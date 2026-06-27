@@ -5,6 +5,14 @@ import { Settings, SupportedLanguage } from '@applye/core';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
+// Current Claude model IDs (Anthropic). Verified against the model catalogue.
+const CLAUDE_MODELS = [
+  'claude-opus-4-8',
+  'claude-opus-4-7',
+  'claude-sonnet-4-6',
+  'claude-haiku-4-5',
+];
+
 /**
  * Phase 2 Settings — the first screen that touches AI. Wires the existing
  * db_get/update_settings + the OS-keychain commands, and proves the end-to-end
@@ -62,21 +70,27 @@ const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
           <div class="row">
             <label class="field">
               <span class="cap">Quality model</span>
-              <input
+              <select
                 [ngModel]="s.defaultModel"
                 (ngModelChange)="patch('defaultModel', $event)"
                 [ngModelOptions]="{ standalone: true }"
-                placeholder="claude-opus-4-8"
-              />
+              >
+                @for (m of models; track m) {
+                  <option [value]="m">{{ m }}</option>
+                }
+              </select>
             </label>
             <label class="field">
               <span class="cap">Economy model</span>
-              <input
+              <select
                 [ngModel]="s.economyModel"
                 (ngModelChange)="patch('economyModel', $event)"
                 [ngModelOptions]="{ standalone: true }"
-                placeholder="claude-haiku-4-5"
-              />
+              >
+                @for (m of models; track m) {
+                  <option [value]="m">{{ m }}</option>
+                }
+              </select>
             </label>
           </div>
 
@@ -105,9 +119,14 @@ const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
         <section class="section">
           <h3 class="eyebrow">API key</h3>
           <p class="muted">
-            Stored in your OS keychain, never written to disk or logs, and sent only to the chosen
-            provider.
-            <strong>{{ keyStored() ? 'Key stored ✓' : 'No key stored.' }}</strong>
+            @if (keyStored()) {
+              <strong>✓ Stored in your OS keychain.</strong> You don't need to re-enter it — the
+              field stays empty because the key is never read back to the app. Type a new one only
+              to replace it.
+            } @else {
+              Saved to your OS keychain, never written to disk or logs, and sent only to the chosen
+              provider.
+            }
           </p>
           <div class="row">
             <label class="field grow">
@@ -117,7 +136,7 @@ const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
                 [ngModel]="apiKeyInput()"
                 (ngModelChange)="apiKeyInput.set($event)"
                 [ngModelOptions]="{ standalone: true }"
-                placeholder="sk-ant-…"
+                [placeholder]="keyStored() ? '•••••••••• (stored — type to replace)' : 'sk-ant-…'"
                 autocomplete="off"
               />
             </label>
@@ -127,7 +146,7 @@ const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
                 [disabled]="keyBusy() || !apiKeyInput().trim()"
                 (click)="saveKey()"
               >
-                Save key
+                {{ keyStored() ? 'Replace' : 'Save key' }}
               </button>
               @if (keyStored()) {
                 <button class="btn btn--ghost" [disabled]="keyBusy()" (click)="removeKey()">
@@ -361,6 +380,7 @@ export class SettingsComponent implements OnInit {
   private readonly ai = inject(AiService);
 
   readonly languages = LANGUAGES;
+  readonly models = CLAUDE_MODELS;
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly status = signal('');

@@ -1,0 +1,59 @@
+# Node
+node_modules/
+.npm/
+
+# Build outputs
+dist/
+tmp/
+out-tsc/
+*.tgz
+
+# Nx
+.nx/cache
+.nx/workspace-data
+.angular/
+
+# Rust / Tauri
+apps/desktop/src-tauri/target/
+apps/mobile/src-tauri/target/
+
+# Personal data — NEVER commit
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+profile.md
+profile_*.md
+*.env
+.env.*
+**/src-tauri/signing-key*
+**/src-tauri/*.key
+**/src-tauri/*.pub.key
+
+# Profile example (committed) vs real profile (not committed)
+# profile.example.md → OK to commit
+# profile.md → NEVER commit
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json
+*.suo
+*.user
+
+# Test artifacts
+coverage/
+*.lcov
+junit.xml
+
+# Logs
+*.log
+npm-debug.log*
+
+# tauri
+apps/desktop/src-tauri/gen/

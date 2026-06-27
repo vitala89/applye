@@ -17,6 +17,7 @@ fn skill_source(name: &str) -> Option<&'static str> {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RenderedSkill {
     pub version: String,
     pub recommended_model: Option<String>,

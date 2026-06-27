@@ -1,25 +1,40 @@
 import { Injectable } from '@angular/core';
+import { AiMode, AiProvider } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
+/** Mirrors the Rust AiRequest. Stable `systemPrompt` is cacheable; `userPrompt` is dynamic. */
 export interface AiRequest {
-  skill: string;
-  context: Record<string, string>;
-  model?: string;
+  mode: AiMode;
+  provider: AiProvider;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  language?: string;
 }
 
 export interface AiResponse {
-  content: string;
-  modelUsed: string;
+  text: string;
   tokensInput: number;
   tokensOutput: number;
-  inputHash: string;
+  cachedTokens: number;
+}
+
+export interface RenderedSkill {
+  version: string;
+  recommendedModel?: string;
+  systemPrompt: string;
+  userPrompt: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AiService {
-  /** Run an AI skill. Returns cached result if hash matches. */
-  async run(req: AiRequest): Promise<AiResponse> {
-    // TODO (Phase 1): implement ai_run Tauri command
+  /** The single AI entry point. The provider key is read from the OS keychain in Rust. */
+  run(req: AiRequest): Promise<AiResponse> {
     return tauriInvoke<AiResponse>('ai_run', { req });
+  }
+
+  /** Render a bundled markdown skill into a ready system/user prompt pair. */
+  renderSkill(name: string, context: Record<string, string>): Promise<RenderedSkill> {
+    return tauriInvoke<RenderedSkill>('skill_render', { name, context });
   }
 }

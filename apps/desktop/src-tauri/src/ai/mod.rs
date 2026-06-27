@@ -20,6 +20,7 @@ pub enum AiMode {
 /// separate from the dynamic `user_prompt` so prompt caching can key on it.
 /// The API key is NEVER part of this request — it is read from the keychain.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AiRequest {
     pub mode: AiMode,
     pub provider: String, // "anthropic"
@@ -31,6 +32,7 @@ pub struct AiRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AiResponse {
     pub text: String,
     pub tokens_input: u32,

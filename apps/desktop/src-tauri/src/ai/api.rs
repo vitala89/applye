@@ -11,9 +11,10 @@ const ANTHROPIC_VERSION: &str = "2023-06-01";
 const MAX_TOKENS: u32 = 1024;
 
 pub async fn run(req: &AiRequest, api_key: &str) -> Result<AiResponse, String> {
-    if req.provider != "anthropic" {
+    // "claude" is this app's id for the Anthropic provider (see AiProvider).
+    if req.provider != "claude" {
         return Err(format!(
-            "Provider '{}' is not supported yet (Phase 2 ships Anthropic only).",
+            "Provider '{}' is not supported yet (Phase 2 ships Anthropic/claude only).",
             req.provider
         ));
     }

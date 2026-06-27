@@ -1,0 +1,86 @@
+name: CI
+
+# Strict gate: runs on every push to main and on every pull request.
+# Frontend goes through Nx affected (lint -> test -> build); the Rust/Tauri
+# backend gets clippy + unit tests. Any lint error, failing test, or build
+# break fails the job and blocks merge.
+#
+# NOT here: the multi-OS Tauri release/packaging build — that is a separate
+# tag-triggered workflow in Phase 4.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  actions: read
+  contents: read
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint / Test / Build (affected) + Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: tree:0
+
+      # Tauri v2 Linux build prerequisites (needed to compile the Rust crate).
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Rust (cargo) build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      # Derive base/head SHAs so `nx affected` only runs changed projects.
+      - uses: nrwl/nx-set-shas@v5
+
+      # Frontend: lint -> test -> build for affected projects. Blocks on any failure.
+      - name: Nx affected (lint, test, build)
+        run: npx nx affected -t lint test build
+
+      # Guarantee the desktop frontend (frontendDist) exists before the Rust
+      # compile below. Cache hit if the affected build already produced it.
+      - name: Build desktop frontend
+        run: npx nx build desktop
+
+      # Rust backend: clippy blocks on errors (warnings allowed, matching the
+      # local hooks); unit tests must pass. Lighter single-OS check for now.
+      - name: Clippy (Rust)
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+      - name: Cargo test (Rust)
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml

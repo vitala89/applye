@@ -1,0 +1,7 @@
+// Global styles for Applye desktop app
+// Design tokens and base reset from libs/ui
+
+@use '../../../libs/ui/src/styles/tokens' as *;
+@use '../../../libs/ui/src/styles/global' as *;
+
+// App-level overrides (if any) go here

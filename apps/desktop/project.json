@@ -21,7 +21,7 @@
             "input": "apps/desktop/public"
           }
         ],
-        "styles": ["apps/desktop/src/styles.scss"]
+        "styles": ["libs/ui/tokens.css", "apps/desktop/src/styles.scss"]
       },
       "configurations": {
         "production": {

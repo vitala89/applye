@@ -1,0 +1,54 @@
+<div class="shell" [attr.data-theme]="theme()">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar__logo">
+      <span class="logo-text">Applye</span>
+    </div>
+
+    <nav class="sidebar__nav">
+      @for (item of navItems; track item.route) {
+        <a
+          class="nav-item"
+          [routerLink]="item.route"
+          routerLinkActive="nav-item--active"
+        >
+          <span class="nav-item__icon" aria-hidden="true">{{ item.icon }}</span>
+          <span class="nav-item__label">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="ai-indicator">
+        <span class="ai-indicator__dot"></span>
+        <span class="ai-indicator__label">AI</span>
+        <span class="ai-indicator__mode">API</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <h1 class="topbar__title" aria-live="polite">
+        <!-- Page title populated by child routes in Phase 1 -->
+        Applye
+      </h1>
+
+      <div class="topbar__actions">
+        <button class="btn-theme" (click)="toggleTheme()" [attr.aria-label]="'Switch to ' + (theme() === 'dark' ? 'light' : 'dark') + ' theme'">
+          {{ theme() === 'dark' ? '☀' : '🌙' }}
+        </button>
+        <button class="btn-primary" disabled title="Coming in Phase 1">
+          + Paste Job
+        </button>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="content">
+      <ng-content />
+    </main>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "dashboard": "Обзор",
+    "jobs": "Вакансии",
+    "pipeline": "Пайплайн",
+    "interview_prep": "Подготовка к интервью",
+    "documents": "Документы",
+    "settings": "Настройки"
+  },
+  "actions": {
+    "paste_job": "+ Добавить вакансию",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "export": "Экспорт",
+    "delete": "Удалить"
+  },
+  "status": {
+    "saved": "Сохранено",
+    "applied": "Откликнулся",
+    "interview": "Интервью",
+    "offer": "Оффер",
+    "rejected": "Отказ"
+  },
+  "ai": { "mode_api": "API", "mode_cli": "CLI", "indicator": "ИИ" },
+  "common": { "loading": "Загрузка...", "error": "Что-то пошло не так", "coming_soon": "Скоро" }
+}

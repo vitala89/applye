@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "dashboard": "Übersicht",
+    "jobs": "Stellen",
+    "pipeline": "Pipeline",
+    "interview_prep": "Interview-Vorbereitung",
+    "documents": "Dokumente",
+    "settings": "Einstellungen"
+  },
+  "actions": {
+    "paste_job": "+ Stelle einfügen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "export": "Exportieren",
+    "delete": "Löschen"
+  },
+  "status": {
+    "saved": "Gespeichert",
+    "applied": "Beworben",
+    "interview": "Vorstellungsgespräch",
+    "offer": "Angebot",
+    "rejected": "Abgelehnt"
+  },
+  "ai": {
+    "mode_api": "API",
+    "mode_cli": "CLI",
+    "indicator": "KI"
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Etwas ist schiefgelaufen",
+    "coming_soon": "Demnächst verfügbar"
+  }
+}

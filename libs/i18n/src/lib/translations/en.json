@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "jobs": "Jobs",
+    "pipeline": "Pipeline",
+    "interview_prep": "Interview Prep",
+    "documents": "Documents",
+    "settings": "Settings"
+  },
+  "actions": {
+    "paste_job": "+ Paste Job",
+    "save": "Save",
+    "cancel": "Cancel",
+    "export": "Export",
+    "delete": "Delete"
+  },
+  "status": {
+    "saved": "Saved",
+    "applied": "Applied",
+    "interview": "Interview",
+    "offer": "Offer",
+    "rejected": "Rejected"
+  },
+  "ai": {
+    "mode_api": "API",
+    "mode_cli": "CLI",
+    "indicator": "AI"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "coming_soon": "Coming soon"
+  }
+}

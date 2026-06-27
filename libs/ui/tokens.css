@@ -1,0 +1,341 @@
+/* ============================================================
+   APPLYE — DESIGN TOKENS
+   Extracted from the "Applye Design System" (claude.ai/design).
+   Single source of truth: colors, type, spacing, radii, shadows,
+   motion. Monochrome graphite + one controlled indigo accent.
+   "A terminal made beautiful." JetBrains Mono (brand) + Inter (text).
+
+   Themes: dark is the default/brand canvas; light is first-class.
+   Switch via  <html data-theme="light">  /  data-theme="dark".
+
+   Do NOT edit values here by hand — they mirror the design system.
+   ============================================================ */
+
+/* ---- Webfonts: JetBrains Mono (brand/mono) + Inter (long-form) ---- */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   COLOR TOKENS
+   Indigo appears ONLY on primary actions, active states, focus
+   rings, scores, AI status, brand.
+   ============================================================ */
+:root {
+  /* ---- Raw palette: neutrals (theme-independent) ---- */
+  --ink:           #0A0A0B;  /* deepest black */
+  --graphite-950:  #0E0F13;  /* brand graphite (app canvas, dark) */
+  --graphite-900:  #161618;  /* raised surface, dark */
+  --graphite-850:  #1C1C20;  /* hover surface, dark */
+  --graphite-800:  #222226;  /* sunken / track, dark */
+  --graphite-700:  #2A2A2E;  /* hairline borders, dark */
+  --graphite-600:  #3A3A40;  /* strong border, dark */
+  --graphite-500:  #6B6B73;  /* muted text / disabled */
+  --graphite-400:  #8A8A92;  /* secondary text, dark */
+  --graphite-300:  #B8B8BF;  /* tertiary / light border */
+  --graphite-200:  #D6D6DA;  /* light hairline */
+  --graphite-100:  #ECECEE;  /* light surface line */
+  --graphite-050:  #F4F4F2;  /* light hover */
+  --off-white:     #FAFAF8;  /* app canvas, light */
+  --white:         #FFFFFF;
+
+  /* ---- Raw palette: indigo accent ---- */
+  --indigo-700:    #3A33D6;  /* pressed */
+  --indigo-600:    #4F5BFF;  /* PRIMARY brand indigo (napkin) */
+  --indigo-500:    #6366F1;  /* hover / secondary accent */
+  --indigo-400:    #818CF8;  /* light-on-dark accent, links */
+  --indigo-300:    #A5B0FF;  /* faint accent text on dark */
+  --violet-500:    #7C3AED;  /* rare secondary accent */
+
+  /* ---- Raw palette: semantic status (muted, engineering-grade) ---- */
+  --green-500:     #2BB673;  /* success / strong fit */
+  --green-400:     #4ECB8C;
+  --amber-500:     #E0A23B;  /* warning / partial fit */
+  --amber-400:     #F0B85C;
+  --red-500:       #E05656;  /* error / weak fit */
+  --red-400:       #F07A7A;
+
+  /* ---- Accent alpha tints (for fills, rings, glows) ---- */
+  --indigo-a08:    rgba(79, 91, 255, 0.08);
+  --indigo-a12:    rgba(79, 91, 255, 0.12);
+  --indigo-a16:    rgba(79, 91, 255, 0.16);
+  --indigo-a24:    rgba(79, 91, 255, 0.24);
+  --indigo-a40:    rgba(79, 91, 255, 0.40);
+
+  /* ============================================================
+     SEMANTIC TOKENS — default = DARK theme (brand-primary canvas)
+     ============================================================ */
+
+  /* Backgrounds & surfaces */
+  --bg-app:        var(--graphite-950);   /* window canvas */
+  --bg-sidebar:    var(--ink);            /* left nav rail */
+  --surface-1:     var(--graphite-900);   /* cards, panels */
+  --surface-2:     var(--graphite-850);   /* nested / raised */
+  --surface-sunken:var(--graphite-800);   /* inputs, tracks */
+  --surface-hover: var(--graphite-850);
+  --surface-active:var(--graphite-800);
+
+  /* Text */
+  --text-primary:    #F2F2F4;
+  --text-secondary:  var(--graphite-400);
+  --text-tertiary:   var(--graphite-500);
+  --text-disabled:   #55555C;
+  --text-inverse:    var(--graphite-950);
+  --text-on-accent:  var(--white);
+  --text-accent:     var(--indigo-400);
+
+  /* Borders */
+  --border-subtle:   var(--graphite-700);
+  --border-default:  var(--graphite-700);
+  --border-strong:   var(--graphite-600);
+  --border-accent:   var(--indigo-600);
+
+  /* Accent (brand) */
+  --accent:          var(--indigo-600);
+  --accent-hover:    var(--indigo-500);
+  --accent-pressed:  var(--indigo-700);
+  --accent-fg:       var(--white);
+  --accent-tint:     var(--indigo-a12);
+  --accent-tint-strong: var(--indigo-a24);
+
+  /* Focus ring */
+  --ring:            var(--indigo-a40);
+
+  /* Status (semantic) */
+  --success:   var(--green-400);
+  --warning:   var(--amber-400);
+  --danger:    var(--red-400);
+  --success-tint: rgba(43, 182, 115, 0.14);
+  --warning-tint: rgba(224, 162, 59, 0.14);
+  --danger-tint:  rgba(224, 86, 86, 0.14);
+
+  color-scheme: dark;
+}
+
+/* Explicit dark (same as default) */
+[data-theme="dark"] {
+  --bg-app:        var(--graphite-950);
+  --bg-sidebar:    var(--ink);
+  --surface-1:     var(--graphite-900);
+  --surface-2:     var(--graphite-850);
+  --surface-sunken:var(--graphite-800);
+  --surface-hover: var(--graphite-850);
+  --surface-active:var(--graphite-800);
+
+  --text-primary:    #F2F2F4;
+  --text-secondary:  var(--graphite-400);
+  --text-tertiary:   var(--graphite-500);
+  --text-disabled:   #55555C;
+  --text-inverse:    var(--graphite-950);
+  --text-on-accent:  var(--white);
+  --text-accent:     var(--indigo-400);
+
+  --border-subtle:   var(--graphite-700);
+  --border-default:  var(--graphite-700);
+  --border-strong:   var(--graphite-600);
+  --border-accent:   var(--indigo-600);
+
+  --accent:          var(--indigo-600);
+  --accent-hover:    var(--indigo-500);
+  --accent-pressed:  var(--indigo-700);
+  --accent-fg:       var(--white);
+  --accent-tint:     var(--indigo-a12);
+  --accent-tint-strong: var(--indigo-a24);
+
+  --ring:            var(--indigo-a40);
+
+  --success:   var(--green-400);
+  --warning:   var(--amber-400);
+  --danger:    var(--red-400);
+  --success-tint: rgba(43, 182, 115, 0.14);
+  --warning-tint: rgba(224, 162, 59, 0.14);
+  --danger-tint:  rgba(224, 86, 86, 0.14);
+
+  color-scheme: dark;
+}
+
+/* ============================================================
+   LIGHT THEME — equal first-class
+   ============================================================ */
+[data-theme="light"] {
+  --bg-app:        var(--off-white);
+  --bg-sidebar:    var(--white);
+  --surface-1:     var(--white);
+  --surface-2:     var(--off-white);
+  --surface-sunken:var(--graphite-050);
+  --surface-hover: var(--graphite-050);
+  --surface-active:var(--graphite-100);
+
+  --text-primary:    #16161A;
+  --text-secondary:  #5A5A63;
+  --text-tertiary:   var(--graphite-500);
+  --text-disabled:   var(--graphite-300);
+  --text-inverse:    var(--white);
+  --text-on-accent:  var(--white);
+  --text-accent:     var(--indigo-600);
+
+  --border-subtle:   var(--graphite-100);
+  --border-default:  var(--graphite-200);
+  --border-strong:   var(--graphite-300);
+  --border-accent:   var(--indigo-600);
+
+  --accent:          var(--indigo-600);
+  --accent-hover:    var(--indigo-700);
+  --accent-pressed:  var(--indigo-700);
+  --accent-fg:       var(--white);
+  --accent-tint:     var(--indigo-a08);
+  --accent-tint-strong: var(--indigo-a16);
+
+  --ring:            var(--indigo-a40);
+
+  --success:   var(--green-500);
+  --warning:   var(--amber-500);
+  --danger:    var(--red-500);
+  --success-tint: rgba(43, 182, 115, 0.10);
+  --warning-tint: rgba(224, 162, 59, 0.12);
+  --danger-tint:  rgba(224, 86, 86, 0.10);
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   TYPOGRAPHY TOKENS
+   JetBrains Mono = brand voice (logo, headings, numbers, metrics,
+   labels, badges, statuses, scores, code-like UI).
+   Inter = long-form reading (JDs, AI analysis, answers, docs).
+   ============================================================ */
+:root {
+  /* ---- Families ---- */
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-brand: var(--font-mono); /* logo + headings */
+
+  /* ---- Weights ---- */
+  --weight-regular:  400;
+  --weight-medium:   500;  /* logo, default brand weight */
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-extra:    800;
+
+  /* ---- Type scale (px) ----
+     Mono headings run slightly tighter tracking; body sans runs normal. */
+  --text-display:  40px;   /* hero / screen-defining numbers */
+  --text-h1:       28px;
+  --text-h2:       22px;
+  --text-h3:       18px;
+  --text-title:    16px;   /* card titles */
+  --text-body:     14px;   /* default UI text */
+  --text-sm:       13px;   /* secondary */
+  --text-xs:       12px;   /* labels, captions */
+  --text-2xs:      11px;   /* micro labels, badges */
+
+  /* ---- Line heights ---- */
+  --leading-tight:   1.1;   /* display / metrics */
+  --leading-snug:    1.25;  /* headings */
+  --leading-normal:  1.45;  /* UI text */
+  --leading-relaxed: 1.65;  /* long-form reading */
+
+  /* ---- Letter spacing ---- */
+  --tracking-tighter: -0.03em; /* large mono display */
+  --tracking-tight:   -0.01em; /* headings */
+  --tracking-normal:  0;
+  --tracking-wide:    0.04em;  /* mono labels */
+  --tracking-wider:   0.12em;  /* uppercase eyebrows / badges */
+}
+
+/* ============================================================
+   SPACING TOKENS — strict 8px grid (2px/4px half-steps for dense)
+   ============================================================ */
+:root {
+  --space-0:   0;
+  --space-1:   2px;
+  --space-2:   4px;
+  --space-3:   8px;    /* base unit */
+  --space-4:   12px;
+  --space-5:   16px;
+  --space-6:   20px;
+  --space-7:   24px;
+  --space-8:   32px;
+  --space-9:   40px;
+  --space-10:  48px;
+  --space-11:  64px;
+  --space-12:  80px;
+  --space-13:  96px;
+
+  /* ---- Layout primitives ---- */
+  --sidebar-width:      240px;
+  --sidebar-collapsed:  64px;
+  --content-max:        1200px;
+  --topbar-height:      56px;
+}
+
+/* ============================================================
+   RADIUS TOKENS — 8px cards/buttons · 6px inputs · 4px badges
+   ============================================================ */
+:root {
+  --radius-none:  0;
+  --radius-badge: 4px;   /* badges, tags, score chips */
+  --radius-input: 6px;   /* inputs, selects, small controls */
+  --radius-card:  8px;   /* cards, buttons, panels */
+  --radius-lg:    12px;  /* large surfaces, dialogs */
+  --radius-xl:    16px;  /* app icon, hero tiles */
+  --radius-full:  999px; /* avatars, status dots, switches */
+}
+
+/* ============================================================
+   ELEVATION TOKENS — soft, low-spread shadows + 1px hairlines.
+   On dark, elevation reads via lighter surface + border more than
+   shadow. On light, gentle ambient shadows.
+   ============================================================ */
+:root {
+  /* Dark-theme elevation (default): subtle, mostly border-driven */
+  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-sm:  0 2px 6px rgba(0, 0, 0, 0.40);
+  --shadow-md:  0 6px 18px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 18px 48px rgba(0, 0, 0, 0.55);
+
+  /* Focus ring (accent) */
+  --shadow-ring: 0 0 0 3px var(--ring);
+
+  /* AI / active glow — used sparingly */
+  --glow-accent: 0 0 0 1px var(--indigo-a40), 0 0 20px var(--indigo-a24);
+
+  --border-width: 1px;
+}
+
+[data-theme="light"] {
+  --shadow-xs:  0 1px 2px rgba(16, 16, 24, 0.05);
+  --shadow-sm:  0 1px 3px rgba(16, 16, 24, 0.08), 0 1px 2px rgba(16, 16, 24, 0.04);
+  --shadow-md:  0 4px 16px rgba(16, 16, 24, 0.08);
+  --shadow-lg:  0 18px 48px rgba(16, 16, 24, 0.12);
+  --glow-accent: 0 0 0 1px var(--indigo-a24), 0 0 16px var(--indigo-a16);
+}
+
+/* ============================================================
+   MOTION TOKENS — calm, precise, fast. No bounce.
+   Subtle AI states use slow, soft pulses.
+   ============================================================ */
+:root {
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);    /* default UI */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1); /* enter */
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1);    /* exit */
+
+  --dur-instant: 80ms;    /* hover / press */
+  --dur-fast:    140ms;   /* most transitions */
+  --dur-base:    220ms;   /* panels, popovers */
+  --dur-slow:    360ms;   /* dialogs, theme switch */
+
+  --dur-ai-pulse: 1800ms; /* AI working loop */
+}
+
+@keyframes applye-ai-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+
+@keyframes applye-shimmer {
+  0%   { background-position: -180% 0; }
+  100% { background-position: 180% 0; }
+}
+
+@keyframes applye-spin {
+  to { transform: rotate(360deg); }
+}

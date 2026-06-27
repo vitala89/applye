@@ -1,32 +1,68 @@
 // AI dispatch layer — two modes, one abstraction.
 // Frontend calls invoke('ai_run', { req }) regardless of mode.
-// This module routes to api.rs (reqwest) or cli.rs (tokio::process).
-// Adding a provider = one branch here, zero Angular changes.
+// `ai_run` is the SINGLE AI entry point: adding a provider later is one branch
+// in api.rs; the frontend never knows whether a reply came from API or CLI.
 
 pub mod api;
 pub mod cli;
+pub mod skills;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AiRequest {
-    pub skill: String,
-    pub context: std::collections::HashMap<String, String>,
-    pub model: Option<String>,
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum AiMode {
+    Api,
+    Cli,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+/// A request to run one AI task. The stable prefix (`system_prompt`) is kept
+/// separate from the dynamic `user_prompt` so prompt caching can key on it.
+/// The API key is NEVER part of this request — it is read from the keychain.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiRequest {
+    pub mode: AiMode,
+    pub provider: String, // "anthropic"
+    pub model: String,
+    pub system_prompt: String,
+    pub user_prompt: String,
+    #[serde(default)]
+    pub language: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiResponse {
-    pub content: String,
-    pub model_used: String,
+    pub text: String,
     pub tokens_input: u32,
     pub tokens_output: u32,
-    pub input_hash: String,
+    pub cached_tokens: u32,
 }
 
-// TODO (Phase 1): pub async fn dispatch(req: AiRequest, mode: &str) -> anyhow::Result<AiResponse>
-// - load skill file from embedded skills/ directory
-// - inject context fields into prompt template
-// - check cache by input_hash (DB lookup, 0 tokens if hit)
-// - if miss: route to api::run() or cli::run()
-// - store result in cache
+async fn dispatch(req: AiRequest, api_key: Option<String>) -> Result<AiResponse, String> {
+    match req.mode {
+        AiMode::Api => {
+            let key = api_key.ok_or_else(|| "internal: missing API key".to_string())?;
+            api::run(&req, &key).await
+        }
+        AiMode::Cli => cli::run(&req).await,
+    }
+}
+
+/// The single AI entry point. In API mode the provider key is loaded from the
+/// OS keychain here (never passed from the frontend) and sent only to the
+/// chosen provider. Errors are returned cleanly — no panics, no key in logs.
+#[tauri::command]
+pub async fn ai_run(req: AiRequest) -> Result<AiResponse, String> {
+    let api_key = match req.mode {
+        AiMode::Api => Some(
+            crate::keys::KeyStore::get_key(&req.provider)?.ok_or_else(|| {
+                format!(
+                    "No API key stored for '{}'. Add it in Settings.",
+                    req.provider
+                )
+            })?,
+        ),
+        AiMode::Cli => None,
+    };
+    dispatch(req, api_key).await
+}

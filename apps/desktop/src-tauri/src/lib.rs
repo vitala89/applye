@@ -22,10 +22,7 @@ pub fn run() {
 
             // Open the local SQLite DB in the OS app-data directory and run
             // migrations before any command can be invoked.
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .expect("resolve app data dir");
+            let app_data_dir = app.path().app_data_dir().expect("resolve app data dir");
             let db = tauri::async_runtime::block_on(Db::init(&app_data_dir))
                 .expect("initialize database");
             app.manage(db);
@@ -43,6 +40,11 @@ pub fn run() {
             commands::applications::db_upsert_application,
             commands::applications::db_set_application_status,
             commands::db_export,
+            ai::ai_run,
+            ai::skills::skill_render,
+            keys::keys_set_provider_key,
+            keys::keys_has_provider_key,
+            keys::keys_delete_provider_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

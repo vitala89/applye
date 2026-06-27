@@ -1,7 +1,7 @@
-// Global styles for Applye desktop app
-// Design tokens and base reset from libs/ui
+// Global styles for Applye desktop app.
+// Design tokens load first via project.json styles (libs/ui/tokens.css);
+// this file carries only the base reset + brand primitives.
 
-@use '../../../libs/ui/src/styles/tokens' as *;
 @use '../../../libs/ui/src/styles/global' as *;
 
 // App-level overrides (if any) go here

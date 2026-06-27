@@ -57,3 +57,11 @@ npm-debug.log*
 
 # tauri
 apps/desktop/src-tauri/gen/
+
+# AI tooling / generated indexes
+.claude/
+.codegraph/
+.serena/
+graphify-out/
+.planning/
+tauri-project-bootstrap.md

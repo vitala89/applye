@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Settings } from '@applye/core';
 import { DbService } from './db.service';
 
@@ -8,7 +8,7 @@ export class SettingsService {
 
   readonly current = this.settings.asReadonly();
 
-  constructor(private db: DbService) {}
+  private readonly db = inject(DbService);
 
   async load(): Promise<void> {
     const s = await this.db.getSettings();

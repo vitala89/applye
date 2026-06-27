@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DbService } from '@applye/data';
 
@@ -77,7 +77,7 @@ export class ProfileComponent implements OnInit {
   readonly status = signal('');
   readonly isError = signal(false);
 
-  constructor(private db: DbService) {}
+  private readonly db = inject(DbService);
 
   async ngOnInit(): Promise<void> {
     try {

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ArrowRight, Check, ChevronRight, LucideAngularModule, Search, X } from 'lucide-angular';
 import { AiService, DbService } from '@applye/data';
 import { Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -18,7 +19,7 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, LucideAngularModule],
   template: `
     <div class="jobs">
       <!-- Paste section -->
@@ -49,7 +50,12 @@ interface PassResult {
 
       @if (!job()) {
         <div class="state-empty">
-          <span class="state-empty__icon">🔍</span>
+          <lucide-icon
+            [img]="icons.empty"
+            [size]="40"
+            class="state-empty__icon"
+            aria-hidden="true"
+          />
           <p class="state-empty__msg">{{ t()('jobs.empty') }}</p>
         </div>
       }
@@ -177,7 +183,12 @@ interface PassResult {
               [class.ats-pass--ok]="c.atsPass"
               [class.ats-pass--warn]="!c.atsPass"
             >
-              {{ c.atsPass ? '✓ Likely to pass ATS scan' : '✗ ATS issues detected' }}
+              <lucide-icon
+                [img]="c.atsPass ? icons.atsPass : icons.atsFail"
+                [size]="16"
+                aria-hidden="true"
+              />
+              {{ c.atsPass ? 'Likely to pass ATS scan' : 'ATS issues detected' }}
             </div>
             @if (c.atsNotes) {
               <p class="muted" style="margin-top: var(--space-2)">{{ c.atsNotes }}</p>
@@ -216,7 +227,9 @@ interface PassResult {
                     }}</span>
                   </div>
                   @if (n < 3) {
-                    <span class="wizard-step__sep">→</span>
+                    <span class="wizard-step__sep">
+                      <lucide-icon [img]="icons.stepSep" [size]="16" aria-hidden="true" />
+                    </span>
                   }
                 }
               </div>
@@ -277,7 +290,8 @@ interface PassResult {
                 <div class="row row--mt">
                   <button class="btn btn--primary" (click)="runNextPass()">
                     Continue to Pass {{ tailorResults().length + 1 }}:
-                    {{ ['Critique', 'Final Build'][tailorResults().length - 1] }} →
+                    {{ ['Critique', 'Final Build'][tailorResults().length - 1] }}
+                    <lucide-icon [img]="icons.next" [size]="16" aria-hidden="true" />
                   </button>
                   <button class="btn" (click)="resetWizard()">{{ t()('jobs.start_over') }}</button>
                   @if (tailorStatus()) {
@@ -753,6 +767,14 @@ export class JobsComponent implements OnInit {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+
+  protected readonly icons = {
+    empty: Search,
+    atsPass: Check,
+    atsFail: X,
+    stepSep: ChevronRight,
+    next: ArrowRight,
+  };
 
   readonly jdText = signal('');
   readonly job = signal<Job | null>(null);

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import {
   CdkDrag,
   CdkDragDrop,
@@ -30,10 +30,10 @@ const COLS: KanbanCol[] = [
   imports: [CdkDropListGroup, CdkDropList, CdkDrag],
   template: `
     <div class="pipeline">
-      @if (loading) {
+      @if (loading()) {
         <p class="pipeline__msg">Loading pipeline…</p>
-      } @else if (error) {
-        <p class="pipeline__msg pipeline__msg--error">{{ error }}</p>
+      } @else if (error()) {
+        <p class="pipeline__msg pipeline__msg--error">{{ error() }}</p>
       } @else {
         <div class="kanban" cdkDropListGroup>
           @for (col of COLS; track col.status) {
@@ -274,6 +274,8 @@ export class PipelineComponent implements OnInit {
 
   readonly COLS = COLS;
 
+  // Plain mutable object: CDK drag-drop needs stable array references.
+  // loading/error are signals so the zoneless scheduler picks up changes.
   cards: Record<ApplicationStatus, PipelineCard[]> = {
     saved: [],
     applied: [],
@@ -282,8 +284,8 @@ export class PipelineComponent implements OnInit {
     rejected: [],
   };
 
-  loading = true;
-  error = '';
+  readonly loading = signal(true);
+  readonly error = signal('');
 
   async ngOnInit(): Promise<void> {
     try {
@@ -292,9 +294,9 @@ export class PipelineComponent implements OnInit {
         this.cards[col.status] = all.filter((c) => c.status === col.status);
       }
     } catch (e) {
-      this.error = String(e);
+      this.error.set(String(e));
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 

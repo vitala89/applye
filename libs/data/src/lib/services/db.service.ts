@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Job, ScoringCache } from '@applye/core';
-import { Application, ApplicationStatus } from '@applye/core';
+import { Application, ApplicationStatus, PipelineCard } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
@@ -71,6 +71,10 @@ export class DbService {
   // --- Applications ---
   async listApplications(): Promise<Application[]> {
     return tauriInvoke<Application[]>('db_list_applications');
+  }
+
+  async listPipelineCards(): Promise<PipelineCard[]> {
+    return tauriInvoke<PipelineCard[]>('db_pipeline_cards');
   }
 
   async upsertApplication(

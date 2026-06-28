@@ -17,8 +17,7 @@ impl Db {
     /// foreign keys, and run all pending migrations. Idempotent across launches.
     pub async fn init(app_data_dir: &Path) -> Result<Self, String> {
         // Tauri's sandbox / a fresh install may not have the dir yet.
-        std::fs::create_dir_all(app_data_dir)
-            .map_err(|e| format!("create app data dir: {e}"))?;
+        std::fs::create_dir_all(app_data_dir).map_err(|e| format!("create app data dir: {e}"))?;
 
         let path = app_data_dir.join("applye.db");
 
@@ -64,5 +63,9 @@ pub fn stable_hash(input: &str) -> String {
 /// Lowercase + collapse all whitespace so trivially different pastes of the
 /// same job (extra spaces, line breaks, casing) hash identically.
 fn normalize_text(input: &str) -> String {
-    input.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    input
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }

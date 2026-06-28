@@ -152,12 +152,9 @@ async fn upsert_generated_doc(
     db: &Db,
 ) -> Result<GeneratedDoc, String> {
     sqlx::query(
-        "INSERT INTO generated_docs
+        "INSERT OR REPLACE INTO generated_docs
            (job_id, doc_type, export_format, input_hash, file_path, created_at)
-         VALUES (?, 'cv', ?, ?, ?, datetime('now'))
-         ON CONFLICT(job_id, doc_type, export_format, input_hash) DO UPDATE SET
-           file_path  = excluded.file_path,
-           created_at = excluded.created_at",
+         VALUES (?, 'cv', ?, ?, ?, datetime('now'))",
     )
     .bind(job_id)
     .bind(export_format)

@@ -35,6 +35,12 @@ const en: TranslationMap = {
     drop_here: 'Drop here',
   },
   shell: { theme_to_light: 'Switch to light theme', theme_to_dark: 'Switch to dark theme' },
+  updater: {
+    title: 'Update available',
+    body: 'A new version of Applye is ready to install.',
+    install: 'Install & restart',
+    later: 'Later',
+  },
   pipeline: {
     loading: 'Loading pipeline…',
     empty: 'No applications yet. Paste a job to get started.',
@@ -147,6 +153,12 @@ const de: TranslationMap = {
   shell: {
     theme_to_light: 'Zum hellen Design wechseln',
     theme_to_dark: 'Zum dunklen Design wechseln',
+  },
+  updater: {
+    title: 'Update verfügbar',
+    body: 'Eine neue Version von Applye kann installiert werden.',
+    install: 'Installieren & neu starten',
+    later: 'Später',
   },
   pipeline: {
     loading: 'Pipeline wird geladen…',

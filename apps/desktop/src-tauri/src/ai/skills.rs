@@ -18,6 +18,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "pitch" => Some(include_str!(
             "../../../../../libs/skills/src/pitch/pitch.md"
         )),
+        "job-scoring" => Some(include_str!(
+            "../../../../../libs/skills/src/job-scoring/job-scoring.md"
+        )),
         _ => None,
     }
 }

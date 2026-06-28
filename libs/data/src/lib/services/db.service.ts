@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Job } from '@applye/core';
+import { Job, ScoringCache } from '@applye/core';
 import { Application, ApplicationStatus } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
@@ -39,6 +39,32 @@ export class DbService {
 
   async upsertJob(job: Omit<Job, 'id' | 'jdHash' | 'createdAt'>): Promise<Job> {
     return tauriInvoke<Job>('db_upsert_job', { job });
+  }
+
+  async jobPaste(jdText: string): Promise<Job> {
+    return tauriInvoke<Job>('job_paste', { jdText });
+  }
+
+  async scoreCacheGet(jobId: number, profileHash: string): Promise<ScoringCache | null> {
+    return tauriInvoke<ScoringCache | null>('score_cache_get', { jobId, profileHash });
+  }
+
+  async scoreCacheSave(input: {
+    jobId: number;
+    profileHash: string;
+    language: string;
+    score: number;
+    dimensionsJson: string;
+    missingKeywordsJson: string;
+    redFlagsJson: string;
+    atsPass: boolean;
+    atsNotes: string;
+    summary: string;
+    modelUsed: string;
+    tokensInput: number;
+    tokensOutput: number;
+  }): Promise<ScoringCache> {
+    return tauriInvoke<ScoringCache>('score_cache_save', { input });
   }
 
   // --- Applications ---

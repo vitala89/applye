@@ -5,6 +5,7 @@
 pub mod applications;
 pub mod jobs;
 pub mod profile;
+pub mod scoring;
 pub mod settings;
 
 use tauri::State;

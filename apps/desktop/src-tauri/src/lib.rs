@@ -48,6 +48,8 @@ pub fn run() {
             commands::tailoring::generated_doc_get,
             commands::tailoring::export_docx,
             commands::tailoring::export_pdf,
+            commands::tailoring::open_file,
+            commands::tailoring::reveal_in_folder,
             commands::db_export,
             ai::ai_run,
             ai::skills::skill_render,

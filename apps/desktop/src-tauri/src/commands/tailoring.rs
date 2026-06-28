@@ -176,33 +176,59 @@ async fn upsert_generated_doc(
     .map_err(|e| format!("generated_doc reload: {e}"))
 }
 
-fn sanitize_name(name: &str) -> String {
-    let s: String = name
-        .chars()
-        .map(|c| {
-            if c.is_alphanumeric() || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-    s.trim_matches('_').to_string()
+/// Kebab-case slug: non-alphanum → hyphen, collapse runs, cap at max_len.
+fn readable_slug(s: &str, max_len: usize) -> String {
+    let mut out = String::new();
+    let mut last_hyphen = true;
+    for c in s.chars() {
+        if c.is_alphanumeric() {
+            out.push(c);
+            last_hyphen = false;
+        } else if !last_hyphen {
+            out.push('-');
+            last_hyphen = true;
+        }
+    }
+    let out = out.trim_end_matches('-');
+    let cap = out
+        .char_indices()
+        .nth(max_len)
+        .map(|(i, _)| i)
+        .unwrap_or(out.len());
+    out[..cap].to_string()
 }
 
-fn cv_dir(app: &AppHandle, company: &str) -> Result<std::path::PathBuf, String> {
+fn cv_dir(app: &AppHandle, company: &str, title: &str) -> Result<std::path::PathBuf, String> {
     let base = app
         .path()
         .app_data_dir()
         .map_err(|e| format!("app_data_dir: {e}"))?;
-    let co = sanitize_name(if company.is_empty() {
-        "unknown"
-    } else {
+    let src = if !company.is_empty() {
         company
-    });
-    let dir = base.join("companies").join(co).join("cv");
+    } else if !title.is_empty() {
+        title
+    } else {
+        "Other"
+    };
+    let dir = base
+        .join("companies")
+        .join(readable_slug(src, 40))
+        .join("cv");
     std::fs::create_dir_all(&dir).map_err(|e| format!("mkdir: {e}"))?;
     Ok(dir)
+}
+
+fn cv_filename(title: &str, company: &str, hash: &str, ext: &str) -> String {
+    let src = if !title.is_empty() {
+        title
+    } else if !company.is_empty() {
+        company
+    } else {
+        "CV"
+    };
+    let slug = readable_slug(src, 48);
+    let suffix = &hash[..8.min(hash.len())];
+    format!("{slug}_{suffix}.{ext}")
 }
 
 // ── DOCX export ──────────────────────────────────────────────────────────────
@@ -247,6 +273,7 @@ pub async fn export_docx(
     job_id: i64,
     content_md: String,
     company: String,
+    job_title: String,
     input_hash: String,
     app: AppHandle,
     db: State<'_, Db>,
@@ -258,8 +285,8 @@ pub async fn export_docx(
     }
 
     let bytes = md_to_docx_bytes(&content_md)?;
-    let dir = cv_dir(&app, &company)?;
-    let path = dir.join(format!("{}.docx", &input_hash[..12.min(input_hash.len())]));
+    let dir = cv_dir(&app, &company, &job_title)?;
+    let path = dir.join(cv_filename(&job_title, &company, &input_hash, "docx"));
     std::fs::write(&path, &bytes).map_err(|e| format!("write docx: {e}"))?;
 
     upsert_generated_doc(
@@ -336,6 +363,7 @@ pub async fn export_pdf(
     job_id: i64,
     content_md: String,
     company: String,
+    job_title: String,
     input_hash: String,
     app: AppHandle,
     db: State<'_, Db>,
@@ -347,9 +375,57 @@ pub async fn export_pdf(
     }
 
     let bytes = md_to_pdf_bytes(&content_md)?;
-    let dir = cv_dir(&app, &company)?;
-    let path = dir.join(format!("{}.pdf", &input_hash[..12.min(input_hash.len())]));
+    let dir = cv_dir(&app, &company, &job_title)?;
+    let path = dir.join(cv_filename(&job_title, &company, &input_hash, "pdf"));
     std::fs::write(&path, &bytes).map_err(|e| format!("write pdf: {e}"))?;
 
     upsert_generated_doc(job_id, &input_hash, "pdf", path.to_str().unwrap_or(""), &db).await
+}
+
+// ── File reveal / open ───────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn open_file(path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open")
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("open_file: {e}"))?;
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("cmd")
+        .args(["/C", "start", "", &path])
+        .spawn()
+        .map_err(|e| format!("open_file: {e}"))?;
+    #[cfg(target_os = "linux")]
+    std::process::Command::new("xdg-open")
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("open_file: {e}"))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn reveal_in_folder(path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open")
+        .args(["-R", &path])
+        .spawn()
+        .map_err(|e| format!("reveal_in_folder: {e}"))?;
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("explorer")
+        .arg(format!("/select,{path}"))
+        .spawn()
+        .map_err(|e| format!("reveal_in_folder: {e}"))?;
+    #[cfg(target_os = "linux")]
+    {
+        let parent = std::path::Path::new(&path)
+            .parent()
+            .and_then(|p| p.to_str())
+            .unwrap_or(&path);
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| format!("reveal_in_folder: {e}"))?;
+    }
+    Ok(())
 }

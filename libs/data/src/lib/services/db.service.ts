@@ -113,18 +113,40 @@ export class DbService {
     jobId: number,
     contentMd: string,
     company: string,
+    jobTitle: string,
     inputHash: string,
   ): Promise<GeneratedDoc> {
-    return tauriInvoke<GeneratedDoc>('export_docx', { jobId, contentMd, company, inputHash });
+    return tauriInvoke<GeneratedDoc>('export_docx', {
+      jobId,
+      contentMd,
+      company,
+      jobTitle,
+      inputHash,
+    });
   }
 
   async exportPdf(
     jobId: number,
     contentMd: string,
     company: string,
+    jobTitle: string,
     inputHash: string,
   ): Promise<GeneratedDoc> {
-    return tauriInvoke<GeneratedDoc>('export_pdf', { jobId, contentMd, company, inputHash });
+    return tauriInvoke<GeneratedDoc>('export_pdf', {
+      jobId,
+      contentMd,
+      company,
+      jobTitle,
+      inputHash,
+    });
+  }
+
+  openFile(path: string): Promise<void> {
+    return tauriInvoke<void>('open_file', { path });
+  }
+
+  revealInFolder(path: string): Promise<void> {
+    return tauriInvoke<void>('reveal_in_folder', { path });
   }
 
   // --- Backup / export ---

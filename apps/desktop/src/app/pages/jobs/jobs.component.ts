@@ -292,6 +292,16 @@ interface PassResult {
                       {{ exportStatus() }}
                     </p>
                   }
+                  @if (lastExport(); as exp) {
+                    <div class="export-actions">
+                      <button class="btn btn--sm" (click)="openExportedFile(exp.filePath)">
+                        Open file
+                      </button>
+                      <button class="btn btn--sm" (click)="revealExportedFile(exp.filePath)">
+                        Show in folder
+                      </button>
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -737,6 +747,7 @@ export class JobsComponent implements OnInit {
   readonly exporting = signal<'docx' | 'pdf' | false>(false);
   readonly exportStatus = signal('');
   readonly exportError = signal(false);
+  readonly lastExport = signal<{ filePath: string; format: 'docx' | 'pdf' } | null>(null);
 
   readonly parsing = signal(false);
   readonly scoring = signal(false);
@@ -905,6 +916,7 @@ export class JobsComponent implements OnInit {
     this.tailorStatus.set('');
     this.tailorError.set(false);
     this.exportStatus.set('');
+    this.lastExport.set(null);
     await this.runPass(1);
   }
 
@@ -929,18 +941,40 @@ export class JobsComponent implements OnInit {
     this.exporting.set(format);
     this.exportStatus.set('');
     this.exportError.set(false);
+    this.lastExport.set(null);
     try {
       const doc =
         format === 'docx'
-          ? await this.db.exportDocx(j.id, pass3.resultMd, j.company ?? '', pass3.inputHash)
-          : await this.db.exportPdf(j.id, pass3.resultMd, j.company ?? '', pass3.inputHash);
+          ? await this.db.exportDocx(
+              j.id,
+              pass3.resultMd,
+              j.company ?? '',
+              j.title ?? '',
+              pass3.inputHash,
+            )
+          : await this.db.exportPdf(
+              j.id,
+              pass3.resultMd,
+              j.company ?? '',
+              j.title ?? '',
+              pass3.inputHash,
+            );
       this.exportStatus.set(`Saved: ${doc.filePath}`);
+      this.lastExport.set({ filePath: doc.filePath, format });
     } catch (e) {
       this.exportStatus.set(`Export failed: ${String(e)}`);
       this.exportError.set(true);
     } finally {
       this.exporting.set(false);
     }
+  }
+
+  openExportedFile(path: string): void {
+    void this.db.openFile(path);
+  }
+
+  revealExportedFile(path: string): void {
+    void this.db.revealInFolder(path);
   }
 
   private async runPass(pass: 1 | 2 | 3): Promise<void> {

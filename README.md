@@ -1,95 +1,111 @@
 # Applye
 
-**Your job search. Your data. Your AI.**
+**A local-first desktop companion for the job hunt — it sharpens your applications, it never sends them for you.**
 
-A free, local-first desktop application for AI-powered job tracking and preparation.
-Built with Tauri 2 + Angular. All data stays on your machine.
+Applye helps job seekers track applications, sanity-check job descriptions, tailor a CV per role, and
+prepare for interviews. It runs offline for everything that matters; AI is opt-in, brings its own keys,
+and is frugal with tokens by design. Built for the German/EU market first.
 
-> **Status:** Private — will be published after the author's job change.
-
----
-
-## What it does
-
-Paste a job description → get a blunt recruiter-style score → tailor your CV → prepare for
-interviews → track your pipeline. AI advises; you decide.
-
-Core principle: **augmentation, not automation.** The app never applies for you, never inflates
-your experience, never substitutes for your judgement.
+> **Status:** private during active development. This repository goes **public after my next job change** —
+> it doubles as a working portfolio piece and a tool I use on myself.
 
 ---
 
-## Privacy & Keys
+## Augmentation, not automation
 
-- All data lives in a local SQLite file on your machine. No cloud, no telemetry.
-- AI API keys are stored in the OS keychain (macOS Keychain, Windows Credential Vault, GNOME Secret).
-  They are never logged, never written to disk in plaintext.
-- You bring your own AI: CLI subscription (Claude Code / Codex / Gemini CLI) or your own API key.
-  The app never signs up for anything on your behalf.
+This is the first principle, and everything else bends to it.
 
----
+**AI assists. You decide.** Applye will never auto-apply, auto-send, or auto-submit anything on your
+behalf. It scores, drafts, and suggests — then hands control back to you. Every AI output is a proposal
+you read, edit, and accept or throw away. No background agent is quietly representing you to a recruiter.
 
-## Job Source Legality
+Why this matters:
 
-This app operates on a **paste-first** model (Tier 1):
-- You copy a job from wherever you see it in your browser and paste the text.
-- No scraping of closed job boards. No breach of terms of service.
-- Tier 2 (friendly APIs/RSS) and Tier 3 (public ATS pages) are planned for v2 with explicit ToS review.
+- A recruiter or hiring manager is a person, and the relationship is yours, not a bot's.
+- Mass-automated applications are noise; a tool that helps you send _fewer, better_ ones is the point.
+- You stay accountable for every word that goes out under your name.
 
-See `ROADMAP.md §11` for details.
+If a feature ever requires giving up that control, it doesn't ship.
 
----
+## Local-first & private
 
-## Token Economy
+- **Offline by default.** Your profile, job list, notes, and generated documents live in a local
+  SQLite database on your machine. Core workflows work with no network at all.
+- **No accounts, no telemetry, no cloud sync.** Nothing about your search leaves the device unless
+  _you_ trigger an AI call, and even then only the minimum needed for that one request is sent.
+- **GDPR-friendly because there's nothing to leak** — there is no server holding your data.
 
-AI is only called where genuine judgement is needed. Everything else is plain code:
+## Bring your own AI
 
-- Parsing and deduplication: **0 tokens** (Rust regex)
-- Hard filtering (location, visa, language): **0 tokens** (code)
-- Pipeline kanban drag: **0 tokens** (DB write)
-- Analytics dashboard: **0 tokens** (SQL)
-- Scoring, tailoring, interview prep: minimal tokens, cached, user-triggered
+Applye doesn't bundle a model or resell tokens. You wire in the AI you already pay for:
 
----
+- **API key** — point Applye at a provider API (e.g. Anthropic Claude) with your own key.
+- **CLI bridge** — or route through a local AI CLI you already have (Claude Code, Codex, Gemini, …).
 
-## How to run locally
+Either way the keys are yours, the billing is yours, and you can run the whole app with AI features
+switched off.
 
-> Prerequisites: Node.js 22+, Rust 1.77+, and platform build tools (Xcode on macOS / Visual Studio Build Tools on Windows).
+## Token economy
+
+AI is treated as a scarce, paid resource — not sprinkled everywhere:
+
+- **Everything is cached.** Identical inputs never pay twice (`jd_hash → scoring`, `input_hash → output`).
+- **Opt-in calls only.** Nothing hits a model until you ask it to.
+- **Frugal prompts.** Features are scoped to the smallest useful request, so a real job search costs
+  cents, not a subscription.
+
+## On source legality
+
+Applye is a tool you point at job descriptions **you** are already looking at. It does not scrape job
+boards, bypass logins, or harvest postings at scale. You paste in the text of a role you found; Applye
+helps you respond to it. Respect the terms of service of any site you use — the app is built to keep
+you on the right side of them by never automating collection.
+
+## The core loop
+
+1. **Paste** a job description.
+2. **Check** — a quick HR/fit read on the role (opt-in AI).
+3. **Tailor** — a 3-pass CV pass that adapts your profile to the posting, exported to DOCX/PDF.
+4. **Track** — drop the application into a Kanban pipeline that records status history automatically.
+5. **Prep** — gather interview notes against the role.
+
+> 📸 **Screenshots / a GIF of the core loop land here** once the UI stabilizes. Drop captures in
+> `docs/assets/` and link them below; the current screen set lives in `design/screens/`.
+
+<!-- ![Core loop — paste, check, tailor, track](docs/assets/core-loop.gif) -->
+
+## Run locally
+
+**Prerequisites:** Node 20+, Rust (stable, 2021 edition), and the
+[Tauri 2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS.
 
 ```bash
-# Install dependencies
+git clone <repo-url> applye
+cd applye
 npm install
 
-# Desktop app (Tauri + Angular dev mode)
-npm run desktop:dev
-
-# Web landing site
-npm run web:dev
-
-# Tests
-npm test
-
-# Lint
-npm run lint
+npm run desktop:dev      # launch the Tauri + Angular app in dev mode
 ```
 
----
+Other useful scripts:
 
-## Tech Stack
+```bash
+npm run desktop:build    # production build of the desktop app
+npm test                 # run the test suite
+npm run lint             # lint all projects
+npm run type-check       # type-check all projects
+```
 
-| Layer | Choice |
-|---|---|
-| Shell | Tauri 2 |
-| Frontend | Angular 21 (standalone components, Signals) |
-| State | NgRx SignalStore |
-| Backend | Rust (Tokio) |
-| Database | SQLite via sqlx |
-| Drag & Drop | Angular CDK |
-| Key storage | OS keychain (keyring crate) |
-| i18n | ngx-translate (en, de, ru, es, fr, uk) |
+AI features are off until you add a key or CLI bridge in **Settings**. The app is fully usable without them.
 
----
+## Tech stack
+
+Tauri 2 · Rust 2021 · SQLite (sqlx) · Angular 21 · TypeScript · NgRx Signals · Angular CDK
+
+It's an [Nx](https://nx.dev) monorepo: a Tauri desktop app, an Angular landing site, and shared
+`core` / `data` / `ui` / `i18n` / `skills` libraries. See [`docs/architecture.md`](docs/architecture.md)
+for the layout and the [decision filter](docs/decision-filter.md) every change is checked against.
 
 ## License
 
-MIT — see `LICENSE`.
+[MIT](LICENSE) © 2026 Vitalii

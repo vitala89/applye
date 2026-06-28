@@ -6,23 +6,41 @@
     </div>
 
     <nav class="sidebar__nav">
-      @for (item of navItems; track item.route) {
-        <a
-          class="nav-item"
-          [routerLink]="item.route"
-          routerLinkActive="nav-item--active"
-        >
-          <span class="nav-item__icon" aria-hidden="true">{{ item.icon }}</span>
-          <span class="nav-item__label">{{ item.label }}</span>
-        </a>
-      }
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">⬛</span>
+        <span class="nav-item__label">{{ t()('nav.dashboard') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/profile" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">👤</span>
+        <span class="nav-item__label">{{ t()('nav.profile') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/jobs" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">🔍</span>
+        <span class="nav-item__label">{{ t()('nav.jobs') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/pipeline" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">📋</span>
+        <span class="nav-item__label">{{ t()('nav.pipeline') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/interview-prep" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">🎯</span>
+        <span class="nav-item__label">{{ t()('nav.interview_prep') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/documents" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">📄</span>
+        <span class="nav-item__label">{{ t()('nav.documents') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/settings" routerLinkActive="nav-item--active">
+        <span class="nav-item__icon" aria-hidden="true">⚙</span>
+        <span class="nav-item__label">{{ t()('nav.settings') }}</span>
+      </a>
     </nav>
 
     <div class="sidebar__footer">
       <div class="ai-indicator">
         <span class="ai-indicator__dot"></span>
-        <span class="ai-indicator__label">AI</span>
-        <span class="ai-indicator__mode">API</span>
+        <span class="ai-indicator__label">{{ t()('ai.indicator') }}</span>
+        <span class="ai-indicator__mode">{{ t()('ai.mode_api') }}</span>
       </div>
     </div>
   </aside>
@@ -31,17 +49,20 @@
   <div class="main">
     <!-- Topbar -->
     <header class="topbar">
-      <h1 class="topbar__title" aria-live="polite">
-        <!-- Page title populated by child routes in Phase 1 -->
-        Applye
-      </h1>
+      <h1 class="topbar__title" aria-live="polite">Applye</h1>
 
       <div class="topbar__actions">
-        <button class="btn-theme" (click)="toggleTheme()" [attr.aria-label]="'Switch to ' + (theme() === 'dark' ? 'light' : 'dark') + ' theme'">
+        <button
+          class="btn-theme"
+          (click)="toggleTheme()"
+          [attr.aria-label]="
+            theme() === 'dark' ? t()('shell.theme_to_light') : t()('shell.theme_to_dark')
+          "
+        >
           {{ theme() === 'dark' ? '☀' : '🌙' }}
         </button>
-        <button class="btn-primary" disabled title="Coming in Phase 1">
-          + Paste Job
+        <button class="btn-primary" disabled [title]="t()('common.coming_soon')">
+          {{ t()('actions.paste_job') }}
         </button>
       </div>
     </header>

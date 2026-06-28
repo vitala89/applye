@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "profile": "Profile",
     "jobs": "Jobs",
     "pipeline": "Pipeline",
     "interview_prep": "Interview Prep",
@@ -27,8 +28,76 @@
     "indicator": "AI"
   },
   "common": {
-    "loading": "Loading...",
+    "loading": "Loading…",
     "error": "Something went wrong",
-    "coming_soon": "Coming soon"
+    "coming_soon": "Coming soon",
+    "retry": "Retry",
+    "drop_here": "Drop here"
+  },
+  "shell": {
+    "theme_to_light": "Switch to light theme",
+    "theme_to_dark": "Switch to dark theme"
+  },
+  "pipeline": {
+    "loading": "Loading pipeline…",
+    "empty": "No applications yet. Paste a job to get started."
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your master profile (Markdown). Source of truth for all AI scoring & tailoring.",
+    "save_btn": "Save profile",
+    "saving": "Saving…",
+    "saved_status": "Saved",
+    "unsaved": "Unsaved changes",
+    "section_markdown": "Markdown profile",
+    "section_ai_tools": "AI tools",
+    "ai_hint": "Save profile first, then generate. Results are cached — re-running on an unchanged profile costs 0 tokens.",
+    "scoring_title": "Scoring profile",
+    "scoring_desc": "Compresses your full profile into compact JSON used by all scoring & tailoring calls. Generated once; cached until you change the profile.",
+    "pitch_title": "Default pitch (60 s)",
+    "pitch_desc": "A spoken self-introduction in your document language. Starting point for application-specific pitches.",
+    "generate": "Generate",
+    "regenerate": "Regenerate",
+    "generating": "Generating…",
+    "empty": "Add your profile to get started",
+    "load_error": "Failed to load profile",
+    "placeholder": "# Jane Doe\nSenior Frontend Engineer · Berlin\n\n## Experience\n…"
+  },
+  "jobs": {
+    "paste_title": "Paste job description",
+    "paste_placeholder": "Paste the full job description here…",
+    "parse_btn": "Parse & filter",
+    "parsing": "Parsing…",
+    "hard_filter_failed": "Hard filter failed",
+    "hard_filter_msg": "Disqualifying phrase detected (visa / location). No AI tokens used.",
+    "score_section": "Recruiter score",
+    "tailor_section": "CV tailoring",
+    "tailor_btn": "Tailor CV",
+    "tailoring": "Tailoring…",
+    "empty": "Paste a job description above to score and tailor your CV.",
+    "load_error": "Failed to load"
+  },
+  "settings": {
+    "title": "Settings",
+    "save_btn": "Save settings",
+    "saving": "Saving…",
+    "section_ai": "AI",
+    "section_key": "API key",
+    "section_lang": "Languages",
+    "ui_lang_label": "UI language",
+    "doc_lang_label": "Document language",
+    "load_error": "Failed to load settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "coming_soon": "Funnel analytics, activity, and counters — coming soon"
+  },
+  "documents": {
+    "title": "Documents",
+    "coming_soon": "CV, cover letter, exports — coming soon"
+  },
+  "interview": {
+    "title": "Interview Prep",
+    "coming_soon": "Stages, Q&A cards, STAR+R, pitch generator — coming soon"
   }
 }

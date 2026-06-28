@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AiService, DbService } from '@applye/data';
 import { Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
+import { TranslateService } from '@applye/i18n';
 
 interface PassResult {
   pass: number;
@@ -22,33 +23,44 @@ interface PassResult {
     <div class="jobs">
       <!-- Paste section -->
       <section class="section">
-        <h3 class="eyebrow">Paste job description</h3>
+        <h3 class="eyebrow">{{ t()('jobs.paste_title') }}</h3>
         <textarea
           class="editor"
           [ngModel]="jdText()"
           (ngModelChange)="jdText.set($event)"
-          placeholder="Paste the full job description here…"
+          [placeholder]="t()('jobs.paste_placeholder')"
           spellcheck="false"
         ></textarea>
         <div class="row">
           <button class="btn" [disabled]="parsing() || !jdText().trim()" (click)="parseAndFilter()">
-            {{ parsing() ? 'Parsing…' : 'Parse & filter' }}
+            {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
           </button>
+          @if (parsing()) {
+            <span class="ai-thinking">
+              <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+              {{ t()('jobs.parsing') }}
+            </span>
+          }
           @if (parseStatus()) {
             <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
           }
         </div>
       </section>
 
+      @if (!job()) {
+        <div class="state-empty">
+          <span class="state-empty__icon">🔍</span>
+          <p class="state-empty__msg">{{ t()('jobs.empty') }}</p>
+        </div>
+      }
+
       <!-- Filter result -->
       @if (job(); as j) {
         <section class="section">
           @if (!j.hardFilterPassed) {
             <div class="card card--danger">
-              <p class="card__title">Hard filter failed</p>
-              <p class="muted">
-                Disqualifying phrase detected (visa / location). No AI tokens used.
-              </p>
+              <p class="card__title">{{ t()('jobs.hard_filter_failed') }}</p>
+              <p class="muted">{{ t()('jobs.hard_filter_msg') }}</p>
             </div>
           } @else {
             <div class="card">
@@ -62,14 +74,20 @@ interface PassResult {
                   }
                   <span class="job-meta__hash">{{ (j.jdHash ?? '').slice(0, 12) }}</span>
                 </div>
-                <span class="badge badge--pass">Filter passed</span>
+                <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
               </div>
               <div class="row row--mt">
                 @if (!profile()?.scoringJson) {
-                  <p class="status status--error">Generate a scoring profile in Profile first.</p>
+                  <p class="status status--error">{{ t()('jobs.profile_needed') }}</p>
                 } @else {
                   <button class="btn" [disabled]="scoring()" (click)="scoreJob(false)">
-                    {{ scoring() ? 'Scoring…' : cache() ? 'Rescore' : 'Score this job' }}
+                    {{
+                      scoring()
+                        ? t()('jobs.scoring')
+                        : cache()
+                          ? t()('jobs.rescore')
+                          : t()('jobs.score_btn')
+                    }}
                   </button>
                   @if (scoreStatus()) {
                     <span class="status" [class.status--error]="scoreError()">{{
@@ -174,10 +192,10 @@ interface PassResult {
                 [disabled]="!profile()?.fullMd"
                 (click)="startTailoring()"
               >
-                Tailor CV for this job →
+                {{ t()('jobs.tailor_btn') }}
               </button>
               @if (!profile()?.fullMd) {
-                <span class="status status--error">Add your full profile first.</span>
+                <span class="status status--error">{{ t()('jobs.profile_needed_full') }}</span>
               }
             </div>
           }
@@ -261,7 +279,7 @@ interface PassResult {
                     Continue to Pass {{ tailorResults().length + 1 }}:
                     {{ ['Critique', 'Final Build'][tailorResults().length - 1] }} →
                   </button>
-                  <button class="btn" (click)="resetWizard()">Start over</button>
+                  <button class="btn" (click)="resetWizard()">{{ t()('jobs.start_over') }}</button>
                   @if (tailorStatus()) {
                     <span class="status" [class.status--error]="tailorError()">{{
                       tailorStatus()
@@ -273,19 +291,21 @@ interface PassResult {
               <!-- Export (pass 3 done) -->
               @if (!tailoring() && tailorResults().length === 3) {
                 <div class="card wizard-export">
-                  <h4 class="eyebrow">Export tailored CV</h4>
+                  <h4 class="eyebrow">{{ t()('jobs.export_section') }}</h4>
                   <div class="row">
                     <button
                       class="btn btn--primary"
                       [disabled]="!!exporting()"
                       (click)="doExport('docx')"
                     >
-                      {{ exporting() === 'docx' ? 'Exporting…' : 'Export DOCX' }}
+                      {{ exporting() === 'docx' ? t()('jobs.exporting') : t()('jobs.export_docx') }}
                     </button>
                     <button class="btn" [disabled]="!!exporting()" (click)="doExport('pdf')">
-                      {{ exporting() === 'pdf' ? 'Exporting…' : 'Export PDF' }}
+                      {{ exporting() === 'pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf') }}
                     </button>
-                    <button class="btn" (click)="resetWizard()">Start over</button>
+                    <button class="btn" (click)="resetWizard()">
+                      {{ t()('jobs.start_over') }}
+                    </button>
                   </div>
                   @if (exportStatus()) {
                     <p class="export-path" [class.status--error]="exportError()">
@@ -295,10 +315,10 @@ interface PassResult {
                   @if (lastExport(); as exp) {
                     <div class="export-actions">
                       <button class="btn btn--sm" (click)="openExportedFile(exp.filePath)">
-                        Open file
+                        {{ t()('jobs.open_file') }}
                       </button>
                       <button class="btn btn--sm" (click)="revealExportedFile(exp.filePath)">
-                        Show in folder
+                        {{ t()('jobs.show_folder') }}
                       </button>
                     </div>
                   }
@@ -731,6 +751,8 @@ interface PassResult {
 export class JobsComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
+  private readonly i18n = inject(TranslateService);
+  protected readonly t = this.i18n.t;
 
   readonly jdText = signal('');
   readonly job = signal<Job | null>(null);

@@ -9,19 +9,20 @@ import {
 } from '@angular/cdk/drag-drop';
 import { DbService } from '@applye/data';
 import { ApplicationStatus, PipelineCard } from '@applye/core';
+import { TranslateService } from '@applye/i18n';
 
 interface KanbanCol {
   status: ApplicationStatus;
-  label: string;
+  labelKey: string;
   accent: string;
 }
 
 const COLS: KanbanCol[] = [
-  { status: 'saved', label: 'Saved', accent: '#64748b' },
-  { status: 'applied', label: 'Applied', accent: '#3b82f6' },
-  { status: 'interview', label: 'Interview', accent: '#f59e0b' },
-  { status: 'offer', label: 'Offer', accent: '#22c55e' },
-  { status: 'rejected', label: 'Rejected', accent: '#ef4444' },
+  { status: 'saved', labelKey: 'status.saved', accent: '#64748b' },
+  { status: 'applied', labelKey: 'status.applied', accent: '#3b82f6' },
+  { status: 'interview', labelKey: 'status.interview', accent: '#f59e0b' },
+  { status: 'offer', labelKey: 'status.offer', accent: '#22c55e' },
+  { status: 'rejected', labelKey: 'status.rejected', accent: '#ef4444' },
 ];
 
 @Component({
@@ -31,15 +32,22 @@ const COLS: KanbanCol[] = [
   template: `
     <div class="pipeline">
       @if (loading()) {
-        <p class="pipeline__msg">Loading pipeline…</p>
+        <div class="state-loading" aria-label="Loading pipeline">
+          <div class="state-loading__bar state-loading__bar--wide"></div>
+          <div class="state-loading__bar state-loading__bar--mid"></div>
+          <div class="state-loading__bar state-loading__bar--short"></div>
+        </div>
       } @else if (error()) {
-        <p class="pipeline__msg pipeline__msg--error">{{ error() }}</p>
+        <div class="state-error" role="alert">
+          <p class="state-error__msg">{{ t()('pipeline.loading') }} — {{ error() }}</p>
+          <button class="state-error__retry" (click)="reload()">{{ t()('common.retry') }}</button>
+        </div>
       } @else {
         <div class="kanban" cdkDropListGroup>
           @for (col of COLS; track col.status) {
             <section class="col" [style.--col-accent]="col.accent">
               <header class="col__head">
-                <span class="col__label">{{ col.label }}</span>
+                <span class="col__label">{{ t()(col.labelKey) }}</span>
                 <span class="col__badge">{{ cards[col.status].length }}</span>
               </header>
               <div
@@ -66,12 +74,18 @@ const COLS: KanbanCol[] = [
                   </article>
                 }
                 @if (cards[col.status].length === 0) {
-                  <div class="col__empty">Drop here</div>
+                  <div class="col__empty">{{ t()('common.drop_here') }}</div>
                 }
               </div>
             </section>
           }
         </div>
+        @if (totalCards() === 0) {
+          <div class="state-empty pipeline__board-empty">
+            <span class="state-empty__icon">📋</span>
+            <p class="state-empty__msg">{{ t()('pipeline.empty') }}</p>
+          </div>
+        }
       }
     </div>
   `,
@@ -85,12 +99,8 @@ const COLS: KanbanCol[] = [
         box-sizing: border-box;
       }
 
-      .pipeline__msg {
-        color: var(--text-secondary);
-        font-size: var(--text-sm);
-        &--error {
-          color: var(--color-danger, #ef4444);
-        }
+      .pipeline__board-empty {
+        margin-top: var(--space-6);
       }
 
       /* Board */
@@ -271,11 +281,11 @@ const COLS: KanbanCol[] = [
 })
 export class PipelineComponent implements OnInit {
   private readonly db = inject(DbService);
+  private readonly i18n = inject(TranslateService);
+  protected readonly t = this.i18n.t;
 
   readonly COLS = COLS;
 
-  // Plain mutable object: CDK drag-drop needs stable array references.
-  // loading/error are signals so the zoneless scheduler picks up changes.
   cards: Record<ApplicationStatus, PipelineCard[]> = {
     saved: [],
     applied: [],
@@ -286,13 +296,25 @@ export class PipelineComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly error = signal('');
+  readonly totalCards = signal(0);
 
   async ngOnInit(): Promise<void> {
+    await this.load();
+  }
+
+  async reload(): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+    await this.load();
+  }
+
+  private async load(): Promise<void> {
     try {
       const all = await this.db.listPipelineCards();
       for (const col of COLS) {
         this.cards[col.status] = all.filter((c) => c.status === col.status);
       }
+      this.totalCards.set(all.length);
     } catch (e) {
       this.error.set(String(e));
     } finally {
@@ -315,8 +337,8 @@ export class PipelineComponent implements OnInit {
     try {
       await this.db.setApplicationStatus(card.id, toStatus);
       card.status = toStatus;
+      this.totalCards.set(Object.values(this.cards).reduce((s, arr) => s + arr.length, 0));
     } catch {
-      // Rollback optimistic move
       transferArrayItem(
         event.container.data,
         event.previousContainer.data,

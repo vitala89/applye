@@ -1,19 +1,32 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { TranslateService } from '@applye/i18n';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   template: `
-    <div class="page-placeholder">
-      <h2>Dashboard</h2>
-      <p>Funnel analytics, activity, and counters — Phase 1+</p>
+    <div class="page-coming-soon">
+      <h2>{{ t()('dashboard.title') }}</h2>
+      <div class="state-empty">
+        <span class="state-empty__icon">📊</span>
+        <p class="state-empty__msg">{{ t()('dashboard.coming_soon') }}</p>
+      </div>
     </div>
   `,
-  styles: [`
-    .page-placeholder {
-      h2 { font-family: var(--font-mono); font-size: var(--text-xl); margin-bottom: var(--space-3); color: var(--text-primary); }
-      p { color: var(--text-secondary); font-size: var(--text-sm); }
-    }
-  `],
+  styles: [
+    `
+      .page-coming-soon {
+        h2 {
+          font-family: var(--font-mono);
+          font-size: var(--text-xl);
+          margin-bottom: var(--space-5);
+          color: var(--text-primary);
+        }
+      }
+    `,
+  ],
 })
-export class DashboardComponent {}
+export class DashboardComponent {
+  private readonly i18n = inject(TranslateService);
+  protected readonly t = this.i18n.t;
+}

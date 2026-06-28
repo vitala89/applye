@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { Settings, SupportedLanguage } from '@applye/core';
+import { TranslateService } from '@applye/i18n';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -28,19 +29,19 @@ const CLAUDE_MODELS = [
   imports: [FormsModule],
   template: `
     @if (loading()) {
-      <p class="muted">Loading settings…</p>
+      <div class="state-loading-text">{{ t()('common.loading') }}</div>
     } @else if (settings(); as s) {
       <div class="settings">
         <header class="head">
-          <h2>Settings</h2>
+          <h2>{{ t()('settings.title') }}</h2>
           <button class="btn" [disabled]="saving()" (click)="save()">
-            {{ saving() ? 'Saving…' : 'Save settings' }}
+            {{ saving() ? t()('settings.saving') : t()('settings.save_btn') }}
           </button>
         </header>
 
         <!-- AI provider + models -->
         <section class="section">
-          <h3 class="eyebrow">AI</h3>
+          <h3 class="eyebrow">{{ t()('settings.section_ai') }}</h3>
 
           <label class="field">
             <span class="cap">Mode</span>
@@ -117,7 +118,7 @@ const CLAUDE_MODELS = [
 
         <!-- API key (keychain) -->
         <section class="section">
-          <h3 class="eyebrow">API key</h3>
+          <h3 class="eyebrow">{{ t()('settings.section_key') }}</h3>
           <p class="muted">
             @if (keyStored()) {
               <strong>✓ Stored in your OS keychain.</strong> You don't need to re-enter it — the
@@ -159,10 +160,10 @@ const CLAUDE_MODELS = [
 
         <!-- Languages + export -->
         <section class="section">
-          <h3 class="eyebrow">Locale & export</h3>
+          <h3 class="eyebrow">{{ t()('settings.section_lang') }}</h3>
           <div class="row">
             <label class="field">
-              <span class="cap">UI language</span>
+              <span class="cap">{{ t()('settings.ui_lang_label') }}</span>
               <select
                 [ngModel]="s.uiLanguage"
                 (ngModelChange)="patch('uiLanguage', $event)"
@@ -174,7 +175,7 @@ const CLAUDE_MODELS = [
               </select>
             </label>
             <label class="field">
-              <span class="cap">Default document language</span>
+              <span class="cap">{{ t()('settings.doc_lang_label') }}</span>
               <select
                 [ngModel]="s.defaultDocLanguage"
                 (ngModelChange)="patch('defaultDocLanguage', $event)"
@@ -378,6 +379,8 @@ export class SettingsComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly keys = inject(KeysService);
   private readonly ai = inject(AiService);
+  private readonly i18n = inject(TranslateService);
+  protected readonly t = this.i18n.t;
 
   readonly languages = LANGUAGES;
   readonly models = CLAUDE_MODELS;
@@ -400,6 +403,7 @@ export class SettingsComponent implements OnInit {
     try {
       const s = await this.db.getSettings();
       this.settings.set(s);
+      this.i18n.setLocale(s.uiLanguage);
       this.keyStored.set(await this.keys.hasProviderKey(s.provider));
     } catch (e) {
       this.status.set(`Load failed: ${String(e)}`);
@@ -411,6 +415,7 @@ export class SettingsComponent implements OnInit {
   patch<K extends keyof Settings>(key: K, value: Settings[K]): void {
     const s = this.settings();
     if (s) this.settings.set({ ...s, [key]: value });
+    if (key === 'uiLanguage') this.i18n.setLocale(value as SupportedLanguage);
   }
 
   async onProviderChange(provider: Settings['provider']): Promise<void> {

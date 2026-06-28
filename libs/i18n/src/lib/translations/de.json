@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Übersicht",
+    "profile": "Profil",
     "jobs": "Stellen",
     "pipeline": "Pipeline",
     "interview_prep": "Interview-Vorbereitung",
@@ -27,8 +28,76 @@
     "indicator": "KI"
   },
   "common": {
-    "loading": "Laden...",
+    "loading": "Laden…",
     "error": "Etwas ist schiefgelaufen",
-    "coming_soon": "Demnächst verfügbar"
+    "coming_soon": "Demnächst verfügbar",
+    "retry": "Erneut versuchen",
+    "drop_here": "Hierher ziehen"
+  },
+  "shell": {
+    "theme_to_light": "Zum hellen Design wechseln",
+    "theme_to_dark": "Zum dunklen Design wechseln"
+  },
+  "pipeline": {
+    "loading": "Pipeline wird geladen…",
+    "empty": "Noch keine Bewerbungen. Stelle einfügen, um zu beginnen."
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Ihr Masterprofil (Markdown). Grundlage für alle KI-Bewertungen und Anpassungen.",
+    "save_btn": "Profil speichern",
+    "saving": "Speichere…",
+    "saved_status": "Gespeichert",
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "section_markdown": "Markdown-Profil",
+    "section_ai_tools": "KI-Werkzeuge",
+    "ai_hint": "Profil zuerst speichern, dann generieren. Ergebnisse werden zwischengespeichert — erneutes Ausführen bei unverändertem Profil kostet 0 Token.",
+    "scoring_title": "Bewerbungsprofil",
+    "scoring_desc": "Komprimiert Ihr vollständiges Profil in kompaktes JSON für alle Bewertungs- und Anpassungsaufrufe. Einmal generiert; wird zwischengespeichert bis das Profil geändert wird.",
+    "pitch_title": "Standard-Pitch (60 s)",
+    "pitch_desc": "Eine gesprochene Selbstvorstellung in Ihrer Dokumentensprache. Ausgangspunkt für bewerbungsspezifische Pitches.",
+    "generate": "Generieren",
+    "regenerate": "Neu generieren",
+    "generating": "Generiere…",
+    "empty": "Profil hinzufügen, um zu beginnen",
+    "load_error": "Profil konnte nicht geladen werden",
+    "placeholder": "# Jane Doe\nSenior Frontend Engineer · Berlin\n\n## Erfahrung\n…"
+  },
+  "jobs": {
+    "paste_title": "Stellenbeschreibung einfügen",
+    "paste_placeholder": "Vollständige Stellenbeschreibung hier einfügen…",
+    "parse_btn": "Analysieren & filtern",
+    "parsing": "Analysiere…",
+    "hard_filter_failed": "Vorauswahl gescheitert",
+    "hard_filter_msg": "Ausschlussmerkmal erkannt (Visum / Standort). Keine KI-Token verwendet.",
+    "score_section": "Recruiter-Bewertung",
+    "tailor_section": "Lebenslauf anpassen",
+    "tailor_btn": "Lebenslauf anpassen",
+    "tailoring": "Passe an…",
+    "empty": "Oben Stellenbeschreibung einfügen, um Lebenslauf zu bewerten und anzupassen.",
+    "load_error": "Laden fehlgeschlagen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "save_btn": "Einstellungen speichern",
+    "saving": "Speichere…",
+    "section_ai": "KI",
+    "section_key": "API-Schlüssel",
+    "section_lang": "Sprachen",
+    "ui_lang_label": "Oberflächensprache",
+    "doc_lang_label": "Dokumentensprache",
+    "load_error": "Einstellungen konnten nicht geladen werden"
+  },
+  "dashboard": {
+    "title": "Übersicht",
+    "coming_soon": "Trichteranalyse, Aktivität und Zähler — demnächst"
+  },
+  "documents": {
+    "title": "Dokumente",
+    "coming_soon": "Lebenslauf, Anschreiben, Export — demnächst"
+  },
+  "interview": {
+    "title": "Interview-Vorbereitung",
+    "coming_soon": "Phasen, Fragenkarten, STAR+R, Pitch-Generator — demnächst"
   }
 }

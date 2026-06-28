@@ -1,11 +1,6 @@
-import { ExportFormat, DocType, SupportedLanguage } from '../types/common.types';
+import { SupportedLanguage } from '../types/common.types';
 
-export type ApplicationStatus =
-  | 'saved'
-  | 'applied'
-  | 'interview'
-  | 'offer'
-  | 'rejected';
+export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'rejected';
 
 export type ApplicationMethod = 'online_form' | 'email' | 'portal';
 
@@ -30,4 +25,15 @@ export interface StatusHistory {
   applicationId: number;
   status: ApplicationStatus;
   changedAt: string;
+}
+
+export interface PipelineCard {
+  id: number;
+  jobId?: number;
+  status: ApplicationStatus;
+  appliedAt?: string;
+  updatedAt?: string;
+  company?: string;
+  title?: string;
+  score?: number;
 }

@@ -146,6 +146,40 @@ pub async fn db_set_application_status(
     fetch_application(&db, id).await
 }
 
+/// Kanban card: application joined with job title/company and latest score.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct PipelineCard {
+    pub id: i64,
+    pub job_id: Option<i64>,
+    pub status: Option<String>,
+    pub applied_at: Option<String>,
+    pub updated_at: Option<String>,
+    pub company: Option<String>,
+    pub title: Option<String>,
+    pub score: Option<f64>,
+}
+
+#[tauri::command]
+pub async fn db_pipeline_cards(db: State<'_, Db>) -> Result<Vec<PipelineCard>, String> {
+    sqlx::query_as::<_, PipelineCard>(
+        "SELECT
+           a.id, a.job_id, a.status, a.applied_at, a.updated_at,
+           j.company, j.title,
+           sc.score
+         FROM applications a
+         LEFT JOIN jobs j ON a.job_id = j.id
+         LEFT JOIN (
+           SELECT job_id, MAX(id) AS max_id FROM scoring_cache GROUP BY job_id
+         ) latest ON latest.job_id = j.id
+         LEFT JOIN scoring_cache sc ON sc.id = latest.max_id
+         ORDER BY a.updated_at DESC, a.id DESC",
+    )
+    .fetch_all(&db.pool)
+    .await
+    .map_err(|e| format!("db_pipeline_cards: {e}"))
+}
+
 async fn fetch_application(db: &Db, id: i64) -> Result<Application, String> {
     sqlx::query_as::<_, Application>("SELECT * FROM applications WHERE id = ?")
         .bind(id)

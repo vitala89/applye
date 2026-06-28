@@ -23,11 +23,16 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-log = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-process = "2"
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "migrate"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 docx-rs = "0.4"
 printpdf = "0.7"
+# Auto-updater. Registered behind #[cfg(desktop)] in lib.rs; kept in the plain
+# [dependencies] table so tauri-build picks up its capability permissions.
+tauri-plugin-updater = "2"
 
 # OS keychain — one backend per platform (no unused dbus on macOS/Windows).
 [target.'cfg(target_os = "macos")'.dependencies]

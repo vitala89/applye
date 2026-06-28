@@ -1,91 +1,324 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DbService } from '@applye/data';
+import { AiService, DbService } from '@applye/data';
+import { Profile, Settings } from '@applye/core';
 
-/**
- * Phase 1 vertical slice — proves the data spine end-to-end.
- * Loads the profile via db_get_profile, saves full_md via db_upsert_profile,
- * and shows a load/save confirmation. The rich editor is Phase 3.
- */
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [FormsModule],
   template: `
-    <div class="profile">
-      <header class="profile__head">
-        <h2>Profile</h2>
-        <p>Your master profile (Markdown). Source of truth for AI scoring &amp; tailoring.</p>
-      </header>
+    @if (loading()) {
+      <p class="muted">Loading profile…</p>
+    } @else {
+      <div class="profile">
+        <!-- Header -->
+        <header class="profile__head">
+          <div>
+            <h2>Profile</h2>
+            <p class="muted">
+              Your master profile (Markdown). Source of truth for all AI scoring &amp; tailoring.
+            </p>
+          </div>
+          <div class="profile__head-actions">
+            <button class="btn" [disabled]="saving() || !dirty()" (click)="save()">
+              {{ saving() ? 'Saving…' : dirty() ? 'Save profile' : 'Saved' }}
+            </button>
+            @if (saveStatus()) {
+              <span class="status" [class.status--error]="saveError()">{{ saveStatus() }}</span>
+            }
+          </div>
+        </header>
 
-      <textarea
-        class="profile__editor"
-        [(ngModel)]="fullMd"
-        [disabled]="loading()"
-        placeholder="# Jane Doe&#10;Senior Frontend Engineer …"
-        spellcheck="false"
-      ></textarea>
+        <!-- Editor -->
+        <section class="section">
+          <h3 class="eyebrow">Markdown profile</h3>
+          <div class="editor-hint">
+            <span># Name · Title · Location</span>
+            <span>## Experience · Skills · Education · Languages</span>
+          </div>
+          <textarea
+            class="editor"
+            [ngModel]="fullMd()"
+            (ngModelChange)="fullMd.set($event)"
+            spellcheck="false"
+            placeholder="# Jane Doe&#10;Senior Frontend Engineer · Berlin&#10;&#10;## Experience&#10;…"
+          ></textarea>
+          @if (dirty()) {
+            <p class="unsaved-hint">Unsaved changes</p>
+          }
+        </section>
 
-      <div class="profile__actions">
-        <button class="btn-primary" (click)="save()" [disabled]="loading() || saving()">
-          {{ saving() ? 'Saving…' : 'Save profile' }}
-        </button>
-        @if (status()) {
-          <span class="profile__status" [class.profile__status--error]="isError()">
-            {{ status() }}
-          </span>
-        }
+        <!-- AI Tools -->
+        <section class="section">
+          <h3 class="eyebrow">AI tools</h3>
+          <p class="muted">
+            Save profile first, then generate. Results are cached — re-running on an unchanged
+            profile costs 0 tokens.
+          </p>
+
+          <div class="ai-tools">
+            <div class="tool-card">
+              <div class="tool-card__body">
+                <p class="tool-card__title">Scoring profile</p>
+                <p class="tool-card__desc">
+                  Compresses your full profile into compact JSON used by all scoring &amp; tailoring
+                  calls. Generated once; cached until you change the profile.
+                </p>
+              </div>
+              <div class="tool-card__foot">
+                <button
+                  class="btn"
+                  [disabled]="scoring() || !fullMd().trim()"
+                  (click)="generateScoringProfile()"
+                >
+                  {{
+                    scoring() ? 'Generating…' : profile()?.scoringJson ? 'Regenerate' : 'Generate'
+                  }}
+                </button>
+                @if (scoreStatus()) {
+                  <span class="status" [class.status--error]="scoreError()">{{
+                    scoreStatus()
+                  }}</span>
+                }
+              </div>
+              @if (profile()?.scoringJson) {
+                <pre class="output-block">{{ profile()?.scoringJson }}</pre>
+              }
+            </div>
+
+            <div class="tool-card">
+              <div class="tool-card__body">
+                <p class="tool-card__title">Default pitch (60 s)</p>
+                <p class="tool-card__desc">
+                  A spoken self-introduction in your document language. Starting point for
+                  application-specific pitches.
+                </p>
+              </div>
+              <div class="tool-card__foot">
+                <button
+                  class="btn"
+                  [disabled]="pitching() || !fullMd().trim()"
+                  (click)="generatePitch()"
+                >
+                  {{ pitching() ? 'Generating…' : profile()?.pitchMd ? 'Regenerate' : 'Generate' }}
+                </button>
+                @if (pitchStatus()) {
+                  <span class="status" [class.status--error]="pitchError()">{{
+                    pitchStatus()
+                  }}</span>
+                }
+              </div>
+              @if (profile()?.pitchMd) {
+                <div class="output-block output-block--prose">{{ profile()?.pitchMd }}</div>
+              }
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
+    }
   `,
-  styles: [`
-    .profile {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-      max-width: 880px;
-    }
-    .profile__head h2 {
-      font-family: var(--font-mono);
-      font-size: var(--text-xl);
-      color: var(--text-primary);
-      margin-bottom: var(--space-2);
-    }
-    .profile__head p { color: var(--text-secondary); font-size: var(--text-sm); }
-    .profile__editor {
-      width: 100%;
-      min-height: 420px;
-      padding: var(--space-3);
-      font-family: var(--font-mono);
-      font-size: var(--text-sm);
-      line-height: 1.6;
-      color: var(--text-primary);
-      background: var(--surface-2, #1a1a1a);
-      border: 1px solid var(--border, #333);
-      border-radius: var(--radius-md, 6px);
-      resize: vertical;
-    }
-    .profile__actions { display: flex; align-items: center; gap: var(--space-3); }
-    .profile__status { font-size: var(--text-sm); color: var(--text-secondary); }
-    .profile__status--error { color: var(--danger, #e5484d); }
-  `],
+  styles: [
+    `
+      .profile {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+        max-width: 880px;
+      }
+
+      .profile__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
+      }
+      .profile__head h2 {
+        font-family: var(--font-brand);
+        font-size: var(--text-xl);
+        color: var(--text-primary);
+        margin-bottom: var(--space-1);
+      }
+      .profile__head-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-shrink: 0;
+        padding-top: var(--space-1);
+      }
+
+      .section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-wider);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+
+      .editor-hint {
+        display: flex;
+        gap: var(--space-4);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+        opacity: 0.6;
+      }
+      .editor {
+        width: 100%;
+        min-height: 400px;
+        padding: var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        line-height: 1.65;
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        resize: vertical;
+      }
+      .editor:focus {
+        outline: none;
+        border-color: var(--indigo-500, #6366f1);
+      }
+      .unsaved-hint {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin: 0;
+      }
+
+      .ai-tools {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+      .tool-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+      }
+      .tool-card__body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+      }
+      .tool-card__title {
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        font-size: var(--text-sm);
+        margin: 0;
+      }
+      .tool-card__desc {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin: 0;
+      }
+      .tool-card__foot {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      .output-block {
+        margin: 0;
+        padding: var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        line-height: 1.6;
+        color: var(--text-secondary);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .output-block--prose {
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        line-height: 1.7;
+        white-space: pre-line;
+      }
+
+      .muted {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin: 0;
+      }
+      .status {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .status--error {
+        color: var(--danger);
+      }
+
+      .btn {
+        padding: var(--space-2) var(--space-4);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-input);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover:not(:disabled) {
+        background: var(--surface-4, var(--surface-3));
+        filter: brightness(1.1);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    `,
+  ],
 })
 export class ProfileComponent implements OnInit {
+  private readonly db = inject(DbService);
+  private readonly ai = inject(AiService);
+
   readonly fullMd = signal('');
+  readonly profile = signal<Profile | null>(null);
+  readonly settings = signal<Settings | null>(null);
+
   readonly loading = signal(true);
   readonly saving = signal(false);
-  readonly status = signal('');
-  readonly isError = signal(false);
+  readonly scoring = signal(false);
+  readonly pitching = signal(false);
 
-  private readonly db = inject(DbService);
+  readonly saveStatus = signal('');
+  readonly saveError = signal(false);
+  readonly scoreStatus = signal('');
+  readonly scoreError = signal(false);
+  readonly pitchStatus = signal('');
+  readonly pitchError = signal(false);
+
+  readonly dirty = computed(() => this.fullMd() !== (this.profile()?.fullMd ?? ''));
 
   async ngOnInit(): Promise<void> {
     try {
-      const profile = await this.db.getProfile();
-      this.fullMd.set(profile?.fullMd ?? '');
-      this.setStatus(profile ? `Loaded (updated ${profile.updatedAt ?? 'never'}).` : 'No profile yet — start typing.');
+      const [p, s] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      this.profile.set(p);
+      this.settings.set(s);
+      this.fullMd.set(p?.fullMd ?? '');
+      if (p?.updatedAt) {
+        this.saveStatus.set(`Last saved ${p.updatedAt}`);
+      }
     } catch (e) {
-      this.setStatus(`Load failed: ${String(e)}`, true);
+      this.saveStatus.set(`Load failed: ${String(e)}`);
+      this.saveError.set(true);
     } finally {
       this.loading.set(false);
     }
@@ -93,18 +326,118 @@ export class ProfileComponent implements OnInit {
 
   async save(): Promise<void> {
     this.saving.set(true);
+    this.saveStatus.set('');
+    this.saveError.set(false);
     try {
-      const saved = await this.db.upsertProfile({ fullMd: this.fullMd() });
-      this.setStatus(`Saved ✓ (${saved.updatedAt ?? 'now'}).`);
+      const p = this.profile();
+      const saved = await this.db.upsertProfile({
+        fullMd: this.fullMd(),
+        scoringJson: p?.scoringJson,
+        scoringHash: p?.scoringHash,
+        pitchMd: p?.pitchMd,
+      });
+      this.profile.set(saved);
+      this.saveStatus.set(`Saved ${saved.updatedAt ?? 'now'}`);
     } catch (e) {
-      this.setStatus(`Save failed: ${String(e)}`, true);
+      this.saveStatus.set(`Save failed: ${String(e)}`);
+      this.saveError.set(true);
     } finally {
       this.saving.set(false);
     }
   }
 
-  private setStatus(msg: string, error = false): void {
-    this.status.set(msg);
-    this.isError.set(error);
+  async generateScoringProfile(): Promise<void> {
+    const md = this.fullMd().trim();
+    if (!md) {
+      this.scoreStatus.set('Profile is empty — add content first.');
+      return;
+    }
+    const p = this.profile();
+    const s = this.settings();
+    if (!s) return;
+
+    const hash = await this.db.hashText(md);
+    if (hash === p?.scoringHash && p?.scoringJson) {
+      this.scoreStatus.set('Profile unchanged — using cached scoring profile (0 tokens).');
+      return;
+    }
+
+    this.scoring.set(true);
+    this.scoreStatus.set('');
+    this.scoreError.set(false);
+    try {
+      const rendered = await this.ai.renderSkill('profile-compress', { profile_md: md });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: 'en',
+      });
+      const saved = await this.db.upsertProfile({
+        fullMd: this.fullMd(),
+        scoringJson: res.text,
+        scoringHash: hash,
+        pitchMd: p?.pitchMd,
+      });
+      this.profile.set(saved);
+      this.scoreStatus.set(`Generated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+    } catch (e) {
+      this.scoreStatus.set(`Failed: ${String(e)}`);
+      this.scoreError.set(true);
+    } finally {
+      this.scoring.set(false);
+    }
+  }
+
+  async generatePitch(): Promise<void> {
+    const md = this.fullMd().trim();
+    if (!md) {
+      this.pitchStatus.set('Profile is empty — add content first.');
+      return;
+    }
+    const p = this.profile();
+    const s = this.settings();
+    if (!s) return;
+
+    const hash = await this.db.hashText(md);
+    if (hash === p?.scoringHash && p?.pitchMd) {
+      this.pitchStatus.set('Profile unchanged — using cached pitch (0 tokens).');
+      return;
+    }
+
+    this.pitching.set(true);
+    this.pitchStatus.set('');
+    this.pitchError.set(false);
+    try {
+      const lang = s.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('pitch', {
+        profile_md: md,
+        duration: '60s',
+        language: lang,
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: lang,
+      });
+      const saved = await this.db.upsertProfile({
+        fullMd: this.fullMd(),
+        scoringJson: p?.scoringJson,
+        scoringHash: p?.scoringHash,
+        pitchMd: res.text,
+      });
+      this.profile.set(saved);
+      this.pitchStatus.set(`Generated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+    } catch (e) {
+      this.pitchStatus.set(`Failed: ${String(e)}`);
+      this.pitchError.set(true);
+    } finally {
+      this.pitching.set(false);
+    }
   }
 }

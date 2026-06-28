@@ -14,9 +14,13 @@ export class DbService {
   }
 
   async upsertProfile(
-    profile: Partial<Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash'>>,
+    profile: Partial<Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd'>>,
   ): Promise<Profile> {
     return tauriInvoke<Profile>('db_upsert_profile', { profile });
+  }
+
+  hashText(text: string): Promise<string> {
+    return tauriInvoke<string>('hash_text', { text });
   }
 
   // --- Settings ---
@@ -48,10 +52,7 @@ export class DbService {
     return tauriInvoke<Application>('db_upsert_application', { application });
   }
 
-  async setApplicationStatus(
-    id: number,
-    status: ApplicationStatus,
-  ): Promise<Application> {
+  async setApplicationStatus(id: number, status: ApplicationStatus): Promise<Application> {
     return tauriInvoke<Application>('db_set_application_status', { id, status });
   }
 

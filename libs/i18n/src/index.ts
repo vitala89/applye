@@ -1,1 +1,1 @@
-export * from './lib/i18n/i18n';
+export { TranslateService } from './lib/i18n/translate.service';

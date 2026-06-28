@@ -1,11 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-
-interface NavItem {
-  label: string;
-  route: string;
-  icon: string;
-}
+import { DbService } from '@applye/data';
+import { TranslateService } from '@applye/i18n';
 
 @Component({
   selector: 'app-shell-layout',
@@ -14,18 +10,23 @@ interface NavItem {
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.scss',
 })
-export class ShellLayoutComponent {
+export class ShellLayoutComponent implements OnInit {
+  protected readonly db = inject(DbService);
+  protected readonly i18n = inject(TranslateService);
+  protected readonly t = this.i18n.t;
+
   readonly theme = signal<'dark' | 'light'>('dark');
 
-  readonly navItems: NavItem[] = [
-    { label: 'Dashboard', route: '/dashboard', icon: '⬛' },
-    { label: 'Profile', route: '/profile', icon: '👤' },
-    { label: 'Jobs', route: '/jobs', icon: '🔍' },
-    { label: 'Pipeline', route: '/pipeline', icon: '📋' },
-    { label: 'Interview Prep', route: '/interview-prep', icon: '🎯' },
-    { label: 'Documents', route: '/documents', icon: '📄' },
-    { label: 'Settings', route: '/settings', icon: '⚙' },
-  ];
+  async ngOnInit(): Promise<void> {
+    try {
+      const settings = await this.db.getSettings();
+      if (settings?.uiLanguage) {
+        this.i18n.setLocale(settings.uiLanguage);
+      }
+    } catch {
+      // Keep defaults (en / dark) on DB error
+    }
+  }
 
   toggleTheme(): void {
     const next = this.theme() === 'dark' ? 'light' : 'dark';

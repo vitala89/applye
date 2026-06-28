@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AiService, DbService } from '@applye/data';
 import { Profile, Settings } from '@applye/core';
+import { TranslateService } from '@applye/i18n';
 
 @Component({
   selector: 'app-profile',
@@ -9,20 +10,26 @@ import { Profile, Settings } from '@applye/core';
   imports: [FormsModule],
   template: `
     @if (loading()) {
-      <p class="muted">Loading profile…</p>
+      <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
+        {{ t()('common.loading') }}
+      </div>
     } @else {
       <div class="profile">
         <!-- Header -->
         <header class="profile__head">
           <div>
-            <h2>Profile</h2>
-            <p class="muted">
-              Your master profile (Markdown). Source of truth for all AI scoring &amp; tailoring.
-            </p>
+            <h2>{{ t()('profile.title') }}</h2>
+            <p class="muted">{{ t()('profile.subtitle') }}</p>
           </div>
           <div class="profile__head-actions">
             <button class="btn" [disabled]="saving() || !dirty()" (click)="save()">
-              {{ saving() ? 'Saving…' : dirty() ? 'Save profile' : 'Saved' }}
+              {{
+                saving()
+                  ? t()('profile.saving')
+                  : dirty()
+                    ? t()('profile.save_btn')
+                    : t()('profile.saved_status')
+              }}
             </button>
             @if (saveStatus()) {
               <span class="status" [class.status--error]="saveError()">{{ saveStatus() }}</span>
@@ -32,7 +39,7 @@ import { Profile, Settings } from '@applye/core';
 
         <!-- Editor -->
         <section class="section">
-          <h3 class="eyebrow">Markdown profile</h3>
+          <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
           <div class="editor-hint">
             <span># Name · Title · Location</span>
             <span>## Experience · Skills · Education · Languages</span>
@@ -45,26 +52,20 @@ import { Profile, Settings } from '@applye/core';
             placeholder="# Jane Doe&#10;Senior Frontend Engineer · Berlin&#10;&#10;## Experience&#10;…"
           ></textarea>
           @if (dirty()) {
-            <p class="unsaved-hint">Unsaved changes</p>
+            <p class="unsaved-hint">{{ t()('profile.unsaved') }}</p>
           }
         </section>
 
         <!-- AI Tools -->
         <section class="section">
-          <h3 class="eyebrow">AI tools</h3>
-          <p class="muted">
-            Save profile first, then generate. Results are cached — re-running on an unchanged
-            profile costs 0 tokens.
-          </p>
+          <h3 class="eyebrow">{{ t()('profile.section_ai_tools') }}</h3>
+          <p class="muted">{{ t()('profile.ai_hint') }}</p>
 
           <div class="ai-tools">
             <div class="tool-card">
               <div class="tool-card__body">
-                <p class="tool-card__title">Scoring profile</p>
-                <p class="tool-card__desc">
-                  Compresses your full profile into compact JSON used by all scoring &amp; tailoring
-                  calls. Generated once; cached until you change the profile.
-                </p>
+                <p class="tool-card__title">{{ t()('profile.scoring_title') }}</p>
+                <p class="tool-card__desc">{{ t()('profile.scoring_desc') }}</p>
               </div>
               <div class="tool-card__foot">
                 <button
@@ -73,7 +74,11 @@ import { Profile, Settings } from '@applye/core';
                   (click)="generateScoringProfile()"
                 >
                   {{
-                    scoring() ? 'Generating…' : profile()?.scoringJson ? 'Regenerate' : 'Generate'
+                    scoring()
+                      ? t()('profile.generating')
+                      : profile()?.scoringJson
+                        ? t()('profile.regenerate')
+                        : t()('profile.generate')
                   }}
                 </button>
                 @if (scoreStatus()) {
@@ -89,11 +94,8 @@ import { Profile, Settings } from '@applye/core';
 
             <div class="tool-card">
               <div class="tool-card__body">
-                <p class="tool-card__title">Default pitch (60 s)</p>
-                <p class="tool-card__desc">
-                  A spoken self-introduction in your document language. Starting point for
-                  application-specific pitches.
-                </p>
+                <p class="tool-card__title">{{ t()('profile.pitch_title') }}</p>
+                <p class="tool-card__desc">{{ t()('profile.pitch_desc') }}</p>
               </div>
               <div class="tool-card__foot">
                 <button
@@ -101,7 +103,13 @@ import { Profile, Settings } from '@applye/core';
                   [disabled]="pitching() || !fullMd().trim()"
                   (click)="generatePitch()"
                 >
-                  {{ pitching() ? 'Generating…' : profile()?.pitchMd ? 'Regenerate' : 'Generate' }}
+                  {{
+                    pitching()
+                      ? t()('profile.generating')
+                      : profile()?.pitchMd
+                        ? t()('profile.regenerate')
+                        : t()('profile.generate')
+                  }}
                 </button>
                 @if (pitchStatus()) {
                   <span class="status" [class.status--error]="pitchError()">{{
@@ -288,6 +296,8 @@ import { Profile, Settings } from '@applye/core';
 export class ProfileComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
+  private readonly i18n = inject(TranslateService);
+  protected readonly t = this.i18n.t;
 
   readonly fullMd = signal('');
   readonly profile = signal<Profile | null>(null);

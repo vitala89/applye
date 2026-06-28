@@ -7,6 +7,7 @@ pub mod jobs;
 pub mod profile;
 pub mod scoring;
 pub mod settings;
+pub mod tailoring;
 
 use tauri::State;
 

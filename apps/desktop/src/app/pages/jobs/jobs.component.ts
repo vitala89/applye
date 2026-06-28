@@ -3,6 +3,17 @@ import { FormsModule } from '@angular/forms';
 import { AiService, DbService } from '@applye/data';
 import { Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
 
+interface PassResult {
+  pass: number;
+  resultMd: string;
+  changes: string[];
+  gaps: string[];
+  inputHash: string;
+  fromCache: boolean;
+  tokensIn: number;
+  tokensOut: number;
+}
+
 @Component({
   selector: 'app-jobs',
   standalone: true,
@@ -155,12 +166,146 @@ import { Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/co
             }
           </div>
 
-          <!-- CTA -->
-          <div class="cta">
-            <button class="btn btn--primary" disabled>
-              Tailor CV for this job → <span class="cta__soon">coming in 3C</span>
-            </button>
-          </div>
+          <!-- Tailoring wizard -->
+          @if (tailorResults().length === 0 && !tailoring()) {
+            <div class="cta">
+              <button
+                class="btn btn--primary"
+                [disabled]="!profile()?.fullMd"
+                (click)="startTailoring()"
+              >
+                Tailor CV for this job →
+              </button>
+              @if (!profile()?.fullMd) {
+                <span class="status status--error">Add your full profile first.</span>
+              }
+            </div>
+          }
+
+          @if (tailorResults().length > 0 || tailoring()) {
+            <div class="wizard">
+              <!-- Step indicators -->
+              <div class="wizard-steps">
+                @for (n of [1, 2, 3]; track n) {
+                  <div
+                    class="wizard-step"
+                    [class.wizard-step--done]="tailorResults().length >= n"
+                    [class.wizard-step--active]="tailoring() && tailorResults().length === n - 1"
+                  >
+                    <span class="wizard-step__num">{{ n }}</span>
+                    <span class="wizard-step__label">{{
+                      ['XYZ rewrite', 'Critique', 'Final build'][n - 1]
+                    }}</span>
+                  </div>
+                  @if (n < 3) {
+                    <span class="wizard-step__sep">→</span>
+                  }
+                }
+              </div>
+
+              <!-- Completed pass results -->
+              @for (r of tailorResults(); track r.pass) {
+                <div class="card wizard-card">
+                  <div class="wizard-pass-header">
+                    <h4 class="eyebrow">
+                      Pass {{ r.pass }} —
+                      {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][r.pass - 1] }}
+                    </h4>
+                    @if (r.fromCache) {
+                      <span class="badge badge--cache">cached · 0 tokens</span>
+                    } @else {
+                      <span class="token-info">{{ r.tokensIn }} in / {{ r.tokensOut }} out</span>
+                    }
+                  </div>
+
+                  <pre class="wizard-result">{{ r.resultMd }}</pre>
+
+                  @if (r.changes.length) {
+                    <details class="wizard-changes">
+                      <summary class="eyebrow">Changes ({{ r.changes.length }})</summary>
+                      <ul class="change-list">
+                        @for (c of r.changes; track c) {
+                          <li>{{ c }}</li>
+                        }
+                      </ul>
+                    </details>
+                  }
+
+                  @if (r.gaps.length) {
+                    <div class="wizard-gaps">
+                      <h4 class="eyebrow">Gaps — not addressable from profile</h4>
+                      <ul class="gap-list">
+                        @for (g of r.gaps; track g) {
+                          <li>{{ g }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Running -->
+              @if (tailoring()) {
+                <div class="card card--running">
+                  <p class="muted">
+                    Running Pass {{ tailorResults().length + 1 }}:
+                    {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][tailorResults().length] }}…
+                  </p>
+                </div>
+              }
+
+              <!-- Pass CTAs -->
+              @if (!tailoring() && tailorResults().length > 0 && tailorResults().length < 3) {
+                <div class="row row--mt">
+                  <button class="btn btn--primary" (click)="runNextPass()">
+                    Continue to Pass {{ tailorResults().length + 1 }}:
+                    {{ ['Critique', 'Final Build'][tailorResults().length - 1] }} →
+                  </button>
+                  <button class="btn" (click)="resetWizard()">Start over</button>
+                  @if (tailorStatus()) {
+                    <span class="status" [class.status--error]="tailorError()">{{
+                      tailorStatus()
+                    }}</span>
+                  }
+                </div>
+              }
+
+              <!-- Export (pass 3 done) -->
+              @if (!tailoring() && tailorResults().length === 3) {
+                <div class="card wizard-export">
+                  <h4 class="eyebrow">Export tailored CV</h4>
+                  <div class="row">
+                    <button
+                      class="btn btn--primary"
+                      [disabled]="!!exporting()"
+                      (click)="doExport('docx')"
+                    >
+                      {{ exporting() === 'docx' ? 'Exporting…' : 'Export DOCX' }}
+                    </button>
+                    <button class="btn" [disabled]="!!exporting()" (click)="doExport('pdf')">
+                      {{ exporting() === 'pdf' ? 'Exporting…' : 'Export PDF' }}
+                    </button>
+                    <button class="btn" (click)="resetWizard()">Start over</button>
+                  </div>
+                  @if (exportStatus()) {
+                    <p class="export-path" [class.status--error]="exportError()">
+                      {{ exportStatus() }}
+                    </p>
+                  }
+                  @if (lastExport(); as exp) {
+                    <div class="export-actions">
+                      <button class="btn btn--sm" (click)="openExportedFile(exp.filePath)">
+                        Open file
+                      </button>
+                      <button class="btn btn--sm" (click)="revealExportedFile(exp.filePath)">
+                        Show in folder
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
         </section>
       }
     </div>
@@ -414,14 +559,127 @@ import { Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/co
         color: var(--indigo-500, #6366f1);
       }
 
-      /* CTA */
+      /* CTA / wizard entry */
       .cta {
         display: flex;
+        align-items: center;
+        gap: var(--space-3);
       }
-      .cta__soon {
+
+      /* Wizard */
+      .wizard {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        margin-top: var(--space-2);
+      }
+      .wizard-steps {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-3) 0;
+      }
+      .wizard-step {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        opacity: 0.45;
+      }
+      .wizard-step--done {
+        opacity: 1;
+        border-color: color-mix(in srgb, var(--indigo-500, #6366f1) 60%, transparent);
+      }
+      .wizard-step--active {
+        opacity: 1;
+        border-color: var(--indigo-500, #6366f1);
+        background: color-mix(in srgb, var(--indigo-500, #6366f1) 10%, transparent);
+      }
+      .wizard-step__num {
+        font-family: var(--font-mono);
         font-size: var(--text-xs);
-        opacity: 0.6;
-        margin-left: var(--space-2);
+        font-weight: var(--weight-medium);
+        color: var(--indigo-500, #6366f1);
+      }
+      .wizard-step__label {
+        font-size: var(--text-xs);
+        color: var(--text-secondary);
+      }
+      .wizard-step__sep {
+        color: var(--text-quaternary, var(--text-tertiary));
+        font-size: var(--text-xs);
+      }
+      .wizard-card {
+        gap: var(--space-3);
+      }
+      .wizard-pass-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+      }
+      .wizard-result {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        line-height: 1.7;
+        color: var(--text-secondary);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: var(--space-3);
+        max-height: 320px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+      }
+      .wizard-changes summary {
+        cursor: pointer;
+        user-select: none;
+        padding: var(--space-1) 0;
+      }
+      .change-list,
+      .gap-list {
+        list-style: none;
+        padding: 0;
+        margin: var(--space-2) 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+      }
+      .change-list li::before {
+        content: '✓ ';
+        color: var(--success, #4ade80);
+      }
+      .gap-list li::before {
+        content: '⚠ ';
+        color: var(--warning, #fb923c);
+      }
+      .change-list li,
+      .gap-list li {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .wizard-gaps {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .wizard-export {
+        gap: var(--space-3);
+      }
+      .export-path {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-secondary);
+        word-break: break-all;
+        margin: 0;
+      }
+      .card--running {
+        border-style: dashed;
+        opacity: 0.8;
       }
 
       /* Shared */
@@ -480,6 +738,16 @@ export class JobsComponent implements OnInit {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
+
+  // Tailoring wizard
+  readonly tailorResults = signal<PassResult[]>([]);
+  readonly tailoring = signal(false);
+  readonly tailorStatus = signal('');
+  readonly tailorError = signal(false);
+  readonly exporting = signal<'docx' | 'pdf' | false>(false);
+  readonly exportStatus = signal('');
+  readonly exportError = signal(false);
+  readonly lastExport = signal<{ filePath: string; format: 'docx' | 'pdf' } | null>(null);
 
   readonly parsing = signal(false);
   readonly scoring = signal(false);
@@ -639,5 +907,219 @@ export class JobsComponent implements OnInit {
 
   starRating(score: number): string {
     return ((score / 100) * 4 + 1).toFixed(1);
+  }
+
+  // ── Tailoring wizard ────────────────────────────────────────────────────────
+
+  async startTailoring(): Promise<void> {
+    this.tailorResults.set([]);
+    this.tailorStatus.set('');
+    this.tailorError.set(false);
+    this.exportStatus.set('');
+    this.lastExport.set(null);
+    await this.runPass(1);
+  }
+
+  async runNextPass(): Promise<void> {
+    const next = (this.tailorResults().length + 1) as 2 | 3;
+    await this.runPass(next);
+  }
+
+  resetWizard(): void {
+    this.tailorResults.set([]);
+    this.tailorStatus.set('');
+    this.tailorError.set(false);
+    this.exportStatus.set('');
+    this.exportError.set(false);
+  }
+
+  async doExport(format: 'docx' | 'pdf'): Promise<void> {
+    const j = this.job();
+    const pass3 = this.tailorResults().find((r) => r.pass === 3);
+    if (!j?.id || !pass3) return;
+
+    this.exporting.set(format);
+    this.exportStatus.set('');
+    this.exportError.set(false);
+    this.lastExport.set(null);
+    try {
+      const doc =
+        format === 'docx'
+          ? await this.db.exportDocx(
+              j.id,
+              pass3.resultMd,
+              j.company ?? '',
+              j.title ?? '',
+              pass3.inputHash,
+            )
+          : await this.db.exportPdf(
+              j.id,
+              pass3.resultMd,
+              j.company ?? '',
+              j.title ?? '',
+              pass3.inputHash,
+            );
+      this.exportStatus.set(`Saved: ${doc.filePath}`);
+      this.lastExport.set({ filePath: doc.filePath, format });
+    } catch (e) {
+      this.exportStatus.set(`Export failed: ${String(e)}`);
+      this.exportError.set(true);
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  openExportedFile(path: string): void {
+    void this.db.openFile(path);
+  }
+
+  revealExportedFile(path: string): void {
+    void this.db.revealInFolder(path);
+  }
+
+  private async runPass(pass: 1 | 2 | 3): Promise<void> {
+    this.tailoring.set(true);
+    this.tailorStatus.set('');
+    this.tailorError.set(false);
+    try {
+      await this.runTailorPass(pass);
+    } catch (e) {
+      this.tailorStatus.set(`Pass ${pass} failed: ${String(e)}`);
+      this.tailorError.set(true);
+    } finally {
+      this.tailoring.set(false);
+    }
+  }
+
+  private async runTailorPass(passNum: 1 | 2 | 3): Promise<void> {
+    const j = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    if (!j?.id || !p?.fullMd || !s) return;
+
+    const lang = s.defaultDocLanguage ?? 'en';
+    const pass1Md = this.tailorResults().find((r) => r.pass === 1)?.resultMd ?? '';
+    const pass2Md = this.tailorResults().find((r) => r.pass === 2)?.resultMd ?? '';
+
+    // Input hash includes all inputs for this pass → correct cache invalidation
+    const hashInput = [p.fullMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
+      '\x00',
+    );
+    const inputHash = await this.db.hashText(hashInput);
+
+    const cached = await this.db.tailoringCacheGet(j.id, passNum, inputHash);
+    if (cached) {
+      this.appendPassResult(
+        passNum,
+        cached.resultMd,
+        cached.changesJson,
+        cached.gapsJson,
+        inputHash,
+        true,
+        0,
+        0,
+      );
+      this.tailorStatus.set(`Pass ${passNum} loaded from cache — 0 tokens.`);
+      return;
+    }
+
+    const scoringJson = this.cache() ? JSON.stringify(this.cache()) : '{}';
+    const rendered = await this.ai.renderSkill('resume-tailoring', {
+      profile_md: p.fullMd,
+      job_description: this.jdText(),
+      scoring_json: scoringJson,
+      pass: String(passNum),
+      language: lang,
+      pass1_result: pass1Md,
+      pass2_result: pass2Md,
+    });
+
+    const res = await this.ai.run({
+      mode: s.aiMode,
+      provider: s.provider,
+      model: s.defaultModel,
+      systemPrompt: rendered.systemPrompt,
+      userPrompt: rendered.userPrompt,
+      language: lang,
+    });
+
+    const parsed = this.parsePassResult(res.text, passNum);
+
+    await this.db.tailoringCacheSave({
+      jobId: j.id,
+      pass: passNum,
+      inputHash,
+      resultMd: parsed.result_md,
+      changesJson: JSON.stringify(parsed.changes),
+      gapsJson: JSON.stringify(parsed.gaps),
+      modelUsed: s.defaultModel,
+      tokensInput: res.tokensInput,
+      tokensOutput: res.tokensOutput,
+    });
+
+    this.appendPassResult(
+      passNum,
+      parsed.result_md,
+      JSON.stringify(parsed.changes),
+      JSON.stringify(parsed.gaps),
+      inputHash,
+      false,
+      res.tokensInput,
+      res.tokensOutput,
+    );
+    this.tailorStatus.set(`Pass ${passNum} done — ${res.tokensInput} in / ${res.tokensOutput} out`);
+  }
+
+  private appendPassResult(
+    pass: number,
+    resultMd: string,
+    changesJson: string | undefined,
+    gapsJson: string | undefined,
+    inputHash: string,
+    fromCache: boolean,
+    tokensIn: number,
+    tokensOut: number,
+  ): void {
+    this.tailorResults.update((r) => [
+      ...r,
+      {
+        pass,
+        resultMd,
+        inputHash,
+        fromCache,
+        tokensIn,
+        tokensOut,
+        changes: this.parseJsonArray(changesJson),
+        gaps: this.parseJsonArray(gapsJson),
+      },
+    ]);
+  }
+
+  private parsePassResult(
+    text: string,
+    pass: number,
+  ): { result_md: string; changes: string[]; gaps: string[] } {
+    try {
+      const raw = text
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```\s*$/i, '')
+        .trim();
+      const parsed = JSON.parse(raw);
+      return {
+        result_md: String(parsed.result_md ?? ''),
+        changes: Array.isArray(parsed.changes) ? parsed.changes : [],
+        gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
+      };
+    } catch {
+      throw new Error(`Pass ${pass} returned invalid JSON: ${text.slice(0, 200)}`);
+    }
+  }
+
+  private parseJsonArray(json: string | undefined): string[] {
+    try {
+      return JSON.parse(json ?? '[]');
+    } catch {
+      return [];
+    }
   }
 }

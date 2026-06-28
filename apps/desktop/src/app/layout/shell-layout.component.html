@@ -7,31 +7,46 @@
 
     <nav class="sidebar__nav">
       <a class="nav-item" routerLink="/dashboard" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">⬛</span>
+        <lucide-icon
+          [img]="icons.dashboard"
+          class="nav-item__icon"
+          [size]="18"
+          aria-hidden="true"
+        />
         <span class="nav-item__label">{{ t()('nav.dashboard') }}</span>
       </a>
       <a class="nav-item" routerLink="/profile" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">👤</span>
+        <lucide-icon [img]="icons.profile" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.profile') }}</span>
       </a>
       <a class="nav-item" routerLink="/jobs" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">🔍</span>
+        <lucide-icon [img]="icons.jobs" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.jobs') }}</span>
       </a>
       <a class="nav-item" routerLink="/pipeline" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">📋</span>
+        <lucide-icon [img]="icons.pipeline" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.pipeline') }}</span>
       </a>
       <a class="nav-item" routerLink="/interview-prep" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">🎯</span>
+        <lucide-icon
+          [img]="icons.interviewPrep"
+          class="nav-item__icon"
+          [size]="18"
+          aria-hidden="true"
+        />
         <span class="nav-item__label">{{ t()('nav.interview_prep') }}</span>
       </a>
       <a class="nav-item" routerLink="/documents" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">📄</span>
+        <lucide-icon
+          [img]="icons.documents"
+          class="nav-item__icon"
+          [size]="18"
+          aria-hidden="true"
+        />
         <span class="nav-item__label">{{ t()('nav.documents') }}</span>
       </a>
       <a class="nav-item" routerLink="/settings" routerLinkActive="nav-item--active">
-        <span class="nav-item__icon" aria-hidden="true">⚙</span>
+        <lucide-icon [img]="icons.settings" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.settings') }}</span>
       </a>
     </nav>
@@ -59,7 +74,7 @@
             theme() === 'dark' ? t()('shell.theme_to_light') : t()('shell.theme_to_dark')
           "
         >
-          {{ theme() === 'dark' ? '☀' : '🌙' }}
+          <lucide-icon [img]="theme() === 'dark' ? icons.sun : icons.moon" [size]="18" />
         </button>
         <button class="btn-primary" disabled [title]="t()('common.coming_soon')">
           {{ t()('actions.paste_job') }}

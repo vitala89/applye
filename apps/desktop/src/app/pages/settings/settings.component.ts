@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Check, LucideAngularModule } from 'lucide-angular';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -26,7 +27,7 @@ const CLAUDE_MODELS = [
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, LucideAngularModule],
   template: `
     @if (loading()) {
       <div class="state-loading-text">{{ t()('common.loading') }}</div>
@@ -121,9 +122,12 @@ const CLAUDE_MODELS = [
           <h3 class="eyebrow">{{ t()('settings.section_key') }}</h3>
           <p class="muted">
             @if (keyStored()) {
-              <strong>✓ Stored in your OS keychain.</strong> You don't need to re-enter it — the
-              field stays empty because the key is never read back to the app. Type a new one only
-              to replace it.
+              <strong
+                ><lucide-icon [img]="icons.stored" [size]="14" aria-hidden="true" /> Stored in your
+                OS keychain.</strong
+              >
+              You don't need to re-enter it — the field stays empty because the key is never read
+              back to the app. Type a new one only to replace it.
             } @else {
               Saved to your OS keychain, never written to disk or logs, and sent only to the chosen
               provider.
@@ -381,6 +385,8 @@ export class SettingsComponent implements OnInit {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+
+  protected readonly icons = { stored: Check };
 
   readonly languages = LANGUAGES;
   readonly models = CLAUDE_MODELS;

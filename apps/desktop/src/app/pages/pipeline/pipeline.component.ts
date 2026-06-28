@@ -7,6 +7,7 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
+import { KanbanSquare, LucideAngularModule } from 'lucide-angular';
 import { DbService } from '@applye/data';
 import { ApplicationStatus, PipelineCard } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -28,7 +29,7 @@ const COLS: KanbanCol[] = [
 @Component({
   selector: 'app-pipeline',
   standalone: true,
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag, LucideAngularModule],
   template: `
     <div class="pipeline">
       @if (loading()) {
@@ -82,7 +83,12 @@ const COLS: KanbanCol[] = [
         </div>
         @if (totalCards() === 0) {
           <div class="state-empty pipeline__board-empty">
-            <span class="state-empty__icon">📋</span>
+            <lucide-icon
+              [img]="icons.empty"
+              [size]="40"
+              class="state-empty__icon"
+              aria-hidden="true"
+            />
             <p class="state-empty__msg">{{ t()('pipeline.empty') }}</p>
           </div>
         }
@@ -285,6 +291,8 @@ export class PipelineComponent implements OnInit {
   protected readonly t = this.i18n.t;
 
   readonly COLS = COLS;
+
+  protected readonly icons = { empty: KanbanSquare };
 
   cards: Record<ApplicationStatus, PipelineCard[]> = {
     saved: [],

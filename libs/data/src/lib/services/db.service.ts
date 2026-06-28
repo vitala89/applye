@@ -3,6 +3,7 @@ import { Job, ScoringCache } from '@applye/core';
 import { Application, ApplicationStatus } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
+import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /** Typed wrappers over the Rust db_* commands. The frontend stays SQL-free. */
@@ -80,6 +81,50 @@ export class DbService {
 
   async setApplicationStatus(id: number, status: ApplicationStatus): Promise<Application> {
     return tauriInvoke<Application>('db_set_application_status', { id, status });
+  }
+
+  // --- Tailoring cache ---
+  async tailoringCacheGet(
+    jobId: number,
+    pass: number,
+    inputHash: string,
+  ): Promise<TailoringCache | null> {
+    return tauriInvoke<TailoringCache | null>('tailoring_cache_get', { jobId, pass, inputHash });
+  }
+
+  async tailoringCacheSave(input: SaveTailoringInput): Promise<TailoringCache> {
+    return tauriInvoke<TailoringCache>('tailoring_cache_save', { input });
+  }
+
+  // --- Document export ---
+  async generatedDocGet(
+    jobId: number,
+    inputHash: string,
+    exportFormat: string,
+  ): Promise<GeneratedDoc | null> {
+    return tauriInvoke<GeneratedDoc | null>('generated_doc_get', {
+      jobId,
+      inputHash,
+      exportFormat,
+    });
+  }
+
+  async exportDocx(
+    jobId: number,
+    contentMd: string,
+    company: string,
+    inputHash: string,
+  ): Promise<GeneratedDoc> {
+    return tauriInvoke<GeneratedDoc>('export_docx', { jobId, contentMd, company, inputHash });
+  }
+
+  async exportPdf(
+    jobId: number,
+    contentMd: string,
+    company: string,
+    inputHash: string,
+  ): Promise<GeneratedDoc> {
+    return tauriInvoke<GeneratedDoc>('export_pdf', { jobId, contentMd, company, inputHash });
   }
 
   // --- Backup / export ---

@@ -579,7 +579,11 @@ export class JobsComponent implements OnInit {
         summary: string;
       };
       try {
-        parsed = JSON.parse(res.text);
+        const raw = res.text
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```\s*$/i, '')
+          .trim();
+        parsed = JSON.parse(raw);
       } catch {
         throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
       }

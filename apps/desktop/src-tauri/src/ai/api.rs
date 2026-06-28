@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
-const MAX_TOKENS: u32 = 1024;
+const MAX_TOKENS: u32 = 2048;
 
 pub async fn run(req: &AiRequest, api_key: &str) -> Result<AiResponse, String> {
     // "claude" is this app's id for the Anthropic provider (see AiProvider).

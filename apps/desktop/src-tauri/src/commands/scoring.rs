@@ -73,7 +73,7 @@ pub struct ScoringCache {
     pub profile_hash: String,
     pub jd_hash: String,
     pub language: Option<String>,
-    pub score: i64,
+    pub score: f64,
     pub dimensions_json: Option<String>,
     pub missing_keywords_json: Option<String>,
     pub red_flags_json: Option<String>,

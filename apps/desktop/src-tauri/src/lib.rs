@@ -32,6 +32,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::profile::db_get_profile,
             commands::profile::db_upsert_profile,
+            commands::profile::hash_text,
             commands::settings::db_get_settings,
             commands::settings::db_update_settings,
             commands::jobs::db_list_jobs,

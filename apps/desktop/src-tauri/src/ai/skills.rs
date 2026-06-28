@@ -12,6 +12,12 @@ use std::collections::HashMap;
 fn skill_source(name: &str) -> Option<&'static str> {
     match name {
         "ping" => Some(include_str!("../../../../../libs/skills/src/ping/ping.md")),
+        "profile-compress" => Some(include_str!(
+            "../../../../../libs/skills/src/profile-compress/profile-compress.md"
+        )),
+        "pitch" => Some(include_str!(
+            "../../../../../libs/skills/src/pitch/pitch.md"
+        )),
         _ => None,
     }
 }

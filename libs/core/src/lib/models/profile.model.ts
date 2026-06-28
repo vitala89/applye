@@ -3,6 +3,7 @@ export interface Profile {
   fullMd: string;
   scoringJson?: string;
   scoringHash?: string;
+  pitchMd?: string;
   updatedAt: string;
 }
 

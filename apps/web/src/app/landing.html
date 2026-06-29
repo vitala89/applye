@@ -126,6 +126,9 @@
         <h3 class="feature__title">{{ f.title }}</h3>
         <p class="feature__example">{{ f.example }}</p>
         <p class="feature__note"><span class="accent">→</span> {{ f.note }}</p>
+        @if (f.link) {
+        <a class="feature__link" [routerLink]="f.link.to">{{ f.link.text }} →</a>
+        }
       </article>
       }
     </div>

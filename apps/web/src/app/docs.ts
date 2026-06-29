@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { afterNextRender, Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { REPO } from './site';
 
 interface DocSection {
@@ -10,6 +11,7 @@ interface DocSection {
 @Component({
   selector: 'app-docs',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './docs.html',
 })
 export class Docs {

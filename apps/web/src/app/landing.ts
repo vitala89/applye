@@ -1,10 +1,12 @@
 import { Component, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { COMING_SOON, DATA_CONTRACT, RELEASES, REPO } from './site';
 
 interface Feature {
   title: string;
   example: string;
   note: string;
+  link?: { to: string; text: string };
 }
 
 interface Faq {
@@ -15,6 +17,7 @@ interface Faq {
 @Component({
   selector: 'app-landing',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './landing.html',
 })
 export class Landing {
@@ -31,6 +34,7 @@ export class Landing {
       example:
         'Paste a job and get an honest fit score, the keywords you are missing, the red flags a screener would catch, and a plain ATS pass/fail, the way a recruiter actually reads in the first ten seconds.',
       note: 'No encouragement. Just signal.',
+      link: { to: '/methodology', text: 'How the scoring works' },
     },
     {
       title: 'Tailored CV in three passes',

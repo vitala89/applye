@@ -1,0 +1,147 @@
+<div class="docs shell">
+  <aside class="docs__nav" aria-label="On this page">
+    <p class="docs__navtitle">Methodology</p>
+    <nav>
+      @for (s of sections; track s.id) {
+      <a [href]="'#' + s.id" [class.is-active]="active() === s.id">{{ s.title }}</a>
+      }
+    </nav>
+  </aside>
+
+  <article class="docs__body">
+    <header class="docs__head">
+      <p class="applye-eyebrow">Methodology</p>
+      <h1 class="docs__h1">How the recruiter check works</h1>
+      <p class="docs__lede">
+        Applye reads a job the way a screener does, not the way you hope it reads. The check is
+        built in layers: cheap deterministic code first, then rubric-guided AI judgement only where
+        it earns its tokens. This is the
+        <a [href]="careerOps" target="_blank" rel="noopener">career-ops</a> methodology, rebuilt for
+        a desktop GUI.
+      </p>
+
+      <!-- Band gauge: a fit score plus three readable bands -->
+      <div class="meth__gauge" aria-hidden="true">
+        <div class="meth__bands">
+          <span class="meth__band meth__band--weak">weak fit</span>
+          <span class="meth__band meth__band--partial">partial fit</span>
+          <span class="meth__band meth__band--strong">strong fit</span>
+        </div>
+        <div class="meth__needle" style="left: 72%"><span>72 / 100</span></div>
+      </div>
+    </header>
+
+    <section id="score" class="docs__section">
+      <h2>The score</h2>
+      <p>
+        Every scored job gets a single fit reading on a 0 to 100 scale, plus a one-line verdict you
+        can act on: pursue it, hold and improve the application, or skip it. The number is not the
+        point; the point is a clear, blunt signal and the reasons behind it. The line between
+        "pursue" and "hold" is defined by the scoring rubric and shown per job, not a fixed
+        universal cutoff.
+      </p>
+      <p class="docs__quote">
+        The tone is deliberately direct: how an HR screener actually reads, not encouragement.
+      </p>
+    </section>
+
+    <section id="layer1" class="docs__section">
+      <h2>Layer 1: deterministic, 0 tokens</h2>
+      <p>
+        Before any model runs, plain code does the obvious work for free. It parses the posting,
+        hard filters on location, salary, contract type, and visa, and assigns a legitimacy tier.
+        Obvious mismatches and likely-fake postings stop here, so you never spend tokens scoring a
+        job that was never real.
+      </p>
+      <div class="meth__tiers">
+        <div class="meth__tier meth__tier--green">
+          <span class="meth__dot"></span>
+          <p class="meth__tiername">Green</p>
+          <p>Looks legitimate. Clear company, comp, and posting signals. Proceeds to scoring.</p>
+        </div>
+        <div class="meth__tier meth__tier--yellow">
+          <span class="meth__dot"></span>
+          <p class="meth__tiername">Yellow</p>
+          <p>Flagged. Missing salary, thin detail, or odd patterns. Scored, but with a caution.</p>
+        </div>
+        <div class="meth__tier meth__tier--red">
+          <span class="meth__dot"></span>
+          <p class="meth__tiername">Red</p>
+          <p>
+            Ghost-job patterns or a suspicious domain. Surfaced as a warning, not quietly scored.
+          </p>
+        </div>
+      </div>
+      <p class="meth__scan">
+        Scan summary, for a batch:
+        <span>"2 passed, 1 rejected (location), 1 flagged yellow (no salary)."</span>
+      </p>
+    </section>
+
+    <section id="ai" class="docs__section">
+      <h2>AI scoring layers</h2>
+      <p>
+        Only jobs that pass the code filter reach the model, and it is asked to act as a blunt
+        recruiter, not a cheerleader. Each result is structured and cached against a hash of the job
+        text, so re-opening it costs nothing.
+      </p>
+      <ul class="docs__list">
+        <li><strong>Recruiter rubric score</strong> with point-by-point deductions, not a vibe.</li>
+        <li><strong>Top missing keywords</strong> the posting expects and your profile lacks.</li>
+        <li><strong>Hiring-manager red flags</strong> a screener would raise.</li>
+        <li>
+          <strong>ATS filter pass</strong> on the formatting that silently breaks parsers (the real
+          hyperref lesson, encoded as a check).
+        </li>
+      </ul>
+    </section>
+
+    <section id="before" class="docs__section">
+      <h2>Before you submit</h2>
+      <p>The check closes with practical notes, so you fix the application before it goes out:</p>
+      <ul class="docs__list">
+        <li>Salary missing prompts a comp-research step.</li>
+        <li>Portfolio required is called out.</li>
+        <li>Deadlines are surfaced.</li>
+      </ul>
+    </section>
+
+    <section id="honesty" class="docs__section">
+      <h2>Honest about judgement</h2>
+      <p>
+        This is rubric-guided LLM judgement, not a deterministic formula. Two runs can phrase things
+        differently, and the model is an excellent assistant but a poor judge of someone's life. So
+        the score is a sharp opinion you can argue with, never a verdict. The deductions are shown,
+        you can expand the full breakdown on demand, and you always override it. We do not publish
+        fixed rubric weights as if they were physical constants; the rubric lives in auditable skill
+        files in the open-source repo.
+      </p>
+    </section>
+
+    <section id="tokens" class="docs__section">
+      <h2>Token economy</h2>
+      <p>
+        The whole design follows one rule: do not call AI where code suffices. Parsing, filtering,
+        legitimacy tiers, the first-pass ATS check, follow-up badges, and analytics are all plain
+        code at 0 tokens. The model is reserved for genuine judgement (scoring, tailoring), runs on
+        a cheap tier for routine work, and every answer is cached. A real search costs cents, not a
+        subscription.
+      </p>
+      <p>
+        <a class="btn btn--ghost" routerLink="/docs">See the full pipeline in the docs</a>
+        <a class="btn btn--ghost" [href]="roadmap" target="_blank" rel="noopener"
+          >Read the roadmap</a
+        >
+      </p>
+    </section>
+
+    <section id="boundary" class="docs__section">
+      <h2>The augmentation boundary</h2>
+      <p>
+        The check scores and the app drafts, but it stops there. It never decides for you and never
+        submits for you. A recruiter is a person, and the relationship is yours, not a bot's.
+        Drafting is automated. Submitting is not.
+      </p>
+    </section>
+  </article>
+</div>

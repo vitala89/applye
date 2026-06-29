@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA fallback: serve the Angular app for client-side routes
+# (/docs, /blog) while still serving real static assets directly.
+/*    /index.html    200

@@ -1,0 +1,249 @@
+<div class="docs shell">
+  <!-- On-page navigation -->
+  <aside class="docs__nav" aria-label="On this page">
+    <p class="docs__navtitle">Documentation</p>
+    <nav>
+      @for (s of sections; track s.id) {
+      <a [href]="'#' + s.id" [class.is-active]="active() === s.id">{{ s.title }}</a>
+      }
+    </nav>
+  </aside>
+
+  <article class="docs__body">
+    <header class="docs__head">
+      <p class="applye-eyebrow">Docs</p>
+      <h1 class="docs__h1">How Applye works</h1>
+      <p class="docs__lede">
+        The honest version. What runs as plain code, where the AI is allowed to judge, what stays on
+        your machine, and what is still a TODO. Written for the same audience that trusts a CLI:
+        people who want to know what the tool actually does before they run it.
+      </p>
+    </header>
+
+    <section id="overview" class="docs__section">
+      <h2>What Applye is</h2>
+      <p>
+        Applye is a free, open-source, local-first desktop app for an AI-powered job search in 2026.
+        It is inspired by the methodology of
+        <a [href]="careerOps" target="_blank" rel="noopener">career-ops.org</a> (a CLI), rebuilt as
+        a graphical desktop app so the same pipeline is usable without a terminal. You paste a job,
+        it gives a blunt recruiter and ATS check, drafts a tailored CV you review, and tracks the
+        role across a kanban. The AI advises; you decide and submit.
+      </p>
+    </section>
+
+    <section id="requirements" class="docs__section">
+      <h2>Requirements</h2>
+      <p>
+        career-ops asks for a terminal, Node, and Git. Applye asks for none of that: it is a desktop
+        application you install and open.
+      </p>
+      <ul class="docs__list">
+        <li>A desktop OS: macOS, Windows, or Linux.</li>
+        <li>
+          One AI source: a direct API key, <em>or</em> a CLI subscription you already have (Claude
+          Code, Codex, or Gemini CLI). Optional until you ask for an AI action.
+        </li>
+        <li>No account. No terminal. No cloud service to sign up for.</li>
+      </ul>
+    </section>
+
+    <section id="install" class="docs__section">
+      <h2>Install &amp; setup</h2>
+      <p>Setup is meant to take about three minutes, not fifteen.</p>
+      <ol class="docs__list docs__list--ol">
+        <li>Download the build for your OS from GitHub Releases.</li>
+        <li>Open the app. Your local database is created on first run.</li>
+        <li>Fill in your profile once (this is what scoring compares against).</li>
+        <li>Optionally connect an AI source in Settings when you want AI actions.</li>
+      </ol>
+      <p class="docs__todo">
+        <span class="docs__todobadge">TODO</span> Per-OS install steps and signed-build notes land
+        with the first public release. The repo is private until launch.
+      </p>
+    </section>
+
+    <section id="ai" class="docs__section">
+      <h2>Bring your own AI</h2>
+      <p>Two modes, one abstraction. You choose; nothing is hardcoded to a single vendor.</p>
+      <ul class="docs__list">
+        <li>
+          <strong>CLI bridge:</strong> use a Claude Code, Codex, or Gemini CLI subscription you
+          already pay for. Zero extra API tokens.
+        </li>
+        <li>
+          <strong>Direct API:</strong> paste your own API key. A token counter is shown so cost is
+          visible.
+        </li>
+      </ul>
+      <p>
+        Model tiering is built in: a cheap model handles routine work (rough scoring, screen
+        questions), a stronger model is used for tailoring. Economy is the default for routine
+        calls.
+      </p>
+    </section>
+
+    <section id="methodology" class="docs__section">
+      <h2>Methodology: the core flow</h2>
+      <p>The daily loop mirrors a three-pass methodology. Code does the cheap work first.</p>
+      <ol class="docs__list docs__list--ol">
+        <li>
+          <strong>You paste</strong> a job (text or URL). The app never auto-fetches from closed
+          boards.
+        </li>
+        <li>
+          <strong>Code parses and hard-filters</strong> (0 tokens): location, salary, contract,
+          visa. Obvious mismatches stop here.
+        </li>
+        <li>
+          <strong>Legitimacy check</strong> assigns a green / yellow / red tier (ghost-job patterns,
+          missing comp, suspicious domain).
+        </li>
+        <li>
+          <strong>The AI acts as a blunt recruiter:</strong> a rubric score, top missing keywords,
+          hiring-manager red flags, an ATS pass, and "before you submit" notes.
+        </li>
+        <li>
+          <strong>The AI offers to tailor:</strong> XYZ rewrite, then a dual critique, then a build.
+        </li>
+        <li>
+          <strong>You review, edit, export, and submit manually.</strong> The app never clicks
+          "apply" for you.
+        </li>
+      </ol>
+    </section>
+
+    <section id="judgement" class="docs__section">
+      <h2>Deterministic code vs LLM judgement</h2>
+      <p>
+        The core rule: do not call AI where code suffices. Most of the pipeline is plain code that
+        costs 0 tokens. The model is only invoked where genuine judgement is needed, and the result
+        is cached against a hash of the input so the same job is never scored twice.
+      </p>
+      <div class="docs__table" role="table" aria-label="Code vs AI">
+        <div class="docs__trow docs__trow--head"><span>Task</span><span>Runs as</span></div>
+        <div class="docs__trow">
+          <span>Parse pasted job, dedupe</span><span class="zero">code · 0 tokens</span>
+        </div>
+        <div class="docs__trow">
+          <span>Hard filter (location, visa, salary)</span><span class="zero">code · 0 tokens</span>
+        </div>
+        <div class="docs__trow">
+          <span>Legitimacy tier (green / yellow / red)</span
+          ><span class="zero">code · 0 tokens</span>
+        </div>
+        <div class="docs__trow">
+          <span>First-pass ATS check (fonts, links, formatting)</span
+          ><span class="zero">code · 0 tokens</span>
+        </div>
+        <div class="docs__trow">
+          <span>Overdue follow-up badges, analytics</span><span class="zero">code · 0 tokens</span>
+        </div>
+        <div class="docs__trow">
+          <span>Recruiter rubric score</span><span class="ai">AI · low</span>
+        </div>
+        <div class="docs__trow">
+          <span>Tailoring, cover letter, pitch</span><span class="ai">AI · on demand</span>
+        </div>
+      </div>
+      <p class="docs__quote">
+        Search is code, not AI. Code collects; AI evaluates. "Auto-search jobs by prompt" is a
+        costly myth.
+      </p>
+    </section>
+
+    <section id="scoring" class="docs__section">
+      <h2>Reading the recruiter check</h2>
+      <p>The score is deliberately blunt: how an HR screener actually reads, not encouragement.</p>
+      <ul class="docs__list">
+        <li><strong>Rubric score</strong> with point-by-point deductions, not a vibe.</li>
+        <li><strong>Top missing keywords</strong> the posting expects and your profile lacks.</li>
+        <li><strong>Hiring-manager red flags</strong> a screener would catch.</li>
+        <li><strong>ATS pass</strong> on formatting that breaks parsers.</li>
+        <li>
+          <strong>Before you submit:</strong> salary missing prompts comp research; portfolio
+          required; deadline noted.
+        </li>
+      </ul>
+      <p class="docs__todo">
+        <span class="docs__todobadge">TODO</span> The exact rubric weights and band thresholds are
+        defined in the scoring skill files and are not published as fixed numbers here. We do not
+        invent precision we cannot stand behind.
+      </p>
+    </section>
+
+    <section id="transparency" class="docs__section">
+      <h2>Transparency</h2>
+      <ul class="docs__list">
+        <li>Output is structured: a short rationale by default, full breakdown only on request.</li>
+        <li>Every result is cached in a local table. Re-opening a job costs 0 tokens.</li>
+        <li>In Direct API mode a token counter shows what each action costs.</li>
+        <li>The AI never auto-applies. Every output is a proposal you accept, edit, or discard.</li>
+      </ul>
+    </section>
+
+    <section id="privacy" class="docs__section">
+      <h2>Privacy &amp; your data</h2>
+      <p>
+        Everything lives in a local SQLite database on your machine. No cloud, no account, no
+        telemetry, no usage history. Nothing is collected. The design is GDPR-aligned by default
+        because your data never leaves the device in the first place. Delete the file and it is
+        gone.
+      </p>
+    </section>
+
+    <section id="legality" class="docs__section">
+      <h2>Source legality</h2>
+      <p>
+        Applye is a tool you point at jobs you are already looking at. It does not scrape closed job
+        boards, bypass logins, or harvest postings at scale. You paste in roles you found. Where
+        automated sources exist, they use public JSON APIs (for example Greenhouse, Lever, Ashby),
+        not HTML scraping, so there is no terms-of-service violation and no anti-bot risk.
+      </p>
+    </section>
+
+    <section id="german" class="docs__section">
+      <h2>German market</h2>
+      <p>The DACH job search has rules other tools ignore. Applye treats them as first-class.</p>
+      <ul class="docs__list">
+        <li>
+          <strong>Agentur für Arbeit:</strong> generate an Eigenbemühungen report of your documented
+          efforts.
+        </li>
+        <li>
+          <strong>German-language output</strong> for CVs, letters, and prep when a role demands it.
+        </li>
+        <li><strong>Visa &amp; Blue-Card awareness</strong> in guidance.</li>
+        <li><strong>GDPR-aligned</strong> data handling by default.</li>
+      </ul>
+    </section>
+
+    <section id="audience" class="docs__section">
+      <h2>Who it is for</h2>
+      <p>
+        People running a real job search who want fewer, better-targeted applications; who care
+        where their data lives; who already have an AI subscription or key; and, especially, job
+        seekers in Germany and the wider EU. career-ops gives developers a CLI. Applye gives
+        everyone a desktop.
+      </p>
+    </section>
+
+    <section id="status" class="docs__section">
+      <h2>Status &amp; roadmap</h2>
+      <p>
+        Applye is pre-launch. The MVP is the core loop: profile, paste, score, tailor, pipeline,
+        interview prep, and the Agentur report. The full plan lives in the roadmap.
+      </p>
+      <p>
+        <a class="btn btn--ghost" [href]="roadmap" target="_blank" rel="noopener"
+          >Read the roadmap</a
+        >
+      </p>
+      <p class="docs__todo">
+        <span class="docs__todobadge">TODO</span> Deep-dive guides (scoring internals, skill files,
+        source configuration) are written as features ship. This page tracks the shipped behaviour
+        only.
+      </p>
+    </section>
+  </article>
+</div>

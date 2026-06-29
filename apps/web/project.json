@@ -21,7 +21,7 @@
             "input": "apps/web/public"
           }
         ],
-        "styles": ["apps/web/src/styles.scss"]
+        "styles": ["libs/ui/tokens.css", "apps/web/src/styles.scss"]
       },
       "configurations": {
         "production": {

@@ -1,11 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <title>web</title>
+    <title>Applye — Drafting is automated. Submitting is not.</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Applye is a free, open-source, local-first desktop app for an AI-powered job search. Blunt recruiter checks, tailored CVs, a pipeline kanban — your data, your machine, your AI. MIT licensed."
+    />
+    <meta name="theme-color" content="#0E0F13" />
+
+    <!-- Social / Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Applye — Drafting is automated. Submitting is not." />
+    <meta
+      property="og:description"
+      content="Open-source, local-first desktop app for an AI-powered job search. Your data, your machine, your AI. Free forever, MIT licensed."
+    />
+    <meta property="og:url" content="https://applye.dev" />
+    <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="canonical" href="https://applye.dev" />
+
+    <!-- No-FOUC theme bootstrap: apply the stored theme before first paint. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('applye-theme');
+          document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>

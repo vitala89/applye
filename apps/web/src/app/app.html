@@ -1,5 +1,5 @@
 <!-- ============================================================
-     applye.dev — landing
+     applye.dev landing
      Brand: monochrome graphite + indigo. JetBrains Mono headings,
      Inter body. Dark default, light toggle. All tokens from libs/ui.
      Tone: honest, anti-hype. Augmentation is the emotional core.
@@ -9,7 +9,18 @@
 <header class="nav">
   <div class="nav__inner shell">
     <a class="brand" href="#top" aria-label="Applye home">
-      <span class="brand__mark">▍</span>applye<span class="brand__dot">.dev</span>
+      <svg
+        class="brand__mark"
+        viewBox="0 0 64 64"
+        width="20"
+        height="20"
+        fill="none"
+        aria-hidden="true"
+      >
+        <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
+        <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)" />
+      </svg>
+      applye<span class="brand__dot">.dev</span>
     </a>
 
     <nav class="nav__links" aria-label="Primary">
@@ -83,14 +94,14 @@
       </h1>
       <p class="hero__sub">
         An open-source, local-first desktop app for an AI-powered job search. Your data, your
-        machine, your AI. It scores roles, tailors your CV, and tracks the pipeline — then hands
+        machine, your AI. It scores roles, tailors your CV, and tracks the pipeline, then hands
         every decision back to you.
       </p>
 
       <div class="hero__cta">
         @if (comingSoon) {
         <button type="button" class="btn btn--primary" disabled aria-disabled="true">
-          Download — coming soon
+          Download (coming soon)
         </button>
         } @else {
         <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener">Download</a>
@@ -107,7 +118,7 @@
       <div class="mock__bar">
         <span class="mock__dot"></span><span class="mock__dot"></span
         ><span class="mock__dot"></span>
-        <span class="mock__path">applye — senior frontend engineer</span>
+        <span class="mock__path">applye · senior frontend engineer</span>
       </div>
       <div class="mock__body">
         <div class="mock__score">
@@ -124,9 +135,9 @@
           <span class="chip chip--warn">CI/CD</span>
         </div>
         <div class="mock__rows">
-          <div class="mock__row"><span class="tick tick--ok">✓</span> ATS parse — clean</div>
+          <div class="mock__row"><span class="tick tick--ok">✓</span> ATS parse: clean</div>
           <div class="mock__row">
-            <span class="tick tick--warn">!</span> Red flag — 2 unexplained gaps
+            <span class="tick tick--warn">!</span> Red flag: 2 unexplained gaps
           </div>
           <div class="mock__row"><span class="tick tick--ok">✓</span> DOCX export ready</div>
         </div>
@@ -152,7 +163,7 @@
           <h3>CLI pipelines</h3>
           <p class="compare__who">career-ops</p>
           <p>
-            Full pipeline, local-first, free — and excellent. But it is terminal-only, so it speaks
+            Full pipeline, local-first, free, and excellent. But it is terminal-only, so it speaks
             to developers and no one else.
           </p>
         </article>
@@ -161,7 +172,7 @@
           <h3>Desktop, local, free</h3>
           <p class="compare__who">applye.dev</p>
           <p>
-            The full pipeline as a desktop GUI — local-first, free, MIT, and aware of the German
+            The full pipeline as a desktop GUI: local-first, free, MIT, and aware of the German
             market. Setup in 3 minutes, not 15. No terminal required.
           </p>
         </article>
@@ -184,8 +195,8 @@
         <strong>blunt HR / ATS check</strong>; it drafts a <strong>tailored CV</strong> you review
         and export; you move the role across a <strong>pipeline kanban</strong> as it progresses;
         and it helps you <strong>prepare for the interview</strong>. It is local-first, you
-        <strong>bring your own AI</strong> — a direct API key or the CLI subscription you already
-        pay for — and it is <strong>MIT-licensed and free forever</strong>.
+        <strong>bring your own AI</strong> (a direct API key or the CLI subscription you already pay
+        for) and it is <strong>MIT-licensed and free forever</strong>.
       </p>
     </div>
   </section>
@@ -213,24 +224,24 @@
       <p class="applye-eyebrow">Built for the German market</p>
       <h2 class="section-title">Made for the search you are actually running.</h2>
       <p class="prose">
-        The DACH job search has rules other tools ignore. Applye treats them as first-class — not a
+        The DACH job search has rules other tools ignore. Applye treats them as first-class, not a
         localisation afterthought.
       </p>
       <ul class="german__list">
         <li>
-          <strong>Agentur für Arbeit</strong> — generate an <em>Eigenbemühungen</em> report of your
+          <strong>Agentur für Arbeit</strong>: generate an <em>Eigenbemühungen</em> report of your
           documented efforts.
         </li>
         <li>
-          <strong>German-language output</strong> — CVs, cover letters, and prep in DE when the role
+          <strong>German-language output</strong>: CVs, cover letters, and prep in DE when the role
           demands it.
         </li>
         <li>
-          <strong>Visa &amp; Blue-Card awareness</strong> — guidance that knows your situation
+          <strong>Visa &amp; Blue-Card awareness</strong>: guidance that knows your situation
           matters.
         </li>
         <li>
-          <strong>GDPR-aligned by design</strong> — because your data never leaves your machine in
+          <strong>GDPR-aligned by design</strong>: because your data never leaves your machine in
           the first place.
         </li>
       </ul>
@@ -294,10 +305,10 @@
         <div class="honest__col honest__col--not">
           <h3>What Applye is not</h3>
           <ul>
-            <li>Not an auto-apply bot — it never submits for you.</li>
-            <li>Not a job-board scraper — you paste roles you found.</li>
-            <li>Not a cloud service — no account, no server, no sync.</li>
-            <li>Not a way to fake experience — honesty over inflation.</li>
+            <li>Not an auto-apply bot. It never submits for you.</li>
+            <li>Not a job-board scraper. You paste roles you found.</li>
+            <li>Not a cloud service: no account, no server, no sync.</li>
+            <li>Not a way to fake experience. Honesty over inflation.</li>
           </ul>
         </div>
       </div>
@@ -347,9 +358,20 @@
 <footer class="footer">
   <div class="shell footer__inner">
     <div class="footer__brand">
-      <span class="brand"
-        ><span class="brand__mark">▍</span>applye<span class="brand__dot">.dev</span></span
-      >
+      <span class="brand">
+        <svg
+          class="brand__mark"
+          viewBox="0 0 64 64"
+          width="20"
+          height="20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
+          <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)" />
+        </svg>
+        applye<span class="brand__dot">.dev</span>
+      </span>
       <p>Drafting is automated. Submitting is not.</p>
     </div>
     <nav class="footer__links" aria-label="Footer">

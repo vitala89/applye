@@ -1,7 +1,7 @@
 // apps/web/src/styles.scss
 // Landing site styles. Design tokens come from libs/ui/tokens.css (wired ahead
 // of this file in project.json); the shared reset + font loading + focus ring
-// come from libs/ui/src/styles/global — the same source as the desktop app.
+// come from libs/ui/src/styles/global, the same source as the desktop app.
 //
 // Landing CSS lives here (global) rather than in a component stylesheet so it
 // is not bound by the per-component anyComponentStyle budget. Class names are
@@ -115,8 +115,9 @@
   white-space: nowrap;
 }
 .brand__mark {
-  color: var(--accent);
-  margin-right: 1px;
+  display: inline-block;
+  vertical-align: -4px;
+  margin-right: var(--space-3);
 }
 .brand__dot {
   color: var(--text-tertiary);

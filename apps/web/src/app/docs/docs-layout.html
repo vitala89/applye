@@ -1,0 +1,66 @@
+<div class="dx shell">
+  <!-- LEFT: grouped, collapsible navigation -->
+  <aside class="dx__left" aria-label="Documentation navigation">
+    <nav>
+      @for (g of groups; track g.id) {
+      <div class="dx__group" [class.is-collapsed]="isCollapsed(g.id)">
+        <button
+          type="button"
+          class="dx__grouphead"
+          (click)="toggleGroup(g.id)"
+          [attr.aria-expanded]="!isCollapsed(g.id)"
+        >
+          <svg
+            class="dx__chev"
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+          {{ g.title }}
+        </button>
+        @if (!isCollapsed(g.id)) {
+        <ul class="dx__links">
+          @for (l of g.links; track l.to) {
+          <li>
+            <a
+              [routerLink]="l.to"
+              routerLinkActive="is-active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              >{{ l.text }}</a
+            >
+          </li>
+          }
+        </ul>
+        }
+      </div>
+      }
+    </nav>
+  </aside>
+
+  <!-- CENTER: routed page content (this column scrolls with the document) -->
+  <article class="dx__center">
+    <router-outlet (activate)="onActivate()"></router-outlet>
+  </article>
+
+  <!-- RIGHT: on-this-page table of contents with scroll-spy -->
+  <aside class="dx__right" aria-label="On this page">
+    @if (toc().length) {
+    <p class="dx__toctitle">On this page</p>
+    <nav>
+      @for (t of toc(); track t.id) {
+      <a [href]="'#' + t.id" [class.is-active]="activeId() === t.id" [class.is-sub]="t.level === 3"
+        >{{ t.text }}</a
+      >
+      }
+    </nav>
+    }
+  </aside>
+</div>

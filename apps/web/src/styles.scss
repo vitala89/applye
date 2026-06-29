@@ -8,6 +8,27 @@
 // landing-specific, so global scope is safe for this single-page site.
 @use '../../../libs/ui/src/styles/global' as *;
 
+/* ---- Document scroll model (web override) ----
+   global.scss pins html/body to height:100% for the desktop app shell (it
+   scrolls internally). The marketing site uses document scrolling instead:
+   the body box must grow with content, otherwise a `position: sticky` header
+   sticks only within the first viewport and then scrolls away. Override here,
+   web-scoped, so the desktop app is untouched. Single scroll container, no
+   transform/overflow on sticky ancestors. */
+html,
+body {
+  height: auto;
+  min-height: 100%;
+}
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* ---- Layout primitives ---- */
 .shell {
   width: 100%;
@@ -1125,5 +1146,152 @@
 @media (max-width: 920px) {
   .meth__tiers {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   DOCS three-zone layout (left grouped nav · center · right TOC)
+   Single document scroll. Sidebars are sticky to the viewport,
+   offset by the sticky header height. No transform/overflow on
+   any sticky ancestor.
+   ============================================================ */
+.dx {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr) 216px;
+  gap: var(--space-9);
+  align-items: start;
+  padding-block: var(--space-9) var(--space-13);
+}
+.dx__left,
+.dx__right {
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--space-6));
+  align-self: start;
+  max-height: calc(100vh - var(--topbar-height) - var(--space-8));
+  overflow-y: auto;
+}
+.dx__center {
+  min-width: 0;
+  max-width: 760px;
+  scroll-margin-top: calc(var(--topbar-height) + var(--space-6));
+}
+
+/* Left: grouped collapsible nav */
+.dx__group {
+  margin-bottom: var(--space-5);
+}
+.dx__grouphead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+}
+.dx__grouphead:hover {
+  color: var(--text-secondary);
+}
+.dx__chev {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.dx__group.is-collapsed .dx__chev {
+  transform: rotate(-90deg);
+}
+.dx__links {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  display: grid;
+  gap: 1px;
+  border-left: var(--border-width) solid var(--border-subtle);
+}
+.dx__links a {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-5);
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  line-height: var(--leading-normal);
+}
+.dx__links a:hover {
+  color: var(--text-primary);
+}
+.dx__links a.is-active {
+  color: var(--text-accent);
+  border-left-color: var(--accent);
+}
+
+/* Right: on-this-page TOC */
+.dx__toctitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-4);
+}
+.dx__right nav {
+  display: grid;
+  gap: 1px;
+  border-left: var(--border-width) solid var(--border-subtle);
+}
+.dx__right a {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-5);
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  line-height: var(--leading-normal);
+}
+.dx__right a.is-sub {
+  padding-left: var(--space-7);
+}
+.dx__right a:hover {
+  color: var(--text-primary);
+}
+.dx__right a.is-active {
+  color: var(--text-accent);
+  border-left-color: var(--accent);
+}
+
+/* Content headings inside a docs page */
+.docs__h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-5);
+  scroll-margin-top: calc(var(--topbar-height) + var(--space-6));
+}
+
+@media (max-width: 1080px) {
+  .dx {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .dx__right {
+    display: none;
+  }
+}
+@media (max-width: 860px) {
+  .dx {
+    grid-template-columns: 1fr;
+  }
+  .dx__left {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    border-bottom: var(--border-width) solid var(--border-subtle);
+    padding-bottom: var(--space-5);
+    margin-bottom: var(--space-5);
   }
 }

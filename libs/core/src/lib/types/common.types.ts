@@ -1,5 +1,5 @@
 export type AiMode = 'api' | 'cli';
-export type AiProvider = 'claude' | 'openai' | 'gemini' | 'codex';
+export type AiProvider = 'claude' | 'deepseek' | 'openai' | 'gemini' | 'codex';
 export type ExportFormat = 'pdf' | 'docx' | 'md' | 'xlsx';
 export type DocType = 'cv' | 'cover_letter' | 'pitch' | 'interview_prep' | 'arbeitsagentur_report';
 

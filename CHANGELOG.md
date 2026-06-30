@@ -10,6 +10,23 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-30
+
+### Added
+
+- **DeepSeek provider** (API mode). A new OpenAI-compatible request path in
+  `ai/api.rs` routes the `deepseek` provider to `api.deepseek.com`, with the
+  Anthropic path untouched. Models `deepseek-v4-pro` (quality) and
+  `deepseek-v4-flash` (economy), selectable in Settings; the API key is stored
+  per provider in the OS keychain, never in the database or logs.
+
+### Security
+
+- **Privacy disclosure for DeepSeek.** Settings shows a clear note that DeepSeek
+  is a China-based cloud provider and that, in API mode, the job description and
+  profile text are sent to its servers. AI remains opt-in; on-device users can
+  pick another provider.
+
 ## [0.4.0] - 2026-06-30
 
 ### Added
@@ -74,7 +91,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/vitala89/applye/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/vitala89/applye/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/vitala89/applye/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/vitala89/applye/compare/v0.1.0...v0.3.0

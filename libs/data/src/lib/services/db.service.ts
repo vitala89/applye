@@ -91,6 +91,7 @@ export class DbService {
     atsPass: boolean;
     atsNotes: string;
     summary: string;
+    beforeYouSubmitJson: string;
     modelUsed: string;
     tokensInput: number;
     tokensOutput: number;

@@ -18,8 +18,9 @@ interface KanbanCol {
   accent: string;
 }
 
+// Pipeline shows only ACTIVE applications. "saved" jobs live in My Jobs
+// (status filter); a job enters the board via Add to Pipeline / Mark Applied.
 const COLS: KanbanCol[] = [
-  { status: 'saved', labelKey: 'status.saved', accent: '#64748b' },
   { status: 'applied', labelKey: 'status.applied', accent: '#3b82f6' },
   { status: 'interview', labelKey: 'status.interview', accent: '#f59e0b' },
   { status: 'offer', labelKey: 'status.offer', accent: '#22c55e' },

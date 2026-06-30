@@ -4,6 +4,7 @@ export interface Profile {
   scoringJson?: string;
   scoringHash?: string;
   pitchMd?: string;
+  targetArchetypes?: string;
   updatedAt: string;
 }
 

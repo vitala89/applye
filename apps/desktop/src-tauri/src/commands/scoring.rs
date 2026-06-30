@@ -77,12 +77,14 @@ pub struct ScoringCache {
     pub dimensions_json: Option<String>,
     pub missing_keywords_json: Option<String>,
     pub red_flags_json: Option<String>,
+    pub before_you_submit_json: Option<String>,
     pub ats_pass: Option<bool>,
     pub ats_notes: Option<String>,
     pub summary: Option<String>,
     pub model_used: Option<String>,
     pub tokens_input: Option<i64>,
     pub tokens_output: Option<i64>,
+    pub error_message: Option<String>,
     pub created_at: Option<String>,
 }
 

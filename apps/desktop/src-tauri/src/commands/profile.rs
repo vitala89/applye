@@ -12,6 +12,7 @@ pub struct Profile {
     pub scoring_json: Option<String>,
     pub scoring_hash: Option<String>,
     pub pitch_md: Option<String>,
+    pub target_archetypes: Option<String>,
     pub updated_at: Option<String>,
 }
 
@@ -28,7 +29,7 @@ pub struct ProfileInput {
 #[tauri::command]
 pub async fn db_get_profile(db: State<'_, Db>) -> Result<Option<Profile>, String> {
     sqlx::query_as::<_, Profile>(
-        "SELECT id, full_md, scoring_json, scoring_hash, pitch_md, updated_at FROM profile WHERE id = 1",
+        "SELECT id, full_md, scoring_json, scoring_hash, pitch_md, target_archetypes, updated_at FROM profile WHERE id = 1",
     )
     .fetch_optional(&db.pool)
     .await

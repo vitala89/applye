@@ -1,4 +1,10 @@
-import { AiMode, AiProvider, ExportFormat, SupportedLanguage, GeoScope } from '../types/common.types';
+import {
+  AiMode,
+  AiProvider,
+  ExportFormat,
+  SupportedLanguage,
+  GeoScope,
+} from '../types/common.types';
 
 export interface Settings {
   id: 1;
@@ -12,4 +18,7 @@ export interface Settings {
   uiLanguage: SupportedLanguage;
   defaultDocLanguage: SupportedLanguage;
   geoScope: GeoScope;
+  followupDaysAfterApply?: number;
+  followupDaysAfterInterview?: number;
+  minScoreNotify?: number;
 }

@@ -10,6 +10,11 @@ export interface Job {
   salaryMin?: number;
   blueCardEligible?: boolean;
   hardFilterPassed?: boolean;
+  legitimacyTier?: string;
+  legitimacyNotes?: string;
+  importedFrom?: string;
+  discoverDismissed?: boolean;
+  discoverShownAt?: string;
   createdAt?: string;
 }
 
@@ -23,9 +28,38 @@ export interface ScoringCache {
   dimensionsJson?: string;
   missingKeywordsJson?: string;
   redFlagsJson?: string;
+  beforeYouSubmitJson?: string;
   atsPass?: boolean;
   atsNotes?: string;
   summary?: string;
+  modelUsed?: string;
+  tokensInput?: number;
+  tokensOutput?: number;
+  errorMessage?: string;
+  createdAt?: string;
+}
+
+/** AI-drafted answers to a portal's open-ended questions (cached per job). */
+export interface PortalAnswer {
+  id: number;
+  jobId?: number;
+  profileHash?: string;
+  questionsJson?: string;
+  answersJson?: string;
+  inputHash?: string;
+  modelUsed?: string;
+  tokensInput?: number;
+  tokensOutput?: number;
+  createdAt?: string;
+}
+
+/** Cached rejection-pattern analysis over aggregated application data. */
+export interface PatternAnalysis {
+  id: number;
+  inputHash?: string;
+  analysisJson?: string;
+  recommendationsJson?: string;
+  sampleSize?: number;
   modelUsed?: string;
   tokensInput?: number;
   tokensOutput?: number;

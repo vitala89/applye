@@ -17,6 +17,11 @@ pub struct Job {
     pub salary_min: Option<i64>,
     pub blue_card_eligible: Option<bool>,
     pub hard_filter_passed: Option<bool>,
+    pub legitimacy_tier: Option<String>,
+    pub legitimacy_notes: Option<String>,
+    pub imported_from: Option<String>,
+    pub discover_dismissed: Option<bool>,
+    pub discover_shown_at: Option<String>,
     pub created_at: Option<String>,
 }
 

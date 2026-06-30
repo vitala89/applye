@@ -17,6 +17,9 @@ pub struct Settings {
     pub ui_language: String,
     pub default_doc_language: String,
     pub geo_scope: String,
+    pub followup_days_after_apply: Option<i64>,
+    pub followup_days_after_interview: Option<i64>,
+    pub min_score_notify: Option<f64>,
 }
 
 /// Partial update — only the fields present (non-null) are written; everything

@@ -1,0 +1,94 @@
+<div class="tracker">
+  <header class="tracker__head">
+    <div>
+      <h2 class="tracker__title">{{ t()('tracker.title') }}</h2>
+      <p class="tracker__sub">{{ t()('tracker.subtitle') }}</p>
+    </div>
+    <div class="tracker__export">
+      @if (isGerman()) {
+        <button class="btn-primary" [disabled]="exporting()" (click)="exportPdf()">
+          {{ t()('tracker.export_de') }}
+        </button>
+      }
+      <button
+        [class]="isGerman() ? 'btn-ghost' : 'btn-primary'"
+        [disabled]="exporting()"
+        (click)="exportPdf()"
+      >
+        {{ t()('tracker.export_pdf') }}
+      </button>
+      <button class="btn-ghost" [disabled]="exporting()" (click)="exportCsv()">
+        {{ t()('tracker.export_excel') }}
+      </button>
+    </div>
+  </header>
+
+  <div class="tracker__filters">
+    <select [ngModel]="range()" (ngModelChange)="range.set($event)">
+      <option value="all">{{ t()('tracker.range_all') }}</option>
+      <option value="month">{{ t()('tracker.range_month') }}</option>
+      <option value="3months">{{ t()('tracker.range_3months') }}</option>
+    </select>
+    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+      <option value="">{{ t()('tracker.all_statuses') }}</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ t()('status.' + s) }}</option>
+      }
+    </select>
+  </div>
+
+  @if (exportMsg()) {
+    <p class="tracker__msg">{{ exportMsg() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="tracker__state">{{ t()('common.loading') }}</p>
+  } @else if (!view().length) {
+    <p class="tracker__state">{{ t()('tracker.empty') }}</p>
+  } @else {
+    <table class="tracker__table">
+      <thead>
+        <tr>
+          <th>{{ t()('tracker.col_n') }}</th>
+          <th>{{ t()('tracker.col_date') }}</th>
+          <th>{{ t()('tracker.col_company') }}</th>
+          <th>{{ t()('tracker.col_role') }}</th>
+          <th>{{ t()('tracker.col_location') }}</th>
+          <th>{{ t()('tracker.col_method') }}</th>
+          <th>{{ t()('tracker.col_status') }}</th>
+          <th>{{ t()('tracker.col_update') }}</th>
+          <th>{{ t()('tracker.col_notes') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of view(); track r.id; let i = $index) {
+          <tr>
+            <td class="muted">{{ i + 1 }}</td>
+            <td>{{ r.appliedAt || '·' }}</td>
+            <td class="cell-strong">{{ r.company || '·' }}</td>
+            <td>{{ r.title || '·' }}</td>
+            <td class="muted">{{ r.location || '·' }}</td>
+            <td class="muted">{{ r.method || '·' }}</td>
+            <td>
+              <span class="badge">{{ r.status ? t()('status.' + r.status) : '·' }}</span>
+            </td>
+            <td class="muted">{{ (r.lastUpdate || '').slice(0, 10) || '·' }}</td>
+            <td class="muted notes">{{ r.notes || '·' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <footer class="tracker__summary">
+      <span
+        ><strong>{{ summary().total }}</strong> {{ t()('tracker.total') }}</span
+      >
+      <span
+        ><strong>{{ summary().rate }}%</strong> {{ t()('tracker.response_rate') }}</span
+      >
+      <span
+        ><strong>{{ summary().avg }}</strong> {{ t()('tracker.avg_days') }}</span
+      >
+    </footer>
+  }
+</div>

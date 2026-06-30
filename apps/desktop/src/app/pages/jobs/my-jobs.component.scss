@@ -1,0 +1,186 @@
+.myjobs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.myjobs__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.myjobs__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+}
+.myjobs__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.myjobs__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: 0 var(--space-3);
+  color: var(--text-tertiary);
+}
+.search input {
+  border: none;
+  background: none;
+  padding: var(--space-2) 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  min-width: 220px;
+}
+.myjobs__filters select,
+.minscore {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.minscore {
+  width: 110px;
+}
+
+.myjobs__state {
+  padding: var(--space-9);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.myjobs__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.myjobs__table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  border-bottom: var(--border-width) solid var(--border-default);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.myjobs__table th span {
+  margin-right: var(--space-1);
+}
+.myjobs__table th.is-sorted {
+  color: var(--text-secondary);
+}
+.myjobs__table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.myjobs__row {
+  cursor: pointer;
+}
+.myjobs__row:hover td {
+  background: var(--surface-hover);
+}
+.cell-strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+.muted {
+  color: var(--text-tertiary);
+}
+.score {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-badge);
+  border: var(--border-width) solid var(--border-default);
+}
+.badge--legit[data-tier='green'] {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+.badge--legit[data-tier='yellow'] {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+.badge--legit[data-tier='red'] {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+/* Paste modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 55%, transparent);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: var(--space-6);
+}
+.modal {
+  width: min(640px, 100%);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-7);
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+.modal__hint {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-4);
+}
+.modal textarea {
+  width: 100%;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-4);
+  resize: vertical;
+}
+.modal__error {
+  color: var(--danger);
+  font-size: var(--text-sm);
+  margin-top: var(--space-3);
+}
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

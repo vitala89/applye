@@ -10,6 +10,30 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-30
+
+### Added
+
+- **Navigation restructure (Phase 5).** The sidebar is reorganised into
+  Dashboard, Discover (stub), My Jobs, Pipeline, Interview Prep (stub),
+  Job Tracker, Analytics (stub), and Settings.
+- **My Jobs** (`/jobs`): the full job database as a sortable, filterable,
+  searchable table (Company, Role, Score, Status, Legitimacy, Date Added,
+  Source) over a new read-only query, with a paste-job modal.
+- **Job Detail** (`/jobs/:id`): the existing scoring and 3-pass tailoring
+  wizard, now opened per job (cached score shown, 0 tokens on open), with
+  Add to Pipeline and Mark as Applied actions.
+- **Job Tracker** (`/tracker`): the Agentur fuer Arbeit "Eigenbemuehungen"
+  report. A table over applications + jobs + status history with date-range
+  and status filters, a summary footer (total, response rate, avg days to
+  response), and PDF / Excel(CSV) export.
+
+### Changed
+
+- **Pipeline** now shows only active applications (applied, interview, offer,
+  rejected); saved jobs live in My Jobs. A job enters the board via Add to
+  Pipeline / Mark Applied.
+
 ## [0.5.0] - 2026-06-30
 
 ### Added
@@ -91,7 +115,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/vitala89/applye/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/vitala89/applye/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/vitala89/applye/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/vitala89/applye/compare/v0.3.0...v0.3.1

@@ -1,7 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import {
-  FileText,
+  BarChart3,
+  ClipboardList,
+  Compass,
   KanbanSquare,
   LayoutDashboard,
   LucideAngularModule,
@@ -30,11 +32,13 @@ export class ShellLayoutComponent implements OnInit {
   // Lucide icons — single minimalist line-icon set across the shell nav.
   protected readonly icons = {
     dashboard: LayoutDashboard,
+    discover: Compass,
     profile: User,
     jobs: Search,
     pipeline: KanbanSquare,
     interviewPrep: Target,
-    documents: FileText,
+    tracker: ClipboardList,
+    analytics: BarChart3,
     settings: Settings,
     sun: Sun,
     moon: Moon,

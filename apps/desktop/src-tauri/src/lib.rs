@@ -47,6 +47,8 @@ pub fn run() {
             commands::settings::db_get_settings,
             commands::settings::db_update_settings,
             commands::jobs::db_list_jobs,
+            commands::jobs::db_list_jobs_overview,
+            commands::jobs::db_get_job,
             commands::jobs::db_upsert_job,
             commands::applications::db_list_applications,
             commands::applications::db_upsert_application,

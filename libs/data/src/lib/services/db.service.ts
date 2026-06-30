@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Job, ScoringCache } from '@applye/core';
+import { Job, JobOverview, ScoringCache } from '@applye/core';
 import { Application, ApplicationStatus, PipelineCard } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
@@ -44,6 +44,15 @@ export class DbService {
 
   async jobPaste(jdText: string): Promise<Job> {
     return tauriInvoke<Job>('job_paste', { jdText });
+  }
+
+  /** My Jobs table rows: job columns + latest score + current status. */
+  async listJobsOverview(): Promise<JobOverview[]> {
+    return tauriInvoke<JobOverview[]>('db_list_jobs_overview');
+  }
+
+  async getJob(id: number): Promise<Job | null> {
+    return tauriInvoke<Job | null>('db_get_job', { id });
   }
 
   async scoreCacheGet(jobId: number, profileHash: string): Promise<ScoringCache | null> {

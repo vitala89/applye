@@ -49,6 +49,50 @@ pub async fn db_list_jobs(db: State<'_, Db>) -> Result<Vec<Job>, String> {
         .map_err(|e| format!("db_list_jobs: {e}"))
 }
 
+/// One row per job for the My Jobs table: the job's columns plus its latest
+/// score and current application status (correlated subqueries, 0 tokens).
+/// Read-only; sort/filter/search happen client-side over this small local list.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct JobOverview {
+    pub id: i64,
+    pub company: Option<String>,
+    pub title: Option<String>,
+    pub source: Option<String>,
+    pub location: Option<String>,
+    pub legitimacy_tier: Option<String>,
+    pub created_at: Option<String>,
+    pub score: Option<f64>,
+    pub status: Option<String>,
+}
+
+#[tauri::command]
+pub async fn db_list_jobs_overview(db: State<'_, Db>) -> Result<Vec<JobOverview>, String> {
+    sqlx::query_as::<_, JobOverview>(
+        "SELECT
+           j.id, j.company, j.title, j.source, j.location,
+           j.legitimacy_tier, j.created_at,
+           (SELECT sc.score FROM scoring_cache sc
+              WHERE sc.job_id = j.id ORDER BY sc.id DESC LIMIT 1) AS score,
+           (SELECT a.status FROM applications a
+              WHERE a.job_id = j.id ORDER BY a.id DESC LIMIT 1) AS status
+         FROM jobs j
+         ORDER BY j.created_at DESC, j.id DESC",
+    )
+    .fetch_all(&db.pool)
+    .await
+    .map_err(|e| format!("db_list_jobs_overview: {e}"))
+}
+
+#[tauri::command]
+pub async fn db_get_job(id: i64, db: State<'_, Db>) -> Result<Option<Job>, String> {
+    sqlx::query_as::<_, Job>("SELECT * FROM jobs WHERE id = ?")
+        .bind(id)
+        .fetch_optional(&db.pool)
+        .await
+        .map_err(|e| format!("db_get_job: {e}"))
+}
+
 #[tauri::command]
 pub async fn db_upsert_job(job: JobInput, db: State<'_, Db>) -> Result<Job, String> {
     // jd_hash is the dedupe key (0 tokens). Re-pasting the same JD updates in place.

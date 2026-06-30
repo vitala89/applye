@@ -1,0 +1,141 @@
+<div class="myjobs">
+  <header class="myjobs__bar">
+    <h2 class="myjobs__title">{{ t()('myjobs.title') }}</h2>
+    <div class="myjobs__actions">
+      <button class="btn-primary" (click)="pasteOpen.set(true)">
+        {{ t()('actions.paste_job') }}
+      </button>
+      <button class="btn-ghost" disabled [title]="t()('common.coming_soon')">
+        {{ t()('myjobs.import') }}
+      </button>
+    </div>
+  </header>
+
+  <div class="myjobs__filters">
+    <label class="search">
+      <lucide-icon [img]="icons.search" [size]="16" aria-hidden="true" />
+      <input
+        type="search"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        [placeholder]="t()('myjobs.search')"
+      />
+    </label>
+    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+      <option value="">{{ t()('myjobs.filter_status') }}</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ t()('status.' + s) }}</option>
+      }
+    </select>
+    <select [ngModel]="legitFilter()" (ngModelChange)="legitFilter.set($event)">
+      <option value="">{{ t()('myjobs.filter_legit') }}</option>
+      @for (l of legitimacies; track l) {
+        <option [value]="l">{{ l }}</option>
+      }
+    </select>
+    <input
+      class="minscore"
+      type="number"
+      min="0"
+      max="100"
+      [ngModel]="minScore()"
+      (ngModelChange)="minScore.set($event === '' || $event === null ? null : +$event)"
+      [placeholder]="t()('myjobs.col_score') + ' ≥'"
+    />
+  </div>
+
+  @if (loading()) {
+    <p class="myjobs__state">{{ t()('common.loading') }}</p>
+  } @else if (loadError()) {
+    <p class="myjobs__state">{{ t()('common.error') }}</p>
+  } @else if (!rows().length) {
+    <p class="myjobs__state">{{ t()('myjobs.empty') }}</p>
+  } @else {
+    <table class="myjobs__table">
+      <thead>
+        <tr>
+          @for (
+            c of [
+              { k: 'company', label: 'myjobs.col_company' },
+              { k: 'title', label: 'myjobs.col_role' },
+              { k: 'score', label: 'myjobs.col_score' },
+              { k: 'status', label: 'myjobs.col_status' },
+              { k: 'legitimacyTier', label: 'myjobs.col_legitimacy' },
+              { k: 'createdAt', label: 'myjobs.col_date' },
+              { k: 'source', label: 'myjobs.col_source' },
+            ];
+            track c.k
+          ) {
+            <th (click)="setSort($any(c.k))" [class.is-sorted]="sortKey() === c.k">
+              <span>{{ t()(c.label) }}</span>
+              @if (sortKey() === c.k) {
+                <lucide-icon
+                  [img]="sortDir() === 'asc' ? icons.up : icons.down"
+                  [size]="13"
+                  aria-hidden="true"
+                />
+              }
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of view(); track r.id) {
+          <tr (click)="open(r.id)" class="myjobs__row">
+            <td class="cell-strong">{{ r.company || '·' }}</td>
+            <td>{{ r.title || '·' }}</td>
+            <td>
+              @if (r.score != null) {
+                <span class="score">{{ r.score }}</span>
+              } @else {
+                <span class="muted">{{ t()('myjobs.not_scored') }}</span>
+              }
+            </td>
+            <td>
+              <span class="badge badge--status">{{
+                r.status ? t()('status.' + r.status) : t()('myjobs.no_status')
+              }}</span>
+            </td>
+            <td>
+              <span class="badge badge--legit" [attr.data-tier]="r.legitimacyTier || 'green'">{{
+                r.legitimacyTier || 'green'
+              }}</span>
+            </td>
+            <td class="muted">{{ (r.createdAt || '').slice(0, 10) }}</td>
+            <td class="muted">{{ r.source || '·' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (pasteOpen()) {
+  <div class="modal-backdrop" (click)="pasteOpen.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>{{ t()('myjobs.paste_title') }}</h3>
+      <p class="modal__hint">{{ t()('myjobs.paste_hint') }}</p>
+      <textarea
+        rows="12"
+        [ngModel]="pasteText()"
+        (ngModelChange)="pasteText.set($event)"
+        [placeholder]="t()('myjobs.paste_title')"
+      ></textarea>
+      @if (pasteError()) {
+        <p class="modal__error">{{ pasteError() }}</p>
+      }
+      <div class="modal__actions">
+        <button class="btn-ghost" (click)="pasteOpen.set(false)">
+          {{ t()('actions.cancel') }}
+        </button>
+        <button
+          class="btn-primary"
+          [disabled]="pasteBusy() || !pasteText().trim()"
+          (click)="submitPaste()"
+        >
+          {{ pasteBusy() ? t()('common.loading') : t()('myjobs.paste_submit') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

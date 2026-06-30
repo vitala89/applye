@@ -39,6 +39,19 @@ export interface ScoringCache {
   createdAt?: string;
 }
 
+/** One row in the My Jobs table: job columns + latest score + current status. */
+export interface JobOverview {
+  id: number;
+  company?: string;
+  title?: string;
+  source?: string;
+  location?: string;
+  legitimacyTier?: string;
+  createdAt?: string;
+  score?: number;
+  status?: string;
+}
+
 /** AI-drafted answers to a portal's open-ended questions (cached per job). */
 export interface PortalAnswer {
   id: number;

@@ -19,6 +19,14 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'jobs',
+    loadComponent: () => import('./pages/jobs/my-jobs.component').then((m) => m.MyJobsComponent),
+  },
+  {
+    path: 'jobs/new',
+    loadComponent: () => import('./pages/jobs/jobs.component').then((m) => m.JobsComponent),
+  },
+  {
+    path: 'jobs/:id',
     loadComponent: () => import('./pages/jobs/jobs.component').then((m) => m.JobsComponent),
   },
   {

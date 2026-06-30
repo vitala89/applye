@@ -52,6 +52,19 @@ export interface JobOverview {
   status?: string;
 }
 
+/** One row of the Job Tracker (applications + jobs + last status change). */
+export interface TrackerRow {
+  id: number;
+  appliedAt?: string;
+  company?: string;
+  title?: string;
+  location?: string;
+  method?: string;
+  status?: string;
+  notes?: string;
+  lastUpdate?: string;
+}
+
 /** AI-drafted answers to a portal's open-ended questions (cached per job). */
 export interface PortalAnswer {
   id: number;

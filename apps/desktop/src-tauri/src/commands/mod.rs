@@ -8,6 +8,7 @@ pub mod profile;
 pub mod scoring;
 pub mod settings;
 pub mod tailoring;
+pub mod tracker;
 
 use tauri::State;
 

@@ -102,10 +102,23 @@ interface PassResult {
                   @if (hasArchetypes() && archetypeMatch() === false) {
                     <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>
                   }
+                  @if (j.legitimacyTier === 'yellow') {
+                    <span class="badge badge--warn">{{ t()('jobs.legitimacy_yellow') }}</span>
+                  }
+                  @if (j.legitimacyTier === 'red') {
+                    <span class="badge badge--danger">{{ t()('jobs.legitimacy_red') }}</span>
+                  }
                 </div>
               </div>
               @if (!hasArchetypes()) {
                 <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
+              }
+              @if (legitimacyNotes().length) {
+                <ul class="legitimacy-notes">
+                  @for (n of legitimacyNotes(); track n) {
+                    <li>{{ n }}</li>
+                  }
+                </ul>
               }
               <div class="row row--mt">
                 @if (!profile()?.scoringJson) {
@@ -219,6 +232,20 @@ interface PassResult {
               <p class="muted" style="margin-top: var(--space-2)">{{ c.atsNotes }}</p>
             }
           </div>
+
+          <!-- Legitimacy warning — informs, never blocks. User can still tailor below. -->
+          @if (job()?.legitimacyTier === 'red') {
+            <div class="card card--danger">
+              <p class="card__title">{{ t()('jobs.legitimacy_red_banner_title') }}</p>
+              @if (legitimacyNotes().length) {
+                <ul class="red-flags">
+                  @for (n of legitimacyNotes(); track n) {
+                    <li class="red-flag">{{ n }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          }
 
           <!-- Tailoring wizard -->
           @if (tailorResults().length === 0 && !tailoring()) {
@@ -636,6 +663,19 @@ interface PassResult {
       .badge--warn {
         background: color-mix(in srgb, var(--warning, #fb923c) 15%, transparent);
         color: var(--warning, #fb923c);
+      }
+      .badge--danger {
+        background: color-mix(in srgb, var(--danger, #f87171) 15%, transparent);
+        color: var(--danger, #f87171);
+      }
+      .legitimacy-notes {
+        margin: var(--space-2) 0 0;
+        padding-left: var(--space-4);
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+      }
+      .legitimacy-notes li {
+        margin-bottom: var(--space-1);
       }
 
       /* CTA / wizard entry */
@@ -1070,6 +1110,14 @@ export class JobsComponent implements OnInit {
   redFlags(c: ScoringCache): string[] {
     try {
       return JSON.parse(c.redFlagsJson ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  legitimacyNotes(): string[] {
+    try {
+      return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
     } catch {
       return [];
     }

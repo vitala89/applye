@@ -5,6 +5,7 @@
 pub mod applications;
 pub mod archetypes;
 pub mod jobs;
+pub mod legitimacy;
 pub mod profile;
 pub mod scoring;
 pub mod settings;

@@ -97,9 +97,13 @@
               }}</span>
             </td>
             <td>
-              <span class="badge badge--legit" [attr.data-tier]="r.legitimacyTier || 'green'">{{
-                r.legitimacyTier || 'green'
-              }}</span>
+              @if ((r.legitimacyTier || 'green') !== 'green') {
+                <span class="badge badge--legit" [attr.data-tier]="r.legitimacyTier">{{
+                  r.legitimacyTier
+                }}</span>
+              } @else {
+                <span class="muted">·</span>
+              }
             </td>
             <td class="muted">{{ (r.createdAt || '').slice(0, 10) }}</td>
             <td class="muted">{{ r.source || '·' }}</td>

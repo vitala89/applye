@@ -5,10 +5,13 @@ type TranslationMap = Record<string, unknown>;
 const en: TranslationMap = {
   nav: {
     dashboard: 'Dashboard',
+    discover: 'Discover',
     profile: 'Profile',
-    jobs: 'Jobs',
+    jobs: 'My Jobs',
     pipeline: 'Pipeline',
     interview_prep: 'Interview Prep',
+    tracker: 'Job Tracker',
+    analytics: 'Analytics',
     documents: 'Documents',
     settings: 'Settings',
   },
@@ -121,10 +124,13 @@ const en: TranslationMap = {
 const de: TranslationMap = {
   nav: {
     dashboard: 'Übersicht',
+    discover: 'Entdecken',
     profile: 'Profil',
-    jobs: 'Stellen',
+    jobs: 'Meine Stellen',
     pipeline: 'Pipeline',
     interview_prep: 'Interview-Vorbereitung',
+    tracker: 'Bewerbungs-Tracker',
+    analytics: 'Statistik',
     documents: 'Dokumente',
     settings: 'Einstellungen',
   },
@@ -244,8 +250,11 @@ function stub(base: TranslationMap, overrides: Partial<TranslationMap>): Transla
 const ru: TranslationMap = stub(en, {
   nav: {
     dashboard: 'Обзор',
+    discover: 'Найти',
     profile: 'Профиль',
-    jobs: 'Вакансии',
+    jobs: 'Мои вакансии',
+    tracker: 'Трекер заявок',
+    analytics: 'Аналитика',
     pipeline: 'Пайплайн',
     interview_prep: 'Подготовка к интервью',
     documents: 'Документы',
@@ -278,8 +287,11 @@ const ru: TranslationMap = stub(en, {
 const es: TranslationMap = stub(en, {
   nav: {
     dashboard: 'Panel',
+    discover: 'Descubrir',
     profile: 'Perfil',
-    jobs: 'Empleos',
+    jobs: 'Mis empleos',
+    tracker: 'Seguimiento',
+    analytics: 'Analíticas',
     pipeline: 'Pipeline',
     interview_prep: 'Preparación',
     documents: 'Documentos',
@@ -312,8 +324,11 @@ const es: TranslationMap = stub(en, {
 const fr: TranslationMap = stub(en, {
   nav: {
     dashboard: 'Tableau de bord',
+    discover: 'Découvrir',
     profile: 'Profil',
-    jobs: 'Offres',
+    jobs: 'Mes offres',
+    tracker: 'Suivi',
+    analytics: 'Analytique',
     pipeline: 'Pipeline',
     interview_prep: 'Préparation',
     documents: 'Documents',
@@ -346,8 +361,11 @@ const fr: TranslationMap = stub(en, {
 const uk: TranslationMap = stub(en, {
   nav: {
     dashboard: 'Огляд',
+    discover: 'Огляд вакансій',
     profile: 'Профіль',
-    jobs: 'Вакансії',
+    jobs: 'Мої вакансії',
+    tracker: 'Трекер заявок',
+    analytics: 'Аналітика',
     pipeline: 'Конвеєр',
     interview_prep: "Підготовка до інтерв'ю",
     documents: 'Документи',

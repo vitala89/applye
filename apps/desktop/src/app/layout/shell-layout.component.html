@@ -15,9 +15,9 @@
         />
         <span class="nav-item__label">{{ t()('nav.dashboard') }}</span>
       </a>
-      <a class="nav-item" routerLink="/profile" routerLinkActive="nav-item--active">
-        <lucide-icon [img]="icons.profile" class="nav-item__icon" [size]="18" aria-hidden="true" />
-        <span class="nav-item__label">{{ t()('nav.profile') }}</span>
+      <a class="nav-item" routerLink="/discover" routerLinkActive="nav-item--active">
+        <lucide-icon [img]="icons.discover" class="nav-item__icon" [size]="18" aria-hidden="true" />
+        <span class="nav-item__label">{{ t()('nav.discover') }}</span>
       </a>
       <a class="nav-item" routerLink="/jobs" routerLinkActive="nav-item--active">
         <lucide-icon [img]="icons.jobs" class="nav-item__icon" [size]="18" aria-hidden="true" />
@@ -36,14 +36,18 @@
         />
         <span class="nav-item__label">{{ t()('nav.interview_prep') }}</span>
       </a>
-      <a class="nav-item" routerLink="/documents" routerLinkActive="nav-item--active">
+      <a class="nav-item" routerLink="/tracker" routerLinkActive="nav-item--active">
+        <lucide-icon [img]="icons.tracker" class="nav-item__icon" [size]="18" aria-hidden="true" />
+        <span class="nav-item__label">{{ t()('nav.tracker') }}</span>
+      </a>
+      <a class="nav-item" routerLink="/analytics" routerLinkActive="nav-item--active">
         <lucide-icon
-          [img]="icons.documents"
+          [img]="icons.analytics"
           class="nav-item__icon"
           [size]="18"
           aria-hidden="true"
         />
-        <span class="nav-item__label">{{ t()('nav.documents') }}</span>
+        <span class="nav-item__label">{{ t()('nav.analytics') }}</span>
       </a>
       <a class="nav-item" routerLink="/settings" routerLinkActive="nav-item--active">
         <lucide-icon [img]="icons.settings" class="nav-item__icon" [size]="18" aria-hidden="true" />
@@ -52,6 +56,14 @@
     </nav>
 
     <div class="sidebar__footer">
+      <a
+        class="nav-item nav-item--secondary"
+        routerLink="/profile"
+        routerLinkActive="nav-item--active"
+      >
+        <lucide-icon [img]="icons.profile" class="nav-item__icon" [size]="18" aria-hidden="true" />
+        <span class="nav-item__label">{{ t()('nav.profile') }}</span>
+      </a>
       <div class="ai-indicator">
         <span class="ai-indicator__dot"></span>
         <span class="ai-indicator__label">{{ t()('ai.indicator') }}</span>
@@ -74,7 +86,11 @@
             theme() === 'dark' ? t()('shell.theme_to_light') : t()('shell.theme_to_dark')
           "
         >
-          <lucide-icon [img]="theme() === 'dark' ? icons.sun : icons.moon" [size]="18" />
+          <lucide-icon
+            [img]="theme() === 'dark' ? icons.sun : icons.moon"
+            [size]="18"
+            aria-hidden="true"
+          />
         </button>
         <button class="btn-primary" disabled [title]="t()('common.coming_soon')">
           {{ t()('actions.paste_job') }}
@@ -84,7 +100,7 @@
 
     <!-- Page content -->
     <main class="content">
-      <ng-content />
+      <router-outlet />
     </main>
   </div>
 </div>

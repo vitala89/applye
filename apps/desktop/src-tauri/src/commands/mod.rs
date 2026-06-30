@@ -3,6 +3,7 @@
 // All SQL lives here in Rust; the Angular frontend only calls typed invoke()s.
 
 pub mod applications;
+pub mod archetypes;
 pub mod jobs;
 pub mod profile;
 pub mod scoring;

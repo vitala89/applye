@@ -37,6 +37,43 @@ import { TranslateService } from '@applye/i18n';
           </div>
         </header>
 
+        <!-- Target roles (archetypes) -->
+        <section class="section">
+          <h3 class="eyebrow">{{ t()('profile.section_archetypes') }}</h3>
+          <p class="muted">{{ t()('profile.archetypes_hint') }}</p>
+          @if (archetypes().length === 0) {
+            <p class="status status--warn">{{ t()('profile.archetypes_empty_warning') }}</p>
+          }
+          @if (archetypes().length > 0) {
+            <div class="archetype-list">
+              @for (a of archetypes(); track $index) {
+                <div class="archetype-row">
+                  <input
+                    class="archetype-input"
+                    type="text"
+                    [ngModel]="a"
+                    (ngModelChange)="updateArchetype($index, $event)"
+                    [placeholder]="t()('profile.archetype_placeholder')"
+                  />
+                  <button
+                    class="btn-icon"
+                    type="button"
+                    (click)="removeArchetype($index)"
+                    [attr.aria-label]="t()('profile.remove_archetype')"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+            </div>
+          }
+          @if (archetypes().length < 5) {
+            <button class="btn" type="button" (click)="addArchetype()">
+              {{ t()('profile.add_archetype') }}
+            </button>
+          }
+        </section>
+
         <!-- Editor -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
@@ -269,6 +306,53 @@ import { TranslateService } from '@applye/i18n';
       .status--error {
         color: var(--danger);
       }
+      .status--warn {
+        color: var(--warning, #fb923c);
+      }
+
+      .archetype-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .archetype-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .archetype-input {
+        flex: 1;
+        padding: var(--space-2) var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+      }
+      .archetype-input:focus {
+        outline: none;
+        border-color: var(--indigo-500, #6366f1);
+      }
+      .btn-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        flex-shrink: 0;
+        font-size: var(--text-lg);
+        line-height: 1;
+        color: var(--text-tertiary);
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+      }
+      .btn-icon:hover {
+        color: var(--danger);
+        filter: brightness(1.1);
+      }
 
       .btn {
         padding: var(--space-2) var(--space-4);
@@ -300,6 +384,7 @@ export class ProfileComponent implements OnInit {
   protected readonly t = this.i18n.t;
 
   readonly fullMd = signal('');
+  readonly archetypes = signal<string[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
 
@@ -315,7 +400,14 @@ export class ProfileComponent implements OnInit {
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
 
-  readonly dirty = computed(() => this.fullMd() !== (this.profile()?.fullMd ?? ''));
+  readonly archetypesDirty = computed(
+    () =>
+      JSON.stringify(this.archetypes()) !==
+      JSON.stringify(this.parseArchetypes(this.profile()?.targetArchetypes)),
+  );
+  readonly dirty = computed(
+    () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
+  );
 
   async ngOnInit(): Promise<void> {
     try {
@@ -323,6 +415,7 @@ export class ProfileComponent implements OnInit {
       this.profile.set(p);
       this.settings.set(s);
       this.fullMd.set(p?.fullMd ?? '');
+      this.archetypes.set(this.parseArchetypes(p?.targetArchetypes));
       if (p?.updatedAt) {
         this.saveStatus.set(`Last saved ${p.updatedAt}`);
       }
@@ -332,6 +425,28 @@ export class ProfileComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private parseArchetypes(json: string | null | undefined): string[] {
+    try {
+      const arr = JSON.parse(json || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+
+  addArchetype(): void {
+    if (this.archetypes().length >= 5) return;
+    this.archetypes.update((a) => [...a, '']);
+  }
+
+  removeArchetype(index: number): void {
+    this.archetypes.update((a) => a.filter((_, i) => i !== index));
+  }
+
+  updateArchetype(index: number, value: string): void {
+    this.archetypes.update((a) => a.map((v, i) => (i === index ? value : v)));
   }
 
   async save(): Promise<void> {
@@ -345,8 +460,10 @@ export class ProfileComponent implements OnInit {
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: p?.pitchMd,
+        targetArchetypes: JSON.stringify(this.archetypes().filter((a) => a.trim())),
       });
       this.profile.set(saved);
+      this.archetypes.set(this.parseArchetypes(saved.targetArchetypes));
       this.saveStatus.set(`Saved ${saved.updatedAt ?? 'now'}`);
     } catch (e) {
       this.saveStatus.set(`Save failed: ${String(e)}`);
@@ -390,6 +507,7 @@ export class ProfileComponent implements OnInit {
         scoringJson: res.text,
         scoringHash: hash,
         pitchMd: p?.pitchMd,
+        targetArchetypes: p?.targetArchetypes,
       });
       this.profile.set(saved);
       this.scoreStatus.set(`Generated — ${res.tokensInput} in / ${res.tokensOutput} out`);
@@ -440,6 +558,7 @@ export class ProfileComponent implements OnInit {
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: res.text,
+        targetArchetypes: p?.targetArchetypes,
       });
       this.profile.set(saved);
       this.pitchStatus.set(`Generated — ${res.tokensInput} in / ${res.tokensOutput} out`);

@@ -15,13 +15,24 @@ export class DbService {
   }
 
   async upsertProfile(
-    profile: Partial<Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd'>>,
+    profile: Partial<
+      Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'targetArchetypes'>
+    >,
   ): Promise<Profile> {
     return tauriInvoke<Profile>('db_upsert_profile', { profile });
   }
 
   hashText(text: string): Promise<string> {
     return tauriInvoke<string>('hash_text', { text });
+  }
+
+  /** Layer-1 archetype overlap (0 tokens). True = on-archetype or no archetypes defined. */
+  checkArchetypeMatch(
+    title: string | undefined,
+    jdText: string,
+    archetypesJson: string | undefined,
+  ): Promise<boolean> {
+    return tauriInvoke<boolean>('check_archetype_match', { title, jdText, archetypesJson });
   }
 
   // --- Settings ---

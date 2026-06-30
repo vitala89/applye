@@ -41,6 +41,7 @@ pub fn run() {
             commands::profile::db_get_profile,
             commands::profile::db_upsert_profile,
             commands::profile::hash_text,
+            commands::archetypes::check_archetype_match,
             commands::scoring::job_paste,
             commands::scoring::score_cache_get,
             commands::scoring::score_cache_save,

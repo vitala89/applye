@@ -1,8 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArrowRight, Check, ChevronRight, LucideAngularModule, Search, X } from 'lucide-angular';
 import { AiService, DbService } from '@applye/data';
-import { Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
+import { Application, Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 
 interface PassResult {
@@ -62,6 +63,22 @@ interface PassResult {
 
       <!-- Filter result -->
       @if (job(); as j) {
+        <div class="detail-actions">
+          @if (!application()) {
+            <button class="btn-ghost" [disabled]="actionBusy()" (click)="addToPipeline()">
+              {{ t()('jobs.add_to_pipeline') }}
+            </button>
+          }
+          <button class="btn-primary" [disabled]="actionBusy()" (click)="markApplied()">
+            {{ t()('jobs.mark_applied') }}
+          </button>
+          <button class="btn-ghost" disabled [title]="t()('common.coming_soon')">
+            {{ t()('jobs.archive') }}
+          </button>
+          @if (actionMsg()) {
+            <span class="detail-actions__msg">{{ actionMsg() }}</span>
+          }
+        </div>
         <section class="section">
           @if (!j.hardFilterPassed) {
             <div class="card card--danger">
@@ -346,6 +363,16 @@ interface PassResult {
   `,
   styles: [
     `
+      .detail-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-5);
+      }
+      .detail-actions__msg {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
       .jobs {
         display: flex;
         flex-direction: column;
@@ -766,6 +793,7 @@ export class JobsComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
+  private readonly route = inject(ActivatedRoute);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -782,6 +810,11 @@ export class JobsComponent implements OnInit {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
+
+  // Job Detail: the application row (if this job is on the board) + action state.
+  readonly application = signal<Application | null>(null);
+  readonly actionBusy = signal(false);
+  readonly actionMsg = signal('');
 
   // Tailoring wizard
   readonly tailorResults = signal<PassResult[]>([]);
@@ -808,6 +841,72 @@ export class JobsComponent implements OnInit {
       this.settings.set(s);
     } catch {
       // non-fatal — user can still paste
+    }
+
+    // Job Detail mode: /jobs/:id loads the job and its CACHED score only.
+    // No AI is called on open (0 tokens); the user clicks Score to spend tokens.
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
+      await this.loadJob(+idParam);
+    }
+  }
+
+  private async loadJob(id: number): Promise<void> {
+    try {
+      const job = await this.db.getJob(id);
+      if (!job) return;
+      this.job.set(job);
+      this.jdText.set(job.jdText ?? '');
+      const p = this.profile();
+      if (p?.scoringHash) {
+        const cached = await this.db.scoreCacheGet(id, p.scoringHash);
+        if (cached) {
+          this.cache.set(cached);
+          this.fromCache.set(true);
+        }
+      }
+      const apps = await this.db.listApplications();
+      this.application.set(apps.find((a) => a.jobId === id) ?? null);
+    } catch {
+      // non-fatal — detail still renders, user can re-score
+    }
+  }
+
+  /** Add to Pipeline: create an 'applied' application so it shows on the board. */
+  async addToPipeline(): Promise<void> {
+    await this.setApplied(false);
+  }
+
+  /** Mark as Applied: same, plus the applied date and an auto follow-up date. */
+  async markApplied(): Promise<void> {
+    await this.setApplied(true);
+  }
+
+  private async setApplied(withDates: boolean): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.actionBusy()) return;
+    this.actionBusy.set(true);
+    this.actionMsg.set('');
+    try {
+      const existing = this.application();
+      const patch: Partial<Application> & { jobId: number; status: 'applied' } = {
+        jobId: j.id,
+        status: 'applied',
+      };
+      if (existing?.id) patch.id = existing.id;
+      if (withDates) {
+        const today = new Date().toISOString().slice(0, 10);
+        const days = this.settings()?.followupDaysAfterApply ?? 7;
+        patch.appliedAt = today;
+        patch.followUpAt = new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+      }
+      const app = await this.db.upsertApplication(patch);
+      this.application.set(app);
+      this.actionMsg.set(this.t()(withDates ? 'jobs.applied_ok' : 'jobs.pipeline_ok'));
+    } catch (e) {
+      this.actionMsg.set(String(e));
+    } finally {
+      this.actionBusy.set(false);
     }
   }
 

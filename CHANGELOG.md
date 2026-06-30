@@ -10,6 +10,23 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-01
+
+### Added
+
+- **Legitimacy check (Phase 6.2).** Deterministic, 0-token Rust pattern
+  matching runs in the paste pipeline after the hard filter, before any AI
+  scoring: green/yellow/red tier plus human-readable notes, stored on the
+  job row. Yellow triggers: no salary mentioned, "wear many hats" with no
+  team size, posting over 90 days old, vague "other duties as
+  assigned/required" scope. Red triggers: no company name (or conflicting
+  company mentions), application directed to a personal email domain
+  (gmail/hotmail/yahoo/outlook.com), an implausibly wide salary range, or
+  the same JD template already saved under a different company.
+  Augmentation, not a gate — a red job can still be scored and tailored if
+  the user chooses; My Jobs shows a badge (none/amber/red) and Job Detail
+  shows the triggered notes plus a non-blocking warning banner for red.
+
 ## [0.6.0] - 2026-06-30
 
 ### Added
@@ -115,7 +132,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/vitala89/applye/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/vitala89/applye/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/vitala89/applye/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/vitala89/applye/compare/v0.3.1...v0.4.0

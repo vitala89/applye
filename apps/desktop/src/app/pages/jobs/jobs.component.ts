@@ -97,8 +97,16 @@ interface PassResult {
                   }
                   <span class="job-meta__hash">{{ (j.jdHash ?? '').slice(0, 12) }}</span>
                 </div>
-                <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
+                <div class="job-meta__badges">
+                  <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
+                  @if (hasArchetypes() && archetypeMatch() === false) {
+                    <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>
+                  }
+                </div>
               </div>
+              @if (!hasArchetypes()) {
+                <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
+              }
               <div class="row row--mt">
                 @if (!profile()?.scoringJson) {
                   <p class="status status--error">{{ t()('jobs.profile_needed') }}</p>
@@ -467,6 +475,12 @@ interface PassResult {
         font-family: var(--font-mono);
         color: var(--text-quaternary, var(--text-tertiary));
       }
+      .job-meta__badges {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-shrink: 0;
+      }
 
       /* Gauge */
       .gauge {
@@ -618,6 +632,10 @@ interface PassResult {
       .badge--cache {
         background: color-mix(in srgb, var(--indigo-500, #6366f1) 15%, transparent);
         color: var(--indigo-500, #6366f1);
+      }
+      .badge--warn {
+        background: color-mix(in srgb, var(--warning, #fb923c) 15%, transparent);
+        color: var(--warning, #fb923c);
       }
 
       /* CTA / wizard entry */
@@ -810,6 +828,7 @@ export class JobsComponent implements OnInit {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
+  readonly archetypeMatch = signal<boolean | null>(null);
 
   // Job Detail: the application row (if this job is on the board) + action state.
   readonly application = signal<Application | null>(null);
@@ -916,6 +935,7 @@ export class JobsComponent implements OnInit {
     this.parseError.set(false);
     this.job.set(null);
     this.cache.set(null);
+    this.archetypeMatch.set(null);
     try {
       const j = await this.db.jobPaste(this.jdText());
       this.job.set(j);
@@ -933,6 +953,13 @@ export class JobsComponent implements OnInit {
             this.scoreStatus.set('Loaded from cache — 0 tokens used.');
           }
         }
+        // Layer-1 archetype overlap check (0 tokens, deterministic) — warn only, never blocks.
+        const match = await this.db.checkArchetypeMatch(
+          j.title ?? undefined,
+          j.jdText ?? '',
+          p?.targetArchetypes ?? undefined,
+        );
+        this.archetypeMatch.set(match);
       }
     } catch (e) {
       this.parseStatus.set(`Failed: ${String(e)}`);
@@ -1050,6 +1077,15 @@ export class JobsComponent implements OnInit {
 
   starRating(score: number): string {
     return ((score / 100) * 4 + 1).toFixed(1);
+  }
+
+  hasArchetypes(): boolean {
+    try {
+      const arr = JSON.parse(this.profile()?.targetArchetypes || '[]');
+      return Array.isArray(arr) && arr.length > 0;
+    } catch {
+      return false;
+    }
   }
 
   // ── Tailoring wizard ────────────────────────────────────────────────────────

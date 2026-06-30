@@ -66,6 +66,7 @@ export class DocsLayout {
         { text: 'Privacy & transparency', to: '/docs/privacy' },
         { text: 'Source legality', to: '/docs/legality' },
         { text: 'Status & roadmap', to: '/docs/status' },
+        { text: 'Changelog', to: '/changelog' },
       ],
     },
   ];

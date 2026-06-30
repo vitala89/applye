@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { Landing } from './landing';
 import { Blog } from './blog';
 import { Methodology } from './methodology';
+import { Changelog } from './changelog';
 import { DocsLayout } from './docs/docs-layout';
 
 export const appRoutes: Route[] = [
@@ -72,6 +73,7 @@ export const appRoutes: Route[] = [
       },
     ],
   },
+  { path: 'changelog', component: Changelog, title: 'Applye Changelog' },
   { path: 'blog', component: Blog, title: 'Applye Blog' },
   { path: '**', redirectTo: '' },
 ];

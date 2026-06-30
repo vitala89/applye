@@ -1,0 +1,52 @@
+<div class="clog shell shell--narrow">
+  <header class="clog__head">
+    <p class="applye-eyebrow">Changelog</p>
+    <h1 class="clog__h1">What changed, and when.</h1>
+    <p class="clog__lede">
+      Every tagged release, reconstructed from the git history. Applye is pre-1.0, so it follows
+      <code>0.x</code> versioning. This page reads the repository's
+      <a [href]="repo + '/blob/main/CHANGELOG.md'" target="_blank" rel="noopener">CHANGELOG.md</a>
+      directly, so it never drifts.
+    </p>
+    <p>
+      <a class="btn btn--ghost" [href]="releasesUrl" target="_blank" rel="noopener"
+        >GitHub Releases</a
+      >
+    </p>
+  </header>
+
+  @switch (status()) { @case ('loading') {
+  <p class="clog__state">Loading the changelog…</p>
+  } @case ('error') {
+  <p class="clog__state">
+    Could not load the changelog. Read it on
+    <a [href]="repo + '/blob/main/CHANGELOG.md'" target="_blank" rel="noopener">GitHub</a>.
+  </p>
+  } @case ('ready') {
+  <div class="clog__list">
+    @for (r of releases(); track r.heading) {
+    <section class="clog__rel">
+      <div class="clog__relhead">
+        @if (r.link) {
+        <a class="clog__ver" [href]="r.link" target="_blank" rel="noopener">{{ r.heading }}</a>
+        } @else {
+        <span class="clog__ver">{{ r.heading }}</span>
+        } @if (r.date) {
+        <time class="clog__date">{{ r.date }}</time>
+        } @else {
+        <span class="clog__badge">unreleased</span>
+        }
+      </div>
+      @for (s of r.sections; track s.name) {
+      <p class="clog__section">{{ s.name }}</p>
+      <ul class="clog__items">
+        @for (it of s.items; track it) {
+        <li [innerHTML]="it"></li>
+        }
+      </ul>
+      }
+    </section>
+    }
+  </div>
+  } }
+</div>

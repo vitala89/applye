@@ -19,6 +19,11 @@
           {
             "glob": "**/*",
             "input": "apps/web/public"
+          },
+          {
+            "glob": "CHANGELOG.md",
+            "input": ".",
+            "output": "."
           }
         ],
         "styles": ["libs/ui/tokens.css", "apps/web/src/styles.scss"]

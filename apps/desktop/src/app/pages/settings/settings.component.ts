@@ -15,6 +15,16 @@ const CLAUDE_MODELS = [
   'claude-haiku-4-5',
 ];
 
+// Current DeepSeek model IDs. Verified against api-docs.deepseek.com (2026-06):
+// v4-pro for quality, v4-flash for the economy tier. OpenAI-compatible API.
+const DEEPSEEK_MODELS = ['deepseek-v4-pro', 'deepseek-v4-flash'];
+
+// Per-provider default (quality) and economy model picks.
+const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = {
+  claude: { default: 'claude-opus-4-8', economy: 'claude-haiku-4-5' },
+  deepseek: { default: 'deepseek-v4-pro', economy: 'deepseek-v4-flash' },
+};
+
 /**
  * Phase 2 Settings — the first screen that touches AI. Wires the existing
  * db_get/update_settings + the OS-keychain commands, and proves the end-to-end
@@ -64,10 +74,22 @@ const CLAUDE_MODELS = [
               [ngModelOptions]="{ standalone: true }"
             >
               <option value="claude">Claude (Anthropic)</option>
+              <option value="deepseek">DeepSeek</option>
               <option value="openai" disabled>OpenAI (coming soon)</option>
               <option value="gemini" disabled>Gemini (coming soon)</option>
             </select>
           </label>
+
+          @if (s.provider === 'deepseek') {
+            <p class="disclosure" role="note">
+              <strong>Privacy note:</strong> DeepSeek is a China-based cloud provider. In API mode
+              the job description and your profile text are sent to DeepSeek's servers to be
+              processed, the same as any cloud API. Your API key is stored in the OS keychain and
+              never written to the local database or logs. If you would rather keep everything on
+              device, use a different provider. AI is always opt-in: nothing is sent until you
+              trigger an action.
+            </p>
+          }
 
           <div class="row">
             <label class="field">
@@ -291,6 +313,19 @@ const CLAUDE_MODELS = [
         font-size: var(--text-xs);
         color: var(--text-secondary);
       }
+      .disclosure {
+        font-size: var(--text-sm);
+        line-height: var(--leading-relaxed);
+        color: var(--text-secondary);
+        background: var(--warning-tint);
+        border: var(--border-width) solid color-mix(in srgb, var(--warning) 30%, transparent);
+        border-radius: var(--radius-input);
+        padding: var(--space-4) var(--space-5);
+        margin: 0;
+      }
+      .disclosure strong {
+        color: var(--text-primary);
+      }
       input,
       select {
         font-family: var(--font-sans);
@@ -389,7 +424,11 @@ export class SettingsComponent implements OnInit {
   protected readonly icons = { stored: Check };
 
   readonly languages = LANGUAGES;
-  readonly models = CLAUDE_MODELS;
+
+  /** Model list for the currently selected provider. */
+  get models(): string[] {
+    return this.settings()?.provider === 'deepseek' ? DEEPSEEK_MODELS : CLAUDE_MODELS;
+  }
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly status = signal('');
@@ -426,6 +465,14 @@ export class SettingsComponent implements OnInit {
 
   async onProviderChange(provider: Settings['provider']): Promise<void> {
     this.patch('provider', provider);
+    // Reset model picks to the new provider's defaults when the current ones
+    // do not belong to it (e.g. switching claude <-> deepseek).
+    const d = PROVIDER_DEFAULTS[provider];
+    const s = this.settings();
+    if (d && s && !this.models.includes(s.defaultModel)) {
+      this.patch('defaultModel', d.default);
+      this.patch('economyModel', d.economy);
+    }
     this.keyStored.set(await this.keys.hasProviderKey(provider));
   }
 

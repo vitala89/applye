@@ -224,6 +224,34 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
           </label>
         </section>
 
+        <!-- Follow-up reminders -->
+        <section class="section">
+          <h3 class="eyebrow">{{ t()('settings.followup_section') }}</h3>
+          <p class="muted">{{ t()('settings.followup_hint') }}</p>
+          <div class="row">
+            <label class="field">
+              <span class="cap">{{ t()('settings.followup_apply_label') }}</span>
+              <input
+                type="number"
+                min="1"
+                [ngModel]="s.followupDaysAfterApply"
+                (ngModelChange)="patch('followupDaysAfterApply', $event)"
+                [ngModelOptions]="{ standalone: true }"
+              />
+            </label>
+            <label class="field">
+              <span class="cap">{{ t()('settings.followup_interview_label') }}</span>
+              <input
+                type="number"
+                min="1"
+                [ngModel]="s.followupDaysAfterInterview"
+                (ngModelChange)="patch('followupDaysAfterInterview', $event)"
+                [ngModelOptions]="{ standalone: true }"
+              />
+            </label>
+          </div>
+        </section>
+
         <!-- Test connection -->
         <section class="section">
           <h3 class="eyebrow">Test connection</h3>

@@ -10,6 +10,24 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-01
+
+### Added
+
+- **Follow-up dates + overdue badges (Phase 6.6).** Moving an application
+  into `applied` or `interview` (via kanban drag or "Mark as Applied") now
+  (re)computes `follow_up_at` deterministically in SQL from the settings
+  cadence (`followup_days_after_apply` / `followup_days_after_interview`,
+  default 7/5 days) — 0 AI tokens, computed in the same transaction as the
+  `status_history` write. Terminal statuses (`offer`/`rejected`) leave
+  `follow_up_at` untouched. A manually-edited follow-up date is never
+  silently recomputed — only a fresh status transition touches it.
+- Pipeline kanban cards show an amber "Overdue" badge once `follow_up_at`
+  has passed, computed in the same SQL query as the rest of the card (no
+  extra round trip).
+- Settings now exposes both cadence values ("Days after applying" / "Days
+  after interview") under a new "Follow-up reminders" section.
+
 ## [0.10.0] - 2026-07-01
 
 ### Added
@@ -189,7 +207,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/vitala89/applye/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/vitala89/applye/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vitala89/applye/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/vitala89/applye/compare/v0.7.0...v0.8.0

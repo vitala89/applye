@@ -37,6 +37,8 @@ pub struct SettingsPatch {
     pub ui_language: Option<String>,
     pub default_doc_language: Option<String>,
     pub geo_scope: Option<String>,
+    pub followup_days_after_apply: Option<i64>,
+    pub followup_days_after_interview: Option<i64>,
 }
 
 #[tauri::command]
@@ -63,7 +65,9 @@ pub async fn db_update_settings(
            export_dir           = COALESCE(?, export_dir),
            ui_language          = COALESCE(?, ui_language),
            default_doc_language = COALESCE(?, default_doc_language),
-           geo_scope            = COALESCE(?, geo_scope)
+           geo_scope            = COALESCE(?, geo_scope),
+           followup_days_after_apply     = COALESCE(?, followup_days_after_apply),
+           followup_days_after_interview = COALESCE(?, followup_days_after_interview)
          WHERE id = 1",
     )
     .bind(&settings.ai_mode)
@@ -76,6 +80,8 @@ pub async fn db_update_settings(
     .bind(&settings.ui_language)
     .bind(&settings.default_doc_language)
     .bind(&settings.geo_scope)
+    .bind(settings.followup_days_after_apply)
+    .bind(settings.followup_days_after_interview)
     .execute(&db.pool)
     .await
     .map_err(|e| format!("db_update_settings: {e}"))?;

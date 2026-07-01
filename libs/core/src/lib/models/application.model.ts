@@ -32,6 +32,8 @@ export interface PipelineCard {
   jobId?: number;
   status: ApplicationStatus;
   appliedAt?: string;
+  followUpAt?: string;
+  overdue: boolean;
   updatedAt?: string;
   company?: string;
   title?: string;

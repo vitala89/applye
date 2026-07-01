@@ -78,6 +78,14 @@ export class ShellLayoutComponent implements OnInit {
 
   readonly theme = signal<'dark' | 'light'>('dark');
 
+  // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) — the native
+  // traffic lights float over our own header, so reserve space for them.
+  // Windows/Linux keep the default native title bar and need no inset.
+  protected readonly isMacOverlayChrome =
+    typeof window !== 'undefined' &&
+    !!(window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ &&
+    navigator.platform.toLowerCase().includes('mac');
+
   async ngOnInit(): Promise<void> {
     try {
       const settings = await this.db.getSettings();

@@ -33,6 +33,12 @@
       color: var(--text-accent);
     }
 
+    // macOS titleBarStyle: "Overlay" floats the native traffic lights over
+    // this row — push our own content clear of that ~78px control cluster.
+    &.sidebar__logo--mac-overlay {
+      padding-left: 78px;
+    }
+
     .logo-text {
       font-family: var(--font-brand, monospace);
       font-size: var(--text-h3, 18px);

@@ -68,7 +68,22 @@
     "tailor_btn": "Tailor CV",
     "tailoring": "Tailoring…",
     "empty": "Paste a job description above to score and tailor your CV.",
-    "load_error": "Failed to load"
+    "load_error": "Failed to load",
+    "portal_section": "Draft portal answers",
+    "portal_hint": "AI drafts answers to the portal's open-ended questions from your profile and this job description. You review, edit, and copy each one — Applye never submits anything.",
+    "portal_never_submits": "Nothing is submitted automatically. Copy an answer, then paste it into the portal yourself.",
+    "portal_question_label": "Question",
+    "portal_remove_question": "Remove question",
+    "portal_add_question": "Add question",
+    "portal_language_label": "Answer language",
+    "portal_draft_btn": "Draft answers",
+    "portal_drafting": "Drafting…",
+    "portal_cached": "Loaded from cache — 0 tokens",
+    "portal_copy": "Copy",
+    "portal_copied": "Copied!",
+    "portal_another_version": "Another version",
+    "portal_redrafting": "Redrafting…",
+    "portal_empty": "Add or edit the questions above, then draft answers."
   },
   "settings": {
     "title": "Settings",

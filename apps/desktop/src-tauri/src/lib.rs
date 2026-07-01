@@ -58,6 +58,8 @@ pub fn run() {
             commands::applications::db_set_application_status,
             commands::tailoring::tailoring_cache_get,
             commands::tailoring::tailoring_cache_save,
+            commands::portal_answers::portal_answers_get,
+            commands::portal_answers::portal_answers_save,
             commands::tailoring::generated_doc_get,
             commands::tailoring::export_docx,
             commands::tailoring::export_pdf,

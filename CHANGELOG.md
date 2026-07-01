@@ -10,6 +10,26 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-01
+
+### Added
+
+- **Portal answer drafting (Phase 6.5).** A collapsible "Draft portal
+  answers" section in Job Detail drafts answers to a job portal's
+  open-ended questions ("Why this role?", "Why this company?", ...) from
+  the user's compact scoring profile and the job description. One AI call
+  (`portal-answers.md`, quality model) per question set; result is cached
+  in `portal_answers` by `(job_id, profile_hash, input_hash)` where
+  `input_hash` covers the question set + language + model, so re-opening
+  the job with the same questions is a 0-token read.
+- Editable question templates (add/remove), an answer-language selector
+  defaulting to the application's `doc_language`, and per-answer editable
+  boxes with a copy-to-clipboard button. "Another version" re-drafts a
+  single answer with a fresh AI call, cached under its own key.
+- Augmentation guarantee: Applye only ever drafts and caches text here —
+  there is no code path that transmits or submits an answer anywhere. The
+  user copies it and pastes it into the portal themselves.
+
 ## [0.9.0] - 2026-07-01
 
 ### Added
@@ -169,7 +189,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/vitala89/applye/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vitala89/applye/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/vitala89/applye/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/vitala89/applye/compare/v0.6.0...v0.7.0

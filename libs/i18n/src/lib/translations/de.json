@@ -88,7 +88,22 @@
     "tailor_btn": "Lebenslauf anpassen",
     "tailoring": "Passe an…",
     "empty": "Oben Stellenbeschreibung einfügen, um Lebenslauf zu bewerten und anzupassen.",
-    "load_error": "Laden fehlgeschlagen"
+    "load_error": "Laden fehlgeschlagen",
+    "portal_section": "Bewerbungsantworten entwerfen",
+    "portal_hint": "Die KI entwirft Antworten auf die offenen Fragen des Portals aus deinem Profil und dieser Stellenbeschreibung. Du prüfst, bearbeitest und kopierst jede Antwort — Applye sendet nie etwas ab.",
+    "portal_never_submits": "Nichts wird automatisch abgeschickt. Antwort kopieren und selbst ins Portal einfügen.",
+    "portal_question_label": "Frage",
+    "portal_remove_question": "Frage entfernen",
+    "portal_add_question": "Frage hinzufügen",
+    "portal_language_label": "Antwortsprache",
+    "portal_draft_btn": "Antworten entwerfen",
+    "portal_drafting": "Entwirft…",
+    "portal_cached": "Aus dem Cache geladen — 0 Tokens",
+    "portal_copy": "Kopieren",
+    "portal_copied": "Kopiert!",
+    "portal_another_version": "Andere Version",
+    "portal_redrafting": "Wird neu entworfen…",
+    "portal_empty": "Fragen oben hinzufügen oder bearbeiten und dann Antworten entwerfen."
   },
   "myjobs": {
     "import": "Datei importieren",

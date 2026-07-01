@@ -27,6 +27,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "import-tracklist" => Some(include_str!(
             "../../../../../libs/skills/src/import-tracklist/import-tracklist.md"
         )),
+        "portal-answers" => Some(include_str!(
+            "../../../../../libs/skills/src/portal-answers/portal-answers.md"
+        )),
         _ => None,
     }
 }

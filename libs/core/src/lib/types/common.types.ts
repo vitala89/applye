@@ -41,3 +41,14 @@ export interface SaveTailoringInput {
   tokensInput: number;
   tokensOutput: number;
 }
+
+export interface SavePortalAnswersInput {
+  jobId: number;
+  profileHash: string;
+  questionsJson: string;
+  answersJson: string;
+  inputHash: string;
+  modelUsed: string;
+  tokensInput: number;
+  tokensOutput: number;
+}

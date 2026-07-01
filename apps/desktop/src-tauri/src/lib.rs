@@ -60,6 +60,7 @@ pub fn run() {
             commands::tailoring::tailoring_cache_save,
             commands::portal_answers::portal_answers_get,
             commands::portal_answers::portal_answers_save,
+            commands::health::health_check,
             commands::tailoring::generated_doc_get,
             commands::tailoring::export_docx,
             commands::tailoring::export_pdf,

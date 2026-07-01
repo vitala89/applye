@@ -6,6 +6,7 @@ import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
 import { PortalAnswer, SavePortalAnswersInput } from '@applye/core';
+import { HealthReport } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /** Typed wrappers over the Rust db_* commands. The frontend stays SQL-free. */
@@ -227,5 +228,10 @@ export class DbService {
       importedFrom,
       followupDaysAfterApply,
     });
+  }
+
+  // --- Health check (Phase 6.7) ---
+  healthCheck(): Promise<HealthReport> {
+    return tauriInvoke<HealthReport>('health_check');
   }
 }

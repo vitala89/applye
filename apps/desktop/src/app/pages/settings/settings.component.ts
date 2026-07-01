@@ -4,6 +4,7 @@ import { Check, LucideAngularModule } from 'lucide-angular';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -37,7 +38,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, HealthCheckPanelComponent],
   template: `
     @if (loading()) {
       <div class="state-loading-text">{{ t()('common.loading') }}</div>
@@ -250,6 +251,13 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
               />
             </label>
           </div>
+        </section>
+
+        <!-- Health check (Phase 6.7) -->
+        <section class="section">
+          <h3 class="eyebrow">{{ t()('health.section') }}</h3>
+          <p class="muted">{{ t()('health.section_hint') }}</p>
+          <app-health-check-panel />
         </section>
 
         <!-- Test connection -->

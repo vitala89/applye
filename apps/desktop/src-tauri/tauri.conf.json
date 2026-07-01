@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Applye",
-  "version": "0.12.3",
+  "version": "0.12.4",
   "identifier": "dev.applye.app",
   "build": {
     "frontendDist": "../../dist/apps/desktop/browser",
@@ -12,13 +12,15 @@
   "app": {
     "windows": [
       {
-        "title": "Applye",
+        "title": "",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
         "minHeight": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {

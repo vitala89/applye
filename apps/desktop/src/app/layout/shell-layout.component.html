@@ -1,12 +1,18 @@
 <div class="shell" [attr.data-theme]="theme()">
   <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="sidebar__logo" role="img" aria-label="Applye">
+    <div
+      class="sidebar__logo"
+      role="img"
+      aria-label="Applye"
+      data-tauri-drag-region
+      [class.sidebar__logo--mac-overlay]="isMacOverlayChrome"
+    >
       <svg class="logo-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
         <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
         <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)" />
       </svg>
-      <span class="logo-text">Applye</span>
+      <span class="logo-text" data-tauri-drag-region>Applye</span>
     </div>
 
     <nav class="sidebar__nav">
@@ -79,8 +85,10 @@
   <!-- Main area -->
   <div class="main">
     <!-- Topbar -->
-    <header class="topbar">
-      <h1 class="topbar__title" aria-live="polite">Applye</h1>
+    <header class="topbar" data-tauri-drag-region>
+      <h1 class="topbar__title" aria-live="polite" data-tauri-drag-region>
+        {{ t()(pageTitleKey()) }}
+      </h1>
 
       <div class="topbar__actions">
         <button

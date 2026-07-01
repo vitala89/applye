@@ -19,6 +19,17 @@ const en: TranslationMap = {
     title: 'My Jobs',
     search: 'Search company or role…',
     import: 'Import file',
+    import_title: 'Import tracklist',
+    import_hint:
+      'Pick a CSV, XLSX, JSON, or text export from another tracker. One AI call detects the columns — nothing is added until you confirm.',
+    import_pick_file: 'Choose file…',
+    import_detecting: 'Detecting…',
+    import_confirm_btn: 'Import selected',
+    import_duplicate: 'Already exists',
+    import_skipped_summary: 'Skipped rows',
+    col_title: 'Role',
+    import_col_applied: 'Applied',
+    import_col_notes: 'Notes',
     col_company: 'Company',
     col_role: 'Role',
     col_score: 'Score',
@@ -69,6 +80,7 @@ const en: TranslationMap = {
     cancel: 'Cancel',
     export: 'Export',
     delete: 'Delete',
+    close: 'Close',
   },
   status: {
     saved: 'Saved',
@@ -95,6 +107,7 @@ const en: TranslationMap = {
   pipeline: {
     loading: 'Loading pipeline…',
     empty: 'No applications yet. Paste a job to get started.',
+    overdue: 'Overdue',
   },
   profile: {
     title: 'Profile',
@@ -103,6 +116,14 @@ const en: TranslationMap = {
     saving: 'Saving…',
     saved_status: 'Saved',
     unsaved: 'Unsaved changes',
+    section_archetypes: 'Target roles',
+    archetypes_hint:
+      '1–5 one-sentence descriptions of roles you\'d accept (e.g. "Senior Backend Engineer, Germany, fintech"). Used to flag off-target jobs before scoring — 0 tokens.',
+    archetypes_empty_warning:
+      "No target roles defined — jobs won't be checked against your preferences.",
+    archetype_placeholder: 'e.g. Staff Frontend Engineer, remote EU, Series B-D product company',
+    add_archetype: '+ Add target role',
+    remove_archetype: 'Remove',
     section_markdown: 'Markdown profile',
     section_ai_tools: 'AI tools',
     ai_hint:
@@ -128,6 +149,12 @@ const en: TranslationMap = {
     hard_filter_failed: 'Hard filter failed',
     hard_filter_msg: 'Disqualifying phrase detected (visa / location). No AI tokens used.',
     filter_passed: 'Filter passed',
+    off_archetype: 'Off target role',
+    define_archetype_prompt: 'Define at least one target role for sharper scoring.',
+    legitimacy_yellow: 'Proceed with caution',
+    legitimacy_red: 'Scam/ghost-job signals',
+    legitimacy_red_banner_title:
+      'This posting has scam/ghost-job signals. Review the notes below before applying — you can still score and tailor if you choose to proceed.',
     score_btn: 'Score this job',
     scoring: 'Scoring…',
     rescore: 'Rescore',
@@ -137,9 +164,27 @@ const en: TranslationMap = {
     applied_ok: 'Marked as applied. Added to Pipeline.',
     pipeline_ok: 'Added to Pipeline.',
     score_section: 'Recruiter score',
+    before_you_submit: 'Before you submit',
     tailor_section: 'CV tailoring',
     tailor_btn: 'Tailor CV for this job →',
     tailoring: 'Tailoring…',
+    portal_section: 'Draft portal answers',
+    portal_hint:
+      "AI drafts answers to the portal's open-ended questions from your profile and this job description. You review, edit, and copy each one — Applye never submits anything.",
+    portal_never_submits:
+      'Nothing is submitted automatically. Copy an answer, then paste it into the portal yourself.',
+    portal_question_label: 'Question',
+    portal_remove_question: 'Remove question',
+    portal_add_question: 'Add question',
+    portal_language_label: 'Answer language',
+    portal_draft_btn: 'Draft answers',
+    portal_drafting: 'Drafting…',
+    portal_cached: 'Loaded from cache — 0 tokens',
+    portal_copy: 'Copy',
+    portal_copied: 'Copied!',
+    portal_another_version: 'Another version',
+    portal_redrafting: 'Redrafting…',
+    portal_empty: 'Add or edit the questions above, then draft answers.',
     start_over: 'Start over',
     export_section: 'Export tailored CV',
     export_docx: 'Export DOCX',
@@ -161,6 +206,10 @@ const en: TranslationMap = {
     section_lang: 'Languages',
     ui_lang_label: 'UI language',
     doc_lang_label: 'Document language',
+    followup_section: 'Follow-up reminders',
+    followup_hint: 'Days after each stage before a card is marked overdue on the Pipeline board.',
+    followup_apply_label: 'Days after applying',
+    followup_interview_label: 'Days after interview',
     load_error: 'Failed to load settings',
   },
   dashboard: {
@@ -171,6 +220,16 @@ const en: TranslationMap = {
   interview: {
     title: 'Interview Prep',
     coming_soon: 'Stages, Q&A cards, STAR+R, pitch generator — coming soon',
+  },
+  health: {
+    section: 'Health check',
+    section_hint:
+      'Deterministic diagnostics — keychain, database, permissions, export folder. 0 AI tokens.',
+    welcome_title: 'Welcome to Applye',
+    welcome_subtitle: 'A quick, offline check that everything on your machine is set up correctly.',
+    checking: 'Checking…',
+    rerun: 'Re-run check',
+    continue: 'Continue',
   },
 };
 
@@ -191,6 +250,17 @@ const de: TranslationMap = {
     title: 'Meine Stellen',
     search: 'Firma oder Rolle suchen…',
     import: 'Datei importieren',
+    import_title: 'Tracklist importieren',
+    import_hint:
+      'CSV-, XLSX-, JSON- oder Text-Export aus einem anderen Tracker wählen. Ein KI-Aufruf erkennt die Spalten — nichts wird hinzugefügt, bevor Sie bestätigen.',
+    import_pick_file: 'Datei wählen…',
+    import_detecting: 'Erkenne…',
+    import_confirm_btn: 'Auswahl importieren',
+    import_duplicate: 'Bereits vorhanden',
+    import_skipped_summary: 'Übersprungene Zeilen',
+    col_title: 'Rolle',
+    import_col_applied: 'Beworben',
+    import_col_notes: 'Notizen',
     col_company: 'Firma',
     col_role: 'Rolle',
     col_score: 'Score',
@@ -241,6 +311,7 @@ const de: TranslationMap = {
     cancel: 'Abbrechen',
     export: 'Exportieren',
     delete: 'Löschen',
+    close: 'Schließen',
   },
   status: {
     saved: 'Gespeichert',
@@ -270,6 +341,7 @@ const de: TranslationMap = {
   pipeline: {
     loading: 'Pipeline wird geladen…',
     empty: 'Noch keine Bewerbungen. Stelle einfügen, um zu beginnen.',
+    overdue: 'Überfällig',
   },
   profile: {
     title: 'Profil',
@@ -278,6 +350,15 @@ const de: TranslationMap = {
     saving: 'Speichere…',
     saved_status: 'Gespeichert',
     unsaved: 'Nicht gespeicherte Änderungen',
+    section_archetypes: 'Zielrollen',
+    archetypes_hint:
+      '1–5 Ein-Satz-Beschreibungen akzeptabler Rollen (z. B. "Senior Backend Engineer, Deutschland, Fintech"). Wird genutzt, um nicht passende Stellen vor der Bewertung zu markieren — 0 Token.',
+    archetypes_empty_warning:
+      'Keine Zielrollen definiert — Stellen werden nicht mit Ihren Präferenzen abgeglichen.',
+    archetype_placeholder:
+      'z. B. Staff Frontend Engineer, remote EU, Series B-D Produktunternehmen',
+    add_archetype: '+ Zielrolle hinzufügen',
+    remove_archetype: 'Entfernen',
     section_markdown: 'Markdown-Profil',
     section_ai_tools: 'KI-Werkzeuge',
     ai_hint:
@@ -303,6 +384,12 @@ const de: TranslationMap = {
     hard_filter_failed: 'Vorauswahl gescheitert',
     hard_filter_msg: 'Ausschlussmerkmal erkannt (Visum / Standort). Keine KI-Token verwendet.',
     filter_passed: 'Vorauswahl bestanden',
+    off_archetype: 'Außerhalb der Zielrolle',
+    define_archetype_prompt: 'Definieren Sie mindestens eine Zielrolle für präzisere Bewertungen.',
+    legitimacy_yellow: 'Vorsicht geboten',
+    legitimacy_red: 'Betrugs-/Scheinstellen-Signale',
+    legitimacy_red_banner_title:
+      'Diese Stellenanzeige weist Betrugs-/Scheinstellen-Signale auf. Prüfen Sie die Hinweise unten, bevor Sie sich bewerben — Sie können trotzdem fortfahren, wenn Sie möchten.',
     score_btn: 'Stelle bewerten',
     scoring: 'Bewerte…',
     add_to_pipeline: 'Zur Pipeline hinzufügen',
@@ -312,9 +399,27 @@ const de: TranslationMap = {
     pipeline_ok: 'Zur Pipeline hinzugefügt.',
     rescore: 'Neu bewerten',
     score_section: 'Recruiter-Bewertung',
+    before_you_submit: 'Vor dem Absenden',
     tailor_section: 'Lebenslauf anpassen',
     tailor_btn: 'Lebenslauf anpassen →',
     tailoring: 'Passe an…',
+    portal_section: 'Bewerbungsantworten entwerfen',
+    portal_hint:
+      'Die KI entwirft Antworten auf die offenen Fragen des Portals aus deinem Profil und dieser Stellenbeschreibung. Du prüfst, bearbeitest und kopierst jede Antwort — Applye sendet nie etwas ab.',
+    portal_never_submits:
+      'Nichts wird automatisch abgeschickt. Antwort kopieren und selbst ins Portal einfügen.',
+    portal_question_label: 'Frage',
+    portal_remove_question: 'Frage entfernen',
+    portal_add_question: 'Frage hinzufügen',
+    portal_language_label: 'Antwortsprache',
+    portal_draft_btn: 'Antworten entwerfen',
+    portal_drafting: 'Entwirft…',
+    portal_cached: 'Aus dem Cache geladen — 0 Tokens',
+    portal_copy: 'Kopieren',
+    portal_copied: 'Kopiert!',
+    portal_another_version: 'Andere Version',
+    portal_redrafting: 'Wird neu entworfen…',
+    portal_empty: 'Fragen oben hinzufügen oder bearbeiten und dann Antworten entwerfen.',
     start_over: 'Von vorne',
     export_section: 'Angepassten Lebenslauf exportieren',
     export_docx: 'DOCX exportieren',
@@ -336,6 +441,11 @@ const de: TranslationMap = {
     section_lang: 'Sprachen',
     ui_lang_label: 'Oberflächensprache',
     doc_lang_label: 'Dokumentensprache',
+    followup_section: 'Erinnerungen für Follow-ups',
+    followup_hint:
+      'Tage nach jeder Phase, bevor eine Karte im Pipeline-Board als überfällig markiert wird.',
+    followup_apply_label: 'Tage nach Bewerbung',
+    followup_interview_label: 'Tage nach Vorstellungsgespräch',
     load_error: 'Einstellungen konnten nicht geladen werden',
   },
   dashboard: {
@@ -346,6 +456,17 @@ const de: TranslationMap = {
   interview: {
     title: 'Interview-Vorbereitung',
     coming_soon: 'Phasen, Fragenkarten, STAR+R, Pitch-Generator — demnächst',
+  },
+  health: {
+    section: 'Systemcheck',
+    section_hint:
+      'Deterministische Diagnose — Schlüsselbund, Datenbank, Berechtigungen, Exportordner. 0 KI-Tokens.',
+    welcome_title: 'Willkommen bei Applye',
+    welcome_subtitle:
+      'Ein kurzer, offline durchgeführter Check, ob alles auf deinem Rechner korrekt eingerichtet ist.',
+    checking: 'Prüfe…',
+    rerun: 'Erneut prüfen',
+    continue: 'Weiter',
   },
 };
 

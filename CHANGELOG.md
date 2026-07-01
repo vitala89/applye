@@ -10,6 +10,27 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-07-02
+
+### Fixed
+
+- **PR #22 (v0.12.1) fixed the wrong file.** `TranslateService` reads from
+  `libs/i18n/src/lib/translations/translations.ts` (a hand-maintained
+  nested TS object) — the `en.json`/`de.json`/etc. files in that same
+  folder are dead, unimported by anything at runtime. All i18n work across
+  Phases 6.5–6.7 and the previous "fix" edited only the dead JSON files,
+  so none of it ever reached the running app. This release makes the same
+  50 additions (portal answers, follow-up cadence, health check, archetype
+  hints, import-tracklist strings, nav labels, etc.) directly in
+  `translations.ts` for both `en` and `de` (`ru`/`es`/`fr`/`uk` inherit
+  automatically via the existing `stub(en, …)` pattern), and **deletes the
+  6 dead JSON files** so this mistake can't recur.
+- `apps/desktop/src/i18n-keys.spec.ts` now imports `TRANSLATIONS` from
+  `@applye/i18n` (newly exported from the package barrel) instead of
+  reading `en.json`, so it actually gates the real runtime source. Added a
+  second guard asserting `TRANSLATIONS.de` has the same key set as `en` —
+  no silent drift between the two fully-maintained locales.
+
 ## [0.12.1] - 2026-07-01
 
 ### Fixed
@@ -249,7 +270,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/vitala89/applye/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/vitala89/applye/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/vitala89/applye/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/vitala89/applye/compare/v0.10.0...v0.11.0

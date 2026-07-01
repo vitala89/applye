@@ -101,6 +101,7 @@ pub struct SaveScoreInput {
     pub ats_pass: bool,
     pub ats_notes: String,
     pub summary: String,
+    pub before_you_submit_json: String,
     pub model_used: String,
     pub tokens_input: i64,
     pub tokens_output: i64,
@@ -196,12 +197,20 @@ pub async fn score_cache_get(
     profile_hash: String,
     db: State<'_, Db>,
 ) -> Result<Option<ScoringCache>, String> {
+    score_cache_get_core(job_id, profile_hash, &db.pool).await
+}
+
+async fn score_cache_get_core(
+    job_id: i64,
+    profile_hash: String,
+    pool: &sqlx::SqlitePool,
+) -> Result<Option<ScoringCache>, String> {
     sqlx::query_as::<_, ScoringCache>(
         "SELECT * FROM scoring_cache WHERE job_id = ? AND profile_hash = ? LIMIT 1",
     )
     .bind(job_id)
     .bind(&profile_hash)
-    .fetch_optional(&db.pool)
+    .fetch_optional(pool)
     .await
     .map_err(|e| format!("score_cache_get: {e}"))
 }
@@ -212,9 +221,16 @@ pub async fn score_cache_save(
     input: SaveScoreInput,
     db: State<'_, Db>,
 ) -> Result<ScoringCache, String> {
+    score_cache_save_core(input, &db.pool).await
+}
+
+async fn score_cache_save_core(
+    input: SaveScoreInput,
+    pool: &sqlx::SqlitePool,
+) -> Result<ScoringCache, String> {
     let jd_hash: String = sqlx::query_scalar("SELECT jd_hash FROM jobs WHERE id = ?")
         .bind(input.job_id)
-        .fetch_one(&db.pool)
+        .fetch_one(pool)
         .await
         .map_err(|e| format!("score_cache_save get jd_hash: {e}"))?;
 
@@ -222,21 +238,23 @@ pub async fn score_cache_save(
         "INSERT INTO scoring_cache
            (job_id, profile_hash, jd_hash, language, score,
             dimensions_json, missing_keywords_json, red_flags_json,
-            ats_pass, ats_notes, summary, model_used, tokens_input, tokens_output, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ats_pass, ats_notes, summary, before_you_submit_json,
+            model_used, tokens_input, tokens_output, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(job_id, profile_hash, jd_hash) DO UPDATE SET
-           language              = excluded.language,
-           score                 = excluded.score,
-           dimensions_json       = excluded.dimensions_json,
-           missing_keywords_json = excluded.missing_keywords_json,
-           red_flags_json        = excluded.red_flags_json,
-           ats_pass              = excluded.ats_pass,
-           ats_notes             = excluded.ats_notes,
-           summary               = excluded.summary,
-           model_used            = excluded.model_used,
-           tokens_input          = excluded.tokens_input,
-           tokens_output         = excluded.tokens_output,
-           created_at            = excluded.created_at",
+           language               = excluded.language,
+           score                  = excluded.score,
+           dimensions_json        = excluded.dimensions_json,
+           missing_keywords_json  = excluded.missing_keywords_json,
+           red_flags_json         = excluded.red_flags_json,
+           ats_pass               = excluded.ats_pass,
+           ats_notes              = excluded.ats_notes,
+           summary                = excluded.summary,
+           before_you_submit_json = excluded.before_you_submit_json,
+           model_used             = excluded.model_used,
+           tokens_input           = excluded.tokens_input,
+           tokens_output          = excluded.tokens_output,
+           created_at             = excluded.created_at",
     )
     .bind(input.job_id)
     .bind(&input.profile_hash)
@@ -249,10 +267,11 @@ pub async fn score_cache_save(
     .bind(input.ats_pass)
     .bind(&input.ats_notes)
     .bind(&input.summary)
+    .bind(&input.before_you_submit_json)
     .bind(&input.model_used)
     .bind(input.tokens_input)
     .bind(input.tokens_output)
-    .execute(&db.pool)
+    .execute(pool)
     .await
     .map_err(|e| format!("score_cache_save: {e}"))?;
 
@@ -261,14 +280,14 @@ pub async fn score_cache_save(
     )
     .bind(input.job_id)
     .bind(&input.profile_hash)
-    .fetch_one(&db.pool)
+    .fetch_one(pool)
     .await
     .map_err(|e| format!("score_cache_save reload: {e}"))
 }
 
 #[cfg(test)]
 mod pipeline_tests {
-    use super::job_paste_core;
+    use super::{job_paste_core, score_cache_get_core, score_cache_save_core, SaveScoreInput};
     use sqlx::sqlite::SqlitePoolOptions;
     use sqlx::SqlitePool;
 
@@ -351,5 +370,74 @@ mod pipeline_tests {
         .execute(&pool)
         .await
         .expect("scoring a red-tier job must not be blocked");
+    }
+
+    fn save_input(job_id: i64, before_you_submit_json: &str) -> SaveScoreInput {
+        SaveScoreInput {
+            job_id,
+            profile_hash: "phash".to_string(),
+            language: "en".to_string(),
+            score: 72,
+            dimensions_json: "[]".to_string(),
+            missing_keywords_json: "[]".to_string(),
+            red_flags_json: "[]".to_string(),
+            ats_pass: true,
+            ats_notes: "".to_string(),
+            summary: "Solid fit.".to_string(),
+            before_you_submit_json: before_you_submit_json.to_string(),
+            model_used: "claude-haiku-4-5".to_string(),
+            tokens_input: 500,
+            tokens_output: 200,
+        }
+    }
+
+    /// Same scoring call that produces score/dimensions/etc. also produces
+    /// before_you_submit — it round-trips through the cache untouched.
+    #[tokio::test]
+    async fn before_you_submit_round_trips_through_cache() {
+        let pool = test_pool().await;
+        let jd = "Company: Acme Robotics\nTitle: Backend Engineer";
+        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+
+        let notes = serde_json::to_string(&vec![
+            "Salary not listed — research market rate before applying.",
+            "JD requires a portfolio — prepare 2-3 examples before submitting.",
+        ])
+        .unwrap();
+        let saved = score_cache_save_core(save_input(job.id, &notes), &pool)
+            .await
+            .unwrap();
+        assert_eq!(
+            saved.before_you_submit_json.as_deref(),
+            Some(notes.as_str())
+        );
+    }
+
+    /// Re-opening a scored job reads the cached before_you_submit notes
+    /// straight from SQLite — no AI call in this path at all (0 tokens).
+    #[tokio::test]
+    async fn reopening_cached_score_returns_notes_with_no_ai_call() {
+        let pool = test_pool().await;
+        let jd = "Company: Acme Robotics\nTitle: Backend Engineer";
+        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+
+        let notes =
+            serde_json::to_string(&vec!["Posting is 95 days old — verify it's still open."])
+                .unwrap();
+        score_cache_save_core(save_input(job.id, &notes), &pool)
+            .await
+            .unwrap();
+
+        // score_cache_get_core only ever issues a SELECT — there is no AI
+        // dispatch reachable from this function, so reading it back is
+        // structurally 0 tokens, not just 0 tokens "this time".
+        let reopened = score_cache_get_core(job.id, "phash".to_string(), &pool)
+            .await
+            .unwrap()
+            .expect("cached row exists");
+        assert_eq!(
+            reopened.before_you_submit_json.as_deref(),
+            Some(notes.as_str())
+        );
     }
 }

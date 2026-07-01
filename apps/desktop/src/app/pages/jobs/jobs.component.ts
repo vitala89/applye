@@ -168,6 +168,18 @@ interface PassResult {
             }
           </div>
 
+          <!-- Before you submit -->
+          @if (beforeYouSubmit(c).length) {
+            <details class="card before-submit" open>
+              <summary class="eyebrow">{{ t()('jobs.before_you_submit') }}</summary>
+              <ul class="before-submit__list">
+                @for (note of beforeYouSubmit(c); track note) {
+                  <li>{{ note }}</li>
+                }
+              </ul>
+            </details>
+          }
+
           <!-- Dimensions -->
           @if (dimensions(c).length) {
             <div class="card">
@@ -644,6 +656,20 @@ interface PassResult {
         margin: 0;
       }
 
+      /* Before you submit */
+      .before-submit summary {
+        cursor: pointer;
+      }
+      .before-submit__list {
+        margin: var(--space-3) 0 0;
+        padding-left: var(--space-4);
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+      }
+      .before-submit__list li {
+        margin-bottom: var(--space-2);
+      }
+
       /* Badges */
       .badge {
         padding: 2px var(--space-2);
@@ -1036,6 +1062,7 @@ export class JobsComponent implements OnInit {
         profile_json: p.scoringJson,
         job_description: this.jdText(),
         language: lang,
+        legitimacy_notes: this.legitimacyNotes().join('\n'),
       });
       const res = await this.ai.run({
         mode: s.aiMode,
@@ -1055,6 +1082,7 @@ export class JobsComponent implements OnInit {
         ats_pass: boolean;
         ats_notes: string;
         summary: string;
+        before_you_submit?: string[];
       };
       try {
         const raw = res.text
@@ -1077,6 +1105,7 @@ export class JobsComponent implements OnInit {
         atsPass: parsed.ats_pass,
         atsNotes: parsed.ats_notes,
         summary: parsed.summary,
+        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
         modelUsed: s.economyModel,
         tokensInput: res.tokensInput,
         tokensOutput: res.tokensOutput,
@@ -1110,6 +1139,14 @@ export class JobsComponent implements OnInit {
   redFlags(c: ScoringCache): string[] {
     try {
       return JSON.parse(c.redFlagsJson ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  beforeYouSubmit(c: ScoringCache): string[] {
+    try {
+      return JSON.parse(c.beforeYouSubmitJson ?? '[]');
     } catch {
       return [];
     }

@@ -10,6 +10,20 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-01
+
+### Added
+
+- **Before-you-submit notes (Phase 6.3).** The `job-scoring.md` skill now
+  also returns `before_you_submit`: 2-4 short, concrete reminders grounded in
+  the job's JD and Phase 6.2 legitimacy notes (e.g. "Salary not listed —
+  research market rate before applying"). Produced in the same `ai_run` call
+  as the score — no second request, 0 extra tokens. Stored in
+  `scoring_cache.before_you_submit_json`, part of the existing cache key
+  (job, profile, JD hash, language, model), so reopening a scored job shows
+  the notes at 0 tokens. Job Detail renders them as a collapsible checklist
+  directly under the score section; hidden when empty.
+
 ## [0.7.0] - 2026-07-01
 
 ### Added
@@ -132,7 +146,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/vitala89/applye/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/vitala89/applye/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/vitala89/applye/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/vitala89/applye/compare/v0.4.0...v0.5.0

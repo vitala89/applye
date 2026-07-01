@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Applye",
+        "title": "",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

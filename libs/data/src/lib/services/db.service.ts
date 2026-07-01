@@ -5,6 +5,7 @@ import { Application, ApplicationStatus, PipelineCard } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
+import { PortalAnswer, SavePortalAnswersInput } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /** Typed wrappers over the Rust db_* commands. The frontend stays SQL-free. */
@@ -130,6 +131,23 @@ export class DbService {
 
   async tailoringCacheSave(input: SaveTailoringInput): Promise<TailoringCache> {
     return tauriInvoke<TailoringCache>('tailoring_cache_save', { input });
+  }
+
+  // --- Portal answer drafts ---
+  async portalAnswersGet(
+    jobId: number,
+    profileHash: string,
+    inputHash: string,
+  ): Promise<PortalAnswer | null> {
+    return tauriInvoke<PortalAnswer | null>('portal_answers_get', {
+      jobId,
+      profileHash,
+      inputHash,
+    });
+  }
+
+  async portalAnswersSave(input: SavePortalAnswersInput): Promise<PortalAnswer> {
+    return tauriInvoke<PortalAnswer>('portal_answers_save', { input });
   }
 
   // --- Document export ---

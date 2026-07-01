@@ -1,9 +1,27 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ArrowRight, Check, ChevronRight, LucideAngularModule, Search, X } from 'lucide-angular';
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Copy,
+  LucideAngularModule,
+  Plus,
+  RotateCw,
+  Search,
+  X,
+} from 'lucide-angular';
 import { AiService, DbService } from '@applye/data';
-import { Application, Job, Profile, ScoreDimension, ScoringCache, Settings } from '@applye/core';
+import {
+  Application,
+  Job,
+  Profile,
+  ScoreDimension,
+  ScoringCache,
+  Settings,
+  SupportedLanguage,
+} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 
 interface PassResult {
@@ -258,6 +276,129 @@ interface PassResult {
               }
             </div>
           }
+
+          <!-- Draft portal answers -->
+          <details class="card portal">
+            <summary class="eyebrow">{{ t()('jobs.portal_section') }}</summary>
+            <p class="muted">{{ t()('jobs.portal_hint') }}</p>
+            <p class="muted">{{ t()('jobs.portal_never_submits') }}</p>
+
+            <div class="portal__questions">
+              @for (q of portalQuestions(); track $index) {
+                <div class="row">
+                  <input
+                    class="editor portal__q-input"
+                    type="text"
+                    [ngModel]="q"
+                    (ngModelChange)="updatePortalQuestion($index, $event)"
+                    [attr.aria-label]="t()('jobs.portal_question_label')"
+                  />
+                  <button
+                    class="btn-ghost"
+                    type="button"
+                    (click)="removePortalQuestion($index)"
+                    [attr.aria-label]="t()('jobs.portal_remove_question')"
+                  >
+                    <lucide-icon [img]="icons.remove" [size]="14" aria-hidden="true" />
+                  </button>
+                </div>
+              }
+              <button class="btn-ghost" type="button" (click)="addPortalQuestion()">
+                <lucide-icon [img]="icons.add" [size]="14" aria-hidden="true" />
+                {{ t()('jobs.portal_add_question') }}
+              </button>
+            </div>
+
+            <label class="portal__lang-label">
+              {{ t()('jobs.portal_language_label') }}
+              <select
+                class="editor portal__lang-select"
+                [ngModel]="portalLanguage()"
+                (ngModelChange)="portalLanguage.set($event)"
+              >
+                @for (lang of portalLanguages; track lang) {
+                  <option [value]="lang">{{ lang.toUpperCase() }}</option>
+                }
+              </select>
+            </label>
+
+            <div class="cta">
+              <button
+                class="btn btn--primary"
+                [disabled]="portalDrafting() || !portalQuestions().length"
+                (click)="draftPortalAnswers()"
+              >
+                {{ portalDrafting() ? t()('jobs.portal_drafting') : t()('jobs.portal_draft_btn') }}
+              </button>
+              @if (portalFromCache() && !portalDrafting()) {
+                <span class="badge badge--cache">{{ t()('jobs.portal_cached') }}</span>
+              }
+              @if (portalStatus() && !portalFromCache()) {
+                <span class="status" [class.status--error]="portalError()">{{
+                  portalStatus()
+                }}</span>
+              }
+            </div>
+
+            @if (portalDrafting()) {
+              <div class="state-loading" [attr.aria-label]="t()('jobs.portal_drafting')">
+                <div class="state-loading__bar state-loading__bar--wide"></div>
+                <div class="state-loading__bar state-loading__bar--mid"></div>
+                <div class="state-loading__bar state-loading__bar--short"></div>
+              </div>
+            } @else if (portalError() && !portalAnswers().length) {
+              <div class="state-error" role="alert">
+                <p class="state-error__msg">{{ portalStatus() }}</p>
+              </div>
+            } @else if (portalAnswers().length) {
+              <div class="portal__answers">
+                @for (a of portalAnswers(); track a.question; let i = $index) {
+                  <div class="card portal__answer">
+                    <h4 class="eyebrow">{{ a.question }}</h4>
+                    <textarea
+                      class="editor"
+                      rows="4"
+                      [ngModel]="a.answer"
+                      (ngModelChange)="editPortalAnswer(i, $event)"
+                    ></textarea>
+                    <div class="row">
+                      <button class="btn-ghost" type="button" (click)="copyPortalAnswer(i)">
+                        <lucide-icon [img]="icons.copy" [size]="14" aria-hidden="true" />
+                        {{
+                          portalCopiedIndex() === i
+                            ? t()('jobs.portal_copied')
+                            : t()('jobs.portal_copy')
+                        }}
+                      </button>
+                      <button
+                        class="btn-ghost"
+                        type="button"
+                        [disabled]="portalRedrafting() === i"
+                        (click)="redraftPortalAnswer(i)"
+                      >
+                        <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
+                        {{
+                          portalRedrafting() === i
+                            ? t()('jobs.portal_redrafting')
+                            : t()('jobs.portal_another_version')
+                        }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="state-empty">
+                <lucide-icon
+                  [img]="icons.empty"
+                  [size]="32"
+                  class="state-empty__icon"
+                  aria-hidden="true"
+                />
+                <p class="state-empty__msg">{{ t()('jobs.portal_empty') }}</p>
+              </div>
+            }
+          </details>
 
           <!-- Tailoring wizard -->
           @if (tailorResults().length === 0 && !tailoring()) {
@@ -840,6 +981,23 @@ interface PassResult {
       .status--error {
         color: var(--danger);
       }
+
+      .portal__questions,
+      .portal__answers {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .portal__q-input {
+        flex: 1;
+      }
+      .portal__lang-label {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        font-size: var(--text-xs);
+        color: var(--text-secondary);
+      }
       .token-info {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
@@ -886,7 +1044,19 @@ export class JobsComponent implements OnInit {
     atsFail: X,
     stepSep: ChevronRight,
     next: ArrowRight,
+    copy: Copy,
+    add: Plus,
+    remove: X,
+    another: RotateCw,
   };
+
+  protected readonly portalLanguages: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
+  private static readonly DEFAULT_PORTAL_QUESTIONS = [
+    'Why this role?',
+    'Why this company?',
+    'Tell us about a relevant project',
+    'What excites you about this?',
+  ];
 
   readonly jdText = signal('');
   readonly job = signal<Job | null>(null);
@@ -900,6 +1070,17 @@ export class JobsComponent implements OnInit {
   readonly application = signal<Application | null>(null);
   readonly actionBusy = signal(false);
   readonly actionMsg = signal('');
+
+  // Draft portal answers
+  readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
+  readonly portalLanguage = signal<SupportedLanguage>('en');
+  readonly portalAnswers = signal<{ question: string; answer: string }[]>([]);
+  readonly portalDrafting = signal(false);
+  readonly portalRedrafting = signal<number | null>(null);
+  readonly portalFromCache = signal(false);
+  readonly portalStatus = signal('');
+  readonly portalError = signal(false);
+  readonly portalCopiedIndex = signal<number | null>(null);
 
   // Tailoring wizard
   readonly tailorResults = signal<PassResult[]>([]);
@@ -951,9 +1132,204 @@ export class JobsComponent implements OnInit {
         }
       }
       const apps = await this.db.listApplications();
-      this.application.set(apps.find((a) => a.jobId === id) ?? null);
+      const app = apps.find((a) => a.jobId === id) ?? null;
+      this.application.set(app);
+
+      this.portalQuestions.set([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
+      this.portalAnswers.set([]);
+      this.portalFromCache.set(false);
+      this.portalStatus.set('');
+      this.portalError.set(false);
+      this.portalRedrafting.set(null);
+      this.portalCopiedIndex.set(null);
+      this.portalLanguage.set(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
+      await this.loadPortalAnswersFromCache();
     } catch {
       // non-fatal — detail still renders, user can re-score
+    }
+  }
+
+  /** Best-effort cache read for the current default question set. Never calls AI. */
+  private async loadPortalAnswersFromCache(): Promise<void> {
+    const job = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    const questions = this.portalQuestions()
+      .map((q) => q.trim())
+      .filter(Boolean);
+    if (!job || !p?.scoringHash || !s || !questions.length) return;
+    try {
+      const inputHash = await this.portalInputHash(questions, s.defaultModel);
+      const cached = await this.db.portalAnswersGet(job.id, p.scoringHash, inputHash);
+      if (cached) {
+        this.portalAnswers.set(JSON.parse(cached.answersJson ?? '[]'));
+        this.portalFromCache.set(true);
+      }
+    } catch {
+      // non-fatal — user can still click "Draft answers"
+    }
+  }
+
+  private portalInputHash(questions: string[], model: string): Promise<string> {
+    return this.db.hashText(JSON.stringify({ q: questions, lang: this.portalLanguage(), model }));
+  }
+
+  private parsePortalAnswers(text: string): { question: string; answer: string }[] {
+    const raw = text
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```\s*$/i, '')
+      .trim();
+    let parsed: { answers: { question: string; answer: string }[] };
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
+    }
+    return parsed.answers ?? [];
+  }
+
+  addPortalQuestion(): void {
+    this.portalQuestions.set([...this.portalQuestions(), '']);
+  }
+
+  updatePortalQuestion(index: number, value: string): void {
+    const qs = this.portalQuestions().slice();
+    qs[index] = value;
+    this.portalQuestions.set(qs);
+  }
+
+  removePortalQuestion(index: number): void {
+    const qs = this.portalQuestions().slice();
+    qs.splice(index, 1);
+    this.portalQuestions.set(qs);
+  }
+
+  editPortalAnswer(index: number, value: string): void {
+    const answers = this.portalAnswers().slice();
+    if (!answers[index]) return;
+    answers[index] = { ...answers[index], answer: value };
+    this.portalAnswers.set(answers);
+  }
+
+  async copyPortalAnswer(index: number): Promise<void> {
+    const answer = this.portalAnswers()[index]?.answer;
+    if (!answer) return;
+    await navigator.clipboard.writeText(answer);
+    this.portalCopiedIndex.set(index);
+    setTimeout(() => this.portalCopiedIndex.set(null), 1500);
+  }
+
+  /** One AI call for the whole question set, cached by (job, profile, questions+language+model). */
+  async draftPortalAnswers(): Promise<void> {
+    if (this.portalDrafting()) return;
+    const job = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    const questions = this.portalQuestions()
+      .map((q) => q.trim())
+      .filter(Boolean);
+    if (!job || !p?.scoringJson || !p.scoringHash || !s || !questions.length) return;
+
+    this.portalDrafting.set(true);
+    this.portalError.set(false);
+    this.portalStatus.set('');
+    try {
+      const inputHash = await this.portalInputHash(questions, s.defaultModel);
+      const cached = await this.db.portalAnswersGet(job.id, p.scoringHash, inputHash);
+      if (cached) {
+        this.portalAnswers.set(JSON.parse(cached.answersJson ?? '[]'));
+        this.portalFromCache.set(true);
+        this.portalStatus.set(this.t()('jobs.portal_cached'));
+        return;
+      }
+
+      const rendered = await this.ai.renderSkill('portal-answers', {
+        profile_json: p.scoringJson,
+        job_description: job.jdText ?? '',
+        questions: JSON.stringify(questions),
+        language: this.portalLanguage(),
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.defaultModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: this.portalLanguage(),
+      });
+      const parsed = this.parsePortalAnswers(res.text);
+      this.portalAnswers.set(parsed);
+      this.portalFromCache.set(false);
+      await this.db.portalAnswersSave({
+        jobId: job.id,
+        profileHash: p.scoringHash,
+        questionsJson: JSON.stringify(questions),
+        answersJson: JSON.stringify(parsed),
+        inputHash,
+        modelUsed: s.defaultModel,
+        tokensInput: res.tokensInput,
+        tokensOutput: res.tokensOutput,
+      });
+      this.portalStatus.set(`${res.tokensInput + res.tokensOutput} tokens used.`);
+    } catch (e) {
+      this.portalError.set(true);
+      this.portalStatus.set(String(e));
+    } finally {
+      this.portalDrafting.set(false);
+    }
+  }
+
+  /** Re-drafts a single answer. Always a fresh AI call (a unique variant marker keeps the
+   * cache key distinct from both the batch draft and any prior version), still cached. */
+  async redraftPortalAnswer(index: number): Promise<void> {
+    if (this.portalRedrafting() !== null) return;
+    const job = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    const current = this.portalAnswers()[index];
+    if (!job || !p?.scoringJson || !p.scoringHash || !s || !current) return;
+
+    this.portalRedrafting.set(index);
+    this.portalError.set(false);
+    try {
+      const question = current.question;
+      const inputHash = await this.db.hashText(
+        `${question}::${this.portalLanguage()}::${s.defaultModel}::${Date.now()}`,
+      );
+      const rendered = await this.ai.renderSkill('portal-answers', {
+        profile_json: p.scoringJson,
+        job_description: job.jdText ?? '',
+        questions: JSON.stringify([question]),
+        language: this.portalLanguage(),
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.defaultModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: this.portalLanguage(),
+      });
+      const parsed = this.parsePortalAnswers(res.text);
+      const answer = parsed[0]?.answer ?? current.answer;
+      await this.db.portalAnswersSave({
+        jobId: job.id,
+        profileHash: p.scoringHash,
+        questionsJson: JSON.stringify([question]),
+        answersJson: JSON.stringify([{ question, answer }]),
+        inputHash,
+        modelUsed: s.defaultModel,
+        tokensInput: res.tokensInput,
+        tokensOutput: res.tokensOutput,
+      });
+      const answers = this.portalAnswers().slice();
+      answers[index] = { question, answer };
+      this.portalAnswers.set(answers);
+    } catch (e) {
+      this.portalError.set(true);
+      this.portalStatus.set(String(e));
+    } finally {
+      this.portalRedrafting.set(null);
     }
   }
 

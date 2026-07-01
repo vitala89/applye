@@ -7,6 +7,7 @@ pub mod archetypes;
 pub mod import;
 pub mod jobs;
 pub mod legitimacy;
+pub mod portal_answers;
 pub mod profile;
 pub mod scoring;
 pub mod settings;

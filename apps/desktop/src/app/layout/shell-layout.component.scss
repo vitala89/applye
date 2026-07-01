@@ -17,8 +17,22 @@
   overflow: hidden;
 
   &__logo {
-    padding: var(--space-6) var(--space-5);
+    height: var(--app-header-h);
+    min-height: var(--app-header-h);
+    padding: 0 var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 8px);
     border-bottom: var(--border-width, 1px) solid var(--border-subtle);
+
+    .logo-mark {
+      display: block;
+      flex: none;
+      width: 20px;
+      height: 20px;
+      color: var(--text-accent);
+    }
+
     .logo-text {
       font-family: var(--font-brand, monospace);
       font-size: var(--text-h3, 18px);
@@ -56,8 +70,9 @@
   font-size: var(--text-body, 14px);
   font-weight: var(--weight-medium, 500);
   font-family: var(--font-mono, monospace);
-  transition: background var(--dur-fast, 140ms) var(--ease-standard),
-              color var(--dur-fast, 140ms) var(--ease-standard);
+  transition:
+    background var(--dur-fast, 140ms) var(--ease-standard),
+    color var(--dur-fast, 140ms) var(--ease-standard);
   cursor: pointer;
 
   &:hover {
@@ -100,7 +115,9 @@
     animation: applye-ai-pulse var(--dur-ai-pulse, 1800ms) var(--ease-standard) infinite;
   }
 
-  &__label { color: var(--text-secondary); }
+  &__label {
+    color: var(--text-secondary);
+  }
 
   &__mode {
     margin-left: auto;
@@ -123,8 +140,8 @@
 
 // --- Topbar ---
 .topbar {
-  height: var(--topbar-height, 56px);
-  min-height: var(--topbar-height, 56px);
+  height: var(--app-header-h);
+  min-height: var(--app-header-h);
   border-bottom: var(--border-width, 1px) solid var(--border-subtle);
   padding: 0 var(--space-7, 24px);
   display: flex;
@@ -160,8 +177,13 @@
   cursor: pointer;
   transition: background var(--dur-fast, 140ms) var(--ease-standard);
 
-  &:hover:not(:disabled) { background: var(--accent-hover); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .btn-theme {
@@ -175,7 +197,9 @@
   line-height: 1;
   transition: background var(--dur-fast, 140ms) var(--ease-standard);
 
-  &:hover { background: var(--surface-hover); }
+  &:hover {
+    background: var(--surface-hover);
+  }
 }
 
 // --- Content area ---

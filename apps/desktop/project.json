@@ -19,6 +19,11 @@
           {
             "glob": "**/*",
             "input": "apps/desktop/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/ui/assets",
+            "output": "brand"
           }
         ],
         "styles": ["libs/ui/tokens.css", "apps/desktop/src/styles.scss"]

@@ -10,6 +10,23 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-07-02
+
+### Fixed
+
+- Sidebar header and main topbar had mismatched height/padding, so their bottom
+  border lines didn't align at the seam. Introduced a shared `--app-header-h`
+  token in `libs/ui/tokens.css` and applied identical height + zero vertical
+  padding to both `.sidebar__logo` and `.topbar` in `shell-layout.component.scss`
+  — the two divider lines now meet exactly.
+
+### Changed
+
+- Replaced the plain-text "Applye" sidebar wordmark with the same SVG mark used
+  on the applye.dev site (indigo accent, `currentColor` + token-driven fill).
+  Canonical SVG now lives in `libs/ui/assets/applye-mark.svg`, wired into the
+  desktop build via a new `assets` glob in `apps/desktop/project.json`.
+
 ## [0.12.2] - 2026-07-02
 
 ### Fixed
@@ -270,7 +287,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.2...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.3...HEAD
+[0.12.3]: https://github.com/vitala89/applye/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/vitala89/applye/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/vitala89/applye/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/vitala89/applye/compare/v0.11.0...v0.12.0

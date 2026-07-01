@@ -1,0 +1,5 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="applye-mark-title">
+  <title id="applye-mark-title">Applye</title>
+  <polygon points="37,10 45,10 15,54 7,54" fill="currentColor"></polygon>
+  <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)"></rect>
+</svg>

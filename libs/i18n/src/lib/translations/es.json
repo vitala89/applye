@@ -33,7 +33,8 @@
   "shell": { "theme_to_light": "Switch to light theme", "theme_to_dark": "Switch to dark theme" },
   "pipeline": {
     "loading": "Loading pipeline…",
-    "empty": "No applications yet. Paste a job to get started."
+    "empty": "No applications yet. Paste a job to get started.",
+    "overdue": "Overdue"
   },
   "profile": {
     "title": "Profile",
@@ -94,6 +95,10 @@
     "section_lang": "Languages",
     "ui_lang_label": "UI language",
     "doc_lang_label": "Document language",
+    "followup_section": "Follow-up reminders",
+    "followup_hint": "Days after each stage before a card is marked overdue on the Pipeline board.",
+    "followup_apply_label": "Days after applying",
+    "followup_interview_label": "Days after interview",
     "load_error": "Failed to load settings"
   },
   "dashboard": {

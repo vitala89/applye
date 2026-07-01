@@ -68,6 +68,11 @@ const COLS: KanbanCol[] = [
                           {{ card.score }}%
                         </span>
                       }
+                      @if (card.overdue) {
+                        <span class="card__badge card__badge--overdue">{{
+                          t()('pipeline.overdue')
+                        }}</span>
+                      }
                       <span class="card__date">{{
                         formatDate(card.appliedAt ?? card.updatedAt)
                       }}</span>
@@ -253,6 +258,16 @@ const COLS: KanbanCol[] = [
           background: rgba(239, 68, 68, 0.15);
           color: #ef4444;
         }
+      }
+
+      .card__badge--overdue {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: var(--radius-full, 999px);
+        line-height: 18px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
       }
 
       .card__date {

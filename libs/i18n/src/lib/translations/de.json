@@ -41,7 +41,8 @@
   },
   "pipeline": {
     "loading": "Pipeline wird geladen…",
-    "empty": "Noch keine Bewerbungen. Stelle einfügen, um zu beginnen."
+    "empty": "Noch keine Bewerbungen. Stelle einfügen, um zu beginnen.",
+    "overdue": "Überfällig"
   },
   "profile": {
     "title": "Profil",
@@ -129,6 +130,10 @@
     "section_lang": "Sprachen",
     "ui_lang_label": "Oberflächensprache",
     "doc_lang_label": "Dokumentensprache",
+    "followup_section": "Erinnerungen für Follow-ups",
+    "followup_hint": "Tage nach jeder Phase, bevor eine Karte im Pipeline-Board als überfällig markiert wird.",
+    "followup_apply_label": "Tage nach Bewerbung",
+    "followup_interview_label": "Tage nach Vorstellungsgespräch",
     "load_error": "Einstellungen konnten nicht geladen werden"
   },
   "dashboard": {

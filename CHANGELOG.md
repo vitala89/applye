@@ -10,6 +10,25 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-07-02
+
+### Fixed
+
+- Topbar title showed static "Applye" on every page. `ShellLayoutComponent`
+  now maps the active route's top-level segment to its `nav.*` i18n key
+  (Dashboard / Discover / My Jobs / Pipeline / Interview Prep / Job Tracker /
+  Analytics / Settings / Documents / Profile) via router `NavigationEnd`.
+- Native window title bar duplicated the app name above the sidebar's own
+  "Applye" wordmark. Cleared the Tauri window title.
+- Native title bar was a fixed OS color that didn't follow the app's
+  dark/light theme, breaking the sidebar's background at the top edge of
+  the window. macOS now runs with `titleBarStyle: "Overlay"` +
+  `hiddenTitle` (no-op on Windows/Linux, which keep the native frame), so
+  the sidebar background shows through behind the traffic lights. Added
+  `data-tauri-drag-region` to the sidebar header and topbar so the window
+  stays draggable, and reserved left padding for the traffic-light cluster
+  on macOS only.
+
 ## [0.12.3] - 2026-07-02
 
 ### Fixed
@@ -287,7 +306,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.3...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.4...HEAD
+[0.12.4]: https://github.com/vitala89/applye/compare/v0.12.3...v0.12.4
 [0.12.3]: https://github.com/vitala89/applye/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/vitala89/applye/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/vitala89/applye/compare/v0.12.0...v0.12.1

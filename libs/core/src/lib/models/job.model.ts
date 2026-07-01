@@ -107,3 +107,32 @@ export interface ScoringResult {
   atsNotes: string;
   summary: string;
 }
+
+/** One row extracted by the import-tracklist skill (Phase 6.4). `status` is
+ * raw text — normalization happens deterministically in Rust. */
+export interface ImportRawRow {
+  company?: string | null;
+  role?: string | null;
+  status?: string | null;
+  appliedAt?: string | null;
+  notes?: string | null;
+}
+
+/** A raw row after deterministic status normalization + dedupe check, shown
+ * to the user for confirmation before anything is written. */
+export interface ImportPreviewRow extends ImportRawRow {
+  company: string;
+  role: string;
+  status: string;
+  isDuplicate: boolean;
+}
+
+export interface ImportSkipped {
+  row: number;
+  reason: string;
+}
+
+export interface ImportResult {
+  inserted: number;
+  skippedDuplicate: number;
+}

@@ -4,6 +4,7 @@
 
 pub mod applications;
 pub mod archetypes;
+pub mod import;
 pub mod jobs;
 pub mod legitimacy;
 pub mod profile;

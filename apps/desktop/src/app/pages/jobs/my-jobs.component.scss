@@ -184,3 +184,53 @@
   gap: var(--space-3);
   margin-top: var(--space-5);
 }
+.modal--wide {
+  width: min(880px, 100%);
+}
+
+/* Import tracklist (Phase 6.4) */
+.import-skipped {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+.import-skipped summary {
+  cursor: pointer;
+}
+.import-skipped ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+}
+.import-table-wrap {
+  margin-top: var(--space-4);
+  max-height: 360px;
+  overflow-y: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+}
+.import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.import-table th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  background: var(--surface-1);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+.import-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.import-row--dup td {
+  color: var(--text-tertiary);
+}

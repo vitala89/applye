@@ -12,6 +12,7 @@
     "paste_job": "+ Paste Job",
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
     "export": "Export",
     "delete": "Delete"
   },
@@ -88,6 +89,21 @@
     "tailoring": "Tailoring…",
     "empty": "Paste a job description above to score and tailor your CV.",
     "load_error": "Failed to load"
+  },
+  "myjobs": {
+    "import": "Import file",
+    "import_title": "Import tracklist",
+    "import_hint": "Pick a CSV, XLSX, JSON, or text export from another tracker. One AI call detects the columns — nothing is added until you confirm.",
+    "import_pick_file": "Choose file…",
+    "import_detecting": "Detecting…",
+    "import_confirm_btn": "Import selected",
+    "import_duplicate": "Already exists",
+    "import_skipped_summary": "Skipped rows",
+    "col_company": "Company",
+    "col_title": "Role",
+    "col_status": "Status",
+    "import_col_applied": "Applied",
+    "import_col_notes": "Notes"
   },
   "settings": {
     "title": "Settings",

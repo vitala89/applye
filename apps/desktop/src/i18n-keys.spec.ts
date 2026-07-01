@@ -1,22 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { TRANSLATIONS } from '@applye/i18n';
 
 // Guard: every `t()('namespace.key')` reference anywhere under apps/desktop
-// must resolve to a real value in en.json. Without this, a missing key
-// renders as the raw dotted string in the UI instead of failing the build —
-// this test turns that into a fast, deterministic CI failure instead.
+// must resolve to a real value in TRANSLATIONS.en (libs/i18n/src/lib/
+// translations/translations.ts — the ACTUAL runtime source TranslateService
+// reads; the sibling .json files in that folder are unused legacy and must
+// never be treated as the source of truth again). Without this, a missing
+// key renders as the raw dotted string in the UI instead of failing the
+// build — this test turns that into a fast, deterministic CI failure.
 
 const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
 const APP_DIR = path.join(WORKSPACE_ROOT, 'apps', 'desktop', 'src', 'app');
-const EN_JSON_PATH = path.join(
-  WORKSPACE_ROOT,
-  'libs',
-  'i18n',
-  'src',
-  'lib',
-  'translations',
-  'en.json',
-);
 
 function walk(dir: string, files: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -60,10 +55,8 @@ function extractKeys(content: string): string[] {
 }
 
 describe('i18n keys', () => {
-  it('every t() key referenced under apps/desktop exists in en.json', () => {
-    const en = JSON.parse(fs.readFileSync(EN_JSON_PATH, 'utf-8'));
-    const namespaces = new Set(Object.keys(en));
-    const flat = flatten(en);
+  it('every t() key referenced under apps/desktop exists in TRANSLATIONS.en', () => {
+    const flat = flatten(TRANSLATIONS.en as unknown as Record<string, unknown>);
 
     const used = new Set<string>();
     for (const file of walk(APP_DIR)) {
@@ -72,14 +65,19 @@ describe('i18n keys', () => {
       }
     }
 
-    // Only judge dotted literals whose first segment is a real i18n
-    // namespace — filters out unrelated dotted identifiers/strings that
-    // happen to match the shape but aren't translation keys.
-    const missing = [...used]
-      .filter((k) => namespaces.has(k.split('.')[0]))
-      .filter((k) => !flat.has(k))
-      .sort();
+    // No namespace pre-filter here on purpose: an earlier version of this
+    // test only flagged keys whose namespace already existed, which hid an
+    // entire missing `health` namespace instead of catching it. A few
+    // false positives from unrelated dotted literals is a better failure
+    // mode than silently missing a whole namespace again.
+    const missing = [...used].filter((k) => !flat.has(k)).sort();
 
     expect(missing).toEqual([]);
+  });
+
+  it('TRANSLATIONS.de has the same key set as TRANSLATIONS.en (no silent drift)', () => {
+    const en = flatten(TRANSLATIONS.en as unknown as Record<string, unknown>);
+    const de = flatten(TRANSLATIONS.de as unknown as Record<string, unknown>);
+    expect([...de].sort()).toEqual([...en].sort());
   });
 });

@@ -10,6 +10,32 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-07-01
+
+### Fixed
+
+- **21 missing i18n keys** (EN + DE) that rendered as raw dotted strings
+  (e.g. `jobs.mark_applied`) instead of real text: 18 pre-existing gaps in
+  Job Detail (Mark as Applied, Add to Pipeline, Export DOCX/PDF, Score/
+  Re-score, Start over, etc.) and My Jobs (table columns, search/filter
+  labels, paste-job modal), plus 3 nav sidebar labels (Discover, Tracker,
+  Analytics). None of these were introduced by Phases 6.5–6.7 — a full
+  scan turned up debt going back further.
+- Fixed `apps/desktop/src/app/app.spec.ts`, which imported a nonexistent
+  `./nx-welcome` module and could never run — this silently meant `nx test
+desktop` (the CI test target for this project) always failed regardless
+  of what else was true, so no test suite in this project could ever gate
+  a merge. Replaced with a minimal smoke test.
+
+### Added
+
+- `apps/desktop/src/i18n-keys.spec.ts` — a fast, deterministic guard test
+  that scans every `.ts`/`.html` file under `apps/desktop/src/app` for
+  `t()('namespace.key')`-shaped references (including the dynamic/ternary
+  call sites) and fails if any resolved namespace key is absent from
+  `en.json`. Runs as part of `nx test desktop`, so a missing key now fails
+  the build instead of silently rendering as a raw string.
+
 ## [0.12.0] - 2026-07-01
 
 ### Added
@@ -223,7 +249,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/vitala89/applye/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/vitala89/applye/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/vitala89/applye/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/vitala89/applye/compare/v0.9.0...v0.10.0

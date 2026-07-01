@@ -109,5 +109,14 @@
   "interview": {
     "title": "Interview Prep",
     "coming_soon": "Stages, Q&A cards, STAR+R, pitch generator — coming soon"
+  },
+  "health": {
+    "section": "Health check",
+    "section_hint": "Deterministic diagnostics — keychain, database, permissions, export folder. 0 AI tokens.",
+    "welcome_title": "Welcome to Applye",
+    "welcome_subtitle": "A quick, offline check that everything on your machine is set up correctly.",
+    "checking": "Checking…",
+    "rerun": "Re-run check",
+    "continue": "Continue"
   }
 }

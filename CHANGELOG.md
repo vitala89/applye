@@ -10,6 +10,22 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-07-01
+
+### Added
+
+- **First-launch health check (Phase 6.7).** A deterministic, 0-token
+  diagnostics report — OS keychain key presence (never a network call),
+  SQLite read/write, the sqlx migration ledger, bundled Tauri capabilities,
+  and export-folder writability — shown once on first launch and re-runnable
+  any time from Settings. Gated by `settings.health_check_seen`, persisted in
+  SQLite (not localStorage), so it survives across windows/profiles.
+- A failing or warning check never blocks the user — "Continue" is always
+  available, in line with the augmentation principle. Whether a stored API
+  key actually _works_ stays a separate, explicitly user-triggered action
+  (Settings' existing "Test connection") — the health report only ever says
+  "stored" or "not stored yet", never "valid".
+
 ## [0.11.0] - 2026-07-01
 
 ### Added
@@ -207,7 +223,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/vitala89/applye/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/vitala89/applye/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/vitala89/applye/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/vitala89/applye/compare/v0.8.0...v0.9.0

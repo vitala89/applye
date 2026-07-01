@@ -147,5 +147,14 @@
   "interview": {
     "title": "Interview-Vorbereitung",
     "coming_soon": "Phasen, Fragenkarten, STAR+R, Pitch-Generator — demnächst"
+  },
+  "health": {
+    "section": "Systemcheck",
+    "section_hint": "Deterministische Diagnose — Schlüsselbund, Datenbank, Berechtigungen, Exportordner. 0 KI-Tokens.",
+    "welcome_title": "Willkommen bei Applye",
+    "welcome_subtitle": "Ein kurzer, offline durchgeführter Check, ob alles auf deinem Rechner korrekt eingerichtet ist.",
+    "checking": "Prüfe…",
+    "rerun": "Erneut prüfen",
+    "continue": "Weiter"
   }
 }

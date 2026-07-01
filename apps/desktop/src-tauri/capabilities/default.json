@@ -3,5 +3,11 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "updater:default", "process:default", "dialog:default"]
+  "permissions": [
+    "core:default",
+    "updater:default",
+    "process:default",
+    "dialog:default",
+    "dialog:allow-open"
+  ]
 }

@@ -5,7 +5,8 @@
       <button class="btn-primary" (click)="pasteOpen.set(true)">
         {{ t()('actions.paste_job') }}
       </button>
-      <button class="btn-ghost" disabled [title]="t()('common.coming_soon')">
+      <button class="btn-ghost" (click)="openImport()">
+        <lucide-icon [img]="icons.upload" [size]="14" aria-hidden="true" />
         {{ t()('myjobs.import') }}
       </button>
     </div>
@@ -140,6 +141,107 @@
           {{ pasteBusy() ? t()('common.loading') : t()('myjobs.paste_submit') }}
         </button>
       </div>
+    </div>
+  </div>
+}
+
+@if (importOpen()) {
+  <div class="modal-backdrop" (click)="cancelImport()">
+    <div class="modal modal--wide" (click)="$event.stopPropagation()">
+      <h3>{{ t()('myjobs.import_title') }}</h3>
+
+      @if (importStep() === 'pick') {
+        <p class="modal__hint">{{ t()('myjobs.import_hint') }}</p>
+        @if (importError()) {
+          <p class="modal__error">{{ importError() }}</p>
+        }
+        <div class="modal__actions">
+          <button class="btn-ghost" (click)="cancelImport()">{{ t()('actions.cancel') }}</button>
+          <button class="btn-primary" [disabled]="importBusy()" (click)="pickAndDetect()">
+            {{ importBusy() ? t()('myjobs.import_detecting') : t()('myjobs.import_pick_file') }}
+          </button>
+        </div>
+      }
+
+      @if (importStep() === 'preview') {
+        <p class="modal__hint">{{ importSummary() }}</p>
+
+        @if (importSkipped().length) {
+          <details class="import-skipped">
+            <summary>
+              {{ t()('myjobs.import_skipped_summary') }} ({{ importSkipped().length }})
+            </summary>
+            <ul>
+              @for (s of importSkipped(); track s.row) {
+                <li>Row {{ s.row }}: {{ s.reason }}</li>
+              }
+            </ul>
+          </details>
+        }
+
+        <div class="import-table-wrap">
+          <table class="import-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>{{ t()('myjobs.col_company') }}</th>
+                <th>{{ t()('myjobs.col_title') }}</th>
+                <th>{{ t()('myjobs.col_status') }}</th>
+                <th>{{ t()('myjobs.import_col_applied') }}</th>
+                <th>{{ t()('myjobs.import_col_notes') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of importRows(); track $index) {
+                <tr [class.import-row--dup]="row.isDuplicate">
+                  <td>
+                    <input
+                      type="checkbox"
+                      [ngModel]="row.selected"
+                      (ngModelChange)="setRowSelected($index, $event)"
+                    />
+                  </td>
+                  <td class="cell-strong">{{ row.company }}</td>
+                  <td>{{ row.role }}</td>
+                  <td>
+                    {{ t()('status.' + row.status) }}
+                    @if (row.isDuplicate) {
+                      <span class="badge badge--warn">{{ t()('myjobs.import_duplicate') }}</span>
+                    }
+                  </td>
+                  <td class="muted">{{ row.appliedAt || '·' }}</td>
+                  <td class="muted">{{ row.notes || '·' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (importError()) {
+          <p class="modal__error">{{ importError() }}</p>
+        }
+        <div class="modal__actions">
+          <button class="btn-ghost" (click)="cancelImport()">{{ t()('actions.cancel') }}</button>
+          <button
+            class="btn-primary"
+            [disabled]="importBusy() || importSelectedCount() === 0"
+            (click)="confirmImport()"
+          >
+            @if (importBusy()) {
+              {{ t()('common.loading') }}
+            } @else {
+              {{ t()('myjobs.import_confirm_btn') }} ({{ importSelectedCount() }})
+            }
+          </button>
+        </div>
+      }
+
+      @if (importStep() === 'done') {
+        <p class="modal__hint">{{ importDoneMsg() }}</p>
+        <div class="modal__actions">
+          <button class="btn-primary" (click)="cancelImport()">{{ t()('actions.close') }}</button>
+        </div>
+      }
     </div>
   </div>
 }

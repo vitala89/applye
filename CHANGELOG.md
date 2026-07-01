@@ -10,6 +10,29 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-01
+
+### Added
+
+- **Import tracklist (Phase 6.4).** "Import file" in My Jobs picks a CSV,
+  XLSX, JSON, or plain-text export from another job tracker via the native
+  file dialog. One AI call (`import-tracklist.md`, economy model) detects
+  the column structure and extracts rows — status normalization, dedupe,
+  and the insert are all deterministic Rust + SQL, 0 tokens. XLSX is read
+  with `calamine` (converted to CSV-like text for the AI call); CSV/JSON/
+  text are forwarded as raw text.
+- Preview shows a per-row checkbox table before anything is written:
+  status strings ("Submitted", "Screening", "Declined", ...) normalized to
+  saved/applied/interview/offer/rejected; rows matching an existing job by
+  lower(company)+lower(role) are flagged as already-existing; rows the
+  skill couldn't use (e.g. missing company) are listed with a reason.
+  Nothing is inserted until the user confirms.
+- Confirm inserts a `jobs` row (plus an `applications` row carrying the
+  normalized status) per selected row, tagging `imported_from` as
+  `import_csv` / `import_xlsx` / `import_json` / `import_text`. Duplicates
+  are re-checked at insert time — re-importing the same file adds nothing
+  twice.
+
 ## [0.8.0] - 2026-07-01
 
 ### Added
@@ -146,7 +169,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/vitala89/applye/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/vitala89/applye/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/vitala89/applye/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/vitala89/applye/compare/v0.5.0...v0.6.0

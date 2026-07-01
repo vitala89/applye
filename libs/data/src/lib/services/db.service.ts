@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Job, JobOverview, ScoringCache, TrackerRow } from '@applye/core';
+import { ImportPreviewRow, ImportRawRow, ImportResult } from '@applye/core';
 import { Application, ApplicationStatus, PipelineCard } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
@@ -187,5 +188,26 @@ export class DbService {
   // --- Backup / export ---
   async exportDatabase(targetPath: string): Promise<string> {
     return tauriInvoke<string>('db_export', { targetPath });
+  }
+
+  // --- Import tracklist (Phase 6.4) ---
+  importReadFile(path: string): Promise<{ fileType: string; content: string }> {
+    return tauriInvoke<{ fileType: string; content: string }>('import_read_file', { path });
+  }
+
+  importPreview(rows: ImportRawRow[]): Promise<ImportPreviewRow[]> {
+    return tauriInvoke<ImportPreviewRow[]>('import_preview', { rows });
+  }
+
+  importConfirm(
+    rows: ImportRawRow[],
+    importedFrom: string,
+    followupDaysAfterApply: number,
+  ): Promise<ImportResult> {
+    return tauriInvoke<ImportResult>('import_confirm', {
+      rows,
+      importedFrom,
+      followupDaysAfterApply,
+    });
   }
 }

@@ -24,6 +24,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "resume-tailoring" => Some(include_str!(
             "../../../../../libs/skills/src/resume-tailoring/resume-tailoring.md"
         )),
+        "import-tracklist" => Some(include_str!(
+            "../../../../../libs/skills/src/import-tracklist/import-tracklist.md"
+        )),
         _ => None,
     }
 }

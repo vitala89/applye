@@ -12,6 +12,7 @@
     "paste_job": "+ Stelle einfügen",
     "save": "Speichern",
     "cancel": "Abbrechen",
+    "close": "Schließen",
     "export": "Exportieren",
     "delete": "Löschen"
   },
@@ -88,6 +89,21 @@
     "tailoring": "Passe an…",
     "empty": "Oben Stellenbeschreibung einfügen, um Lebenslauf zu bewerten und anzupassen.",
     "load_error": "Laden fehlgeschlagen"
+  },
+  "myjobs": {
+    "import": "Datei importieren",
+    "import_title": "Tracklist importieren",
+    "import_hint": "CSV-, XLSX-, JSON- oder Text-Export aus einem anderen Tracker wählen. Ein KI-Aufruf erkennt die Spalten — nichts wird hinzugefügt, bevor Sie bestätigen.",
+    "import_pick_file": "Datei wählen…",
+    "import_detecting": "Erkenne…",
+    "import_confirm_btn": "Auswahl importieren",
+    "import_duplicate": "Bereits vorhanden",
+    "import_skipped_summary": "Übersprungene Zeilen",
+    "col_company": "Unternehmen",
+    "col_title": "Rolle",
+    "col_status": "Status",
+    "import_col_applied": "Beworben",
+    "import_col_notes": "Notizen"
   },
   "settings": {
     "title": "Einstellungen",

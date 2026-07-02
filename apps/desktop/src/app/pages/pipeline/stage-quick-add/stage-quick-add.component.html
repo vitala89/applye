@@ -1,0 +1,53 @@
+<div class="sqa">
+  <p class="sqa__title">{{ t()('interview.quickadd_title') }}</p>
+
+  <label class="sqa__field">
+    <span class="sqa__label">{{ t()('interview.stage_type_label') }}</span>
+    <select class="sqa__select" [ngModel]="stageType()" (ngModelChange)="stageType.set($event)">
+      @for (type of STAGE_TYPES; track type) {
+        <option [value]="type">{{ t()('interview.type_' + type) }}</option>
+      }
+    </select>
+  </label>
+
+  <label class="sqa__field">
+    <span class="sqa__label">{{ t()('interview.stage_label_label') }}</span>
+    <input
+      type="text"
+      [ngModel]="stageLabel()"
+      (ngModelChange)="stageLabel.set($event)"
+      [placeholder]="t()('interview.stage_label_placeholder')"
+      [disabled]="busy()"
+    />
+  </label>
+
+  <label class="sqa__field">
+    <span class="sqa__label">{{ t()('interview.stage_date_label') }}</span>
+    <input
+      type="date"
+      [ngModel]="scheduledAt()"
+      (ngModelChange)="scheduledAt.set($event)"
+      [disabled]="busy()"
+    />
+  </label>
+
+  @if (error()) {
+    <p class="sqa__error">{{ error() }}</p>
+  }
+
+  <div class="sqa__actions">
+    <button type="button" appButton variant="ghost" size="sm" [disabled]="busy()" (click)="skip()">
+      {{ t()('interview.quickadd_skip') }}
+    </button>
+    <button
+      type="button"
+      appButton
+      variant="primary"
+      size="sm"
+      [disabled]="busy() || !stageLabel().trim()"
+      (click)="submit()"
+    >
+      {{ t()('interview.add_stage') }}
+    </button>
+  </div>
+</div>

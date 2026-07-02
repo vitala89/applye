@@ -249,6 +249,7 @@ pub struct PipelineCard {
     pub current_stage_order: Option<i64>,
     pub current_stage_label: Option<String>,
     pub current_stage_status: Option<String>,
+    pub current_stage_scheduled_at: Option<String>,
 }
 
 /// `overdue` is computed in SQL (0 tokens): a follow-up is due once its date
@@ -269,7 +270,8 @@ async fn db_pipeline_cards_core(pool: &sqlx::SqlitePool) -> Result<Vec<PipelineC
            sc.score,
            cs.stage_order AS current_stage_order,
            cs.stage_label AS current_stage_label,
-           cs.status AS current_stage_status
+           cs.status AS current_stage_status,
+           cs.scheduled_at AS current_stage_scheduled_at
          FROM applications a
          LEFT JOIN jobs j ON a.job_id = j.id
          LEFT JOIN (

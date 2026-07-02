@@ -67,6 +67,7 @@ export interface PipelineCard {
   currentStageOrder?: number;
   currentStageLabel?: string;
   currentStageStatus?: InterviewStageStatus;
+  currentStageScheduledAt?: string;
 }
 
 export interface Comment {

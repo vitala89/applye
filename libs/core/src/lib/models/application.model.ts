@@ -4,6 +4,8 @@ export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'r
 
 export type ApplicationMethod = 'online_form' | 'email' | 'portal';
 
+export type Priority = 'low' | 'medium' | 'high' | null;
+
 export interface Application {
   id: number;
   jobId: number;
@@ -24,6 +26,7 @@ export interface Application {
   nextAction?: string;
   nextActionAt?: string;
   salaryRange?: string;
+  priority?: Priority;
   updatedAt: string;
 }
 
@@ -59,4 +62,12 @@ export interface PipelineCard {
   company?: string;
   title?: string;
   score?: number;
+  priority?: Priority;
+}
+
+export interface Comment {
+  id: number;
+  applicationId: number;
+  commentText: string;
+  createdAt: string;
 }

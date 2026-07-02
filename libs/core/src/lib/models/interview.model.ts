@@ -5,7 +5,24 @@ export type StageType =
   | 'technical'
   | 'system_design'
   | 'behavioral'
-  | 'final';
+  | 'final'
+  | 'other';
+
+/**
+ * scheduled — has a confirmed scheduledAt.
+ * awaitingScheduling — passed the previous stage, this one not yet booked.
+ * awaitingResponse — interview happened, waiting to hear back.
+ * passed — cleared this stage.
+ * rejected — ends the process (syncs the parent application's kanban status).
+ * cancelled — ended without a rejection verdict (no sync).
+ */
+export type InterviewStageStatus =
+  | 'scheduled'
+  | 'awaiting_scheduling'
+  | 'awaiting_response'
+  | 'passed'
+  | 'rejected'
+  | 'cancelled';
 
 export type PrepFormat = 'qa' | 'star';
 
@@ -14,10 +31,38 @@ export interface InterviewStage {
   applicationId: number;
   stageOrder: number;
   stageType: StageType;
+  /** Free-text name the user sees everywhere — the primary field, not stageType. */
   stageLabel: string;
   scheduledAt?: string;
-  status: 'upcoming' | 'done';
-  stageLanguage: SupportedLanguage;
+  status: InterviewStageStatus;
+  stageLanguage?: SupportedLanguage;
+  interviewerName?: string;
+  interviewerRole?: string;
+  interviewerEmail?: string;
+  notes?: string;
+}
+
+export interface CreateInterviewStageInput {
+  applicationId: number;
+  stageOrder: number;
+  stageType: StageType;
+  stageLabel: string;
+  scheduledAt?: string;
+  stageLanguage?: SupportedLanguage;
+  interviewerName?: string;
+  interviewerRole?: string;
+  interviewerEmail?: string;
+  notes?: string;
+}
+
+export interface UpdateInterviewStageInput {
+  stageId: number;
+  stageOrder?: number;
+  stageType?: StageType;
+  stageLabel?: string;
+  scheduledAt?: string;
+  status?: InterviewStageStatus;
+  stageLanguage?: SupportedLanguage;
   interviewerName?: string;
   interviewerRole?: string;
   interviewerEmail?: string;

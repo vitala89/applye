@@ -196,10 +196,13 @@ export class PasteJobModalComponent {
   }
 
   // Window focus is the practical proxy for "user switched back from their
-  // browser" in a single-window desktop app — only active while this
-  // component is mounted (i.e. the modal is open).
+  // browser" in a single-window desktop app. The component itself is
+  // mounted once at the shell root (so both entry points share it), so this
+  // listener is live even when closed — guard explicitly on modal state so
+  // the clipboard is only ever read while the paste modal is actually open.
   @HostListener('window:focus')
   protected onWindowFocus(): void {
+    if (!this.modal.isOpen()) return;
     void this.checkClipboard();
   }
 

@@ -160,7 +160,7 @@ pub async fn db_set_application_status(
     db_set_application_status_core(id, status, &db.pool).await
 }
 
-async fn db_set_application_status_core(
+pub(crate) async fn db_set_application_status_core(
     id: i64,
     status: String,
     pool: &sqlx::SqlitePool,
@@ -246,6 +246,9 @@ pub struct PipelineCard {
     pub title: Option<String>,
     pub score: Option<f64>,
     pub priority: Option<String>,
+    pub current_stage_order: Option<i64>,
+    pub current_stage_label: Option<String>,
+    pub current_stage_status: Option<String>,
 }
 
 /// `overdue` is computed in SQL (0 tokens): a follow-up is due once its date
@@ -263,13 +266,24 @@ async fn db_pipeline_cards_core(pool: &sqlx::SqlitePool) -> Result<Vec<PipelineC
            (a.follow_up_at IS NOT NULL AND a.follow_up_at < date('now')) AS overdue,
            a.updated_at, a.priority,
            j.company, j.title,
-           sc.score
+           sc.score,
+           cs.stage_order AS current_stage_order,
+           cs.stage_label AS current_stage_label,
+           cs.status AS current_stage_status
          FROM applications a
          LEFT JOIN jobs j ON a.job_id = j.id
          LEFT JOIN (
            SELECT job_id, MAX(id) AS max_id FROM scoring_cache GROUP BY job_id
          ) latest ON latest.job_id = j.id
          LEFT JOIN scoring_cache sc ON sc.id = latest.max_id
+         LEFT JOIN interview_stages cs ON cs.id = (
+           SELECT s.id FROM interview_stages s
+           WHERE s.application_id = a.id
+           ORDER BY
+             CASE WHEN s.status NOT IN ('rejected', 'cancelled') THEN 0 ELSE 1 END ASC,
+             s.stage_order DESC
+           LIMIT 1
+         )
          ORDER BY a.updated_at DESC, a.id DESC",
     )
     .fetch_all(pool)

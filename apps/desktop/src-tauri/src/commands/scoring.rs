@@ -109,25 +109,36 @@ pub struct SaveScoreInput {
 
 /// Paste raw JD: compute hash, hard-filter, extract metadata, run the
 /// deterministic legitimacy check (0 tokens, after the hard filter, before
-/// any AI scoring), upsert job row.
+/// any AI scoring), upsert job row. `title`/`company` are optional overrides
+/// for callers that already know them precisely (e.g. the "From link" ATS
+/// fetch, which reads structured fields instead of guessing from raw text);
+/// the paste-text flow omits them and falls back to text extraction.
 #[tauri::command]
 pub async fn job_paste(
     jd_text: String,
+    title: Option<String>,
+    company: Option<String>,
     db: State<'_, Db>,
 ) -> Result<crate::commands::jobs::Job, String> {
-    job_paste_core(jd_text, &db.pool).await
+    job_paste_core(jd_text, title, company, &db.pool).await
 }
 
 /// Core of `job_paste`, decoupled from `tauri::State` so it can be exercised
 /// directly against a plain pool in tests.
 async fn job_paste_core(
     jd_text: String,
+    title_override: Option<String>,
+    company_override: Option<String>,
     pool: &sqlx::SqlitePool,
 ) -> Result<crate::commands::jobs::Job, String> {
     let jd_hash = stable_hash(&jd_text);
     let hard_pass = hard_filter(&jd_text);
-    let title = extract_title(&jd_text);
-    let company = extract_company(&jd_text);
+    let title = title_override
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| extract_title(&jd_text));
+    let company = company_override
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| extract_company(&jd_text));
 
     // Legitimacy is informational only — it never blocks the hard filter or
     // scoring, it just gets recorded alongside the job (augmentation, not a gate).
@@ -308,7 +319,9 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer\n\
                    We build warehouse robots and need a great engineer.";
-        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(jd.to_string(), None, None, &pool)
+            .await
+            .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("yellow"));
         let notes = job.legitimacy_notes.expect("notes present");
         assert!(notes.contains("Salary"));
@@ -319,7 +332,9 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer\nSalary: €90,000\n\
                    Apply by sending your CV to recruiter88@gmail.com";
-        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(jd.to_string(), None, None, &pool)
+            .await
+            .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("red"));
         let notes = job.legitimacy_notes.expect("notes present");
         assert!(notes.contains("personal email"));
@@ -331,7 +346,9 @@ mod pipeline_tests {
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer\nSalary: €90,000 - €110,000\n\
                    Join our team of 12 engineers building warehouse robots.\n\
                    Apply: jobs@acmerobotics.com";
-        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(jd.to_string(), None, None, &pool)
+            .await
+            .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("green"));
         assert_eq!(job.legitimacy_notes, None);
     }
@@ -341,11 +358,15 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let first = "Company: Acme Robotics\nSalary: €90,000\n\
                       Build great products with a passionate team of 10.";
-        job_paste_core(first.to_string(), &pool).await.unwrap();
+        job_paste_core(first.to_string(), None, None, &pool)
+            .await
+            .unwrap();
 
         let second = "Company: Globex Corp\nSalary: €90,000\n\
                        Build great products with a passionate team of 10.";
-        let job = job_paste_core(second.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(second.to_string(), None, None, &pool)
+            .await
+            .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("red"));
         let notes = job.legitimacy_notes.expect("notes present");
         assert!(notes.contains("already saved under a different company"));
@@ -359,7 +380,9 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let jd = "Title: Backend Engineer\nSalary: €90,000\n\
                    Apply by sending your CV to recruiter88@gmail.com";
-        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(jd.to_string(), None, None, &pool)
+            .await
+            .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("red"));
 
         sqlx::query(
@@ -397,7 +420,9 @@ mod pipeline_tests {
     async fn before_you_submit_round_trips_through_cache() {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer";
-        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(jd.to_string(), None, None, &pool)
+            .await
+            .unwrap();
 
         let notes = serde_json::to_string(&vec![
             "Salary not listed — research market rate before applying.",
@@ -419,7 +444,9 @@ mod pipeline_tests {
     async fn reopening_cached_score_returns_notes_with_no_ai_call() {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer";
-        let job = job_paste_core(jd.to_string(), &pool).await.unwrap();
+        let job = job_paste_core(jd.to_string(), None, None, &pool)
+            .await
+            .unwrap();
 
         let notes =
             serde_json::to_string(&vec!["Posting is 95 days old — verify it's still open."])

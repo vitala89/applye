@@ -1,6 +1,6 @@
 {
   "name": "applye",
-  "version": "0.12.5",
+  "version": "0.13.0",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -33,6 +33,7 @@
     "@ngx-translate/core": "~18.0.0",
     "@ngx-translate/http-loader": "~16.0.0",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-clipboard-manager": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.0",
     "@tauri-apps/plugin-opener": "^2.0.0",
     "@tauri-apps/plugin-process": "^2.0.0",

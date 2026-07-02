@@ -13,6 +13,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             // Auto-updater is desktop-only; the JS side drives the
             // check/prompt/download/install flow (see updater.service.ts).
@@ -51,6 +53,8 @@ pub fn run() {
             commands::jobs::db_list_jobs_overview,
             commands::jobs::db_get_job,
             commands::jobs::db_upsert_job,
+            commands::job_url::classify_job_url,
+            commands::job_url::fetch_job_from_url,
             commands::tracker::db_tracker_rows,
             commands::tracker::export_report,
             commands::applications::db_list_applications,

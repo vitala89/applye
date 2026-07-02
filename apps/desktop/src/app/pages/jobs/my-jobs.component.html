@@ -1,10 +1,10 @@
 <div class="myjobs">
   <header class="myjobs__bar">
     <div class="myjobs__actions">
-      <button class="btn-primary" (click)="pasteJobModal.open()">
+      <button appButton variant="primary" size="sm" (click)="pasteJobModal.open()">
         {{ t()('actions.paste_job') }}
       </button>
-      <button class="btn-ghost" (click)="openImport()">
+      <button appButton variant="secondary" size="sm" (click)="openImport()">
         <lucide-icon [img]="icons.upload" [size]="14" aria-hidden="true" />
         {{ t()('myjobs.import') }}
       </button>

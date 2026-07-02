@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, LucideAngularModule, Search, Upload } from 'lucide-
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped, JobOverview } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
 
 type SortKey = 'company' | 'title' | 'score' | 'status' | 'legitimacyTier' | 'createdAt' | 'source';
@@ -30,7 +31,7 @@ interface ImportSkillResponse {
   selector: 'app-my-jobs',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, ButtonDirective],
   templateUrl: './my-jobs.component.html',
   styleUrl: './my-jobs.component.scss',
 })

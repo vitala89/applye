@@ -157,7 +157,7 @@ const COLS: KanbanCol[] = [
         display: flex;
         flex-direction: column;
         height: 100%;
-        background: var(--surface-raised, #1e1e2e);
+        background: var(--surface-1);
         border-radius: var(--radius-lg, 10px);
         overflow: hidden;
         border-top: 3px solid var(--col-accent);
@@ -219,7 +219,7 @@ const COLS: KanbanCol[] = [
       /* Card */
       .card {
         position: relative;
-        background: var(--surface-base, #13131f);
+        background: var(--surface-2);
         border-radius: var(--radius-md, 6px);
         padding: var(--space-2) var(--space-3);
         border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
@@ -290,16 +290,16 @@ const COLS: KanbanCol[] = [
         line-height: 18px;
 
         &.score--high {
-          background: rgba(34, 197, 94, 0.15);
-          color: #22c55e;
+          background: var(--success-tint);
+          color: var(--success);
         }
         &.score--mid {
-          background: rgba(245, 158, 11, 0.15);
-          color: #f59e0b;
+          background: var(--warning-tint);
+          color: var(--warning);
         }
         &.score--low {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
+          background: var(--danger-tint);
+          color: var(--danger);
         }
       }
 
@@ -309,8 +309,8 @@ const COLS: KanbanCol[] = [
         padding: 1px 6px;
         border-radius: var(--radius-full, 999px);
         line-height: 18px;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
+        background: var(--warning-tint);
+        color: var(--warning);
       }
 
       .card__date {

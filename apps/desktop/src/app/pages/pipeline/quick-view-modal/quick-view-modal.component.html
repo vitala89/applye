@@ -79,14 +79,6 @@
           [placeholder]="t()('pipeline.quickview_comment_placeholder')"
           [disabled]="commentBusy()"
         ></textarea>
-        <button
-          type="button"
-          class="btn-primary"
-          [disabled]="commentBusy() || !commentText().trim()"
-          (click)="addComment()"
-        >
-          {{ t()('pipeline.quickview_add_comment') }}
-        </button>
       </div>
     </section>
 
@@ -94,6 +86,14 @@
       <button type="button" class="btn-ghost" (click)="openFullDetails()">
         {{ t()('pipeline.quickview_open_details') }}
         <lucide-icon [img]="icons.openExternal" [size]="14" />
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="commentBusy() || !commentText().trim()"
+        (click)="addComment()"
+      >
+        {{ t()('pipeline.quickview_add_comment') }}
       </button>
     </footer>
   </div>

@@ -52,6 +52,13 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'interview-prep/:applicationId',
+    loadComponent: () =>
+      import('./pages/interview-prep/interview-prep-detail/interview-prep-detail.component').then(
+        (m) => m.InterviewPrepDetailComponent,
+      ),
+  },
+  {
     path: 'documents',
     loadComponent: () =>
       import('./pages/documents/documents.component').then((m) => m.DocumentsComponent),

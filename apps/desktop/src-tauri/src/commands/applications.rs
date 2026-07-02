@@ -25,6 +25,7 @@ pub struct Application {
     pub next_action: Option<String>,
     pub next_action_at: Option<String>,
     pub salary_range: Option<String>,
+    pub priority: Option<String>,
     pub updated_at: Option<String>,
 }
 
@@ -244,6 +245,7 @@ pub struct PipelineCard {
     pub company: Option<String>,
     pub title: Option<String>,
     pub score: Option<f64>,
+    pub priority: Option<String>,
 }
 
 /// `overdue` is computed in SQL (0 tokens): a follow-up is due once its date
@@ -259,7 +261,7 @@ async fn db_pipeline_cards_core(pool: &sqlx::SqlitePool) -> Result<Vec<PipelineC
         "SELECT
            a.id, a.job_id, a.status, a.applied_at, a.follow_up_at,
            (a.follow_up_at IS NOT NULL AND a.follow_up_at < date('now')) AS overdue,
-           a.updated_at,
+           a.updated_at, a.priority,
            j.company, j.title,
            sc.score
          FROM applications a
@@ -333,6 +335,77 @@ async fn db_update_application_tracker_fields_core(
     .map_err(|e| format!("db_update_application_tracker_fields: {e}"))?;
 
     fetch_application(pool, input.id).await
+}
+
+/// Pipeline quick-view priority flag — a different concept from the
+/// deterministic legitimacy tier: this is the user's own triage signal.
+#[tauri::command]
+pub async fn set_application_priority(
+    application_id: i64,
+    priority: Option<String>,
+    db: State<'_, Db>,
+) -> Result<Application, String> {
+    if let Some(p) = &priority {
+        if !matches!(p.as_str(), "low" | "medium" | "high") {
+            return Err(format!("invalid priority: {p}"));
+        }
+    }
+    sqlx::query("UPDATE applications SET priority = ?, updated_at = datetime('now') WHERE id = ?")
+        .bind(&priority)
+        .bind(application_id)
+        .execute(&db.pool)
+        .await
+        .map_err(|e| format!("set_application_priority: {e}"))?;
+
+    fetch_application(&db.pool, application_id).await
+}
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct Comment {
+    pub id: i64,
+    pub application_id: i64,
+    pub comment_text: String,
+    pub created_at: String,
+}
+
+#[tauri::command]
+pub async fn add_application_comment(
+    application_id: i64,
+    comment_text: String,
+    db: State<'_, Db>,
+) -> Result<Comment, String> {
+    let id = sqlx::query(
+        "INSERT INTO application_comments (application_id, comment_text, created_at)
+         VALUES (?, ?, datetime('now'))",
+    )
+    .bind(application_id)
+    .bind(&comment_text)
+    .execute(&db.pool)
+    .await
+    .map_err(|e| format!("add_application_comment: {e}"))?
+    .last_insert_rowid();
+
+    sqlx::query_as::<_, Comment>("SELECT * FROM application_comments WHERE id = ?")
+        .bind(id)
+        .fetch_one(&db.pool)
+        .await
+        .map_err(|e| format!("add_application_comment (reload): {e}"))
+}
+
+/// Oldest → newest, for the quick-view comment feed.
+#[tauri::command]
+pub async fn list_application_comments(
+    application_id: i64,
+    db: State<'_, Db>,
+) -> Result<Vec<Comment>, String> {
+    sqlx::query_as::<_, Comment>(
+        "SELECT * FROM application_comments WHERE application_id = ? ORDER BY id ASC",
+    )
+    .bind(application_id)
+    .fetch_all(&db.pool)
+    .await
+    .map_err(|e| format!("list_application_comments: {e}"))
 }
 
 #[cfg(test)]

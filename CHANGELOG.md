@@ -10,6 +10,32 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-07-02
+
+### Added
+
+- **Job Tracker now matches the user's real xlsx tracker 1:1 (19 fields).**
+  New additive migration `0008_tracker_fields.sql` adds `jobs.tech_stack` and
+  `applications.source_url` / `contact_name` / `contact_role` /
+  `contact_channel` / `next_action` / `next_action_at` / `salary_range` —
+  purely `ALTER TABLE ADD COLUMN`, dogfooding data preserved.
+  - Tracker screen shows all 19 fields (company, role, tech stack,
+    location, source link, contact name/role/email-or-LinkedIn, outreach
+    type, sent-on, interview #1, follow-up #2, status, next action + date,
+    salary range, contract type, Blue Card threshold, EOR provider, notes)
+    with per-column show/hide and horizontal scroll.
+  - Inline-edit for contact, next action, salary range, and notes — a
+    dedicated `db_update_application_tracker_fields` patch command touches
+    only those 7 columns so it never clobbers `cv_path` /
+    `cover_letter_path` / `application_method` on save.
+  - The Agentur für Arbeit PDF/Excel export now states the applicant name
+    and generated date and adds a contact column to the official layout
+    (period, applicant, date, table of date/company/position/method/
+    status/contact) — 0 tokens, unchanged.
+  - The `import-tracklist` skill and Rust import pipeline now detect and
+    round-trip all 8 new columns from an imported xlsx/csv into the right
+    place.
+
 ## [0.13.1] - 2026-07-02
 
 ### Changed
@@ -358,7 +384,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.13.1...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/vitala89/applye/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/vitala89/applye/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/vitala89/applye/compare/v0.12.5...v0.13.0
 [0.12.5]: https://github.com/vitala89/applye/compare/v0.12.4...v0.12.5

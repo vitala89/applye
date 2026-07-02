@@ -7,13 +7,8 @@
 .myjobs__bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-4);
-}
-.myjobs__title {
-  font-family: var(--font-mono);
-  font-size: var(--text-xl);
-  color: var(--text-primary);
 }
 .myjobs__actions {
   display: flex;

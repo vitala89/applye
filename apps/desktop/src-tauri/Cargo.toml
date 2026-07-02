@@ -1,6 +1,6 @@
 [package]
 name = "applye-desktop"
-version = "0.12.4"
+version = "0.12.5"
 description = "Applye — local-first AI-powered job search desktop app"
 authors = ["Vitalii Kasap"]
 license = "MIT"

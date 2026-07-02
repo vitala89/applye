@@ -8,7 +8,13 @@
       data-tauri-drag-region
       [class.sidebar__logo--mac-overlay]="isMacOverlayChrome"
     >
-      <svg class="logo-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <svg
+        class="logo-mark"
+        viewBox="0 0 64 64"
+        fill="none"
+        aria-hidden="true"
+        data-tauri-drag-region
+      >
         <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
         <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)" />
       </svg>
@@ -85,7 +91,7 @@
   <!-- Main area -->
   <div class="main">
     <!-- Topbar -->
-    <header class="topbar" data-tauri-drag-region>
+    <header class="topbar" data-tauri-drag-region [class.topbar--mac-overlay]="isMacOverlayChrome">
       <h1 class="topbar__title" aria-live="polite" data-tauri-drag-region>
         {{ t()(pageTitleKey()) }}
       </h1>

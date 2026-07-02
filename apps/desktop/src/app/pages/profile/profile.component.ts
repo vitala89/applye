@@ -17,10 +17,7 @@ import { TranslateService } from '@applye/i18n';
       <div class="profile">
         <!-- Header -->
         <header class="profile__head">
-          <div>
-            <h2>{{ t()('profile.title') }}</h2>
-            <p class="muted">{{ t()('profile.subtitle') }}</p>
-          </div>
+          <p class="muted">{{ t()('profile.subtitle') }}</p>
           <div class="profile__head-actions">
             <button class="btn" [disabled]="saving() || !dirty()" (click)="save()">
               {{
@@ -174,22 +171,15 @@ import { TranslateService } from '@applye/i18n';
 
       .profile__head {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: var(--space-4);
-      }
-      .profile__head h2 {
-        font-family: var(--font-brand);
-        font-size: var(--text-xl);
-        color: var(--text-primary);
-        margin-bottom: var(--space-1);
       }
       .profile__head-actions {
         display: flex;
         align-items: center;
         gap: var(--space-3);
         flex-shrink: 0;
-        padding-top: var(--space-1);
       }
 
       .section {

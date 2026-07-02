@@ -10,6 +10,22 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.12.5] - 2026-07-02
+
+### Fixed
+
+- Removed the per-page title heading duplicating the topbar's active-route
+  title on all 9 remaining pages (Dashboard, Discover, Interview Prep, Job
+  Tracker, Documents, Analytics, Settings, Profile, My Jobs) — kept each
+  page's description/actions, cleaned up the CSS that only styled the
+  removed headings.
+- Sidebar logo on macOS previously sat beside the traffic lights on the
+  same row, misaligned with the nav icons below. Now sits on its own row
+  below the traffic-light cluster, left-aligned flush with the nav.
+- `data-tauri-drag-region` wasn't set on the sidebar logo-mark SVG (the
+  attribute isn't inherited by children), leaving a small non-draggable
+  gap in the header. Added it so the full header row is draggable.
+
 ## [0.12.4] - 2026-07-02
 
 ### Fixed
@@ -306,7 +322,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.4...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.5...HEAD
+[0.12.5]: https://github.com/vitala89/applye/compare/v0.12.4...v0.12.5
 [0.12.4]: https://github.com/vitala89/applye/compare/v0.12.3...v0.12.4
 [0.12.3]: https://github.com/vitala89/applye/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/vitala89/applye/compare/v0.12.1...v0.12.2

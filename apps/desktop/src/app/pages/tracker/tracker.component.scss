@@ -5,20 +5,14 @@
 }
 .tracker__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-5);
   flex-wrap: wrap;
 }
-.tracker__title {
-  font-family: var(--font-mono);
-  font-size: var(--text-xl);
-  color: var(--text-primary);
-}
 .tracker__sub {
   font-size: var(--text-sm);
   color: var(--text-tertiary);
-  margin-top: var(--space-1);
 }
 .tracker__export {
   display: flex;

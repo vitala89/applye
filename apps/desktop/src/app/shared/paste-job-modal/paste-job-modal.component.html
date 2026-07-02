@@ -1,0 +1,134 @@
+@if (modal.isOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="onBackdropClick($event)"
+    (keydown.escape)="close()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div class="modal" role="dialog" aria-modal="true" [attr.aria-label]="t()('pasteModal.title')">
+      <div class="pastemodal__header">
+        <h3>{{ t()('pasteModal.title') }}</h3>
+        <button
+          type="button"
+          class="pastemodal__close"
+          (click)="close()"
+          [attr.aria-label]="t()('actions.close')"
+        >
+          <lucide-icon [img]="icons.close" [size]="16" aria-hidden="true" />
+        </button>
+      </div>
+
+      <div class="pastemodal__tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="pastemodal__tab"
+          [class.is-active]="tab() === 'link'"
+          [attr.aria-selected]="tab() === 'link'"
+          (click)="setTab('link')"
+        >
+          <lucide-icon [img]="icons.link" [size]="14" aria-hidden="true" />
+          {{ t()('pasteModal.tab_link') }}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="pastemodal__tab"
+          [class.is-active]="tab() === 'text'"
+          [attr.aria-selected]="tab() === 'text'"
+          (click)="setTab('text')"
+        >
+          <lucide-icon [img]="icons.text" [size]="14" aria-hidden="true" />
+          {{ t()('pasteModal.tab_text') }}
+        </button>
+      </div>
+
+      @if (tab() === 'link') {
+        <div class="pastemodal__panel">
+          <label class="pastemodal__label" for="paste-job-url">{{
+            t()('pasteModal.link_label')
+          }}</label>
+          <input
+            id="paste-job-url"
+            type="url"
+            [ngModel]="linkUrl()"
+            (ngModelChange)="linkUrl.set($event)"
+            [placeholder]="t()('pasteModal.link_placeholder')"
+            (keydown.enter)="submitLink()"
+          />
+          <p class="modal__hint">{{ t()('pasteModal.link_hint') }}</p>
+
+          @if (closedBoardName() || isUnknownDomain()) {
+            <div class="pastemodal__warning">
+              @if (closedBoardName()) {
+                <p class="pastemodal__warning-title">{{ closedWarningTitle() }}</p>
+              }
+              <p>{{ closedWarningBody() }}</p>
+              <button type="button" class="btn-ghost" (click)="openInBrowser()">
+                <lucide-icon [img]="icons.open" [size]="14" aria-hidden="true" />
+                {{ t()('pasteModal.open_in_browser') }}
+              </button>
+            </div>
+          }
+
+          @if (linkError()) {
+            <p class="modal__error">{{ linkError() }}</p>
+          }
+
+          <div class="modal__actions">
+            <button class="btn-ghost" (click)="close()">{{ t()('actions.cancel') }}</button>
+            <button
+              class="btn-primary"
+              [disabled]="linkBusy() || !linkUrl().trim()"
+              (click)="submitLink()"
+            >
+              {{ linkBusy() ? t()('pasteModal.link_fetching') : t()('pasteModal.link_submit') }}
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="pastemodal__panel">
+          <p class="modal__hint">{{ t()('pasteModal.text_hint') }}</p>
+
+          @if (clipboardOffer()) {
+            <button type="button" class="pastemodal__clipboard-offer" (click)="useClipboardText()">
+              <lucide-icon [img]="icons.clipboardPaste" [size]="14" aria-hidden="true" />
+              {{ t()('pasteModal.clipboard_found') }}
+            </button>
+          } @else {
+            <div class="pastemodal__clipboard-check">
+              <button type="button" class="btn-ghost" (click)="checkClipboard()">
+                <lucide-icon [img]="icons.clipboard" [size]="14" aria-hidden="true" />
+                {{ t()('pasteModal.clipboard_check') }}
+              </button>
+              <span class="pastemodal__clipboard-hint">{{ t()('pasteModal.clipboard_hint') }}</span>
+            </div>
+          }
+
+          <textarea
+            rows="12"
+            [ngModel]="textValue()"
+            (ngModelChange)="textValue.set($event)"
+            [placeholder]="t()('pasteModal.text_placeholder')"
+          ></textarea>
+
+          @if (textError()) {
+            <p class="modal__error">{{ textError() }}</p>
+          }
+
+          <div class="modal__actions">
+            <button class="btn-ghost" (click)="close()">{{ t()('actions.cancel') }}</button>
+            <button
+              class="btn-primary"
+              [disabled]="textBusy() || !textValue().trim()"
+              (click)="submitText()"
+            >
+              {{ textBusy() ? t()('pasteModal.submitting') : t()('pasteModal.submit') }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

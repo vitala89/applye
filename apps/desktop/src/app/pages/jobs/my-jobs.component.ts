@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, LucideAngularModule, Search, Upload } from 'lucide-
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped, JobOverview } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
 
 type SortKey = 'company' | 'title' | 'score' | 'status' | 'legitimacyTier' | 'createdAt' | 'source';
 type ImportStep = 'pick' | 'preview' | 'done';
@@ -39,6 +40,7 @@ export class MyJobsComponent {
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+  protected readonly pasteJobModal = inject(PasteJobModalService);
   protected readonly icons = { search: Search, up: ArrowUp, down: ArrowDown, upload: Upload };
 
   readonly rows = signal<JobOverview[]>([]);
@@ -54,12 +56,6 @@ export class MyJobsComponent {
 
   readonly statuses = ['saved', 'applied', 'interview', 'offer', 'rejected'];
   readonly legitimacies = ['green', 'yellow', 'red'];
-
-  // Paste flow
-  readonly pasteOpen = signal(false);
-  readonly pasteText = signal('');
-  readonly pasteBusy = signal(false);
-  readonly pasteError = signal('');
 
   // Import tracklist flow (Phase 6.4) — pick file -> detect (1 AI call) ->
   // preview (deterministic) -> confirm (deterministic insert).
@@ -139,23 +135,6 @@ export class MyJobsComponent {
 
   open(id: number): void {
     void this.router.navigate(['/jobs', id]);
-  }
-
-  async submitPaste(): Promise<void> {
-    const text = this.pasteText().trim();
-    if (!text || this.pasteBusy()) return;
-    this.pasteBusy.set(true);
-    this.pasteError.set('');
-    try {
-      const job = await this.db.jobPaste(text);
-      this.pasteOpen.set(false);
-      this.pasteText.set('');
-      void this.router.navigate(['/jobs', job.id]);
-    } catch (e) {
-      this.pasteError.set(String(e));
-    } finally {
-      this.pasteBusy.set(false);
-    }
   }
 
   // ── Import tracklist ────────────────────────────────────────────────────────

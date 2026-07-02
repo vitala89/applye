@@ -110,7 +110,7 @@
             aria-hidden="true"
           />
         </button>
-        <button class="btn-primary" disabled [title]="t()('common.coming_soon')">
+        <button class="btn-primary" (click)="pasteJobModal.open()">
           {{ t()('actions.paste_job') }}
         </button>
       </div>
@@ -122,3 +122,5 @@
     </main>
   </div>
 </div>
+
+<app-paste-job-modal />

@@ -18,11 +18,13 @@ import {
 } from 'lucide-angular';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
+import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 
 @Component({
   selector: 'app-shell-layout',
   standalone: true,
-  imports: [RouterModule, LucideAngularModule],
+  imports: [RouterModule, LucideAngularModule, PasteJobModalComponent],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.scss',
 })
@@ -30,6 +32,7 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly db = inject(DbService);
   protected readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+  protected readonly pasteJobModal = inject(PasteJobModalService);
   private readonly router = inject(Router);
 
   // Maps a route's top-level path segment to its i18n nav label — reused

@@ -1,7 +1,7 @@
 <div class="myjobs">
   <header class="myjobs__bar">
     <div class="myjobs__actions">
-      <button class="btn-primary" (click)="pasteOpen.set(true)">
+      <button class="btn-primary" (click)="pasteJobModal.open()">
         {{ t()('actions.paste_job') }}
       </button>
       <button class="btn-ghost" (click)="openImport()">
@@ -113,36 +113,6 @@
     </table>
   }
 </div>
-
-@if (pasteOpen()) {
-  <div class="modal-backdrop" (click)="pasteOpen.set(false)">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <h3>{{ t()('myjobs.paste_title') }}</h3>
-      <p class="modal__hint">{{ t()('myjobs.paste_hint') }}</p>
-      <textarea
-        rows="12"
-        [ngModel]="pasteText()"
-        (ngModelChange)="pasteText.set($event)"
-        [placeholder]="t()('myjobs.paste_title')"
-      ></textarea>
-      @if (pasteError()) {
-        <p class="modal__error">{{ pasteError() }}</p>
-      }
-      <div class="modal__actions">
-        <button class="btn-ghost" (click)="pasteOpen.set(false)">
-          {{ t()('actions.cancel') }}
-        </button>
-        <button
-          class="btn-primary"
-          [disabled]="pasteBusy() || !pasteText().trim()"
-          (click)="submitPaste()"
-        >
-          {{ pasteBusy() ? t()('common.loading') : t()('myjobs.paste_submit') }}
-        </button>
-      </div>
-    </div>
-  </div>
-}
 
 @if (importOpen()) {
   <div class="modal-backdrop" (click)="cancelImport()">

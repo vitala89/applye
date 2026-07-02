@@ -21,7 +21,9 @@
 }
 .tracker__filters {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
+  flex-wrap: wrap;
 }
 .tracker__filters select {
   background: var(--surface-sunken);
@@ -30,6 +32,49 @@
   color: var(--text-primary);
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
+}
+.tracker__applicant {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  min-width: 180px;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+}
+.tracker__colmenu {
+  position: relative;
+  margin-left: auto;
+}
+.tracker__colpanel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-md);
+  min-width: 220px;
+}
+.tracker__colitem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
 }
 .tracker__msg {
   font-size: var(--text-sm);
@@ -42,8 +87,12 @@
   color: var(--text-tertiary);
   font-family: var(--font-mono);
 }
+.tracker__table-wrap {
+  overflow-x: auto;
+}
 .tracker__table {
   width: 100%;
+  min-width: max-content;
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
@@ -74,6 +123,26 @@
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cell-edit {
+  width: 100%;
+  min-width: 120px;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: var(--space-1) var(--space-2);
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+}
+.tracker-link {
+  color: var(--text-accent);
+  font-size: var(--text-sm);
   white-space: nowrap;
 }
 .badge {

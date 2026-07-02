@@ -10,6 +10,18 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-07-02
+
+### Changed
+
+- **My Jobs controls now use the shared design system.** Added a token-driven
+  `[libButton]` directive in `libs/ui` (`primary`/`secondary`/`ghost`
+  variants, `sm`/`md` sizes). The top-bar "+ Paste Job" button is now
+  primary and "Import file" is secondary, both with matched icon size and
+  spacing. The status/legitimacy/score filter controls were normalized to
+  share height, border, radius, focus ring, and placeholder color with the
+  search input — verified in both light and dark themes.
+
 ## [0.13.0] - 2026-07-02
 
 ### Added
@@ -346,7 +358,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/vitala89/applye/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/vitala89/applye/compare/v0.12.5...v0.13.0
 [0.12.5]: https://github.com/vitala89/applye/compare/v0.12.4...v0.12.5
 [0.12.4]: https://github.com/vitala89/applye/compare/v0.12.3...v0.12.4

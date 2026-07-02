@@ -37,7 +37,12 @@
   padding: var(--space-2) 0;
   color: var(--text-primary);
   font-size: var(--text-sm);
+  line-height: var(--leading-normal);
   min-width: 220px;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
 }
 .myjobs__filters select,
 .minscore {
@@ -47,9 +52,27 @@
   color: var(--text-primary);
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
+  line-height: var(--leading-normal);
+}
+.myjobs__filters select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--space-8);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-tertiary) 50%),
+    linear-gradient(135deg, var(--text-tertiary) 50%, transparent 50%);
+  background-position:
+    right var(--space-4) center,
+    right calc(var(--space-4) + 5px) center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
 }
 .minscore {
   width: 110px;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
 }
 
 .myjobs__state {

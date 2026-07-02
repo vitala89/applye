@@ -10,6 +10,30 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-02
+
+### Added
+
+- **"+ Paste Job" is now functional**, wired to both the topbar and My Jobs
+  buttons via a single shared modal with two tabs:
+  - **Paste text** — pastes straight into the existing pipeline (Rust parse
+    - hard filter + legitimacy check + cache check; AI recruiter score/ATS
+      run from the job detail page as before). No duplicated logic.
+  - **From link** — a URL is classified server-side by `classify_job_url`
+    against a legal-first allowlist (open/ATS/RSS sources only:
+    `boards-api.greenhouse.io`, `api.lever.co`, `api.ashbyhq.com`,
+    `*.jobs.personio.de`, `remotive.com`, `weworkremotely.com`). Allowed
+    URLs are fetched via `fetch_job_from_url` (public JSON/RSS APIs only)
+    and flow into the same pipeline. Closed boards (LinkedIn, Indeed,
+    StepStone, Glassdoor) and any unrecognized domain are never fetched —
+    the app only ever opens them in the browser via `tauri-plugin-opener`,
+    shows a warning naming the board, and switches to the Paste text tab.
+  - A clipboard helper (`tauri-plugin-clipboard-manager`, read-only) offers
+    to fill the textarea when the clipboard holds a long, job-shaped text
+    block after the user copies it themselves — 0 tokens, never reads a
+    browser tab, never auto-submits.
+  - All new copy ships in English and German.
+
 ## [0.12.5] - 2026-07-02
 
 ### Fixed
@@ -322,7 +346,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.12.5...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/vitala89/applye/compare/v0.12.5...v0.13.0
 [0.12.5]: https://github.com/vitala89/applye/compare/v0.12.4...v0.12.5
 [0.12.4]: https://github.com/vitala89/applye/compare/v0.12.3...v0.12.4
 [0.12.3]: https://github.com/vitala89/applye/compare/v0.12.2...v0.12.3

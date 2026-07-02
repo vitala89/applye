@@ -26,23 +26,31 @@ You detect the structure of a job-application tracklist a user exported from ano
 Rules:
 
 - Output ONLY valid JSON. No markdown fences, no commentary, no preamble.
-- detected_columns: map each concept (company, role, status, applied_at, notes) to the source column header/label you found it under. Use null for applied_at or notes if the file has no such column.
+- detected_columns: map each concept (company, role, status, applied_at, notes, tech_stack, source_url, contact_name, contact_role, contact_channel, next_action, next_action_at, salary_range) to the source column header/label you found it under. Use null for any concept the file has no column for.
 - normalized_rows: one entry per data row (skip the header row itself).
   - company: the company/employer name, trimmed. Required.
   - role: the job title/role, trimmed. Required.
   - status: the status/stage text EXACTLY as it appears in that row (e.g. "Submitted", "Screening", "No response") — do NOT map it to a fixed set of values. A deterministic step after this call normalizes it.
   - applied_at: convert to "YYYY-MM-DD" if the row has a recognizable date, otherwise null. Never guess a date that isn't in the row.
   - notes: any free-text notes/comments column content, trimmed, or null if none.
+  - tech_stack: the tech stack / stack column content (e.g. "React, Node, AWS"), trimmed, or null if none.
+  - source_url: the job posting / source link URL, trimmed, or null if none.
+  - contact_name: the recruiter/contact person's name, trimmed, or null if none.
+  - contact_role: the contact person's role/title, trimmed, or null if none.
+  - contact_channel: the contact's email address or LinkedIn URL, trimmed, or null if none.
+  - next_action: free-text description of the next planned action, trimmed, or null if none.
+  - next_action_at: convert to "YYYY-MM-DD" if the row has a recognizable next-action date, otherwise null.
+  - salary_range: the gross salary range text (e.g. "70-80k EUR"), trimmed, or null if none.
 - skipped: rows you could not use, 1-indexed by their position in the data (row 1 = first data row, not the header). Most common reason: missing company name. Do not put these rows in normalized_rows.
 - duplicates_expected: informational only — "Company / Role" pairs that appear more than once within THIS file. This is not the real dedupe check (that runs against the actual database afterward); it's just a heads-up for rows that look like repeats of each other in the same import.
-- If a row is ambiguous but has a company and role, keep it — do not skip rows just because status or date is unclear; use null for what you can't determine.
+- If a row is ambiguous but has a company and role, keep it — do not skip rows just because a secondary field is unclear; use null for what you can't determine.
 - Output language for skip reasons: {{language}}.
 
 Output schema (all fields required, arrays may be empty):
 {
-"detected_columns": { "company": "...", "role": "...", "status": "...", "applied_at": "... or null", "notes": "... or null" },
+"detected_columns": { "company": "...", "role": "...", "status": "...", "applied_at": "... or null", "notes": "... or null", "tech_stack": "... or null", "source_url": "... or null", "contact_name": "... or null", "contact_role": "... or null", "contact_channel": "... or null", "next_action": "... or null", "next_action_at": "... or null", "salary_range": "... or null" },
 "normalized_rows": [
-{ "company": "string", "role": "string", "status": "string", "applied_at": "YYYY-MM-DD or null", "notes": "string or null" }
+{ "company": "string", "role": "string", "status": "string", "applied_at": "YYYY-MM-DD or null", "notes": "string or null", "tech_stack": "string or null", "source_url": "string or null", "contact_name": "string or null", "contact_role": "string or null", "contact_channel": "string or null", "next_action": "string or null", "next_action_at": "YYYY-MM-DD or null", "salary_range": "string or null" }
 ],
 "skipped": [ { "row": 0, "reason": "..." } ],
 "duplicates_expected": []

@@ -85,7 +85,7 @@
   <!-- Main area -->
   <div class="main">
     <!-- Topbar -->
-    <header class="topbar" data-tauri-drag-region>
+    <header class="topbar" data-tauri-drag-region [class.topbar--mac-overlay]="isMacOverlayChrome">
       <h1 class="topbar__title" aria-live="polite" data-tauri-drag-region>
         {{ t()(pageTitleKey()) }}
       </h1>

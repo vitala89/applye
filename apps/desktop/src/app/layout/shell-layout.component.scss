@@ -33,10 +33,14 @@
       color: var(--text-accent);
     }
 
-    // macOS titleBarStyle: "Overlay" floats the native traffic lights over
-    // this row — push our own content clear of that ~78px control cluster.
+    // macOS titleBarStyle: "Overlay" floats the native traffic lights above
+    // this row — grow the row and inset it from the top so our own content
+    // sits below the control cluster instead of squeezed beside it. Kept in
+    // sync with .topbar--mac-overlay so the two rows stay the same height.
     &.sidebar__logo--mac-overlay {
-      padding-left: 78px;
+      height: calc(var(--app-header-h) + 28px);
+      min-height: calc(var(--app-header-h) + 28px);
+      padding-top: 28px;
     }
 
     .logo-text {
@@ -154,6 +158,13 @@
   align-items: center;
   gap: var(--space-5, 16px);
   background: var(--bg-app);
+
+  // Keeps the seam with .sidebar__logo--mac-overlay aligned — see there.
+  &.topbar--mac-overlay {
+    height: calc(var(--app-header-h) + 28px);
+    min-height: calc(var(--app-header-h) + 28px);
+    padding-top: 28px;
+  }
 
   &__title {
     flex: 1;

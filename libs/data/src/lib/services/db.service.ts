@@ -8,7 +8,12 @@ import {
   UrlClassification,
 } from '@applye/core';
 import { ImportPreviewRow, ImportRawRow, ImportResult } from '@applye/core';
-import { Application, ApplicationStatus, PipelineCard } from '@applye/core';
+import {
+  Application,
+  ApplicationStatus,
+  ApplicationTrackerFieldsInput,
+  PipelineCard,
+} from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
@@ -136,6 +141,11 @@ export class DbService {
 
   async setApplicationStatus(id: number, status: ApplicationStatus): Promise<Application> {
     return tauriInvoke<Application>('db_set_application_status', { id, status });
+  }
+
+  /** Job Tracker inline edit — patches only contact/next-action/salary/notes. */
+  async updateApplicationTrackerFields(input: ApplicationTrackerFieldsInput): Promise<Application> {
+    return tauriInvoke<Application>('db_update_application_tracker_fields', { input });
   }
 
   // --- Tailoring cache ---

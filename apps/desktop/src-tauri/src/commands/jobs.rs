@@ -22,6 +22,7 @@ pub struct Job {
     pub imported_from: Option<String>,
     pub discover_dismissed: Option<bool>,
     pub discover_shown_at: Option<String>,
+    pub tech_stack: Option<String>,
     pub created_at: Option<String>,
 }
 
@@ -39,6 +40,7 @@ pub struct JobInput {
     pub salary_min: Option<i64>,
     pub blue_card_eligible: Option<bool>,
     pub hard_filter_passed: Option<bool>,
+    pub tech_stack: Option<String>,
 }
 
 #[tauri::command]
@@ -101,8 +103,8 @@ pub async fn db_upsert_job(job: JobInput, db: State<'_, Db>) -> Result<Job, Stri
     sqlx::query(
         "INSERT INTO jobs
            (company, title, jd_text, jd_hash, source, location, language,
-            salary_min, blue_card_eligible, hard_filter_passed, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            salary_min, blue_card_eligible, hard_filter_passed, tech_stack, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(jd_hash) DO UPDATE SET
            company            = excluded.company,
            title              = excluded.title,
@@ -111,7 +113,8 @@ pub async fn db_upsert_job(job: JobInput, db: State<'_, Db>) -> Result<Job, Stri
            language           = excluded.language,
            salary_min         = excluded.salary_min,
            blue_card_eligible = excluded.blue_card_eligible,
-           hard_filter_passed = excluded.hard_filter_passed",
+           hard_filter_passed = excluded.hard_filter_passed,
+           tech_stack         = excluded.tech_stack",
     )
     .bind(&job.company)
     .bind(&job.title)
@@ -123,6 +126,7 @@ pub async fn db_upsert_job(job: JobInput, db: State<'_, Db>) -> Result<Job, Stri
     .bind(job.salary_min)
     .bind(job.blue_card_eligible)
     .bind(job.hard_filter_passed)
+    .bind(&job.tech_stack)
     .execute(&db.pool)
     .await
     .map_err(|e| format!("db_upsert_job: {e}"))?;

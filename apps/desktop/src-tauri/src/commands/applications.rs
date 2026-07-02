@@ -18,6 +18,13 @@ pub struct Application {
     pub eor_provider: Option<String>,
     pub doc_language: Option<String>,
     pub notes: Option<String>,
+    pub source_url: Option<String>,
+    pub contact_name: Option<String>,
+    pub contact_role: Option<String>,
+    pub contact_channel: Option<String>,
+    pub next_action: Option<String>,
+    pub next_action_at: Option<String>,
+    pub salary_range: Option<String>,
     pub updated_at: Option<String>,
 }
 
@@ -37,6 +44,13 @@ pub struct ApplicationInput {
     pub eor_provider: Option<String>,
     pub doc_language: Option<String>,
     pub notes: Option<String>,
+    pub source_url: Option<String>,
+    pub contact_name: Option<String>,
+    pub contact_role: Option<String>,
+    pub contact_channel: Option<String>,
+    pub next_action: Option<String>,
+    pub next_action_at: Option<String>,
+    pub salary_range: Option<String>,
 }
 
 #[tauri::command]
@@ -59,7 +73,10 @@ pub async fn db_upsert_application(
                 "UPDATE applications SET
                    job_id = ?, status = ?, application_method = ?, applied_at = ?,
                    follow_up_at = ?, cv_path = ?, cover_letter_path = ?, contract_type = ?,
-                   eor_provider = ?, doc_language = ?, notes = ?, updated_at = datetime('now')
+                   eor_provider = ?, doc_language = ?, notes = ?,
+                   source_url = ?, contact_name = ?, contact_role = ?, contact_channel = ?,
+                   next_action = ?, next_action_at = ?, salary_range = ?,
+                   updated_at = datetime('now')
                  WHERE id = ?",
             )
             .bind(a.job_id)
@@ -73,6 +90,13 @@ pub async fn db_upsert_application(
             .bind(&a.eor_provider)
             .bind(&a.doc_language)
             .bind(&a.notes)
+            .bind(&a.source_url)
+            .bind(&a.contact_name)
+            .bind(&a.contact_role)
+            .bind(&a.contact_channel)
+            .bind(&a.next_action)
+            .bind(&a.next_action_at)
+            .bind(&a.salary_range)
             .bind(id)
             .execute(&db.pool)
             .await
@@ -83,8 +107,10 @@ pub async fn db_upsert_application(
             let res = sqlx::query(
                 "INSERT INTO applications
                    (job_id, status, application_method, applied_at, follow_up_at, cv_path,
-                    cover_letter_path, contract_type, eor_provider, doc_language, notes, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                    cover_letter_path, contract_type, eor_provider, doc_language, notes,
+                    source_url, contact_name, contact_role, contact_channel,
+                    next_action, next_action_at, salary_range, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
             )
             .bind(a.job_id)
             .bind(&a.status)
@@ -97,6 +123,13 @@ pub async fn db_upsert_application(
             .bind(&a.eor_provider)
             .bind(&a.doc_language)
             .bind(&a.notes)
+            .bind(&a.source_url)
+            .bind(&a.contact_name)
+            .bind(&a.contact_role)
+            .bind(&a.contact_channel)
+            .bind(&a.next_action)
+            .bind(&a.next_action_at)
+            .bind(&a.salary_range)
             .execute(&db.pool)
             .await
             .map_err(|e| format!("db_upsert_application (insert): {e}"))?;
@@ -248,6 +281,58 @@ async fn fetch_application(pool: &sqlx::SqlitePool, id: i64) -> Result<Applicati
         .fetch_one(pool)
         .await
         .map_err(|e| format!("fetch_application: {e}"))
+}
+
+/// Patch payload for the Job Tracker's inline edit — only the tracker fields
+/// the screen lets the user edit directly (contact, next action, salary,
+/// notes). Deliberately narrower than `ApplicationInput`: a full upsert would
+/// silently null out `cv_path` / `cover_letter_path` / `doc_language` /
+/// `application_method` etc. since the Tracker table doesn't carry them.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplicationTrackerFieldsInput {
+    pub id: i64,
+    pub contact_name: Option<String>,
+    pub contact_role: Option<String>,
+    pub contact_channel: Option<String>,
+    pub next_action: Option<String>,
+    pub next_action_at: Option<String>,
+    pub salary_range: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[tauri::command]
+pub async fn db_update_application_tracker_fields(
+    input: ApplicationTrackerFieldsInput,
+    db: State<'_, Db>,
+) -> Result<Application, String> {
+    db_update_application_tracker_fields_core(input, &db.pool).await
+}
+
+async fn db_update_application_tracker_fields_core(
+    input: ApplicationTrackerFieldsInput,
+    pool: &sqlx::SqlitePool,
+) -> Result<Application, String> {
+    sqlx::query(
+        "UPDATE applications SET
+           contact_name = ?, contact_role = ?, contact_channel = ?,
+           next_action = ?, next_action_at = ?, salary_range = ?, notes = ?,
+           updated_at = datetime('now')
+         WHERE id = ?",
+    )
+    .bind(&input.contact_name)
+    .bind(&input.contact_role)
+    .bind(&input.contact_channel)
+    .bind(&input.next_action)
+    .bind(&input.next_action_at)
+    .bind(&input.salary_range)
+    .bind(&input.notes)
+    .bind(input.id)
+    .execute(pool)
+    .await
+    .map_err(|e| format!("db_update_application_tracker_fields: {e}"))?;
+
+    fetch_application(pool, input.id).await
 }
 
 #[cfg(test)]
@@ -419,5 +504,48 @@ mod followup_tests {
         assert!(overdue(overdue_id));
         assert!(!overdue(due_today_id));
         assert!(!overdue(future_id));
+    }
+
+    /// The Job Tracker inline-edit patch writes only the 7 tracker fields —
+    /// it must never null out cv_path/cover_letter_path/application_method,
+    /// which the Tracker table doesn't carry and would otherwise clobber.
+    #[tokio::test]
+    async fn tracker_fields_patch_never_clobbers_unrelated_columns() {
+        let pool = test_pool().await;
+        let id = insert_job_and_application(&pool).await;
+        sqlx::query(
+            "UPDATE applications SET
+               cv_path = 'cv.pdf', cover_letter_path = 'cl.pdf',
+               application_method = 'email', contract_type = 'permanent'
+             WHERE id = ?",
+        )
+        .bind(id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let patched = db_update_application_tracker_fields_core(
+            ApplicationTrackerFieldsInput {
+                id,
+                contact_name: Some("Jane Doe".to_string()),
+                contact_role: Some("Recruiter".to_string()),
+                contact_channel: Some("jane@acme.example".to_string()),
+                next_action: Some("Follow up".to_string()),
+                next_action_at: Some("2026-07-10".to_string()),
+                salary_range: Some("70-80k EUR".to_string()),
+                notes: Some("Great call".to_string()),
+            },
+            &pool,
+        )
+        .await
+        .expect("patch tracker fields");
+
+        assert_eq!(patched.contact_name.as_deref(), Some("Jane Doe"));
+        assert_eq!(patched.salary_range.as_deref(), Some("70-80k EUR"));
+        // Fields the Tracker screen never sends must survive untouched.
+        assert_eq!(patched.cv_path.as_deref(), Some("cv.pdf"));
+        assert_eq!(patched.cover_letter_path.as_deref(), Some("cl.pdf"));
+        assert_eq!(patched.application_method.as_deref(), Some("email"));
+        assert_eq!(patched.contract_type.as_deref(), Some("permanent"));
     }
 }

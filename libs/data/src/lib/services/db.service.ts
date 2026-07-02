@@ -12,7 +12,9 @@ import {
   Application,
   ApplicationStatus,
   ApplicationTrackerFieldsInput,
+  Comment,
   PipelineCard,
+  Priority,
 } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
@@ -146,6 +148,20 @@ export class DbService {
   /** Job Tracker inline edit — patches only contact/next-action/salary/notes. */
   async updateApplicationTrackerFields(input: ApplicationTrackerFieldsInput): Promise<Application> {
     return tauriInvoke<Application>('db_update_application_tracker_fields', { input });
+  }
+
+  /** Pipeline quick-view priority flag — distinct from the legitimacy tier. */
+  async setApplicationPriority(applicationId: number, priority: Priority): Promise<Application> {
+    return tauriInvoke<Application>('set_application_priority', { applicationId, priority });
+  }
+
+  async addApplicationComment(applicationId: number, commentText: string): Promise<Comment> {
+    return tauriInvoke<Comment>('add_application_comment', { applicationId, commentText });
+  }
+
+  /** Oldest → newest, for the quick-view comment feed. */
+  async listApplicationComments(applicationId: number): Promise<Comment[]> {
+    return tauriInvoke<Comment[]>('list_application_comments', { applicationId });
   }
 
   // --- Tailoring cache ---

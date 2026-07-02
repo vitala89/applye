@@ -10,6 +10,32 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-07-02
+
+### Added
+
+- **Pipeline quick-view modal.** Clicking a Pipeline card (drag still works
+  unchanged — CDK's own drag-threshold keeps the two separate) opens a fast
+  triage modal: status dropdown, priority flag (none/low/medium/high), an
+  oldest→newest comment thread, and an "Open full details" link to
+  `/jobs/:id`. The modal is deliberately shallow — no score, JD, tailoring,
+  or portal-answers content, that stays on the full Job Detail screen.
+  - Status changes go through the _same_ `db_set_application_status`
+    command the kanban drag-and-drop already used — no second status-update
+    path, so `status_history` is written identically either way.
+  - New additive migration `0009_pipeline_priority_comments.sql` adds
+    `applications.priority` and a new `application_comments` table. Any
+    existing non-empty `applications.notes` is copied in as that
+    application's first comment during migration; the `notes` column is
+    left in place as legacy, never dropped.
+  - New commands `set_application_priority`, `add_application_comment`,
+    `list_application_comments`.
+  - The priority flag renders as an outlined flag icon (blue/amber/red for
+    low/medium/high) — deliberately distinct from the existing green/
+    yellow/red legitimacy-tier badge so the two are never confused on the
+    same card. It also shows in the card's top-right corner on the board
+    itself, not just inside the modal.
+
 ## [0.14.0] - 2026-07-02
 
 ### Added
@@ -385,6 +411,7 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
   slice.
 
 [Unreleased]: https://github.com/vitala89/applye/compare/v0.14.0...HEAD
+[0.15.0]: https://github.com/vitala89/applye/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/vitala89/applye/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/vitala89/applye/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/vitala89/applye/compare/v0.12.5...v0.13.0

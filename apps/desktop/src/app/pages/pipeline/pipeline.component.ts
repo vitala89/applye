@@ -7,10 +7,11 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
-import { KanbanSquare, LucideAngularModule } from 'lucide-angular';
+import { Flag, KanbanSquare, LucideAngularModule } from 'lucide-angular';
 import { DbService } from '@applye/data';
-import { ApplicationStatus, PipelineCard } from '@applye/core';
+import { ApplicationStatus, PipelineCard, Priority } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { QuickViewModalComponent } from './quick-view-modal/quick-view-modal.component';
 
 interface KanbanCol {
   status: ApplicationStatus;
@@ -30,7 +31,7 @@ const COLS: KanbanCol[] = [
 @Component({
   selector: 'app-pipeline',
   standalone: true,
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, LucideAngularModule],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag, LucideAngularModule, QuickViewModalComponent],
   template: `
     <div class="pipeline">
       @if (loading()) {
@@ -59,7 +60,24 @@ const COLS: KanbanCol[] = [
                 (cdkDropListDropped)="onDrop($event, col.status)"
               >
                 @for (card of cards[col.status]; track card.id) {
-                  <article class="card" cdkDrag>
+                  <article
+                    class="card"
+                    cdkDrag
+                    role="button"
+                    tabindex="0"
+                    (click)="openQuickView(card)"
+                    (keydown.enter)="openQuickView(card)"
+                    (keydown.space)="openQuickView(card)"
+                  >
+                    @if (card.priority) {
+                      <lucide-icon
+                        [img]="icons.flag"
+                        [size]="12"
+                        class="card__priority-flag"
+                        [attr.data-priority]="card.priority"
+                        [attr.title]="t()('pipeline.priority_' + card.priority)"
+                      />
+                    }
                     <div class="card__company">{{ card.company || '–' }}</div>
                     <div class="card__title">{{ card.title || '–' }}</div>
                     <footer class="card__foot">
@@ -100,6 +118,14 @@ const COLS: KanbanCol[] = [
         }
       }
     </div>
+    @if (selectedCard(); as card) {
+      <app-quick-view-modal
+        [card]="card"
+        (closed)="closeQuickView()"
+        (statusChanged)="onModalStatusChanged($event)"
+        (priorityChanged)="onModalPriorityChanged($event)"
+      />
+    }
   `,
   styles: [
     `
@@ -192,6 +218,7 @@ const COLS: KanbanCol[] = [
 
       /* Card */
       .card {
+        position: relative;
         background: var(--surface-base, #13131f);
         border-radius: var(--radius-md, 6px);
         padding: var(--space-2) var(--space-3);
@@ -209,6 +236,22 @@ const COLS: KanbanCol[] = [
         &:hover {
           border-color: var(--border-default, rgba(255, 255, 255, 0.16));
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+      }
+
+      .card__priority-flag {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+
+        &[data-priority='low'] {
+          color: var(--text-accent);
+        }
+        &[data-priority='medium'] {
+          color: var(--warning);
+        }
+        &[data-priority='high'] {
+          color: var(--danger);
         }
       }
 
@@ -308,7 +351,7 @@ export class PipelineComponent implements OnInit {
 
   readonly COLS = COLS;
 
-  protected readonly icons = { empty: KanbanSquare };
+  protected readonly icons = { empty: KanbanSquare, flag: Flag };
 
   cards: Record<ApplicationStatus, PipelineCard[]> = {
     saved: [],
@@ -321,6 +364,7 @@ export class PipelineComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal('');
   readonly totalCards = signal(0);
+  readonly selectedCard = signal<PipelineCard | null>(null);
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -369,6 +413,37 @@ export class PipelineComponent implements OnInit {
         event.currentIndex,
         event.previousIndex,
       );
+    }
+  }
+
+  openQuickView(card: PipelineCard): void {
+    this.selectedCard.set(card);
+  }
+
+  closeQuickView(): void {
+    this.selectedCard.set(null);
+  }
+
+  onModalStatusChanged(event: { id: number; status: ApplicationStatus }): void {
+    for (const status of Object.keys(this.cards) as ApplicationStatus[]) {
+      const idx = this.cards[status].findIndex((c) => c.id === event.id);
+      if (idx === -1) continue;
+      const [card] = this.cards[status].splice(idx, 1);
+      card.status = event.status;
+      (this.cards[event.status] ??= []).unshift(card);
+      this.selectedCard.set(card);
+      break;
+    }
+  }
+
+  onModalPriorityChanged(event: { id: number; priority: Priority }): void {
+    for (const status of Object.keys(this.cards) as ApplicationStatus[]) {
+      const card = this.cards[status].find((c) => c.id === event.id);
+      if (card) {
+        card.priority = event.priority;
+        this.selectedCard.set(card);
+        break;
+      }
     }
   }
 

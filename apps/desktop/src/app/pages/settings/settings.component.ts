@@ -45,7 +45,6 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
     } @else if (settings(); as s) {
       <div class="settings">
         <header class="head">
-          <h2>{{ t()('settings.title') }}</h2>
           <button class="btn" [disabled]="saving()" (click)="save()">
             {{ saving() ? t()('settings.saving') : t()('settings.save_btn') }}
           </button>
@@ -301,12 +300,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
       .head {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-      }
-      h2 {
-        font-family: var(--font-brand);
-        font-size: var(--text-h2);
-        margin: 0;
+        justify-content: flex-end;
       }
       .eyebrow {
         font-family: var(--font-mono);

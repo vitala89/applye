@@ -79,7 +79,7 @@ fn read_xlsx_as_csv(path: &str) -> Result<String, String> {
 /// One row as extracted by the `import-tracklist` skill. `status` is
 /// whatever raw text the skill found in that column — normalization happens
 /// in `normalize_status`, never in the AI call.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportRawRow {
     pub company: Option<String>,
@@ -87,6 +87,14 @@ pub struct ImportRawRow {
     pub status: Option<String>,
     pub applied_at: Option<String>,
     pub notes: Option<String>,
+    pub tech_stack: Option<String>,
+    pub source_url: Option<String>,
+    pub contact_name: Option<String>,
+    pub contact_role: Option<String>,
+    pub contact_channel: Option<String>,
+    pub next_action: Option<String>,
+    pub next_action_at: Option<String>,
+    pub salary_range: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -97,6 +105,14 @@ pub struct ImportPreviewRow {
     pub status: String,
     pub applied_at: Option<String>,
     pub notes: Option<String>,
+    pub tech_stack: Option<String>,
+    pub source_url: Option<String>,
+    pub contact_name: Option<String>,
+    pub contact_role: Option<String>,
+    pub contact_channel: Option<String>,
+    pub next_action: Option<String>,
+    pub next_action_at: Option<String>,
+    pub salary_range: Option<String>,
     pub is_duplicate: bool,
 }
 
@@ -180,6 +196,14 @@ async fn import_preview_core(
             status: status.to_string(),
             applied_at: row.applied_at,
             notes: row.notes,
+            tech_stack: row.tech_stack,
+            source_url: row.source_url,
+            contact_name: row.contact_name,
+            contact_role: row.contact_role,
+            contact_channel: row.contact_channel,
+            next_action: row.next_action,
+            next_action_at: row.next_action_at,
+            salary_range: row.salary_range,
             is_duplicate,
         });
     }
@@ -239,13 +263,14 @@ async fn import_confirm_core(
         let job_res = sqlx::query(
             "INSERT INTO jobs
                (company, title, jd_hash, source, hard_filter_passed,
-                legitimacy_tier, imported_from, created_at)
-             VALUES (?, ?, ?, 'import', 1, 'green', ?, datetime('now'))",
+                legitimacy_tier, imported_from, tech_stack, created_at)
+             VALUES (?, ?, ?, 'import', 1, 'green', ?, ?, datetime('now'))",
         )
         .bind(&company)
         .bind(&role)
         .bind(&jd_hash)
         .bind(imported_from)
+        .bind(&row.tech_stack)
         .execute(pool)
         .await
         .map_err(|e| format!("import_confirm: insert job: {e}"))?;
@@ -253,13 +278,23 @@ async fn import_confirm_core(
         let job_id = job_res.last_insert_rowid();
 
         let app_res = sqlx::query(
-            "INSERT INTO applications (job_id, status, applied_at, notes, updated_at)
-             VALUES (?, ?, ?, ?, datetime('now'))",
+            "INSERT INTO applications
+               (job_id, status, applied_at, notes, source_url, contact_name,
+                contact_role, contact_channel, next_action, next_action_at,
+                salary_range, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
         )
         .bind(job_id)
         .bind(status)
         .bind(&applied_at)
         .bind(&notes)
+        .bind(&row.source_url)
+        .bind(&row.contact_name)
+        .bind(&row.contact_role)
+        .bind(&row.contact_channel)
+        .bind(&row.next_action)
+        .bind(&row.next_action_at)
+        .bind(&row.salary_range)
         .execute(pool)
         .await
         .map_err(|e| format!("import_confirm: insert application: {e}"))?;
@@ -371,6 +406,7 @@ mod tests {
                 status: Some(status.to_string()),
                 applied_at: applied_at.map(|s| s.to_string()),
                 notes: Some("from import".to_string()),
+                ..Default::default()
             }
         }
 
@@ -382,6 +418,69 @@ mod tests {
             assert_eq!(preview.len(), 1);
             assert!(!preview[0].is_duplicate);
             assert_eq!(preview[0].status, "applied");
+        }
+
+        /// The 8 tracker-parity columns (jobs.tech_stack + the 7 applications
+        /// fields from 0008_tracker_fields.sql) round-trip through import:
+        /// what the skill detects in the xlsx ends up in the right column.
+        #[tokio::test]
+        async fn confirm_round_trips_tracker_fields() {
+            let pool = test_pool().await;
+            let rows = vec![ImportRawRow {
+                company: Some("Acme Robotics".to_string()),
+                role: Some("Backend Engineer".to_string()),
+                status: Some("Submitted".to_string()),
+                applied_at: Some("2026-06-01".to_string()),
+                notes: Some("from xlsx".to_string()),
+                tech_stack: Some("Rust, Postgres".to_string()),
+                source_url: Some("https://boards.greenhouse.io/acme/jobs/1".to_string()),
+                contact_name: Some("Jane Doe".to_string()),
+                contact_role: Some("Recruiter".to_string()),
+                contact_channel: Some("jane@acme.example".to_string()),
+                next_action: Some("Follow up".to_string()),
+                next_action_at: Some("2026-06-15".to_string()),
+                salary_range: Some("70-80k EUR".to_string()),
+            }];
+
+            let result = import_confirm_core(rows, "import_xlsx", 7, &pool)
+                .await
+                .unwrap();
+            assert_eq!(result.inserted, 1);
+
+            let tech_stack: Option<String> = sqlx::query_scalar("SELECT tech_stack FROM jobs")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+            assert_eq!(tech_stack.as_deref(), Some("Rust, Postgres"));
+
+            let app: (
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                Option<String>,
+            ) = sqlx::query_as(
+                "SELECT source_url, contact_name, contact_role, contact_channel,
+                        next_action, next_action_at, salary_range
+                 FROM applications",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+            assert_eq!(
+                app,
+                (
+                    Some("https://boards.greenhouse.io/acme/jobs/1".to_string()),
+                    Some("Jane Doe".to_string()),
+                    Some("Recruiter".to_string()),
+                    Some("jane@acme.example".to_string()),
+                    Some("Follow up".to_string()),
+                    Some("2026-06-15".to_string()),
+                    Some("70-80k EUR".to_string()),
+                )
+            );
         }
 
         #[tokio::test]
@@ -459,6 +558,7 @@ mod tests {
                 status: Some("Applied".to_string()),
                 applied_at: None,
                 notes: None,
+                ..Default::default()
             }];
             let result = import_confirm_core(rows, "import_csv", 7, &pool)
                 .await

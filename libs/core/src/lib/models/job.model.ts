@@ -15,6 +15,7 @@ export interface Job {
   importedFrom?: string;
   discoverDismissed?: boolean;
   discoverShownAt?: string;
+  techStack?: string;
   createdAt?: string;
 }
 
@@ -52,15 +53,31 @@ export interface JobOverview {
   status?: string;
 }
 
-/** One row of the Job Tracker (applications + jobs + last status change). */
+/** One row of the Job Tracker: applications + jobs + last status change +
+ * interview_stages #1/#2 dates. Mirrors the user's real xlsx tracker 1:1
+ * (19 fields) — see ROADMAP §9 + §12. */
 export interface TrackerRow {
   id: number;
+  jobId?: number;
   appliedAt?: string;
   company?: string;
   title?: string;
+  techStack?: string;
   location?: string;
+  sourceUrl?: string;
+  contactName?: string;
+  contactRole?: string;
+  contactChannel?: string;
   method?: string;
+  interview1At?: string;
+  followUp2At?: string;
   status?: string;
+  nextAction?: string;
+  nextActionAt?: string;
+  salaryRange?: string;
+  contractType?: string;
+  blueCardEligible?: boolean;
+  eorProvider?: string;
   notes?: string;
   lastUpdate?: string;
 }
@@ -116,6 +133,14 @@ export interface ImportRawRow {
   status?: string | null;
   appliedAt?: string | null;
   notes?: string | null;
+  techStack?: string | null;
+  sourceUrl?: string | null;
+  contactName?: string | null;
+  contactRole?: string | null;
+  contactChannel?: string | null;
+  nextAction?: string | null;
+  nextActionAt?: string | null;
+  salaryRange?: string | null;
 }
 
 /** A raw row after deterministic status normalization + dedupe check, shown

@@ -17,7 +17,28 @@ export interface Application {
   eorProvider?: string;
   docLanguage: SupportedLanguage;
   notes?: string;
+  sourceUrl?: string;
+  contactName?: string;
+  contactRole?: string;
+  contactChannel?: string;
+  nextAction?: string;
+  nextActionAt?: string;
+  salaryRange?: string;
   updatedAt: string;
+}
+
+/** Job Tracker inline-edit payload — only the fields the screen lets the
+ * user edit directly. Narrower than `Application` on purpose (see the Rust
+ * command doc comment): a full upsert would clobber cv/cover-letter paths. */
+export interface ApplicationTrackerFieldsInput {
+  id: number;
+  contactName?: string;
+  contactRole?: string;
+  contactChannel?: string;
+  nextAction?: string;
+  nextActionAt?: string;
+  salaryRange?: string;
+  notes?: string;
 }
 
 export interface StatusHistory {

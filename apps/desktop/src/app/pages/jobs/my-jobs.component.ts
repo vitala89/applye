@@ -20,6 +20,14 @@ interface ImportSkillResponse {
     status: string;
     applied_at: string | null;
     notes: string | null;
+    tech_stack: string | null;
+    source_url: string | null;
+    contact_name: string | null;
+    contact_role: string | null;
+    contact_channel: string | null;
+    next_action: string | null;
+    next_action_at: string | null;
+    salary_range: string | null;
   }>;
   skipped: ImportSkipped[];
   duplicates_expected: string[];
@@ -201,6 +209,14 @@ export class MyJobsComponent {
         status: r.status,
         appliedAt: r.applied_at,
         notes: r.notes,
+        techStack: r.tech_stack,
+        sourceUrl: r.source_url,
+        contactName: r.contact_name,
+        contactRole: r.contact_role,
+        contactChannel: r.contact_channel,
+        nextAction: r.next_action,
+        nextActionAt: r.next_action_at,
+        salaryRange: r.salary_range,
       }));
       const preview = await this.db.importPreview(rawRows);
 
@@ -233,6 +249,14 @@ export class MyJobsComponent {
         status: r.status,
         appliedAt: r.appliedAt,
         notes: r.notes,
+        techStack: r.techStack,
+        sourceUrl: r.sourceUrl,
+        contactName: r.contactName,
+        contactRole: r.contactRole,
+        contactChannel: r.contactChannel,
+        nextAction: r.nextAction,
+        nextActionAt: r.nextActionAt,
+        salaryRange: r.salaryRange,
       }));
       const result = await this.db.importConfirm(
         rows,

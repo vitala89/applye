@@ -2,19 +2,39 @@
   <header class="tracker__head">
     <p class="tracker__sub">{{ t()('tracker.subtitle') }}</p>
     <div class="tracker__export">
+      <input
+        class="tracker__applicant"
+        [ngModel]="applicantName()"
+        (ngModelChange)="applicantName.set($event)"
+        [placeholder]="t()('tracker.applicant_placeholder')"
+      />
       @if (isGerman()) {
-        <button class="btn-primary" [disabled]="exporting()" (click)="exportPdf()">
+        <button
+          appButton
+          variant="primary"
+          size="sm"
+          [disabled]="exporting()"
+          (click)="exportPdf()"
+        >
           {{ t()('tracker.export_de') }}
         </button>
       }
       <button
-        [class]="isGerman() ? 'btn-ghost' : 'btn-primary'"
+        appButton
+        [variant]="isGerman() ? 'secondary' : 'primary'"
+        size="sm"
         [disabled]="exporting()"
         (click)="exportPdf()"
       >
         {{ t()('tracker.export_pdf') }}
       </button>
-      <button class="btn-ghost" [disabled]="exporting()" (click)="exportCsv()">
+      <button
+        appButton
+        variant="secondary"
+        size="sm"
+        [disabled]="exporting()"
+        (click)="exportCsv()"
+      >
         {{ t()('tracker.export_excel') }}
       </button>
     </div>
@@ -32,6 +52,26 @@
         <option [value]="s">{{ t()('status.' + s) }}</option>
       }
     </select>
+
+    <div class="tracker__colmenu">
+      <button appButton variant="secondary" size="sm" (click)="toggleColumnMenu()">
+        {{ t()('tracker.columns_toggle') }}
+      </button>
+      @if (columnMenuOpen()) {
+        <div class="tracker__colpanel">
+          @for (col of columns; track col.key) {
+            <label class="tracker__colitem">
+              <input
+                type="checkbox"
+                [checked]="isColumnVisible(col.key)"
+                (change)="toggleColumn(col.key)"
+              />
+              {{ t()(col.labelKey) }}
+            </label>
+          }
+        </div>
+      }
+    </div>
   </div>
 
   @if (exportMsg()) {
@@ -43,38 +83,69 @@
   } @else if (!view().length) {
     <p class="tracker__state">{{ t()('tracker.empty') }}</p>
   } @else {
-    <table class="tracker__table">
-      <thead>
-        <tr>
-          <th>{{ t()('tracker.col_n') }}</th>
-          <th>{{ t()('tracker.col_date') }}</th>
-          <th>{{ t()('tracker.col_company') }}</th>
-          <th>{{ t()('tracker.col_role') }}</th>
-          <th>{{ t()('tracker.col_location') }}</th>
-          <th>{{ t()('tracker.col_method') }}</th>
-          <th>{{ t()('tracker.col_status') }}</th>
-          <th>{{ t()('tracker.col_update') }}</th>
-          <th>{{ t()('tracker.col_notes') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of view(); track r.id; let i = $index) {
+    <div class="tracker__table-wrap">
+      <table class="tracker__table">
+        <thead>
           <tr>
-            <td class="muted">{{ i + 1 }}</td>
-            <td>{{ r.appliedAt || '·' }}</td>
-            <td class="cell-strong">{{ r.company || '·' }}</td>
-            <td>{{ r.title || '·' }}</td>
-            <td class="muted">{{ r.location || '·' }}</td>
-            <td class="muted">{{ r.method || '·' }}</td>
-            <td>
-              <span class="badge">{{ r.status ? t()('status.' + r.status) : '·' }}</span>
-            </td>
-            <td class="muted">{{ (r.lastUpdate || '').slice(0, 10) || '·' }}</td>
-            <td class="muted notes">{{ r.notes || '·' }}</td>
+            <th>{{ t()('tracker.col_n') }}</th>
+            @for (col of columns; track col.key) {
+              @if (isColumnVisible(col.key)) {
+                <th>{{ t()(col.labelKey) }}</th>
+              }
+            }
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (r of view(); track r.id; let i = $index) {
+            <tr>
+              <td class="muted">{{ i + 1 }}</td>
+              @for (col of columns; track col.key) {
+                @if (isColumnVisible(col.key)) {
+                  <td
+                    [class.cell-strong]="col.key === 'company'"
+                    [class.notes]="col.key === 'notes'"
+                  >
+                    @if (col.editable) {
+                      <input
+                        class="cell-edit"
+                        [type]="col.type === 'date' ? 'date' : 'text'"
+                        [value]="cellValue(r, col.key)"
+                        (change)="patchField(r, $any(col.key), inputValue($event))"
+                      />
+                    } @else if (col.type === 'link') {
+                      @if (cellValue(r, col.key)) {
+                        <a
+                          [href]="cellValue(r, col.key)"
+                          target="_blank"
+                          rel="noopener"
+                          class="tracker-link"
+                        >
+                          {{ t()('tracker.open_link') }}
+                        </a>
+                      } @else {
+                        <span class="muted">·</span>
+                      }
+                    } @else if (col.type === 'bool') {
+                      <span class="muted">{{
+                        r.blueCardEligible === undefined || r.blueCardEligible === null
+                          ? '·'
+                          : r.blueCardEligible
+                            ? t()('common.yes')
+                            : t()('common.no')
+                      }}</span>
+                    } @else if (col.key === 'status') {
+                      <span class="badge">{{ r.status ? t()('status.' + r.status) : '·' }}</span>
+                    } @else {
+                      <span class="muted">{{ cellValue(r, col.key) || '·' }}</span>
+                    }
+                  </td>
+                }
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
     <footer class="tracker__summary">
       <span

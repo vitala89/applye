@@ -1,9 +1,6 @@
 <div class="tracker">
   <header class="tracker__head">
-    <div>
-      <h2 class="tracker__title">{{ t()('tracker.title') }}</h2>
-      <p class="tracker__sub">{{ t()('tracker.subtitle') }}</p>
-    </div>
+    <p class="tracker__sub">{{ t()('tracker.subtitle') }}</p>
     <div class="tracker__export">
       @if (isGerman()) {
         <button class="btn-primary" [disabled]="exporting()" (click)="exportPdf()">

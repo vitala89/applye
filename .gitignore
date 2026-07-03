@@ -29,6 +29,11 @@ profile_*.md
 **/src-tauri/*.key
 **/src-tauri/*.pub.key
 
+# Working files (scratch docs, planning additions)
+INSTRUCTIONS_ADDITIONS.md
+ROADMAP_ADDITIONS.md
+STEP_BY_STEP_PLAN_ADDITIONS.md
+
 # Profile example (committed) vs real profile (not committed)
 # profile.example.md → OK to commit
 # profile.md → NEVER commit

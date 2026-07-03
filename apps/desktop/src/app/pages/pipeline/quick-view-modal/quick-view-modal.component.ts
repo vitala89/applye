@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Output,
+  computed,
   effect,
   inject,
   input,
@@ -12,11 +13,22 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ExternalLink, Flag, LucideAngularModule, X } from 'lucide-angular';
 import { DbService } from '@applye/data';
-import { ApplicationStatus, Comment, PipelineCard, Priority } from '@applye/core';
+import { ApplicationStatus, Comment, InterviewStage, PipelineCard, Priority } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { StageQuickAddComponent } from '../stage-quick-add/stage-quick-add.component';
 
 const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected'];
 const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
+
+/** Highest stage_order that isn't rejected/cancelled, or the most recent one
+ * if all are closed — mirrors the SQL in db_pipeline_cards exactly, so the
+ * modal's summary always matches the card footer. */
+function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
+  if (!stages.length) return null;
+  const open = stages.filter((s) => s.status !== 'rejected' && s.status !== 'cancelled');
+  const pool = open.length ? open : stages;
+  return pool.reduce((max, s) => (s.stageOrder > max.stageOrder ? s : max), pool[0]);
+}
 
 // Fast triage surface for a Pipeline card — status, priority, comments, and a
 // link out. Deliberately shallow: no score/JD/tailoring/portal-answers here,
@@ -27,7 +39,7 @@ const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
   selector: 'app-quick-view-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, StageQuickAddComponent],
   templateUrl: './quick-view-modal.component.html',
   styleUrl: './quick-view-modal.component.scss',
 })
@@ -42,6 +54,7 @@ export class QuickViewModalComponent {
   @Output() closed = new EventEmitter<void>();
   @Output() statusChanged = new EventEmitter<{ id: number; status: ApplicationStatus }>();
   @Output() priorityChanged = new EventEmitter<{ id: number; priority: Priority }>();
+  @Output() stageAdded = new EventEmitter<{ id: number; stage: InterviewStage }>();
 
   protected readonly icons = { close: X, openExternal: ExternalLink, flag: Flag };
   protected readonly STATUSES = STATUSES;
@@ -56,10 +69,26 @@ export class QuickViewModalComponent {
   protected readonly commentText = signal('');
   protected readonly commentBusy = signal(false);
 
+  // Stage summary / quick-add — see the "one write path outside Interview
+  // Prep" exception: the mini form only ever shows right after a
+  // transition INTO interview when the application has 0 stages yet.
+  protected readonly stageSummary = signal<InterviewStage | null>(null);
+  protected readonly stagesLoading = signal(true);
+  protected readonly promptDismissed = signal(false);
+  protected readonly showQuickAdd = computed(
+    () =>
+      this.card().status === 'interview' &&
+      !this.stagesLoading() &&
+      this.stageSummary() === null &&
+      !this.promptDismissed(),
+  );
+
   constructor() {
     effect(() => {
       const card = this.card();
+      this.promptDismissed.set(false);
       void this.loadComments(card.id);
+      void this.refreshStageState(card.id, card.status);
     });
   }
 
@@ -73,6 +102,30 @@ export class QuickViewModalComponent {
     } finally {
       this.commentsLoading.set(false);
     }
+  }
+
+  private async refreshStageState(applicationId: number, status: ApplicationStatus): Promise<void> {
+    if (status !== 'interview') {
+      this.stageSummary.set(null);
+      this.stagesLoading.set(false);
+      return;
+    }
+    this.stagesLoading.set(true);
+    try {
+      const stages = await this.db.listInterviewStages(applicationId);
+      this.stageSummary.set(pickCurrentStage(stages));
+    } finally {
+      this.stagesLoading.set(false);
+    }
+  }
+
+  protected onStageAdded(stage: InterviewStage): void {
+    this.stageSummary.set(stage);
+    this.stageAdded.emit({ id: this.card().id, stage });
+  }
+
+  protected skipStagePrompt(): void {
+    this.promptDismissed.set(true);
   }
 
   protected close(): void {
@@ -92,6 +145,8 @@ export class QuickViewModalComponent {
     try {
       await this.db.setApplicationStatus(card.id, status);
       this.statusChanged.emit({ id: card.id, status });
+      this.promptDismissed.set(false);
+      await this.refreshStageState(card.id, status);
     } finally {
       this.statusBusy.set(false);
     }
@@ -129,6 +184,12 @@ export class QuickViewModalComponent {
     const id = this.card().id;
     this.close();
     void this.router.navigate(['/jobs', id]);
+  }
+
+  protected viewAllStages(): void {
+    const id = this.card().id;
+    this.close();
+    void this.router.navigate(['/interview-prep', id]);
   }
 
   protected formatTimestamp(iso: string): string {

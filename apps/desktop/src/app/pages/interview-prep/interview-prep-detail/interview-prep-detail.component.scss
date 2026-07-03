@@ -1,0 +1,188 @@
+.ipd {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ipd__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--text-sm, 13px);
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.ipd__state {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm, 13px);
+}
+
+.ipd__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ipd__company {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3, 18px);
+  font-weight: var(--weight-bold, 700);
+  color: var(--text-primary);
+}
+
+.ipd__title {
+  color: var(--text-secondary);
+  font-size: var(--text-sm, 13px);
+}
+
+.ipd__stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ipd__stage {
+  background: var(--surface-1);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-card, 8px);
+  padding: var(--space-3);
+}
+
+.ipd__stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.ipd__stage-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ipd__stage-order {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold, 700);
+  color: var(--text-tertiary);
+  min-width: 20px;
+  text-align: center;
+}
+
+.ipd__stage-label {
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.ipd__stage-meta {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs, 12px);
+  margin-top: 2px;
+}
+
+.ipd__stage-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ipd__status-select {
+  background: var(--surface-sunken);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-input, 6px);
+  color: var(--text-primary);
+  font-size: var(--text-xs, 12px);
+  padding: var(--space-1) var(--space-2);
+}
+
+.ipd__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-input, 6px);
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.ipd__icon-btn--danger:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.ipd__add {
+  border-top: var(--border-width, 1px) solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+
+.ipd__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.ipd__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ipd__field--wide {
+  grid-column: 1 / -1;
+}
+
+.ipd__label {
+  font-size: var(--text-xs, 12px);
+  color: var(--text-secondary);
+}
+
+.ipd__field input,
+.ipd__field select,
+.ipd__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-sunken);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-input, 6px);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body, 14px);
+  padding: var(--space-2) var(--space-3);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
+.ipd__form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

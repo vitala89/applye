@@ -9,7 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { Flag, KanbanSquare, LucideAngularModule } from 'lucide-angular';
 import { DbService } from '@applye/data';
-import { ApplicationStatus, PipelineCard, Priority } from '@applye/core';
+import { ApplicationStatus, InterviewStage, PipelineCard, Priority } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { QuickViewModalComponent } from './quick-view-modal/quick-view-modal.component';
 
@@ -95,6 +95,16 @@ const COLS: KanbanCol[] = [
                         formatDate(card.appliedAt ?? card.updatedAt)
                       }}</span>
                     </footer>
+                    @if (col.status === 'interview' && card.currentStageOrder !== undefined) {
+                      <div class="card__stage">
+                        <span
+                          class="card__stage-dot"
+                          [attr.data-status]="card.currentStageStatus"
+                        ></span>
+                        {{ t()('interview.stage_prefix') }} {{ card.currentStageOrder }} ·
+                        {{ card.currentStageLabel }}
+                      </div>
+                    }
                     <div class="card__placeholder" *cdkDragPlaceholder></div>
                   </article>
                 }
@@ -124,6 +134,7 @@ const COLS: KanbanCol[] = [
         (closed)="closeQuickView()"
         (statusChanged)="onModalStatusChanged($event)"
         (priorityChanged)="onModalPriorityChanged($event)"
+        (stageAdded)="onModalStageAdded($event)"
       />
     }
   `,
@@ -319,6 +330,33 @@ const COLS: KanbanCol[] = [
         margin-left: auto;
       }
 
+      .card__stage {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        margin-top: var(--space-1);
+        font-size: var(--text-2xs, 10px);
+        color: var(--text-tertiary);
+      }
+
+      .card__stage-dot {
+        width: 6px;
+        height: 6px;
+        flex: 0 0 auto;
+        border-radius: var(--radius-full, 999px);
+        background: var(--text-tertiary);
+
+        &[data-status='passed'] {
+          background: var(--success);
+        }
+        &[data-status='rejected'] {
+          background: var(--danger);
+        }
+        &[data-status='scheduled'] {
+          background: var(--text-accent);
+        }
+      }
+
       /* CDK states */
       .cdk-drag-preview {
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -406,6 +444,9 @@ export class PipelineComponent implements OnInit {
       await this.db.setApplicationStatus(card.id, toStatus);
       card.status = toStatus;
       this.totalCards.set(Object.values(this.cards).reduce((s, arr) => s + arr.length, 0));
+      if (toStatus === 'interview') {
+        await this.maybePromptFirstStage(card);
+      }
     } catch {
       transferArrayItem(
         event.container.data,
@@ -413,6 +454,18 @@ export class PipelineComponent implements OnInit {
         event.currentIndex,
         event.previousIndex,
       );
+    }
+  }
+
+  // The one write path allowed outside Interview Prep: dragging a card into
+  // INTERVIEW with no open modal to host the prompt, so the quick-view
+  // modal itself is opened (pre-focused on the mini form by the modal's own
+  // showQuickAdd logic). Only opens when the application has 0 stages yet —
+  // never re-prompts on a reschedule that briefly leaves and returns.
+  private async maybePromptFirstStage(card: PipelineCard): Promise<void> {
+    const stages = await this.db.listInterviewStages(card.id);
+    if (stages.length === 0) {
+      this.openQuickView(card);
     }
   }
 
@@ -441,6 +494,19 @@ export class PipelineComponent implements OnInit {
       const card = this.cards[status].find((c) => c.id === event.id);
       if (card) {
         card.priority = event.priority;
+        this.selectedCard.set(card);
+        break;
+      }
+    }
+  }
+
+  onModalStageAdded(event: { id: number; stage: InterviewStage }): void {
+    for (const status of Object.keys(this.cards) as ApplicationStatus[]) {
+      const card = this.cards[status].find((c) => c.id === event.id);
+      if (card) {
+        card.currentStageOrder = event.stage.stageOrder;
+        card.currentStageLabel = event.stage.stageLabel;
+        card.currentStageStatus = event.stage.status;
         this.selectedCard.set(card);
         break;
       }

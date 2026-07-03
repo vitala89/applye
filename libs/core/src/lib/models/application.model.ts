@@ -1,4 +1,5 @@
 import { SupportedLanguage } from '../types/common.types';
+import { InterviewStageStatus } from './interview.model';
 
 export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'rejected';
 
@@ -63,6 +64,10 @@ export interface PipelineCard {
   title?: string;
   score?: number;
   priority?: Priority;
+  currentStageOrder?: number;
+  currentStageLabel?: string;
+  currentStageStatus?: InterviewStageStatus;
+  currentStageScheduledAt?: string;
 }
 
 export interface Comment {

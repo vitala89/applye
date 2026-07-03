@@ -1,0 +1,268 @@
+<div class="ipd">
+  <button type="button" class="ipd__back" (click)="back()">
+    <lucide-icon [img]="icons.back" [size]="14" />
+    {{ t()('interview.back_to_list') }}
+  </button>
+
+  @if (loading()) {
+    <p class="ipd__state">{{ t()('common.loading') }}</p>
+  } @else if (error()) {
+    <p class="ipd__state">{{ error() }}</p>
+  } @else {
+    <header class="ipd__header">
+      <div class="ipd__company">{{ application()?.company || '–' }}</div>
+      <div class="ipd__title">{{ application()?.title || '–' }}</div>
+    </header>
+
+    @if (!stages().length) {
+      <p class="ipd__state">{{ t()('interview.detail_empty') }}</p>
+    }
+
+    <ul class="ipd__stages">
+      @for (stage of stages(); track stage.id; let i = $index) {
+        <li class="ipd__stage">
+          @if (editingId() === stage.id) {
+            <div class="ipd__form">
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_type_label') }}</span>
+                <select
+                  [ngModel]="editForm().stageType"
+                  (ngModelChange)="updateEditForm('stageType', $event)"
+                >
+                  @for (type of STAGE_TYPES; track type) {
+                    <option [value]="type">{{ t()('interview.type_' + type) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_label_label') }}</span>
+                <input
+                  type="text"
+                  [ngModel]="editForm().stageLabel"
+                  (ngModelChange)="updateEditForm('stageLabel', $event)"
+                  [placeholder]="t()('interview.stage_label_placeholder')"
+                />
+              </label>
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_date_label') }}</span>
+                <input
+                  type="date"
+                  [ngModel]="editForm().scheduledAt"
+                  (ngModelChange)="updateEditForm('scheduledAt', $event)"
+                />
+              </label>
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_language_label') }}</span>
+                <select
+                  [ngModel]="editForm().stageLanguage"
+                  (ngModelChange)="updateEditForm('stageLanguage', $event)"
+                >
+                  <option value="">·</option>
+                  @for (lang of LANGUAGES; track lang) {
+                    <option [value]="lang">{{ lang.toUpperCase() }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_interviewer_name') }}</span>
+                <input
+                  type="text"
+                  [ngModel]="editForm().interviewerName"
+                  (ngModelChange)="updateEditForm('interviewerName', $event)"
+                />
+              </label>
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_interviewer_role') }}</span>
+                <input
+                  type="text"
+                  [ngModel]="editForm().interviewerRole"
+                  (ngModelChange)="updateEditForm('interviewerRole', $event)"
+                />
+              </label>
+              <label class="ipd__field">
+                <span class="ipd__label">{{ t()('interview.stage_interviewer_email') }}</span>
+                <input
+                  type="email"
+                  [ngModel]="editForm().interviewerEmail"
+                  (ngModelChange)="updateEditForm('interviewerEmail', $event)"
+                />
+              </label>
+              <label class="ipd__field ipd__field--wide">
+                <span class="ipd__label">{{ t()('interview.stage_notes') }}</span>
+                <textarea
+                  rows="2"
+                  [ngModel]="editForm().notes"
+                  (ngModelChange)="updateEditForm('notes', $event)"
+                ></textarea>
+              </label>
+              <div class="ipd__form-actions">
+                <button type="button" appButton variant="ghost" size="sm" (click)="cancelEdit()">
+                  {{ t()('actions.cancel') }}
+                </button>
+                <button
+                  type="button"
+                  appButton
+                  variant="primary"
+                  size="sm"
+                  [disabled]="editBusy() || !editForm().stageLabel.trim()"
+                  (click)="saveEdit()"
+                >
+                  {{ t()('interview.save') }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="ipd__stage-row">
+              <div class="ipd__stage-main">
+                <span class="ipd__stage-order">{{ stage.stageOrder }}</span>
+                <div>
+                  <div class="ipd__stage-label">{{ stage.stageLabel }}</div>
+                  <div class="ipd__stage-meta">
+                    {{ t()('interview.type_' + stage.stageType) }}
+                    @if (stage.scheduledAt) {
+                      · {{ stage.scheduledAt }}
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="ipd__stage-actions">
+                <select
+                  class="ipd__status-select"
+                  [ngModel]="stage.status"
+                  (ngModelChange)="setStatus(stage, $event)"
+                >
+                  @for (s of STAGE_STATUSES; track s) {
+                    <option [value]="s">{{ t()('interview.status_' + s) }}</option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  class="ipd__icon-btn"
+                  [disabled]="i === 0"
+                  [attr.aria-label]="t()('interview.move_up')"
+                  (click)="moveUp(i)"
+                >
+                  <lucide-icon [img]="icons.up" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="ipd__icon-btn"
+                  [disabled]="i === stages().length - 1"
+                  [attr.aria-label]="t()('interview.move_down')"
+                  (click)="moveDown(i)"
+                >
+                  <lucide-icon [img]="icons.down" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="ipd__icon-btn"
+                  [attr.aria-label]="t()('interview.edit')"
+                  (click)="startEdit(stage)"
+                >
+                  <lucide-icon [img]="icons.edit" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="ipd__icon-btn ipd__icon-btn--danger"
+                  [attr.aria-label]="t()('interview.delete')"
+                  (click)="deleteStage(stage)"
+                >
+                  <lucide-icon [img]="icons.delete" [size]="14" />
+                </button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+
+    <div class="ipd__add">
+      <div class="ipd__form">
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_type_label') }}</span>
+          <select
+            [ngModel]="addForm().stageType"
+            (ngModelChange)="updateAddForm('stageType', $event)"
+          >
+            @for (type of STAGE_TYPES; track type) {
+              <option [value]="type">{{ t()('interview.type_' + type) }}</option>
+            }
+          </select>
+        </label>
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_label_label') }}</span>
+          <input
+            type="text"
+            [ngModel]="addForm().stageLabel"
+            (ngModelChange)="updateAddForm('stageLabel', $event)"
+            [placeholder]="t()('interview.stage_label_placeholder')"
+          />
+        </label>
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_date_label') }}</span>
+          <input
+            type="date"
+            [ngModel]="addForm().scheduledAt"
+            (ngModelChange)="updateAddForm('scheduledAt', $event)"
+          />
+        </label>
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_language_label') }}</span>
+          <select
+            [ngModel]="addForm().stageLanguage"
+            (ngModelChange)="updateAddForm('stageLanguage', $event)"
+          >
+            <option value="">·</option>
+            @for (lang of LANGUAGES; track lang) {
+              <option [value]="lang">{{ lang.toUpperCase() }}</option>
+            }
+          </select>
+        </label>
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_interviewer_name') }}</span>
+          <input
+            type="text"
+            [ngModel]="addForm().interviewerName"
+            (ngModelChange)="updateAddForm('interviewerName', $event)"
+          />
+        </label>
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_interviewer_role') }}</span>
+          <input
+            type="text"
+            [ngModel]="addForm().interviewerRole"
+            (ngModelChange)="updateAddForm('interviewerRole', $event)"
+          />
+        </label>
+        <label class="ipd__field">
+          <span class="ipd__label">{{ t()('interview.stage_interviewer_email') }}</span>
+          <input
+            type="email"
+            [ngModel]="addForm().interviewerEmail"
+            (ngModelChange)="updateAddForm('interviewerEmail', $event)"
+          />
+        </label>
+        <label class="ipd__field ipd__field--wide">
+          <span class="ipd__label">{{ t()('interview.stage_notes') }}</span>
+          <textarea
+            rows="2"
+            [ngModel]="addForm().notes"
+            (ngModelChange)="updateAddForm('notes', $event)"
+          ></textarea>
+        </label>
+        <div class="ipd__form-actions">
+          <button
+            type="button"
+            appButton
+            variant="primary"
+            size="sm"
+            [disabled]="addBusy() || !addForm().stageLabel.trim()"
+            (click)="addStage()"
+          >
+            {{ t()('interview.add_stage') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

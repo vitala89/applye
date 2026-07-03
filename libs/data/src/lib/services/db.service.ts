@@ -16,6 +16,7 @@ import {
   PipelineCard,
   Priority,
 } from '@applye/core';
+import { CreateInterviewStageInput, InterviewStage, UpdateInterviewStageInput } from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
@@ -162,6 +163,25 @@ export class DbService {
   /** Oldest → newest, for the quick-view comment feed. */
   async listApplicationComments(applicationId: number): Promise<Comment[]> {
     return tauriInvoke<Comment[]>('list_application_comments', { applicationId });
+  }
+
+  // --- Interview stages ---
+  async createInterviewStage(input: CreateInterviewStageInput): Promise<InterviewStage> {
+    return tauriInvoke<InterviewStage>('create_interview_stage', { input });
+  }
+
+  /** Partial patch — only stageId is required; other fields keep their current value. */
+  async updateInterviewStage(input: UpdateInterviewStageInput): Promise<InterviewStage> {
+    return tauriInvoke<InterviewStage>('update_interview_stage', { input });
+  }
+
+  async deleteInterviewStage(stageId: number): Promise<void> {
+    return tauriInvoke<void>('delete_interview_stage', { stageId });
+  }
+
+  /** Ordered by stageOrder ascending. */
+  async listInterviewStages(applicationId: number): Promise<InterviewStage[]> {
+    return tauriInvoke<InterviewStage[]>('list_interview_stages', { applicationId });
   }
 
   // --- Tailoring cache ---

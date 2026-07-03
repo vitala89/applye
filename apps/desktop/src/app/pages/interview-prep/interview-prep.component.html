@@ -1,0 +1,48 @@
+<div class="interview-prep">
+  @if (loading()) {
+    <p class="interview-prep__state">{{ t()('common.loading') }}</p>
+  } @else if (error()) {
+    <p class="interview-prep__state">{{ t()('common.error') }}</p>
+  } @else if (!rows().length) {
+    <p class="interview-prep__state">{{ t()('interview.list_empty') }}</p>
+  } @else {
+    <table class="interview-prep__table">
+      <thead>
+        <tr>
+          <th>{{ t()('interview.col_company') }}</th>
+          <th>{{ t()('interview.col_role') }}</th>
+          <th>{{ t()('interview.col_stage') }}</th>
+          <th>{{ t()('interview.col_status') }}</th>
+          <th>{{ t()('interview.col_next') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.id) {
+          <tr
+            class="interview-prep__row"
+            role="button"
+            tabindex="0"
+            (click)="open(r.id)"
+            (keydown.enter)="open(r.id)"
+          >
+            <td class="cell-strong">{{ r.company || '·' }}</td>
+            <td>{{ r.title || '·' }}</td>
+            <td>
+              {{ t()('interview.stage_prefix') }} {{ r.currentStageOrder }} ·
+              {{ r.currentStageLabel }}
+            </td>
+            <td>
+              @if (r.currentStageStatus) {
+                <span class="badge badge--stage" [attr.data-status]="r.currentStageStatus">
+                  <span class="badge--stage__dot"></span>
+                  {{ t()('interview.status_' + r.currentStageStatus) }}
+                </span>
+              }
+            </td>
+            <td class="muted">{{ formatDate(r.currentStageScheduledAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

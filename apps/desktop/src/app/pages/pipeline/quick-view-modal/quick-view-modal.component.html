@@ -53,6 +53,32 @@
       </div>
     </section>
 
+    @if (card().status === 'interview') {
+      <section class="qv__section">
+        <span class="qv__label">{{ t()('interview.quickview_stage_label') }}</span>
+        @if (showQuickAdd()) {
+          <app-stage-quick-add
+            [applicationId]="card().id"
+            (added)="onStageAdded($event)"
+            (skipped)="skipStagePrompt()"
+          />
+        } @else {
+          @if (stagesLoading()) {
+            <p class="qv__hint">{{ t()('common.loading') }}</p>
+          } @else if (stageSummary(); as stage) {
+            <p class="qv__stage-summary">
+              {{ t()('interview.stage_prefix') }} {{ stage.stageOrder }} · {{ stage.stageLabel }}
+            </p>
+          } @else {
+            <p class="qv__hint">{{ t()('interview.quickview_stage_none') }}</p>
+          }
+          <button type="button" class="qv__link" (click)="viewAllStages()">
+            {{ t()('interview.quickview_view_all') }} →
+          </button>
+        }
+      </section>
+    }
+
     <section class="qv__section qv__section--grow">
       <span class="qv__label">{{ t()('pipeline.quickview_comments') }}</span>
       <div class="qv__comments">

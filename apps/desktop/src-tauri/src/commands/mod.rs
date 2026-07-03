@@ -6,6 +6,7 @@ pub mod applications;
 pub mod archetypes;
 pub mod health;
 pub mod import;
+pub mod interview;
 pub mod job_url;
 pub mod jobs;
 pub mod legitimacy;

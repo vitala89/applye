@@ -112,6 +112,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-3, 8px);
+  margin: var(--space-3, 8px) var(--space-3, 8px) 0;
+  padding: 0 var(--space-5, 16px);
   font-size: var(--text-xs, 12px);
   font-family: var(--font-mono, monospace);
   color: var(--text-tertiary);

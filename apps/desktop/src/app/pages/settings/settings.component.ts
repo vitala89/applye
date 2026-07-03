@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Check, LucideAngularModule } from 'lucide-angular';
+import { Check, KeyRound, RefreshCw, Send, Trash2, LucideAngularModule } from 'lucide-angular';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -31,9 +31,8 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
  * db_get/update_settings + the OS-keychain commands, and proves the end-to-end
  * AI round-trip via "Test connection". Styled strictly with libs/ui tokens.
  *
- * NOTE: strings are inline for now (the i18n lib isn't wired into the app yet —
- * tracked as a follow-up). The economy/quality toggle is local UI state; there
- * is no persisted tier field in the Phase 1 settings schema.
+ * NOTE: the economy/quality toggle is local UI state; there is no persisted
+ * tier field in the Phase 1 settings schema.
  */
 @Component({
   selector: 'app-settings',
@@ -45,7 +44,8 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
     } @else if (settings(); as s) {
       <div class="settings">
         <header class="head">
-          <button class="btn" [disabled]="saving()" (click)="save()">
+          <button class="btn btn--primary btn--md" [disabled]="saving()" (click)="save()">
+            <lucide-icon [img]="icons.save" [size]="16" aria-hidden="true" />
             {{ saving() ? t()('settings.saving') : t()('settings.save_btn') }}
           </button>
         </header>
@@ -93,7 +93,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
 
           <div class="row">
             <label class="field">
-              <span class="cap">Quality model</span>
+              <span class="cap">{{ t()('settings.quality_model_label') }}</span>
               <select
                 [ngModel]="s.defaultModel"
                 (ngModelChange)="patch('defaultModel', $event)"
@@ -105,7 +105,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
               </select>
             </label>
             <label class="field">
-              <span class="cap">Economy model</span>
+              <span class="cap">{{ t()('settings.economy_model_label') }}</span>
               <select
                 [ngModel]="s.economyModel"
                 (ngModelChange)="patch('economyModel', $event)"
@@ -119,23 +119,26 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
           </div>
 
           <div class="field">
-            <span class="cap">Test tier</span>
-            <div class="toggle">
+            <span class="cap">{{ t()('settings.test_tier_label') }}</span>
+            <div class="toggle" role="group">
               <button
+                type="button"
                 class="seg"
                 [class.seg--on]="tier() === 'economy'"
                 (click)="tier.set('economy')"
               >
-                Economy
+                {{ t()('settings.tier_economy') }}
               </button>
               <button
+                type="button"
                 class="seg"
                 [class.seg--on]="tier() === 'quality'"
                 (click)="tier.set('quality')"
               >
-                Quality
+                {{ t()('settings.tier_quality') }}
               </button>
             </div>
+            <p class="hint">{{ t()('settings.test_tier_hint') }}</p>
           </div>
         </section>
 
@@ -157,7 +160,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
           </p>
           <div class="row">
             <label class="field grow">
-              <span class="cap">{{ s.provider }} API key</span>
+              <span class="cap">{{ s.provider }} {{ t()('settings.api_key_label') }}</span>
               <input
                 type="password"
                 [ngModel]="apiKeyInput()"
@@ -169,15 +172,25 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
             </label>
             <div class="field actions">
               <button
-                class="btn"
+                class="btn btn--secondary btn--md"
                 [disabled]="keyBusy() || !apiKeyInput().trim()"
                 (click)="saveKey()"
               >
-                {{ keyStored() ? 'Replace' : 'Save key' }}
+                <lucide-icon
+                  [img]="keyStored() ? icons.replace : icons.saveKey"
+                  [size]="16"
+                  aria-hidden="true"
+                />
+                {{ keyStored() ? t()('settings.replace_key_btn') : t()('settings.save_key_btn') }}
               </button>
               @if (keyStored()) {
-                <button class="btn btn--ghost" [disabled]="keyBusy()" (click)="removeKey()">
-                  Remove
+                <button
+                  class="btn btn--danger btn--md"
+                  [disabled]="keyBusy()"
+                  (click)="removeKey()"
+                >
+                  <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+                  {{ t()('settings.remove_key_btn') }}
                 </button>
               }
             </div>
@@ -261,12 +274,17 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
 
         <!-- Test connection -->
         <section class="section">
-          <h3 class="eyebrow">Test connection</h3>
-          <button class="btn" [disabled]="testing() || !keyStored()" (click)="testConnection()">
-            {{ testing() ? 'Testing…' : 'Send a test prompt' }}
+          <h3 class="eyebrow">{{ t()('settings.test_section') }}</h3>
+          <button
+            class="btn btn--primary btn--md test-btn"
+            [disabled]="testing() || !keyStored()"
+            (click)="testConnection()"
+          >
+            <lucide-icon [img]="icons.send" [size]="16" aria-hidden="true" />
+            {{ testing() ? t()('settings.testing') : t()('settings.test_prompt_btn') }}
           </button>
           @if (!keyStored()) {
-            <p class="muted">Store an API key first.</p>
+            <p class="muted">{{ t()('settings.store_key_first') }}</p>
           }
           @if (testReply(); as reply) {
             <div class="reply">
@@ -365,9 +383,41 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
         border: var(--border-width) solid var(--border-default);
         border-radius: var(--radius-input);
         padding: var(--space-3) var(--space-4);
+        transition:
+          border-color var(--dur-fast) var(--ease-standard),
+          background var(--dur-fast) var(--ease-standard);
       }
       input::placeholder {
         color: var(--text-tertiary);
+      }
+      select {
+        appearance: none;
+        cursor: pointer;
+        padding-right: var(--space-8);
+        background-image:
+          linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+          linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+        background-position:
+          calc(100% - var(--space-4) - 5px) center,
+          calc(100% - var(--space-4)) center;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
+      }
+      select:disabled {
+        background-image: none;
+      }
+      input:hover:not(:disabled),
+      select:hover:not(:disabled) {
+        border-color: var(--border-strong, var(--text-tertiary));
+      }
+      input:focus-visible,
+      select:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--surface-1);
+      }
+      .test-btn {
+        align-self: flex-start;
       }
       .toggle {
         display: inline-flex;
@@ -389,31 +439,10 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
         background: var(--accent-tint);
         color: var(--text-accent);
       }
-      .btn {
-        font-family: var(--font-sans);
-        font-size: var(--text-body);
-        font-weight: var(--weight-semibold);
-        color: var(--accent-fg);
-        background: var(--accent);
-        border: none;
-        border-radius: var(--radius-card);
-        padding: var(--space-3) var(--space-5);
-        cursor: pointer;
-      }
-      .btn:hover:not(:disabled) {
-        background: var(--accent-hover);
-      }
-      .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      .btn--ghost {
-        background: transparent;
-        color: var(--text-secondary);
-        border: var(--border-width) solid var(--border-default);
-      }
-      .btn--ghost:hover:not(:disabled) {
-        background: var(--surface-hover);
+      .hint {
+        margin: var(--space-2) 0 0;
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
       }
       .reply {
         margin-top: var(--space-4);
@@ -451,7 +480,14 @@ export class SettingsComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons = { stored: Check };
+  protected readonly icons = {
+    stored: Check,
+    save: Check,
+    saveKey: KeyRound,
+    replace: RefreshCw,
+    remove: Trash2,
+    send: Send,
+  };
 
   readonly languages = LANGUAGES;
 

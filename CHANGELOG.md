@@ -10,6 +10,25 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-07-03
+
+### Changed
+
+- **Settings polish** — buttons now use the shared design-system variants
+  (`btn--primary`/`secondary`/`ghost`/`danger`) instead of page-local CSS:
+  Save settings and Send a test prompt are primary, Replace/Save key is
+  secondary, Remove is a new `btn--danger` variant, and the health panel's
+  Re-run check moved off a stray `btn-ghost` class onto the shared one.
+  Added the `danger` variant to `ButtonDirective` and `.btn--danger` to
+  `libs/ui/src/styles/global.scss`, token-driven via `--danger`/`--danger-tint`.
+- Replaced remaining hardcoded Settings copy with i18n keys (EN+DE): model
+  labels, API key actions, the Test connection section/button, and the
+  "Test tier" toggle, renamed to "Test connection uses" with a one-line
+  helper explaining what it controls.
+- Restyled `<select>`/`<input>` controls in Settings with hover/focus states
+  and a token-only CSS chevron (no image asset) for visual consistency with
+  the rest of the app.
+
 ## [0.16.0] - 2026-07-03
 
 ### Added
@@ -446,7 +465,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.1...HEAD
+[0.16.1]: https://github.com/vitala89/applye/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/vitala89/applye/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/vitala89/applye/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/vitala89/applye/compare/v0.13.1...v0.14.0

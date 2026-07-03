@@ -62,7 +62,7 @@
   }
 
   &__footer {
-    padding: var(--space-5);
+    padding: var(--space-4, 12px) 0;
     border-top: var(--border-width, 1px) solid var(--border-subtle);
   }
 }

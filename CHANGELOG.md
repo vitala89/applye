@@ -10,6 +10,18 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.16.2] - 2026-07-03
+
+### Fixed
+
+- **Sidebar AI/API status indicator** — removed the pulsing `applye-ai-pulse`
+  keyframe animation (and its now-unused `--dur-ai-pulse` token) from the
+  status dot next to Profile; it read as a distracting blinking light rather
+  than a status glance. The dot is now static, the mode label reflects the
+  actual `Settings.aiMode` ("API" or "CLI") instead of always showing "API",
+  and a tooltip ("AI mode: Direct API" / "AI mode: Local CLI") was added,
+  translated across all 6 locales.
+
 ## [0.16.1] - 2026-07-03
 
 ### Changed
@@ -465,7 +477,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.1...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.2...HEAD
+[0.16.2]: https://github.com/vitala89/applye/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/vitala89/applye/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/vitala89/applye/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/vitala89/applye/compare/v0.14.0...v0.15.0

@@ -326,18 +326,6 @@
   --dur-fast: 140ms; /* most transitions */
   --dur-base: 220ms; /* panels, popovers */
   --dur-slow: 360ms; /* dialogs, theme switch */
-
-  --dur-ai-pulse: 1800ms; /* AI working loop */
-}
-
-@keyframes applye-ai-pulse {
-  0%,
-  100% {
-    opacity: 0.45;
-  }
-  50% {
-    opacity: 1;
-  }
 }
 
 @keyframes applye-shimmer {

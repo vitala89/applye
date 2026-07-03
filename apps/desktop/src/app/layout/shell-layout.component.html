@@ -80,10 +80,15 @@
         <lucide-icon [img]="icons.profile" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.profile') }}</span>
       </a>
-      <div class="ai-indicator">
+      <div
+        class="ai-indicator"
+        [title]="t()(aiMode() === 'cli' ? 'ai.tooltip_cli' : 'ai.tooltip_api')"
+      >
         <span class="ai-indicator__dot"></span>
         <span class="ai-indicator__label">{{ t()('ai.indicator') }}</span>
-        <span class="ai-indicator__mode">{{ t()('ai.mode_api') }}</span>
+        <span class="ai-indicator__mode">{{
+          t()(aiMode() === 'cli' ? 'ai.mode_cli' : 'ai.mode_api')
+        }}</span>
       </div>
     </div>
   </aside>

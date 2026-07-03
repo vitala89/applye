@@ -10,6 +10,35 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.16.3] - 2026-07-03
+
+### Changed
+
+- **Profile screen rework for clarity and design consistency**:
+  - Fixed raw hardcoded English strings that bypassed i18n (`Last saved …`,
+    `Save failed …`, `Profile is empty …`, `Generated — N in / N out`, etc.)
+    — all now go through `libs/i18n`, EN+DE, with `{placeholder}` interpolation.
+  - "+ Add target role" is now a visible `appButton` secondary control
+    instead of a plain link-styled button.
+  - Added plain-language info-icon tooltips (hover/focus) for Profile
+    (master Markdown CV, source of truth), Target roles (archetypes), and
+    Scoring profile — explaining it's a compact JSON generated once from the
+    Markdown and reused for every scoring/tailoring call to save tokens,
+    auto-refreshed on save, never hand-edited.
+  - Markdown editor: larger padding, clearer "Markdown profile" header, the
+    `# Name · Title …` scaffold hint is now a visually distinct dashed
+    "Example structure (not saved)" box separated from the editable
+    textarea, and the editor column is capped at a readable `72ch`.
+  - Scoring profile is now a collapsible card titled "Scoring profile
+    (auto-generated)", pretty-printed/padded JSON output, a proper
+    secondary Regenerate button, and a "cached · 0 tokens" chip when the
+    profile is unchanged since the last save.
+  - Default pitch card restyled to match, with a visible secondary
+    Regenerate button.
+  - Replaced undefined CSS custom properties (`--radius-md`, `--border`,
+    `--surface-3/4`) with real design tokens (`--radius-card`,
+    `--border-default`, `--surface-sunken`) throughout the page.
+
 ## [0.16.2] - 2026-07-03
 
 ### Fixed
@@ -477,7 +506,8 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.2...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.3...HEAD
+[0.16.3]: https://github.com/vitala89/applye/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/vitala89/applye/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/vitala89/applye/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/vitala89/applye/compare/v0.15.0...v0.16.0

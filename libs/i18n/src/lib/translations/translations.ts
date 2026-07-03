@@ -198,6 +198,25 @@ const en: TranslationMap = {
     empty: 'Add your profile to get started',
     load_error: 'Failed to load profile',
     placeholder: '# Jane Doe\nSenior Frontend Engineer · Berlin\n\n## Experience\n…',
+    info_aria: 'More information',
+    info_profile:
+      'Your master profile is plain Markdown — the single source of truth for every AI scoring and tailoring call.',
+    info_archetypes:
+      "Target roles are short descriptions (archetypes) of positions you'd accept. They flag off-target jobs before scoring, at no token cost.",
+    info_scoring:
+      'A compact JSON the AI generates once from your Markdown profile and reuses for every scoring and tailoring call, to save tokens. It auto-refreshes whenever you save your profile — you never edit it by hand. This is the cached, compressed profile, not a separate stored object.',
+    scaffold_label: 'Example structure (not saved)',
+    scoring_card_title: 'Scoring profile (auto-generated)',
+    cached_chip: 'cached · 0 tokens',
+    last_saved: 'Last saved {date}',
+    saved_at: 'Saved {date}',
+    load_failed: 'Failed to load: {error}',
+    save_failed: 'Save failed: {error}',
+    empty_hint: 'Profile is empty — add content first.',
+    scoring_cached: 'Profile unchanged — using cached scoring profile (0 tokens).',
+    pitch_cached: 'Profile unchanged — using cached pitch (0 tokens).',
+    generated_tokens: 'Generated — {in} in / {out} out',
+    generate_failed: 'Failed: {error}',
   },
   jobs: {
     paste_title: 'Paste job description',
@@ -546,6 +565,26 @@ const de: TranslationMap = {
     empty: 'Profil hinzufügen, um zu beginnen',
     load_error: 'Profil konnte nicht geladen werden',
     placeholder: '# Jane Doe\nSenior Frontend Engineer · Berlin\n\n## Erfahrung\n…',
+    info_aria: 'Weitere Informationen',
+    info_profile:
+      'Ihr Masterprofil ist reines Markdown — die alleinige Grundlage für jede KI-Bewertung und Anpassung.',
+    info_archetypes:
+      'Zielrollen sind kurze Beschreibungen (Archetypen) akzeptabler Positionen. Sie markieren nicht passende Stellen vor der Bewertung — ohne Tokenkosten.',
+    info_scoring:
+      'Ein kompaktes JSON, das die KI einmal aus Ihrem Markdown-Profil generiert und für jede Bewertungs- und Anpassungsanfrage wiederverwendet, um Tokens zu sparen. Es wird automatisch aktualisiert, sobald Sie Ihr Profil speichern — Sie bearbeiten es nie von Hand. Dies ist das zwischengespeicherte, komprimierte Profil, kein separates gespeichertes Objekt.',
+    scaffold_label: 'Beispielstruktur (wird nicht gespeichert)',
+    scoring_card_title: 'Bewerbungsprofil (automatisch generiert)',
+    cached_chip: 'zwischengespeichert · 0 Token',
+    last_saved: 'Zuletzt gespeichert {date}',
+    saved_at: 'Gespeichert {date}',
+    load_failed: 'Laden fehlgeschlagen: {error}',
+    save_failed: 'Speichern fehlgeschlagen: {error}',
+    empty_hint: 'Profil ist leer — zuerst Inhalt hinzufügen.',
+    scoring_cached:
+      'Profil unverändert — zwischengespeichertes Bewerbungsprofil wird verwendet (0 Token).',
+    pitch_cached: 'Profil unverändert — zwischengespeicherter Pitch wird verwendet (0 Token).',
+    generated_tokens: 'Generiert — {in} eingehend / {out} ausgehend',
+    generate_failed: 'Fehlgeschlagen: {error}',
   },
   jobs: {
     paste_title: 'Stellenbeschreibung einfügen',

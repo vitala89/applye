@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ButtonDirective } from '@applye/ui';
 import { AiService, DbService } from '@applye/data';
 import { Profile, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -7,7 +8,7 @@ import { TranslateService } from '@applye/i18n';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ButtonDirective],
   template: `
     @if (loading()) {
       <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
@@ -17,9 +18,34 @@ import { TranslateService } from '@applye/i18n';
       <div class="profile">
         <!-- Header -->
         <header class="profile__head">
-          <p class="muted">{{ t()('profile.subtitle') }}</p>
+          <p class="muted">
+            {{ t()('profile.subtitle') }}
+            <span
+              class="info info--below"
+              tabindex="0"
+              [attr.aria-label]="t()('profile.info_aria')"
+            >
+              <svg class="info__glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3" />
+                <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
+                <path
+                  d="M8 7.2v4.6"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span class="info__tip" role="tooltip">{{ t()('profile.info_profile') }}</span>
+            </span>
+          </p>
           <div class="profile__head-actions">
-            <button class="btn" [disabled]="saving() || !dirty()" (click)="save()">
+            <button
+              appButton
+              variant="primary"
+              size="md"
+              [disabled]="saving() || !dirty()"
+              (click)="save()"
+            >
               {{
                 saving()
                   ? t()('profile.saving')
@@ -36,7 +62,26 @@ import { TranslateService } from '@applye/i18n';
 
         <!-- Target roles (archetypes) -->
         <section class="section">
-          <h3 class="eyebrow">{{ t()('profile.section_archetypes') }}</h3>
+          <h3 class="eyebrow-row">
+            <span class="eyebrow">{{ t()('profile.section_archetypes') }}</span>
+            <span
+              class="info info--below"
+              tabindex="0"
+              [attr.aria-label]="t()('profile.info_aria')"
+            >
+              <svg class="info__glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3" />
+                <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
+                <path
+                  d="M8 7.2v4.6"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span class="info__tip" role="tooltip">{{ t()('profile.info_archetypes') }}</span>
+            </span>
+          </h3>
           <p class="muted">{{ t()('profile.archetypes_hint') }}</p>
           @if (archetypes().length === 0) {
             <p class="status status--warn">{{ t()('profile.archetypes_empty_warning') }}</p>
@@ -65,7 +110,7 @@ import { TranslateService } from '@applye/i18n';
             </div>
           }
           @if (archetypes().length < 5) {
-            <button class="btn" type="button" (click)="addArchetype()">
+            <button appButton variant="secondary" size="sm" type="button" (click)="addArchetype()">
               {{ t()('profile.add_archetype') }}
             </button>
           }
@@ -74,20 +119,23 @@ import { TranslateService } from '@applye/i18n';
         <!-- Editor -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
-          <div class="editor-hint">
-            <span># Name · Title · Location</span>
-            <span>## Experience · Skills · Education · Languages</span>
+          <div class="editor-panel">
+            <div class="scaffold">
+              <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
+              <span class="scaffold__line"># Name · Title · Location</span>
+              <span class="scaffold__line">## Experience · Skills · Education · Languages</span>
+            </div>
+            <textarea
+              class="editor"
+              [ngModel]="fullMd()"
+              (ngModelChange)="fullMd.set($event)"
+              spellcheck="false"
+              placeholder="# Jane Doe&#10;Senior Frontend Engineer · Berlin&#10;&#10;## Experience&#10;…"
+            ></textarea>
+            @if (dirty()) {
+              <p class="unsaved-hint">{{ t()('profile.unsaved') }}</p>
+            }
           </div>
-          <textarea
-            class="editor"
-            [ngModel]="fullMd()"
-            (ngModelChange)="fullMd.set($event)"
-            spellcheck="false"
-            placeholder="# Jane Doe&#10;Senior Frontend Engineer · Berlin&#10;&#10;## Experience&#10;…"
-          ></textarea>
-          @if (dirty()) {
-            <p class="unsaved-hint">{{ t()('profile.unsaved') }}</p>
-          }
         </section>
 
         <!-- AI Tools -->
@@ -97,32 +145,87 @@ import { TranslateService } from '@applye/i18n';
 
           <div class="ai-tools">
             <div class="tool-card">
-              <div class="tool-card__body">
-                <p class="tool-card__title">{{ t()('profile.scoring_title') }}</p>
-                <p class="tool-card__desc">{{ t()('profile.scoring_desc') }}</p>
-              </div>
-              <div class="tool-card__foot">
-                <button
-                  class="btn"
-                  [disabled]="scoring() || !fullMd().trim()"
-                  (click)="generateScoringProfile()"
+              <div
+                class="tool-card__head"
+                role="button"
+                tabindex="0"
+                [attr.aria-expanded]="scoringOpen()"
+                (click)="toggleScoring()"
+                (keydown.enter)="toggleScoring()"
+                (keydown.space)="toggleScoring(); $event.preventDefault()"
+              >
+                <div class="tool-card__body">
+                  <p class="tool-card__title">
+                    {{ t()('profile.scoring_card_title') }}
+                    <span
+                      class="info info--below"
+                      tabindex="0"
+                      (click)="$event.stopPropagation()"
+                      (keydown)="$event.stopPropagation()"
+                      [attr.aria-label]="t()('profile.info_aria')"
+                    >
+                      <svg
+                        class="info__glyph"
+                        viewBox="0 0 16 16"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <circle
+                          cx="8"
+                          cy="8"
+                          r="7"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.3"
+                        />
+                        <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
+                        <path
+                          d="M8 7.2v4.6"
+                          stroke="currentColor"
+                          stroke-width="1.3"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      <span class="info__tip" role="tooltip">{{
+                        t()('profile.info_scoring')
+                      }}</span>
+                    </span>
+                  </p>
+                  <p class="tool-card__desc">{{ t()('profile.scoring_desc') }}</p>
+                </div>
+                <span class="chevron" [class.chevron--open]="scoringOpen()" aria-hidden="true"
+                  >›</span
                 >
-                  {{
-                    scoring()
-                      ? t()('profile.generating')
-                      : profile()?.scoringJson
-                        ? t()('profile.regenerate')
-                        : t()('profile.generate')
-                  }}
-                </button>
-                @if (scoreStatus()) {
-                  <span class="status" [class.status--error]="scoreError()">{{
-                    scoreStatus()
-                  }}</span>
-                }
               </div>
-              @if (profile()?.scoringJson) {
-                <pre class="output-block">{{ profile()?.scoringJson }}</pre>
+              @if (scoringOpen()) {
+                <div class="tool-card__foot">
+                  <button
+                    appButton
+                    variant="secondary"
+                    size="sm"
+                    [disabled]="scoring() || !fullMd().trim()"
+                    (click)="generateScoringProfile()"
+                  >
+                    {{
+                      scoring()
+                        ? t()('profile.generating')
+                        : profile()?.scoringJson
+                          ? t()('profile.regenerate')
+                          : t()('profile.generate')
+                    }}
+                  </button>
+                  @if (scoringCached()) {
+                    <span class="chip">{{ t()('profile.cached_chip') }}</span>
+                  }
+                  @if (scoreStatus()) {
+                    <span class="status" [class.status--error]="scoreError()">{{
+                      scoreStatus()
+                    }}</span>
+                  }
+                </div>
+                @if (profile()?.scoringJson) {
+                  <pre class="json-block">{{ scoringJsonPretty() }}</pre>
+                }
               }
             </div>
 
@@ -133,7 +236,9 @@ import { TranslateService } from '@applye/i18n';
               </div>
               <div class="tool-card__foot">
                 <button
-                  class="btn"
+                  appButton
+                  variant="secondary"
+                  size="sm"
                   [disabled]="pitching() || !fullMd().trim()"
                   (click)="generatePitch()"
                 >
@@ -187,7 +292,8 @@ import { TranslateService } from '@applye/i18n';
         flex-direction: column;
         gap: var(--space-3);
       }
-      .eyebrow {
+      .eyebrow,
+      .eyebrow-row {
         font-family: var(--font-mono);
         font-size: var(--text-2xs);
         font-weight: var(--weight-medium);
@@ -195,31 +301,106 @@ import { TranslateService } from '@applye/i18n';
         text-transform: uppercase;
         color: var(--text-tertiary);
       }
-
-      .editor-hint {
+      .eyebrow-row {
         display: flex;
-        gap: var(--space-4);
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0;
+      }
+
+      /* Info-icon tooltip: hover/focus reveals plain-language help. */
+      .info {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.05rem;
+        height: 1.05rem;
+        flex-shrink: 0;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--text-tertiary);
+        border-radius: var(--radius-full);
+        cursor: help;
+      }
+      .info__glyph {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .info:hover,
+      .info:focus {
+        color: var(--text-secondary);
+      }
+      .info__tip {
+        position: absolute;
+        bottom: calc(100% + var(--space-2));
+        left: 0;
+        z-index: 20;
+        width: max-content;
+        max-width: 280px;
+        padding: var(--space-3);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-regular);
+        font-style: normal;
+        line-height: 1.5;
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-md);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.12s ease;
+        pointer-events: none;
+      }
+      .info--below .info__tip {
+        bottom: auto;
+        top: calc(100% + var(--space-2));
+      }
+      .info:hover .info__tip,
+      .info:focus .info__tip {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .editor-panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        max-width: 72ch;
+      }
+      .scaffold {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: var(--space-3) var(--space-4);
         font-family: var(--font-mono);
         font-size: var(--text-2xs);
         color: var(--text-tertiary);
-        opacity: 0.6;
+        background: var(--surface-sunken);
+        border: 1px dashed var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .scaffold__label {
+        font-family: var(--font-sans);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-wider);
+        text-transform: uppercase;
+        margin-bottom: var(--space-1);
       }
       .editor {
         width: 100%;
         min-height: 400px;
-        padding: var(--space-3);
+        padding: var(--space-4);
         font-family: var(--font-mono);
         font-size: var(--text-sm);
         line-height: 1.65;
         color: var(--text-primary);
         background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
         resize: vertical;
-      }
-      .editor:focus {
-        outline: none;
-        border-color: var(--indigo-500, #6366f1);
       }
       .unsaved-hint {
         font-size: var(--text-xs);
@@ -238,8 +419,15 @@ import { TranslateService } from '@applye/i18n';
         gap: var(--space-3);
         padding: var(--space-4);
         background: var(--surface-1);
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-default);
         border-radius: var(--radius-lg);
+      }
+      .tool-card__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-3);
+        cursor: pointer;
       }
       .tool-card__body {
         display: flex;
@@ -247,6 +435,9 @@ import { TranslateService } from '@applye/i18n';
         gap: var(--space-1);
       }
       .tool-card__title {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
         font-weight: var(--weight-medium);
         color: var(--text-primary);
         font-size: var(--text-sm);
@@ -262,8 +453,29 @@ import { TranslateService } from '@applye/i18n';
         align-items: center;
         gap: var(--space-3);
       }
+      .chevron {
+        font-size: var(--text-body);
+        color: var(--text-tertiary);
+        transform: rotate(90deg);
+        transition: transform 0.12s ease;
+        flex-shrink: 0;
+      }
+      .chevron--open {
+        transform: rotate(-90deg);
+      }
+      .chip {
+        padding: var(--space-1) var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-badge);
+        white-space: nowrap;
+      }
 
-      .output-block {
+      .output-block,
+      .json-block {
         margin: 0;
         padding: var(--space-3);
         font-family: var(--font-mono);
@@ -271,8 +483,8 @@ import { TranslateService } from '@applye/i18n';
         line-height: 1.6;
         color: var(--text-secondary);
         background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
         overflow-x: auto;
         white-space: pre-wrap;
         word-break: break-word;
@@ -285,6 +497,9 @@ import { TranslateService } from '@applye/i18n';
       }
 
       .muted {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
         font-size: var(--text-sm);
         color: var(--text-secondary);
         margin: 0;
@@ -297,7 +512,7 @@ import { TranslateService } from '@applye/i18n';
         color: var(--danger);
       }
       .status--warn {
-        color: var(--warning, #fb923c);
+        color: var(--warning);
       }
 
       .archetype-list {
@@ -310,6 +525,9 @@ import { TranslateService } from '@applye/i18n';
         align-items: center;
         gap: var(--space-2);
       }
+      button[appButton] {
+        align-self: flex-start;
+      }
       .archetype-input {
         flex: 1;
         padding: var(--space-2) var(--space-3);
@@ -317,12 +535,8 @@ import { TranslateService } from '@applye/i18n';
         font-size: var(--text-sm);
         color: var(--text-primary);
         background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-      }
-      .archetype-input:focus {
-        outline: none;
-        border-color: var(--indigo-500, #6366f1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
       }
       .btn-icon {
         display: flex;
@@ -331,38 +545,17 @@ import { TranslateService } from '@applye/i18n';
         width: 2rem;
         height: 2rem;
         flex-shrink: 0;
-        font-size: var(--text-lg);
+        font-size: var(--text-body);
         line-height: 1;
         color: var(--text-tertiary);
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
         cursor: pointer;
       }
       .btn-icon:hover {
         color: var(--danger);
         filter: brightness(1.1);
-      }
-
-      .btn {
-        padding: var(--space-2) var(--space-4);
-        font-family: var(--font-mono);
-        font-size: var(--text-sm);
-        font-weight: var(--weight-medium);
-        color: var(--text-primary);
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-input);
-        cursor: pointer;
-        white-space: nowrap;
-      }
-      .btn:hover:not(:disabled) {
-        background: var(--surface-4, var(--surface-3));
-        filter: brightness(1.1);
-      }
-      .btn:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
       }
     `,
   ],
@@ -389,6 +582,7 @@ export class ProfileComponent implements OnInit {
   readonly scoreError = signal(false);
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
+  readonly scoringOpen = signal(true);
 
   readonly archetypesDirty = computed(
     () =>
@@ -398,6 +592,16 @@ export class ProfileComponent implements OnInit {
   readonly dirty = computed(
     () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
   );
+  readonly scoringCached = computed(() => !!this.profile()?.scoringJson && !this.dirty());
+  readonly scoringJsonPretty = computed(() => {
+    const raw = this.profile()?.scoringJson;
+    if (!raw) return '';
+    try {
+      return JSON.stringify(JSON.parse(raw), null, 2);
+    } catch {
+      return raw;
+    }
+  });
 
   async ngOnInit(): Promise<void> {
     try {
@@ -407,14 +611,18 @@ export class ProfileComponent implements OnInit {
       this.fullMd.set(p?.fullMd ?? '');
       this.archetypes.set(this.parseArchetypes(p?.targetArchetypes));
       if (p?.updatedAt) {
-        this.saveStatus.set(`Last saved ${p.updatedAt}`);
+        this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
       }
     } catch (e) {
-      this.saveStatus.set(`Load failed: ${String(e)}`);
+      this.saveStatus.set(this.t()('profile.load_failed').replace('{error}', String(e)));
       this.saveError.set(true);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  toggleScoring(): void {
+    this.scoringOpen.update((v) => !v);
   }
 
   private parseArchetypes(json: string | null | undefined): string[] {
@@ -454,9 +662,9 @@ export class ProfileComponent implements OnInit {
       });
       this.profile.set(saved);
       this.archetypes.set(this.parseArchetypes(saved.targetArchetypes));
-      this.saveStatus.set(`Saved ${saved.updatedAt ?? 'now'}`);
+      this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
     } catch (e) {
-      this.saveStatus.set(`Save failed: ${String(e)}`);
+      this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));
       this.saveError.set(true);
     } finally {
       this.saving.set(false);
@@ -466,7 +674,7 @@ export class ProfileComponent implements OnInit {
   async generateScoringProfile(): Promise<void> {
     const md = this.fullMd().trim();
     if (!md) {
-      this.scoreStatus.set('Profile is empty — add content first.');
+      this.scoreStatus.set(this.t()('profile.empty_hint'));
       return;
     }
     const p = this.profile();
@@ -475,7 +683,7 @@ export class ProfileComponent implements OnInit {
 
     const hash = await this.db.hashText(md);
     if (hash === p?.scoringHash && p?.scoringJson) {
-      this.scoreStatus.set('Profile unchanged — using cached scoring profile (0 tokens).');
+      this.scoreStatus.set(this.t()('profile.scoring_cached'));
       return;
     }
 
@@ -500,9 +708,13 @@ export class ProfileComponent implements OnInit {
         targetArchetypes: p?.targetArchetypes,
       });
       this.profile.set(saved);
-      this.scoreStatus.set(`Generated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.scoreStatus.set(
+        this.t()('profile.generated_tokens')
+          .replace('{in}', String(res.tokensInput))
+          .replace('{out}', String(res.tokensOutput)),
+      );
     } catch (e) {
-      this.scoreStatus.set(`Failed: ${String(e)}`);
+      this.scoreStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
       this.scoreError.set(true);
     } finally {
       this.scoring.set(false);
@@ -512,7 +724,7 @@ export class ProfileComponent implements OnInit {
   async generatePitch(): Promise<void> {
     const md = this.fullMd().trim();
     if (!md) {
-      this.pitchStatus.set('Profile is empty — add content first.');
+      this.pitchStatus.set(this.t()('profile.empty_hint'));
       return;
     }
     const p = this.profile();
@@ -521,7 +733,7 @@ export class ProfileComponent implements OnInit {
 
     const hash = await this.db.hashText(md);
     if (hash === p?.scoringHash && p?.pitchMd) {
-      this.pitchStatus.set('Profile unchanged — using cached pitch (0 tokens).');
+      this.pitchStatus.set(this.t()('profile.pitch_cached'));
       return;
     }
 
@@ -551,9 +763,13 @@ export class ProfileComponent implements OnInit {
         targetArchetypes: p?.targetArchetypes,
       });
       this.profile.set(saved);
-      this.pitchStatus.set(`Generated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.pitchStatus.set(
+        this.t()('profile.generated_tokens')
+          .replace('{in}', String(res.tokensInput))
+          .replace('{out}', String(res.tokensOutput)),
+      );
     } catch (e) {
-      this.pitchStatus.set(`Failed: ${String(e)}`);
+      this.pitchStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
       this.pitchError.set(true);
     } finally {
       this.pitching.set(false);

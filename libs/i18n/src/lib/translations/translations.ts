@@ -128,7 +128,13 @@ const en: TranslationMap = {
     offer: 'Offer',
     rejected: 'Rejected',
   },
-  ai: { mode_api: 'API', mode_cli: 'CLI', indicator: 'AI' },
+  ai: {
+    mode_api: 'API',
+    mode_cli: 'CLI',
+    indicator: 'AI',
+    tooltip_api: 'AI mode: Direct API',
+    tooltip_cli: 'AI mode: Local CLI',
+  },
   common: {
     loading: 'Loading…',
     error: 'Something went wrong',
@@ -466,7 +472,13 @@ const de: TranslationMap = {
     offer: 'Angebot',
     rejected: 'Abgelehnt',
   },
-  ai: { mode_api: 'API', mode_cli: 'CLI', indicator: 'KI' },
+  ai: {
+    mode_api: 'API',
+    mode_cli: 'CLI',
+    indicator: 'KI',
+    tooltip_api: 'KI-Modus: Direkte API',
+    tooltip_cli: 'KI-Modus: Lokale CLI',
+  },
   common: {
     loading: 'Laden…',
     error: 'Etwas ist schiefgelaufen',
@@ -716,7 +728,13 @@ const ru: TranslationMap = stub(en, {
     offer: 'Оффер',
     rejected: 'Отказ',
   },
-  ai: { mode_api: 'API', mode_cli: 'CLI', indicator: 'ИИ' },
+  ai: {
+    mode_api: 'API',
+    mode_cli: 'CLI',
+    indicator: 'ИИ',
+    tooltip_api: 'Режим ИИ: Прямой API',
+    tooltip_cli: 'Режим ИИ: Локальный CLI',
+  },
   common: {
     loading: 'Загрузка…',
     error: 'Что-то пошло не так',
@@ -755,7 +773,13 @@ const es: TranslationMap = stub(en, {
     offer: 'Oferta',
     rejected: 'Rechazado',
   },
-  ai: { mode_api: 'API', mode_cli: 'CLI', indicator: 'IA' },
+  ai: {
+    mode_api: 'API',
+    mode_cli: 'CLI',
+    indicator: 'IA',
+    tooltip_api: 'Modo IA: API directa',
+    tooltip_cli: 'Modo IA: CLI local',
+  },
   common: {
     loading: 'Cargando…',
     error: 'Algo salió mal',
@@ -794,7 +818,13 @@ const fr: TranslationMap = stub(en, {
     offer: 'Offre',
     rejected: 'Refusé',
   },
-  ai: { mode_api: 'API', mode_cli: 'CLI', indicator: 'IA' },
+  ai: {
+    mode_api: 'API',
+    mode_cli: 'CLI',
+    indicator: 'IA',
+    tooltip_api: 'Mode IA : API directe',
+    tooltip_cli: 'Mode IA : CLI locale',
+  },
   common: {
     loading: 'Chargement…',
     error: "Une erreur s'est produite",
@@ -833,7 +863,13 @@ const uk: TranslationMap = stub(en, {
     offer: 'Оффер',
     rejected: 'Відмова',
   },
-  ai: { mode_api: 'API', mode_cli: 'CLI', indicator: 'ШІ' },
+  ai: {
+    mode_api: 'API',
+    mode_cli: 'CLI',
+    indicator: 'ШІ',
+    tooltip_api: 'Режим ШІ: Прямий API',
+    tooltip_cli: 'Режим ШІ: Локальний CLI',
+  },
   common: {
     loading: 'Завантаження…',
     error: 'Щось пішло не так',

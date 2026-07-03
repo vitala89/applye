@@ -16,6 +16,7 @@ import {
   Target,
   User,
 } from 'lucide-angular';
+import { AiMode } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
@@ -80,6 +81,7 @@ export class ShellLayoutComponent implements OnInit {
   };
 
   readonly theme = signal<'dark' | 'light'>('dark');
+  readonly aiMode = signal<AiMode>('api');
 
   // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) — the native
   // traffic lights float over our own header, so reserve space for them.
@@ -94,6 +96,9 @@ export class ShellLayoutComponent implements OnInit {
       const settings = await this.db.getSettings();
       if (settings?.uiLanguage) {
         this.i18n.setLocale(settings.uiLanguage);
+      }
+      if (settings?.aiMode) {
+        this.aiMode.set(settings.aiMode);
       }
     } catch {
       // Keep defaults (en / dark) on DB error

@@ -122,7 +122,6 @@
     border-radius: var(--radius-full, 50%);
     background: var(--accent);
     flex-shrink: 0;
-    animation: applye-ai-pulse var(--dur-ai-pulse, 1800ms) var(--ease-standard) infinite;
   }
 
   &__label {

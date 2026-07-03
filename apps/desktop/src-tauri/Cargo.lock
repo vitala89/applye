@@ -94,7 +94,7 @@ checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
 name = "applye-desktop"
-version = "0.16.1"
+version = "0.16.2"
 dependencies = [
  "calamine",
  "docx-rs",

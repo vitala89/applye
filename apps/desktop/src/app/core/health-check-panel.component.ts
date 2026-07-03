@@ -1,5 +1,11 @@
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
-import { AlertTriangle, CheckCircle2, LucideAngularModule, XCircle } from 'lucide-angular';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  LucideAngularModule,
+  RefreshCw,
+  XCircle,
+} from 'lucide-angular';
 import { DbService } from '@applye/data';
 import { HealthCheckItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -36,7 +42,13 @@ import { TranslateService } from '@applye/i18n';
           }
         </ul>
         <div class="row">
-          <button class="btn-ghost" type="button" [disabled]="loading()" (click)="run()">
+          <button
+            class="btn btn--ghost btn--sm"
+            type="button"
+            [disabled]="loading()"
+            (click)="run()"
+          >
+            <lucide-icon [img]="icons.rerun" [size]="14" aria-hidden="true" />
             {{ t()('health.rerun') }}
           </button>
           @if (showContinue()) {
@@ -104,7 +116,12 @@ export class HealthCheckPanelComponent implements OnInit {
   readonly loading = signal(true);
   readonly items = signal<HealthCheckItem[]>([]);
 
-  private readonly icons = { ok: CheckCircle2, warn: AlertTriangle, fail: XCircle };
+  protected readonly icons = {
+    ok: CheckCircle2,
+    warn: AlertTriangle,
+    fail: XCircle,
+    rerun: RefreshCw,
+  };
 
   async ngOnInit(): Promise<void> {
     await this.run();

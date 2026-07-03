@@ -272,8 +272,8 @@ a:hover {
 /* ============================================================
    BUTTON — shared control used via the [appButton] directive.
    Variants: primary (indigo fill), secondary (neutral outline),
-   ghost (borderless). Sizes: sm, md. Token-driven, no hardcoded
-   colors/sizes.
+   ghost (borderless), danger (ghost-style, destructive actions).
+   Sizes: sm, md. Token-driven, no hardcoded colors/sizes.
    ============================================================ */
 .btn {
   display: inline-flex;
@@ -329,6 +329,17 @@ a:hover {
   &:hover:not(:disabled) {
     background: var(--surface-hover);
     color: var(--text-primary);
+  }
+}
+
+.btn--danger {
+  background: none;
+  color: var(--danger);
+  border: var(--border-width) solid transparent;
+
+  &:hover:not(:disabled) {
+    background: var(--danger-tint);
+    border-color: var(--danger);
   }
 }
 

@@ -1,6 +1,6 @@
 import { Directive, HostBinding, input } from '@angular/core';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md';
 
 // Attribute directive: applies design-system button classes to native

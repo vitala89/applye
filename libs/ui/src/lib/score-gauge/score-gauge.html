@@ -1,0 +1,22 @@
+<div class="score-gauge" [class]="'score-gauge--' + band()">
+  <svg viewBox="0 0 100 100" class="score-gauge__ring" aria-hidden="true">
+    <circle cx="50" cy="50" r="40" class="score-gauge__track"></circle>
+    <circle
+      cx="50"
+      cy="50"
+      r="40"
+      class="score-gauge__fill"
+      [style.stroke-dasharray.px]="circumference"
+      [style.stroke-dashoffset.px]="dashOffset()"
+    ></circle>
+  </svg>
+  <div class="score-gauge__center">
+    <span class="score-gauge__number">{{ score() }}</span>
+    <span class="score-gauge__max">/100</span>
+  </div>
+  @if (verdict()) {
+  <p class="score-gauge__verdict">{{ verdict() }}</p>
+  } @if (cached()) {
+  <span class="score-gauge__cache-chip">{{ cachedLabel() }}</span>
+  }
+</div>

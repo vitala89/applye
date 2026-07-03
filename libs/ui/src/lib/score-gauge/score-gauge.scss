@@ -1,0 +1,73 @@
+.score-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  position: relative;
+}
+
+.score-gauge__ring {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.score-gauge__track {
+  fill: none;
+  stroke: var(--border-default);
+  stroke-width: 8;
+}
+
+.score-gauge__fill {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.score-gauge--low .score-gauge__fill {
+  stroke: var(--danger);
+}
+
+.score-gauge--mid .score-gauge__fill {
+  stroke: var(--warning);
+}
+
+.score-gauge--high .score-gauge__fill {
+  stroke: var(--success);
+}
+
+.score-gauge__center {
+  position: absolute;
+  top: 42px;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.score-gauge__number {
+  font-family: var(--font-mono);
+  font-size: var(--text-h1);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.score-gauge__max {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.score-gauge__verdict {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  margin: 0;
+  text-align: center;
+}
+
+.score-gauge__cache-chip {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-full, 999px);
+  padding: 2px 8px;
+}

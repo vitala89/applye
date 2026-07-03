@@ -10,6 +10,42 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-07-03
+
+### Added
+
+- **Interview Prep is real** — fills the sidebar stub. `interview_stages`
+  already existed in the schema (migration `0001`) with no `CHECK`
+  constraint on `status`, so the full lifecycle (`scheduled` /
+  `awaiting_scheduling` / `awaiting_response` / `passed` / `rejected` /
+  `cancelled`) needed no new migration, just an app-level enum. `stage_type`
+  gains an explicit `other` fallback.
+  - List (`/interview-prep`): every application with ≥1 stage, current
+    stage + status badge + next date, soonest-upcoming first — reads the
+    same `db_pipeline_cards` join the Pipeline board uses, no new command.
+  - Detail (`/interview-prep/:applicationId`): full CRUD — add (type +
+    required free-text label + date/language/interviewer/notes), inline
+    status change, edit, delete, move up/down via adjacent `stage_order`
+    swaps. Not a fixed template: any number of stages, any order, any
+    wording.
+  - New commands: `create_interview_stage`, `update_interview_stage`
+    (partial patch), `delete_interview_stage`, `list_interview_stages`.
+  - **Rejection sync, not a new status path**: `update_interview_stage`
+    reuses the same `db_set_application_status_core` drag-and-drop and the
+    quick-view modal already call — whenever a stage's status becomes
+    `rejected` (at ANY stage position, not just the last one), the parent
+    application moves to `rejected` and `status_history` gets a new row.
+    `cancelled` never triggers this.
+  - Pipeline card footer on INTERVIEW-column cards now shows "Stage N ·
+    &lt;label&gt;" with a small subordinate status dot — deliberately not a
+    third color badge next to the legitimacy tier and priority flag.
+  - Quick-view modal: read-only "Interview stage" row + "View all stages"
+    link, **except** right after a transition into `interview` with 0
+    existing stages, when a skippable quick-add mini form appears instead
+    (fires at most once per application). The same modal is reused for the
+    drag-and-drop trigger — dragging a card into INTERVIEW opens it
+    pre-focused on the mini form instead of building a second popover.
+
 ## [0.15.0] - 2026-07-02
 
 ### Added
@@ -411,6 +447,7 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
   slice.
 
 [Unreleased]: https://github.com/vitala89/applye/compare/v0.14.0...HEAD
+[0.16.0]: https://github.com/vitala89/applye/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/vitala89/applye/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/vitala89/applye/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/vitala89/applye/compare/v0.13.0...v0.13.1

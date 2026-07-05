@@ -18,10 +18,14 @@ Context order:
 
 Do not recommend subagents or graph/context tools for simple or bounded feature tasks by default. Do not recommend graph/context tools just because they exist.
 
-If the user says "classify only" or "do not modify files", prefer pure classification from the task text and do not read files unless necessary.
+If the user says "classify only", "without reading files", "do not read files", or "do not modify files", classify from the current task text only. Do not read files, do not recommend manual file exploration, do not call or recommend context scout, and do not recommend Graphify, CodeGraph, or other graph/context tools unless the task is explicitly architecture, security, migration, or broad-impact.
+
+Do not reference previous observations, memory IDs, prior smoke tests, or internal state in classify-only outputs.
 
 If implementation starts, use targeted manual reads first for bounded tasks with clear scope and no storage, sync, privacy, security, plugin, notification, or Tauri/Angular boundary risk.
 
-Use CodeGraph before grep or manual file walking only when graph/context tooling is justified by the criteria above and `.codegraph/` already exists. Do not install graph tooling in this foundation.
+Use CodeGraph before grep or manual file walking only when graph/context tooling is justified by the criteria above and `.codegraph/` already exists. CodeGraph or Graphify must not be recommended merely because they exist. Do not install graph tooling in this foundation.
 
-Always include every requested output field, including Stop condition.
+Context scout should only be recommended when implementation is actually starting, relevant files are unknown, and a focused read-only map would reduce total context.
+
+Always include every requested output field, including Stop condition. When the user requests exact field names, use those names verbatim.

@@ -9,8 +9,9 @@ const SIZES: Record<ScoreGaugeSize, { diameter: number; radius: number; strokeWi
 };
 
 /** Matches --dur-slow / --ease-out design tokens (dialogs/panels/count-ups). */
-const COUNT_UP_MS = 360;
+const COUNT_UP_MS = 700;
 const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
+const clampScore = (n: number): number => Math.max(0, Math.min(100, Math.round(n)));
 
 @Component({
   selector: 'lib-score-gauge',
@@ -22,10 +23,13 @@ const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 export class ScoreGauge {
   readonly score = input.required<number>();
   readonly size = input<ScoreGaugeSize>('lg');
+  /** Optional start value. When set, the gauge counts up from `from` to
+   * `score` on first paint (e.g. a before→after rescore reveal) instead of
+   * snapping. Null = snap on mount, tween only on later score changes. */
+  readonly from = input<number | null>(null);
 
-  /** Tweened display value — the ring's stroke-dashoffset already animates
-   * via CSS, but text content can't transition, so the number is tweened
-   * in JS on every `score()` change ("counts up/down" from old to new). */
+  /** Tweened display value driving BOTH the number and the ring arc, so the
+   * whole gauge counts up/down together via rAF (no CSS transition needed). */
   private readonly displayScore = signal(0);
   protected readonly animatedScore = this.displayScore.asReadonly();
 
@@ -34,17 +38,23 @@ export class ScoreGauge {
 
   constructor() {
     effect((onCleanup) => {
-      const target = Math.max(0, Math.min(100, Math.round(this.score())));
+      const target = clampScore(this.score());
 
-      // Snap on initial mount — only tween when the score actually changes
-      // later (e.g. a post-tailor rescore), not on first paint.
+      let start: number;
       if (this.firstRun) {
         this.firstRun = false;
-        this.displayScore.set(target);
-        return;
+        const seed = this.from();
+        if (seed == null) {
+          // Snap on mount — no reveal animation requested.
+          this.displayScore.set(target);
+          return;
+        }
+        start = clampScore(seed);
+        this.displayScore.set(start);
+      } else {
+        start = this.displayScore();
       }
 
-      const start = this.displayScore();
       if (start === target) return;
 
       const startTime = performance.now();
@@ -63,8 +73,9 @@ export class ScoreGauge {
     });
   }
 
+  /** Band follows the animated value so ring colour shifts as it counts up. */
   protected readonly band = computed<ScoreBand>(() => {
-    const s = this.score();
+    const s = this.animatedScore();
     if (s >= 75) return 'high';
     if (s >= 50) return 'mid';
     return 'low';
@@ -75,7 +86,7 @@ export class ScoreGauge {
   protected readonly circumference = computed(() => 2 * Math.PI * this.dims().radius);
 
   protected readonly dashOffset = computed(() => {
-    const pct = Math.max(0, Math.min(100, this.score())) / 100;
+    const pct = this.animatedScore() / 100;
     return this.circumference() * (1 - pct);
   });
 }

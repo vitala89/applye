@@ -17,7 +17,6 @@
 .score-gauge__fill {
   fill: none;
   stroke-linecap: round;
-  transition: stroke-dashoffset var(--dur-slow) var(--ease-standard);
 }
 
 .score-gauge--low .score-gauge__fill {

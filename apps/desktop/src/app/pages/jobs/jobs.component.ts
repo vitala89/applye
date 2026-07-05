@@ -1,5 +1,6 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle,
@@ -30,8 +31,10 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  CircleX,
   Star,
   Tag,
+  Trash2,
   WandSparkles,
   Bookmark,
   X,
@@ -47,6 +50,7 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { ScoreGauge } from '@applye/ui';
 import { JobDetailIcons, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
@@ -65,7 +69,7 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard],
+  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard, ScoreGauge],
   template: `
     <div class="jobs">
       @if (!wizardOpen()) {
@@ -74,29 +78,35 @@ interface PassResult {
           <h3 class="eyebrow">{{ t()('jobs.paste_title') }}</h3>
           <textarea
             class="editor"
+            [class.editor--locked]="jobLocked()"
+            [disabled]="jobLocked()"
             [ngModel]="jdText()"
             (ngModelChange)="jdText.set($event)"
             [placeholder]="t()('jobs.paste_placeholder')"
             spellcheck="false"
           ></textarea>
-          <div class="row">
-            <button
-              class="btn btn--secondary btn--md"
-              [disabled]="parsing() || !jdText().trim()"
-              (click)="parseAndFilter()"
-            >
-              {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
-            </button>
-            @if (parsing()) {
-              <span class="ai-thinking">
-                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-                {{ t()('jobs.parsing') }}
-              </span>
-            }
-            @if (parseStatus()) {
-              <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
-            }
-          </div>
+          @if (jobLocked()) {
+            <p class="locked-hint">{{ t()('jobs.description_locked') }}</p>
+          } @else {
+            <div class="row">
+              <button
+                class="btn btn--secondary btn--md"
+                [disabled]="parsing() || !jdText().trim()"
+                (click)="parseAndFilter()"
+              >
+                {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
+              </button>
+              @if (parsing()) {
+                <span class="ai-thinking">
+                  <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                  {{ t()('jobs.parsing') }}
+                </span>
+              }
+              @if (parseStatus()) {
+                <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
+              }
+            </div>
+          }
         </section>
 
         @if (!job()) {
@@ -114,26 +124,81 @@ interface PassResult {
         <!-- Filter result -->
         @if (job(); as j) {
           <div class="detail-actions">
-            @if (!application()) {
+            <div class="detail-actions__row">
+              @if (!application()) {
+                <button
+                  class="btn btn--secondary btn--md"
+                  [disabled]="actionBusy()"
+                  (click)="addToPipeline()"
+                >
+                  {{ t()('jobs.add_to_pipeline') }}
+                </button>
+              }
+              @if (application()?.status === 'applied') {
+                <span class="badge badge--pass">{{ t()('jobs.applied_badge') }}</span>
+                <button
+                  class="btn btn--secondary btn--sm"
+                  [disabled]="actionBusy()"
+                  (click)="revertToSaved()"
+                >
+                  {{ t()('jobs.change_status_action') }}
+                </button>
+              } @else {
+                <button
+                  class="btn btn--primary btn--md"
+                  [disabled]="actionBusy()"
+                  (click)="markApplied()"
+                >
+                  {{ t()('jobs.mark_applied') }}
+                </button>
+              }
+              <span class="detail-actions__spacer"></span>
               <button
-                class="btn btn--secondary btn--md"
-                [disabled]="actionBusy()"
-                (click)="addToPipeline()"
+                class="btn btn--secondary btn--sm"
+                type="button"
+                [disabled]="actionBusy() || deleting()"
+                (click)="openDeleteConfirm()"
               >
-                {{ t()('jobs.add_to_pipeline') }}
+                <lucide-icon [img]="icons.trash" [size]="14" aria-hidden="true" />
+                {{ t()('jobs.delete_action') }}
               </button>
-            }
-            <button
-              class="btn btn--primary btn--md"
-              [disabled]="actionBusy()"
-              (click)="markApplied()"
-            >
-              {{ t()('jobs.mark_applied') }}
-            </button>
+            </div>
             @if (actionMsg()) {
-              <span class="detail-actions__msg">{{ actionMsg() }}</span>
+              <p class="detail-actions__msg">{{ actionMsg() }}</p>
             }
           </div>
+          @if (deleteConfirmOpen()) {
+            <div class="alert alert--danger" role="alert">
+              <lucide-icon
+                [img]="icons.dangerGlyph"
+                [size]="16"
+                class="alert__icon"
+                aria-hidden="true"
+              />
+              <div class="alert__body">
+                <p class="alert__title">{{ t()('jobs.delete_confirm_title') }}</p>
+                <p class="alert__text">{{ t()('jobs.delete_confirm_msg') }}</p>
+                <div class="alert__actions">
+                  <button
+                    class="btn btn--danger btn--md"
+                    type="button"
+                    [disabled]="deleting()"
+                    (click)="confirmDeleteJob()"
+                  >
+                    {{ deleting() ? t()('common.loading') : t()('jobs.delete_confirm_btn') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    [disabled]="deleting()"
+                    (click)="cancelDeleteConfirm()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
           <section class="section">
             @if (!j.hardFilterPassed) {
               <div class="card card--danger">
@@ -238,8 +303,10 @@ interface PassResult {
               [jobTitle]="job()?.title ?? ''"
               [company]="job()?.company ?? ''"
               [icons]="icons"
+              [applicationStatus]="application()?.status ?? null"
               (closeWizard)="wizardOpen.set(false)"
               (markApplied)="markApplied()"
+              (changeStatus)="revertToSaved()"
             >
               <div wizardTailorStep class="wizard-step-content">
                 <div class="apply-fields-header">
@@ -291,6 +358,66 @@ interface PassResult {
                       {{ t()('jobs.start_over') }}
                     </button>
                   </div>
+                } @else if (!tailoring() && tailorResults().length === 3) {
+                  <div class="row">
+                    <span class="badge badge--pass">
+                      <lucide-icon [img]="icons.checkCircle" [size]="12" aria-hidden="true" />
+                      {{ t()('jobs.wizard.tailored_badge') }}
+                    </span>
+                    <button class="btn btn--secondary btn--md" (click)="resetWizard()">
+                      <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
+                      {{ t()('jobs.wizard.retailor_btn') }}
+                    </button>
+                  </div>
+
+                  @if (!postTailorScore()) {
+                    <div class="row row--mt">
+                      <button
+                        class="btn btn--primary btn--md"
+                        [disabled]="updatingScore()"
+                        (click)="updateScoreAfterTailor()"
+                      >
+                        <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
+                        {{
+                          updatingScore()
+                            ? t()('jobs.wizard.updating_score')
+                            : t()('jobs.wizard.update_score_btn')
+                        }}
+                      </button>
+                      @if (updateScoreStatus()) {
+                        <span class="status" [class.status--error]="updateScoreError()">{{
+                          updateScoreStatus()
+                        }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <div class="card score-compare row--mt">
+                      <span class="eyebrow">{{ t()('jobs.wizard.score_compare_title') }}</span>
+                      <div class="score-compare__row">
+                        <div class="score-compare__col">
+                          <lib-score-gauge [score]="cache()?.score ?? 0" size="sm" />
+                          <span class="score-compare__label">{{
+                            t()('jobs.wizard.score_before')
+                          }}</span>
+                        </div>
+                        <lucide-icon
+                          [img]="icons.next"
+                          [size]="18"
+                          class="score-compare__arrow"
+                          aria-hidden="true"
+                        />
+                        <div class="score-compare__col">
+                          <lib-score-gauge [score]="postTailorScore()!.score" size="sm" />
+                          <span class="score-compare__label">{{
+                            t()('jobs.wizard.score_after')
+                          }}</span>
+                        </div>
+                      </div>
+                      @if (postTailorScore()?.summary) {
+                        <p class="muted">{{ postTailorScore()?.summary }}</p>
+                      }
+                    </div>
+                  }
                 }
 
                 @if (tailorStatus()) {
@@ -466,13 +593,99 @@ interface PassResult {
     `
       .detail-actions {
         display: flex;
-        align-items: center;
-        gap: var(--space-3);
+        flex-direction: column;
+        gap: var(--space-2);
         margin-bottom: var(--space-5);
       }
+      .detail-actions__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+      }
       .detail-actions__msg {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin: 0;
+      }
+      .detail-actions__spacer {
+        flex: 1 1 auto;
+      }
+      .locked-hint {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin: 0;
+      }
+      /* Alert (danger) — matches the Applye Design System Alert component:
+         tinted surface, hairline tone border, mono title + sans body. */
+      .alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 13px 14px;
+        border-radius: var(--radius-card);
+        margin-bottom: var(--space-5);
+      }
+      .alert--danger {
+        background: var(--danger-tint);
+        border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
+      }
+      .alert__icon {
+        flex: 0 0 auto;
+        margin-top: 1px;
+        color: var(--danger);
+      }
+      .alert__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .alert__title {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        margin: 0;
+      }
+      .alert__text {
+        font-family: var(--font-sans);
         font-size: var(--text-sm);
         color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.6;
+      }
+      .alert__actions {
+        display: flex;
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+      }
+      .score-compare {
+        align-items: center;
+      }
+      .score-compare__row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-6);
+      }
+      .score-compare__col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .score-compare__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+      .score-compare__arrow {
+        color: var(--text-tertiary);
+        flex: 0 0 auto;
       }
       .jobs {
         display: flex;
@@ -508,6 +721,12 @@ interface PassResult {
         border: 1px solid var(--border-default);
         border-radius: var(--radius-input);
         resize: vertical;
+      }
+      .editor--locked,
+      .editor:disabled {
+        color: var(--text-disabled);
+        cursor: not-allowed;
+        resize: none;
       }
       .editor:focus {
         outline: none;
@@ -952,11 +1171,13 @@ interface PassResult {
     `,
   ],
 })
-export class JobsComponent implements OnInit {
+export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly pageTitle = inject(PageTitleService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons: JobDetailIcons & {
@@ -965,6 +1186,8 @@ export class JobsComponent implements OnInit {
     add: typeof Plus;
     remove: typeof X;
     another: typeof RotateCw;
+    trash: typeof Trash2;
+    dangerGlyph: typeof CircleX;
   } = {
     empty: Search,
     atsPass: Check,
@@ -1001,6 +1224,8 @@ export class JobsComponent implements OnInit {
     add: Plus,
     remove: X,
     another: RotateCw,
+    trash: Trash2,
+    dangerGlyph: CircleX,
   };
 
   protected readonly portalLanguages: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
@@ -1024,6 +1249,14 @@ export class JobsComponent implements OnInit {
   readonly application = signal<Application | null>(null);
   readonly actionBusy = signal(false);
   readonly actionMsg = signal('');
+  readonly deleteConfirmOpen = signal(false);
+  readonly deleting = signal(false);
+
+  /** Once a job is Applied, its description is locked — editing/re-parsing
+   * would risk drifting the saved JD out of sync with what was submitted.
+   * Unlocks only via "Change" (revertToSaved), same gate as the Applied
+   * badge below. */
+  readonly jobLocked = computed(() => this.application()?.status === 'applied');
 
   // Draft portal answers
   readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
@@ -1041,6 +1274,13 @@ export class JobsComponent implements OnInit {
   readonly tailoring = signal(false);
   readonly tailorStatus = signal('');
   readonly tailorError = signal(false);
+
+  // Post-tailor rescore (before/after) — transient, not persisted (see
+  // updateScoreAfterTailor doc comment).
+  readonly postTailorScore = signal<ScoringCache | null>(null);
+  readonly updatingScore = signal(false);
+  readonly updateScoreStatus = signal('');
+  readonly updateScoreError = signal(false);
 
   /** Flattened change / gap notes across all completed tailoring passes. */
   readonly allChanges = computed(() => this.tailorResults().flatMap((r) => r.changes));
@@ -1106,12 +1346,18 @@ export class JobsComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.pageTitle.clear();
+  }
+
   private async loadJob(id: number): Promise<void> {
     try {
       const job = await this.db.getJob(id);
       if (!job) return;
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
+      const headerTitle = [job.company, job.title].filter(Boolean).join(' — ');
+      this.pageTitle.set(headerTitle || this.t()('nav.jobs'));
       const p = this.profile();
       if (p?.scoringHash) {
         const cached = await this.db.scoreCacheGet(id, p.scoringHash);
@@ -1372,6 +1618,43 @@ export class JobsComponent implements OnInit {
     }
   }
 
+  /** Lets the user undo an accidental/premature "Mark as Applied". */
+  async revertToSaved(): Promise<void> {
+    const app = this.application();
+    if (!app?.id || this.actionBusy()) return;
+    if (!confirm(this.t()('jobs.change_status_confirm'))) return;
+    this.actionBusy.set(true);
+    try {
+      this.application.set(await this.db.setApplicationStatus(app.id, 'saved'));
+    } catch (e) {
+      this.actionMsg.set(String(e));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
+  openDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(true);
+  }
+
+  cancelDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(false);
+  }
+
+  async confirmDeleteJob(): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.deleting()) return;
+    this.deleting.set(true);
+    try {
+      await this.db.deleteJob(j.id);
+      await this.router.navigate(['/jobs']);
+    } catch (e) {
+      this.actionMsg.set(String(e));
+      this.deleting.set(false);
+      this.deleteConfirmOpen.set(false);
+    }
+  }
+
   async parseAndFilter(): Promise<void> {
     this.parsing.set(true);
     this.parseStatus.set('');
@@ -1440,6 +1723,7 @@ export class JobsComponent implements OnInit {
         job_description: this.jdText(),
         language: lang,
         legitimacy_notes: this.legitimacyNotes().join('\n'),
+        tailored_resume_md: '',
       });
       const res = await this.ai.run({
         mode: s.aiMode,
@@ -1497,6 +1781,92 @@ export class JobsComponent implements OnInit {
     }
   }
 
+  /**
+   * Post-tailor rescore — user-initiated (opt-in, spends tokens), scores the
+   * PASS-3 tailored resume instead of the generic profile, so the user sees
+   * before (original posting fit) vs after (fit of what they'd actually
+   * submit). Intentionally NOT persisted to `scoring_cache`: that table is
+   * keyed unique on (job_id, profile_hash, jd_hash) — the same key the
+   * original score used — so saving here would overwrite the "before"
+   * baseline instead of keeping both. Kept as in-memory state only.
+   */
+  async updateScoreAfterTailor(): Promise<void> {
+    const j = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    const pass3 = this.tailorResults().find((r) => r.pass === 3);
+    if (!j?.id || !p?.scoringJson || !p.scoringHash || !s || !pass3 || this.updatingScore()) {
+      return;
+    }
+
+    this.updatingScore.set(true);
+    this.updateScoreStatus.set('');
+    this.updateScoreError.set(false);
+    try {
+      const lang = s.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('job-scoring', {
+        profile_json: p.scoringJson,
+        job_description: this.jdText(),
+        language: lang,
+        legitimacy_notes: this.legitimacyNotes().join('\n'),
+        tailored_resume_md: pass3.resultMd,
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: lang,
+      });
+
+      let parsed: {
+        score: number;
+        dimensions: ScoreDimension[];
+        missing_keywords: string[];
+        red_flags: string[];
+        ats_pass: boolean;
+        ats_notes: string;
+        summary: string;
+        before_you_submit?: string[];
+      };
+      try {
+        const raw = res.text
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```\s*$/i, '')
+          .trim();
+        parsed = JSON.parse(raw);
+      } catch {
+        throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
+      }
+
+      this.postTailorScore.set({
+        id: -1,
+        jobId: j.id,
+        profileHash: p.scoringHash,
+        jdHash: j.jdHash ?? '',
+        language: lang,
+        score: parsed.score,
+        dimensionsJson: JSON.stringify(parsed.dimensions),
+        missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
+        redFlagsJson: JSON.stringify(parsed.red_flags),
+        atsPass: parsed.ats_pass,
+        atsNotes: parsed.ats_notes,
+        summary: parsed.summary,
+        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
+        modelUsed: s.economyModel,
+        tokensInput: res.tokensInput,
+        tokensOutput: res.tokensOutput,
+      });
+      this.updateScoreStatus.set(`Updated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+    } catch (e) {
+      this.updateScoreStatus.set(`Update failed: ${String(e)}`);
+      this.updateScoreError.set(true);
+    } finally {
+      this.updatingScore.set(false);
+    }
+  }
+
   legitimacyNotes(): string[] {
     try {
       return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
@@ -1522,6 +1892,9 @@ export class JobsComponent implements OnInit {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.lastExport.set(null);
+    this.postTailorScore.set(null);
+    this.updateScoreStatus.set('');
+    this.updateScoreError.set(false);
     await this.runPass(1);
   }
 
@@ -1536,6 +1909,9 @@ export class JobsComponent implements OnInit {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.exportError.set(false);
+    this.postTailorScore.set(null);
+    this.updateScoreStatus.set('');
+    this.updateScoreError.set(false);
   }
 
   async doExport(format: 'docx' | 'pdf'): Promise<void> {

@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
-import { Job, ScoringCache } from '@applye/core';
+import { ApplicationStatus, Job, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { Stepper } from '@applye/ui';
 import {
@@ -100,10 +100,20 @@ import {
         </span>
         <span class="apply-wizard__spacer"></span>
         @if (activeStep() === lastStep) {
-          <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
-            <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
-            {{ t()('jobs.wizard.mark_as_applied') }}
-          </button>
+          @if (applicationStatus() === 'applied') {
+            <span class="badge badge--pass">
+              <lucide-icon [img]="icons().checkCircle" [size]="12" aria-hidden="true" />
+              {{ t()('jobs.applied_badge') }}
+            </span>
+            <button class="btn btn--secondary btn--sm" type="button" (click)="changeStatus.emit()">
+              {{ t()('jobs.change_status_action') }}
+            </button>
+          } @else {
+            <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
+              <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
+              {{ t()('jobs.wizard.mark_as_applied') }}
+            </button>
+          }
         } @else {
           <button class="btn btn--primary btn--md" type="button" (click)="goNext()">
             {{
@@ -131,10 +141,12 @@ export class ApplyWizard {
   readonly job = input<Job | null>(null);
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
+  readonly applicationStatus = input<ApplicationStatus | null>(null);
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
   readonly markApplied = output<void>();
+  readonly changeStatus = output<void>();
 
   readonly activeStep = signal(0);
 

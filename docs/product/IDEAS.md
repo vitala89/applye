@@ -3,7 +3,7 @@
 This file serves as the raw inbox for ideas, feature requests, and product suggestions.
 
 > [!IMPORTANT]
-> **Rule**: Raw ideas placed here **do not** automatically modify the canonical [ROADMAP.md](file:///Users/eugenekasap/WebstormProjects/applye/ROADMAP.md). They must go through triage, analysis, and acceptance before they are elevated to the roadmap or execution plans.
+> **Rule**: Raw ideas placed here **do not** automatically modify the canonical [ROADMAP.md](../../ROADMAP.md). They must go through triage, analysis, and acceptance before they are elevated to the roadmap or execution plans.
 
 ---
 

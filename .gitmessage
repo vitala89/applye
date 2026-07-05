@@ -1,0 +1,41 @@
+# <type>(<scope>): <summary>
+#
+# Summary rules:
+# - Use English.
+# - Use imperative style where possible.
+# - Keep the header under 90 characters.
+# - Do not mention AI-generated code.
+# - Avoid vague summaries such as "update files", "changes", "fix stuff", or "misc".
+#
+# Allowed types:
+# - feat: user-visible capability
+# - fix: bug fix
+# - refactor: behavior-preserving code restructuring
+# - test: tests or test fixtures
+# - docs: documentation only
+# - style: formatting or visual style with no behavior change
+# - chore: maintenance
+# - build: build system or dependency plumbing
+# - ci: CI configuration
+# - perf: performance improvement
+# - revert: revert a previous commit
+#
+# Recommended scopes:
+# jobs, applications, profile, notifications, storage, sync, plugins, mcp,
+# ai, ui, auth, docs, repo, tauri, angular
+#
+# Examples:
+# feat(jobs): add saved jobs empty state
+# fix(storage): preserve application notes during migration
+# docs(ai): add commit workflow
+# chore(repo): update generated ignore patterns
+#
+# Body guidance:
+# - Explain what changed and why when the header is not enough.
+# - Mention behavior or risk when touching privacy, storage, sync, auth,
+#   notifications, plugins, MCP, external sources, or user data.
+# - Recommend splitting the commit if unrelated changes are staged.
+#
+# Footer examples:
+# BREAKING CHANGE: describe the migration or incompatible behavior.
+# Closes #123

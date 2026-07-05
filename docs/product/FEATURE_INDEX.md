@@ -2,11 +2,12 @@
 
 This document tracks the high-level status of features, mapping them from raw ideas to implementation plans and historical records.
 
-| Feature                                 | Status      | Source            | Brief              | Roadmap Section | Step Plan Section | Notes                                                               |
-| :-------------------------------------- | :---------- | :---------------- | :----------------- | :-------------- | :---------------- | :------------------------------------------------------------------ |
-| **AIF Core Foundation**                 | Shipped     | Core Architecture | Done               | N/A             | N/A               | Base AIF rules, model routing, keyring, and core foundation.        |
-| **AIF Commit Workflow**                 | Shipped     | Developer Tooling | Done               | N/A             | N/A               | Commit helper and validation hooks.                                 |
-| **Product State System**                | In-Progress | Developer Tooling | [Brief](README.md) | N/A             | N/A               | This operational layer (in-progress).                               |
-| **Documents CV & Cover Letter Library** | Planned     | Core Feature      | TBD                | TODO            | TODO              | Core library for tracking documents and versions.                   |
-| **First-run Onboarding Wizard**         | Planned     | Core Feature      | TBD                | TODO            | TODO              | Walkthrough experience for first-run configuration.                 |
-| **Provider Disclosure Alignment**       | Planned     | Privacy / AI      | TBD                | TODO            | TODO              | UI/disclosure alignment for AI provider terms and privacy settings. |
+| Feature                                 | Status      | Source            | Brief                                                | Roadmap Section | Step Plan Section | Notes                                                                              |
+| :-------------------------------------- | :---------- | :---------------- | :--------------------------------------------------- | :-------------- | :---------------- | :--------------------------------------------------------------------------------- |
+| **AIF Core Foundation**                 | Shipped     | Core Architecture | Done                                                 | N/A             | N/A               | Base AIF rules, model routing, keyring, and core foundation.                       |
+| **AIF Commit Workflow**                 | Shipped     | Developer Tooling | Done                                                 | N/A             | N/A               | Commit helper and validation hooks.                                                |
+| **Product State System**                | In-Progress | Developer Tooling | [Brief](feature-briefs/aif-product-state-system.md)  | N/A             | N/A               | Step 0 — finalize + commit + PR before new feature work.                           |
+| **Follow-up Message Drafting**          | Ready       | IDEAS.md          | [Brief](feature-briefs/followup-drafting.md)         | §13 v2          | TODO              | Step 2 — draft follow-up for overdue apps → `mailto:`, never auto-sent. Quick win. |
+| **Documents CV & Cover Letter Library** | Ready (1a)  | Core Feature      | [Brief](feature-briefs/documents-cv-cover-letter.md) | §16             | 1a → 1d           | Step 1 — XL, split into 1a (data) → 1d (style/export). Start data layer only.      |
+| **First-run Onboarding Wizard**         | Planned     | Core Feature      | TBD                                                  | §17             | TODO              | Walkthrough experience for first-run configuration.                                |
+| **Provider Disclosure Alignment**       | Planned     | Privacy / AI      | TBD                                                  | §3              | TODO              | UI/disclosure alignment for AI provider terms and privacy settings.                |

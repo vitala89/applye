@@ -278,6 +278,7 @@ interface PassResult {
                       }}</span>
                     }
                   </div>
+                  <p class="muted">{{ t()('jobs.wizard.tailor_skip_hint') }}</p>
                 } @else if (
                   !tailoring() && tailorResults().length > 0 && tailorResults().length < 3
                 ) {
@@ -425,6 +426,8 @@ interface PassResult {
                   <button class="btn btn--ghost btn--sm export-startover" (click)="resetWizard()">
                     {{ t()('jobs.start_over') }}
                   </button>
+                } @else if (!tailoring()) {
+                  <p class="muted">{{ t()('jobs.wizard.export_skipped') }}</p>
                 }
 
                 <div class="apply-fields-header apply-fields-header--sub">

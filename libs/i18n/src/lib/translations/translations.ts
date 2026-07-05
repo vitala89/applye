@@ -321,6 +321,10 @@ const en: TranslationMap = {
       gaps_title: 'Gaps — not addressable from profile',
       export_apply_eyebrow: 'Step 3 · Export & apply',
       export_title: 'Save your tailored resume',
+      export_skipped:
+        'CV not tailored — go back to Tailor CV to export one, or apply with your existing resume below.',
+      tailor_skip_hint:
+        'You can also skip tailoring and apply with your existing resume — Continue always works.',
       apply_title: 'Ready to apply',
       apply_subtitle:
         'Nothing is submitted automatically — you paste into the employer’s form yourself.',
@@ -748,6 +752,10 @@ const de: TranslationMap = {
       gaps_title: 'Lücken — nicht aus dem Profil lösbar',
       export_apply_eyebrow: 'Schritt 3 · Export & Bewerbung',
       export_title: 'Angepassten Lebenslauf speichern',
+      export_skipped:
+        'Lebenslauf nicht angepasst — gehe zurück zu Lebenslauf anpassen, um einen zu exportieren, oder bewirb dich unten mit deinem bestehenden Lebenslauf.',
+      tailor_skip_hint:
+        'Du kannst die Anpassung auch überspringen und dich mit deinem bestehenden Lebenslauf bewerben — Weiter funktioniert immer.',
       apply_title: 'Bereit zur Bewerbung',
       apply_subtitle:
         'Nichts wird automatisch abgeschickt — du fügst es selbst in das Formular des Arbeitgebers ein.',

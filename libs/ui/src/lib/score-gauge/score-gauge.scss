@@ -1,0 +1,72 @@
+.score-gauge {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.score-gauge__ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.score-gauge__track {
+  fill: none;
+  stroke: var(--surface-sunken);
+}
+
+.score-gauge__fill {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-slow) var(--ease-standard);
+}
+
+.score-gauge--low .score-gauge__fill {
+  stroke: var(--danger);
+}
+
+.score-gauge--mid .score-gauge__fill {
+  stroke: var(--warning);
+}
+
+.score-gauge--high .score-gauge__fill {
+  stroke: var(--success);
+}
+
+.score-gauge__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-gauge__number {
+  font-family: var(--font-mono);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.score-gauge--low .score-gauge__number {
+  color: var(--danger);
+}
+
+.score-gauge--mid .score-gauge__number {
+  color: var(--warning);
+}
+
+.score-gauge--high .score-gauge__number {
+  color: var(--success);
+}
+
+.score-gauge__max {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-top: var(--space-1);
+}

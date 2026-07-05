@@ -1,0 +1,33 @@
+<div
+  class="score-gauge"
+  [class]="'score-gauge--' + band()"
+  [style.width.px]="dims().diameter"
+  [style.height.px]="dims().diameter"
+>
+  <svg
+    [attr.viewBox]="'0 0 ' + dims().diameter + ' ' + dims().diameter"
+    class="score-gauge__ring"
+    aria-hidden="true"
+  >
+    <circle
+      [attr.cx]="dims().diameter / 2"
+      [attr.cy]="dims().diameter / 2"
+      [attr.r]="dims().radius"
+      [attr.stroke-width]="dims().strokeWidth"
+      class="score-gauge__track"
+    ></circle>
+    <circle
+      [attr.cx]="dims().diameter / 2"
+      [attr.cy]="dims().diameter / 2"
+      [attr.r]="dims().radius"
+      [attr.stroke-width]="dims().strokeWidth"
+      class="score-gauge__fill"
+      [style.stroke-dasharray.px]="circumference()"
+      [style.stroke-dashoffset.px]="dashOffset()"
+    ></circle>
+  </svg>
+  <div class="score-gauge__center">
+    <span class="score-gauge__number">{{ score() }}</span>
+    <span class="score-gauge__max">/100</span>
+  </div>
+</div>

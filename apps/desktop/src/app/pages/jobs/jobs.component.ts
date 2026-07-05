@@ -1,15 +1,39 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
+  AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   Check,
-  ChevronRight,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Copy,
+  Database,
+  ExternalLink,
+  FileDown,
+  FileText,
+  Flag,
+  GitCompare,
+  Hammer,
+  Languages,
+  ListChecks,
   LucideAngularModule,
+  Minus,
+  Pencil,
+  PencilLine,
   Plus,
   RotateCw,
+  ScanLine,
+  ScanSearch,
   Search,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Tag,
+  WandSparkles,
+  Bookmark,
   X,
 } from 'lucide-angular';
 import { AiService, DbService } from '@applye/data';
@@ -23,6 +47,9 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { JobDetailIcons, classifyChangeType } from './scoring.utils';
+import { ScoringView } from './scoring-view.component';
+import { ApplyWizard } from './apply-wizard.component';
 
 interface PassResult {
   pass: number;
@@ -38,492 +65,341 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard],
   template: `
     <div class="jobs">
-      <!-- Paste section -->
-      <section class="section">
-        <h3 class="eyebrow">{{ t()('jobs.paste_title') }}</h3>
-        <textarea
-          class="editor"
-          [ngModel]="jdText()"
-          (ngModelChange)="jdText.set($event)"
-          [placeholder]="t()('jobs.paste_placeholder')"
-          spellcheck="false"
-        ></textarea>
-        <div class="row">
-          <button class="btn" [disabled]="parsing() || !jdText().trim()" (click)="parseAndFilter()">
-            {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
-          </button>
-          @if (parsing()) {
-            <span class="ai-thinking">
-              <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-              {{ t()('jobs.parsing') }}
-            </span>
-          }
-          @if (parseStatus()) {
-            <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
-          }
-        </div>
-      </section>
-
-      @if (!job()) {
-        <div class="state-empty">
-          <lucide-icon
-            [img]="icons.empty"
-            [size]="40"
-            class="state-empty__icon"
-            aria-hidden="true"
-          />
-          <p class="state-empty__msg">{{ t()('jobs.empty') }}</p>
-        </div>
-      }
-
-      <!-- Filter result -->
-      @if (job(); as j) {
-        <div class="detail-actions">
-          @if (!application()) {
-            <button class="btn-ghost" [disabled]="actionBusy()" (click)="addToPipeline()">
-              {{ t()('jobs.add_to_pipeline') }}
-            </button>
-          }
-          <button class="btn-primary" [disabled]="actionBusy()" (click)="markApplied()">
-            {{ t()('jobs.mark_applied') }}
-          </button>
-          <button class="btn-ghost" disabled [title]="t()('common.coming_soon')">
-            {{ t()('jobs.archive') }}
-          </button>
-          @if (actionMsg()) {
-            <span class="detail-actions__msg">{{ actionMsg() }}</span>
-          }
-        </div>
+      @if (!wizardOpen()) {
+        <!-- Paste section -->
         <section class="section">
-          @if (!j.hardFilterPassed) {
-            <div class="card card--danger">
-              <p class="card__title">{{ t()('jobs.hard_filter_failed') }}</p>
-              <p class="muted">{{ t()('jobs.hard_filter_msg') }}</p>
-            </div>
-          } @else {
-            <div class="card">
-              <div class="job-meta">
-                <div class="job-meta__info">
-                  @if (j.company) {
-                    <span class="job-meta__company">{{ j.company }}</span>
-                  }
-                  @if (j.title) {
-                    <span class="job-meta__title">{{ j.title }}</span>
-                  }
-                  <span class="job-meta__hash">{{ (j.jdHash ?? '').slice(0, 12) }}</span>
-                </div>
-                <div class="job-meta__badges">
-                  <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
-                  @if (hasArchetypes() && archetypeMatch() === false) {
-                    <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>
-                  }
-                  @if (j.legitimacyTier === 'yellow') {
-                    <span class="badge badge--warn">{{ t()('jobs.legitimacy_yellow') }}</span>
-                  }
-                  @if (j.legitimacyTier === 'red') {
-                    <span class="badge badge--danger">{{ t()('jobs.legitimacy_red') }}</span>
-                  }
-                </div>
-              </div>
-              @if (!hasArchetypes()) {
-                <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
-              }
-              @if (legitimacyNotes().length) {
-                <ul class="legitimacy-notes">
-                  @for (n of legitimacyNotes(); track n) {
-                    <li>{{ n }}</li>
-                  }
-                </ul>
-              }
-              <div class="row row--mt">
-                @if (!profile()?.scoringJson) {
-                  <p class="status status--error">{{ t()('jobs.profile_needed') }}</p>
-                } @else {
-                  <button class="btn" [disabled]="scoring()" (click)="scoreJob(false)">
-                    {{
-                      scoring()
-                        ? t()('jobs.scoring')
-                        : cache()
-                          ? t()('jobs.rescore')
-                          : t()('jobs.score_btn')
-                    }}
-                  </button>
-                  @if (scoreStatus()) {
-                    <span class="status" [class.status--error]="scoreError()">{{
-                      scoreStatus()
-                    }}</span>
-                  }
-                }
-              </div>
-            </div>
-          }
+          <h3 class="eyebrow">{{ t()('jobs.paste_title') }}</h3>
+          <textarea
+            class="editor"
+            [ngModel]="jdText()"
+            (ngModelChange)="jdText.set($event)"
+            [placeholder]="t()('jobs.paste_placeholder')"
+            spellcheck="false"
+          ></textarea>
+          <div class="row">
+            <button
+              class="btn btn--secondary btn--md"
+              [disabled]="parsing() || !jdText().trim()"
+              (click)="parseAndFilter()"
+            >
+              {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
+            </button>
+            @if (parsing()) {
+              <span class="ai-thinking">
+                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                {{ t()('jobs.parsing') }}
+              </span>
+            }
+            @if (parseStatus()) {
+              <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
+            }
+          </div>
         </section>
+
+        @if (!job()) {
+          <div class="state-empty">
+            <lucide-icon
+              [img]="icons.empty"
+              [size]="40"
+              class="state-empty__icon"
+              aria-hidden="true"
+            />
+            <p class="state-empty__msg">{{ t()('jobs.empty') }}</p>
+          </div>
+        }
+
+        <!-- Filter result -->
+        @if (job(); as j) {
+          <div class="detail-actions">
+            @if (!application()) {
+              <button
+                class="btn btn--secondary btn--md"
+                [disabled]="actionBusy()"
+                (click)="addToPipeline()"
+              >
+                {{ t()('jobs.add_to_pipeline') }}
+              </button>
+            }
+            <button
+              class="btn btn--primary btn--md"
+              [disabled]="actionBusy()"
+              (click)="markApplied()"
+            >
+              {{ t()('jobs.mark_applied') }}
+            </button>
+            @if (actionMsg()) {
+              <span class="detail-actions__msg">{{ actionMsg() }}</span>
+            }
+          </div>
+          <section class="section">
+            @if (!j.hardFilterPassed) {
+              <div class="card card--danger">
+                <p class="card__title">{{ t()('jobs.hard_filter_failed') }}</p>
+                <p class="muted">{{ t()('jobs.hard_filter_msg') }}</p>
+              </div>
+            } @else {
+              <div class="card">
+                <div class="job-meta">
+                  <div class="job-meta__info">
+                    @if (j.company) {
+                      <span class="job-meta__company">{{ j.company }}</span>
+                    }
+                    @if (j.title) {
+                      <span class="job-meta__title">{{ j.title }}</span>
+                    }
+                    <span class="job-meta__hash">{{ (j.jdHash ?? '').slice(0, 12) }}</span>
+                  </div>
+                  <div class="job-meta__badges">
+                    <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
+                    @if (hasArchetypes() && archetypeMatch() === false) {
+                      <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>
+                    }
+                    @if (j.legitimacyTier === 'yellow') {
+                      <span class="badge badge--warn">{{ t()('jobs.legitimacy_yellow') }}</span>
+                    }
+                    @if (j.legitimacyTier === 'red') {
+                      <span class="badge badge--danger">{{ t()('jobs.legitimacy_red') }}</span>
+                    }
+                  </div>
+                </div>
+                @if (!hasArchetypes()) {
+                  <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
+                }
+                @if (legitimacyNotes().length) {
+                  <ul class="legitimacy-notes">
+                    @for (n of legitimacyNotes(); track n) {
+                      <li>{{ n }}</li>
+                    }
+                  </ul>
+                }
+                <div class="row row--mt">
+                  @if (!profile()?.scoringJson) {
+                    <p class="status status--error">{{ t()('jobs.profile_needed') }}</p>
+                  } @else {
+                    <button
+                      class="btn btn--secondary btn--md"
+                      [disabled]="scoring()"
+                      (click)="scoreJob(false)"
+                    >
+                      {{
+                        scoring()
+                          ? t()('jobs.scoring')
+                          : cache()
+                            ? t()('jobs.rescore')
+                            : t()('jobs.score_btn')
+                      }}
+                    </button>
+                    @if (scoreStatus()) {
+                      <span class="status" [class.status--error]="scoreError()">{{
+                        scoreStatus()
+                      }}</span>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          </section>
+        }
       }
 
       <!-- Scoring result -->
       @if (cache(); as c) {
         <section class="section">
-          <!-- Gauge -->
-          <div class="card">
-            <div class="gauge">
-              <span class="gauge__number">{{ c.score }}</span>
-              <span class="gauge__sep">/100</span>
-              <span class="gauge__stars">{{ starRating(c.score) }} ★</span>
-              @if (fromCache()) {
-                <span class="badge badge--cache">cached · 0 tokens</span>
-              } @else {
-                <span class="token-info">{{ c.tokensInput }} in / {{ c.tokensOutput }} out</span>
-              }
-            </div>
-            <div class="gauge__bar-wrap">
-              <div class="gauge__bar" [style.width.%]="c.score"></div>
-            </div>
-            @if (c.summary) {
-              <p class="summary">{{ c.summary }}</p>
-            }
-          </div>
-
-          <!-- Before you submit -->
-          @if (beforeYouSubmit(c).length) {
-            <details class="card before-submit" open>
-              <summary class="eyebrow">{{ t()('jobs.before_you_submit') }}</summary>
-              <ul class="before-submit__list">
-                @for (note of beforeYouSubmit(c); track note) {
-                  <li>{{ note }}</li>
-                }
-              </ul>
-            </details>
-          }
-
-          <!-- Dimensions -->
-          @if (dimensions(c).length) {
-            <div class="card">
-              <h4 class="eyebrow">Dimensions</h4>
-              <div class="dim-table">
-                @for (d of dimensions(c); track d.name) {
-                  <div class="dim-row">
-                    <span class="dim-name">{{ d.name }}</span>
-                    <span class="dim-score">{{ d.score }}/10</span>
-                    <div class="dim-bar-wrap">
-                      <div class="dim-bar" [style.width.%]="d.score * 10"></div>
-                    </div>
-                    @if (d.comment) {
-                      <span class="dim-comment">{{ d.comment }}</span>
+          @if (!wizardOpen()) {
+            <!-- Legitimacy warning — informs, never blocks. User can still tailor below. -->
+            @if (job()?.legitimacyTier === 'red') {
+              <div class="card card--danger">
+                <p class="card__title">{{ t()('jobs.legitimacy_red_banner_title') }}</p>
+                @if (legitimacyNotes().length) {
+                  <ul class="red-flags">
+                    @for (n of legitimacyNotes(); track n) {
+                      <li class="red-flag">{{ n }}</li>
                     }
-                  </div>
+                  </ul>
                 }
               </div>
-            </div>
-          }
+            }
 
-          <!-- Missing keywords -->
-          @if (missingKeywords(c).length) {
-            <div class="card">
-              <h4 class="eyebrow">Missing keywords</h4>
-              <div class="chips">
-                @for (kw of missingKeywords(c); track kw) {
-                  <span class="chip">{{ kw }}</span>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Red flags -->
-          @if (redFlags(c).length) {
-            <div class="card">
-              <h4 class="eyebrow">Red flags</h4>
-              <ul class="red-flags">
-                @for (flag of redFlags(c); track flag) {
-                  <li class="red-flag">{{ flag }}</li>
-                }
-              </ul>
-            </div>
-          }
-
-          <!-- ATS -->
-          <div class="card">
-            <h4 class="eyebrow">ATS check</h4>
-            <div
-              class="ats-pass"
-              [class.ats-pass--ok]="c.atsPass"
-              [class.ats-pass--warn]="!c.atsPass"
+            <app-scoring-view
+              [cache]="cache()"
+              [fromCache]="fromCache()"
+              [job]="job()"
+              [icons]="icons"
+              (tailorApply)="wizardOpen.set(true)"
+            />
+          } @else {
+            <app-apply-wizard
+              [cache]="cache()"
+              [fromCache]="fromCache()"
+              [job]="job()"
+              [jobTitle]="job()?.title ?? ''"
+              [company]="job()?.company ?? ''"
+              [icons]="icons"
+              (closeWizard)="wizardOpen.set(false)"
+              (markApplied)="markApplied()"
             >
-              <lucide-icon
-                [img]="c.atsPass ? icons.atsPass : icons.atsFail"
-                [size]="16"
-                aria-hidden="true"
-              />
-              {{ c.atsPass ? 'Likely to pass ATS scan' : 'ATS issues detected' }}
-            </div>
-            @if (c.atsNotes) {
-              <p class="muted" style="margin-top: var(--space-2)">{{ c.atsNotes }}</p>
-            }
-          </div>
-
-          <!-- Legitimacy warning — informs, never blocks. User can still tailor below. -->
-          @if (job()?.legitimacyTier === 'red') {
-            <div class="card card--danger">
-              <p class="card__title">{{ t()('jobs.legitimacy_red_banner_title') }}</p>
-              @if (legitimacyNotes().length) {
-                <ul class="red-flags">
-                  @for (n of legitimacyNotes(); track n) {
-                    <li class="red-flag">{{ n }}</li>
-                  }
-                </ul>
-              }
-            </div>
-          }
-
-          <!-- Draft portal answers -->
-          <details class="card portal">
-            <summary class="eyebrow">{{ t()('jobs.portal_section') }}</summary>
-            <p class="muted">{{ t()('jobs.portal_hint') }}</p>
-            <p class="muted">{{ t()('jobs.portal_never_submits') }}</p>
-
-            <div class="portal__questions">
-              @for (q of portalQuestions(); track $index) {
-                <div class="row">
-                  <input
-                    class="editor portal__q-input"
-                    type="text"
-                    [ngModel]="q"
-                    (ngModelChange)="updatePortalQuestion($index, $event)"
-                    [attr.aria-label]="t()('jobs.portal_question_label')"
-                  />
-                  <button
-                    class="btn-ghost"
-                    type="button"
-                    (click)="removePortalQuestion($index)"
-                    [attr.aria-label]="t()('jobs.portal_remove_question')"
-                  >
-                    <lucide-icon [img]="icons.remove" [size]="14" aria-hidden="true" />
-                  </button>
+              <div wizardTailorStep class="wizard-step-content">
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.tailor_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.tailor_title') }}</h4>
                 </div>
-              }
-              <button class="btn-ghost" type="button" (click)="addPortalQuestion()">
-                <lucide-icon [img]="icons.add" [size]="14" aria-hidden="true" />
-                {{ t()('jobs.portal_add_question') }}
-              </button>
-            </div>
-
-            <label class="portal__lang-label">
-              {{ t()('jobs.portal_language_label') }}
-              <select
-                class="editor portal__lang-select"
-                [ngModel]="portalLanguage()"
-                (ngModelChange)="portalLanguage.set($event)"
-              >
-                @for (lang of portalLanguages; track lang) {
-                  <option [value]="lang">{{ lang.toUpperCase() }}</option>
-                }
-              </select>
-            </label>
-
-            <div class="cta">
-              <button
-                class="btn btn--primary"
-                [disabled]="portalDrafting() || !portalQuestions().length"
-                (click)="draftPortalAnswers()"
-              >
-                {{ portalDrafting() ? t()('jobs.portal_drafting') : t()('jobs.portal_draft_btn') }}
-              </button>
-              @if (portalFromCache() && !portalDrafting()) {
-                <span class="badge badge--cache">{{ t()('jobs.portal_cached') }}</span>
-              }
-              @if (portalStatus() && !portalFromCache()) {
-                <span class="status" [class.status--error]="portalError()">{{
-                  portalStatus()
-                }}</span>
-              }
-            </div>
-
-            @if (portalDrafting()) {
-              <div class="state-loading" [attr.aria-label]="t()('jobs.portal_drafting')">
-                <div class="state-loading__bar state-loading__bar--wide"></div>
-                <div class="state-loading__bar state-loading__bar--mid"></div>
-                <div class="state-loading__bar state-loading__bar--short"></div>
-              </div>
-            } @else if (portalError() && !portalAnswers().length) {
-              <div class="state-error" role="alert">
-                <p class="state-error__msg">{{ portalStatus() }}</p>
-              </div>
-            } @else if (portalAnswers().length) {
-              <div class="portal__answers">
-                @for (a of portalAnswers(); track a.question; let i = $index) {
-                  <div class="card portal__answer">
-                    <h4 class="eyebrow">{{ a.question }}</h4>
-                    <textarea
-                      class="editor"
-                      rows="4"
-                      [ngModel]="a.answer"
-                      (ngModelChange)="editPortalAnswer(i, $event)"
-                    ></textarea>
-                    <div class="row">
-                      <button class="btn-ghost" type="button" (click)="copyPortalAnswer(i)">
-                        <lucide-icon [img]="icons.copy" [size]="14" aria-hidden="true" />
-                        {{
-                          portalCopiedIndex() === i
-                            ? t()('jobs.portal_copied')
-                            : t()('jobs.portal_copy')
-                        }}
-                      </button>
-                      <button
-                        class="btn-ghost"
-                        type="button"
-                        [disabled]="portalRedrafting() === i"
-                        (click)="redraftPortalAnswer(i)"
-                      >
-                        <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
-                        {{
-                          portalRedrafting() === i
-                            ? t()('jobs.portal_redrafting')
-                            : t()('jobs.portal_another_version')
-                        }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div class="state-empty">
-                <lucide-icon
-                  [img]="icons.empty"
-                  [size]="32"
-                  class="state-empty__icon"
-                  aria-hidden="true"
-                />
-                <p class="state-empty__msg">{{ t()('jobs.portal_empty') }}</p>
-              </div>
-            }
-          </details>
-
-          <!-- Tailoring wizard -->
-          @if (tailorResults().length === 0 && !tailoring()) {
-            <div class="cta">
-              <button
-                class="btn btn--primary"
-                [disabled]="!profile()?.fullMd"
-                (click)="startTailoring()"
-              >
-                {{ t()('jobs.tailor_btn') }}
-              </button>
-              @if (!profile()?.fullMd) {
-                <span class="status status--error">{{ t()('jobs.profile_needed_full') }}</span>
-              }
-            </div>
-          }
-
-          @if (tailorResults().length > 0 || tailoring()) {
-            <div class="wizard">
-              <!-- Step indicators -->
-              <div class="wizard-steps">
-                @for (n of [1, 2, 3]; track n) {
-                  <div
-                    class="wizard-step"
-                    [class.wizard-step--done]="tailorResults().length >= n"
-                    [class.wizard-step--active]="tailoring() && tailorResults().length === n - 1"
-                  >
-                    <span class="wizard-step__num">{{ n }}</span>
-                    <span class="wizard-step__label">{{
-                      ['XYZ rewrite', 'Critique', 'Final build'][n - 1]
-                    }}</span>
-                  </div>
-                  @if (n < 3) {
-                    <span class="wizard-step__sep">
-                      <lucide-icon [img]="icons.stepSep" [size]="16" aria-hidden="true" />
-                    </span>
-                  }
-                }
-              </div>
-
-              <!-- Completed pass results -->
-              @for (r of tailorResults(); track r.pass) {
-                <div class="card wizard-card">
-                  <div class="wizard-pass-header">
-                    <h4 class="eyebrow">
-                      Pass {{ r.pass }} —
-                      {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][r.pass - 1] }}
-                    </h4>
-                    @if (r.fromCache) {
-                      <span class="badge badge--cache">cached · 0 tokens</span>
-                    } @else {
-                      <span class="token-info">{{ r.tokensIn }} in / {{ r.tokensOut }} out</span>
-                    }
-                  </div>
-
-                  <pre class="wizard-result">{{ r.resultMd }}</pre>
-
-                  @if (r.changes.length) {
-                    <details class="wizard-changes">
-                      <summary class="eyebrow">Changes ({{ r.changes.length }})</summary>
-                      <ul class="change-list">
-                        @for (c of r.changes; track c) {
-                          <li>{{ c }}</li>
-                        }
-                      </ul>
-                    </details>
-                  }
-
-                  @if (r.gaps.length) {
-                    <div class="wizard-gaps">
-                      <h4 class="eyebrow">Gaps — not addressable from profile</h4>
-                      <ul class="gap-list">
-                        @for (g of r.gaps; track g) {
-                          <li>{{ g }}</li>
-                        }
-                      </ul>
+                <!-- Phase cards -->
+                <div class="tailor-phases">
+                  @for (p of tailorPhases(); track p.n) {
+                    <div class="tailor-phase" [class]="'tailor-phase--' + p.state">
+                      <div class="tailor-phase__head">
+                        <span class="tailor-phase__icon">
+                          <lucide-icon [img]="p.icon" [size]="13" aria-hidden="true" />
+                        </span>
+                        <span class="tailor-phase__name">{{ t()(p.nameKey) }}</span>
+                      </div>
+                      <span class="tailor-phase__status">{{ t()(p.statusKey) }}</span>
                     </div>
                   }
                 </div>
-              }
 
-              <!-- Running -->
-              @if (tailoring()) {
-                <div class="card card--running">
-                  <p class="muted">
-                    Running Pass {{ tailorResults().length + 1 }}:
-                    {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][tailorResults().length] }}…
-                  </p>
-                </div>
-              }
-
-              <!-- Pass CTAs -->
-              @if (!tailoring() && tailorResults().length > 0 && tailorResults().length < 3) {
-                <div class="row row--mt">
-                  <button class="btn btn--primary" (click)="runNextPass()">
-                    Continue to Pass {{ tailorResults().length + 1 }}:
-                    {{ ['Critique', 'Final Build'][tailorResults().length - 1] }}
-                    <lucide-icon [img]="icons.next" [size]="16" aria-hidden="true" />
-                  </button>
-                  <button class="btn" (click)="resetWizard()">{{ t()('jobs.start_over') }}</button>
-                  @if (tailorStatus()) {
-                    <span class="status" [class.status--error]="tailorError()">{{
-                      tailorStatus()
-                    }}</span>
-                  }
-                </div>
-              }
-
-              <!-- Export (pass 3 done) -->
-              @if (!tailoring() && tailorResults().length === 3) {
-                <div class="card wizard-export">
-                  <h4 class="eyebrow">{{ t()('jobs.export_section') }}</h4>
+                <!-- Actions -->
+                @if (tailorResults().length === 0 && !tailoring()) {
                   <div class="row">
                     <button
-                      class="btn btn--primary"
+                      class="btn btn--primary btn--md"
+                      [disabled]="!profile()?.fullMd"
+                      (click)="startTailoring()"
+                    >
+                      <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
+                      {{ t()('jobs.tailor_btn') }}
+                    </button>
+                    @if (!profile()?.fullMd) {
+                      <span class="status status--error">{{
+                        t()('jobs.profile_needed_full')
+                      }}</span>
+                    }
+                  </div>
+                  <p class="muted">{{ t()('jobs.wizard.tailor_skip_hint') }}</p>
+                } @else if (
+                  !tailoring() && tailorResults().length > 0 && tailorResults().length < 3
+                ) {
+                  <div class="row">
+                    <button class="btn btn--primary btn--md" (click)="runNextPass()">
+                      {{ t()('jobs.wizard.continue_label') }}
+                      <lucide-icon [img]="icons.next" [size]="15" aria-hidden="true" />
+                    </button>
+                    <button class="btn btn--secondary btn--md" (click)="resetWizard()">
+                      {{ t()('jobs.start_over') }}
+                    </button>
+                  </div>
+                }
+
+                @if (tailorStatus()) {
+                  <span class="status" [class.status--error]="tailorError()">{{
+                    tailorStatus()
+                  }}</span>
+                }
+
+                <!-- Changes -->
+                @if (allChanges().length) {
+                  <details
+                    class="card tailor-changes"
+                    open
+                    (toggle)="changesOpen.set($any($event.target).open)"
+                  >
+                    <summary class="tailor-changes__summary">
+                      <lucide-icon
+                        [img]="icons.gitCompare"
+                        [size]="15"
+                        class="scoring-view__accent-icon"
+                        aria-hidden="true"
+                      />
+                      <span class="tailor-changes__title"
+                        >{{ t()('jobs.wizard.changes_title') }} ({{ allChanges().length }})</span
+                      >
+                      <span class="tailor-changes__toggle">
+                        {{
+                          changesOpen()
+                            ? t()('jobs.wizard.hide_label')
+                            : t()('jobs.wizard.show_label')
+                        }}
+                        <lucide-icon
+                          [img]="changesOpen() ? icons.chevronUp : icons.chevronDown"
+                          [size]="14"
+                          aria-hidden="true"
+                        />
+                      </span>
+                    </summary>
+                    <div class="tailor-changes__list">
+                      @for (ch of allChanges(); track ch) {
+                        <div class="tailor-change-row">
+                          <lucide-icon
+                            [img]="changeType(ch) === 'added' ? icons.plus : icons.pencil"
+                            [size]="13"
+                            [class]="
+                              'tailor-change-row__icon tailor-change-row__icon--' + changeType(ch)
+                            "
+                            aria-hidden="true"
+                          />
+                          <span>{{ ch }}</span>
+                        </div>
+                      }
+                    </div>
+                  </details>
+                }
+
+                <!-- Gaps -->
+                @if (allGaps().length) {
+                  <div class="tailor-gaps">
+                    <div class="tailor-gaps__head">
+                      <lucide-icon [img]="icons.alertTriangle" [size]="14" aria-hidden="true" />
+                      <span class="eyebrow">{{ t()('jobs.wizard.gaps_title') }}</span>
+                    </div>
+                    @for (g of allGaps(); track g) {
+                      <div class="tailor-gap-row">
+                        <lucide-icon [img]="icons.minus" [size]="13" aria-hidden="true" />
+                        <span>{{ g }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div wizardExportApplyStep class="wizard-step-content">
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.export_apply_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.export_title') }}</h4>
+                </div>
+                <!-- Export (pass 3 done) -->
+                @if (!tailoring() && tailorResults().length === 3) {
+                  <div class="export-options">
+                    <button
+                      class="export-option export-option--primary"
+                      type="button"
                       [disabled]="!!exporting()"
                       (click)="doExport('docx')"
                     >
-                      {{ exporting() === 'docx' ? t()('jobs.exporting') : t()('jobs.export_docx') }}
+                      <span class="export-option__badge">{{ t()('jobs.export_recommended') }}</span>
+                      <span class="export-option__icon export-option__icon--accent">
+                        <lucide-icon [img]="icons.fileText" [size]="20" aria-hidden="true" />
+                      </span>
+                      <span class="export-option__title">{{
+                        exporting() === 'docx' ? t()('jobs.exporting') : t()('jobs.export_docx')
+                      }}</span>
+                      <span class="export-option__desc">{{ t()('jobs.export_docx_desc') }}</span>
                     </button>
-                    <button class="btn" [disabled]="!!exporting()" (click)="doExport('pdf')">
-                      {{ exporting() === 'pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf') }}
-                    </button>
-                    <button class="btn" (click)="resetWizard()">
-                      {{ t()('jobs.start_over') }}
+                    <button
+                      class="export-option"
+                      type="button"
+                      [disabled]="!!exporting()"
+                      (click)="doExport('pdf')"
+                    >
+                      <span class="export-option__icon">
+                        <lucide-icon [img]="icons.fileDown" [size]="20" aria-hidden="true" />
+                      </span>
+                      <span class="export-option__title">{{
+                        exporting() === 'pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf')
+                      }}</span>
+                      <span class="export-option__desc">{{ t()('jobs.export_pdf_desc') }}</span>
                     </button>
                   </div>
                   @if (exportStatus()) {
@@ -533,17 +409,54 @@ interface PassResult {
                   }
                   @if (lastExport(); as exp) {
                     <div class="export-actions">
-                      <button class="btn btn--sm" (click)="openExportedFile(exp.filePath)">
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        (click)="openExportedFile(exp.filePath)"
+                      >
                         {{ t()('jobs.open_file') }}
                       </button>
-                      <button class="btn btn--sm" (click)="revealExportedFile(exp.filePath)">
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        (click)="revealExportedFile(exp.filePath)"
+                      >
                         {{ t()('jobs.show_folder') }}
                       </button>
                     </div>
                   }
+                  <button class="btn btn--ghost btn--sm export-startover" (click)="resetWizard()">
+                    {{ t()('jobs.start_over') }}
+                  </button>
+                } @else if (!tailoring()) {
+                  <p class="muted">{{ t()('jobs.wizard.export_skipped') }}</p>
+                }
+
+                <div class="apply-fields-header apply-fields-header--sub">
+                  <span class="eyebrow">{{ t()('jobs.wizard.apply_title') }}</span>
+                  <p class="muted">{{ t()('jobs.wizard.apply_subtitle') }}</p>
                 </div>
-              }
-            </div>
+                @if (lastExport(); as exp) {
+                  <div class="card apply-fields">
+                    <div class="apply-field-row">
+                      <span class="apply-field-row__label">{{ t()('jobs.export_section') }}</span>
+                      <span class="apply-field-row__value">{{ exp.filePath }}</span>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        (click)="openExportedFile(exp.filePath)"
+                      >
+                        <lucide-icon [img]="icons.fileText" [size]="12" aria-hidden="true" />
+                        {{ t()('jobs.open_file') }}
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <p class="muted">{{ t()('jobs.wizard.apply_no_export') }}</p>
+                }
+                @if (actionMsg()) {
+                  <p class="muted">{{ actionMsg() }}</p>
+                }
+              </div>
+            </app-apply-wizard>
           }
         </section>
       }
@@ -591,14 +504,14 @@ interface PassResult {
         font-size: var(--text-sm);
         line-height: 1.6;
         color: var(--text-primary);
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
         resize: vertical;
       }
       .editor:focus {
         outline: none;
-        border-color: var(--indigo-500, #6366f1);
+        border-color: var(--accent);
       }
 
       .row {
@@ -615,8 +528,8 @@ interface PassResult {
         flex-direction: column;
         gap: var(--space-3);
         background: var(--surface-1);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
         padding: var(--space-4);
       }
       .card--danger {
@@ -662,96 +575,6 @@ interface PassResult {
         flex-shrink: 0;
       }
 
-      /* Gauge */
-      .gauge {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-3);
-        flex-wrap: wrap;
-      }
-      .gauge__number {
-        font-size: 3rem;
-        font-weight: 700;
-        color: var(--indigo-500, #6366f1);
-        font-family: var(--font-mono);
-        line-height: 1;
-      }
-      .gauge__sep {
-        font-size: var(--text-lg);
-        color: var(--text-tertiary);
-        font-family: var(--font-mono);
-      }
-      .gauge__stars {
-        font-size: var(--text-xl);
-        color: var(--indigo-500, #6366f1);
-        font-family: var(--font-mono);
-      }
-      .gauge__bar-wrap {
-        height: 8px;
-        background: var(--surface-3);
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .gauge__bar {
-        height: 100%;
-        background: var(--indigo-500, #6366f1);
-        border-radius: 4px;
-        transition: width 0.6s ease;
-      }
-
-      /* Dimensions */
-      .dim-table {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-      }
-      .dim-row {
-        display: grid;
-        grid-template-columns: 160px 64px 1fr;
-        gap: var(--space-3);
-        align-items: center;
-      }
-      .dim-name {
-        font-size: var(--text-sm);
-        color: var(--text-secondary);
-      }
-      .dim-score {
-        font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        color: var(--text-primary);
-      }
-      .dim-bar-wrap {
-        height: 4px;
-        background: var(--surface-3);
-        border-radius: 2px;
-      }
-      .dim-bar {
-        height: 100%;
-        background: var(--indigo-500, #6366f1);
-        border-radius: 2px;
-      }
-      .dim-comment {
-        font-size: var(--text-xs);
-        color: var(--text-secondary);
-        grid-column: 2 / -1;
-      }
-
-      /* Keywords */
-      .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-      }
-      .chip {
-        padding: 2px var(--space-2);
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        font-size: var(--text-xs);
-        font-family: var(--font-mono);
-        color: var(--text-secondary);
-      }
-
       /* Red flags */
       .red-flags {
         list-style: none;
@@ -774,66 +597,29 @@ interface PassResult {
         flex-shrink: 0;
       }
 
-      /* ATS */
-      .ats-pass {
-        font-size: var(--text-sm);
-        font-weight: var(--weight-medium);
-      }
-      .ats-pass--ok {
-        color: var(--success, #4ade80);
-      }
-      .ats-pass--warn {
-        color: var(--danger);
-      }
-
-      /* Summary */
-      .summary {
-        font-size: var(--text-sm);
-        line-height: 1.7;
-        color: var(--text-secondary);
-        font-style: italic;
-        border-left: 2px solid var(--indigo-500, #6366f1);
-        padding-left: var(--space-3);
-        margin: 0;
-      }
-
-      /* Before you submit */
-      .before-submit summary {
-        cursor: pointer;
-      }
-      .before-submit__list {
-        margin: var(--space-3) 0 0;
-        padding-left: var(--space-4);
-        color: var(--text-secondary);
-        font-size: var(--text-sm);
-      }
-      .before-submit__list li {
-        margin-bottom: var(--space-2);
-      }
-
       /* Badges */
       .badge {
         padding: 2px var(--space-2);
-        border-radius: 999px;
+        border-radius: var(--radius-full);
         font-size: var(--text-xs);
         font-weight: var(--weight-medium);
         font-family: var(--font-mono);
       }
       .badge--pass {
-        background: color-mix(in srgb, var(--success, #4ade80) 15%, transparent);
-        color: var(--success, #4ade80);
+        background: var(--success-tint);
+        color: var(--success);
       }
       .badge--cache {
-        background: color-mix(in srgb, var(--indigo-500, #6366f1) 15%, transparent);
-        color: var(--indigo-500, #6366f1);
+        background: var(--accent-tint);
+        color: var(--text-accent);
       }
       .badge--warn {
-        background: color-mix(in srgb, var(--warning, #fb923c) 15%, transparent);
-        color: var(--warning, #fb923c);
+        background: var(--warning-tint);
+        color: var(--warning);
       }
       .badge--danger {
-        background: color-mix(in srgb, var(--danger, #f87171) 15%, transparent);
-        color: var(--danger, #f87171);
+        background: var(--danger-tint);
+        color: var(--danger);
       }
       .legitimacy-notes {
         margin: var(--space-2) 0 0;
@@ -846,116 +632,166 @@ interface PassResult {
       }
 
       /* CTA / wizard entry */
-      .cta {
+      /* Tailor CV — phase cards */
+      .tailor-phases {
+        display: flex;
+        gap: var(--space-4);
+      }
+      .tailor-phase {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
+      }
+      .tailor-phase--done {
+        border-color: color-mix(in srgb, var(--success) 35%, var(--border-subtle));
+      }
+      .tailor-phase--running,
+      .tailor-phase--ready {
+        border-color: var(--accent);
+      }
+      .tailor-phase--pending {
+        opacity: 0.6;
+      }
+      .tailor-phase__head {
         display: flex;
         align-items: center;
         gap: var(--space-3);
       }
-
-      /* Wizard */
-      .wizard {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4);
-        margin-top: var(--space-2);
-      }
-      .wizard-steps {
+      .tailor-phase__icon {
+        width: 22px;
+        height: 22px;
+        border-radius: var(--radius-badge);
         display: flex;
         align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-3) 0;
+        justify-content: center;
+        background: var(--surface-sunken);
+        color: var(--text-tertiary);
       }
-      .wizard-step {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-1) var(--space-3);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        opacity: 0.45;
+      .tailor-phase--done .tailor-phase__icon {
+        background: var(--success-tint);
+        color: var(--success);
       }
-      .wizard-step--done {
-        opacity: 1;
-        border-color: color-mix(in srgb, var(--indigo-500, #6366f1) 60%, transparent);
+      .tailor-phase--running .tailor-phase__icon,
+      .tailor-phase--ready .tailor-phase__icon {
+        background: var(--accent-tint);
+        color: var(--text-accent);
       }
-      .wizard-step--active {
-        opacity: 1;
-        border-color: var(--indigo-500, #6366f1);
-        background: color-mix(in srgb, var(--indigo-500, #6366f1) 10%, transparent);
-      }
-      .wizard-step__num {
+      .tailor-phase__name {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
         font-weight: var(--weight-medium);
-        color: var(--indigo-500, #6366f1);
+        color: var(--text-primary);
       }
-      .wizard-step__label {
-        font-size: var(--text-xs);
-        color: var(--text-secondary);
+      .tailor-phase__status {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
       }
-      .wizard-step__sep {
-        color: var(--text-quaternary, var(--text-tertiary));
-        font-size: var(--text-xs);
+      .tailor-phase--done .tailor-phase__status {
+        color: var(--success);
       }
-      .wizard-card {
-        gap: var(--space-3);
+      .tailor-phase--running .tailor-phase__status,
+      .tailor-phase--ready .tailor-phase__status {
+        color: var(--text-accent);
       }
-      .wizard-pass-header {
+
+      /* Tailor CV — changes diff */
+      .tailor-changes {
+        padding: 0;
+        gap: 0;
+      }
+      .tailor-changes__summary {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: var(--space-3);
-      }
-      .wizard-result {
-        font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        line-height: 1.7;
-        color: var(--text-secondary);
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: var(--space-3);
-        max-height: 320px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
-        margin: 0;
-      }
-      .wizard-changes summary {
+        padding: var(--space-4);
         cursor: pointer;
         user-select: none;
-        padding: var(--space-1) 0;
       }
-      .change-list,
-      .gap-list {
-        list-style: none;
-        padding: 0;
-        margin: var(--space-2) 0 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-      }
-      .change-list li::before {
-        content: '✓ ';
-        color: var(--success, #4ade80);
-      }
-      .gap-list li::before {
-        content: '⚠ ';
-        color: var(--warning, #fb923c);
-      }
-      .change-list li,
-      .gap-list li {
+      .tailor-changes__title {
+        font-family: var(--font-mono);
         font-size: var(--text-sm);
-        color: var(--text-secondary);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
       }
-      .wizard-gaps {
+      .tailor-changes__toggle {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+      }
+      .tailor-changes__list {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
+        padding: 0 var(--space-4) var(--space-4);
       }
-      .wizard-export {
+      .tailor-change-row {
+        display: flex;
         gap: var(--space-3);
+        align-items: flex-start;
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-input);
+        background: var(--accent-tint);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+        color: var(--text-secondary);
       }
+      .tailor-change-row__icon {
+        margin-top: 2px;
+        flex: 0 0 auto;
+      }
+      .tailor-change-row__icon--added {
+        color: var(--success);
+      }
+      .tailor-change-row__icon--reworded {
+        color: var(--text-accent);
+      }
+
+      /* Tailor CV — gaps */
+      .tailor-gaps {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--warning-tint);
+        border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+        border-radius: var(--radius-card);
+      }
+      .tailor-gaps__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        color: var(--warning);
+      }
+      .tailor-gap-row {
+        display: flex;
+        gap: var(--space-3);
+        align-items: flex-start;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+        color: var(--text-primary);
+      }
+      .tailor-gap-row lucide-icon {
+        color: var(--warning);
+        margin-top: 2px;
+        flex: 0 0 auto;
+      }
+
+      /* Export */
       .export-path {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
@@ -963,9 +799,87 @@ interface PassResult {
         word-break: break-all;
         margin: 0;
       }
-      .card--running {
-        border-style: dashed;
-        opacity: 0.8;
+      .export-actions {
+        display: flex;
+        gap: var(--space-3);
+      }
+      .export-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-5);
+      }
+      .export-option {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-6);
+        text-align: left;
+        background: var(--surface-1);
+        border: 1.5px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
+        cursor: pointer;
+      }
+      .export-option:hover:not(:disabled) {
+        border-color: var(--border-strong);
+      }
+      .export-option:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .export-option--primary {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1px var(--accent),
+          var(--shadow-md);
+      }
+      .export-option__badge {
+        position: absolute;
+        top: var(--space-4);
+        right: var(--space-4);
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-badge);
+        background: var(--success-tint);
+        color: var(--success);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+      }
+      .export-option__icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-input);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface-sunken);
+        color: var(--text-secondary);
+      }
+      .export-option__icon--accent {
+        background: var(--accent-tint);
+        color: var(--text-accent);
+      }
+      .export-option__title {
+        font-family: var(--font-mono);
+        font-size: var(--text-title);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+      }
+      .export-option__desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-xs);
+        line-height: 1.55;
+        color: var(--text-secondary);
+      }
+      .export-startover {
+        align-self: center;
+        color: var(--text-tertiary);
       }
 
       /* Shared */
@@ -982,51 +896,58 @@ interface PassResult {
         color: var(--danger);
       }
 
-      .portal__questions,
-      .portal__answers {
+      .wizard-step-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+      }
+      .apply-fields-header {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
       }
-      .portal__q-input {
-        flex: 1;
+      .apply-fields-header--sub {
+        padding-top: var(--space-5);
+        border-top: 1px solid var(--border-subtle);
       }
-      .portal__lang-label {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-        font-size: var(--text-xs);
-        color: var(--text-secondary);
-      }
-      .token-info {
+      .apply-fields-title {
+        margin: 0;
         font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        color: var(--text-tertiary);
-      }
-
-      .btn {
-        padding: var(--space-2) var(--space-4);
-        font-family: var(--font-mono);
-        font-size: var(--text-sm);
+        font-size: var(--text-h2);
         font-weight: var(--weight-medium);
         color: var(--text-primary);
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-input);
-        cursor: pointer;
+      }
+      .apply-fields {
+        padding: 0;
+        gap: 0;
+      }
+      .apply-field-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .apply-field-row:last-child {
+        border-bottom: none;
+      }
+      .apply-field-row__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        width: 96px;
+        flex: 0 0 auto;
+      }
+      .apply-field-row__value {
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
-      }
-      .btn:hover:not(:disabled) {
-        filter: brightness(1.15);
-      }
-      .btn:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
-      .btn--primary {
-        background: var(--indigo-500, #6366f1);
-        color: #fff;
-        border-color: var(--indigo-500, #6366f1);
       }
     `,
   ],
@@ -1038,13 +959,45 @@ export class JobsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons = {
+  protected readonly icons: JobDetailIcons & {
+    empty: typeof Search;
+    copy: typeof Copy;
+    add: typeof Plus;
+    remove: typeof X;
+    another: typeof RotateCw;
+  } = {
     empty: Search,
     atsPass: Check,
     atsFail: X,
-    stepSep: ChevronRight,
+    tag: Tag,
+    flag: Flag,
+    scan: ScanLine,
+    checklist: ListChecks,
     next: ArrowRight,
+    star: Star,
+    db: Database,
+    bookmark: Bookmark,
+    wand: WandSparkles,
+    back: ArrowLeft,
+    checkCircle: CheckCircle2,
+    languages: Languages,
+    chevronDown: ChevronDown,
+    chevronUp: ChevronUp,
+    shieldCheck: ShieldCheck,
+    sparkles: Sparkles,
+    gitCompare: GitCompare,
+    alertTriangle: AlertTriangle,
+    minus: Minus,
+    plus: Plus,
+    pencil: Pencil,
+    hammer: Hammer,
+    scanSearch: ScanSearch,
+    pencilLine: PencilLine,
+    fileText: FileText,
+    fileDown: FileDown,
+    externalLink: ExternalLink,
     copy: Copy,
+    check: Check,
     add: Plus,
     remove: X,
     another: RotateCw,
@@ -1064,6 +1017,7 @@ export class JobsComponent implements OnInit {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
+  readonly wizardOpen = signal(false);
   readonly archetypeMatch = signal<boolean | null>(null);
 
   // Job Detail: the application row (if this job is on the board) + action state.
@@ -1087,6 +1041,41 @@ export class JobsComponent implements OnInit {
   readonly tailoring = signal(false);
   readonly tailorStatus = signal('');
   readonly tailorError = signal(false);
+
+  /** Flattened change / gap notes across all completed tailoring passes. */
+  readonly allChanges = computed(() => this.tailorResults().flatMap((r) => r.changes));
+  readonly allGaps = computed(() => this.tailorResults().flatMap((r) => r.gaps));
+  readonly changesOpen = signal(true);
+  protected readonly changeType = classifyChangeType;
+
+  /** Three tailoring phases (XYZ → dual critique → build) with derived state. */
+  readonly tailorPhases = computed(() => {
+    const done = this.tailorResults().length;
+    const running = this.tailoring();
+    const defs = [
+      { n: 1, icon: this.icons.pencilLine, nameKey: 'jobs.wizard.phase_xyz' },
+      { n: 2, icon: this.icons.scanSearch, nameKey: 'jobs.wizard.phase_critique' },
+      { n: 3, icon: this.icons.hammer, nameKey: 'jobs.wizard.phase_build' },
+    ];
+    return defs.map((d) => {
+      let state: 'done' | 'running' | 'ready' | 'pending';
+      let statusKey: string;
+      if (done >= d.n) {
+        state = 'done';
+        statusKey = 'jobs.wizard.phase_done';
+      } else if (running && done === d.n - 1) {
+        state = 'running';
+        statusKey = 'jobs.wizard.phase_running';
+      } else if (!running && done === d.n - 1) {
+        state = 'ready';
+        statusKey = 'jobs.wizard.phase_ready';
+      } else {
+        state = 'pending';
+        statusKey = 'jobs.wizard.phase_pending';
+      }
+      return { ...d, state, statusKey };
+    });
+  });
   readonly exporting = signal<'docx' | 'pdf' | false>(false);
   readonly exportStatus = signal('');
   readonly exportError = signal(false);
@@ -1335,15 +1324,6 @@ export class JobsComponent implements OnInit {
 
   /** Add to Pipeline: create an 'applied' application so it shows on the board. */
   async addToPipeline(): Promise<void> {
-    await this.setApplied(false);
-  }
-
-  /** Mark as Applied: same, plus the applied date and an auto follow-up date. */
-  async markApplied(): Promise<void> {
-    await this.setApplied(true);
-  }
-
-  private async setApplied(withDates: boolean): Promise<void> {
     const j = this.job();
     if (!j?.id || this.actionBusy()) return;
     this.actionBusy.set(true);
@@ -1355,15 +1335,36 @@ export class JobsComponent implements OnInit {
         status: 'applied',
       };
       if (existing?.id) patch.id = existing.id;
-      if (withDates) {
-        const today = new Date().toISOString().slice(0, 10);
-        const days = this.settings()?.followupDaysAfterApply ?? 7;
-        patch.appliedAt = today;
-        patch.followUpAt = new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
-      }
       const app = await this.db.upsertApplication(patch);
       this.application.set(app);
-      this.actionMsg.set(this.t()(withDates ? 'jobs.applied_ok' : 'jobs.pipeline_ok'));
+      this.actionMsg.set(this.t()('jobs.pipeline_ok'));
+    } catch (e) {
+      this.actionMsg.set(String(e));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
+  /**
+   * Mark as Applied — reuses the SAME status-transition command the pipeline
+   * kanban's drag-and-drop uses (`db_set_application_status`): it writes
+   * `status_history` and computes `follow_up_at` deterministically from
+   * `settings.followup_days_after_apply` in SQL, 0 AI tokens. No date math
+   * is duplicated here.
+   */
+  async markApplied(): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.actionBusy()) return;
+    this.actionBusy.set(true);
+    this.actionMsg.set('');
+    try {
+      let app = this.application();
+      if (!app?.id) {
+        app = await this.db.upsertApplication({ jobId: j.id, status: 'saved' });
+      }
+      const updated = await this.db.setApplicationStatus(app.id, 'applied');
+      this.application.set(updated);
+      this.actionMsg.set(this.t()('jobs.applied_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
     } finally {
@@ -1496,48 +1497,12 @@ export class JobsComponent implements OnInit {
     }
   }
 
-  dimensions(c: ScoringCache): ScoreDimension[] {
-    try {
-      return JSON.parse(c.dimensionsJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  missingKeywords(c: ScoringCache): string[] {
-    try {
-      return JSON.parse(c.missingKeywordsJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  redFlags(c: ScoringCache): string[] {
-    try {
-      return JSON.parse(c.redFlagsJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  beforeYouSubmit(c: ScoringCache): string[] {
-    try {
-      return JSON.parse(c.beforeYouSubmitJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
   legitimacyNotes(): string[] {
     try {
       return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
     } catch {
       return [];
     }
-  }
-
-  starRating(score: number): string {
-    return ((score / 100) * 4 + 1).toFixed(1);
   }
 
   hasArchetypes(): boolean {

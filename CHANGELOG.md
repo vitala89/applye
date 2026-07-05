@@ -10,6 +10,40 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-07-05
+
+### Changed
+
+- **Tailor & apply wizard redesigned to 3 symmetric steps** (was 4, with a
+  near-empty portal-answers step): Review score → Tailor CV → Export &
+  apply. Stepper and the footer's "Step X of 3" counter now always agree.
+- Step 1 (Review score) is a compact recap — score + verdict pill, recruiter
+  verdict text, and an equal-height 2-column dimension breakdown — instead
+  of re-rendering the full Job Detail scoring page inside the wizard.
+- Step 2 (Tailor CV) now surfaces a collapsible **Changes** panel (expanded
+  by default, explicit Hide/Show toggle, icon-coded rows) and an
+  **always-visible, non-collapsible Gaps** panel — what the tailoring pass
+  intentionally left as a flagged gap rather than fabricated.
+- Step 3 merges Export and Apply into one screen; applying without an
+  export is allowed (with an honest warning), never blocked.
+- Single exit control (Close, on the progress rail) — the footer Back
+  button now purely navigates steps, and returns to the job summary from
+  step 1 instead of duplicating Close.
+- Removed the portal-answers step from this wizard entirely (that flow
+  belongs to interview prep) and all its copy.
+- "Mark as applied" now calls the same status-transition command the
+  pipeline board's drag-and-drop uses, instead of duplicating the
+  applied-date / follow-up-date computation on the frontend — one source
+  of truth for `status_history` and `follow_up_at`.
+
+## [0.17.0] - 2026-07-05
+
+### Added
+
+- Job Detail screen redesigned: card-based scoring view (gauge, dimension cards, missing-keyword chips, red-flags, ATS check) replaces the long scroll.
+- 5-step apply/tailor wizard (Review score → Portal answers → Tailor CV → Export → Apply) with Back/Next navigation, one step visible at a time.
+- Apply step adds Mark Applied action within the new wizard flow.
+
 ## [0.16.3] - 2026-07-03
 
 ### Changed

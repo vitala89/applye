@@ -70,3 +70,6 @@ apps/desktop/src-tauri/gen/
 graphify-out/
 .planning/
 tauri-project-bootstrap.md
+
+# superpowers scratch state
+.superpowers/

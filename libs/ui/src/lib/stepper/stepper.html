@@ -1,0 +1,18 @@
+<div class="stepper">
+  @for (m of markers(); track m.label; let i = $index) {
+  <div class="stepper__step">
+    <div
+      class="stepper__marker"
+      [class.stepper__marker--done]="m.done"
+      [class.stepper__marker--active]="m.active"
+    >
+      {{ m.done ? '✓' : i + 1 }}
+    </div>
+    <span class="stepper__label" [class.stepper__label--dim]="!m.done && !m.active"
+      >{{ m.label }}</span
+    >
+  </div>
+  @if (!m.isLast) {
+  <div class="stepper__connector" [class.stepper__connector--done]="m.done"></div>
+  } }
+</div>

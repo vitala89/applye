@@ -53,6 +53,7 @@ pub fn run() {
             commands::jobs::db_list_jobs_overview,
             commands::jobs::db_get_job,
             commands::jobs::db_upsert_job,
+            commands::jobs::db_delete_job,
             commands::job_url::classify_job_url,
             commands::job_url::fetch_job_from_url,
             commands::tracker::db_tracker_rows,

@@ -1,5 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle,
@@ -30,8 +32,10 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  CircleX,
   Star,
   Tag,
+  Trash2,
   WandSparkles,
   Bookmark,
   X,
@@ -47,9 +51,11 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { JobDetailIcons, classifyChangeType } from './scoring.utils';
+import { SkeletonCard } from '@applye/ui';
+import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
+import { UpdatedScoreView } from './updated-score-view.component';
 
 interface PassResult {
   pass: number;
@@ -65,7 +71,14 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard],
+  imports: [
+    FormsModule,
+    LucideAngularModule,
+    ScoringView,
+    ApplyWizard,
+    UpdatedScoreView,
+    SkeletonCard,
+  ],
   template: `
     <div class="jobs">
       @if (!wizardOpen()) {
@@ -74,29 +87,35 @@ interface PassResult {
           <h3 class="eyebrow">{{ t()('jobs.paste_title') }}</h3>
           <textarea
             class="editor"
+            [class.editor--locked]="jobLocked()"
+            [disabled]="jobLocked()"
             [ngModel]="jdText()"
             (ngModelChange)="jdText.set($event)"
             [placeholder]="t()('jobs.paste_placeholder')"
             spellcheck="false"
           ></textarea>
-          <div class="row">
-            <button
-              class="btn btn--secondary btn--md"
-              [disabled]="parsing() || !jdText().trim()"
-              (click)="parseAndFilter()"
-            >
-              {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
-            </button>
-            @if (parsing()) {
-              <span class="ai-thinking">
-                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-                {{ t()('jobs.parsing') }}
-              </span>
-            }
-            @if (parseStatus()) {
-              <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
-            }
-          </div>
+          @if (jobLocked()) {
+            <p class="locked-hint">{{ t()('jobs.description_locked') }}</p>
+          } @else {
+            <div class="row">
+              <button
+                class="btn btn--secondary btn--md"
+                [disabled]="parsing() || !jdText().trim()"
+                (click)="parseAndFilter()"
+              >
+                {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
+              </button>
+              @if (parsing()) {
+                <span class="ai-thinking">
+                  <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                  {{ t()('jobs.parsing') }}
+                </span>
+              }
+              @if (parseStatus()) {
+                <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
+              }
+            </div>
+          }
         </section>
 
         @if (!job()) {
@@ -114,26 +133,105 @@ interface PassResult {
         <!-- Filter result -->
         @if (job(); as j) {
           <div class="detail-actions">
-            @if (!application()) {
+            <div class="detail-actions__row">
+              <!-- Left: primary action + status/tailored badges -->
+              @if (!application()) {
+                <button
+                  class="btn btn--secondary btn--md"
+                  [disabled]="actionBusy()"
+                  (click)="addToPipeline()"
+                >
+                  {{ t()('jobs.add_to_pipeline') }}
+                </button>
+              }
+              @if (canMarkApplied()) {
+                <button
+                  class="btn btn--primary btn--md"
+                  [disabled]="actionBusy()"
+                  (click)="markApplied()"
+                >
+                  {{ t()('jobs.mark_applied') }}
+                </button>
+              } @else if (application(); as app) {
+                <span class="badge" [class]="statusBadgeClass(app.status)">{{
+                  t()('status.' + app.status)
+                }}</span>
+              }
+              @if (isTailored()) {
+                <span class="badge badge--accent">
+                  <lucide-icon [img]="icons.wand" [size]="11" aria-hidden="true" />
+                  {{ t()('jobs.wizard.tailored_badge') }}
+                </span>
+              }
+
+              <span class="detail-actions__spacer"></span>
+
+              <!-- Right: edit/cancel + delete -->
+              @if (!canMarkApplied()) {
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="actionBusy()"
+                  (click)="startEditingLocked()"
+                >
+                  {{ t()('jobs.change_status_action') }}
+                </button>
+              } @else if (editingLocked()) {
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="actionBusy()"
+                  (click)="cancelEditingLocked()"
+                >
+                  {{ t()('actions.cancel') }}
+                </button>
+              }
               <button
-                class="btn btn--secondary btn--md"
-                [disabled]="actionBusy()"
-                (click)="addToPipeline()"
+                class="btn btn--secondary btn--sm"
+                type="button"
+                [disabled]="actionBusy() || deleting()"
+                (click)="openDeleteConfirm()"
               >
-                {{ t()('jobs.add_to_pipeline') }}
+                <lucide-icon [img]="icons.trash" [size]="14" aria-hidden="true" />
+                {{ t()('jobs.delete_action') }}
               </button>
-            }
-            <button
-              class="btn btn--primary btn--md"
-              [disabled]="actionBusy()"
-              (click)="markApplied()"
-            >
-              {{ t()('jobs.mark_applied') }}
-            </button>
+            </div>
             @if (actionMsg()) {
-              <span class="detail-actions__msg">{{ actionMsg() }}</span>
+              <p class="detail-actions__msg">{{ actionMsg() }}</p>
             }
           </div>
+          @if (deleteConfirmOpen()) {
+            <div class="alert alert--danger" role="alert">
+              <lucide-icon
+                [img]="icons.dangerGlyph"
+                [size]="16"
+                class="alert__icon"
+                aria-hidden="true"
+              />
+              <div class="alert__body">
+                <p class="alert__title">{{ t()('jobs.delete_confirm_title') }}</p>
+                <p class="alert__text">{{ t()('jobs.delete_confirm_msg') }}</p>
+                <div class="alert__actions">
+                  <button
+                    class="btn btn--danger btn--md"
+                    type="button"
+                    [disabled]="deleting()"
+                    (click)="confirmDeleteJob()"
+                  >
+                    {{ deleting() ? t()('common.loading') : t()('jobs.delete_confirm_btn') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    [disabled]="deleting()"
+                    (click)="cancelDeleteConfirm()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
           <section class="section">
             @if (!j.hardFilterPassed) {
               <div class="card card--danger">
@@ -228,8 +326,22 @@ interface PassResult {
               [fromCache]="fromCache()"
               [job]="job()"
               [icons]="icons"
-              (tailorApply)="wizardOpen.set(true)"
+              [tailored]="isTailored()"
+              (tailorApply)="openWizard()"
             />
+          } @else if (applyResult()) {
+            <!-- Success confirmation before redirecting back to the job -->
+            <div class="apply-success card">
+              <span class="apply-success__icon">
+                <lucide-icon [img]="icons.checkCircle" [size]="28" aria-hidden="true" />
+              </span>
+              <h3 class="apply-success__title">{{ t()('jobs.wizard.update_success_title') }}</h3>
+              <p class="apply-success__msg">{{ t()('jobs.wizard.update_success_msg') }}</p>
+              <span class="ai-thinking">
+                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                {{ t()('jobs.wizard.redirecting') }}
+              </span>
+            </div>
           } @else {
             <app-apply-wizard
               [cache]="cache()"
@@ -238,8 +350,14 @@ interface PassResult {
               [jobTitle]="job()?.title ?? ''"
               [company]="job()?.company ?? ''"
               [icons]="icons"
-              (closeWizard)="wizardOpen.set(false)"
+              [postTailorScore]="postTailorScore()"
+              [applicationStatus]="application()?.status ?? null"
+              [overrideEditing]="editingLocked()"
+              (closeWizard)="closeWizard()"
               (markApplied)="markApplied()"
+              (updateApplication)="updateApplication()"
+              (cancelEdit)="cancelEditingLocked()"
+              (stepChange)="onWizardStep($event)"
             >
               <div wizardTailorStep class="wizard-step-content">
                 <div class="apply-fields-header">
@@ -279,28 +397,30 @@ interface PassResult {
                     }
                   </div>
                   <p class="muted">{{ t()('jobs.wizard.tailor_skip_hint') }}</p>
-                } @else if (
-                  !tailoring() && tailorResults().length > 0 && tailorResults().length < 3
-                ) {
+                } @else if (tailoring()) {
+                  <div class="ai-thinking">
+                    <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                    {{ t()(currentPhaseKey()) }}
+                  </div>
+                } @else if (tailorResults().length === 3) {
                   <div class="row">
-                    <button class="btn btn--primary btn--md" (click)="runNextPass()">
-                      {{ t()('jobs.wizard.continue_label') }}
-                      <lucide-icon [img]="icons.next" [size]="15" aria-hidden="true" />
-                    </button>
+                    <span class="badge badge--pass">
+                      <lucide-icon [img]="icons.checkCircle" [size]="12" aria-hidden="true" />
+                      {{ t()('jobs.wizard.tailored_badge') }}
+                    </span>
                     <button class="btn btn--secondary btn--md" (click)="resetWizard()">
-                      {{ t()('jobs.start_over') }}
+                      <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
+                      {{ t()('jobs.wizard.retailor_btn') }}
                     </button>
                   </div>
                 }
 
-                @if (tailorStatus()) {
-                  <span class="status" [class.status--error]="tailorError()">{{
-                    tailorStatus()
-                  }}</span>
+                @if (tailorStatus() && tailorError()) {
+                  <span class="status status--error">{{ tailorStatus() }}</span>
                 }
 
-                <!-- Changes -->
-                @if (allChanges().length) {
+                <!-- Changes (shown here, after the tailoring pass completes) -->
+                @if (!tailoring() && allChanges().length) {
                   <details
                     class="card tailor-changes"
                     open
@@ -348,7 +468,7 @@ interface PassResult {
                 }
 
                 <!-- Gaps -->
-                @if (allGaps().length) {
+                @if (!tailoring() && allGaps().length) {
                   <div class="tailor-gaps">
                     <div class="tailor-gaps__head">
                       <lucide-icon [img]="icons.alertTriangle" [size]="14" aria-hidden="true" />
@@ -361,6 +481,43 @@ interface PassResult {
                       </div>
                     }
                   </div>
+                }
+              </div>
+
+              <!-- Step 3: Updated score — auto-rescores the tailored resume -->
+              <div wizardUpdateScoreStep class="wizard-step-content">
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.updated_score_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.updated_score_title') }}</h4>
+                </div>
+
+                @if (updatingScore()) {
+                  <!-- Design-system skeleton card while the rescore runs -->
+                  <div class="rescore-loading">
+                    <div class="ai-thinking">
+                      <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                      {{ t()('jobs.wizard.updating_score_hint') }}
+                    </div>
+                    <lib-skeleton-card [lines]="2" />
+                    <lib-skeleton-card [media]="false" [lines]="3" [footer]="false" />
+                  </div>
+                } @else if (postTailorScore(); as post) {
+                  <app-updated-score-view
+                    [before]="cache()"
+                    [after]="post"
+                    [jobTitle]="job()?.title ?? ''"
+                    [icons]="icons"
+                  />
+                } @else if (updateScoreError()) {
+                  <div class="row">
+                    <span class="status status--error">{{ updateScoreStatus() }}</span>
+                    <button class="btn btn--secondary btn--md" (click)="updateScoreAfterTailor()">
+                      <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
+                      {{ t()('common.retry') }}
+                    </button>
+                  </div>
+                } @else {
+                  <p class="muted">{{ t()('jobs.wizard.updated_score_skip') }}</p>
                 }
               </div>
 
@@ -466,13 +623,113 @@ interface PassResult {
     `
       .detail-actions {
         display: flex;
-        align-items: center;
-        gap: var(--space-3);
+        flex-direction: column;
+        gap: var(--space-2);
         margin-bottom: var(--space-5);
       }
+      .detail-actions__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+      }
       .detail-actions__msg {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin: 0;
+      }
+      .detail-actions__spacer {
+        flex: 1 1 auto;
+      }
+      .locked-hint {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        margin: 0;
+      }
+      /* Alert (danger) — matches the Applye Design System Alert component:
+         tinted surface, hairline tone border, mono title + sans body. */
+      .alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 13px 14px;
+        border-radius: var(--radius-card);
+        margin-bottom: var(--space-5);
+      }
+      .alert--danger {
+        background: var(--danger-tint);
+        border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
+      }
+      .alert--danger .alert__icon {
+        color: var(--danger);
+      }
+      .alert__icon {
+        flex: 0 0 auto;
+        margin-top: 1px;
+      }
+      .alert__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .alert__title {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        margin: 0;
+      }
+      .alert__text {
+        font-family: var(--font-sans);
         font-size: var(--text-sm);
         color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.6;
+      }
+      .alert__actions {
+        display: flex;
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+      }
+      /* Rescore loading — AI-thinking line + design-system skeleton cards. */
+      .rescore-loading {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-4) 0;
+      }
+      .apply-success {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        text-align: center;
+        padding: var(--space-9) var(--space-6);
+      }
+      .apply-success__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--success-tint);
+        color: var(--success);
+        margin-bottom: var(--space-2);
+      }
+      .apply-success__title {
+        font-family: var(--font-mono);
+        font-size: var(--text-h2);
+        color: var(--text-primary);
+        margin: 0;
+      }
+      .apply-success__msg {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin: 0;
+        max-width: 420px;
       }
       .jobs {
         display: flex;
@@ -508,6 +765,12 @@ interface PassResult {
         border: 1px solid var(--border-default);
         border-radius: var(--radius-input);
         resize: vertical;
+      }
+      .editor--locked,
+      .editor:disabled {
+        color: var(--text-disabled);
+        cursor: not-allowed;
+        resize: none;
       }
       .editor:focus {
         outline: none;
@@ -597,30 +860,6 @@ interface PassResult {
         flex-shrink: 0;
       }
 
-      /* Badges */
-      .badge {
-        padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
-        font-size: var(--text-xs);
-        font-weight: var(--weight-medium);
-        font-family: var(--font-mono);
-      }
-      .badge--pass {
-        background: var(--success-tint);
-        color: var(--success);
-      }
-      .badge--cache {
-        background: var(--accent-tint);
-        color: var(--text-accent);
-      }
-      .badge--warn {
-        background: var(--warning-tint);
-        color: var(--warning);
-      }
-      .badge--danger {
-        background: var(--danger-tint);
-        color: var(--danger);
-      }
       .legitimacy-notes {
         margin: var(--space-2) 0 0;
         padding-left: var(--space-4);
@@ -952,11 +1191,14 @@ interface PassResult {
     `,
   ],
 })
-export class JobsComponent implements OnInit {
+export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly pageTitle = inject(PageTitleService);
+  private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
   protected readonly icons: JobDetailIcons & {
@@ -965,6 +1207,8 @@ export class JobsComponent implements OnInit {
     add: typeof Plus;
     remove: typeof X;
     another: typeof RotateCw;
+    trash: typeof Trash2;
+    dangerGlyph: typeof CircleX;
   } = {
     empty: Search,
     atsPass: Check,
@@ -1001,6 +1245,8 @@ export class JobsComponent implements OnInit {
     add: Plus,
     remove: X,
     another: RotateCw,
+    trash: Trash2,
+    dangerGlyph: CircleX,
   };
 
   protected readonly portalLanguages: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
@@ -1024,6 +1270,29 @@ export class JobsComponent implements OnInit {
   readonly application = signal<Application | null>(null);
   readonly actionBusy = signal(false);
   readonly actionMsg = signal('');
+  readonly deleteConfirmOpen = signal(false);
+  readonly deleting = signal(false);
+
+  /** "Change" doesn't write anything — it just lifts the lock so the
+   * description is editable and Mark-as-Applied reappears, letting the user
+   * redo the status/description from scratch. Nothing is saved unless the
+   * user then takes an explicit action (Parse & filter, Mark as Applied).
+   * "Cancel" drops this override and discards any in-progress edit. */
+  readonly editingLocked = signal(false);
+
+  /** True with no application yet, one still in 'saved', or the user
+   * overrode the lock via "Change". Anything else (applied/interview/
+   * offer/rejected/cancelled) shows a status badge + Change instead of an
+   * actionable Mark-as-Applied button. */
+  readonly canMarkApplied = computed(() => {
+    const status = this.application()?.status;
+    return !status || status === 'saved' || this.editingLocked();
+  });
+
+  /** Locked exactly when Mark-as-Applied isn't available. */
+  readonly jobLocked = computed(() => !this.canMarkApplied());
+
+  protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
   // Draft portal answers
   readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
@@ -1041,6 +1310,22 @@ export class JobsComponent implements OnInit {
   readonly tailoring = signal(false);
   readonly tailorStatus = signal('');
   readonly tailorError = signal(false);
+
+  // Post-tailor rescore (before/after). The before/after pair is transient
+  // (in-memory), but the *after* score is persisted to My Jobs once the user
+  // reaches the export step — see savePostTailorScore.
+  readonly postTailorScore = signal<ScoringCache | null>(null);
+  readonly updatingScore = signal(false);
+  readonly updateScoreStatus = signal('');
+  readonly updateScoreError = signal(false);
+  private readonly postTailorSaved = signal(false);
+  /** Non-null while the post-apply/update success card is shown before the
+   * redirect fires. */
+  readonly applyResult = signal<'updated' | null>(null);
+
+  /** True once all 3 tailoring passes are done (in this session or restored
+   * from cache) — drives the immutable Tailored badge and the Retailor CTA. */
+  readonly isTailored = computed(() => this.tailorResults().length === 3);
 
   /** Flattened change / gap notes across all completed tailoring passes. */
   readonly allChanges = computed(() => this.tailorResults().flatMap((r) => r.changes));
@@ -1076,6 +1361,14 @@ export class JobsComponent implements OnInit {
       return { ...d, state, statusKey };
     });
   });
+
+  /** i18n key of the phase currently being generated — drives the animated
+   * "AI thinking" line while tailoring auto-runs through all three passes. */
+  readonly currentPhaseKey = computed(() => {
+    const keys = ['jobs.wizard.phase_xyz', 'jobs.wizard.phase_critique', 'jobs.wizard.phase_build'];
+    return keys[Math.min(this.tailorResults().length, 2)];
+  });
+
   readonly exporting = signal<'docx' | 'pdf' | false>(false);
   readonly exportStatus = signal('');
   readonly exportError = signal(false);
@@ -1106,12 +1399,18 @@ export class JobsComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.pageTitle.clear();
+  }
+
   private async loadJob(id: number): Promise<void> {
     try {
       const job = await this.db.getJob(id);
       if (!job) return;
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
+      const headerTitle = [job.company, job.title].filter(Boolean).join(' — ');
+      this.pageTitle.set(headerTitle || this.t()('nav.jobs'));
       const p = this.profile();
       if (p?.scoringHash) {
         const cached = await this.db.scoreCacheGet(id, p.scoringHash);
@@ -1133,9 +1432,45 @@ export class JobsComponent implements OnInit {
       this.portalCopiedIndex.set(null);
       this.portalLanguage.set(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
       await this.loadPortalAnswersFromCache();
+      await this.restoreTailoringFromCache();
     } catch {
       // non-fatal — detail still renders, user can re-score
     }
+  }
+
+  /** Re-hydrate `tailorResults` from `tailoring_cache` so returning to a
+   * previously-tailored job shows its Tailored state (badge + Retailor)
+   * without re-running any AI. Replays the exact per-pass input hashes
+   * `runTailorPass` uses; stops at the first pass with no cached row. */
+  private async restoreTailoringFromCache(): Promise<void> {
+    const j = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    if (!j?.id || !p?.fullMd || !s) return;
+
+    const lang = s.defaultDocLanguage ?? 'en';
+    const restored: PassResult[] = [];
+    for (const passNum of [1, 2, 3] as const) {
+      const pass1Md = restored.find((r) => r.pass === 1)?.resultMd ?? '';
+      const pass2Md = restored.find((r) => r.pass === 2)?.resultMd ?? '';
+      const hashInput = [p.fullMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
+        '\x00',
+      );
+      const inputHash = await this.db.hashText(hashInput);
+      const cached = await this.db.tailoringCacheGet(j.id, passNum, inputHash);
+      if (!cached) break;
+      restored.push({
+        pass: passNum,
+        resultMd: cached.resultMd,
+        inputHash,
+        fromCache: true,
+        tokensIn: 0,
+        tokensOut: 0,
+        changes: this.parseJsonArray(cached.changesJson),
+        gaps: this.parseJsonArray(cached.gapsJson),
+      });
+    }
+    if (restored.length) this.tailorResults.set(restored);
   }
 
   /** Best-effort cache read for the current default question set. Never calls AI. */
@@ -1364,11 +1699,80 @@ export class JobsComponent implements OnInit {
       }
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
-      this.actionMsg.set(this.t()('jobs.applied_ok'));
+      this.editingLocked.set(false);
+      // Applied — send the user back to My Jobs; re-entering the job shows
+      // its Applied + Tailored state.
+      await this.router.navigate(['/jobs']);
     } catch (e) {
       this.actionMsg.set(String(e));
-    } finally {
       this.actionBusy.set(false);
+    }
+  }
+
+  /** "Change" — lifts the lock immediately, no confirmation. Nothing is
+   * written until the user takes an explicit follow-up action. */
+  startEditingLocked(): void {
+    this.editingLocked.set(true);
+  }
+
+  /** "Cancel" — drops the override and discards the in-progress description
+   * edit (reverts jdText to the persisted value). Nothing was ever saved. */
+  cancelEditingLocked(): void {
+    this.editingLocked.set(false);
+    this.jdText.set(this.job()?.jdText ?? '');
+  }
+
+  /** Opening the wizard / returning to the summary should always land the
+   * user at the top of the page — the scoring view runs long, so the wizard
+   * (or the restored summary) would otherwise open mid-scroll. */
+  openWizard(): void {
+    this.wizardOpen.set(true);
+    this.scrollContentToTop();
+  }
+
+  closeWizard(): void {
+    this.wizardOpen.set(false);
+    this.scrollContentToTop();
+  }
+
+  private scrollContentToTop(): void {
+    // Defer to the next frame so the step's new (shorter/taller) content has
+    // rendered before we scroll — otherwise the container clamps against the
+    // old scrollHeight and can land mid-page.
+    const view = this.document.defaultView;
+    const doScroll = (): void => {
+      const el =
+        this.document.querySelector('.content') ??
+        this.document.scrollingElement ??
+        this.document.documentElement;
+      el?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    };
+    if (view?.requestAnimationFrame) {
+      view.requestAnimationFrame(doScroll);
+    } else {
+      doScroll();
+    }
+  }
+
+  openDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(true);
+  }
+
+  cancelDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(false);
+  }
+
+  async confirmDeleteJob(): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.deleting()) return;
+    this.deleting.set(true);
+    try {
+      await this.db.deleteJob(j.id);
+      await this.router.navigate(['/jobs']);
+    } catch (e) {
+      this.actionMsg.set(String(e));
+      this.deleting.set(false);
+      this.deleteConfirmOpen.set(false);
     }
   }
 
@@ -1379,6 +1783,11 @@ export class JobsComponent implements OnInit {
     this.job.set(null);
     this.cache.set(null);
     this.archetypeMatch.set(null);
+    // Re-parsing means the JD (and therefore the score) changed — any earlier
+    // tailoring for this job is now stale. Drop it so the Tailored badge and
+    // Retailor state clear and the user re-tailors against the updated JD.
+    this.editingLocked.set(false);
+    this.resetWizard();
     try {
       const j = await this.db.jobPaste(this.jdText());
       this.job.set(j);
@@ -1440,6 +1849,7 @@ export class JobsComponent implements OnInit {
         job_description: this.jdText(),
         language: lang,
         legitimacy_notes: this.legitimacyNotes().join('\n'),
+        tailored_resume_md: '',
       });
       const res = await this.ai.run({
         mode: s.aiMode,
@@ -1497,6 +1907,153 @@ export class JobsComponent implements OnInit {
     }
   }
 
+  /**
+   * Post-tailor rescore — user-initiated (opt-in, spends tokens), scores the
+   * PASS-3 tailored resume instead of the generic profile, so the user sees
+   * before (original posting fit) vs after (fit of what they'd actually
+   * submit). Intentionally NOT persisted to `scoring_cache`: that table is
+   * keyed unique on (job_id, profile_hash, jd_hash) — the same key the
+   * original score used — so saving here would overwrite the "before"
+   * baseline instead of keeping both. Kept as in-memory state only.
+   */
+  async updateScoreAfterTailor(): Promise<void> {
+    const j = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    const pass3 = this.tailorResults().find((r) => r.pass === 3);
+    if (!j?.id || !p?.scoringJson || !p.scoringHash || !s || !pass3 || this.updatingScore()) {
+      return;
+    }
+
+    this.updatingScore.set(true);
+    this.updateScoreStatus.set('');
+    this.updateScoreError.set(false);
+    try {
+      const lang = s.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('job-scoring', {
+        profile_json: p.scoringJson,
+        job_description: this.jdText(),
+        language: lang,
+        legitimacy_notes: this.legitimacyNotes().join('\n'),
+        tailored_resume_md: pass3.resultMd,
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: lang,
+      });
+
+      let parsed: {
+        score: number;
+        dimensions: ScoreDimension[];
+        missing_keywords: string[];
+        red_flags: string[];
+        ats_pass: boolean;
+        ats_notes: string;
+        summary: string;
+        before_you_submit?: string[];
+      };
+      try {
+        const raw = res.text
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```\s*$/i, '')
+          .trim();
+        parsed = JSON.parse(raw);
+      } catch {
+        throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
+      }
+
+      this.postTailorScore.set({
+        id: -1,
+        jobId: j.id,
+        profileHash: p.scoringHash,
+        jdHash: j.jdHash ?? '',
+        language: lang,
+        score: parsed.score,
+        dimensionsJson: JSON.stringify(parsed.dimensions),
+        missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
+        redFlagsJson: JSON.stringify(parsed.red_flags),
+        atsPass: parsed.ats_pass,
+        atsNotes: parsed.ats_notes,
+        summary: parsed.summary,
+        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
+        modelUsed: s.economyModel,
+        tokensInput: res.tokensInput,
+        tokensOutput: res.tokensOutput,
+      });
+      this.updateScoreStatus.set(`Updated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+    } catch (e) {
+      this.updateScoreStatus.set(`Update failed: ${String(e)}`);
+      this.updateScoreError.set(true);
+    } finally {
+      this.updatingScore.set(false);
+    }
+  }
+
+  /**
+   * Persists the post-tailor score to `scoring_cache` so the My Jobs list
+   * reflects the tailored fit. The unique key (job_id, profile_hash, jd_hash)
+   * matches the baseline row, so this overwrites it — the "before" is only
+   * needed for the in-session comparison (held in `cache()`), not on disk.
+   * Idempotent per rescore via `postTailorSaved`.
+   */
+  private async savePostTailorScore(): Promise<void> {
+    const post = this.postTailorScore();
+    const j = this.job();
+    if (!post || !j?.id || this.postTailorSaved()) return;
+    this.postTailorSaved.set(true);
+    try {
+      await this.db.scoreCacheSave({
+        jobId: j.id,
+        profileHash: post.profileHash,
+        language: post.language ?? 'en',
+        score: post.score,
+        dimensionsJson: post.dimensionsJson ?? '[]',
+        missingKeywordsJson: post.missingKeywordsJson ?? '[]',
+        redFlagsJson: post.redFlagsJson ?? '[]',
+        atsPass: post.atsPass ?? false,
+        atsNotes: post.atsNotes ?? '',
+        summary: post.summary ?? '',
+        beforeYouSubmitJson: post.beforeYouSubmitJson ?? '[]',
+        modelUsed: post.modelUsed ?? '',
+        tokensInput: post.tokensInput ?? 0,
+        tokensOutput: post.tokensOutput ?? 0,
+      });
+    } catch {
+      this.postTailorSaved.set(false); // allow a retry on the next commit
+    }
+  }
+
+  /**
+   * "Update application" — final-step action when the job already has a
+   * status (applied/interview/…). Commits the re-tailored score, shows the
+   * success card, then returns the user to this job's detail where the
+   * updated score and Tailored badge are now in place.
+   */
+  async updateApplication(): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.actionBusy()) return;
+    this.actionBusy.set(true);
+    await this.savePostTailorScore();
+    this.applyResult.set('updated');
+    // Success card holds briefly, then drop back to this job's detail with the
+    // updated score + Tailored badge freshly loaded from cache.
+    const view = this.document.defaultView;
+    const jobId = j.id;
+    view?.setTimeout(() => {
+      void (async () => {
+        this.wizardOpen.set(false);
+        this.applyResult.set(null);
+        this.actionBusy.set(false);
+        await this.loadJob(jobId);
+        this.scrollContentToTop();
+      })();
+    }, 2200);
+  }
+
   legitimacyNotes(): string[] {
     try {
       return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
@@ -1516,18 +2073,54 @@ export class JobsComponent implements OnInit {
 
   // ── Tailoring wizard ────────────────────────────────────────────────────────
 
+  /** Runs the full 3-pass tailoring pipeline back-to-back on one click — the
+   * phase cards animate through running/done as each pass lands, no manual
+   * Continue between passes. Stops on the first failing pass. */
   async startTailoring(): Promise<void> {
     this.tailorResults.set([]);
     this.tailorStatus.set('');
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.lastExport.set(null);
-    await this.runPass(1);
+    this.postTailorScore.set(null);
+    this.postTailorSaved.set(false);
+    this.updateScoreStatus.set('');
+    this.updateScoreError.set(false);
+
+    this.tailoring.set(true);
+    try {
+      for (const pass of [1, 2, 3] as const) {
+        await this.runTailorPass(pass);
+      }
+    } catch (e) {
+      this.tailorStatus.set(String(e));
+      this.tailorError.set(true);
+    } finally {
+      this.tailoring.set(false);
+    }
   }
 
-  async runNextPass(): Promise<void> {
-    const next = (this.tailorResults().length + 1) as 2 | 3;
-    await this.runPass(next);
+  /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 export.
+   * Entering the Updated score step auto-runs the rescore once (only if the
+   * user actually tailored — pass 3 exists — and it hasn't run yet). */
+  onWizardStep(step: number): void {
+    // Every step transition lands the user at the top of the page.
+    this.scrollContentToTop();
+
+    const UPDATED_SCORE_STEP = 2;
+    const EXPORT_STEP = 3;
+    if (
+      step === UPDATED_SCORE_STEP &&
+      this.tailorResults().length === 3 &&
+      !this.postTailorScore() &&
+      !this.updatingScore()
+    ) {
+      void this.updateScoreAfterTailor();
+    }
+    // Continuing past the Updated score step commits the new score to My Jobs.
+    if (step === EXPORT_STEP) {
+      void this.savePostTailorScore();
+    }
   }
 
   resetWizard(): void {
@@ -1536,6 +2129,10 @@ export class JobsComponent implements OnInit {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.exportError.set(false);
+    this.postTailorScore.set(null);
+    this.postTailorSaved.set(false);
+    this.updateScoreStatus.set('');
+    this.updateScoreError.set(false);
   }
 
   async doExport(format: 'docx' | 'pdf'): Promise<void> {
@@ -1580,20 +2177,6 @@ export class JobsComponent implements OnInit {
 
   revealExportedFile(path: string): void {
     void this.db.revealInFolder(path);
-  }
-
-  private async runPass(pass: 1 | 2 | 3): Promise<void> {
-    this.tailoring.set(true);
-    this.tailorStatus.set('');
-    this.tailorError.set(false);
-    try {
-      await this.runTailorPass(pass);
-    } catch (e) {
-      this.tailorStatus.set(`Pass ${pass} failed: ${String(e)}`);
-      this.tailorError.set(true);
-    } finally {
-      this.tailoring.set(false);
-    }
   }
 
   private async runTailorPass(passNum: 1 | 2 | 3): Promise<void> {

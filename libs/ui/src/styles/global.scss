@@ -106,6 +106,46 @@ a:hover {
    Used globally across all page components.
    ============================================================ */
 
+/* Skeleton — shimmering loading placeholder. Verbatim from the Applye
+   Design System Skeleton primitive: a sliding highlight over a sunken
+   surface, degrading to a soft opacity pulse under reduced motion. Consumed
+   by the lib-skeleton component (@applye/ui). */
+.applye-skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+.applye-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, var(--surface-hover) 50%, transparent 100%);
+  animation: applye-skeleton-shimmer 1.4s var(--ease-standard) infinite;
+}
+@keyframes applye-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .applye-skeleton::after {
+    animation: applye-skeleton-pulse 1.6s ease-in-out infinite;
+    transform: none;
+    background: var(--surface-hover);
+  }
+  @keyframes applye-skeleton-pulse {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
+
 /* Loading pulse (indigo shimmer on a card-like block) */
 @keyframes applye-pulse {
   0%,
@@ -354,4 +394,52 @@ a:hover {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* ============================================================
+   BADGE — compact status/label chip. Matches the Applye Design
+   System Badge component: mono, uppercase, soft tinted surface.
+   Tones: neutral (muted), accent (indigo/AI), pass (success),
+   warn (warning), danger (danger).
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: var(--radius-badge);
+  border: var(--border-width) solid transparent;
+}
+
+.badge--neutral,
+.badge--muted {
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+
+.badge--accent {
+  background: var(--accent-tint);
+  color: var(--text-accent);
+}
+
+.badge--pass {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.badge--warn {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.badge--danger {
+  background: var(--danger-tint);
+  color: var(--danger);
 }

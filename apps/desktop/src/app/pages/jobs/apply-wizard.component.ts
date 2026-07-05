@@ -1,10 +1,11 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
-import { Job, ScoringCache } from '@applye/core';
+import { ApplicationStatus, Job, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { Stepper } from '@applye/ui';
 import {
   JobDetailIcons,
+  applicationStatusBadgeClass,
   dimensionBand,
   parseDimensions,
   scoreVerdictKey,
@@ -25,7 +26,7 @@ import {
         @switch (activeStep()) {
           @case (0) {
             <!-- Compact review — NOT the full Job Detail scoring page. -->
-            @if (cache(); as c) {
+            @if (reviewScore(); as c) {
               <div class="wizard-review">
                 <div class="wizard-review__top">
                   <div class="card wizard-review__score">
@@ -42,12 +43,17 @@ import {
                       <p class="wizard-review__verdict-quote">{{ c.summary }}</p>
                     }
                     <span class="cache-chip">
-                      <lucide-icon [img]="icons().db" [size]="11" aria-hidden="true" />
-                      @if (fromCache()) {
-                        {{ t()('jobs.cached_badge') }}
+                      @if (postTailorScore()) {
+                        <lucide-icon [img]="icons().wand" [size]="11" aria-hidden="true" />
+                        {{ t()('jobs.wizard.updated_after_tailor') }}
                       } @else {
-                        {{ (c.tokensInput ?? 0) + (c.tokensOutput ?? 0) }}
-                        {{ t()('jobs.tokens_used') }}
+                        <lucide-icon [img]="icons().db" [size]="11" aria-hidden="true" />
+                        @if (fromCache()) {
+                          {{ t()('jobs.cached_badge') }}
+                        } @else {
+                          {{ (c.tokensInput ?? 0) + (c.tokensOutput ?? 0) }}
+                          {{ t()('jobs.tokens_used') }}
+                        }
                       }
                     </span>
                   </div>
@@ -84,6 +90,9 @@ import {
             <ng-content select="[wizardTailorStep]" />
           }
           @case (2) {
+            <ng-content select="[wizardUpdateScoreStep]" />
+          }
+          @case (3) {
             <ng-content select="[wizardExportApplyStep]" />
           }
         }
@@ -100,10 +109,29 @@ import {
         </span>
         <span class="apply-wizard__spacer"></span>
         @if (activeStep() === lastStep) {
-          <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
-            <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
-            {{ t()('jobs.wizard.mark_as_applied') }}
-          </button>
+          @if (canMarkApplied()) {
+            <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
+              <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
+              {{ t()('jobs.wizard.mark_as_applied') }}
+            </button>
+            @if (overrideEditing()) {
+              <button class="btn btn--secondary btn--sm" type="button" (click)="cancelEdit.emit()">
+                {{ t()('actions.cancel') }}
+              </button>
+            }
+          } @else if (applicationStatus(); as status) {
+            <span class="badge" [class]="statusBadgeClass(status)">
+              {{ t()('status.' + status) }}
+            </span>
+            <button
+              class="btn btn--primary btn--md"
+              type="button"
+              (click)="updateApplication.emit()"
+            >
+              <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
+              {{ t()('jobs.wizard.update_application') }}
+            </button>
+          }
         } @else {
           <button class="btn btn--primary btn--md" type="button" (click)="goNext()">
             {{
@@ -123,24 +151,44 @@ export class ApplyWizard {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  /** 3 steps: Review score (0) → Tailor CV (1) → Export & apply (2). */
-  protected readonly lastStep = 2;
+  /** 4 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
+   * Export & apply (3). */
+  protected readonly lastStep = 3;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
+  /** Post-tailor rescore, if the user ran one — takes over as the review
+   * number once present, so Review Score always shows the current best
+   * known fit instead of a stale pre-tailor figure. */
+  readonly postTailorScore = input<ScoringCache | null>(null);
+  protected readonly reviewScore = computed(() => this.postTailorScore() ?? this.cache());
   readonly job = input<Job | null>(null);
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
+  readonly applicationStatus = input<ApplicationStatus | null>(null);
+  /** Parent's "Change" override — same live-edit-mode signal as
+   * JobsComponent.editingLocked, so this footer stays in sync with the
+   * top-level lock state. */
+  readonly overrideEditing = input<boolean>(false);
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
   readonly markApplied = output<void>();
+  /** Commit the re-tailored resume for a job that already has a status
+   * (applied/interview/…) — persists the updated score and confirms. */
+  readonly updateApplication = output<void>();
+  readonly cancelEdit = output<void>();
+  /** Emitted whenever the active step changes — lets the parent kick off
+   * work tied to a step (e.g. auto-rescore on entering the Updated score
+   * step) without the wizard knowing what that work is. */
+  readonly stepChange = output<number>();
 
   readonly activeStep = signal(0);
 
   protected readonly stepLabels = computed(() => [
     this.t()('jobs.wizard.step_review_score'),
     this.t()('jobs.wizard.step_tailor_cv'),
+    this.t()('jobs.wizard.step_updated_score'),
     this.t()('jobs.wizard.step_export_apply'),
   ]);
 
@@ -148,16 +196,27 @@ export class ApplyWizard {
   protected readonly band = dimensionBand;
   protected readonly verdictKey = scoreVerdictKey;
   protected readonly verdictLabelKey = scoreVerdictLabelKey;
+  protected readonly statusBadgeClass = applicationStatusBadgeClass;
+
+  /** Mirrors JobsComponent.canMarkApplied — same gate, same reasoning. */
+  protected readonly canMarkApplied = computed(() => {
+    const status = this.applicationStatus();
+    return !status || status === 'saved' || this.overrideEditing();
+  });
 
   protected goBack(): void {
     if (this.activeStep() === 0) {
       this.closeWizard.emit();
       return;
     }
-    this.activeStep.update((n) => Math.max(0, n - 1));
+    const next = Math.max(0, this.activeStep() - 1);
+    this.activeStep.set(next);
+    this.stepChange.emit(next);
   }
 
   protected goNext(): void {
-    this.activeStep.update((n) => Math.min(this.lastStep, n + 1));
+    const next = Math.min(this.lastStep, this.activeStep() + 1);
+    this.activeStep.set(next);
+    this.stepChange.emit(next);
   }
 }

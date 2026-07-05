@@ -1,0 +1,187 @@
+@if (after(); as post) {
+  <section class="updated">
+    <!-- Overall before → after -->
+    <div class="card updated__overall reveal" [class.reveal--in]="revealStep() >= STEP.OVERALL">
+      <div class="updated__gauges">
+        <div class="updated__gauge-col">
+          <lib-score-gauge [score]="beforeScore()" size="sm" />
+          <span class="updated__gauge-label">{{ t()('jobs.wizard.score_before') }}</span>
+        </div>
+        <div class="updated__delta">
+          <lucide-icon [img]="icons().next" [size]="18" aria-hidden="true" />
+          @if (scoreDelta() !== 0) {
+            <span
+              class="updated__delta-num"
+              [class.updated__delta-num--up]="scoreDelta() > 0"
+              [class.updated__delta-num--down]="scoreDelta() < 0"
+            >
+              {{ scoreDelta() > 0 ? '+' : '' }}{{ scoreDelta() }}
+            </span>
+          }
+        </div>
+        <div class="updated__gauge-col">
+          <lib-score-gauge [score]="afterScore()" [from]="beforeScore()" size="sm" />
+          <span class="updated__gauge-label">{{ t()('jobs.wizard.score_after') }}</span>
+        </div>
+      </div>
+      <div class="updated__verdict">
+        <div class="updated__verdict-head">
+          <span class="eyebrow">{{ t()('jobs.recruiter_verdict_eyebrow') }}</span>
+          <span class="verdict-badge" [class]="'verdict-badge--' + verdictKey(post.score)">
+            <span class="verdict-badge__dot"></span>
+            {{ t()(verdictLabelKey(post.score)) }}
+          </span>
+        </div>
+        @if (post.summary) {
+          <p class="updated__verdict-quote">{{ post.summary }}</p>
+        }
+      </div>
+    </div>
+
+    <!-- Dimensions before → after -->
+    @if (dimPairs().length) {
+      <div class="updated__section reveal" [class.reveal--in]="revealStep() >= STEP.DIMS">
+        <span class="eyebrow">{{ t()('jobs.score_breakdown_eyebrow') }}</span>
+        @for (d of dimPairs(); track d.name) {
+          <div class="updated__dim">
+            <div class="updated__dim-head">
+              <span class="updated__dim-name">{{ d.name }}</span>
+              <span class="updated__dim-score">
+                <span class="updated__dim-was">{{ d.before }}</span>
+                <lucide-icon [img]="icons().next" [size]="11" aria-hidden="true" />
+                <span [class]="'updated__dim-now score-' + band(d.after)">{{ d.after }}/10</span>
+              </span>
+            </div>
+            <div class="updated__dim-track">
+              <div
+                class="updated__dim-fill"
+                [class]="'score-' + band(d.after)"
+                [style.width.%]="barWidth(d)"
+              ></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Missing keywords: before → after -->
+    <div class="card updated__meta-card reveal" [class.reveal--in]="revealStep() >= STEP.KEYWORDS">
+      <div class="updated__meta-head">
+        <lucide-icon [img]="icons().tag" [size]="14" aria-hidden="true" />
+        <span class="eyebrow">{{ t()('jobs.missing_keywords_title') }}</span>
+        <span class="updated__count">
+          {{ missingBefore().length }}
+          <lucide-icon [img]="icons().next" [size]="10" aria-hidden="true" />
+          {{ missingAfter().length }}
+        </span>
+      </div>
+      @if (resolvedKeywords().length) {
+        <span class="updated__meta-sub">{{ t()('jobs.wizard.keywords_resolved') }}</span>
+        <div class="updated__chips">
+          @for (kw of resolvedKeywords(); track kw) {
+            <span class="updated__chip updated__chip--resolved">
+              <lucide-icon [img]="icons().check" [size]="11" aria-hidden="true" />
+              {{ kw }}
+            </span>
+          }
+        </div>
+      }
+      @if (missingAfter().length) {
+        <span class="updated__meta-sub">{{ t()('jobs.wizard.keywords_still_missing') }}</span>
+        <div class="updated__chips">
+          @for (kw of missingAfter(); track kw) {
+            <span class="updated__chip">{{ kw }}</span>
+          }
+        </div>
+      } @else {
+        <p class="updated__meta-note">{{ t()('jobs.wizard.keywords_all_covered') }}</p>
+      }
+    </div>
+
+    <!-- ATS + red flags -->
+    <div class="updated__meta-row reveal" [class.reveal--in]="revealStep() >= STEP.META">
+      <div class="card updated__meta-card">
+        <div class="updated__meta-head">
+          <lucide-icon [img]="icons().scan" [size]="14" aria-hidden="true" />
+          <span class="eyebrow">{{ t()('jobs.ats_check_title') }}</span>
+          <span
+            class="ats-badge"
+            [class.ats-badge--ok]="post.atsPass"
+            [class.ats-badge--warn]="!post.atsPass"
+          >
+            <lucide-icon
+              [img]="post.atsPass ? icons().atsPass : icons().atsFail"
+              [size]="11"
+              aria-hidden="true"
+            />
+            {{ post.atsPass ? t()('jobs.ats_pass_msg') : t()('jobs.ats_fail_msg') }}
+          </span>
+        </div>
+        @if (post.atsNotes) {
+          <p class="updated__meta-note">{{ post.atsNotes }}</p>
+        }
+      </div>
+
+      <div class="card updated__meta-card">
+        <div class="updated__meta-head">
+          <lucide-icon
+            [img]="icons().flag"
+            [size]="14"
+            class="updated__danger-icon"
+            aria-hidden="true"
+          />
+          <span class="eyebrow">{{ t()('jobs.red_flags_title') }}</span>
+          <span class="updated__count">
+            {{ redFlagsBefore() }}
+            <lucide-icon [img]="icons().next" [size]="10" aria-hidden="true" />
+            {{ redFlagsAfter() }}
+          </span>
+        </div>
+        @if (resolvedRedFlags().length) {
+          <span class="updated__meta-sub">{{ t()('jobs.wizard.red_flags_resolved') }}</span>
+          <div class="updated__list">
+            @for (flag of resolvedRedFlags(); track flag) {
+              <div class="updated__list-row updated__list-row--resolved">
+                <lucide-icon [img]="icons().check" [size]="13" aria-hidden="true" />
+                <span>{{ flag }}</span>
+              </div>
+            }
+          </div>
+        }
+        @if (redFlagsAfterList().length) {
+          <span class="updated__meta-sub">{{ t()('jobs.wizard.red_flags_remaining') }}</span>
+          <div class="updated__list">
+            @for (flag of redFlagsAfterList(); track flag) {
+              <div class="updated__list-row">
+                <span class="updated__dot updated__dot--danger"></span>
+                <span>{{ flag }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="updated__meta-note">{{ t()('jobs.wizard.red_flags_cleared') }}</p>
+        }
+      </div>
+    </div>
+
+    <!-- Before you submit -->
+    @if (beforeYouSubmit().length) {
+      <div class="updated__section reveal" [class.reveal--in]="revealStep() >= STEP.NOTES">
+        <div class="updated__meta-head">
+          <lucide-icon [img]="icons().checklist" [size]="14" aria-hidden="true" />
+          <span class="eyebrow">{{ t()('jobs.before_you_submit') }}</span>
+        </div>
+        <div class="updated__list">
+          @for (note of beforeYouSubmit(); track note) {
+            <div class="updated__list-row">
+              <span class="updated__step-icon">
+                <lucide-icon [img]="icons().next" [size]="12" aria-hidden="true" />
+              </span>
+              <span>{{ note }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </section>
+}

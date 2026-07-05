@@ -98,7 +98,7 @@
     <!-- Topbar -->
     <header class="topbar" data-tauri-drag-region [class.topbar--mac-overlay]="isMacOverlayChrome">
       <h1 class="topbar__title" aria-live="polite" data-tauri-drag-region>
-        {{ t()(pageTitleKey()) }}
+        {{ pageTitle.override() ?? t()(pageTitleKey()) }}
       </h1>
 
       <div class="topbar__actions">

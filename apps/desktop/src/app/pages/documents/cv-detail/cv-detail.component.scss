@@ -118,6 +118,40 @@
   margin-top: var(--space-1);
 }
 
+.cvdetail__style {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+.cvdetail__style-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.cvdetail__style-field label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.cvdetail__style-hint {
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+.cvdetail__style-color-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.cvdetail__style-color-row input[type='color'] {
+  width: 36px;
+  height: 32px;
+  padding: 2px;
+  flex: 0 0 auto;
+}
+.cvdetail__style-color-hex {
+  flex: 1;
+}
+
 .cvdetail__sections {
   display: flex;
   flex-direction: column;

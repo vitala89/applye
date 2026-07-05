@@ -425,7 +425,12 @@ const en: TranslationMap = {
     cv_import_action: 'Import CV',
     cv_generate_action: 'Generate baseline',
     cv_duplicate_action: 'Duplicate',
+    cv_export_action: 'Export',
     cv_export_docx_action: 'Export as DOCX',
+    cv_export_pdf_action: 'Export as PDF',
+    cv_export_tex_action: 'Export as LaTeX source (.tex)',
+    cv_export_tex_note:
+      'LaTeX export is optimised for visual/print quality for a human reader, not ATS parsing. Applye never compiles it — open the .tex file in Overleaf or your local pdflatex.',
     cv_delete_action: 'Delete',
     cv_delete_confirm_title: 'Delete this CV?',
     cv_delete_confirm_msg: 'This removes it from your library. It cannot be undone.',
@@ -494,6 +499,20 @@ const en: TranslationMap = {
     cv_edit_action: 'Edit',
     cv_preview_empty: 'Nothing to preview yet — add some content or generate a baseline.',
     cv_present: 'Present',
+    cv_style_font: 'Font',
+    cv_style_size: 'Size (pt)',
+    cv_style_color: 'Accent colour',
+    cv_style_hint_font:
+      'Recommended: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans, or another common sans/serif face.',
+    cv_style_hint_size: 'Recommended: 10–12pt body text.',
+    cv_style_hint_color:
+      'Recommended: a single dark, muted colour used only in headings — bright or pale colours risk poor contrast when printed.',
+    cv_style_note_font:
+      '"{value}" may not be reliably read by every ATS parser — safe choices: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
+    cv_style_note_size:
+      '{value}pt is outside the recommended 10–12pt body range — very small or very large text can look off in print or on screen.',
+    cv_style_note_color:
+      '{value} may be hard to read once printed in greyscale (e.g. by an Agentur für Arbeit printer). This is a readability/print concern, not an ATS-parsing one — colour barely affects text extraction.',
   },
   interview: {
     title: 'Interview Prep',
@@ -984,7 +1003,12 @@ const de: TranslationMap = {
     cv_import_action: 'Lebenslauf importieren',
     cv_generate_action: 'Basisversion erstellen',
     cv_duplicate_action: 'Duplizieren',
+    cv_export_action: 'Exportieren',
     cv_export_docx_action: 'Als DOCX exportieren',
+    cv_export_pdf_action: 'Als PDF exportieren',
+    cv_export_tex_action: 'Als LaTeX-Quelltext exportieren (.tex)',
+    cv_export_tex_note:
+      'Der LaTeX-Export ist auf visuelle Druckqualität für menschliche Leser optimiert, nicht auf ATS-Parsing. Applye kompiliert ihn nie — öffne die .tex-Datei in Overleaf oder deinem lokalen pdflatex.',
     cv_delete_action: 'Löschen',
     cv_delete_confirm_title: 'Diesen Lebenslauf löschen?',
     cv_delete_confirm_msg:
@@ -1056,6 +1080,20 @@ const de: TranslationMap = {
     cv_preview_empty:
       'Noch nichts zum Anzeigen — füge Inhalte hinzu oder erstelle eine Basisversion.',
     cv_present: 'Heute',
+    cv_style_font: 'Schriftart',
+    cv_style_size: 'Größe (pt)',
+    cv_style_color: 'Akzentfarbe',
+    cv_style_hint_font:
+      'Empfohlen: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans oder eine andere gängige Serifen-/serifenlose Schrift.',
+    cv_style_hint_size: 'Empfohlen: 10–12pt Fließtext.',
+    cv_style_hint_color:
+      'Empfohlen: eine einzelne dunkle, gedeckte Farbe, nur in Überschriften — helle oder blasse Farben bergen ein Kontrastrisiko beim Ausdruck.',
+    cv_style_note_font:
+      '„{value}" wird möglicherweise nicht von jedem ATS-Parser zuverlässig gelesen — sichere Wahl: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
+    cv_style_note_size:
+      '{value}pt liegt außerhalb des empfohlenen Bereichs von 10–12pt Fließtext — sehr kleiner oder sehr großer Text kann im Druck oder am Bildschirm unpassend wirken.',
+    cv_style_note_color:
+      '{value} könnte nach dem Ausdruck in Graustufen (z. B. bei der Agentur für Arbeit) schwer lesbar sein. Das ist ein Lesbarkeits-/Druckproblem, kein ATS-Parsing-Problem — Farbe beeinflusst die Textextraktion kaum.',
   },
   interview: {
     title: 'Interview-Vorbereitung',

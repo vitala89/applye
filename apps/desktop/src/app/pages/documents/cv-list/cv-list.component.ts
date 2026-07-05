@@ -11,7 +11,7 @@ import type {
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { buildCvContent, parseCvSkillResponse } from '../cv-content.util';
+import { buildCvContent, parseCvSkillResponse, suggestCvFilename } from '../cv-content.util';
 
 type ImportStep = 'pick' | 'preview' | 'done';
 type GenerateStep = 'config' | 'done';
@@ -95,15 +95,20 @@ export class CvListComponent {
   }
 
   readonly exportBusyId = signal<number | null>(null);
+  readonly texExportNoteOpen = signal(false);
 
-  async exportDoc(item: DocumentLibraryItem, format: 'docx' | 'pdf', event: Event): Promise<void> {
+  async exportDoc(
+    item: DocumentLibraryItem,
+    format: 'docx' | 'pdf' | 'tex',
+    event: Event,
+  ): Promise<void> {
     event.stopPropagation();
-    if (this.exportBusyId() != null) return;
+    if (!format || this.exportBusyId() != null) return;
+    if (format === 'tex') this.texExportNoteOpen.set(true);
     this.exportBusyId.set(item.id);
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
-      const slug = (item.label ?? 'cv').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-      const path = await save({ defaultPath: `${slug}.${format}` });
+      const path = await save({ defaultPath: suggestCvFilename(item, format) });
       if (!path) return;
       await this.db.cvDocumentExport(item.id, format, path);
     } finally {

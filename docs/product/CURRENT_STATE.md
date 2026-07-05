@@ -1,19 +1,18 @@
 # Current Operational State
 
 - **Current version**: `0.21.0`
-- **Current branch / focus**: `feat/documents-cv` / Documents CV & Cover Letter Library (Step 1, phases 1c → 1d)
+- **Current branch / focus**: `feat/documents-cv` / Documents CV & Cover Letter Library (Step 1, phase 1c next)
 - **Recently completed**:
-  - Step 1 / phase 1b — Documents CV module: real Documents sidebar with CV | Cover Letter tabs, CV list + detail, import own CV (`cv-import` skill), generate baseline (`cv-generate-baseline` skill), CDK drag-drop section constructor with field toggles + non-blocking ATS-risk notes, per-section regenerate cached by input hash, save-as-custom-template, DOCX/PDF export. v0.21.0. [Brief](feature-briefs/documents-cv-cover-letter.md)
+  - Step 1 / phase 1b — Documents CV module: real Documents sidebar with CV | Cover Letter tabs, CV list + detail, import own CV (`cv-import` skill), generate baseline (`cv-generate-baseline` skill), CDK drag-drop section constructor with field toggles + non-blocking ATS-risk notes, per-section regenerate cached by input hash, save-as-custom-template. Toggle checkboxes restyled as chips (fixed a rendering overlap bug) and a Preview mode added. **1d folded into the same branch**: style section (font/size/accent colour) with always-on recommended-value hints and a deterministic `check_style_safety` check (honestly separate ATS-parsing vs print-readability notes), plus DOCX/PDF/LaTeX (`.tex`, never compiled) export with the DE `Lastname_Vorname_Lebenslauf` filename convention. v0.21.0 (PR #52, open). [Brief](feature-briefs/documents-cv-cover-letter.md)
   - Step 1 / phase 1a — Documents data layer: migration `0011_documents_library.sql` (`document_library` + `cv_templates`, nullable `applications.cv_document_id` / `cover_letter_document_id`, built-in templates seeded), Rust commands + `libs/core`/`libs/data` types. Merged PR #51, v0.20.0. [Brief](feature-briefs/documents-cv-cover-letter.md)
   - Step 2 — Follow-up Message Drafting: "Draft follow-up" action on overdue Pipeline cards, cached AI draft, `mailto:` hand-off only. Merged PR #50, v0.19.0. [Brief](feature-briefs/followup-drafting.md)
   - AIF Core foundation for AI-assisted development (Cursor rules, model policies, security/privacy trust docs, context gate, keyring and token guards, CLI routing).
 - **Currently working on**:
-  - Preparing PR for Documents 1b (CV module).
-- **Next recommended action** (Documents phases, sequential — each shares the Documents shell + `content_json` contract):
-  - **1c** — Cover Letter module (block split editor, via Claude Design).
-  - **1d** — Style/ATS safety + `.tex` export; on merge, §16 complete → Documents → Shipped.
+  - Preparing PR for Documents 1b (CV module, now including 1d style/ATS safety + export).
+- **Next recommended action**:
+  - **1c** — Cover Letter module (block split editor, via Claude Design). On merge, §16 complete → Documents → Shipped.
 - **Active feature briefs**:
-  - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, in-progress (1a + 1b shipped; 1c next).
+  - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, in-progress (1a, 1b, and 1d shipped; 1c next — deviated from the brief's sequential 1a→1b→1c→1d plan at the user's explicit request, folding 1d into 1b's branch).
 - **Blocked / open questions**:
   - None at present.
 - **Important constraints**:
@@ -24,4 +23,4 @@
   - [PROJECT_CONTEXT.md](../../PROJECT_CONTEXT.md)
   - [CURRENT_STATE.md](CURRENT_STATE.md)
   - [AGENTS.md](../../AGENTS.md)
-- **Last updated**: 2026-07-06 (v0.21.0 — Documents 1b shipped)
+- **Last updated**: 2026-07-06 (v0.21.0 — Documents 1b + 1d shipped)

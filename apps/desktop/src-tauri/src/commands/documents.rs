@@ -344,6 +344,309 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
     Ok(md)
 }
 
+/// Escapes LaTeX special characters in plain (non-math) text.
+fn tex_escape(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        match c {
+            '&' | '%' | '$' | '#' | '_' | '{' | '}' => {
+                out.push('\\');
+                out.push(c);
+            }
+            '~' => out.push_str("\\textasciitilde{}"),
+            '^' => out.push_str("\\textasciicircum{}"),
+            '\\' => out.push_str("\\textbackslash{}"),
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+/// Renders a `CvContent` JSON blob into a clean, minimal LaTeX source
+/// (ROADMAP §16.6) — string templating only, never compiled here (no TeX
+/// toolchain bundled, keeps the binary tiny and local-first). Same section
+/// walk as `cv_content_to_markdown`, escaped for LaTeX instead.
+fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
+    let parsed: serde_json::Value = serde_json::from_str(content_json)
+        .map_err(|e| format!("cv_content_to_tex: invalid content_json: {e}"))?;
+    let mut sections: Vec<serde_json::Value> = parsed
+        .get("sections")
+        .and_then(|s| s.as_array())
+        .cloned()
+        .unwrap_or_default();
+    sections.sort_by_key(|s| s.get("order").and_then(|o| o.as_i64()).unwrap_or(0));
+
+    let mut body = String::new();
+    for section in sections {
+        if section.get("visible").and_then(|v| v.as_bool()) == Some(false) {
+            continue;
+        }
+        let str_field = |field: &str| -> Option<String> {
+            section
+                .get(field)
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+        };
+        match section.get("key").and_then(|k| k.as_str()).unwrap_or("") {
+            "personal_details" => {
+                if let Some(name) = str_field("fullName") {
+                    body.push_str(&format!(
+                        "{{\\LARGE \\textbf{{{}}}}}\\\\\n",
+                        tex_escape(&name)
+                    ));
+                }
+                let contact: Vec<String> = ["email", "phone", "address"]
+                    .into_iter()
+                    .filter_map(str_field)
+                    .map(|v| tex_escape(&v))
+                    .collect();
+                if !contact.is_empty() {
+                    body.push_str(&contact.join(" \\textbullet\\ "));
+                    body.push_str("\n\n");
+                }
+            }
+            "summary" => {
+                if let Some(text) = str_field("text") {
+                    body.push_str("\\section*{Summary}\n");
+                    body.push_str(&tex_escape(&text));
+                    body.push_str("\n\n");
+                }
+            }
+            "experience" => {
+                body.push_str("\\section*{Experience}\n");
+                if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
+                    for entry in entries {
+                        let company = entry.get("company").and_then(|v| v.as_str()).unwrap_or("");
+                        let role = entry.get("role").and_then(|v| v.as_str()).unwrap_or("");
+                        let start = entry
+                            .get("startDate")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        let end = entry
+                            .get("endDate")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Present");
+                        body.push_str(&format!(
+                            "\\textbf{{{}}}, {} \\hfill {} -- {}\\\\\n",
+                            tex_escape(role),
+                            tex_escape(company),
+                            tex_escape(start),
+                            tex_escape(end)
+                        ));
+                        if let Some(bullets) = entry.get("bullets").and_then(|b| b.as_array()) {
+                            let items: Vec<&str> =
+                                bullets.iter().filter_map(|b| b.as_str()).collect();
+                            if !items.is_empty() {
+                                body.push_str("\\begin{itemize}\n");
+                                for bullet in items {
+                                    body.push_str(&format!("\\item {}\n", tex_escape(bullet)));
+                                }
+                                body.push_str("\\end{itemize}\n");
+                            }
+                        }
+                        body.push('\n');
+                    }
+                }
+            }
+            "education" => {
+                body.push_str("\\section*{Education}\n");
+                if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
+                    for entry in entries {
+                        let institution = entry
+                            .get("institution")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        let degree = entry.get("degree").and_then(|v| v.as_str()).unwrap_or("");
+                        let start = entry
+                            .get("startDate")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        let end = entry
+                            .get("endDate")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Present");
+                        body.push_str(&format!(
+                            "\\textbf{{{}}}, {} \\hfill {} -- {}\\\\\n\n",
+                            tex_escape(degree),
+                            tex_escape(institution),
+                            tex_escape(start),
+                            tex_escape(end)
+                        ));
+                    }
+                }
+            }
+            "skills" => {
+                if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
+                    let list: Vec<String> = items
+                        .iter()
+                        .filter_map(|v| v.as_str())
+                        .map(tex_escape)
+                        .collect();
+                    if !list.is_empty() {
+                        body.push_str("\\section*{Skills}\n");
+                        body.push_str(&list.join(", "));
+                        body.push_str("\n\n");
+                    }
+                }
+            }
+            "languages" => {
+                if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
+                    if !items.is_empty() {
+                        body.push_str("\\section*{Languages}\n");
+                        for item in items {
+                            let language =
+                                item.get("language").and_then(|v| v.as_str()).unwrap_or("");
+                            let level = item.get("level").and_then(|v| v.as_str()).unwrap_or("");
+                            body.push_str(&format!(
+                                "{}: {}\\\\\n",
+                                tex_escape(language),
+                                tex_escape(level)
+                            ));
+                        }
+                        body.push('\n');
+                    }
+                }
+            }
+            // "photo" has no plain LaTeX representation in this string-templated renderer.
+            _ => {}
+        }
+    }
+
+    Ok(format!(
+        "\\documentclass[11pt]{{article}}\n\
+         \\usepackage[margin=1in]{{geometry}}\n\
+         \\usepackage[utf8]{{inputenc}}\n\
+         \\pagestyle{{empty}}\n\
+         \\setlength{{\\parindent}}{{0pt}}\n\n\
+         \\begin{{document}}\n\n\
+         {body}\
+         \\end{{document}}\n"
+    ))
+}
+
+/// CV style choices (ROADMAP §16.5) — layout-adjacent but distinct from
+/// `cv_templates` (section order/toggles): font, size, one accent colour.
+/// Deserializes with safe defaults so a document with no `style_json` yet
+/// (every CV before this feature) resolves to the safe default, not an error.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CvStyle {
+    #[serde(default = "CvStyle::default_font_family")]
+    pub font_family: String,
+    #[serde(default = "CvStyle::default_font_size_pt")]
+    pub font_size_pt: f64,
+    #[serde(default = "CvStyle::default_accent_color_hex")]
+    pub accent_color_hex: String,
+}
+
+impl CvStyle {
+    fn default_font_family() -> String {
+        "Calibri".to_string()
+    }
+    fn default_font_size_pt() -> f64 {
+        11.0
+    }
+    fn default_accent_color_hex() -> String {
+        "#333333".to_string()
+    }
+}
+
+impl Default for CvStyle {
+    fn default() -> Self {
+        Self {
+            font_family: Self::default_font_family(),
+            font_size_pt: Self::default_font_size_pt(),
+            accent_color_hex: Self::default_accent_color_hex(),
+        }
+    }
+}
+
+/// Curated ATS-safe font list (ROADMAP §16.5) — case-insensitive match.
+/// Fonts outside this list aren't blocked, just flagged: some ATS parsers
+/// choke on decorative/condensed/script fonts when extracting text.
+const ATS_SAFE_FONTS: &[&str] = &[
+    "arial",
+    "calibri",
+    "helvetica",
+    "times new roman",
+    "georgia",
+    "lato",
+    "open sans",
+    "verdana",
+    "tahoma",
+    "garamond",
+];
+
+/// One ATS/readability note. `kind` selects the (translated, honestly
+/// worded) message on the frontend; `detail` is the value to interpolate
+/// (font name / point size / hex) — Rust never renders user-facing text.
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct StyleNote {
+    pub kind: String,
+    pub detail: String,
+}
+
+/// Deterministic, 0-token style-safety check. Two honestly distinct note
+/// types (ROADMAP §16.5): `font_ats_risk` / `size_out_of_range` are about
+/// ATS text-parsing risk; `color_readability_risk` is about print/greyscale
+/// legibility, NOT ATS parsing — colour barely affects text extraction.
+/// A note only appears when the value leaves the safe default.
+#[tauri::command]
+pub fn check_style_safety(style_json: Option<String>) -> Vec<StyleNote> {
+    check_style_safety_core(style_json)
+}
+
+fn check_style_safety_core(style_json: Option<String>) -> Vec<StyleNote> {
+    let style: CvStyle = style_json
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
+    let mut notes = Vec::new();
+
+    if !ATS_SAFE_FONTS.contains(&style.font_family.trim().to_lowercase().as_str()) {
+        notes.push(StyleNote {
+            kind: "font_ats_risk".to_string(),
+            detail: style.font_family.clone(),
+        });
+    }
+    if !(9.0..=13.0).contains(&style.font_size_pt) {
+        notes.push(StyleNote {
+            kind: "size_out_of_range".to_string(),
+            detail: format!("{}", style.font_size_pt),
+        });
+    }
+    if is_low_print_contrast(&style.accent_color_hex) {
+        notes.push(StyleNote {
+            kind: "color_readability_risk".to_string(),
+            detail: style.accent_color_hex.clone(),
+        });
+    }
+    notes
+}
+
+/// Flags an accent colour too light to stay legible once printed in
+/// greyscale (e.g. by an Agentur für Arbeit printer) — a readability/print
+/// concern, not an ATS-parsing one.
+fn is_low_print_contrast(hex: &str) -> bool {
+    let hex = hex.trim_start_matches('#');
+    if hex.len() != 6 {
+        return false; // malformed value — don't nag, `check_style_safety` isn't a validator
+    }
+    let Ok(r) = u8::from_str_radix(&hex[0..2], 16) else {
+        return false;
+    };
+    let Ok(g) = u8::from_str_radix(&hex[2..4], 16) else {
+        return false;
+    };
+    let Ok(b) = u8::from_str_radix(&hex[4..6], 16) else {
+        return false;
+    };
+    let luminance =
+        0.2126 * (r as f64 / 255.0) + 0.7152 * (g as f64 / 255.0) + 0.0722 * (b as f64 / 255.0);
+    luminance > 0.75
+}
+
 /// Exports a library CV to a user-chosen path as DOCX or PDF. This is a
 /// library export, distinct from the job-specific `generated_docs` journal
 /// (`export_docx`/`export_pdf` in `commands::tailoring`) — it never touches
@@ -371,10 +674,14 @@ async fn cv_document_export_bytes_core(
     let content_json = doc
         .content_json
         .ok_or_else(|| "cv_document_export: document has no content".to_string())?;
-    let md = cv_content_to_markdown(&content_json)?;
     match format {
-        "docx" => crate::commands::tailoring::md_to_docx_bytes(&md),
-        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(&md),
+        "docx" => {
+            crate::commands::tailoring::md_to_docx_bytes(&cv_content_to_markdown(&content_json)?)
+        }
+        "pdf" => {
+            crate::commands::tailoring::md_to_pdf_bytes(&cv_content_to_markdown(&content_json)?)
+        }
+        "tex" => Ok(cv_content_to_tex(&content_json)?.into_bytes()),
         other => Err(format!("cv_document_export: unsupported format '{other}'")),
     }
 }
@@ -802,7 +1109,7 @@ mod tests {
         ));
         std::fs::create_dir_all(&dir).unwrap();
 
-        for format in ["docx", "pdf"] {
+        for format in ["docx", "pdf", "tex"] {
             let save_path = dir.join(format!("cv.{format}"));
             let bytes = cv_document_export_bytes_core(doc.id, format, &pool)
                 .await
@@ -812,9 +1119,63 @@ mod tests {
             assert!(save_path.exists());
         }
 
-        let unsupported = cv_document_export_bytes_core(doc.id, "tex", &pool).await;
+        let unsupported = cv_document_export_bytes_core(doc.id, "xyz", &pool).await;
         assert!(unsupported.is_err());
 
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn cv_content_to_tex_escapes_special_characters_and_hides_invisible_sections() {
+        let content_json = r#"{"sections":[
+            {"key":"personal_details","order":0,"visible":true,"fullName":"Jane & Doe","email":"jane@example.com"},
+            {"key":"summary","order":1,"visible":true,"text":"Grew revenue 50% using C# & R&D budget."},
+            {"key":"skills","order":2,"visible":false,"items":["Rust"]}
+        ]}"#;
+        let tex = cv_content_to_tex(content_json).expect("render");
+        assert!(tex.starts_with("\\documentclass"));
+        assert!(tex.contains("\\end{document}"));
+        assert!(tex.contains("Jane \\& Doe"));
+        assert!(tex.contains("50\\%"));
+        assert!(!tex.contains("Rust"), "hidden section must not render");
+    }
+
+    #[test]
+    fn check_style_safety_is_quiet_on_the_safe_default() {
+        assert!(check_style_safety_core(None).is_empty());
+        let safe = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333"}"##;
+        assert!(check_style_safety_core(Some(safe.to_string())).is_empty());
+    }
+
+    #[test]
+    fn check_style_safety_flags_risky_font_size_and_colour_independently() {
+        let risky =
+            r##"{"fontFamily":"Comic Sans MS","fontSizePt":18,"accentColorHex":"#FFFF66"}"##;
+        let notes = check_style_safety_core(Some(risky.to_string()));
+        let kinds: Vec<&str> = notes.iter().map(|n| n.kind.as_str()).collect();
+        assert!(kinds.contains(&"font_ats_risk"));
+        assert!(kinds.contains(&"size_out_of_range"));
+        assert!(kinds.contains(&"color_readability_risk"));
+        assert_eq!(notes.len(), 3);
+    }
+
+    #[test]
+    fn check_style_safety_accepts_every_curated_safe_font_case_insensitively() {
+        for font in ATS_SAFE_FONTS {
+            let style = format!(
+                r##"{{"fontFamily":"{}","fontSizePt":11,"accentColorHex":"#333333"}}"##,
+                font.to_uppercase()
+            );
+            let notes = check_style_safety_core(Some(style));
+            assert!(notes.is_empty(), "{font} should not be flagged");
+        }
+    }
+
+    #[test]
+    fn check_style_safety_ignores_a_malformed_hex_colour_instead_of_erroring() {
+        let malformed =
+            r#"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"not-a-color"}"#;
+        let notes = check_style_safety_core(Some(malformed.to_string()));
+        assert!(notes.iter().all(|n| n.kind != "color_readability_risk"));
     }
 }

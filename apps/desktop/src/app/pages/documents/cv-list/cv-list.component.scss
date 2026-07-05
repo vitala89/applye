@@ -66,6 +66,44 @@
   font-weight: var(--weight-medium);
 }
 
+.cvlist__export {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-input);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.cvlist__export:hover {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+.cvlist__export select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cvlist__note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.cvlist__note p {
+  margin: 0;
+}
+
 .icon-btn {
   display: inline-flex;
   align-items: center;

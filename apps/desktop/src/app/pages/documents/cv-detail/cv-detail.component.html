@@ -88,6 +88,65 @@
       </div>
     }
 
+    @if (!previewMode()) {
+      <div class="cvdetail__style">
+        <div class="cvdetail__style-field">
+          <label for="cv-style-font">{{ t()('documents.cv_style_font') }}</label>
+          <input
+            id="cv-style-font"
+            type="text"
+            list="cv-style-font-options"
+            [ngModel]="style().fontFamily"
+            (ngModelChange)="updateStyle({ fontFamily: $event })"
+          />
+          <datalist id="cv-style-font-options">
+            @for (font of atsSafeFonts; track font) {
+              <option [value]="font"></option>
+            }
+          </datalist>
+          <p class="cvdetail__style-hint">{{ t()('documents.cv_style_hint_font') }}</p>
+        </div>
+        <div class="cvdetail__style-field">
+          <label for="cv-style-size">{{ t()('documents.cv_style_size') }}</label>
+          <input
+            id="cv-style-size"
+            type="number"
+            min="6"
+            max="24"
+            step="0.5"
+            [ngModel]="style().fontSizePt"
+            (ngModelChange)="updateStyle({ fontSizePt: +$event })"
+          />
+          <p class="cvdetail__style-hint">{{ t()('documents.cv_style_hint_size') }}</p>
+        </div>
+        <div class="cvdetail__style-field">
+          <label for="cv-style-color">{{ t()('documents.cv_style_color') }}</label>
+          <div class="cvdetail__style-color-row">
+            <input
+              id="cv-style-color"
+              type="color"
+              [ngModel]="style().accentColorHex"
+              (ngModelChange)="updateStyle({ accentColorHex: $event })"
+            />
+            <input
+              type="text"
+              class="cvdetail__style-color-hex"
+              [ngModel]="style().accentColorHex"
+              (ngModelChange)="updateStyle({ accentColorHex: $event })"
+            />
+          </div>
+          <p class="cvdetail__style-hint">{{ t()('documents.cv_style_hint_color') }}</p>
+        </div>
+      </div>
+      @if (styleNotes().length) {
+        <div class="cvdetail__ats-note">
+          @for (note of styleNotes(); track note.kind) {
+            <p>{{ styleNoteMessage(note) }}</p>
+          }
+        </div>
+      }
+    }
+
     @if (error()) {
       <p class="modal__error">{{ error() }}</p>
     }

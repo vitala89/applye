@@ -7,9 +7,12 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
+  CvStyle,
   CvTemplate,
   DocumentLibraryItem,
+  StyleNote,
 } from '@applye/core';
+import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -80,6 +83,31 @@ export class CvDetailComponent {
   readonly saveTemplateName = signal('');
   readonly savingTemplate = signal(false);
 
+  protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
+  readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
+  readonly styleNotes = signal<StyleNote[]>([]);
+  private styleCheckTimer?: ReturnType<typeof setTimeout>;
+
+  private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
+    font_ats_risk: 'documents.cv_style_note_font',
+    size_out_of_range: 'documents.cv_style_note_size',
+    color_readability_risk: 'documents.cv_style_note_color',
+  };
+
+  styleNoteMessage(note: StyleNote): string {
+    return this.t()(CvDetailComponent.STYLE_NOTE_KEYS[note.kind]).replace('{value}', note.detail);
+  }
+
+  updateStyle(patch: Partial<CvStyle>): void {
+    this.style.set({ ...this.style(), ...patch });
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  private async refreshStyleNotes(): Promise<void> {
+    this.styleNotes.set(await this.db.checkStyleSafety(JSON.stringify(this.style())));
+  }
+
   readonly previewMode = signal(false);
 
   /** Ordered, visible sections as they'd actually render — the photo
@@ -136,6 +164,12 @@ export class CvDetailComponent {
       );
       this.includeBirthdate.set(!!personal?.birthDate);
       this.includeMaritalStatus.set(!!personal?.maritalStatus);
+
+      const style: CvStyle = item.styleJson
+        ? { ...CV_STYLE_DEFAULT, ...JSON.parse(item.styleJson) }
+        : CV_STYLE_DEFAULT;
+      this.style.set(style);
+      await this.refreshStyleNotes();
     } catch {
       this.loadError.set(true);
     } finally {
@@ -257,7 +291,7 @@ export class CvDetailComponent {
         label: this.label(),
         contentJson: JSON.stringify({ sections }),
         templateId: doc.templateId,
-        styleJson: doc.styleJson,
+        styleJson: JSON.stringify(this.style()),
         regionTag: this.regionTag(),
         language: doc.language,
         archetypeTag: doc.archetypeTag,

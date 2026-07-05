@@ -12,6 +12,13 @@
     </div>
   </header>
 
+  @if (texExportNoteOpen()) {
+    <div class="cvlist__note">
+      <p>{{ t()('documents.cv_export_tex_note') }}</p>
+      <button class="icon-btn" type="button" (click)="texExportNoteOpen.set(false)">×</button>
+    </div>
+  }
+
   @if (loading()) {
     <p class="cvlist__state">{{ t()('common.loading') }}</p>
   } @else if (loadError()) {
@@ -51,15 +58,22 @@
             >
               <lucide-icon [img]="icons.duplicate" [size]="14" aria-hidden="true" />
             </button>
-            <button
-              class="icon-btn"
-              type="button"
-              [disabled]="exportBusyId() === item.id"
-              [attr.aria-label]="t()('documents.cv_export_docx_action')"
-              (click)="exportDoc(item, 'docx', $event)"
-            >
+            <label class="cvlist__export">
               <lucide-icon [img]="icons.export" [size]="14" aria-hidden="true" />
-            </button>
+              <select
+                [disabled]="exportBusyId() === item.id"
+                [attr.aria-label]="t()('documents.cv_export_action')"
+                (click)="$event.stopPropagation()"
+                (change)="
+                  exportDoc(item, $any($event.target).value, $event); $any($event.target).value = ''
+                "
+              >
+                <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
+                <option value="docx">{{ t()('documents.cv_export_docx_action') }}</option>
+                <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
+                <option value="tex">{{ t()('documents.cv_export_tex_action') }}</option>
+              </select>
+            </label>
             <button
               class="icon-btn icon-btn--danger"
               type="button"

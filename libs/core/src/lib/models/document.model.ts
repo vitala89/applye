@@ -128,6 +128,46 @@ export interface CoverLetterContent {
 
 export type DocumentContent = CvContent | CoverLetterContent;
 
+/** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
+ * Deliberately small: font, size, one accent colour. Layout/order lives in
+ * `CvTemplate` instead. Safe default: Calibri 11pt, dark-grey (#333333). */
+export interface CvStyle {
+  fontFamily: string;
+  fontSizePt: number;
+  accentColorHex: string;
+}
+
+export const CV_STYLE_DEFAULT: CvStyle = {
+  fontFamily: 'Calibri',
+  fontSizePt: 11,
+  accentColorHex: '#333333',
+};
+
+/** Curated ATS-safe font list (ROADMAP §16.5), mirrors the Rust
+ * `ATS_SAFE_FONTS` constant — for populating a suggestions list in the UI,
+ * not for client-side validation (that's `check_style_safety`). */
+export const CV_ATS_SAFE_FONTS = [
+  'Arial',
+  'Calibri',
+  'Helvetica',
+  'Times New Roman',
+  'Georgia',
+  'Lato',
+  'Open Sans',
+  'Verdana',
+  'Tahoma',
+  'Garamond',
+];
+
+/** One ATS/readability note from `check_style_safety` — `kind` selects the
+ * (translated) message; `detail` is the value to interpolate. */
+export type StyleNoteKind = 'font_ats_risk' | 'size_out_of_range' | 'color_readability_risk';
+
+export interface StyleNote {
+  kind: StyleNoteKind;
+  detail: string;
+}
+
 /** CV layout templates (ROADMAP §16.2) — layout only, separate from content.
  * Built-in presets: DE-traditional (photo), DE-ATS-modern (no photo), US, UK,
  * generic. */

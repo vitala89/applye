@@ -27,6 +27,7 @@ import {
   CvTemplate,
   DocumentLibraryItem,
   LibraryDocType,
+  StyleNote,
   UpsertCvTemplateInput,
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
@@ -270,10 +271,21 @@ export class DbService {
     return tauriInvoke<CvImportFile>('cv_import_read_file', { path });
   }
 
-  /** Exports a library CV to `savePath` as DOCX or PDF — a library export,
-   * distinct from the job-specific tailoring export journal. */
-  async cvDocumentExport(id: number, format: 'docx' | 'pdf', savePath: string): Promise<string> {
+  /** Exports a library CV to `savePath` as DOCX, PDF, or LaTeX source (never
+   * compiled — no TeX toolchain bundled) — a library export, distinct from
+   * the job-specific tailoring export journal. */
+  async cvDocumentExport(
+    id: number,
+    format: 'docx' | 'pdf' | 'tex',
+    savePath: string,
+  ): Promise<string> {
     return tauriInvoke<string>('cv_document_export', { id, format, savePath });
+  }
+
+  /** Deterministic, 0-token ATS/readability check (ROADMAP §16.5) — empty
+   * array when `styleJson` is unset or already at the safe default. */
+  async checkStyleSafety(styleJson?: string): Promise<StyleNote[]> {
+    return tauriInvoke<StyleNote[]>('check_style_safety', { styleJson });
   }
 
   // --- Document export ---

@@ -7,11 +7,15 @@ description: Sync and manage product/feature state, templates, ideas, ADRs, and 
 
 Use this skill when dealing with planning, next steps, ideas, roadmap updates, feature prioritization, architecture direction, or after completing a feature.
 
+> [!NOTE]
+> If the request is primarily about prioritizing features, estimating effort, splitting a task, comparing tasks, or determining next actions, route the request to the `aif-planning-review` skill.
+
 ## Steps
 
-1. **Classify Request**: Classify the request into one of: `idea`, `feature`, `architecture decision`, `docs sync`, `release note`, or `next action`.
+1. **Classify Request**: Classify the request into one of: `idea`, `feature`, `architecture decision`, `docs sync`, `release note`, or `next action`. If the request is about feature prioritization, next actions, task comparisons, or estimations, **immediately route/delegate to `aif-planning-review`**.
 2. **Determine Read List**: Determine which documents to read according to [AIF Project State Policy](docs/ai/project-state-policy.md):
    - For operational/daily state: [CURRENT_STATE.md](docs/product/CURRENT_STATE.md)
+   - For planning model: [PLANNING.md](docs/product/PLANNING.md)
    - For feature work: corresponding brief in `docs/product/feature-briefs/`
    - For ideas: [IDEAS.md](docs/product/IDEAS.md)
    - For strategy: [ROADMAP.md](ROADMAP.md)

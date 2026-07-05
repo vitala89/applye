@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, LucideIconData } from 'lucide-angular';
 import { ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoreGauge } from '@applye/ui';
@@ -110,8 +110,8 @@ export class ScoringView {
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
-  readonly atsPassIcon = input.required<unknown>();
-  readonly atsFailIcon = input.required<unknown>();
+  readonly atsPassIcon = input.required<LucideIconData>();
+  readonly atsFailIcon = input.required<LucideIconData>();
 
   protected readonly parseDimensions = parseDimensions;
   protected readonly parseMissingKeywords = parseMissingKeywords;

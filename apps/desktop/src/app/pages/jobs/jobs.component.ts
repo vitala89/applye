@@ -40,7 +40,7 @@ import {
   Bookmark,
   X,
 } from 'lucide-angular';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
   Job,
@@ -1193,6 +1193,7 @@ interface PassResult {
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
+  private readonly jobsStore = inject(JobsStore);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
@@ -1699,6 +1700,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       }
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
+      this.jobsStore.patchOverviewRow(j.id, { status: 'applied' });
       this.editingLocked.set(false);
       // Applied — send the user back to My Jobs; re-entering the job shows
       // its Applied + Tailored state.
@@ -1767,7 +1769,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (!j?.id || this.deleting()) return;
     this.deleting.set(true);
     try {
-      await this.db.deleteJob(j.id);
+      await this.jobsStore.deleteJob(j.id);
       await this.router.navigate(['/jobs']);
     } catch (e) {
       this.actionMsg.set(String(e));
@@ -1898,6 +1900,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         tokensOutput: res.tokensOutput,
       });
       this.cache.set(saved);
+      this.jobsStore.patchOverviewRow(j.id!, { score: saved.score });
       this.scoreStatus.set(`Scored — ${res.tokensInput} in / ${res.tokensOutput} out`);
     } catch (e) {
       this.scoreStatus.set(`Scoring failed: ${String(e)}`);
@@ -2022,6 +2025,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         tokensInput: post.tokensInput ?? 0,
         tokensOutput: post.tokensOutput ?? 0,
       });
+      this.jobsStore.patchOverviewRow(j.id, { score: post.score });
     } catch {
       this.postTailorSaved.set(false); // allow a retry on the next commit
     }

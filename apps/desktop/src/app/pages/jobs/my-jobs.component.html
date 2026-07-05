@@ -48,7 +48,7 @@
     <p class="myjobs__state">{{ t()('common.loading') }}</p>
   } @else if (loadError()) {
     <p class="myjobs__state">{{ t()('common.error') }}</p>
-  } @else if (!rows().length) {
+  } @else if (!jobsStore.overview().length) {
     <p class="myjobs__state">{{ t()('myjobs.empty') }}</p>
   } @else {
     <table class="myjobs__table">

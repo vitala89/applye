@@ -1687,7 +1687,22 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   private scrollContentToTop(): void {
-    this.document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+    // Defer to the next frame so the step's new (shorter/taller) content has
+    // rendered before we scroll — otherwise the container clamps against the
+    // old scrollHeight and can land mid-page.
+    const view = this.document.defaultView;
+    const doScroll = (): void => {
+      const el =
+        this.document.querySelector('.content') ??
+        this.document.scrollingElement ??
+        this.document.documentElement;
+      el?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    };
+    if (view?.requestAnimationFrame) {
+      view.requestAnimationFrame(doScroll);
+    } else {
+      doScroll();
+    }
   }
 
   openDeleteConfirm(): void {
@@ -1978,6 +1993,9 @@ export class JobsComponent implements OnInit, OnDestroy {
    * Entering the Updated score step auto-runs the rescore once (only if the
    * user actually tailored — pass 3 exists — and it hasn't run yet). */
   onWizardStep(step: number): void {
+    // Every step transition lands the user at the top of the page.
+    this.scrollContentToTop();
+
     const UPDATED_SCORE_STEP = 2;
     if (
       step === UPDATED_SCORE_STEP &&

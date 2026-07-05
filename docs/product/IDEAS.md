@@ -21,7 +21,7 @@ This file serves as the raw inbox for ideas, feature requests, and product sugge
 
 ## Accepted
 
-- **Draft follow-up message for overdue applications** → scoped as [Follow-up Message Drafting brief](feature-briefs/followup-drafting.md) (Step 2, Ready). Drafts polite follow-up for overdue apps; user sends manually via `mailto:` (no auto-send). (2026-07-05)
+- _Ideas accepted for a brief but not yet shipped._
 
 ---
 

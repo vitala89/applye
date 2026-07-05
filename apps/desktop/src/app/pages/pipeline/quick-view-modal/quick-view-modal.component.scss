@@ -193,6 +193,58 @@
   font-size: var(--text-sm, 13px);
 }
 
+.qv__followup-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+
+  .qv__select {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    margin-left: auto;
+  }
+}
+
+.qv__followup-subject {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-sunken);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-input, 6px);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body, 14px);
+  font-weight: var(--weight-semibold, 600);
+  padding: var(--space-2) var(--space-3);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
+.qv__followup-body {
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+  background: var(--surface-sunken);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-input, 6px);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body, 14px);
+  padding: var(--space-2) var(--space-3);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
 .qv__comment-input {
   margin-top: var(--space-2);
 

@@ -170,6 +170,15 @@ const en: TranslationMap = {
     quickview_add_comment: 'Add comment',
     quickview_open_details: 'Open full details',
   },
+  followup: {
+    section_label: 'Follow-up email',
+    draft_action: 'Draft follow-up',
+    cached_hint: 'Unchanged — using cached draft (0 tokens).',
+    subject_placeholder: 'Subject',
+    copy: 'Copy',
+    copied: 'Copied!',
+    open_in_mail: 'Open in mail',
+  },
   profile: {
     title: 'Profile',
     subtitle: 'Your master profile (Markdown). Source of truth for all AI scoring & tailoring.',
@@ -630,6 +639,15 @@ const de: TranslationMap = {
     quickview_comment_placeholder: 'Kommentar hinzufügen…',
     quickview_add_comment: 'Kommentar hinzufügen',
     quickview_open_details: 'Vollständige Details öffnen',
+  },
+  followup: {
+    section_label: 'Follow-up-E-Mail',
+    draft_action: 'Follow-up entwerfen',
+    cached_hint: 'Unverändert — verwendet zwischengespeicherten Entwurf (0 Token).',
+    subject_placeholder: 'Betreff',
+    copy: 'Kopieren',
+    copied: 'Kopiert!',
+    open_in_mail: 'In Mail öffnen',
   },
   profile: {
     title: 'Profil',

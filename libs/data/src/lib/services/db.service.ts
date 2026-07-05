@@ -21,6 +21,7 @@ import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
 import { PortalAnswer, SavePortalAnswersInput } from '@applye/core';
+import { FollowupDraft, SaveFollowupDraftInput } from '@applye/core';
 import { HealthReport } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
@@ -219,6 +220,15 @@ export class DbService {
 
   async portalAnswersSave(input: SavePortalAnswersInput): Promise<PortalAnswer> {
     return tauriInvoke<PortalAnswer>('portal_answers_save', { input });
+  }
+
+  // --- Follow-up drafts ---
+  async followupDraftGet(applicationId: number, inputHash: string): Promise<FollowupDraft | null> {
+    return tauriInvoke<FollowupDraft | null>('followup_draft_get', { applicationId, inputHash });
+  }
+
+  async followupDraftSave(input: SaveFollowupDraftInput): Promise<FollowupDraft> {
+    return tauriInvoke<FollowupDraft>('followup_draft_save', { input });
   }
 
   // --- Document export ---

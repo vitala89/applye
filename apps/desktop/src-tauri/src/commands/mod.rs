@@ -4,6 +4,7 @@
 
 pub mod applications;
 pub mod archetypes;
+pub mod followup_drafts;
 pub mod health;
 pub mod import;
 pub mod interview;

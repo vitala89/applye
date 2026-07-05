@@ -30,6 +30,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "portal-answers" => Some(include_str!(
             "../../../../../libs/skills/src/portal-answers/portal-answers.md"
         )),
+        "followup" => Some(include_str!(
+            "../../../../../libs/skills/src/followup/followup.md"
+        )),
         _ => None,
     }
 }

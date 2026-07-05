@@ -68,6 +68,7 @@ export interface PipelineCard {
   updatedAt?: string;
   company?: string;
   title?: string;
+  docLanguage?: SupportedLanguage;
   score?: number;
   priority?: Priority;
   currentStageOrder?: number;
@@ -81,4 +82,31 @@ export interface Comment {
   applicationId: number;
   commentText: string;
   createdAt: string;
+}
+
+/** AI-drafted follow-up email for an overdue application, cached by
+ * (applicationId, inputHash). Applye never sends this — the frontend opens
+ * it via `mailto:` so the user's own mail client sends it. */
+export interface FollowupDraft {
+  id: number;
+  applicationId: number;
+  inputHash: string;
+  language: SupportedLanguage;
+  subject: string;
+  body: string;
+  modelUsed?: string;
+  tokensInput?: number;
+  tokensOutput?: number;
+  createdAt?: string;
+}
+
+export interface SaveFollowupDraftInput {
+  applicationId: number;
+  inputHash: string;
+  language: SupportedLanguage;
+  subject: string;
+  body: string;
+  modelUsed: string;
+  tokensInput: number;
+  tokensOutput: number;
 }

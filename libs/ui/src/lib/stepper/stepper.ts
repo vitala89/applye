@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 @Component({
   selector: 'lib-stepper',
@@ -10,18 +10,13 @@ import { Component, input, output } from '@angular/core';
 export class Stepper {
   readonly steps = input.required<string[]>();
   readonly activeIndex = input.required<number>();
-  readonly nextDisabled = input<boolean>(false);
-  readonly backLabel = input<string>('Back');
-  readonly nextLabel = input<string>('Next');
 
-  readonly back = output<void>();
-  readonly next = output<void>();
-
-  protected onBack(): void {
-    this.back.emit();
-  }
-
-  protected onNext(): void {
-    this.next.emit();
-  }
+  protected readonly markers = computed(() =>
+    this.steps().map((label, i) => ({
+      label,
+      done: i < this.activeIndex(),
+      active: i === this.activeIndex(),
+      isLast: i === this.steps().length - 1,
+    })),
+  );
 }

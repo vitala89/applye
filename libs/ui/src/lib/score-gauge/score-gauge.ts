@@ -1,6 +1,12 @@
 import { Component, computed, input } from '@angular/core';
 
 export type ScoreBand = 'low' | 'mid' | 'high';
+export type ScoreGaugeSize = 'lg' | 'sm';
+
+const SIZES: Record<ScoreGaugeSize, { diameter: number; radius: number; strokeWidth: number }> = {
+  lg: { diameter: 132, radius: 59, strokeWidth: 10 },
+  sm: { diameter: 76, radius: 33, strokeWidth: 7 },
+};
 
 @Component({
   selector: 'lib-score-gauge',
@@ -11,9 +17,7 @@ export type ScoreBand = 'low' | 'mid' | 'high';
 })
 export class ScoreGauge {
   readonly score = input.required<number>();
-  readonly verdict = input<string>('');
-  readonly cached = input<boolean>(false);
-  readonly cachedLabel = input<string>('cached · 0 tokens');
+  readonly size = input<ScoreGaugeSize>('lg');
 
   protected readonly band = computed<ScoreBand>(() => {
     const s = this.score();
@@ -22,10 +26,12 @@ export class ScoreGauge {
     return 'low';
   });
 
-  protected readonly circumference = 2 * Math.PI * 40;
+  protected readonly dims = computed(() => SIZES[this.size()]);
+
+  protected readonly circumference = computed(() => 2 * Math.PI * this.dims().radius);
 
   protected readonly dashOffset = computed(() => {
     const pct = Math.max(0, Math.min(100, this.score())) / 100;
-    return this.circumference * (1 - pct);
+    return this.circumference() * (1 - pct);
   });
 }

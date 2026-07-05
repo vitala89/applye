@@ -2,13 +2,38 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
+  AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Copy,
+  Database,
+  ExternalLink,
+  FileDown,
+  FileText,
+  Flag,
+  GitCompare,
+  Hammer,
+  Languages,
+  ListChecks,
   LucideAngularModule,
+  Minus,
+  Pencil,
+  PencilLine,
   Plus,
   RotateCw,
+  ScanLine,
+  ScanSearch,
   Search,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Tag,
+  WandSparkles,
+  Bookmark,
   X,
 } from 'lucide-angular';
 import { AiService, DbService } from '@applye/data';
@@ -22,6 +47,7 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { JobDetailIcons } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 
@@ -185,27 +211,27 @@ interface PassResult {
             <app-scoring-view
               [cache]="cache()"
               [fromCache]="fromCache()"
-              [atsPassIcon]="icons.atsPass"
-              [atsFailIcon]="icons.atsFail"
+              [job]="job()"
+              [icons]="icons"
+              (save)="addToPipeline()"
+              (tailorApply)="wizardOpen.set(true)"
             />
-            <div class="cta">
-              <button class="btn btn--primary" (click)="wizardOpen.set(true)">
-                {{ t()('jobs.wizard.start_apply') }}
-              </button>
-            </div>
           } @else {
-            <div class="cta">
-              <button class="btn" type="button" (click)="wizardOpen.set(false)">
-                {{ t()('jobs.wizard.back_to_summary') }}
-              </button>
-            </div>
             <app-apply-wizard
               [cache]="cache()"
               [fromCache]="fromCache()"
-              [atsPassIcon]="icons.atsPass"
-              [atsFailIcon]="icons.atsFail"
+              [job]="job()"
+              [jobTitle]="job()?.title ?? ''"
+              [company]="job()?.company ?? ''"
+              [icons]="icons"
+              (closeWizard)="wizardOpen.set(false)"
+              (markApplied)="markApplied()"
             >
               <div wizardPortalStep>
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.portal_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.portal_title') }}</h4>
+                </div>
                 <!-- Draft portal answers -->
                 <details class="card portal">
                   <summary class="eyebrow">{{ t()('jobs.portal_section') }}</summary>
@@ -335,6 +361,10 @@ interface PassResult {
               </div>
 
               <div wizardTailorStep>
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.tailor_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.tailor_title') }}</h4>
+                </div>
                 <!-- Tailoring wizard -->
                 @if (tailorResults().length === 0 && !tailoring()) {
                   <div class="cta">
@@ -433,6 +463,10 @@ interface PassResult {
               </div>
 
               <div wizardExportStep>
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.export_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.export_title') }}</h4>
+                </div>
                 <!-- Export (pass 3 done) -->
                 @if (!tailoring() && tailorResults().length === 3) {
                   <div class="card wizard-export">
@@ -474,17 +508,34 @@ interface PassResult {
               </div>
 
               <div wizardApplyStep>
-                <div class="card">
-                  <h4 class="eyebrow">{{ t()('jobs.wizard.step_apply') }}</h4>
-                  <div class="cta">
-                    <button class="btn-ghost" [disabled]="actionBusy()" (click)="markApplied()">
-                      {{ t()('jobs.mark_applied') }}
-                    </button>
-                    @if (actionMsg()) {
-                      <span class="detail-actions__msg">{{ actionMsg() }}</span>
-                    }
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.apply_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.apply_title') }}</h4>
+                  <p class="muted">{{ t()('jobs.wizard.apply_subtitle') }}</p>
+                </div>
+                <div class="card apply-fields">
+                  @if (lastExport(); as exp) {
+                    <div class="apply-field-row">
+                      <span class="apply-field-row__label">{{ t()('jobs.export_section') }}</span>
+                      <span class="apply-field-row__value">{{ exp.filePath }}</span>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        (click)="openExportedFile(exp.filePath)"
+                      >
+                        <lucide-icon [img]="icons.fileText" [size]="12" aria-hidden="true" />
+                        {{ t()('jobs.open_file') }}
+                      </button>
+                    </div>
+                  }
+                  <div class="apply-field-row">
+                    <span class="apply-field-row__label">{{ t()('jobs.portal_section') }}</span>
+                    <span class="apply-field-row__value">{{ portalAnswers().length }}</span>
                   </div>
                 </div>
+                @if (actionMsg()) {
+                  <p class="muted">{{ actionMsg() }}</p>
+                }
               </div>
             </app-apply-wizard>
           }
@@ -534,14 +585,14 @@ interface PassResult {
         font-size: var(--text-sm);
         line-height: 1.6;
         color: var(--text-primary);
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
         resize: vertical;
       }
       .editor:focus {
         outline: none;
-        border-color: var(--indigo-500, #6366f1);
+        border-color: var(--accent);
       }
 
       .row {
@@ -558,8 +609,8 @@ interface PassResult {
         flex-direction: column;
         gap: var(--space-3);
         background: var(--surface-1);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
         padding: var(--space-4);
       }
       .card--danger {
@@ -605,96 +656,6 @@ interface PassResult {
         flex-shrink: 0;
       }
 
-      /* Gauge */
-      .gauge {
-        display: flex;
-        align-items: baseline;
-        gap: var(--space-3);
-        flex-wrap: wrap;
-      }
-      .gauge__number {
-        font-size: 3rem;
-        font-weight: 700;
-        color: var(--indigo-500, #6366f1);
-        font-family: var(--font-mono);
-        line-height: 1;
-      }
-      .gauge__sep {
-        font-size: var(--text-lg);
-        color: var(--text-tertiary);
-        font-family: var(--font-mono);
-      }
-      .gauge__stars {
-        font-size: var(--text-xl);
-        color: var(--indigo-500, #6366f1);
-        font-family: var(--font-mono);
-      }
-      .gauge__bar-wrap {
-        height: 8px;
-        background: var(--surface-3);
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .gauge__bar {
-        height: 100%;
-        background: var(--indigo-500, #6366f1);
-        border-radius: 4px;
-        transition: width 0.6s ease;
-      }
-
-      /* Dimensions */
-      .dim-table {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-      }
-      .dim-row {
-        display: grid;
-        grid-template-columns: 160px 64px 1fr;
-        gap: var(--space-3);
-        align-items: center;
-      }
-      .dim-name {
-        font-size: var(--text-sm);
-        color: var(--text-secondary);
-      }
-      .dim-score {
-        font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        color: var(--text-primary);
-      }
-      .dim-bar-wrap {
-        height: 4px;
-        background: var(--surface-3);
-        border-radius: 2px;
-      }
-      .dim-bar {
-        height: 100%;
-        background: var(--indigo-500, #6366f1);
-        border-radius: 2px;
-      }
-      .dim-comment {
-        font-size: var(--text-xs);
-        color: var(--text-secondary);
-        grid-column: 2 / -1;
-      }
-
-      /* Keywords */
-      .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-      }
-      .chip {
-        padding: 2px var(--space-2);
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        font-size: var(--text-xs);
-        font-family: var(--font-mono);
-        color: var(--text-secondary);
-      }
-
       /* Red flags */
       .red-flags {
         list-style: none;
@@ -717,66 +678,29 @@ interface PassResult {
         flex-shrink: 0;
       }
 
-      /* ATS */
-      .ats-pass {
-        font-size: var(--text-sm);
-        font-weight: var(--weight-medium);
-      }
-      .ats-pass--ok {
-        color: var(--success, #4ade80);
-      }
-      .ats-pass--warn {
-        color: var(--danger);
-      }
-
-      /* Summary */
-      .summary {
-        font-size: var(--text-sm);
-        line-height: 1.7;
-        color: var(--text-secondary);
-        font-style: italic;
-        border-left: 2px solid var(--indigo-500, #6366f1);
-        padding-left: var(--space-3);
-        margin: 0;
-      }
-
-      /* Before you submit */
-      .before-submit summary {
-        cursor: pointer;
-      }
-      .before-submit__list {
-        margin: var(--space-3) 0 0;
-        padding-left: var(--space-4);
-        color: var(--text-secondary);
-        font-size: var(--text-sm);
-      }
-      .before-submit__list li {
-        margin-bottom: var(--space-2);
-      }
-
       /* Badges */
       .badge {
         padding: 2px var(--space-2);
-        border-radius: 999px;
+        border-radius: var(--radius-full);
         font-size: var(--text-xs);
         font-weight: var(--weight-medium);
         font-family: var(--font-mono);
       }
       .badge--pass {
-        background: color-mix(in srgb, var(--success, #4ade80) 15%, transparent);
-        color: var(--success, #4ade80);
+        background: var(--success-tint);
+        color: var(--success);
       }
       .badge--cache {
-        background: color-mix(in srgb, var(--indigo-500, #6366f1) 15%, transparent);
-        color: var(--indigo-500, #6366f1);
+        background: var(--accent-tint);
+        color: var(--text-accent);
       }
       .badge--warn {
-        background: color-mix(in srgb, var(--warning, #fb923c) 15%, transparent);
-        color: var(--warning, #fb923c);
+        background: var(--warning-tint);
+        color: var(--warning);
       }
       .badge--danger {
-        background: color-mix(in srgb, var(--danger, #f87171) 15%, transparent);
-        color: var(--danger, #f87171);
+        background: var(--danger-tint);
+        color: var(--danger);
       }
       .legitimacy-notes {
         margin: var(--space-2) 0 0;
@@ -816,9 +740,9 @@ interface PassResult {
         font-size: var(--text-xs);
         line-height: 1.7;
         color: var(--text-secondary);
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
         padding: var(--space-3);
         max-height: 320px;
         overflow-y: auto;
@@ -842,11 +766,11 @@ interface PassResult {
       }
       .change-list li::before {
         content: '✓ ';
-        color: var(--success, #4ade80);
+        color: var(--success);
       }
       .gap-list li::before {
         content: '⚠ ';
-        color: var(--warning, #fb923c);
+        color: var(--warning);
       }
       .change-list li,
       .gap-list li {
@@ -915,8 +839,8 @@ interface PassResult {
         font-size: var(--text-sm);
         font-weight: var(--weight-medium);
         color: var(--text-primary);
-        background: var(--surface-3);
-        border: 1px solid var(--border);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
         border-radius: var(--radius-input);
         cursor: pointer;
         white-space: nowrap;
@@ -929,9 +853,67 @@ interface PassResult {
         cursor: not-allowed;
       }
       .btn--primary {
-        background: var(--indigo-500, #6366f1);
-        color: #fff;
-        border-color: var(--indigo-500, #6366f1);
+        background: var(--accent);
+        color: var(--accent-fg);
+        border-color: var(--accent);
+      }
+      .btn--secondary {
+        background: transparent;
+        color: var(--text-primary);
+        border-color: var(--border-strong);
+      }
+      .btn--sm {
+        padding: var(--space-1) var(--space-3);
+        font-size: var(--text-xs);
+      }
+      .btn--md {
+        padding: var(--space-2) var(--space-5);
+      }
+
+      .apply-fields-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-bottom: var(--space-5);
+      }
+      .apply-fields-title {
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-h2);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+      }
+      .apply-fields {
+        padding: 0;
+        gap: 0;
+      }
+      .apply-field-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .apply-field-row:last-child {
+        border-bottom: none;
+      }
+      .apply-field-row__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        width: 96px;
+        flex: 0 0 auto;
+      }
+      .apply-field-row__value {
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     `,
   ],
@@ -943,12 +925,46 @@ export class JobsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons = {
+  protected readonly icons: JobDetailIcons & {
+    empty: typeof Search;
+    copy: typeof Copy;
+    add: typeof Plus;
+    remove: typeof X;
+    another: typeof RotateCw;
+  } = {
     empty: Search,
     atsPass: Check,
     atsFail: X,
+    tag: Tag,
+    flag: Flag,
+    scan: ScanLine,
+    checklist: ListChecks,
     next: ArrowRight,
+    star: Star,
+    db: Database,
+    bookmark: Bookmark,
+    wand: WandSparkles,
+    close: X,
+    back: ArrowLeft,
+    checkCircle: CheckCircle2,
+    languages: Languages,
+    chevronDown: ChevronDown,
+    chevronUp: ChevronUp,
+    shieldCheck: ShieldCheck,
+    sparkles: Sparkles,
+    gitCompare: GitCompare,
+    alertTriangle: AlertTriangle,
+    minus: Minus,
+    plus: Plus,
+    pencil: Pencil,
+    hammer: Hammer,
+    scanSearch: ScanSearch,
+    pencilLine: PencilLine,
+    fileText: FileText,
+    fileDown: FileDown,
+    externalLink: ExternalLink,
     copy: Copy,
+    check: Check,
     add: Plus,
     remove: X,
     another: RotateCw,

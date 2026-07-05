@@ -21,34 +21,32 @@ describe('Stepper', () => {
     expect(component).toBeTruthy();
   });
 
-  it('renders one dot per step', () => {
+  it('renders one marker per step', () => {
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelectorAll('.stepper__dot').length).toBe(3);
+    expect(el.querySelectorAll('.stepper__marker').length).toBe(3);
   });
 
-  it('emits next when Next is clicked', () => {
+  it('renders a checkmark for done steps and a number for the rest', () => {
     fixture.detectChanges();
-    let emitted = false;
-    component.next.subscribe(() => (emitted = true));
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.btn--primary');
-    btn.click();
-    expect(emitted).toBe(true);
+    const markers = fixture.nativeElement.querySelectorAll('.stepper__marker');
+    expect(markers[0].textContent.trim()).toBe('✓');
+    expect(markers[1].textContent.trim()).toBe('2');
+    expect(markers[2].textContent.trim()).toBe('3');
   });
 
-  it('emits back when Back is clicked', () => {
+  it('marks the active step distinctly from done and pending', () => {
     fixture.detectChanges();
-    let emitted = false;
-    component.back.subscribe(() => (emitted = true));
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.btn-ghost');
-    btn.click();
-    expect(emitted).toBe(true);
+    const markers = fixture.nativeElement.querySelectorAll('.stepper__marker');
+    expect(markers[0].classList.contains('stepper__marker--done')).toBe(true);
+    expect(markers[1].classList.contains('stepper__marker--active')).toBe(true);
+    expect(markers[2].classList.contains('stepper__marker--done')).toBe(false);
+    expect(markers[2].classList.contains('stepper__marker--active')).toBe(false);
   });
 
-  it('disables Back on the first step', () => {
-    fixture.componentRef.setInput('activeIndex', 0);
+  it('renders one fewer connector than steps', () => {
     fixture.detectChanges();
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.btn-ghost');
-    expect(btn.disabled).toBe(true);
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('.stepper__connector').length).toBe(2);
   });
 });

@@ -1,0 +1,398 @@
+.scoring-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Header */
+.scoring-view__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-2);
+}
+
+.scoring-view__header-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.scoring-view__job-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.scoring-view__job-meta {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 24px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.verdict-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.verdict-badge--reject {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+.verdict-badge--consider {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.verdict-badge--strong {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+/* Summary row: gauge + verdict text */
+.scoring-view__summary {
+  display: flex;
+  gap: var(--space-8);
+  padding: var(--space-6);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.scoring-view__summary-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 0 0 auto;
+}
+
+.scoring-view__stars {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.scoring-view__star-icon {
+  color: var(--amber-500);
+  fill: var(--amber-500);
+}
+
+.scoring-view__stars-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.scoring-view__stars-max {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.cache-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 22px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.scoring-view__verdict-text {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scoring-view__verdict-quote {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-style: italic;
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+}
+
+/* Dimension breakdown */
+.scoring-view__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.scoring-view__dims-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.scoring-view__dim-card {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scoring-view__dim-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.scoring-view__dim-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.scoring-view__dim-score {
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.scoring-view__dim-bar-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.scoring-view__dim-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+
+.scoring-view__dim-rationale {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.score-low {
+  color: var(--danger);
+  background: var(--danger);
+}
+
+.score-mid {
+  color: var(--warning);
+  background: var(--warning);
+}
+
+.score-high {
+  color: var(--success);
+  background: var(--success);
+}
+
+/* Supporting cards (missing keywords / red flags / ATS / before-you-submit) */
+.scoring-view__support-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.scoring-view__support-card {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.scoring-view__support-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.scoring-view__support-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+
+.scoring-view__support-note {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.scoring-view__danger-icon {
+  color: var(--danger);
+}
+
+.scoring-view__accent-icon {
+  color: var(--accent);
+}
+
+.scoring-view__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.scoring-view__chip {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-strong);
+}
+
+.scoring-view__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scoring-view__list-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.scoring-view__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 7px;
+  flex: 0 0 auto;
+}
+
+.scoring-view__dot--danger {
+  background: var(--danger);
+}
+
+.scoring-view__step-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-badge);
+  background: var(--accent-tint);
+  color: var(--text-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.ats-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 22px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.ats-badge--ok {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.ats-badge--warn {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+/* Sticky CTA bar */
+.scoring-view__cta {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-md);
+}
+
+.scoring-view__cta-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.scoring-view__cta-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.scoring-view__cta-subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}

@@ -1,8 +1,8 @@
 ---
-version: 1
+version: 2
 description: Drafts a polite follow-up email for an overdue job application, grounded in the company, role, and days since applying. One AI call per draft, cached. The user reviews, edits, and sends it themselves via their own mail client — Applye never sends anything.
-inputs: company, role, days_overdue, language
-output_format: 'strict JSON: {"subject": "string", "body": "string"} — no markdown fences, no extra keys'
+inputs: company, role, days_overdue, language (spelled-out language name, e.g. "Ukrainian", not a code)
+output_format: 'strict JSON: {"subject": "string", "body": "string"} — no markdown fences, no extra keys, exactly one backslash before each escape character (a literal newline inside body must be written as \n, never \\n)'
 recommended_model: economy
 ---
 
@@ -20,9 +20,11 @@ email finds you well". State plainly that the candidate applied for the role, re
 and ask for a status update. Reference the actual company and role names and roughly how long it's
 been since applying.
 
-Respond with strict JSON only, in {{language}}:
+Respond with strict JSON only, entirely in {{language}} (translate the whole subject and body into
+{{language}}, do not leave any part in English):
 {"subject": "string", "body": "string"}
-No markdown code fences, no commentary, no extra keys.
+No markdown code fences, no commentary, no extra keys. Use a real single backslash-n for each line
+break inside "body" (valid JSON string escaping) — never write a doubled backslash before the n.
 
 [USER]
 Company: {{company}}

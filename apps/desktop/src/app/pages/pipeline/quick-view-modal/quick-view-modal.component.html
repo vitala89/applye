@@ -83,16 +83,18 @@
       <section class="qv__section">
         <span class="qv__label">{{ t()('followup.section_label') }}</span>
         <div class="qv__followup-row">
-          <select
-            class="qv__select"
-            [ngModel]="followupLanguage()"
-            (ngModelChange)="onFollowupLanguageChange($event)"
-            [ngModelOptions]="{ standalone: true }"
-          >
+          <div class="qv__lang-options">
             @for (l of FOLLOWUP_LANGUAGES; track l) {
-              <option [value]="l">{{ l }}</option>
+              <button
+                type="button"
+                class="qv__lang-btn"
+                [class.is-active]="followupLanguage() === l"
+                (click)="onFollowupLanguageChange(l)"
+              >
+                {{ l }}
+              </button>
             }
-          </select>
+          </div>
           <button
             type="button"
             class="btn-ghost"
@@ -112,6 +114,22 @@
           @if (followupFromCache()) {
             <p class="qv__hint">{{ t()('followup.cached_hint') }}</p>
           }
+          <div class="qv__followup-row">
+            <input
+              class="qv__followup-recipient"
+              [ngModel]="followupTo()"
+              (ngModelChange)="followupTo.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="t()('followup.to_placeholder')"
+            />
+            <input
+              class="qv__followup-recipient"
+              [ngModel]="followupCc()"
+              (ngModelChange)="followupCc.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="t()('followup.cc_placeholder')"
+            />
+          </div>
           <input
             class="qv__followup-subject"
             [ngModel]="followupSubject()"

@@ -30,6 +30,18 @@ const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
 const FOLLOWUP_LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+// Spelled out for the prompt: a bare 2-letter code (esp. "uk") is ambiguous
+// enough that weaker/economy models sometimes ignore it and default to
+// English. The cache key still stores the short code.
+const FOLLOWUP_LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
+  en: 'English',
+  de: 'German',
+  ru: 'Russian',
+  es: 'Spanish',
+  fr: 'French',
+  uk: 'Ukrainian',
+};
+
 /** Highest stage_order that isn't rejected/cancelled, or the most recent one
  * if all are closed — mirrors the SQL in db_pipeline_cards exactly, so the
  * modal's summary always matches the card footer. */
@@ -111,6 +123,8 @@ export class QuickViewModalComponent {
   protected readonly followupFromCache = signal(false);
   protected readonly followupError = signal('');
   protected readonly followupCopied = signal(false);
+  protected readonly followupTo = signal('');
+  protected readonly followupCc = signal('');
   protected readonly followupHasDraft = computed(
     () => !!this.followupSubject() || !!this.followupBody(),
   );
@@ -127,6 +141,8 @@ export class QuickViewModalComponent {
       this.followupFromCache.set(false);
       this.followupError.set('');
       this.followupCopied.set(false);
+      this.followupTo.set('');
+      this.followupCc.set('');
     });
   }
 
@@ -168,11 +184,12 @@ export class QuickViewModalComponent {
       }
 
       const daysOverdue = this.daysSinceApplied();
+      const languageName = FOLLOWUP_LANGUAGE_NAMES[this.followupLanguage()];
       const rendered = await this.ai.renderSkill('followup', {
         company: card.company ?? '',
         role: card.title ?? '',
         days_overdue: String(daysOverdue),
-        language: this.followupLanguage(),
+        language: languageName,
       });
       const res = await this.ai.run({
         mode: settings.aiMode,
@@ -203,9 +220,15 @@ export class QuickViewModalComponent {
     }
   }
 
+  // Some models double-escape newlines inside the JSON string value (e.g.
+  // emit `\\n` instead of `\n`), which JSON.parse then turns into a literal
+  // two-character "\n" in the output instead of a real line break. Normalize
+  // that away; a correctly-escaped response is untouched by this regex since
+  // it no longer contains a literal backslash at that point.
   private parseFollowupDraft(text: string): { subject: string; body: string } {
     const parsed = JSON.parse(text) as { subject?: string; body?: string };
-    return { subject: parsed.subject ?? '', body: parsed.body ?? '' };
+    const clean = (s?: string) => (s ?? '').replace(/\\n/g, '\n').trim();
+    return { subject: clean(parsed.subject), body: clean(parsed.body) };
   }
 
   protected onFollowupLanguageChange(language: SupportedLanguage): void {
@@ -223,13 +246,22 @@ export class QuickViewModalComponent {
   }
 
   /** Opens the user's own mail client via `mailto:` — Applye never sends this
-   * itself, and there is no other code path that transmits it anywhere. */
+   * itself, and there is no other code path that transmits it anywhere.
+   * Built by hand (not URLSearchParams) because mailto: query values use
+   * RFC 3986 percent-encoding, where a space is `%20` — URLSearchParams
+   * encodes spaces as `+`, which most mail clients show literally instead of
+   * decoding. */
   protected async openFollowupInMail(): Promise<void> {
-    const params = new URLSearchParams({
-      subject: this.followupSubject(),
-      body: this.followupBody(),
-    });
-    await openUrl(`mailto:?${params.toString()}`);
+    const to = encodeURIComponent(this.followupTo().trim());
+    const params = [
+      ['subject', this.followupSubject()],
+      ['cc', this.followupCc().trim()],
+      ['body', this.followupBody()],
+    ]
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
+    await openUrl(`mailto:${to}?${params}`);
   }
 
   private async loadComments(applicationId: number): Promise<void> {

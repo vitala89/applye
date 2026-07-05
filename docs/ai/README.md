@@ -20,3 +20,5 @@ The main session is the conductor. Skills and subagents are focused specialists 
 ## Not Installed Yet
 
 This foundation does not install dependencies, configure MCP, create secrets, or add external tools such as Graphify, CodeGraph, Headroom, Context Mode, Token Optimizer, Superpowers, Browser Harness, or Agent Reach.
+
+Local machine agent config such as `.codex/` or `.claude/settings.json` is not part of AIF Core and should stay untracked.

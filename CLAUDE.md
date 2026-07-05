@@ -2,7 +2,7 @@
 
 Read `AGENTS.md` and `PROJECT_CONTEXT.md` before non-trivial work.
 
-Use the `aif-orchestrator` skill before feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. The main Claude Code session remains the conductor; subagents are specialists.
+Use the `aif-orchestrator` skill before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. The main Claude Code session remains the conductor; subagents are specialists.
 
 Applye is an Nx monorepo for a privacy-first Tauri 2 + Angular job-search app. Keep project-specific facts in `PROJECT_CONTEXT.md`; do not duplicate large context here.
 
@@ -15,4 +15,4 @@ Applye is an Nx monorepo for a privacy-first Tauri 2 + Angular job-search app. K
 - Do not read generated folders, dependency folders, logs, or `.git`.
 - Use Claude Sonnet as the default model.
 
-After a completed task, recommend starting a new session so the next task begins with clean context.
+After a large completed task, recommend starting a new session so the next task begins with clean context.

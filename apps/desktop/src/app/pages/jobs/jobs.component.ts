@@ -803,44 +803,6 @@ interface PassResult {
         gap: var(--space-4);
         margin-top: var(--space-2);
       }
-      .wizard-steps {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-3) 0;
-      }
-      .wizard-step {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-1) var(--space-3);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        opacity: 0.45;
-      }
-      .wizard-step--done {
-        opacity: 1;
-        border-color: color-mix(in srgb, var(--indigo-500, #6366f1) 60%, transparent);
-      }
-      .wizard-step--active {
-        opacity: 1;
-        border-color: var(--indigo-500, #6366f1);
-        background: color-mix(in srgb, var(--indigo-500, #6366f1) 10%, transparent);
-      }
-      .wizard-step__num {
-        font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        font-weight: var(--weight-medium);
-        color: var(--indigo-500, #6366f1);
-      }
-      .wizard-step__label {
-        font-size: var(--text-xs);
-        color: var(--text-secondary);
-      }
-      .wizard-step__sep {
-        color: var(--text-quaternary, var(--text-tertiary));
-        font-size: var(--text-xs);
-      }
       .wizard-card {
         gap: var(--space-3);
       }

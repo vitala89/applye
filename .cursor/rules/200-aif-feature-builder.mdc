@@ -1,0 +1,18 @@
+---
+description: Build Applye features with scoped behavior, tests, docs, and review triggers.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Feature Builder
+
+Before coding, state behavior and non-goals. Use focused context only.
+
+During implementation:
+
+- Preserve privacy-first defaults.
+- Keep domain logic separate from integrations.
+- Use existing local patterns.
+- Add focused tests when behavior changes.
+- Update docs when workflows, setup, security, or privacy expectations change.

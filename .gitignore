@@ -64,7 +64,13 @@ npm-debug.log*
 apps/desktop/src-tauri/gen/
 
 # AI tooling / generated indexes
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/aif-*/
+!.claude/skills/aif-*/SKILL.md
+!.claude/agents/
+!.claude/agents/aif-*.md
+!.claude/settings.example.json
 .codegraph/
 .serena/
 graphify-out/

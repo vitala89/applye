@@ -1,0 +1,14 @@
+---
+description: Apply security and privacy review triggers for sensitive Applye work.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Security And Privacy
+
+Security review is required for auth, secrets, shell commands, dependencies, MCP, browser automation, and external tools.
+
+Privacy review is required for user data, storage, sync, notifications, external job sources, plugins, MCP, and AI integrations.
+
+Do not create real secrets. Do not assume telemetry, sync, or external AI processing is acceptable by default.

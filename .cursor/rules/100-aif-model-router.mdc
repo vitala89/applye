@@ -1,0 +1,16 @@
+---
+description: Route Cursor work to the lightest reliable model tier for Applye.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Model Router
+
+Use these tiers:
+
+- `fast`: simple edits, docs cleanup, formatting.
+- `standard`: normal implementation, tests, docs, and review.
+- `deep`: architecture, security, privacy, hard debugging, or broad impact.
+
+Start with the lowest reliable tier. Escalate only for risk, ambiguity, or repeated failure after checking context.

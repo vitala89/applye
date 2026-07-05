@@ -1,0 +1,19 @@
+---
+description: Orchestrate non-trivial Applye tasks through AIF workflows.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Orchestrator
+
+For non-trivial work:
+
+1. Classify task type.
+2. Pick model tier.
+3. Apply the context gate.
+4. Identify security, privacy, testing, and docs triggers.
+5. Make scoped changes.
+6. Verify and summarize diff-first.
+
+Do not create a generic implementer agent. The main session remains responsible.

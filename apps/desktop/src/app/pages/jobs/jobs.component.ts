@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import {
   ArrowRight,
   Check,
-  ChevronRight,
   Copy,
   LucideAngularModule,
   Plus,
@@ -948,7 +947,6 @@ export class JobsComponent implements OnInit {
     empty: Search,
     atsPass: Check,
     atsFail: X,
-    stepSep: ChevronRight,
     next: ArrowRight,
     copy: Copy,
     add: Plus,

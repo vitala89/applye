@@ -51,7 +51,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoreGauge } from '@applye/ui';
-import { JobDetailIcons, classifyChangeType } from './scoring.utils';
+import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 
@@ -134,22 +134,24 @@ interface PassResult {
                   {{ t()('jobs.add_to_pipeline') }}
                 </button>
               }
-              @if (application()?.status === 'applied') {
-                <span class="badge badge--pass">{{ t()('jobs.applied_badge') }}</span>
-                <button
-                  class="btn btn--secondary btn--sm"
-                  [disabled]="actionBusy()"
-                  (click)="revertToSaved()"
-                >
-                  {{ t()('jobs.change_status_action') }}
-                </button>
-              } @else {
+              @if (canMarkApplied()) {
                 <button
                   class="btn btn--primary btn--md"
                   [disabled]="actionBusy()"
                   (click)="markApplied()"
                 >
                   {{ t()('jobs.mark_applied') }}
+                </button>
+              } @else if (application(); as app) {
+                <span class="badge" [class]="statusBadgeClass(app.status)">{{
+                  t()('status.' + app.status)
+                }}</span>
+                <button
+                  class="btn btn--secondary btn--sm"
+                  [disabled]="actionBusy()"
+                  (click)="revertToSaved()"
+                >
+                  {{ t()('jobs.change_status_action') }}
                 </button>
               }
               <span class="detail-actions__spacer"></span>
@@ -303,6 +305,7 @@ interface PassResult {
               [jobTitle]="job()?.title ?? ''"
               [company]="job()?.company ?? ''"
               [icons]="icons"
+              [postTailorScore]="postTailorScore()"
               [applicationStatus]="application()?.status ?? null"
               (closeWizard)="wizardOpen.set(false)"
               (markApplied)="markApplied()"
@@ -816,30 +819,6 @@ interface PassResult {
         flex-shrink: 0;
       }
 
-      /* Badges */
-      .badge {
-        padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
-        font-size: var(--text-xs);
-        font-weight: var(--weight-medium);
-        font-family: var(--font-mono);
-      }
-      .badge--pass {
-        background: var(--success-tint);
-        color: var(--success);
-      }
-      .badge--cache {
-        background: var(--accent-tint);
-        color: var(--text-accent);
-      }
-      .badge--warn {
-        background: var(--warning-tint);
-        color: var(--warning);
-      }
-      .badge--danger {
-        background: var(--danger-tint);
-        color: var(--danger);
-      }
       .legitimacy-notes {
         margin: var(--space-2) 0 0;
         padding-left: var(--space-4);
@@ -1256,7 +1235,21 @@ export class JobsComponent implements OnInit, OnDestroy {
    * would risk drifting the saved JD out of sync with what was submitted.
    * Unlocks only via "Change" (revertToSaved), same gate as the Applied
    * badge below. */
-  readonly jobLocked = computed(() => this.application()?.status === 'applied');
+  /** Mark-as-Applied only makes sense with no application yet, or one still
+   * in 'saved'. Anything further along (applied/interview/offer/rejected/
+   * cancelled) shows a status badge + Change instead — it used to fall
+   * through to "Mark as Applied" for every status except the exact literal
+   * 'applied', which was wrong for interview/offer/rejected/cancelled. */
+  readonly canMarkApplied = computed(() => {
+    const status = this.application()?.status;
+    return !status || status === 'saved';
+  });
+
+  /** Once past 'saved', the description is locked too — same gate as
+   * canMarkApplied, inverted. */
+  readonly jobLocked = computed(() => !this.canMarkApplied());
+
+  protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
   // Draft portal answers
   readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);

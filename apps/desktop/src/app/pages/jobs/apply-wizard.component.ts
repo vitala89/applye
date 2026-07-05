@@ -5,6 +5,7 @@ import { TranslateService } from '@applye/i18n';
 import { Stepper } from '@applye/ui';
 import {
   JobDetailIcons,
+  applicationStatusBadgeClass,
   dimensionBand,
   parseDimensions,
   scoreVerdictKey,
@@ -25,7 +26,7 @@ import {
         @switch (activeStep()) {
           @case (0) {
             <!-- Compact review — NOT the full Job Detail scoring page. -->
-            @if (cache(); as c) {
+            @if (reviewScore(); as c) {
               <div class="wizard-review">
                 <div class="wizard-review__top">
                   <div class="card wizard-review__score">
@@ -42,12 +43,17 @@ import {
                       <p class="wizard-review__verdict-quote">{{ c.summary }}</p>
                     }
                     <span class="cache-chip">
-                      <lucide-icon [img]="icons().db" [size]="11" aria-hidden="true" />
-                      @if (fromCache()) {
-                        {{ t()('jobs.cached_badge') }}
+                      @if (postTailorScore()) {
+                        <lucide-icon [img]="icons().wand" [size]="11" aria-hidden="true" />
+                        {{ t()('jobs.wizard.updated_after_tailor') }}
                       } @else {
-                        {{ (c.tokensInput ?? 0) + (c.tokensOutput ?? 0) }}
-                        {{ t()('jobs.tokens_used') }}
+                        <lucide-icon [img]="icons().db" [size]="11" aria-hidden="true" />
+                        @if (fromCache()) {
+                          {{ t()('jobs.cached_badge') }}
+                        } @else {
+                          {{ (c.tokensInput ?? 0) + (c.tokensOutput ?? 0) }}
+                          {{ t()('jobs.tokens_used') }}
+                        }
                       }
                     </span>
                   </div>
@@ -100,18 +106,17 @@ import {
         </span>
         <span class="apply-wizard__spacer"></span>
         @if (activeStep() === lastStep) {
-          @if (applicationStatus() === 'applied') {
-            <span class="badge badge--pass">
-              <lucide-icon [img]="icons().checkCircle" [size]="12" aria-hidden="true" />
-              {{ t()('jobs.applied_badge') }}
-            </span>
-            <button class="btn btn--secondary btn--sm" type="button" (click)="changeStatus.emit()">
-              {{ t()('jobs.change_status_action') }}
-            </button>
-          } @else {
+          @if (canMarkApplied()) {
             <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
               {{ t()('jobs.wizard.mark_as_applied') }}
+            </button>
+          } @else if (applicationStatus(); as status) {
+            <span class="badge" [class]="statusBadgeClass(status)">
+              {{ t()('status.' + status) }}
+            </span>
+            <button class="btn btn--secondary btn--sm" type="button" (click)="changeStatus.emit()">
+              {{ t()('jobs.change_status_action') }}
             </button>
           }
         } @else {
@@ -138,6 +143,11 @@ export class ApplyWizard {
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
+  /** Post-tailor rescore, if the user ran one — takes over as the review
+   * number once present, so Review Score always shows the current best
+   * known fit instead of a stale pre-tailor figure. */
+  readonly postTailorScore = input<ScoringCache | null>(null);
+  protected readonly reviewScore = computed(() => this.postTailorScore() ?? this.cache());
   readonly job = input<Job | null>(null);
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
@@ -160,6 +170,13 @@ export class ApplyWizard {
   protected readonly band = dimensionBand;
   protected readonly verdictKey = scoreVerdictKey;
   protected readonly verdictLabelKey = scoreVerdictLabelKey;
+  protected readonly statusBadgeClass = applicationStatusBadgeClass;
+
+  /** Mirrors JobsComponent.canMarkApplied — same gate, same reasoning. */
+  protected readonly canMarkApplied = computed(() => {
+    const status = this.applicationStatus();
+    return !status || status === 'saved';
+  });
 
   protected goBack(): void {
     if (this.activeStep() === 0) {

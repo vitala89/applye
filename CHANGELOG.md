@@ -14,6 +14,14 @@ is the single source of truth; this file tracks what changed at each tag.
 
 - AIF Core foundation for AI-assisted development: shared agent context, Claude Code skills and read-only specialist subagents, Cursor rules, token/context/model policies, and security/privacy trust docs.
 
+## [0.18.1] - 2026-07-05
+
+### Added
+
+- Pipeline board now has a **Cancelled** column. The status already existed
+  in filters and the quick-view modal, but there was no kanban column to
+  drag a card into or see it land — that gap is closed.
+
 ## [0.18.0] - 2026-07-05
 
 ### Changed

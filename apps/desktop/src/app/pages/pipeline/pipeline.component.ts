@@ -26,6 +26,7 @@ const COLS: KanbanCol[] = [
   { status: 'interview', labelKey: 'status.interview', accent: '#f59e0b' },
   { status: 'offer', labelKey: 'status.offer', accent: '#22c55e' },
   { status: 'rejected', labelKey: 'status.rejected', accent: '#ef4444' },
+  { status: 'cancelled', labelKey: 'status.cancelled', accent: '#6b7280' },
 ];
 
 @Component({

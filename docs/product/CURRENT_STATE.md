@@ -1,0 +1,23 @@
+# Current Operational State
+
+- **Current version**: `0.18.0`
+- **Current branch / focus**: `main` / Setting up AIF Product State System
+- **Recently completed**:
+  - AIF Core foundation for AI-assisted development (Cursor rules, model policies, security/privacy trust docs, context gate, keyring and token guards, CLI routing).
+- **Currently working on**:
+  - Implementing the AIF Product State System — a product-aware planning and documentation layer in `docs/product/` for Applye.
+- **Next recommended action**:
+  - Complete testing and verification of the AIF Product State System setup, commit the changes to `docs/aif-product-state-workflow`, and prepare a PR.
+- **Active feature brief**:
+  - [Product State System](file:///Users/eugenekasap/WebstormProjects/applye/docs/product/README.md) (Establishing the operational documentation layer).
+- **Blocked / open questions**:
+  - None at present.
+- **Important constraints**:
+  - Do not modify application source code, package.json, or dependencies in the current task.
+  - Do not use CHANGELOG.md as a backlog.
+  - Do not edit root-level canonical documents for small feature iterations.
+- **Files agents should check first**:
+  - [PROJECT_CONTEXT.md](file:///Users/eugenekasap/WebstormProjects/applye/PROJECT_CONTEXT.md)
+  - [CURRENT_STATE.md](file:///Users/eugenekasap/WebstormProjects/applye/docs/product/CURRENT_STATE.md)
+  - [AGENTS.md](file:///Users/eugenekasap/WebstormProjects/applye/AGENTS.md)
+- **Last updated**: 2026-07-05

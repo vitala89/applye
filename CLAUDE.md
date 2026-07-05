@@ -1,8 +1,8 @@
 # Claude Code AIF Notes
 
-Read `AGENTS.md` and `PROJECT_CONTEXT.md` before non-trivial work.
+Read `AGENTS.md`, `PROJECT_CONTEXT.md`, and `docs/product/CURRENT_STATE.md` before non-trivial work.
 
-Use the `aif-orchestrator` skill before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. The main Claude Code session remains the conductor; subagents are specialists.
+Use the `aif-orchestrator` skill before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. Non-trivial feature/product work should check `docs/product/CURRENT_STATE.md` first. The main Claude Code session remains the conductor; subagents are specialists.
 
 Applye is an Nx monorepo for a privacy-first Tauri 2 + Angular job-search app. Keep project-specific facts in `PROJECT_CONTEXT.md`; do not duplicate large context here.
 

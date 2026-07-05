@@ -21,6 +21,16 @@ The main agent session is the conductor. It owns task framing, context selection
 - `commit`: prepare a focused commit message and change summary.
 - `branch finish`: final verification, release notes, docs sync, and PR summary.
 
+## Canonical Document Roles
+
+The project separates strategic documents from operational daily tracking:
+
+- **ROADMAP.md**: Strategy / vision / product principles.
+- **INSTRUCTIONS.md**: Working agreement / engineering rules.
+- **STEP_BY_STEP_PLAN.md**: Phased execution checklist.
+- **CHANGELOG.md**: Historical record of shipped changes.
+- **docs/product/CURRENT_STATE.md**: Operational daily/focus state. Check this first before starting feature work.
+
 ## Before Coding
 
 1. Classify the task type.

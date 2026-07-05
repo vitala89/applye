@@ -14,6 +14,10 @@ pub struct Application {
     pub follow_up_at: Option<String>,
     pub cv_path: Option<String>,
     pub cover_letter_path: Option<String>,
+    /// Which `document_library` row was used (ROADMAP §16). `cv_path` above
+    /// stays the frozen apply-time snapshot and is never rewritten from this.
+    pub cv_document_id: Option<i64>,
+    pub cover_letter_document_id: Option<i64>,
     pub contract_type: Option<String>,
     pub eor_provider: Option<String>,
     pub doc_language: Option<String>,

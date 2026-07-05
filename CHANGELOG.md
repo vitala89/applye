@@ -10,6 +10,14 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-07-05
+
+### Added
+
+- Job Detail screen redesigned: card-based scoring view (gauge, dimension cards, missing-keyword chips, red-flags, ATS check) replaces the long scroll.
+- 5-step apply/tailor wizard (Review score → Portal answers → Tailor CV → Export → Apply) with Back/Next navigation, one step visible at a time.
+- Apply step adds copy-to-clipboard and "Open in browser" (via system default browser) alongside the existing Mark Applied action.
+
 ## [0.16.3] - 2026-07-03
 
 ### Changed

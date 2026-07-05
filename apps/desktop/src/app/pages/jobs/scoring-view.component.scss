@@ -220,18 +220,29 @@
   color: var(--text-secondary);
 }
 
-.score-low {
+/* Score badge text (.scoring-view__dim-score) — color only, no background. */
+.scoring-view__dim-score.score-low {
   color: var(--danger);
+}
+
+.scoring-view__dim-score.score-mid {
+  color: var(--warning);
+}
+
+.scoring-view__dim-score.score-high {
+  color: var(--success);
+}
+
+/* Progress bar fill (.scoring-view__dim-bar-fill) — background only. */
+.scoring-view__dim-bar-fill.score-low {
   background: var(--danger);
 }
 
-.score-mid {
-  color: var(--warning);
+.scoring-view__dim-bar-fill.score-mid {
   background: var(--warning);
 }
 
-.score-high {
-  color: var(--success);
+.scoring-view__dim-bar-fill.score-high {
   background: var(--success);
 }
 

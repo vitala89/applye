@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ArrowLeft, LucideAngularModule, RefreshCw, Save } from 'lucide-angular';
+import { ArrowLeft, Eye, LucideAngularModule, Pencil, RefreshCw, Save } from 'lucide-angular';
 import type {
   CvContent,
   CvSection,
@@ -16,6 +16,7 @@ import { ButtonDirective } from '@applye/ui';
 import {
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
+  orderedVisibleSections,
   parseCvSkillResponse,
   REGENERATABLE_SECTION_KEYS,
   sectionLabelKey,
@@ -37,7 +38,13 @@ export class CvDetailComponent {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons = { back: ArrowLeft, save: Save, regenerate: RefreshCw };
+  protected readonly icons = {
+    back: ArrowLeft,
+    save: Save,
+    regenerate: RefreshCw,
+    preview: Eye,
+    edit: Pencil,
+  };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
 
@@ -72,6 +79,22 @@ export class CvDetailComponent {
   readonly saveTemplateOpen = signal(false);
   readonly saveTemplateName = signal('');
   readonly savingTemplate = signal(false);
+
+  readonly previewMode = signal(false);
+
+  /** Ordered, visible sections as they'd actually render — the photo
+   * toggle isn't written back into `section.visible` until Save, so this
+   * mirrors the live toggle state rather than trusting the stored value. */
+  readonly previewSections = computed(() => {
+    const live = this.sections().map((s) =>
+      s.key === 'photo' ? { ...s, visible: this.includePhoto() } : s,
+    );
+    return orderedVisibleSections(live);
+  });
+
+  togglePreview(): void {
+    this.previewMode.set(!this.previewMode());
+  }
 
   constructor() {
     void this.load();

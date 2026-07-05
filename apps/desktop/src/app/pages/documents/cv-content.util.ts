@@ -11,6 +11,16 @@ const DEFAULT_SECTION_ORDER: CvSectionKey[] = [
   'languages',
 ];
 
+/** Visible sections in display order — what the preview (and the real
+ * export) actually renders, as opposed to the constructor's full
+ * edit-everything list. */
+export function orderedVisibleSections(sections: CvSection[]): CvSection[] {
+  return sections
+    .filter((s) => s.visible)
+    .slice()
+    .sort((a, b) => a.order - b.order);
+}
+
 export function templateSectionOrder(template: CvTemplate | null): CvSectionKey[] {
   if (!template?.sectionsJson) return DEFAULT_SECTION_ORDER;
   try {

@@ -490,6 +490,10 @@ const en: TranslationMap = {
     cv_section_skills: 'Skills',
     cv_section_languages: 'Languages',
     cv_photo_hint: 'Photo upload is not yet supported in the constructor.',
+    cv_preview_action: 'Preview',
+    cv_edit_action: 'Edit',
+    cv_preview_empty: 'Nothing to preview yet — add some content or generate a baseline.',
+    cv_present: 'Present',
   },
   interview: {
     title: 'Interview Prep',
@@ -1047,6 +1051,11 @@ const de: TranslationMap = {
     cv_section_skills: 'Fähigkeiten',
     cv_section_languages: 'Sprachen',
     cv_photo_hint: 'Foto-Upload wird im Konstruktor noch nicht unterstützt.',
+    cv_preview_action: 'Vorschau',
+    cv_edit_action: 'Bearbeiten',
+    cv_preview_empty:
+      'Noch nichts zum Anzeigen — füge Inhalte hinzu oder erstelle eine Basisversion.',
+    cv_present: 'Heute',
   },
   interview: {
     title: 'Interview-Vorbereitung',

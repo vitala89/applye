@@ -1,7 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ArrowDown, ArrowUp, LucideAngularModule, Search, Upload } from 'lucide-angular';
+import {
+  ArrowDown,
+  ArrowUp,
+  CircleX,
+  LucideAngularModule,
+  Search,
+  Trash2,
+  Upload,
+} from 'lucide-angular';
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped, JobOverview } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -50,7 +58,14 @@ export class MyJobsComponent {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
-  protected readonly icons = { search: Search, up: ArrowUp, down: ArrowDown, upload: Upload };
+  protected readonly icons = {
+    search: Search,
+    up: ArrowUp,
+    down: ArrowDown,
+    upload: Upload,
+    trash: Trash2,
+    dangerGlyph: CircleX,
+  };
 
   readonly rows = signal<JobOverview[]>([]);
   readonly loading = signal(true);
@@ -144,6 +159,37 @@ export class MyJobsComponent {
 
   open(id: number): void {
     void this.router.navigate(['/jobs', id]);
+  }
+
+  readonly deleteTarget = signal<JobOverview | null>(null);
+  readonly deleting = signal(false);
+
+  requestDelete(row: JobOverview, event: Event): void {
+    event.stopPropagation();
+    this.deleteTarget.set(row);
+  }
+
+  cancelDelete(): void {
+    this.deleteTarget.set(null);
+  }
+
+  onDeleteBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.cancelDelete();
+    }
+  }
+
+  async confirmDelete(): Promise<void> {
+    const row = this.deleteTarget();
+    if (!row || this.deleting()) return;
+    this.deleting.set(true);
+    try {
+      await this.db.deleteJob(row.id);
+      this.deleteTarget.set(null);
+      await this.load();
+    } finally {
+      this.deleting.set(false);
+    }
   }
 
   // ── Import tracklist ────────────────────────────────────────────────────────

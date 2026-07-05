@@ -117,6 +117,32 @@
 .myjobs__row:hover td {
   background: var(--surface-hover);
 }
+.myjobs__row-actions {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-input);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+.icon-btn--danger:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
 .cell-strong {
   color: var(--text-primary);
   font-weight: var(--weight-medium);
@@ -195,6 +221,30 @@
   color: var(--danger);
   font-size: var(--text-sm);
   margin-top: var(--space-3);
+}
+.modal-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  border-radius: var(--radius-card);
+  background: var(--danger-tint);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
+}
+.modal-alert__icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--danger);
+}
+.modal-alert__body {
+  flex: 1;
+  min-width: 0;
+}
+.modal-alert__body h3 {
+  margin-bottom: var(--space-2);
+}
+.modal-alert .modal__hint {
+  margin-bottom: var(--space-2);
 }
 .modal__actions {
   display: flex;

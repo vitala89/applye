@@ -43,3 +43,204 @@
   font-size: var(--text-2xs);
   color: var(--text-tertiary);
 }
+
+/* Step 1 — compact review */
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.wizard-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.wizard-review__top {
+  display: flex;
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+.wizard-review__score {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  min-width: 160px;
+}
+
+.wizard-review__score-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-display);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.wizard-review__score-max {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 24px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.verdict-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.verdict-badge--reject {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+.verdict-badge--consider {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.verdict-badge--strong {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.wizard-review__verdict {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  justify-content: center;
+}
+
+.wizard-review__verdict-quote {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-style: italic;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+}
+
+.cache-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 22px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.wizard-review__dims {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.wizard-review__dim {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.wizard-review__dim-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.wizard-review__dim-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.wizard-review__dim-score {
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.wizard-review__dim-score.score-low {
+  color: var(--danger);
+}
+.wizard-review__dim-score.score-mid {
+  color: var(--warning);
+}
+.wizard-review__dim-score.score-high {
+  color: var(--success);
+}
+
+.wizard-review__dim-bar-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.wizard-review__dim-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+
+.wizard-review__dim-bar-fill.score-low {
+  background: var(--danger);
+}
+.wizard-review__dim-bar-fill.score-mid {
+  background: var(--warning);
+}
+.wizard-review__dim-bar-fill.score-high {
+  background: var(--success);
+}
+
+.wizard-review__dim-comment {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}

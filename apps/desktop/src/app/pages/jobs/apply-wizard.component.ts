@@ -3,13 +3,18 @@ import { LucideAngularModule } from 'lucide-angular';
 import { Job, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { Stepper } from '@applye/ui';
-import { JobDetailIcons } from './scoring.utils';
-import { ScoringView } from './scoring-view.component';
+import {
+  JobDetailIcons,
+  dimensionBand,
+  parseDimensions,
+  scoreVerdictKey,
+  scoreVerdictLabelKey,
+} from './scoring.utils';
 
 @Component({
   selector: 'app-apply-wizard',
   standalone: true,
-  imports: [LucideAngularModule, Stepper, ScoringView],
+  imports: [LucideAngularModule, Stepper],
   template: `
     <div class="apply-wizard">
       <div class="apply-wizard__rail">
@@ -27,21 +32,67 @@ import { ScoringView } from './scoring-view.component';
       <div class="apply-wizard__content">
         @switch (activeStep()) {
           @case (0) {
-            <app-scoring-view
-              [cache]="cache()"
-              [fromCache]="fromCache()"
-              [job]="job()"
-              [icons]="icons()"
-            />
+            <!-- Compact review — NOT the full Job Detail scoring page. -->
+            @if (cache(); as c) {
+              <div class="wizard-review">
+                <div class="wizard-review__top">
+                  <div class="card wizard-review__score">
+                    <span class="wizard-review__score-num">{{ c.score }}</span>
+                    <span class="wizard-review__score-max">/100</span>
+                    <span class="verdict-badge" [class]="'verdict-badge--' + verdictKey(c.score)">
+                      <span class="verdict-badge__dot"></span>
+                      {{ t()(verdictLabelKey(c.score)) }}
+                    </span>
+                  </div>
+                  <div class="card wizard-review__verdict">
+                    <span class="eyebrow">{{ t()('jobs.recruiter_verdict_eyebrow') }}</span>
+                    @if (c.summary) {
+                      <p class="wizard-review__verdict-quote">{{ c.summary }}</p>
+                    }
+                    <span class="cache-chip">
+                      <lucide-icon [img]="icons().db" [size]="11" aria-hidden="true" />
+                      @if (fromCache()) {
+                        {{ t()('jobs.cached_badge') }}
+                      } @else {
+                        {{ (c.tokensInput ?? 0) + (c.tokensOutput ?? 0) }}
+                        {{ t()('jobs.tokens_used') }}
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                @if (dims(c).length) {
+                  <div class="wizard-review__dims">
+                    @for (d of dims(c); track d.name) {
+                      <div class="card wizard-review__dim">
+                        <div class="wizard-review__dim-head">
+                          <span class="wizard-review__dim-name">{{ d.name }}</span>
+                          <span class="wizard-review__dim-score" [class]="'score-' + band(d.score)"
+                            >{{ d.score }}/10</span
+                          >
+                        </div>
+                        <div class="wizard-review__dim-bar-track">
+                          <div
+                            class="wizard-review__dim-bar-fill"
+                            [class]="'score-' + band(d.score)"
+                            [style.width.%]="d.score * 10"
+                          ></div>
+                        </div>
+                        @if (d.comment) {
+                          <p class="wizard-review__dim-comment">{{ d.comment }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
           }
           @case (1) {
             <ng-content select="[wizardTailorStep]" />
           }
           @case (2) {
-            <ng-content select="[wizardExportStep]" />
-          }
-          @case (3) {
-            <ng-content select="[wizardApplyStep]" />
+            <ng-content select="[wizardExportApplyStep]" />
           }
         }
       </div>
@@ -80,7 +131,8 @@ export class ApplyWizard {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  protected readonly lastStep = 3;
+  /** 3 steps: Review score (0) → Tailor CV (1) → Export & apply (2). */
+  protected readonly lastStep = 2;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
@@ -97,9 +149,13 @@ export class ApplyWizard {
   protected readonly stepLabels = computed(() => [
     this.t()('jobs.wizard.step_review_score'),
     this.t()('jobs.wizard.step_tailor_cv'),
-    this.t()('jobs.wizard.step_export'),
-    this.t()('jobs.wizard.step_apply'),
+    this.t()('jobs.wizard.step_export_apply'),
   ]);
+
+  protected readonly dims = parseDimensions;
+  protected readonly band = dimensionBand;
+  protected readonly verdictKey = scoreVerdictKey;
+  protected readonly verdictLabelKey = scoreVerdictLabelKey;
 
   protected goBack(): void {
     if (this.activeStep() === 0) {

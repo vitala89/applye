@@ -89,3 +89,22 @@ const VERDICT_LABEL_KEYS: Record<ScoreVerdictKey, string> = {
 export function scoreVerdictLabelKey(score: number): string {
   return VERDICT_LABEL_KEYS[scoreVerdictKey(score)];
 }
+
+export function dimensionBand(score: number): 'low' | 'mid' | 'high' {
+  if (score >= 7) return 'high';
+  if (score >= 4) return 'mid';
+  return 'low';
+}
+
+export type ChangeType = 'added' | 'reworded';
+
+/**
+ * The tailoring pipeline's `changes` field is a flat string[] — the AI
+ * output has no per-item type tag (adding this would mean changing the
+ * resume-tailoring skill's output contract, out of scope for a
+ * presentation-only pass). This is a text heuristic over the existing
+ * strings, not an AI-provided classification — used only to pick an icon.
+ */
+export function classifyChangeType(text: string): ChangeType {
+  return /^(added|inserted|new)\b/i.test(text.trim()) ? 'added' : 'reworded';
+}

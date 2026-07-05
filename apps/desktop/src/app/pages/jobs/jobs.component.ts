@@ -47,7 +47,7 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { JobDetailIcons } from './scoring.utils';
+import { JobDetailIcons, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 
@@ -300,7 +300,11 @@ interface PassResult {
 
                 <!-- Changes -->
                 @if (allChanges().length) {
-                  <details class="card tailor-changes" open>
+                  <details
+                    class="card tailor-changes"
+                    open
+                    (toggle)="changesOpen.set($any($event.target).open)"
+                  >
                     <summary class="tailor-changes__summary">
                       <lucide-icon
                         [img]="icons.gitCompare"
@@ -311,14 +315,28 @@ interface PassResult {
                       <span class="tailor-changes__title"
                         >{{ t()('jobs.wizard.changes_title') }} ({{ allChanges().length }})</span
                       >
+                      <span class="tailor-changes__toggle">
+                        {{
+                          changesOpen()
+                            ? t()('jobs.wizard.hide_label')
+                            : t()('jobs.wizard.show_label')
+                        }}
+                        <lucide-icon
+                          [img]="changesOpen() ? icons.chevronUp : icons.chevronDown"
+                          [size]="14"
+                          aria-hidden="true"
+                        />
+                      </span>
                     </summary>
                     <div class="tailor-changes__list">
                       @for (ch of allChanges(); track ch) {
                         <div class="tailor-change-row">
                           <lucide-icon
-                            [img]="icons.plus"
+                            [img]="changeType(ch) === 'added' ? icons.plus : icons.pencil"
                             [size]="13"
-                            class="tailor-change-row__icon"
+                            [class]="
+                              'tailor-change-row__icon tailor-change-row__icon--' + changeType(ch)
+                            "
                             aria-hidden="true"
                           />
                           <span>{{ ch }}</span>
@@ -345,9 +363,9 @@ interface PassResult {
                 }
               </div>
 
-              <div wizardExportStep>
+              <div wizardExportApplyStep>
                 <div class="apply-fields-header">
-                  <span class="eyebrow">{{ t()('jobs.wizard.export_eyebrow') }}</span>
+                  <span class="eyebrow">{{ t()('jobs.wizard.export_apply_eyebrow') }}</span>
                   <h4 class="apply-fields-title">{{ t()('jobs.wizard.export_title') }}</h4>
                 </div>
                 <!-- Export (pass 3 done) -->
@@ -408,12 +426,9 @@ interface PassResult {
                     {{ t()('jobs.start_over') }}
                   </button>
                 }
-              </div>
 
-              <div wizardApplyStep>
-                <div class="apply-fields-header">
-                  <span class="eyebrow">{{ t()('jobs.wizard.apply_eyebrow') }}</span>
-                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.apply_title') }}</h4>
+                <div class="apply-fields-header apply-fields-header--sub">
+                  <span class="eyebrow">{{ t()('jobs.wizard.apply_title') }}</span>
                   <p class="muted">{{ t()('jobs.wizard.apply_subtitle') }}</p>
                 </div>
                 @if (lastExport(); as exp) {
@@ -704,6 +719,15 @@ interface PassResult {
         font-weight: var(--weight-medium);
         color: var(--text-primary);
       }
+      .tailor-changes__toggle {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+      }
       .tailor-changes__list {
         display: flex;
         flex-direction: column;
@@ -723,9 +747,14 @@ interface PassResult {
         color: var(--text-secondary);
       }
       .tailor-change-row__icon {
-        color: var(--text-accent);
         margin-top: 2px;
         flex: 0 0 auto;
+      }
+      .tailor-change-row__icon--added {
+        color: var(--success);
+      }
+      .tailor-change-row__icon--reworded {
+        color: var(--text-accent);
       }
 
       /* Tailor CV — gaps */
@@ -870,6 +899,11 @@ interface PassResult {
         gap: var(--space-2);
         margin-bottom: var(--space-5);
       }
+      .apply-fields-header--sub {
+        margin-top: var(--space-6);
+        padding-top: var(--space-5);
+        border-top: 1px solid var(--border-subtle);
+      }
       .apply-fields-title {
         margin: 0;
         font-family: var(--font-mono);
@@ -1006,6 +1040,8 @@ export class JobsComponent implements OnInit {
   /** Flattened change / gap notes across all completed tailoring passes. */
   readonly allChanges = computed(() => this.tailorResults().flatMap((r) => r.changes));
   readonly allGaps = computed(() => this.tailorResults().flatMap((r) => r.gaps));
+  readonly changesOpen = signal(true);
+  protected readonly changeType = classifyChangeType;
 
   /** Three tailoring phases (XYZ → dual critique → build) with derived state. */
   readonly tailorPhases = computed(() => {
@@ -1283,15 +1319,6 @@ export class JobsComponent implements OnInit {
 
   /** Add to Pipeline: create an 'applied' application so it shows on the board. */
   async addToPipeline(): Promise<void> {
-    await this.setApplied(false);
-  }
-
-  /** Mark as Applied: same, plus the applied date and an auto follow-up date. */
-  async markApplied(): Promise<void> {
-    await this.setApplied(true);
-  }
-
-  private async setApplied(withDates: boolean): Promise<void> {
     const j = this.job();
     if (!j?.id || this.actionBusy()) return;
     this.actionBusy.set(true);
@@ -1303,15 +1330,36 @@ export class JobsComponent implements OnInit {
         status: 'applied',
       };
       if (existing?.id) patch.id = existing.id;
-      if (withDates) {
-        const today = new Date().toISOString().slice(0, 10);
-        const days = this.settings()?.followupDaysAfterApply ?? 7;
-        patch.appliedAt = today;
-        patch.followUpAt = new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
-      }
       const app = await this.db.upsertApplication(patch);
       this.application.set(app);
-      this.actionMsg.set(this.t()(withDates ? 'jobs.applied_ok' : 'jobs.pipeline_ok'));
+      this.actionMsg.set(this.t()('jobs.pipeline_ok'));
+    } catch (e) {
+      this.actionMsg.set(String(e));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
+  /**
+   * Mark as Applied — reuses the SAME status-transition command the pipeline
+   * kanban's drag-and-drop uses (`db_set_application_status`): it writes
+   * `status_history` and computes `follow_up_at` deterministically from
+   * `settings.followup_days_after_apply` in SQL, 0 AI tokens. No date math
+   * is duplicated here.
+   */
+  async markApplied(): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.actionBusy()) return;
+    this.actionBusy.set(true);
+    this.actionMsg.set('');
+    try {
+      let app = this.application();
+      if (!app?.id) {
+        app = await this.db.upsertApplication({ jobId: j.id, status: 'saved' });
+      }
+      const updated = await this.db.setApplicationStatus(app.id, 'applied');
+      this.application.set(updated);
+      this.actionMsg.set(this.t()('jobs.applied_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
     } finally {

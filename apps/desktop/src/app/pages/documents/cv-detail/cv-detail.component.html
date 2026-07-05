@@ -1,0 +1,292 @@
+@if (loading()) {
+  <p class="cvdetail__state">{{ t()('common.loading') }}</p>
+} @else if (loadError() || !doc()) {
+  <p class="cvdetail__state">{{ t()('common.error') }}</p>
+} @else {
+  <div class="cvdetail">
+    <header class="cvdetail__bar">
+      <button class="icon-btn" type="button" (click)="back()">
+        <lucide-icon [img]="icons.back" [size]="16" aria-hidden="true" />
+      </button>
+      <input
+        class="cvdetail__label"
+        type="text"
+        [ngModel]="label()"
+        (ngModelChange)="label.set($event)"
+        [placeholder]="t()('documents.cv_field_label')"
+      />
+      <div class="cvdetail__spacer"></div>
+      <button appButton variant="secondary" size="sm" (click)="openSaveTemplate()">
+        {{ t()('documents.cv_save_as_template_action') }}
+      </button>
+      <button appButton variant="primary" size="sm" [disabled]="saving()" (click)="save()">
+        <lucide-icon [img]="icons.save" [size]="14" aria-hidden="true" />
+        {{ saving() ? t()('common.loading') : t()('actions.save') }}
+      </button>
+    </header>
+
+    <div class="cvdetail__meta">
+      <label>
+        {{ t()('documents.cv_field_region') }}
+        <input type="text" [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)" />
+      </label>
+      <label class="cvdetail__checkbox">
+        <input type="checkbox" [ngModel]="isDefault()" (ngModelChange)="isDefault.set($event)" />
+        {{ t()('documents.cv_field_is_default') }}
+      </label>
+    </div>
+
+    <div class="cvdetail__toggles">
+      <label class="cvdetail__checkbox">
+        <input
+          type="checkbox"
+          [ngModel]="includePhoto()"
+          (ngModelChange)="includePhoto.set($event)"
+        />
+        {{ t()('documents.cv_toggle_photo') }}
+      </label>
+      <label class="cvdetail__checkbox">
+        <input
+          type="checkbox"
+          [ngModel]="includeBirthdate()"
+          (ngModelChange)="includeBirthdate.set($event)"
+        />
+        {{ t()('documents.cv_toggle_birthdate') }}
+      </label>
+      <label class="cvdetail__checkbox">
+        <input
+          type="checkbox"
+          [ngModel]="includeMaritalStatus()"
+          (ngModelChange)="includeMaritalStatus.set($event)"
+        />
+        {{ t()('documents.cv_toggle_marital') }}
+      </label>
+    </div>
+
+    @if (atsNoteKeys().length) {
+      <div class="cvdetail__ats-note">
+        @for (key of atsNoteKeys(); track key) {
+          <p>{{ t()(key) }}</p>
+        }
+      </div>
+    }
+
+    @if (error()) {
+      <p class="modal__error">{{ error() }}</p>
+    }
+
+    <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
+      @for (section of sections(); track section.key) {
+        <div cdkDrag class="cvdetail__section">
+          <div class="cvdetail__section-head">
+            <span class="cvdetail__section-title">{{ t()(sectionLabelKey(section.key)) }}</span>
+            @if (regeneratableKeys.includes(section.key)) {
+              <button
+                class="icon-btn"
+                type="button"
+                [disabled]="!!regeneratingKey()"
+                [attr.aria-label]="t()('documents.cv_regenerate_action')"
+                (click)="regenerateSection(section.key)"
+              >
+                <lucide-icon
+                  [img]="icons.regenerate"
+                  [size]="14"
+                  aria-hidden="true"
+                  [class.spinning]="regeneratingKey() === section.key"
+                />
+              </button>
+            }
+          </div>
+
+          @switch (section.key) {
+            @case ('personal_details') {
+              <div class="cvdetail__grid">
+                <input
+                  type="text"
+                  [ngModel]="$any(section).fullName"
+                  (ngModelChange)="$any(section).fullName = $event"
+                  [placeholder]="t()('documents.cv_field_full_name')"
+                />
+                <input
+                  type="text"
+                  [ngModel]="$any(section).email"
+                  (ngModelChange)="$any(section).email = $event"
+                  [placeholder]="t()('documents.cv_field_email')"
+                />
+                <input
+                  type="text"
+                  [ngModel]="$any(section).phone"
+                  (ngModelChange)="$any(section).phone = $event"
+                  [placeholder]="t()('documents.cv_field_phone')"
+                />
+                <input
+                  type="text"
+                  [ngModel]="$any(section).address"
+                  (ngModelChange)="$any(section).address = $event"
+                  [placeholder]="t()('documents.cv_field_address')"
+                />
+                @if (includeBirthdate()) {
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).birthDate"
+                    (ngModelChange)="$any(section).birthDate = $event"
+                    [placeholder]="t()('documents.cv_field_birthdate')"
+                  />
+                }
+                @if (includeMaritalStatus()) {
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).maritalStatus"
+                    (ngModelChange)="$any(section).maritalStatus = $event"
+                    [placeholder]="t()('documents.cv_field_marital')"
+                  />
+                }
+              </div>
+            }
+            @case ('summary') {
+              <textarea
+                [ngModel]="$any(section).text"
+                (ngModelChange)="$any(section).text = $event"
+                rows="4"
+              ></textarea>
+            }
+            @case ('experience') {
+              @for (entry of $any(section).entries; track $index) {
+                <div class="cvdetail__entry">
+                  <div class="cvdetail__grid">
+                    <input
+                      type="text"
+                      [ngModel]="entry.role"
+                      (ngModelChange)="entry.role = $event"
+                      [placeholder]="t()('documents.cv_field_role')"
+                    />
+                    <input
+                      type="text"
+                      [ngModel]="entry.company"
+                      (ngModelChange)="entry.company = $event"
+                      [placeholder]="t()('documents.cv_field_company')"
+                    />
+                    <input
+                      type="text"
+                      [ngModel]="entry.startDate"
+                      (ngModelChange)="entry.startDate = $event"
+                      [placeholder]="t()('documents.cv_field_start_date')"
+                    />
+                    <input
+                      type="text"
+                      [ngModel]="entry.endDate"
+                      (ngModelChange)="entry.endDate = $event"
+                      [placeholder]="t()('documents.cv_field_end_date')"
+                    />
+                  </div>
+                  <textarea
+                    [ngModel]="entry.bullets.join('\n')"
+                    (ngModelChange)="entry.bullets = $event.split('\n')"
+                    rows="3"
+                    [placeholder]="t()('documents.cv_field_bullets')"
+                  ></textarea>
+                </div>
+              }
+            }
+            @case ('education') {
+              @for (entry of $any(section).entries; track $index) {
+                <div class="cvdetail__grid">
+                  <input
+                    type="text"
+                    [ngModel]="entry.degree"
+                    (ngModelChange)="entry.degree = $event"
+                    [placeholder]="t()('documents.cv_field_degree')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="entry.institution"
+                    (ngModelChange)="entry.institution = $event"
+                    [placeholder]="t()('documents.cv_field_institution')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="entry.startDate"
+                    (ngModelChange)="entry.startDate = $event"
+                    [placeholder]="t()('documents.cv_field_start_date')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="entry.endDate"
+                    (ngModelChange)="entry.endDate = $event"
+                    [placeholder]="t()('documents.cv_field_end_date')"
+                  />
+                </div>
+              }
+            }
+            @case ('skills') {
+              <textarea
+                [ngModel]="$any(section).items.join(', ')"
+                (ngModelChange)="
+                  $any(section).items = $event
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter((s) => s)
+                "
+                rows="2"
+                [placeholder]="t()('documents.cv_field_skills_hint')"
+              ></textarea>
+            }
+            @case ('languages') {
+              <textarea
+                [ngModel]="
+                  $any(section)
+                    .items.map((i) => i.language + ': ' + i.level)
+                    .join('\n')
+                "
+                (ngModelChange)="onLanguagesChange($any(section), $event)"
+                rows="2"
+                [placeholder]="t()('documents.cv_field_languages_hint')"
+              ></textarea>
+            }
+            @case ('photo') {
+              <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (saveTemplateOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="cancelSaveTemplate()"
+    (keydown.escape)="cancelSaveTemplate()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div
+      class="modal"
+      role="presentation"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h3>{{ t()('documents.cv_save_as_template_title') }}</h3>
+      <input
+        type="text"
+        [ngModel]="saveTemplateName()"
+        (ngModelChange)="saveTemplateName.set($event)"
+        [placeholder]="t()('documents.cv_field_template_name')"
+      />
+      <div class="modal__actions">
+        <button class="btn-ghost" (click)="cancelSaveTemplate()">
+          {{ t()('actions.cancel') }}
+        </button>
+        <button
+          class="btn-primary"
+          [disabled]="savingTemplate() || !saveTemplateName().trim()"
+          (click)="confirmSaveTemplate()"
+        >
+          {{ savingTemplate() ? t()('common.loading') : t()('actions.save') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

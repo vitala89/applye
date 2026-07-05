@@ -14,6 +14,12 @@ is the single source of truth; this file tracks what changed at each tag.
 
 - AIF Core foundation for AI-assisted development: shared agent context, Claude Code skills and read-only specialist subagents, Cursor rules, token/context/model policies, and security/privacy trust docs.
 
+## [0.21.0] - 2026-07-06
+
+### Added
+
+- **Documents — CV module (ROADMAP §16, step 1b of 1a–1d).** The Documents sidebar item is real: a CV | Cover Letter tab switch (Cover Letter stays a placeholder until 1c). CV list shows label, region/language tags, and a default badge, with open/duplicate/export/delete row actions. CV detail page adds a section constructor — Angular CDK drag-and-drop reorder, photo/birth-date/marital-status field toggles with a non-blocking, market-aware ATS-risk note, per-section AI regenerate (cached by input hash), and saving an arrangement as a named custom `cv_templates` row. Import your own CV (DOCX/PDF via native file dialog → new `cv-import` skill, one cached AI call) with a preview step to fix mis-parsed bits before saving as an editable library doc. Generate a market/archetype baseline from your profile and template choice via a new `cv-generate-baseline` skill (distinct from the existing job-specific `resume-tailoring` skill). CV export reuses the existing DOCX/PDF byte generators; `applications.cv_path` stays the frozen apply-time snapshot and is never rewritten by a library edit.
+
 ## [0.20.0] - 2026-07-05
 
 ### Added

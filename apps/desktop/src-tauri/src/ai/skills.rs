@@ -33,6 +33,12 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "followup" => Some(include_str!(
             "../../../../../libs/skills/src/followup/followup.md"
         )),
+        "cv-import" => Some(include_str!(
+            "../../../../../libs/skills/src/cv-import/cv-import.md"
+        )),
+        "cv-generate-baseline" => Some(include_str!(
+            "../../../../../libs/skills/src/cv-generate-baseline/cv-generate-baseline.md"
+        )),
         _ => None,
     }
 }

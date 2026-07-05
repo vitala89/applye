@@ -1,6 +1,6 @@
 # Feature Brief: Documents — CV & Cover Letter Library (Step 1)
 
-- **Status**: `planned`
+- **Status**: `in-progress` (1a shipped v0.20.0, PR #51; 1b shipped v0.21.0; 1c next)
 - **Source**: Real-world dogfooding gap (German Agentur für Arbeit requires a local-market
   Lebenslauf/Anschreiben). `FEATURE_INDEX.md` top Planned item.
 - **Roadmap**: §16 (full spec), §12 (DDL), §13 v2 build order #13.

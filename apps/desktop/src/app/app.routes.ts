@@ -64,6 +64,11 @@ export const appRoutes: Route[] = [
       import('./pages/documents/documents.component').then((m) => m.DocumentsComponent),
   },
   {
+    path: 'documents/cv/:id',
+    loadComponent: () =>
+      import('./pages/documents/cv-detail/cv-detail.component').then((m) => m.CvDetailComponent),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./pages/settings/settings.component').then((m) => m.SettingsComponent),

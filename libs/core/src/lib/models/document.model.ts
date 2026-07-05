@@ -22,6 +22,11 @@ interface CvSectionBase {
   key: CvSectionKey;
   order: number;
   visible: boolean;
+  /** Hash of the inputs used to last (re)generate this section's content —
+   * lets "regenerate this section" skip a repeat AI call when nothing that
+   * feeds it has changed. Absent on sections that were never AI-generated
+   * (e.g. hand-edited or imported as-is). */
+  sourceHash?: string;
 }
 
 export interface CvPhotoSection extends CvSectionBase {
@@ -139,6 +144,16 @@ export interface CvTemplate {
   createdAt?: string;
 }
 
+export interface UpsertCvTemplateInput {
+  id?: number;
+  name: string;
+  regionTag?: string;
+  sectionsJson: string;
+  includePhoto: boolean;
+  includeBirthdate: boolean;
+  includeMaritalStatus: boolean;
+}
+
 /** The live, editable CV / Cover-Letter library — distinct from
  * `generated_docs`, which stays the export journal. `contentJson` is a
  * serialized `CvContent` or `CoverLetterContent` depending on `docType`. */
@@ -180,4 +195,52 @@ export interface UpsertDocumentLibraryItemInput {
   modelUsed?: string;
   tokensInput?: number;
   tokensOutput?: number;
+}
+
+/** Plain text extracted from an uploaded CV file (DOCX/PDF), ready for the
+ * `cv-import` skill. Mirrors Rust `CvImportFile`. */
+export interface CvImportFile {
+  text: string;
+  fileType: 'docx' | 'pdf';
+  inputHash: string;
+}
+
+export interface CvParsedExperienceEntry {
+  company: string;
+  role: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  location?: string | null;
+  bullets: string[];
+}
+
+export interface CvParsedEducationEntry {
+  institution: string;
+  degree: string;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+export interface CvParsedLanguageEntry {
+  language: string;
+  level: string;
+}
+
+/** Shared output shape of both `cv-import.md` and `cv-generate-baseline.md`
+ * — structure detection and market-baseline generation feed the same
+ * `CvContent` builder. Any field is empty/null when that section wasn't
+ * produced (e.g. a targeted per-section regenerate). */
+export interface CvParsedContent {
+  personalDetails: {
+    fullName: string | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+  };
+  summary: string | null;
+  experience: CvParsedExperienceEntry[];
+  education: CvParsedEducationEntry[];
+  skills: string[];
+  languages: CvParsedLanguageEntry[];
+  lowConfidenceNotes: string[];
 }

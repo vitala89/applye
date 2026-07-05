@@ -4,7 +4,7 @@ description: Choose the AIF workflow, model tier, context path, specialist skill
 
 # AIF Orchestrator
 
-Use before feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work.
+Use before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work.
 
 ## Steps
 

@@ -13,6 +13,15 @@ Context order:
 2. `AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`.
 3. Named files.
 4. Targeted symbol or path search.
-5. Focused scout or future graph tool only when available.
+5. Focused scout only when relevant files are unknown.
+6. Graph/context tools only when the area is unknown, cross-module, architectural, touches storage, sync, plugins, notifications, the Tauri/Angular boundary, or would require reading more than 8 files.
 
-If `.codegraph/` exists, use CodeGraph before grep or manual file walking. Do not install graph tooling in this foundation.
+Do not recommend subagents or graph/context tools for simple or bounded feature tasks by default. Do not recommend graph/context tools just because they exist.
+
+If the user says "classify only" or "do not modify files", prefer pure classification from the task text and do not read files unless necessary.
+
+If implementation starts, use targeted manual reads first for bounded tasks with clear scope and no storage, sync, privacy, security, plugin, notification, or Tauri/Angular boundary risk.
+
+Use CodeGraph before grep or manual file walking only when graph/context tooling is justified by the criteria above and `.codegraph/` already exists. Do not install graph tooling in this foundation.
+
+Always include every requested output field, including Stop condition.

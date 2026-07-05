@@ -241,7 +241,7 @@ interface PassResult {
               (closeWizard)="wizardOpen.set(false)"
               (markApplied)="markApplied()"
             >
-              <div wizardTailorStep>
+              <div wizardTailorStep class="wizard-step-content">
                 <div class="apply-fields-header">
                   <span class="eyebrow">{{ t()('jobs.wizard.tailor_eyebrow') }}</span>
                   <h4 class="apply-fields-title">{{ t()('jobs.wizard.tailor_title') }}</h4>
@@ -363,7 +363,7 @@ interface PassResult {
                 }
               </div>
 
-              <div wizardExportApplyStep>
+              <div wizardExportApplyStep class="wizard-step-content">
                 <div class="apply-fields-header">
                   <span class="eyebrow">{{ t()('jobs.wizard.export_apply_eyebrow') }}</span>
                   <h4 class="apply-fields-title">{{ t()('jobs.wizard.export_title') }}</h4>
@@ -893,14 +893,17 @@ interface PassResult {
         color: var(--danger);
       }
 
+      .wizard-step-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+      }
       .apply-fields-header {
         display: flex;
         flex-direction: column;
         gap: var(--space-2);
-        margin-bottom: var(--space-5);
       }
       .apply-fields-header--sub {
-        margin-top: var(--space-6);
         padding-top: var(--space-5);
         border-top: 1px solid var(--border-subtle);
       }

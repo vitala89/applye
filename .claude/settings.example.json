@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": ["Read", "Grep", "Glob"],
+    "deny": [
+      "Read(node_modules/**)",
+      "Read(dist/**)",
+      "Read(.angular/**)",
+      "Read(coverage/**)",
+      "Read(target/**)",
+      "Read(src-tauri/target/**)",
+      "Read(.git/**)",
+      "Read(logs/**)",
+      "Read(.env)",
+      "Read(.env.*)"
+    ]
+  },
+  "aif": {
+    "defaultModel": "claude-sonnet",
+    "mainSessionRole": "conductor",
+    "maxFilesBeforeExplanation": 8,
+    "installExternalTools": false,
+    "configureMcp": false,
+    "createSecrets": false
+  }
+}

@@ -1,0 +1,18 @@
+---
+description: Prevent broad context gathering and route to targeted reads or future graph tools.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Context Gate
+
+Context order:
+
+1. User request.
+2. `AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`.
+3. Named files.
+4. Targeted symbol or path search.
+5. Focused scout or future graph tool only when available.
+
+If `.codegraph/` exists, use CodeGraph before grep or manual file walking. Do not install graph tooling in this foundation.

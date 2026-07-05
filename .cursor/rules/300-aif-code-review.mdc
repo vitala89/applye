@@ -1,0 +1,20 @@
+---
+description: Review Applye changes for correctness, regressions, tests, and docs gaps.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Code Review
+
+Review the diff before finalizing.
+
+Prioritize:
+
+- Bugs and behavioral regressions.
+- Data loss or privacy leaks.
+- Security boundary changes.
+- Missing tests for changed behavior.
+- Stale docs.
+
+Keep findings concrete and line-referenced.

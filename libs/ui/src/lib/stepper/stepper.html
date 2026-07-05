@@ -1,0 +1,29 @@
+<div class="stepper">
+  <div class="stepper__dots">
+    @for (label of steps(); track label; let i = $index) {
+    <div
+      class="stepper__dot"
+      [class.stepper__dot--done]="i < activeIndex()"
+      [class.stepper__dot--active]="i === activeIndex()"
+    >
+      <span class="stepper__dot-num">{{ i + 1 }}</span>
+      <span class="stepper__dot-label">{{ label }}</span>
+    </div>
+    @if (i < steps().length - 1) {
+    <span class="stepper__sep"></span>
+    } }
+  </div>
+  <div class="stepper__nav">
+    <button type="button" class="btn-ghost" [disabled]="activeIndex() === 0" (click)="onBack()">
+      {{ backLabel() }}
+    </button>
+    <button
+      type="button"
+      class="btn btn--primary"
+      [disabled]="nextDisabled() || activeIndex() === steps().length - 1"
+      (click)="onNext()"
+    >
+      {{ nextLabel() }}
+    </button>
+  </div>
+</div>

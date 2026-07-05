@@ -1,4 +1,4 @@
-import { ScoreDimension, ScoringCache } from '@applye/core';
+import { ApplicationStatus, ScoreDimension, ScoringCache } from '@applye/core';
 import { LucideIconData } from 'lucide-angular';
 
 export interface JobDetailIcons {
@@ -93,6 +93,19 @@ export function dimensionBand(score: number): 'low' | 'mid' | 'high' {
   if (score >= 7) return 'high';
   if (score >= 4) return 'mid';
   return 'low';
+}
+
+const STATUS_BADGE_CLASSES: Record<ApplicationStatus, string> = {
+  saved: 'badge--muted',
+  applied: 'badge--pass',
+  interview: 'badge--accent',
+  offer: 'badge--pass',
+  rejected: 'badge--danger',
+  cancelled: 'badge--muted',
+};
+
+export function applicationStatusBadgeClass(status: ApplicationStatus): string {
+  return STATUS_BADGE_CLASSES[status] ?? 'badge--muted';
 }
 
 export type ChangeType = 'added' | 'reworded';

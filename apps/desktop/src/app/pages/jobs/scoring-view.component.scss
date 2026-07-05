@@ -167,8 +167,8 @@
 }
 
 .scoring-view__dims-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
 }
 
@@ -246,19 +246,17 @@
   background: var(--success);
 }
 
-/* Supporting cards (missing keywords / red flags / ATS / before-you-submit) */
+/* Supporting cards (missing keywords / red flags / ATS / before-you-submit) —
+   single column: card heights vary a lot by content length, and a 2-col
+   layout left large uneven gaps under the shorter column. */
 .scoring-view__support-grid {
-  display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: var(--space-5);
-  align-items: start;
-}
-
-.scoring-view__support-col {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  min-width: 0;
+}
+
+.scoring-view__support-col {
+  display: contents;
 }
 
 .scoring-view__support-card {

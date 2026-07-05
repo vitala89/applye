@@ -189,10 +189,21 @@ import {
             <span class="scoring-view__cta-subtitle">{{ t()('jobs.tailor_cta_subtitle') }}</span>
           </div>
           <span class="scoring-view__cta-spacer"></span>
-          <button class="btn btn--primary btn--md" type="button" (click)="tailorApply.emit()">
-            <lucide-icon [img]="icons().wand" [size]="15" aria-hidden="true" />
-            {{ t()('jobs.tailor_apply_btn') }}
-          </button>
+          @if (tailored()) {
+            <span class="badge badge--accent">
+              <lucide-icon [img]="icons().checkCircle" [size]="12" aria-hidden="true" />
+              {{ t()('jobs.wizard.tailored_badge') }}
+            </span>
+            <button class="btn btn--secondary btn--md" type="button" (click)="tailorApply.emit()">
+              <lucide-icon [img]="icons().wand" [size]="15" aria-hidden="true" />
+              {{ t()('jobs.retailor_cta') }}
+            </button>
+          } @else {
+            <button class="btn btn--primary btn--md" type="button" (click)="tailorApply.emit()">
+              <lucide-icon [img]="icons().wand" [size]="15" aria-hidden="true" />
+              {{ t()('jobs.tailor_apply_btn') }}
+            </button>
+          }
         </div>
       </section>
     }
@@ -207,6 +218,9 @@ export class ScoringView {
   readonly fromCache = input<boolean>(false);
   readonly job = input<Job | null>(null);
   readonly icons = input.required<JobDetailIcons>();
+  /** True once the CV has been tailored for this job — flips the CTA to a
+   * Tailored badge + Retailor button. */
+  readonly tailored = input<boolean>(false);
 
   readonly tailorApply = output<void>();
 

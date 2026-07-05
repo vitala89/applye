@@ -90,6 +90,9 @@ import {
             <ng-content select="[wizardTailorStep]" />
           }
           @case (2) {
+            <ng-content select="[wizardUpdateScoreStep]" />
+          }
+          @case (3) {
             <ng-content select="[wizardExportApplyStep]" />
           }
         }
@@ -143,8 +146,9 @@ export class ApplyWizard {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  /** 3 steps: Review score (0) → Tailor CV (1) → Export & apply (2). */
-  protected readonly lastStep = 2;
+  /** 4 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
+   * Export & apply (3). */
+  protected readonly lastStep = 3;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
@@ -167,12 +171,17 @@ export class ApplyWizard {
   readonly markApplied = output<void>();
   readonly changeStatus = output<void>();
   readonly cancelEdit = output<void>();
+  /** Emitted whenever the active step changes — lets the parent kick off
+   * work tied to a step (e.g. auto-rescore on entering the Updated score
+   * step) without the wizard knowing what that work is. */
+  readonly stepChange = output<number>();
 
   readonly activeStep = signal(0);
 
   protected readonly stepLabels = computed(() => [
     this.t()('jobs.wizard.step_review_score'),
     this.t()('jobs.wizard.step_tailor_cv'),
+    this.t()('jobs.wizard.step_updated_score'),
     this.t()('jobs.wizard.step_export_apply'),
   ]);
 
@@ -193,10 +202,14 @@ export class ApplyWizard {
       this.closeWizard.emit();
       return;
     }
-    this.activeStep.update((n) => Math.max(0, n - 1));
+    const next = Math.max(0, this.activeStep() - 1);
+    this.activeStep.set(next);
+    this.stepChange.emit(next);
   }
 
   protected goNext(): void {
-    this.activeStep.update((n) => Math.min(this.lastStep, n + 1));
+    const next = Math.min(this.lastStep, this.activeStep() + 1);
+    this.activeStep.set(next);
+    this.stepChange.emit(next);
   }
 }

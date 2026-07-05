@@ -164,6 +164,12 @@ interface PassResult {
                   {{ t()('jobs.change_status_action') }}
                 </button>
               }
+              @if (isTailored()) {
+                <span class="badge badge--accent">
+                  <lucide-icon [img]="icons.wand" [size]="11" aria-hidden="true" />
+                  {{ t()('jobs.wizard.tailored_badge') }}
+                </span>
+              }
               <span class="detail-actions__spacer"></span>
               <button
                 class="btn btn--secondary btn--sm"
@@ -305,6 +311,7 @@ interface PassResult {
               [fromCache]="fromCache()"
               [job]="job()"
               [icons]="icons"
+              [tailored]="isTailored()"
               (tailorApply)="wizardOpen.set(true)"
             />
           } @else {
@@ -322,6 +329,7 @@ interface PassResult {
               (markApplied)="markApplied()"
               (changeStatus)="startEditingLocked()"
               (cancelEdit)="cancelEditingLocked()"
+              (stepChange)="onWizardStep($event)"
             >
               <div wizardTailorStep class="wizard-step-content">
                 <div class="apply-fields-header">
@@ -384,55 +392,6 @@ interface PassResult {
                       {{ t()('jobs.wizard.retailor_btn') }}
                     </button>
                   </div>
-
-                  @if (!postTailorScore()) {
-                    <div class="row row--mt">
-                      <button
-                        class="btn btn--primary btn--md"
-                        [disabled]="updatingScore()"
-                        (click)="updateScoreAfterTailor()"
-                      >
-                        <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
-                        {{
-                          updatingScore()
-                            ? t()('jobs.wizard.updating_score')
-                            : t()('jobs.wizard.update_score_btn')
-                        }}
-                      </button>
-                      @if (updateScoreStatus()) {
-                        <span class="status" [class.status--error]="updateScoreError()">{{
-                          updateScoreStatus()
-                        }}</span>
-                      }
-                    </div>
-                  } @else {
-                    <div class="card score-compare row--mt">
-                      <span class="eyebrow">{{ t()('jobs.wizard.score_compare_title') }}</span>
-                      <div class="score-compare__row">
-                        <div class="score-compare__col">
-                          <lib-score-gauge [score]="cache()?.score ?? 0" size="sm" />
-                          <span class="score-compare__label">{{
-                            t()('jobs.wizard.score_before')
-                          }}</span>
-                        </div>
-                        <lucide-icon
-                          [img]="icons.next"
-                          [size]="18"
-                          class="score-compare__arrow"
-                          aria-hidden="true"
-                        />
-                        <div class="score-compare__col">
-                          <lib-score-gauge [score]="postTailorScore()!.score" size="sm" />
-                          <span class="score-compare__label">{{
-                            t()('jobs.wizard.score_after')
-                          }}</span>
-                        </div>
-                      </div>
-                      @if (postTailorScore()?.summary) {
-                        <p class="muted">{{ postTailorScore()?.summary }}</p>
-                      }
-                    </div>
-                  }
                 }
 
                 @if (tailorStatus()) {
@@ -440,69 +399,136 @@ interface PassResult {
                     tailorStatus()
                   }}</span>
                 }
+              </div>
 
-                <!-- Changes -->
-                @if (allChanges().length) {
-                  <details
-                    class="card tailor-changes"
-                    open
-                    (toggle)="changesOpen.set($any($event.target).open)"
-                  >
-                    <summary class="tailor-changes__summary">
+              <!-- Step 3: Updated score — auto-rescores the tailored resume -->
+              <div wizardUpdateScoreStep class="wizard-step-content">
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.updated_score_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">{{ t()('jobs.wizard.updated_score_title') }}</h4>
+                </div>
+
+                @if (updatingScore()) {
+                  <!-- AI-thinking skeleton while the rescore runs -->
+                  <div class="rescore-loading">
+                    <div class="rescore-loading__gauges">
+                      <div class="skeleton skeleton--gauge"></div>
                       <lucide-icon
-                        [img]="icons.gitCompare"
-                        [size]="15"
-                        class="scoring-view__accent-icon"
+                        [img]="icons.next"
+                        [size]="18"
+                        class="score-compare__arrow"
                         aria-hidden="true"
                       />
-                      <span class="tailor-changes__title"
-                        >{{ t()('jobs.wizard.changes_title') }} ({{ allChanges().length }})</span
-                      >
-                      <span class="tailor-changes__toggle">
-                        {{
-                          changesOpen()
-                            ? t()('jobs.wizard.hide_label')
-                            : t()('jobs.wizard.show_label')
-                        }}
+                      <div class="skeleton skeleton--gauge"></div>
+                    </div>
+                    <div class="ai-thinking">
+                      <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                      {{ t()('jobs.wizard.updating_score_hint') }}
+                    </div>
+                    <div class="skeleton skeleton--line"></div>
+                    <div class="skeleton skeleton--line skeleton--line-short"></div>
+                  </div>
+                } @else if (postTailorScore(); as post) {
+                  <div class="card score-compare">
+                    <span class="eyebrow">{{ t()('jobs.wizard.score_compare_title') }}</span>
+                    <div class="score-compare__row">
+                      <div class="score-compare__col">
+                        <lib-score-gauge [score]="cache()?.score ?? 0" size="sm" />
+                        <span class="score-compare__label">{{
+                          t()('jobs.wizard.score_before')
+                        }}</span>
+                      </div>
+                      <lucide-icon
+                        [img]="icons.next"
+                        [size]="18"
+                        class="score-compare__arrow"
+                        aria-hidden="true"
+                      />
+                      <div class="score-compare__col">
+                        <lib-score-gauge [score]="post.score" size="sm" />
+                        <span class="score-compare__label">{{
+                          t()('jobs.wizard.score_after')
+                        }}</span>
+                      </div>
+                    </div>
+                    @if (post.summary) {
+                      <p class="muted">{{ post.summary }}</p>
+                    }
+                  </div>
+
+                  <!-- Changes -->
+                  @if (allChanges().length) {
+                    <details
+                      class="card tailor-changes"
+                      open
+                      (toggle)="changesOpen.set($any($event.target).open)"
+                    >
+                      <summary class="tailor-changes__summary">
                         <lucide-icon
-                          [img]="changesOpen() ? icons.chevronUp : icons.chevronDown"
-                          [size]="14"
+                          [img]="icons.gitCompare"
+                          [size]="15"
+                          class="scoring-view__accent-icon"
                           aria-hidden="true"
                         />
-                      </span>
-                    </summary>
-                    <div class="tailor-changes__list">
-                      @for (ch of allChanges(); track ch) {
-                        <div class="tailor-change-row">
+                        <span class="tailor-changes__title"
+                          >{{ t()('jobs.wizard.changes_title') }} ({{ allChanges().length }})</span
+                        >
+                        <span class="tailor-changes__toggle">
+                          {{
+                            changesOpen()
+                              ? t()('jobs.wizard.hide_label')
+                              : t()('jobs.wizard.show_label')
+                          }}
                           <lucide-icon
-                            [img]="changeType(ch) === 'added' ? icons.plus : icons.pencil"
-                            [size]="13"
-                            [class]="
-                              'tailor-change-row__icon tailor-change-row__icon--' + changeType(ch)
-                            "
+                            [img]="changesOpen() ? icons.chevronUp : icons.chevronDown"
+                            [size]="14"
                             aria-hidden="true"
                           />
-                          <span>{{ ch }}</span>
+                        </span>
+                      </summary>
+                      <div class="tailor-changes__list">
+                        @for (ch of allChanges(); track ch) {
+                          <div class="tailor-change-row">
+                            <lucide-icon
+                              [img]="changeType(ch) === 'added' ? icons.plus : icons.pencil"
+                              [size]="13"
+                              [class]="
+                                'tailor-change-row__icon tailor-change-row__icon--' + changeType(ch)
+                              "
+                              aria-hidden="true"
+                            />
+                            <span>{{ ch }}</span>
+                          </div>
+                        }
+                      </div>
+                    </details>
+                  }
+
+                  <!-- Gaps -->
+                  @if (allGaps().length) {
+                    <div class="tailor-gaps">
+                      <div class="tailor-gaps__head">
+                        <lucide-icon [img]="icons.alertTriangle" [size]="14" aria-hidden="true" />
+                        <span class="eyebrow">{{ t()('jobs.wizard.gaps_title') }}</span>
+                      </div>
+                      @for (g of allGaps(); track g) {
+                        <div class="tailor-gap-row">
+                          <lucide-icon [img]="icons.minus" [size]="13" aria-hidden="true" />
+                          <span>{{ g }}</span>
                         </div>
                       }
                     </div>
-                  </details>
-                }
-
-                <!-- Gaps -->
-                @if (allGaps().length) {
-                  <div class="tailor-gaps">
-                    <div class="tailor-gaps__head">
-                      <lucide-icon [img]="icons.alertTriangle" [size]="14" aria-hidden="true" />
-                      <span class="eyebrow">{{ t()('jobs.wizard.gaps_title') }}</span>
-                    </div>
-                    @for (g of allGaps(); track g) {
-                      <div class="tailor-gap-row">
-                        <lucide-icon [img]="icons.minus" [size]="13" aria-hidden="true" />
-                        <span>{{ g }}</span>
-                      </div>
-                    }
+                  }
+                } @else if (updateScoreError()) {
+                  <div class="row">
+                    <span class="status status--error">{{ updateScoreStatus() }}</span>
+                    <button class="btn btn--secondary btn--md" (click)="updateScoreAfterTailor()">
+                      <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
+                      {{ t()('common.retry') }}
+                    </button>
                   </div>
+                } @else {
+                  <p class="muted">{{ t()('jobs.wizard.updated_score_skip') }}</p>
                 }
               </div>
 
@@ -703,6 +729,39 @@ interface PassResult {
       .score-compare__arrow {
         color: var(--text-tertiary);
         flex: 0 0 auto;
+      }
+      /* Rescore loading — skeleton gauges + AI-thinking line while the
+         tailored resume is re-scored. Uses the shared applye-pulse keyframe. */
+      .rescore-loading {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-4) 0;
+      }
+      .rescore-loading__gauges {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-6);
+      }
+      .skeleton {
+        background: var(--surface-sunken);
+        border-radius: var(--radius-card);
+        animation: applye-pulse 1.6s ease-in-out infinite;
+      }
+      .skeleton--gauge {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+      }
+      .skeleton--line {
+        height: 12px;
+        width: 100%;
+        border-radius: var(--radius-full, 999px);
+      }
+      .skeleton--line-short {
+        width: 55%;
+        animation-delay: 0.2s;
       }
       .jobs {
         display: flex;
@@ -1290,6 +1349,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly updateScoreStatus = signal('');
   readonly updateScoreError = signal(false);
 
+  /** True once all 3 tailoring passes are done (in this session or restored
+   * from cache) — drives the immutable Tailored badge and the Retailor CTA. */
+  readonly isTailored = computed(() => this.tailorResults().length === 3);
+
   /** Flattened change / gap notes across all completed tailoring passes. */
   readonly allChanges = computed(() => this.tailorResults().flatMap((r) => r.changes));
   readonly allGaps = computed(() => this.tailorResults().flatMap((r) => r.gaps));
@@ -1387,9 +1450,45 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.portalCopiedIndex.set(null);
       this.portalLanguage.set(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
       await this.loadPortalAnswersFromCache();
+      await this.restoreTailoringFromCache();
     } catch {
       // non-fatal — detail still renders, user can re-score
     }
+  }
+
+  /** Re-hydrate `tailorResults` from `tailoring_cache` so returning to a
+   * previously-tailored job shows its Tailored state (badge + Retailor)
+   * without re-running any AI. Replays the exact per-pass input hashes
+   * `runTailorPass` uses; stops at the first pass with no cached row. */
+  private async restoreTailoringFromCache(): Promise<void> {
+    const j = this.job();
+    const p = this.profile();
+    const s = this.settings();
+    if (!j?.id || !p?.fullMd || !s) return;
+
+    const lang = s.defaultDocLanguage ?? 'en';
+    const restored: PassResult[] = [];
+    for (const passNum of [1, 2, 3] as const) {
+      const pass1Md = restored.find((r) => r.pass === 1)?.resultMd ?? '';
+      const pass2Md = restored.find((r) => r.pass === 2)?.resultMd ?? '';
+      const hashInput = [p.fullMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
+        '\x00',
+      );
+      const inputHash = await this.db.hashText(hashInput);
+      const cached = await this.db.tailoringCacheGet(j.id, passNum, inputHash);
+      if (!cached) break;
+      restored.push({
+        pass: passNum,
+        resultMd: cached.resultMd,
+        inputHash,
+        fromCache: true,
+        tokensIn: 0,
+        tokensOut: 0,
+        changes: this.parseJsonArray(cached.changesJson),
+        gaps: this.parseJsonArray(cached.gapsJson),
+      });
+    }
+    if (restored.length) this.tailorResults.set(restored);
   }
 
   /** Best-effort cache read for the current default question set. Never calls AI. */
@@ -1619,10 +1718,11 @@ export class JobsComponent implements OnInit, OnDestroy {
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
       this.editingLocked.set(false);
-      this.actionMsg.set(this.t()('jobs.applied_ok'));
+      // Applied — send the user back to My Jobs; re-entering the job shows
+      // its Applied + Tailored state.
+      await this.router.navigate(['/jobs']);
     } catch (e) {
       this.actionMsg.set(String(e));
-    } finally {
       this.actionBusy.set(false);
     }
   }
@@ -1908,6 +2008,21 @@ export class JobsComponent implements OnInit, OnDestroy {
   async runNextPass(): Promise<void> {
     const next = (this.tailorResults().length + 1) as 2 | 3;
     await this.runPass(next);
+  }
+
+  /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 export.
+   * Entering the Updated score step auto-runs the rescore once (only if the
+   * user actually tailored — pass 3 exists — and it hasn't run yet). */
+  onWizardStep(step: number): void {
+    const UPDATED_SCORE_STEP = 2;
+    if (
+      step === UPDATED_SCORE_STEP &&
+      this.tailorResults().length === 3 &&
+      !this.postTailorScore() &&
+      !this.updatingScore()
+    ) {
+      void this.updateScoreAfterTailor();
+    }
   }
 
   resetWizard(): void {

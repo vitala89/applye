@@ -22,6 +22,12 @@ import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
 import { PortalAnswer, SavePortalAnswersInput } from '@applye/core';
 import { FollowupDraft, SaveFollowupDraftInput } from '@applye/core';
+import {
+  CvTemplate,
+  DocumentLibraryItem,
+  LibraryDocType,
+  UpsertDocumentLibraryItemInput,
+} from '@applye/core';
 import { HealthReport } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
@@ -229,6 +235,27 @@ export class DbService {
 
   async followupDraftSave(input: SaveFollowupDraftInput): Promise<FollowupDraft> {
     return tauriInvoke<FollowupDraft>('followup_draft_save', { input });
+  }
+
+  // --- Documents library (CV / Cover Letter) ---
+  async cvTemplatesList(): Promise<CvTemplate[]> {
+    return tauriInvoke<CvTemplate[]>('cv_templates_list');
+  }
+
+  async documentLibraryList(docType?: LibraryDocType): Promise<DocumentLibraryItem[]> {
+    return tauriInvoke<DocumentLibraryItem[]>('document_library_list', { docType });
+  }
+
+  async documentLibraryGet(id: number): Promise<DocumentLibraryItem | null> {
+    return tauriInvoke<DocumentLibraryItem | null>('document_library_get', { id });
+  }
+
+  async documentLibraryUpsert(input: UpsertDocumentLibraryItemInput): Promise<DocumentLibraryItem> {
+    return tauriInvoke<DocumentLibraryItem>('document_library_upsert', { input });
+  }
+
+  async documentLibraryDelete(id: number): Promise<void> {
+    return tauriInvoke<void>('document_library_delete', { id });
   }
 
   // --- Document export ---

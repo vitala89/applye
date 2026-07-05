@@ -22,6 +22,11 @@ export interface Application {
   followUpAt?: string;
   cvPath?: string;
   coverLetterPath?: string;
+  /** Which `document_library` doc was used — the frozen `cvPath` /
+   * `coverLetterPath` snapshot above is never rewritten when the library doc
+   * is later edited (Agentur report accuracy). */
+  cvDocumentId?: number;
+  coverLetterDocumentId?: number;
   contractType?: string;
   eorProvider?: string;
   docLanguage: SupportedLanguage;

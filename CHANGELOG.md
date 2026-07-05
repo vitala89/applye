@@ -14,6 +14,12 @@ is the single source of truth; this file tracks what changed at each tag.
 
 - AIF Core foundation for AI-assisted development: shared agent context, Claude Code skills and read-only specialist subagents, Cursor rules, token/context/model policies, and security/privacy trust docs.
 
+## [0.20.0] - 2026-07-05
+
+### Added
+
+- **Documents library — data layer.** Additive migration `0011_documents_library.sql` adds `document_library` and `cv_templates` (per ROADMAP §12) plus nullable `applications.cv_document_id` / `cover_letter_document_id`, with built-in CV templates seeded (DE-traditional, DE-ATS-modern, US, UK, generic). Rust and `libs/core`/`libs/data` types synced. No feature UI yet — schema foundation for the CV & Cover Letter library (ROADMAP §16, step 1a of 1a–1d).
+
 ## [0.19.0] - 2026-07-05
 
 ### Added

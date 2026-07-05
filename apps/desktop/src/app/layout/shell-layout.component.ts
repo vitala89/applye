@@ -21,6 +21,7 @@ import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
+import { PageTitleService } from '../shared/page-title/page-title.service';
 
 @Component({
   selector: 'app-shell-layout',
@@ -34,6 +35,7 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
+  protected readonly pageTitle = inject(PageTitleService);
   private readonly router = inject(Router);
 
   // Maps a route's top-level path segment to its i18n nav label — reused

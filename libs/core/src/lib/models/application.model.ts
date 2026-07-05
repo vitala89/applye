@@ -1,7 +1,13 @@
 import { SupportedLanguage } from '../types/common.types';
 import { InterviewStageStatus } from './interview.model';
 
-export type ApplicationStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'rejected';
+export type ApplicationStatus =
+  | 'saved'
+  | 'applied'
+  | 'interview'
+  | 'offer'
+  | 'rejected'
+  | 'cancelled';
 
 export type ApplicationMethod = 'online_form' | 'email' | 'portal';
 

@@ -23,6 +23,8 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { ScoringView } from './scoring-view.component';
+import { ApplyWizard } from './apply-wizard.component';
 
 interface PassResult {
   pass: number;
@@ -38,7 +40,7 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard],
   template: `
     <div class="jobs">
       <!-- Paste section -->
@@ -166,103 +168,6 @@ interface PassResult {
       <!-- Scoring result -->
       @if (cache(); as c) {
         <section class="section">
-          <!-- Gauge -->
-          <div class="card">
-            <div class="gauge">
-              <span class="gauge__number">{{ c.score }}</span>
-              <span class="gauge__sep">/100</span>
-              <span class="gauge__stars">{{ starRating(c.score) }} ★</span>
-              @if (fromCache()) {
-                <span class="badge badge--cache">cached · 0 tokens</span>
-              } @else {
-                <span class="token-info">{{ c.tokensInput }} in / {{ c.tokensOutput }} out</span>
-              }
-            </div>
-            <div class="gauge__bar-wrap">
-              <div class="gauge__bar" [style.width.%]="c.score"></div>
-            </div>
-            @if (c.summary) {
-              <p class="summary">{{ c.summary }}</p>
-            }
-          </div>
-
-          <!-- Before you submit -->
-          @if (beforeYouSubmit(c).length) {
-            <details class="card before-submit" open>
-              <summary class="eyebrow">{{ t()('jobs.before_you_submit') }}</summary>
-              <ul class="before-submit__list">
-                @for (note of beforeYouSubmit(c); track note) {
-                  <li>{{ note }}</li>
-                }
-              </ul>
-            </details>
-          }
-
-          <!-- Dimensions -->
-          @if (dimensions(c).length) {
-            <div class="card">
-              <h4 class="eyebrow">Dimensions</h4>
-              <div class="dim-table">
-                @for (d of dimensions(c); track d.name) {
-                  <div class="dim-row">
-                    <span class="dim-name">{{ d.name }}</span>
-                    <span class="dim-score">{{ d.score }}/10</span>
-                    <div class="dim-bar-wrap">
-                      <div class="dim-bar" [style.width.%]="d.score * 10"></div>
-                    </div>
-                    @if (d.comment) {
-                      <span class="dim-comment">{{ d.comment }}</span>
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Missing keywords -->
-          @if (missingKeywords(c).length) {
-            <div class="card">
-              <h4 class="eyebrow">Missing keywords</h4>
-              <div class="chips">
-                @for (kw of missingKeywords(c); track kw) {
-                  <span class="chip">{{ kw }}</span>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Red flags -->
-          @if (redFlags(c).length) {
-            <div class="card">
-              <h4 class="eyebrow">Red flags</h4>
-              <ul class="red-flags">
-                @for (flag of redFlags(c); track flag) {
-                  <li class="red-flag">{{ flag }}</li>
-                }
-              </ul>
-            </div>
-          }
-
-          <!-- ATS -->
-          <div class="card">
-            <h4 class="eyebrow">ATS check</h4>
-            <div
-              class="ats-pass"
-              [class.ats-pass--ok]="c.atsPass"
-              [class.ats-pass--warn]="!c.atsPass"
-            >
-              <lucide-icon
-                [img]="c.atsPass ? icons.atsPass : icons.atsFail"
-                [size]="16"
-                aria-hidden="true"
-              />
-              {{ c.atsPass ? 'Likely to pass ATS scan' : 'ATS issues detected' }}
-            </div>
-            @if (c.atsNotes) {
-              <p class="muted" style="margin-top: var(--space-2)">{{ c.atsNotes }}</p>
-            }
-          </div>
-
           <!-- Legitimacy warning — informs, never blocks. User can still tailor below. -->
           @if (job()?.legitimacyTier === 'red') {
             <div class="card card--danger">
@@ -277,273 +182,312 @@ interface PassResult {
             </div>
           }
 
-          <!-- Draft portal answers -->
-          <details class="card portal">
-            <summary class="eyebrow">{{ t()('jobs.portal_section') }}</summary>
-            <p class="muted">{{ t()('jobs.portal_hint') }}</p>
-            <p class="muted">{{ t()('jobs.portal_never_submits') }}</p>
-
-            <div class="portal__questions">
-              @for (q of portalQuestions(); track $index) {
-                <div class="row">
-                  <input
-                    class="editor portal__q-input"
-                    type="text"
-                    [ngModel]="q"
-                    (ngModelChange)="updatePortalQuestion($index, $event)"
-                    [attr.aria-label]="t()('jobs.portal_question_label')"
-                  />
-                  <button
-                    class="btn-ghost"
-                    type="button"
-                    (click)="removePortalQuestion($index)"
-                    [attr.aria-label]="t()('jobs.portal_remove_question')"
-                  >
-                    <lucide-icon [img]="icons.remove" [size]="14" aria-hidden="true" />
-                  </button>
-                </div>
-              }
-              <button class="btn-ghost" type="button" (click)="addPortalQuestion()">
-                <lucide-icon [img]="icons.add" [size]="14" aria-hidden="true" />
-                {{ t()('jobs.portal_add_question') }}
-              </button>
-            </div>
-
-            <label class="portal__lang-label">
-              {{ t()('jobs.portal_language_label') }}
-              <select
-                class="editor portal__lang-select"
-                [ngModel]="portalLanguage()"
-                (ngModelChange)="portalLanguage.set($event)"
-              >
-                @for (lang of portalLanguages; track lang) {
-                  <option [value]="lang">{{ lang.toUpperCase() }}</option>
-                }
-              </select>
-            </label>
-
+          @if (!wizardOpen()) {
+            <app-scoring-view
+              [cache]="cache()"
+              [fromCache]="fromCache()"
+              [atsPassIcon]="icons.atsPass"
+              [atsFailIcon]="icons.atsFail"
+            />
             <div class="cta">
-              <button
-                class="btn btn--primary"
-                [disabled]="portalDrafting() || !portalQuestions().length"
-                (click)="draftPortalAnswers()"
-              >
-                {{ portalDrafting() ? t()('jobs.portal_drafting') : t()('jobs.portal_draft_btn') }}
+              <button class="btn btn--primary" (click)="wizardOpen.set(true)">
+                {{ t()('jobs.wizard.start_apply') }}
               </button>
-              @if (portalFromCache() && !portalDrafting()) {
-                <span class="badge badge--cache">{{ t()('jobs.portal_cached') }}</span>
-              }
-              @if (portalStatus() && !portalFromCache()) {
-                <span class="status" [class.status--error]="portalError()">{{
-                  portalStatus()
-                }}</span>
-              }
             </div>
-
-            @if (portalDrafting()) {
-              <div class="state-loading" [attr.aria-label]="t()('jobs.portal_drafting')">
-                <div class="state-loading__bar state-loading__bar--wide"></div>
-                <div class="state-loading__bar state-loading__bar--mid"></div>
-                <div class="state-loading__bar state-loading__bar--short"></div>
-              </div>
-            } @else if (portalError() && !portalAnswers().length) {
-              <div class="state-error" role="alert">
-                <p class="state-error__msg">{{ portalStatus() }}</p>
-              </div>
-            } @else if (portalAnswers().length) {
-              <div class="portal__answers">
-                @for (a of portalAnswers(); track a.question; let i = $index) {
-                  <div class="card portal__answer">
-                    <h4 class="eyebrow">{{ a.question }}</h4>
-                    <textarea
-                      class="editor"
-                      rows="4"
-                      [ngModel]="a.answer"
-                      (ngModelChange)="editPortalAnswer(i, $event)"
-                    ></textarea>
-                    <div class="row">
-                      <button class="btn-ghost" type="button" (click)="copyPortalAnswer(i)">
-                        <lucide-icon [img]="icons.copy" [size]="14" aria-hidden="true" />
-                        {{
-                          portalCopiedIndex() === i
-                            ? t()('jobs.portal_copied')
-                            : t()('jobs.portal_copy')
-                        }}
-                      </button>
-                      <button
-                        class="btn-ghost"
-                        type="button"
-                        [disabled]="portalRedrafting() === i"
-                        (click)="redraftPortalAnswer(i)"
-                      >
-                        <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
-                        {{
-                          portalRedrafting() === i
-                            ? t()('jobs.portal_redrafting')
-                            : t()('jobs.portal_another_version')
-                        }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div class="state-empty">
-                <lucide-icon
-                  [img]="icons.empty"
-                  [size]="32"
-                  class="state-empty__icon"
-                  aria-hidden="true"
-                />
-                <p class="state-empty__msg">{{ t()('jobs.portal_empty') }}</p>
-              </div>
-            }
-          </details>
-
-          <!-- Tailoring wizard -->
-          @if (tailorResults().length === 0 && !tailoring()) {
+          } @else {
             <div class="cta">
-              <button
-                class="btn btn--primary"
-                [disabled]="!profile()?.fullMd"
-                (click)="startTailoring()"
-              >
-                {{ t()('jobs.tailor_btn') }}
+              <button class="btn" type="button" (click)="wizardOpen.set(false)">
+                {{ t()('jobs.wizard.back_to_summary') }}
               </button>
-              @if (!profile()?.fullMd) {
-                <span class="status status--error">{{ t()('jobs.profile_needed_full') }}</span>
-              }
             </div>
-          }
+            <app-apply-wizard
+              [cache]="cache()"
+              [fromCache]="fromCache()"
+              [atsPassIcon]="icons.atsPass"
+              [atsFailIcon]="icons.atsFail"
+            >
+              <div wizardPortalStep>
+                <!-- Draft portal answers -->
+                <details class="card portal">
+                  <summary class="eyebrow">{{ t()('jobs.portal_section') }}</summary>
+                  <p class="muted">{{ t()('jobs.portal_hint') }}</p>
+                  <p class="muted">{{ t()('jobs.portal_never_submits') }}</p>
 
-          @if (tailorResults().length > 0 || tailoring()) {
-            <div class="wizard">
-              <!-- Step indicators -->
-              <div class="wizard-steps">
-                @for (n of [1, 2, 3]; track n) {
-                  <div
-                    class="wizard-step"
-                    [class.wizard-step--done]="tailorResults().length >= n"
-                    [class.wizard-step--active]="tailoring() && tailorResults().length === n - 1"
-                  >
-                    <span class="wizard-step__num">{{ n }}</span>
-                    <span class="wizard-step__label">{{
-                      ['XYZ rewrite', 'Critique', 'Final build'][n - 1]
-                    }}</span>
+                  <div class="portal__questions">
+                    @for (q of portalQuestions(); track $index) {
+                      <div class="row">
+                        <input
+                          class="editor portal__q-input"
+                          type="text"
+                          [ngModel]="q"
+                          (ngModelChange)="updatePortalQuestion($index, $event)"
+                          [attr.aria-label]="t()('jobs.portal_question_label')"
+                        />
+                        <button
+                          class="btn-ghost"
+                          type="button"
+                          (click)="removePortalQuestion($index)"
+                          [attr.aria-label]="t()('jobs.portal_remove_question')"
+                        >
+                          <lucide-icon [img]="icons.remove" [size]="14" aria-hidden="true" />
+                        </button>
+                      </div>
+                    }
+                    <button class="btn-ghost" type="button" (click)="addPortalQuestion()">
+                      <lucide-icon [img]="icons.add" [size]="14" aria-hidden="true" />
+                      {{ t()('jobs.portal_add_question') }}
+                    </button>
                   </div>
-                  @if (n < 3) {
-                    <span class="wizard-step__sep">
-                      <lucide-icon [img]="icons.stepSep" [size]="16" aria-hidden="true" />
-                    </span>
-                  }
-                }
-              </div>
 
-              <!-- Completed pass results -->
-              @for (r of tailorResults(); track r.pass) {
-                <div class="card wizard-card">
-                  <div class="wizard-pass-header">
-                    <h4 class="eyebrow">
-                      Pass {{ r.pass }} —
-                      {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][r.pass - 1] }}
-                    </h4>
-                    @if (r.fromCache) {
-                      <span class="badge badge--cache">cached · 0 tokens</span>
-                    } @else {
-                      <span class="token-info">{{ r.tokensIn }} in / {{ r.tokensOut }} out</span>
+                  <label class="portal__lang-label">
+                    {{ t()('jobs.portal_language_label') }}
+                    <select
+                      class="editor portal__lang-select"
+                      [ngModel]="portalLanguage()"
+                      (ngModelChange)="portalLanguage.set($event)"
+                    >
+                      @for (lang of portalLanguages; track lang) {
+                        <option [value]="lang">{{ lang.toUpperCase() }}</option>
+                      }
+                    </select>
+                  </label>
+
+                  <div class="cta">
+                    <button
+                      class="btn btn--primary"
+                      [disabled]="portalDrafting() || !portalQuestions().length"
+                      (click)="draftPortalAnswers()"
+                    >
+                      {{
+                        portalDrafting()
+                          ? t()('jobs.portal_drafting')
+                          : t()('jobs.portal_draft_btn')
+                      }}
+                    </button>
+                    @if (portalFromCache() && !portalDrafting()) {
+                      <span class="badge badge--cache">{{ t()('jobs.portal_cached') }}</span>
+                    }
+                    @if (portalStatus() && !portalFromCache()) {
+                      <span class="status" [class.status--error]="portalError()">{{
+                        portalStatus()
+                      }}</span>
                     }
                   </div>
 
-                  <pre class="wizard-result">{{ r.resultMd }}</pre>
-
-                  @if (r.changes.length) {
-                    <details class="wizard-changes">
-                      <summary class="eyebrow">Changes ({{ r.changes.length }})</summary>
-                      <ul class="change-list">
-                        @for (c of r.changes; track c) {
-                          <li>{{ c }}</li>
-                        }
-                      </ul>
-                    </details>
-                  }
-
-                  @if (r.gaps.length) {
-                    <div class="wizard-gaps">
-                      <h4 class="eyebrow">Gaps — not addressable from profile</h4>
-                      <ul class="gap-list">
-                        @for (g of r.gaps; track g) {
-                          <li>{{ g }}</li>
-                        }
-                      </ul>
+                  @if (portalDrafting()) {
+                    <div class="state-loading" [attr.aria-label]="t()('jobs.portal_drafting')">
+                      <div class="state-loading__bar state-loading__bar--wide"></div>
+                      <div class="state-loading__bar state-loading__bar--mid"></div>
+                      <div class="state-loading__bar state-loading__bar--short"></div>
+                    </div>
+                  } @else if (portalError() && !portalAnswers().length) {
+                    <div class="state-error" role="alert">
+                      <p class="state-error__msg">{{ portalStatus() }}</p>
+                    </div>
+                  } @else if (portalAnswers().length) {
+                    <div class="portal__answers">
+                      @for (a of portalAnswers(); track a.question; let i = $index) {
+                        <div class="card portal__answer">
+                          <h4 class="eyebrow">{{ a.question }}</h4>
+                          <textarea
+                            class="editor"
+                            rows="4"
+                            [ngModel]="a.answer"
+                            (ngModelChange)="editPortalAnswer(i, $event)"
+                          ></textarea>
+                          <div class="row">
+                            <button class="btn-ghost" type="button" (click)="copyPortalAnswer(i)">
+                              <lucide-icon [img]="icons.copy" [size]="14" aria-hidden="true" />
+                              {{
+                                portalCopiedIndex() === i
+                                  ? t()('jobs.portal_copied')
+                                  : t()('jobs.portal_copy')
+                              }}
+                            </button>
+                            <button
+                              class="btn-ghost"
+                              type="button"
+                              [disabled]="portalRedrafting() === i"
+                              (click)="redraftPortalAnswer(i)"
+                            >
+                              <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
+                              {{
+                                portalRedrafting() === i
+                                  ? t()('jobs.portal_redrafting')
+                                  : t()('jobs.portal_another_version')
+                              }}
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="state-empty">
+                      <lucide-icon
+                        [img]="icons.empty"
+                        [size]="32"
+                        class="state-empty__icon"
+                        aria-hidden="true"
+                      />
+                      <p class="state-empty__msg">{{ t()('jobs.portal_empty') }}</p>
                     </div>
                   }
-                </div>
-              }
+                </details>
+              </div>
 
-              <!-- Running -->
-              @if (tailoring()) {
-                <div class="card card--running">
-                  <p class="muted">
-                    Running Pass {{ tailorResults().length + 1 }}:
-                    {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][tailorResults().length] }}…
-                  </p>
-                </div>
-              }
-
-              <!-- Pass CTAs -->
-              @if (!tailoring() && tailorResults().length > 0 && tailorResults().length < 3) {
-                <div class="row row--mt">
-                  <button class="btn btn--primary" (click)="runNextPass()">
-                    Continue to Pass {{ tailorResults().length + 1 }}:
-                    {{ ['Critique', 'Final Build'][tailorResults().length - 1] }}
-                    <lucide-icon [img]="icons.next" [size]="16" aria-hidden="true" />
-                  </button>
-                  <button class="btn" (click)="resetWizard()">{{ t()('jobs.start_over') }}</button>
-                  @if (tailorStatus()) {
-                    <span class="status" [class.status--error]="tailorError()">{{
-                      tailorStatus()
-                    }}</span>
-                  }
-                </div>
-              }
-
-              <!-- Export (pass 3 done) -->
-              @if (!tailoring() && tailorResults().length === 3) {
-                <div class="card wizard-export">
-                  <h4 class="eyebrow">{{ t()('jobs.export_section') }}</h4>
-                  <div class="row">
+              <div wizardTailorStep>
+                <!-- Tailoring wizard -->
+                @if (tailorResults().length === 0 && !tailoring()) {
+                  <div class="cta">
                     <button
                       class="btn btn--primary"
-                      [disabled]="!!exporting()"
-                      (click)="doExport('docx')"
+                      [disabled]="!profile()?.fullMd"
+                      (click)="startTailoring()"
                     >
-                      {{ exporting() === 'docx' ? t()('jobs.exporting') : t()('jobs.export_docx') }}
+                      {{ t()('jobs.tailor_btn') }}
                     </button>
-                    <button class="btn" [disabled]="!!exporting()" (click)="doExport('pdf')">
-                      {{ exporting() === 'pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf') }}
-                    </button>
-                    <button class="btn" (click)="resetWizard()">
-                      {{ t()('jobs.start_over') }}
-                    </button>
+                    @if (!profile()?.fullMd) {
+                      <span class="status status--error">{{
+                        t()('jobs.profile_needed_full')
+                      }}</span>
+                    }
                   </div>
-                  @if (exportStatus()) {
-                    <p class="export-path" [class.status--error]="exportError()">
-                      {{ exportStatus() }}
-                    </p>
-                  }
-                  @if (lastExport(); as exp) {
-                    <div class="export-actions">
-                      <button class="btn btn--sm" (click)="openExportedFile(exp.filePath)">
-                        {{ t()('jobs.open_file') }}
+                }
+
+                @if (tailorResults().length > 0 || tailoring()) {
+                  <div class="wizard">
+                    <!-- Completed pass results -->
+                    @for (r of tailorResults(); track r.pass) {
+                      <div class="card wizard-card">
+                        <div class="wizard-pass-header">
+                          <h4 class="eyebrow">
+                            Pass {{ r.pass }} —
+                            {{ ['XYZ Rewrite', 'Dual Critique', 'Final Build'][r.pass - 1] }}
+                          </h4>
+                          @if (r.fromCache) {
+                            <span class="badge badge--cache">cached · 0 tokens</span>
+                          } @else {
+                            <span class="token-info"
+                              >{{ r.tokensIn }} in / {{ r.tokensOut }} out</span
+                            >
+                          }
+                        </div>
+
+                        <pre class="wizard-result">{{ r.resultMd }}</pre>
+
+                        @if (r.changes.length) {
+                          <details class="wizard-changes">
+                            <summary class="eyebrow">Changes ({{ r.changes.length }})</summary>
+                            <ul class="change-list">
+                              @for (c of r.changes; track c) {
+                                <li>{{ c }}</li>
+                              }
+                            </ul>
+                          </details>
+                        }
+
+                        @if (r.gaps.length) {
+                          <div class="wizard-gaps">
+                            <h4 class="eyebrow">Gaps — not addressable from profile</h4>
+                            <ul class="gap-list">
+                              @for (g of r.gaps; track g) {
+                                <li>{{ g }}</li>
+                              }
+                            </ul>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Running -->
+                    @if (tailoring()) {
+                      <div class="card card--running">
+                        <p class="muted">
+                          Running Pass {{ tailorResults().length + 1 }}:
+                          {{
+                            ['XYZ Rewrite', 'Dual Critique', 'Final Build'][tailorResults().length]
+                          }}…
+                        </p>
+                      </div>
+                    }
+
+                    <!-- Pass CTAs -->
+                    @if (!tailoring() && tailorResults().length > 0 && tailorResults().length < 3) {
+                      <div class="row row--mt">
+                        <button class="btn btn--primary" (click)="runNextPass()">
+                          Continue to Pass {{ tailorResults().length + 1 }}:
+                          {{ ['Critique', 'Final Build'][tailorResults().length - 1] }}
+                          <lucide-icon [img]="icons.next" [size]="16" aria-hidden="true" />
+                        </button>
+                        <button class="btn" (click)="resetWizard()">
+                          {{ t()('jobs.start_over') }}
+                        </button>
+                        @if (tailorStatus()) {
+                          <span class="status" [class.status--error]="tailorError()">{{
+                            tailorStatus()
+                          }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div wizardExportStep>
+                <!-- Export (pass 3 done) -->
+                @if (!tailoring() && tailorResults().length === 3) {
+                  <div class="card wizard-export">
+                    <h4 class="eyebrow">{{ t()('jobs.export_section') }}</h4>
+                    <div class="row">
+                      <button
+                        class="btn btn--primary"
+                        [disabled]="!!exporting()"
+                        (click)="doExport('docx')"
+                      >
+                        {{
+                          exporting() === 'docx' ? t()('jobs.exporting') : t()('jobs.export_docx')
+                        }}
                       </button>
-                      <button class="btn btn--sm" (click)="revealExportedFile(exp.filePath)">
-                        {{ t()('jobs.show_folder') }}
+                      <button class="btn" [disabled]="!!exporting()" (click)="doExport('pdf')">
+                        {{ exporting() === 'pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf') }}
+                      </button>
+                      <button class="btn" (click)="resetWizard()">
+                        {{ t()('jobs.start_over') }}
                       </button>
                     </div>
-                  }
+                    @if (exportStatus()) {
+                      <p class="export-path" [class.status--error]="exportError()">
+                        {{ exportStatus() }}
+                      </p>
+                    }
+                    @if (lastExport(); as exp) {
+                      <div class="export-actions">
+                        <button class="btn btn--sm" (click)="openExportedFile(exp.filePath)">
+                          {{ t()('jobs.open_file') }}
+                        </button>
+                        <button class="btn btn--sm" (click)="revealExportedFile(exp.filePath)">
+                          {{ t()('jobs.show_folder') }}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div wizardApplyStep>
+                <div class="card">
+                  <h4 class="eyebrow">{{ t()('jobs.wizard.step_apply') }}</h4>
+                  <div class="cta">
+                    <button class="btn-ghost" [disabled]="actionBusy()" (click)="markApplied()">
+                      {{ t()('jobs.mark_applied') }}
+                    </button>
+                    @if (actionMsg()) {
+                      <span class="detail-actions__msg">{{ actionMsg() }}</span>
+                    }
+                  </div>
                 </div>
-              }
-            </div>
+              </div>
+            </app-apply-wizard>
           }
         </section>
       }
@@ -1064,6 +1008,7 @@ export class JobsComponent implements OnInit {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
+  readonly wizardOpen = signal(false);
   readonly archetypeMatch = signal<boolean | null>(null);
 
   // Job Detail: the application row (if this job is on the board) + action state.
@@ -1496,48 +1441,12 @@ export class JobsComponent implements OnInit {
     }
   }
 
-  dimensions(c: ScoringCache): ScoreDimension[] {
-    try {
-      return JSON.parse(c.dimensionsJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  missingKeywords(c: ScoringCache): string[] {
-    try {
-      return JSON.parse(c.missingKeywordsJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  redFlags(c: ScoringCache): string[] {
-    try {
-      return JSON.parse(c.redFlagsJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  beforeYouSubmit(c: ScoringCache): string[] {
-    try {
-      return JSON.parse(c.beforeYouSubmitJson ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
   legitimacyNotes(): string[] {
     try {
       return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
     } catch {
       return [];
     }
-  }
-
-  starRating(score: number): string {
-    return ((score / 100) * 4 + 1).toFixed(1);
   }
 
   hasArchetypes(): boolean {

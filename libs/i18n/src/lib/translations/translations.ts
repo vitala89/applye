@@ -290,6 +290,7 @@ const en: TranslationMap = {
       step_apply: 'Apply',
       start_apply: 'Start apply',
       open_browser: 'Open in browser',
+      back_to_summary: 'Back to summary',
     },
   },
   settings: {
@@ -676,6 +677,7 @@ const de: TranslationMap = {
       step_apply: 'Bewerben',
       start_apply: 'Bewerbung starten',
       open_browser: 'Im Browser öffnen',
+      back_to_summary: 'Zurück zur Übersicht',
     },
   },
   settings: {

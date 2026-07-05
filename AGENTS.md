@@ -34,11 +34,12 @@ The project separates strategic documents from operational daily tracking:
 ## Before Coding
 
 1. Classify the task type.
-2. Read `PROJECT_CONTEXT.md` and the smallest relevant docs or files.
-3. Use the AIF Context Gate for non-trivial work.
-4. State the working plan before editing when the change has meaningful blast radius.
-5. Do not read broad directories or generated outputs.
-6. Do not modify application source code unless the user explicitly asked for it.
+2. For `feature`, `debug`, or any other task that adds, changes, or fixes application code: create and switch to a new branch before editing (e.g. `feat/<slug>`, `fix/<slug>`). Never make feature/fix edits directly on `main`. Skip only for pure `docs`, `commit`, or `branch finish` tasks, or when the user is already on a dedicated branch for this exact task.
+3. Read `PROJECT_CONTEXT.md` and the smallest relevant docs or files.
+4. Use the AIF Context Gate for non-trivial work.
+5. State the working plan before editing when the change has meaningful blast radius.
+6. Do not read broad directories or generated outputs.
+7. Do not modify application source code unless the user explicitly asked for it.
 
 ## After Coding
 
@@ -65,6 +66,12 @@ Escalate model depth only for task risk, ambiguity, or blast radius.
 - If `.codegraph/` exists, use CodeGraph before grep, find, or manual file walks.
 - Do not read `node_modules`, `dist`, `.angular`, `coverage`, `target`, `src-tauri/target`, `.git`, logs, or generated files.
 - Do not configure or install Graphify, CodeGraph, Headroom, Context Mode, Token Optimizer, Superpowers, Browser Harness, Agent Reach, MCP, or other external tools in this PR.
+
+## Git Workflow
+
+- Do feature/fix/change work on a dedicated branch (see Before Coding step 2), never directly on `main`.
+- Commit atomically: one logical change per commit, not one giant end-of-session commit.
+- Push after each commit on a feature branch, so remote stays in sync as work lands.
 
 ## Safety Rules
 

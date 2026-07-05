@@ -94,12 +94,19 @@ export class UpdatedScoreView {
     return this.missingBefore().filter((k) => !after.has(k));
   });
 
-  protected readonly redFlagsBefore = computed(() =>
-    this.before() ? parseRedFlags(this.before() as ScoringCache).length : 0,
+  protected readonly redFlagsBeforeList = computed(() =>
+    this.before() ? parseRedFlags(this.before() as ScoringCache) : [],
   );
-  protected readonly redFlagsAfter = computed(() =>
-    this.after() ? parseRedFlags(this.after() as ScoringCache).length : 0,
+  protected readonly redFlagsAfterList = computed(() =>
+    this.after() ? parseRedFlags(this.after() as ScoringCache) : [],
   );
+  protected readonly redFlagsBefore = computed(() => this.redFlagsBeforeList().length);
+  protected readonly redFlagsAfter = computed(() => this.redFlagsAfterList().length);
+  /** Red flags present before that are gone after the rescore. */
+  protected readonly resolvedRedFlags = computed(() => {
+    const after = new Set(this.redFlagsAfterList());
+    return this.redFlagsBeforeList().filter((f) => !after.has(f));
+  });
 
   protected readonly beforeYouSubmit = computed(() =>
     this.after() ? parseBeforeYouSubmit(this.after() as ScoringCache) : [],

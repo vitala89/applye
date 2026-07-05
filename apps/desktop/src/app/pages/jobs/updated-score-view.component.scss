@@ -338,6 +338,22 @@
   margin-top: 1px;
 }
 
+.updated__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 7px;
+  flex: 0 0 auto;
+}
+
+.updated__dot--danger {
+  background: var(--danger);
+}
+
+.updated__list-row--resolved {
+  color: var(--success);
+}
+
 .ats-badge {
   margin-left: auto;
   display: inline-flex;

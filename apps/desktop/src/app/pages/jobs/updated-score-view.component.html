@@ -137,7 +137,28 @@
             {{ redFlagsAfter() }}
           </span>
         </div>
-        @if (redFlagsAfter() === 0) {
+        @if (resolvedRedFlags().length) {
+          <span class="updated__meta-sub">{{ t()('jobs.wizard.red_flags_resolved') }}</span>
+          <div class="updated__list">
+            @for (flag of resolvedRedFlags(); track flag) {
+              <div class="updated__list-row updated__list-row--resolved">
+                <lucide-icon [img]="icons().check" [size]="13" aria-hidden="true" />
+                <span>{{ flag }}</span>
+              </div>
+            }
+          </div>
+        }
+        @if (redFlagsAfterList().length) {
+          <span class="updated__meta-sub">{{ t()('jobs.wizard.red_flags_remaining') }}</span>
+          <div class="updated__list">
+            @for (flag of redFlagsAfterList(); track flag) {
+              <div class="updated__list-row">
+                <span class="updated__dot updated__dot--danger"></span>
+                <span>{{ flag }}</span>
+              </div>
+            }
+          </div>
+        } @else {
           <p class="updated__meta-note">{{ t()('jobs.wizard.red_flags_cleared') }}</p>
         }
       </div>

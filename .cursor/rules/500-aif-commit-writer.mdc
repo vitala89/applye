@@ -1,0 +1,30 @@
+---
+description: Write focused Conventional Commit messages for Applye diffs.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# AIF Commit Writer
+
+Use this rule when the user asks for a commit message, commit review, or commit split recommendation.
+
+Rules:
+
+- Use Conventional Commits: `<type>(<scope>): <summary>`.
+- Use English.
+- Keep the header under 90 characters.
+- Use imperative style where possible.
+- Do not mention AI-generated code in commit messages.
+- Do not use vague summaries such as "update files", "changes", "fix stuff", or "misc".
+- Allowed types: `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `chore`, `build`, `ci`, `perf`, `revert`.
+- Recommended scopes: `jobs`, `applications`, `profile`, `notifications`, `storage`, `sync`, `plugins`, `mcp`, `ai`, `ui`, `auth`, `docs`, `repo`, `tauri`, `angular`.
+- Recommend splitting commits when staged changes are unrelated or too broad for one specific header.
+- If changes touch privacy, storage, sync, auth, notifications, plugins, MCP, external sources, or user data, include a concise risk or behavior note in the commit body.
+
+Return:
+
+1. Recommended commit message
+2. Optional commit body
+3. Whether changes should be split
+4. Risk note if privacy/security/storage/sync/MCP/user data is involved

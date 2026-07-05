@@ -357,6 +357,10 @@ const en: TranslationMap = {
       score_before: 'Before',
       score_after: 'After',
       updated_after_tailor: 'Updated after tailoring',
+      keywords_resolved: 'Now covered',
+      keywords_still_missing: 'Still missing',
+      keywords_all_covered: 'All required keywords are now present.',
+      red_flags_cleared: 'No red flags remain.',
     },
   },
   settings: {
@@ -812,6 +816,10 @@ const de: TranslationMap = {
       score_before: 'Vorher',
       score_after: 'Nachher',
       updated_after_tailor: 'Nach der Anpassung aktualisiert',
+      keywords_resolved: 'Jetzt abgedeckt',
+      keywords_still_missing: 'Weiterhin fehlend',
+      keywords_all_covered: 'Alle geforderten Schlüsselwörter sind jetzt vorhanden.',
+      red_flags_cleared: 'Keine Warnsignale mehr.',
     },
   },
   settings: {

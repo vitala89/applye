@@ -268,6 +268,11 @@ const en: TranslationMap = {
     export_section: 'Export tailored CV',
     export_docx: 'Export DOCX',
     export_pdf: 'Export PDF',
+    export_recommended: 'Recommended',
+    export_docx_desc:
+      'Editable Word file. ATS-safe formatting — parses cleanly through applicant tracking systems.',
+    export_pdf_desc:
+      'Pixel-perfect layout for humans. Best when a recruiter reads it directly, not a parser.',
     exporting: 'Exporting…',
     open_file: 'Open file',
     show_folder: 'Show in folder',
@@ -319,6 +324,9 @@ const en: TranslationMap = {
       phase_done: 'Done',
       phase_ready: 'Ready',
       phase_running: 'Running',
+      phase_pending: 'Pending',
+      changes_title: 'Changes',
+      gaps_title: 'Gaps — not addressable from profile',
       export_eyebrow: 'Step 4 · Export',
       export_title: 'Save your tailored resume',
       apply_eyebrow: 'Step 5 · Apply',
@@ -326,11 +334,13 @@ const en: TranslationMap = {
       apply_subtitle:
         'Everything is ready on your machine. Nothing is submitted automatically — paste into the employer’s form yourself.',
       step_word: 'Step',
-      step_progress_of: 'of 5',
+      step_progress_of: 'of 4',
       continue_label: 'Continue',
       next_label: 'Next',
       mark_as_applied: 'Mark as applied',
       close: 'Close',
+      apply_no_export:
+        'No tailored resume exported yet — go back to Export if you want to attach one.',
     },
   },
   settings: {
@@ -695,6 +705,11 @@ const de: TranslationMap = {
     export_section: 'Angepassten Lebenslauf exportieren',
     export_docx: 'DOCX exportieren',
     export_pdf: 'PDF exportieren',
+    export_recommended: 'Empfohlen',
+    export_docx_desc:
+      'Bearbeitbare Word-Datei. ATS-sicheres Format — wird von Bewerbersystemen sauber gelesen.',
+    export_pdf_desc:
+      'Pixelgenaues Layout für Menschen. Am besten, wenn ein Recruiter es direkt liest.',
     exporting: 'Exportiere…',
     open_file: 'Datei öffnen',
     show_folder: 'Im Ordner anzeigen',
@@ -747,6 +762,9 @@ const de: TranslationMap = {
       phase_done: 'Fertig',
       phase_ready: 'Bereit',
       phase_running: 'Läuft',
+      phase_pending: 'Ausstehend',
+      changes_title: 'Änderungen',
+      gaps_title: 'Lücken — nicht aus dem Profil lösbar',
       export_eyebrow: 'Schritt 4 · Export',
       export_title: 'Angepassten Lebenslauf speichern',
       apply_eyebrow: 'Schritt 5 · Bewerben',
@@ -754,11 +772,13 @@ const de: TranslationMap = {
       apply_subtitle:
         'Alles ist auf deinem Rechner bereit. Nichts wird automatisch abgeschickt — füge es selbst in das Formular des Arbeitgebers ein.',
       step_word: 'Schritt',
-      step_progress_of: 'von 5',
+      step_progress_of: 'von 4',
       continue_label: 'Weiter',
       next_label: 'Weiter',
       mark_as_applied: 'Als beworben markieren',
       close: 'Schließen',
+      apply_no_export:
+        'Noch kein angepasster Lebenslauf exportiert — gehe zu Export, um einen anzuhängen.',
     },
   },
   settings: {

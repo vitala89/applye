@@ -243,6 +243,13 @@
   align-items: start;
 }
 
+.scoring-view__support-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
 .scoring-view__support-card {
   padding: var(--space-5);
   display: flex;
@@ -364,17 +371,16 @@
   color: var(--danger);
 }
 
-/* Sticky CTA bar */
+/* CTA bar (non-sticky, sits at the end of the scoring view) */
 .scoring-view__cta {
-  position: sticky;
-  bottom: 0;
   display: flex;
   align-items: center;
   gap: var(--space-5);
   padding: var(--space-5) var(--space-6);
-  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
-  backdrop-filter: blur(8px);
-  box-shadow: var(--shadow-md);
+}
+
+.scoring-view__cta-spacer {
+  flex: 1;
 }
 
 .scoring-view__cta-text {

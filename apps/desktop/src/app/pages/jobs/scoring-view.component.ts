@@ -92,91 +92,95 @@ import {
         }
 
         <div class="scoring-view__support-grid">
-          @if (parseMissingKeywords(c).length) {
-            <div class="card scoring-view__support-card">
-              <div class="scoring-view__support-head">
-                <lucide-icon [img]="icons().tag" [size]="14" aria-hidden="true" />
-                <span class="eyebrow">{{ t()('jobs.missing_keywords_title') }}</span>
-                <span class="scoring-view__support-count"
-                  >{{ parseMissingKeywords(c).length }} {{ t()('jobs.not_found_label') }}</span
-                >
+          <div class="scoring-view__support-col">
+            @if (parseMissingKeywords(c).length) {
+              <div class="card scoring-view__support-card">
+                <div class="scoring-view__support-head">
+                  <lucide-icon [img]="icons().tag" [size]="14" aria-hidden="true" />
+                  <span class="eyebrow">{{ t()('jobs.missing_keywords_title') }}</span>
+                  <span class="scoring-view__support-count"
+                    >{{ parseMissingKeywords(c).length }} {{ t()('jobs.not_found_label') }}</span
+                  >
+                </div>
+                <div class="scoring-view__chips">
+                  @for (kw of parseMissingKeywords(c); track kw) {
+                    <span class="scoring-view__chip">{{ kw }}</span>
+                  }
+                </div>
               </div>
-              <div class="scoring-view__chips">
-                @for (kw of parseMissingKeywords(c); track kw) {
-                  <span class="scoring-view__chip">{{ kw }}</span>
-                }
-              </div>
-            </div>
-          }
-
-          @if (parseRedFlags(c).length) {
-            <div class="card scoring-view__support-card">
-              <div class="scoring-view__support-head">
-                <lucide-icon
-                  [img]="icons().flag"
-                  [size]="14"
-                  class="scoring-view__danger-icon"
-                  aria-hidden="true"
-                />
-                <span class="eyebrow">{{ t()('jobs.red_flags_title') }}</span>
-                <span class="scoring-view__support-count">{{ parseRedFlags(c).length }}</span>
-              </div>
-              <div class="scoring-view__list">
-                @for (flag of parseRedFlags(c); track flag) {
-                  <div class="scoring-view__list-row">
-                    <span class="scoring-view__dot scoring-view__dot--danger"></span>
-                    <span>{{ flag }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <div class="card scoring-view__support-card">
-            <div class="scoring-view__support-head">
-              <lucide-icon [img]="icons().scan" [size]="14" aria-hidden="true" />
-              <span class="eyebrow">{{ t()('jobs.ats_check_title') }}</span>
-              <span
-                class="ats-badge"
-                [class.ats-badge--ok]="c.atsPass"
-                [class.ats-badge--warn]="!c.atsPass"
-              >
-                <lucide-icon
-                  [img]="c.atsPass ? icons().atsPass : icons().atsFail"
-                  [size]="11"
-                  aria-hidden="true"
-                />
-                {{ c.atsPass ? t()('jobs.ats_pass_msg') : t()('jobs.ats_fail_msg') }}
-              </span>
-            </div>
-            @if (c.atsNotes) {
-              <p class="scoring-view__support-note">{{ c.atsNotes }}</p>
             }
+
+            <div class="card scoring-view__support-card">
+              <div class="scoring-view__support-head">
+                <lucide-icon [img]="icons().scan" [size]="14" aria-hidden="true" />
+                <span class="eyebrow">{{ t()('jobs.ats_check_title') }}</span>
+                <span
+                  class="ats-badge"
+                  [class.ats-badge--ok]="c.atsPass"
+                  [class.ats-badge--warn]="!c.atsPass"
+                >
+                  <lucide-icon
+                    [img]="c.atsPass ? icons().atsPass : icons().atsFail"
+                    [size]="11"
+                    aria-hidden="true"
+                  />
+                  {{ c.atsPass ? t()('jobs.ats_pass_msg') : t()('jobs.ats_fail_msg') }}
+                </span>
+              </div>
+              @if (c.atsNotes) {
+                <p class="scoring-view__support-note">{{ c.atsNotes }}</p>
+              }
+            </div>
           </div>
 
-          @if (parseBeforeYouSubmit(c).length) {
-            <div class="card scoring-view__support-card">
-              <div class="scoring-view__support-head">
-                <lucide-icon
-                  [img]="icons().checklist"
-                  [size]="14"
-                  class="scoring-view__accent-icon"
-                  aria-hidden="true"
-                />
-                <span class="eyebrow">{{ t()('jobs.before_you_submit') }}</span>
+          <div class="scoring-view__support-col">
+            @if (parseRedFlags(c).length) {
+              <div class="card scoring-view__support-card">
+                <div class="scoring-view__support-head">
+                  <lucide-icon
+                    [img]="icons().flag"
+                    [size]="14"
+                    class="scoring-view__danger-icon"
+                    aria-hidden="true"
+                  />
+                  <span class="eyebrow">{{ t()('jobs.red_flags_title') }}</span>
+                  <span class="scoring-view__support-count">{{ parseRedFlags(c).length }}</span>
+                </div>
+                <div class="scoring-view__list">
+                  @for (flag of parseRedFlags(c); track flag) {
+                    <div class="scoring-view__list-row">
+                      <span class="scoring-view__dot scoring-view__dot--danger"></span>
+                      <span>{{ flag }}</span>
+                    </div>
+                  }
+                </div>
               </div>
-              <div class="scoring-view__list">
-                @for (note of parseBeforeYouSubmit(c); track note) {
-                  <div class="scoring-view__list-row">
-                    <span class="scoring-view__step-icon">
-                      <lucide-icon [img]="icons().next" [size]="12" aria-hidden="true" />
-                    </span>
-                    <span>{{ note }}</span>
-                  </div>
-                }
+            }
+
+            @if (parseBeforeYouSubmit(c).length) {
+              <div class="card scoring-view__support-card">
+                <div class="scoring-view__support-head">
+                  <lucide-icon
+                    [img]="icons().checklist"
+                    [size]="14"
+                    class="scoring-view__accent-icon"
+                    aria-hidden="true"
+                  />
+                  <span class="eyebrow">{{ t()('jobs.before_you_submit') }}</span>
+                </div>
+                <div class="scoring-view__list">
+                  @for (note of parseBeforeYouSubmit(c); track note) {
+                    <div class="scoring-view__list-row">
+                      <span class="scoring-view__step-icon">
+                        <lucide-icon [img]="icons().next" [size]="12" aria-hidden="true" />
+                      </span>
+                      <span>{{ note }}</span>
+                    </div>
+                  }
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
 
         <div class="scoring-view__cta card">
@@ -184,10 +188,7 @@ import {
             <span class="scoring-view__cta-title">{{ t()('jobs.tailor_cta_title') }}</span>
             <span class="scoring-view__cta-subtitle">{{ t()('jobs.tailor_cta_subtitle') }}</span>
           </div>
-          <button class="btn btn--secondary btn--md" type="button" (click)="save.emit()">
-            <lucide-icon [img]="icons().bookmark" [size]="15" aria-hidden="true" />
-            {{ t()('jobs.save_btn') }}
-          </button>
+          <span class="scoring-view__cta-spacer"></span>
           <button class="btn btn--primary btn--md" type="button" (click)="tailorApply.emit()">
             <lucide-icon [img]="icons().wand" [size]="15" aria-hidden="true" />
             {{ t()('jobs.tailor_apply_btn') }}
@@ -207,7 +208,6 @@ export class ScoringView {
   readonly job = input<Job | null>(null);
   readonly icons = input.required<JobDetailIcons>();
 
-  readonly save = output<void>();
   readonly tailorApply = output<void>();
 
   protected readonly parseDimensions = parseDimensions;

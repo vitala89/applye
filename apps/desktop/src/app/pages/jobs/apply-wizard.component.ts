@@ -12,79 +12,65 @@ import { ScoringView } from './scoring-view.component';
   imports: [LucideAngularModule, Stepper, ScoringView],
   template: `
     <div class="apply-wizard">
-      <header class="apply-wizard__header">
-        <span class="apply-wizard__crumb">
-          {{ t()('jobs.wizard.step_apply') }}
-          <span class="apply-wizard__crumb-sep">/</span>
-          <b>{{ crumbLine() }}</b>
-        </span>
-        <span class="apply-wizard__spacer"></span>
-        <button class="btn btn--secondary btn--sm" type="button" (click)="closeWizard.emit()">
+      <div class="apply-wizard__rail">
+        <lib-stepper [steps]="stepLabels()" [activeIndex]="activeStep()" />
+        <button
+          class="btn btn--secondary btn--sm apply-wizard__close"
+          type="button"
+          (click)="closeWizard.emit()"
+        >
           <lucide-icon [img]="icons().close" [size]="14" aria-hidden="true" />
           {{ t()('jobs.wizard.close') }}
         </button>
-      </header>
-
-      <div class="apply-wizard__rail">
-        <lib-stepper [steps]="stepLabels()" [activeIndex]="activeStep()" />
       </div>
 
       <div class="apply-wizard__content">
-        <div class="apply-wizard__content-inner">
-          @switch (activeStep()) {
-            @case (0) {
-              <app-scoring-view
-                [cache]="cache()"
-                [fromCache]="fromCache()"
-                [job]="job()"
-                [icons]="icons()"
-              />
-            }
-            @case (1) {
-              <ng-content select="[wizardPortalStep]" />
-            }
-            @case (2) {
-              <ng-content select="[wizardTailorStep]" />
-            }
-            @case (3) {
-              <ng-content select="[wizardExportStep]" />
-            }
-            @case (4) {
-              <ng-content select="[wizardApplyStep]" />
-            }
+        @switch (activeStep()) {
+          @case (0) {
+            <app-scoring-view
+              [cache]="cache()"
+              [fromCache]="fromCache()"
+              [job]="job()"
+              [icons]="icons()"
+            />
           }
-        </div>
+          @case (1) {
+            <ng-content select="[wizardTailorStep]" />
+          }
+          @case (2) {
+            <ng-content select="[wizardExportStep]" />
+          }
+          @case (3) {
+            <ng-content select="[wizardApplyStep]" />
+          }
+        }
       </div>
 
       <footer class="apply-wizard__footer">
-        <div class="apply-wizard__footer-inner">
-          @if (activeStep() > 0) {
-            <button class="btn btn--secondary btn--md" type="button" (click)="goBack()">
-              <lucide-icon [img]="icons().back" [size]="15" aria-hidden="true" />
-              {{ t()('common.back') }}
-            </button>
-          }
-          <span class="apply-wizard__step-of">
-            {{ t()('jobs.wizard.step_word') }} {{ activeStep() + 1 }}
-            {{ t()('jobs.wizard.step_progress_of') }}
-          </span>
-          <span class="apply-wizard__spacer"></span>
-          @if (activeStep() === 4) {
-            <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
-              <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
-              {{ t()('jobs.wizard.mark_as_applied') }}
-            </button>
-          } @else {
-            <button class="btn btn--primary btn--md" type="button" (click)="goNext()">
-              {{
-                activeStep() === 3
-                  ? t()('jobs.wizard.continue_label')
-                  : t()('jobs.wizard.next_label')
-              }}
-              <lucide-icon [img]="icons().next" [size]="15" aria-hidden="true" />
-            </button>
-          }
-        </div>
+        <button class="btn btn--secondary btn--md" type="button" (click)="goBack()">
+          <lucide-icon [img]="icons().back" [size]="15" aria-hidden="true" />
+          {{ activeStep() === 0 ? t()('jobs.wizard.back_to_summary') : t()('common.back') }}
+        </button>
+        <span class="apply-wizard__step-of">
+          {{ t()('jobs.wizard.step_word') }} {{ activeStep() + 1 }}
+          {{ t()('jobs.wizard.step_progress_of') }}
+        </span>
+        <span class="apply-wizard__spacer"></span>
+        @if (activeStep() === lastStep) {
+          <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
+            <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
+            {{ t()('jobs.wizard.mark_as_applied') }}
+          </button>
+        } @else {
+          <button class="btn btn--primary btn--md" type="button" (click)="goNext()">
+            {{
+              activeStep() === lastStep - 1
+                ? t()('jobs.wizard.continue_label')
+                : t()('jobs.wizard.next_label')
+            }}
+            <lucide-icon [img]="icons().next" [size]="15" aria-hidden="true" />
+          </button>
+        }
       </footer>
     </div>
   `,
@@ -93,6 +79,8 @@ import { ScoringView } from './scoring-view.component';
 export class ApplyWizard {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+
+  protected readonly lastStep = 3;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
@@ -108,21 +96,20 @@ export class ApplyWizard {
 
   protected readonly stepLabels = computed(() => [
     this.t()('jobs.wizard.step_review_score'),
-    this.t()('jobs.wizard.step_portal_answers'),
     this.t()('jobs.wizard.step_tailor_cv'),
     this.t()('jobs.wizard.step_export'),
     this.t()('jobs.wizard.step_apply'),
   ]);
 
   protected goBack(): void {
+    if (this.activeStep() === 0) {
+      this.closeWizard.emit();
+      return;
+    }
     this.activeStep.update((n) => Math.max(0, n - 1));
   }
 
   protected goNext(): void {
-    this.activeStep.update((n) => Math.min(4, n + 1));
+    this.activeStep.update((n) => Math.min(this.lastStep, n + 1));
   }
-
-  protected readonly crumbLine = computed(() =>
-    [this.jobTitle(), this.company()].filter(Boolean).join(' · '),
-  );
 }

@@ -16,6 +16,12 @@ inputs:
     description: >
       Notes from the deterministic legitimacy check (Phase 6.2), one per line.
       Empty string if none triggered.
+  - name: tailored_resume_md
+    description: >
+      Optional full text of a resume the candidate has already tailored for
+      this specific job (output of resume-tailoring pass 3). Empty string if
+      the candidate hasn't tailored yet. When present, score THIS resume's
+      fit instead of the generic profile — this is a "post-tailor" rescore.
 output_format: valid JSON only — no markdown, no preamble
 recommended_model: claude-haiku-4-5
 ---
@@ -59,6 +65,9 @@ Score this candidate against the job description.
 
 Candidate profile (compressed):
 {{profile_json}}
+
+Tailored resume for this job — empty if the candidate hasn't tailored one yet. If non-empty, this is a post-tailor rescore: score THIS resume's fit instead of the generic profile above, since it's what would actually be submitted:
+{{tailored_resume_md}}
 
 Job description:
 {{job_description}}

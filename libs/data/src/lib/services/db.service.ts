@@ -179,6 +179,13 @@ export class DbService {
     return tauriInvoke<void>('delete_interview_stage', { stageId });
   }
 
+  /** Hard delete — removes the job and every dependent row (applications,
+   *  scoring, tailoring, interview data). Irreversible; caller must confirm
+   *  with the user first. */
+  async deleteJob(id: number): Promise<void> {
+    return tauriInvoke<void>('db_delete_job', { id });
+  }
+
   /** Ordered by stageOrder ascending. */
   async listInterviewStages(applicationId: number): Promise<InterviewStage[]> {
     return tauriInvoke<InterviewStage[]>('list_interview_stages', { applicationId });

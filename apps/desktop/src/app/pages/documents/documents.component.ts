@@ -1,23 +1,29 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FileText, LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
+import { CvListComponent } from './cv-list/cv-list.component';
 
+type DocumentsTab = 'cv' | 'cover_letter';
+
+// Documents (ROADMAP §16): CV | Cover Letter tab switch. The Cover Letter
+// tab is a placeholder until 1c ships its split editor.
 @Component({
   selector: 'app-documents',
   standalone: true,
-  imports: [LucideAngularModule],
-  template: `
-    <div class="page-coming-soon">
-      <div class="state-empty">
-        <lucide-icon [img]="icons.empty" [size]="40" class="state-empty__icon" aria-hidden="true" />
-        <p class="state-empty__msg">{{ t()('documents.coming_soon') }}</p>
-      </div>
-    </div>
-  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideAngularModule, CvListComponent],
+  templateUrl: './documents.component.html',
+  styleUrl: './documents.component.scss',
 })
 export class DocumentsComponent {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = { empty: FileText };
+
+  readonly tab = signal<DocumentsTab>('cv');
+
+  setTab(tab: DocumentsTab): void {
+    this.tab.set(tab);
+  }
 }

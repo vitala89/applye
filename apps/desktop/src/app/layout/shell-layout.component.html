@@ -65,6 +65,15 @@
         />
         <span class="nav-item__label">{{ t()('nav.analytics') }}</span>
       </a>
+      <a class="nav-item" routerLink="/documents" routerLinkActive="nav-item--active">
+        <lucide-icon
+          [img]="icons.documents"
+          class="nav-item__icon"
+          [size]="18"
+          aria-hidden="true"
+        />
+        <span class="nav-item__label">{{ t()('nav.documents') }}</span>
+      </a>
       <a class="nav-item" routerLink="/settings" routerLinkActive="nav-item--active">
         <lucide-icon [img]="icons.settings" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.settings') }}</span>

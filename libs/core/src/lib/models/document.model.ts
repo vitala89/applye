@@ -22,6 +22,11 @@ interface CvSectionBase {
   key: CvSectionKey;
   order: number;
   visible: boolean;
+  /** Hash of the inputs used to last (re)generate this section's content —
+   * lets "regenerate this section" skip a repeat AI call when nothing that
+   * feeds it has changed. Absent on sections that were never AI-generated
+   * (e.g. hand-edited or imported as-is). */
+  sourceHash?: string;
 }
 
 export interface CvPhotoSection extends CvSectionBase {
@@ -123,6 +128,46 @@ export interface CoverLetterContent {
 
 export type DocumentContent = CvContent | CoverLetterContent;
 
+/** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
+ * Deliberately small: font, size, one accent colour. Layout/order lives in
+ * `CvTemplate` instead. Safe default: Calibri 11pt, dark-grey (#333333). */
+export interface CvStyle {
+  fontFamily: string;
+  fontSizePt: number;
+  accentColorHex: string;
+}
+
+export const CV_STYLE_DEFAULT: CvStyle = {
+  fontFamily: 'Calibri',
+  fontSizePt: 11,
+  accentColorHex: '#333333',
+};
+
+/** Curated ATS-safe font list (ROADMAP §16.5), mirrors the Rust
+ * `ATS_SAFE_FONTS` constant — for populating a suggestions list in the UI,
+ * not for client-side validation (that's `check_style_safety`). */
+export const CV_ATS_SAFE_FONTS = [
+  'Arial',
+  'Calibri',
+  'Helvetica',
+  'Times New Roman',
+  'Georgia',
+  'Lato',
+  'Open Sans',
+  'Verdana',
+  'Tahoma',
+  'Garamond',
+];
+
+/** One ATS/readability note from `check_style_safety` — `kind` selects the
+ * (translated) message; `detail` is the value to interpolate. */
+export type StyleNoteKind = 'font_ats_risk' | 'size_out_of_range' | 'color_readability_risk';
+
+export interface StyleNote {
+  kind: StyleNoteKind;
+  detail: string;
+}
+
 /** CV layout templates (ROADMAP §16.2) — layout only, separate from content.
  * Built-in presets: DE-traditional (photo), DE-ATS-modern (no photo), US, UK,
  * generic. */
@@ -137,6 +182,16 @@ export interface CvTemplate {
   includeMaritalStatus: boolean;
   isBuiltin: boolean;
   createdAt?: string;
+}
+
+export interface UpsertCvTemplateInput {
+  id?: number;
+  name: string;
+  regionTag?: string;
+  sectionsJson: string;
+  includePhoto: boolean;
+  includeBirthdate: boolean;
+  includeMaritalStatus: boolean;
 }
 
 /** The live, editable CV / Cover-Letter library — distinct from
@@ -180,4 +235,52 @@ export interface UpsertDocumentLibraryItemInput {
   modelUsed?: string;
   tokensInput?: number;
   tokensOutput?: number;
+}
+
+/** Plain text extracted from an uploaded CV file (DOCX/PDF), ready for the
+ * `cv-import` skill. Mirrors Rust `CvImportFile`. */
+export interface CvImportFile {
+  text: string;
+  fileType: 'docx' | 'pdf';
+  inputHash: string;
+}
+
+export interface CvParsedExperienceEntry {
+  company: string;
+  role: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  location?: string | null;
+  bullets: string[];
+}
+
+export interface CvParsedEducationEntry {
+  institution: string;
+  degree: string;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+export interface CvParsedLanguageEntry {
+  language: string;
+  level: string;
+}
+
+/** Shared output shape of both `cv-import.md` and `cv-generate-baseline.md`
+ * — structure detection and market-baseline generation feed the same
+ * `CvContent` builder. Any field is empty/null when that section wasn't
+ * produced (e.g. a targeted per-section regenerate). */
+export interface CvParsedContent {
+  personalDetails: {
+    fullName: string | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+  };
+  summary: string | null;
+  experience: CvParsedExperienceEntry[];
+  education: CvParsedEducationEntry[];
+  skills: string[];
+  languages: CvParsedLanguageEntry[];
+  lowConfidenceNotes: string[];
 }

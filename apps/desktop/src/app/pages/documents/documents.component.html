@@ -1,0 +1,29 @@
+<div class="documents">
+  <div class="documents__tabs">
+    <button
+      class="documents__tab"
+      type="button"
+      [class.documents__tab--active]="tab() === 'cv'"
+      (click)="setTab('cv')"
+    >
+      {{ t()('documents.tab_cv') }}
+    </button>
+    <button
+      class="documents__tab"
+      type="button"
+      [class.documents__tab--active]="tab() === 'cover_letter'"
+      (click)="setTab('cover_letter')"
+    >
+      {{ t()('documents.tab_cover_letter') }}
+    </button>
+  </div>
+
+  @if (tab() === 'cv') {
+    <app-cv-list />
+  } @else {
+    <div class="state-empty">
+      <lucide-icon [img]="icons.empty" [size]="40" class="state-empty__icon" aria-hidden="true" />
+      <p class="state-empty__msg">{{ t()('documents.coming_soon') }}</p>
+    </div>
+  }
+</div>

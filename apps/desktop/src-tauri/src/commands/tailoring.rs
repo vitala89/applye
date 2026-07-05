@@ -233,7 +233,9 @@ fn cv_filename(title: &str, company: &str, hash: &str, ext: &str) -> String {
 
 // ── DOCX export ──────────────────────────────────────────────────────────────
 
-fn md_to_docx_bytes(content_md: &str) -> Result<Vec<u8>, String> {
+// `pub(crate)`, not private: reused by `commands::documents` to export a
+// library CV (a different journal/caching path — no `generated_docs` row).
+pub(crate) fn md_to_docx_bytes(content_md: &str) -> Result<Vec<u8>, String> {
     use docx_rs::*;
 
     let mut doc = Docx::new();
@@ -301,7 +303,7 @@ pub async fn export_docx(
 
 // ── PDF export ───────────────────────────────────────────────────────────────
 
-fn md_to_pdf_bytes(content_md: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn md_to_pdf_bytes(content_md: &str) -> Result<Vec<u8>, String> {
     use printpdf::*;
 
     let (doc, page1, layer1) = PdfDocument::new("Tailored CV", Mm(210.0), Mm(297.0), "Layer 1");

@@ -14,11 +14,15 @@ alwaysApply: false
 
 Trigger this rule when planning, checking next steps, recording ideas, prioritizing features, making architectural decisions, or updating project state docs.
 
+> [!NOTE]
+> If the request is primarily about prioritizing features, estimating effort, splitting a task, comparing tasks, or determining next actions, route the request to `aif-planning-review` (rule 700).
+
 ## Behavior Rules
 
 1. **Focus First**: Do not force all project docs into the context. Prefer reading [docs/product/CURRENT_STATE.md](docs/product/CURRENT_STATE.md) first to establish operational context.
 2. **Check Policy**: Follow the read/write guidelines in [docs/ai/project-state-policy.md](docs/ai/project-state-policy.md) strictly.
-3. **Request Classification**:
+3. **Request Classification & Routing**:
+   * **Planning / Next Action / Estimation**: Route immediately to `aif-planning-review`.
    * **Idea**: Update [docs/product/IDEAS.md](docs/product/IDEAS.md) only.
    * **Feature brief**: Create/update under `docs/product/feature-briefs/` and update [docs/product/FEATURE_INDEX.md](docs/product/FEATURE_INDEX.md).
    * **Architectural decision**: Create ADR under `docs/product/decisions/`.

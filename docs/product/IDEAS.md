@@ -10,6 +10,7 @@ This file serves as the raw inbox for ideas, feature requests, and product sugge
 ## Raw Ideas
 
 - _Add raw ideas here to capture them before they are forgotten._
+- **Draft follow-up message for overdue applications**: lightweight action that drafts polite follow-up email for overdue applications; user sends manually (no auto-send). Fits privacy-first, no-auto-outreach principle. (2026-07-05)
 
 ---
 

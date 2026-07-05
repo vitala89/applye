@@ -49,6 +49,9 @@ import {
   ScoringCache,
   Settings,
   SupportedLanguage,
+  CoverLetterAddress,
+  CoverLetterContent,
+  DocumentLibraryItem,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
@@ -329,6 +332,40 @@ interface PassResult {
               [tailored]="isTailored()"
               (tailorApply)="openWizard()"
             />
+
+            <!-- Cover Letter Tailoring CTA -->
+            <div class="card scoring-view__cta" style="margin-top: var(--space-4);">
+              <div class="scoring-view__cta-text">
+                <span class="scoring-view__cta-title">Tailor Cover Letter</span>
+                <span class="scoring-view__cta-subtitle">
+                  Generate or rewrite a cover letter specifically for this job description.
+                </span>
+              </div>
+              <span class="scoring-view__cta-spacer" style="flex: 1 1 auto;"></span>
+              @if (application()?.coverLetterDocumentId; as clId) {
+                <span class="badge badge--accent" style="margin-right: var(--space-2);">
+                  <lucide-icon [img]="icons.check" [size]="12" aria-hidden="true" />
+                  Cover Letter Linked
+                </span>
+                <button
+                  class="btn btn--secondary btn--md"
+                  type="button"
+                  (click)="openCoverLetter(clId)"
+                >
+                  <lucide-icon [img]="icons.pencil" [size]="15" aria-hidden="true" />
+                  Edit Letter
+                </button>
+              } @else {
+                <button
+                  class="btn btn--primary btn--md"
+                  type="button"
+                  (click)="openTailorCoverLetterModal()"
+                >
+                  <lucide-icon [img]="icons.wand" [size]="15" aria-hidden="true" />
+                  Tailor Letter
+                </button>
+              }
+            </div>
           } @else if (applyResult()) {
             <!-- Success confirmation before redirecting back to the job -->
             <div class="apply-success card">
@@ -616,6 +653,87 @@ interface PassResult {
             </app-apply-wizard>
           }
         </section>
+      }
+
+      @if (tailorCoverLetterOpen()) {
+        <div
+          class="modal-backdrop"
+          (click)="tailorCoverLetterOpen.set(false)"
+          (keydown.escape)="tailorCoverLetterOpen.set(false)"
+          tabindex="-1"
+          role="presentation"
+        >
+          <div
+            class="modal"
+            role="presentation"
+            tabindex="-1"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
+          >
+            <h3>{{ t()('documents.cover_letter_tailor_title') }}</h3>
+            <p class="modal__hint">{{ t()('documents.cover_letter_tailor_hint') }}</p>
+
+            <div class="cvform">
+              <label
+                style="grid-column: span 2; display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-2);"
+              >
+                {{ t()('documents.cover_letter_tailor_select') }}
+                <select
+                  style="background: var(--surface-sunken); border: var(--border-width) solid var(--border-default); border-radius: var(--radius-input); color: var(--text-primary); padding: var(--space-2) var(--space-3);"
+                  [ngModel]="selectedCoverLetterId()"
+                  (ngModelChange)="selectedCoverLetterId.set($event === '' ? null : +$event)"
+                >
+                  <option [value]="null">-- None (Generate New from Scratch) --</option>
+                  @for (c of coverLetters(); track c.id) {
+                    <option [value]="c.id">
+                      {{ c.label || t()('documents.cover_letter_untitled') }} ({{
+                        c.language?.toUpperCase()
+                      }})
+                    </option>
+                  }
+                </select>
+              </label>
+              <label
+                style="grid-column: span 2; display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-2);"
+              >
+                {{ t()('documents.cv_field_language') }}
+                <select
+                  style="background: var(--surface-sunken); border: var(--border-width) solid var(--border-default); border-radius: var(--radius-input); color: var(--text-primary); padding: var(--space-2) var(--space-3);"
+                  [ngModel]="tailorCoverLetterLanguage()"
+                  (ngModelChange)="tailorCoverLetterLanguage.set($event)"
+                >
+                  @for (l of portalLanguages; track l) {
+                    <option [value]="l">{{ l.toUpperCase() }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+
+            @if (tailorCoverLetterError()) {
+              <p class="modal__error">{{ tailorCoverLetterError() }}</p>
+            }
+            <div class="modal__actions">
+              <button
+                class="btn btn--secondary btn--md"
+                [disabled]="tailoringCoverLetter()"
+                (click)="tailorCoverLetterOpen.set(false)"
+              >
+                {{ t()('actions.cancel') }}
+              </button>
+              <button
+                class="btn btn--primary btn--md"
+                [disabled]="tailoringCoverLetter()"
+                (click)="startTailoringCoverLetter()"
+              >
+                {{
+                  tailoringCoverLetter()
+                    ? t()('documents.cover_letter_tailor_busy')
+                    : t()('documents.cover_letter_tailor_confirm_btn')
+                }}
+              </button>
+            </div>
+          </div>
+        </div>
       }
     </div>
   `,
@@ -1334,6 +1452,184 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly changesOpen = signal(true);
   protected readonly changeType = classifyChangeType;
 
+  // Cover Letter tailoring (Phase 1c)
+  readonly coverLetters = signal<DocumentLibraryItem[]>([]);
+  readonly selectedCoverLetterId = signal<number | null>(null);
+  readonly tailorCoverLetterLanguage = signal<SupportedLanguage>('en');
+  readonly tailorCoverLetterOpen = signal(false);
+  readonly tailoringCoverLetter = signal(false);
+  readonly tailorCoverLetterError = signal('');
+
+  openCoverLetter(id: number): void {
+    void this.router.navigate(['/documents/cover-letter', id]);
+  }
+
+  async openTailorCoverLetterModal(): Promise<void> {
+    this.tailorCoverLetterError.set('');
+    this.selectedCoverLetterId.set(null);
+    this.tailoringCoverLetter.set(false);
+    this.tailorCoverLetterOpen.set(true);
+
+    try {
+      const letters = await this.db.documentLibraryList('cover_letter');
+      this.coverLetters.set(letters);
+      const settings = this.settings();
+      this.tailorCoverLetterLanguage.set(settings?.defaultDocLanguage ?? 'en');
+      const defaultDoc =
+        letters.find((c) => c.isDefault && c.language === this.tailorCoverLetterLanguage()) ??
+        letters.find((c) => c.language === this.tailorCoverLetterLanguage()) ??
+        letters[0] ??
+        null;
+      if (defaultDoc) {
+        this.selectedCoverLetterId.set(defaultDoc.id);
+      }
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  async startTailoringCoverLetter(): Promise<void> {
+    if (this.tailoringCoverLetter()) return;
+    this.tailoringCoverLetter.set(true);
+    this.tailorCoverLetterError.set('');
+
+    try {
+      const job = this.job();
+      const profile = this.profile();
+      const settings = this.settings();
+      if (!job || !job.id) throw new Error('No active job selected.');
+      if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
+
+      const lang = this.tailorCoverLetterLanguage();
+      const jd = job.jdText ?? '';
+
+      let baseParagraphs: string[] = [];
+      let baseAddress: CoverLetterAddress = {};
+      let baseSubject = '';
+      let baseGreeting = '';
+      let baseClosing = '';
+      let baseSignature = '';
+      let baseRegionTag = 'generic';
+
+      const selectedId = this.selectedCoverLetterId();
+      if (selectedId) {
+        const baseDoc = this.coverLetters().find((c) => c.id === selectedId);
+        if (baseDoc && baseDoc.contentJson) {
+          const content = JSON.parse(baseDoc.contentJson) as CoverLetterContent;
+          baseParagraphs = content.bodyParagraphs || [];
+          baseAddress = content.address || {};
+          baseSubject = content.subject || '';
+          baseGreeting = content.greeting || '';
+          baseClosing = content.closing || '';
+          baseSignature = content.signature || '';
+          baseRegionTag = baseDoc.regionTag || 'generic';
+        }
+      }
+
+      let tailoredParagraphs: string[] = [];
+      const modelUsed = settings?.defaultModel ?? 'quality';
+      let tokensInput = 0;
+      let tokensOutput = 0;
+
+      if (baseParagraphs.length > 0) {
+        const rendered = await this.ai.renderSkill('cover-letter-tailor', {
+          profile_md: profile.fullMd,
+          job_description: jd,
+          body_paragraphs: JSON.stringify(baseParagraphs),
+          language: lang,
+        });
+        const res = await this.ai.run({
+          mode: settings?.aiMode ?? 'api',
+          provider: settings?.provider ?? 'openai',
+          model: settings?.defaultModel ?? 'quality',
+          systemPrompt: rendered.systemPrompt,
+          userPrompt: rendered.userPrompt,
+          language: lang,
+        });
+
+        const rawText = res.text
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```\s*$/i, '')
+          .trim();
+
+        const parsed = JSON.parse(rawText);
+        tailoredParagraphs = parsed.bodyParagraphs || [];
+        tokensInput = res.tokensInput;
+        tokensOutput = res.tokensOutput;
+      } else {
+        const rendered = await this.ai.renderSkill('cover-letter-generate', {
+          profile_md: profile.fullMd,
+          job_description: jd,
+          language: lang,
+          section: 'all',
+        });
+        const res = await this.ai.run({
+          mode: settings?.aiMode ?? 'api',
+          provider: settings?.provider ?? 'openai',
+          model: settings?.defaultModel ?? 'quality',
+          systemPrompt: rendered.systemPrompt,
+          userPrompt: rendered.userPrompt,
+          language: lang,
+        });
+
+        const rawText = res.text
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```\s*$/i, '')
+          .trim();
+
+        const parsed = JSON.parse(rawText) as CoverLetterContent;
+        baseAddress = parsed.address || {};
+        baseSubject = parsed.subject || '';
+        baseGreeting = parsed.greeting || '';
+        baseClosing = parsed.closing || '';
+        baseSignature = parsed.signature || '';
+        tailoredParagraphs = parsed.bodyParagraphs || [];
+        tokensInput = res.tokensInput;
+        tokensOutput = res.tokensOutput;
+      }
+
+      const contentJsonObj: CoverLetterContent = {
+        address: baseAddress,
+        date: new Date().toISOString().split('T')[0],
+        subject: baseSubject,
+        greeting: baseGreeting,
+        bodyParagraphs: tailoredParagraphs,
+        closing: baseClosing,
+        signature: baseSignature,
+        jobDescription: jd,
+      };
+
+      const label = `${job.company || 'Job'} — Tailored Cover Letter`;
+      const created = await this.db.documentLibraryUpsert({
+        docType: 'cover_letter',
+        source: 'generated',
+        label,
+        contentJson: JSON.stringify(contentJsonObj),
+        regionTag: baseRegionTag,
+        language: lang,
+        modelUsed,
+        tokensInput,
+        tokensOutput,
+      });
+
+      const app = this.application();
+      if (app && app.id) {
+        const updatedApp = await this.db.upsertApplication({
+          ...app,
+          coverLetterDocumentId: created.id,
+        });
+        this.application.set(updatedApp);
+      }
+
+      this.tailorCoverLetterOpen.set(false);
+      void this.router.navigate(['/documents/cover-letter', created.id]);
+    } catch (e) {
+      this.tailorCoverLetterError.set(String(e));
+    } finally {
+      this.tailoringCoverLetter.set(false);
+    }
+  }
+
   /** Three tailoring phases (XYZ → dual critique → build) with derived state. */
   readonly tailorPhases = computed(() => {
     const done = this.tailorResults().length;
@@ -1423,6 +1719,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;
       this.application.set(app);
+
+      const coverLetters = await this.db.documentLibraryList('cover_letter');
+      this.coverLetters.set(coverLetters);
 
       this.portalQuestions.set([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
       this.portalAnswers.set([]);

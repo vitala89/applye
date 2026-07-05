@@ -83,6 +83,7 @@ pub fn run() {
             commands::documents::cv_template_upsert,
             commands::documents::cv_import_read_file,
             commands::documents::cv_document_export,
+            commands::documents::cover_letter_document_export,
             commands::documents::check_style_safety,
             commands::health::health_check,
             commands::tailoring::generated_doc_get,

@@ -1,0 +1,378 @@
+@if (loading()) {
+  <p class="cvdetail__state">{{ t()('common.loading') }}</p>
+} @else if (loadError() || !doc()) {
+  <p class="cvdetail__state">{{ t()('common.error') }}</p>
+} @else {
+  <div class="coverdetail">
+    <header class="coverdetail__bar">
+      <button class="icon-btn" type="button" (click)="back()">
+        <lucide-icon [img]="icons.back" [size]="16" aria-hidden="true" />
+      </button>
+      <input
+        class="coverdetail__label"
+        type="text"
+        [ngModel]="label()"
+        (ngModelChange)="label.set($event)"
+        [placeholder]="t()('documents.cover_letter_untitled')"
+      />
+      <div class="coverdetail__spacer"></div>
+      <button appButton variant="secondary" size="sm" (click)="previewMode.set(!previewMode())">
+        <lucide-icon
+          [img]="previewMode() ? icons.edit : icons.preview"
+          [size]="14"
+          aria-hidden="true"
+        />
+        {{ previewMode() ? t()('documents.cv_edit_action') : t()('documents.cv_preview_action') }}
+      </button>
+      <button
+        appButton
+        variant="primary"
+        size="sm"
+        [disabled]="saving() || justSaved()"
+        (click)="save()"
+      >
+        <lucide-icon
+          [img]="justSaved() ? icons.check : icons.save"
+          [size]="14"
+          aria-hidden="true"
+        />
+        {{ justSaved() ? 'Saved' : saving() ? t()('common.loading') : t()('actions.save') }}
+      </button>
+    </header>
+
+    <div class="coverdetail__meta">
+      <div class="coverdetail__meta-field">
+        <span class="coverdetail__meta-label">{{ t()('documents.cv_field_region') }}</span>
+        <div class="coverdetail__meta-row">
+          <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
+            @for (r of regionTags; track r) {
+              <option [value]="r">{{ r.toUpperCase() }}</option>
+            }
+          </select>
+          <label class="coverdetail__checkbox">
+            <input
+              type="checkbox"
+              [ngModel]="isDefault()"
+              (ngModelChange)="isDefault.set($event)"
+            />
+            <span>{{ t()('documents.cv_field_is_default') }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    @if (error()) {
+      <p class="modal__error">{{ error() }}</p>
+    }
+
+    <div class="split-editor" [class.split-editor--preview]="previewMode()">
+      <!-- LEFT: Structured Block Editor -->
+      @if (!previewMode()) {
+        <div class="block-editor">
+          <h3 class="block-editor__title">Edit Blocks</h3>
+
+          <!-- Address Block -->
+          <fieldset class="editor-fieldset">
+            <legend>Recipient Address</legend>
+            <div class="editor-grid">
+              <label>
+                Recipient Name
+                <input
+                  type="text"
+                  [ngModel]="content().address.recipientName"
+                  (ngModelChange)="updateAddress('recipientName', $event)"
+                />
+              </label>
+              <label>
+                Company
+                <input
+                  type="text"
+                  [ngModel]="content().address.company"
+                  (ngModelChange)="updateAddress('company', $event)"
+                />
+              </label>
+              <label style="grid-column: span 2">
+                Street
+                <input
+                  type="text"
+                  [ngModel]="content().address.street"
+                  (ngModelChange)="updateAddress('street', $event)"
+                />
+              </label>
+              <label>
+                Postal Code
+                <input
+                  type="text"
+                  [ngModel]="content().address.postalCode"
+                  (ngModelChange)="updateAddress('postalCode', $event)"
+                />
+              </label>
+              <label>
+                City
+                <input
+                  type="text"
+                  [ngModel]="content().address.city"
+                  (ngModelChange)="updateAddress('city', $event)"
+                />
+              </label>
+              <label style="grid-column: span 2">
+                Country
+                <input
+                  type="text"
+                  [ngModel]="content().address.country"
+                  (ngModelChange)="updateAddress('country', $event)"
+                />
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Date Block -->
+          <fieldset class="editor-fieldset">
+            <legend>Date</legend>
+            <div class="block-row">
+              <input
+                type="text"
+                class="full-width"
+                [ngModel]="content().date"
+                (ngModelChange)="updateField('date', $event)"
+              />
+            </div>
+          </fieldset>
+
+          <!-- Subject Block -->
+          <fieldset class="editor-fieldset">
+            <div class="legend-row">
+              <legend>{{ t()('documents.cover_letter_field_subject') }}</legend>
+              <button
+                class="icon-btn text-accent"
+                type="button"
+                [disabled]="regeneratingBlock() === 'subject'"
+                (click)="regenerateBlock('subject')"
+              >
+                <lucide-icon
+                  [img]="icons.regenerate"
+                  [size]="13"
+                  [class.spin]="regeneratingBlock() === 'subject'"
+                  aria-hidden="true"
+                />
+                Regenerate
+              </button>
+            </div>
+            <div class="block-row">
+              <input
+                type="text"
+                class="full-width"
+                [ngModel]="content().subject"
+                (ngModelChange)="updateField('subject', $event)"
+              />
+            </div>
+          </fieldset>
+
+          <!-- Greeting Block -->
+          <fieldset class="editor-fieldset">
+            <div class="legend-row">
+              <legend>{{ t()('documents.cover_letter_field_greeting') }}</legend>
+              <button
+                class="icon-btn text-accent"
+                type="button"
+                [disabled]="regeneratingBlock() === 'greeting'"
+                (click)="regenerateBlock('greeting')"
+              >
+                <lucide-icon
+                  [img]="icons.regenerate"
+                  [size]="13"
+                  [class.spin]="regeneratingBlock() === 'greeting'"
+                  aria-hidden="true"
+                />
+                Regenerate
+              </button>
+            </div>
+            <div class="block-row">
+              <input
+                type="text"
+                class="full-width"
+                [ngModel]="content().greeting"
+                (ngModelChange)="updateField('greeting', $event)"
+              />
+            </div>
+          </fieldset>
+
+          <!-- Body Paragraphs Block -->
+          <fieldset class="editor-fieldset">
+            <legend>Body Paragraphs</legend>
+            <div class="paragraphs-list">
+              @for (para of content().bodyParagraphs || []; track $index) {
+                <div class="paragraph-card">
+                  <div class="paragraph-card__header">
+                    <span>{{
+                      t()('documents.cover_letter_field_paragraph').replace(
+                        '{index}',
+                        '' + ($index + 1)
+                      )
+                    }}</span>
+                    <div class="paragraph-card__actions">
+                      <button
+                        class="icon-btn text-accent"
+                        type="button"
+                        [disabled]="regeneratingBlock() === 'body_' + $index"
+                        (click)="regenerateBlock('body', $index)"
+                      >
+                        <lucide-icon
+                          [img]="icons.regenerate"
+                          [size]="13"
+                          [class.spin]="regeneratingBlock() === 'body_' + $index"
+                          aria-hidden="true"
+                        />
+                        Regen
+                      </button>
+                      <button
+                        class="icon-btn icon-btn--danger"
+                        type="button"
+                        (click)="removeParagraph($index)"
+                      >
+                        <lucide-icon [img]="icons.trash" [size]="13" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    class="paragraph-card__textarea"
+                    [ngModel]="para"
+                    (ngModelChange)="updateParagraph($index, $event)"
+                  ></textarea>
+                </div>
+              }
+            </div>
+            <button
+              appButton
+              variant="secondary"
+              size="sm"
+              style="margin-top: var(--space-3)"
+              (click)="addParagraph()"
+            >
+              <lucide-icon [img]="icons.plus" [size]="12" aria-hidden="true" />
+              Add Paragraph
+            </button>
+          </fieldset>
+
+          <!-- Closing Block -->
+          <fieldset class="editor-fieldset">
+            <div class="legend-row">
+              <legend>{{ t()('documents.cover_letter_field_closing') }}</legend>
+              <button
+                class="icon-btn text-accent"
+                type="button"
+                [disabled]="regeneratingBlock() === 'closing'"
+                (click)="regenerateBlock('closing')"
+              >
+                <lucide-icon
+                  [img]="icons.regenerate"
+                  [size]="13"
+                  [class.spin]="regeneratingBlock() === 'closing'"
+                  aria-hidden="true"
+                />
+                Regenerate
+              </button>
+            </div>
+            <div class="block-row">
+              <input
+                type="text"
+                class="full-width"
+                [ngModel]="content().closing"
+                (ngModelChange)="updateField('closing', $event)"
+              />
+            </div>
+          </fieldset>
+
+          <!-- Signature Block -->
+          <fieldset class="editor-fieldset">
+            <div class="legend-row">
+              <legend>{{ t()('documents.cover_letter_field_signature') }}</legend>
+              <button
+                class="icon-btn text-accent"
+                type="button"
+                [disabled]="regeneratingBlock() === 'signature'"
+                (click)="regenerateBlock('signature')"
+              >
+                <lucide-icon
+                  [img]="icons.regenerate"
+                  [size]="13"
+                  [class.spin]="regeneratingBlock() === 'signature'"
+                  aria-hidden="true"
+                />
+                Regenerate
+              </button>
+            </div>
+            <div class="block-row">
+              <input
+                type="text"
+                class="full-width"
+                [ngModel]="content().signature"
+                (ngModelChange)="updateField('signature', $event)"
+              />
+            </div>
+          </fieldset>
+        </div>
+      }
+
+      <!-- RIGHT: Real Export Layout Live Preview -->
+      @if (previewMode()) {
+        <div class="live-preview">
+          <h3 class="live-preview__title">Preview</h3>
+          <div class="letter-sheet">
+            <!-- Recipient address block -->
+            <div class="letter-recipient">
+              @if (content().address.recipientName) {
+                <div>{{ content().address.recipientName }}</div>
+              }
+              @if (content().address.company) {
+                <div>{{ content().address.company }}</div>
+              }
+              @if (content().address.street) {
+                <div>{{ content().address.street }}</div>
+              }
+              @if (content().address.postalCode || content().address.city) {
+                <div>
+                  {{ content().address.postalCode || '' }} {{ content().address.city || '' }}
+                </div>
+              }
+              @if (content().address.country) {
+                <div>{{ content().address.country }}</div>
+              }
+            </div>
+
+            <!-- Date -->
+            <div class="letter-date">
+              {{ content().date }}
+            </div>
+
+            <!-- Subject -->
+            <div class="letter-subject">
+              {{ content().subject }}
+            </div>
+
+            <!-- Greeting -->
+            <div class="letter-greeting">
+              {{ content().greeting }}
+            </div>
+
+            <!-- Body Paragraphs -->
+            <div class="letter-body">
+              @for (para of content().bodyParagraphs || []; track $index) {
+                @if (para) {
+                  <p>{{ para }}</p>
+                }
+              }
+            </div>
+
+            <!-- Closing & Signature -->
+            <div class="letter-closing">
+              <div>{{ content().closing }}</div>
+              <div class="letter-signature-space"></div>
+              <div class="letter-signature">{{ content().signature }}</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

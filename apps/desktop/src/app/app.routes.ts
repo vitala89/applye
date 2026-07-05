@@ -69,6 +69,13 @@ export const appRoutes: Route[] = [
       import('./pages/documents/cv-detail/cv-detail.component').then((m) => m.CvDetailComponent),
   },
   {
+    path: 'documents/cover-letter/:id',
+    loadComponent: () =>
+      import('./pages/documents/cover-letter-detail/cover-letter-detail.component').then(
+        (m) => m.CoverLetterDetailComponent,
+      ),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./pages/settings/settings.component').then((m) => m.SettingsComponent),

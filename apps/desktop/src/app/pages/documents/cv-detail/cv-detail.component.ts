@@ -2,7 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ArrowLeft, Eye, LucideAngularModule, Pencil, RefreshCw, Save } from 'lucide-angular';
+import {
+  ArrowLeft,
+  Eye,
+  LucideAngularModule,
+  Pencil,
+  RefreshCw,
+  Save,
+  Check,
+  Info,
+} from 'lucide-angular';
 import type {
   CvContent,
   CvSection,
@@ -47,9 +56,12 @@ export class CvDetailComponent {
     regenerate: RefreshCw,
     preview: Eye,
     edit: Pencil,
+    check: Check,
+    info: Info,
   };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
+  protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -65,6 +77,7 @@ export class CvDetailComponent {
   readonly includeMaritalStatus = signal(false);
 
   readonly saving = signal(false);
+  readonly justSaved = signal(false);
   readonly regeneratingKey = signal<CvSectionKey | null>(null);
   readonly error = signal('');
 
@@ -302,6 +315,8 @@ export class CvDetailComponent {
         tokensOutput: doc.tokensOutput,
       });
       this.doc.set(saved);
+      this.justSaved.set(true);
+      setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
       this.error.set(String(e));
     } finally {

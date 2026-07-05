@@ -355,3 +355,51 @@ a:hover {
     opacity: 1;
   }
 }
+
+/* ============================================================
+   BADGE — compact status/label chip. Matches the Applye Design
+   System Badge component: mono, uppercase, soft tinted surface.
+   Tones: neutral (muted), accent (indigo/AI), pass (success),
+   warn (warning), danger (danger).
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: var(--radius-badge);
+  border: var(--border-width) solid transparent;
+}
+
+.badge--neutral,
+.badge--muted {
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+
+.badge--accent {
+  background: var(--accent-tint);
+  color: var(--text-accent);
+}
+
+.badge--pass {
+  background: var(--success-tint);
+  color: var(--success);
+}
+
+.badge--warn {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.badge--danger {
+  background: var(--danger-tint);
+  color: var(--danger);
+}

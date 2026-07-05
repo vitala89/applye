@@ -1,19 +1,16 @@
 # Current Operational State
 
-- **Current version**: `0.18.1`
-- **Current branch / focus**: `main` / AIF Product State System + next-feature brief queue (0 → 2 → 1)
+- **Current version**: `0.19.0`
+- **Current branch / focus**: `feat/followup-drafting` / next-feature brief queue (1 remaining: Step 1)
 - **Recently completed**:
+  - Step 2 — Follow-up Message Drafting: "Draft follow-up" action on overdue Pipeline cards, cached AI draft, `mailto:` hand-off only. [Brief](feature-briefs/followup-drafting.md)
   - AIF Core foundation for AI-assisted development (Cursor rules, model policies, security/privacy trust docs, context gate, keyring and token guards, CLI routing).
 - **Currently working on**:
-  - Implementing the AIF Product State System — a product-aware planning and documentation layer in `docs/product/` for Applye.
-- **Next recommended action** (queue 0 → 2 → 1):
-  - **Step 0** — finalize AIF Product State System, commit to `docs/aif-product-state-workflow`, open PR. [Brief](feature-briefs/aif-product-state-system.md)
-  - **Step 2** — Follow-up Message Drafting (quick win, builds on shipped overdue badge). [Brief](feature-briefs/followup-drafting.md)
-  - **Step 1** — Documents CV & Cover Letter Library, start with **1a data layer only** (migration `0010`). [Brief](feature-briefs/documents-cv-cover-letter.md)
+  - Preparing PR for Follow-up Message Drafting (Step 2).
+- **Next recommended action**:
+  - **Step 1** — Documents CV & Cover Letter Library, start with **1a data layer only** (migration `0011` — `0010` was taken by Follow-up Drafting). [Brief](feature-briefs/documents-cv-cover-letter.md)
 - **Active feature briefs**:
-  - [AIF Product State System](feature-briefs/aif-product-state-system.md) — Step 0, in-progress.
-  - [Follow-up Message Drafting](feature-briefs/followup-drafting.md) — Step 2, ready.
-  - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, ready (1a).
+  - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, ready (1a, migration `0011`).
 - **Blocked / open questions**:
   - None at present.
 - **Important constraints**:

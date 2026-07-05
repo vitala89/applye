@@ -244,6 +244,7 @@ pub struct PipelineCard {
     pub updated_at: Option<String>,
     pub company: Option<String>,
     pub title: Option<String>,
+    pub doc_language: Option<String>,
     pub score: Option<f64>,
     pub priority: Option<String>,
     pub current_stage_order: Option<i64>,
@@ -265,7 +266,7 @@ async fn db_pipeline_cards_core(pool: &sqlx::SqlitePool) -> Result<Vec<PipelineC
         "SELECT
            a.id, a.job_id, a.status, a.applied_at, a.follow_up_at,
            (a.follow_up_at IS NOT NULL AND a.follow_up_at < date('now')) AS overdue,
-           a.updated_at, a.priority,
+           a.updated_at, a.priority, a.doc_language,
            j.company, j.title,
            sc.score,
            cs.stage_order AS current_stage_order,
@@ -636,5 +637,22 @@ mod followup_tests {
         assert_eq!(patched.cover_letter_path.as_deref(), Some("cl.pdf"));
         assert_eq!(patched.application_method.as_deref(), Some("email"));
         assert_eq!(patched.contract_type.as_deref(), Some("permanent"));
+    }
+
+    /// `doc_language` must flow through the Pipeline card query so the
+    /// follow-up drafting language selector can default to it.
+    #[tokio::test]
+    async fn pipeline_cards_include_doc_language() {
+        let pool = test_pool().await;
+        let id = insert_job_and_application(&pool).await;
+        sqlx::query("UPDATE applications SET doc_language = 'de' WHERE id = ?")
+            .bind(id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let cards = db_pipeline_cards_core(&pool).await.expect("list cards");
+        let card = cards.into_iter().find(|c| c.id == id).expect("card exists");
+        assert_eq!(card.doc_language.as_deref(), Some("de"));
     }
 }

@@ -1,6 +1,6 @@
 # Feature Brief: Follow-up Message Drafting (Step 2)
 
-- **Status**: `planned`
+- **Status**: `shipped` (v0.19.0)
 - **Source**: `IDEAS.md` (2026-07-05) — "Draft follow-up message for overdue applications".
 - **Roadmap**: §13 v2 — "Follow-up drafting"; complements the shipped overdue badge (§7, v0.11.0).
 

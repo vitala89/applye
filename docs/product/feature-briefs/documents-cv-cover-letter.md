@@ -32,7 +32,7 @@ section/paragraph content on demand (cached). Nothing auto-submitted — passes 
 
 ### In Scope (whole feature, delivered across 1a–1d)
 
-- **1a — Data layer.** Migration `0010_documents_library.sql`: `document_library` + `cv_templates`
+- **1a — Data layer.** Migration `0011_documents_library.sql`: `document_library` + `cv_templates`
   tables per §12 DDL, plus `applications.cv_document_id` / `cover_letter_document_id` (nullable FKs).
   Built-in `cv_templates` seed rows (DE-traditional, DE-ATS-modern, US, UK, generic). Rust + `libs/core`
   - `libs/data` types. No UI yet.
@@ -69,7 +69,7 @@ section/paragraph content on demand (cached). Nothing auto-submitted — passes 
 
 **1a (first agent task):**
 
-- [ ] `0010_documents_library.sql` creates `document_library` + `cv_templates` exactly per §12 DDL.
+- [ ] `0011_documents_library.sql` creates `document_library` + `cv_templates` exactly per §12 DDL.
 - [ ] `applications.cv_document_id` + `cover_letter_document_id` added as nullable FKs (additive).
 - [ ] Built-in `cv_templates` rows seeded (DE-traditional/photo, DE-ATS-modern/no-photo, US, UK, generic).
 - [ ] `libs/core` + `libs/data` types mirror the new tables; Rust structs + basic CRUD commands compile.
@@ -89,7 +89,7 @@ avoid scope bleed).
 
 ### Expected Files (1a only)
 
-- `apps/desktop/src-tauri/migrations/0010_documents_library.sql` (new).
+- `apps/desktop/src-tauri/migrations/0011_documents_library.sql` (new).
 - Rust models + commands for `document_library` / `cv_templates` (mirror existing table modules).
 - `libs/core/src/...` domain types (`DocumentLibraryItem`, `CvTemplate`).
 - `libs/data/src/...` data-layer types/queries.
@@ -106,10 +106,10 @@ skills are distinct (baseline/market vs job-specific).
 
 ### Data / Migration Impact
 
-Migration `0010_documents_library.sql` — confirmed next-free (latest applied is
-`0009_pipeline_priority_comments.sql`). Two new tables + two additive columns on `applications`. Purely
-additive. `document_library` is the live editable library; `generated_docs` stays the export journal —
-do not merge them. Coordinate the 0010 number with Follow-up Drafting (whichever ships first claims 0010).
+Migration `0011_documents_library.sql` — Follow-up Drafting shipped first and claimed `0010`
+(`0010_followup_drafts.sql`), so this is the next-free number as of v0.19.0. Two new tables + two
+additive columns on `applications`. Purely additive. `document_library` is the live editable library;
+`generated_docs` stays the export journal — do not merge them.
 
 ### Privacy / Security Impact
 
@@ -147,11 +147,11 @@ verification begins in 1b when the Documents screen becomes real.
 ### Docs to Update
 
 CHANGELOG `[Unreleased]` (per sub-phase), FEATURE_INDEX (Documents → In-Progress at 1a start),
-CURRENT_STATE, and ROADMAP §12 migration-order note (confirm 0010 landed).
+CURRENT_STATE, and ROADMAP §12 migration-order note (confirm 0011 landed).
 
 ### Changelog Draft (1a)
 
-> **Documents library — data layer.** Additive migration `0010_documents_library.sql` adds
+> **Documents library — data layer.** Additive migration `0011_documents_library.sql` adds
 > `document_library` and `cv_templates` (per ROADMAP §12) plus nullable
 > `applications.cv_document_id` / `cover_letter_document_id`, with built-in CV templates seeded
 > (DE-traditional, DE-ATS-modern, US, UK, generic). Rust and `libs/core`/`libs/data` types synced.
@@ -172,7 +172,8 @@ bump. 1a is a minor bump (new schema capability, no user-visible behavior).
 - Exact `content_json` shape for CV sections vs cover-letter blocks — lock in 1a as typed structs so
   1b/1c build against a stable contract.
 - Which built-in templates ship first vs. later.
-- 0010 migration number coordination with Follow-up Drafting.
+- ~~0010 migration number coordination with Follow-up Drafting~~ — resolved: Follow-up Drafting
+  shipped first and claimed `0010`; this feature uses `0011`.
 
 ### Decision
 

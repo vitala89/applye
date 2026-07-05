@@ -79,6 +79,84 @@
       </section>
     }
 
+    @if (card().overdue) {
+      <section class="qv__section">
+        <span class="qv__label">{{ t()('followup.section_label') }}</span>
+        <div class="qv__followup-row">
+          <div class="qv__lang-options">
+            @for (l of FOLLOWUP_LANGUAGES; track l) {
+              <button
+                type="button"
+                class="qv__lang-btn"
+                [class.is-active]="followupLanguage() === l"
+                (click)="onFollowupLanguageChange(l)"
+              >
+                {{ l }}
+              </button>
+            }
+          </div>
+          <button
+            type="button"
+            class="btn-ghost"
+            [disabled]="followupDrafting()"
+            (click)="draftFollowup()"
+          >
+            <lucide-icon [img]="icons.mail" [size]="14" />
+            {{ t()('followup.draft_action') }}
+          </button>
+        </div>
+
+        @if (followupDrafting()) {
+          <p class="qv__hint">{{ t()('common.loading') }}</p>
+        } @else if (followupError()) {
+          <p class="qv__error">{{ followupError() }}</p>
+        } @else if (followupHasDraft()) {
+          @if (followupFromCache()) {
+            <p class="qv__hint">{{ t()('followup.cached_hint') }}</p>
+          }
+          <div class="qv__followup-row">
+            <input
+              class="qv__followup-recipient"
+              [ngModel]="followupTo()"
+              (ngModelChange)="followupTo.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="t()('followup.to_placeholder')"
+            />
+            <input
+              class="qv__followup-recipient"
+              [ngModel]="followupCc()"
+              (ngModelChange)="followupCc.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="t()('followup.cc_placeholder')"
+            />
+          </div>
+          <input
+            class="qv__followup-subject"
+            [ngModel]="followupSubject()"
+            (ngModelChange)="followupSubject.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            [placeholder]="t()('followup.subject_placeholder')"
+          />
+          <textarea
+            class="qv__followup-body"
+            rows="6"
+            [ngModel]="followupBody()"
+            (ngModelChange)="followupBody.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          ></textarea>
+          <div class="qv__followup-row">
+            <button type="button" class="btn-ghost" (click)="copyFollowup()">
+              <lucide-icon [img]="icons.copy" [size]="14" />
+              {{ followupCopied() ? t()('followup.copied') : t()('followup.copy') }}
+            </button>
+            <button type="button" class="btn-primary" (click)="openFollowupInMail()">
+              {{ t()('followup.open_in_mail') }}
+            </button>
+          </div>
+        }
+      </section>
+    }
+
     <section class="qv__section qv__section--grow">
       <span class="qv__label">{{ t()('pipeline.quickview_comments') }}</span>
       <div class="qv__comments">

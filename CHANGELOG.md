@@ -14,6 +14,12 @@ is the single source of truth; this file tracks what changed at each tag.
 
 - AIF Core foundation for AI-assisted development: shared agent context, Claude Code skills and read-only specialist subagents, Cursor rules, token/context/model policies, and security/privacy trust docs.
 
+## [0.19.0] - 2026-07-05
+
+### Added
+
+- **Follow-up drafting.** Overdue Pipeline cards now offer a "Draft follow-up" action in the quick-view modal that drafts a polite follow-up email from the company, role, and days-overdue via the `followup.md` skill (one AI call, cached per application + language + model). The draft is editable and opens the user's own mail client pre-filled via `mailto:` — Applye never sends it. EN + DE.
+
 ## [0.18.1] - 2026-07-05
 
 ### Added

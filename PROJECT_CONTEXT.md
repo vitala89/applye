@@ -1,5 +1,7 @@
 # Applye Project Context
 
+For the daily operational planning, current branch focus, and status of active features, refer to the operational state file: [docs/product/CURRENT_STATE.md](file:///Users/eugenekasap/WebstormProjects/applye/docs/product/CURRENT_STATE.md).
+
 ## Product
 
 Applye is an open-source, privacy-first job-search productivity app for German/EU job seekers. It helps people track applications, paste job descriptions for AI-assisted HR checks and resume tailoring, and prepare for interviews. Core workflows should run offline; AI features are opt-in and token-frugal.

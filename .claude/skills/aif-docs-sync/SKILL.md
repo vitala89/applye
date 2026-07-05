@@ -8,7 +8,7 @@ Use when behavior, workflow, commands, architecture, security, privacy, or AI pr
 
 ## Steps
 
-1. Identify docs affected by the change.
+1. Identify docs affected by the change, including root canonical files and operational docs in `docs/product/` (e.g., `CURRENT_STATE.md`, `FEATURE_INDEX.md`, or active feature briefs).
 2. Update only docs that help future work.
 3. Keep wording concise and operational.
 4. Mark unknowns as `TODO`.

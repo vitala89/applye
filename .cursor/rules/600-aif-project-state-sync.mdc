@@ -1,0 +1,26 @@
+---
+description: Sync and manage product, feature, and architectural state for Applye work.
+globs:
+  - "docs/product/**/*"
+  - "docs/ai/**/*"
+  - "ROADMAP.md"
+  - "INSTRUCTIONS.md"
+  - "STEP_BY_STEP_PLAN.md"
+  - "CHANGELOG.md"
+alwaysApply: false
+---
+
+# AIF Project State Sync
+
+Trigger this rule when planning, checking next steps, recording ideas, prioritizing features, making architectural decisions, or updating project state docs.
+
+## Behavior Rules
+
+1. **Focus First**: Do not force all project docs into the context. Prefer reading [docs/product/CURRENT_STATE.md](file:///Users/eugenekasap/WebstormProjects/applye/docs/product/CURRENT_STATE.md) first to establish operational context.
+2. **Check Policy**: Follow the read/write guidelines in [docs/ai/project-state-policy.md](file:///Users/eugenekasap/WebstormProjects/applye/docs/ai/project-state-policy.md) strictly.
+3. **Request Classification**:
+   * **Idea**: Update [docs/product/IDEAS.md](file:///Users/eugenekasap/WebstormProjects/applye/docs/product/IDEAS.md) only.
+   * **Feature brief**: Create/update under `docs/product/feature-briefs/` and update [docs/product/FEATURE_INDEX.md](file:///Users/eugenekasap/WebstormProjects/applye/docs/product/FEATURE_INDEX.md).
+   * **Architectural decision**: Create ADR under `docs/product/decisions/`.
+4. **Prevent Noise**: Do not modify root-level canonical files (`ROADMAP.md`, `INSTRUCTIONS.md`, `STEP_BY_STEP_PLAN.md`, `CHANGELOG.md`) for minor feature steps or raw ideas.
+5. **Release Logs**: Add unreleased entry to `CHANGELOG.md` only when a product feature is completed and ready, never for raw ideas.

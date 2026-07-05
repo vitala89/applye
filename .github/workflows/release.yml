@@ -1,9 +1,10 @@
 name: Release
 
 # Multi-OS packaging + auto-updater artifacts. Separate from ci.yml (which
-# gates pushes/PRs). This runs ONLY on a version tag push (e.g. v0.3.0) and
+# gates pushes/PRs). This runs ONLY on a version tag push (e.g. v0.18.0) and
 # produces a DRAFT GitHub Release with installers + latest.json for review
-# before publishing.
+# before publishing. The tag must match package.json, tauri.conf.json, and
+# Cargo.toml versions.
 #
 # Required repo secrets:
 #   TAURI_SIGNING_PRIVATE_KEY           — updater private key (from `tauri signer generate`)
@@ -74,6 +75,30 @@ jobs:
           workspaces: apps/desktop/src-tauri
 
       - run: npm ci
+
+      - name: Verify release tag matches app versions
+        shell: bash
+        run: |
+          expected="${GITHUB_REF_NAME#v}"
+          package_version="$(node -p "require('./package.json').version")"
+          package_lock_version="$(node -p "require('./package-lock.json').version")"
+          tauri_version="$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")"
+          cargo_version="$(grep -m1 '^version = ' apps/desktop/src-tauri/Cargo.toml | sed -E 's/version = "([^"]+)"/\1/')"
+
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tags must use vX.Y.Z format. Got: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          if [ "$package_version" != "$expected" ] || [ "$package_lock_version" != "$expected" ] || [ "$tauri_version" != "$expected" ] || [ "$cargo_version" != "$expected" ]; then
+            echo "Tag/version mismatch:"
+            echo "  tag:               $GITHUB_REF_NAME"
+            echo "  package.json:      $package_version"
+            echo "  package-lock.json: $package_lock_version"
+            echo "  tauri.conf:        $tauri_version"
+            echo "  Cargo.toml:        $cargo_version"
+            exit 1
+          fi
 
       - name: Build + publish draft release
         uses: tauri-apps/tauri-action@v0

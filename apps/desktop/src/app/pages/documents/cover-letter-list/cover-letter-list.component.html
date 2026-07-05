@@ -1,0 +1,197 @@
+<div class="cvlist">
+  <header class="cvlist__bar">
+    <div class="cvlist__actions">
+      <button appButton variant="primary" size="sm" (click)="openGenerate()">
+        <lucide-icon [img]="icons.generate" [size]="14" aria-hidden="true" />
+        {{ t()('documents.cover_letter_generate_action') }}
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="cvlist__state">{{ t()('common.loading') }}</p>
+  } @else if (loadError()) {
+    <p class="cvlist__state">{{ t()('common.error') }}</p>
+  } @else if (!hasCoverLetters()) {
+    <p class="cvlist__state">{{ t()('documents.cover_letter_empty') }}</p>
+  } @else {
+    <ul class="cvlist__rows">
+      @for (item of coverLetters(); track item.id) {
+        <li
+          class="cvlist__row"
+          role="button"
+          tabindex="0"
+          (click)="open(item.id)"
+          (keydown.enter)="open(item.id)"
+        >
+          <div class="cvlist__row-main">
+            <span class="cell-strong">{{
+              item.label || t()('documents.cover_letter_untitled')
+            }}</span>
+            <div class="cvlist__tags">
+              @if (item.regionTag) {
+                <span class="badge">{{ item.regionTag.toUpperCase() }}</span>
+              }
+              @if (item.language) {
+                <span class="badge">{{ item.language.toUpperCase() }}</span>
+              }
+              @if (item.isDefault) {
+                <span class="badge badge--default">{{ t()('documents.cv_default_badge') }}</span>
+              }
+            </div>
+          </div>
+          <div class="cvlist__row-actions">
+            <button
+              class="icon-btn"
+              type="button"
+              [attr.aria-label]="t()('documents.cv_duplicate_action')"
+              (click)="duplicate(item, $event)"
+            >
+              <lucide-icon [img]="icons.duplicate" [size]="14" aria-hidden="true" />
+            </button>
+            <label class="cvlist__export">
+              <lucide-icon [img]="icons.export" [size]="14" aria-hidden="true" />
+              <select
+                [disabled]="exportBusyId() === item.id"
+                [attr.aria-label]="t()('documents.cv_export_action')"
+                (click)="$event.stopPropagation()"
+                (change)="
+                  exportDoc(item, $any($event.target).value, $event); $any($event.target).value = ''
+                "
+              >
+                <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
+                <option value="docx">{{ t()('documents.cv_export_docx_action') }}</option>
+                <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
+              </select>
+            </label>
+            <button
+              class="icon-btn icon-btn--danger"
+              type="button"
+              [attr.aria-label]="t()('documents.cv_delete_action')"
+              (click)="requestDelete(item, $event)"
+            >
+              <lucide-icon [img]="icons.trash" [size]="14" aria-hidden="true" />
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+@if (deleteTarget(); as target) {
+  <div
+    class="modal-backdrop"
+    (click)="onDeleteBackdropClick($event)"
+    (keydown.escape)="cancelDelete()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="t()('documents.cover_letter_delete_confirm_title')"
+    >
+      <h3>{{ t()('documents.cover_letter_delete_confirm_title') }}</h3>
+      <p class="modal__hint">{{ t()('documents.cover_letter_delete_confirm_msg') }}</p>
+      <p class="cell-strong">{{ target.label || t()('documents.cover_letter_untitled') }}</p>
+      <div class="modal__actions">
+        <button class="btn btn--secondary btn--md" [disabled]="deleting()" (click)="cancelDelete()">
+          {{ t()('actions.cancel') }}
+        </button>
+        <button class="btn btn--danger btn--md" [disabled]="deleting()" (click)="confirmDelete()">
+          {{
+            deleting() ? t()('common.loading') : t()('documents.cover_letter_delete_confirm_btn')
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (generateOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="cancelGenerate()"
+    (keydown.escape)="cancelGenerate()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div
+      class="modal"
+      role="presentation"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h3>{{ t()('documents.cover_letter_generate_title') }}</h3>
+      <p class="modal__hint">{{ t()('documents.cover_letter_generate_hint') }}</p>
+
+      <div class="cvform">
+        <label>
+          {{ t()('documents.cv_field_region') }}
+          <select [ngModel]="generateRegionTag()" (ngModelChange)="generateRegionTag.set($event)">
+            @for (r of regionTags; track r) {
+              <option [value]="r">{{ r.toUpperCase() }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          {{ t()('documents.cv_field_language') }}
+          <select [ngModel]="generateLanguage()" (ngModelChange)="generateLanguage.set($event)">
+            @for (l of languages; track l) {
+              <option [value]="l">{{ l.toUpperCase() }}</option>
+            }
+          </select>
+        </label>
+        <label style="grid-column: span 2">
+          {{ t()('documents.cover_letter_generate_job_select') }}
+          <select
+            [ngModel]="selectedJobId()"
+            (ngModelChange)="selectedJobId.set($event === '' ? null : +$event)"
+          >
+            <option [value]="null">-- Select a Tracked Job (Optional) --</option>
+            @for (j of trackedJobs(); track j.id) {
+              <option [value]="j.id">{{ j.company }} — {{ j.title }}</option>
+            }
+          </select>
+        </label>
+        @if (!selectedJobId()) {
+          <label style="grid-column: span 2">
+            {{ t()('documents.cover_letter_generate_custom_job') }}
+            <textarea
+              style="
+                min-height: 100px;
+                resize: vertical;
+                background: var(--surface-sunken);
+                border: var(--border-width) solid var(--border-default);
+                border-radius: var(--radius-input);
+                color: var(--text-primary);
+                padding: var(--space-2) var(--space-3);
+              "
+              [ngModel]="customJdText()"
+              (ngModelChange)="customJdText.set($event)"
+            ></textarea>
+          </label>
+        }
+      </div>
+
+      @if (generateError()) {
+        <p class="modal__error">{{ generateError() }}</p>
+      }
+      <div class="modal__actions">
+        <button class="btn-ghost" [disabled]="generateBusy()" (click)="cancelGenerate()">
+          {{ t()('actions.cancel') }}
+        </button>
+        <button class="btn-primary" [disabled]="generateBusy()" (click)="confirmGenerate()">
+          {{
+            generateBusy()
+              ? t()('documents.cover_letter_generate_busy')
+              : t()('documents.cover_letter_generate_confirm_btn')
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

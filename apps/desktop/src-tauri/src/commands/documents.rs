@@ -687,6 +687,127 @@ async fn cv_document_export_bytes_core(
 }
 
 #[tauri::command]
+pub async fn cover_letter_document_export(
+    id: i64,
+    format: String,
+    save_path: String,
+    db: State<'_, Db>,
+) -> Result<String, String> {
+    let bytes = cover_letter_document_export_bytes_core(id, &format, &db.pool).await?;
+    std::fs::write(&save_path, bytes)
+        .map_err(|e| format!("cover_letter_document_export: write: {e}"))?;
+    Ok(save_path)
+}
+
+async fn cover_letter_document_export_bytes_core(
+    id: i64,
+    format: &str,
+    pool: &sqlx::SqlitePool,
+) -> Result<Vec<u8>, String> {
+    let doc = document_library_get_core(id, pool)
+        .await?
+        .ok_or_else(|| "cover_letter_document_export: document not found".to_string())?;
+    let content_json = doc
+        .content_json
+        .ok_or_else(|| "cover_letter_document_export: document has no content".to_string())?;
+    match format {
+        "docx" => crate::commands::tailoring::md_to_docx_bytes(&cover_letter_content_to_markdown(
+            &content_json,
+        )?),
+        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(&cover_letter_content_to_markdown(
+            &content_json,
+        )?),
+        other => Err(format!(
+            "cover_letter_document_export: unsupported format '{other}'"
+        )),
+    }
+}
+
+fn cover_letter_content_to_markdown(content_json: &str) -> Result<String, String> {
+    let parsed: serde_json::Value = serde_json::from_str(content_json)
+        .map_err(|e| format!("cover_letter_content_to_markdown: invalid json: {e}"))?;
+
+    let mut md = String::new();
+
+    if let Some(addr) = parsed.get("address") {
+        if let Some(name) = addr.get("recipientName").and_then(|v| v.as_str()) {
+            if !name.is_empty() {
+                md.push_str(&format!("{name}\n"));
+            }
+        }
+        if let Some(comp) = addr.get("company").and_then(|v| v.as_str()) {
+            if !comp.is_empty() {
+                md.push_str(&format!("{comp}\n"));
+            }
+        }
+        if let Some(street) = addr.get("street").and_then(|v| v.as_str()) {
+            if !street.is_empty() {
+                md.push_str(&format!("{street}\n"));
+            }
+        }
+        let pc = addr
+            .get("postalCode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let city = addr.get("city").and_then(|v| v.as_str()).unwrap_or("");
+        if !pc.is_empty() || !city.is_empty() {
+            md.push_str(&format!("{pc} {city}\n").trim());
+        }
+        if let Some(country) = addr.get("country").and_then(|v| v.as_str()) {
+            if !country.is_empty() {
+                md.push_str(&format!("{country}\n"));
+            }
+        }
+    }
+
+    if !md.is_empty() {
+        md.push_str("\n");
+    }
+
+    if let Some(date) = parsed.get("date").and_then(|v| v.as_str()) {
+        if !date.is_empty() {
+            md.push_str(&format!("{date}\n\n"));
+        }
+    }
+
+    if let Some(subject) = parsed.get("subject").and_then(|v| v.as_str()) {
+        if !subject.is_empty() {
+            md.push_str(&format!("**{subject}**\n\n"));
+        }
+    }
+
+    if let Some(greeting) = parsed.get("greeting").and_then(|v| v.as_str()) {
+        if !greeting.is_empty() {
+            md.push_str(&format!("{greeting}\n\n"));
+        }
+    }
+
+    if let Some(paras) = parsed.get("bodyParagraphs").and_then(|v| v.as_array()) {
+        for para in paras {
+            if let Some(p_str) = para.as_str() {
+                if !p_str.is_empty() {
+                    md.push_str(&format!("{p_str}\n\n"));
+                }
+            }
+        }
+    }
+
+    let closing = parsed.get("closing").and_then(|v| v.as_str()).unwrap_or("");
+    let sig = parsed
+        .get("signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if !closing.is_empty() {
+        md.push_str(&format!("{closing}\n\n"));
+    }
+    if !sig.is_empty() {
+        md.push_str(&format!("{sig}\n"));
+    }
+
+    Ok(md)
+}
+
+#[tauri::command]
 pub async fn document_library_list(
     doc_type: Option<String>,
     db: State<'_, Db>,

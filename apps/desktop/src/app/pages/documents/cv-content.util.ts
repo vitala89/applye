@@ -161,11 +161,24 @@ function emptyParsedContent(): CvParsedContent {
 /** Parses a `cv-import`/`cv-generate-baseline` skill response (JSON, possibly
  * fenced) into `CvParsedContent`. Throws with the raw text on invalid JSON
  * so the caller can surface a real error instead of a silent empty draft. */
-export function parseCvSkillResponse(text: string): CvParsedContent {
-  const raw = text
+export function cleanJsonText(text: string): string {
+  let cleaned = text.trim();
+  cleaned = cleaned
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```\s*$/i, '')
     .trim();
+  const startIdx = cleaned.indexOf('{');
+  const endIdx = cleaned.lastIndexOf('}');
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    cleaned = cleaned.substring(startIdx, endIdx + 1);
+  }
+  if (cleaned.startsWith('`')) cleaned = cleaned.substring(1);
+  if (cleaned.endsWith('`')) cleaned = cleaned.substring(0, cleaned.length - 1);
+  return cleaned.trim();
+}
+
+export function parseCvSkillResponse(text: string): CvParsedContent {
+  const raw = cleanJsonText(text);
   let parsed: Partial<CvParsedContent>;
   try {
     parsed = JSON.parse(raw);

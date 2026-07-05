@@ -283,6 +283,23 @@
             }
           </select>
         </label>
+        <label class="cvform__full-width">
+          {{ t()('documents.cv_field_job') }}
+          <select
+            [ngModel]="selectedJobId()"
+            (ngModelChange)="selectedJobId.set($event === '' ? null : +$event)"
+          >
+            <option value="">-- General Application / None --</option>
+            @for (job of trackedJobs(); track job.id) {
+              <option [value]="job.id">
+                {{ job.title }}
+                @if (job.company) {
+                  ({{ job.company }})
+                }
+              </option>
+            }
+          </select>
+        </label>
       </div>
 
       @if (generateError()) {

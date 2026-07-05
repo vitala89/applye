@@ -39,6 +39,12 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "cv-generate-baseline" => Some(include_str!(
             "../../../../../libs/skills/src/cv-generate-baseline/cv-generate-baseline.md"
         )),
+        "cover-letter-generate" => Some(include_str!(
+            "../../../../../libs/skills/src/cover-letter-generate/cover-letter-generate.md"
+        )),
+        "cover-letter-tailor" => Some(include_str!(
+            "../../../../../libs/skills/src/cover-letter-tailor/cover-letter-tailor.md"
+        )),
         _ => None,
     }
 }

@@ -30,20 +30,31 @@
   flex: 1;
 }
 
-.cvdetail__meta,
-.cvdetail__toggles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  align-items: center;
+.cvdetail__meta {
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
 }
-.cvdetail__meta label {
+
+.cvdetail__meta-field {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.cvdetail__meta-label {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
 }
+
+.cvdetail__meta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
 .cvdetail__meta input[type='text'] {
   background: var(--surface-sunken);
   border: var(--border-width) solid var(--border-default);
@@ -52,7 +63,30 @@
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
   width: 140px;
+  outline: none;
 }
+.cvdetail__meta select {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 140px !important;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--space-8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-position: right var(--space-3) center;
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
+}
+.cvdetail__meta select:focus {
+  border-color: var(--accent);
+}
+
 .cvdetail__checkbox {
   display: inline-flex;
   align-items: center;
@@ -62,9 +96,18 @@
   cursor: pointer;
 }
 .cvdetail__checkbox input[type='checkbox'] {
-  width: auto;
+  width: 16px;
+  height: 16px;
   accent-color: var(--accent);
+  margin: 0;
   cursor: pointer;
+}
+
+.cvdetail__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: center;
 }
 
 .toggle-chip {
@@ -119,37 +162,119 @@
 }
 
 .cvdetail__style {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
 }
 .cvdetail__style-field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
 }
 .cvdetail__style-field label {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
-}
-.cvdetail__style-hint {
   margin: 0;
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
 }
+.cvdetail__style-field select {
+  width: 180px !important;
+}
+.cvdetail__style-field input[type='number'] {
+  width: 95px !important;
+}
+.cvdetail__label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-1);
+}
+
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  cursor: help;
+  transition: color 0.15s ease;
+}
+.tooltip:hover {
+  color: var(--text-secondary);
+}
+.tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 0;
+  transform: scale(0.9);
+  transform-origin: bottom left;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  color: var(--text-primary);
+  font-size: var(--text-2xs);
+  line-height: var(--leading-normal);
+  white-space: normal;
+  width: 220px;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  z-index: 100;
+}
+.tooltip:hover::before {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
 .cvdetail__style-color-row {
   display: flex;
   align-items: center;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: 0 var(--space-2);
+  height: 36px;
   gap: var(--space-2);
+  transition: border-color 0.15s ease;
+  width: 180px !important;
+}
+.cvdetail__style-color-row:focus-within {
+  border-color: var(--accent);
 }
 .cvdetail__style-color-row input[type='color'] {
-  width: 36px;
-  height: 32px;
-  padding: 2px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  background: none;
   flex: 0 0 auto;
+  outline: none;
 }
-.cvdetail__style-color-hex {
-  flex: 1;
+.cvdetail__style-color-row input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.cvdetail__style-color-row input[type='color']::-webkit-color-swatch {
+  border: var(--border-width) solid var(--border-default);
+  border-radius: 4px;
+}
+.cvdetail__style-color-row input[type='text'] {
+  border: none !important;
+  background: none !important;
+  padding: 0 !important;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  width: 100% !important;
+  outline: none !important;
+  height: 100%;
 }
 
 .cvdetail__sections {
@@ -211,6 +336,7 @@
 }
 
 .cvdetail input:not([type='checkbox']),
+.cvdetail select,
 .cvdetail textarea {
   background: var(--surface-sunken);
   border: var(--border-width) solid var(--border-default);
@@ -220,6 +346,22 @@
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
   width: 100%;
+  outline: none;
+}
+.cvdetail select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--space-8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-position: right var(--space-3) center;
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+.cvdetail select:focus,
+.cvdetail input:focus,
+.cvdetail textarea:focus {
+  border-color: var(--accent);
 }
 .cvdetail textarea {
   resize: vertical;

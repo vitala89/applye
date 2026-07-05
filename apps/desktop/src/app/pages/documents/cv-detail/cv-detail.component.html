@@ -33,21 +33,41 @@
       <button appButton variant="secondary" size="sm" (click)="openSaveTemplate()">
         {{ t()('documents.cv_save_as_template_action') }}
       </button>
-      <button appButton variant="primary" size="sm" [disabled]="saving()" (click)="save()">
-        <lucide-icon [img]="icons.save" [size]="14" aria-hidden="true" />
-        {{ saving() ? t()('common.loading') : t()('actions.save') }}
+      <button
+        appButton
+        variant="primary"
+        size="sm"
+        [disabled]="saving() || justSaved()"
+        (click)="save()"
+      >
+        <lucide-icon
+          [img]="justSaved() ? icons.check : icons.save"
+          [size]="14"
+          aria-hidden="true"
+        />
+        {{ justSaved() ? 'Saved' : saving() ? t()('common.loading') : t()('actions.save') }}
       </button>
     </header>
 
     <div class="cvdetail__meta">
-      <label>
-        {{ t()('documents.cv_field_region') }}
-        <input type="text" [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)" />
-      </label>
-      <label class="cvdetail__checkbox">
-        <input type="checkbox" [ngModel]="isDefault()" (ngModelChange)="isDefault.set($event)" />
-        {{ t()('documents.cv_field_is_default') }}
-      </label>
+      <div class="cvdetail__meta-field">
+        <span class="cvdetail__meta-label">{{ t()('documents.cv_field_region') }}</span>
+        <div class="cvdetail__meta-row">
+          <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
+            @for (r of regionTags; track r) {
+              <option [value]="r">{{ r.toUpperCase() }}</option>
+            }
+          </select>
+          <label class="cvdetail__checkbox">
+            <input
+              type="checkbox"
+              [ngModel]="isDefault()"
+              (ngModelChange)="isDefault.set($event)"
+            />
+            <span>{{ t()('documents.cv_field_is_default') }}</span>
+          </label>
+        </div>
+      </div>
     </div>
 
     <div class="cvdetail__toggles">
@@ -91,23 +111,29 @@
     @if (!previewMode()) {
       <div class="cvdetail__style">
         <div class="cvdetail__style-field">
-          <label for="cv-style-font">{{ t()('documents.cv_style_font') }}</label>
-          <input
+          <div class="cvdetail__label-row">
+            <label for="cv-style-font">{{ t()('documents.cv_style_font') }}</label>
+            <div class="tooltip" [attr.data-tooltip]="t()('documents.cv_style_hint_font')">
+              <lucide-icon [img]="icons.info" [size]="13" aria-hidden="true" />
+            </div>
+          </div>
+          <select
             id="cv-style-font"
-            type="text"
-            list="cv-style-font-options"
             [ngModel]="style().fontFamily"
             (ngModelChange)="updateStyle({ fontFamily: $event })"
-          />
-          <datalist id="cv-style-font-options">
+          >
             @for (font of atsSafeFonts; track font) {
-              <option [value]="font"></option>
+              <option [value]="font">{{ font }}</option>
             }
-          </datalist>
-          <p class="cvdetail__style-hint">{{ t()('documents.cv_style_hint_font') }}</p>
+          </select>
         </div>
         <div class="cvdetail__style-field">
-          <label for="cv-style-size">{{ t()('documents.cv_style_size') }}</label>
+          <div class="cvdetail__label-row">
+            <label for="cv-style-size">{{ t()('documents.cv_style_size') }}</label>
+            <div class="tooltip" [attr.data-tooltip]="t()('documents.cv_style_hint_size')">
+              <lucide-icon [img]="icons.info" [size]="13" aria-hidden="true" />
+            </div>
+          </div>
           <input
             id="cv-style-size"
             type="number"
@@ -117,10 +143,14 @@
             [ngModel]="style().fontSizePt"
             (ngModelChange)="updateStyle({ fontSizePt: +$event })"
           />
-          <p class="cvdetail__style-hint">{{ t()('documents.cv_style_hint_size') }}</p>
         </div>
         <div class="cvdetail__style-field">
-          <label for="cv-style-color">{{ t()('documents.cv_style_color') }}</label>
+          <div class="cvdetail__label-row">
+            <label for="cv-style-color">{{ t()('documents.cv_style_color') }}</label>
+            <div class="tooltip" [attr.data-tooltip]="t()('documents.cv_style_hint_color')">
+              <lucide-icon [img]="icons.info" [size]="13" aria-hidden="true" />
+            </div>
+          </div>
           <div class="cvdetail__style-color-row">
             <input
               id="cv-style-color"
@@ -135,7 +165,6 @@
               (ngModelChange)="updateStyle({ accentColorHex: $event })"
             />
           </div>
-          <p class="cvdetail__style-hint">{{ t()('documents.cv_style_hint_color') }}</p>
         </div>
       </div>
       @if (styleNotes().length) {

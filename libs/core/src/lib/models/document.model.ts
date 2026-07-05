@@ -124,6 +124,14 @@ export interface CoverLetterContent {
   bodyParagraphs: string[];
   closing: string;
   signature: string;
+  jobDescription?: string;
+  hashes?: {
+    subject?: string;
+    greeting?: string;
+    bodyParagraphs?: string[];
+    closing?: string;
+    signature?: string;
+  };
 }
 
 export type DocumentContent = CvContent | CoverLetterContent;

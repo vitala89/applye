@@ -21,9 +21,6 @@
   @if (tab() === 'cv') {
     <app-cv-list />
   } @else {
-    <div class="state-empty">
-      <lucide-icon [img]="icons.empty" [size]="40" class="state-empty__icon" aria-hidden="true" />
-      <p class="state-empty__msg">{{ t()('documents.coming_soon') }}</p>
-    </div>
+    <app-cover-letter-list />
   }
 </div>

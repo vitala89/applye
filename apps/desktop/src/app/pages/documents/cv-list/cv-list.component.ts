@@ -7,11 +7,17 @@ import type {
   CvTemplate,
   DocumentLibraryItem,
   SupportedLanguage,
+  Job,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { buildCvContent, parseCvSkillResponse, suggestCvFilename } from '../cv-content.util';
+import {
+  buildCvContent,
+  parseCvSkillResponse,
+  suggestCvFilename,
+  cleanJsonText,
+} from '../cv-content.util';
 
 type ImportStep = 'pick' | 'preview' | 'done';
 type GenerateStep = 'config' | 'done';
@@ -47,6 +53,7 @@ export class CvListComponent {
 
   readonly cvs = signal<DocumentLibraryItem[]>([]);
   readonly templates = signal<CvTemplate[]>([]);
+  readonly trackedJobs = signal<Job[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal(false);
 
@@ -60,12 +67,14 @@ export class CvListComponent {
     this.loading.set(true);
     this.loadError.set(false);
     try {
-      const [cvs, templates] = await Promise.all([
+      const [cvs, templates, jobs] = await Promise.all([
         this.db.documentLibraryList('cv'),
         this.db.cvTemplatesList(),
+        this.db.listJobs(),
       ]);
       this.cvs.set(cvs);
       this.templates.set(templates);
+      this.trackedJobs.set(jobs);
     } catch {
       this.loadError.set(true);
     } finally {
@@ -263,10 +272,12 @@ export class CvListComponent {
   readonly generateArchetypeTag = signal('');
   readonly generateLanguage = signal<SupportedLanguage>('en');
   readonly generateTemplateId = signal<number | null>(null);
+  readonly selectedJobId = signal<number | null>(null);
 
   async openGenerate(): Promise<void> {
     this.generateStep.set('config');
     this.generateError.set('');
+    this.selectedJobId.set(null);
     this.generateOpen.set(true);
     try {
       const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
@@ -295,9 +306,33 @@ export class CvListComponent {
       if (!profile?.fullMd) {
         throw new Error(this.t()('documents.cv_generate_no_profile'));
       }
+
+      let scoringJson = profile.scoringJson ?? '{}';
+      let label = `${this.generateArchetypeTag() || this.t()('documents.cv_untitled')} — ${this.generateRegionTag().toUpperCase()}`;
+
+      if (this.selectedJobId()) {
+        const job = this.trackedJobs().find((j) => j.id === this.selectedJobId());
+        if (job) {
+          let originalScoring = {};
+          try {
+            originalScoring = JSON.parse(cleanJsonText(profile.scoringJson ?? '{}'));
+          } catch {
+            // Ignore parse errors on profile scoring
+          }
+          const jobContext = {
+            targetJobTitle: job.title,
+            targetCompany: job.company,
+            jobDescription: job.jdText,
+            originalScoring,
+          };
+          scoringJson = JSON.stringify(jobContext);
+          label = `${job.title ?? this.t()('documents.cv_untitled')} — ${job.company ?? 'Job'}`;
+        }
+      }
+
       const rendered = await this.ai.renderSkill('cv-generate-baseline', {
         profile_md: profile.fullMd,
-        scoring_json: profile.scoringJson ?? '{}',
+        scoring_json: scoringJson,
         region_tag: this.generateRegionTag(),
         archetype_tag: this.generateArchetypeTag() || 'generalist',
         language: this.generateLanguage(),
@@ -318,7 +353,7 @@ export class CvListComponent {
       const created = await this.db.documentLibraryUpsert({
         docType: 'cv',
         source: 'generated',
-        label: `${this.generateArchetypeTag() || this.t()('documents.cv_untitled')} — ${this.generateRegionTag().toUpperCase()}`,
+        label,
         contentJson: JSON.stringify(content),
         templateId: template?.id,
         regionTag: this.generateRegionTag(),
@@ -328,6 +363,19 @@ export class CvListComponent {
         tokensInput: res.tokensInput,
         tokensOutput: res.tokensOutput,
       });
+
+      // Link to job application if selected
+      if (this.selectedJobId()) {
+        const apps = await this.db.listApplications();
+        const app = apps.find((a) => a.jobId === this.selectedJobId());
+        if (app) {
+          await this.db.upsertApplication({
+            ...app,
+            cvDocumentId: created.id,
+          });
+        }
+      }
+
       this.generateOpen.set(false);
       await this.load();
       this.open(created.id);

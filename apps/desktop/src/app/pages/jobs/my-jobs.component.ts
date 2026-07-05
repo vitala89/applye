@@ -11,7 +11,7 @@ import {
   Upload,
 } from 'lucide-angular';
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped, JobOverview } from '@applye/core';
-import { AiService, DbService } from '@applye/data';
+import { AiService, DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
@@ -55,6 +55,7 @@ export class MyJobsComponent {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly router = inject(Router);
+  protected readonly jobsStore = inject(JobsStore);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
@@ -67,9 +68,8 @@ export class MyJobsComponent {
     dangerGlyph: CircleX,
   };
 
-  readonly rows = signal<JobOverview[]>([]);
-  readonly loading = signal(true);
-  readonly loadError = signal(false);
+  readonly loading = this.jobsStore.loading;
+  readonly loadError = this.jobsStore.loadError;
 
   readonly search = signal('');
   readonly statusFilter = signal<string>('');
@@ -116,7 +116,7 @@ export class MyJobsComponent {
     const key = this.sortKey();
     const dir = this.sortDir() === 'asc' ? 1 : -1;
 
-    const filtered = this.rows().filter((r) => {
+    const filtered = this.jobsStore.overview().filter((r) => {
       if (q && !`${r.company ?? ''} ${r.title ?? ''}`.toLowerCase().includes(q)) return false;
       if (sf && (r.status ?? 'saved') !== sf) return false;
       if (lf && (r.legitimacyTier ?? 'green') !== lf) return false;
@@ -137,15 +137,7 @@ export class MyJobsComponent {
   }
 
   async load(): Promise<void> {
-    this.loading.set(true);
-    this.loadError.set(false);
-    try {
-      this.rows.set(await this.db.listJobsOverview());
-    } catch {
-      this.loadError.set(true);
-    } finally {
-      this.loading.set(false);
-    }
+    await this.jobsStore.loadOverview(true);
   }
 
   setSort(key: SortKey): void {
@@ -184,9 +176,8 @@ export class MyJobsComponent {
     if (!row || this.deleting()) return;
     this.deleting.set(true);
     try {
-      await this.db.deleteJob(row.id);
+      await this.jobsStore.deleteJob(row.id);
       this.deleteTarget.set(null);
-      await this.load();
     } finally {
       this.deleting.set(false);
     }

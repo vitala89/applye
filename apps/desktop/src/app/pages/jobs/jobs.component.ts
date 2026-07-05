@@ -50,7 +50,7 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { ScoreGauge } from '@applye/ui';
+import { ScoreGauge, Skeleton } from '@applye/ui';
 import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
@@ -69,7 +69,7 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard, ScoreGauge],
+  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard, ScoreGauge, Skeleton],
   template: `
     <div class="jobs">
       @if (!wizardOpen()) {
@@ -409,24 +409,25 @@ interface PassResult {
                 </div>
 
                 @if (updatingScore()) {
-                  <!-- AI-thinking skeleton while the rescore runs -->
+                  <!-- AI-thinking skeleton (design-system shimmer) while the
+                       rescore runs -->
                   <div class="rescore-loading">
                     <div class="rescore-loading__gauges">
-                      <div class="skeleton skeleton--gauge"></div>
+                      <lib-skeleton [circle]="true" [height]="76" />
                       <lucide-icon
                         [img]="icons.next"
                         [size]="18"
                         class="score-compare__arrow"
                         aria-hidden="true"
                       />
-                      <div class="skeleton skeleton--gauge"></div>
+                      <lib-skeleton [circle]="true" [height]="76" />
                     </div>
                     <div class="ai-thinking">
                       <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
                       {{ t()('jobs.wizard.updating_score_hint') }}
                     </div>
-                    <div class="skeleton skeleton--line"></div>
-                    <div class="skeleton skeleton--line skeleton--line-short"></div>
+                    <lib-skeleton [height]="12" />
+                    <lib-skeleton [height]="12" width="55%" />
                   </div>
                 } @else if (postTailorScore(); as post) {
                   <div class="card score-compare">
@@ -743,25 +744,6 @@ interface PassResult {
         align-items: center;
         justify-content: center;
         gap: var(--space-6);
-      }
-      .skeleton {
-        background: var(--surface-sunken);
-        border-radius: var(--radius-card);
-        animation: applye-pulse 1.6s ease-in-out infinite;
-      }
-      .skeleton--gauge {
-        width: 76px;
-        height: 76px;
-        border-radius: 50%;
-      }
-      .skeleton--line {
-        height: 12px;
-        width: 100%;
-        border-radius: var(--radius-full, 999px);
-      }
-      .skeleton--line-short {
-        width: 55%;
-        animation-delay: 0.2s;
       }
       .jobs {
         display: flex;

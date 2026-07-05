@@ -111,6 +111,11 @@ import {
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
               {{ t()('jobs.wizard.mark_as_applied') }}
             </button>
+            @if (overrideEditing()) {
+              <button class="btn btn--secondary btn--sm" type="button" (click)="cancelEdit.emit()">
+                {{ t()('actions.cancel') }}
+              </button>
+            }
           } @else if (applicationStatus(); as status) {
             <span class="badge" [class]="statusBadgeClass(status)">
               {{ t()('status.' + status) }}
@@ -152,11 +157,16 @@ export class ApplyWizard {
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
   readonly applicationStatus = input<ApplicationStatus | null>(null);
+  /** Parent's "Change" override — same live-edit-mode signal as
+   * JobsComponent.editingLocked, so this footer stays in sync with the
+   * top-level lock state. */
+  readonly overrideEditing = input<boolean>(false);
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
   readonly markApplied = output<void>();
   readonly changeStatus = output<void>();
+  readonly cancelEdit = output<void>();
 
   readonly activeStep = signal(0);
 
@@ -175,7 +185,7 @@ export class ApplyWizard {
   /** Mirrors JobsComponent.canMarkApplied — same gate, same reasoning. */
   protected readonly canMarkApplied = computed(() => {
     const status = this.applicationStatus();
-    return !status || status === 'saved';
+    return !status || status === 'saved' || this.overrideEditing();
   });
 
   protected goBack(): void {

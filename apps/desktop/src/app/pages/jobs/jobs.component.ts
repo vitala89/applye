@@ -142,6 +142,16 @@ interface PassResult {
                 >
                   {{ t()('jobs.mark_applied') }}
                 </button>
+                @if (editingLocked()) {
+                  <button
+                    class="btn btn--secondary btn--sm"
+                    type="button"
+                    [disabled]="actionBusy()"
+                    (click)="cancelEditingLocked()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                }
               } @else if (application(); as app) {
                 <span class="badge" [class]="statusBadgeClass(app.status)">{{
                   t()('status.' + app.status)
@@ -149,7 +159,7 @@ interface PassResult {
                 <button
                   class="btn btn--secondary btn--sm"
                   [disabled]="actionBusy()"
-                  (click)="openChangeStatusConfirm()"
+                  (click)="startEditingLocked()"
                 >
                   {{ t()('jobs.change_status_action') }}
                 </button>
@@ -272,39 +282,6 @@ interface PassResult {
         }
       }
 
-      @if (changeStatusConfirmOpen()) {
-        <div class="alert alert--warn" role="alert">
-          <lucide-icon
-            [img]="icons.alertTriangle"
-            [size]="16"
-            class="alert__icon"
-            aria-hidden="true"
-          />
-          <div class="alert__body">
-            <p class="alert__title">{{ t()('jobs.change_status_confirm_title') }}</p>
-            <p class="alert__text">{{ t()('jobs.change_status_confirm') }}</p>
-            <div class="alert__actions">
-              <button
-                class="btn btn--primary btn--md"
-                type="button"
-                [disabled]="actionBusy()"
-                (click)="revertToSaved()"
-              >
-                {{ actionBusy() ? t()('common.loading') : t()('jobs.change_status_confirm_btn') }}
-              </button>
-              <button
-                class="btn btn--secondary btn--md"
-                type="button"
-                [disabled]="actionBusy()"
-                (click)="cancelChangeStatusConfirm()"
-              >
-                {{ t()('actions.cancel') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-
       <!-- Scoring result -->
       @if (cache(); as c) {
         <section class="section">
@@ -340,9 +317,11 @@ interface PassResult {
               [icons]="icons"
               [postTailorScore]="postTailorScore()"
               [applicationStatus]="application()?.status ?? null"
+              [overrideEditing]="editingLocked()"
               (closeWizard)="wizardOpen.set(false)"
               (markApplied)="markApplied()"
-              (changeStatus)="openChangeStatusConfirm()"
+              (changeStatus)="startEditingLocked()"
+              (cancelEdit)="cancelEditingLocked()"
             >
               <div wizardTailorStep class="wizard-step-content">
                 <div class="apply-fields-header">
@@ -668,13 +647,6 @@ interface PassResult {
       }
       .alert--danger .alert__icon {
         color: var(--danger);
-      }
-      .alert--warn {
-        background: var(--warning-tint);
-        border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
-      }
-      .alert--warn .alert__icon {
-        color: var(--warning);
       }
       .alert__icon {
         flex: 0 0 auto;
@@ -1272,24 +1244,24 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly actionMsg = signal('');
   readonly deleteConfirmOpen = signal(false);
   readonly deleting = signal(false);
-  readonly changeStatusConfirmOpen = signal(false);
 
-  /** Once a job is Applied, its description is locked — editing/re-parsing
-   * would risk drifting the saved JD out of sync with what was submitted.
-   * Unlocks only via "Change" (revertToSaved), same gate as the Applied
-   * badge below. */
-  /** Mark-as-Applied only makes sense with no application yet, or one still
-   * in 'saved'. Anything further along (applied/interview/offer/rejected/
-   * cancelled) shows a status badge + Change instead — it used to fall
-   * through to "Mark as Applied" for every status except the exact literal
-   * 'applied', which was wrong for interview/offer/rejected/cancelled. */
+  /** "Change" doesn't write anything — it just lifts the lock so the
+   * description is editable and Mark-as-Applied reappears, letting the user
+   * redo the status/description from scratch. Nothing is saved unless the
+   * user then takes an explicit action (Parse & filter, Mark as Applied).
+   * "Cancel" drops this override and discards any in-progress edit. */
+  readonly editingLocked = signal(false);
+
+  /** True with no application yet, one still in 'saved', or the user
+   * overrode the lock via "Change". Anything else (applied/interview/
+   * offer/rejected/cancelled) shows a status badge + Change instead of an
+   * actionable Mark-as-Applied button. */
   readonly canMarkApplied = computed(() => {
     const status = this.application()?.status;
-    return !status || status === 'saved';
+    return !status || status === 'saved' || this.editingLocked();
   });
 
-  /** Once past 'saved', the description is locked too — same gate as
-   * canMarkApplied, inverted. */
+  /** Locked exactly when Mark-as-Applied isn't available. */
   readonly jobLocked = computed(() => !this.canMarkApplied());
 
   protected readonly statusBadgeClass = applicationStatusBadgeClass;
@@ -1646,6 +1618,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       }
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
+      this.editingLocked.set(false);
       this.actionMsg.set(this.t()('jobs.applied_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
@@ -1654,28 +1627,17 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  openChangeStatusConfirm(): void {
-    this.changeStatusConfirmOpen.set(true);
+  /** "Change" — lifts the lock immediately, no confirmation. Nothing is
+   * written until the user takes an explicit follow-up action. */
+  startEditingLocked(): void {
+    this.editingLocked.set(true);
   }
 
-  /** Cancel — closes the confirm with no changes, application state untouched. */
-  cancelChangeStatusConfirm(): void {
-    this.changeStatusConfirmOpen.set(false);
-  }
-
-  /** Lets the user undo an accidental/premature status change back to Saved. */
-  async revertToSaved(): Promise<void> {
-    const app = this.application();
-    if (!app?.id || this.actionBusy()) return;
-    this.actionBusy.set(true);
-    try {
-      this.application.set(await this.db.setApplicationStatus(app.id, 'saved'));
-      this.changeStatusConfirmOpen.set(false);
-    } catch (e) {
-      this.actionMsg.set(String(e));
-    } finally {
-      this.actionBusy.set(false);
-    }
+  /** "Cancel" — drops the override and discards the in-progress description
+   * edit (reverts jdText to the persisted value). Nothing was ever saved. */
+  cancelEditingLocked(): void {
+    this.editingLocked.set(false);
+    this.jdText.set(this.job()?.jdText ?? '');
   }
 
   openDeleteConfirm(): void {

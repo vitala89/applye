@@ -11,9 +11,17 @@ For non-trivial work:
 
 1. Classify task type.
 2. Pick model tier.
-3. Apply the context gate.
-4. Identify security, privacy, testing, and docs triggers.
-5. Make scoped changes.
-6. Verify and summarize diff-first.
+3. If the user says "classify only", "without reading files", "do not read files", or "do not modify files", classify from the current task text only.
+4. For text-only classification, do not read files, do not call context scouts, do not recommend Graphify, CodeGraph, or graph/context tools, and do not reference previous observations, memory IDs, prior smoke tests, or internal state.
+5. Exception: architecture, security, migration, or broad-impact tasks may recommend more context, but still must not read files when the user explicitly requested classification only.
+6. Apply the context gate only when implementation is actually starting or broad context is explicitly needed.
+7. Do not recommend subagents for simple or bounded feature tasks by default.
+8. For bounded feature tasks with clear scope, local mock data only, and no storage, sync, privacy, security, architecture, plugin, notification, Tauri/Angular boundary, large-refactor, or 8+ file signal, set `Subagents needed: no` and `Graph/context tool needed: no`.
+9. Do not recommend graph/context tools just because they exist.
+10. Identify security, privacy, testing, and docs triggers.
+11. Make scoped changes.
+12. Verify and summarize diff-first.
 
 Do not create a generic implementer agent. The main session remains responsible.
+
+Always include every requested output field, including Stop condition. When the user requests exact field names, use those names verbatim.

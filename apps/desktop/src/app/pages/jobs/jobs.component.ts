@@ -972,7 +972,6 @@ export class JobsComponent implements OnInit {
     db: Database,
     bookmark: Bookmark,
     wand: WandSparkles,
-    close: X,
     back: ArrowLeft,
     checkCircle: CheckCircle2,
     languages: Languages,

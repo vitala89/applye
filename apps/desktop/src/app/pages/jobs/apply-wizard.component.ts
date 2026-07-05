@@ -19,14 +19,6 @@ import {
     <div class="apply-wizard">
       <div class="apply-wizard__rail">
         <lib-stepper [steps]="stepLabels()" [activeIndex]="activeStep()" />
-        <button
-          class="btn btn--secondary btn--sm apply-wizard__close"
-          type="button"
-          (click)="closeWizard.emit()"
-        >
-          <lucide-icon [img]="icons().close" [size]="14" aria-hidden="true" />
-          {{ t()('jobs.wizard.close') }}
-        </button>
       </div>
 
       <div class="apply-wizard__content">

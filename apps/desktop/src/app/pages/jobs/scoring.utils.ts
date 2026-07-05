@@ -13,7 +13,6 @@ export interface JobDetailIcons {
   db: LucideIconData;
   bookmark: LucideIconData;
   wand: LucideIconData;
-  close: LucideIconData;
   back: LucideIconData;
   checkCircle: LucideIconData;
   languages: LucideIconData;

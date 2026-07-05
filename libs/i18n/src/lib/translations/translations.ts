@@ -329,7 +329,6 @@ const en: TranslationMap = {
       continue_label: 'Continue',
       next_label: 'Next',
       mark_as_applied: 'Mark as applied',
-      close: 'Close',
       apply_no_export: 'No tailored resume exported yet — export one above, or apply anyway.',
     },
   },
@@ -757,7 +756,6 @@ const de: TranslationMap = {
       continue_label: 'Weiter',
       next_label: 'Weiter',
       mark_as_applied: 'Als beworben markieren',
-      close: 'Schließen',
       apply_no_export:
         'Noch kein angepasster Lebenslauf exportiert — exportiere oben einen oder bewirb dich trotzdem.',
     },

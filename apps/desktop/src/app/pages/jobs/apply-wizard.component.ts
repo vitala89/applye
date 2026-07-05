@@ -123,8 +123,13 @@ import {
             <span class="badge" [class]="statusBadgeClass(status)">
               {{ t()('status.' + status) }}
             </span>
-            <button class="btn btn--secondary btn--sm" type="button" (click)="changeStatus.emit()">
-              {{ t()('jobs.change_status_action') }}
+            <button
+              class="btn btn--primary btn--md"
+              type="button"
+              (click)="updateApplication.emit()"
+            >
+              <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
+              {{ t()('jobs.wizard.update_application') }}
             </button>
           }
         } @else {
@@ -169,7 +174,9 @@ export class ApplyWizard {
 
   readonly closeWizard = output<void>();
   readonly markApplied = output<void>();
-  readonly changeStatus = output<void>();
+  /** Commit the re-tailored resume for a job that already has a status
+   * (applied/interview/…) — persists the updated score and confirms. */
+  readonly updateApplication = output<void>();
   readonly cancelEdit = output<void>();
   /** Emitted whenever the active step changes — lets the parent kick off
    * work tied to a step (e.g. auto-rescore on entering the Updated score

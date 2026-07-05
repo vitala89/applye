@@ -329,6 +329,19 @@ interface PassResult {
               [tailored]="isTailored()"
               (tailorApply)="openWizard()"
             />
+          } @else if (applyResult()) {
+            <!-- Success confirmation before redirecting back to the job -->
+            <div class="apply-success card">
+              <span class="apply-success__icon">
+                <lucide-icon [img]="icons.checkCircle" [size]="28" aria-hidden="true" />
+              </span>
+              <h3 class="apply-success__title">{{ t()('jobs.wizard.update_success_title') }}</h3>
+              <p class="apply-success__msg">{{ t()('jobs.wizard.update_success_msg') }}</p>
+              <span class="ai-thinking">
+                <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                {{ t()('jobs.wizard.redirecting') }}
+              </span>
+            </div>
           } @else {
             <app-apply-wizard
               [cache]="cache()"
@@ -342,7 +355,7 @@ interface PassResult {
               [overrideEditing]="editingLocked()"
               (closeWizard)="closeWizard()"
               (markApplied)="markApplied()"
-              (changeStatus)="startEditingLocked()"
+              (updateApplication)="updateApplication()"
               (cancelEdit)="cancelEditingLocked()"
               (stepChange)="onWizardStep($event)"
             >
@@ -686,6 +699,37 @@ interface PassResult {
         flex-direction: column;
         gap: var(--space-4);
         padding: var(--space-4) 0;
+      }
+      .apply-success {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        text-align: center;
+        padding: var(--space-9) var(--space-6);
+      }
+      .apply-success__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--success-tint);
+        color: var(--success);
+        margin-bottom: var(--space-2);
+      }
+      .apply-success__title {
+        font-family: var(--font-mono);
+        font-size: var(--text-h2);
+        color: var(--text-primary);
+        margin: 0;
+      }
+      .apply-success__msg {
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+        margin: 0;
+        max-width: 420px;
       }
       .jobs {
         display: flex;
@@ -1267,12 +1311,17 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly tailorStatus = signal('');
   readonly tailorError = signal(false);
 
-  // Post-tailor rescore (before/after) — transient, not persisted (see
-  // updateScoreAfterTailor doc comment).
+  // Post-tailor rescore (before/after). The before/after pair is transient
+  // (in-memory), but the *after* score is persisted to My Jobs once the user
+  // reaches the export step — see savePostTailorScore.
   readonly postTailorScore = signal<ScoringCache | null>(null);
   readonly updatingScore = signal(false);
   readonly updateScoreStatus = signal('');
   readonly updateScoreError = signal(false);
+  private readonly postTailorSaved = signal(false);
+  /** Non-null while the post-apply/update success card is shown before the
+   * redirect fires. */
+  readonly applyResult = signal<'updated' | null>(null);
 
   /** True once all 3 tailoring passes are done (in this session or restored
    * from cache) — drives the immutable Tailored badge and the Retailor CTA. */
@@ -1944,6 +1993,67 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Persists the post-tailor score to `scoring_cache` so the My Jobs list
+   * reflects the tailored fit. The unique key (job_id, profile_hash, jd_hash)
+   * matches the baseline row, so this overwrites it — the "before" is only
+   * needed for the in-session comparison (held in `cache()`), not on disk.
+   * Idempotent per rescore via `postTailorSaved`.
+   */
+  private async savePostTailorScore(): Promise<void> {
+    const post = this.postTailorScore();
+    const j = this.job();
+    if (!post || !j?.id || this.postTailorSaved()) return;
+    this.postTailorSaved.set(true);
+    try {
+      await this.db.scoreCacheSave({
+        jobId: j.id,
+        profileHash: post.profileHash,
+        language: post.language ?? 'en',
+        score: post.score,
+        dimensionsJson: post.dimensionsJson ?? '[]',
+        missingKeywordsJson: post.missingKeywordsJson ?? '[]',
+        redFlagsJson: post.redFlagsJson ?? '[]',
+        atsPass: post.atsPass ?? false,
+        atsNotes: post.atsNotes ?? '',
+        summary: post.summary ?? '',
+        beforeYouSubmitJson: post.beforeYouSubmitJson ?? '[]',
+        modelUsed: post.modelUsed ?? '',
+        tokensInput: post.tokensInput ?? 0,
+        tokensOutput: post.tokensOutput ?? 0,
+      });
+    } catch {
+      this.postTailorSaved.set(false); // allow a retry on the next commit
+    }
+  }
+
+  /**
+   * "Update application" — final-step action when the job already has a
+   * status (applied/interview/…). Commits the re-tailored score, shows the
+   * success card, then returns the user to this job's detail where the
+   * updated score and Tailored badge are now in place.
+   */
+  async updateApplication(): Promise<void> {
+    const j = this.job();
+    if (!j?.id || this.actionBusy()) return;
+    this.actionBusy.set(true);
+    await this.savePostTailorScore();
+    this.applyResult.set('updated');
+    // Success card holds briefly, then drop back to this job's detail with the
+    // updated score + Tailored badge freshly loaded from cache.
+    const view = this.document.defaultView;
+    const jobId = j.id;
+    view?.setTimeout(() => {
+      void (async () => {
+        this.wizardOpen.set(false);
+        this.applyResult.set(null);
+        this.actionBusy.set(false);
+        await this.loadJob(jobId);
+        this.scrollContentToTop();
+      })();
+    }, 2200);
+  }
+
   legitimacyNotes(): string[] {
     try {
       return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
@@ -1973,6 +2083,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.exportStatus.set('');
     this.lastExport.set(null);
     this.postTailorScore.set(null);
+    this.postTailorSaved.set(false);
     this.updateScoreStatus.set('');
     this.updateScoreError.set(false);
 
@@ -1997,6 +2108,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.scrollContentToTop();
 
     const UPDATED_SCORE_STEP = 2;
+    const EXPORT_STEP = 3;
     if (
       step === UPDATED_SCORE_STEP &&
       this.tailorResults().length === 3 &&
@@ -2004,6 +2116,10 @@ export class JobsComponent implements OnInit, OnDestroy {
       !this.updatingScore()
     ) {
       void this.updateScoreAfterTailor();
+    }
+    // Continuing past the Updated score step commits the new score to My Jobs.
+    if (step === EXPORT_STEP) {
+      void this.savePostTailorScore();
     }
   }
 
@@ -2014,6 +2130,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.exportStatus.set('');
     this.exportError.set(false);
     this.postTailorScore.set(null);
+    this.postTailorSaved.set(false);
     this.updateScoreStatus.set('');
     this.updateScoreError.set(false);
   }

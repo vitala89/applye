@@ -397,6 +397,7 @@ export class PipelineComponent implements OnInit {
     interview: [],
     offer: [],
     rejected: [],
+    cancelled: [],
   };
 
   readonly loading = signal(true);

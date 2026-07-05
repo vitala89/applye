@@ -78,7 +78,7 @@ export class MyJobsComponent {
   readonly sortKey = signal<SortKey>('createdAt');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
 
-  readonly statuses = ['saved', 'applied', 'interview', 'offer', 'rejected'];
+  readonly statuses = ['saved', 'applied', 'interview', 'offer', 'rejected', 'cancelled'];
   readonly legitimacies = ['green', 'yellow', 'red'];
 
   // Import tracklist flow (Phase 6.4) — pick file -> detect (1 AI call) ->

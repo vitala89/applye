@@ -49,7 +49,7 @@ export class TrackerComponent {
   readonly applicantName = signal('');
   readonly columnMenuOpen = signal(false);
 
-  readonly statuses = ['saved', 'applied', 'interview', 'offer', 'rejected'];
+  readonly statuses = ['saved', 'applied', 'interview', 'offer', 'rejected', 'cancelled'];
   readonly isGerman = computed(() => this.settings()?.uiLanguage === 'de');
 
   readonly columns: ColumnDef[] = [

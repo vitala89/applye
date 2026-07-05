@@ -17,7 +17,7 @@ import { ApplicationStatus, Comment, InterviewStage, PipelineCard, Priority } fr
 import { TranslateService } from '@applye/i18n';
 import { StageQuickAddComponent } from '../stage-quick-add/stage-quick-add.component';
 
-const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected'];
+const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
 const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
 
 /** Highest stage_order that isn't rejected/cancelled, or the most recent one

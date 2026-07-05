@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { FormsModule } from '@angular/forms';
@@ -50,7 +51,7 @@ import {
   SupportedLanguage,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { Skeleton } from '@applye/ui';
+import { SkeletonCard } from '@applye/ui';
 import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
@@ -70,7 +71,14 @@ interface PassResult {
 @Component({
   selector: 'app-jobs',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, ScoringView, ApplyWizard, UpdatedScoreView, Skeleton],
+  imports: [
+    FormsModule,
+    LucideAngularModule,
+    ScoringView,
+    ApplyWizard,
+    UpdatedScoreView,
+    SkeletonCard,
+  ],
   template: `
     <div class="jobs">
       @if (!wizardOpen()) {
@@ -126,6 +134,7 @@ interface PassResult {
         @if (job(); as j) {
           <div class="detail-actions">
             <div class="detail-actions__row">
+              <!-- Left: primary action + status/tailored badges -->
               @if (!application()) {
                 <button
                   class="btn btn--secondary btn--md"
@@ -143,27 +152,10 @@ interface PassResult {
                 >
                   {{ t()('jobs.mark_applied') }}
                 </button>
-                @if (editingLocked()) {
-                  <button
-                    class="btn btn--secondary btn--sm"
-                    type="button"
-                    [disabled]="actionBusy()"
-                    (click)="cancelEditingLocked()"
-                  >
-                    {{ t()('actions.cancel') }}
-                  </button>
-                }
               } @else if (application(); as app) {
                 <span class="badge" [class]="statusBadgeClass(app.status)">{{
                   t()('status.' + app.status)
                 }}</span>
-                <button
-                  class="btn btn--secondary btn--sm"
-                  [disabled]="actionBusy()"
-                  (click)="startEditingLocked()"
-                >
-                  {{ t()('jobs.change_status_action') }}
-                </button>
               }
               @if (isTailored()) {
                 <span class="badge badge--accent">
@@ -171,7 +163,29 @@ interface PassResult {
                   {{ t()('jobs.wizard.tailored_badge') }}
                 </span>
               }
+
               <span class="detail-actions__spacer"></span>
+
+              <!-- Right: edit/cancel + delete -->
+              @if (!canMarkApplied()) {
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="actionBusy()"
+                  (click)="startEditingLocked()"
+                >
+                  {{ t()('jobs.change_status_action') }}
+                </button>
+              } @else if (editingLocked()) {
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="actionBusy()"
+                  (click)="cancelEditingLocked()"
+                >
+                  {{ t()('actions.cancel') }}
+                </button>
+              }
               <button
                 class="btn btn--secondary btn--sm"
                 type="button"
@@ -313,7 +327,7 @@ interface PassResult {
               [job]="job()"
               [icons]="icons"
               [tailored]="isTailored()"
-              (tailorApply)="wizardOpen.set(true)"
+              (tailorApply)="openWizard()"
             />
           } @else {
             <app-apply-wizard
@@ -326,7 +340,7 @@ interface PassResult {
               [postTailorScore]="postTailorScore()"
               [applicationStatus]="application()?.status ?? null"
               [overrideEditing]="editingLocked()"
-              (closeWizard)="wizardOpen.set(false)"
+              (closeWizard)="closeWizard()"
               (markApplied)="markApplied()"
               (changeStatus)="startEditingLocked()"
               (cancelEdit)="cancelEditingLocked()"
@@ -465,25 +479,14 @@ interface PassResult {
                 </div>
 
                 @if (updatingScore()) {
-                  <!-- AI-thinking skeleton (design-system shimmer) while the
-                       rescore runs -->
+                  <!-- Design-system skeleton card while the rescore runs -->
                   <div class="rescore-loading">
-                    <div class="rescore-loading__gauges">
-                      <lib-skeleton [circle]="true" [height]="76" />
-                      <lucide-icon
-                        [img]="icons.next"
-                        [size]="18"
-                        class="score-compare__arrow"
-                        aria-hidden="true"
-                      />
-                      <lib-skeleton [circle]="true" [height]="76" />
-                    </div>
                     <div class="ai-thinking">
                       <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
                       {{ t()('jobs.wizard.updating_score_hint') }}
                     </div>
-                    <lib-skeleton [height]="12" />
-                    <lib-skeleton [height]="12" width="55%" />
+                    <lib-skeleton-card [lines]="2" />
+                    <lib-skeleton-card [media]="false" [lines]="3" [footer]="false" />
                   </div>
                 } @else if (postTailorScore(); as post) {
                   <app-updated-score-view
@@ -677,23 +680,12 @@ interface PassResult {
         gap: var(--space-3);
         margin-top: var(--space-4);
       }
-      .score-compare__arrow {
-        color: var(--text-tertiary);
-        flex: 0 0 auto;
-      }
-      /* Rescore loading — skeleton gauges + AI-thinking line while the
-         tailored resume is re-scored. Uses the shared applye-pulse keyframe. */
+      /* Rescore loading — AI-thinking line + design-system skeleton cards. */
       .rescore-loading {
         display: flex;
         flex-direction: column;
         gap: var(--space-4);
         padding: var(--space-4) 0;
-      }
-      .rescore-loading__gauges {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-6);
       }
       .jobs {
         display: flex;
@@ -1162,6 +1154,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
+  private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
   protected readonly icons: JobDetailIcons & {
@@ -1680,6 +1673,23 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.jdText.set(this.job()?.jdText ?? '');
   }
 
+  /** Opening the wizard / returning to the summary should always land the
+   * user at the top of the page — the scoring view runs long, so the wizard
+   * (or the restored summary) would otherwise open mid-scroll. */
+  openWizard(): void {
+    this.wizardOpen.set(true);
+    this.scrollContentToTop();
+  }
+
+  closeWizard(): void {
+    this.wizardOpen.set(false);
+    this.scrollContentToTop();
+  }
+
+  private scrollContentToTop(): void {
+    this.document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   openDeleteConfirm(): void {
     this.deleteConfirmOpen.set(true);
   }
@@ -1709,6 +1719,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.job.set(null);
     this.cache.set(null);
     this.archetypeMatch.set(null);
+    // Re-parsing means the JD (and therefore the score) changed — any earlier
+    // tailoring for this job is now stale. Drop it so the Tailored badge and
+    // Retailor state clear and the user re-tailors against the updated JD.
+    this.editingLocked.set(false);
+    this.resetWizard();
     try {
       const j = await this.db.jobPaste(this.jdText());
       this.job.set(j);

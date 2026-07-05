@@ -4,6 +4,25 @@
   gap: var(--space-6);
 }
 
+/* Staged reveal — each section fades up as revealStep reaches it. */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.reveal--in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: opacity var(--dur-fast) var(--ease-standard);
+    transform: none;
+  }
+}
+
 .eyebrow {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);

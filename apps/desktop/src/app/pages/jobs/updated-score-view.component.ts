@@ -37,15 +37,29 @@ export class UpdatedScoreView {
   readonly jobTitle = input<string>('');
   readonly icons = input.required<JobDetailIcons>();
 
-  /** Flipped after first paint so bar widths transition from before→after
-   * rather than rendering already-filled. */
-  protected readonly revealed = signal(false);
+  /** Sections fade in one after another (score → breakdown → keywords →
+   * ATS/flags → notes). `revealStep` gates each: a section shows once the
+   * step reaches its index. Bar widths also animate from before→after only
+   * once the breakdown step is revealed. */
+  protected readonly STEP = { OVERALL: 1, DIMS: 2, KEYWORDS: 3, META: 4, NOTES: 5 } as const;
+  private static readonly LAST_STEP = 5;
+  private static readonly STAGGER_MS = 320;
+  protected readonly revealStep = signal(0);
 
   constructor() {
     afterNextRender(() => {
-      // Next frame, so the initial (before) widths are painted first.
-      requestAnimationFrame(() => this.revealed.set(true));
+      // First paint renders everything hidden (and bars at their before
+      // width); then step through the sections on a gentle stagger.
+      requestAnimationFrame(() => this.advanceReveal());
     });
+  }
+
+  private advanceReveal(): void {
+    const next = this.revealStep() + 1;
+    this.revealStep.set(next);
+    if (next < UpdatedScoreView.LAST_STEP) {
+      setTimeout(() => this.advanceReveal(), UpdatedScoreView.STAGGER_MS);
+    }
   }
 
   protected readonly verdictKey = scoreVerdictKey;
@@ -91,9 +105,9 @@ export class UpdatedScoreView {
     this.after() ? parseBeforeYouSubmit(this.after() as ScoringCache) : [],
   );
 
-  /** Bar fill width for a dimension — before value until revealed, then the
-   * after value, so CSS transitions the growth. */
+  /** Bar fill width for a dimension — before value until the breakdown step
+   * reveals, then the after value, so CSS transitions the growth. */
   protected barWidth(pair: { before: number; after: number }): number {
-    return (this.revealed() ? pair.after : pair.before) * 10;
+    return (this.revealStep() >= this.STEP.DIMS ? pair.after : pair.before) * 10;
   }
 }

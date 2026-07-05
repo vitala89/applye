@@ -1,7 +1,7 @@
 @if (after(); as post) {
   <section class="updated">
     <!-- Overall before → after -->
-    <div class="card updated__overall">
+    <div class="card updated__overall reveal" [class.reveal--in]="revealStep() >= STEP.OVERALL">
       <div class="updated__gauges">
         <div class="updated__gauge-col">
           <lib-score-gauge [score]="beforeScore()" size="sm" />
@@ -40,7 +40,7 @@
 
     <!-- Dimensions before → after -->
     @if (dimPairs().length) {
-      <div class="updated__section">
+      <div class="updated__section reveal" [class.reveal--in]="revealStep() >= STEP.DIMS">
         <span class="eyebrow">{{ t()('jobs.score_breakdown_eyebrow') }}</span>
         @for (d of dimPairs(); track d.name) {
           <div class="updated__dim">
@@ -65,7 +65,7 @@
     }
 
     <!-- Missing keywords: before → after -->
-    <div class="card updated__meta-card">
+    <div class="card updated__meta-card reveal" [class.reveal--in]="revealStep() >= STEP.KEYWORDS">
       <div class="updated__meta-head">
         <lucide-icon [img]="icons().tag" [size]="14" aria-hidden="true" />
         <span class="eyebrow">{{ t()('jobs.missing_keywords_title') }}</span>
@@ -99,7 +99,7 @@
     </div>
 
     <!-- ATS + red flags -->
-    <div class="updated__meta-row">
+    <div class="updated__meta-row reveal" [class.reveal--in]="revealStep() >= STEP.META">
       <div class="card updated__meta-card">
         <div class="updated__meta-head">
           <lucide-icon [img]="icons().scan" [size]="14" aria-hidden="true" />
@@ -145,7 +145,7 @@
 
     <!-- Before you submit -->
     @if (beforeYouSubmit().length) {
-      <div class="updated__section">
+      <div class="updated__section reveal" [class.reveal--in]="revealStep() >= STEP.NOTES">
         <div class="updated__meta-head">
           <lucide-icon [img]="icons().checklist" [size]="14" aria-hidden="true" />
           <span class="eyebrow">{{ t()('jobs.before_you_submit') }}</span>

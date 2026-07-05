@@ -149,7 +149,7 @@ interface PassResult {
                 <button
                   class="btn btn--secondary btn--sm"
                   [disabled]="actionBusy()"
-                  (click)="revertToSaved()"
+                  (click)="openChangeStatusConfirm()"
                 >
                   {{ t()('jobs.change_status_action') }}
                 </button>
@@ -272,6 +272,39 @@ interface PassResult {
         }
       }
 
+      @if (changeStatusConfirmOpen()) {
+        <div class="alert alert--warn" role="alert">
+          <lucide-icon
+            [img]="icons.alertTriangle"
+            [size]="16"
+            class="alert__icon"
+            aria-hidden="true"
+          />
+          <div class="alert__body">
+            <p class="alert__title">{{ t()('jobs.change_status_confirm_title') }}</p>
+            <p class="alert__text">{{ t()('jobs.change_status_confirm') }}</p>
+            <div class="alert__actions">
+              <button
+                class="btn btn--primary btn--md"
+                type="button"
+                [disabled]="actionBusy()"
+                (click)="revertToSaved()"
+              >
+                {{ actionBusy() ? t()('common.loading') : t()('jobs.change_status_confirm_btn') }}
+              </button>
+              <button
+                class="btn btn--secondary btn--md"
+                type="button"
+                [disabled]="actionBusy()"
+                (click)="cancelChangeStatusConfirm()"
+              >
+                {{ t()('actions.cancel') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Scoring result -->
       @if (cache(); as c) {
         <section class="section">
@@ -309,7 +342,7 @@ interface PassResult {
               [applicationStatus]="application()?.status ?? null"
               (closeWizard)="wizardOpen.set(false)"
               (markApplied)="markApplied()"
-              (changeStatus)="revertToSaved()"
+              (changeStatus)="openChangeStatusConfirm()"
             >
               <div wizardTailorStep class="wizard-step-content">
                 <div class="apply-fields-header">
@@ -633,10 +666,19 @@ interface PassResult {
         background: var(--danger-tint);
         border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
       }
+      .alert--danger .alert__icon {
+        color: var(--danger);
+      }
+      .alert--warn {
+        background: var(--warning-tint);
+        border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
+      }
+      .alert--warn .alert__icon {
+        color: var(--warning);
+      }
       .alert__icon {
         flex: 0 0 auto;
         margin-top: 1px;
-        color: var(--danger);
       }
       .alert__body {
         flex: 1;
@@ -1230,6 +1272,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly actionMsg = signal('');
   readonly deleteConfirmOpen = signal(false);
   readonly deleting = signal(false);
+  readonly changeStatusConfirmOpen = signal(false);
 
   /** Once a job is Applied, its description is locked — editing/re-parsing
    * would risk drifting the saved JD out of sync with what was submitted.
@@ -1611,14 +1654,23 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Lets the user undo an accidental/premature "Mark as Applied". */
+  openChangeStatusConfirm(): void {
+    this.changeStatusConfirmOpen.set(true);
+  }
+
+  /** Cancel — closes the confirm with no changes, application state untouched. */
+  cancelChangeStatusConfirm(): void {
+    this.changeStatusConfirmOpen.set(false);
+  }
+
+  /** Lets the user undo an accidental/premature status change back to Saved. */
   async revertToSaved(): Promise<void> {
     const app = this.application();
     if (!app?.id || this.actionBusy()) return;
-    if (!confirm(this.t()('jobs.change_status_confirm'))) return;
     this.actionBusy.set(true);
     try {
       this.application.set(await this.db.setApplicationStatus(app.id, 'saved'));
+      this.changeStatusConfirmOpen.set(false);
     } catch (e) {
       this.actionMsg.set(String(e));
     } finally {

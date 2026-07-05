@@ -127,6 +127,7 @@ const en: TranslationMap = {
     interview: 'Interview',
     offer: 'Offer',
     rejected: 'Rejected',
+    cancelled: 'Cancelled',
   },
   ai: {
     mode_api: 'API',
@@ -239,7 +240,6 @@ const en: TranslationMap = {
     rescore: 'Rescore',
     add_to_pipeline: 'Add to Pipeline',
     mark_applied: 'Mark as Applied',
-    applied_badge: 'Applied',
     change_status_action: 'Change',
     change_status_confirm: 'Revert this application back to Saved?',
     description_locked: 'Applied — description is locked.',
@@ -346,11 +346,12 @@ const en: TranslationMap = {
       apply_no_export: 'No tailored resume exported yet — export one above, or apply anyway.',
       tailored_badge: 'Tailored',
       retailor_btn: 'Retailor',
-      update_score_btn: 'Update score',
+      update_score_btn: 'Rescore CV',
       updating_score: 'Updating…',
       score_compare_title: 'Score after tailoring',
       score_before: 'Before',
       score_after: 'After',
+      updated_after_tailor: 'Updated after tailoring',
     },
   },
   settings: {
@@ -569,6 +570,7 @@ const de: TranslationMap = {
     interview: 'Vorstellungsgespräch',
     offer: 'Angebot',
     rejected: 'Abgelehnt',
+    cancelled: 'Storniert',
   },
   ai: {
     mode_api: 'API',
@@ -685,7 +687,6 @@ const de: TranslationMap = {
     scoring: 'Bewerte…',
     add_to_pipeline: 'Zur Pipeline hinzufügen',
     mark_applied: 'Als beworben markieren',
-    applied_badge: 'Beworben',
     change_status_action: 'Ändern',
     change_status_confirm: 'Diese Bewerbung zurück auf „Gespeichert“ setzen?',
     description_locked: 'Beworben — Beschreibung ist gesperrt.',
@@ -795,11 +796,12 @@ const de: TranslationMap = {
         'Noch kein angepasster Lebenslauf exportiert — exportiere oben einen oder bewirb dich trotzdem.',
       tailored_badge: 'Angepasst',
       retailor_btn: 'Erneut anpassen',
-      update_score_btn: 'Bewertung aktualisieren',
+      update_score_btn: 'Lebenslauf neu bewerten',
       updating_score: 'Aktualisiere…',
       score_compare_title: 'Bewertung nach der Anpassung',
       score_before: 'Vorher',
       score_after: 'Nachher',
+      updated_after_tailor: 'Nach der Anpassung aktualisiert',
     },
   },
   settings: {
@@ -926,6 +928,7 @@ const ru: TranslationMap = stub(en, {
     interview: 'Интервью',
     offer: 'Оффер',
     rejected: 'Отказ',
+    cancelled: 'Отменено',
   },
   ai: {
     mode_api: 'API',
@@ -971,6 +974,7 @@ const es: TranslationMap = stub(en, {
     interview: 'Entrevista',
     offer: 'Oferta',
     rejected: 'Rechazado',
+    cancelled: 'Cancelado',
   },
   ai: {
     mode_api: 'API',
@@ -1016,6 +1020,7 @@ const fr: TranslationMap = stub(en, {
     interview: 'Entretien',
     offer: 'Offre',
     rejected: 'Refusé',
+    cancelled: 'Annulé',
   },
   ai: {
     mode_api: 'API',
@@ -1061,6 +1066,7 @@ const uk: TranslationMap = stub(en, {
     interview: "Інтерв'ю",
     offer: 'Оффер',
     rejected: 'Відмова',
+    cancelled: 'Скасовано',
   },
   ai: {
     mode_api: 'API',

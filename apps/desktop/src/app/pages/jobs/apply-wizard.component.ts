@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApplicationStatus, Job, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -173,6 +182,7 @@ export class ApplyWizard {
    * JobsComponent.editingLocked, so this footer stays in sync with the
    * top-level lock state. */
   readonly overrideEditing = input<boolean>(false);
+  readonly initialStep = input<number>(0);
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
@@ -187,6 +197,13 @@ export class ApplyWizard {
   readonly stepChange = output<number>();
 
   readonly activeStep = signal(0);
+
+  constructor() {
+    effect(() => {
+      const next = Math.max(0, Math.min(this.lastStep, this.initialStep()));
+      if (untracked(() => this.activeStep()) !== next) this.activeStep.set(next);
+    });
+  }
 
   protected readonly stepLabels = computed(() => [
     this.t()('jobs.wizard.step_review_score'),

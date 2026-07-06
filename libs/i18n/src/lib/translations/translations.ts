@@ -377,6 +377,10 @@ const en: TranslationMap = {
       document_cv_requires_tailoring: 'Tailor the CV first before creating a linked CV draft.',
       document_cv_linked: 'CV document linked.',
       document_cover_letter_linked: 'Cover Letter document linked.',
+      document_saved_unchanged:
+        'Saved. No document changes detected, so the previous check can stand.',
+      document_saved_changed:
+        'Saved. This document changed; run Final checks again before exporting.',
       final_checks_title: 'Final checks',
       final_checks_run: 'Run final checks',
       final_checks_ats: 'ATS',
@@ -384,6 +388,9 @@ const en: TranslationMap = {
       final_checks_fit: 'Fit',
       final_checks_outdated: 'Checks are outdated because a document or target setting changed.',
       final_checks_rescore_action: 'Run/update score again',
+      final_checks_retailor_action: 'Retailor CV',
+      final_checks_retailor_hint:
+        'Final checks found issues. Retailor the CV, then review the updated score again.',
       final_check_not_run: 'Not run',
       final_check_pass: 'Pass',
       final_check_needs_review: 'Needs review',
@@ -1054,6 +1061,10 @@ const de: TranslationMap = {
         'Passe zuerst den Lebenslauf an, bevor du einen verknüpften Entwurf erstellst.',
       document_cv_linked: 'Lebenslauf-Dokument verknüpft.',
       document_cover_letter_linked: 'Anschreiben-Dokument verknüpft.',
+      document_saved_unchanged:
+        'Gespeichert. Keine Dokumentänderung erkannt, die vorherige Prüfung kann bestehen bleiben.',
+      document_saved_changed:
+        'Gespeichert. Dieses Dokument wurde geändert; führe vor dem Export die Abschlussprüfung erneut aus.',
       final_checks_title: 'Abschlussprüfung',
       final_checks_run: 'Abschlussprüfung ausführen',
       final_checks_ats: 'ATS',
@@ -1062,6 +1073,9 @@ const de: TranslationMap = {
       final_checks_outdated:
         'Die Prüfung ist veraltet, weil ein Dokument oder eine Zieleinstellung geändert wurde.',
       final_checks_rescore_action: 'Bewertung erneut ausführen/aktualisieren',
+      final_checks_retailor_action: 'Lebenslauf erneut anpassen',
+      final_checks_retailor_hint:
+        'Die Abschlussprüfung hat Probleme gefunden. Passe den Lebenslauf erneut an und prüfe danach die aktualisierte Bewertung.',
       final_check_not_run: 'Nicht ausgeführt',
       final_check_pass: 'Bestanden',
       final_check_needs_review: 'Prüfung nötig',

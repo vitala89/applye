@@ -407,6 +407,7 @@ interface FinalChecks {
               [postTailorScore]="postTailorScore()"
               [applicationStatus]="application()?.status ?? null"
               [overrideEditing]="editingLocked()"
+              [initialStep]="wizardInitialStep()"
               (closeWizard)="closeWizard()"
               (markApplied)="markApplied()"
               (updateApplication)="updateApplication()"
@@ -659,7 +660,7 @@ interface FinalChecks {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
-                          (click)="openCv(cv.id)"
+                          (click)="openCv(cv.id, true)"
                         >
                           {{ t()('jobs.wizard.document_review_cv') }}
                         </button>
@@ -696,7 +697,7 @@ interface FinalChecks {
                         <button
                           class="btn btn--secondary btn--sm"
                           type="button"
-                          (click)="openCv(cv.id)"
+                          (click)="openCv(cv.id, true)"
                         >
                           {{ t()('jobs.wizard.document_open_editor') }}
                         </button>
@@ -752,7 +753,7 @@ interface FinalChecks {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
-                          (click)="openCoverLetter(letter.id)"
+                          (click)="openCoverLetter(letter.id, true)"
                         >
                           {{ t()('jobs.wizard.document_review_letter') }}
                         </button>
@@ -789,7 +790,7 @@ interface FinalChecks {
                         <button
                           class="btn btn--secondary btn--sm"
                           type="button"
-                          (click)="openCoverLetter(letter.id)"
+                          (click)="openCoverLetter(letter.id, true)"
                         >
                           {{ t()('jobs.wizard.document_open_editor') }}
                         </button>
@@ -891,6 +892,24 @@ interface FinalChecks {
                     >
                       {{ t()('jobs.wizard.final_checks_rescore_action') }}
                     </button>
+                  }
+                  @if (finalChecksNeedRetailor()) {
+                    <div class="final-checks__retailor">
+                      <p class="muted">{{ t()('jobs.wizard.final_checks_retailor_hint') }}</p>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="tailoring()"
+                        (click)="retailorFromFinalChecks()"
+                      >
+                        <lucide-icon [img]="icons.another" [size]="14" aria-hidden="true" />
+                        {{
+                          tailoring()
+                            ? t()('jobs.wizard.phase_running')
+                            : t()('jobs.wizard.final_checks_retailor_action')
+                        }}
+                      </button>
+                    </div>
                   }
                 </section>
               </div>
@@ -1828,6 +1847,19 @@ interface FinalChecks {
         color: var(--text-secondary);
         font-size: var(--text-sm);
       }
+      .final-checks__retailor {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        border: var(--border-width) solid var(--border-default);
+        border-radius: var(--radius-input);
+        background: var(--surface-sunken);
+      }
+      .final-checks__retailor p {
+        margin: 0;
+      }
       .alert--warn {
         color: var(--warning);
         border-color: color-mix(in srgb, var(--warning) 35%, transparent);
@@ -1917,6 +1949,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
   readonly wizardOpen = signal(false);
+  readonly wizardInitialStep = signal(0);
   readonly archetypeMatch = signal<boolean | null>(null);
 
   // Job Detail: the application row (if this job is on the board) + action state.
@@ -2016,12 +2049,55 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.documentCardStatus('cover_letter', this.linkedCoverLetter()),
   );
 
-  openCv(id: number): void {
-    void this.router.navigate(['/documents/cv', id]);
+  async openCv(id: number, returnToWizard = false): Promise<void> {
+    if (!returnToWizard) {
+      await this.router.navigate(['/documents/cv', id]);
+      return;
+    }
+    await this.openDocumentEditorWithReturn('cv', id);
   }
 
-  openCoverLetter(id: number): void {
-    void this.router.navigate(['/documents/cover-letter', id]);
+  async openCoverLetter(id: number, returnToWizard = false): Promise<void> {
+    if (!returnToWizard) {
+      await this.router.navigate(['/documents/cover-letter', id]);
+      return;
+    }
+    await this.openDocumentEditorWithReturn('cover_letter', id);
+  }
+
+  private async openDocumentEditorWithReturn(kind: ReviewDocumentKind, id: number): Promise<void> {
+    const job = this.job();
+    if (!job?.id) return;
+    const reviewHash = await this.currentDocumentsHash();
+    this.storeFinalChecksForReturn(reviewHash);
+    const path = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
+    await this.router.navigate(path, {
+      queryParams: {
+        returnTo: 'applyWizard',
+        jobId: job.id,
+        documentType: kind,
+        documentId: id,
+        reviewHash,
+      },
+    });
+  }
+
+  private storeFinalChecksForReturn(reviewHash: string): void {
+    const checks = this.finalChecks();
+    const storage = this.document.defaultView?.sessionStorage;
+    if (!checks || !storage) return;
+    storage.setItem(`applye:wizardFinalChecks:${reviewHash}`, JSON.stringify(checks));
+  }
+
+  private restoreFinalChecksAfterReturn(reviewHash: string): FinalChecks | null {
+    const storage = this.document.defaultView?.sessionStorage;
+    const raw = storage?.getItem(`applye:wizardFinalChecks:${reviewHash}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as FinalChecks;
+    } catch {
+      return null;
+    }
   }
 
   private inferDocumentRegion(job: Job | null): DocumentRegionTag {
@@ -2302,6 +2378,30 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.finalChecksOutdated.set(false);
   }
 
+  finalChecksNeedRetailor(): boolean {
+    const checks = this.finalChecks();
+    if (!checks || this.finalChecksOutdated()) return false;
+    return !!this.linkedCv() && (checks.ats === 'needs_review' || checks.fit === 'rescore');
+  }
+
+  async retailorFromFinalChecks(): Promise<void> {
+    if (this.tailoring()) return;
+    this.documentReviewStatus.set('');
+    this.documentReviewError.set(false);
+    this.wizardInitialStep.set(1);
+    await this.startTailoring();
+    if (this.tailorError()) return;
+    if (!this.postTailorScore() && !this.updatingScore()) {
+      await this.updateScoreAfterTailor();
+    }
+    if (this.linkedCv()) {
+      await this.createCvDraft(true);
+    }
+    this.finalChecks.set(null);
+    this.finalChecksOutdated.set(true);
+    this.wizardInitialStep.set(2);
+  }
+
   private documentText(item: DocumentLibraryItem | null): string {
     if (!item?.contentJson) return '';
     try {
@@ -2322,10 +2422,26 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   private currentDocumentsHash(): Promise<string> {
+    const cv = this.linkedCv();
+    const coverLetter = this.linkedCoverLetter();
     return this.db.hashText(
       JSON.stringify({
-        cv: this.linkedCv()?.contentJson ?? '',
-        coverLetter: this.linkedCoverLetter()?.contentJson ?? '',
+        cv: cv
+          ? {
+              label: cv.label ?? '',
+              contentJson: cv.contentJson ?? '',
+              language: cv.language ?? '',
+              regionTag: cv.regionTag ?? '',
+            }
+          : null,
+        coverLetter: coverLetter
+          ? {
+              label: coverLetter.label ?? '',
+              contentJson: coverLetter.contentJson ?? '',
+              language: coverLetter.language ?? '',
+              regionTag: coverLetter.regionTag ?? '',
+            }
+          : null,
         language: this.documentReviewLanguage(),
         region: this.documentReviewRegion(),
       }),
@@ -2570,6 +2686,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       await this.loadJob(+idParam);
+      await this.handleWizardReturnFromDocumentEditor();
     }
   }
 
@@ -2629,6 +2746,36 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.restoreTailoringFromCache();
     } catch {
       // non-fatal — detail still renders, user can re-score
+    }
+  }
+
+  private async handleWizardReturnFromDocumentEditor(): Promise<void> {
+    const params = this.route.snapshot.queryParamMap;
+    if (params.get('returnTo') !== 'applyWizard' && params.get('wizardStep') !== 'documents') {
+      return;
+    }
+
+    this.wizardOpen.set(true);
+    this.wizardInitialStep.set(3);
+    await this.prepareDocumentsStep();
+
+    if (params.get('documentSaved') !== '1') return;
+
+    const previousHash = params.get('reviewHash');
+    if (!previousHash) return;
+
+    const currentHash = await this.currentDocumentsHash();
+    if (currentHash === previousHash) {
+      const restoredChecks = this.restoreFinalChecksAfterReturn(previousHash);
+      if (restoredChecks) this.finalChecks.set(restoredChecks);
+      this.finalChecksOutdated.set(false);
+      this.documentReviewError.set(false);
+      this.documentReviewStatus.set(this.t()('jobs.wizard.document_saved_unchanged'));
+    } else {
+      this.finalChecks.set(null);
+      this.finalChecksOutdated.set(true);
+      this.documentReviewError.set(false);
+      this.documentReviewStatus.set(this.t()('jobs.wizard.document_saved_changed'));
     }
   }
 
@@ -2921,6 +3068,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * user at the top of the page — the scoring view runs long, so the wizard
    * (or the restored summary) would otherwise open mid-scroll. */
   openWizard(): void {
+    this.wizardInitialStep.set(0);
     this.wizardOpen.set(true);
     this.scrollContentToTop();
   }
@@ -3305,6 +3453,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * Entering the Updated score step auto-runs the rescore once (only if the
    * user actually tailored — pass 3 exists — and it hasn't run yet). */
   onWizardStep(step: number): void {
+    this.wizardInitialStep.set(step);
     // Every step transition lands the user at the top of the page.
     this.scrollContentToTop();
 

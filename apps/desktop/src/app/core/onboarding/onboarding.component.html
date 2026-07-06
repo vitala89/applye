@@ -1,27 +1,27 @@
 <div class="ob">
   <div class="ob__frame">
-    <!-- Left rail: brand, numbered steps, local-first note -->
-    <aside class="ob__rail">
+    <!-- Top bar: brand + horizontal step stepper (focused shell — no left rail) -->
+    <div class="ob__panehead">
       <div class="ob__brand">
-        <svg width="22" height="22" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 64 64" fill="none" aria-hidden="true">
           <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
           <rect x="50" y="10" width="8" height="44" fill="#4F5BFF" />
         </svg>
         <span class="ob__brand-name">applye</span>
         <span class="ob__brand-caret" aria-hidden="true"></span>
+        <span class="ob__foot-spacer"></span>
+        <span class="ob__rail-eyebrow"
+          >{{ t()('onboarding.step') }} · {{ step() + 1 }} / {{ totalSteps }}</span
+        >
       </div>
 
-      <div class="ob__rail-eyebrow">
-        {{ t()('onboarding.step') }} · {{ step() + 1 }} / {{ totalSteps }}
-      </div>
-
-      <nav class="ob__steps">
+      <nav class="ob__topsteps">
         @for (s of railSteps(); track s.index) {
           <button
             type="button"
-            class="ob__step"
-            [class.ob__step--clickable]="s.clickable"
-            [class.ob__step--active]="s.active"
+            class="ob__chip"
+            [class.ob__chip--clickable]="s.clickable"
+            [class.ob__chip--upcoming]="!s.active && !s.done"
             [disabled]="!s.clickable"
             (click)="goTo(s.index)"
           >
@@ -41,12 +41,7 @@
           </button>
         }
       </nav>
-
-      <div class="ob__rail-footer">
-        <lucide-icon [img]="icons.shieldCheck" [size]="15" aria-hidden="true" />
-        <span class="ob__rail-footer-text">{{ t()('onboarding.local_note') }}</span>
-      </div>
-    </aside>
+    </div>
 
     <!-- Content pane -->
     <div class="ob__pane">

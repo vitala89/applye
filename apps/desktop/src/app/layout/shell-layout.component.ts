@@ -23,6 +23,7 @@ import { TranslateService } from '@applye/i18n';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
+import { ThemeService } from '../core/theme.service';
 
 @Component({
   selector: 'app-shell-layout',
@@ -84,7 +85,8 @@ export class ShellLayoutComponent implements OnInit {
     moon: Moon,
   };
 
-  readonly theme = signal<'dark' | 'light'>('dark');
+  private readonly themeService = inject(ThemeService);
+  readonly theme = this.themeService.theme;
   readonly aiMode = signal<AiMode>('api');
 
   // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) — the native
@@ -110,8 +112,6 @@ export class ShellLayoutComponent implements OnInit {
   }
 
   toggleTheme(): void {
-    const next = this.theme() === 'dark' ? 'light' : 'dark';
-    this.theme.set(next);
-    document.documentElement.setAttribute('data-theme', next);
+    this.themeService.toggle();
   }
 }

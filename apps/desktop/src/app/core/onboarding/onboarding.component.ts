@@ -1,4 +1,4 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
+import { Component, HostBinding, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -20,7 +20,6 @@ import {
   LucideAngularModule,
   Plus,
   ScanLine,
-  ShieldCheck,
   Sparkles,
   Target,
   TriangleAlert,
@@ -42,13 +41,15 @@ import {
   type ParsedCv,
 } from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
+import { ThemeService } from '../theme.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
 type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
- * health-check (see app.ts + onboarding-gate.util.ts). Split-shell layout:
- * left rail lists the 6 steps, right pane holds the current step + footer nav. */
+ * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
+ * a single centered column with a horizontal step stepper up top, the
+ * current step body, and a footer nav — no left rail. */
 @Component({
   selector: 'app-onboarding',
   standalone: true,
@@ -62,7 +63,16 @@ export class OnboardingComponent {
   private readonly keys = inject(KeysService);
   private readonly i18n = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly themeService = inject(ThemeService);
   protected readonly t = this.i18n.t;
+
+  // Bound on the host element (not the inner template) so the whole overlay
+  // — including anything future markup adds outside `.ob` — always carries
+  // the SAME live theme as the rest of the app, instead of silently
+  // inheriting a stale `<html data-theme>` if it ever drifts.
+  @HostBinding('attr.data-theme') get hostTheme() {
+    return this.themeService.theme();
+  }
 
   protected readonly icons = {
     arrowLeft: ArrowLeft,
@@ -82,7 +92,6 @@ export class OnboardingComponent {
     plus: Plus,
     playCircle: CirclePlay,
     scanLine: ScanLine,
-    shieldCheck: ShieldCheck,
     sparkles: Sparkles,
     target: Target,
     triangleAlert: TriangleAlert,

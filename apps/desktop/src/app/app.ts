@@ -7,9 +7,16 @@ import { OnboardingComponent } from './core/onboarding/onboarding.component';
 import { OnboardingService } from './core/onboarding/onboarding.service';
 import { shouldAutoOpenOnboarding } from './core/onboarding/onboarding-gate.util';
 import { DbService } from '@applye/data';
+import { ToastContainerComponent } from './core/toast/toast-container.component';
 
 @Component({
-  imports: [RouterOutlet, ShellLayoutComponent, FirstLaunchComponent, OnboardingComponent],
+  imports: [
+    RouterOutlet,
+    ShellLayoutComponent,
+    FirstLaunchComponent,
+    OnboardingComponent,
+    ToastContainerComponent,
+  ],
   selector: 'app-root',
   template: `
     @if (showFirstLaunch()) {
@@ -19,6 +26,7 @@ import { DbService } from '@applye/data';
     } @else {
       <app-shell-layout><router-outlet /></app-shell-layout>
     }
+    <app-toast-container />
   `,
   styles: [':host { display: block; height: 100%; }'],
 })

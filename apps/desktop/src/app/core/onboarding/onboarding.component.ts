@@ -1,6 +1,6 @@
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { AiProvider } from '@applye/core';
-import { DbService } from '@applye/data';
+import { DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -134,6 +134,7 @@ import { guideForProvider } from './provider-guides';
 })
 export class OnboardingComponent {
   private readonly db = inject(DbService);
+  private readonly keys = inject(KeysService);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
@@ -163,8 +164,8 @@ export class OnboardingComponent {
   async saveKey(): Promise<void> {
     const key = this.keyInput().trim();
     if (!key) return;
-    await this.db.setProviderKey(this.selectedProvider(), key);
-    this.keySaved.set(await this.db.hasProviderKey(this.selectedProvider()));
+    await this.keys.setProviderKey(this.selectedProvider(), key);
+    this.keySaved.set(await this.keys.hasProviderKey(this.selectedProvider()));
   }
 
   next(): void {

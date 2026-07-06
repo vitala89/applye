@@ -335,6 +335,7 @@ const en: TranslationMap = {
       tailor_eyebrow: 'Step 2 · Tailor CV',
       tailor_title: 'Rewrite, critique, build',
       tailor_base_cv_label: 'Base CV',
+      tailor_base_cv_hint: 'Choose the library CV that should feed this tailoring run.',
       tailor_profile_from_scratch: 'Profile (from scratch)',
       hide_label: 'Hide',
       show_label: 'Show',
@@ -1017,6 +1018,8 @@ const de: TranslationMap = {
       tailor_eyebrow: 'Schritt 2 · Lebenslauf anpassen',
       tailor_title: 'Umschreiben, kritisieren, erstellen',
       tailor_base_cv_label: 'Basis-Lebenslauf',
+      tailor_base_cv_hint:
+        'Wähle den Bibliotheks-Lebenslauf, der für diese Anpassung verwendet werden soll.',
       tailor_profile_from_scratch: 'Profil (von Grund auf)',
       hide_label: 'Verbergen',
       show_label: 'Anzeigen',

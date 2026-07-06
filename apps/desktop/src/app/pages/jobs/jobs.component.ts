@@ -436,10 +436,21 @@ interface FinalChecks {
 
                 <!-- Actions -->
                 @if (tailorResults().length === 0 && !tailoring()) {
-                  <div class="apply-fields" style="margin-bottom: var(--space-4);">
-                    <label>
-                      {{ t()('jobs.wizard.tailor_base_cv_label') }}
+                  <div class="base-cv-picker">
+                    <span class="base-cv-picker__icon" aria-hidden="true">
+                      <lucide-icon [img]="icons.fileText" [size]="16" />
+                    </span>
+                    <div class="base-cv-picker__body">
+                      <label class="base-cv-picker__label" for="wizard-base-cv">
+                        {{ t()('jobs.wizard.tailor_base_cv_label') }}
+                      </label>
+                      <p class="base-cv-picker__hint">
+                        {{ t()('jobs.wizard.tailor_base_cv_hint') }}
+                      </p>
+                    </div>
+                    <div class="base-cv-picker__control">
                       <select
+                        id="wizard-base-cv"
                         [ngModel]="selectedBaseCvId()"
                         (ngModelChange)="
                           selectedBaseCvId.set($event === null || $event === '' ? null : +$event)
@@ -450,11 +461,17 @@ interface FinalChecks {
                         </option>
                         @for (cv of matchingCvs(); track cv.id) {
                           <option [value]="cv.id">
-                            {{ cv.label }} ({{ cv.regionTag?.toUpperCase() || 'Gen' }})
+                            {{ cv.label }} · {{ cv.regionTag?.toUpperCase() || 'GENERIC' }}
                           </option>
                         }
                       </select>
-                    </label>
+                      <lucide-icon
+                        class="base-cv-picker__chevron"
+                        [img]="icons.chevronDown"
+                        [size]="16"
+                        aria-hidden="true"
+                      />
+                    </div>
                   </div>
                   <div class="row">
                     <button
@@ -1469,6 +1486,86 @@ interface FinalChecks {
         color: var(--text-accent);
       }
 
+      .base-cv-picker {
+        display: grid;
+        grid-template-columns: auto minmax(160px, 1fr) minmax(260px, 420px);
+        align-items: center;
+        gap: var(--space-4);
+        margin: var(--space-5) 0 var(--space-4);
+        padding: var(--space-4);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        background: var(--surface-1);
+        box-shadow: var(--shadow-sm);
+      }
+      .base-cv-picker__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-input);
+        background: var(--accent-tint);
+        color: var(--text-accent);
+      }
+      .base-cv-picker__body {
+        min-width: 0;
+      }
+      .base-cv-picker__label {
+        display: block;
+        margin-bottom: 2px;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+      }
+      .base-cv-picker__hint {
+        margin: 0;
+        color: var(--text-tertiary);
+        font-size: var(--text-xs);
+        line-height: var(--leading-snug);
+      }
+      .base-cv-picker__control {
+        position: relative;
+        min-width: 0;
+      }
+      .base-cv-picker__control select {
+        width: 100%;
+        height: 40px;
+        padding: 0 calc(var(--space-8) + var(--space-2)) 0 var(--space-3);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
+        background: var(--surface-sunken);
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        box-shadow: inset 0 0 0 1px transparent;
+        transition:
+          border-color var(--dur-fast) var(--ease-standard),
+          box-shadow var(--dur-fast) var(--ease-standard),
+          background var(--dur-fast) var(--ease-standard);
+      }
+      .base-cv-picker__control select:hover {
+        border-color: color-mix(in srgb, var(--accent) 55%, var(--border-default));
+        background: var(--surface-hover);
+      }
+      .base-cv-picker__control select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+      }
+      .base-cv-picker__chevron {
+        position: absolute;
+        right: var(--space-3);
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-tertiary);
+        pointer-events: none;
+      }
+
       /* Tailor CV — changes diff */
       .tailor-changes {
         padding: 0;
@@ -1866,6 +1963,12 @@ interface FinalChecks {
         background: var(--warning-tint);
       }
       @media (max-width: 760px) {
+        .base-cv-picker {
+          grid-template-columns: auto minmax(0, 1fr);
+        }
+        .base-cv-picker__control {
+          grid-column: 1 / -1;
+        }
         .document-targets,
         .document-review-grid,
         .final-checks__rows {

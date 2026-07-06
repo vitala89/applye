@@ -16,6 +16,7 @@ import type { CoverLetterAddress, CoverLetterContent, DocumentLibraryItem } from
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 import { cleanJsonText } from '../cv-content.util';
 
 @Component({
@@ -32,6 +33,7 @@ export class CoverLetterDetailComponent {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -256,6 +258,7 @@ export class CoverLetterDetailComponent {
       this.content.set(freshContent);
     } catch (e) {
       this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.regeneratingBlock.set(null);
     }
@@ -305,6 +308,7 @@ export class CoverLetterDetailComponent {
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
       this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.saving.set(false);
     }

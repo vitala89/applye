@@ -13,6 +13,7 @@ import type {
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 import {
   buildCvContent,
   parseCvSkillResponse,
@@ -39,6 +40,7 @@ export class CvListComponent {
   private readonly ai = inject(AiService);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -241,6 +243,7 @@ export class CvListComponent {
       this.importStep.set('preview');
     } catch (e) {
       this.importError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.importBusy.set(false);
     }
@@ -268,6 +271,7 @@ export class CvListComponent {
       await this.load();
     } catch (e) {
       this.importError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.importBusy.set(false);
     }
@@ -301,6 +305,7 @@ export class CvListComponent {
       this.generateTemplateId.set(defaultTemplate?.id ?? null);
     } catch (e) {
       this.generateError.set(String(e));
+      this.toast.error(String(e));
     }
   }
 
@@ -392,6 +397,7 @@ export class CvListComponent {
       this.open(created.id);
     } catch (e) {
       this.generateError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.generateBusy.set(false);
     }

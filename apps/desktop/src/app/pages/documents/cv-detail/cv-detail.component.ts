@@ -25,6 +25,7 @@ import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 import {
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
@@ -48,6 +49,7 @@ export class CvDetailComponent {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -284,6 +286,7 @@ export class CvDetailComponent {
       this.sections.set(updated.sections);
     } catch (e) {
       this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.regeneratingKey.set(null);
     }
@@ -347,6 +350,7 @@ export class CvDetailComponent {
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
       this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.saving.set(false);
     }

@@ -112,6 +112,7 @@ const en: TranslationMap = {
     report_period: 'Period',
     report_name: 'Name',
     report_generated: 'Generated on',
+    export_done: 'Exported',
   },
   actions: {
     paste_job: '+ Paste Job',
@@ -128,6 +129,10 @@ const en: TranslationMap = {
     offer: 'Offer',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
+  },
+  toast: {
+    dismiss: 'Dismiss',
+    saved: 'Saved',
   },
   ai: {
     mode_api: 'API',
@@ -477,6 +482,10 @@ const en: TranslationMap = {
     followup_interview_label: 'Days after interview',
     section_onboarding: 'Onboarding',
     load_error: 'Failed to load settings',
+    saved: 'Settings saved.',
+    load_failed: 'Failed to load settings.',
+    key_stored: 'API key stored in your OS keychain.',
+    key_removed: 'API key removed from keychain.',
   },
   dashboard: {
     title: 'Dashboard',
@@ -948,6 +957,7 @@ const de: TranslationMap = {
     report_period: 'Zeitraum',
     report_name: 'Name',
     report_generated: 'Erstellt am',
+    export_done: 'Exportiert',
   },
   actions: {
     paste_job: '+ Stelle einfügen',
@@ -964,6 +974,10 @@ const de: TranslationMap = {
     offer: 'Angebot',
     rejected: 'Abgelehnt',
     cancelled: 'Storniert',
+  },
+  toast: {
+    dismiss: 'Schließen',
+    saved: 'Gespeichert',
   },
   ai: {
     mode_api: 'API',
@@ -1326,6 +1340,10 @@ const de: TranslationMap = {
     followup_interview_label: 'Tage nach Vorstellungsgespräch',
     section_onboarding: 'Einrichtung',
     load_error: 'Einstellungen konnten nicht geladen werden',
+    saved: 'Einstellungen gespeichert.',
+    load_failed: 'Einstellungen konnten nicht geladen werden.',
+    key_stored: 'API-Schlüssel im Schlüsselbund gespeichert.',
+    key_removed: 'API-Schlüssel aus dem Schlüsselbund entfernt.',
   },
   dashboard: {
     title: 'Übersicht',

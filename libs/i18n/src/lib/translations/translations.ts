@@ -815,6 +815,7 @@ const en: TranslationMap = {
       suggest: 'Suggest again',
       add_placeholder: 'Add a role and press Enter',
       comp_label: 'Compensation range',
+      comp_currency_label: 'Currency',
       comp_hint: 'total comp',
       no_fabrication:
         'These are suggestions only — nothing is invented. Always double-check before applying.',
@@ -1673,6 +1674,7 @@ const de: TranslationMap = {
       suggest: 'Erneut vorschlagen',
       add_placeholder: 'Rolle hinzufügen und Enter drücken',
       comp_label: 'Angestrebte Gehaltsspanne',
+      comp_currency_label: 'Währung',
       comp_hint: 'Gesamtvergütung',
       no_fabrication:
         'Dies sind nur Vorschläge — nichts wird erfunden. Prüfe alles vor der Bewerbung noch einmal.',

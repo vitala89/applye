@@ -93,3 +93,18 @@ export function formatCompRange(range: CompRange): string {
   const symbol = range.currency.length === 1 ? range.currency : `${range.currency} `;
   return `${symbol}${range.min}K – ${symbol}${range.max}K`;
 }
+
+export const CURRENCY_OPTIONS = ['USD', 'EUR'] as const;
+export type CurrencyOption = (typeof CURRENCY_OPTIONS)[number];
+
+/** Maps a free-text/symbol currency (from an AI suggestion or a stray
+ * parse) onto one of the app's selectable currency codes, so the currency
+ * dropdown always has a matching option selected. Defaults to USD for
+ * anything not yet supported (e.g. GBP) rather than leaving the select
+ * with no match. */
+export function normalizeCurrency(raw: string): CurrencyOption {
+  const upper = raw.trim().toUpperCase();
+  if (upper === '€' || upper === 'EUR') return 'EUR';
+  if (upper === '$' || upper === 'USD') return 'USD';
+  return 'USD';
+}

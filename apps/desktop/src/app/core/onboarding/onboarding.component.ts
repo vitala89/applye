@@ -34,8 +34,10 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
 import {
   appendCompensation,
+  CURRENCY_OPTIONS,
   cvToProfileMarkdown,
   formatCompRange,
+  normalizeCurrency,
   parseArchetypesSkillResponse,
   parseCompRange,
   type ParsedCv,
@@ -261,7 +263,8 @@ export class OnboardingComponent {
   readonly suggestedRoles = signal<string[]>([]);
   readonly archetypes = signal<string[]>([]);
   readonly suggesting = signal(false);
-  readonly compCurrency = signal('USD');
+  readonly currencyOptions = CURRENCY_OPTIONS;
+  readonly compCurrency = signal<string>('USD');
   readonly compMin = signal(80);
   readonly compMax = signal(120);
 
@@ -355,7 +358,7 @@ export class OnboardingComponent {
       this.suggestedRoles.set(parsed.archetypes);
       this.archetypes.set(parsed.archetypes);
       const range = parseCompRange(parsed.compRange);
-      this.compCurrency.set(range.currency);
+      this.compCurrency.set(normalizeCurrency(range.currency));
       this.compMin.set(range.min);
       this.compMax.set(range.max);
     } catch {

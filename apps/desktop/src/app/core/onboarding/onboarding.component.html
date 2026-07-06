@@ -496,8 +496,17 @@
                   </span>
                 </div>
                 <div class="ob__comp-row">
+                  <select
+                    class="ob__comp-currency-select"
+                    [ngModel]="compCurrency()"
+                    (ngModelChange)="compCurrency.set($event)"
+                    [attr.aria-label]="t()('onboarding.archetypes.comp_currency_label')"
+                  >
+                    @for (c of currencyOptions; track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
                   <div class="ob__comp-input-wrap">
-                    <span class="ob__comp-currency">{{ compCurrency() }}</span>
                     <input
                       type="text"
                       inputmode="numeric"
@@ -509,7 +518,6 @@
                   </div>
                   <span class="ob__comp-dash">—</span>
                   <div class="ob__comp-input-wrap">
-                    <span class="ob__comp-currency">{{ compCurrency() }}</span>
                     <input
                       type="text"
                       inputmode="numeric"

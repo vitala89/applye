@@ -803,10 +803,16 @@
   border-radius: var(--radius-input);
   background: var(--surface-sunken);
 }
-.ob__comp-currency {
+.ob__comp-currency-select {
+  height: 40px;
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  outline: none;
 }
 .ob__comp-number {
   width: 56px;

@@ -2,6 +2,7 @@ import {
   appendCompensation,
   cvToProfileMarkdown,
   formatCompRange,
+  normalizeCurrency,
   parseArchetypesSkillResponse,
   parseCompRange,
 } from './onboarding-content.util';
@@ -82,6 +83,19 @@ describe('parseCompRange', () => {
   });
   it('uses a single number as both min and max', () => {
     expect(parseCompRange('EUR 100K')).toEqual({ currency: 'EUR', min: 100, max: 100 });
+  });
+});
+
+describe('normalizeCurrency', () => {
+  it('maps symbols and codes to their selectable currency code', () => {
+    expect(normalizeCurrency('$')).toBe('USD');
+    expect(normalizeCurrency('USD')).toBe('USD');
+    expect(normalizeCurrency('€')).toBe('EUR');
+    expect(normalizeCurrency('EUR')).toBe('EUR');
+  });
+  it('falls back to USD for a currency without a selectable option', () => {
+    expect(normalizeCurrency('GBP')).toBe('USD');
+    expect(normalizeCurrency('£')).toBe('USD');
   });
 });
 

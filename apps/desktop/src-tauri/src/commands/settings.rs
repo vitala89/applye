@@ -21,6 +21,7 @@ pub struct Settings {
     pub followup_days_after_interview: Option<i64>,
     pub min_score_notify: Option<f64>,
     pub health_check_seen: bool,
+    pub onboarding_seen: bool,
 }
 
 /// Partial update — only the fields present (non-null) are written; everything
@@ -41,6 +42,7 @@ pub struct SettingsPatch {
     pub followup_days_after_apply: Option<i64>,
     pub followup_days_after_interview: Option<i64>,
     pub health_check_seen: Option<bool>,
+    pub onboarding_seen: Option<bool>,
 }
 
 #[tauri::command]
@@ -70,7 +72,8 @@ pub async fn db_update_settings(
            geo_scope            = COALESCE(?, geo_scope),
            followup_days_after_apply     = COALESCE(?, followup_days_after_apply),
            followup_days_after_interview = COALESCE(?, followup_days_after_interview),
-           health_check_seen             = COALESCE(?, health_check_seen)
+           health_check_seen             = COALESCE(?, health_check_seen),
+           onboarding_seen               = COALESCE(?, onboarding_seen)
          WHERE id = 1",
     )
     .bind(&settings.ai_mode)
@@ -86,6 +89,7 @@ pub async fn db_update_settings(
     .bind(settings.followup_days_after_apply)
     .bind(settings.followup_days_after_interview)
     .bind(settings.health_check_seen)
+    .bind(settings.onboarding_seen)
     .execute(&db.pool)
     .await
     .map_err(|e| format!("db_update_settings: {e}"))?;

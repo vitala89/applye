@@ -1,17 +1,18 @@
 # Current Operational State
 
 - **Current version**: `0.22.0`
-- **Current branch / focus**: `feat/documents-cover-letter` / Documents Cover Letter Library (Phase 1c complete, branch ready)
+- **Current branch / focus**: `feat/onboarding-wizard` / First-run Onboarding Wizard (all 8 tasks complete, branch verified, PR pending)
 - **Recently completed**:
+  - First-run Onboarding Wizard (branch `feat/onboarding-wizard`, all 8 tasks): a skippable first-run overlay gated in `app.ts` after the health-check via a new `settings.onboardingSeen` flag (migration `0012_onboarding_seen.sql`). Steps: Welcome → AI-setup (per-provider key guide + keyring via `KeysService`) → Resume input (PDF/DOCX + paste, reuses `cv-import`) → Preview (editable profile markdown) → Archetypes+comp (new `onboarding-archetypes` skill, suggestion-only, user confirms) → Done (CTAs route to `/jobs/new` and `/documents`). Writes the existing `Profile` schema (`fullMd` + `targetArchetypes`), all local, key stored in the OS keyring. Adds a dashboard `OnboardingBannerComponent` and "Re-run onboarding" entry points in Settings and Profile. i18n EN+DE throughout. Full verification (`nx test`/`lint`/`build` desktop) passed; only pre-existing, unrelated `jobs.component.ts`/`my-jobs.component.html` lint issues remain.
   - Step 1 / phase 1c — Documents Cover Letter module: Split editor (structured block editor on the left with block-level AI regeneration and caching, live business letter layout preview on the right), list view matching the CV library design, and Job Detail tailoring integration (body-only rewrite via new `cover-letter-tailor` skill, linking tailored letter to the application, and seamless navigation). Registered new prompt skills (`cover-letter-generate` and `cover-letter-tailor`) in the Tauri backend.
   - Step 1 / phase 1b — Documents CV module: real Documents sidebar with CV | Cover Letter tabs, CV list + detail, import own CV (`cv-import` skill), generate baseline (`cv-generate-baseline` skill), CDK drag-drop section constructor with field toggles + non-blocking ATS-risk notes, per-section regenerate cached by input hash, save-as-custom-template. Toggle checkboxes restyled as chips (fixed a rendering overlap bug) and a Preview mode added. **1d folded into the same branch**: style section (font/size/accent colour) with always-on recommended-value hints and a deterministic `check_style_safety` check (honestly separate ATS-parsing vs print-readability notes), plus DOCX/PDF/LaTeX (`.tex`, never compiled) export with the DE `Lastname_Vorname_Lebenslauf` filename convention. v0.21.0 (PR #52, open). [Brief](feature-briefs/documents-cv-cover-letter.md)
   - Step 1 / phase 1a — Documents data layer: migration `0011_documents_library.sql` (`document_library` + `cv_templates`, nullable `applications.cv_document_id` / `cover_letter_document_id`, built-in templates seeded), Rust commands + `libs/core`/`libs/data` types. Merged PR #51, v0.20.0. [Brief](feature-briefs/documents-cv-cover-letter.md)
   - Step 2 — Follow-up Message Drafting: "Draft follow-up" action on overdue Pipeline cards, cached AI draft, `mailto:` hand-off only. Merged PR #50, v0.19.0. [Brief](feature-briefs/followup-drafting.md)
   - AIF Core foundation for AI-assisted development (Cursor rules, model policies, security/privacy trust docs, context gate, keyring and token guards, CLI routing).
 - **Currently working on**:
-  - Final branch finish and validation of the Documents Cover Letter PR.
+  - Opening the PR for `feat/onboarding-wizard` (branch verified, ready for review).
 - **Next recommended action**:
-  - Merge branch `feat/documents-cover-letter` and gather user feedback.
+  - Open and merge the `feat/onboarding-wizard` PR, then gather user feedback on the first-run flow.
 - **Active feature briefs**:
   - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, in-progress (1a, 1b, 1c, and 1d complete).
 - **Blocked / open questions**:
@@ -24,4 +25,4 @@
   - [PROJECT_CONTEXT.md](../../PROJECT_CONTEXT.md)
   - [CURRENT_STATE.md](CURRENT_STATE.md)
   - [AGENTS.md](../../AGENTS.md)
-- **Last updated**: 2026-07-06 (v0.22.0 — Documents 1c complete)
+- **Last updated**: 2026-07-06 (onboarding wizard branch verified, all 8 tasks complete)

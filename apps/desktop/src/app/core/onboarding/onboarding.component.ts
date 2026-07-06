@@ -1,0 +1,458 @@
+import { Component, HostBinding, computed, inject, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BadgeCheck,
+  Check,
+  CheckCheck,
+  CircleAlert,
+  CirclePlay,
+  Clock,
+  ClipboardType,
+  ExternalLink,
+  FileText,
+  HardDrive,
+  Info,
+  Key,
+  Lock,
+  LucideAngularModule,
+  Plus,
+  ScanLine,
+  Sparkles,
+  Target,
+  TriangleAlert,
+  Upload,
+  Wallet,
+} from 'lucide-angular';
+import { AiProvider, CvParsedContent } from '@applye/core';
+import { AiService, DbService, KeysService } from '@applye/data';
+import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
+import {
+  appendCompensation,
+  CURRENCY_OPTIONS,
+  cvToProfileMarkdown,
+  formatCompRange,
+  normalizeCurrency,
+  parseArchetypesSkillResponse,
+  parseCompRange,
+  type ParsedCv,
+} from './onboarding-content.util';
+import { guideForProvider } from './provider-guides';
+import { ThemeService } from '../theme.service';
+
+type ResumePath = 'upload' | 'paste' | 'skip';
+type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
+
+/** Full-screen onboarding wizard overlay. Auto-opened once after the
+ * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
+ * a single centered column with a horizontal step stepper up top, the
+ * current step body, and a footer nav — no left rail. */
+@Component({
+  selector: 'app-onboarding',
+  standalone: true,
+  imports: [ButtonDirective, FormsModule, LucideAngularModule],
+  templateUrl: './onboarding.component.html',
+  styleUrl: './onboarding.component.scss',
+})
+export class OnboardingComponent {
+  private readonly db = inject(DbService);
+  private readonly ai = inject(AiService);
+  private readonly keys = inject(KeysService);
+  private readonly i18n = inject(TranslateService);
+  private readonly router = inject(Router);
+  private readonly themeService = inject(ThemeService);
+  protected readonly t = this.i18n.t;
+
+  // Bound on the host element (not the inner template) so the whole overlay
+  // — including anything future markup adds outside `.ob` — always carries
+  // the SAME live theme as the rest of the app, instead of silently
+  // inheriting a stale `<html data-theme>` if it ever drifts.
+  @HostBinding('attr.data-theme') get hostTheme() {
+    return this.themeService.theme();
+  }
+
+  protected readonly icons = {
+    arrowLeft: ArrowLeft,
+    arrowRight: ArrowRight,
+    badgeCheck: BadgeCheck,
+    check: Check,
+    checkCheck: CheckCheck,
+    circleAlert: CircleAlert,
+    clock: Clock,
+    clipboardType: ClipboardType,
+    externalLink: ExternalLink,
+    fileText: FileText,
+    hardDrive: HardDrive,
+    info: Info,
+    key: Key,
+    lock: Lock,
+    plus: Plus,
+    playCircle: CirclePlay,
+    scanLine: ScanLine,
+    sparkles: Sparkles,
+    target: Target,
+    triangleAlert: TriangleAlert,
+    upload: Upload,
+    wallet: Wallet,
+  };
+
+  readonly completed = output<void>();
+  readonly step = signal(0);
+  readonly totalSteps = 6; // 0 welcome, 1 ai-setup, 2 resume, 3 review, 4 targeting, 5 ready
+  private readonly stepNameKeys = [
+    'onboarding.step_names.welcome',
+    'onboarding.step_names.ai',
+    'onboarding.step_names.resume',
+    'onboarding.step_names.review',
+    'onboarding.step_names.targeting',
+    'onboarding.step_names.ready',
+  ];
+
+  readonly railSteps = computed(() => {
+    const current = this.step();
+    return this.stepNameKeys.map((key, index) => ({
+      index,
+      n: String(index + 1).padStart(2, '0'),
+      label: this.t()(key),
+      active: index === current,
+      done: index < current,
+      clickable: index <= current,
+    }));
+  });
+
+  readonly privacyItems = computed(() => [
+    this.t()('onboarding.privacy_1'),
+    this.t()('onboarding.privacy_2'),
+    this.t()('onboarding.privacy_3'),
+  ]);
+
+  // ---- AI setup ----
+  readonly selectedProvider = signal<AiProvider>('claude');
+  readonly guide = computed(() => guideForProvider(this.selectedProvider()));
+  readonly keyInput = signal('');
+  readonly keyStatus = signal<KeyStatus>('idle');
+  readonly keySaveError = signal(false);
+  readonly v1Providers: AiProvider[] = ['claude', 'openai', 'deepseek'];
+
+  readonly providerSteps = computed(() =>
+    this.guide().stepKeys.map((key, i) => ({ n: i + 1, text: this.t()(key) })),
+  );
+
+  guideFor(p: AiProvider) {
+    return guideForProvider(p);
+  }
+
+  selectProvider(id: AiProvider): void {
+    this.selectedProvider.set(id);
+    this.keyStatus.set('idle');
+    this.keySaveError.set(false);
+  }
+
+  async openConsole(): Promise<void> {
+    await openUrl(this.guide().consoleUrl);
+  }
+
+  async openVideo(): Promise<void> {
+    const url = this.guide().helpVideoUrl;
+    if (url) await openUrl(url);
+  }
+
+  /** Lightweight format sanity-check (length + provider prefix hint) before
+   * touching the keyring — this is NOT a live validation against the
+   * provider's API (no such check exists), just a copy-paste sanity guard. */
+  async saveKey(): Promise<void> {
+    const key = this.keyInput().trim();
+    if (!key) return;
+    const prefix = this.guide().keyPrefix;
+    const looksValid = key.length >= 15 && (!prefix || key.toLowerCase().startsWith('sk'));
+    if (!looksValid) {
+      this.keyStatus.set('invalid');
+      return;
+    }
+    this.keyStatus.set('checking');
+    this.keySaveError.set(false);
+    try {
+      await this.keys.setProviderKey(this.selectedProvider(), key);
+      const saved = await this.keys.hasProviderKey(this.selectedProvider());
+      this.keyStatus.set(saved ? 'valid' : 'invalid');
+    } catch {
+      this.keyStatus.set('idle');
+      this.keySaveError.set(true);
+    }
+  }
+
+  // ---- Resume ----
+  readonly resumePath = signal<ResumePath>('upload');
+  readonly resumeFileName = signal<string | null>(null);
+  readonly resumeText = signal('');
+  readonly parsing = signal(false);
+  readonly resumeError = signal(false);
+  readonly parsedCv = signal<CvParsedContent | null>(null);
+
+  readonly experience = computed(() => this.parsedCv()?.experience ?? []);
+  readonly skills = computed(() => this.parsedCv()?.skills ?? []);
+  readonly lowConfidenceCount = computed(() => this.parsedCv()?.lowConfidenceNotes?.length ?? 0);
+
+  // ---- Review (editable overrides seeded once from the parsed CV) ----
+  readonly reviewName = signal('');
+  readonly reviewEmail = signal('');
+  readonly reviewPhone = signal('');
+  readonly reviewAddress = signal('');
+
+  chooseResume(path: ResumePath): void {
+    this.resumePath.set(path);
+    this.resumeError.set(false);
+    if (path === 'upload' && !this.resumeFileName()) {
+      void this.pickResumeFile();
+    }
+  }
+
+  async pickResumeFile(): Promise<void> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const path = await open({
+      multiple: false,
+      filters: [{ name: 'Resume', extensions: ['pdf', 'docx'] }],
+    });
+    if (typeof path !== 'string') return;
+    const file = await this.db.cvImportReadFile(path);
+    this.resumeText.set(file.text);
+    this.resumeFileName.set(path.split(/[/\\]/).pop() ?? path);
+  }
+
+  async parseResume(): Promise<void> {
+    const text = this.resumeText().trim();
+    if (!text) return;
+    this.parsing.set(true);
+    this.resumeError.set(false);
+    try {
+      const settings = await this.db.getSettings();
+      // Match the Documents cv-import pipeline: the skill's `language` drives
+      // label text and follows the UI language, not the document output language.
+      const language = settings.uiLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('cv-import', { cv_text: text, language });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      const cv = parseCvSkillResponse(res.text);
+      this.parsedCv.set(cv);
+      // Seed each review field only if still empty — a Back + re-parse must
+      // never silently clobber the user's manual edits.
+      if (!this.reviewName().trim()) this.reviewName.set(cv.personalDetails.fullName ?? '');
+      if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
+      if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
+      if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');
+      this.next();
+    } catch {
+      this.resumeError.set(true);
+    } finally {
+      this.parsing.set(false);
+    }
+  }
+
+  // ---- Targeting (archetypes + compensation) ----
+  readonly suggestedRoles = signal<string[]>([]);
+  readonly archetypes = signal<string[]>([]);
+  readonly suggesting = signal(false);
+  readonly currencyOptions = CURRENCY_OPTIONS;
+  readonly compCurrency = signal<string>('USD');
+  readonly compMin = signal(80);
+  readonly compMax = signal(120);
+
+  readonly displayRoles = computed(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const r of [...this.suggestedRoles(), ...this.archetypes()]) {
+      if (!seen.has(r)) {
+        seen.add(r);
+        out.push(r);
+      }
+    }
+    return out;
+  });
+
+  private readonly compBand = { lo: 50, hi: 300 };
+  readonly compLeft = computed(() => {
+    const pct = ((this.compMin() - this.compBand.lo) / (this.compBand.hi - this.compBand.lo)) * 100;
+    return `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`;
+  });
+  readonly compRight = computed(() => {
+    const pct = ((this.compBand.hi - this.compMax()) / (this.compBand.hi - this.compBand.lo)) * 100;
+    return `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`;
+  });
+
+  isRoleOn(role: string): boolean {
+    return this.archetypes().includes(role);
+  }
+
+  toggleRole(role: string): void {
+    this.archetypes.update((a) => (a.includes(role) ? a.filter((r) => r !== role) : [...a, role]));
+  }
+
+  addArchetype(v: string): void {
+    const t = v.trim();
+    if (t) this.toggleRole(t);
+  }
+
+  setCompMin(v: string): void {
+    const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
+    this.compMin.set(isNaN(n) ? 0 : n);
+  }
+
+  setCompMax(v: string): void {
+    const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
+    this.compMax.set(isNaN(n) ? 0 : n);
+  }
+
+  /** Footer "Continue" handler: branches per step so parsing/suggestion runs
+   * before advancing, and a skipped/empty resume never blocks progress. */
+  async goNext(): Promise<void> {
+    const s = this.step();
+    if (s === 2) {
+      if (this.resumePath() === 'skip' || !this.resumeText().trim()) {
+        this.next();
+        return;
+      }
+      await this.parseResume();
+      return;
+    }
+    if (s === 3) {
+      await this.suggestArchetypes();
+      return;
+    }
+    this.next();
+  }
+
+  async suggestArchetypes(): Promise<void> {
+    const text = this.resumeText().trim();
+    if (!text) {
+      this.next();
+      return;
+    }
+    this.suggesting.set(true);
+    try {
+      const settings = await this.db.getSettings();
+      const language = settings.uiLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('onboarding-archetypes', {
+        cv_text: text,
+        language,
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      const parsed = parseArchetypesSkillResponse(res.text);
+      this.suggestedRoles.set(parsed.archetypes);
+      this.archetypes.set(parsed.archetypes);
+      const range = parseCompRange(parsed.compRange);
+      this.compCurrency.set(normalizeCurrency(range.currency));
+      this.compMin.set(range.min);
+      this.compMax.set(range.max);
+    } catch {
+      // Suggestion is an enhancement, not a requirement — fail soft and let
+      // the user confirm/add roles manually on the targeting step.
+    } finally {
+      this.suggesting.set(false);
+      this.next();
+    }
+  }
+
+  // ---- Ready summary ----
+  readonly providerSummary = computed(() => {
+    if (this.keyStatus() !== 'valid') return this.t()('onboarding.done.not_connected');
+    return `${this.t()(this.guide().nameKey)} · ${this.t()('onboarding.done.connected_suffix')}`;
+  });
+  readonly resumeSummary = computed(() => {
+    if (this.resumePath() === 'skip') return this.t()('onboarding.done.skipped');
+    const name = this.reviewName().trim();
+    return `${this.t()('onboarding.done.imported_prefix')}${name ? ' · ' + name : ''}`;
+  });
+  readonly rolesSummary = computed(
+    () => `${this.archetypes().length} ${this.t()('onboarding.done.roles_selected_suffix')}`,
+  );
+  readonly compSummary = computed(() =>
+    formatCompRange({ currency: this.compCurrency(), min: this.compMin(), max: this.compMax() }),
+  );
+
+  // ---- Navigation / persistence ----
+  next(): void {
+    this.step.update((s) => Math.min(s + 1, this.totalSteps - 1));
+  }
+
+  back(): void {
+    this.step.update((s) => Math.max(s - 1, 0));
+  }
+
+  goTo(i: number): void {
+    if (i <= this.step()) this.step.set(i);
+  }
+
+  private buildProfileCv(): ParsedCv {
+    const cv = this.parsedCv();
+    return {
+      personalDetails: {
+        fullName: this.reviewName().trim() || null,
+        email: this.reviewEmail().trim() || null,
+        phone: this.reviewPhone().trim() || null,
+        address: this.reviewAddress().trim() || null,
+      },
+      summary: cv?.summary ?? null,
+      experience: cv?.experience ?? [],
+      skills: cv?.skills ?? [],
+    };
+  }
+
+  async saveProfile(): Promise<void> {
+    const base = cvToProfileMarkdown(this.buildProfileCv()).trim();
+    if (!base) return;
+    const compRange = formatCompRange({
+      currency: this.compCurrency(),
+      min: this.compMin(),
+      max: this.compMax(),
+    });
+    const fullMd = appendCompensation(base, compRange);
+    await this.db.upsertProfile({
+      fullMd,
+      targetArchetypes: JSON.stringify(this.archetypes()),
+    });
+  }
+
+  async skip(): Promise<void> {
+    await this.markSeen();
+    this.completed.emit();
+  }
+
+  async finish(): Promise<void> {
+    await this.saveProfile();
+    await this.markSeen();
+    this.completed.emit();
+  }
+
+  async finishTo(path: string): Promise<void> {
+    await this.saveProfile();
+    await this.markSeen();
+    await this.router.navigateByUrl(path);
+    this.completed.emit();
+  }
+
+  private async markSeen(): Promise<void> {
+    try {
+      await this.db.updateSettings({ onboardingSeen: true });
+    } catch {
+      // fail open — never trap the user in onboarding
+    }
+  }
+}

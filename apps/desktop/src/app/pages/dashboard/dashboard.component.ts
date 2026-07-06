@@ -1,12 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { LayoutDashboard, LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
+import { OnboardingBannerComponent } from '../../core/onboarding/onboarding-banner.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, OnboardingBannerComponent],
   template: `
+    <app-onboarding-banner />
     <div class="page-coming-soon">
       <div class="state-empty">
         <lucide-icon [img]="icons.empty" [size]="40" class="state-empty__icon" aria-hidden="true" />

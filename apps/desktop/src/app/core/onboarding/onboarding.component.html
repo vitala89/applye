@@ -1,0 +1,657 @@
+<div class="ob">
+  <div class="ob__frame">
+    <!-- Top bar: brand + horizontal step stepper (focused shell — no left rail) -->
+    <div class="ob__panehead">
+      <div class="ob__brand">
+        <svg width="20" height="20" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
+          <rect x="50" y="10" width="8" height="44" fill="#4F5BFF" />
+        </svg>
+        <span class="ob__brand-name">applye</span>
+      </div>
+
+      <nav class="ob__topsteps">
+        @for (s of railSteps(); track s.index) {
+          <button
+            type="button"
+            class="ob__chip"
+            [class.ob__chip--clickable]="s.clickable"
+            [class.ob__chip--upcoming]="!s.active && !s.done"
+            [disabled]="!s.clickable"
+            (click)="goTo(s.index)"
+          >
+            <span class="ob__step-num" [class.ob__step-num--filled]="s.active || s.done">
+              @if (s.done) {
+                <lucide-icon [img]="icons.check" [size]="12" aria-hidden="true" />
+              } @else {
+                {{ s.n }}
+              }
+            </span>
+            <span
+              class="ob__step-label"
+              [class.ob__step-label--active]="s.active"
+              [class.ob__step-label--done]="s.done"
+              >{{ s.label }}</span
+            >
+          </button>
+        }
+      </nav>
+    </div>
+
+    <!-- Content pane -->
+    <div class="ob__pane">
+      <div class="ob__body">
+        <div class="ob__body-inner">
+          @switch (step()) {
+            @case (0) {
+              <!-- STEP 0 · WELCOME -->
+              <div>
+                <span class="ob__eyebrow">{{ t()('onboarding.eyebrow_welcome') }}</span>
+                <h1 class="ob__h1 ob__h1--lg">
+                  {{ t()('onboarding.welcome_heading_line1') }}<br />{{
+                    t()('onboarding.welcome_heading_line2')
+                  }}
+                </h1>
+                <p class="ob__subtitle">{{ t()('onboarding.welcome_subtitle') }}</p>
+              </div>
+              <div class="ob__card ob__privacy-card">
+                <div class="ob__privacy-head">
+                  <span class="ob__privacy-icon">
+                    <lucide-icon [img]="icons.hardDrive" [size]="16" aria-hidden="true" />
+                  </span>
+                  <span class="ob__privacy-title">{{ t()('onboarding.privacy_card_title') }}</span>
+                  <span class="ob__badge ob__badge--success" style="margin-left: auto">
+                    <span class="ob__badge-dot" aria-hidden="true"></span>Local
+                  </span>
+                </div>
+                <div class="ob__privacy-list">
+                  @for (p of privacyItems(); track p) {
+                    <div class="ob__privacy-item">
+                      <lucide-icon [img]="icons.check" [size]="15" aria-hidden="true" />
+                      <span class="ob__privacy-item-text">{{ p }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+            @case (1) {
+              <!-- STEP 1 · AI SETUP -->
+              <div>
+                <span class="ob__eyebrow">{{ t()('onboarding.ai.eyebrow') }}</span>
+                <h1 class="ob__h1">{{ t()('onboarding.ai.title') }}</h1>
+                <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.ai.intro') }}</p>
+              </div>
+              <div class="ob__provider-grid">
+                @for (p of v1Providers; track p) {
+                  <button
+                    type="button"
+                    class="ob__provider-card"
+                    [class.ob__provider-card--selected]="selectedProvider() === p"
+                    (click)="selectProvider(p)"
+                  >
+                    <span
+                      class="ob__provider-glyph"
+                      [class.ob__provider-glyph--selected]="selectedProvider() === p"
+                      aria-hidden="true"
+                      >{{ guideFor(p).glyph }}</span
+                    >
+                    <span class="ob__provider-text">
+                      <span class="ob__provider-name">{{ t()(guideFor(p).nameKey) }}</span>
+                      <span class="ob__provider-vendor">{{ t()(guideFor(p).vendorKey) }}</span>
+                    </span>
+                    @if (selectedProvider() === p) {
+                      <lucide-icon
+                        [img]="icons.check"
+                        [size]="15"
+                        class="ob__provider-check"
+                        aria-hidden="true"
+                      />
+                    }
+                  </button>
+                }
+              </div>
+
+              <div class="ob__card">
+                <div class="ob__panel-intro">
+                  <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
+                  <p class="ob__panel-intro-text">{{ t()('onboarding.ai.intro') }}</p>
+                </div>
+                <div class="ob__panel-body">
+                  <button
+                    appButton
+                    variant="secondary"
+                    size="md"
+                    type="button"
+                    (click)="openConsole()"
+                  >
+                    <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
+                    {{ t()('onboarding.ai.open_console') }} · {{ t()(guide().consoleLabelKey) }}
+                  </button>
+                  <ol class="ob__steplist">
+                    @for (st of providerSteps(); track st.n) {
+                      <li class="ob__stepitem">
+                        <span class="ob__stepitem-num">{{ st.n }}</span>
+                        <span class="ob__stepitem-text">{{ st.text }}</span>
+                      </li>
+                    }
+                  </ol>
+                  <div class="ob__field">
+                    <label class="ob__field-label" for="ob-api-key">{{
+                      t()('onboarding.ai.api_key_label')
+                    }}</label>
+                    <div class="ob__key-row">
+                      <div class="ob__key-input-wrap">
+                        <lucide-icon [img]="icons.key" [size]="15" aria-hidden="true" />
+                        <input
+                          id="ob-api-key"
+                          type="password"
+                          class="ob__input ob__key-input"
+                          [value]="keyInput()"
+                          (input)="keyInput.set($any($event.target).value)"
+                          [placeholder]="guide().keyPrefix + '…'"
+                          spellcheck="false"
+                        />
+                      </div>
+                      <button
+                        appButton
+                        variant="primary"
+                        size="md"
+                        type="button"
+                        [disabled]="keyStatus() === 'checking'"
+                        (click)="saveKey()"
+                      >
+                        @if (keyStatus() === 'checking') {
+                          <span class="ob__spinner" aria-hidden="true"></span>
+                          {{ t()('onboarding.ai.checking') }}
+                        } @else {
+                          <lucide-icon [img]="icons.checkCheck" [size]="15" aria-hidden="true" />
+                          {{ t()('onboarding.ai.save_check') }}
+                        }
+                      </button>
+                    </div>
+                    @if (keyStatus() === 'valid') {
+                      <div class="ob__key-status ob__key-status--valid">
+                        <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
+                        {{ t()('onboarding.ai.valid_note') }}
+                      </div>
+                    } @else if (keyStatus() === 'invalid') {
+                      <div class="ob__key-status ob__key-status--invalid">
+                        <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+                        {{ t()('onboarding.ai.invalid_note') }}
+                      </div>
+                    } @else {
+                      <div class="ob__key-status ob__key-status--muted">
+                        <lucide-icon [img]="icons.lock" [size]="14" aria-hidden="true" />
+                        {{ t()('onboarding.ai.keyring_note') }}
+                      </div>
+                    }
+                    @if (keySaveError()) {
+                      <div class="ob__key-status ob__key-status--invalid">
+                        <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+                        {{ t()('onboarding.ai.error') }}
+                      </div>
+                    }
+                  </div>
+                  @if (guide().helpVideoUrl) {
+                    <button type="button" class="ob__link-btn" (click)="openVideo()">
+                      <lucide-icon [img]="icons.playCircle" [size]="15" aria-hidden="true" />
+                      {{ t()('onboarding.ai.watch_video') }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="ob__note">
+                <lucide-icon [img]="icons.clock" [size]="15" aria-hidden="true" />
+                <span class="ob__note-text"
+                  ><b>{{ t()('onboarding.step') }} —</b>
+                  {{ t()('onboarding.ai.cli_bridge_note') }}</span
+                >
+              </div>
+              <div class="ob__warning-row">
+                <lucide-icon [img]="icons.circleAlert" [size]="14" aria-hidden="true" />
+                {{ t()('onboarding.ai.skip_warning') }}
+              </div>
+            }
+            @case (2) {
+              <!-- STEP 2 · RESUME -->
+              <div>
+                <span class="ob__eyebrow">{{ t()('onboarding.resume.eyebrow') }}</span>
+                <h1 class="ob__h1">{{ t()('onboarding.resume.title') }}</h1>
+                <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.resume.subtitle') }}</p>
+              </div>
+              <div class="ob__resume-grid">
+                <button
+                  type="button"
+                  class="ob__resume-tile"
+                  [class.ob__resume-tile--selected]="resumePath() === 'upload'"
+                  (click)="chooseResume('upload')"
+                >
+                  <span
+                    class="ob__resume-tile-icon"
+                    [class.ob__resume-tile-icon--selected]="resumePath() === 'upload'"
+                  >
+                    <lucide-icon [img]="icons.upload" [size]="20" aria-hidden="true" />
+                  </span>
+                  <span class="ob__resume-tile-title">{{
+                    t()('onboarding.resume.tile_upload_title')
+                  }}</span>
+                  <span class="ob__resume-tile-sub">{{
+                    t()('onboarding.resume.tile_upload_sub')
+                  }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="ob__resume-tile"
+                  [class.ob__resume-tile--selected]="resumePath() === 'paste'"
+                  (click)="chooseResume('paste')"
+                >
+                  <span
+                    class="ob__resume-tile-icon"
+                    [class.ob__resume-tile-icon--selected]="resumePath() === 'paste'"
+                  >
+                    <lucide-icon [img]="icons.clipboardType" [size]="20" aria-hidden="true" />
+                  </span>
+                  <span class="ob__resume-tile-title">{{
+                    t()('onboarding.resume.tile_paste_title')
+                  }}</span>
+                  <span class="ob__resume-tile-sub">{{
+                    t()('onboarding.resume.tile_paste_sub')
+                  }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="ob__resume-tile"
+                  [class.ob__resume-tile--selected]="resumePath() === 'skip'"
+                  (click)="chooseResume('skip')"
+                >
+                  <span
+                    class="ob__resume-tile-icon"
+                    [class.ob__resume-tile-icon--selected]="resumePath() === 'skip'"
+                  >
+                    <lucide-icon [img]="icons.clock" [size]="20" aria-hidden="true" />
+                  </span>
+                  <span class="ob__resume-tile-title">{{
+                    t()('onboarding.resume.tile_skip_title')
+                  }}</span>
+                  <span class="ob__resume-tile-sub">{{
+                    t()('onboarding.resume.tile_skip_sub')
+                  }}</span>
+                </button>
+              </div>
+
+              @if (resumePath() === 'upload') {
+                @if (resumeFileName()) {
+                  <div class="ob__attached-card">
+                    <span class="ob__attached-icon">
+                      <lucide-icon [img]="icons.fileText" [size]="18" aria-hidden="true" />
+                    </span>
+                    <div class="ob__attached-body">
+                      <div class="ob__attached-name">{{ resumeFileName() }}</div>
+                      <div class="ob__attached-meta">
+                        {{ t()('onboarding.resume.ready_to_parse') }}
+                      </div>
+                    </div>
+                    <span class="ob__attached-status">
+                      <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
+                      {{ t()('onboarding.resume.attached') }}
+                    </span>
+                  </div>
+                } @else {
+                  <button
+                    appButton
+                    variant="secondary"
+                    size="md"
+                    type="button"
+                    (click)="pickResumeFile()"
+                  >
+                    <lucide-icon [img]="icons.upload" [size]="15" aria-hidden="true" />
+                    {{ t()('onboarding.resume.upload') }}
+                  </button>
+                }
+              }
+              @if (resumePath() === 'paste') {
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-resume-paste">{{
+                    t()('onboarding.resume.paste_label')
+                  }}</label>
+                  <textarea
+                    id="ob-resume-paste"
+                    class="ob__textarea"
+                    [ngModel]="resumeText()"
+                    (ngModelChange)="resumeText.set($event)"
+                    [placeholder]="t()('onboarding.resume.paste_placeholder')"
+                  ></textarea>
+                </div>
+              }
+              @if (resumePath() === 'skip') {
+                <div class="ob__info-row">
+                  <lucide-icon [img]="icons.info" [size]="15" aria-hidden="true" />
+                  {{ t()('onboarding.resume.skip_note') }}
+                </div>
+              }
+              <p class="ob__muted-note">{{ t()('onboarding.resume.privacy_note') }}</p>
+              @if (resumeError()) {
+                <div class="ob__key-status ob__key-status--invalid">
+                  <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+                  {{ t()('onboarding.resume.error') }}
+                </div>
+              }
+            }
+            @case (3) {
+              <!-- STEP 3 · REVIEW -->
+              <div>
+                <span class="ob__eyebrow">{{ t()('onboarding.preview.eyebrow') }}</span>
+                <h1 class="ob__h1">{{ t()('onboarding.preview.title') }}</h1>
+              </div>
+              @if (lowConfidenceCount() > 0) {
+                <div class="ob__warning-card">
+                  <lucide-icon [img]="icons.triangleAlert" [size]="16" aria-hidden="true" />
+                  <div>
+                    <div class="ob__warning-card-title">
+                      {{ lowConfidenceCount() }} {{ t()('onboarding.preview.warning_suffix') }}
+                    </div>
+                    <div class="ob__warning-card-help">
+                      {{ t()('onboarding.preview.warning_help') }}
+                    </div>
+                  </div>
+                </div>
+              }
+              <div class="ob__grid-2">
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-review-name">{{
+                    t()('onboarding.preview.field_name')
+                  }}</label>
+                  <input
+                    id="ob-review-name"
+                    class="ob__input"
+                    [ngModel]="reviewName()"
+                    (ngModelChange)="reviewName.set($event)"
+                  />
+                </div>
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-review-email">{{
+                    t()('onboarding.preview.field_email')
+                  }}</label>
+                  <input
+                    id="ob-review-email"
+                    class="ob__input"
+                    [ngModel]="reviewEmail()"
+                    (ngModelChange)="reviewEmail.set($event)"
+                  />
+                </div>
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-review-phone">{{
+                    t()('onboarding.preview.field_phone')
+                  }}</label>
+                  <input
+                    id="ob-review-phone"
+                    class="ob__input"
+                    [ngModel]="reviewPhone()"
+                    (ngModelChange)="reviewPhone.set($event)"
+                  />
+                </div>
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-review-address">{{
+                    t()('onboarding.preview.field_address')
+                  }}</label>
+                  <input
+                    id="ob-review-address"
+                    class="ob__input"
+                    [ngModel]="reviewAddress()"
+                    (ngModelChange)="reviewAddress.set($event)"
+                  />
+                </div>
+              </div>
+              <div class="ob__section">
+                <span class="ob__field-label">{{
+                  t()('onboarding.preview.experience_label')
+                }}</span>
+                @if (experience().length) {
+                  <div class="ob__exp-list">
+                    @for (e of experience(); track e.role + e.company) {
+                      <div class="ob__exp-row">
+                        <div class="ob__exp-body">
+                          <div class="ob__exp-role">{{ e.role }}</div>
+                          <div class="ob__exp-meta">{{ e.company }}</div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p class="ob__muted-note">{{ t()('onboarding.preview.no_experience') }}</p>
+                }
+              </div>
+              <div class="ob__section">
+                <span class="ob__field-label">{{ t()('onboarding.preview.skills_label') }}</span>
+                @if (skills().length) {
+                  <div class="ob__skill-list">
+                    @for (sk of skills(); track sk) {
+                      <span class="ob__skill-chip">{{ sk }}</span>
+                    }
+                  </div>
+                } @else {
+                  <p class="ob__muted-note">{{ t()('onboarding.preview.no_skills') }}</p>
+                }
+              </div>
+            }
+            @case (4) {
+              <!-- STEP 4 · TARGETING -->
+              <div>
+                <span class="ob__eyebrow">{{ t()('onboarding.archetypes.eyebrow') }}</span>
+                <h1 class="ob__h1">{{ t()('onboarding.archetypes.title') }}</h1>
+                <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.archetypes.help') }}</p>
+              </div>
+              <div class="ob__section">
+                <div class="ob__label-row">
+                  <span class="ob__field-label">{{
+                    t()('onboarding.archetypes.roles_label')
+                  }}</span>
+                  <span class="ob__badge ob__badge--accent">
+                    <lucide-icon [img]="icons.sparkles" [size]="11" aria-hidden="true" />
+                    {{ t()('onboarding.archetypes.ai_suggested') }}
+                  </span>
+                </div>
+                <div class="ob__role-list">
+                  @for (r of displayRoles(); track r) {
+                    <button
+                      type="button"
+                      class="ob__role-chip"
+                      [class.ob__role-chip--on]="isRoleOn(r)"
+                      (click)="toggleRole(r)"
+                    >
+                      @if (isRoleOn(r)) {
+                        <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
+                      } @else {
+                        <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+                      }
+                      {{ r }}
+                    </button>
+                  }
+                  <input
+                    #roleInput
+                    type="text"
+                    class="ob__role-add"
+                    [placeholder]="t()('onboarding.archetypes.add_placeholder')"
+                    (keydown.enter)="addArchetype(roleInput.value); roleInput.value = ''"
+                  />
+                </div>
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  [disabled]="suggesting()"
+                  (click)="suggestArchetypes()"
+                >
+                  {{ t()('onboarding.archetypes.suggest') }}
+                </button>
+              </div>
+              <div class="ob__comp-card">
+                <div class="ob__label-row">
+                  <span class="ob__field-label">{{ t()('onboarding.archetypes.comp_label') }}</span>
+                  <span class="ob__badge ob__badge--accent">
+                    <lucide-icon [img]="icons.sparkles" [size]="11" aria-hidden="true" />
+                    {{ t()('onboarding.archetypes.ai_suggested') }}
+                  </span>
+                </div>
+                <div class="ob__comp-row">
+                  <select
+                    class="ob__comp-currency-select"
+                    [ngModel]="compCurrency()"
+                    (ngModelChange)="compCurrency.set($event)"
+                    [attr.aria-label]="t()('onboarding.archetypes.comp_currency_label')"
+                  >
+                    @for (c of currencyOptions; track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
+                  <div class="ob__comp-input-wrap">
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      class="ob__comp-number"
+                      [ngModel]="compMin() + ''"
+                      (ngModelChange)="setCompMin($event)"
+                    />
+                    <span class="ob__comp-suffix">K</span>
+                  </div>
+                  <span class="ob__comp-dash">—</span>
+                  <div class="ob__comp-input-wrap">
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      class="ob__comp-number"
+                      [ngModel]="compMax() + ''"
+                      (ngModelChange)="setCompMax($event)"
+                    />
+                    <span class="ob__comp-suffix">K</span>
+                  </div>
+                  <span class="ob__comp-hint">{{ t()('onboarding.archetypes.comp_hint') }}</span>
+                </div>
+                <div class="ob__comp-track">
+                  <div
+                    class="ob__comp-track-fill"
+                    [style.left]="compLeft()"
+                    [style.right]="compRight()"
+                  ></div>
+                </div>
+              </div>
+              <p class="ob__muted-note">{{ t()('onboarding.archetypes.no_fabrication') }}</p>
+            }
+            @case (5) {
+              <!-- STEP 5 · READY -->
+              <div class="ob__section">
+                <span class="ob__ready-icon">
+                  <lucide-icon [img]="icons.check" [size]="26" aria-hidden="true" />
+                </span>
+                <div>
+                  <h1 class="ob__h1" style="font-size: var(--text-h1)">
+                    {{ t()('onboarding.done.title') }}
+                  </h1>
+                  <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.done.body') }}</p>
+                </div>
+              </div>
+              <div class="ob__card">
+                <div class="ob__summary-row">
+                  <span
+                    class="ob__summary-icon"
+                    [class.ob__summary-icon--ok]="keyStatus() === 'valid'"
+                    [class.ob__summary-icon--muted]="keyStatus() !== 'valid'"
+                  >
+                    <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
+                  </span>
+                  <span class="ob__summary-label">{{
+                    t()('onboarding.done.summary_provider')
+                  }}</span>
+                  <span
+                    class="ob__summary-value"
+                    [class.ob__summary-value--ok]="keyStatus() === 'valid'"
+                    [class.ob__summary-value--muted]="keyStatus() !== 'valid'"
+                    >{{ providerSummary() }}</span
+                  >
+                </div>
+                <div class="ob__summary-row">
+                  <span
+                    class="ob__summary-icon"
+                    [class.ob__summary-icon--ok]="resumePath() !== 'skip'"
+                    [class.ob__summary-icon--muted]="resumePath() === 'skip'"
+                  >
+                    <lucide-icon [img]="icons.fileText" [size]="15" aria-hidden="true" />
+                  </span>
+                  <span class="ob__summary-label">{{ t()('onboarding.done.summary_resume') }}</span>
+                  <span
+                    class="ob__summary-value"
+                    [class.ob__summary-value--ok]="resumePath() !== 'skip'"
+                    [class.ob__summary-value--muted]="resumePath() === 'skip'"
+                    >{{ resumeSummary() }}</span
+                  >
+                </div>
+                <div class="ob__summary-row">
+                  <span class="ob__summary-icon ob__summary-icon--ok">
+                    <lucide-icon [img]="icons.target" [size]="15" aria-hidden="true" />
+                  </span>
+                  <span class="ob__summary-label">{{ t()('onboarding.done.summary_roles') }}</span>
+                  <span class="ob__summary-value">{{ rolesSummary() }}</span>
+                </div>
+                <div class="ob__summary-row">
+                  <span class="ob__summary-icon ob__summary-icon--ok">
+                    <lucide-icon [img]="icons.wallet" [size]="15" aria-hidden="true" />
+                  </span>
+                  <span class="ob__summary-label">{{ t()('onboarding.done.summary_comp') }}</span>
+                  <span class="ob__summary-value">{{ compSummary() }}</span>
+                </div>
+              </div>
+              <div class="ob__cta-row">
+                <button
+                  appButton
+                  variant="primary"
+                  size="md"
+                  type="button"
+                  (click)="finishTo('/jobs/new')"
+                >
+                  <lucide-icon [img]="icons.scanLine" [size]="15" aria-hidden="true" />
+                  {{ t()('onboarding.done.cta_job') }}
+                </button>
+                <button
+                  appButton
+                  variant="secondary"
+                  size="md"
+                  type="button"
+                  (click)="finishTo('/documents')"
+                >
+                  <lucide-icon [img]="icons.fileText" [size]="15" aria-hidden="true" />
+                  {{ t()('onboarding.done.cta_docs') }}
+                </button>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <footer class="ob__foot">
+        <button appButton variant="ghost" size="md" type="button" (click)="skip()">
+          {{ t()('onboarding.skip') }}
+        </button>
+        <span class="ob__foot-spacer"></span>
+        @if (step() > 0) {
+          <button appButton variant="secondary" size="md" type="button" (click)="back()">
+            <lucide-icon [img]="icons.arrowLeft" [size]="15" aria-hidden="true" />
+            {{ t()('onboarding.back') }}
+          </button>
+        }
+        @if (step() < totalSteps - 1) {
+          <button appButton variant="primary" size="md" type="button" (click)="goNext()">
+            {{ t()('onboarding.next') }}
+            <lucide-icon [img]="icons.arrowRight" [size]="15" aria-hidden="true" />
+          </button>
+        } @else {
+          <button appButton variant="primary" size="md" type="button" (click)="finish()">
+            {{ t()('onboarding.done_cta') }}
+            <lucide-icon [img]="icons.check" [size]="15" aria-hidden="true" />
+          </button>
+        }
+      </footer>
+    </div>
+  </div>
+</div>

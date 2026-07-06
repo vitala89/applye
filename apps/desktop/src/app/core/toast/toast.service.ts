@@ -32,7 +32,13 @@ export class ToastService {
 
     this._toasts.update((list) => {
       const next = [...list, toast];
-      return next.length > TOAST_MAX ? next.slice(next.length - TOAST_MAX) : next;
+      if (next.length <= TOAST_MAX) return next;
+      // Cap overflow: clear the armed timers of the toasts we drop so they
+      // don't linger in the timers Map until they fire dismiss() on an
+      // already-removed id.
+      const overflow = next.length - TOAST_MAX;
+      for (let i = 0; i < overflow; i++) this.clear(next[i].id);
+      return next.slice(overflow);
     });
 
     this.arm(id, kind, opts?.durationMs);

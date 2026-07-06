@@ -1,4 +1,4 @@
-import { cvToProfileMarkdown } from './onboarding-content.util';
+import { cvToProfileMarkdown, parseArchetypesSkillResponse } from './onboarding-content.util';
 
 describe('cvToProfileMarkdown', () => {
   it('renders name, summary, experience and skills as markdown', () => {
@@ -18,5 +18,25 @@ describe('cvToProfileMarkdown', () => {
   it('omits empty sections without throwing', () => {
     const md = cvToProfileMarkdown({});
     expect(typeof md).toBe('string');
+  });
+});
+
+describe('parseArchetypesSkillResponse', () => {
+  it('parses archetypes and comp range from JSON', () => {
+    const r = parseArchetypesSkillResponse(
+      '{"archetypes":["Senior FE Engineer","Staff FE"],"compRange":"EUR 90-120K"}',
+    );
+    expect(r.archetypes).toEqual(['Senior FE Engineer', 'Staff FE']);
+    expect(r.compRange).toBe('EUR 90-120K');
+  });
+  it('tolerates code fences and missing comp', () => {
+    const r = parseArchetypesSkillResponse('```json\n{"archetypes":["X"]}\n```');
+    expect(r.archetypes).toEqual(['X']);
+    expect(r.compRange).toBeNull();
+  });
+  it('returns empty on garbage', () => {
+    const r = parseArchetypesSkillResponse('not json');
+    expect(r.archetypes).toEqual([]);
+    expect(r.compRange).toBeNull();
   });
 });

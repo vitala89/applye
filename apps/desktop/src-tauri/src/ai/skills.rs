@@ -36,6 +36,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "cv-import" => Some(include_str!(
             "../../../../../libs/skills/src/cv-import/cv-import.md"
         )),
+        "onboarding-archetypes" => Some(include_str!(
+            "../../../../../libs/skills/src/onboarding-archetypes/onboarding-archetypes.md"
+        )),
         "cv-generate-baseline" => Some(include_str!(
             "../../../../../libs/skills/src/cv-generate-baseline/cv-generate-baseline.md"
         )),

@@ -740,6 +740,21 @@ const en: TranslationMap = {
       title: 'Review your profile',
       help: 'This is what we extracted from your resume. Edit anything before continuing.',
     },
+    archetypes: {
+      title: 'Target roles & compensation',
+      help: 'Based on your resume, here are role archetypes you could credibly apply to. Edit or remove any of them.',
+      suggest: 'Suggest again',
+      add_placeholder: 'Add a role and press Enter',
+      comp_label: 'Target compensation range',
+      no_fabrication:
+        'These are suggestions only — nothing is invented. Always double-check before applying.',
+    },
+    done: {
+      title: "You're all set",
+      body: 'Your profile is saved locally. You can find and score jobs, or generate tailored documents whenever you are ready.',
+      cta_job: 'Find jobs',
+      cta_docs: 'Go to documents',
+    },
   },
 };
 
@@ -1500,6 +1515,21 @@ const de: TranslationMap = {
     preview: {
       title: 'Profil überprüfen',
       help: 'Das haben wir aus deinem Lebenslauf extrahiert. Bearbeite alles, bevor du fortfährst.',
+    },
+    archetypes: {
+      title: 'Zielrollen & Gehalt',
+      help: 'Basierend auf deinem Lebenslauf sind hier Rollen-Archetypen, auf die du dich glaubwürdig bewerben könntest. Bearbeite oder entferne einzelne davon.',
+      suggest: 'Erneut vorschlagen',
+      add_placeholder: 'Rolle hinzufügen und Enter drücken',
+      comp_label: 'Angestrebte Gehaltsspanne',
+      no_fabrication:
+        'Dies sind nur Vorschläge — nichts wird erfunden. Prüfe alles vor der Bewerbung noch einmal.',
+    },
+    done: {
+      title: 'Alles bereit',
+      body: 'Dein Profil ist lokal gespeichert. Du kannst jetzt Stellen finden und bewerten oder passgenaue Dokumente erstellen, sobald du bereit bist.',
+      cta_job: 'Stellen finden',
+      cta_docs: 'Zu den Dokumenten',
     },
   },
 };

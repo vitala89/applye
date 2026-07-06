@@ -6,7 +6,7 @@ import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
-import { cvToProfileMarkdown } from './onboarding-content.util';
+import { cvToProfileMarkdown, parseArchetypesSkillResponse } from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
@@ -126,6 +126,66 @@ import { guideForProvider } from './provider-guides';
               }
             </section>
           }
+          @case (4) {
+            <section class="onboarding__archetypes">
+              <h2>{{ t()('onboarding.archetypes.title') }}</h2>
+              <p class="muted">{{ t()('onboarding.archetypes.help') }}</p>
+              <ul class="onboarding__chips">
+                @for (a of archetypes(); track a; let i = $index) {
+                  <li class="onboarding__chip">
+                    {{ a }}
+                    <button
+                      type="button"
+                      appButton
+                      variant="ghost"
+                      size="sm"
+                      (click)="removeArchetype(i)"
+                    >
+                      ×
+                    </button>
+                  </li>
+                }
+              </ul>
+              <input
+                type="text"
+                [placeholder]="t()('onboarding.archetypes.add_placeholder')"
+                #archetypeInput
+                (keydown.enter)="addArchetype(archetypeInput.value); archetypeInput.value = ''"
+              />
+              <label>
+                {{ t()('onboarding.archetypes.comp_label') }}
+                <input
+                  type="text"
+                  [ngModel]="compRange()"
+                  (ngModelChange)="compRange.set($event)"
+                />
+              </label>
+              <button
+                appButton
+                variant="secondary"
+                size="md"
+                [disabled]="suggesting()"
+                (click)="suggestArchetypes()"
+              >
+                {{ t()('onboarding.archetypes.suggest') }}
+              </button>
+              <p class="muted">{{ t()('onboarding.archetypes.no_fabrication') }}</p>
+            </section>
+          }
+          @case (5) {
+            <section class="onboarding__done">
+              <h2>{{ t()('onboarding.done.title') }}</h2>
+              <p>{{ t()('onboarding.done.body') }}</p>
+              <div class="onboarding__done-actions">
+                <button appButton variant="secondary" size="md" (click)="finish()">
+                  {{ t()('onboarding.done.cta_job') }}
+                </button>
+                <button appButton variant="secondary" size="md" (click)="finish()">
+                  {{ t()('onboarding.done.cta_docs') }}
+                </button>
+              </div>
+            </section>
+          }
           @default {
             <section>
               <p>{{ t()('onboarding.step_todo') }}</p>
@@ -139,7 +199,7 @@ import { guideForProvider } from './provider-guides';
           {{ t()('onboarding.back') }}
         </button>
         @if (step() < totalSteps - 1) {
-          <button appButton variant="primary" size="md" (click)="next()">
+          <button appButton variant="primary" size="md" (click)="goNext()">
             {{ t()('onboarding.next') }}
           </button>
         } @else {
@@ -176,6 +236,25 @@ import { guideForProvider } from './provider-guides';
         display: flex;
         justify-content: space-between;
       }
+      .onboarding__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        list-style: none;
+        padding: 0;
+      }
+      .onboarding__chip {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        background: var(--surface-2, #eee);
+      }
+      .onboarding__done-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
     `,
   ],
 })
@@ -204,6 +283,10 @@ export class OnboardingComponent {
     return cv ? cvToProfileMarkdown(cv) : '';
   });
   readonly profileMd = signal('');
+
+  readonly archetypes = signal<string[]>([]);
+  readonly compRange = signal<string>('');
+  readonly suggesting = signal(false);
 
   guideNameKey(p: AiProvider): string {
     return guideForProvider(p).nameKey;
@@ -270,12 +353,75 @@ export class OnboardingComponent {
     this.step.update((s) => Math.max(s - 1, 0));
   }
 
+  /** Footer "Next" handler: triggers archetype suggestion when leaving the
+   * profile-preview step (3) so step 4 arrives pre-populated. */
+  async goNext(): Promise<void> {
+    if (this.step() === 3) {
+      await this.suggestArchetypes();
+      return;
+    }
+    this.next();
+  }
+
+  async suggestArchetypes(): Promise<void> {
+    const text = this.resumeText().trim();
+    if (!text) {
+      this.next();
+      return;
+    }
+    this.suggesting.set(true);
+    try {
+      const settings = await this.db.getSettings();
+      // Match the Documents cv-import pipeline: the skill's `language` drives
+      // label text and follows the UI language, not the document output language.
+      const language = settings.uiLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('onboarding-archetypes', {
+        cv_text: text,
+        language,
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      const parsed = parseArchetypesSkillResponse(res.text);
+      this.archetypes.set(parsed.archetypes);
+      this.compRange.set(parsed.compRange ?? '');
+      this.next();
+    } finally {
+      this.suggesting.set(false);
+    }
+  }
+
+  addArchetype(v: string): void {
+    const t = v.trim();
+    if (t) this.archetypes.update((a) => [...a, t]);
+  }
+
+  removeArchetype(i: number): void {
+    this.archetypes.update((a) => a.filter((_, idx) => idx !== i));
+  }
+
+  async saveProfile(): Promise<void> {
+    const fullMd = this.profileMd();
+    if (fullMd) {
+      await this.db.upsertProfile({
+        fullMd,
+        targetArchetypes: JSON.stringify(this.archetypes()),
+      });
+    }
+  }
+
   async skip(): Promise<void> {
     await this.markSeen();
     this.completed.emit();
   }
 
   async finish(): Promise<void> {
+    await this.saveProfile();
     await this.markSeen();
     this.completed.emit();
   }

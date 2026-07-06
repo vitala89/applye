@@ -28,3 +28,22 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   if (cv.skills?.length) out.push('', '## Skills', cv.skills.join(', '));
   return out.join('\n').trim();
 }
+
+export function parseArchetypesSkillResponse(text: string): {
+  archetypes: string[];
+  compRange: string | null;
+} {
+  const empty = { archetypes: [] as string[], compRange: null as string | null };
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return empty;
+  try {
+    const obj = JSON.parse(match[0]) as { archetypes?: unknown; compRange?: unknown };
+    const archetypes = Array.isArray(obj.archetypes)
+      ? obj.archetypes.filter((x): x is string => typeof x === 'string')
+      : [];
+    const compRange = typeof obj.compRange === 'string' ? obj.compRange : null;
+    return { archetypes, compRange };
+  } catch {
+    return empty;
+  }
+}

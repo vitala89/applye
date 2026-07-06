@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApplicationStatus, Job, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -93,6 +102,9 @@ import {
             <ng-content select="[wizardUpdateScoreStep]" />
           }
           @case (3) {
+            <ng-content select="[wizardDocumentsStep]" />
+          }
+          @case (4) {
             <ng-content select="[wizardExportApplyStep]" />
           }
         }
@@ -151,9 +163,9 @@ export class ApplyWizard {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  /** 4 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
-   * Export & apply (3). */
-  protected readonly lastStep = 3;
+  /** 5 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
+   * Review documents (3) → Export & apply (4). */
+  protected readonly lastStep = 4;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
@@ -170,6 +182,7 @@ export class ApplyWizard {
    * JobsComponent.editingLocked, so this footer stays in sync with the
    * top-level lock state. */
   readonly overrideEditing = input<boolean>(false);
+  readonly initialStep = input<number>(0);
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
@@ -185,10 +198,18 @@ export class ApplyWizard {
 
   readonly activeStep = signal(0);
 
+  constructor() {
+    effect(() => {
+      const next = Math.max(0, Math.min(this.lastStep, this.initialStep()));
+      if (untracked(() => this.activeStep()) !== next) this.activeStep.set(next);
+    });
+  }
+
   protected readonly stepLabels = computed(() => [
     this.t()('jobs.wizard.step_review_score'),
     this.t()('jobs.wizard.step_tailor_cv'),
     this.t()('jobs.wizard.step_updated_score'),
+    this.t()('jobs.wizard.step_review_documents'),
     this.t()('jobs.wizard.step_export_apply'),
   ]);
 

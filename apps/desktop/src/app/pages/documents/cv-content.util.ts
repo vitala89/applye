@@ -234,3 +234,104 @@ export function suggestCvFilename(
   const slug = (item.label ?? 'cv').toLowerCase().replace(/[^a-z0-9]+/g, '_');
   return `${slug}.${format}`;
 }
+
+/** Converts a structured CV back into markdown so it can be passed to
+ * the AI tailoring skill as a baseline profile. */
+export function cvContentToMd(content: CvContent): string {
+  const sections = orderedVisibleSections(content.sections);
+  const parts: string[] = [];
+
+  for (const s of sections) {
+    if (s.key === 'personal_details') {
+      const p = s as Extract<CvSection, { key: 'personal_details' }>;
+      parts.push(`# ${p.fullName}`);
+      const contact = [p.email, p.phone, p.address].filter(Boolean).join(' | ');
+      if (contact) parts.push(contact);
+    } else if (s.key === 'summary') {
+      const p = s as Extract<CvSection, { key: 'summary' }>;
+      if (p.text) parts.push(`## Summary\n${p.text}`);
+    } else if (s.key === 'experience') {
+      const p = s as Extract<CvSection, { key: 'experience' }>;
+      if (p.entries.length) {
+        parts.push('## Experience');
+        for (const e of p.entries) {
+          let heading = `### ${e.role} at ${e.company}`;
+          if (e.startDate) {
+            heading += ` (${e.startDate} - ${e.endDate || 'Present'})`;
+          }
+          if (e.location) heading += ` | ${e.location}`;
+          parts.push(heading);
+          for (const b of e.bullets) parts.push(`- ${b}`);
+        }
+      }
+    } else if (s.key === 'education') {
+      const p = s as Extract<CvSection, { key: 'education' }>;
+      if (p.entries.length) {
+        parts.push('## Education');
+        for (const e of p.entries) {
+          let heading = `### ${e.degree} at ${e.institution}`;
+          if (e.startDate) {
+            heading += ` (${e.startDate} - ${e.endDate || 'Present'})`;
+          }
+          parts.push(heading);
+        }
+      }
+    } else if (s.key === 'skills') {
+      const p = s as Extract<CvSection, { key: 'skills' }>;
+      if (p.items.length) {
+        parts.push(`## Skills\n${p.items.join(', ')}`);
+      }
+    } else if (s.key === 'languages') {
+      const p = s as Extract<CvSection, { key: 'languages' }>;
+      if (p.items.length) {
+        const langs = p.items.map((l) => `${l.language} (${l.level})`).join(', ');
+        parts.push(`## Languages\n${langs}`);
+      }
+    }
+  }
+  return parts.join('\n\n');
+}
+
+export function markdownToCvContentFallback(markdown: string, fullName = ''): CvContent {
+  const text = markdown.trim();
+  return {
+    sections: [
+      {
+        key: 'personal_details',
+        order: 0,
+        visible: true,
+        fullName,
+      },
+      {
+        key: 'summary',
+        order: 1,
+        visible: true,
+        text,
+      },
+      {
+        key: 'experience',
+        order: 2,
+        visible: true,
+        entries: [],
+      },
+      {
+        key: 'education',
+        order: 3,
+        visible: true,
+        entries: [],
+      },
+      {
+        key: 'skills',
+        order: 4,
+        visible: true,
+        items: [],
+      },
+      {
+        key: 'languages',
+        order: 5,
+        visible: true,
+        items: [],
+      },
+    ],
+  };
+}

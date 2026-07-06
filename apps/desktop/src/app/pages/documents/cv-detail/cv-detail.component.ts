@@ -191,7 +191,31 @@ export class CvDetailComponent {
   }
 
   back(): void {
+    if (this.shouldReturnToApplyWizard()) {
+      void this.returnToApplyWizard(false);
+      return;
+    }
     void this.router.navigate(['/documents']);
+  }
+
+  private shouldReturnToApplyWizard(): boolean {
+    return this.route.snapshot.queryParamMap.get('returnTo') === 'applyWizard';
+  }
+
+  private returnToApplyWizard(documentSaved: boolean): Promise<boolean> {
+    const params = this.route.snapshot.queryParamMap;
+    const jobId = params.get('jobId');
+    if (!jobId) return this.router.navigate(['/documents']);
+    return this.router.navigate(['/jobs', jobId], {
+      queryParams: {
+        returnTo: 'applyWizard',
+        wizardStep: 'documents',
+        documentType: 'cv',
+        documentId: this.doc()?.id ?? params.get('documentId'),
+        reviewHash: params.get('reviewHash'),
+        documentSaved: documentSaved ? '1' : '0',
+      },
+    });
   }
 
   drop(event: CdkDragDrop<CvSection[]>): void {
@@ -316,6 +340,10 @@ export class CvDetailComponent {
       });
       this.doc.set(saved);
       this.justSaved.set(true);
+      if (this.shouldReturnToApplyWizard()) {
+        await this.returnToApplyWizard(true);
+        return;
+      }
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
       this.error.set(String(e));

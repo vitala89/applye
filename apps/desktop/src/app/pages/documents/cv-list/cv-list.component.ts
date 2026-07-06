@@ -8,6 +8,7 @@ import type {
   DocumentLibraryItem,
   SupportedLanguage,
   Job,
+  Application,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -54,6 +55,7 @@ export class CvListComponent {
   readonly cvs = signal<DocumentLibraryItem[]>([]);
   readonly templates = signal<CvTemplate[]>([]);
   readonly trackedJobs = signal<Job[]>([]);
+  readonly applications = signal<Application[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal(false);
 
@@ -67,14 +69,16 @@ export class CvListComponent {
     this.loading.set(true);
     this.loadError.set(false);
     try {
-      const [cvs, templates, jobs] = await Promise.all([
+      const [cvs, templates, jobs, applications] = await Promise.all([
         this.db.documentLibraryList('cv'),
         this.db.cvTemplatesList(),
         this.db.listJobs(),
+        this.db.listApplications(),
       ]);
       this.cvs.set(cvs);
       this.templates.set(templates);
       this.trackedJobs.set(jobs);
+      this.applications.set(applications);
     } catch {
       this.loadError.set(true);
     } finally {
@@ -84,6 +88,13 @@ export class CvListComponent {
 
   open(id: number): void {
     void this.router.navigate(['/documents/cv', id]);
+  }
+
+  linkedJobLabel(item: DocumentLibraryItem): string {
+    const app = this.applications().find((a) => a.cvDocumentId === item.id);
+    if (!app) return '';
+    const job = this.trackedJobs().find((j) => j.id === app.jobId);
+    return [job?.company, job?.title].filter(Boolean).join(' — ');
   }
 
   async duplicate(item: DocumentLibraryItem, event: Event): Promise<void> {

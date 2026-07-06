@@ -25,9 +25,16 @@
           (keydown.enter)="open(item.id)"
         >
           <div class="cvlist__row-main">
-            <span class="cell-strong">{{
-              item.label || t()('documents.cover_letter_untitled')
-            }}</span>
+            <div class="cvlist__row-title">
+              <span class="cell-strong">{{
+                item.label || t()('documents.cover_letter_untitled')
+              }}</span>
+              @if (linkedJobLabel(item); as linkedLabel) {
+                <span class="cvlist__linked">
+                  {{ t()('documents.linked_to') }}: {{ linkedLabel }}
+                </span>
+              }
+            </div>
             <div class="cvlist__tags">
               @if (item.regionTag) {
                 <span class="badge">{{ item.regionTag.toUpperCase() }}</span>
@@ -149,9 +156,9 @@
           {{ t()('documents.cover_letter_generate_job_select') }}
           <select
             [ngModel]="selectedJobId()"
-            (ngModelChange)="selectedJobId.set($event === '' ? null : +$event)"
+            (ngModelChange)="selectedJobId.set($event === null || $event === '' ? null : +$event)"
           >
-            <option [value]="null">-- Select a Tracked Job (Optional) --</option>
+            <option [ngValue]="null">{{ t()('documents.cover_letter_generate_job_none') }}</option>
             @for (j of trackedJobs(); track j.id) {
               <option [value]="j.id">{{ j.company }} — {{ j.title }}</option>
             }

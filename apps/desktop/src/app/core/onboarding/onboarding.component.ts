@@ -1,7 +1,10 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
+import { AiProvider } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { guideForProvider } from './provider-guides';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts); steps are placeholders
@@ -29,6 +32,51 @@ import { ButtonDirective } from '@applye/ui';
             <section>
               <h2>{{ t()('onboarding.welcome_title') }}</h2>
               <p>{{ t()('onboarding.welcome_privacy') }}</p>
+            </section>
+          }
+          @case (1) {
+            <section class="onboarding__ai">
+              <h2>{{ t()('onboarding.ai.title') }}</h2>
+              <p>{{ t()('onboarding.ai.intro') }}</p>
+              <label
+                >{{ t()('onboarding.ai.provider') }}
+                <select
+                  [value]="selectedProvider()"
+                  (change)="selectedProvider.set($any($event.target).value)"
+                >
+                  @for (p of v1Providers; track p) {
+                    <option [value]="p">{{ t()(guideNameKey(p)) }}</option>
+                  }
+                </select>
+              </label>
+              <button appButton variant="secondary" size="md" (click)="openConsole()">
+                {{ t()('onboarding.ai.open_console') }}
+              </button>
+              <ol>
+                @for (k of guide().stepKeys; track k) {
+                  <li>{{ t()(k) }}</li>
+                }
+              </ol>
+              <label
+                >{{ t()('onboarding.ai.key_label') }}
+                <input
+                  type="password"
+                  [value]="keyInput()"
+                  (input)="keyInput.set($any($event.target).value)"
+                />
+              </label>
+              <button appButton variant="primary" size="md" (click)="saveKey()">
+                {{ t()('onboarding.ai.save_check') }}
+              </button>
+              @if (keySaved()) {
+                <p class="ok">{{ t()('onboarding.ai.saved') }}</p>
+              }
+              @if (guide().helpVideoUrl) {
+                <button appButton variant="ghost" size="sm" (click)="openVideo()">
+                  {{ t()('onboarding.ai.watch_video') }}
+                </button>
+              }
+              <p class="muted">{{ t()('onboarding.ai.keyring_note') }}</p>
             </section>
           }
           @default {
@@ -92,6 +140,32 @@ export class OnboardingComponent {
   readonly completed = output<void>();
   readonly step = signal(0);
   readonly totalSteps = 6; // 0 welcome, 1 ai-setup, 2 resume, 3 preview, 4 archetypes, 5 done
+
+  readonly selectedProvider = signal<AiProvider>('claude');
+  readonly guide = computed(() => guideForProvider(this.selectedProvider()));
+  readonly keyInput = signal('');
+  readonly keySaved = signal(false);
+  readonly v1Providers: AiProvider[] = ['claude', 'openai', 'deepseek'];
+
+  guideNameKey(p: AiProvider): string {
+    return guideForProvider(p).nameKey;
+  }
+
+  async openConsole(): Promise<void> {
+    await openUrl(this.guide().consoleUrl);
+  }
+
+  async openVideo(): Promise<void> {
+    const url = this.guide().helpVideoUrl;
+    if (url) await openUrl(url);
+  }
+
+  async saveKey(): Promise<void> {
+    const key = this.keyInput().trim();
+    if (!key) return;
+    await this.db.setProviderKey(this.selectedProvider(), key);
+    this.keySaved.set(await this.db.hasProviderKey(this.selectedProvider()));
+  }
 
   next(): void {
     this.step.update((s) => Math.min(s + 1, this.totalSteps - 1));

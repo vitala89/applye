@@ -379,4 +379,13 @@ export class DbService {
   healthCheck(): Promise<HealthReport> {
     return tauriInvoke<HealthReport>('health_check');
   }
+
+  // --- Keyring (AI provider keys) ---
+  async hasProviderKey(provider: string): Promise<boolean> {
+    return tauriInvoke<boolean>('keys_has_provider_key', { provider });
+  }
+
+  async setProviderKey(provider: string, key: string): Promise<void> {
+    return tauriInvoke<void>('keys_set_provider_key', { provider, key });
+  }
 }

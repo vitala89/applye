@@ -687,6 +687,46 @@ const en: TranslationMap = {
     welcome_title: 'Welcome',
     welcome_privacy: 'Everything stays on your computer. Applye never uploads your data.',
     step_todo: '…',
+    ai: {
+      title: 'Connect an AI provider',
+      intro:
+        'Applye uses AI to score jobs and tailor documents. You need one API key. Think of it as a password for the AI — it is stored only on your computer.',
+      provider: 'Provider',
+      open_console: 'Open console & create key',
+      key_label: 'Paste your API key',
+      save_check: 'Save & check',
+      saved: 'Key saved and detected.',
+      watch_video: 'Watch the video guide',
+      keyring_note: 'Your key is stored in your operating system keychain, never in a file or log.',
+      generic: {
+        name: 'Other provider',
+        step1: 'Open the provider console.',
+        step2: 'Create an API key.',
+        step3: 'Copy it.',
+        step4: 'Paste it below and save.',
+      },
+      claude: {
+        name: 'Claude (Anthropic)',
+        step1: 'Sign in at console.anthropic.com.',
+        step2: 'Go to API Keys and click Create Key.',
+        step3: 'Copy the key (it starts with sk-ant-).',
+        step4: 'Paste it below and click Save & check.',
+      },
+      openai: {
+        name: 'OpenAI (Codex)',
+        step1: 'Sign in at platform.openai.com.',
+        step2: 'Open API keys and Create new secret key.',
+        step3: 'Copy the key.',
+        step4: 'Paste it below and click Save & check.',
+      },
+      deepseek: {
+        name: 'DeepSeek',
+        step1: 'Sign in at platform.deepseek.com.',
+        step2: 'Open API keys and create one.',
+        step3: 'Copy the key.',
+        step4: 'Paste it below and click Save & check.',
+      },
+    },
   },
 };
 
@@ -1394,6 +1434,47 @@ const de: TranslationMap = {
     welcome_title: 'Willkommen',
     welcome_privacy: 'Alles bleibt auf deinem Rechner. Applye lädt deine Daten nie hoch.',
     step_todo: '…',
+    ai: {
+      title: 'KI-Anbieter verbinden',
+      intro:
+        'Applye nutzt KI, um Stellen zu bewerten und Dokumente anzupassen. Du brauchst dafür einen API-Schlüssel. Stell ihn dir wie ein Passwort für die KI vor — er wird nur auf deinem Rechner gespeichert.',
+      provider: 'Anbieter',
+      open_console: 'Konsole öffnen & Schlüssel erstellen',
+      key_label: 'API-Schlüssel einfügen',
+      save_check: 'Speichern & prüfen',
+      saved: 'Schlüssel gespeichert und erkannt.',
+      watch_video: 'Video-Anleitung ansehen',
+      keyring_note:
+        'Dein Schlüssel wird im Schlüsselbund deines Betriebssystems gespeichert, niemals in einer Datei oder einem Protokoll.',
+      generic: {
+        name: 'Anderer Anbieter',
+        step1: 'Öffne die Konsole des Anbieters.',
+        step2: 'Erstelle einen API-Schlüssel.',
+        step3: 'Kopiere ihn.',
+        step4: 'Füge ihn unten ein und speichere.',
+      },
+      claude: {
+        name: 'Claude (Anthropic)',
+        step1: 'Melde dich bei console.anthropic.com an.',
+        step2: 'Gehe zu API Keys und klicke auf Create Key.',
+        step3: 'Kopiere den Schlüssel (er beginnt mit sk-ant-).',
+        step4: 'Füge ihn unten ein und klicke auf Speichern & prüfen.',
+      },
+      openai: {
+        name: 'OpenAI (Codex)',
+        step1: 'Melde dich bei platform.openai.com an.',
+        step2: 'Öffne API keys und erstelle einen neuen geheimen Schlüssel.',
+        step3: 'Kopiere den Schlüssel.',
+        step4: 'Füge ihn unten ein und klicke auf Speichern & prüfen.',
+      },
+      deepseek: {
+        name: 'DeepSeek',
+        step1: 'Melde dich bei platform.deepseek.com an.',
+        step2: 'Öffne API keys und erstelle einen Schlüssel.',
+        step3: 'Kopiere den Schlüssel.',
+        step4: 'Füge ihn unten ein und klicke auf Speichern & prüfen.',
+      },
+    },
   },
 };
 

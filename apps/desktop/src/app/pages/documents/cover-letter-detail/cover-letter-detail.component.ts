@@ -70,7 +70,6 @@ export class CoverLetterDetailComponent {
   readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingBlock = signal<string | null>(null);
-  readonly error = signal('');
 
   constructor() {
     void this.load();
@@ -183,7 +182,6 @@ export class CoverLetterDetailComponent {
 
     const sectionName = index !== undefined ? `body_${index}` : blockKey;
     this.regeneratingBlock.set(sectionName);
-    this.error.set('');
 
     try {
       const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
@@ -257,7 +255,6 @@ export class CoverLetterDetailComponent {
 
       this.content.set(freshContent);
     } catch (e) {
-      this.error.set(String(e));
       this.toast.error(String(e));
     } finally {
       this.regeneratingBlock.set(null);
@@ -268,7 +265,6 @@ export class CoverLetterDetailComponent {
     const doc = this.doc();
     if (!doc || this.saving()) return;
     this.saving.set(true);
-    this.error.set('');
     try {
       if (this.isDefault()) {
         const siblings = await this.db.documentLibraryList('cover_letter');
@@ -307,7 +303,6 @@ export class CoverLetterDetailComponent {
       }
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
-      this.error.set(String(e));
       this.toast.error(String(e));
     } finally {
       this.saving.set(false);

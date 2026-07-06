@@ -61,10 +61,6 @@
       </div>
     </div>
 
-    @if (error()) {
-      <p class="modal__error">{{ error() }}</p>
-    }
-
     <div class="split-editor" [class.split-editor--preview]="previewMode()">
       <!-- LEFT: Structured Block Editor -->
       @if (!previewMode()) {

@@ -226,7 +226,9 @@ export class OnboardingComponent {
     this.parsing.set(true);
     try {
       const settings = await this.db.getSettings();
-      const language = settings.defaultDocLanguage ?? 'en';
+      // Match the Documents cv-import pipeline: the skill's `language` drives
+      // label text and follows the UI language, not the document output language.
+      const language = settings.uiLanguage ?? 'en';
       const rendered = await this.ai.renderSkill('cv-import', { cv_text: text, language });
       const res = await this.ai.run({
         mode: settings.aiMode,

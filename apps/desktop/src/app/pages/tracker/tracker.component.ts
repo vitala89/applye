@@ -4,6 +4,7 @@ import type { ApplicationTrackerFieldsInput, Settings, TrackerRow } from '@apply
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../core/toast/toast.service';
 
 type Range = 'month' | '3months' | 'all';
 const RESPONDED = ['interview', 'offer', 'rejected'];
@@ -37,6 +38,7 @@ interface ColumnDef {
 export class TrackerComponent {
   private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   readonly rows = signal<TrackerRow[]>([]);
@@ -44,7 +46,6 @@ export class TrackerComponent {
   readonly loading = signal(true);
   readonly range = signal<Range>('all');
   readonly statusFilter = signal<string>('');
-  readonly exportMsg = signal('');
   readonly exporting = signal(false);
   readonly applicantName = signal('');
   readonly columnMenuOpen = signal(false);
@@ -188,14 +189,13 @@ export class TrackerComponent {
   private async doExport(format: 'pdf' | 'csv'): Promise<void> {
     if (this.exporting()) return;
     this.exporting.set(true);
-    this.exportMsg.set('');
     try {
       const content = format === 'csv' ? this.buildCsv() : this.buildReportText();
       const stamp = new Date().toISOString().slice(0, 10);
       const path = await this.db.exportReport(content, format, `eigenbemuehungen-${stamp}`);
-      this.exportMsg.set(`${this.t()('tracker.saved_to')} ${path}`);
+      this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
     } catch (e) {
-      this.exportMsg.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.exporting.set(false);
     }

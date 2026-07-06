@@ -5,6 +5,7 @@ import { AiService, DbService } from '@applye/data';
 import { Profile, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
+import { ToastService } from '../../core/toast/toast.service';
 
 @Component({
   selector: 'app-profile',
@@ -569,6 +570,7 @@ export class ProfileComponent implements OnInit {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   protected readonly onboarding = inject(OnboardingService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   readonly fullMd = signal('');
@@ -621,6 +623,7 @@ export class ProfileComponent implements OnInit {
     } catch (e) {
       this.saveStatus.set(this.t()('profile.load_failed').replace('{error}', String(e)));
       this.saveError.set(true);
+      this.toast.error(this.t()('profile.load_failed').replace('{error}', String(e)));
     } finally {
       this.loading.set(false);
     }
@@ -671,6 +674,7 @@ export class ProfileComponent implements OnInit {
     } catch (e) {
       this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));
       this.saveError.set(true);
+      this.toast.error(this.t()('profile.save_failed').replace('{error}', String(e)));
     } finally {
       this.saving.set(false);
     }
@@ -721,6 +725,7 @@ export class ProfileComponent implements OnInit {
     } catch (e) {
       this.scoreStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
       this.scoreError.set(true);
+      this.toast.error(this.t()('profile.generate_failed').replace('{error}', String(e)));
     } finally {
       this.scoring.set(false);
     }
@@ -776,6 +781,7 @@ export class ProfileComponent implements OnInit {
     } catch (e) {
       this.pitchStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
       this.pitchError.set(true);
+      this.toast.error(this.t()('profile.generate_failed').replace('{error}', String(e)));
     } finally {
       this.pitching.set(false);
     }

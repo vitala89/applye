@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { Copy, ExternalLink, Flag, LucideAngularModule, Mail, X } from 'lucide-angular';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { AiService, DbService } from '@applye/data';
+import { ToastService } from '../../../core/toast/toast.service';
 import {
   ApplicationStatus,
   Comment,
@@ -70,6 +71,7 @@ export class QuickViewModalComponent {
   private readonly ai = inject(AiService);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   readonly card = input.required<PipelineCard>();
@@ -215,6 +217,7 @@ export class QuickViewModalComponent {
       });
     } catch (e) {
       this.followupError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.followupDrafting.set(false);
     }
@@ -271,6 +274,7 @@ export class QuickViewModalComponent {
       this.comments.set(await this.db.listApplicationComments(applicationId));
     } catch (e) {
       this.commentsError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.commentsLoading.set(false);
     }
@@ -347,6 +351,7 @@ export class QuickViewModalComponent {
       this.commentText.set('');
     } catch (e) {
       this.commentsError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.commentBusy.set(false);
     }

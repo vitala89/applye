@@ -12,6 +12,7 @@ import { DbService } from '@applye/data';
 import { ApplicationStatus, InterviewStage, PipelineCard, Priority } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { QuickViewModalComponent } from './quick-view-modal/quick-view-modal.component';
+import { ToastService } from '../../core/toast/toast.service';
 
 interface KanbanCol {
   status: ApplicationStatus;
@@ -386,6 +387,7 @@ const COLS: KanbanCol[] = [
 export class PipelineComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   readonly COLS = COLS;
@@ -425,6 +427,7 @@ export class PipelineComponent implements OnInit {
       this.totalCards.set(all.length);
     } catch (e) {
       this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.loading.set(false);
     }

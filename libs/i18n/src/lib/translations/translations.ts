@@ -677,6 +677,17 @@ const en: TranslationMap = {
     rerun: 'Re-run check',
     continue: 'Continue',
   },
+  onboarding: {
+    title: 'Set up Applye',
+    step: 'Step',
+    skip: 'Skip for now',
+    back: 'Back',
+    next: 'Next',
+    done_cta: 'Finish',
+    welcome_title: 'Welcome',
+    welcome_privacy: 'Everything stays on your computer. Applye never uploads your data.',
+    step_todo: '…',
+  },
 };
 
 const de: TranslationMap = {
@@ -1372,6 +1383,17 @@ const de: TranslationMap = {
     checking: 'Prüfe…',
     rerun: 'Erneut prüfen',
     continue: 'Weiter',
+  },
+  onboarding: {
+    title: 'Applye einrichten',
+    step: 'Schritt',
+    skip: 'Später',
+    back: 'Zurück',
+    next: 'Weiter',
+    done_cta: 'Fertig',
+    welcome_title: 'Willkommen',
+    welcome_privacy: 'Alles bleibt auf deinem Rechner. Applye lädt deine Daten nie hoch.',
+    step_todo: '…',
   },
 };
 

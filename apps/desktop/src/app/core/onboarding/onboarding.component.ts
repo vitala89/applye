@@ -7,7 +7,11 @@ import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
-import { cvToProfileMarkdown, parseArchetypesSkillResponse } from './onboarding-content.util';
+import {
+  appendCompensation,
+  cvToProfileMarkdown,
+  parseArchetypesSkillResponse,
+} from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
@@ -187,11 +191,6 @@ import { guideForProvider } from './provider-guides';
               </div>
             </section>
           }
-          @default {
-            <section>
-              <p>{{ t()('onboarding.step_todo') }}</p>
-            </section>
-          }
         }
       </main>
 
@@ -324,7 +323,9 @@ export class OnboardingComponent {
         language,
       });
       this.parsedCv.set(parseCvSkillResponse(res.text));
-      this.profileMd.set(this.parsedMd());
+      // Only seed the preview when it's still empty — otherwise a Back +
+      // re-parse would silently clobber the user's manual edits.
+      if (!this.profileMd().trim()) this.profileMd.set(this.parsedMd());
       this.next(); // advance to preview
     } finally {
       this.parsing.set(false);
@@ -408,13 +409,13 @@ export class OnboardingComponent {
   }
 
   async saveProfile(): Promise<void> {
-    const fullMd = this.profileMd();
-    if (fullMd) {
-      await this.db.upsertProfile({
-        fullMd,
-        targetArchetypes: JSON.stringify(this.archetypes()),
-      });
-    }
+    const base = this.profileMd().trim();
+    if (!base) return;
+    const fullMd = appendCompensation(base, this.compRange());
+    await this.db.upsertProfile({
+      fullMd,
+      targetArchetypes: JSON.stringify(this.archetypes()),
+    });
   }
 
   async skip(): Promise<void> {

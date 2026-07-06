@@ -1,3 +1,4 @@
+// structurally compatible subset of CvParsedContent
 export interface ParsedCv {
   personalDetails?: {
     fullName?: string | null;
@@ -27,6 +28,15 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   }
   if (cv.skills?.length) out.push('', '## Skills', cv.skills.join(', '));
   return out.join('\n').trim();
+}
+
+/** Folds the user-edited compensation range into the profile markdown so it
+ * survives `saveProfile()` without needing a dedicated `Profile` column
+ * (a dual-track comp schema is planned separately). Pure/no-op on blank input. */
+export function appendCompensation(md: string, compRange: string): string {
+  const range = compRange.trim();
+  if (!range) return md;
+  return `${md}\n\n## Compensation Target\n${range}`.trim();
 }
 
 export function parseArchetypesSkillResponse(text: string): {

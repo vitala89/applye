@@ -687,7 +687,6 @@ const en: TranslationMap = {
     done_cta: 'Finish',
     welcome_title: 'Welcome',
     welcome_privacy: 'Everything stays on your computer. Applye never uploads your data.',
-    step_todo: '…',
     rerun: 'Re-run onboarding',
     banner: {
       text: 'Your profile is still empty. Finish setup to get the most out of Applye.',
@@ -1469,7 +1468,6 @@ const de: TranslationMap = {
     done_cta: 'Fertig',
     welcome_title: 'Willkommen',
     welcome_privacy: 'Alles bleibt auf deinem Rechner. Applye lädt deine Daten nie hoch.',
-    step_todo: '…',
     rerun: 'Einrichtung erneut starten',
     banner: {
       text: 'Dein Profil ist noch leer. Schließe die Einrichtung ab, um Applye optimal zu nutzen.',

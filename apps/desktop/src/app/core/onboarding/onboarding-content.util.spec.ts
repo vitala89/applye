@@ -1,4 +1,8 @@
-import { cvToProfileMarkdown, parseArchetypesSkillResponse } from './onboarding-content.util';
+import {
+  appendCompensation,
+  cvToProfileMarkdown,
+  parseArchetypesSkillResponse,
+} from './onboarding-content.util';
 
 describe('cvToProfileMarkdown', () => {
   it('renders name, summary, experience and skills as markdown', () => {
@@ -38,5 +42,17 @@ describe('parseArchetypesSkillResponse', () => {
     const r = parseArchetypesSkillResponse('not json');
     expect(r.archetypes).toEqual([]);
     expect(r.compRange).toBeNull();
+  });
+});
+
+describe('appendCompensation', () => {
+  it('appends a Compensation Target section when the range is non-empty', () => {
+    const md = appendCompensation('# Jane Smith', 'EUR 90-120K');
+    expect(md).toBe('# Jane Smith\n\n## Compensation Target\nEUR 90-120K');
+  });
+
+  it('returns the markdown unchanged when the range is empty or whitespace', () => {
+    expect(appendCompensation('# Jane Smith', '')).toBe('# Jane Smith');
+    expect(appendCompensation('# Jane Smith', '   ')).toBe('# Jane Smith');
   });
 });

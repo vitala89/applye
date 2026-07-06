@@ -4,6 +4,7 @@ export interface ParsedCv {
     fullName?: string | null;
     email?: string | null;
     phone?: string | null;
+    address?: string | null;
   } | null;
   summary?: string | null;
   experience?: { company: string; role: string; bullets?: string[] }[] | null;
@@ -14,7 +15,11 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   const out: string[] = [];
   const name = cv.personalDetails?.fullName?.trim();
   if (name) out.push(`# ${name}`);
-  const contact = [cv.personalDetails?.email, cv.personalDetails?.phone]
+  const contact = [
+    cv.personalDetails?.email,
+    cv.personalDetails?.phone,
+    cv.personalDetails?.address,
+  ]
     .filter(Boolean)
     .join(' · ');
   if (contact) out.push(contact);
@@ -56,4 +61,35 @@ export function parseArchetypesSkillResponse(text: string): {
   } catch {
     return empty;
   }
+}
+
+export interface CompRange {
+  currency: string;
+  min: number;
+  max: number;
+}
+
+const DEFAULT_COMP_RANGE: CompRange = { currency: 'USD', min: 80, max: 120 };
+
+/** Best-effort extraction of a currency + two numbers from a free-text AI
+ * suggestion (e.g. "EUR 90-120K", "$140k – $190k") so the two numeric
+ * min/max inputs can be pre-filled. Never throws; falls back to a sane
+ * default range when nothing parseable is found. */
+export function parseCompRange(text: string | null | undefined): CompRange {
+  if (!text) return { ...DEFAULT_COMP_RANGE };
+  const numbers = text.match(/\d+/g);
+  if (!numbers || numbers.length < 1) return { ...DEFAULT_COMP_RANGE };
+  const min = parseInt(numbers[0], 10);
+  const max = numbers.length > 1 ? parseInt(numbers[1], 10) : min;
+  const currencyMatch = text.match(/[A-Z]{3}|\$|€|£/);
+  const currency = currencyMatch ? currencyMatch[0] : DEFAULT_COMP_RANGE.currency;
+  return { currency, min, max: max >= min ? max : min };
+}
+
+/** Renders a min/max compensation range back into the free-text format
+ * `appendCompensation` expects. Pure inverse of `parseCompRange` for the
+ * common case (does not need to round-trip exactly). */
+export function formatCompRange(range: CompRange): string {
+  const symbol = range.currency.length === 1 ? range.currency : `${range.currency} `;
+  return `${symbol}${range.min}K – ${symbol}${range.max}K`;
 }

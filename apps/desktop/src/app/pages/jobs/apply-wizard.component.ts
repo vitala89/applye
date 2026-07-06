@@ -93,6 +93,9 @@ import {
             <ng-content select="[wizardUpdateScoreStep]" />
           }
           @case (3) {
+            <ng-content select="[wizardDocumentsStep]" />
+          }
+          @case (4) {
             <ng-content select="[wizardExportApplyStep]" />
           }
         }
@@ -151,9 +154,9 @@ export class ApplyWizard {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
-  /** 4 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
-   * Export & apply (3). */
-  protected readonly lastStep = 3;
+  /** 5 steps: Review score (0) → Tailor CV (1) → Updated score (2) →
+   * Review documents (3) → Export & apply (4). */
+  protected readonly lastStep = 4;
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
@@ -189,6 +192,7 @@ export class ApplyWizard {
     this.t()('jobs.wizard.step_review_score'),
     this.t()('jobs.wizard.step_tailor_cv'),
     this.t()('jobs.wizard.step_updated_score'),
+    this.t()('jobs.wizard.step_review_documents'),
     this.t()('jobs.wizard.step_export_apply'),
   ]);
 

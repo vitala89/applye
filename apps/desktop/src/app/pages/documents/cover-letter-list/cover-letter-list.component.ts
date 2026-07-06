@@ -2,7 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Copy, Download, LucideAngularModule, Trash2, WandSparkles } from 'lucide-angular';
-import type { CoverLetterContent, DocumentLibraryItem, Job, SupportedLanguage } from '@applye/core';
+import type {
+  Application,
+  CoverLetterContent,
+  DocumentLibraryItem,
+  Job,
+  SupportedLanguage,
+} from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -38,6 +44,7 @@ export class CoverLetterListComponent {
 
   readonly coverLetters = signal<DocumentLibraryItem[]>([]);
   readonly trackedJobs = signal<Job[]>([]);
+  readonly applications = signal<Application[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal(false);
 
@@ -51,12 +58,14 @@ export class CoverLetterListComponent {
     this.loading.set(true);
     this.loadError.set(false);
     try {
-      const [letters, jobs] = await Promise.all([
+      const [letters, jobs, applications] = await Promise.all([
         this.db.documentLibraryList('cover_letter'),
         this.db.listJobs(),
+        this.db.listApplications(),
       ]);
       this.coverLetters.set(letters);
       this.trackedJobs.set(jobs);
+      this.applications.set(applications);
     } catch {
       this.loadError.set(true);
     } finally {
@@ -66,6 +75,13 @@ export class CoverLetterListComponent {
 
   open(id: number): void {
     void this.router.navigate(['/documents/cover-letter', id]);
+  }
+
+  linkedJobLabel(item: DocumentLibraryItem): string {
+    const app = this.applications().find((a) => a.coverLetterDocumentId === item.id);
+    if (!app) return '';
+    const job = this.trackedJobs().find((j) => j.id === app.jobId);
+    return [job?.company, job?.title].filter(Boolean).join(' — ');
   }
 
   async duplicate(item: DocumentLibraryItem, event: Event): Promise<void> {

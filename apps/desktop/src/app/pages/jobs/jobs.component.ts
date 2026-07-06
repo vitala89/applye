@@ -51,6 +51,7 @@ import {
   SupportedLanguage,
   CoverLetterAddress,
   CoverLetterContent,
+  CvContent,
   DocumentLibraryItem,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -59,6 +60,11 @@ import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from 
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
+import {
+  cleanJsonText,
+  cvContentToMd,
+  markdownToCvContentFallback,
+} from '../documents/cv-content.util';
 
 interface PassResult {
   pass: number;
@@ -69,6 +75,27 @@ interface PassResult {
   fromCache: boolean;
   tokensIn: number;
   tokensOut: number;
+}
+
+type DocumentRegionTag = 'de' | 'us' | 'uk' | 'generic';
+type ReviewDocumentKind = 'cv' | 'cover_letter';
+type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
+type FinalCheckStatus =
+  | 'not_run'
+  | 'pass'
+  | 'needs_review'
+  | 'strong'
+  | 'needs_edits'
+  | 'valid'
+  | 'rescore'
+  | 'outdated';
+
+interface FinalChecks {
+  inputHash: string;
+  ats: FinalCheckStatus;
+  hr: FinalCheckStatus;
+  fit: FinalCheckStatus;
+  notes: string[];
 }
 
 @Component({
@@ -165,6 +192,30 @@ interface PassResult {
                   <lucide-icon [img]="icons.wand" [size]="11" aria-hidden="true" />
                   {{ t()('jobs.wizard.tailored_badge') }}
                 </span>
+              }
+              @if (application()?.cvDocumentId; as cvId) {
+                <button
+                  class="detail-actions__doc"
+                  type="button"
+                  [title]="t()('jobs.open_cv_document')"
+                  [attr.aria-label]="t()('jobs.open_cv_document')"
+                  (click)="openCv(cvId)"
+                >
+                  <lucide-icon [img]="icons.fileText" [size]="14" aria-hidden="true" />
+                  <span>CV</span>
+                </button>
+              }
+              @if (application()?.coverLetterDocumentId; as clId) {
+                <button
+                  class="detail-actions__doc"
+                  type="button"
+                  [title]="t()('jobs.open_cover_letter_document')"
+                  [attr.aria-label]="t()('jobs.open_cover_letter_document')"
+                  (click)="openCoverLetter(clId)"
+                >
+                  <lucide-icon [img]="icons.pencilLine" [size]="14" aria-hidden="true" />
+                  <span>{{ t()('documents.tab_cover_letter') }}</span>
+                </button>
               }
 
               <span class="detail-actions__spacer"></span>
@@ -332,40 +383,6 @@ interface PassResult {
               [tailored]="isTailored()"
               (tailorApply)="openWizard()"
             />
-
-            <!-- Cover Letter Tailoring CTA -->
-            <div class="card scoring-view__cta" style="margin-top: var(--space-4);">
-              <div class="scoring-view__cta-text">
-                <span class="scoring-view__cta-title">Tailor Cover Letter</span>
-                <span class="scoring-view__cta-subtitle">
-                  Generate or rewrite a cover letter specifically for this job description.
-                </span>
-              </div>
-              <span class="scoring-view__cta-spacer" style="flex: 1 1 auto;"></span>
-              @if (application()?.coverLetterDocumentId; as clId) {
-                <span class="badge badge--accent" style="margin-right: var(--space-2);">
-                  <lucide-icon [img]="icons.check" [size]="12" aria-hidden="true" />
-                  Cover Letter Linked
-                </span>
-                <button
-                  class="btn btn--secondary btn--md"
-                  type="button"
-                  (click)="openCoverLetter(clId)"
-                >
-                  <lucide-icon [img]="icons.pencil" [size]="15" aria-hidden="true" />
-                  Edit Letter
-                </button>
-              } @else {
-                <button
-                  class="btn btn--primary btn--md"
-                  type="button"
-                  (click)="openTailorCoverLetterModal()"
-                >
-                  <lucide-icon [img]="icons.wand" [size]="15" aria-hidden="true" />
-                  Tailor Letter
-                </button>
-              }
-            </div>
           } @else if (applyResult()) {
             <!-- Success confirmation before redirecting back to the job -->
             <div class="apply-success card">
@@ -418,16 +435,36 @@ interface PassResult {
 
                 <!-- Actions -->
                 @if (tailorResults().length === 0 && !tailoring()) {
+                  <div class="apply-fields" style="margin-bottom: var(--space-4);">
+                    <label>
+                      {{ t()('jobs.wizard.tailor_base_cv_label') }}
+                      <select
+                        [ngModel]="selectedBaseCvId()"
+                        (ngModelChange)="
+                          selectedBaseCvId.set($event === null || $event === '' ? null : +$event)
+                        "
+                      >
+                        <option [ngValue]="null">
+                          {{ t()('jobs.wizard.tailor_profile_from_scratch') }}
+                        </option>
+                        @for (cv of matchingCvs(); track cv.id) {
+                          <option [value]="cv.id">
+                            {{ cv.label }} ({{ cv.regionTag?.toUpperCase() || 'Gen' }})
+                          </option>
+                        }
+                      </select>
+                    </label>
+                  </div>
                   <div class="row">
                     <button
                       class="btn btn--primary btn--md"
-                      [disabled]="!profile()?.fullMd"
+                      [disabled]="!selectedBaseCvId() && !profile()?.fullMd"
                       (click)="startTailoring()"
                     >
                       <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
                       {{ t()('jobs.tailor_btn') }}
                     </button>
-                    @if (!profile()?.fullMd) {
+                    @if (!selectedBaseCvId() && !profile()?.fullMd) {
                       <span class="status status--error">{{
                         t()('jobs.profile_needed_full')
                       }}</span>
@@ -558,43 +595,374 @@ interface PassResult {
                 }
               </div>
 
+              <div wizardDocumentsStep class="wizard-step-content">
+                <div class="apply-fields-header">
+                  <span class="eyebrow">{{ t()('jobs.wizard.review_documents_eyebrow') }}</span>
+                  <h4 class="apply-fields-title">
+                    {{ t()('jobs.wizard.review_documents_title') }}
+                  </h4>
+                  <p class="muted">{{ t()('jobs.wizard.review_documents_hint') }}</p>
+                </div>
+
+                <div class="document-targets">
+                  <label>
+                    {{ t()('documents.cv_field_region') }}
+                    <select
+                      [ngModel]="documentReviewRegion()"
+                      (ngModelChange)="
+                        documentReviewRegion.set($event); finalChecksOutdated.set(!!finalChecks())
+                      "
+                    >
+                      @for (region of documentRegionTags; track region) {
+                        <option [value]="region">{{ region.toUpperCase() }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    {{ t()('documents.cv_field_language') }}
+                    <select
+                      [ngModel]="documentReviewLanguage()"
+                      (ngModelChange)="
+                        documentReviewLanguage.set($event); finalChecksOutdated.set(!!finalChecks())
+                      "
+                    >
+                      @for (language of portalLanguages; track language) {
+                        <option [value]="language">{{ language.toUpperCase() }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+
+                <div class="document-review-grid">
+                  <article class="document-review-card">
+                    <div class="document-review-card__head">
+                      <span class="document-review-card__icon">
+                        <lucide-icon [img]="icons.fileText" [size]="16" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h5>{{ t()('documents.tab_cv') }}</h5>
+                        <span class="badge" [class]="'badge--doc-' + cvReviewStatus()">
+                          {{ t()(documentStatusKey(cvReviewStatus())) }}
+                        </span>
+                      </div>
+                    </div>
+                    @if (linkedCv(); as cv) {
+                      <p class="document-review-card__label">
+                        {{ cv.label || t()('documents.cv_untitled') }}
+                      </p>
+                      <p class="muted">{{ t()('jobs.wizard.document_linked_hint') }}</p>
+                    } @else {
+                      <p class="muted">{{ t()('jobs.wizard.document_cv_missing_hint') }}</p>
+                    }
+                    <div class="document-review-card__actions">
+                      @if (linkedCv(); as cv) {
+                        <button
+                          class="btn btn--primary btn--sm"
+                          type="button"
+                          (click)="openCv(cv.id)"
+                        >
+                          {{ t()('jobs.wizard.document_review_cv') }}
+                        </button>
+                      } @else {
+                        <button
+                          class="btn btn--primary btn--sm"
+                          type="button"
+                          [disabled]="documentPreparing() === 'cv'"
+                          (click)="createCvDraft(false)"
+                        >
+                          {{
+                            documentPreparing() === 'cv'
+                              ? t()('jobs.wizard.document_status_generating')
+                              : t()('jobs.wizard.document_create_cv')
+                          }}
+                        </button>
+                      }
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="documentPreparing() === 'cv' || !finalTailoredCvMd()"
+                        (click)="createCvDraft(true)"
+                      >
+                        {{ t()('jobs.wizard.document_regenerate') }}
+                      </button>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        (click)="chooseCvOpen.set(!chooseCvOpen())"
+                      >
+                        {{ t()('jobs.wizard.document_choose_existing') }}
+                      </button>
+                      @if (linkedCv(); as cv) {
+                        <button
+                          class="btn btn--secondary btn--sm"
+                          type="button"
+                          (click)="openCv(cv.id)"
+                        >
+                          {{ t()('jobs.wizard.document_open_editor') }}
+                        </button>
+                      }
+                    </div>
+                    @if (chooseCvOpen()) {
+                      <select
+                        class="document-review-card__select"
+                        [ngModel]="application()?.cvDocumentId ?? null"
+                        (ngModelChange)="
+                          chooseExistingDocument(
+                            'cv',
+                            $event === null || $event === '' ? null : +$event
+                          )
+                        "
+                      >
+                        <option [ngValue]="null">
+                          {{ t()('jobs.wizard.document_choose_cv') }}
+                        </option>
+                        @for (cv of matchingCvs(); track cv.id) {
+                          <option [value]="cv.id">
+                            {{ cv.label || t()('documents.cv_untitled') }}
+                          </option>
+                        }
+                      </select>
+                    }
+                  </article>
+
+                  <article class="document-review-card">
+                    <div class="document-review-card__head">
+                      <span class="document-review-card__icon">
+                        <lucide-icon [img]="icons.pencilLine" [size]="16" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h5>{{ t()('documents.tab_cover_letter') }}</h5>
+                        <span class="badge" [class]="'badge--doc-' + coverLetterReviewStatus()">
+                          {{ t()(documentStatusKey(coverLetterReviewStatus())) }}
+                        </span>
+                      </div>
+                    </div>
+                    @if (linkedCoverLetter(); as letter) {
+                      <p class="document-review-card__label">
+                        {{ letter.label || t()('documents.cover_letter_untitled') }}
+                      </p>
+                      <p class="muted">{{ t()('jobs.wizard.document_linked_hint') }}</p>
+                    } @else {
+                      <p class="muted">
+                        {{ t()('jobs.wizard.document_cover_letter_missing_hint') }}
+                      </p>
+                    }
+                    <div class="document-review-card__actions">
+                      @if (linkedCoverLetter(); as letter) {
+                        <button
+                          class="btn btn--primary btn--sm"
+                          type="button"
+                          (click)="openCoverLetter(letter.id)"
+                        >
+                          {{ t()('jobs.wizard.document_review_letter') }}
+                        </button>
+                      } @else {
+                        <button
+                          class="btn btn--primary btn--sm"
+                          type="button"
+                          [disabled]="documentPreparing() === 'cover_letter'"
+                          (click)="createCoverLetterDraft(false)"
+                        >
+                          {{
+                            documentPreparing() === 'cover_letter'
+                              ? t()('jobs.wizard.document_status_generating')
+                              : t()('jobs.wizard.document_create_cover_letter')
+                          }}
+                        </button>
+                      }
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="documentPreparing() === 'cover_letter'"
+                        (click)="createCoverLetterDraft(true)"
+                      >
+                        {{ t()('jobs.wizard.document_regenerate') }}
+                      </button>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        (click)="chooseCoverLetterOpen.set(!chooseCoverLetterOpen())"
+                      >
+                        {{ t()('jobs.wizard.document_choose_existing') }}
+                      </button>
+                      @if (linkedCoverLetter(); as letter) {
+                        <button
+                          class="btn btn--secondary btn--sm"
+                          type="button"
+                          (click)="openCoverLetter(letter.id)"
+                        >
+                          {{ t()('jobs.wizard.document_open_editor') }}
+                        </button>
+                      }
+                    </div>
+                    @if (chooseCoverLetterOpen()) {
+                      <select
+                        class="document-review-card__select"
+                        [ngModel]="application()?.coverLetterDocumentId ?? null"
+                        (ngModelChange)="
+                          chooseExistingDocument(
+                            'cover_letter',
+                            $event === null || $event === '' ? null : +$event
+                          )
+                        "
+                      >
+                        <option [ngValue]="null">
+                          {{ t()('jobs.wizard.document_choose_cover_letter') }}
+                        </option>
+                        @for (letter of coverLetters(); track letter.id) {
+                          <option [value]="letter.id">
+                            {{ letter.label || t()('documents.cover_letter_untitled') }}
+                          </option>
+                        }
+                      </select>
+                    }
+                  </article>
+                </div>
+
+                @if (documentReviewStatus()) {
+                  <p class="status" [class.status--error]="documentReviewError()">
+                    {{ documentReviewStatus() }}
+                  </p>
+                }
+
+                <section class="final-checks card">
+                  <div class="final-checks__head">
+                    <div>
+                      <h5>{{ t()('jobs.wizard.final_checks_title') }}</h5>
+                      @if (finalChecksOutdated()) {
+                        <p class="status status--error">
+                          {{ t()('jobs.wizard.final_checks_outdated') }}
+                        </p>
+                      }
+                    </div>
+                    <button
+                      class="btn btn--secondary btn--sm"
+                      type="button"
+                      (click)="runFinalChecks()"
+                    >
+                      <lucide-icon [img]="icons.checklist" [size]="14" aria-hidden="true" />
+                      {{ t()('jobs.wizard.final_checks_run') }}
+                    </button>
+                  </div>
+                  <div class="final-checks__rows">
+                    <div>
+                      <span>{{ t()('jobs.wizard.final_checks_ats') }}</span>
+                      <strong>{{
+                        t()(
+                          finalCheckStatusKey(
+                            finalChecksOutdated() ? 'outdated' : finalChecks()?.ats || 'not_run'
+                          )
+                        )
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span>{{ t()('jobs.wizard.final_checks_hr') }}</span>
+                      <strong>{{
+                        t()(
+                          finalCheckStatusKey(
+                            finalChecksOutdated() ? 'outdated' : finalChecks()?.hr || 'not_run'
+                          )
+                        )
+                      }}</strong>
+                    </div>
+                    <div>
+                      <span>{{ t()('jobs.wizard.final_checks_fit') }}</span>
+                      <strong>{{
+                        t()(
+                          finalCheckStatusKey(
+                            finalChecksOutdated() ? 'outdated' : finalChecks()?.fit || 'not_run'
+                          )
+                        )
+                      }}</strong>
+                    </div>
+                  </div>
+                  @if (finalChecks()?.notes?.length) {
+                    <ul class="final-checks__notes">
+                      @for (note of finalChecks()?.notes; track note) {
+                        <li>{{ note }}</li>
+                      }
+                    </ul>
+                  }
+                  @if (finalChecks()?.fit === 'rescore' || finalChecksOutdated()) {
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      type="button"
+                      (click)="updateScoreAfterTailor()"
+                    >
+                      {{ t()('jobs.wizard.final_checks_rescore_action') }}
+                    </button>
+                  }
+                </section>
+              </div>
+
               <div wizardExportApplyStep class="wizard-step-content">
                 <div class="apply-fields-header">
                   <span class="eyebrow">{{ t()('jobs.wizard.export_apply_eyebrow') }}</span>
                   <h4 class="apply-fields-title">{{ t()('jobs.wizard.export_title') }}</h4>
                 </div>
-                <!-- Export (pass 3 done) -->
-                @if (!tailoring() && tailorResults().length === 3) {
+                <!-- Export linked library documents. -->
+                @if (!tailoring()) {
+                  @if (!linkedCv()) {
+                    <div class="alert alert--warn">
+                      <lucide-icon [img]="icons.alertTriangle" [size]="15" aria-hidden="true" />
+                      <span>{{ t()('jobs.wizard.export_missing_cv_warning') }}</span>
+                    </div>
+                  }
+                  @if (!linkedCoverLetter()) {
+                    <p class="muted">
+                      {{ t()('jobs.wizard.export_missing_cover_letter_warning') }}
+                    </p>
+                  }
                   <div class="export-options">
                     <button
                       class="export-option export-option--primary"
                       type="button"
-                      [disabled]="!!exporting()"
-                      (click)="doExport('docx')"
+                      [disabled]="!!exporting() || !linkedCv()"
+                      (click)="doExport('cv', 'docx')"
                     >
                       <span class="export-option__badge">{{ t()('jobs.export_recommended') }}</span>
                       <span class="export-option__icon export-option__icon--accent">
                         <lucide-icon [img]="icons.fileText" [size]="20" aria-hidden="true" />
                       </span>
                       <span class="export-option__title">{{
-                        exporting() === 'docx' ? t()('jobs.exporting') : t()('jobs.export_docx')
+                        exporting() === 'cv-docx' ? t()('jobs.exporting') : t()('jobs.export_docx')
                       }}</span>
                       <span class="export-option__desc">{{ t()('jobs.export_docx_desc') }}</span>
                     </button>
                     <button
                       class="export-option"
                       type="button"
-                      [disabled]="!!exporting()"
-                      (click)="doExport('pdf')"
+                      [disabled]="!!exporting() || !linkedCv()"
+                      (click)="doExport('cv', 'pdf')"
                     >
                       <span class="export-option__icon">
                         <lucide-icon [img]="icons.fileDown" [size]="20" aria-hidden="true" />
                       </span>
                       <span class="export-option__title">{{
-                        exporting() === 'pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf')
+                        exporting() === 'cv-pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf')
                       }}</span>
                       <span class="export-option__desc">{{ t()('jobs.export_pdf_desc') }}</span>
                     </button>
+                    @if (linkedCoverLetter()) {
+                      <button
+                        class="export-option"
+                        type="button"
+                        [disabled]="!!exporting()"
+                        (click)="doExport('cover_letter', 'docx')"
+                      >
+                        <span class="export-option__icon">
+                          <lucide-icon [img]="icons.pencilLine" [size]="20" aria-hidden="true" />
+                        </span>
+                        <span class="export-option__title">{{
+                          exporting() === 'cover_letter-docx'
+                            ? t()('jobs.exporting')
+                            : t()('jobs.wizard.export_cover_letter_docx')
+                        }}</span>
+                        <span class="export-option__desc">{{
+                          t()('jobs.wizard.export_cover_letter_desc')
+                        }}</span>
+                      </button>
+                    }
                   </div>
                   @if (exportStatus()) {
                     <p class="export-path" [class.status--error]="exportError()">
@@ -620,8 +988,6 @@ interface PassResult {
                   <button class="btn btn--ghost btn--sm export-startover" (click)="resetWizard()">
                     {{ t()('jobs.start_over') }}
                   </button>
-                } @else if (!tailoring()) {
-                  <p class="muted">{{ t()('jobs.wizard.export_skipped') }}</p>
                 }
 
                 <div class="apply-fields-header apply-fields-header--sub">
@@ -681,9 +1047,13 @@ interface PassResult {
                 <select
                   style="background: var(--surface-sunken); border: var(--border-width) solid var(--border-default); border-radius: var(--radius-input); color: var(--text-primary); padding: var(--space-2) var(--space-3);"
                   [ngModel]="selectedCoverLetterId()"
-                  (ngModelChange)="selectedCoverLetterId.set($event === '' ? null : +$event)"
+                  (ngModelChange)="
+                    selectedCoverLetterId.set($event === null || $event === '' ? null : +$event)
+                  "
                 >
-                  <option [value]="null">-- None (Generate New from Scratch) --</option>
+                  <option [ngValue]="null">
+                    {{ t()('documents.cover_letter_tailor_none') }}
+                  </option>
                   @for (c of coverLetters(); track c.id) {
                     <option [value]="c.id">
                       {{ c.label || t()('documents.cover_letter_untitled') }} ({{
@@ -748,7 +1118,27 @@ interface PassResult {
       .detail-actions__row {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: var(--space-3);
+      }
+      .detail-actions__doc {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 28px;
+        padding: 0 var(--space-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
+        background: var(--surface-1);
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        font-weight: var(--weight-medium);
+        cursor: pointer;
+      }
+      .detail-actions__doc:hover {
+        border-color: var(--accent);
+        color: var(--text-primary);
       }
       .detail-actions__msg {
         font-size: var(--text-xs);
@@ -1306,6 +1696,150 @@ interface PassResult {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .document-targets {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4);
+        margin-bottom: var(--space-5);
+      }
+      .document-targets label {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+      .document-targets select,
+      .document-review-card__select {
+        background: var(--surface-sunken);
+        border: var(--border-width) solid var(--border-default);
+        border-radius: var(--radius-input);
+        color: var(--text-primary);
+        font-size: var(--text-sm);
+        padding: var(--space-2) var(--space-3);
+        outline: none;
+      }
+      .document-review-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4);
+      }
+      .document-review-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-5);
+        border: var(--border-width) solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        background: var(--surface-1);
+      }
+      .document-review-card__head {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+      }
+      .document-review-card__head h5,
+      .final-checks h5 {
+        margin: 0 0 var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+      }
+      .document-review-card__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-input);
+        background: var(--surface-sunken);
+        color: var(--accent);
+      }
+      .document-review-card__label {
+        margin: 0;
+        color: var(--text-primary);
+        font-weight: var(--weight-medium);
+      }
+      .document-review-card__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .document-review-card__select {
+        width: 100%;
+      }
+      .badge--doc-missing {
+        color: var(--warning);
+        border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+      }
+      .badge--doc-generating {
+        color: var(--accent);
+        border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+      }
+      .badge--doc-ready {
+        color: var(--success);
+        border-color: color-mix(in srgb, var(--success) 40%, transparent);
+      }
+      .badge--doc-needs_review {
+        color: var(--warning);
+        border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+      }
+      .final-checks {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        margin-top: var(--space-5);
+        padding: var(--space-5);
+      }
+      .final-checks__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
+      }
+      .final-checks__rows {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-3);
+      }
+      .final-checks__rows div {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: var(--space-3);
+        border-radius: var(--radius-input);
+        background: var(--surface-sunken);
+      }
+      .final-checks__rows span {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+      }
+      .final-checks__rows strong {
+        color: var(--text-primary);
+        font-size: var(--text-sm);
+      }
+      .final-checks__notes {
+        margin: 0;
+        padding-left: var(--space-5);
+        color: var(--text-secondary);
+        font-size: var(--text-sm);
+      }
+      .alert--warn {
+        color: var(--warning);
+        border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+        background: var(--warning-tint);
+      }
+      @media (max-width: 760px) {
+        .document-targets,
+        .document-review-grid,
+        .final-checks__rows {
+          grid-template-columns: 1fr;
+        }
+      }
     `,
   ],
 })
@@ -1454,14 +1988,357 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   // Cover Letter tailoring (Phase 1c)
   readonly coverLetters = signal<DocumentLibraryItem[]>([]);
+  readonly matchingCvs = signal<DocumentLibraryItem[]>([]);
+  readonly selectedBaseCvId = signal<number | null>(null);
   readonly selectedCoverLetterId = signal<number | null>(null);
   readonly tailorCoverLetterLanguage = signal<SupportedLanguage>('en');
   readonly tailorCoverLetterOpen = signal(false);
   readonly tailoringCoverLetter = signal(false);
   readonly tailorCoverLetterError = signal('');
 
+  readonly documentRegionTags: DocumentRegionTag[] = ['de', 'us', 'uk', 'generic'];
+  readonly documentReviewRegion = signal<DocumentRegionTag>('generic');
+  readonly documentReviewLanguage = signal<SupportedLanguage>('en');
+  readonly linkedCv = signal<DocumentLibraryItem | null>(null);
+  readonly linkedCoverLetter = signal<DocumentLibraryItem | null>(null);
+  readonly documentPreparing = signal<ReviewDocumentKind | null>(null);
+  readonly documentReviewStatus = signal('');
+  readonly documentReviewError = signal(false);
+  readonly chooseCvOpen = signal(false);
+  readonly chooseCoverLetterOpen = signal(false);
+  readonly finalChecks = signal<FinalChecks | null>(null);
+  readonly finalChecksOutdated = signal(false);
+
+  readonly cvReviewStatus = computed<ReviewDocumentStatus>(() =>
+    this.documentCardStatus('cv', this.linkedCv()),
+  );
+  readonly coverLetterReviewStatus = computed<ReviewDocumentStatus>(() =>
+    this.documentCardStatus('cover_letter', this.linkedCoverLetter()),
+  );
+
+  openCv(id: number): void {
+    void this.router.navigate(['/documents/cv', id]);
+  }
+
   openCoverLetter(id: number): void {
     void this.router.navigate(['/documents/cover-letter', id]);
+  }
+
+  private inferDocumentRegion(job: Job | null): DocumentRegionTag {
+    return job?.language === 'de' ? 'de' : 'generic';
+  }
+
+  private normalizeSupportedLanguage(value: string | null | undefined): SupportedLanguage {
+    return this.portalLanguages.includes(value as SupportedLanguage)
+      ? (value as SupportedLanguage)
+      : 'en';
+  }
+
+  private documentCardStatus(
+    kind: ReviewDocumentKind,
+    item: DocumentLibraryItem | null,
+  ): ReviewDocumentStatus {
+    if (this.documentPreparing() === kind) return 'generating';
+    if (!item) return 'missing';
+    if (this.finalChecks()?.inputHash && !this.finalChecksOutdated()) return 'ready';
+    if (this.finalChecksOutdated()) return 'needs_review';
+    return 'linked';
+  }
+
+  documentStatusKey(status: ReviewDocumentStatus): string {
+    return `jobs.wizard.document_status_${status}`;
+  }
+
+  finalCheckStatusKey(status: FinalCheckStatus): string {
+    return `jobs.wizard.final_check_${status}`;
+  }
+
+  async ensureApplicationDraft(): Promise<Application> {
+    const existing = this.application();
+    if (existing) return existing;
+
+    const job = this.job();
+    if (!job?.id) throw new Error(this.t()('jobs.not_found_label'));
+
+    const created = await this.db.upsertApplication({
+      jobId: job.id,
+      status: 'saved',
+      docLanguage: this.documentReviewLanguage(),
+      sourceUrl: job.source,
+    });
+    this.application.set(created);
+    this.jobsStore.patchOverviewRow(job.id, { status: 'saved' });
+    return created;
+  }
+
+  private async loadLinkedDocuments(): Promise<void> {
+    const app = this.application();
+    const [cv, letter] = await Promise.all([
+      app?.cvDocumentId ? this.db.documentLibraryGet(app.cvDocumentId) : Promise.resolve(null),
+      app?.coverLetterDocumentId
+        ? this.db.documentLibraryGet(app.coverLetterDocumentId)
+        : Promise.resolve(null),
+    ]);
+    this.linkedCv.set(cv);
+    this.linkedCoverLetter.set(letter);
+    await this.refreshFinalChecksFreshness();
+  }
+
+  async prepareDocumentsStep(): Promise<void> {
+    this.documentReviewStatus.set('');
+    this.documentReviewError.set(false);
+    try {
+      const [cvs, letters] = await Promise.all([
+        this.db.documentLibraryList('cv'),
+        this.db.documentLibraryList('cover_letter'),
+      ]);
+      this.matchingCvs.set(cvs);
+      this.coverLetters.set(letters);
+      await this.ensureApplicationDraft();
+      await this.loadLinkedDocuments();
+      if (!this.linkedCv() && this.tailorResults().find((r) => r.pass === 3)) {
+        await this.createCvDraft(false);
+      }
+    } catch (e) {
+      this.documentReviewError.set(true);
+      this.documentReviewStatus.set(String(e));
+    }
+  }
+
+  protected finalTailoredCvMd(): string {
+    return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
+  }
+
+  private profileDisplayName(): string {
+    const md = this.profile()?.fullMd ?? '';
+    const heading = md
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.startsWith('# '));
+    return heading?.replace(/^#\s+/, '').trim() ?? '';
+  }
+
+  async createCvDraft(regenerate: boolean): Promise<void> {
+    if (this.documentPreparing()) return;
+    const job = this.job();
+    const tailoredMd = this.finalTailoredCvMd();
+    if (!job?.id || !tailoredMd) {
+      this.documentReviewError.set(true);
+      this.documentReviewStatus.set(this.t()('jobs.wizard.document_cv_requires_tailoring'));
+      return;
+    }
+
+    this.documentPreparing.set('cv');
+    this.documentReviewStatus.set('');
+    this.documentReviewError.set(false);
+    try {
+      const app = await this.ensureApplicationDraft();
+      const inputHash = await this.db.hashText(
+        [job.id, tailoredMd, this.documentReviewLanguage(), this.documentReviewRegion()].join(
+          '\x00',
+        ),
+      );
+      const content = markdownToCvContentFallback(tailoredMd, this.profileDisplayName());
+      const doc = await this.db.documentLibraryUpsert({
+        id: regenerate ? app.cvDocumentId : undefined,
+        docType: 'cv',
+        source: 'generated',
+        label: `${job.company || 'Job'} — Tailored CV`,
+        language: this.documentReviewLanguage(),
+        regionTag: this.documentReviewRegion(),
+        contentJson: JSON.stringify(content),
+        inputHash,
+      });
+      const updated = await this.db.upsertApplication({
+        ...app,
+        cvDocumentId: doc.id,
+        docLanguage: this.documentReviewLanguage(),
+      });
+      this.application.set(updated);
+      this.linkedCv.set(doc);
+      this.finalChecksOutdated.set(!!this.finalChecks());
+      this.documentReviewStatus.set(this.t()('jobs.wizard.document_cv_linked'));
+    } catch (e) {
+      this.documentReviewError.set(true);
+      this.documentReviewStatus.set(String(e));
+    } finally {
+      this.documentPreparing.set(null);
+    }
+  }
+
+  async createCoverLetterDraft(regenerate: boolean): Promise<void> {
+    if (this.documentPreparing()) return;
+    const job = this.job();
+    const profile = this.profile();
+    const settings = this.settings();
+    if (!job?.id || !profile?.fullMd || !settings) {
+      this.documentReviewError.set(true);
+      this.documentReviewStatus.set(this.t()('documents.cv_generate_no_profile'));
+      return;
+    }
+
+    this.documentPreparing.set('cover_letter');
+    this.documentReviewStatus.set('');
+    this.documentReviewError.set(false);
+    try {
+      const app = await this.ensureApplicationDraft();
+      const language = this.documentReviewLanguage();
+      const rendered = await this.ai.renderSkill('cover-letter-generate', {
+        profile_md: profile.fullMd,
+        job_description: job.jdText ?? '',
+        language,
+        section: 'all',
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.defaultModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      const parsed = JSON.parse(cleanJsonText(res.text)) as CoverLetterContent;
+      const content: CoverLetterContent = {
+        ...parsed,
+        bodyParagraphs: parsed.bodyParagraphs ?? [],
+        jobDescription: job.jdText ?? '',
+      };
+      const inputHash = await this.db.hashText(
+        [job.id, profile.fullMd, job.jdText ?? '', language, this.documentReviewRegion()].join(
+          '\x00',
+        ),
+      );
+      const doc = await this.db.documentLibraryUpsert({
+        id: regenerate ? app.coverLetterDocumentId : undefined,
+        docType: 'cover_letter',
+        source: 'generated',
+        label: `${job.company || 'Job'} — Cover Letter`,
+        language,
+        regionTag: this.documentReviewRegion(),
+        contentJson: JSON.stringify(content),
+        inputHash,
+        modelUsed: settings.defaultModel,
+        tokensInput: res.tokensInput,
+        tokensOutput: res.tokensOutput,
+      });
+      const updated = await this.db.upsertApplication({
+        ...app,
+        coverLetterDocumentId: doc.id,
+        docLanguage: language,
+      });
+      this.application.set(updated);
+      this.linkedCoverLetter.set(doc);
+      this.finalChecksOutdated.set(!!this.finalChecks());
+      this.documentReviewStatus.set(this.t()('jobs.wizard.document_cover_letter_linked'));
+    } catch (e) {
+      this.documentReviewError.set(true);
+      this.documentReviewStatus.set(String(e));
+    } finally {
+      this.documentPreparing.set(null);
+    }
+  }
+
+  async chooseExistingDocument(kind: ReviewDocumentKind, id: number | null): Promise<void> {
+    if (!id) return;
+    this.documentReviewStatus.set('');
+    this.documentReviewError.set(false);
+    try {
+      const app = await this.ensureApplicationDraft();
+      const item = await this.db.documentLibraryGet(id);
+      if (!item) return;
+      const updated = await this.db.upsertApplication({
+        ...app,
+        cvDocumentId: kind === 'cv' ? id : app.cvDocumentId,
+        coverLetterDocumentId: kind === 'cover_letter' ? id : app.coverLetterDocumentId,
+        docLanguage: item.language ?? this.documentReviewLanguage(),
+      });
+      this.application.set(updated);
+      if (kind === 'cv') {
+        this.linkedCv.set(item);
+        this.chooseCvOpen.set(false);
+      } else {
+        this.linkedCoverLetter.set(item);
+        this.chooseCoverLetterOpen.set(false);
+      }
+      this.finalChecksOutdated.set(!!this.finalChecks());
+    } catch (e) {
+      this.documentReviewError.set(true);
+      this.documentReviewStatus.set(String(e));
+    }
+  }
+
+  async runFinalChecks(): Promise<void> {
+    const hash = await this.currentDocumentsHash();
+    const cvText = this.documentText(this.linkedCv());
+    const letterText = this.documentText(this.linkedCoverLetter());
+    const jobText = this.jdText().toLowerCase();
+    const keywords = Array.from(new Set(jobText.match(/[a-zäöüß]{5,}/gi) ?? [])).slice(0, 24);
+    const overlap = keywords.filter((word) =>
+      cvText.toLowerCase().includes(word.toLowerCase()),
+    ).length;
+    const cvReasonable = cvText.trim().length >= 900;
+    const hasSettings = !!this.documentReviewLanguage() && !!this.documentReviewRegion();
+    const notes: string[] = [];
+
+    if (!this.linkedCv()) notes.push(this.t()('jobs.wizard.final_note_missing_cv'));
+    if (!this.linkedCoverLetter())
+      notes.push(this.t()('jobs.wizard.final_note_missing_cover_letter'));
+    if (this.linkedCv() && !cvReasonable) notes.push(this.t()('jobs.wizard.final_note_short_cv'));
+    if (keywords.length && overlap < Math.min(4, keywords.length)) {
+      notes.push(this.t()('jobs.wizard.final_note_keyword_overlap'));
+    }
+    if (!hasSettings) notes.push(this.t()('jobs.wizard.final_note_market_language'));
+    if (letterText && letterText.length < 500) {
+      notes.push(this.t()('jobs.wizard.final_note_short_cover_letter'));
+    }
+
+    this.finalChecks.set({
+      inputHash: hash,
+      ats: this.linkedCv() && cvReasonable && hasSettings ? 'pass' : 'needs_review',
+      hr: notes.length <= 1 ? 'strong' : 'needs_edits',
+      fit: this.finalChecksOutdated() ? 'rescore' : 'valid',
+      notes,
+    });
+    this.finalChecksOutdated.set(false);
+  }
+
+  private documentText(item: DocumentLibraryItem | null): string {
+    if (!item?.contentJson) return '';
+    try {
+      if (item.docType === 'cv') return cvContentToMd(JSON.parse(item.contentJson) as CvContent);
+      const content = JSON.parse(item.contentJson) as CoverLetterContent;
+      return [
+        content.subject,
+        content.greeting,
+        ...(content.bodyParagraphs ?? []),
+        content.closing,
+        content.signature,
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+    } catch {
+      return item.contentJson;
+    }
+  }
+
+  private currentDocumentsHash(): Promise<string> {
+    return this.db.hashText(
+      JSON.stringify({
+        cv: this.linkedCv()?.contentJson ?? '',
+        coverLetter: this.linkedCoverLetter()?.contentJson ?? '',
+        language: this.documentReviewLanguage(),
+        region: this.documentReviewRegion(),
+      }),
+    );
+  }
+
+  private async refreshFinalChecksFreshness(): Promise<void> {
+    const checks = this.finalChecks();
+    if (!checks) {
+      this.finalChecksOutdated.set(false);
+      return;
+    }
+    this.finalChecksOutdated.set((await this.currentDocumentsHash()) !== checks.inputHash);
   }
 
   async openTailorCoverLetterModal(): Promise<void> {
@@ -1666,7 +2543,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     return keys[Math.min(this.tailorResults().length, 2)];
   });
 
-  readonly exporting = signal<'docx' | 'pdf' | false>(false);
+  readonly exporting = signal<string | false>(false);
   readonly exportStatus = signal('');
   readonly exportError = signal(false);
   readonly lastExport = signal<{ filePath: string; format: 'docx' | 'pdf' } | null>(null);
@@ -1719,9 +2596,26 @@ export class JobsComponent implements OnInit, OnDestroy {
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;
       this.application.set(app);
+      this.documentReviewLanguage.set(
+        app?.docLanguage ??
+          this.normalizeSupportedLanguage(job.language ?? this.settings()?.defaultDocLanguage),
+      );
+      this.documentReviewRegion.set(this.inferDocumentRegion(job));
 
       const coverLetters = await this.db.documentLibraryList('cover_letter');
       this.coverLetters.set(coverLetters);
+
+      const cvs = await this.db.documentLibraryList('cv');
+      const s = this.settings();
+      const lang = job.language ?? s?.defaultDocLanguage ?? 'en';
+      const matches = cvs.filter((c) => c.language === lang || c.isDefault);
+      this.matchingCvs.set(matches);
+      if (matches.length > 0) {
+        this.selectedBaseCvId.set(matches[0].id);
+      } else {
+        this.selectedBaseCvId.set(null);
+      }
+      await this.loadLinkedDocuments();
 
       this.portalQuestions.set([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
       this.portalAnswers.set([]);
@@ -2230,6 +3124,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.updatingScore.set(true);
     this.updateScoreStatus.set('');
     this.updateScoreError.set(false);
+    this.finalChecks.set(null);
+    this.finalChecksOutdated.set(false);
     try {
       const lang = s.defaultDocLanguage ?? 'en';
       const rendered = await this.ai.renderSkill('job-scoring', {
@@ -2389,6 +3285,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.postTailorSaved.set(false);
     this.updateScoreStatus.set('');
     this.updateScoreError.set(false);
+    this.finalChecks.set(null);
+    this.finalChecksOutdated.set(false);
 
     this.tailoring.set(true);
     try {
@@ -2403,7 +3301,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 export.
+  /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 documents · 4 export.
    * Entering the Updated score step auto-runs the rescore once (only if the
    * user actually tailored — pass 3 exists — and it hasn't run yet). */
   onWizardStep(step: number): void {
@@ -2411,7 +3309,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.scrollContentToTop();
 
     const UPDATED_SCORE_STEP = 2;
-    const EXPORT_STEP = 3;
+    const DOCUMENTS_STEP = 3;
+    const EXPORT_STEP = 4;
     if (
       step === UPDATED_SCORE_STEP &&
       this.tailorResults().length === 3 &&
@@ -2419,6 +3318,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       !this.updatingScore()
     ) {
       void this.updateScoreAfterTailor();
+    }
+    if (step === DOCUMENTS_STEP) {
+      void this.prepareDocumentsStep();
     }
     // Continuing past the Updated score step commits the new score to My Jobs.
     if (step === EXPORT_STEP) {
@@ -2438,40 +3340,48 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.updateScoreError.set(false);
   }
 
-  async doExport(format: 'docx' | 'pdf'): Promise<void> {
-    const j = this.job();
-    const pass3 = this.tailorResults().find((r) => r.pass === 3);
-    if (!j?.id || !pass3) return;
+  async doExport(kind: ReviewDocumentKind, format: 'docx' | 'pdf'): Promise<void> {
+    const item = kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter();
+    if (!item) {
+      this.exportStatus.set(
+        kind === 'cv'
+          ? this.t()('jobs.wizard.export_missing_cv_warning')
+          : this.t()('jobs.wizard.export_missing_cover_letter_warning'),
+      );
+      this.exportError.set(true);
+      return;
+    }
 
-    this.exporting.set(format);
+    const exportingKey = `${kind}-${format}`;
+    this.exporting.set(exportingKey);
     this.exportStatus.set('');
     this.exportError.set(false);
     this.lastExport.set(null);
     try {
-      const doc =
-        format === 'docx'
-          ? await this.db.exportDocx(
-              j.id,
-              pass3.resultMd,
-              j.company ?? '',
-              j.title ?? '',
-              pass3.inputHash,
-            )
-          : await this.db.exportPdf(
-              j.id,
-              pass3.resultMd,
-              j.company ?? '',
-              j.title ?? '',
-              pass3.inputHash,
-            );
-      this.exportStatus.set(`Saved: ${doc.filePath}`);
-      this.lastExport.set({ filePath: doc.filePath, format });
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const filePath = await save({ defaultPath: this.documentExportFilename(item, format) });
+      if (!filePath) return;
+      if (kind === 'cv') {
+        await this.db.cvDocumentExport(item.id, format, filePath);
+      } else {
+        await this.db.coverLetterDocumentExport(item.id, format, filePath);
+      }
+      this.exportStatus.set(`${this.t()('jobs.wizard.export_saved')}: ${filePath}`);
+      this.lastExport.set({ filePath, format });
     } catch (e) {
-      this.exportStatus.set(`Export failed: ${String(e)}`);
+      this.exportStatus.set(`${this.t()('jobs.wizard.export_failed')}: ${String(e)}`);
       this.exportError.set(true);
     } finally {
       this.exporting.set(false);
     }
+  }
+
+  private documentExportFilename(item: DocumentLibraryItem, format: 'docx' | 'pdf'): string {
+    const base = (item.label || item.docType)
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return `${base || item.docType}.${format}`;
   }
 
   openExportedFile(path: string): void {
@@ -2486,14 +3396,30 @@ export class JobsComponent implements OnInit, OnDestroy {
     const j = this.job();
     const p = this.profile();
     const s = this.settings();
-    if (!j?.id || !p?.fullMd || !s) return;
+    const selectedCvId = this.selectedBaseCvId();
+    const matchingCvs = this.matchingCvs();
+
+    if (!j?.id || (!p?.fullMd && !selectedCvId) || !s) return;
+
+    let baselineMd = p?.fullMd ?? '';
+    if (selectedCvId) {
+      const cvItem = matchingCvs.find((c) => c.id === selectedCvId);
+      if (cvItem?.contentJson) {
+        try {
+          const cvContent = JSON.parse(cvItem.contentJson) as CvContent;
+          baselineMd = cvContentToMd(cvContent);
+        } catch {
+          // fallback to profile if parsing fails
+        }
+      }
+    }
 
     const lang = s.defaultDocLanguage ?? 'en';
     const pass1Md = this.tailorResults().find((r) => r.pass === 1)?.resultMd ?? '';
     const pass2Md = this.tailorResults().find((r) => r.pass === 2)?.resultMd ?? '';
 
     // Input hash includes all inputs for this pass → correct cache invalidation
-    const hashInput = [p.fullMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
+    const hashInput = [baselineMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
       '\x00',
     );
     const inputHash = await this.db.hashText(hashInput);
@@ -2516,7 +3442,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
     const scoringJson = this.cache() ? JSON.stringify(this.cache()) : '{}';
     const rendered = await this.ai.renderSkill('resume-tailoring', {
-      profile_md: p.fullMd,
+      profile_md: baselineMd,
       job_description: this.jdText(),
       scoring_json: scoringJson,
       pass: String(passNum),

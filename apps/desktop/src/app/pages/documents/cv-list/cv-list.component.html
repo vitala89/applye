@@ -36,7 +36,14 @@
           (keydown.enter)="open(item.id)"
         >
           <div class="cvlist__row-main">
-            <span class="cell-strong">{{ item.label || t()('documents.cv_untitled') }}</span>
+            <div class="cvlist__row-title">
+              <span class="cell-strong">{{ item.label || t()('documents.cv_untitled') }}</span>
+              @if (linkedJobLabel(item); as linkedLabel) {
+                <span class="cvlist__linked">
+                  {{ t()('documents.linked_to') }}: {{ linkedLabel }}
+                </span>
+              }
+            </div>
             <div class="cvlist__tags">
               @if (item.regionTag) {
                 <span class="badge">{{ item.regionTag.toUpperCase() }}</span>

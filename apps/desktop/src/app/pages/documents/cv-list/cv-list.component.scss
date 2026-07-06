@@ -51,6 +51,20 @@
   gap: var(--space-3);
   min-width: 0;
 }
+.cvlist__row-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cvlist__linked {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cvlist__tags {
   display: flex;
   gap: var(--space-2);

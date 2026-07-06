@@ -475,6 +475,7 @@ const en: TranslationMap = {
     followup_hint: 'Days after each stage before a card is marked overdue on the Pipeline board.',
     followup_apply_label: 'Days after applying',
     followup_interview_label: 'Days after interview',
+    section_onboarding: 'Onboarding',
     load_error: 'Failed to load settings',
   },
   dashboard: {
@@ -687,6 +688,12 @@ const en: TranslationMap = {
     welcome_title: 'Welcome',
     welcome_privacy: 'Everything stays on your computer. Applye never uploads your data.',
     step_todo: '…',
+    rerun: 'Re-run onboarding',
+    banner: {
+      text: 'Your profile is still empty. Finish setup to get the most out of Applye.',
+      cta: 'Finish setup',
+      dismiss: 'Dismiss',
+    },
     ai: {
       title: 'Connect an AI provider',
       intro:
@@ -1244,6 +1251,7 @@ const de: TranslationMap = {
       'Tage nach jeder Phase, bevor eine Karte im Pipeline-Board als überfällig markiert wird.',
     followup_apply_label: 'Tage nach Bewerbung',
     followup_interview_label: 'Tage nach Vorstellungsgespräch',
+    section_onboarding: 'Einrichtung',
     load_error: 'Einstellungen konnten nicht geladen werden',
   },
   dashboard: {
@@ -1462,6 +1470,12 @@ const de: TranslationMap = {
     welcome_title: 'Willkommen',
     welcome_privacy: 'Alles bleibt auf deinem Rechner. Applye lädt deine Daten nie hoch.',
     step_todo: '…',
+    rerun: 'Einrichtung erneut starten',
+    banner: {
+      text: 'Dein Profil ist noch leer. Schließe die Einrichtung ab, um Applye optimal zu nutzen.',
+      cta: 'Einrichtung abschließen',
+      dismiss: 'Verwerfen',
+    },
     ai: {
       title: 'KI-Anbieter verbinden',
       intro:

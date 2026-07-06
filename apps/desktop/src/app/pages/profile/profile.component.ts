@@ -4,6 +4,7 @@ import { ButtonDirective } from '@applye/ui';
 import { AiService, DbService } from '@applye/data';
 import { Profile, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { OnboardingService } from '../../core/onboarding/onboarding.service';
 
 @Component({
   selector: 'app-profile',
@@ -39,6 +40,9 @@ import { TranslateService } from '@applye/i18n';
             </span>
           </p>
           <div class="profile__head-actions">
+            <button appButton variant="secondary" size="md" (click)="onboarding.requestOpen()">
+              {{ t()('onboarding.rerun') }}
+            </button>
             <button
               appButton
               variant="primary"
@@ -564,6 +568,7 @@ export class ProfileComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
+  protected readonly onboarding = inject(OnboardingService);
   protected readonly t = this.i18n.t;
 
   readonly fullMd = signal('');

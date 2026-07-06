@@ -5,6 +5,7 @@ import { AiService, DbService, KeysService } from '@applye/data';
 import { Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
+import { OnboardingService } from '../../core/onboarding/onboarding.service';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -272,6 +273,18 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
           <app-health-check-panel />
         </section>
 
+        <!-- Onboarding -->
+        <section class="section">
+          <h3 class="eyebrow">{{ t()('settings.section_onboarding') }}</h3>
+          <button
+            class="btn btn--secondary btn--md"
+            type="button"
+            (click)="onboarding.requestOpen()"
+          >
+            {{ t()('onboarding.rerun') }}
+          </button>
+        </section>
+
         <!-- Test connection -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.test_section') }}</h3>
@@ -478,6 +491,7 @@ export class SettingsComponent implements OnInit {
   private readonly keys = inject(KeysService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
+  protected readonly onboarding = inject(OnboardingService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {

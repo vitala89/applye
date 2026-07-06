@@ -22,4 +22,5 @@ export interface Settings {
   followupDaysAfterInterview?: number;
   minScoreNotify?: number;
   healthCheckSeen: boolean;
+  onboardingSeen: boolean;
 }

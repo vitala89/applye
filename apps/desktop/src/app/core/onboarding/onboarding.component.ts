@@ -1,9 +1,12 @@
 import { Component, computed, inject, output, signal } from '@angular/core';
-import { AiProvider } from '@applye/core';
-import { DbService, KeysService } from '@applye/data';
+import { FormsModule } from '@angular/forms';
+import { AiProvider, CvParsedContent } from '@applye/core';
+import { AiService, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
+import { cvToProfileMarkdown } from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
@@ -12,7 +15,7 @@ import { guideForProvider } from './provider-guides';
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [ButtonDirective],
+  imports: [ButtonDirective, FormsModule],
   template: `
     <div class="onboarding">
       <header class="onboarding__head">
@@ -79,6 +82,50 @@ import { guideForProvider } from './provider-guides';
               <p class="muted">{{ t()('onboarding.ai.keyring_note') }}</p>
             </section>
           }
+          @case (2) {
+            <section class="onboarding__resume">
+              <h2>{{ t()('onboarding.resume.title') }}</h2>
+              <button appButton variant="secondary" size="md" (click)="pickResumeFile()">
+                {{ t()('onboarding.resume.upload') }}
+              </button>
+              <label
+                >{{ t()('onboarding.resume.paste_label') }}
+                <textarea
+                  rows="8"
+                  [ngModel]="resumeText()"
+                  (ngModelChange)="resumeText.set($event)"
+                ></textarea>
+              </label>
+              <p class="muted">{{ t()('onboarding.resume.privacy_note') }}</p>
+              <button
+                appButton
+                variant="primary"
+                size="md"
+                [disabled]="parsing() || !resumeText().trim()"
+                (click)="parseResume()"
+              >
+                {{ parsing() ? t()('onboarding.resume.parsing') : t()('onboarding.resume.parse') }}
+              </button>
+            </section>
+          }
+          @case (3) {
+            <section class="onboarding__preview">
+              <h2>{{ t()('onboarding.preview.title') }}</h2>
+              <p class="muted">{{ t()('onboarding.preview.help') }}</p>
+              <textarea
+                rows="16"
+                [ngModel]="profileMd()"
+                (ngModelChange)="profileMd.set($event)"
+              ></textarea>
+              @if (parsedCv()?.lowConfidenceNotes?.length) {
+                <ul class="onboarding__notes">
+                  @for (note of parsedCv()?.lowConfidenceNotes; track note) {
+                    <li>{{ note }}</li>
+                  }
+                </ul>
+              }
+            </section>
+          }
           @default {
             <section>
               <p>{{ t()('onboarding.step_todo') }}</p>
@@ -134,6 +181,7 @@ import { guideForProvider } from './provider-guides';
 })
 export class OnboardingComponent {
   private readonly db = inject(DbService);
+  private readonly ai = inject(AiService);
   private readonly keys = inject(KeysService);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
@@ -148,8 +196,52 @@ export class OnboardingComponent {
   readonly keySaved = signal(false);
   readonly v1Providers: AiProvider[] = ['claude', 'openai', 'deepseek'];
 
+  readonly resumeText = signal('');
+  readonly parsedCv = signal<CvParsedContent | null>(null);
+  readonly parsing = signal(false);
+  private readonly parsedMd = computed(() => {
+    const cv = this.parsedCv();
+    return cv ? cvToProfileMarkdown(cv) : '';
+  });
+  readonly profileMd = signal('');
+
   guideNameKey(p: AiProvider): string {
     return guideForProvider(p).nameKey;
+  }
+
+  async pickResumeFile(): Promise<void> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const path = await open({
+      multiple: false,
+      filters: [{ name: 'Resume', extensions: ['pdf', 'docx'] }],
+    });
+    if (typeof path !== 'string') return;
+    const file = await this.db.cvImportReadFile(path);
+    this.resumeText.set(file.text);
+  }
+
+  async parseResume(): Promise<void> {
+    const text = this.resumeText().trim();
+    if (!text) return;
+    this.parsing.set(true);
+    try {
+      const settings = await this.db.getSettings();
+      const language = settings.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('cv-import', { cv_text: text, language });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      this.parsedCv.set(parseCvSkillResponse(res.text));
+      this.profileMd.set(this.parsedMd());
+      this.next(); // advance to preview
+    } finally {
+      this.parsing.set(false);
+    }
   }
 
   async openConsole(): Promise<void> {

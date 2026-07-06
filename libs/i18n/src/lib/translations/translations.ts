@@ -727,6 +727,19 @@ const en: TranslationMap = {
         step4: 'Paste it below and click Save & check.',
       },
     },
+    resume: {
+      title: 'Add your resume',
+      upload: 'Upload PDF/DOCX',
+      paste_label: 'Or paste your resume text',
+      privacy_note:
+        'Your resume stays on this computer. It is only sent to the AI model you configured.',
+      parse: 'Parse resume',
+      parsing: 'Parsing…',
+    },
+    preview: {
+      title: 'Review your profile',
+      help: 'This is what we extracted from your resume. Edit anything before continuing.',
+    },
   },
 };
 
@@ -1474,6 +1487,19 @@ const de: TranslationMap = {
         step3: 'Kopiere den Schlüssel.',
         step4: 'Füge ihn unten ein und klicke auf Speichern & prüfen.',
       },
+    },
+    resume: {
+      title: 'Lebenslauf hinzufügen',
+      upload: 'PDF/DOCX hochladen',
+      paste_label: 'Oder Lebenslauf-Text einfügen',
+      privacy_note:
+        'Dein Lebenslauf bleibt auf diesem Rechner. Er wird nur an das von dir konfigurierte KI-Modell gesendet.',
+      parse: 'Lebenslauf analysieren',
+      parsing: 'Analysiere…',
+    },
+    preview: {
+      title: 'Profil überprüfen',
+      help: 'Das haben wir aus deinem Lebenslauf extrahiert. Bearbeite alles, bevor du fortfährst.',
     },
   },
 };

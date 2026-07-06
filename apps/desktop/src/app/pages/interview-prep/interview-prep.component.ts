@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { PipelineCard } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { ToastService } from '../../core/toast/toast.service';
 
 // Interview Prep list: every application that has at least one stage,
 // sorted soonest-upcoming first. This is the CRUD home for stages — the
@@ -27,11 +28,11 @@ export class InterviewPrepComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   private readonly cards = signal<PipelineCard[]>([]);
   readonly loading = signal(true);
-  readonly error = signal('');
 
   readonly rows = computed(() => {
     return this.cards()
@@ -50,7 +51,7 @@ export class InterviewPrepComponent implements OnInit {
     try {
       this.cards.set(await this.db.listPipelineCards());
     } catch (e) {
-      this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.loading.set(false);
     }

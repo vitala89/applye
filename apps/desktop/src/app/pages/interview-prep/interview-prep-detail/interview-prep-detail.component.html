@@ -6,8 +6,6 @@
 
   @if (loading()) {
     <p class="ipd__state">{{ t()('common.loading') }}</p>
-  } @else if (error()) {
-    <p class="ipd__state">{{ error() }}</p>
   } @else {
     <header class="ipd__header">
       <div class="ipd__company">{{ application()?.company || '–' }}</div>

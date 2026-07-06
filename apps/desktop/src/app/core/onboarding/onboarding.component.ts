@@ -1,5 +1,6 @@
 import { Component, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AiProvider, CvParsedContent } from '@applye/core';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -177,10 +178,10 @@ import { guideForProvider } from './provider-guides';
               <h2>{{ t()('onboarding.done.title') }}</h2>
               <p>{{ t()('onboarding.done.body') }}</p>
               <div class="onboarding__done-actions">
-                <button appButton variant="secondary" size="md" (click)="finish()">
+                <button appButton variant="secondary" size="md" (click)="finishTo('/jobs/new')">
                   {{ t()('onboarding.done.cta_job') }}
                 </button>
-                <button appButton variant="secondary" size="md" (click)="finish()">
+                <button appButton variant="secondary" size="md" (click)="finishTo('/documents')">
                   {{ t()('onboarding.done.cta_docs') }}
                 </button>
               </div>
@@ -263,6 +264,7 @@ export class OnboardingComponent {
   private readonly ai = inject(AiService);
   private readonly keys = inject(KeysService);
   private readonly i18n = inject(TranslateService);
+  private readonly router = inject(Router);
   protected readonly t = this.i18n.t;
 
   readonly completed = output<void>();
@@ -423,6 +425,13 @@ export class OnboardingComponent {
   async finish(): Promise<void> {
     await this.saveProfile();
     await this.markSeen();
+    this.completed.emit();
+  }
+
+  async finishTo(path: string): Promise<void> {
+    await this.saveProfile();
+    await this.markSeen();
+    await this.router.navigateByUrl(path);
     this.completed.emit();
   }
 

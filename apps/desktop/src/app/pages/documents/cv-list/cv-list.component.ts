@@ -10,6 +10,7 @@ import type {
   Job,
   Application,
 } from '@applye/core';
+import { parseArchetypes, archetypeNames } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -296,7 +297,9 @@ export class CvListComponent {
     this.generateOpen.set(true);
     try {
       const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      this.generateArchetypeTag.set((profile?.targetArchetypes ?? '').split(',')[0]?.trim() ?? '');
+      this.generateArchetypeTag.set(
+        archetypeNames(parseArchetypes(profile?.targetArchetypes))[0] ?? '',
+      );
       this.generateLanguage.set(settings.defaultDocLanguage ?? 'en');
       const defaultTemplate =
         this.templates().find((tpl) => tpl.regionTag === this.generateRegionTag()) ??

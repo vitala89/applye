@@ -10,16 +10,30 @@ import {
   EMPTY_FORM,
   parseProfileMd,
   serializeProfileForm,
+  Archetype,
+  parseArchetypes,
+  serializeArchetypes,
+  profileCompleteness,
+  missingFields,
+  parseScoringJson,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { LucideAngularModule, Info } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
+import { CompletenessHeroComponent } from './completeness-hero.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule, ButtonDirective, ScoringSummaryComponent],
+  imports: [
+    FormsModule,
+    ButtonDirective,
+    ScoringSummaryComponent,
+    CompletenessHeroComponent,
+    LucideAngularModule,
+  ],
   template: `
     @if (loading()) {
       <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
@@ -36,16 +50,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
               tabindex="0"
               [attr.aria-label]="t()('profile.info_aria')"
             >
-              <svg class="info__glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3" />
-                <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-                <path
-                  d="M8 7.2v4.6"
-                  stroke="currentColor"
-                  stroke-width="1.3"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
               <span class="info__tip" role="tooltip">{{ t()('profile.info_profile') }}</span>
             </span>
           </p>
@@ -74,8 +79,16 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
           </div>
         </header>
 
+        <app-completeness-hero
+          [completeness]="completeness()"
+          [gaps]="gaps()"
+          [name]="form().name"
+          [subtitle]="heroSubtitle()"
+          (addField)="focusField($event)"
+        />
+
         <!-- Target roles (archetypes) -->
-        <section class="section">
+        <section class="section section--card">
           <h3 class="eyebrow-row">
             <span class="eyebrow">{{ t()('profile.section_archetypes') }}</span>
             <span
@@ -83,16 +96,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
               tabindex="0"
               [attr.aria-label]="t()('profile.info_aria')"
             >
-              <svg class="info__glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3" />
-                <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-                <path
-                  d="M8 7.2v4.6"
-                  stroke="currentColor"
-                  stroke-width="1.3"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
               <span class="info__tip" role="tooltip">{{ t()('profile.info_archetypes') }}</span>
             </span>
           </h3>
@@ -103,22 +107,45 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
           @if (archetypes().length > 0) {
             <div class="archetype-list">
               @for (a of archetypes(); track $index) {
-                <div class="archetype-row">
-                  <input
-                    class="archetype-input"
-                    type="text"
-                    [ngModel]="a"
-                    (ngModelChange)="updateArchetype($index, $event)"
-                    [placeholder]="t()('profile.archetype_placeholder')"
-                  />
-                  <button
-                    class="btn-icon"
-                    type="button"
-                    (click)="removeArchetype($index)"
-                    [attr.aria-label]="t()('profile.remove_archetype')"
-                  >
-                    ×
-                  </button>
+                <div class="archetype-card">
+                  <div class="archetype-card__top">
+                    <input
+                      class="archetype-input"
+                      type="text"
+                      [ngModel]="a.name"
+                      (ngModelChange)="updateArchetype($index, { name: $event })"
+                      [placeholder]="t()('profile.archetype_placeholder')"
+                      [attr.aria-label]="t()('profile.archetype_name')"
+                    />
+                    <select
+                      class="archetype-fit"
+                      [ngModel]="a.fit"
+                      (ngModelChange)="updateArchetype($index, { fit: $event })"
+                      [attr.aria-label]="t()('profile.archetype_fit')"
+                    >
+                      <option value="primary">{{ t()('profile.fit_primary') }}</option>
+                      <option value="secondary">{{ t()('profile.fit_secondary') }}</option>
+                      <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
+                    </select>
+                    <button
+                      class="btn-icon"
+                      type="button"
+                      (click)="removeArchetype($index)"
+                      [attr.aria-label]="t()('profile.remove_archetype')"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <label class="archetype-card__label" [attr.for]="'archetype-sell-' + $index">{{
+                    t()('profile.archetype_sell_when')
+                  }}</label>
+                  <textarea
+                    [id]="'archetype-sell-' + $index"
+                    class="archetype-sell"
+                    [ngModel]="a.sellWhen"
+                    (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
+                    [placeholder]="t()('profile.archetype_sell_when_hint')"
+                  ></textarea>
                 </div>
               }
             </div>
@@ -131,7 +158,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
         </section>
 
         <!-- Editor -->
-        <section class="section">
+        <section class="section section--card">
           <div class="editor-head">
             <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
             <div class="mode-toggle" role="tablist">
@@ -156,62 +183,56 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
 
           @if (!rawMode()) {
             <div class="form-cards">
-              <div class="form-card">
+              <div class="field">
+                <label class="field__label" for="field-name">{{ t()('profile.field_name') }}</label>
+                <input
+                  id="field-name"
+                  class="field__input"
+                  type="text"
+                  [ngModel]="form().name"
+                  (ngModelChange)="updateField('name', $event)"
+                />
+              </div>
+              <div class="field-row">
                 <div class="field">
-                  <label class="field__label" for="field-name">{{
-                    t()('profile.field_name')
+                  <label class="field__label" for="field-title">{{
+                    t()('profile.field_title')
                   }}</label>
                   <input
-                    id="field-name"
+                    id="field-title"
                     class="field__input"
                     type="text"
-                    [ngModel]="form().name"
-                    (ngModelChange)="updateField('name', $event)"
+                    [ngModel]="form().title"
+                    (ngModelChange)="updateField('title', $event)"
                   />
                 </div>
-                <div class="field-row">
-                  <div class="field">
-                    <label class="field__label" for="field-title">{{
-                      t()('profile.field_title')
-                    }}</label>
-                    <input
-                      id="field-title"
-                      class="field__input"
-                      type="text"
-                      [ngModel]="form().title"
-                      (ngModelChange)="updateField('title', $event)"
-                    />
-                  </div>
-                  <div class="field">
-                    <label class="field__label" for="field-location">{{
-                      t()('profile.field_location')
-                    }}</label>
-                    <input
-                      id="field-location"
-                      class="field__input"
-                      type="text"
-                      [ngModel]="form().location"
-                      (ngModelChange)="updateField('location', $event)"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-card">
                 <div class="field">
-                  <label class="field__label" for="field-experience">{{
-                    t()('profile.field_experience')
+                  <label class="field__label" for="field-location">{{
+                    t()('profile.field_location')
                   }}</label>
-                  <textarea
-                    id="field-experience"
-                    class="field__input field__input--area"
-                    [ngModel]="form().experienceText"
-                    (ngModelChange)="updateField('experienceText', $event)"
-                  ></textarea>
+                  <input
+                    id="field-location"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().location"
+                    (ngModelChange)="updateField('location', $event)"
+                  />
                 </div>
               </div>
 
-              <div class="form-card">
+              <div class="field">
+                <label class="field__label" for="field-experience">{{
+                  t()('profile.field_experience')
+                }}</label>
+                <textarea
+                  id="field-experience"
+                  class="field__input field__input--area"
+                  [ngModel]="form().experienceText"
+                  (ngModelChange)="updateField('experienceText', $event)"
+                ></textarea>
+              </div>
+
+              <div class="field-row">
                 <div class="field">
                   <label class="field__label" for="field-skills">{{
                     t()('profile.field_skills')
@@ -223,18 +244,6 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
                     [ngModel]="form().skills.join(', ')"
                     (ngModelChange)="updateSkills($event)"
                     [placeholder]="t()('profile.skills_hint')"
-                  />
-                </div>
-                <div class="field">
-                  <label class="field__label" for="field-education">{{
-                    t()('profile.field_education')
-                  }}</label>
-                  <input
-                    id="field-education"
-                    class="field__input"
-                    type="text"
-                    [ngModel]="form().education"
-                    (ngModelChange)="updateField('education', $event)"
                   />
                 </div>
                 <div class="field">
@@ -250,6 +259,19 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
                     [placeholder]="t()('profile.languages_hint')"
                   />
                 </div>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="field-education">{{
+                  t()('profile.field_education')
+                }}</label>
+                <input
+                  id="field-education"
+                  class="field__input"
+                  type="text"
+                  [ngModel]="form().education"
+                  (ngModelChange)="updateField('education', $event)"
+                />
               </div>
             </div>
           } @else {
@@ -298,28 +320,12 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
                       (keydown)="$event.stopPropagation()"
                       [attr.aria-label]="t()('profile.info_aria')"
                     >
-                      <svg
+                      <lucide-icon
+                        [img]="infoIcon"
+                        [size]="14"
                         class="info__glyph"
-                        viewBox="0 0 16 16"
                         aria-hidden="true"
-                        focusable="false"
-                      >
-                        <circle
-                          cx="8"
-                          cy="8"
-                          r="7"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                        />
-                        <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-                        <path
-                          d="M8 7.2v4.6"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                          stroke-linecap="round"
-                        />
-                      </svg>
+                      />
                       <span class="info__tip" role="tooltip">{{
                         t()('profile.info_scoring')
                       }}</span>
@@ -358,11 +364,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
                   }
                 </div>
                 @if (profile()?.scoringJson) {
-                  <app-scoring-summary
-                    [scoringJson]="profile()?.scoringJson ?? null"
-                    [form]="form()"
-                    (addField)="focusField($event)"
-                  />
+                  <app-scoring-summary [scoringJson]="profile()?.scoringJson ?? null" />
                 }
               }
             </div>
@@ -429,6 +431,13 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
+      }
+      .section--card {
+        padding: var(--space-5);
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
       }
       .eyebrow,
       .eyebrow-row {
@@ -557,8 +566,9 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
         gap: var(--space-3);
         padding: var(--space-4);
         background: var(--surface-1);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
       }
       .tool-card__head {
         display: flex;
@@ -658,11 +668,6 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
         flex-direction: column;
         gap: var(--space-2);
       }
-      .archetype-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-      }
       button[appButton] {
         align-self: flex-start;
       }
@@ -675,6 +680,49 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
         background: var(--surface-2);
         border: 1px solid var(--border-default);
         border-radius: var(--radius-card);
+      }
+      .archetype-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .archetype-card__top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .archetype-card__top .archetype-input {
+        flex: 1;
+      }
+      .archetype-fit {
+        padding: var(--space-2) var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .archetype-card__label {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+      }
+      .archetype-sell {
+        width: 100%;
+        min-height: 60px;
+        padding: var(--space-2) var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+        resize: vertical;
       }
       .btn-icon {
         display: flex;
@@ -726,17 +774,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
       .form-cards {
         display: flex;
         flex-direction: column;
-        gap: var(--space-4);
-        max-width: 72ch;
-      }
-      .form-card {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-        padding: var(--space-4);
-        background: var(--surface-1);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-lg);
+        gap: var(--space-5);
       }
       .field {
         display: flex;
@@ -779,11 +817,12 @@ export class ProfileComponent implements OnInit {
   protected readonly onboarding = inject(OnboardingService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
+  protected readonly infoIcon = Info;
 
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
   readonly form = signal<ProfileForm>({ ...EMPTY_FORM });
-  readonly archetypes = signal<string[]>([]);
+  readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
 
@@ -802,13 +841,23 @@ export class ProfileComponent implements OnInit {
 
   readonly archetypesDirty = computed(
     () =>
-      JSON.stringify(this.archetypes()) !==
-      JSON.stringify(this.parseArchetypes(this.profile()?.targetArchetypes)),
+      serializeArchetypes(this.archetypes()) !==
+      serializeArchetypes(parseArchetypes(this.profile()?.targetArchetypes)),
   );
   readonly dirty = computed(
     () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
   );
   readonly scoringCached = computed(() => !!this.profile()?.scoringJson && !this.dirty());
+
+  readonly completeness = computed(() => profileCompleteness(this.form()));
+  readonly gaps = computed(() => missingFields(this.form()));
+  readonly heroSubtitle = computed(() => {
+    const s = parseScoringJson(this.profile()?.scoringJson ?? null);
+    const f = this.form();
+    return [s?.seniority, f.location || s?.location, ...(s?.domains ?? [])]
+      .filter(Boolean)
+      .join(' · ');
+  });
 
   async ngOnInit(): Promise<void> {
     try {
@@ -817,7 +866,7 @@ export class ProfileComponent implements OnInit {
       this.settings.set(s);
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
-      this.archetypes.set(this.parseArchetypes(p?.targetArchetypes));
+      this.archetypes.set(parseArchetypes(p?.targetArchetypes));
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
       }
@@ -879,26 +928,17 @@ export class ProfileComponent implements OnInit {
     (el as HTMLElement | null)?.focus?.();
   }
 
-  private parseArchetypes(json: string | null | undefined): string[] {
-    try {
-      const arr = JSON.parse(json || '[]');
-      return Array.isArray(arr) ? arr : [];
-    } catch {
-      return [];
-    }
-  }
-
   addArchetype(): void {
     if (this.archetypes().length >= 5) return;
-    this.archetypes.update((a) => [...a, '']);
+    this.archetypes.update((a) => [...a, { name: '', fit: 'primary', sellWhen: '' }]);
   }
 
   removeArchetype(index: number): void {
     this.archetypes.update((a) => a.filter((_, i) => i !== index));
   }
 
-  updateArchetype(index: number, value: string): void {
-    this.archetypes.update((a) => a.map((v, i) => (i === index ? value : v)));
+  updateArchetype(index: number, patch: Partial<Archetype>): void {
+    this.archetypes.update((a) => a.map((v, i) => (i === index ? { ...v, ...patch } : v)));
   }
 
   async save(): Promise<void> {
@@ -912,10 +952,10 @@ export class ProfileComponent implements OnInit {
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: p?.pitchMd,
-        targetArchetypes: JSON.stringify(this.archetypes().filter((a) => a.trim())),
+        targetArchetypes: serializeArchetypes(this.archetypes()),
       });
       this.profile.set(saved);
-      this.archetypes.set(this.parseArchetypes(saved.targetArchetypes));
+      this.archetypes.set(parseArchetypes(saved.targetArchetypes));
       this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
     } catch (e) {
       this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));

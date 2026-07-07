@@ -16,9 +16,10 @@ Use before non-trivial feature, architecture, debug, test, security, privacy, do
 6. Run `aif-context-gate` for context selection only when implementation is actually starting or broad context is explicitly needed.
 7. Do not recommend subagents for simple or bounded feature tasks by default.
 8. For bounded feature tasks with clear scope, local mock data only, and no storage, sync, privacy, security, architecture, plugin, notification, Tauri/Angular boundary, large-refactor, or 8+ file signal, set `Subagents needed: no` and `Graph/context tool needed: no`.
-9. Add specialist skills or subagents only when triggered by risk, unknown ownership, architecture, security, privacy, storage, sync, plugins, notifications, the Tauri/Angular boundary, or review needs.
-10. Use subagents for focused scouting or review, not implementation.
-11. Keep the main session responsible for decisions, edits, verification, and final response.
+9. For bounded feature tasks, use this baseline skill list: `aif-model-router`, `aif-token-guard`, `aif-feature-builder`, and `aif-testing-strategy`.
+10. Add other specialist skills or subagents only when triggered by risk, unknown ownership, architecture, security, privacy, storage, sync, plugins, notifications, the Tauri/Angular boundary, or review needs.
+11. Use subagents for focused scouting or review, not implementation.
+12. Keep the main session responsible for decisions, edits, verification, and final response.
 
 ## Output
 

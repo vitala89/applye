@@ -809,15 +809,6 @@ export class ProfileComponent implements OnInit {
     () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
   );
   readonly scoringCached = computed(() => !!this.profile()?.scoringJson && !this.dirty());
-  readonly scoringJsonPretty = computed(() => {
-    const raw = this.profile()?.scoringJson;
-    if (!raw) return '';
-    try {
-      return JSON.stringify(JSON.parse(raw), null, 2);
-    } catch {
-      return raw;
-    }
-  });
 
   async ngOnInit(): Promise<void> {
     try {

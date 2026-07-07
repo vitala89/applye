@@ -74,4 +74,15 @@ describe('profile-markdown', () => {
     expect(parseScoringJson(null)).toBeNull();
     expect(parseScoringJson(undefined)).toBeNull();
   });
+
+  it('returns null for a top-level JSON array (not a ScoringProfile object)', () => {
+    expect(parseScoringJson('[1,2,3]')).toBeNull();
+    expect(parseScoringJson('```json\n["a","b"]\n```')).toBeNull();
+  });
+
+  it('keeps a bare middot inside the title (only the spaced middot splits location)', () => {
+    const form = parseProfileMd('# Jane\nFull·Stack Engineer · Berlin');
+    expect(form.title).toBe('Full·Stack Engineer');
+    expect(form.location).toBe('Berlin');
+  });
 });

@@ -10,7 +10,12 @@ export interface ProfileForm {
 }
 
 export type ProfileFieldKey =
-  'title' | 'location' | 'experience' | 'skills' | 'education' | 'languages';
+  | 'title'
+  | 'location'
+  | 'experience'
+  | 'skills'
+  | 'education'
+  | 'languages';
 
 export interface ScoringProfile {
   name?: string;
@@ -70,7 +75,9 @@ export function parseProfileMd(md: string): ProfileForm {
   if (headerLines.length > 0) form.name = headerLines[0];
   if (headerLines.length > 1) {
     const rest = headerLines[1];
-    const parts = rest.split('·').map((s) => s.trim());
+    // Split on the spaced middot the serializer emits, so a title that itself
+    // contains a bare "·" is not shredded into the location field.
+    const parts = rest.split(/\s+·\s+/).map((s) => s.trim());
     if (parts.length > 1) {
       form.title = parts[0];
       form.location = parts.slice(1).join(' · ');
@@ -131,7 +138,7 @@ export function parseScoringJson(raw: string | null | undefined): ScoringProfile
     .trim();
   try {
     const obj = JSON.parse(cleaned);
-    return obj && typeof obj === 'object' ? (obj as ScoringProfile) : null;
+    return obj && typeof obj === 'object' && !Array.isArray(obj) ? (obj as ScoringProfile) : null;
   } catch {
     return null;
   }

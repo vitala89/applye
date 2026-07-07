@@ -2,15 +2,24 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from '@applye/ui';
 import { AiService, DbService } from '@applye/data';
-import { Profile, Settings } from '@applye/core';
+import {
+  Profile,
+  Settings,
+  ProfileForm,
+  ProfileFieldKey,
+  EMPTY_FORM,
+  parseProfileMd,
+  serializeProfileForm,
+} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
+import { ScoringSummaryComponent } from './scoring-summary.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule, ButtonDirective],
+  imports: [FormsModule, ButtonDirective, ScoringSummaryComponent],
   template: `
     @if (loading()) {
       <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
@@ -123,24 +132,144 @@ import { ToastService } from '../../core/toast/toast.service';
 
         <!-- Editor -->
         <section class="section">
-          <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
-          <div class="editor-panel">
-            <div class="scaffold">
-              <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
-              <span class="scaffold__line"># Name · Title · Location</span>
-              <span class="scaffold__line">## Experience · Skills · Education · Languages</span>
+          <div class="editor-head">
+            <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
+            <div class="mode-toggle" role="tablist">
+              <button
+                type="button"
+                class="mode-btn"
+                [class.mode-btn--on]="!rawMode()"
+                (click)="rawMode() && toggleRawMode()"
+              >
+                {{ t()('profile.mode_form') }}
+              </button>
+              <button
+                type="button"
+                class="mode-btn"
+                [class.mode-btn--on]="rawMode()"
+                (click)="!rawMode() && toggleRawMode()"
+              >
+                {{ t()('profile.mode_raw') }}
+              </button>
             </div>
-            <textarea
-              class="editor"
-              [ngModel]="fullMd()"
-              (ngModelChange)="fullMd.set($event)"
-              spellcheck="false"
-              placeholder="# Jane Doe&#10;Senior Frontend Engineer · Berlin&#10;&#10;## Experience&#10;…"
-            ></textarea>
-            @if (dirty()) {
-              <p class="unsaved-hint">{{ t()('profile.unsaved') }}</p>
-            }
           </div>
+
+          @if (!rawMode()) {
+            <div class="form-cards">
+              <div class="form-card">
+                <div class="field">
+                  <label class="field__label" for="field-name">{{
+                    t()('profile.field_name')
+                  }}</label>
+                  <input
+                    id="field-name"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().name"
+                    (ngModelChange)="updateField('name', $event)"
+                  />
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field__label" for="field-title">{{
+                      t()('profile.field_title')
+                    }}</label>
+                    <input
+                      id="field-title"
+                      class="field__input"
+                      type="text"
+                      [ngModel]="form().title"
+                      (ngModelChange)="updateField('title', $event)"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="field-location">{{
+                      t()('profile.field_location')
+                    }}</label>
+                    <input
+                      id="field-location"
+                      class="field__input"
+                      type="text"
+                      [ngModel]="form().location"
+                      (ngModelChange)="updateField('location', $event)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-card">
+                <div class="field">
+                  <label class="field__label" for="field-experience">{{
+                    t()('profile.field_experience')
+                  }}</label>
+                  <textarea
+                    id="field-experience"
+                    class="field__input field__input--area"
+                    [ngModel]="form().experienceText"
+                    (ngModelChange)="updateField('experienceText', $event)"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="form-card">
+                <div class="field">
+                  <label class="field__label" for="field-skills">{{
+                    t()('profile.field_skills')
+                  }}</label>
+                  <input
+                    id="field-skills"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().skills.join(', ')"
+                    (ngModelChange)="updateSkills($event)"
+                    [placeholder]="t()('profile.skills_hint')"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="field-education">{{
+                    t()('profile.field_education')
+                  }}</label>
+                  <input
+                    id="field-education"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().education"
+                    (ngModelChange)="updateField('education', $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="field-languages">{{
+                    t()('profile.field_languages')
+                  }}</label>
+                  <input
+                    id="field-languages"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().languages.join(', ')"
+                    (ngModelChange)="updateLanguages($event)"
+                    [placeholder]="t()('profile.languages_hint')"
+                  />
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="editor-panel">
+              <div class="scaffold">
+                <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
+                <span class="scaffold__line"># Name · Title · Location</span>
+                <span class="scaffold__line">## Experience · Skills · Education · Languages</span>
+              </div>
+              <textarea
+                class="editor"
+                [ngModel]="fullMd()"
+                (ngModelChange)="fullMd.set($event)"
+                spellcheck="false"
+              ></textarea>
+            </div>
+          }
+          @if (dirty()) {
+            <p class="unsaved-hint">{{ t()('profile.unsaved') }}</p>
+          }
         </section>
 
         <!-- AI Tools -->
@@ -229,7 +358,11 @@ import { ToastService } from '../../core/toast/toast.service';
                   }
                 </div>
                 @if (profile()?.scoringJson) {
-                  <pre class="json-block">{{ scoringJsonPretty() }}</pre>
+                  <app-scoring-summary
+                    [scoringJson]="profile()?.scoringJson ?? null"
+                    [form]="form()"
+                    (addField)="focusField($event)"
+                  />
                 }
               }
             </div>
@@ -562,6 +695,80 @@ import { ToastService } from '../../core/toast/toast.service';
         color: var(--danger);
         filter: brightness(1.1);
       }
+
+      .editor-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+      }
+      .mode-toggle {
+        display: inline-flex;
+        gap: var(--space-1);
+        padding: var(--space-1);
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-badge);
+      }
+      .mode-btn {
+        padding: var(--space-1) var(--space-3);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        background: none;
+        border: none;
+        border-radius: var(--radius-badge);
+        cursor: pointer;
+      }
+      .mode-btn--on {
+        color: var(--text-primary);
+        background: var(--surface-2);
+      }
+      .form-cards {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        max-width: 72ch;
+      }
+      .form-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-lg);
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+      }
+      .field-row {
+        display: flex;
+        gap: var(--space-3);
+      }
+      .field-row .field {
+        flex: 1;
+      }
+      .field__label {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+      }
+      .field__input {
+        width: 100%;
+        padding: var(--space-2) var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .field__input--area {
+        min-height: 160px;
+        line-height: 1.6;
+        resize: vertical;
+      }
     `,
   ],
 })
@@ -574,6 +781,8 @@ export class ProfileComponent implements OnInit {
   protected readonly t = this.i18n.t;
 
   readonly fullMd = signal('');
+  readonly rawMode = signal(false);
+  readonly form = signal<ProfileForm>({ ...EMPTY_FORM });
   readonly archetypes = signal<string[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
@@ -616,6 +825,7 @@ export class ProfileComponent implements OnInit {
       this.profile.set(p);
       this.settings.set(s);
       this.fullMd.set(p?.fullMd ?? '');
+      this.form.set(parseProfileMd(p?.fullMd ?? ''));
       this.archetypes.set(this.parseArchetypes(p?.targetArchetypes));
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
@@ -631,6 +841,51 @@ export class ProfileComponent implements OnInit {
 
   toggleScoring(): void {
     this.scoringOpen.update((v) => !v);
+  }
+
+  private syncMdFromForm(): void {
+    this.fullMd.set(serializeProfileForm(this.form()));
+  }
+
+  updateField<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]): void {
+    this.form.update((f) => ({ ...f, [key]: value }));
+    this.syncMdFromForm();
+  }
+
+  updateSkills(value: string): void {
+    this.updateField(
+      'skills',
+      value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+  }
+
+  updateLanguages(value: string): void {
+    this.updateField(
+      'languages',
+      value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
+  }
+
+  toggleRawMode(): void {
+    if (this.rawMode()) {
+      // leaving raw → re-parse edited markdown back into fields
+      this.form.set(parseProfileMd(this.fullMd()));
+    } else {
+      this.syncMdFromForm();
+    }
+    this.rawMode.update((v) => !v);
+  }
+
+  focusField(key: ProfileFieldKey): void {
+    const el = document.getElementById('field-' + key);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el as HTMLElement | null)?.focus?.();
   }
 
   private parseArchetypes(json: string | null | undefined): string[] {

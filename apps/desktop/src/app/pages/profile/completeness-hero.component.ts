@@ -73,8 +73,9 @@ const CIRC = 2 * Math.PI * RADIUS;
         gap: var(--space-5);
         padding: var(--space-5);
         background: var(--surface-1);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-accent);
+        border-radius: var(--radius-card);
+        box-shadow: var(--glow-accent);
       }
       .hero__ring {
         position: relative;

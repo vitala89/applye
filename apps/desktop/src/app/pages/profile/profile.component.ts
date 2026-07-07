@@ -10,6 +10,9 @@ import {
   EMPTY_FORM,
   parseProfileMd,
   serializeProfileForm,
+  Archetype,
+  parseArchetypes,
+  serializeArchetypes,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
@@ -103,22 +106,45 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
           @if (archetypes().length > 0) {
             <div class="archetype-list">
               @for (a of archetypes(); track $index) {
-                <div class="archetype-row">
-                  <input
-                    class="archetype-input"
-                    type="text"
-                    [ngModel]="a"
-                    (ngModelChange)="updateArchetype($index, $event)"
-                    [placeholder]="t()('profile.archetype_placeholder')"
-                  />
-                  <button
-                    class="btn-icon"
-                    type="button"
-                    (click)="removeArchetype($index)"
-                    [attr.aria-label]="t()('profile.remove_archetype')"
-                  >
-                    ×
-                  </button>
+                <div class="archetype-card">
+                  <div class="archetype-card__top">
+                    <input
+                      class="archetype-input"
+                      type="text"
+                      [ngModel]="a.name"
+                      (ngModelChange)="updateArchetype($index, { name: $event })"
+                      [placeholder]="t()('profile.archetype_placeholder')"
+                      [attr.aria-label]="t()('profile.archetype_name')"
+                    />
+                    <select
+                      class="archetype-fit"
+                      [ngModel]="a.fit"
+                      (ngModelChange)="updateArchetype($index, { fit: $event })"
+                      [attr.aria-label]="t()('profile.archetype_fit')"
+                    >
+                      <option value="primary">{{ t()('profile.fit_primary') }}</option>
+                      <option value="secondary">{{ t()('profile.fit_secondary') }}</option>
+                      <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
+                    </select>
+                    <button
+                      class="btn-icon"
+                      type="button"
+                      (click)="removeArchetype($index)"
+                      [attr.aria-label]="t()('profile.remove_archetype')"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <label class="archetype-card__label" [attr.for]="'archetype-sell-' + $index">{{
+                    t()('profile.archetype_sell_when')
+                  }}</label>
+                  <textarea
+                    [id]="'archetype-sell-' + $index"
+                    class="archetype-sell"
+                    [ngModel]="a.sellWhen"
+                    (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
+                    [placeholder]="t()('profile.archetype_sell_when_hint')"
+                  ></textarea>
                 </div>
               }
             </div>
@@ -676,6 +702,49 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
         border: 1px solid var(--border-default);
         border-radius: var(--radius-card);
       }
+      .archetype-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .archetype-card__top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .archetype-card__top .archetype-input {
+        flex: 1;
+      }
+      .archetype-fit {
+        padding: var(--space-2) var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .archetype-card__label {
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+      }
+      .archetype-sell {
+        width: 100%;
+        min-height: 60px;
+        padding: var(--space-2) var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+        color: var(--text-primary);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+        resize: vertical;
+      }
       .btn-icon {
         display: flex;
         align-items: center;
@@ -783,7 +852,7 @@ export class ProfileComponent implements OnInit {
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
   readonly form = signal<ProfileForm>({ ...EMPTY_FORM });
-  readonly archetypes = signal<string[]>([]);
+  readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
 
@@ -802,8 +871,8 @@ export class ProfileComponent implements OnInit {
 
   readonly archetypesDirty = computed(
     () =>
-      JSON.stringify(this.archetypes()) !==
-      JSON.stringify(this.parseArchetypes(this.profile()?.targetArchetypes)),
+      serializeArchetypes(this.archetypes()) !==
+      serializeArchetypes(parseArchetypes(this.profile()?.targetArchetypes)),
   );
   readonly dirty = computed(
     () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
@@ -817,7 +886,7 @@ export class ProfileComponent implements OnInit {
       this.settings.set(s);
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
-      this.archetypes.set(this.parseArchetypes(p?.targetArchetypes));
+      this.archetypes.set(parseArchetypes(p?.targetArchetypes));
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
       }
@@ -879,26 +948,17 @@ export class ProfileComponent implements OnInit {
     (el as HTMLElement | null)?.focus?.();
   }
 
-  private parseArchetypes(json: string | null | undefined): string[] {
-    try {
-      const arr = JSON.parse(json || '[]');
-      return Array.isArray(arr) ? arr : [];
-    } catch {
-      return [];
-    }
-  }
-
   addArchetype(): void {
     if (this.archetypes().length >= 5) return;
-    this.archetypes.update((a) => [...a, '']);
+    this.archetypes.update((a) => [...a, { name: '', fit: 'primary', sellWhen: '' }]);
   }
 
   removeArchetype(index: number): void {
     this.archetypes.update((a) => a.filter((_, i) => i !== index));
   }
 
-  updateArchetype(index: number, value: string): void {
-    this.archetypes.update((a) => a.map((v, i) => (i === index ? value : v)));
+  updateArchetype(index: number, patch: Partial<Archetype>): void {
+    this.archetypes.update((a) => a.map((v, i) => (i === index ? { ...v, ...patch } : v)));
   }
 
   async save(): Promise<void> {
@@ -912,10 +972,10 @@ export class ProfileComponent implements OnInit {
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: p?.pitchMd,
-        targetArchetypes: JSON.stringify(this.archetypes().filter((a) => a.trim())),
+        targetArchetypes: serializeArchetypes(this.archetypes()),
       });
       this.profile.set(saved);
-      this.archetypes.set(this.parseArchetypes(saved.targetArchetypes));
+      this.archetypes.set(parseArchetypes(saved.targetArchetypes));
       this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
     } catch (e) {
       this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));

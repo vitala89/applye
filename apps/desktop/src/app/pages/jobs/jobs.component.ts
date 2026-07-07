@@ -53,6 +53,8 @@ import {
   CoverLetterContent,
   CvContent,
   DocumentLibraryItem,
+  parseArchetypes,
+  archetypeNames,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
@@ -3255,7 +3257,9 @@ export class JobsComponent implements OnInit, OnDestroy {
         const match = await this.db.checkArchetypeMatch(
           j.title ?? undefined,
           j.jdText ?? '',
-          p?.targetArchetypes ?? undefined,
+          p?.targetArchetypes
+            ? JSON.stringify(archetypeNames(parseArchetypes(p.targetArchetypes)))
+            : undefined,
         );
         this.archetypeMatch.set(match);
       }
@@ -3513,12 +3517,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   hasArchetypes(): boolean {
-    try {
-      const arr = JSON.parse(this.profile()?.targetArchetypes || '[]');
-      return Array.isArray(arr) && arr.length > 0;
-    } catch {
-      return false;
-    }
+    return parseArchetypes(this.profile()?.targetArchetypes).length > 0;
   }
 
   // ── Tailoring wizard ────────────────────────────────────────────────────────

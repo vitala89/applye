@@ -26,7 +26,7 @@ import {
   Upload,
   Wallet,
 } from 'lucide-angular';
-import { AiProvider, CvParsedContent } from '@applye/core';
+import { AiProvider, CvParsedContent, serializeArchetypes, parseArchetypes } from '@applye/core';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -426,7 +426,7 @@ export class OnboardingComponent {
     const fullMd = appendCompensation(base, compRange);
     await this.db.upsertProfile({
       fullMd,
-      targetArchetypes: JSON.stringify(this.archetypes()),
+      targetArchetypes: serializeArchetypes(parseArchetypes(JSON.stringify(this.archetypes()))),
     });
   }
 

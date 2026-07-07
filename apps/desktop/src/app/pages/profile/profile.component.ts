@@ -665,11 +665,6 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         flex-direction: column;
         gap: var(--space-2);
       }
-      .archetype-row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-      }
       button[appButton] {
         align-self: flex-start;
       }

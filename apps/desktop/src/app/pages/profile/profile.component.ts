@@ -13,16 +13,27 @@ import {
   Archetype,
   parseArchetypes,
   serializeArchetypes,
+  profileCompleteness,
+  missingFields,
+  parseScoringJson,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { LucideAngularModule, Info } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
+import { CompletenessHeroComponent } from './completeness-hero.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule, ButtonDirective, ScoringSummaryComponent],
+  imports: [
+    FormsModule,
+    ButtonDirective,
+    ScoringSummaryComponent,
+    CompletenessHeroComponent,
+    LucideAngularModule,
+  ],
   template: `
     @if (loading()) {
       <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
@@ -39,16 +50,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
               tabindex="0"
               [attr.aria-label]="t()('profile.info_aria')"
             >
-              <svg class="info__glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3" />
-                <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-                <path
-                  d="M8 7.2v4.6"
-                  stroke="currentColor"
-                  stroke-width="1.3"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
               <span class="info__tip" role="tooltip">{{ t()('profile.info_profile') }}</span>
             </span>
           </p>
@@ -77,6 +79,14 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
           </div>
         </header>
 
+        <app-completeness-hero
+          [completeness]="completeness()"
+          [gaps]="gaps()"
+          [name]="form().name"
+          [subtitle]="heroSubtitle()"
+          (addField)="focusField($event)"
+        />
+
         <!-- Target roles (archetypes) -->
         <section class="section">
           <h3 class="eyebrow-row">
@@ -86,16 +96,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
               tabindex="0"
               [attr.aria-label]="t()('profile.info_aria')"
             >
-              <svg class="info__glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.3" />
-                <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-                <path
-                  d="M8 7.2v4.6"
-                  stroke="currentColor"
-                  stroke-width="1.3"
-                  stroke-linecap="round"
-                />
-              </svg>
+              <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
               <span class="info__tip" role="tooltip">{{ t()('profile.info_archetypes') }}</span>
             </span>
           </h3>
@@ -324,28 +325,12 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
                       (keydown)="$event.stopPropagation()"
                       [attr.aria-label]="t()('profile.info_aria')"
                     >
-                      <svg
+                      <lucide-icon
+                        [img]="infoIcon"
+                        [size]="14"
                         class="info__glyph"
-                        viewBox="0 0 16 16"
                         aria-hidden="true"
-                        focusable="false"
-                      >
-                        <circle
-                          cx="8"
-                          cy="8"
-                          r="7"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                        />
-                        <circle cx="8" cy="4.6" r="0.9" fill="currentColor" />
-                        <path
-                          d="M8 7.2v4.6"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                          stroke-linecap="round"
-                        />
-                      </svg>
+                      />
                       <span class="info__tip" role="tooltip">{{
                         t()('profile.info_scoring')
                       }}</span>
@@ -384,11 +369,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
                   }
                 </div>
                 @if (profile()?.scoringJson) {
-                  <app-scoring-summary
-                    [scoringJson]="profile()?.scoringJson ?? null"
-                    [form]="form()"
-                    (addField)="focusField($event)"
-                  />
+                  <app-scoring-summary [scoringJson]="profile()?.scoringJson ?? null" />
                 }
               }
             </div>
@@ -848,6 +829,7 @@ export class ProfileComponent implements OnInit {
   protected readonly onboarding = inject(OnboardingService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
+  protected readonly infoIcon = Info;
 
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
@@ -878,6 +860,16 @@ export class ProfileComponent implements OnInit {
     () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
   );
   readonly scoringCached = computed(() => !!this.profile()?.scoringJson && !this.dirty());
+
+  readonly completeness = computed(() => profileCompleteness(this.form()));
+  readonly gaps = computed(() => missingFields(this.form()));
+  readonly heroSubtitle = computed(() => {
+    const s = parseScoringJson(this.profile()?.scoringJson ?? null);
+    const f = this.form();
+    return [s?.seniority, f.location || s?.location, ...(s?.domains ?? [])]
+      .filter(Boolean)
+      .join(' · ');
+  });
 
   async ngOnInit(): Promise<void> {
     try {

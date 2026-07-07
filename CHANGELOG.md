@@ -10,6 +10,19 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-07-07
+
+### Added
+
+- **Profile page, humanized (completeness-first "1A" layout).** The Profile screen is now a structured single-column form (target roles, strengths, notes) instead of a raw-markdown-only editor. It leads with a completeness hero, then strengths and notes, uses Lucide icons throughout, and flattens the form fields into a single card. A raw-markdown toggle stays for power users, and an AI summary view surfaces strengths and notes. Target-role archetypes render as rich, name-based cards instead of plain rows. The "Markdown profile" section is now labelled "Profile". EN + DE.
+
+### Fixed
+
+- Inline errors across the Pipeline, Profile, and Interview Prep screens are now mirrored to toast notifications instead of failing silently. Toast dismissal timers are cleared when a toast is dropped on cap overflow (no stale auto-dismiss), and a dead i18n key was removed.
+- The custom titlebar can drag the window again — the window start-dragging capability was missing.
+
+## [0.22.0] - 2026-07-06
+
 ### Added
 
 - **First-run onboarding wizard.** A skippable first-run overlay configures an AI provider key (with a per-provider beginner guide) and builds the user's profile from an uploaded or pasted resume, with AI-suggested target archetypes and compensation ranges the user reviews and confirms before anything is saved. Everything runs locally; the provider key is stored in the OS keyring, never in the database or logs. Skipping shows a "finish setup" banner on the dashboard, and onboarding can be re-run any time from Settings or Profile.

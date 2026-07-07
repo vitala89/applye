@@ -1,6 +1,6 @@
 # Managed AI Tier — Implementation Plan
 
-Status: `draft` · Date: 2026-07-07 · Related: [ADR-0001](decisions/ADR-0001-ai-key-monetization.md)
+Status: `draft` · Date: 2026-07-07 · Related: [ADR-0001](decisions/ADR-0001-ai-key-monetization.md), [ADR-0002](decisions/ADR-0002-pro-entitlements.md)
 
 Goal: paid **managed** tier where end-user AI requests are proxied through
 Applye-operated infrastructure under our provider accounts, gated by a

@@ -128,6 +128,9 @@ Mitigations (non-negotiable for shipping managed):
 
 ## References
 
+- **Follow-up decision**: [ADR-0002](ADR-0002-pro-entitlements.md) — how a paid
+  Pro feature tier is gated on top of the managed token without breaking MIT
+  (server-anchored entitlements; no client-side unlock).
 - **ToS pre-condition (RESOLVED 2026-07-07)**: Anthropic / OpenAI / DeepSeek all
   **PERMIT** the managed proxy model (verdict PERMITTED-WITH-CONDITIONS each),
   because the key stays server-side and users authenticate to our app, not the

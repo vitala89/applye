@@ -202,7 +202,7 @@ const en: TranslationMap = {
     archetype_placeholder: 'e.g. Staff Frontend Engineer, remote EU, Series B-D product company',
     add_archetype: '+ Add target role',
     remove_archetype: 'Remove',
-    section_markdown: 'Markdown profile',
+    section_markdown: 'Profile',
     section_ai_tools: 'AI tools',
     ai_hint:
       'Save profile first, then generate. Results are cached — re-running on an unchanged profile costs 0 tokens.',
@@ -1085,7 +1085,7 @@ const de: TranslationMap = {
       'z. B. Staff Frontend Engineer, remote EU, Series B-D Produktunternehmen',
     add_archetype: '+ Zielrolle hinzufügen',
     remove_archetype: 'Entfernen',
-    section_markdown: 'Markdown-Profil',
+    section_markdown: 'Profil',
     section_ai_tools: 'KI-Werkzeuge',
     ai_hint:
       'Profil zuerst speichern, dann generieren. Ergebnisse werden zwischengespeichert — erneutes Ausführen bei unverändertem Profil kostet 0 Token.',

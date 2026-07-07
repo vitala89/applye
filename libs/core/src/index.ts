@@ -11,3 +11,4 @@ export * from './lib/types/common.types';
 
 // Pure utilities
 export * from './lib/profile/profile-markdown';
+export * from './lib/profile/archetype';

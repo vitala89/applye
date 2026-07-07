@@ -13,6 +13,7 @@ import {
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 
 const STAGE_TYPES: StageType[] = [
   'hr_screen',
@@ -74,6 +75,7 @@ export class InterviewPrepDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -91,7 +93,6 @@ export class InterviewPrepDetailComponent implements OnInit {
   protected readonly application = signal<PipelineCard | null>(null);
   protected readonly stages = signal<InterviewStage[]>([]);
   protected readonly loading = signal(true);
-  protected readonly error = signal('');
 
   protected readonly addForm = signal<StageFormValue>(emptyForm());
   protected readonly addBusy = signal(false);
@@ -107,7 +108,6 @@ export class InterviewPrepDetailComponent implements OnInit {
 
   private async load(id: number): Promise<void> {
     this.loading.set(true);
-    this.error.set('');
     try {
       const [cards, stages] = await Promise.all([
         this.db.listPipelineCards(),
@@ -116,7 +116,7 @@ export class InterviewPrepDetailComponent implements OnInit {
       this.application.set(cards.find((c) => c.id === id) ?? null);
       this.stages.set(stages);
     } catch (e) {
-      this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.loading.set(false);
     }
@@ -156,7 +156,7 @@ export class InterviewPrepDetailComponent implements OnInit {
       this.stages.set([...this.stages(), stage]);
       this.addForm.set(emptyForm());
     } catch (e) {
-      this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.addBusy.set(false);
     }
@@ -202,7 +202,7 @@ export class InterviewPrepDetailComponent implements OnInit {
       this.stages.set(this.stages().map((s) => (s.id === id ? updated : s)));
       this.editingId.set(null);
     } catch (e) {
-      this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.editBusy.set(false);
     }

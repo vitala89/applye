@@ -25,6 +25,7 @@ import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 import {
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
@@ -48,6 +49,7 @@ export class CvDetailComponent {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -79,7 +81,6 @@ export class CvDetailComponent {
   readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingKey = signal<CvSectionKey | null>(null);
-  readonly error = signal('');
 
   readonly atsNoteKeys = computed(() =>
     cvFieldAtsNoteKeys(
@@ -242,7 +243,6 @@ export class CvDetailComponent {
     const doc = this.doc();
     if (!doc) return;
     this.regeneratingKey.set(key);
-    this.error.set('');
     try {
       const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
       if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
@@ -283,7 +283,7 @@ export class CvDetailComponent {
       );
       this.sections.set(updated.sections);
     } catch (e) {
-      this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.regeneratingKey.set(null);
     }
@@ -293,7 +293,6 @@ export class CvDetailComponent {
     const doc = this.doc();
     if (!doc || this.saving()) return;
     this.saving.set(true);
-    this.error.set('');
     try {
       const sections = this.sections().map((s) => {
         if (s.key === 'photo') return { ...s, visible: this.includePhoto() };
@@ -346,7 +345,7 @@ export class CvDetailComponent {
       }
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
-      this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.saving.set(false);
     }

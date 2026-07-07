@@ -6,6 +6,7 @@ import { Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
+import { ToastService } from '../../core/toast/toast.service';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -310,13 +311,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
             </div>
           }
         </section>
-
-        @if (status()) {
-          <p class="status">{{ status() }}</p>
-        }
       </div>
-    } @else {
-      <p class="status">{{ status() }}</p>
     }
   `,
   styles: [
@@ -479,10 +474,6 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
         font-size: var(--text-sm);
         margin: 0;
       }
-      .status {
-        font-size: var(--text-sm);
-        color: var(--text-accent);
-      }
     `,
   ],
 })
@@ -492,6 +483,7 @@ export class SettingsComponent implements OnInit {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   protected readonly onboarding = inject(OnboardingService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -511,7 +503,6 @@ export class SettingsComponent implements OnInit {
   }
   readonly loading = signal(true);
   readonly saving = signal(false);
-  readonly status = signal('');
   readonly settings = signal<Settings | null>(null);
 
   readonly apiKeyInput = signal('');
@@ -531,7 +522,7 @@ export class SettingsComponent implements OnInit {
       this.i18n.setLocale(s.uiLanguage);
       this.keyStored.set(await this.keys.hasProviderKey(s.provider));
     } catch (e) {
-      this.status.set(`Load failed: ${String(e)}`);
+      this.toast.error(String(e));
     } finally {
       this.loading.set(false);
     }
@@ -560,12 +551,11 @@ export class SettingsComponent implements OnInit {
     const s = this.settings();
     if (!s) return;
     this.saving.set(true);
-    this.status.set('');
     try {
       this.settings.set(await this.db.updateSettings(s));
-      this.status.set('Settings saved.');
+      this.toast.success('settings.saved');
     } catch (e) {
-      this.status.set(`Save failed: ${String(e)}`);
+      this.toast.error(String(e));
     } finally {
       this.saving.set(false);
     }
@@ -580,9 +570,9 @@ export class SettingsComponent implements OnInit {
       await this.keys.setProviderKey(s.provider, key);
       this.apiKeyInput.set('');
       this.keyStored.set(true);
-      this.status.set('API key stored in your OS keychain.');
+      this.toast.success('settings.key_stored');
     } catch (e) {
-      this.status.set(`Key store failed: ${String(e)}`);
+      this.toast.error(String(e));
     } finally {
       this.keyBusy.set(false);
     }
@@ -595,9 +585,9 @@ export class SettingsComponent implements OnInit {
     try {
       await this.keys.deleteProviderKey(s.provider);
       this.keyStored.set(false);
-      this.status.set('API key removed from keychain.');
+      this.toast.success('settings.key_removed');
     } catch (e) {
-      this.status.set(`Key remove failed: ${String(e)}`);
+      this.toast.error(String(e));
     } finally {
       this.keyBusy.set(false);
     }
@@ -609,7 +599,6 @@ export class SettingsComponent implements OnInit {
     this.testing.set(true);
     this.testReply.set(null);
     this.testTokens.set(null);
-    this.status.set('');
     try {
       const model = this.tier() === 'quality' ? s.defaultModel : s.economyModel;
       const rendered = await this.ai.renderSkill('ping', {
@@ -630,7 +619,7 @@ export class SettingsComponent implements OnInit {
         cached: res.cachedTokens,
       });
     } catch (e) {
-      this.status.set(`Test failed: ${String(e)}`);
+      this.toast.error(String(e));
     } finally {
       this.testing.set(false);
     }

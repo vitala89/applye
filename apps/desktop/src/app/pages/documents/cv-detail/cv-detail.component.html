@@ -176,10 +176,6 @@
       }
     }
 
-    @if (error()) {
-      <p class="modal__error">{{ error() }}</p>
-    }
-
     @if (previewMode()) {
       <div class="cvpreview">
         @if (!previewSections().length) {

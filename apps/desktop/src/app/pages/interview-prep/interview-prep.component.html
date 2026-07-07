@@ -1,8 +1,6 @@
 <div class="interview-prep">
   @if (loading()) {
     <p class="interview-prep__state">{{ t()('common.loading') }}</p>
-  } @else if (error()) {
-    <p class="interview-prep__state">{{ t()('common.error') }}</p>
   } @else if (!rows().length) {
     <p class="interview-prep__state">{{ t()('interview.list_empty') }}</p>
   } @else {

@@ -12,6 +12,7 @@ import { DbService } from '@applye/data';
 import { InterviewStage, StageType } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 
 const STAGE_TYPES: StageType[] = [
   'hr_screen',
@@ -38,6 +39,7 @@ const STAGE_TYPES: StageType[] = [
 export class StageQuickAddComponent {
   private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   readonly applicationId = input.required<number>();
@@ -69,6 +71,7 @@ export class StageQuickAddComponent {
       this.added.emit(stage);
     } catch (e) {
       this.error.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.busy.set(false);
     }

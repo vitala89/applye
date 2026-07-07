@@ -88,7 +88,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         />
 
         <!-- Target roles (archetypes) -->
-        <section class="section">
+        <section class="section section--card">
           <h3 class="eyebrow-row">
             <span class="eyebrow">{{ t()('profile.section_archetypes') }}</span>
             <span
@@ -158,7 +158,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         </section>
 
         <!-- Editor -->
-        <section class="section">
+        <section class="section section--card">
           <div class="editor-head">
             <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
             <div class="mode-toggle" role="tablist">
@@ -183,62 +183,56 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
 
           @if (!rawMode()) {
             <div class="form-cards">
-              <div class="form-card">
+              <div class="field">
+                <label class="field__label" for="field-name">{{ t()('profile.field_name') }}</label>
+                <input
+                  id="field-name"
+                  class="field__input"
+                  type="text"
+                  [ngModel]="form().name"
+                  (ngModelChange)="updateField('name', $event)"
+                />
+              </div>
+              <div class="field-row">
                 <div class="field">
-                  <label class="field__label" for="field-name">{{
-                    t()('profile.field_name')
+                  <label class="field__label" for="field-title">{{
+                    t()('profile.field_title')
                   }}</label>
                   <input
-                    id="field-name"
+                    id="field-title"
                     class="field__input"
                     type="text"
-                    [ngModel]="form().name"
-                    (ngModelChange)="updateField('name', $event)"
+                    [ngModel]="form().title"
+                    (ngModelChange)="updateField('title', $event)"
                   />
                 </div>
-                <div class="field-row">
-                  <div class="field">
-                    <label class="field__label" for="field-title">{{
-                      t()('profile.field_title')
-                    }}</label>
-                    <input
-                      id="field-title"
-                      class="field__input"
-                      type="text"
-                      [ngModel]="form().title"
-                      (ngModelChange)="updateField('title', $event)"
-                    />
-                  </div>
-                  <div class="field">
-                    <label class="field__label" for="field-location">{{
-                      t()('profile.field_location')
-                    }}</label>
-                    <input
-                      id="field-location"
-                      class="field__input"
-                      type="text"
-                      [ngModel]="form().location"
-                      (ngModelChange)="updateField('location', $event)"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-card">
                 <div class="field">
-                  <label class="field__label" for="field-experience">{{
-                    t()('profile.field_experience')
+                  <label class="field__label" for="field-location">{{
+                    t()('profile.field_location')
                   }}</label>
-                  <textarea
-                    id="field-experience"
-                    class="field__input field__input--area"
-                    [ngModel]="form().experienceText"
-                    (ngModelChange)="updateField('experienceText', $event)"
-                  ></textarea>
+                  <input
+                    id="field-location"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().location"
+                    (ngModelChange)="updateField('location', $event)"
+                  />
                 </div>
               </div>
 
-              <div class="form-card">
+              <div class="field">
+                <label class="field__label" for="field-experience">{{
+                  t()('profile.field_experience')
+                }}</label>
+                <textarea
+                  id="field-experience"
+                  class="field__input field__input--area"
+                  [ngModel]="form().experienceText"
+                  (ngModelChange)="updateField('experienceText', $event)"
+                ></textarea>
+              </div>
+
+              <div class="field-row">
                 <div class="field">
                   <label class="field__label" for="field-skills">{{
                     t()('profile.field_skills')
@@ -250,18 +244,6 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     [ngModel]="form().skills.join(', ')"
                     (ngModelChange)="updateSkills($event)"
                     [placeholder]="t()('profile.skills_hint')"
-                  />
-                </div>
-                <div class="field">
-                  <label class="field__label" for="field-education">{{
-                    t()('profile.field_education')
-                  }}</label>
-                  <input
-                    id="field-education"
-                    class="field__input"
-                    type="text"
-                    [ngModel]="form().education"
-                    (ngModelChange)="updateField('education', $event)"
                   />
                 </div>
                 <div class="field">
@@ -277,6 +259,19 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     [placeholder]="t()('profile.languages_hint')"
                   />
                 </div>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="field-education">{{
+                  t()('profile.field_education')
+                }}</label>
+                <input
+                  id="field-education"
+                  class="field__input"
+                  type="text"
+                  [ngModel]="form().education"
+                  (ngModelChange)="updateField('education', $event)"
+                />
               </div>
             </div>
           } @else {
@@ -437,6 +432,13 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         flex-direction: column;
         gap: var(--space-3);
       }
+      .section--card {
+        padding: var(--space-5);
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
+      }
       .eyebrow,
       .eyebrow-row {
         font-family: var(--font-mono);
@@ -564,8 +566,9 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         gap: var(--space-3);
         padding: var(--space-4);
         background: var(--surface-1);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-sm);
       }
       .tool-card__head {
         display: flex;
@@ -771,17 +774,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       .form-cards {
         display: flex;
         flex-direction: column;
-        gap: var(--space-4);
-        max-width: 72ch;
-      }
-      .form-card {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-        padding: var(--space-4);
-        background: var(--surface-1);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-lg);
+        gap: var(--space-5);
       }
       .field {
         display: flex;

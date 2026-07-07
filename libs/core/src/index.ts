@@ -8,3 +8,6 @@ export * from './lib/models/source.model';
 export * from './lib/models/health.model';
 export * from './lib/models/document.model';
 export * from './lib/types/common.types';
+
+// Pure utilities
+export * from './lib/profile/profile-markdown';

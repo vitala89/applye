@@ -90,5 +90,8 @@
   },
   "nx": {
     "includedScripts": []
+  },
+  "overrides": {
+    "jest-mock": "30.4.1"
   }
 }

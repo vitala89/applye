@@ -43,6 +43,10 @@ Applye is an open-source, privacy-first job-search productivity app for German/E
 - Versioned prompt/skill content: `libs/skills`.
 - TODO: Confirm the long-term module map as features stabilize.
 
+## Design Sources
+
+- CV Editor visual spec: Claude Design project "Страница редактирования CV" (`project_id: 0ca6fecb-ecb5-4ec3-9b21-abf332d381fa`, file `CV Editor.dc.html`). Before restyling CV editor UI, fetch this via the `claude-design` MCP (`get_project` / `list_files` / `read_file`) rather than guessing from screenshots alone.
+
 ## Development Commands
 
 - `npm run desktop:dev`

@@ -50,7 +50,9 @@ export function buildCvContent(parsed: CvParsedContent, template: CvTemplate | n
   const order = templateSectionOrder(template);
   // personal_details is identity, not layout — guarantee it regardless of the
   // template's section list (some built-ins omit it). Force it first.
-  const keys = order.includes('personal_details') ? order : ['personal_details', ...order];
+  const keys: CvSectionKey[] = order.includes('personal_details')
+    ? order
+    : ['personal_details', ...order];
   const sections: CvSection[] = keys.map((key, index) => sectionFor(key, index, parsed, template));
   return { sections };
 }

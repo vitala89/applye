@@ -18,12 +18,12 @@ describe('normalizeCvContent', () => {
       sections: [{ key: 'skills', order: 0, visible: true, items: ['TypeScript', 'Rust'] }],
     } as unknown as CvContent;
     const out = normalizeCvContent(legacy);
-    const skills = out.sections[0] as {
+    const skills = out.sections.find((s) => s.key === 'skills') as {
       key: 'skills';
       groups: { label: string; values: string[] }[];
     };
     expect(skills.groups).toEqual([{ label: 'Skills', values: ['TypeScript', 'Rust'] }]);
-    expect((out.sections[0] as Record<string, unknown>)['items']).toBeUndefined();
+    expect((skills as Record<string, unknown>)['items']).toBeUndefined();
   });
 
   it('leaves an already-grouped skills section untouched', () => {
@@ -37,7 +37,14 @@ describe('normalizeCvContent', () => {
         },
       ],
     } as unknown as CvContent;
-    expect(normalizeCvContent(modern).sections[0]).toEqual(modern.sections[0]);
+    const out = normalizeCvContent(modern);
+    // order shifts by 1 because personal_details is now guaranteed to be
+    // prepended when the stored content lacks one — everything else on the
+    // skills section (key, visible, groups) is untouched.
+    expect(out.sections.find((s) => s.key === 'skills')).toEqual({
+      ...modern.sections[0],
+      order: 1,
+    });
   });
 });
 
@@ -224,5 +231,76 @@ describe('cv-generate-baseline output → content', () => {
       entries: { bullets: string[] }[];
     };
     expect(experience.entries[0].bullets[0]).toContain('**25%**');
+  });
+});
+
+function parsedMin(): CvParsedContent {
+  return {
+    personalDetails: {
+      fullName: 'Vitalii Kasap',
+      title: null,
+      email: null,
+      phone: null,
+      address: null,
+      website: null,
+      linkedin: null,
+    },
+    summary: null,
+    experience: [],
+    education: [],
+    skills: [],
+    skillGroups: undefined,
+    languages: [],
+    lowConfidenceNotes: [],
+  };
+}
+
+describe('buildCvContent personal_details guarantee', () => {
+  it('forces personal_details first when the template omits it', () => {
+    const template = {
+      id: 1,
+      sectionsJson: JSON.stringify(['summary', 'experience', 'skills']),
+      includePhoto: false,
+      includeBirthdate: false,
+      includeMaritalStatus: false,
+      isBuiltin: true,
+    } as CvTemplate;
+    const content = buildCvContent(parsedMin(), template);
+    expect(content.sections[0].key).toBe('personal_details');
+    expect(content.sections[0].order).toBe(0);
+    const pd = content.sections[0] as Record<string, unknown>;
+    expect(pd['fullName']).toBe('Vitalii Kasap');
+    expect(content.sections.map((s) => s.key)).toEqual([
+      'personal_details',
+      'summary',
+      'experience',
+      'skills',
+    ]);
+  });
+
+  it('keeps template order when personal_details is already present', () => {
+    const template = {
+      id: 1,
+      sectionsJson: JSON.stringify(['personal_details', 'summary']),
+      includePhoto: false,
+      includeBirthdate: false,
+      includeMaritalStatus: false,
+      isBuiltin: true,
+    } as CvTemplate;
+    const content = buildCvContent(parsedMin(), template);
+    expect(content.sections.map((s) => s.key)).toEqual(['personal_details', 'summary']);
+  });
+});
+
+describe('normalizeCvContent personal_details', () => {
+  it('adds an empty personal_details section when a stored CV lacks one', () => {
+    const legacy = {
+      sections: [{ key: 'summary', order: 0, visible: true, text: 'hi' }],
+    } as unknown as CvContent;
+    const out = normalizeCvContent(legacy);
+    expect(out.sections.some((s) => s.key === 'personal_details')).toBe(true);
+    const pd = out.sections.find((s) => s.key === 'personal_details') as Record<string, unknown>;
+    expect(pd['fullName']).toBe('');
+    expect(pd['order']).toBe(0);
   });
 });

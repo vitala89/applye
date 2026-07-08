@@ -1030,6 +1030,28 @@ mod tests {
             .any(|t| t.name.as_deref() == Some("DE-traditional")));
     }
 
+    /// Migration 0013 backfills `personal_details` into the built-in
+    /// templates that 0011 seeded without it (DE-ATS-modern/US/UK/generic),
+    /// so every generated CV has a name section. DE-traditional was already
+    /// correct and must be left untouched (photo still first).
+    #[tokio::test]
+    async fn migration_0013_adds_personal_details_to_builtin_templates() {
+        let pool = test_pool().await;
+        let rows: Vec<(String, String)> =
+            sqlx::query_as("SELECT name, sections_json FROM cv_templates WHERE is_builtin = 1")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+        for (name, sections) in &rows {
+            assert!(
+                sections.contains("personal_details"),
+                "built-in template {name} still lacks personal_details: {sections}"
+            );
+        }
+        let de_trad = rows.iter().find(|(n, _)| n == "DE-traditional").unwrap();
+        assert!(de_trad.1.starts_with("[\"photo\""));
+    }
+
     fn cv_input(template_id: i64) -> UpsertDocumentLibraryItemInput {
         UpsertDocumentLibraryItemInput {
             id: None,

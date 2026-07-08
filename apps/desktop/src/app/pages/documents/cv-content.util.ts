@@ -46,7 +46,10 @@ export function templateSectionOrder(template: CvTemplate | null): CvSectionKey[
  * came from the AI (or the user's own upload). */
 export function buildCvContent(parsed: CvParsedContent, template: CvTemplate | null): CvContent {
   const order = templateSectionOrder(template);
-  const sections: CvSection[] = order.map((key, index) => sectionFor(key, index, parsed, template));
+  // personal_details is identity, not layout — guarantee it regardless of the
+  // template's section list (some built-ins omit it). Force it first.
+  const keys = order.includes('personal_details') ? order : ['personal_details', ...order];
+  const sections: CvSection[] = keys.map((key, index) => sectionFor(key, index, parsed, template));
   return { sections };
 }
 
@@ -397,6 +400,12 @@ export function normalizeCvContent(content: CvContent): CvContent {
     };
     return migrated;
   });
+  const hasPersonal = sections.some((s) => s.key === 'personal_details');
+  if (!hasPersonal) {
+    const shifted = sections.map((s) => ({ ...s, order: s.order + 1 }));
+    const personal: CvSection = { key: 'personal_details', order: 0, visible: true, fullName: '' };
+    return { sections: [personal, ...shifted] };
+  }
   return { sections };
 }
 

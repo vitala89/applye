@@ -16,6 +16,7 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
+  CvSkillGroup,
   CvStyle,
   CvTemplate,
   CvTextRun,
@@ -244,6 +245,28 @@ export class CvDetailComponent {
       .map((line) => {
         const [language, level] = line.split(':');
         return { language: (language ?? '').trim(), level: (level ?? '').trim() };
+      });
+  }
+
+  skillGroupsToText(groups: CvSkillGroup[]): string {
+    return groups.map((g) => `${g.label}: ${g.values.join(', ')}`).join('\n');
+  }
+
+  onSkillsChange(section: Extract<CvSection, { key: 'skills' }>, value: string): void {
+    section.groups = value
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => {
+        const idx = line.indexOf(':');
+        const label = idx >= 0 ? line.slice(0, idx).trim() : 'Skills';
+        const rest = idx >= 0 ? line.slice(idx + 1) : line;
+        return {
+          label,
+          values: rest
+            .split(',')
+            .map((v) => v.trim())
+            .filter((v) => v),
+        };
       });
   }
 

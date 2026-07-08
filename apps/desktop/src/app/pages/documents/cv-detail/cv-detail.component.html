@@ -342,6 +342,12 @@
                   />
                   <input
                     type="text"
+                    [ngModel]="$any(section).title"
+                    (ngModelChange)="$any(section).title = $event"
+                    [placeholder]="t()('documents.cv_field_title')"
+                  />
+                  <input
+                    type="text"
                     [ngModel]="$any(section).email"
                     (ngModelChange)="$any(section).email = $event"
                     [placeholder]="t()('documents.cv_field_email')"
@@ -357,6 +363,18 @@
                     [ngModel]="$any(section).address"
                     (ngModelChange)="$any(section).address = $event"
                     [placeholder]="t()('documents.cv_field_address')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).website"
+                    (ngModelChange)="$any(section).website = $event"
+                    [placeholder]="t()('documents.cv_field_website')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).linkedin"
+                    (ngModelChange)="$any(section).linkedin = $event"
+                    [placeholder]="t()('documents.cv_field_linkedin')"
                   />
                   @if (includeBirthdate()) {
                     <input
@@ -453,14 +471,9 @@
               }
               @case ('skills') {
                 <textarea
-                  [ngModel]="$any(section).items.join(', ')"
-                  (ngModelChange)="
-                    $any(section).items = $event
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter((s) => s)
-                  "
-                  rows="2"
+                  [ngModel]="skillGroupsToText($any(section).groups)"
+                  (ngModelChange)="onSkillsChange($any(section), $event)"
+                  rows="4"
                   [placeholder]="t()('documents.cv_field_skills_hint')"
                 ></textarea>
               }

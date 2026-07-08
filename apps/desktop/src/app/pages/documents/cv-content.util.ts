@@ -65,9 +65,12 @@ function sectionFor(
         order,
         visible: true,
         fullName: parsed.personalDetails.fullName ?? '',
+        title: parsed.personalDetails.title ?? undefined,
         email: parsed.personalDetails.email ?? undefined,
         phone: parsed.personalDetails.phone ?? undefined,
         address: parsed.personalDetails.address ?? undefined,
+        website: parsed.personalDetails.website ?? undefined,
+        linkedin: parsed.personalDetails.linkedin ?? undefined,
         birthDate: undefined,
         maritalStatus: undefined,
       };
@@ -99,8 +102,14 @@ function sectionFor(
           endDate: e.endDate ?? undefined,
         })),
       };
-    case 'skills':
-      return { key: 'skills', order, visible: true, items: parsed.skills };
+    case 'skills': {
+      const groups: CvSkillGroup[] = parsed.skillGroups?.length
+        ? parsed.skillGroups
+        : parsed.skills.length
+          ? [{ label: 'Skills', values: parsed.skills }]
+          : [];
+      return { key: 'skills', order, visible: true, groups };
+    }
     case 'languages':
       return { key: 'languages', order, visible: true, items: parsed.languages };
   }
@@ -157,11 +166,20 @@ export const REGENERATABLE_SECTION_KEYS: CvSectionKey[] = [
 
 function emptyParsedContent(): CvParsedContent {
   return {
-    personalDetails: { fullName: null, email: null, phone: null, address: null },
+    personalDetails: {
+      fullName: null,
+      title: null,
+      email: null,
+      phone: null,
+      address: null,
+      website: null,
+      linkedin: null,
+    },
     summary: null,
     experience: [],
     education: [],
     skills: [],
+    skillGroups: undefined,
     languages: [],
     lowConfidenceNotes: [],
   };
@@ -194,7 +212,12 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
   } catch {
     throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
   }
-  return { ...emptyParsedContent(), ...parsed };
+  const base = emptyParsedContent();
+  return {
+    ...base,
+    ...parsed,
+    personalDetails: { ...base.personalDetails, ...(parsed.personalDetails ?? {}) },
+  };
 }
 
 /** Merges a targeted single-section regenerate result into an existing
@@ -287,8 +310,10 @@ export function cvContentToMd(content: CvContent): string {
       }
     } else if (s.key === 'skills') {
       const p = s as Extract<CvSection, { key: 'skills' }>;
-      if (p.items.length) {
-        parts.push(`## Skills\n${p.items.join(', ')}`);
+      const groups = p.groups.filter((g) => g.values.length);
+      if (groups.length) {
+        parts.push('## Skills');
+        for (const g of groups) parts.push(`**${g.label}:** ${g.values.join(', ')}`);
       }
     } else if (s.key === 'languages') {
       const p = s as Extract<CvSection, { key: 'languages' }>;
@@ -333,7 +358,7 @@ export function markdownToCvContentFallback(markdown: string, fullName = ''): Cv
         key: 'skills',
         order: 4,
         visible: true,
-        items: [],
+        groups: [],
       },
       {
         key: 'languages',

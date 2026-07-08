@@ -57,7 +57,7 @@ template's section list.
   it in as the first section (order 0) and shift the template-ordered sections
   after it. Same guarantee applied on load via a small normalizer so existing
   stored CVs that lack the section gain an (empty) one.
-- **Migration `0012`:** `UPDATE cv_templates` for the built-in rows whose
+- **Migration `0013`:** `UPDATE cv_templates` for the built-in rows whose
   `sections_json` lacks `personal_details` (DE-ATS-modern, US, UK, generic) to
   prepend `"personal_details"` — fixes "Save as template"/reorder UX and
   existing installs. Idempotent (only updates rows missing the key).
@@ -129,7 +129,7 @@ Import: file ─▶ Rust extract ─▶ cv-import (synced schema, ≤8192 tok) �
   `documents.cv_generate_no_profile` error via toast.
 - Stored CV lacking `personal_details` → normalized to include an empty one on
   load (no crash, name field editable).
-- Migration 0012 is additive/idempotent; never removes a section.
+- Migration 0013 is additive/idempotent; never removes a section.
 
 ## Testing
 

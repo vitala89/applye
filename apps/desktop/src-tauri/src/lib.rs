@@ -82,6 +82,7 @@ pub fn run() {
             commands::documents::document_library_delete,
             commands::documents::cv_template_upsert,
             commands::documents::cv_import_read_file,
+            commands::documents::cv_photo_read_file,
             commands::documents::cv_document_export,
             commands::documents::cover_letter_document_export,
             commands::documents::check_style_safety,

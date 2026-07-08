@@ -42,6 +42,7 @@ pdf-extract = "0.7"
 # Auto-updater. Registered behind #[cfg(desktop)] in lib.rs; kept in the plain
 # [dependencies] table so tauri-build picks up its capability permissions.
 tauri-plugin-updater = "2"
+base64 = "0.22"
 
 # OS keychain — one backend per platform (no unused dbus on macOS/Windows).
 [target.'cfg(target_os = "macos")'.dependencies]

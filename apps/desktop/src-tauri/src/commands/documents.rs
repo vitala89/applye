@@ -184,6 +184,40 @@ pub fn cv_import_read_file(path: String) -> Result<CvImportFile, String> {
     })
 }
 
+use base64::Engine as _;
+
+/// Sniff image MIME from magic bytes; default to octet-stream.
+fn image_mime(bytes: &[u8]) -> &'static str {
+    if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        "image/png"
+    } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        "image/jpeg"
+    } else if bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP") {
+        "image/webp"
+    } else {
+        "application/octet-stream"
+    }
+}
+
+fn bytes_to_data_uri(bytes: &[u8]) -> String {
+    let mime = image_mime(bytes);
+    let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+    format!("data:{mime};base64,{b64}")
+}
+
+/// Reads a picked CV photo file and returns it as a base64 data URI for
+/// inline storage/preview — no separate asset file, matches the
+/// `content_json`-opaque-blob convention used elsewhere in this module.
+#[tauri::command]
+pub fn cv_photo_read_file(path: String) -> Result<String, String> {
+    let bytes = std::fs::read(&path).map_err(|e| format!("read photo: {e}"))?;
+    // Guard: reject files that are not a supported image type.
+    match image_mime(&bytes) {
+        "application/octet-stream" => Err("unsupported image format".into()),
+        _ => Ok(bytes_to_data_uri(&bytes)),
+    }
+}
+
 fn read_docx_text(path: &str) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("read_docx_text: {e}"))?;
     let docx = docx_rs::read_docx(&bytes).map_err(|e| format!("read_docx_text: {e}"))?;
@@ -1467,5 +1501,24 @@ mod tests {
             r#"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"not-a-color"}"#;
         let notes = check_style_safety_core(Some(malformed.to_string()));
         assert!(notes.iter().all(|n| n.kind != "color_readability_risk"));
+    }
+}
+
+#[cfg(test)]
+mod photo_tests {
+    use super::*;
+
+    #[test]
+    fn detects_png_mime_and_encodes() {
+        // 1x1 transparent PNG
+        let png: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
+            0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78,
+            0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+        ];
+        let uri = bytes_to_data_uri(png);
+        assert!(uri.starts_with("data:image/png;base64,"));
     }
 }

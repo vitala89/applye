@@ -118,6 +118,7 @@ export class CvDetailComponent {
     font_ats_risk: 'documents.cv_style_note_font',
     size_out_of_range: 'documents.cv_style_note_size',
     color_readability_risk: 'documents.cv_style_note_color',
+    weight_unavailable_risk: 'documents.cv_style_note_weight',
   };
 
   styleNoteMessage(note: StyleNote): string {

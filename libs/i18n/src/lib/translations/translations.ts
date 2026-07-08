@@ -673,6 +673,12 @@ const en: TranslationMap = {
       '{value}pt is outside the recommended 10–12pt body range — very small or very large text can look off in print or on screen.',
     cv_style_note_color:
       '{value} may be hard to read once printed in greyscale (e.g. by an Agentur für Arbeit printer). This is a readability/print concern, not an ATS-parsing one — colour barely affects text extraction.',
+    cv_style_weight: 'Weight',
+    cv_style_weight_300: 'Light',
+    cv_style_weight_400: 'Normal',
+    cv_style_weight_600: 'Semibold',
+    cv_style_weight_700: 'Bold',
+    cv_style_note_weight: 'This weight may not be available for the chosen font.',
   },
   interview: {
     title: 'Interview Prep',
@@ -1579,6 +1585,12 @@ const de: TranslationMap = {
       '{value}pt liegt außerhalb des empfohlenen Bereichs von 10–12pt Fließtext — sehr kleiner oder sehr großer Text kann im Druck oder am Bildschirm unpassend wirken.',
     cv_style_note_color:
       '{value} könnte nach dem Ausdruck in Graustufen (z. B. bei der Agentur für Arbeit) schwer lesbar sein. Das ist ein Lesbarkeits-/Druckproblem, kein ATS-Parsing-Problem — Farbe beeinflusst die Textextraktion kaum.',
+    cv_style_weight: 'Schriftstärke',
+    cv_style_weight_300: 'Leicht',
+    cv_style_weight_400: 'Normal',
+    cv_style_weight_600: 'Halbfett',
+    cv_style_weight_700: 'Fett',
+    cv_style_note_weight: 'Diese Schriftstärke ist für die gewählte Schrift evtl. nicht verfügbar.',
   },
   interview: {
     title: 'Interview-Vorbereitung',

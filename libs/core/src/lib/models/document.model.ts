@@ -37,9 +37,12 @@ export interface CvPhotoSection extends CvSectionBase {
 export interface CvPersonalDetailsSection extends CvSectionBase {
   key: 'personal_details';
   fullName: string;
+  title?: string;
   email?: string;
   phone?: string;
   address?: string;
+  website?: string;
+  linkedin?: string;
   birthDate?: string;
   maritalStatus?: string;
 }
@@ -75,9 +78,14 @@ export interface CvEducationSection extends CvSectionBase {
   entries: CvEducationEntry[];
 }
 
+export interface CvSkillGroup {
+  label: string;
+  values: string[];
+}
+
 export interface CvSkillsSection extends CvSectionBase {
   key: 'skills';
-  items: string[];
+  groups: CvSkillGroup[];
 }
 
 export interface CvLanguageEntry {
@@ -281,14 +289,18 @@ export interface CvParsedLanguageEntry {
 export interface CvParsedContent {
   personalDetails: {
     fullName: string | null;
+    title: string | null;
     email: string | null;
     phone: string | null;
     address: string | null;
+    website: string | null;
+    linkedin: string | null;
   };
   summary: string | null;
   experience: CvParsedExperienceEntry[];
   education: CvParsedEducationEntry[];
   skills: string[];
+  skillGroups?: CvSkillGroup[];
   languages: CvParsedLanguageEntry[];
   lowConfidenceNotes: string[];
 }

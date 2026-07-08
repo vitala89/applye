@@ -1,4 +1,13 @@
-import { CvContent, CvParsedContent, CvSection, CvSectionKey, CvTemplate } from '@applye/core';
+import {
+  CvContent,
+  CvParsedContent,
+  CvPersonalDetailsSection,
+  CvSection,
+  CvSectionKey,
+  CvSkillGroup,
+  CvSkillsSection,
+  CvTemplate,
+} from '@applye/core';
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
  * for the seeded built-ins, but keeps the builder total). */
@@ -334,4 +343,51 @@ export function markdownToCvContentFallback(markdown: string, fullName = ''): Cv
       },
     ],
   };
+}
+
+/** Migrates a stored CvContent to the current shape without rewriting content
+ * the user authored. Currently: a legacy `items: string[]` skills section
+ * becomes a single `{ label: 'Skills', values }` group. Idempotent. */
+export function normalizeCvContent(content: CvContent): CvContent {
+  const sections = content.sections.map((section) => {
+    if (section.key !== 'skills') return section;
+    const legacy = section as unknown as {
+      key: 'skills';
+      order: number;
+      visible: boolean;
+      sourceHash?: string;
+      items?: string[];
+      groups?: CvSkillGroup[];
+    };
+    if (legacy.groups) return section;
+    const migrated: CvSkillsSection = {
+      key: 'skills',
+      order: legacy.order,
+      visible: legacy.visible,
+      sourceHash: legacy.sourceHash,
+      groups: [{ label: 'Skills', values: legacy.items ?? [] }],
+    };
+    return migrated;
+  });
+  return { sections };
+}
+
+/** Reference-order single-line contact string: location · phone · email ·
+ * website · linkedin, then optionally birthdate/marital. Empty fields drop out
+ * with no dangling ` | `. */
+export function buildContactLine(
+  p: CvPersonalDetailsSection,
+  opts: { includeBirthdate: boolean; includeMaritalStatus: boolean },
+): string {
+  return [
+    p.address,
+    p.phone,
+    p.email,
+    p.website,
+    p.linkedin,
+    opts.includeBirthdate ? p.birthDate : undefined,
+    opts.includeMaritalStatus ? p.maritalStatus : undefined,
+  ]
+    .filter((v): v is string => !!v && v.trim().length > 0)
+    .join(' | ');
 }

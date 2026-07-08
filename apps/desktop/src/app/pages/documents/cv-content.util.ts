@@ -1,5 +1,7 @@
 import {
   CvContent,
+  CvEducationEntry,
+  CvExperienceEntry,
   CvParsedContent,
   CvPersonalDetailsSection,
   CvSection,
@@ -427,4 +429,13 @@ export function buildContactLine(
   ]
     .filter((v): v is string => !!v && v.trim().length > 0)
     .join(' | ');
+}
+
+/** Blank rows for the "add entry" affordance in the CV editor. */
+export function blankExperienceEntry(): CvExperienceEntry {
+  return { company: '', role: '', startDate: '', endDate: '', location: '', bullets: [''] };
+}
+
+export function blankEducationEntry(): CvEducationEntry {
+  return { institution: '', degree: '', startDate: '', endDate: '' };
 }

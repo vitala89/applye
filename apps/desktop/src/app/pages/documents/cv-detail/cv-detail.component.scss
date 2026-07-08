@@ -514,3 +514,15 @@
   gap: var(--space-3);
   margin-top: var(--space-5);
 }
+.cvdetail__entry-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+.cvdetail__bullet-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.cvdetail__bullet-row input {
+  flex: 1;
+}

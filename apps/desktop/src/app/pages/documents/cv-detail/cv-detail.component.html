@@ -404,6 +404,16 @@
               @case ('experience') {
                 @for (entry of $any(section).entries; track $index) {
                   <div class="cvdetail__entry">
+                    <div class="cvdetail__entry-bar">
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [attr.aria-label]="t()('documents.cv_remove_entry')"
+                        (click)="removeEntry($any(section), $index)"
+                      >
+                        ×
+                      </button>
+                    </div>
                     <div class="cvdetail__grid">
                       <input
                         type="text"
@@ -430,44 +440,95 @@
                         [placeholder]="t()('documents.cv_field_end_date')"
                       />
                     </div>
-                    <textarea
-                      [ngModel]="entry.bullets.join('\n')"
-                      (ngModelChange)="entry.bullets = $event.split('\n')"
-                      rows="3"
-                      [placeholder]="t()('documents.cv_field_bullets')"
-                    ></textarea>
+                    @for (bullet of entry.bullets; track $index) {
+                      <div class="cvdetail__bullet-row">
+                        <input
+                          type="text"
+                          [ngModel]="bullet"
+                          (ngModelChange)="entry.bullets[$index] = $event"
+                          [placeholder]="t()('documents.cv_field_bullet')"
+                        />
+                        <button
+                          class="icon-btn"
+                          type="button"
+                          [attr.aria-label]="t()('documents.cv_remove_bullet')"
+                          (click)="removeBullet(entry, $index)"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    }
+                    <button
+                      appButton
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      (click)="addBullet(entry)"
+                    >
+                      {{ t()('documents.cv_add_bullet') }}
+                    </button>
                   </div>
                 }
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  (click)="addEntry($any(section))"
+                >
+                  {{ t()('documents.cv_add_experience') }}
+                </button>
               }
               @case ('education') {
                 @for (entry of $any(section).entries; track $index) {
-                  <div class="cvdetail__grid">
-                    <input
-                      type="text"
-                      [ngModel]="entry.degree"
-                      (ngModelChange)="entry.degree = $event"
-                      [placeholder]="t()('documents.cv_field_degree')"
-                    />
-                    <input
-                      type="text"
-                      [ngModel]="entry.institution"
-                      (ngModelChange)="entry.institution = $event"
-                      [placeholder]="t()('documents.cv_field_institution')"
-                    />
-                    <input
-                      type="text"
-                      [ngModel]="entry.startDate"
-                      (ngModelChange)="entry.startDate = $event"
-                      [placeholder]="t()('documents.cv_field_start_date')"
-                    />
-                    <input
-                      type="text"
-                      [ngModel]="entry.endDate"
-                      (ngModelChange)="entry.endDate = $event"
-                      [placeholder]="t()('documents.cv_field_end_date')"
-                    />
+                  <div class="cvdetail__entry">
+                    <div class="cvdetail__entry-bar">
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [attr.aria-label]="t()('documents.cv_remove_entry')"
+                        (click)="removeEntry($any(section), $index)"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div class="cvdetail__grid">
+                      <input
+                        type="text"
+                        [ngModel]="entry.degree"
+                        (ngModelChange)="entry.degree = $event"
+                        [placeholder]="t()('documents.cv_field_degree')"
+                      />
+                      <input
+                        type="text"
+                        [ngModel]="entry.institution"
+                        (ngModelChange)="entry.institution = $event"
+                        [placeholder]="t()('documents.cv_field_institution')"
+                      />
+                      <input
+                        type="text"
+                        [ngModel]="entry.startDate"
+                        (ngModelChange)="entry.startDate = $event"
+                        [placeholder]="t()('documents.cv_field_start_date')"
+                      />
+                      <input
+                        type="text"
+                        [ngModel]="entry.endDate"
+                        (ngModelChange)="entry.endDate = $event"
+                        [placeholder]="t()('documents.cv_field_end_date')"
+                      />
+                    </div>
                   </div>
                 }
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  (click)="addEntry($any(section))"
+                >
+                  {{ t()('documents.cv_add_education') }}
+                </button>
               }
               @case ('skills') {
                 <textarea

@@ -5,6 +5,8 @@ import type {
   CvTemplate,
 } from '@applye/core';
 import {
+  blankEducationEntry,
+  blankExperienceEntry,
   buildContactLine,
   buildCvContent,
   cvContentToMd,
@@ -302,5 +304,26 @@ describe('normalizeCvContent personal_details', () => {
     const pd = out.sections.find((s) => s.key === 'personal_details') as Record<string, unknown>;
     expect(pd['fullName']).toBe('');
     expect(pd['order']).toBe(0);
+  });
+});
+
+describe('blank entry factories', () => {
+  it('creates an empty experience entry with an empty bullet', () => {
+    expect(blankExperienceEntry()).toEqual({
+      company: '',
+      role: '',
+      startDate: '',
+      endDate: '',
+      location: '',
+      bullets: [''],
+    });
+  });
+  it('creates an empty education entry', () => {
+    expect(blankEducationEntry()).toEqual({
+      institution: '',
+      degree: '',
+      startDate: '',
+      endDate: '',
+    });
   });
 });

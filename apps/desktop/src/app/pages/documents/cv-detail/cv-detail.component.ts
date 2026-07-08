@@ -29,6 +29,8 @@ import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import {
+  blankEducationEntry,
+  blankExperienceEntry,
   buildContactLine,
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
@@ -268,6 +270,30 @@ export class CvDetailComponent {
             .filter((v) => v),
         };
       });
+  }
+
+  addEntry(section: Extract<CvSection, { key: 'experience' | 'education' }>): void {
+    if (section.key === 'experience') section.entries.push(blankExperienceEntry());
+    else section.entries.push(blankEducationEntry());
+    this.sections.set([...this.sections()]);
+  }
+
+  removeEntry(
+    section: Extract<CvSection, { key: 'experience' | 'education' }>,
+    index: number,
+  ): void {
+    section.entries.splice(index, 1);
+    this.sections.set([...this.sections()]);
+  }
+
+  addBullet(entry: { bullets: string[] }): void {
+    entry.bullets.push('');
+    this.sections.set([...this.sections()]);
+  }
+
+  removeBullet(entry: { bullets: string[] }, index: number): void {
+    entry.bullets.splice(index, 1);
+    this.sections.set([...this.sections()]);
   }
 
   async regenerateSection(key: CvSectionKey): Promise<void> {

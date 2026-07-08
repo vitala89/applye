@@ -71,8 +71,12 @@ export class CvPhotoCropComponent {
 
   onPointerMove(ev: PointerEvent) {
     if (!this.dragging) return;
-    this.offsetX.update((x) => x + (ev.clientX - this.lastX));
-    this.offsetY.update((y) => y + (ev.clientY - this.lastY));
+    const canvas = this.canvasRef().nativeElement;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+    const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+    this.offsetX.update((x) => x + (ev.clientX - this.lastX) * scaleX);
+    this.offsetY.update((y) => y + (ev.clientY - this.lastY) * scaleY);
     this.lastX = ev.clientX;
     this.lastY = ev.clientY;
     this.draw();

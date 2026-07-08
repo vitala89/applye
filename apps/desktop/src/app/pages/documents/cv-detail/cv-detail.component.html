@@ -800,6 +800,13 @@
                     </div>
                   }
                 }
+                @case ('photo') {
+                  @if (includePhoto() && photoDataUri()) {
+                    <div class="cvpreview__photo">
+                      <img [src]="photoDataUri()" alt="" />
+                    </div>
+                  }
+                }
               }
             }
           </div>

@@ -2,23 +2,35 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
   Eye,
+  GripVertical,
   LucideAngularModule,
   Pencil,
   RefreshCw,
   Save,
   Check,
   Info,
+  Sparkles,
+  Plus,
+  X,
+  Trash2,
 } from 'lucide-angular';
 import type {
   CvContent,
   CvSection,
   CvSectionKey,
   CvSectionStyle,
-  CvSkillGroup,
   CvStyle,
   CvTemplate,
   CvTextRun,
@@ -64,6 +76,7 @@ export function mergePersonalField<T extends string | undefined>(
     ButtonDirective,
     CdkDropList,
     CdkDrag,
+    CdkDragHandle,
     NgStyle,
     NgTemplateOutlet,
   ],
@@ -87,11 +100,25 @@ export class CvDetailComponent {
     edit: Pencil,
     check: Check,
     info: Info,
+    dragHandle: GripVertical,
+    moveUp: ChevronUp,
+    moveDown: ChevronDown,
+    sparkles: Sparkles,
+    plus: Plus,
+    close: X,
+    trash: Trash2,
   };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
   protected readonly buildContactLine = buildContactLine;
+
+  readonly regionOptions = computed(() =>
+    this.regionTags.map((tag) => ({
+      tag,
+      label: `${tag.toUpperCase()} — ${this.t()(`documents.cv_region_${tag}`)}`,
+    })),
+  );
 
   runs(text: string): CvTextRun[] {
     return parseInlineEmphasis(text);
@@ -322,39 +349,77 @@ export class CvDetailComponent {
     this.sections.set(list.map((s, index) => ({ ...s, order: index })));
   }
 
-  /** Angular templates can't parse a multi-line arrow function body, so the
-   * "Language: Level" per-line textarea parsing lives here instead of
-   * inline in the template. */
-  onLanguagesChange(section: Extract<CvSection, { key: 'languages' }>, value: string): void {
-    section.items = value
-      .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => {
-        const [language, level] = line.split(':');
-        return { language: (language ?? '').trim(), level: (level ?? '').trim() };
-      });
+  private moveSection(key: CvSectionKey, offset: -1 | 1): void {
+    const list = this.sections().slice();
+    const index = list.findIndex((s) => s.key === key);
+    const target = index + offset;
+    if (index < 0 || target < 0 || target >= list.length) return;
+    moveItemInArray(list, index, target);
+    this.sections.set(list.map((s, i) => ({ ...s, order: i })));
   }
 
-  skillGroupsToText(groups: CvSkillGroup[]): string {
-    return groups.map((g) => `${g.label}: ${g.values.join(', ')}`).join('\n');
+  moveSectionUp(key: CvSectionKey): void {
+    this.moveSection(key, -1);
   }
 
-  onSkillsChange(section: Extract<CvSection, { key: 'skills' }>, value: string): void {
-    section.groups = value
-      .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => {
-        const idx = line.indexOf(':');
-        const label = idx >= 0 ? line.slice(0, idx).trim() : 'Skills';
-        const rest = idx >= 0 ? line.slice(idx + 1) : line;
-        return {
-          label,
-          values: rest
-            .split(',')
-            .map((v) => v.trim())
-            .filter((v) => v),
-        };
-      });
+  moveSectionDown(key: CvSectionKey): void {
+    this.moveSection(key, 1);
+  }
+
+  /** CEFR levels plus an empty option — a language may be listed with no
+   * level (e.g. just "English"), which some CV conventions prefer. */
+  protected readonly languageLevels = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'];
+
+  addLanguage(section: Extract<CvSection, { key: 'languages' }>): void {
+    section.items.push({ language: '', level: '' });
+    this.sections.set([...this.sections()]);
+  }
+
+  removeLanguage(section: Extract<CvSection, { key: 'languages' }>, index: number): void {
+    section.items.splice(index, 1);
+    this.sections.set([...this.sections()]);
+  }
+
+  setSkillGroupLabel(
+    section: Extract<CvSection, { key: 'skills' }>,
+    groupIndex: number,
+    label: string,
+  ): void {
+    const group = section.groups[groupIndex];
+    if (group) group.label = label;
+  }
+
+  addSkillGroup(section: Extract<CvSection, { key: 'skills' }>): void {
+    section.groups.push({ label: 'Skills', values: [] });
+    this.sections.set([...this.sections()]);
+  }
+
+  removeSkillGroup(section: Extract<CvSection, { key: 'skills' }>, groupIndex: number): void {
+    section.groups.splice(groupIndex, 1);
+    this.sections.set([...this.sections()]);
+  }
+
+  /** Adds the trimmed input value as a skill chip on Enter, then clears the
+   * input. Ignores empty values and duplicates within the group. */
+  addSkill(section: Extract<CvSection, { key: 'skills' }>, groupIndex: number, event: Event): void {
+    event.preventDefault();
+    const input = event.target as HTMLInputElement;
+    const value = input.value.trim();
+    if (!value) return;
+    const group = section.groups[groupIndex];
+    if (!group) return;
+    if (!group.values.includes(value)) group.values.push(value);
+    input.value = '';
+    this.sections.set([...this.sections()]);
+  }
+
+  removeSkill(
+    section: Extract<CvSection, { key: 'skills' }>,
+    groupIndex: number,
+    valueIndex: number,
+  ): void {
+    section.groups[groupIndex]?.values.splice(valueIndex, 1);
+    this.sections.set([...this.sections()]);
   }
 
   addEntry(section: Extract<CvSection, { key: 'experience' | 'education' }>): void {

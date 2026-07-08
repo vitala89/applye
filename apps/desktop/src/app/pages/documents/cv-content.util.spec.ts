@@ -159,6 +159,13 @@ describe('cvContentToMd (grouped skills)', () => {
     expect(md).toContain('**Languages:** TypeScript, JavaScript');
     expect(md).toContain('**Frameworks:** Angular, React');
   });
+
+  it('includes title, website, and linkedin in the header/contact lines', () => {
+    const md = cvContentToMd(buildCvContent(parsed(), null as unknown as CvTemplate | null));
+    expect(md).toContain('_Senior Frontend Software Engineer_');
+    expect(md).toContain('vitaliikasap.com');
+    expect(md).toContain('linkedin.com/in/vitaliikasap');
+  });
 });
 
 describe('cv-generate-baseline output → content', () => {
@@ -206,6 +213,16 @@ describe('cv-generate-baseline output → content', () => {
       groups: { label: string }[];
     };
     expect(pd['title']).toBe('Senior Frontend Software Engineer');
+    expect(pd['website']).toBe('vitaliikasap.com');
+    expect(pd['linkedin']).toBe('linkedin.com/in/vitaliikasap');
     expect(skills.groups.map((g) => g.label)).toEqual(['Languages', 'Frameworks']);
+
+    const parsedSample = parseCvSkillResponse(sample);
+    expect(parsedSample.skills).toEqual(['TypeScript', 'Angular']);
+
+    const experience = content.sections.find((s) => s.key === 'experience') as {
+      entries: { bullets: string[] }[];
+    };
+    expect(experience.entries[0].bullets[0]).toContain('**25%**');
   });
 });

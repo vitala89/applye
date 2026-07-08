@@ -277,7 +277,10 @@ export function cvContentToMd(content: CvContent): string {
     if (s.key === 'personal_details') {
       const p = s as Extract<CvSection, { key: 'personal_details' }>;
       parts.push(`# ${p.fullName}`);
-      const contact = [p.email, p.phone, p.address].filter(Boolean).join(' | ');
+      if (p.title) parts.push(`_${p.title}_`);
+      const contact = [p.email, p.phone, p.address, p.website, p.linkedin]
+        .filter(Boolean)
+        .join(' | ');
       if (contact) parts.push(contact);
     } else if (s.key === 'summary') {
       const p = s as Extract<CvSection, { key: 'summary' }>;

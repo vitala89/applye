@@ -25,4 +25,16 @@ describe('parseInlineEmphasis', () => {
   it('never returns an empty array for empty input', () => {
     expect(parseInlineEmphasis('')).toEqual([{ text: '', bold: false }]);
   });
+
+  it('renders adjacent bold spans without a phantom plain run', () => {
+    expect(parseInlineEmphasis('**a****b**')).toEqual([
+      { text: 'a', bold: true },
+      { text: 'b', bold: true },
+    ]);
+  });
+
+  it('treats an unterminated or empty marker as literal plain text', () => {
+    expect(parseInlineEmphasis('**bold')).toEqual([{ text: '**bold', bold: false }]);
+    expect(parseInlineEmphasis('****')).toEqual([{ text: '****', bold: false }]);
+  });
 });

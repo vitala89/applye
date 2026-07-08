@@ -321,6 +321,24 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                         md.push_str(&list.join(", "));
                         md.push_str("\n\n");
                     }
+                } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
+                    let mut lines: Vec<String> = Vec::new();
+                    for group in groups {
+                        let label = group.get("label").and_then(|v| v.as_str()).unwrap_or("");
+                        let values: Vec<&str> = group
+                            .get("values")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
+                            .unwrap_or_default();
+                        if !values.is_empty() {
+                            lines.push(format!("**{label}:** {}", values.join(", ")));
+                        }
+                    }
+                    if !lines.is_empty() {
+                        md.push_str("## Skills\n\n");
+                        md.push_str(&lines.join("\n"));
+                        md.push_str("\n\n");
+                    }
                 }
             }
             "languages" => {
@@ -485,6 +503,33 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
                     if !list.is_empty() {
                         body.push_str("\\section*{Skills}\n");
                         body.push_str(&list.join(", "));
+                        body.push_str("\n\n");
+                    }
+                } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
+                    let mut lines: Vec<String> = Vec::new();
+                    for group in groups {
+                        let label = group.get("label").and_then(|v| v.as_str()).unwrap_or("");
+                        let values: Vec<String> = group
+                            .get("values")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| {
+                                arr.iter()
+                                    .filter_map(|v| v.as_str())
+                                    .map(tex_escape)
+                                    .collect()
+                            })
+                            .unwrap_or_default();
+                        if !values.is_empty() {
+                            lines.push(format!(
+                                "\\textbf{{{}:}} {}",
+                                tex_escape(label),
+                                values.join(", ")
+                            ));
+                        }
+                    }
+                    if !lines.is_empty() {
+                        body.push_str("\\section*{Skills}\n");
+                        body.push_str(&lines.join("\\\\\n"));
                         body.push_str("\n\n");
                     }
                 }
@@ -1209,6 +1254,18 @@ mod tests {
         assert!(md.find("Jane Doe").unwrap() < md.find("Backend engineer.").unwrap());
         assert!(md.find("Backend engineer.").unwrap() < md.find("Acme").unwrap());
         assert!(!md.contains("Rust"), "hidden section must not render");
+    }
+
+    #[test]
+    fn cv_content_to_markdown_renders_grouped_skills_when_items_absent() {
+        let content_json = r#"{"sections":[
+            {"key":"skills","order":0,"visible":true,"groups":[
+                {"label":"Languages","values":["TypeScript","Angular"]}
+            ]}
+        ]}"#;
+        let md = cv_content_to_markdown(content_json).expect("render");
+        assert!(md.contains("## Skills"));
+        assert!(md.contains("**Languages:** TypeScript, Angular"));
     }
 
     #[tokio::test]

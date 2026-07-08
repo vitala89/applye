@@ -57,7 +57,7 @@ Output schema (identical shape to cv-import.md, so both feed the same builder):
 "experience": [ { "company": "string", "role": "string", "startDate": "string or null", "endDate": "string or null", "location": "string or null", "bullets": ["string"] } ],
 "education": [ { "institution": "string", "degree": "string", "startDate": "string or null", "endDate": "string or null" } ],
 "skills": ["string"],
-"skillGroups": [ { "label": "string", "values": ["string"] } ],
+"skillGroups": [ { "label": "string", "values": ["string"] } ] (omitted unless section is "all" or "skills"),
 "languages": [ { "language": "string", "level": "string" } ],
 "lowConfidenceNotes": ["string"]
 }

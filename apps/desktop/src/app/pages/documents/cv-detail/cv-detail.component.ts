@@ -558,8 +558,12 @@ export class CvDetailComponent {
       filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
     });
     if (typeof selected !== 'string') return;
-    const uri = await this.db.cvPhotoReadFile(selected);
-    this.cropSourceUri.set(uri);
+    try {
+      const uri = await this.db.cvPhotoReadFile(selected);
+      this.cropSourceUri.set(uri);
+    } catch (e) {
+      this.toast.error(String(e));
+    }
   }
 
   onCropConfirmed(uri: string): void {

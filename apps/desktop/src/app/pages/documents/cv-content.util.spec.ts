@@ -160,3 +160,52 @@ describe('cvContentToMd (grouped skills)', () => {
     expect(md).toContain('**Frameworks:** Angular, React');
   });
 });
+
+describe('cv-generate-baseline output → content', () => {
+  const sample = JSON.stringify({
+    personalDetails: {
+      fullName: 'Vitalii Kasap',
+      title: 'Senior Frontend Software Engineer',
+      email: 'v@icloud.com',
+      phone: '+49 171 206 4899',
+      address: 'Nuremberg, Germany',
+      website: 'vitaliikasap.com',
+      linkedin: 'linkedin.com/in/vitaliikasap',
+    },
+    summary: 'Senior FE engineer with 5+ years.',
+    experience: [
+      {
+        company: 'Celonis',
+        role: 'Senior FE Engineer',
+        startDate: 'Jan 2026',
+        endDate: 'Jun 2026',
+        location: 'Munich',
+        bullets: ['Cut bundle size by **25%**'],
+      },
+    ],
+    education: [],
+    skills: ['TypeScript', 'Angular'],
+    skillGroups: [
+      { label: 'Languages', values: ['TypeScript'] },
+      { label: 'Frameworks', values: ['Angular'] },
+    ],
+    languages: [{ language: 'English', level: 'C1' }],
+    lowConfidenceNotes: [],
+  });
+
+  it('parses and builds a full enriched CvContent', () => {
+    const content = buildCvContent(
+      parseCvSkillResponse(sample),
+      null as unknown as CvTemplate | null,
+    );
+    const pd = content.sections.find((s) => s.key === 'personal_details') as Record<
+      string,
+      unknown
+    >;
+    const skills = content.sections.find((s) => s.key === 'skills') as {
+      groups: { label: string }[];
+    };
+    expect(pd['title']).toBe('Senior Frontend Software Engineer');
+    expect(skills.groups.map((g) => g.label)).toEqual(['Languages', 'Frameworks']);
+  });
+});

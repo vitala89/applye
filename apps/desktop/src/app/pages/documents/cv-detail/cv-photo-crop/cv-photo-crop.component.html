@@ -1,0 +1,33 @@
+<div class="crop-backdrop" (click)="cancel()">
+  <div class="crop-dialog" (click)="$event.stopPropagation()">
+    <h3>{{ t()('documents.cv_photo_crop_title') }}</h3>
+    <div
+      class="crop-stage"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp()"
+      (pointercancel)="onPointerUp()"
+    >
+      <canvas #canvas class="crop-canvas"></canvas>
+    </div>
+    <label class="crop-zoom">
+      {{ t()('documents.cv_photo_crop_zoom') }}
+      <input
+        type="range"
+        min="1"
+        max="3"
+        step="0.01"
+        [value]="zoom()"
+        (input)="onZoom(+$any($event.target).value)"
+      />
+    </label>
+    <div class="crop-actions">
+      <button type="button" (click)="cancel()">
+        {{ t()('documents.cv_photo_crop_cancel') }}
+      </button>
+      <button type="button" class="primary" (click)="confirm()">
+        {{ t()('documents.cv_photo_crop_confirm') }}
+      </button>
+    </div>
+  </div>
+</div>

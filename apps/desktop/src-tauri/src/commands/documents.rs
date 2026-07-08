@@ -582,6 +582,10 @@ pub struct CvStyle {
     pub font_size_pt: f64,
     #[serde(default = "CvStyle::default_accent_color_hex")]
     pub accent_color_hex: String,
+    #[serde(default = "CvStyle::default_font_weight")]
+    pub font_weight: i64,
+    #[serde(default)]
+    pub section_styles: std::collections::HashMap<String, CvSectionStyle>,
 }
 
 impl CvStyle {
@@ -594,6 +598,9 @@ impl CvStyle {
     fn default_accent_color_hex() -> String {
         "#333333".to_string()
     }
+    fn default_font_weight() -> i64 {
+        400
+    }
 }
 
 impl Default for CvStyle {
@@ -602,8 +609,21 @@ impl Default for CvStyle {
             font_family: Self::default_font_family(),
             font_size_pt: Self::default_font_size_pt(),
             accent_color_hex: Self::default_accent_color_hex(),
+            font_weight: Self::default_font_weight(),
+            section_styles: Default::default(),
         }
     }
+}
+
+/// Per-section style override (Wave B): any field left `None` falls back to
+/// the parent `CvStyle`'s value when `check_style_safety_core` evaluates it.
+#[derive(Debug, Default, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CvSectionStyle {
+    pub font_family: Option<String>,
+    pub font_size_pt: Option<f64>,
+    pub color_hex: Option<String>,
+    pub font_weight: Option<i64>,
 }
 
 /// Curated ATS-safe font list (ROADMAP §16.5) — case-insensitive match.
@@ -649,25 +669,65 @@ fn check_style_safety_core(style_json: Option<String>) -> Vec<StyleNote> {
         .unwrap_or_default();
     let mut notes = Vec::new();
 
-    if !ATS_SAFE_FONTS.contains(&style.font_family.trim().to_lowercase().as_str()) {
-        notes.push(StyleNote {
-            kind: "font_ats_risk".to_string(),
-            detail: style.font_family.clone(),
-        });
+    push_font_size_color_notes(
+        &mut notes,
+        &style.font_family,
+        style.font_size_pt,
+        &style.accent_color_hex,
+    );
+    if let Some(n) = weight_note(style.font_weight) {
+        notes.push(n);
     }
-    if !(9.0..=13.0).contains(&style.font_size_pt) {
-        notes.push(StyleNote {
-            kind: "size_out_of_range".to_string(),
-            detail: format!("{}", style.font_size_pt),
-        });
-    }
-    if is_low_print_contrast(&style.accent_color_hex) {
-        notes.push(StyleNote {
-            kind: "color_readability_risk".to_string(),
-            detail: style.accent_color_hex.clone(),
-        });
+    for o in style.section_styles.values() {
+        let font = o.font_family.as_deref().unwrap_or(&style.font_family);
+        let size = o.font_size_pt.unwrap_or(style.font_size_pt);
+        let color = o.color_hex.as_deref().unwrap_or(&style.accent_color_hex);
+        push_font_size_color_notes(&mut notes, font, size, color);
+        if let Some(n) = weight_note(o.font_weight.unwrap_or(style.font_weight)) {
+            notes.push(n);
+        }
     }
     notes
+}
+
+/// Shared ATS/size/colour checks, run once for the global style and once per
+/// per-section override (with the override's effective, fallback-resolved
+/// values) so both paths stay in lockstep.
+fn push_font_size_color_notes(notes: &mut Vec<StyleNote>, font: &str, size: f64, color: &str) {
+    if !ATS_SAFE_FONTS.contains(&font.trim().to_lowercase().as_str()) {
+        notes.push(StyleNote {
+            kind: "font_ats_risk".to_string(),
+            detail: font.to_string(),
+        });
+    }
+    if !(9.0..=13.0).contains(&size) {
+        notes.push(StyleNote {
+            kind: "size_out_of_range".to_string(),
+            detail: format!("{size}"),
+        });
+    }
+    if is_low_print_contrast(color) {
+        notes.push(StyleNote {
+            kind: "color_readability_risk".to_string(),
+            detail: color.to_string(),
+        });
+    }
+}
+
+/// Curated fonts carry no per-weight metadata, so this note is a conservative,
+/// truthful heuristic rather than a lookup: Light (300) is not reliably
+/// shipped by the common ATS core fonts (Calibri, Arial, Times New Roman,
+/// Georgia, Verdana), so only 300 is flagged. 400/600/700 are treated as
+/// universally available and never flagged.
+fn weight_note(weight: i64) -> Option<StyleNote> {
+    if weight == 300 {
+        Some(StyleNote {
+            kind: "weight_unavailable_risk".to_string(),
+            detail: "300".to_string(),
+        })
+    } else {
+        None
+    }
 }
 
 /// Flags an accent colour too light to stay legible once printed in
@@ -1352,6 +1412,29 @@ mod tests {
         assert!(check_style_safety_core(None).is_empty());
         let safe = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333"}"##;
         assert!(check_style_safety_core(Some(safe.to_string())).is_empty());
+    }
+
+    #[test]
+    fn check_style_safety_flags_bad_per_section_override() {
+        let json = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333","fontWeight":400,
+            "sectionStyles":{"summary":{"fontSizePt":20.0,"colorHex":"#eeeeee"}}}"##;
+        let notes = check_style_safety_core(Some(json.to_string()));
+        assert!(notes.iter().any(|n| n.kind == "size_out_of_range"));
+        assert!(notes.iter().any(|n| n.kind == "color_readability_risk"));
+    }
+
+    #[test]
+    fn check_style_safety_flags_light_weight() {
+        let json = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333","fontWeight":300}"##;
+        let notes = check_style_safety_core(Some(json.to_string()));
+        assert!(notes.iter().any(|n| n.kind == "weight_unavailable_risk"));
+    }
+
+    #[test]
+    fn check_style_safety_quiet_on_safe_per_section() {
+        let json = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333","fontWeight":700,
+            "sectionStyles":{"skills":{"fontFamily":"Arial","fontWeight":600}}}"##;
+        assert!(check_style_safety_core(Some(json.to_string())).is_empty());
     }
 
     #[test]

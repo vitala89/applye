@@ -144,6 +144,15 @@ export interface CoverLetterContent {
 
 export type DocumentContent = CvContent | CoverLetterContent;
 
+export type CvFontWeight = 300 | 400 | 600 | 700; // Light / Normal / Semibold / Bold
+
+export interface CvSectionStyle {
+  fontFamily?: string;
+  fontSizePt?: number;
+  colorHex?: string;
+  fontWeight?: CvFontWeight;
+}
+
 /** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
  * Deliberately small: font, size, one accent colour. Layout/order lives in
  * `CvTemplate` instead. Safe default: Calibri 11pt, dark-grey (#333333). */
@@ -151,12 +160,15 @@ export interface CvStyle {
   fontFamily: string;
   fontSizePt: number;
   accentColorHex: string;
+  fontWeight: CvFontWeight;
+  sectionStyles?: Partial<Record<CvSectionKey, CvSectionStyle>>;
 }
 
 export const CV_STYLE_DEFAULT: CvStyle = {
   fontFamily: 'Calibri',
   fontSizePt: 11,
   accentColorHex: '#333333',
+  fontWeight: 400,
 };
 
 /** Curated ATS-safe font list (ROADMAP §16.5), mirrors the Rust
@@ -177,7 +189,11 @@ export const CV_ATS_SAFE_FONTS = [
 
 /** One ATS/readability note from `check_style_safety` — `kind` selects the
  * (translated) message; `detail` is the value to interpolate. */
-export type StyleNoteKind = 'font_ats_risk' | 'size_out_of_range' | 'color_readability_risk';
+export type StyleNoteKind =
+  | 'font_ats_risk'
+  | 'size_out_of_range'
+  | 'color_readability_risk'
+  | 'weight_unavailable_risk';
 
 export interface StyleNote {
   kind: StyleNoteKind;

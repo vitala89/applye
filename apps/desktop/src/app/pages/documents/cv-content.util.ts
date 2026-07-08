@@ -236,7 +236,7 @@ function closeOpenStructures(s: string): string | null {
     }
   }
   let out = s.replace(/\s+$/, '');
-  if (/[,:]$/.test(out)) return null; // dangling separator — caller trims further
+  if (!inStr && /[,:]$/.test(out)) return null; // dangling separator outside a string
   if (inStr) out += '"';
   for (let i = stack.length - 1; i >= 0; i--) out += stack[i];
   return out;

@@ -352,6 +352,23 @@ describe('repairTruncatedJson', () => {
   it('returns null when there is no JSON object at all', () => {
     expect(repairTruncatedJson('totally not json')).toBeNull();
   });
+  it('repairTruncatedJson keeps a colon inside a truncated string value', () => {
+    // string value cut off mid-word after a colon — the ":" is inside the string, not a dangling separator
+    const raw = '{"summary":"Led migration: scale';
+    const repaired = repairTruncatedJson(raw);
+    expect(repaired).not.toBeNull();
+    const obj = JSON.parse(repaired as string);
+    expect(obj.summary).toBe('Led migration: scale');
+  });
+  it('repairTruncatedJson keeps a trailing colon truncated inside a string value', () => {
+    // truncation lands exactly on the ":" while still inside the open string —
+    // the dangling-separator guard must not fire here, or the ":" is dropped
+    const raw = '{"summary":"Led migration:';
+    const repaired = repairTruncatedJson(raw);
+    expect(repaired).not.toBeNull();
+    const obj = JSON.parse(repaired as string);
+    expect(obj.summary).toBe('Led migration:');
+  });
 });
 
 describe('parseCvSkillResponse repair fallback', () => {

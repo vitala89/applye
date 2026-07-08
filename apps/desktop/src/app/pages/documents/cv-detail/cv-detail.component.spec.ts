@@ -3,7 +3,16 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
-import { CvDetailComponent } from './cv-detail.component';
+import { CvDetailComponent, mergePersonalField } from './cv-detail.component';
+
+describe('mergePersonalField', () => {
+  it('ignores empty/whitespace, keeps current', () => {
+    expect(mergePersonalField('', 'Vitalii')).toBe('Vitalii');
+    expect(mergePersonalField('   ', 'Vitalii')).toBe('Vitalii');
+    expect(mergePersonalField(undefined, 'Vitalii')).toBe('Vitalii');
+    expect(mergePersonalField('New', 'Vitalii')).toBe('New');
+  });
+});
 
 describe('CvDetailComponent per-section style', () => {
   let component: CvDetailComponent;

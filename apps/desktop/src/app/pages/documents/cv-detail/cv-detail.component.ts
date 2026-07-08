@@ -44,6 +44,13 @@ import {
   sectionLabelKey,
 } from '../cv-content.util';
 
+/** Merges an incoming profile field into the current personal-details value,
+ * ignoring empty/whitespace-only incoming values so a blank field from the
+ * model never overwrites an existing value. */
+export function mergePersonalField(incoming: string | undefined, current: string): string {
+  return incoming && incoming.trim() ? incoming : current;
+}
+
 @Component({
   selector: 'app-cv-detail',
   standalone: true,
@@ -439,13 +446,13 @@ export class CvDetailComponent {
       });
       const parsed = parseCvSkillResponse(res.text);
       const p = parsed.personalDetails;
-      personal.fullName = p.fullName ?? personal.fullName;
-      personal.title = p.title ?? personal.title;
-      personal.email = p.email ?? personal.email;
-      personal.phone = p.phone ?? personal.phone;
-      personal.address = p.address ?? personal.address;
-      personal.website = p.website ?? personal.website;
-      personal.linkedin = p.linkedin ?? personal.linkedin;
+      personal.fullName = mergePersonalField(p.fullName, personal.fullName);
+      personal.title = mergePersonalField(p.title, personal.title);
+      personal.email = mergePersonalField(p.email, personal.email);
+      personal.phone = mergePersonalField(p.phone, personal.phone);
+      personal.address = mergePersonalField(p.address, personal.address);
+      personal.website = mergePersonalField(p.website, personal.website);
+      personal.linkedin = mergePersonalField(p.linkedin, personal.linkedin);
       this.sections.set([...this.sections()]);
     } catch (e) {
       this.toast.error(String(e));

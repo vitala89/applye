@@ -331,6 +331,7 @@ export class CvDetailComponent {
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
+        maxTokens: 8192,
       });
       const parsed = parseCvSkillResponse(res.text);
       const updated = mergeRegeneratedSection(

@@ -17,7 +17,11 @@ const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
 // Verified against api-docs.deepseek.com (2026-06): OpenAI-compatible base.
 const DEEPSEEK_URL: &str = "https://api.deepseek.com/chat/completions";
-const MAX_TOKENS: u32 = 2048;
+const DEFAULT_MAX_TOKENS: u32 = 8192;
+
+fn resolve_max_tokens(req: &AiRequest) -> u32 {
+    req.max_tokens.unwrap_or(DEFAULT_MAX_TOKENS)
+}
 
 pub async fn run(req: &AiRequest, api_key: &str) -> Result<AiResponse, String> {
     match req.provider.as_str() {
@@ -35,7 +39,7 @@ async fn anthropic_run(req: &AiRequest, api_key: &str) -> Result<AiResponse, Str
     // Stable prefix in `system` (cacheable); dynamic input in the user turn.
     let body = json!({
         "model": req.model,
-        "max_tokens": MAX_TOKENS,
+        "max_tokens": resolve_max_tokens(req),
         "system": [{
             "type": "text",
             "text": req.system_prompt,
@@ -100,7 +104,7 @@ async fn openai_compatible_run(
 ) -> Result<AiResponse, String> {
     let body = json!({
         "model": req.model,
-        "max_tokens": MAX_TOKENS,
+        "max_tokens": resolve_max_tokens(req),
         "messages": [
             { "role": "system", "content": req.system_prompt },
             { "role": "user", "content": req.user_prompt },
@@ -162,4 +166,32 @@ fn error_message(val: &Value) -> String {
         .and_then(Value::as_str)
         .unwrap_or("unknown error")
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ai::{AiMode, AiRequest};
+
+    fn req(max: Option<u32>) -> AiRequest {
+        AiRequest {
+            mode: AiMode::Api,
+            provider: "claude".into(),
+            model: "m".into(),
+            system_prompt: "s".into(),
+            user_prompt: "u".into(),
+            language: None,
+            max_tokens: max,
+        }
+    }
+
+    #[test]
+    fn default_cap_is_8192_when_unset() {
+        assert_eq!(resolve_max_tokens(&req(None)), 8192);
+    }
+
+    #[test]
+    fn cap_honors_explicit_override() {
+        assert_eq!(resolve_max_tokens(&req(Some(4096))), 4096);
+    }
 }

@@ -28,6 +28,29 @@ describe('cvToProfileMarkdown', () => {
   });
 });
 
+describe('cvToProfileMarkdown identity fields', () => {
+  it('emits title, website and linkedin when present', () => {
+    const md = cvToProfileMarkdown({
+      personalDetails: {
+        fullName: 'Vitalii Kasap',
+        title: 'Senior Frontend Software Engineer',
+        email: 'v@x.io',
+        phone: '+49',
+        address: 'Nuremberg',
+        website: 'vitaliikasap.com',
+        linkedin: 'linkedin.com/in/vitaliikasap',
+      },
+      summary: 'Engineer.',
+      experience: [],
+      skills: [],
+    });
+    expect(md).toContain('# Vitalii Kasap');
+    expect(md).toContain('Senior Frontend Software Engineer');
+    expect(md).toContain('vitaliikasap.com');
+    expect(md).toContain('linkedin.com/in/vitaliikasap');
+  });
+});
+
 describe('parseArchetypesSkillResponse', () => {
   it('parses archetypes and comp range from JSON', () => {
     const r = parseArchetypesSkillResponse(

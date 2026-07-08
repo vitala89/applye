@@ -601,6 +601,7 @@ const en: TranslationMap = {
     cv_generate_busy: 'Generating…',
     cv_generate_confirm_btn: 'Generate',
     cv_generate_no_profile: 'Add a profile first — there is no content to build a CV from yet.',
+    cv_pull_from_profile: 'Pull from profile',
     cv_field_label: 'Label',
     cv_field_job: 'Target Job (Optional)',
     cv_field_region: 'Region',
@@ -1505,6 +1506,7 @@ const de: TranslationMap = {
     cv_generate_confirm_btn: 'Erstellen',
     cv_generate_no_profile:
       'Lege zuerst ein Profil an — es gibt noch keinen Inhalt für einen Lebenslauf.',
+    cv_pull_from_profile: 'Aus Profil übernehmen',
     cv_field_label: 'Bezeichnung',
     cv_field_job: 'Zieljob (Optional)',
     cv_field_region: 'Region',

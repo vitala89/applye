@@ -333,6 +333,18 @@
 
             @switch (section.key) {
               @case ('personal_details') {
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  [disabled]="pullingProfile()"
+                  (click)="pullFromProfile()"
+                >
+                  {{
+                    pullingProfile() ? t()('common.loading') : t()('documents.cv_pull_from_profile')
+                  }}
+                </button>
                 <div class="cvdetail__grid">
                   <input
                     type="text"

@@ -92,6 +92,7 @@ export class CvDetailComponent {
   readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingKey = signal<CvSectionKey | null>(null);
+  readonly pullingProfile = signal(false);
 
   readonly atsNoteKeys = computed(() =>
     cvFieldAtsNoteKeys(
@@ -345,6 +346,49 @@ export class CvDetailComponent {
       this.toast.error(String(e));
     } finally {
       this.regeneratingKey.set(null);
+    }
+  }
+
+  async pullFromProfile(): Promise<void> {
+    if (this.pullingProfile()) return;
+    const personal = this.personalDetailsSection();
+    if (!personal) return;
+    this.pullingProfile.set(true);
+    try {
+      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
+      const language = this.doc()?.language ?? settings.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('cv-generate-baseline', {
+        profile_md: profile.fullMd,
+        scoring_json: profile.scoringJson ?? '{}',
+        region_tag: this.regionTag(),
+        archetype_tag: this.doc()?.archetypeTag ?? 'generalist',
+        language,
+        section: 'personalDetails',
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.defaultModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+        maxTokens: 8192,
+      });
+      const parsed = parseCvSkillResponse(res.text);
+      const p = parsed.personalDetails;
+      personal.fullName = p.fullName ?? personal.fullName;
+      personal.title = p.title ?? personal.title;
+      personal.email = p.email ?? personal.email;
+      personal.phone = p.phone ?? personal.phone;
+      personal.address = p.address ?? personal.address;
+      personal.website = p.website ?? personal.website;
+      personal.linkedin = p.linkedin ?? personal.linkedin;
+      this.sections.set([...this.sections()]);
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.pullingProfile.set(false);
     }
   }
 

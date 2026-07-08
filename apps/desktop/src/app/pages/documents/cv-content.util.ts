@@ -2,12 +2,14 @@ import {
   CvContent,
   CvEducationEntry,
   CvExperienceEntry,
+  CvFontWeight,
   CvParsedContent,
   CvPersonalDetailsSection,
   CvSection,
   CvSectionKey,
   CvSkillGroup,
   CvSkillsSection,
+  CvStyle,
   CvTemplate,
 } from '@applye/core';
 
@@ -498,6 +500,19 @@ export function buildContactLine(
   ]
     .filter((v): v is string => !!v && v.trim().length > 0)
     .join(' | ');
+}
+
+export function effectiveSectionStyle(
+  style: CvStyle,
+  key: CvSectionKey,
+): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+  const o = style.sectionStyles?.[key] ?? {};
+  return {
+    fontFamily: o.fontFamily ?? style.fontFamily,
+    fontSizePt: o.fontSizePt ?? style.fontSizePt,
+    fontWeight: o.fontWeight ?? style.fontWeight,
+    colorHex: o.colorHex ?? style.accentColorHex,
+  };
 }
 
 /** Blank rows for the "add entry" affordance in the CV editor. */

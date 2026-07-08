@@ -10,10 +10,12 @@ import {
   buildContactLine,
   buildCvContent,
   cvContentToMd,
+  effectiveSectionStyle,
   normalizeCvContent,
   parseCvSkillResponse,
   repairTruncatedJson,
 } from './cv-content.util';
+import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
 
 describe('normalizeCvContent', () => {
   it('migrates a legacy items[] skills section into a single group', () => {
@@ -402,5 +404,44 @@ describe('cv-import output → content', () => {
     expect(pd['fullName']).toBe('VITALII KASAP');
     expect(pd['website']).toBe('vitaliikasap.com');
     expect(pd['linkedin']).toBe('linkedin.com/in/vitaliikasap');
+  });
+});
+
+describe('effectiveSectionStyle', () => {
+  const base: CvStyle = { ...CV_STYLE_DEFAULT }; // fontFamily Calibri, fontSizePt 11, accentColorHex #333333, fontWeight 400
+
+  it('inherits global when no override', () => {
+    expect(effectiveSectionStyle(base, 'summary')).toEqual({
+      fontFamily: 'Calibri',
+      fontSizePt: 11,
+      fontWeight: 400,
+      colorHex: '#333333',
+    });
+  });
+
+  it('applies per-field override, inherits the rest', () => {
+    const s: CvStyle = {
+      ...base,
+      sectionStyles: { experience: { fontSizePt: 12, fontWeight: 700 } },
+    };
+    expect(effectiveSectionStyle(s, 'experience')).toEqual({
+      fontFamily: 'Calibri',
+      fontSizePt: 12,
+      fontWeight: 700,
+      colorHex: '#333333',
+    });
+  });
+
+  it('colorHex falls back to accent, or uses override', () => {
+    expect(effectiveSectionStyle(base, 'skills').colorHex).toBe('#333333');
+    const s: CvStyle = { ...base, sectionStyles: { skills: { colorHex: '#0a5' } } };
+    expect(effectiveSectionStyle(s, 'skills').colorHex).toBe('#0a5');
+  });
+
+  it('legacy style_json (no fontWeight) defaults to 400 after CV_STYLE_DEFAULT merge', () => {
+    const legacy = { fontFamily: 'Arial', fontSizePt: 10, accentColorHex: '#111111' };
+    const merged: CvStyle = { ...CV_STYLE_DEFAULT, ...legacy };
+    expect(effectiveSectionStyle(merged, 'summary').fontWeight).toBe(400);
+    expect(effectiveSectionStyle(merged, 'summary').fontFamily).toBe('Arial');
   });
 });

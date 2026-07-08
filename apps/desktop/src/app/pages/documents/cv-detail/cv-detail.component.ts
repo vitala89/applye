@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -16,6 +17,7 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
+  CvSectionStyle,
   CvSkillGroup,
   CvStyle,
   CvTemplate,
@@ -33,6 +35,7 @@ import {
   blankExperienceEntry,
   buildContactLine,
   cvFieldAtsNoteKeys,
+  effectiveSectionStyle,
   mergeRegeneratedSection,
   normalizeCvContent,
   orderedVisibleSections,
@@ -45,7 +48,15 @@ import {
   selector: 'app-cv-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, ButtonDirective, CdkDropList, CdkDrag],
+  imports: [
+    FormsModule,
+    LucideAngularModule,
+    ButtonDirective,
+    CdkDropList,
+    CdkDrag,
+    NgStyle,
+    NgTemplateOutlet,
+  ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
 })
@@ -133,6 +144,56 @@ export class CvDetailComponent {
 
   private async refreshStyleNotes(): Promise<void> {
     this.styleNotes.set(await this.db.checkStyleSafety(JSON.stringify(this.style())));
+  }
+
+  /** Which section's "Style" popover is open, if any — only one at a time. */
+  readonly openStyleKey = signal<CvSectionKey | null>(null);
+
+  /** Effective font/size/weight/colour for a section — its own override
+   * merged over the document-wide style (Task 1's `effectiveSectionStyle`). */
+  effStyle(key: CvSectionKey) {
+    return effectiveSectionStyle(this.style(), key);
+  }
+
+  /** Bindable style object for a section wrapper's font-family/size/weight,
+   * so preview templates use a single `[ngStyle]` instead of three
+   * `[style.*]` bindings per section. */
+  sectionCss(key: CvSectionKey): Record<string, string> {
+    const s = this.effStyle(key);
+    return {
+      'font-family': s.fontFamily,
+      'font-size': `${s.fontSizePt}pt`,
+      'font-weight': String(s.fontWeight),
+    };
+  }
+
+  toggleStylePopover(key: CvSectionKey): void {
+    this.openStyleKey.set(this.openStyleKey() === key ? null : key);
+  }
+
+  /** The section's own style override, if any — used by the popover template
+   * (`stylePopover`), which is parameterized by key via `ngTemplateOutlet`
+   * and so can't index `sectionStyles` directly without losing type safety. */
+  sectionOverride(key: CvSectionKey): CvSectionStyle | undefined {
+    return this.style().sectionStyles?.[key];
+  }
+
+  setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
+    const current = this.style();
+    const sectionStyles = { ...(current.sectionStyles ?? {}) };
+    sectionStyles[key] = { ...(sectionStyles[key] ?? {}), ...patch };
+    this.style.set({ ...current, sectionStyles });
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  resetSectionStyle(key: CvSectionKey): void {
+    const current = this.style();
+    const sectionStyles = { ...(current.sectionStyles ?? {}) };
+    delete sectionStyles[key];
+    this.style.set({ ...current, sectionStyles });
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
   readonly previewMode = signal(false);

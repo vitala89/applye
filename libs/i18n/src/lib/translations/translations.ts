@@ -679,6 +679,9 @@ const en: TranslationMap = {
     cv_style_weight_600: 'Semibold',
     cv_style_weight_700: 'Bold',
     cv_style_note_weight: 'This weight may not be available for the chosen font.',
+    cv_section_style: 'Style',
+    cv_section_style_inherit: 'Inherit',
+    cv_section_style_reset: 'Reset to common',
   },
   interview: {
     title: 'Interview Prep',
@@ -1591,6 +1594,9 @@ const de: TranslationMap = {
     cv_style_weight_600: 'Halbfett',
     cv_style_weight_700: 'Fett',
     cv_style_note_weight: 'Diese Schriftstärke ist für die gewählte Schrift evtl. nicht verfügbar.',
+    cv_section_style: 'Stil',
+    cv_section_style_inherit: 'Erben',
+    cv_section_style_reset: 'Auf gemeinsam zurücksetzen',
   },
   interview: {
     title: 'Interview-Vorbereitung',

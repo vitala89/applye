@@ -215,25 +215,33 @@
             @for (section of previewSections(); track section.key) {
               @switch (section.key) {
                 @case ('personal_details') {
-                  <h2 class="cvpreview__name" [style.color]="style().accentColorHex">
-                    {{ $any(section).fullName || t()('documents.cv_untitled') }}
-                  </h2>
-                  @if ($any(section).title) {
-                    <p class="cvpreview__title">{{ $any(section).title }}</p>
-                  }
-                  <p class="cvpreview__contact">
-                    {{
-                      buildContactLine($any(section), {
-                        includeBirthdate: includeBirthdate(),
-                        includeMaritalStatus: includeMaritalStatus(),
-                      })
-                    }}
-                  </p>
+                  <div [ngStyle]="sectionCss('personal_details')">
+                    <h2
+                      class="cvpreview__name"
+                      [style.color]="effStyle('personal_details').colorHex"
+                    >
+                      {{ $any(section).fullName || t()('documents.cv_untitled') }}
+                    </h2>
+                    @if ($any(section).title) {
+                      <p class="cvpreview__title">{{ $any(section).title }}</p>
+                    }
+                    <p class="cvpreview__contact">
+                      {{
+                        buildContactLine($any(section), {
+                          includeBirthdate: includeBirthdate(),
+                          includeMaritalStatus: includeMaritalStatus(),
+                        })
+                      }}
+                    </p>
+                  </div>
                 }
                 @case ('summary') {
                   @if ($any(section).text) {
-                    <div class="cvpreview__section">
-                      <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('summary')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('summary').colorHex"
+                      >
                         {{ t()(sectionLabelKey(section.key)) }}
                       </h3>
                       <p class="cvpreview__summary">{{ $any(section).text }}</p>
@@ -242,8 +250,11 @@
                 }
                 @case ('skills') {
                   @if ($any(section).groups.length) {
-                    <div class="cvpreview__section">
-                      <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('skills')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('skills').colorHex"
+                      >
                         {{ t()(sectionLabelKey(section.key)) }}
                       </h3>
                       @for (group of $any(section).groups; track $index) {
@@ -258,8 +269,11 @@
                 }
                 @case ('experience') {
                   @if ($any(section).entries.length) {
-                    <div class="cvpreview__section">
-                      <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('experience')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('experience').colorHex"
+                      >
                         {{ t()(sectionLabelKey(section.key)) }}
                       </h3>
                       @for (entry of $any(section).entries; track $index) {
@@ -297,8 +311,11 @@
                 }
                 @case ('education') {
                   @if ($any(section).entries.length) {
-                    <div class="cvpreview__section">
-                      <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('education')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('education').colorHex"
+                      >
                         {{ t()(sectionLabelKey(section.key)) }}
                       </h3>
                       @for (entry of $any(section).entries; track $index) {
@@ -319,8 +336,11 @@
                 }
                 @case ('languages') {
                   @if ($any(section).items.length) {
-                    <div class="cvpreview__section">
-                      <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('languages')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('languages').colorHex"
+                      >
                         {{ t()(sectionLabelKey(section.key)) }}
                       </h3>
                       <p class="cvpreview__languages">
@@ -347,23 +367,40 @@
                   <span class="cvdetail__section-title">{{
                     t()(sectionLabelKey(section.key))
                   }}</span>
-                  @if (regeneratableKeys.includes(section.key)) {
-                    <button
-                      class="icon-btn"
-                      type="button"
-                      [disabled]="!!regeneratingKey()"
-                      [attr.aria-label]="t()('documents.cv_regenerate_action')"
-                      (click)="regenerateSection(section.key)"
-                    >
-                      <lucide-icon
-                        [img]="icons.regenerate"
-                        [size]="14"
-                        aria-hidden="true"
-                        [class.spinning]="regeneratingKey() === section.key"
-                      />
-                    </button>
-                  }
+                  <div class="cvdetail__section-head-actions">
+                    @if (section.key !== 'photo') {
+                      <button
+                        type="button"
+                        class="cvdetail__style-btn"
+                        (click)="toggleStylePopover(section.key)"
+                      >
+                        {{ t()('documents.cv_section_style') }}
+                      </button>
+                    }
+                    @if (regeneratableKeys.includes(section.key)) {
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [disabled]="!!regeneratingKey()"
+                        [attr.aria-label]="t()('documents.cv_regenerate_action')"
+                        (click)="regenerateSection(section.key)"
+                      >
+                        <lucide-icon
+                          [img]="icons.regenerate"
+                          [size]="14"
+                          aria-hidden="true"
+                          [class.spinning]="regeneratingKey() === section.key"
+                        />
+                      </button>
+                    }
+                  </div>
                 </div>
+                @if (openStyleKey() === section.key) {
+                  <ng-container
+                    [ngTemplateOutlet]="stylePopover"
+                    [ngTemplateOutletContext]="{ $implicit: section.key }"
+                  ></ng-container>
+                }
 
                 @switch (section.key) {
                   @case ('personal_details') {
@@ -606,6 +643,61 @@
             }
           </div>
         </div>
+
+        <ng-template #stylePopover let-key>
+          <div class="cvdetail__style-pop">
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.fontFamily ?? ''"
+                (ngModelChange)="setSectionStyle(key, { fontFamily: $event || undefined })"
+              >
+                <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                @for (font of atsSafeFonts; track font) {
+                  <option [value]="font">{{ font }}</option>
+                }
+              </select>
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+              <input
+                type="number"
+                min="8"
+                max="14"
+                step="0.5"
+                [ngModel]="sectionOverride(key)?.fontSizePt ?? null"
+                [placeholder]="style().fontSizePt"
+                (ngModelChange)="setSectionStyle(key, { fontSizePt: $event ? +$event : undefined })"
+              />
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+              <input
+                type="color"
+                [ngModel]="sectionOverride(key)?.colorHex ?? style().accentColorHex"
+                (ngModelChange)="setSectionStyle(key, { colorHex: $event })"
+              />
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.fontWeight ?? null"
+                (ngModelChange)="
+                  setSectionStyle(key, { fontWeight: $event ? $any(+$event) : undefined })
+                "
+              >
+                <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+                <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+              </select>
+            </label>
+            <button type="button" class="cvdetail__style-reset" (click)="resetSectionStyle(key)">
+              {{ t()('documents.cv_section_style_reset') }}
+            </button>
+          </div>
+        </ng-template>
       }
     </div>
   </div>

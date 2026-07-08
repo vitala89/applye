@@ -463,6 +463,36 @@
   text-align: center;
   padding: var(--space-8);
 }
+.cvpreview__name {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1.6rem;
+  margin: 0;
+}
+.cvpreview__title {
+  font-weight: 600;
+  margin: 0.1rem 0 0.4rem;
+}
+.cvpreview__contact {
+  margin: 0 0 0.8rem;
+  font-size: 0.85em;
+}
+.cvpreview__skill-row {
+  margin: 0.15rem 0;
+}
+.cvpreview__entry-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.cvpreview__entry-company {
+  font-weight: 700;
+}
+.cvpreview__entry-meta,
+.cvpreview__entry-dates {
+  white-space: nowrap;
+  font-size: 0.85em;
+}
 
 .spinning {
   animation: cv-spin 0.8s linear infinite;

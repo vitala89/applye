@@ -177,48 +177,72 @@
     }
 
     @if (previewMode()) {
-      <div class="cvpreview">
+      <div
+        class="cvpreview"
+        [style.font-family]="style().fontFamily"
+        [style.font-size.pt]="style().fontSizePt"
+      >
         @if (!previewSections().length) {
           <p class="cvpreview__empty">{{ t()('documents.cv_preview_empty') }}</p>
         }
         @for (section of previewSections(); track section.key) {
           @switch (section.key) {
             @case ('personal_details') {
-              <h2 class="cvpreview__name">
+              <h2 class="cvpreview__name" [style.color]="style().accentColorHex">
                 {{ $any(section).fullName || t()('documents.cv_untitled') }}
               </h2>
+              @if ($any(section).title) {
+                <p class="cvpreview__title">{{ $any(section).title }}</p>
+              }
               <p class="cvpreview__contact">
                 {{
-                  [
-                    $any(section).email,
-                    $any(section).phone,
-                    $any(section).address,
-                    includeBirthdate() ? $any(section).birthDate : null,
-                    includeMaritalStatus() ? $any(section).maritalStatus : null,
-                  ]
-                    .filter((v) => v)
-                    .join(' · ')
+                  buildContactLine($any(section), {
+                    includeBirthdate: includeBirthdate(),
+                    includeMaritalStatus: includeMaritalStatus(),
+                  })
                 }}
               </p>
             }
             @case ('summary') {
               @if ($any(section).text) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   <p class="cvpreview__summary">{{ $any(section).text }}</p>
+                </div>
+              }
+            }
+            @case ('skills') {
+              @if ($any(section).groups.length) {
+                <div class="cvpreview__section">
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
+                  @for (group of $any(section).groups; track $index) {
+                    @if (group.values.length) {
+                      <p class="cvpreview__skill-row">
+                        <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
+                      </p>
+                    }
+                  }
                 </div>
               }
             }
             @case ('experience') {
               @if ($any(section).entries.length) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   @for (entry of $any(section).entries; track $index) {
                     <div class="cvpreview__entry">
                       <div class="cvpreview__entry-head">
-                        <span class="cvpreview__entry-role"
-                          >{{ entry.role }}, {{ entry.company }}</span
-                        >
+                        <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                        <span class="cvpreview__entry-meta">{{ entry.location }}</span>
+                      </div>
+                      <div class="cvpreview__entry-head">
+                        <span class="cvpreview__entry-role">{{ entry.role }}</span>
                         <span class="cvpreview__entry-dates">
                           {{ entry.startDate }} – {{ entry.endDate || t()('documents.cv_present') }}
                         </span>
@@ -226,7 +250,15 @@
                       @if (entry.bullets.length) {
                         <ul>
                           @for (bullet of entry.bullets; track $index) {
-                            <li>{{ bullet }}</li>
+                            <li>
+                              @for (run of runs(bullet); track $index) {
+                                @if (run.bold) {
+                                  <strong>{{ run.text }}</strong>
+                                } @else {
+                                  {{ run.text }}
+                                }
+                              }
+                            </li>
                           }
                         </ul>
                       }
@@ -238,7 +270,9 @@
             @case ('education') {
               @if ($any(section).entries.length) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   @for (entry of $any(section).entries; track $index) {
                     <div class="cvpreview__entry">
                       <div class="cvpreview__entry-head">
@@ -254,23 +288,17 @@
                 </div>
               }
             }
-            @case ('skills') {
-              @if ($any(section).items.length) {
-                <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
-                  <p class="cvpreview__skills">{{ $any(section).items.join(', ') }}</p>
-                </div>
-              }
-            }
             @case ('languages') {
               @if ($any(section).items.length) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   <p class="cvpreview__languages">
                     {{
                       $any(section)
-                        .items.map((i) => i.language + ' (' + i.level + ')')
-                        .join(', ')
+                        .items.map((i) => i.language)
+                        .join(' | ')
                     }}
                   </p>
                 </div>

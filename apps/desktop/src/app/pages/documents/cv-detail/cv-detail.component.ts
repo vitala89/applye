@@ -18,17 +18,20 @@ import type {
   CvSectionKey,
   CvStyle,
   CvTemplate,
+  CvTextRun,
   DocumentLibraryItem,
   StyleNote,
 } from '@applye/core';
-import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT } from '@applye/core';
+import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT, parseInlineEmphasis } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import {
+  buildContactLine,
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
+  normalizeCvContent,
   orderedVisibleSections,
   parseCvSkillResponse,
   REGENERATABLE_SECTION_KEYS,
@@ -64,6 +67,11 @@ export class CvDetailComponent {
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
+  protected readonly buildContactLine = buildContactLine;
+
+  runs(text: string): CvTextRun[] {
+    return parseInlineEmphasis(text);
+  }
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -167,7 +175,8 @@ export class CvDetailComponent {
       this.regionTag.set(item.regionTag ?? 'generic');
       this.isDefault.set(item.isDefault);
 
-      const content: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
+      const raw: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
+      const content = normalizeCvContent(raw);
       const ordered = [...content.sections].sort((a, b) => a.order - b.order);
       this.sections.set(ordered);
 

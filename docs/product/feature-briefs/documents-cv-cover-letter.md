@@ -1,6 +1,6 @@
 # Feature Brief: Documents — CV & Cover Letter Library (Step 1)
 
-- **Status**: `in-progress` (1a shipped v0.20.0, PR #51; 1b + 1d shipped v0.21.0, PR #52 — 1d folded into 1b's branch at the user's request, out of the brief's original sequential order; 1c next)
+- **Status**: `shipped` (1a v0.20.0 PR #51; 1b + 1d v0.21.0 PR #52 — 1d folded into 1b's branch at the user's request, out of sequential order; 1c v0.22.0 PR #53. All four sub-phases complete). Extended beyond the original brief by two follow-on efforts on `feat/cv-default-template`: **Phase 1 + Wave A** (default-template ATS layout fix + blocker fixes: guaranteed `personal_details`, add/remove entries, import token-cap fix, profile↔CV field propagation — PR #59) and **Wave B** (per-section style constructor: font/size/colour/weight per section with inheritance + reset-to-common, new weight control, editor shell reconciled to design mock — PR #60). Specs/plans for both in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
 - **Source**: Real-world dogfooding gap (German Agentur für Arbeit requires a local-market
   Lebenslauf/Anschreiben). `FEATURE_INDEX.md` top Planned item.
 - **Roadmap**: §16 (full spec), §12 (DDL), §13 v2 build order #13.

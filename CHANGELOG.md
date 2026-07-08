@@ -10,6 +10,11 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **CV default template, rebuilt.** All built-in region templates (DE-ATS-modern, DE-traditional, US, UK, generic) now guarantee a Personal Details section, matching a reference ATS layout: bold-emphasis parsing, grouped skills, contact-line formatting, and title/website/LinkedIn fields (with a "pull from profile" action). Experience and Education entries and bullets can now be added/removed directly in the editor. Fixed AI-import truncation handling (configurable token cap + JSON repair) so long resumes import cleanly.
+- **CV editor per-section style constructor.** Font, size, colour, and weight can now be set per section (Personal Details, Summary, Experience, Education, Skills, Languages) via an inline "Style" popover, inheriting from the global default with a one-click "reset to common". The global style row gained a font-weight control (Light/Normal/Semibold/Bold) and was restyled to match the design system.
+
 ### Fixed
 
 - CV editor preview mode now fills the whole detail pane and shows only the rendered CV — the region selector, include-photo/birthdate/marital-status toggles, and style controls no longer leak into the preview. Edit mode no longer reserves empty space for a preview column that isn't shown (the two modes never actually render side by side). Added missing spacing between the "Pull from profile" action and the Personal Details fields below it.

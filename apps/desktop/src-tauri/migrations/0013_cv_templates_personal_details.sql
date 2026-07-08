@@ -7,9 +7,8 @@ SET sections_json = '["personal_details","summary","experience","education","ski
 WHERE is_builtin = 1 AND name = 'DE-ATS-modern' AND sections_json NOT LIKE '%personal_details%';
 
 UPDATE cv_templates
-SET sections_json = json_insert(sections_json, '$[#]', 'personal_details')
+SET sections_json = '["personal_details","summary","experience","education","skills"]'
 WHERE is_builtin = 1 AND name IN ('US', 'UK', 'generic') AND sections_json NOT LIKE '%personal_details%';
 
--- The builder forces personal_details first regardless of position, so the
--- json_insert append above is sufficient for US/UK/generic; DE-ATS-modern is
--- set explicitly to keep its canonical order.
+-- All built-in templates now list personal_details first, except
+-- DE-traditional which intentionally keeps photo first.

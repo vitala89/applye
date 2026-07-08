@@ -1048,6 +1048,13 @@ mod tests {
                 "built-in template {name} still lacks personal_details: {sections}"
             );
         }
+        for name in ["US", "UK", "generic", "DE-ATS-modern"] {
+            let (_, sections) = rows.iter().find(|(n, _)| n == name).unwrap();
+            assert!(
+                sections.starts_with("[\"personal_details\""),
+                "built-in template {name} does not have personal_details first: {sections}"
+            );
+        }
         let de_trad = rows.iter().find(|(n, _)| n == "DE-traditional").unwrap();
         assert!(de_trad.1.starts_with("[\"photo\""));
     }

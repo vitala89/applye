@@ -361,3 +361,46 @@ describe('parseCvSkillResponse repair fallback', () => {
     expect(out.personalDetails.address).toBe('Nuremberg');
   });
 });
+
+describe('cv-import output → content', () => {
+  it('parses the enriched import shape into a full CvContent', () => {
+    const sample = JSON.stringify({
+      personalDetails: {
+        fullName: 'VITALII KASAP',
+        title: 'Senior Frontend Software Engineer',
+        email: null,
+        phone: '+49 171 206 4899',
+        address: 'Nuremberg, Germany',
+        website: 'vitaliikasap.com',
+        linkedin: 'linkedin.com/in/vitaliikasap',
+      },
+      summary: 'Senior Frontend Engineer with 5+ years.',
+      experience: [
+        {
+          company: 'Celonis',
+          role: 'Senior FE Engineer',
+          startDate: 'Jan 2026',
+          endDate: 'Jun 2026',
+          location: 'Munich',
+          bullets: ['Led Performance Spectrum to GA'],
+        },
+      ],
+      education: [],
+      skills: ['TypeScript'],
+      skillGroups: [{ label: 'Languages', values: ['TypeScript'] }],
+      languages: [{ language: 'English', level: 'C1' }],
+      lowConfidenceNotes: [],
+    });
+    const content = buildCvContent(
+      parseCvSkillResponse(sample),
+      null as unknown as CvTemplate | null,
+    );
+    const pd = content.sections.find((s) => s.key === 'personal_details') as Record<
+      string,
+      unknown
+    >;
+    expect(pd['fullName']).toBe('VITALII KASAP');
+    expect(pd['website']).toBe('vitaliikasap.com');
+    expect(pd['linkedin']).toBe('linkedin.com/in/vitaliikasap');
+  });
+});

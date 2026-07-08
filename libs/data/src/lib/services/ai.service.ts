@@ -10,6 +10,7 @@ export interface AiRequest {
   systemPrompt: string;
   userPrompt: string;
   language?: string;
+  maxTokens?: number;
 }
 
 export interface AiResponse {

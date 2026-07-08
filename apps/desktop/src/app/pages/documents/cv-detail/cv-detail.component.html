@@ -177,48 +177,72 @@
     }
 
     @if (previewMode()) {
-      <div class="cvpreview">
+      <div
+        class="cvpreview"
+        [style.font-family]="style().fontFamily"
+        [style.font-size.pt]="style().fontSizePt"
+      >
         @if (!previewSections().length) {
           <p class="cvpreview__empty">{{ t()('documents.cv_preview_empty') }}</p>
         }
         @for (section of previewSections(); track section.key) {
           @switch (section.key) {
             @case ('personal_details') {
-              <h2 class="cvpreview__name">
+              <h2 class="cvpreview__name" [style.color]="style().accentColorHex">
                 {{ $any(section).fullName || t()('documents.cv_untitled') }}
               </h2>
+              @if ($any(section).title) {
+                <p class="cvpreview__title">{{ $any(section).title }}</p>
+              }
               <p class="cvpreview__contact">
                 {{
-                  [
-                    $any(section).email,
-                    $any(section).phone,
-                    $any(section).address,
-                    includeBirthdate() ? $any(section).birthDate : null,
-                    includeMaritalStatus() ? $any(section).maritalStatus : null,
-                  ]
-                    .filter((v) => v)
-                    .join(' · ')
+                  buildContactLine($any(section), {
+                    includeBirthdate: includeBirthdate(),
+                    includeMaritalStatus: includeMaritalStatus(),
+                  })
                 }}
               </p>
             }
             @case ('summary') {
               @if ($any(section).text) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   <p class="cvpreview__summary">{{ $any(section).text }}</p>
+                </div>
+              }
+            }
+            @case ('skills') {
+              @if ($any(section).groups.length) {
+                <div class="cvpreview__section">
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
+                  @for (group of $any(section).groups; track $index) {
+                    @if (group.values.length) {
+                      <p class="cvpreview__skill-row">
+                        <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
+                      </p>
+                    }
+                  }
                 </div>
               }
             }
             @case ('experience') {
               @if ($any(section).entries.length) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   @for (entry of $any(section).entries; track $index) {
                     <div class="cvpreview__entry">
                       <div class="cvpreview__entry-head">
-                        <span class="cvpreview__entry-role"
-                          >{{ entry.role }}, {{ entry.company }}</span
-                        >
+                        <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                        <span class="cvpreview__entry-meta">{{ entry.location }}</span>
+                      </div>
+                      <div class="cvpreview__entry-head">
+                        <span class="cvpreview__entry-role">{{ entry.role }}</span>
                         <span class="cvpreview__entry-dates">
                           {{ entry.startDate }} – {{ entry.endDate || t()('documents.cv_present') }}
                         </span>
@@ -226,7 +250,15 @@
                       @if (entry.bullets.length) {
                         <ul>
                           @for (bullet of entry.bullets; track $index) {
-                            <li>{{ bullet }}</li>
+                            <li>
+                              @for (run of runs(bullet); track $index) {
+                                @if (run.bold) {
+                                  <strong>{{ run.text }}</strong>
+                                } @else {
+                                  {{ run.text }}
+                                }
+                              }
+                            </li>
                           }
                         </ul>
                       }
@@ -238,7 +270,9 @@
             @case ('education') {
               @if ($any(section).entries.length) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   @for (entry of $any(section).entries; track $index) {
                     <div class="cvpreview__entry">
                       <div class="cvpreview__entry-head">
@@ -254,23 +288,17 @@
                 </div>
               }
             }
-            @case ('skills') {
-              @if ($any(section).items.length) {
-                <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
-                  <p class="cvpreview__skills">{{ $any(section).items.join(', ') }}</p>
-                </div>
-              }
-            }
             @case ('languages') {
               @if ($any(section).items.length) {
                 <div class="cvpreview__section">
-                  <h3 class="cvpreview__section-title">{{ t()(sectionLabelKey(section.key)) }}</h3>
+                  <h3 class="cvpreview__section-title" [style.color]="style().accentColorHex">
+                    {{ t()(sectionLabelKey(section.key)) }}
+                  </h3>
                   <p class="cvpreview__languages">
                     {{
                       $any(section)
-                        .items.map((i) => i.language + ' (' + i.level + ')')
-                        .join(', ')
+                        .items.map((i) => i.language)
+                        .join(' | ')
                     }}
                   </p>
                 </div>
@@ -305,12 +333,30 @@
 
             @switch (section.key) {
               @case ('personal_details') {
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  [disabled]="pullingProfile()"
+                  (click)="pullFromProfile()"
+                >
+                  {{
+                    pullingProfile() ? t()('common.loading') : t()('documents.cv_pull_from_profile')
+                  }}
+                </button>
                 <div class="cvdetail__grid">
                   <input
                     type="text"
                     [ngModel]="$any(section).fullName"
                     (ngModelChange)="$any(section).fullName = $event"
                     [placeholder]="t()('documents.cv_field_full_name')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).title"
+                    (ngModelChange)="$any(section).title = $event"
+                    [placeholder]="t()('documents.cv_field_title')"
                   />
                   <input
                     type="text"
@@ -329,6 +375,18 @@
                     [ngModel]="$any(section).address"
                     (ngModelChange)="$any(section).address = $event"
                     [placeholder]="t()('documents.cv_field_address')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).website"
+                    (ngModelChange)="$any(section).website = $event"
+                    [placeholder]="t()('documents.cv_field_website')"
+                  />
+                  <input
+                    type="text"
+                    [ngModel]="$any(section).linkedin"
+                    (ngModelChange)="$any(section).linkedin = $event"
+                    [placeholder]="t()('documents.cv_field_linkedin')"
                   />
                   @if (includeBirthdate()) {
                     <input
@@ -358,6 +416,16 @@
               @case ('experience') {
                 @for (entry of $any(section).entries; track $index) {
                   <div class="cvdetail__entry">
+                    <div class="cvdetail__entry-bar">
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [attr.aria-label]="t()('documents.cv_remove_entry')"
+                        (click)="removeEntry($any(section), $index)"
+                      >
+                        ×
+                      </button>
+                    </div>
                     <div class="cvdetail__grid">
                       <input
                         type="text"
@@ -384,55 +452,101 @@
                         [placeholder]="t()('documents.cv_field_end_date')"
                       />
                     </div>
-                    <textarea
-                      [ngModel]="entry.bullets.join('\n')"
-                      (ngModelChange)="entry.bullets = $event.split('\n')"
-                      rows="3"
-                      [placeholder]="t()('documents.cv_field_bullets')"
-                    ></textarea>
+                    @for (bullet of entry.bullets; track $index) {
+                      <div class="cvdetail__bullet-row">
+                        <input
+                          type="text"
+                          [ngModel]="bullet"
+                          (ngModelChange)="entry.bullets[$index] = $event"
+                          [placeholder]="t()('documents.cv_field_bullet')"
+                        />
+                        <button
+                          class="icon-btn"
+                          type="button"
+                          [attr.aria-label]="t()('documents.cv_remove_bullet')"
+                          (click)="removeBullet(entry, $index)"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    }
+                    <button
+                      appButton
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      (click)="addBullet(entry)"
+                    >
+                      {{ t()('documents.cv_add_bullet') }}
+                    </button>
                   </div>
                 }
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  (click)="addEntry($any(section))"
+                >
+                  {{ t()('documents.cv_add_experience') }}
+                </button>
               }
               @case ('education') {
                 @for (entry of $any(section).entries; track $index) {
-                  <div class="cvdetail__grid">
-                    <input
-                      type="text"
-                      [ngModel]="entry.degree"
-                      (ngModelChange)="entry.degree = $event"
-                      [placeholder]="t()('documents.cv_field_degree')"
-                    />
-                    <input
-                      type="text"
-                      [ngModel]="entry.institution"
-                      (ngModelChange)="entry.institution = $event"
-                      [placeholder]="t()('documents.cv_field_institution')"
-                    />
-                    <input
-                      type="text"
-                      [ngModel]="entry.startDate"
-                      (ngModelChange)="entry.startDate = $event"
-                      [placeholder]="t()('documents.cv_field_start_date')"
-                    />
-                    <input
-                      type="text"
-                      [ngModel]="entry.endDate"
-                      (ngModelChange)="entry.endDate = $event"
-                      [placeholder]="t()('documents.cv_field_end_date')"
-                    />
+                  <div class="cvdetail__entry">
+                    <div class="cvdetail__entry-bar">
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [attr.aria-label]="t()('documents.cv_remove_entry')"
+                        (click)="removeEntry($any(section), $index)"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div class="cvdetail__grid">
+                      <input
+                        type="text"
+                        [ngModel]="entry.degree"
+                        (ngModelChange)="entry.degree = $event"
+                        [placeholder]="t()('documents.cv_field_degree')"
+                      />
+                      <input
+                        type="text"
+                        [ngModel]="entry.institution"
+                        (ngModelChange)="entry.institution = $event"
+                        [placeholder]="t()('documents.cv_field_institution')"
+                      />
+                      <input
+                        type="text"
+                        [ngModel]="entry.startDate"
+                        (ngModelChange)="entry.startDate = $event"
+                        [placeholder]="t()('documents.cv_field_start_date')"
+                      />
+                      <input
+                        type="text"
+                        [ngModel]="entry.endDate"
+                        (ngModelChange)="entry.endDate = $event"
+                        [placeholder]="t()('documents.cv_field_end_date')"
+                      />
+                    </div>
                   </div>
                 }
+                <button
+                  appButton
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  (click)="addEntry($any(section))"
+                >
+                  {{ t()('documents.cv_add_education') }}
+                </button>
               }
               @case ('skills') {
                 <textarea
-                  [ngModel]="$any(section).items.join(', ')"
-                  (ngModelChange)="
-                    $any(section).items = $event
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter((s) => s)
-                  "
-                  rows="2"
+                  [ngModel]="skillGroupsToText($any(section).groups)"
+                  (ngModelChange)="onSkillsChange($any(section), $event)"
+                  rows="4"
                   [placeholder]="t()('documents.cv_field_skills_hint')"
                 ></textarea>
               }

@@ -2,9 +2,12 @@
 export interface ParsedCv {
   personalDetails?: {
     fullName?: string | null;
+    title?: string | null;
     email?: string | null;
     phone?: string | null;
     address?: string | null;
+    website?: string | null;
+    linkedin?: string | null;
   } | null;
   summary?: string | null;
   experience?: { company: string; role: string; bullets?: string[] }[] | null;
@@ -15,10 +18,14 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   const out: string[] = [];
   const name = cv.personalDetails?.fullName?.trim();
   if (name) out.push(`# ${name}`);
+  const title = cv.personalDetails?.title?.trim();
+  if (title) out.push(`_${title}_`);
   const contact = [
     cv.personalDetails?.email,
     cv.personalDetails?.phone,
     cv.personalDetails?.address,
+    cv.personalDetails?.website,
+    cv.personalDetails?.linkedin,
   ]
     .filter(Boolean)
     .join(' · ');

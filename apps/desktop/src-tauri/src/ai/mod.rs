@@ -29,6 +29,8 @@ pub struct AiRequest {
     pub user_prompt: String,
     #[serde(default)]
     pub language: Option<String>,
+    #[serde(default)]
+    pub max_tokens: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

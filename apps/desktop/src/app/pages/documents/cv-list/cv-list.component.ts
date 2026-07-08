@@ -229,6 +229,7 @@ export class CvListComponent {
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
+        maxTokens: 8192,
       });
 
       const parsed = parseCvSkillResponse(res.text);
@@ -364,6 +365,7 @@ export class CvListComponent {
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language: this.generateLanguage(),
+        maxTokens: 8192,
       });
 
       const parsed = parseCvSkillResponse(res.text);

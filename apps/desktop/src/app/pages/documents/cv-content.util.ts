@@ -1,4 +1,15 @@
-import { CvContent, CvParsedContent, CvSection, CvSectionKey, CvTemplate } from '@applye/core';
+import {
+  CvContent,
+  CvEducationEntry,
+  CvExperienceEntry,
+  CvParsedContent,
+  CvPersonalDetailsSection,
+  CvSection,
+  CvSectionKey,
+  CvSkillGroup,
+  CvSkillsSection,
+  CvTemplate,
+} from '@applye/core';
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
  * for the seeded built-ins, but keeps the builder total). */
@@ -37,7 +48,12 @@ export function templateSectionOrder(template: CvTemplate | null): CvSectionKey[
  * came from the AI (or the user's own upload). */
 export function buildCvContent(parsed: CvParsedContent, template: CvTemplate | null): CvContent {
   const order = templateSectionOrder(template);
-  const sections: CvSection[] = order.map((key, index) => sectionFor(key, index, parsed, template));
+  // personal_details is identity, not layout — guarantee it regardless of the
+  // template's section list (some built-ins omit it). Force it first.
+  const keys: CvSectionKey[] = order.includes('personal_details')
+    ? order
+    : ['personal_details', ...order];
+  const sections: CvSection[] = keys.map((key, index) => sectionFor(key, index, parsed, template));
   return { sections };
 }
 
@@ -56,9 +72,12 @@ function sectionFor(
         order,
         visible: true,
         fullName: parsed.personalDetails.fullName ?? '',
+        title: parsed.personalDetails.title ?? undefined,
         email: parsed.personalDetails.email ?? undefined,
         phone: parsed.personalDetails.phone ?? undefined,
         address: parsed.personalDetails.address ?? undefined,
+        website: parsed.personalDetails.website ?? undefined,
+        linkedin: parsed.personalDetails.linkedin ?? undefined,
         birthDate: undefined,
         maritalStatus: undefined,
       };
@@ -90,8 +109,14 @@ function sectionFor(
           endDate: e.endDate ?? undefined,
         })),
       };
-    case 'skills':
-      return { key: 'skills', order, visible: true, items: parsed.skills };
+    case 'skills': {
+      const groups: CvSkillGroup[] = parsed.skillGroups?.length
+        ? parsed.skillGroups
+        : parsed.skills.length
+          ? [{ label: 'Skills', values: parsed.skills }]
+          : [];
+      return { key: 'skills', order, visible: true, groups };
+    }
     case 'languages':
       return { key: 'languages', order, visible: true, items: parsed.languages };
   }
@@ -148,11 +173,20 @@ export const REGENERATABLE_SECTION_KEYS: CvSectionKey[] = [
 
 function emptyParsedContent(): CvParsedContent {
   return {
-    personalDetails: { fullName: null, email: null, phone: null, address: null },
+    personalDetails: {
+      fullName: null,
+      title: null,
+      email: null,
+      phone: null,
+      address: null,
+      website: null,
+      linkedin: null,
+    },
     summary: null,
     experience: [],
     education: [],
     skills: [],
+    skillGroups: undefined,
     languages: [],
     lowConfidenceNotes: [],
   };
@@ -177,15 +211,87 @@ export function cleanJsonText(text: string): string {
   return cleaned.trim();
 }
 
+/** Closes any open string and open braces/brackets of `s`, or returns null if
+ * `s` ends on a separator/colon that cannot be closed into valid JSON. */
+function closeOpenStructures(s: string): string | null {
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') inStr = true;
+    else if (c === '{') stack.push('}');
+    else if (c === '[') stack.push(']');
+    else if (c === '}' || c === ']') {
+      if (!stack.length) return null;
+      stack.pop();
+    }
+  }
+  let out = s.replace(/\s+$/, '');
+  if (/[,:]$/.test(out)) return null; // dangling separator — caller trims further
+  if (inStr) out += '"';
+  for (let i = stack.length - 1; i >= 0; i--) out += stack[i];
+  return out;
+}
+
+/** Best-effort recovery of a JSON object from a response truncated mid-value
+ * (an output-token cap cutting the model off). Trims from the end to the
+ * longest prefix that becomes valid once open strings/brackets are closed.
+ * Pure, never throws, bounded to the input length. Returns a parseable JSON
+ * string or null. */
+export function repairTruncatedJson(raw: string): string | null {
+  const start = raw.indexOf('{');
+  if (start < 0) return null;
+  const body = raw.slice(start);
+  try {
+    JSON.parse(body);
+    return body;
+  } catch {
+    // fall through to trim-and-close
+  }
+  for (let end = body.length; end > 0; end--) {
+    const closed = closeOpenStructures(body.slice(0, end));
+    if (closed === null) continue;
+    try {
+      JSON.parse(closed);
+      return closed;
+    } catch {
+      // keep trimming
+    }
+  }
+  return null;
+}
+
+function tryParseParsed(s: string): Partial<CvParsedContent> | null {
+  try {
+    return JSON.parse(s) as Partial<CvParsedContent>;
+  } catch {
+    return null;
+  }
+}
+
 export function parseCvSkillResponse(text: string): CvParsedContent {
   const raw = cleanJsonText(text);
-  let parsed: Partial<CvParsedContent>;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
+  let parsed = tryParseParsed(raw);
+  if (!parsed) {
+    const repaired = repairTruncatedJson(raw);
+    if (repaired) parsed = tryParseParsed(repaired);
+  }
+  if (!parsed) {
     throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
   }
-  return { ...emptyParsedContent(), ...parsed };
+  const base = emptyParsedContent();
+  return {
+    ...base,
+    ...parsed,
+    personalDetails: { ...base.personalDetails, ...(parsed.personalDetails ?? {}) },
+  };
 }
 
 /** Merges a targeted single-section regenerate result into an existing
@@ -245,7 +351,10 @@ export function cvContentToMd(content: CvContent): string {
     if (s.key === 'personal_details') {
       const p = s as Extract<CvSection, { key: 'personal_details' }>;
       parts.push(`# ${p.fullName}`);
-      const contact = [p.email, p.phone, p.address].filter(Boolean).join(' | ');
+      if (p.title) parts.push(`_${p.title}_`);
+      const contact = [p.email, p.phone, p.address, p.website, p.linkedin]
+        .filter(Boolean)
+        .join(' | ');
       if (contact) parts.push(contact);
     } else if (s.key === 'summary') {
       const p = s as Extract<CvSection, { key: 'summary' }>;
@@ -278,8 +387,10 @@ export function cvContentToMd(content: CvContent): string {
       }
     } else if (s.key === 'skills') {
       const p = s as Extract<CvSection, { key: 'skills' }>;
-      if (p.items.length) {
-        parts.push(`## Skills\n${p.items.join(', ')}`);
+      const groups = p.groups.filter((g) => g.values.length);
+      if (groups.length) {
+        parts.push('## Skills');
+        for (const g of groups) parts.push(`**${g.label}:** ${g.values.join(', ')}`);
       }
     } else if (s.key === 'languages') {
       const p = s as Extract<CvSection, { key: 'languages' }>;
@@ -324,7 +435,7 @@ export function markdownToCvContentFallback(markdown: string, fullName = ''): Cv
         key: 'skills',
         order: 4,
         visible: true,
-        items: [],
+        groups: [],
       },
       {
         key: 'languages',
@@ -334,4 +445,66 @@ export function markdownToCvContentFallback(markdown: string, fullName = ''): Cv
       },
     ],
   };
+}
+
+/** Migrates a stored CvContent to the current shape without rewriting content
+ * the user authored. Currently: a legacy `items: string[]` skills section
+ * becomes a single `{ label: 'Skills', values }` group. Idempotent. */
+export function normalizeCvContent(content: CvContent): CvContent {
+  const sections = content.sections.map((section) => {
+    if (section.key !== 'skills') return section;
+    const legacy = section as unknown as {
+      key: 'skills';
+      order: number;
+      visible: boolean;
+      sourceHash?: string;
+      items?: string[];
+      groups?: CvSkillGroup[];
+    };
+    if (legacy.groups) return section;
+    const migrated: CvSkillsSection = {
+      key: 'skills',
+      order: legacy.order,
+      visible: legacy.visible,
+      sourceHash: legacy.sourceHash,
+      groups: [{ label: 'Skills', values: legacy.items ?? [] }],
+    };
+    return migrated;
+  });
+  const hasPersonal = sections.some((s) => s.key === 'personal_details');
+  if (!hasPersonal) {
+    const shifted = sections.map((s) => ({ ...s, order: s.order + 1 }));
+    const personal: CvSection = { key: 'personal_details', order: 0, visible: true, fullName: '' };
+    return { sections: [personal, ...shifted] };
+  }
+  return { sections };
+}
+
+/** Reference-order single-line contact string: location · phone · email ·
+ * website · linkedin, then optionally birthdate/marital. Empty fields drop out
+ * with no dangling ` | `. */
+export function buildContactLine(
+  p: CvPersonalDetailsSection,
+  opts: { includeBirthdate: boolean; includeMaritalStatus: boolean },
+): string {
+  return [
+    p.address,
+    p.phone,
+    p.email,
+    p.website,
+    p.linkedin,
+    opts.includeBirthdate ? p.birthDate : undefined,
+    opts.includeMaritalStatus ? p.maritalStatus : undefined,
+  ]
+    .filter((v): v is string => !!v && v.trim().length > 0)
+    .join(' | ');
+}
+
+/** Blank rows for the "add entry" affordance in the CV editor. */
+export function blankExperienceEntry(): CvExperienceEntry {
+  return { company: '', role: '', startDate: '', endDate: '', location: '', bullets: [''] };
+}
+
+export function blankEducationEntry(): CvEducationEntry {
+  return { institution: '', degree: '', startDate: '', endDate: '' };
 }

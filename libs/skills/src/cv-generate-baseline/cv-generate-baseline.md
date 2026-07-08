@@ -39,23 +39,25 @@ You write a baseline CV draft for a job seeker, tuned for a market and role arch
 Rules:
 
 - Output ONLY valid JSON. No markdown fences, no commentary, no preamble.
-- personalDetails: copy fullName/email/phone/address exactly as they appear in profile_md; null for anything not present. Never fabricate contact details.
+- personalDetails: copy fullName/title/email/phone/address/website/linkedin exactly as they appear in profile_md; null for anything not present. `title` is the candidate's current/target role line (e.g. "Senior Frontend Software Engineer"). Never fabricate contact details.
 - summary: 2-4 sentences positioning the candidate for the {{archetype_tag}} archetype in the {{region_tag}} market, written in {{language}}, grounded only in profile_md content.
 - experience: every role from profile_md, in reverse-chronological source order. Rewrite bullets to be concise and market-appropriate (e.g. German CVs favor a plainer, less self-promotional tone than US CVs) — but every bullet must describe something profile_md actually states; do not add metrics or outcomes that aren't there.
+- experience bullets: wrap the single most important metric or outcome phrase per bullet in `**double asterisks**` (e.g. "reduced bundle size by **25%**"). At most one or two emphasised spans per bullet; never emphasise a whole bullet.
 - education: every entry from profile_md, unmodified facts.
-- skills: drawn from profile_md, ordered to foreground what scoring_json indicates scores well for this archetype.
+- skillGroups: group skills into labelled categories appropriate to the archetype (e.g. Languages, Frameworks, Build Tools, Data, Cloud & DevOps, Quality) drawn only from profile_md, ordered to foreground what scoring_json indicates scores well. Also emit the flat `skills` array (all skills, ungrouped) for backward compatibility.
 - languages: from profile_md's language section if present, else empty array.
 - lowConfidenceNotes: notes (in {{language}}) about any profile_md gaps that limited the draft (e.g. "No education dates found in profile — left blank"). Empty array if none.
 - All generated prose is in {{language}}, regardless of the language profile_md itself is written in.
-- If {{section}} is not "all": only fill in that one top-level field with a fresh regeneration; every other top-level field must be its empty value (null for personalDetails/summary, [] for the array fields) — the caller merges just the regenerated field into the existing document and leaves the rest untouched.
+- If {{section}} is not "all": only fill in that one top-level field with a fresh regeneration; every other top-level field must be its empty value (null for personalDetails/summary, [] for the array fields, omitted for skillGroups). When {{section}} is "skills", fill both `skills` and `skillGroups`. The caller merges just the regenerated field(s) into the existing document and leaves the rest untouched.
 
 Output schema (identical shape to cv-import.md, so both feed the same builder):
 {
-"personalDetails": { "fullName": "string or null", "email": "string or null", "phone": "string or null", "address": "string or null" },
+"personalDetails": { "fullName": "string or null", "title": "string or null", "email": "string or null", "phone": "string or null", "address": "string or null", "website": "string or null", "linkedin": "string or null" },
 "summary": "string or null",
 "experience": [ { "company": "string", "role": "string", "startDate": "string or null", "endDate": "string or null", "location": "string or null", "bullets": ["string"] } ],
 "education": [ { "institution": "string", "degree": "string", "startDate": "string or null", "endDate": "string or null" } ],
 "skills": ["string"],
+"skillGroups": [ { "label": "string", "values": ["string"] } ] (omitted unless section is "all" or "skills"),
 "languages": [ { "language": "string", "level": "string" } ],
 "lowConfidenceNotes": ["string"]
 }

@@ -321,6 +321,24 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                         md.push_str(&list.join(", "));
                         md.push_str("\n\n");
                     }
+                } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
+                    let mut lines: Vec<String> = Vec::new();
+                    for group in groups {
+                        let label = group.get("label").and_then(|v| v.as_str()).unwrap_or("");
+                        let values: Vec<&str> = group
+                            .get("values")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
+                            .unwrap_or_default();
+                        if !values.is_empty() {
+                            lines.push(format!("**{label}:** {}", values.join(", ")));
+                        }
+                    }
+                    if !lines.is_empty() {
+                        md.push_str("## Skills\n\n");
+                        md.push_str(&lines.join("\n"));
+                        md.push_str("\n\n");
+                    }
                 }
             }
             "languages" => {
@@ -485,6 +503,33 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
                     if !list.is_empty() {
                         body.push_str("\\section*{Skills}\n");
                         body.push_str(&list.join(", "));
+                        body.push_str("\n\n");
+                    }
+                } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
+                    let mut lines: Vec<String> = Vec::new();
+                    for group in groups {
+                        let label = group.get("label").and_then(|v| v.as_str()).unwrap_or("");
+                        let values: Vec<String> = group
+                            .get("values")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| {
+                                arr.iter()
+                                    .filter_map(|v| v.as_str())
+                                    .map(tex_escape)
+                                    .collect()
+                            })
+                            .unwrap_or_default();
+                        if !values.is_empty() {
+                            lines.push(format!(
+                                "\\textbf{{{}:}} {}",
+                                tex_escape(label),
+                                values.join(", ")
+                            ));
+                        }
+                    }
+                    if !lines.is_empty() {
+                        body.push_str("\\section*{Skills}\n");
+                        body.push_str(&lines.join("\\\\\n"));
                         body.push_str("\n\n");
                     }
                 }
@@ -985,6 +1030,35 @@ mod tests {
             .any(|t| t.name.as_deref() == Some("DE-traditional")));
     }
 
+    /// Migration 0013 backfills `personal_details` into the built-in
+    /// templates that 0011 seeded without it (DE-ATS-modern/US/UK/generic),
+    /// so every generated CV has a name section. DE-traditional was already
+    /// correct and must be left untouched (photo still first).
+    #[tokio::test]
+    async fn migration_0013_adds_personal_details_to_builtin_templates() {
+        let pool = test_pool().await;
+        let rows: Vec<(String, String)> =
+            sqlx::query_as("SELECT name, sections_json FROM cv_templates WHERE is_builtin = 1")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+        for (name, sections) in &rows {
+            assert!(
+                sections.contains("personal_details"),
+                "built-in template {name} still lacks personal_details: {sections}"
+            );
+        }
+        for name in ["US", "UK", "generic", "DE-ATS-modern"] {
+            let (_, sections) = rows.iter().find(|(n, _)| n == name).unwrap();
+            assert!(
+                sections.starts_with("[\"personal_details\""),
+                "built-in template {name} does not have personal_details first: {sections}"
+            );
+        }
+        let de_trad = rows.iter().find(|(n, _)| n == "DE-traditional").unwrap();
+        assert!(de_trad.1.starts_with("[\"photo\""));
+    }
+
     fn cv_input(template_id: i64) -> UpsertDocumentLibraryItemInput {
         UpsertDocumentLibraryItemInput {
             id: None,
@@ -1209,6 +1283,18 @@ mod tests {
         assert!(md.find("Jane Doe").unwrap() < md.find("Backend engineer.").unwrap());
         assert!(md.find("Backend engineer.").unwrap() < md.find("Acme").unwrap());
         assert!(!md.contains("Rust"), "hidden section must not render");
+    }
+
+    #[test]
+    fn cv_content_to_markdown_renders_grouped_skills_when_items_absent() {
+        let content_json = r#"{"sections":[
+            {"key":"skills","order":0,"visible":true,"groups":[
+                {"label":"Languages","values":["TypeScript","Angular"]}
+            ]}
+        ]}"#;
+        let md = cv_content_to_markdown(content_json).expect("render");
+        assert!(md.contains("## Skills"));
+        assert!(md.contains("**Languages:** TypeScript, Angular"));
     }
 
     #[tokio::test]

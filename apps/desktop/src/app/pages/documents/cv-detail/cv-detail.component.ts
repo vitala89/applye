@@ -16,19 +16,25 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
+  CvSkillGroup,
   CvStyle,
   CvTemplate,
+  CvTextRun,
   DocumentLibraryItem,
   StyleNote,
 } from '@applye/core';
-import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT } from '@applye/core';
+import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT, parseInlineEmphasis } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import {
+  blankEducationEntry,
+  blankExperienceEntry,
+  buildContactLine,
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
+  normalizeCvContent,
   orderedVisibleSections,
   parseCvSkillResponse,
   REGENERATABLE_SECTION_KEYS,
@@ -64,6 +70,11 @@ export class CvDetailComponent {
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
+  protected readonly buildContactLine = buildContactLine;
+
+  runs(text: string): CvTextRun[] {
+    return parseInlineEmphasis(text);
+  }
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -81,6 +92,7 @@ export class CvDetailComponent {
   readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingKey = signal<CvSectionKey | null>(null);
+  readonly pullingProfile = signal(false);
 
   readonly atsNoteKeys = computed(() =>
     cvFieldAtsNoteKeys(
@@ -167,7 +179,8 @@ export class CvDetailComponent {
       this.regionTag.set(item.regionTag ?? 'generic');
       this.isDefault.set(item.isDefault);
 
-      const content: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
+      const raw: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
+      const content = normalizeCvContent(raw);
       const ordered = [...content.sections].sort((a, b) => a.order - b.order);
       this.sections.set(ordered);
 
@@ -238,6 +251,52 @@ export class CvDetailComponent {
       });
   }
 
+  skillGroupsToText(groups: CvSkillGroup[]): string {
+    return groups.map((g) => `${g.label}: ${g.values.join(', ')}`).join('\n');
+  }
+
+  onSkillsChange(section: Extract<CvSection, { key: 'skills' }>, value: string): void {
+    section.groups = value
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => {
+        const idx = line.indexOf(':');
+        const label = idx >= 0 ? line.slice(0, idx).trim() : 'Skills';
+        const rest = idx >= 0 ? line.slice(idx + 1) : line;
+        return {
+          label,
+          values: rest
+            .split(',')
+            .map((v) => v.trim())
+            .filter((v) => v),
+        };
+      });
+  }
+
+  addEntry(section: Extract<CvSection, { key: 'experience' | 'education' }>): void {
+    if (section.key === 'experience') section.entries.push(blankExperienceEntry());
+    else section.entries.push(blankEducationEntry());
+    this.sections.set([...this.sections()]);
+  }
+
+  removeEntry(
+    section: Extract<CvSection, { key: 'experience' | 'education' }>,
+    index: number,
+  ): void {
+    section.entries.splice(index, 1);
+    this.sections.set([...this.sections()]);
+  }
+
+  addBullet(entry: { bullets: string[] }): void {
+    entry.bullets.push('');
+    this.sections.set([...this.sections()]);
+  }
+
+  removeBullet(entry: { bullets: string[] }, index: number): void {
+    entry.bullets.splice(index, 1);
+    this.sections.set([...this.sections()]);
+  }
+
   async regenerateSection(key: CvSectionKey): Promise<void> {
     if (this.regeneratingKey()) return;
     const doc = this.doc();
@@ -273,6 +332,7 @@ export class CvDetailComponent {
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
+        maxTokens: 8192,
       });
       const parsed = parseCvSkillResponse(res.text);
       const updated = mergeRegeneratedSection(
@@ -286,6 +346,49 @@ export class CvDetailComponent {
       this.toast.error(String(e));
     } finally {
       this.regeneratingKey.set(null);
+    }
+  }
+
+  async pullFromProfile(): Promise<void> {
+    if (this.pullingProfile()) return;
+    const personal = this.personalDetailsSection();
+    if (!personal) return;
+    this.pullingProfile.set(true);
+    try {
+      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
+      const language = this.doc()?.language ?? settings.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('cv-generate-baseline', {
+        profile_md: profile.fullMd,
+        scoring_json: profile.scoringJson ?? '{}',
+        region_tag: this.regionTag(),
+        archetype_tag: this.doc()?.archetypeTag ?? 'generalist',
+        language,
+        section: 'personalDetails',
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.defaultModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+        maxTokens: 8192,
+      });
+      const parsed = parseCvSkillResponse(res.text);
+      const p = parsed.personalDetails;
+      personal.fullName = p.fullName ?? personal.fullName;
+      personal.title = p.title ?? personal.title;
+      personal.email = p.email ?? personal.email;
+      personal.phone = p.phone ?? personal.phone;
+      personal.address = p.address ?? personal.address;
+      personal.website = p.website ?? personal.website;
+      personal.linkedin = p.linkedin ?? personal.linkedin;
+      this.sections.set([...this.sections()]);
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.pullingProfile.set(false);
     }
   }
 

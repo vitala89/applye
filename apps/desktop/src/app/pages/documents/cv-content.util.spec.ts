@@ -12,6 +12,7 @@ import {
   cvContentToMd,
   normalizeCvContent,
   parseCvSkillResponse,
+  repairTruncatedJson,
 } from './cv-content.util';
 
 describe('normalizeCvContent', () => {
@@ -325,5 +326,38 @@ describe('blank entry factories', () => {
       startDate: '',
       endDate: '',
     });
+  });
+});
+
+describe('repairTruncatedJson', () => {
+  it('returns already-valid JSON unchanged (parseable)', () => {
+    const s = '{"a":1,"b":[2,3]}';
+    expect(JSON.parse(repairTruncatedJson(s)!)).toEqual({ a: 1, b: [2, 3] });
+  });
+  it('recovers a value truncated mid-string', () => {
+    const truncated = '{"fullName":"VITALII KASAP","summary":"Senior Frontend Engineer specializ';
+    const repaired = repairTruncatedJson(truncated)!;
+    const obj = JSON.parse(repaired);
+    expect(obj.fullName).toBe('VITALII KASAP');
+    expect(typeof obj.summary).toBe('string');
+  });
+  it('recovers a truncated array of objects', () => {
+    const truncated = '{"experience":[{"company":"A","role":"Dev"},{"company":"B","role":"Le';
+    const obj = JSON.parse(repairTruncatedJson(truncated)!);
+    expect(obj.experience[0]).toEqual({ company: 'A', role: 'Dev' });
+    expect(Array.isArray(obj.experience)).toBe(true);
+  });
+  it('returns null when there is no JSON object at all', () => {
+    expect(repairTruncatedJson('totally not json')).toBeNull();
+  });
+});
+
+describe('parseCvSkillResponse repair fallback', () => {
+  it('recovers personalDetails from a truncated response', () => {
+    const truncated =
+      '{"personalDetails":{"fullName":"VITALII KASAP","email":null,"phone":"+49","address":"Nuremberg"},"summary":"Senior Frontend Software Engineer (7+ years) specializ';
+    const out = parseCvSkillResponse(truncated);
+    expect(out.personalDetails.fullName).toBe('VITALII KASAP');
+    expect(out.personalDetails.address).toBe('Nuremberg');
   });
 });

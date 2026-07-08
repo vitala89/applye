@@ -209,12 +209,79 @@ export function cleanJsonText(text: string): string {
   return cleaned.trim();
 }
 
+/** Closes any open string and open braces/brackets of `s`, or returns null if
+ * `s` ends on a separator/colon that cannot be closed into valid JSON. */
+function closeOpenStructures(s: string): string | null {
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') inStr = true;
+    else if (c === '{') stack.push('}');
+    else if (c === '[') stack.push(']');
+    else if (c === '}' || c === ']') {
+      if (!stack.length) return null;
+      stack.pop();
+    }
+  }
+  let out = s.replace(/\s+$/, '');
+  if (/[,:]$/.test(out)) return null; // dangling separator — caller trims further
+  if (inStr) out += '"';
+  for (let i = stack.length - 1; i >= 0; i--) out += stack[i];
+  return out;
+}
+
+/** Best-effort recovery of a JSON object from a response truncated mid-value
+ * (an output-token cap cutting the model off). Trims from the end to the
+ * longest prefix that becomes valid once open strings/brackets are closed.
+ * Pure, never throws, bounded to the input length. Returns a parseable JSON
+ * string or null. */
+export function repairTruncatedJson(raw: string): string | null {
+  const start = raw.indexOf('{');
+  if (start < 0) return null;
+  const body = raw.slice(start);
+  try {
+    JSON.parse(body);
+    return body;
+  } catch {
+    // fall through to trim-and-close
+  }
+  for (let end = body.length; end > 0; end--) {
+    const closed = closeOpenStructures(body.slice(0, end));
+    if (closed === null) continue;
+    try {
+      JSON.parse(closed);
+      return closed;
+    } catch {
+      // keep trimming
+    }
+  }
+  return null;
+}
+
+function tryParseParsed(s: string): Partial<CvParsedContent> | null {
+  try {
+    return JSON.parse(s) as Partial<CvParsedContent>;
+  } catch {
+    return null;
+  }
+}
+
 export function parseCvSkillResponse(text: string): CvParsedContent {
   const raw = cleanJsonText(text);
-  let parsed: Partial<CvParsedContent>;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
+  let parsed = tryParseParsed(raw);
+  if (!parsed) {
+    const repaired = repairTruncatedJson(raw);
+    if (repaired) parsed = tryParseParsed(repaired);
+  }
+  if (!parsed) {
     throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
   }
   const base = emptyParsedContent();

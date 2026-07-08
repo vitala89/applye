@@ -569,7 +569,24 @@
                     </div>
                   }
                   @case ('photo') {
-                    <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
+                    <div class="cvdetail__photo-editor">
+                      @if (photoDataUri(); as uri) {
+                        <img class="cvdetail__photo-thumb" [src]="uri" alt="" />
+                        <div class="cvdetail__photo-actions">
+                          <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
+                            {{ t()('documents.cv_photo_replace') }}
+                          </button>
+                          <button appButton variant="secondary" size="sm" (click)="removePhoto()">
+                            {{ t()('documents.cv_photo_remove') }}
+                          </button>
+                        </div>
+                      } @else {
+                        <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
+                          {{ t()('documents.cv_photo_upload') }}
+                        </button>
+                        <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
+                      }
+                    </div>
                   }
                 }
               </div>
@@ -828,4 +845,12 @@
       </div>
     </div>
   </div>
+}
+
+@if (cropSourceUri(); as src) {
+  <app-cv-photo-crop
+    [sourceDataUri]="src"
+    (confirmed)="onCropConfirmed($event)"
+    (cancelled)="onCropCancelled()"
+  />
 }

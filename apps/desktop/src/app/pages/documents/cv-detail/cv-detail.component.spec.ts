@@ -69,4 +69,10 @@ describe('CvDetailComponent per-section style', () => {
     component.toggleStylePopover('summary');
     expect(component.openStyleKey()).toBeNull();
   });
+
+  it('removePhoto clears the stored dataUri', () => {
+    component.photoDataUri.set('data:image/jpeg;base64,AAAA');
+    component.removePhoto();
+    expect(component.photoDataUri()).toBeNull();
+  });
 });

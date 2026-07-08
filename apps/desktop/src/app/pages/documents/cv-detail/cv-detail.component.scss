@@ -12,30 +12,17 @@
 }
 
 .cvdetail__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 540px;
-  gap: 24px;
-  align-items: start;
+  display: block;
+  width: 100%;
 }
 .cvdetail__editor-col {
-  grid-column: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  width: 100%;
 }
 .cvdetail__preview-col {
-  grid-column: 2;
-  position: sticky;
-  top: 16px;
-}
-@media (max-width: 1100px) {
-  .cvdetail__body {
-    grid-template-columns: 1fr;
-  }
-  .cvdetail__preview-col {
-    position: static;
-    grid-column: 1;
-  }
+  width: 100%;
 }
 
 .cvdetail__bar {
@@ -397,6 +384,10 @@
   border-radius: var(--radius-input);
   color: var(--text-secondary);
   cursor: pointer;
+}
+
+.cvdetail__pull-btn {
+  margin-bottom: var(--space-3);
 }
 
 .cvdetail__grid {

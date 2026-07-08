@@ -50,67 +50,67 @@
     </header>
 
     <div class="cvdetail__body">
-      <div class="cvdetail__editor-col">
-        <div class="cvdetail__meta">
-          <div class="cvdetail__meta-field">
-            <span class="cvdetail__meta-label">{{ t()('documents.cv_field_region') }}</span>
-            <div class="cvdetail__meta-row">
-              <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
-                @for (r of regionTags; track r) {
-                  <option [value]="r">{{ r.toUpperCase() }}</option>
-                }
-              </select>
-              <label class="cvdetail__checkbox">
-                <input
-                  type="checkbox"
-                  [ngModel]="isDefault()"
-                  (ngModelChange)="isDefault.set($event)"
-                />
-                <span>{{ t()('documents.cv_field_is_default') }}</span>
-              </label>
+      @if (!previewMode()) {
+        <div class="cvdetail__editor-col">
+          <div class="cvdetail__meta">
+            <div class="cvdetail__meta-field">
+              <span class="cvdetail__meta-label">{{ t()('documents.cv_field_region') }}</span>
+              <div class="cvdetail__meta-row">
+                <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
+                  @for (r of regionTags; track r) {
+                    <option [value]="r">{{ r.toUpperCase() }}</option>
+                  }
+                </select>
+                <label class="cvdetail__checkbox">
+                  <input
+                    type="checkbox"
+                    [ngModel]="isDefault()"
+                    (ngModelChange)="isDefault.set($event)"
+                  />
+                  <span>{{ t()('documents.cv_field_is_default') }}</span>
+                </label>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="cvdetail__toggles">
-          <button
-            type="button"
-            class="toggle-chip"
-            [class.toggle-chip--active]="includePhoto()"
-            (click)="includePhoto.set(!includePhoto())"
-          >
-            <span class="toggle-chip__dot"></span>
-            {{ t()('documents.cv_toggle_photo') }}
-          </button>
-          <button
-            type="button"
-            class="toggle-chip"
-            [class.toggle-chip--active]="includeBirthdate()"
-            (click)="includeBirthdate.set(!includeBirthdate())"
-          >
-            <span class="toggle-chip__dot"></span>
-            {{ t()('documents.cv_toggle_birthdate') }}
-          </button>
-          <button
-            type="button"
-            class="toggle-chip"
-            [class.toggle-chip--active]="includeMaritalStatus()"
-            (click)="includeMaritalStatus.set(!includeMaritalStatus())"
-          >
-            <span class="toggle-chip__dot"></span>
-            {{ t()('documents.cv_toggle_marital') }}
-          </button>
-        </div>
-
-        @if (atsNoteKeys().length) {
-          <div class="cvdetail__ats-note">
-            @for (key of atsNoteKeys(); track key) {
-              <p>{{ t()(key) }}</p>
-            }
+          <div class="cvdetail__toggles">
+            <button
+              type="button"
+              class="toggle-chip"
+              [class.toggle-chip--active]="includePhoto()"
+              (click)="includePhoto.set(!includePhoto())"
+            >
+              <span class="toggle-chip__dot"></span>
+              {{ t()('documents.cv_toggle_photo') }}
+            </button>
+            <button
+              type="button"
+              class="toggle-chip"
+              [class.toggle-chip--active]="includeBirthdate()"
+              (click)="includeBirthdate.set(!includeBirthdate())"
+            >
+              <span class="toggle-chip__dot"></span>
+              {{ t()('documents.cv_toggle_birthdate') }}
+            </button>
+            <button
+              type="button"
+              class="toggle-chip"
+              [class.toggle-chip--active]="includeMaritalStatus()"
+              (click)="includeMaritalStatus.set(!includeMaritalStatus())"
+            >
+              <span class="toggle-chip__dot"></span>
+              {{ t()('documents.cv_toggle_marital') }}
+            </button>
           </div>
-        }
 
-        @if (!previewMode()) {
+          @if (atsNoteKeys().length) {
+            <div class="cvdetail__ats-note">
+              @for (key of atsNoteKeys(); track key) {
+                <p>{{ t()(key) }}</p>
+              }
+            </div>
+          }
+
           <div class="cvdetail__style">
             <div class="cvdetail__style-field">
               <div class="cvdetail__label-row">
@@ -199,167 +199,7 @@
               }
             </div>
           }
-        }
-      </div>
-      @if (previewMode()) {
-        <div class="cvdetail__preview-col">
-          <div
-            class="cvpreview"
-            [style.font-family]="style().fontFamily"
-            [style.font-size.pt]="style().fontSizePt"
-            [style.font-weight]="style().fontWeight"
-          >
-            @if (!previewSections().length) {
-              <p class="cvpreview__empty">{{ t()('documents.cv_preview_empty') }}</p>
-            }
-            @for (section of previewSections(); track section.key) {
-              @switch (section.key) {
-                @case ('personal_details') {
-                  <div [ngStyle]="sectionCss('personal_details')">
-                    <h2
-                      class="cvpreview__name"
-                      [style.color]="effStyle('personal_details').colorHex"
-                    >
-                      {{ $any(section).fullName || t()('documents.cv_untitled') }}
-                    </h2>
-                    @if ($any(section).title) {
-                      <p class="cvpreview__title">{{ $any(section).title }}</p>
-                    }
-                    <p class="cvpreview__contact">
-                      {{
-                        buildContactLine($any(section), {
-                          includeBirthdate: includeBirthdate(),
-                          includeMaritalStatus: includeMaritalStatus(),
-                        })
-                      }}
-                    </p>
-                  </div>
-                }
-                @case ('summary') {
-                  @if ($any(section).text) {
-                    <div class="cvpreview__section" [ngStyle]="sectionCss('summary')">
-                      <h3
-                        class="cvpreview__section-title"
-                        [style.color]="effStyle('summary').colorHex"
-                      >
-                        {{ t()(sectionLabelKey(section.key)) }}
-                      </h3>
-                      <p class="cvpreview__summary">{{ $any(section).text }}</p>
-                    </div>
-                  }
-                }
-                @case ('skills') {
-                  @if ($any(section).groups.length) {
-                    <div class="cvpreview__section" [ngStyle]="sectionCss('skills')">
-                      <h3
-                        class="cvpreview__section-title"
-                        [style.color]="effStyle('skills').colorHex"
-                      >
-                        {{ t()(sectionLabelKey(section.key)) }}
-                      </h3>
-                      @for (group of $any(section).groups; track $index) {
-                        @if (group.values.length) {
-                          <p class="cvpreview__skill-row">
-                            <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
-                          </p>
-                        }
-                      }
-                    </div>
-                  }
-                }
-                @case ('experience') {
-                  @if ($any(section).entries.length) {
-                    <div class="cvpreview__section" [ngStyle]="sectionCss('experience')">
-                      <h3
-                        class="cvpreview__section-title"
-                        [style.color]="effStyle('experience').colorHex"
-                      >
-                        {{ t()(sectionLabelKey(section.key)) }}
-                      </h3>
-                      @for (entry of $any(section).entries; track $index) {
-                        <div class="cvpreview__entry">
-                          <div class="cvpreview__entry-head">
-                            <span class="cvpreview__entry-company">{{ entry.company }}</span>
-                            <span class="cvpreview__entry-meta">{{ entry.location }}</span>
-                          </div>
-                          <div class="cvpreview__entry-head">
-                            <span class="cvpreview__entry-role">{{ entry.role }}</span>
-                            <span class="cvpreview__entry-dates">
-                              {{ entry.startDate }} –
-                              {{ entry.endDate || t()('documents.cv_present') }}
-                            </span>
-                          </div>
-                          @if (entry.bullets.length) {
-                            <ul>
-                              @for (bullet of entry.bullets; track $index) {
-                                <li>
-                                  @for (run of runs(bullet); track $index) {
-                                    @if (run.bold) {
-                                      <strong>{{ run.text }}</strong>
-                                    } @else {
-                                      {{ run.text }}
-                                    }
-                                  }
-                                </li>
-                              }
-                            </ul>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-                }
-                @case ('education') {
-                  @if ($any(section).entries.length) {
-                    <div class="cvpreview__section" [ngStyle]="sectionCss('education')">
-                      <h3
-                        class="cvpreview__section-title"
-                        [style.color]="effStyle('education').colorHex"
-                      >
-                        {{ t()(sectionLabelKey(section.key)) }}
-                      </h3>
-                      @for (entry of $any(section).entries; track $index) {
-                        <div class="cvpreview__entry">
-                          <div class="cvpreview__entry-head">
-                            <span class="cvpreview__entry-role"
-                              >{{ entry.degree }}, {{ entry.institution }}</span
-                            >
-                            <span class="cvpreview__entry-dates">
-                              {{ entry.startDate }} –
-                              {{ entry.endDate || t()('documents.cv_present') }}
-                            </span>
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  }
-                }
-                @case ('languages') {
-                  @if ($any(section).items.length) {
-                    <div class="cvpreview__section" [ngStyle]="sectionCss('languages')">
-                      <h3
-                        class="cvpreview__section-title"
-                        [style.color]="effStyle('languages').colorHex"
-                      >
-                        {{ t()(sectionLabelKey(section.key)) }}
-                      </h3>
-                      <p class="cvpreview__languages">
-                        {{
-                          $any(section)
-                            .items.map((i) => i.language)
-                            .join(' | ')
-                        }}
-                      </p>
-                    </div>
-                  }
-                }
-              }
-            }
-          </div>
-        </div>
-      }
-      @if (!previewMode()) {
-        <div class="cvdetail__editor-col">
+
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
             @for (section of sections(); track section.key) {
               <div cdkDrag class="cvdetail__section">
@@ -409,6 +249,7 @@
                       variant="secondary"
                       size="sm"
                       type="button"
+                      class="cvdetail__pull-btn"
                       [disabled]="pullingProfile()"
                       (click)="pullFromProfile()"
                     >
@@ -698,6 +539,162 @@
             </button>
           </div>
         </ng-template>
+      } @else {
+        <div class="cvdetail__preview-col">
+          <div
+            class="cvpreview"
+            [style.font-family]="style().fontFamily"
+            [style.font-size.pt]="style().fontSizePt"
+            [style.font-weight]="style().fontWeight"
+          >
+            @if (!previewSections().length) {
+              <p class="cvpreview__empty">{{ t()('documents.cv_preview_empty') }}</p>
+            }
+            @for (section of previewSections(); track section.key) {
+              @switch (section.key) {
+                @case ('personal_details') {
+                  <div [ngStyle]="sectionCss('personal_details')">
+                    <h2
+                      class="cvpreview__name"
+                      [style.color]="effStyle('personal_details').colorHex"
+                    >
+                      {{ $any(section).fullName || t()('documents.cv_untitled') }}
+                    </h2>
+                    @if ($any(section).title) {
+                      <p class="cvpreview__title">{{ $any(section).title }}</p>
+                    }
+                    <p class="cvpreview__contact">
+                      {{
+                        buildContactLine($any(section), {
+                          includeBirthdate: includeBirthdate(),
+                          includeMaritalStatus: includeMaritalStatus(),
+                        })
+                      }}
+                    </p>
+                  </div>
+                }
+                @case ('summary') {
+                  @if ($any(section).text) {
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('summary')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('summary').colorHex"
+                      >
+                        {{ t()(sectionLabelKey(section.key)) }}
+                      </h3>
+                      <p class="cvpreview__summary">{{ $any(section).text }}</p>
+                    </div>
+                  }
+                }
+                @case ('skills') {
+                  @if ($any(section).groups.length) {
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('skills')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('skills').colorHex"
+                      >
+                        {{ t()(sectionLabelKey(section.key)) }}
+                      </h3>
+                      @for (group of $any(section).groups; track $index) {
+                        @if (group.values.length) {
+                          <p class="cvpreview__skill-row">
+                            <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
+                          </p>
+                        }
+                      }
+                    </div>
+                  }
+                }
+                @case ('experience') {
+                  @if ($any(section).entries.length) {
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('experience')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('experience').colorHex"
+                      >
+                        {{ t()(sectionLabelKey(section.key)) }}
+                      </h3>
+                      @for (entry of $any(section).entries; track $index) {
+                        <div class="cvpreview__entry">
+                          <div class="cvpreview__entry-head">
+                            <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                            <span class="cvpreview__entry-meta">{{ entry.location }}</span>
+                          </div>
+                          <div class="cvpreview__entry-head">
+                            <span class="cvpreview__entry-role">{{ entry.role }}</span>
+                            <span class="cvpreview__entry-dates">
+                              {{ entry.startDate }} –
+                              {{ entry.endDate || t()('documents.cv_present') }}
+                            </span>
+                          </div>
+                          @if (entry.bullets.length) {
+                            <ul>
+                              @for (bullet of entry.bullets; track $index) {
+                                <li>
+                                  @for (run of runs(bullet); track $index) {
+                                    @if (run.bold) {
+                                      <strong>{{ run.text }}</strong>
+                                    } @else {
+                                      {{ run.text }}
+                                    }
+                                  }
+                                </li>
+                              }
+                            </ul>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+                @case ('education') {
+                  @if ($any(section).entries.length) {
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('education')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('education').colorHex"
+                      >
+                        {{ t()(sectionLabelKey(section.key)) }}
+                      </h3>
+                      @for (entry of $any(section).entries; track $index) {
+                        <div class="cvpreview__entry">
+                          <div class="cvpreview__entry-head">
+                            <span class="cvpreview__entry-role"
+                              >{{ entry.degree }}, {{ entry.institution }}</span
+                            >
+                            <span class="cvpreview__entry-dates">
+                              {{ entry.startDate }} –
+                              {{ entry.endDate || t()('documents.cv_present') }}
+                            </span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+                @case ('languages') {
+                  @if ($any(section).items.length) {
+                    <div class="cvpreview__section" [ngStyle]="sectionCss('languages')">
+                      <h3
+                        class="cvpreview__section-title"
+                        [style.color]="effStyle('languages').colorHex"
+                      >
+                        {{ t()(sectionLabelKey(section.key)) }}
+                      </h3>
+                      <p class="cvpreview__languages">
+                        {{
+                          $any(section)
+                            .items.map((i) => i.language)
+                            .join(' | ')
+                        }}
+                      </p>
+                    </div>
+                  }
+                }
+              }
+            }
+          </div>
+        </div>
       }
     </div>
   </div>

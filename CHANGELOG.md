@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- CV editor preview mode now fills the whole detail pane and shows only the rendered CV — the region selector, include-photo/birthdate/marital-status toggles, and style controls no longer leak into the preview. Edit mode no longer reserves empty space for a preview column that isn't shown (the two modes never actually render side by side). Added missing spacing between the "Pull from profile" action and the Personal Details fields below it.
+
 ## [0.23.0] - 2026-07-07
 
 ### Added

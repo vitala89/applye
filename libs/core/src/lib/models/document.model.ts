@@ -31,6 +31,9 @@ interface CvSectionBase {
 
 export interface CvPhotoSection extends CvSectionBase {
   key: 'photo';
+  /** Cropped photo as a JPEG data URI: `data:image/jpeg;base64,...`. */
+  dataUri?: string;
+  /** Legacy/unused; retained for back-compat with older documents. */
   filePath?: string;
 }
 

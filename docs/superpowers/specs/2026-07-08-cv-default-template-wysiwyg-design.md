@@ -86,11 +86,17 @@ verified during implementation).
 
 - `CvPersonalDetailsSection` += `title?`, `website?`, `linkedin?` (optional
   strings). Existing `birthDate`/`maritalStatus` remain, gated by template.
-- Skills become grouped:
-  `CvSkillsSection { groups: CvSkillGroup[] }`,
+- Skills become grouped in the stored content:
+  `CvSkillsSection { groups: CvSkillGroup[] }` (replaces `items: string[]`),
   `CvSkillGroup { label: string; values: string[] }`.
-  Backward compat: a loader normalizes legacy `items: string[]` into a single
-  `{ label: 'Skills', values: items }` group (non-destructive).
+  The AI/parse contract stays additive to avoid breaking other consumers of
+  `CvParsedContent` (notably `onboarding-content.util.ts`
+  `cvToProfileMarkdown`): `CvParsedContent.skills: string[]` is **kept**, and a
+  new optional `CvParsedContent.skillGroups?: CvSkillGroup[]` is added. The
+  builder uses `skillGroups` when present, else wraps the flat `skills` array
+  in a single `{ label: 'Skills', values: skills }` group.
+  Backward compat on load: `normalizeCvContent` migrates a legacy stored
+  `items: string[]` skills section into `groups` (non-destructive).
 - Bullets stay `string[]`; **inline emphasis is encoded inline** with `**…**`
   markers. A shared pure function `parseInlineEmphasis(text): TextRun[]`
   (`TextRun { text: string; bold: boolean }`) is consumed by the HTML preview

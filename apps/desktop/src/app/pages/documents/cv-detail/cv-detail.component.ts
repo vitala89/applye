@@ -47,7 +47,10 @@ import {
 /** Merges an incoming profile field into the current personal-details value,
  * ignoring empty/whitespace-only incoming values so a blank field from the
  * model never overwrites an existing value. */
-export function mergePersonalField(incoming: string | undefined, current: string): string {
+export function mergePersonalField<T extends string | undefined>(
+  incoming: string | null | undefined,
+  current: T,
+): string | T {
   return incoming && incoming.trim() ? incoming : current;
 }
 
@@ -150,7 +153,19 @@ export class CvDetailComponent {
   }
 
   private async refreshStyleNotes(): Promise<void> {
-    this.styleNotes.set(await this.db.checkStyleSafety(JSON.stringify(this.style())));
+    const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
+    // Global + per-section safety checks can surface the same (kind, detail)
+    // more than once (e.g. a Light global weight plus overridden sections);
+    // collapse duplicates so each distinct warning shows once.
+    const seen = new Set<string>();
+    this.styleNotes.set(
+      notes.filter((n) => {
+        const key = `${n.kind}|${n.detail}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }),
+    );
   }
 
   /** Which section's "Style" popover is open, if any — only one at a time. */

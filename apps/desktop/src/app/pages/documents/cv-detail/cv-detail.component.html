@@ -194,7 +194,7 @@
           </div>
           @if (styleNotes().length) {
             <div class="cvdetail__ats-note">
-              @for (note of styleNotes(); track note.kind) {
+              @for (note of styleNotes(); track note.kind + note.detail) {
                 <p>{{ styleNoteMessage(note) }}</p>
               }
             </div>

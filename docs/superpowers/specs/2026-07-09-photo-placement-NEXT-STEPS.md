@@ -19,17 +19,32 @@ Key files: `apps/desktop/src/app/pages/documents/{cv-detail,cover-letter-detail}
 
 Deferred minors (safe): orphaned `documents.cv_export_pdf_action` i18n key; unused `ResolvedPage.marginPct`; `cvpreview__` class prefix reused inside the cover-letter template.
 
-## Step 0 — Manual print verification (do FIRST, blocks trust in the WYSIWYG path)
+## Step 0 — Manual print verification — DONE ✅
 
-Headless/web has no Tauri IPC, so this was never runtime-verified. On a real desktop build (`nx run desktop:tauri dev` or the documented desktop dev command):
+Verified on a real macOS desktop build: Export PDF opens the OS "Save as PDF" dialog and prints **only the sheet** (correct A4 size, legible dark-on-white). `window.print()` on the macOS Tauri webview honours `@page`. Option A stands; no need for headless Chromium.
 
-1. Open a CV → Preview → **Export PDF**. Confirm the OS "Save as PDF" dialog opens.
-2. Save and open the PDF. Verify: page size = the chosen A4/Letter; the 4 margins match the on-screen sheet; text is legible (dark on white); a multi-page CV breaks where the on-screen guides show.
-3. Repeat for the cover letter.
+Two print bugs found + fixed post-merge (PR #67, on `main` `f661b74`):
 
-**If `window.print()` on macOS does NOT honor `@page` size/margins** (WKWebView is the risk), that invalidates Option A. Fallback = Option B (headless Chromium) — a bigger dependency decision to escalate. Do not start new feature work until Step 0 passes.
+1. **Async print timing** — `window.print()` on macOS is a non-blocking native IPC; the synchronous `finally` removed the `printing-cv` body class before the snapshot. Fix: clear the class on the `afterprint` event instead.
+2. **View-encapsulated print CSS (the real one)** — the `@media print` block lived in the component SCSS, so Angular's Emulated encapsulation scoped `body.printing-cv *` to that component's own elements and it could not hide the app shell/sidebar → the whole app printed. Fix: moved the print rules to the GLOBAL `apps/desktop/src/styles.scss`.
 
-## Step 1 — Always-white preview sheet (decided; small, do before Phase D)
+**Lesson for future print work:** print rules that hide/show across components MUST live in the global stylesheet, never in a component SCSS.
+
+## Step 1b — Discrete page cards in the preview (NEW, user-requested; likely the next feature)
+
+**User wants** the preview to show real, separate page sheets, not the current single continuous sheet with a dashed break-guide line. Each page rendered as its own card with a clear caption below it: **"Page 1 of N", "Page 2 of N", …** — so page 2 shows how the content actually continues.
+
+This is the "true separate page cards" option deferred at the original brainstorm (we shipped continuous-sheet + guides for simplicity). It is a **preview redesign**, non-trivial:
+
+- Measure content and split into per-page `.page-card`s at the usable-page-height boundary (JS: `usableH = (heightMm − top − bottom)·PX_PER_MM`; page count = `ceil(contentH / usableH)`).
+- Do NOT cut a block/line in half — respect `break-inside: avoid`; a block that doesn't fit moves wholly to the next card.
+- Each card = white paper (fold in Step 1 "always white sheet" here — we're rebuilding the sheet anyway), caption "Page i of N" underneath, gap between cards.
+- Keep the printed PDF in sync (real `@page` breaks already work; ensure on-screen card boundaries match where print actually breaks — `page-break-inside: avoid` on the same blocks).
+- Replaces the current `repeating-linear-gradient` guides + single page-count row + `blockOverflow`/`pageCount` measurement in cv-detail & cover-letter-detail.
+
+Needs its own `/brainstorm` → spec → plan → subagent execution. Branch `feat/preview-page-cards`. **This likely supersedes Step 1** (white sheet folds in) and is probably higher priority than Phase D per the user.
+
+## Step 1 — Always-white preview sheet (fold into Step 1b)
 
 **Decision (locked by user): the on-screen preview sheet always renders as white paper, regardless of app theme.** Rationale: preview = final document; on the dark theme the sheet currently uses `--surface-1`/`--text-primary` → grey paper, which breaks "what you see is what you print".
 

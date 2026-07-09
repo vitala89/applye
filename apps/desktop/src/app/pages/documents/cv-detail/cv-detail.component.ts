@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  OnDestroy,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -37,7 +47,12 @@ import type {
   DocumentLibraryItem,
   StyleNote,
 } from '@applye/core';
-import { CV_ATS_SAFE_FONTS, CV_STYLE_DEFAULT, parseInlineEmphasis } from '@applye/core';
+import {
+  CV_ATS_SAFE_FONTS,
+  CV_STYLE_DEFAULT,
+  PAGE_SETTINGS_DEFAULT,
+  parseInlineEmphasis,
+} from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -86,7 +101,7 @@ export function mergePersonalField<T extends string | undefined>(
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
 })
-export class CvDetailComponent {
+export class CvDetailComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly db = inject(DbService);
@@ -185,23 +200,89 @@ export class CvDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
+  /** mm per named margin preset — mirrors `PRESET_MM` in cv-content.util. */
+  private static readonly MARGIN_PRESET_MM: Record<'narrow' | 'normal' | 'wide', number> = {
+    narrow: 12.7,
+    normal: 20,
+    wide: 30,
+  };
+
   setPageSize(size: 'a4' | 'letter'): void {
     this.updateStyle({
-      page: { ...(this.style().page ?? { size: 'a4', margin: 'normal' }), size },
+      page: { ...(this.style().page ?? PAGE_SETTINGS_DEFAULT), size },
     });
   }
 
   setPageMargin(margin: 'narrow' | 'normal' | 'wide'): void {
+    const mm = CvDetailComponent.MARGIN_PRESET_MM[margin];
     this.updateStyle({
-      page: { ...(this.style().page ?? { size: 'a4', margin: 'normal' }), margin },
+      page: {
+        ...(this.style().page ?? PAGE_SETTINGS_DEFAULT),
+        margin: { top: mm, right: mm, bottom: mm, left: mm },
+      },
     });
   }
 
-  /** Preview page geometry — aspect ratio + margin padding from the resolver. */
-  readonly pageStyle = computed(() => {
+  /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
+  private static readonly PX_PER_MM = 96 / 25.4;
+
+  /** Preview page geometry as CSS custom properties — real A4/Letter proportions
+   * plus margins, consumed by the `.cvpreview` sheet in the template/SCSS. */
+  readonly pageVars = computed(() => {
     const r = resolvePageSettings(this.style().page);
-    return { 'aspect-ratio': `${r.widthMm} / ${r.heightMm}`, padding: `${r.marginPct}%` };
+    const px = CvDetailComponent.PX_PER_MM;
+    const w = r.widthMm * px;
+    const h = r.heightMm * px;
+    return {
+      '--page-w': `${w}px`,
+      '--page-h': `${h}px`,
+      '--mt': `${r.margin.top * px}px`,
+      '--mr': `${r.margin.right * px}px`,
+      '--mb': `${r.margin.bottom * px}px`,
+      '--ml': `${r.margin.left * px}px`,
+    } as Record<string, string>;
   });
+
+  /** The rendered sheet element — measured by `observeSheet()` for page count. */
+  readonly sheetEl = viewChild<ElementRef<HTMLElement>>('cvSheet');
+  readonly pageCount = signal(1);
+  readonly blockOverflow = signal(false);
+
+  private ro?: ResizeObserver;
+
+  private observeSheet(): void {
+    const el = this.sheetEl()?.nativeElement;
+    if (!el) return;
+    this.ro?.disconnect();
+    this.ro = new ResizeObserver(() => this.recomputePages(el));
+    this.ro.observe(el);
+    this.recomputePages(el);
+  }
+
+  private recomputePages(el: HTMLElement): void {
+    const r = resolvePageSettings(this.style().page);
+    const px = CvDetailComponent.PX_PER_MM;
+    const usableH = (r.heightMm - r.margin.top - r.margin.bottom) * px;
+    const contentH = el.scrollHeight - (r.margin.top + r.margin.bottom) * px;
+    this.pageCount.set(Math.max(1, Math.ceil(contentH / Math.max(1, usableH))));
+    // Block-too-tall: any direct child taller than one usable page.
+    const tooTall = Array.from(el.children).some(
+      (c) => (c as HTMLElement).offsetHeight > usableH + 1,
+    );
+    this.blockOverflow.set(tooTall || usableH <= 0);
+  }
+
+  private readonly observeSheetEffect = effect(() => {
+    // Re-run when previewMode flips to true (sheet enters the DOM) and when
+    // the sheet element or page geometry changes.
+    this.previewMode();
+    this.pageVars();
+    this.observeSheet();
+  });
+
+  ngOnDestroy(): void {
+    this.ro?.disconnect();
+  }
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));

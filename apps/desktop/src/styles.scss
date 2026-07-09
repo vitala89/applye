@@ -5,3 +5,67 @@
 @use '../../../libs/ui/src/styles/global' as *;
 
 // App-level overrides (if any) go here
+
+// WYSIWYG PDF export. While `body.printing-cv` is set (toggled by
+// `exportPdfWysiwyg()` in the CV / cover-letter editors), hide the entire app
+// except the document sheet so only it prints. This MUST be global, not in a
+// component stylesheet: component styles are view-encapsulated, so a
+// `body.printing-cv *` rule there only matches that component's own elements
+// and cannot hide the app shell/sidebar (the reason the whole app leaked into
+// the printed PDF). The injected `@page` rule supplies the real margins, so
+// the sheet's on-screen padding is zeroed here to avoid doubling them.
+@media print {
+  body.printing-cv * {
+    visibility: hidden;
+  }
+
+  body.printing-cv .cvpreview,
+  body.printing-cv .cvpreview *,
+  body.printing-cv .letter-sheet,
+  body.printing-cv .letter-sheet * {
+    visibility: visible;
+  }
+
+  body.printing-cv .cvpreview,
+  body.printing-cv .letter-sheet {
+    // Pin to light "paper" colours regardless of the active app theme (dark is
+    // the default). Browsers print text colour but not background-colour, so
+    // without this the sheet renders near-white text on a white page. The vars
+    // cascade to the sheet's encapsulated children.
+    --surface-1: #ffffff;
+    --surface-2: #fafaf8;
+    --surface-hover: #f4f4f2;
+    --surface-sunken: #f4f4f2;
+    --text-primary: #16161a;
+    --text-secondary: #5a5a63;
+    --text-tertiary: #6b6b73;
+    --text-accent: #4f5bff;
+    --border-subtle: #ececee;
+    --border-default: #d6d6da;
+    --border-strong: #b8b8bf;
+    --border-accent: #4f5bff;
+    --accent: #4f5bff;
+    --accent-hover: #3a33d6;
+    --accent-fg: #ffffff;
+    --accent-tint: rgba(79, 91, 255, 0.08);
+    --danger: #e05656;
+    --danger-tint: rgba(224, 86, 86, 0.1);
+    --warning: #e0a23b;
+    --warning-tint: rgba(224, 162, 59, 0.12);
+    --success: #2bb673;
+
+    position: absolute;
+    inset: 0;
+    width: auto;
+    min-height: auto;
+    margin: 0;
+    padding: 0; // @page margin supplies the real margins — avoid double-margin
+    border: 0;
+    box-shadow: none;
+    background-image: none; // hide the on-screen page-break guides
+    background-color: #fff;
+    color: #16161a;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

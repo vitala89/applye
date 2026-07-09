@@ -1007,55 +1007,7 @@
   padding: 0 11px;
 }
 
-// WYSIWYG PDF export: while `body.printing-cv` is set, hide everything
-// except the `.cvpreview` sheet so only the CV prints. The `@page` rule
-// (injected by `exportPdfWysiwyg()`) supplies the real margins, so the
-// on-screen padding is zeroed here to avoid doubling them.
-@media print {
-  body.printing-cv * {
-    visibility: hidden;
-  }
-  body.printing-cv .cvpreview,
-  body.printing-cv .cvpreview * {
-    visibility: visible;
-  }
-  body.printing-cv .cvpreview {
-    // Pin to light "paper" colors regardless of active app theme (dark is
-    // default). Browsers print text color but not background-color, so
-    // without this the sheet renders near-white text on a white page.
-    --surface-1: #ffffff;
-    --surface-2: #fafaf8;
-    --surface-hover: #f4f4f2;
-    --surface-sunken: #f4f4f2;
-    --text-primary: #16161a;
-    --text-secondary: #5a5a63;
-    --text-tertiary: #6b6b73;
-    --text-accent: #4f5bff;
-    --border-subtle: #ececee;
-    --border-default: #d6d6da;
-    --border-strong: #b8b8bf;
-    --border-accent: #4f5bff;
-    --accent: #4f5bff;
-    --accent-hover: #3a33d6;
-    --accent-fg: #ffffff;
-    --accent-tint: rgba(79, 91, 255, 0.08);
-    --danger: #e05656;
-    --danger-tint: rgba(224, 86, 86, 0.1);
-    --warning: #e0a23b;
-    --warning-tint: rgba(224, 162, 59, 0.12);
-
-    position: absolute;
-    inset: 0;
-    width: auto;
-    min-height: auto;
-    margin: 0;
-    padding: 0; // @page margin handles the real margins — avoid double-margin
-    border: 0;
-    box-shadow: none;
-    background-image: none; // hide the on-screen break guides
-    background-color: #fff;
-    color: #16161a;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-}
+// NOTE: the WYSIWYG print rules live in the GLOBAL stylesheet
+// (apps/desktop/src/styles.scss), not here. Component styles are view-
+// encapsulated, so a `body.printing-cv *` rule in this file would only match
+// this component's own elements and could not hide the app shell/sidebar.

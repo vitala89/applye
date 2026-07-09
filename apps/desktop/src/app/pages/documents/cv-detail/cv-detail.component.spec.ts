@@ -119,4 +119,23 @@ describe('CvDetailComponent per-section style', () => {
     });
     expect(component.pageVars()['--page-w']).toBe(`${(215.9 * 96) / 25.4}px`);
   });
+
+  it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {
+    const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
+    document.body.classList.remove('printing-cv');
+
+    void component.exportPdfWysiwyg();
+
+    // Root-cause guard: the class must survive the print() call. Removing it
+    // synchronously stripped the @media-print styles before the async macOS
+    // print snapshot, so the OS captured the whole app instead of the sheet.
+    expect(printSpy).toHaveBeenCalled();
+    expect(document.body.classList.contains('printing-cv')).toBe(true);
+
+    // afterprint is what clears it.
+    window.dispatchEvent(new Event('afterprint'));
+    expect(document.body.classList.contains('printing-cv')).toBe(false);
+
+    printSpy.mockRestore();
+  });
 });

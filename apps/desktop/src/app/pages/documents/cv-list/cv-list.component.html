@@ -12,6 +12,8 @@
     </div>
   </header>
 
+  <p class="cvlist__pdf-hint">{{ t()('documents.cv_export_pdf_moved') }}</p>
+
   @if (texExportNoteOpen()) {
     <div class="cvlist__note">
       <p>{{ t()('documents.cv_export_tex_note') }}</p>
@@ -77,7 +79,6 @@
               >
                 <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
                 <option value="docx">{{ t()('documents.cv_export_docx_action') }}</option>
-                <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
                 <option value="tex">{{ t()('documents.cv_export_tex_action') }}</option>
               </select>
             </label>

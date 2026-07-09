@@ -742,6 +742,10 @@ const en: TranslationMap = {
     cv_section_move_up: 'Move section up',
     cv_section_move_down: 'Move section down',
     cv_section_drag_handle: 'Drag to reorder',
+    preview_page_of: 'Page {i} of {n}',
+    preview_section_continued: '{section} (cont.)',
+    preview_block_overflow:
+      'A block is too tall to fit one page — shorten it so the preview and PDF paginate cleanly.',
   },
   interview: {
     title: 'Interview Prep',
@@ -1717,6 +1721,10 @@ const de: TranslationMap = {
     cv_section_move_up: 'Abschnitt nach oben verschieben',
     cv_section_move_down: 'Abschnitt nach unten verschieben',
     cv_section_drag_handle: 'Zum Sortieren ziehen',
+    preview_page_of: 'Seite {i} von {n}',
+    preview_section_continued: '{section} (Fortsetzung)',
+    preview_block_overflow:
+      'Ein Block ist zu hoch für eine Seite — kürze ihn, damit Vorschau und PDF sauber umbrechen.',
   },
   interview: {
     title: 'Interview-Vorbereitung',

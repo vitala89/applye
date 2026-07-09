@@ -249,6 +249,20 @@
 .cvdetail__style-field input[type='number'] {
   width: 80px;
 }
+.cvdetail__margin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.cvdetail__margin-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+.cvdetail__margin-input input {
+  width: 100%;
+}
 .cvdetail__style select,
 .cvdetail__style input {
   height: 36px;

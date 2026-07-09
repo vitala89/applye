@@ -201,15 +201,22 @@
                 </select>
               </div>
               <div class="cvdetail__style-field">
-                <span class="cvdetail__style-label">{{ t()('documents.cv_style_margin') }}</span>
-                <select
-                  [ngModel]="style().page?.margin ?? 'normal'"
-                  (ngModelChange)="setPageMargin($event)"
-                >
-                  <option value="narrow">{{ t()('documents.cv_style_margin_narrow') }}</option>
-                  <option value="normal">{{ t()('documents.cv_style_margin_normal') }}</option>
-                  <option value="wide">{{ t()('documents.cv_style_margin_wide') }}</option>
-                </select>
+                <span class="cvdetail__style-label">{{ t()('documents.cv_style_margins') }}</span>
+                <div class="cvdetail__margin-grid">
+                  @for (side of marginSides; track side.key) {
+                    <label class="cvdetail__margin-input">
+                      <span>{{ t()(side.label) }}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        step="1"
+                        [ngModel]="currentMargin()[side.key]"
+                        (ngModelChange)="setMarginSide(side.key, $event)"
+                      />
+                    </label>
+                  }
+                </div>
               </div>
             </div>
             @if (styleNotes().length) {

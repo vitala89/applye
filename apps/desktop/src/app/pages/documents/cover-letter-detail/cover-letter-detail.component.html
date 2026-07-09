@@ -227,15 +227,24 @@
                 </select>
               </div>
               <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{ t()('documents.cv_style_margin') }}</span>
-                <select
-                  [ngModel]="style().page?.margin ?? 'normal'"
-                  (ngModelChange)="setPageMargin($event)"
-                >
-                  <option value="narrow">{{ t()('documents.cv_style_margin_narrow') }}</option>
-                  <option value="normal">{{ t()('documents.cv_style_margin_normal') }}</option>
-                  <option value="wide">{{ t()('documents.cv_style_margin_wide') }}</option>
-                </select>
+                <span class="coverdetail__style-label">{{
+                  t()('documents.cv_style_margins')
+                }}</span>
+                <div class="cvdetail__margin-grid">
+                  @for (side of marginSides; track side.key) {
+                    <label class="cvdetail__margin-input">
+                      <span>{{ t()(side.label) }}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        step="1"
+                        [ngModel]="currentMargin()[side.key]"
+                        (ngModelChange)="setMarginSide(side.key, $event)"
+                      />
+                    </label>
+                  }
+                </div>
               </div>
             </div>
 
@@ -697,86 +706,88 @@
       } @else {
         <!-- PREVIEW MODE -->
         <div class="coverdetail__preview-col">
-          <div
-            class="letter-sheet"
-            [style.font-family]="style().fontFamily"
-            [style.font-size.pt]="style().fontSizePt"
-            [style.font-weight]="style().fontWeight"
-            [style.aspect-ratio]="pageStyle()['aspect-ratio']"
-            [style.padding]="pageStyle()['padding']"
-          >
+          <div class="letter-sheet-viewport">
             <div
-              class="letter-recipient"
-              [ngStyle]="blockCss('recipient')"
-              [style.color]="effBlockStyle('recipient').colorHex"
+              class="letter-sheet"
+              #letterSheet
+              [style]="pageVars()"
+              [style.font-family]="style().fontFamily"
+              [style.font-size.pt]="style().fontSizePt"
+              [style.font-weight]="style().fontWeight"
             >
-              @if (content().address.recipientName) {
-                <div>{{ content().address.recipientName }}</div>
-              }
-              @if (content().address.company) {
-                <div>{{ content().address.company }}</div>
-              }
-              @if (content().address.street) {
-                <div>{{ content().address.street }}</div>
-              }
-              @if (content().address.postalCode || content().address.city) {
-                <div>
-                  {{ content().address.postalCode || '' }} {{ content().address.city || '' }}
-                </div>
-              }
-              @if (content().address.country) {
-                <div>{{ content().address.country }}</div>
-              }
-            </div>
-
-            <div
-              class="letter-date"
-              [ngStyle]="blockCss('date')"
-              [style.color]="effBlockStyle('date').colorHex"
-            >
-              {{ content().date }}
-            </div>
-
-            <div
-              class="letter-subject"
-              [ngStyle]="blockCss('subject')"
-              [style.color]="effBlockStyle('subject').colorHex"
-            >
-              {{ content().subject }}
-            </div>
-
-            <div
-              class="letter-greeting"
-              [ngStyle]="blockCss('greeting')"
-              [style.color]="effBlockStyle('greeting').colorHex"
-            >
-              {{ content().greeting }}
-            </div>
-
-            <div class="letter-body">
-              @for (para of content().bodyParagraphs || []; track $index) {
-                @if (para) {
-                  <p [ngStyle]="paraCss($index)" [style.color]="effParaStyle($index).colorHex">
-                    {{ para }}
-                  </p>
+              <div
+                class="letter-recipient"
+                [ngStyle]="blockCss('recipient')"
+                [style.color]="effBlockStyle('recipient').colorHex"
+              >
+                @if (content().address.recipientName) {
+                  <div>{{ content().address.recipientName }}</div>
                 }
-              }
-            </div>
+                @if (content().address.company) {
+                  <div>{{ content().address.company }}</div>
+                }
+                @if (content().address.street) {
+                  <div>{{ content().address.street }}</div>
+                }
+                @if (content().address.postalCode || content().address.city) {
+                  <div>
+                    {{ content().address.postalCode || '' }} {{ content().address.city || '' }}
+                  </div>
+                }
+                @if (content().address.country) {
+                  <div>{{ content().address.country }}</div>
+                }
+              </div>
 
-            <div
-              class="letter-closing"
-              [ngStyle]="blockCss('closing')"
-              [style.color]="effBlockStyle('closing').colorHex"
-            >
-              {{ content().closing }}
-            </div>
-            <div class="letter-signature-space"></div>
-            <div
-              class="letter-signature"
-              [ngStyle]="blockCss('signature')"
-              [style.color]="effBlockStyle('signature').colorHex"
-            >
-              {{ content().signature }}
+              <div
+                class="letter-date"
+                [ngStyle]="blockCss('date')"
+                [style.color]="effBlockStyle('date').colorHex"
+              >
+                {{ content().date }}
+              </div>
+
+              <div
+                class="letter-subject"
+                [ngStyle]="blockCss('subject')"
+                [style.color]="effBlockStyle('subject').colorHex"
+              >
+                {{ content().subject }}
+              </div>
+
+              <div
+                class="letter-greeting"
+                [ngStyle]="blockCss('greeting')"
+                [style.color]="effBlockStyle('greeting').colorHex"
+              >
+                {{ content().greeting }}
+              </div>
+
+              <div class="letter-body">
+                @for (para of content().bodyParagraphs || []; track $index) {
+                  @if (para) {
+                    <p [ngStyle]="paraCss($index)" [style.color]="effParaStyle($index).colorHex">
+                      {{ para }}
+                    </p>
+                  }
+                }
+              </div>
+
+              <div
+                class="letter-closing"
+                [ngStyle]="blockCss('closing')"
+                [style.color]="effBlockStyle('closing').colorHex"
+              >
+                {{ content().closing }}
+              </div>
+              <div class="letter-signature-space"></div>
+              <div
+                class="letter-signature"
+                [ngStyle]="blockCss('signature')"
+                [style.color]="effBlockStyle('signature').colorHex"
+              >
+                {{ content().signature }}
+              </div>
             </div>
           </div>
         </div>

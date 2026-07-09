@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  OnDestroy,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -23,6 +33,9 @@ import type {
   CoverLetterTone,
   CvSectionStyle,
   DocumentLibraryItem,
+  PageMargins,
+  PageSettings,
+  PageSize,
   StyleNote,
 } from '@applye/core';
 import {
@@ -34,6 +47,7 @@ import {
   COVER_LETTER_TONE_DEFAULT,
   COVER_LETTER_TONES,
   CV_ATS_SAFE_FONTS,
+  PAGE_SETTINGS_DEFAULT,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -54,7 +68,7 @@ import {
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
 })
-export class CoverLetterDetailComponent {
+export class CoverLetterDetailComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly db = inject(DbService);
@@ -240,23 +254,94 @@ export class CoverLetterDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
-  setPageSize(size: 'a4' | 'letter'): void {
-    this.updateStyle({
-      page: { ...(this.style().page ?? { size: 'a4', margin: 'normal' }), size },
-    });
+  readonly marginSides: { key: keyof PageMargins; label: string }[] = [
+    { key: 'top', label: 'documents.cv_style_margin_top' },
+    { key: 'right', label: 'documents.cv_style_margin_right' },
+    { key: 'bottom', label: 'documents.cv_style_margin_bottom' },
+    { key: 'left', label: 'documents.cv_style_margin_left' },
+  ];
+
+  /** Current 4-side margins in mm, already clamped by the resolver. */
+  readonly currentMargin = computed<PageMargins>(
+    () => resolvePageSettings(this.style().page).margin,
+  );
+
+  private updatePage(page: PageSettings): void {
+    this.updateStyle({ page });
   }
 
-  setPageMargin(margin: 'narrow' | 'normal' | 'wide'): void {
-    this.updateStyle({
-      page: { ...(this.style().page ?? { size: 'a4', margin: 'normal' }), margin },
-    });
+  setMarginSide(side: keyof PageMargins, value: number): void {
+    const clamped = Math.min(50, Math.max(0, Math.round(Number(value) || 0)));
+    const cur = this.currentMargin();
+    const size = this.style().page?.size ?? PAGE_SETTINGS_DEFAULT.size;
+    this.updatePage({ size, margin: { ...cur, [side]: clamped } });
   }
 
-  /** Preview page geometry — aspect ratio + margin padding from the resolver. */
-  readonly pageStyle = computed(() => {
+  setPageSize(size: PageSize): void {
+    this.updatePage({ size, margin: this.currentMargin() });
+  }
+
+  /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
+  private static readonly PX_PER_MM = 96 / 25.4;
+
+  /** Preview page geometry as CSS custom properties — real A4/Letter proportions
+   * plus margins, consumed by the `.letter-sheet` in the template/SCSS. Mirrors
+   * `pageVars` on `CvDetailComponent`. */
+  readonly pageVars = computed(() => {
     const r = resolvePageSettings(this.style().page);
-    return { 'aspect-ratio': `${r.widthMm} / ${r.heightMm}`, padding: `${r.marginPct}%` };
+    const px = CoverLetterDetailComponent.PX_PER_MM;
+    const w = r.widthMm * px;
+    const h = r.heightMm * px;
+    return {
+      '--page-w': `${w}px`,
+      '--page-h': `${h}px`,
+      '--mt': `${r.margin.top * px}px`,
+      '--mr': `${r.margin.right * px}px`,
+      '--mb': `${r.margin.bottom * px}px`,
+      '--ml': `${r.margin.left * px}px`,
+    } as Record<string, string>;
   });
+
+  /** The rendered sheet element — measured by `observeSheet()` for page count. */
+  readonly sheetEl = viewChild<ElementRef<HTMLElement>>('letterSheet');
+  readonly pageCount = signal(1);
+  readonly blockOverflow = signal(false);
+
+  private ro?: ResizeObserver;
+
+  private observeSheet(): void {
+    const el = this.sheetEl()?.nativeElement;
+    if (!el) return;
+    this.ro?.disconnect();
+    this.ro = new ResizeObserver(() => this.recomputePages(el));
+    this.ro.observe(el);
+    this.recomputePages(el);
+  }
+
+  private recomputePages(el: HTMLElement): void {
+    const r = resolvePageSettings(this.style().page);
+    const px = CoverLetterDetailComponent.PX_PER_MM;
+    const usableH = (r.heightMm - r.margin.top - r.margin.bottom) * px;
+    const contentH = el.scrollHeight - (r.margin.top + r.margin.bottom) * px;
+    this.pageCount.set(Math.max(1, Math.ceil(contentH / Math.max(1, usableH))));
+    // Block-too-tall: any direct child taller than one usable page.
+    const tooTall = Array.from(el.children).some(
+      (c) => (c as HTMLElement).offsetHeight > usableH + 1,
+    );
+    this.blockOverflow.set(tooTall || usableH <= 0);
+  }
+
+  private readonly observeSheetEffect = effect(() => {
+    // Re-run when previewMode flips to true (sheet enters the DOM) and when
+    // the sheet element or page geometry changes.
+    this.previewMode();
+    this.pageVars();
+    this.observeSheet();
+  });
+
+  ngOnDestroy(): void {
+    this.ro?.disconnect();
+  }
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));

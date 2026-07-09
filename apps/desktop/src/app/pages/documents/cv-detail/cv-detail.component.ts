@@ -45,6 +45,9 @@ import type {
   CvTemplate,
   CvTextRun,
   DocumentLibraryItem,
+  PageMargins,
+  PageSettings,
+  PageSize,
   StyleNote,
 } from '@applye/core';
 import {
@@ -200,27 +203,31 @@ export class CvDetailComponent implements OnDestroy {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
-  /** mm per named margin preset — mirrors `PRESET_MM` in cv-content.util. */
-  private static readonly MARGIN_PRESET_MM: Record<'narrow' | 'normal' | 'wide', number> = {
-    narrow: 12.7,
-    normal: 20,
-    wide: 30,
-  };
+  readonly marginSides: { key: keyof PageMargins; label: string }[] = [
+    { key: 'top', label: 'documents.cv_style_margin_top' },
+    { key: 'right', label: 'documents.cv_style_margin_right' },
+    { key: 'bottom', label: 'documents.cv_style_margin_bottom' },
+    { key: 'left', label: 'documents.cv_style_margin_left' },
+  ];
 
-  setPageSize(size: 'a4' | 'letter'): void {
-    this.updateStyle({
-      page: { ...(this.style().page ?? PAGE_SETTINGS_DEFAULT), size },
-    });
+  /** Current 4-side margins in mm, already clamped by the resolver. */
+  readonly currentMargin = computed<PageMargins>(
+    () => resolvePageSettings(this.style().page).margin,
+  );
+
+  private updatePage(page: PageSettings): void {
+    this.updateStyle({ page });
   }
 
-  setPageMargin(margin: 'narrow' | 'normal' | 'wide'): void {
-    const mm = CvDetailComponent.MARGIN_PRESET_MM[margin];
-    this.updateStyle({
-      page: {
-        ...(this.style().page ?? PAGE_SETTINGS_DEFAULT),
-        margin: { top: mm, right: mm, bottom: mm, left: mm },
-      },
-    });
+  setMarginSide(side: keyof PageMargins, value: number): void {
+    const clamped = Math.min(50, Math.max(0, Math.round(Number(value) || 0)));
+    const cur = this.currentMargin();
+    const size = this.style().page?.size ?? PAGE_SETTINGS_DEFAULT.size;
+    this.updatePage({ size, margin: { ...cur, [side]: clamped } });
+  }
+
+  setPageSize(size: PageSize): void {
+    this.updatePage({ size, margin: this.currentMargin() });
   }
 
   /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */

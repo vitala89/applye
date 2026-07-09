@@ -286,6 +286,20 @@
 .coverdetail__style-field input[type='number'] {
   width: 80px;
 }
+.cvdetail__margin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.cvdetail__margin-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+.cvdetail__margin-input input {
+  width: 100%;
+}
 .coverdetail__style select,
 .coverdetail__style input,
 .coverdetail__style-pop select,
@@ -572,17 +586,33 @@
 }
 
 /* ---- Preview sheet ---- */
+.letter-sheet-viewport {
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--surface-2);
+}
 .letter-sheet {
-  width: 100%;
-  max-width: 720px;
-  min-height: 900px;
-  background: #ffffff;
-  color: #1a1a1a;
-  padding: 64px 72px;
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: 4px;
-  box-shadow: var(--shadow-sm);
+  position: relative;
+  width: var(--page-w);
+  min-height: var(--page-h);
+  padding: var(--mt) var(--mr) var(--mb) var(--ml);
+  box-sizing: border-box;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+  color: var(--text-primary);
   line-height: 1.55;
+  // Page-break guides: a dashed line at every full page-height boundary.
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--page-h) - 1px),
+    var(--border-strong, #999) calc(var(--page-h) - 1px),
+    var(--border-strong, #999) var(--page-h)
+  );
+  background-attachment: local;
 }
 .letter-recipient {
   margin-bottom: 32px;

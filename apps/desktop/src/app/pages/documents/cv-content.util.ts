@@ -11,6 +11,8 @@ import {
   CvSkillsSection,
   CvStyle,
   CvTemplate,
+  CoverLetterBlockKey,
+  CoverLetterStyle,
 } from '@applye/core';
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
@@ -512,6 +514,37 @@ export function effectiveSectionStyle(
     fontSizePt: o.fontSizePt ?? style.fontSizePt,
     fontWeight: o.fontWeight ?? style.fontWeight,
     colorHex: o.colorHex ?? style.accentColorHex,
+  };
+}
+
+/** Effective per-block cover-letter style — the block's override merged over
+ * the document-wide style. Mirrors `effectiveSectionStyle` for CVs. */
+export function effectiveCoverLetterBlockStyle(
+  style: CoverLetterStyle,
+  key: CoverLetterBlockKey,
+): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+  const o = style.sectionStyles?.[key] ?? {};
+  return {
+    fontFamily: o.fontFamily ?? style.fontFamily,
+    fontSizePt: o.fontSizePt ?? style.fontSizePt,
+    fontWeight: o.fontWeight ?? style.fontWeight,
+    colorHex: o.colorHex ?? style.accentColorHex,
+  };
+}
+
+/** Effective style for a single body paragraph — its `body_<i>` override
+ * merged over the `body` block style, merged over the document-wide style. */
+export function effectiveCoverLetterParagraphStyle(
+  style: CoverLetterStyle,
+  index: number,
+): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+  const base = effectiveCoverLetterBlockStyle(style, 'body');
+  const o = style.sectionStyles?.[`body_${index}`] ?? {};
+  return {
+    fontFamily: o.fontFamily ?? base.fontFamily,
+    fontSizePt: o.fontSizePt ?? base.fontSizePt,
+    fontWeight: o.fontWeight ?? base.fontWeight,
+    colorHex: o.colorHex ?? base.colorHex,
   };
 }
 

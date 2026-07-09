@@ -51,6 +51,8 @@ import {
   SupportedLanguage,
   CoverLetterAddress,
   CoverLetterContent,
+  COVER_LETTER_TONE_DEFAULT,
+  COVER_LETTER_LENGTH_DEFAULT,
   CvContent,
   DocumentLibraryItem,
   parseArchetypes,
@@ -2369,6 +2371,8 @@ export class JobsComponent implements OnInit, OnDestroy {
         job_description: job.jdText ?? '',
         language,
         section: 'all',
+        tone: COVER_LETTER_TONE_DEFAULT,
+        length: COVER_LETTER_LENGTH_DEFAULT,
       });
       const res = await this.ai.run({
         mode: settings.aiMode,
@@ -2383,6 +2387,8 @@ export class JobsComponent implements OnInit, OnDestroy {
         ...parsed,
         bodyParagraphs: parsed.bodyParagraphs ?? [],
         jobDescription: job.jdText ?? '',
+        tone: parsed.tone ?? COVER_LETTER_TONE_DEFAULT,
+        length: parsed.length ?? COVER_LETTER_LENGTH_DEFAULT,
       };
       const inputHash = await this.db.hashText(
         [job.id, profile.fullMd, job.jdText ?? '', language, this.documentReviewRegion()].join(
@@ -2608,6 +2614,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       let baseClosing = '';
       let baseSignature = '';
       let baseRegionTag = 'generic';
+      // Honor the base letter's chosen voice/length; fall back to defaults.
+      let tone = COVER_LETTER_TONE_DEFAULT;
+      let length = COVER_LETTER_LENGTH_DEFAULT;
 
       const selectedId = this.selectedCoverLetterId();
       if (selectedId) {
@@ -2621,6 +2630,8 @@ export class JobsComponent implements OnInit, OnDestroy {
           baseClosing = content.closing || '';
           baseSignature = content.signature || '';
           baseRegionTag = baseDoc.regionTag || 'generic';
+          tone = content.tone ?? tone;
+          length = content.length ?? length;
         }
       }
 
@@ -2635,6 +2646,8 @@ export class JobsComponent implements OnInit, OnDestroy {
           job_description: jd,
           body_paragraphs: JSON.stringify(baseParagraphs),
           language: lang,
+          tone,
+          length,
         });
         const res = await this.ai.run({
           mode: settings?.aiMode ?? 'api',
@@ -2660,6 +2673,8 @@ export class JobsComponent implements OnInit, OnDestroy {
           job_description: jd,
           language: lang,
           section: 'all',
+          tone,
+          length,
         });
         const res = await this.ai.run({
           mode: settings?.aiMode ?? 'api',
@@ -2695,6 +2710,8 @@ export class JobsComponent implements OnInit, OnDestroy {
         closing: baseClosing,
         signature: baseSignature,
         jobDescription: jd,
+        tone,
+        length,
       };
 
       const label = `${job.company || 'Job'} — Tailored Cover Letter`;

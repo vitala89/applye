@@ -11,6 +11,8 @@ import {
   CvSkillsSection,
   CvStyle,
   CvTemplate,
+  CoverLetterBlockKey,
+  CoverLetterStyle,
 } from '@applye/core';
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
@@ -505,6 +507,21 @@ export function buildContactLine(
 export function effectiveSectionStyle(
   style: CvStyle,
   key: CvSectionKey,
+): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+  const o = style.sectionStyles?.[key] ?? {};
+  return {
+    fontFamily: o.fontFamily ?? style.fontFamily,
+    fontSizePt: o.fontSizePt ?? style.fontSizePt,
+    fontWeight: o.fontWeight ?? style.fontWeight,
+    colorHex: o.colorHex ?? style.accentColorHex,
+  };
+}
+
+/** Effective per-block cover-letter style — the block's override merged over
+ * the document-wide style. Mirrors `effectiveSectionStyle` for CVs. */
+export function effectiveCoverLetterBlockStyle(
+  style: CoverLetterStyle,
+  key: CoverLetterBlockKey,
 ): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
   const o = style.sectionStyles?.[key] ?? {};
   return {

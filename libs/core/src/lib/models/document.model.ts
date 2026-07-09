@@ -182,20 +182,45 @@ export const COVER_LETTER_LENGTH_TARGET: Record<CoverLetterLength, { min: number
   Detailed: { min: 320, max: 450 },
 };
 
+/** Styleable cover-letter blocks — the fixed business-letter order. Body
+ * paragraphs share one `body` key (they render as one styled block). */
+export type CoverLetterBlockKey =
+  | 'recipient'
+  | 'date'
+  | 'subject'
+  | 'greeting'
+  | 'body'
+  | 'closing'
+  | 'signature';
+
+export const COVER_LETTER_BLOCK_KEYS: readonly CoverLetterBlockKey[] = [
+  'recipient',
+  'date',
+  'subject',
+  'greeting',
+  'body',
+  'closing',
+  'signature',
+];
+
 /** Cover letter style choices — mirrors the CV `CvStyle` shape (same field
  * names so the deterministic Rust `check_style_safety` command validates it
- * unchanged), but preview-only: export renders style-agnostic markdown just
- * like the CV library export. */
+ * unchanged, including per-block overrides), but preview-only: export renders
+ * style-agnostic markdown just like the CV library export. */
 export interface CoverLetterStyle {
   fontFamily: string;
   fontSizePt: number;
   accentColorHex: string;
+  fontWeight: CvFontWeight;
+  /** Per-block overrides; any unset field inherits the document-wide value. */
+  sectionStyles?: Partial<Record<CoverLetterBlockKey, CvSectionStyle>>;
 }
 
 export const COVER_LETTER_STYLE_DEFAULT: CoverLetterStyle = {
   fontFamily: 'Calibri',
   fontSizePt: 11,
   accentColorHex: '#333333',
+  fontWeight: 400,
 };
 
 export type DocumentContent = CvContent | CoverLetterContent;

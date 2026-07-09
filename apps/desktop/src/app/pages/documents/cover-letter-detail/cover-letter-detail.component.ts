@@ -13,16 +13,20 @@ import {
   Pencil,
   Sparkles,
 } from 'lucide-angular';
+import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import type {
   CoverLetterAddress,
+  CoverLetterBlockKey,
   CoverLetterContent,
   CoverLetterLength,
   CoverLetterStyle,
   CoverLetterTone,
+  CvSectionStyle,
   DocumentLibraryItem,
   StyleNote,
 } from '@applye/core';
 import {
+  COVER_LETTER_BLOCK_KEYS,
   COVER_LETTER_LENGTH_DEFAULT,
   COVER_LETTER_LENGTH_TARGET,
   COVER_LETTER_LENGTHS,
@@ -35,13 +39,13 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
-import { cleanJsonText } from '../cv-content.util';
+import { cleanJsonText, effectiveCoverLetterBlockStyle } from '../cv-content.util';
 
 @Component({
   selector: 'app-cover-letter-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, ButtonDirective],
+  imports: [FormsModule, LucideAngularModule, ButtonDirective, NgStyle, NgTemplateOutlet],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
 })
@@ -69,6 +73,10 @@ export class CoverLetterDetailComponent {
   protected readonly toneOptions = COVER_LETTER_TONES;
   protected readonly lengthOptions = COVER_LETTER_LENGTHS;
   protected readonly fontOptions = CV_ATS_SAFE_FONTS;
+  protected readonly blockKeys = COVER_LETTER_BLOCK_KEYS;
+
+  /** Which block's Style popover is open, if any — only one at a time. */
+  readonly openStyleKey = signal<CoverLetterBlockKey | null>(null);
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -237,6 +245,48 @@ export class CoverLetterDetailComponent {
         return true;
       }),
     );
+  }
+
+  /** Effective font/size/weight/colour for a block — its override merged over
+   * the document-wide style. */
+  effBlockStyle(key: CoverLetterBlockKey) {
+    return effectiveCoverLetterBlockStyle(this.style(), key);
+  }
+
+  /** Bindable style object for a preview block's font/size/weight. */
+  blockCss(key: CoverLetterBlockKey): Record<string, string> {
+    const s = this.effBlockStyle(key);
+    return {
+      'font-family': s.fontFamily,
+      'font-size': `${s.fontSizePt}pt`,
+      'font-weight': String(s.fontWeight),
+    };
+  }
+
+  toggleStylePopover(key: CoverLetterBlockKey): void {
+    this.openStyleKey.set(this.openStyleKey() === key ? null : key);
+  }
+
+  sectionOverride(key: CoverLetterBlockKey): CvSectionStyle | undefined {
+    return this.style().sectionStyles?.[key];
+  }
+
+  setSectionStyle(key: CoverLetterBlockKey, patch: Partial<CvSectionStyle>): void {
+    const current = this.style();
+    const sectionStyles = { ...(current.sectionStyles ?? {}) };
+    sectionStyles[key] = { ...(sectionStyles[key] ?? {}), ...patch };
+    this.style.set({ ...current, sectionStyles });
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  resetSectionStyle(key: CoverLetterBlockKey): void {
+    const current = this.style();
+    const sectionStyles = { ...(current.sectionStyles ?? {}) };
+    delete sectionStyles[key];
+    this.style.set({ ...current, sectionStyles });
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
   updateAddress(field: keyof CoverLetterAddress, value: string): void {

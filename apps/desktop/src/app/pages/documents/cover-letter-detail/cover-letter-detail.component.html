@@ -4,7 +4,6 @@
   <p class="coverdetail__state">{{ t()('common.error') }}</p>
 } @else {
   <div class="coverdetail">
-    <!-- Toolbar -->
     <header class="coverdetail__bar">
       <button
         class="icon-btn"
@@ -21,8 +20,7 @@
         (ngModelChange)="label.set($event)"
         [placeholder]="t()('documents.cover_letter_untitled')"
       />
-
-      <span class="coverdetail__spacer"></span>
+      <div class="coverdetail__spacer"></div>
 
       <!-- Word-count badge vs the selected length budget -->
       <span
@@ -37,7 +35,13 @@
         <strong>{{ wordCount() }}</strong>
       </span>
 
-      <button appButton variant="secondary" size="sm" (click)="previewMode.set(!previewMode())">
+      <button
+        appButton
+        variant="secondary"
+        size="sm"
+        [class.icon-btn--active]="previewMode()"
+        (click)="previewMode.set(!previewMode())"
+      >
         <lucide-icon
           [img]="previewMode() ? icons.edit : icons.preview"
           [size]="14"
@@ -47,8 +51,10 @@
       </button>
 
       <button
-        class="draft-btn"
-        type="button"
+        appButton
+        variant="secondary"
+        size="sm"
+        class="draft-accent"
         [disabled]="drafting() || regeneratingBlock() !== null"
         (click)="draftWithAI()"
       >
@@ -76,122 +82,151 @@
       </button>
     </header>
 
-    <!-- Meta: region + default -->
-    <div class="coverdetail__meta">
-      <div class="coverdetail__meta-field">
-        <span class="coverdetail__meta-label">{{ t()('documents.cv_field_region') }}</span>
-        <div class="coverdetail__meta-row">
-          <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
-            @for (r of regionTags; track r) {
-              <option [value]="r">{{ r.toUpperCase() }}</option>
-            }
-          </select>
-          <label class="coverdetail__checkbox">
-            <input
-              type="checkbox"
-              [ngModel]="isDefault()"
-              (ngModelChange)="isDefault.set($event)"
-            />
-            <span>{{ t()('documents.cv_field_is_default') }}</span>
-          </label>
-        </div>
-      </div>
-    </div>
-
     <div class="coverdetail__body">
       <!-- EDIT MODE -->
       @if (!previewMode()) {
-        <div class="editor-scroll">
-          <div class="editor-col">
-            <!-- Config card: tone / length / font / size / accent -->
-            <div class="config-card">
-              <div class="config-row">
-                <label class="config-field">
-                  <span class="config-field__label">{{ t()('documents.cover_letter_tone') }}</span>
-                  <select [ngModel]="tone()" (ngModelChange)="setTone($event)">
-                    @for (opt of toneOptions; track opt) {
-                      <option [value]="opt">
-                        {{ t()('documents.cover_letter_tone_' + opt.toLowerCase()) }}
-                      </option>
-                    }
-                  </select>
-                </label>
-                <label class="config-field">
-                  <span class="config-field__label">{{
-                    t()('documents.cover_letter_length')
-                  }}</span>
-                  <select [ngModel]="length()" (ngModelChange)="setLength($event)">
-                    @for (opt of lengthOptions; track opt) {
-                      <option [value]="opt">
-                        {{ t()('documents.cover_letter_length_' + opt.toLowerCase()) }}
-                      </option>
-                    }
-                  </select>
-                </label>
-              </div>
-
-              <div class="config-divider"></div>
-
-              <div class="config-row">
-                <label class="config-field">
-                  <span class="config-field__label">{{ t()('documents.cv_style_font') }}</span>
-                  <select
-                    [ngModel]="style().fontFamily"
-                    (ngModelChange)="updateStyle({ fontFamily: $event })"
-                  >
-                    @for (f of fontOptions; track f) {
-                      <option [value]="f">{{ f }}</option>
-                    }
-                  </select>
-                </label>
-                <label class="config-field">
-                  <span class="config-field__label">{{ t()('documents.cv_style_size') }}</span>
-                  <input
-                    type="number"
-                    min="9"
-                    max="13"
-                    step="0.5"
-                    class="config-field__num"
-                    [ngModel]="style().fontSizePt"
-                    (ngModelChange)="updateStyle({ fontSizePt: +$event })"
-                  />
-                </label>
-                <label class="config-field">
-                  <span class="config-field__label">{{ t()('documents.cv_style_color') }}</span>
-                  <span class="color-input">
-                    <input
-                      type="color"
-                      [ngModel]="style().accentColorHex"
-                      (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                    />
-                    <input
-                      type="text"
-                      class="color-input__hex"
-                      [ngModel]="style().accentColorHex"
-                      (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                    />
-                  </span>
-                </label>
-              </div>
-
-              @if (styleNotes().length) {
-                <ul class="style-notes">
-                  @for (note of styleNotes(); track note.kind + note.detail) {
-                    <li>{{ styleNoteMessage(note) }}</li>
+        <div class="coverdetail__editor-col">
+          <!-- Config panel: region + tone/length + style -->
+          <div class="coverdetail__panel">
+            <div class="coverdetail__meta-field">
+              <span class="coverdetail__style-label">{{ t()('documents.cv_field_region') }}</span>
+              <div class="coverdetail__meta-row">
+                <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
+                  @for (r of regionTags; track r) {
+                    <option [value]="r">{{ r.toUpperCase() }}</option>
                   }
-                </ul>
-              }
+                </select>
+                <label class="coverdetail__checkbox">
+                  <input
+                    type="checkbox"
+                    [ngModel]="isDefault()"
+                    (ngModelChange)="isDefault.set($event)"
+                  />
+                  <span>{{ t()('documents.cv_field_is_default') }}</span>
+                </label>
+              </div>
             </div>
 
+            <div class="coverdetail__panel-divider"></div>
+
+            <div class="coverdetail__style">
+              <div class="coverdetail__style-field">
+                <span class="coverdetail__style-label">{{
+                  t()('documents.cover_letter_tone')
+                }}</span>
+                <select [ngModel]="tone()" (ngModelChange)="setTone($event)">
+                  @for (opt of toneOptions; track opt) {
+                    <option [value]="opt">
+                      {{ t()('documents.cover_letter_tone_' + opt.toLowerCase()) }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="coverdetail__style-field">
+                <span class="coverdetail__style-label">{{
+                  t()('documents.cover_letter_length')
+                }}</span>
+                <select [ngModel]="length()" (ngModelChange)="setLength($event)">
+                  @for (opt of lengthOptions; track opt) {
+                    <option [value]="opt">
+                      {{ t()('documents.cover_letter_length_' + opt.toLowerCase()) }}
+                    </option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="coverdetail__panel-divider"></div>
+
+            <div class="coverdetail__style">
+              <div class="coverdetail__style-field">
+                <span class="coverdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+                <select
+                  [ngModel]="style().fontFamily"
+                  (ngModelChange)="updateStyle({ fontFamily: $event })"
+                >
+                  @for (f of fontOptions; track f) {
+                    <option [value]="f">{{ f }}</option>
+                  }
+                </select>
+              </div>
+              <div class="coverdetail__style-field">
+                <span class="coverdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+                <input
+                  type="number"
+                  min="6"
+                  max="24"
+                  step="0.5"
+                  [ngModel]="style().fontSizePt"
+                  (ngModelChange)="updateStyle({ fontSizePt: +$event })"
+                />
+              </div>
+              <div class="coverdetail__style-field">
+                <span class="coverdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
+                <select
+                  [ngModel]="style().fontWeight"
+                  (ngModelChange)="updateStyle({ fontWeight: $any(+$event) })"
+                >
+                  <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                  <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                  <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                  <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+                </select>
+              </div>
+              <div class="coverdetail__style-field">
+                <span class="coverdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+                <div class="coverdetail__style-color-row">
+                  <input
+                    type="color"
+                    [ngModel]="style().accentColorHex"
+                    (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                  />
+                  <input
+                    type="text"
+                    class="coverdetail__style-color-hex"
+                    [ngModel]="style().accentColorHex"
+                    (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                  />
+                </div>
+              </div>
+            </div>
+
+            @if (styleNotes().length) {
+              <div class="coverdetail__ats-note">
+                @for (note of styleNotes(); track note.kind + note.detail) {
+                  <p>{{ styleNoteMessage(note) }}</p>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Blocks -->
+          <div class="coverdetail__blocks">
             <!-- Recipient address -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_field_recipient_address')
                 }}</span>
+                <div class="coverdetail__block-actions">
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'recipient'"
+                    (click)="toggleStylePopover('recipient')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                </div>
               </div>
-              <div class="block-grid">
-                <label class="field">
+              @if (openStyleKey() === 'recipient') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'recipient' }"
+                ></ng-container>
+              }
+              <div class="coverdetail__grid">
+                <label class="coverdetail__field">
                   <span>{{ t()('documents.cover_letter_field_recipient') }}</span>
                   <input
                     type="text"
@@ -199,7 +234,7 @@
                     (ngModelChange)="updateAddress('recipientName', $event)"
                   />
                 </label>
-                <label class="field">
+                <label class="coverdetail__field">
                   <span>{{ t()('documents.cover_letter_field_company') }}</span>
                   <input
                     type="text"
@@ -207,7 +242,7 @@
                     (ngModelChange)="updateAddress('company', $event)"
                   />
                 </label>
-                <label class="field field--wide">
+                <label class="coverdetail__field coverdetail__field--wide">
                   <span>{{ t()('documents.cover_letter_field_street') }}</span>
                   <input
                     type="text"
@@ -215,7 +250,7 @@
                     (ngModelChange)="updateAddress('street', $event)"
                   />
                 </label>
-                <label class="field">
+                <label class="coverdetail__field">
                   <span>{{ t()('documents.cover_letter_field_postal_code') }}</span>
                   <input
                     type="text"
@@ -223,7 +258,7 @@
                     (ngModelChange)="updateAddress('postalCode', $event)"
                   />
                 </label>
-                <label class="field">
+                <label class="coverdetail__field">
                   <span>{{ t()('documents.cover_letter_field_city') }}</span>
                   <input
                     type="text"
@@ -231,7 +266,7 @@
                     (ngModelChange)="updateAddress('city', $event)"
                   />
                 </label>
-                <label class="field field--wide">
+                <label class="coverdetail__field coverdetail__field--wide">
                   <span>{{ t()('documents.cover_letter_field_country') }}</span>
                   <input
                     type="text"
@@ -243,99 +278,165 @@
             </section>
 
             <!-- Date -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_field_date')
                 }}</span>
+                <div class="coverdetail__block-actions">
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'date'"
+                    (click)="toggleStylePopover('date')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                </div>
               </div>
+              @if (openStyleKey() === 'date') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'date' }"
+                ></ng-container>
+              }
               <input
                 type="text"
-                class="field__full"
+                class="coverdetail__full"
                 [ngModel]="content().date"
                 (ngModelChange)="updateField('date', $event)"
               />
             </section>
 
             <!-- Subject -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_field_subject')
                 }}</span>
-                <button
-                  class="regen-btn"
-                  type="button"
-                  [disabled]="regeneratingBlock() === 'subject'"
-                  (click)="regenerateBlock('subject')"
-                >
-                  <lucide-icon
-                    [img]="icons.regenerate"
-                    [size]="13"
-                    [class.spin]="regeneratingBlock() === 'subject'"
-                    aria-hidden="true"
-                  />
-                  {{ t()('documents.cover_letter_regenerate') }}
-                </button>
+                <div class="coverdetail__block-actions">
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'subject'"
+                    (click)="toggleStylePopover('subject')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                  <button
+                    class="coverdetail__regen"
+                    type="button"
+                    [disabled]="regeneratingBlock() === 'subject'"
+                    (click)="regenerateBlock('subject')"
+                  >
+                    <lucide-icon
+                      [img]="icons.regenerate"
+                      [size]="13"
+                      [class.spin]="regeneratingBlock() === 'subject'"
+                      aria-hidden="true"
+                    />
+                    {{ t()('documents.cover_letter_regenerate') }}
+                  </button>
+                </div>
               </div>
+              @if (openStyleKey() === 'subject') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'subject' }"
+                ></ng-container>
+              }
               <input
                 type="text"
-                class="field__full"
+                class="coverdetail__full"
                 [ngModel]="content().subject"
                 (ngModelChange)="updateField('subject', $event)"
               />
             </section>
 
             <!-- Greeting -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_field_greeting')
                 }}</span>
-                <button
-                  class="regen-btn"
-                  type="button"
-                  [disabled]="regeneratingBlock() === 'greeting'"
-                  (click)="regenerateBlock('greeting')"
-                >
-                  <lucide-icon
-                    [img]="icons.regenerate"
-                    [size]="13"
-                    [class.spin]="regeneratingBlock() === 'greeting'"
-                    aria-hidden="true"
-                  />
-                  {{ t()('documents.cover_letter_regenerate') }}
-                </button>
+                <div class="coverdetail__block-actions">
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'greeting'"
+                    (click)="toggleStylePopover('greeting')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                  <button
+                    class="coverdetail__regen"
+                    type="button"
+                    [disabled]="regeneratingBlock() === 'greeting'"
+                    (click)="regenerateBlock('greeting')"
+                  >
+                    <lucide-icon
+                      [img]="icons.regenerate"
+                      [size]="13"
+                      [class.spin]="regeneratingBlock() === 'greeting'"
+                      aria-hidden="true"
+                    />
+                    {{ t()('documents.cover_letter_regenerate') }}
+                  </button>
+                </div>
               </div>
+              @if (openStyleKey() === 'greeting') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'greeting' }"
+                ></ng-container>
+              }
               <input
                 type="text"
-                class="field__full"
+                class="coverdetail__full"
                 [ngModel]="content().greeting"
                 (ngModelChange)="updateField('greeting', $event)"
               />
             </section>
 
             <!-- Body paragraphs -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_body_paragraphs')
                 }}</span>
-                <span class="block-card__count">{{ (content().bodyParagraphs || []).length }}</span>
+                <div class="coverdetail__block-actions">
+                  <span class="coverdetail__count">{{
+                    (content().bodyParagraphs || []).length
+                  }}</span>
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'body'"
+                    (click)="toggleStylePopover('body')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                </div>
               </div>
-              <div class="paragraphs">
+              @if (openStyleKey() === 'body') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'body' }"
+                ></ng-container>
+              }
+              <div class="coverdetail__paragraphs">
                 @for (para of content().bodyParagraphs || []; track $index) {
-                  <div class="paragraph">
-                    <div class="paragraph__head">
+                  <div class="coverdetail__paragraph">
+                    <div class="coverdetail__paragraph-head">
                       <span>{{
                         t()('documents.cover_letter_field_paragraph').replace(
                           '{index}',
                           '' + ($index + 1)
                         )
                       }}</span>
-                      <div class="paragraph__actions">
+                      <div class="coverdetail__paragraph-actions">
                         <button
-                          class="regen-btn"
+                          class="coverdetail__regen"
                           type="button"
                           [disabled]="regeneratingBlock() === 'body_' + $index"
                           (click)="regenerateBlock('body', $index)"
@@ -359,89 +460,180 @@
                       </div>
                     </div>
                     <textarea
-                      class="paragraph__text"
+                      class="coverdetail__textarea"
                       [ngModel]="para"
                       (ngModelChange)="updateParagraph($index, $event)"
                     ></textarea>
                   </div>
                 }
               </div>
-              <button class="add-btn" type="button" (click)="addParagraph()">
+              <button class="coverdetail__add" type="button" (click)="addParagraph()">
                 <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
                 {{ t()('documents.cover_letter_add_paragraph') }}
               </button>
             </section>
 
             <!-- Closing -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_field_closing')
                 }}</span>
-                <button
-                  class="regen-btn"
-                  type="button"
-                  [disabled]="regeneratingBlock() === 'closing'"
-                  (click)="regenerateBlock('closing')"
-                >
-                  <lucide-icon
-                    [img]="icons.regenerate"
-                    [size]="13"
-                    [class.spin]="regeneratingBlock() === 'closing'"
-                    aria-hidden="true"
-                  />
-                  {{ t()('documents.cover_letter_regenerate') }}
-                </button>
+                <div class="coverdetail__block-actions">
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'closing'"
+                    (click)="toggleStylePopover('closing')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                  <button
+                    class="coverdetail__regen"
+                    type="button"
+                    [disabled]="regeneratingBlock() === 'closing'"
+                    (click)="regenerateBlock('closing')"
+                  >
+                    <lucide-icon
+                      [img]="icons.regenerate"
+                      [size]="13"
+                      [class.spin]="regeneratingBlock() === 'closing'"
+                      aria-hidden="true"
+                    />
+                    {{ t()('documents.cover_letter_regenerate') }}
+                  </button>
+                </div>
               </div>
+              @if (openStyleKey() === 'closing') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'closing' }"
+                ></ng-container>
+              }
               <input
                 type="text"
-                class="field__full"
+                class="coverdetail__full"
                 [ngModel]="content().closing"
                 (ngModelChange)="updateField('closing', $event)"
               />
             </section>
 
             <!-- Signature -->
-            <section class="block-card">
-              <div class="block-card__head">
-                <span class="block-card__title">{{
+            <section class="coverdetail__block">
+              <div class="coverdetail__block-head">
+                <span class="coverdetail__block-title">{{
                   t()('documents.cover_letter_field_signature')
                 }}</span>
-                <button
-                  class="regen-btn"
-                  type="button"
-                  [disabled]="regeneratingBlock() === 'signature'"
-                  (click)="regenerateBlock('signature')"
-                >
-                  <lucide-icon
-                    [img]="icons.regenerate"
-                    [size]="13"
-                    [class.spin]="regeneratingBlock() === 'signature'"
-                    aria-hidden="true"
-                  />
-                  {{ t()('documents.cover_letter_regenerate') }}
-                </button>
+                <div class="coverdetail__block-actions">
+                  <button
+                    type="button"
+                    class="coverdetail__style-btn"
+                    [class.coverdetail__style-btn--active]="openStyleKey() === 'signature'"
+                    (click)="toggleStylePopover('signature')"
+                  >
+                    {{ t()('documents.cv_section_style') }}
+                  </button>
+                  <button
+                    class="coverdetail__regen"
+                    type="button"
+                    [disabled]="regeneratingBlock() === 'signature'"
+                    (click)="regenerateBlock('signature')"
+                  >
+                    <lucide-icon
+                      [img]="icons.regenerate"
+                      [size]="13"
+                      [class.spin]="regeneratingBlock() === 'signature'"
+                      aria-hidden="true"
+                    />
+                    {{ t()('documents.cover_letter_regenerate') }}
+                  </button>
+                </div>
               </div>
+              @if (openStyleKey() === 'signature') {
+                <ng-container
+                  [ngTemplateOutlet]="stylePopover"
+                  [ngTemplateOutletContext]="{ $implicit: 'signature' }"
+                ></ng-container>
+              }
               <input
                 type="text"
-                class="field__full"
+                class="coverdetail__full"
                 [ngModel]="content().signature"
                 (ngModelChange)="updateField('signature', $event)"
               />
             </section>
           </div>
         </div>
-      }
 
-      <!-- PREVIEW MODE -->
-      @if (previewMode()) {
-        <div class="preview-scroll">
+        <!-- Per-block Style popover (font / size / colour / weight), parameterized by key -->
+        <ng-template #stylePopover let-key>
+          <div class="coverdetail__style-pop">
+            <label class="coverdetail__style-field">
+              <span class="coverdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.fontFamily ?? ''"
+                (ngModelChange)="setSectionStyle(key, { fontFamily: $event || undefined })"
+              >
+                <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                @for (f of fontOptions; track f) {
+                  <option [value]="f">{{ f }}</option>
+                }
+              </select>
+            </label>
+            <label class="coverdetail__style-field">
+              <span class="coverdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+              <input
+                type="number"
+                min="8"
+                max="14"
+                step="0.5"
+                [ngModel]="sectionOverride(key)?.fontSizePt ?? null"
+                [placeholder]="style().fontSizePt"
+                (ngModelChange)="setSectionStyle(key, { fontSizePt: $event ? +$event : undefined })"
+              />
+            </label>
+            <label class="coverdetail__style-field">
+              <span class="coverdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+              <input
+                type="color"
+                [ngModel]="sectionOverride(key)?.colorHex ?? style().accentColorHex"
+                (ngModelChange)="setSectionStyle(key, { colorHex: $event })"
+              />
+            </label>
+            <label class="coverdetail__style-field">
+              <span class="coverdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.fontWeight ?? null"
+                (ngModelChange)="
+                  setSectionStyle(key, { fontWeight: $event ? $any(+$event) : undefined })
+                "
+              >
+                <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+                <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+              </select>
+            </label>
+            <button type="button" class="coverdetail__style-reset" (click)="resetSectionStyle(key)">
+              {{ t()('documents.cv_section_style_reset') }}
+            </button>
+          </div>
+        </ng-template>
+      } @else {
+        <!-- PREVIEW MODE -->
+        <div class="coverdetail__preview-col">
           <div
             class="letter-sheet"
             [style.font-family]="style().fontFamily"
             [style.font-size.pt]="style().fontSizePt"
+            [style.font-weight]="style().fontWeight"
           >
-            <div class="letter-recipient">
+            <div
+              class="letter-recipient"
+              [ngStyle]="blockCss('recipient')"
+              [style.color]="effBlockStyle('recipient').colorHex"
+            >
               @if (content().address.recipientName) {
                 <div>{{ content().address.recipientName }}</div>
               }
@@ -461,15 +653,35 @@
               }
             </div>
 
-            <div class="letter-date">{{ content().date }}</div>
+            <div
+              class="letter-date"
+              [ngStyle]="blockCss('date')"
+              [style.color]="effBlockStyle('date').colorHex"
+            >
+              {{ content().date }}
+            </div>
 
-            <div class="letter-subject" [style.color]="style().accentColorHex">
+            <div
+              class="letter-subject"
+              [ngStyle]="blockCss('subject')"
+              [style.color]="effBlockStyle('subject').colorHex"
+            >
               {{ content().subject }}
             </div>
 
-            <div class="letter-greeting">{{ content().greeting }}</div>
+            <div
+              class="letter-greeting"
+              [ngStyle]="blockCss('greeting')"
+              [style.color]="effBlockStyle('greeting').colorHex"
+            >
+              {{ content().greeting }}
+            </div>
 
-            <div class="letter-body">
+            <div
+              class="letter-body"
+              [ngStyle]="blockCss('body')"
+              [style.color]="effBlockStyle('body').colorHex"
+            >
               @for (para of content().bodyParagraphs || []; track $index) {
                 @if (para) {
                   <p>{{ para }}</p>
@@ -477,10 +689,20 @@
               }
             </div>
 
-            <div class="letter-closing">
-              <div>{{ content().closing }}</div>
-              <div class="letter-signature-space"></div>
-              <div class="letter-signature">{{ content().signature }}</div>
+            <div
+              class="letter-closing"
+              [ngStyle]="blockCss('closing')"
+              [style.color]="effBlockStyle('closing').colorHex"
+            >
+              {{ content().closing }}
+            </div>
+            <div class="letter-signature-space"></div>
+            <div
+              class="letter-signature"
+              [ngStyle]="blockCss('signature')"
+              [style.color]="effBlockStyle('signature').colorHex"
+            >
+              {{ content().signature }}
             </div>
           </div>
         </div>

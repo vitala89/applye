@@ -203,6 +203,18 @@ export const COVER_LETTER_BLOCK_KEYS: readonly CoverLetterBlockKey[] = [
   'signature',
 ];
 
+export type PageSize = 'a4' | 'letter';
+export type PageMarginPreset = 'narrow' | 'normal' | 'wide';
+
+/** Page geometry for CV / cover-letter export + preview. Portrait only.
+ * Stored inside `style_json`; absent resolves to A4 / normal margins. */
+export interface PageSettings {
+  size: PageSize;
+  margin: PageMarginPreset;
+}
+
+export const PAGE_SETTINGS_DEFAULT: PageSettings = { size: 'a4', margin: 'normal' };
+
 /** Cover letter style choices — mirrors the CV `CvStyle` shape (same field
  * names so the deterministic Rust `check_style_safety` command validates it
  * unchanged, including per-block overrides), but preview-only: export renders
@@ -217,6 +229,8 @@ export interface CoverLetterStyle {
    * for an individual body paragraph (which inherits the `body` block style,
    * then the document-wide style). */
   sectionStyles?: Record<string, CvSectionStyle>;
+  /** Page geometry (size + margin preset); absent → A4 / normal. */
+  page?: PageSettings;
 }
 
 export const COVER_LETTER_STYLE_DEFAULT: CoverLetterStyle = {
@@ -224,6 +238,7 @@ export const COVER_LETTER_STYLE_DEFAULT: CoverLetterStyle = {
   fontSizePt: 11,
   accentColorHex: '#333333',
   fontWeight: 400,
+  page: PAGE_SETTINGS_DEFAULT,
 };
 
 export type DocumentContent = CvContent | CoverLetterContent;
@@ -246,6 +261,8 @@ export interface CvStyle {
   accentColorHex: string;
   fontWeight: CvFontWeight;
   sectionStyles?: Partial<Record<CvSectionKey, CvSectionStyle>>;
+  /** Page geometry (size + margin preset); absent → A4 / normal. */
+  page?: PageSettings;
 }
 
 export const CV_STYLE_DEFAULT: CvStyle = {
@@ -253,6 +270,7 @@ export const CV_STYLE_DEFAULT: CvStyle = {
   fontSizePt: 11,
   accentColorHex: '#333333',
   fontWeight: 400,
+  page: PAGE_SETTINGS_DEFAULT,
 };
 
 /** Curated ATS-safe font list (ROADMAP §16.5), mirrors the Rust

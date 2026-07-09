@@ -39,7 +39,11 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
-import { cleanJsonText, effectiveCoverLetterBlockStyle } from '../cv-content.util';
+import {
+  cleanJsonText,
+  effectiveCoverLetterBlockStyle,
+  effectiveCoverLetterParagraphStyle,
+} from '../cv-content.util';
 
 @Component({
   selector: 'app-cover-letter-detail',
@@ -75,8 +79,9 @@ export class CoverLetterDetailComponent {
   protected readonly fontOptions = CV_ATS_SAFE_FONTS;
   protected readonly blockKeys = COVER_LETTER_BLOCK_KEYS;
 
-  /** Which block's Style popover is open, if any — only one at a time. */
-  readonly openStyleKey = signal<CoverLetterBlockKey | null>(null);
+  /** Which block/paragraph Style popover is open, if any — only one at a
+   * time. A `CoverLetterBlockKey` for a block, or `body_<i>` for a paragraph. */
+  readonly openStyleKey = signal<string | null>(null);
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -255,7 +260,24 @@ export class CoverLetterDetailComponent {
 
   /** Bindable style object for a preview block's font/size/weight. */
   blockCss(key: CoverLetterBlockKey): Record<string, string> {
-    const s = this.effBlockStyle(key);
+    return this.cssOf(this.effBlockStyle(key));
+  }
+
+  /** Effective style / bindable CSS for a single body paragraph (its
+   * `body_<i>` override → `body` block → document-wide). */
+  effParaStyle(index: number) {
+    return effectiveCoverLetterParagraphStyle(this.style(), index);
+  }
+
+  paraCss(index: number): Record<string, string> {
+    return this.cssOf(this.effParaStyle(index));
+  }
+
+  private cssOf(s: {
+    fontFamily: string;
+    fontSizePt: number;
+    fontWeight: number;
+  }): Record<string, string> {
     return {
       'font-family': s.fontFamily,
       'font-size': `${s.fontSizePt}pt`,
@@ -263,15 +285,20 @@ export class CoverLetterDetailComponent {
     };
   }
 
-  toggleStylePopover(key: CoverLetterBlockKey): void {
+  /** Style-override key for a body paragraph. */
+  paragraphStyleKey(index: number): string {
+    return `body_${index}`;
+  }
+
+  toggleStylePopover(key: string): void {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
   }
 
-  sectionOverride(key: CoverLetterBlockKey): CvSectionStyle | undefined {
+  sectionOverride(key: string): CvSectionStyle | undefined {
     return this.style().sectionStyles?.[key];
   }
 
-  setSectionStyle(key: CoverLetterBlockKey, patch: Partial<CvSectionStyle>): void {
+  setSectionStyle(key: string, patch: Partial<CvSectionStyle>): void {
     const current = this.style();
     const sectionStyles = { ...(current.sectionStyles ?? {}) };
     sectionStyles[key] = { ...(sectionStyles[key] ?? {}), ...patch };
@@ -280,7 +307,7 @@ export class CoverLetterDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
-  resetSectionStyle(key: CoverLetterBlockKey): void {
+  resetSectionStyle(key: string): void {
     const current = this.style();
     const sectionStyles = { ...(current.sectionStyles ?? {}) };
     delete sectionStyles[key];
@@ -326,6 +353,28 @@ export class CoverLetterDetailComponent {
     paragraphs.splice(index, 1);
     fresh.bodyParagraphs = paragraphs;
     this.content.set(fresh);
+    if (this.openStyleKey() === this.paragraphStyleKey(index)) this.openStyleKey.set(null);
+    this.reindexParagraphStyles(index, paragraphs.length);
+  }
+
+  /** After removing paragraph `removedAt`, shift every `body_<i>` style
+   * override down one so overrides keep pointing at the right paragraph. */
+  private reindexParagraphStyles(removedAt: number, newLength: number): void {
+    const current = this.style();
+    if (!current.sectionStyles) return;
+    const next = { ...current.sectionStyles };
+    delete next[this.paragraphStyleKey(removedAt)];
+    for (let i = removedAt + 1; i <= newLength; i++) {
+      const from = this.paragraphStyleKey(i);
+      const to = this.paragraphStyleKey(i - 1);
+      if (next[from]) {
+        next[to] = next[from];
+        delete next[from];
+      } else {
+        delete next[to];
+      }
+    }
+    this.style.set({ ...current, sectionStyles: next });
   }
 
   /** Full-letter AI draft — fills every block in one pass honoring the current

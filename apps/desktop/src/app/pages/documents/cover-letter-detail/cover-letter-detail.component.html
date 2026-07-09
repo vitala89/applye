@@ -436,6 +436,16 @@
                       }}</span>
                       <div class="coverdetail__paragraph-actions">
                         <button
+                          type="button"
+                          class="coverdetail__style-btn"
+                          [class.coverdetail__style-btn--active]="
+                            openStyleKey() === paragraphStyleKey($index)
+                          "
+                          (click)="toggleStylePopover(paragraphStyleKey($index))"
+                        >
+                          {{ t()('documents.cv_section_style') }}
+                        </button>
+                        <button
                           class="coverdetail__regen"
                           type="button"
                           [disabled]="regeneratingBlock() === 'body_' + $index"
@@ -459,6 +469,12 @@
                         </button>
                       </div>
                     </div>
+                    @if (openStyleKey() === paragraphStyleKey($index)) {
+                      <ng-container
+                        [ngTemplateOutlet]="stylePopover"
+                        [ngTemplateOutletContext]="{ $implicit: paragraphStyleKey($index) }"
+                      ></ng-container>
+                    }
                     <textarea
                       class="coverdetail__textarea"
                       [ngModel]="para"
@@ -677,14 +693,12 @@
               {{ content().greeting }}
             </div>
 
-            <div
-              class="letter-body"
-              [ngStyle]="blockCss('body')"
-              [style.color]="effBlockStyle('body').colorHex"
-            >
+            <div class="letter-body">
               @for (para of content().bodyParagraphs || []; track $index) {
                 @if (para) {
-                  <p>{{ para }}</p>
+                  <p [ngStyle]="paraCss($index)" [style.color]="effParaStyle($index).colorHex">
+                    {{ para }}
+                  </p>
                 }
               }
             </div>

@@ -212,8 +212,11 @@ export interface CoverLetterStyle {
   fontSizePt: number;
   accentColorHex: string;
   fontWeight: CvFontWeight;
-  /** Per-block overrides; any unset field inherits the document-wide value. */
-  sectionStyles?: Partial<Record<CoverLetterBlockKey, CvSectionStyle>>;
+  /** Per-block and per-paragraph overrides; any unset field inherits its
+   * parent. Keys are a `CoverLetterBlockKey` for whole blocks, or `body_<i>`
+   * for an individual body paragraph (which inherits the `body` block style,
+   * then the document-wide style). */
+  sectionStyles?: Record<string, CvSectionStyle>;
 }
 
 export const COVER_LETTER_STYLE_DEFAULT: CoverLetterStyle = {

@@ -312,6 +312,32 @@ fn hex_to_rgb(hex: &str) -> (u8, u8, u8) {
     }
 }
 
+/// Concrete page geometry in millimetres, resolved from a `PageSettings` preset.
+pub(crate) struct PageConfig {
+    pub width_mm: f32,
+    pub height_mm: f32,
+    pub margin_mm: f32,
+}
+
+/// Mirrors the TS `resolvePageSettings` exactly. Unknown values fall back to
+/// A4 / normal so a malformed `style_json` never breaks export.
+pub(crate) fn resolve_page(p: &crate::commands::documents::PageSettings) -> PageConfig {
+    let (width_mm, height_mm) = match p.size.as_str() {
+        "letter" => (215.9, 279.4),
+        _ => (210.0, 297.0),
+    };
+    let margin_mm = match p.margin.as_str() {
+        "narrow" => 12.7,
+        "wide" => 30.0,
+        _ => 20.0,
+    };
+    PageConfig {
+        width_mm,
+        height_mm,
+        margin_mm,
+    }
+}
+
 /// CV cascade: per-section override field ?? document-wide field. Mirrors the
 /// TS `effectiveSectionStyle`.
 fn effective_cv(style: &CvStyle, key: Option<&str>) -> EffStyle {
@@ -1030,5 +1056,36 @@ mod tests {
     fn wrap_text_handles_empty_and_zero_budget() {
         assert_eq!(wrap_text("", 10), vec![String::new()]);
         assert_eq!(wrap_text("keep whole", 0), vec!["keep whole"]);
+    }
+
+    #[test]
+    fn resolve_page_maps_presets_to_mm() {
+        use crate::commands::documents::PageSettings;
+        let a4_normal = resolve_page(&PageSettings {
+            size: "a4".into(),
+            margin: "normal".into(),
+        });
+        assert_eq!(
+            (a4_normal.width_mm, a4_normal.height_mm, a4_normal.margin_mm),
+            (210.0, 297.0, 20.0)
+        );
+
+        let letter_narrow = resolve_page(&PageSettings {
+            size: "letter".into(),
+            margin: "narrow".into(),
+        });
+        assert_eq!(letter_narrow.width_mm, 215.9);
+        assert_eq!(letter_narrow.height_mm, 279.4);
+        assert_eq!(letter_narrow.margin_mm, 12.7);
+
+        // Unknown values fall back to A4 / normal.
+        let junk = resolve_page(&PageSettings {
+            size: "x".into(),
+            margin: "y".into(),
+        });
+        assert_eq!(
+            (junk.width_mm, junk.height_mm, junk.margin_mm),
+            (210.0, 297.0, 20.0)
+        );
     }
 }

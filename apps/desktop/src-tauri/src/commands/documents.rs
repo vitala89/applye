@@ -741,6 +741,8 @@ pub struct CvStyle {
     pub font_weight: i64,
     #[serde(default)]
     pub section_styles: std::collections::HashMap<String, CvSectionStyle>,
+    #[serde(default)]
+    pub page: PageSettings,
 }
 
 impl CvStyle {
@@ -766,6 +768,7 @@ impl Default for CvStyle {
             accent_color_hex: Self::default_accent_color_hex(),
             font_weight: Self::default_font_weight(),
             section_styles: Default::default(),
+            page: Default::default(),
         }
     }
 }
@@ -779,6 +782,36 @@ pub struct CvSectionStyle {
     pub font_size_pt: Option<f64>,
     pub color_hex: Option<String>,
     pub font_weight: Option<i64>,
+}
+
+/// Page geometry (portrait) stored in `style_json`. String fields (not enums)
+/// so an unknown/legacy value deserializes cleanly and falls back at resolve
+/// time rather than erroring, matching the rest of `CvStyle`.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PageSettings {
+    #[serde(default = "PageSettings::default_size")]
+    pub size: String,
+    #[serde(default = "PageSettings::default_margin")]
+    pub margin: String,
+}
+
+impl PageSettings {
+    fn default_size() -> String {
+        "a4".to_string()
+    }
+    fn default_margin() -> String {
+        "normal".to_string()
+    }
+}
+
+impl Default for PageSettings {
+    fn default() -> Self {
+        Self {
+            size: Self::default_size(),
+            margin: Self::default_margin(),
+        }
+    }
 }
 
 /// Curated ATS-safe font list (ROADMAP §16.5) — case-insensitive match.

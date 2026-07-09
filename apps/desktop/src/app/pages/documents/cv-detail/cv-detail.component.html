@@ -57,10 +57,10 @@
     <div class="cvdetail__body">
       @if (!previewMode()) {
         <div class="cvdetail__editor-col">
-          <div class="cvdetail__card cvdetail__card--region">
-            <div class="cvdetail__meta-field">
-              <span class="cvdetail__style-label">{{ t()('documents.cv_field_region') }}</span>
-              <div class="cvdetail__meta-row">
+          <div class="docedit-card">
+            <div class="docedit-meta">
+              <span class="docedit-field__label">{{ t()('documents.cv_field_region') }}</span>
+              <div class="docedit-meta-row">
                 <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
                   @for (r of regionOptions(); track r.tag) {
                     <option [value]="r.tag">{{ r.label }}</option>
@@ -83,38 +83,38 @@
               </div>
             </div>
 
-            <div class="cvdetail__toggles">
+            <div class="docedit-chip-row">
               <button
                 type="button"
-                class="toggle-chip"
-                [class.toggle-chip--active]="includePhoto()"
+                class="docedit-chip"
+                [class.docedit-chip--active]="includePhoto()"
                 (click)="toggleIncludePhoto()"
               >
-                <span class="toggle-chip__dot"></span>
+                <span class="docedit-chip__dot"></span>
                 {{ t()('documents.cv_toggle_photo') }}
               </button>
               <button
                 type="button"
-                class="toggle-chip"
-                [class.toggle-chip--active]="includeBirthdate()"
+                class="docedit-chip"
+                [class.docedit-chip--active]="includeBirthdate()"
                 (click)="includeBirthdate.set(!includeBirthdate())"
               >
-                <span class="toggle-chip__dot"></span>
+                <span class="docedit-chip__dot"></span>
                 {{ t()('documents.cv_toggle_birthdate') }}
               </button>
               <button
                 type="button"
-                class="toggle-chip"
-                [class.toggle-chip--active]="includeMaritalStatus()"
+                class="docedit-chip"
+                [class.docedit-chip--active]="includeMaritalStatus()"
                 (click)="includeMaritalStatus.set(!includeMaritalStatus())"
               >
-                <span class="toggle-chip__dot"></span>
+                <span class="docedit-chip__dot"></span>
                 {{ t()('documents.cv_toggle_marital') }}
               </button>
             </div>
 
             @if (atsNoteKeys().length) {
-              <div class="cvdetail__ats-note">
+              <div class="docedit-note">
                 @for (key of atsNoteKeys(); track key) {
                   <p>{{ t()(key) }}</p>
                 }
@@ -122,15 +122,15 @@
             }
           </div>
 
-          <div class="cvdetail__card cvdetail__card--style">
-            <div class="cvdetail__card-head">
+          <div class="docedit-card">
+            <div class="docedit-card__head">
               <button
                 type="button"
-                class="cvdetail__card-head-toggle"
+                class="docedit-card__toggle"
                 [attr.aria-expanded]="styleOpen()"
                 (click)="toggleStyleOpen()"
               >
-                <span class="cvdetail__style-label">{{ t()('documents.cv_section_style') }}</span>
+                <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
                 @if (hasAnyCustomStyle()) {
                   <span class="cvdetail__custom-badge">{{
                     t()('documents.cv_style_customized')
@@ -140,14 +140,14 @@
                   [img]="icons.chevron"
                   [size]="16"
                   aria-hidden="true"
-                  class="cvdetail__chevron"
-                  [class.cvdetail__chevron--closed]="!styleOpen()"
+                  class="docedit-chevron"
+                  [class.docedit-chevron--closed]="!styleOpen()"
                 />
               </button>
               <span class="cvdetail__spacer"></span>
               <button
                 type="button"
-                class="cvdetail__reset-all"
+                class="docedit-reset"
                 [disabled]="!hasAnyCustomStyle()"
                 (click)="resetAllStyles()"
               >
@@ -156,12 +156,12 @@
               </button>
             </div>
 
-            <div class="cvdetail__collapse" [class.cvdetail__collapse--closed]="!styleOpen()">
+            <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
               <div>
-                <div class="cvdetail__style">
-                  <div class="cvdetail__style-field">
+                <div class="docedit-style-grid">
+                  <div class="docedit-field">
                     <span
-                      class="cvdetail__style-label"
+                      class="docedit-field__label"
                       [attr.title]="t()('documents.cv_style_hint_font')"
                       >{{ t()('documents.cv_style_font') }}</span
                     >
@@ -174,9 +174,9 @@
                       }
                     </select>
                   </div>
-                  <div class="cvdetail__style-field">
+                  <div class="docedit-field">
                     <span
-                      class="cvdetail__style-label"
+                      class="docedit-field__label"
                       [attr.title]="t()('documents.cv_style_hint_size')"
                       >{{ t()('documents.cv_style_size') }}</span
                     >
@@ -189,13 +189,13 @@
                       (ngModelChange)="updateStyle({ fontSizePt: +$event })"
                     />
                   </div>
-                  <div class="cvdetail__style-field">
+                  <div class="docedit-field">
                     <span
-                      class="cvdetail__style-label"
+                      class="docedit-field__label"
                       [attr.title]="t()('documents.cv_style_hint_color')"
                       >{{ t()('documents.cv_style_color') }}</span
                     >
-                    <div class="cvdetail__style-color-row">
+                    <div class="docedit-color-row">
                       <input
                         type="color"
                         [ngModel]="style().accentColorHex"
@@ -203,14 +203,13 @@
                       />
                       <input
                         type="text"
-                        class="cvdetail__style-color-hex"
                         [ngModel]="style().accentColorHex"
                         (ngModelChange)="updateStyle({ accentColorHex: $event })"
                       />
                     </div>
                   </div>
-                  <div class="cvdetail__style-field">
-                    <span class="cvdetail__style-label">{{
+                  <div class="docedit-field">
+                    <span class="docedit-field__label">{{
                       t()('documents.cv_style_page_size')
                     }}</span>
                     <select
@@ -221,13 +220,13 @@
                       <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
                     </select>
                   </div>
-                  <div class="cvdetail__style-field cvdetail__style-field--full">
-                    <span class="cvdetail__style-label">{{
+                  <div class="docedit-field docedit-field--full">
+                    <span class="docedit-field__label">{{
                       t()('documents.cv_style_margins')
                     }}</span>
-                    <div class="cvdetail__margin-grid">
+                    <div class="docedit-margin-grid">
                       @for (side of marginSides; track side.key) {
-                        <label class="cvdetail__margin-input">
+                        <label class="docedit-margin-field">
                           <span>{{ t()(side.label) }}</span>
                           <input
                             type="number"
@@ -243,7 +242,7 @@
                   </div>
                 </div>
                 @if (styleNotes().length) {
-                  <div class="cvdetail__ats-note">
+                  <div class="docedit-note">
                     @for (note of styleNotes(); track note.kind + note.detail) {
                       <p>{{ styleNoteMessage(note) }}</p>
                     }
@@ -255,9 +254,9 @@
 
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
             @for (section of sections(); track section.key; let i = $index; let count = $count) {
-              <div cdkDrag class="cvdetail__section">
-                <div class="cvdetail__section-head">
-                  <div class="cvdetail__section-head-main">
+              <div cdkDrag class="docedit-section">
+                <div class="docedit-section__head">
+                  <div class="docedit-section__head-main">
                     <button
                       type="button"
                       class="cvdetail__drag-handle"
@@ -268,7 +267,7 @@
                     </button>
                     <button
                       type="button"
-                      class="cvdetail__section-toggle"
+                      class="docedit-section__toggle"
                       [attr.aria-expanded]="isSectionOpen(section.key)"
                       [attr.aria-label]="t()(sectionLabelKey(section.key))"
                       (click)="toggleSectionCollapse(section.key)"
@@ -277,15 +276,15 @@
                         [img]="icons.chevron"
                         [size]="15"
                         aria-hidden="true"
-                        class="cvdetail__chevron"
-                        [class.cvdetail__chevron--closed]="!isSectionOpen(section.key)"
+                        class="docedit-chevron"
+                        [class.docedit-chevron--closed]="!isSectionOpen(section.key)"
                       />
-                      <span class="cvdetail__section-title">{{
+                      <span class="docedit-section__title">{{
                         t()(sectionLabelKey(section.key))
                       }}</span>
                     </button>
                   </div>
-                  <div class="cvdetail__section-head-actions">
+                  <div class="docedit-section__actions">
                     @if (section.key !== 'photo') {
                       <button
                         type="button"
@@ -341,8 +340,8 @@
                 }
 
                 <div
-                  class="cvdetail__collapse"
-                  [class.cvdetail__collapse--closed]="!isSectionOpen(section.key)"
+                  class="docedit-collapse"
+                  [class.docedit-collapse--closed]="!isSectionOpen(section.key)"
                 >
                   <div>
                     @switch (section.key) {

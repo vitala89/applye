@@ -1,0 +1,439 @@
+// Shared editor-shell classes for CV + cover-letter document editors.
+//
+// Both `cv-detail.component.scss` and `cover-letter-detail.component.scss`
+// `@use` this partial so the two editors render one visual system. Angular
+// view-encapsulation scopes the compiled output per-component, so `@use`-ing
+// this file from both places produces identical (but independently scoped)
+// CSS rather than a shared runtime stylesheet — that's intentional.
+//
+// Keep this partial prefix-neutral (`.docedit-*`) and free of anything
+// component-specific (preview rendering, drag-drop internals, popover
+// internals) — those stay in each component's own SCSS file.
+
+// ---------------------------------------------------------------------------
+// Card
+// ---------------------------------------------------------------------------
+
+.docedit-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5) var(--space-6);
+}
+.docedit-card + .docedit-card {
+  margin-top: var(--space-4);
+}
+
+.docedit-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.docedit-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.docedit-card__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+// ---------------------------------------------------------------------------
+// Chevron + collapse animator
+// ---------------------------------------------------------------------------
+
+.docedit-chevron {
+  color: var(--text-tertiary);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.docedit-chevron--closed {
+  transform: rotate(-90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .docedit-chevron {
+    transition: none;
+  }
+}
+
+.docedit-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+.docedit-collapse--closed {
+  grid-template-rows: 0fr;
+}
+.docedit-collapse > * {
+  overflow: hidden;
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .docedit-collapse {
+    transition: none;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Chips (toggle-chip row)
+// ---------------------------------------------------------------------------
+
+.docedit-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.docedit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background var(--dur-instant) var(--ease-standard),
+    border-color var(--dur-instant) var(--ease-standard),
+    color var(--dur-instant) var(--ease-standard);
+}
+.docedit-chip:hover {
+  background: var(--surface-hover);
+}
+.docedit-chip--active {
+  background: var(--accent-tint);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text-primary);
+}
+.docedit-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-default);
+  flex: 0 0 auto;
+  transition: background var(--dur-instant) var(--ease-standard);
+}
+.docedit-chip--active .docedit-chip__dot {
+  background: var(--accent);
+}
+
+// ---------------------------------------------------------------------------
+// Meta row (region select + default toggle)
+// ---------------------------------------------------------------------------
+
+.docedit-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.docedit-meta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+.docedit-meta-row select {
+  width: auto;
+  height: var(--control-h, 36px);
+  min-width: 130px;
+  padding: 0 var(--space-4);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+.docedit-meta-row select:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}
+
+// ---------------------------------------------------------------------------
+// Style grid — the polished control layout
+// ---------------------------------------------------------------------------
+
+.docedit-style-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4) var(--space-5);
+  align-items: end;
+}
+@container (max-width: 420px) {
+  .docedit-style-grid {
+    grid-template-columns: 1fr;
+  }
+}
+// Fallback for browsers/contexts without a container-query ancestor.
+@media (max-width: 620px) {
+  .docedit-style-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.docedit-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.docedit-field--full {
+  grid-column: 1 / -1;
+}
+.docedit-field__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+// Consistent control sizing for everything inside the style grid.
+.docedit-style-grid select,
+.docedit-style-grid input,
+.docedit-color-row {
+  height: var(--control-h, 36px);
+  min-height: var(--control-h, 36px);
+}
+.docedit-style-grid select,
+.docedit-style-grid input {
+  width: 100%;
+  padding: 0 var(--space-4);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+.docedit-style-grid select {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+.docedit-style-grid input[type='number'] {
+  text-align: left;
+}
+.docedit-style-grid select:focus,
+.docedit-style-grid input:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}
+
+.docedit-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.docedit-color-row:focus-within {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}
+.docedit-color-row input[type='color'] {
+  width: 38px;
+  height: 100%;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  background: transparent;
+  flex: 0 0 auto;
+  outline: none;
+}
+.docedit-color-row input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.docedit-color-row input[type='color']::-webkit-color-swatch {
+  border: var(--border-width) solid var(--border-default);
+  border-radius: 3px;
+}
+.docedit-color-row input[type='text'] {
+  border: none !important;
+  border-left: var(--border-width) solid var(--border-default) !important;
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 var(--space-3) !important;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  width: 92px !important;
+  outline: none !important;
+  height: 100%;
+}
+
+// Margins — one tidy row of 4 labelled inputs, wraps to 2x2 when narrow.
+.docedit-margin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+@container (max-width: 420px) {
+  .docedit-margin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 620px) {
+  .docedit-margin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.docedit-margin-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.docedit-margin-field span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.docedit-margin-field input {
+  width: 100%;
+  height: var(--control-h, 36px);
+  padding: 0 var(--space-3);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+.docedit-margin-field input:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-ring);
+}
+
+// ---------------------------------------------------------------------------
+// Note / callout
+// ---------------------------------------------------------------------------
+
+.docedit-note {
+  background: var(--warning-tint, color-mix(in srgb, var(--warning) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.docedit-note p {
+  margin: 0;
+}
+.docedit-note p + p {
+  margin-top: var(--space-1);
+}
+
+// ---------------------------------------------------------------------------
+// Reset-all button (card-head trailing slot)
+// ---------------------------------------------------------------------------
+
+.docedit-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.docedit-reset:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.docedit-reset:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+// ---------------------------------------------------------------------------
+// Content-section accordion (CV sections / cover-letter blocks)
+// ---------------------------------------------------------------------------
+
+.docedit-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5) var(--space-5) var(--space-5);
+}
+
+.docedit-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.docedit-section__head-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.docedit-section__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.docedit-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  padding: var(--space-1) var(--space-1);
+  margin: 0;
+  cursor: pointer;
+  border-radius: var(--radius-input);
+}
+.docedit-section__title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+.docedit-section__toggle:hover .docedit-section__title {
+  color: var(--text-primary);
+}

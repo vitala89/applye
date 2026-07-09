@@ -468,7 +468,21 @@ pub(crate) fn render_blocks_docx(
         if b.bold {
             run = run.bold();
         }
-        let mut para = Paragraph::new().add_run(run);
+        // Vertical rhythm — docx-rs paragraphs are flush by default, which reads
+        // as cramped next to the spaced PDF. Add space before/after (twips,
+        // 1/20 pt) scaled to the block size so headings breathe and body/bullets
+        // stay tight, mirroring the PDF's inter-block gaps.
+        let (before, after) = match b.level {
+            BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3 => (
+                (b.size_pt * 9.0).round() as u32,
+                (b.size_pt * 3.0).round() as u32,
+            ),
+            BlockLevel::Bullet => (0, (b.size_pt * 2.0).round() as u32),
+            BlockLevel::Body => (0, (b.size_pt * 3.5).round() as u32),
+        };
+        let mut para = Paragraph::new()
+            .add_run(run)
+            .line_spacing(LineSpacing::new().before(before).after(after));
         if b.level == BlockLevel::Bullet {
             para = para.indent(Some(360), None, None, None);
         }

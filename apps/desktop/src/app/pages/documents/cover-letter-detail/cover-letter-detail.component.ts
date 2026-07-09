@@ -671,12 +671,19 @@ export class CoverLetterDetailComponent implements OnDestroy {
       document.head.appendChild(el);
     }
     el.textContent = rule;
-    document.body.classList.add('printing-cv');
-    try {
-      window.print();
-    } finally {
+    // Native macOS print (Tauri) is async: window.print() returns before the
+    // page is rendered for print, so removing the class synchronously would
+    // strip the print styles before the snapshot and capture the whole app.
+    // Keep the class on and clear it on `afterprint`. Every `body.printing-cv`
+    // rule lives inside `@media print`, so a lingering class has no on-screen
+    // effect if `afterprint` never fires.
+    const clearPrinting = (): void => {
       document.body.classList.remove('printing-cv');
-    }
+      window.removeEventListener('afterprint', clearPrinting);
+    };
+    window.addEventListener('afterprint', clearPrinting);
+    document.body.classList.add('printing-cv');
+    window.print();
   }
 
   async save(): Promise<void> {

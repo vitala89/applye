@@ -453,7 +453,8 @@ fn strip_bold_wrap(line: &str) -> (&str, bool) {
 pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    render_blocks_docx(&resolved, photo)
+    let page = resolve_page(&crate::commands::documents::PageSettings::default());
+    render_blocks_docx(&resolved, photo, &page)
 }
 
 /// `pub(crate)`, not private: the library CV/cover-letter export in
@@ -461,10 +462,21 @@ pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result
 pub(crate) fn render_blocks_docx(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
+    page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
     use docx_rs::*;
 
-    let mut doc = Docx::new();
+    // Page size + margins. docx-rs takes twips (1 mm ≈ 56.6929 twips / DXA).
+    let tw = |mm: f32| (mm * 56.6929) as i32;
+    let mut doc = Docx::new()
+        .page_size(tw(page.width_mm) as u32, tw(page.height_mm) as u32)
+        .page_margin(
+            PageMargin::new()
+                .top(tw(page.margin_mm))
+                .bottom(tw(page.margin_mm))
+                .left(tw(page.margin_mm))
+                .right(tw(page.margin_mm)),
+        );
 
     if let Some(bytes) = photo {
         // docx-rs 0.4: `Pic::new(&[u8])` decodes/re-encodes and computes pixel
@@ -559,7 +571,8 @@ pub async fn export_docx(
 pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    render_blocks_pdf(&resolved, photo)
+    let page = resolve_page(&crate::commands::documents::PageSettings::default());
+    render_blocks_pdf(&resolved, photo, &page)
 }
 
 /// Maps a user font family + weight to the nearest PDF base font. printpdf only
@@ -686,10 +699,12 @@ fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
 pub(crate) fn render_blocks_pdf(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
+    page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
     use printpdf::*;
 
-    let (doc, page1, layer1) = PdfDocument::new("CV", Mm(210.0), Mm(297.0), "Layer 1");
+    let (doc, page1, layer1) =
+        PdfDocument::new("CV", Mm(page.width_mm), Mm(page.height_mm), "Layer 1");
 
     let helv = doc
         .add_builtin_font(BuiltinFont::Helvetica)
@@ -710,12 +725,12 @@ pub(crate) fn render_blocks_pdf(
         .add_builtin_font(BuiltinFont::CourierBold)
         .map_err(|e| format!("pdf font: {e}"))?;
 
-    let margin = Mm(18.0_f32);
-    let margin_mm = 18.0_f32;
-    let indent_mm = 23.0_f32;
-    let right_margin_mm = 18.0_f32;
-    let page_w_mm = 210.0_f32;
-    let top_y = 277.0_f32;
+    let margin = Mm(page.margin_mm);
+    let margin_mm = page.margin_mm;
+    let indent_mm = page.margin_mm + 5.0;
+    let right_margin_mm = page.margin_mm;
+    let page_w_mm = page.width_mm;
+    let top_y = page.height_mm - page.margin_mm;
     let mut y: f32 = top_y;
     let mut cur_page = page1;
     let mut cur_layer = layer1;
@@ -791,8 +806,8 @@ pub(crate) fn render_blocks_pdf(
             y -= 3.0_f32;
         }
         for (i, line) in wrapped.iter().enumerate() {
-            if y < 18.0_f32 {
-                let (p, l) = doc.add_page(Mm(page_w_mm), Mm(297.0_f32), "Layer 1");
+            if y < margin_mm {
+                let (p, l) = doc.add_page(Mm(page_w_mm), Mm(page.height_mm), "Layer 1");
                 cur_page = p;
                 cur_layer = l;
                 y = top_y;
@@ -1087,5 +1102,30 @@ mod tests {
             (junk.width_mm, junk.height_mm, junk.margin_mm),
             (210.0, 297.0, 20.0)
         );
+    }
+
+    #[test]
+    fn render_blocks_letter_wide_produce_bytes() {
+        let style = crate::commands::documents::CvStyle::default();
+        let blocks = resolve_blocks(
+            &style,
+            &[StyledBlock {
+                level: BlockLevel::Body,
+                section_key: None,
+                text: "hello world".into(),
+                bold: false,
+            }],
+            false,
+        );
+        let page = resolve_page(&crate::commands::documents::PageSettings {
+            size: "letter".into(),
+            margin: "wide".into(),
+        });
+        assert!(!render_blocks_pdf(&blocks, None, &page)
+            .expect("pdf")
+            .is_empty());
+        assert!(!render_blocks_docx(&blocks, None, &page)
+            .expect("docx")
+            .is_empty());
     }
 }

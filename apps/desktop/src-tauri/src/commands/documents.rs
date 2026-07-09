@@ -1008,10 +1008,19 @@ async fn cv_document_export_bytes_core(
         "docx" | "pdf" => {
             let blocks = cv_content_to_blocks(&content_json)?;
             let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, false);
+            let page = crate::commands::tailoring::resolve_page(&style.page);
             if format == "docx" {
-                crate::commands::tailoring::render_blocks_docx(&resolved, photo_bytes.as_deref())
+                crate::commands::tailoring::render_blocks_docx(
+                    &resolved,
+                    photo_bytes.as_deref(),
+                    &page,
+                )
             } else {
-                crate::commands::tailoring::render_blocks_pdf(&resolved, photo_bytes.as_deref())
+                crate::commands::tailoring::render_blocks_pdf(
+                    &resolved,
+                    photo_bytes.as_deref(),
+                    &page,
+                )
             }
         }
         "tex" => Ok(cv_content_to_tex(&content_json)?.into_bytes()),
@@ -1052,10 +1061,11 @@ async fn cover_letter_document_export_bytes_core(
         "docx" | "pdf" => {
             let blocks = cover_letter_content_to_blocks(&content_json)?;
             let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, true);
+            let page = crate::commands::tailoring::resolve_page(&style.page);
             if format == "docx" {
-                crate::commands::tailoring::render_blocks_docx(&resolved, None)
+                crate::commands::tailoring::render_blocks_docx(&resolved, None, &page)
             } else {
-                crate::commands::tailoring::render_blocks_pdf(&resolved, None)
+                crate::commands::tailoring::render_blocks_pdf(&resolved, None, &page)
             }
         }
         other => Err(format!(

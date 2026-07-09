@@ -120,6 +120,25 @@
 
             <div class="cvdetail__panel-divider"></div>
 
+            <div class="cvdetail__style-header">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_section_style') }}</span>
+              @if (hasAnyCustomStyle()) {
+                <span class="cvdetail__custom-badge">{{
+                  t()('documents.cv_style_customized')
+                }}</span>
+              }
+              <span class="cvdetail__spacer"></span>
+              <button
+                type="button"
+                class="cvdetail__reset-all"
+                [disabled]="!hasAnyCustomStyle()"
+                (click)="resetAllStyles()"
+              >
+                <lucide-icon [img]="icons.regenerate" [size]="12" aria-hidden="true" />
+                {{ t()('documents.cv_style_reset_all') }}
+              </button>
+            </div>
+
             <div class="cvdetail__style">
               <div class="cvdetail__style-field">
                 <span
@@ -204,6 +223,7 @@
                         type="button"
                         class="cvdetail__style-btn"
                         [class.cvdetail__style-btn--active]="openStyleKey() === section.key"
+                        [class.cvdetail__style-btn--custom]="hasCustomStyle(section.key)"
                         (click)="toggleStylePopover(section.key)"
                       >
                         {{ t()('documents.cv_section_style') }}

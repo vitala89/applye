@@ -96,14 +96,20 @@
                     <option [value]="r">{{ r.toUpperCase() }}</option>
                   }
                 </select>
-                <label class="coverdetail__checkbox">
-                  <input
-                    type="checkbox"
-                    [ngModel]="isDefault()"
-                    (ngModelChange)="isDefault.set($event)"
-                  />
-                  <span>{{ t()('documents.cv_field_is_default') }}</span>
-                </label>
+                <button
+                  type="button"
+                  class="coverdetail__checkbox"
+                  [class.coverdetail__checkbox--active]="isDefault()"
+                  [attr.aria-pressed]="isDefault()"
+                  (click)="isDefault.set(!isDefault())"
+                >
+                  <span class="coverdetail__checkbox-box">
+                    @if (isDefault()) {
+                      <lucide-icon [img]="icons.check" [size]="11" aria-hidden="true" />
+                    }
+                  </span>
+                  {{ t()('documents.cv_field_is_default') }}
+                </button>
               </div>
             </div>
 
@@ -137,6 +143,25 @@
             </div>
 
             <div class="coverdetail__panel-divider"></div>
+
+            <div class="coverdetail__style-header">
+              <span class="coverdetail__style-label">{{ t()('documents.cv_section_style') }}</span>
+              @if (hasAnyCustomStyle()) {
+                <span class="coverdetail__custom-badge">{{
+                  t()('documents.cv_style_customized')
+                }}</span>
+              }
+              <span class="coverdetail__spacer"></span>
+              <button
+                type="button"
+                class="coverdetail__reset-all"
+                [disabled]="!hasAnyCustomStyle()"
+                (click)="resetAllStyles()"
+              >
+                <lucide-icon [img]="icons.regenerate" [size]="12" aria-hidden="true" />
+                {{ t()('documents.cv_style_reset_all') }}
+              </button>
+            </div>
 
             <div class="coverdetail__style">
               <div class="coverdetail__style-field">
@@ -213,6 +238,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'recipient'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('recipient')"
                     (click)="toggleStylePopover('recipient')"
                   >
                     {{ t()('documents.cv_section_style') }}
@@ -288,6 +314,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'date'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('date')"
                     (click)="toggleStylePopover('date')"
                   >
                     {{ t()('documents.cv_section_style') }}
@@ -319,6 +346,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'subject'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('subject')"
                     (click)="toggleStylePopover('subject')"
                   >
                     {{ t()('documents.cv_section_style') }}
@@ -364,6 +392,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'greeting'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('greeting')"
                     (click)="toggleStylePopover('greeting')"
                   >
                     {{ t()('documents.cv_section_style') }}
@@ -412,6 +441,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'body'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('body')"
                     (click)="toggleStylePopover('body')"
                   >
                     {{ t()('documents.cv_section_style') }}
@@ -440,6 +470,9 @@
                           class="coverdetail__style-btn"
                           [class.coverdetail__style-btn--active]="
                             openStyleKey() === paragraphStyleKey($index)
+                          "
+                          [class.coverdetail__style-btn--custom]="
+                            hasCustomStyle(paragraphStyleKey($index))
                           "
                           (click)="toggleStylePopover(paragraphStyleKey($index))"
                         >
@@ -500,6 +533,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'closing'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('closing')"
                     (click)="toggleStylePopover('closing')"
                   >
                     {{ t()('documents.cv_section_style') }}
@@ -545,6 +579,7 @@
                     type="button"
                     class="coverdetail__style-btn"
                     [class.coverdetail__style-btn--active]="openStyleKey() === 'signature'"
+                    [class.coverdetail__style-btn--custom]="hasCustomStyle('signature')"
                     (click)="toggleStylePopover('signature')"
                   >
                     {{ t()('documents.cv_section_style') }}

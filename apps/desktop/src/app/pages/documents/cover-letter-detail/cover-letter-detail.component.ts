@@ -316,6 +316,27 @@ export class CoverLetterDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
+  /** True when a block/paragraph carries any style override — drives the
+   * "Custom" badge so the user can see which parts differ from the default. */
+  hasCustomStyle(key: string): boolean {
+    const o = this.style().sectionStyles?.[key];
+    return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
+  }
+
+  /** Any block/paragraph carries an override. */
+  readonly hasAnyCustomStyle = computed(() => {
+    const s = this.style().sectionStyles ?? {};
+    return Object.values(s).some((o) => o && Object.values(o).some((v) => v != null));
+  });
+
+  /** Reset every block/paragraph and the document-wide style to the default. */
+  resetAllStyles(): void {
+    this.style.set({ ...COVER_LETTER_STYLE_DEFAULT });
+    this.openStyleKey.set(null);
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    void this.refreshStyleNotes();
+  }
+
   updateAddress(field: keyof CoverLetterAddress, value: string): void {
     const fresh = { ...this.content() };
     fresh.address = { ...fresh.address, [field]: value };

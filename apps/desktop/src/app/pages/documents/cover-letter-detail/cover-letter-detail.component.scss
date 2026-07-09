@@ -172,14 +172,88 @@
 .coverdetail__checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
+  gap: 9px;
+  height: 36px;
+  background: transparent;
+  border: none;
   color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 0;
   cursor: pointer;
 }
-.coverdetail__checkbox input {
+.coverdetail__checkbox-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: var(--border-width) solid var(--border-strong);
+  background: transparent;
+  color: var(--accent-fg);
+}
+.coverdetail__checkbox--active .coverdetail__checkbox-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Style-panel header + reset-all */
+.coverdetail__style-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.coverdetail__reset-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
   width: auto;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.coverdetail__reset-all:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.coverdetail__reset-all:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* "Custom" badge + per-button dot */
+.coverdetail__custom-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-tint, var(--surface-hover));
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.coverdetail__style-btn--custom {
+  color: var(--accent);
+}
+.coverdetail__style-btn--custom::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 /* ---- Style rows (tone/length + font/size/weight/colour) ---- */

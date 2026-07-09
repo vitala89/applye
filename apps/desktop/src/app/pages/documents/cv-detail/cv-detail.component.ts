@@ -250,6 +250,27 @@ export class CvDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
+  /** True when a section carries any style override — drives the "Custom"
+   * badge so the user can see which sections differ from the default. */
+  hasCustomStyle(key: CvSectionKey): boolean {
+    const o = this.style().sectionStyles?.[key];
+    return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
+  }
+
+  /** Any section carries an override. */
+  readonly hasAnyCustomStyle = computed(() => {
+    const s = this.style().sectionStyles ?? {};
+    return Object.values(s).some((o) => o && Object.values(o).some((v) => v != null));
+  });
+
+  /** Reset every section and the document-wide style to the default. */
+  resetAllStyles(): void {
+    this.style.set({ ...CV_STYLE_DEFAULT });
+    this.openStyleKey.set(null);
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    void this.refreshStyleNotes();
+  }
+
   readonly previewMode = signal(false);
 
   /** Ordered, visible sections as they'd actually render — the photo

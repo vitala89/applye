@@ -46,10 +46,15 @@
   body.printing-cv .page-card {
     @include paper.paper-light;
     display: block;
-    width: auto;
-    height: auto;
+    // !important needed: .page-card binds inline [style.width.px],
+    // [style.height.px], and per-side padding from geometry() on-screen;
+    // inline styles beat non-!important external CSS, so without
+    // !important the on-screen fixed size + simulated-margin padding
+    // survives into print and stacks with the real @page margin.
+    width: auto !important;
+    height: auto !important;
     margin: 0;
-    padding: 0; // @page supplies the real margins — avoid doubling
+    padding: 0 !important; // @page supplies the real margins — avoid doubling
     border: 0;
     box-shadow: none;
     overflow: visible;

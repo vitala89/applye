@@ -579,6 +579,25 @@ export class CvDetailComponent {
     this.photoDataUri.set(null);
   }
 
+  /**
+   * Toggle the "Include photo" chip. Turning it ON guarantees a `photo`
+   * section exists in the editor (most templates don't seed one), so the
+   * upload card actually appears; turning it OFF just hides the photo in the
+   * preview while keeping the stored bytes.
+   */
+  toggleIncludePhoto(): void {
+    const next = !this.includePhoto();
+    this.includePhoto.set(next);
+    if (!next || this.sections().some((s) => s.key === 'photo')) return;
+    const photo: Extract<CvSection, { key: 'photo' }> = {
+      key: 'photo',
+      order: 0,
+      visible: true,
+      dataUri: this.photoDataUri() ?? undefined,
+    };
+    this.sections.set([photo, ...this.sections()].map((s, i) => ({ ...s, order: i })));
+  }
+
   async save(): Promise<void> {
     const doc = this.doc();
     if (!doc || this.saving()) return;

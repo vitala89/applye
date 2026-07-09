@@ -85,7 +85,7 @@
                 type="button"
                 class="toggle-chip"
                 [class.toggle-chip--active]="includePhoto()"
-                (click)="includePhoto.set(!includePhoto())"
+                (click)="toggleIncludePhoto()"
               >
                 <span class="toggle-chip__dot"></span>
                 {{ t()('documents.cv_toggle_photo') }}

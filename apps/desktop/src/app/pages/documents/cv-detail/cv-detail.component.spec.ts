@@ -75,4 +75,30 @@ describe('CvDetailComponent per-section style', () => {
     component.removePhoto();
     expect(component.photoDataUri()).toBeNull();
   });
+
+  it('toggleIncludePhoto adds a photo section when turning on if none exists', () => {
+    component.sections.set([{ key: 'personal_details', order: 0, visible: true, fullName: 'X' }]);
+    component.includePhoto.set(false);
+
+    component.toggleIncludePhoto();
+
+    expect(component.includePhoto()).toBe(true);
+    const photo = component.sections().find((s) => s.key === 'photo');
+    expect(photo).toBeDefined();
+    expect(photo?.visible).toBe(true);
+    expect(component.sections()[0].key).toBe('photo');
+  });
+
+  it('toggleIncludePhoto off keeps the photo section (bytes retained)', () => {
+    component.sections.set([
+      { key: 'photo', order: 0, visible: true, dataUri: 'data:image/jpeg;base64,AAAA' },
+      { key: 'personal_details', order: 1, visible: true, fullName: 'X' },
+    ]);
+    component.includePhoto.set(true);
+
+    component.toggleIncludePhoto();
+
+    expect(component.includePhoto()).toBe(false);
+    expect(component.sections().some((s) => s.key === 'photo')).toBe(true);
+  });
 });

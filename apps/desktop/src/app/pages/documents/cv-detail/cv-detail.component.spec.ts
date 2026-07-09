@@ -101,4 +101,22 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.includePhoto()).toBe(false);
     expect(component.sections().some((s) => s.key === 'photo')).toBe(true);
   });
+
+  it('exposes A4 sheet dimensions via pageVars', () => {
+    component.style.set({
+      ...component.style(),
+      page: { size: 'a4', margin: { top: 20, right: 20, bottom: 20, left: 20 } },
+    });
+    const vars = component.pageVars();
+    expect(vars['--page-w']).toBe(`${(210 * 96) / 25.4}px`);
+    expect(vars['--mt']).toBe(`${(20 * 96) / 25.4}px`);
+  });
+
+  it('produces different width for Letter', () => {
+    component.style.set({
+      ...component.style(),
+      page: { size: 'letter', margin: { top: 20, right: 20, bottom: 20, left: 20 } },
+    });
+    expect(component.pageVars()['--page-w']).toBe(`${(215.9 * 96) / 25.4}px`);
+  });
 });

@@ -12,6 +12,7 @@
     "dialog:allow-open",
     "opener:allow-open-url",
     "opener:allow-default-urls",
-    "clipboard-manager:allow-read-text"
+    "clipboard-manager:allow-read-text",
+    "core:webview:allow-print"
   ]
 }

@@ -597,6 +597,7 @@ const en: TranslationMap = {
     cv_export_tex_action: 'Export as LaTeX source (.tex)',
     cv_export_tex_note:
       'LaTeX export is optimised for visual/print quality for a human reader, not ATS parsing. Applye never compiles it — open the .tex file in Overleaf or your local pdflatex.',
+    cv_export_pdf_moved: 'Open a document and use Export PDF for a pixel-exact PDF.',
     cv_delete_action: 'Delete',
     cv_delete_confirm_title: 'Delete this CV?',
     cv_delete_confirm_msg: 'This removes it from your library. It cannot be undone.',
@@ -727,6 +728,17 @@ const en: TranslationMap = {
     cv_style_margin_narrow: 'Narrow',
     cv_style_margin_normal: 'Normal',
     cv_style_margin_wide: 'Wide',
+    cv_style_margins: 'Margins (mm)',
+    cv_style_margin_top: 'Top',
+    cv_style_margin_right: 'Right',
+    cv_style_margin_bottom: 'Bottom',
+    cv_style_margin_left: 'Left',
+    cv_style_page_count: 'Page {n}',
+    cv_style_overflow_warning:
+      'Content is taller than the usable page area — reduce margins or content.',
+    cv_style_export_pdf_wysiwyg: 'Export PDF (print)',
+    cv_style_export_pixel_note:
+      'PDF matches the preview exactly. DOCX matches size, margins, and structure but not pixels.',
     cv_section_move_up: 'Move section up',
     cv_section_move_down: 'Move section down',
     cv_section_drag_handle: 'Drag to reorder',
@@ -1557,6 +1569,7 @@ const de: TranslationMap = {
     cv_export_tex_action: 'Als LaTeX-Quelltext exportieren (.tex)',
     cv_export_tex_note:
       'Der LaTeX-Export ist auf visuelle Druckqualität für menschliche Leser optimiert, nicht auf ATS-Parsing. Applye kompiliert ihn nie — öffne die .tex-Datei in Overleaf oder deinem lokalen pdflatex.',
+    cv_export_pdf_moved: 'Öffne ein Dokument und nutze „PDF exportieren“ für ein pixelgenaues PDF.',
     cv_delete_action: 'Löschen',
     cv_delete_confirm_title: 'Diesen Lebenslauf löschen?',
     cv_delete_confirm_msg:
@@ -1690,6 +1703,17 @@ const de: TranslationMap = {
     cv_style_margin_narrow: 'Schmal',
     cv_style_margin_normal: 'Normal',
     cv_style_margin_wide: 'Breit',
+    cv_style_margins: 'Ränder (mm)',
+    cv_style_margin_top: 'Oben',
+    cv_style_margin_right: 'Rechts',
+    cv_style_margin_bottom: 'Unten',
+    cv_style_margin_left: 'Links',
+    cv_style_page_count: 'Seite {n}',
+    cv_style_overflow_warning:
+      'Der Inhalt ist höher als der nutzbare Seitenbereich — Ränder oder Inhalt reduzieren.',
+    cv_style_export_pdf_wysiwyg: 'PDF exportieren (Druck)',
+    cv_style_export_pixel_note:
+      'Das PDF entspricht exakt der Vorschau. Das DOCX stimmt bei Größe, Rändern und Struktur überein, jedoch nicht pixelgenau.',
     cv_section_move_up: 'Abschnitt nach oben verschieben',
     cv_section_move_down: 'Abschnitt nach unten verschieben',
     cv_section_drag_handle: 'Zum Sortieren ziehen',

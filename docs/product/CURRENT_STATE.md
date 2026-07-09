@@ -1,9 +1,10 @@
 # Current Operational State
 
 - **Current version**: `0.23.0` (package.json / tauri.conf.json; CV photo upload work below is on `main`, unreleased/untagged)
-- **Current branch / focus**: `feat/cv-photo-upload` — CV photo upload complete, pending merge. Documents CV & Cover Letter Library (§16) is fully shipped and extended.
+- **Current branch / focus**: `feat/wysiwyg-preview-export` — paginated preview + numeric margins + WYSIWYG PDF, complete and reviewed, pending merge. Documents CV & Cover Letter Library (§16) is fully shipped and extended.
 - **Recently completed**:
-  - CV photo upload: pick/crop (3:4) a local photo, preview render when "Include photo" is on, base64 stored in the CV document, embedded in DOCX + PDF export (LaTeX omits). Branch `feat/cv-photo-upload`. [Spec](../superpowers/specs/2026-07-09-cv-photo-upload-design.md)
+  - WYSIWYG preview → export: CV & cover-letter previews are now real fixed-proportion A4/Letter sheets with dashed page-break guides + page-count; margins are four numeric mm inputs (0–50, clamped, legacy preset→mm on read) with an overflow warning; PDF export is WYSIWYG via the preview (system print → Save as PDF), print styles pinned to light paper colours regardless of app theme; DOCX honours 4-side mm margins; list-level PDF option removed (DOCX/tex stay). Branch `feat/wysiwyg-preview-export`. [Spec](../superpowers/specs/2026-07-09-wysiwyg-preview-export-design.md) · [Plan](../superpowers/plans/2026-07-09-wysiwyg-preview-export.md)
+  - CV photo upload: pick/crop (3:4) a local photo, preview render when "Include photo" is on, base64 stored in the CV document, embedded in DOCX + PDF export (LaTeX omits). Branch `feat/cv-photo-upload` (merged, PR #62). [Spec](../superpowers/specs/2026-07-09-cv-photo-upload-design.md)
   - CV builder — per-section style constructor (Wave B): font/size/colour/weight settable per section (Personal Details, Summary, Experience, Education, Skills, Languages) via an inline "Style" popover, inheriting from a global default with "reset to common"; new global font-weight control (Light/Normal/Semibold/Bold); editor shell reconciled to the design mock (`CV Editor.dc.html`); Rust `check_style_safety` extended to check per-section overrides. Merged PR #60 → `main` (`2912bd2`). Style is now also honored in export (branch `feat/export-style-parity`): library CV & cover-letter DOCX/PDF render from a shared section-tagged block model that applies per-section/per-paragraph font/size/colour/weight and keeps the two formats in lockstep; PDF photo moved to an inline top box matching DOCX. Known follow-up: PDF approximates custom fonts via the 14 base fonts (DOCX keeps the exact name) — embed TTFs for exact PDF fonts. Includes a same-day follow-up fix: preview mode now fills the full pane and hides editor-only controls (region/toggles/style), edit mode no longer reserves dead space for a preview column. [Brief](feature-briefs/documents-cv-cover-letter.md)
   - CV builder — default template rebuild + Wave A blocker fixes: all built-in region templates now guarantee a Personal Details section (migration `0013`); add/remove Experience & Education entries and bullets; fixed AI-import truncation (configurable token cap + JSON repair, `cv-import.md` schema synced); profile↔CV field propagation (title/website/LinkedIn, "pull from profile" action). Merged PR #59 → `main` (`ace5986`). [Brief](feature-briefs/documents-cv-cover-letter.md)
   - First-run Onboarding Wizard: a skippable first-run overlay gated in `app.ts` after the health-check via a new `settings.onboardingSeen` flag (migration `0012_onboarding_seen.sql`). Steps: Welcome → AI-setup (per-provider key guide + keyring via `KeysService`) → Resume input (PDF/DOCX + paste, reuses `cv-import`) → Preview (editable profile markdown) → Archetypes+comp (new `onboarding-archetypes` skill, suggestion-only, user confirms) → Done (CTAs route to `/jobs/new` and `/documents`). Writes the existing `Profile` schema (`fullMd` + `targetArchetypes`), all local, key stored in the OS keyring. Adds a dashboard `OnboardingBannerComponent` and "Re-run onboarding" entry points in Settings and Profile. i18n EN+DE throughout. Merged, v0.22.0.
@@ -13,9 +14,11 @@
   - Step 2 — Follow-up Message Drafting: "Draft follow-up" action on overdue Pipeline cards, cached AI draft, `mailto:` hand-off only. Merged PR #50, v0.19.0. [Brief](feature-briefs/followup-drafting.md)
   - AIF Core foundation for AI-assisted development (Cursor rules, model policies, security/privacy trust docs, context gate, keyring and token guards, CLI routing).
 - **Currently working on**:
-  - Nothing in-flight. `main` is clean and up to date with `origin/main`.
+  - `feat/wysiwyg-preview-export` complete + reviewed (final whole-branch review + C1 print-legibility fix landed), pending merge/PR.
 - **Next recommended action**:
-  - Lower priority: a handful of cosmetic minors deferred from the Wave B code review (stale doc-comment, `$any` weight cast, no Rust-side weight-domain guard) — batch these whenever convenient, none are user-visible.
+  - Merge `feat/wysiwyg-preview-export`, then run a real desktop build to verify the user manual gates: Export PDF opens the OS "Save as PDF" dialog honouring `@page` A4/Letter + margins, and the printed PDF is legible and matches the on-screen sheet.
+  - Product call: on the dark app theme the on-screen "paper" is grey (the printed PDF is white). Decide whether the preview sheet should always render as white paper for full WYSIWYG fidelity (Phase C/D follow-ups).
+  - Lower priority: cosmetic minors deferred from review (orphaned `cv_export_pdf_action` i18n key, unused `ResolvedPage.marginPct`, `cvpreview__` prefix reused in cover-letter template) — none user-visible.
 - **Active feature briefs**:
   - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, shipped (1a–1d complete, plus two follow-on efforts: default-template/Wave A and per-section style/Wave B).
 - **Blocked / open questions**:
@@ -28,4 +31,4 @@
   - [PROJECT_CONTEXT.md](../../PROJECT_CONTEXT.md)
   - [CURRENT_STATE.md](CURRENT_STATE.md)
   - [AGENTS.md](../../AGENTS.md)
-- **Last updated**: 2026-07-09 (CV photo upload shipped on `feat/cv-photo-upload`, documentation updated)
+- **Last updated**: 2026-07-09 (WYSIWYG preview → export complete on `feat/wysiwyg-preview-export`, documentation updated)

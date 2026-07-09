@@ -249,6 +249,20 @@
 .cvdetail__style-field input[type='number'] {
   width: 80px;
 }
+.cvdetail__margin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.cvdetail__margin-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+.cvdetail__margin-input input {
+  width: 100%;
+}
 .cvdetail__style select,
 .cvdetail__style input {
   height: 36px;
@@ -811,15 +825,34 @@
   color: var(--accent);
 }
 
+.cvpreview-viewport {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--surface-2);
+}
 .cvpreview {
+  position: relative;
+  width: var(--page-w);
+  min-height: var(--page-h);
+  padding: var(--mt) var(--mr) var(--mb) var(--ml);
+  box-sizing: border-box;
   background: var(--surface-1);
   border: var(--border-width) solid var(--border-default);
-  border-radius: var(--radius-card);
-  padding: var(--space-8);
-  max-width: 720px;
-  margin: 0 auto;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
   font-family: var(--font-sans);
   color: var(--text-primary);
+  // Page-break guides: a dashed line at every full page-height boundary.
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--page-h) - 1px),
+    var(--border-strong, #999) calc(var(--page-h) - 1px),
+    var(--border-strong, #999) var(--page-h)
+  );
+  background-attachment: local;
 }
 .cvpreview__section + .cvpreview__section {
   margin-top: var(--space-6);
@@ -861,6 +894,21 @@
   font-size: var(--text-sm);
   text-align: center;
   padding: var(--space-8);
+}
+.cvpreview__pagebar {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  padding: var(--space-2) 0;
+}
+.cvpreview__warning {
+  margin: var(--space-2) auto 0;
+  max-width: var(--page-w, 720px);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--warning-tint, #fff4e5);
+  color: var(--warning-strong, #8a5a00);
+  font-size: var(--text-sm);
 }
 .cvpreview__name {
   text-transform: uppercase;
@@ -957,4 +1005,57 @@
   flex: 1;
   height: 34px;
   padding: 0 11px;
+}
+
+// WYSIWYG PDF export: while `body.printing-cv` is set, hide everything
+// except the `.cvpreview` sheet so only the CV prints. The `@page` rule
+// (injected by `exportPdfWysiwyg()`) supplies the real margins, so the
+// on-screen padding is zeroed here to avoid doubling them.
+@media print {
+  body.printing-cv * {
+    visibility: hidden;
+  }
+  body.printing-cv .cvpreview,
+  body.printing-cv .cvpreview * {
+    visibility: visible;
+  }
+  body.printing-cv .cvpreview {
+    // Pin to light "paper" colors regardless of active app theme (dark is
+    // default). Browsers print text color but not background-color, so
+    // without this the sheet renders near-white text on a white page.
+    --surface-1: #ffffff;
+    --surface-2: #fafaf8;
+    --surface-hover: #f4f4f2;
+    --surface-sunken: #f4f4f2;
+    --text-primary: #16161a;
+    --text-secondary: #5a5a63;
+    --text-tertiary: #6b6b73;
+    --text-accent: #4f5bff;
+    --border-subtle: #ececee;
+    --border-default: #d6d6da;
+    --border-strong: #b8b8bf;
+    --border-accent: #4f5bff;
+    --accent: #4f5bff;
+    --accent-hover: #3a33d6;
+    --accent-fg: #ffffff;
+    --accent-tint: rgba(79, 91, 255, 0.08);
+    --danger: #e05656;
+    --danger-tint: rgba(224, 86, 86, 0.1);
+    --warning: #e0a23b;
+    --warning-tint: rgba(224, 162, 59, 0.12);
+
+    position: absolute;
+    inset: 0;
+    width: auto;
+    min-height: auto;
+    margin: 0;
+    padding: 0; // @page margin handles the real margins — avoid double-margin
+    border: 0;
+    box-shadow: none;
+    background-image: none; // hide the on-screen break guides
+    background-color: #fff;
+    color: #16161a;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

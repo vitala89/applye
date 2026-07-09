@@ -102,7 +102,7 @@ export class CoverLetterListComponent {
 
   readonly exportBusyId = signal<number | null>(null);
 
-  async exportDoc(item: DocumentLibraryItem, format: 'docx' | 'pdf', event: Event): Promise<void> {
+  async exportDoc(item: DocumentLibraryItem, format: 'docx', event: Event): Promise<void> {
     event.stopPropagation();
     if (!format || this.exportBusyId() != null) return;
     this.exportBusyId.set(item.id);
@@ -116,7 +116,7 @@ export class CoverLetterListComponent {
     }
   }
 
-  private suggestCoverLetterFilename(item: DocumentLibraryItem, format: 'docx' | 'pdf'): string {
+  private suggestCoverLetterFilename(item: DocumentLibraryItem, format: 'docx'): string {
     const base = (item.label || 'cover-letter')
       .toLowerCase()
       .replace(/[^a-z0-9_-]+/g, '_')

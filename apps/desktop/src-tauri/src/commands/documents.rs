@@ -787,29 +787,48 @@ pub struct CvSectionStyle {
 /// Page geometry (portrait) stored in `style_json`. String fields (not enums)
 /// so an unknown/legacy value deserializes cleanly and falls back at resolve
 /// time rather than erroring, matching the rest of `CvStyle`.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageMargins {
+    pub top: f32,
+    pub right: f32,
+    pub bottom: f32,
+    pub left: f32,
+}
+
+/// Margin as stored: legacy preset string ("narrow"|"normal"|"wide") OR a
+/// 4-side mm object. `resolve_page` normalises both to clamped mm.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MarginSpec {
+    Preset(String),
+    Sides(PageMargins),
+}
+
+impl Default for MarginSpec {
+    fn default() -> Self {
+        MarginSpec::Preset("normal".into())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PageSettings {
     #[serde(default = "PageSettings::default_size")]
     pub size: String,
-    #[serde(default = "PageSettings::default_margin")]
-    pub margin: String,
+    #[serde(default)]
+    pub margin: MarginSpec,
 }
 
 impl PageSettings {
     fn default_size() -> String {
-        "a4".to_string()
-    }
-    fn default_margin() -> String {
-        "normal".to_string()
+        "a4".into()
     }
 }
 
 impl Default for PageSettings {
     fn default() -> Self {
-        Self {
+        PageSettings {
             size: Self::default_size(),
-            margin: Self::default_margin(),
+            margin: MarginSpec::default(),
         }
     }
 }

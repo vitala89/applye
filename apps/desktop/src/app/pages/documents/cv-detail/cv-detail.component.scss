@@ -868,15 +868,9 @@
   color: var(--text-secondary);
   margin: 0;
 }
-.cvpreview__empty {
-  color: var(--text-tertiary);
-  font-size: var(--text-sm);
-  text-align: center;
-  padding: var(--space-8);
-}
 .cvpreview__warning {
   margin: var(--space-2) auto 0;
-  max-width: var(--page-w, 720px);
+  max-width: 720px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-card);
   background: var(--warning-tint, #fff4e5);

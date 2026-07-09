@@ -303,7 +303,7 @@ export class CvDetailComponent {
           out.push({
             id: 'sec:experience:title',
             tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label },
+            ctx: { $implicit: label, key: 'experience' },
             sectionLabel: label,
             isSectionStart: true,
             glueToNext: true,
@@ -312,7 +312,7 @@ export class CvDetailComponent {
             out.push({
               id: `sec:experience:e${i}`,
               tpl: this.expEntryTpl(),
-              ctx: { $implicit: entry },
+              ctx: { $implicit: entry, key: 'experience' },
               sectionLabel: label,
             }),
           );
@@ -324,7 +324,7 @@ export class CvDetailComponent {
           out.push({
             id: 'sec:education:title',
             tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label },
+            ctx: { $implicit: label, key: 'education' },
             sectionLabel: label,
             isSectionStart: true,
             glueToNext: true,
@@ -333,7 +333,7 @@ export class CvDetailComponent {
             out.push({
               id: `sec:education:e${i}`,
               tpl: this.eduEntryTpl(),
-              ctx: { $implicit: entry },
+              ctx: { $implicit: entry, key: 'education' },
               sectionLabel: label,
             }),
           );

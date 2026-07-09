@@ -753,8 +753,14 @@
             </div>
           </ng-template>
 
-          <ng-template #sectionTitleTpl let-label>
-            <h3 class="cvpreview__section-title">{{ label }}</h3>
+          <ng-template #sectionTitleTpl let-label let-key="key">
+            <h3
+              class="cvpreview__section-title"
+              [ngStyle]="sectionCss(key)"
+              [style.color]="effStyle(key).colorHex"
+            >
+              {{ label }}
+            </h3>
           </ng-template>
 
           <ng-template #skillsTpl let-section>
@@ -772,8 +778,8 @@
             </div>
           </ng-template>
 
-          <ng-template #expEntryTpl let-entry>
-            <div class="cvpreview__entry">
+          <ng-template #expEntryTpl let-entry let-key="key">
+            <div class="cvpreview__entry" [ngStyle]="sectionCss(key)">
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-company">{{ entry.company }}</span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
@@ -803,8 +809,8 @@
             </div>
           </ng-template>
 
-          <ng-template #eduEntryTpl let-entry>
-            <div class="cvpreview__entry">
+          <ng-template #eduEntryTpl let-entry let-key="key">
+            <div class="cvpreview__entry" [ngStyle]="sectionCss(key)">
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-role"
                   >{{ entry.degree }}, {{ entry.institution }}</span

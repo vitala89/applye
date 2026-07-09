@@ -664,3 +664,28 @@
     transform: rotate(360deg);
   }
 }
+
+// WYSIWYG PDF export: while `body.printing-cv` is set, hide everything
+// except the `.letter-sheet` so only the letter prints. The `@page` rule
+// (injected by `exportPdfWysiwyg()`) supplies the real margins, so the
+// on-screen padding is zeroed here to avoid doubling them.
+@media print {
+  body.printing-cv * {
+    visibility: hidden;
+  }
+  body.printing-cv .letter-sheet,
+  body.printing-cv .letter-sheet * {
+    visibility: visible;
+  }
+  body.printing-cv .letter-sheet {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    min-height: auto;
+    margin: 0;
+    padding: 0; // @page margin handles the real margins — avoid double-margin
+    border: 0;
+    box-shadow: none;
+    background-image: none; // hide the on-screen break guides
+  }
+}

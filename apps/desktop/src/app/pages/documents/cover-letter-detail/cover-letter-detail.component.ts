@@ -648,6 +648,37 @@ export class CoverLetterDetailComponent implements OnDestroy {
     }
   }
 
+  /**
+   * WYSIWYG PDF export via the OS print dialog. Injects a `@page` rule sized
+   * from the current page settings, toggles `printing-cv` on `<body>` so the
+   * print stylesheet isolates `.letter-sheet`, then invokes the standard DOM
+   * `window.print()`. Tauri's webview plugin already overrides
+   * `window.print` on macOS to route through its native print command (gated
+   * by the `core:webview:allow-print` capability); on Windows/Linux the
+   * webview's built-in print is used directly — no `@tauri-apps/api` import
+   * is needed or available for this in the installed SDK version. Mirrors
+   * `exportPdfWysiwyg` on `CvDetailComponent`.
+   */
+  async exportPdfWysiwyg(): Promise<void> {
+    const r = resolvePageSettings(this.style().page);
+    const rule =
+      `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
+      ` margin: ${r.margin.top}mm ${r.margin.right}mm ${r.margin.bottom}mm ${r.margin.left}mm; }`;
+    let el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'wysiwyg-page-rule';
+      document.head.appendChild(el);
+    }
+    el.textContent = rule;
+    document.body.classList.add('printing-cv');
+    try {
+      window.print();
+    } finally {
+      document.body.classList.remove('printing-cv');
+    }
+  }
+
   async save(): Promise<void> {
     const doc = this.doc();
     if (!doc || this.saving()) return;

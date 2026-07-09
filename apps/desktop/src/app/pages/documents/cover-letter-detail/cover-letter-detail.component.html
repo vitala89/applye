@@ -50,6 +50,12 @@
         {{ previewMode() ? t()('documents.cv_edit_action') : t()('documents.cv_preview_action') }}
       </button>
 
+      @if (previewMode()) {
+        <button appButton variant="primary" size="sm" (click)="exportPdfWysiwyg()">
+          {{ t()('documents.cv_style_export_pdf_wysiwyg') }}
+        </button>
+      }
+
       <button
         appButton
         variant="secondary"

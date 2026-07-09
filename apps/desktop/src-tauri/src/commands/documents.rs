@@ -264,9 +264,18 @@ fn read_pdf_text(path: &str) -> Result<String, String> {
 /// `content_json` generically via `serde_json::Value` rather than a full
 /// typed mirror of the `libs/core` union — this module only ever needs to
 /// walk it in visible/order sequence, not round-trip it.
-fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
+/// Structured, section-tagged block list for the
+/// styled DOCX/PDF exporters: same section walk, but each line is emitted as a
+/// `StyledBlock` carrying its `CvSectionKey` so the renderer can apply that
+/// section's effective style. Section titles stay in English (export
+/// convention), matching the markdown path.
+fn cv_content_to_blocks(
+    content_json: &str,
+) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
+    use crate::commands::tailoring::{BlockLevel, StyledBlock};
+
     let parsed: serde_json::Value = serde_json::from_str(content_json)
-        .map_err(|e| format!("cv_content_to_markdown: invalid content_json: {e}"))?;
+        .map_err(|e| format!("cv_content_to_blocks: invalid content_json: {e}"))?;
     let mut sections: Vec<serde_json::Value> = parsed
         .get("sections")
         .and_then(|s| s.as_array())
@@ -274,7 +283,14 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
         .unwrap_or_default();
     sections.sort_by_key(|s| s.get("order").and_then(|o| o.as_i64()).unwrap_or(0));
 
-    let mut md = String::new();
+    let mut out: Vec<StyledBlock> = Vec::new();
+    let block = |level, key: &str, text: String, bold| StyledBlock {
+        level,
+        section_key: Some(key.to_string()),
+        text,
+        bold,
+    };
+
     for section in sections {
         if section.get("visible").and_then(|v| v.as_bool()) == Some(false) {
             continue;
@@ -285,29 +301,43 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                 .and_then(|v| v.as_str())
                 .map(str::to_string)
         };
-        match section.get("key").and_then(|k| k.as_str()).unwrap_or("") {
+        let key = section.get("key").and_then(|k| k.as_str()).unwrap_or("");
+        match key {
             "personal_details" => {
                 if let Some(name) = str_field("fullName") {
-                    md.push_str(&format!("# {name}\n\n"));
+                    out.push(block(BlockLevel::H1, "personal_details", name, false));
                 }
                 let contact: Vec<String> = ["email", "phone", "address"]
                     .into_iter()
                     .filter_map(str_field)
                     .collect();
                 if !contact.is_empty() {
-                    md.push_str(&contact.join(" · "));
-                    md.push_str("\n\n");
+                    out.push(block(
+                        BlockLevel::Body,
+                        "personal_details",
+                        contact.join(" · "),
+                        false,
+                    ));
                 }
             }
             "summary" => {
                 if let Some(text) = str_field("text") {
-                    md.push_str("## Summary\n\n");
-                    md.push_str(&text);
-                    md.push_str("\n\n");
+                    out.push(block(
+                        BlockLevel::H2,
+                        "summary",
+                        "Summary".to_string(),
+                        false,
+                    ));
+                    out.push(block(BlockLevel::Body, "summary", text, false));
                 }
             }
             "experience" => {
-                md.push_str("## Experience\n\n");
+                out.push(block(
+                    BlockLevel::H2,
+                    "experience",
+                    "Experience".to_string(),
+                    false,
+                ));
                 if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
                     for entry in entries {
                         let company = entry.get("company").and_then(|v| v.as_str()).unwrap_or("");
@@ -320,20 +350,34 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                             .get("endDate")
                             .and_then(|v| v.as_str())
                             .unwrap_or("Present");
-                        md.push_str(&format!("**{role}**, {company} ({start} – {end})\n\n"));
+                        out.push(block(
+                            BlockLevel::Body,
+                            "experience",
+                            format!("{role}, {company} ({start} – {end})"),
+                            true,
+                        ));
                         if let Some(bullets) = entry.get("bullets").and_then(|b| b.as_array()) {
                             for bullet in bullets {
                                 if let Some(text) = bullet.as_str() {
-                                    md.push_str(&format!("- {text}\n"));
+                                    out.push(block(
+                                        BlockLevel::Bullet,
+                                        "experience",
+                                        text.to_string(),
+                                        false,
+                                    ));
                                 }
                             }
                         }
-                        md.push('\n');
                     }
                 }
             }
             "education" => {
-                md.push_str("## Education\n\n");
+                out.push(block(
+                    BlockLevel::H2,
+                    "education",
+                    "Education".to_string(),
+                    false,
+                ));
                 if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
                     for entry in entries {
                         let institution = entry
@@ -349,8 +393,11 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                             .get("endDate")
                             .and_then(|v| v.as_str())
                             .unwrap_or("Present");
-                        md.push_str(&format!(
-                            "**{degree}**, {institution} ({start} – {end})\n\n"
+                        out.push(block(
+                            BlockLevel::Body,
+                            "education",
+                            format!("{degree}, {institution} ({start} – {end})"),
+                            true,
                         ));
                     }
                 }
@@ -359,9 +406,8 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                 if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
                     let list: Vec<&str> = items.iter().filter_map(|v| v.as_str()).collect();
                     if !list.is_empty() {
-                        md.push_str("## Skills\n\n");
-                        md.push_str(&list.join(", "));
-                        md.push_str("\n\n");
+                        out.push(block(BlockLevel::H2, "skills", "Skills".to_string(), false));
+                        out.push(block(BlockLevel::Body, "skills", list.join(", "), false));
                     }
                 } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
                     let mut lines: Vec<String> = Vec::new();
@@ -373,35 +419,99 @@ fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
                             .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
                             .unwrap_or_default();
                         if !values.is_empty() {
-                            lines.push(format!("**{label}:** {}", values.join(", ")));
+                            lines.push(format!("{label}: {}", values.join(", ")));
                         }
                     }
                     if !lines.is_empty() {
-                        md.push_str("## Skills\n\n");
-                        md.push_str(&lines.join("\n"));
-                        md.push_str("\n\n");
+                        out.push(block(BlockLevel::H2, "skills", "Skills".to_string(), false));
+                        for line in lines {
+                            out.push(block(BlockLevel::Body, "skills", line, false));
+                        }
                     }
                 }
             }
             "languages" => {
                 if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
                     if !items.is_empty() {
-                        md.push_str("## Languages\n\n");
+                        out.push(block(
+                            BlockLevel::H2,
+                            "languages",
+                            "Languages".to_string(),
+                            false,
+                        ));
                         for item in items {
                             let language =
                                 item.get("language").and_then(|v| v.as_str()).unwrap_or("");
                             let level = item.get("level").and_then(|v| v.as_str()).unwrap_or("");
-                            md.push_str(&format!("- {language}: {level}\n"));
+                            out.push(block(
+                                BlockLevel::Bullet,
+                                "languages",
+                                format!("{language}: {level}"),
+                                false,
+                            ));
                         }
-                        md.push('\n');
                     }
                 }
             }
-            // "photo" has no plain-text representation in this renderer.
+            // "photo" is rendered as an embedded image, not a text block.
             _ => {}
         }
     }
-    Ok(md)
+    Ok(out)
+}
+
+/// Structured, block-tagged version of `cover_letter_content_to_markdown`. Body
+/// paragraphs are tagged `body_<i>` so per-paragraph style overrides resolve
+/// through the `body` block down to the document-wide style.
+fn cover_letter_content_to_blocks(
+    content_json: &str,
+) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
+    use crate::commands::tailoring::{BlockLevel, StyledBlock};
+
+    let parsed: serde_json::Value = serde_json::from_str(content_json)
+        .map_err(|e| format!("cover_letter_content_to_blocks: invalid json: {e}"))?;
+
+    let mut out: Vec<StyledBlock> = Vec::new();
+    let mut body = |key: String, text: String, bold| {
+        if !text.is_empty() {
+            out.push(StyledBlock {
+                level: BlockLevel::Body,
+                section_key: Some(key),
+                text,
+                bold,
+            });
+        }
+    };
+
+    if let Some(addr) = parsed.get("address") {
+        let s = |f: &str| addr.get(f).and_then(|v| v.as_str()).unwrap_or("");
+        body("recipient".into(), s("recipientName").into(), false);
+        body("recipient".into(), s("company").into(), false);
+        body("recipient".into(), s("street").into(), false);
+        let pc_city = format!("{} {}", s("postalCode"), s("city"))
+            .trim()
+            .to_string();
+        body("recipient".into(), pc_city, false);
+        body("recipient".into(), s("country").into(), false);
+    }
+
+    let s = |f: &str| parsed.get(f).and_then(|v| v.as_str()).unwrap_or("");
+    body("date".into(), s("date").into(), false);
+    body("subject".into(), s("subject").into(), true);
+    body("greeting".into(), s("greeting").into(), false);
+
+    if let Some(paras) = parsed.get("bodyParagraphs").and_then(|v| v.as_array()) {
+        for (i, para) in paras.iter().enumerate() {
+            if let Some(p) = para.as_str() {
+                body(format!("body_{i}"), p.to_string(), false);
+            }
+        }
+    }
+
+    body("closing".into(), s("closing").into(), false);
+    body("signature".into(), s("signature").into(), false);
+
+    Ok(out)
 }
 
 /// Escapes LaTeX special characters in plain (non-math) text.
@@ -425,7 +535,7 @@ fn tex_escape(text: &str) -> String {
 /// Renders a `CvContent` JSON blob into a clean, minimal LaTeX source
 /// (ROADMAP §16.6) — string templating only, never compiled here (no TeX
 /// toolchain bundled, keeps the binary tiny and local-first). Same section
-/// walk as `cv_content_to_markdown`, escaped for LaTeX instead.
+/// walk as `cv_content_to_blocks`, escaped for LaTeX instead.
 fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
     let parsed: serde_json::Value = serde_json::from_str(content_json)
         .map_err(|e| format!("cv_content_to_tex: invalid content_json: {e}"))?;
@@ -821,6 +931,14 @@ async fn cv_document_export_bytes_core(
     let doc = document_library_get_core(id, pool)
         .await?
         .ok_or_else(|| "cv_document_export: document not found".to_string())?;
+    // The user's style choices live in `style_json`; a missing/legacy value
+    // resolves to the safe default rather than erroring. Read it before moving
+    // `content_json` out of `doc`.
+    let style: CvStyle = doc
+        .style_json
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
     let content_json = doc
         .content_json
         .ok_or_else(|| "cv_document_export: document has no content".to_string())?;
@@ -854,14 +972,15 @@ async fn cv_document_export_bytes_core(
         });
 
     match format {
-        "docx" => crate::commands::tailoring::md_to_docx_bytes(
-            &cv_content_to_markdown(&content_json)?,
-            photo_bytes.as_deref(),
-        ),
-        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(
-            &cv_content_to_markdown(&content_json)?,
-            photo_bytes.as_deref(),
-        ),
+        "docx" | "pdf" => {
+            let blocks = cv_content_to_blocks(&content_json)?;
+            let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, false);
+            if format == "docx" {
+                crate::commands::tailoring::render_blocks_docx(&resolved, photo_bytes.as_deref())
+            } else {
+                crate::commands::tailoring::render_blocks_pdf(&resolved, photo_bytes.as_deref())
+            }
+        }
         "tex" => Ok(cv_content_to_tex(&content_json)?.into_bytes()),
         other => Err(format!("cv_document_export: unsupported format '{other}'")),
     }
@@ -888,106 +1007,28 @@ async fn cover_letter_document_export_bytes_core(
     let doc = document_library_get_core(id, pool)
         .await?
         .ok_or_else(|| "cover_letter_document_export: document not found".to_string())?;
+    let style: CvStyle = doc
+        .style_json
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
     let content_json = doc
         .content_json
         .ok_or_else(|| "cover_letter_document_export: document has no content".to_string())?;
     match format {
-        "docx" => crate::commands::tailoring::md_to_docx_bytes(
-            &cover_letter_content_to_markdown(&content_json)?,
-            None,
-        ),
-        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(
-            &cover_letter_content_to_markdown(&content_json)?,
-            None,
-        ),
+        "docx" | "pdf" => {
+            let blocks = cover_letter_content_to_blocks(&content_json)?;
+            let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, true);
+            if format == "docx" {
+                crate::commands::tailoring::render_blocks_docx(&resolved, None)
+            } else {
+                crate::commands::tailoring::render_blocks_pdf(&resolved, None)
+            }
+        }
         other => Err(format!(
             "cover_letter_document_export: unsupported format '{other}'"
         )),
     }
-}
-
-fn cover_letter_content_to_markdown(content_json: &str) -> Result<String, String> {
-    let parsed: serde_json::Value = serde_json::from_str(content_json)
-        .map_err(|e| format!("cover_letter_content_to_markdown: invalid json: {e}"))?;
-
-    let mut md = String::new();
-
-    if let Some(addr) = parsed.get("address") {
-        if let Some(name) = addr.get("recipientName").and_then(|v| v.as_str()) {
-            if !name.is_empty() {
-                md.push_str(&format!("{name}\n"));
-            }
-        }
-        if let Some(comp) = addr.get("company").and_then(|v| v.as_str()) {
-            if !comp.is_empty() {
-                md.push_str(&format!("{comp}\n"));
-            }
-        }
-        if let Some(street) = addr.get("street").and_then(|v| v.as_str()) {
-            if !street.is_empty() {
-                md.push_str(&format!("{street}\n"));
-            }
-        }
-        let pc = addr
-            .get("postalCode")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        let city = addr.get("city").and_then(|v| v.as_str()).unwrap_or("");
-        if !pc.is_empty() || !city.is_empty() {
-            md.push_str(&format!("{pc} {city}\n").trim());
-        }
-        if let Some(country) = addr.get("country").and_then(|v| v.as_str()) {
-            if !country.is_empty() {
-                md.push_str(&format!("{country}\n"));
-            }
-        }
-    }
-
-    if !md.is_empty() {
-        md.push_str("\n");
-    }
-
-    if let Some(date) = parsed.get("date").and_then(|v| v.as_str()) {
-        if !date.is_empty() {
-            md.push_str(&format!("{date}\n\n"));
-        }
-    }
-
-    if let Some(subject) = parsed.get("subject").and_then(|v| v.as_str()) {
-        if !subject.is_empty() {
-            md.push_str(&format!("**{subject}**\n\n"));
-        }
-    }
-
-    if let Some(greeting) = parsed.get("greeting").and_then(|v| v.as_str()) {
-        if !greeting.is_empty() {
-            md.push_str(&format!("{greeting}\n\n"));
-        }
-    }
-
-    if let Some(paras) = parsed.get("bodyParagraphs").and_then(|v| v.as_array()) {
-        for para in paras {
-            if let Some(p_str) = para.as_str() {
-                if !p_str.is_empty() {
-                    md.push_str(&format!("{p_str}\n\n"));
-                }
-            }
-        }
-    }
-
-    let closing = parsed.get("closing").and_then(|v| v.as_str()).unwrap_or("");
-    let sig = parsed
-        .get("signature")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    if !closing.is_empty() {
-        md.push_str(&format!("{closing}\n\n"));
-    }
-    if !sig.is_empty() {
-        md.push_str(&format!("{sig}\n"));
-    }
-
-    Ok(md)
 }
 
 #[tauri::command]
@@ -1410,29 +1451,54 @@ mod tests {
     }
 
     #[test]
-    fn cv_content_to_markdown_renders_visible_sections_in_order() {
+    fn cv_content_to_blocks_orders_sections_tags_keys_and_hides_invisible() {
+        use crate::commands::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"summary","order":1,"visible":true,"text":"Backend engineer."},
             {"key":"personal_details","order":0,"visible":true,"fullName":"Jane Doe","email":"jane@example.com"},
             {"key":"experience","order":2,"visible":true,"entries":[{"company":"Acme","role":"Engineer","startDate":"2020","endDate":"2023","bullets":["Built things"]}]},
             {"key":"skills","order":3,"visible":false,"items":["Rust"]}
         ]}"#;
-        let md = cv_content_to_markdown(content_json).expect("render");
-        assert!(md.find("Jane Doe").unwrap() < md.find("Backend engineer.").unwrap());
-        assert!(md.find("Backend engineer.").unwrap() < md.find("Acme").unwrap());
-        assert!(!md.contains("Rust"), "hidden section must not render");
+        let blocks = cv_content_to_blocks(content_json).expect("render");
+        let pos = |needle: &str| {
+            blocks
+                .iter()
+                .position(|b| b.text.contains(needle))
+                .unwrap_or_else(|| panic!("missing {needle}"))
+        };
+        assert!(pos("Jane Doe") < pos("Backend engineer."));
+        assert!(pos("Backend engineer.") < pos("Acme"));
+        assert!(
+            !blocks.iter().any(|b| b.text.contains("Rust")),
+            "hidden section must not render"
+        );
+        // Name is the H1, tagged to its owning section for style resolution.
+        assert_eq!(blocks[0].level, BlockLevel::H1);
+        assert_eq!(blocks[0].section_key.as_deref(), Some("personal_details"));
+        // The experience bullet keeps the section tag so overrides resolve.
+        let bullet = blocks
+            .iter()
+            .find(|b| b.text.contains("Built things"))
+            .unwrap();
+        assert_eq!(bullet.level, BlockLevel::Bullet);
+        assert_eq!(bullet.section_key.as_deref(), Some("experience"));
     }
 
     #[test]
-    fn cv_content_to_markdown_renders_grouped_skills_when_items_absent() {
+    fn cv_content_to_blocks_renders_grouped_skills_when_items_absent() {
+        use crate::commands::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"skills","order":0,"visible":true,"groups":[
                 {"label":"Languages","values":["TypeScript","Angular"]}
             ]}
         ]}"#;
-        let md = cv_content_to_markdown(content_json).expect("render");
-        assert!(md.contains("## Skills"));
-        assert!(md.contains("**Languages:** TypeScript, Angular"));
+        let blocks = cv_content_to_blocks(content_json).expect("render");
+        assert!(blocks
+            .iter()
+            .any(|b| b.level == BlockLevel::H2 && b.text == "Skills"));
+        assert!(blocks
+            .iter()
+            .any(|b| b.text == "Languages: TypeScript, Angular"));
     }
 
     #[tokio::test]

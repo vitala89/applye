@@ -231,44 +231,261 @@ fn cv_filename(title: &str, company: &str, hash: &str, ext: &str) -> String {
     format!("{slug}_{suffix}.{ext}")
 }
 
-// ── DOCX export ──────────────────────────────────────────────────────────────
+// ── Shared export styling ─────────────────────────────────────────────────────
+//
+// Both exporters (DOCX via docx-rs, PDF via printpdf) render from one structured
+// block list so their output stays in lockstep, and both honor the user's
+// `CvStyle` (font / size / colour / weight, plus per-section and per-paragraph
+// overrides) instead of hardcoding a look. The style cascade mirrors the editor
+// utils `effectiveSectionStyle` / `effectiveCoverLetterParagraphStyle` exactly so
+// what the user sees in the editor is what lands in the file.
+//
+// Honest limit: printpdf ships only the 14 PDF base fonts, so an arbitrary
+// user font (Calibri, Lato, …) is mapped to the nearest base family in PDF
+// (sans→Helvetica, serif→Times, mono→Courier). DOCX carries the real font name.
 
-// `pub(crate)`, not private: reused by `commands::documents` to export a
-// library CV (a different journal/caching path — no `generated_docs` row).
+use crate::commands::documents::CvStyle;
+
+/// Logical role of a block — drives relative size scale and spacing so both
+/// renderers agree on hierarchy without hardcoding absolute sizes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BlockLevel {
+    H1,
+    H2,
+    H3,
+    Body,
+    Bullet,
+}
+
+impl BlockLevel {
+    /// Multiplier applied to the section's effective point size.
+    fn scale(self) -> f64 {
+        match self {
+            BlockLevel::H1 => 1.6,
+            BlockLevel::H2 => 1.3,
+            BlockLevel::H3 => 1.15,
+            BlockLevel::Body | BlockLevel::Bullet => 1.0,
+        }
+    }
+    fn is_heading(self) -> bool {
+        matches!(self, BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3)
+    }
+}
+
+/// One logical line to render, tagged with the section/block it belongs to so
+/// per-section style overrides resolve correctly. `bold` marks inline-emphasised
+/// body lines (entry titles, the cover-letter subject).
+pub(crate) struct StyledBlock {
+    pub level: BlockLevel,
+    pub section_key: Option<String>,
+    pub text: String,
+    pub bold: bool,
+}
+
+/// A block with its style fully resolved — renderers consume this and stay
+/// agnostic of the CV-vs-cover-letter cascade rules.
+pub(crate) struct RenderBlock {
+    pub level: BlockLevel,
+    pub font_family: String,
+    pub size_pt: f64,
+    pub rgb: (u8, u8, u8),
+    pub bold: bool,
+    pub text: String,
+}
+
+struct EffStyle {
+    font_family: String,
+    size_pt: f64,
+    weight: i64,
+    rgb: (u8, u8, u8),
+}
+
+fn hex_to_rgb(hex: &str) -> (u8, u8, u8) {
+    let h = hex.trim_start_matches('#');
+    if h.len() != 6 {
+        return (51, 51, 51); // #333333 default — matches CV_STYLE_DEFAULT
+    }
+    let byte = |a: usize, b: usize| u8::from_str_radix(&h[a..b], 16).ok();
+    match (byte(0, 2), byte(2, 4), byte(4, 6)) {
+        (Some(r), Some(g), Some(b)) => (r, g, b),
+        _ => (51, 51, 51),
+    }
+}
+
+/// CV cascade: per-section override field ?? document-wide field. Mirrors the
+/// TS `effectiveSectionStyle`.
+fn effective_cv(style: &CvStyle, key: Option<&str>) -> EffStyle {
+    let o = key.and_then(|k| style.section_styles.get(k));
+    EffStyle {
+        font_family: o
+            .and_then(|s| s.font_family.clone())
+            .unwrap_or_else(|| style.font_family.clone()),
+        size_pt: o.and_then(|s| s.font_size_pt).unwrap_or(style.font_size_pt),
+        weight: o.and_then(|s| s.font_weight).unwrap_or(style.font_weight),
+        rgb: hex_to_rgb(
+            o.and_then(|s| s.color_hex.as_deref())
+                .unwrap_or(&style.accent_color_hex),
+        ),
+    }
+}
+
+/// Cover-letter cascade: a `body_<i>` paragraph override ?? the `body` block
+/// style ?? document-wide. Mirrors the TS `effectiveCoverLetterParagraphStyle`.
+fn effective_cl(style: &CvStyle, key: Option<&str>) -> EffStyle {
+    match key {
+        Some(k) if k.starts_with("body_") => {
+            let base = effective_cv(style, Some("body"));
+            let o = style.section_styles.get(k);
+            EffStyle {
+                font_family: o
+                    .and_then(|s| s.font_family.clone())
+                    .unwrap_or(base.font_family),
+                size_pt: o.and_then(|s| s.font_size_pt).unwrap_or(base.size_pt),
+                weight: o.and_then(|s| s.font_weight).unwrap_or(base.weight),
+                rgb: o
+                    .and_then(|s| s.color_hex.as_deref())
+                    .map(hex_to_rgb)
+                    .unwrap_or(base.rgb),
+            }
+        }
+        _ => effective_cv(style, key),
+    }
+}
+
+/// Resolves every block's effective style once, up front. `cover_letter` picks
+/// the paragraph-aware cascade. A block renders bold when it is a heading, was
+/// tagged inline-bold, or its effective weight is semibold+.
+pub(crate) fn resolve_blocks(
+    style: &CvStyle,
+    blocks: &[StyledBlock],
+    cover_letter: bool,
+) -> Vec<RenderBlock> {
+    blocks
+        .iter()
+        .map(|b| {
+            let eff = if cover_letter {
+                effective_cl(style, b.section_key.as_deref())
+            } else {
+                effective_cv(style, b.section_key.as_deref())
+            };
+            RenderBlock {
+                level: b.level,
+                font_family: eff.font_family,
+                size_pt: eff.size_pt * b.level.scale(),
+                rgb: eff.rgb,
+                bold: b.level.is_heading() || b.bold || eff.weight >= 600,
+                text: b.text.clone(),
+            }
+        })
+        .collect()
+}
+
+/// Parses already-rendered markdown (the tailored-CV journal path, which has no
+/// per-section style) into blocks tagged with no section key — they resolve to
+/// the document-wide style. A `**wrapped**` line becomes bold body text.
+fn md_to_blocks(content_md: &str) -> Vec<StyledBlock> {
+    let mk = |level, text: &str, bold| StyledBlock {
+        level,
+        section_key: None,
+        text: text.to_string(),
+        bold,
+    };
+    content_md
+        .lines()
+        .filter_map(|line| {
+            if let Some(t) = line.strip_prefix("# ") {
+                Some(mk(BlockLevel::H1, t, false))
+            } else if let Some(t) = line.strip_prefix("## ") {
+                Some(mk(BlockLevel::H2, t, false))
+            } else if let Some(t) = line.strip_prefix("### ") {
+                Some(mk(BlockLevel::H3, t, false))
+            } else if let Some(t) = line.strip_prefix("- ").or_else(|| line.strip_prefix("* ")) {
+                Some(mk(BlockLevel::Bullet, t, false))
+            } else if line.trim().is_empty() {
+                None
+            } else {
+                let (text, bold) = strip_bold_wrap(line);
+                Some(mk(BlockLevel::Body, text, bold))
+            }
+        })
+        .collect()
+}
+
+/// Strips a single `**…**` wrap, reporting whether it was bold.
+fn strip_bold_wrap(line: &str) -> (&str, bool) {
+    let t = line.trim();
+    if t.len() >= 4 && t.starts_with("**") && t.ends_with("**") {
+        (t[2..t.len() - 2].trim(), true)
+    } else {
+        (line, false)
+    }
+}
+
+// ── DOCX rendering ────────────────────────────────────────────────────────────
+
+/// Tailored-CV journal export (markdown in, document-wide default style).
 pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
+    let blocks = md_to_blocks(content_md);
+    let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
+    render_blocks_docx(&resolved, photo)
+}
+
+/// `pub(crate)`, not private: the library CV/cover-letter export in
+/// `commands::documents` builds section-tagged blocks and calls this directly.
+pub(crate) fn render_blocks_docx(
+    blocks: &[RenderBlock],
+    photo: Option<&[u8]>,
+) -> Result<Vec<u8>, String> {
     use docx_rs::*;
 
     let mut doc = Docx::new();
 
     if let Some(bytes) = photo {
-        // docx-rs 0.4: `Pic::new(&[u8])` decodes the image via its bundled
-        // `image` crate, re-encodes to PNG, and computes the pixel size; we then
-        // override the rendered box to ~2.7cm x 3.6cm (3:4) in EMU
-        // (914400 EMU/inch). Embedded as the first paragraph.
+        // docx-rs 0.4: `Pic::new(&[u8])` decodes/re-encodes and computes pixel
+        // size; we override the box to ~2.7cm x 3.6cm (3:4) in EMU
+        // (914400 EMU/inch). First paragraph, so text flows below it — the same
+        // top-of-document placement the PDF renderer mirrors.
         let pic = Pic::new(bytes).size(972_000, 1_296_000);
         doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_image(pic)));
     }
 
-    for line in content_md.lines() {
-        let para = if let Some(text) = line.strip_prefix("# ") {
-            Paragraph::new()
-                .add_run(Run::new().add_text(text).bold())
-                .style("Heading1")
-        } else if let Some(text) = line.strip_prefix("## ") {
-            Paragraph::new()
-                .add_run(Run::new().add_text(text).bold())
-                .style("Heading2")
-        } else if let Some(text) = line.strip_prefix("### ") {
-            Paragraph::new()
-                .add_run(Run::new().add_text(text))
-                .style("Heading3")
-        } else if let Some(text) = line.strip_prefix("- ").or_else(|| line.strip_prefix("* ")) {
-            Paragraph::new()
-                .add_run(Run::new().add_text(text))
-                .style("ListParagraph")
+    for b in blocks {
+        let (r, g, bl) = b.rgb;
+        let text = if b.level == BlockLevel::Bullet {
+            format!("•  {}", b.text)
         } else {
-            Paragraph::new().add_run(Run::new().add_text(line))
+            b.text.clone()
         };
+        let mut run = Run::new()
+            .add_text(&text)
+            .size((b.size_pt * 2.0).round() as usize) // docx size is half-points
+            .color(format!("{r:02X}{g:02X}{bl:02X}"))
+            .fonts(
+                RunFonts::new()
+                    .ascii(&b.font_family)
+                    .hi_ansi(&b.font_family),
+            );
+        if b.bold {
+            run = run.bold();
+        }
+        // Vertical rhythm — docx-rs paragraphs are flush by default, which reads
+        // as cramped next to the spaced PDF. Add space before/after (twips,
+        // 1/20 pt) scaled to the block size so headings breathe and body/bullets
+        // stay tight, mirroring the PDF's inter-block gaps.
+        let (before, after) = match b.level {
+            BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3 => (
+                (b.size_pt * 9.0).round() as u32,
+                (b.size_pt * 3.0).round() as u32,
+            ),
+            BlockLevel::Bullet => (0, (b.size_pt * 2.0).round() as u32),
+            BlockLevel::Body => (0, (b.size_pt * 3.5).round() as u32),
+        };
+        let mut para = Paragraph::new()
+            .add_run(run)
+            .line_spacing(LineSpacing::new().before(before).after(after));
+        if b.level == BlockLevel::Bullet {
+            para = para.indent(Some(360), None, None, None);
+        }
         doc = doc.add_paragraph(para);
     }
 
@@ -310,79 +527,272 @@ pub async fn export_docx(
     .await
 }
 
-// ── PDF export ───────────────────────────────────────────────────────────────
+// ── PDF rendering ─────────────────────────────────────────────────────────────
 
+/// Tailored-CV journal export (markdown in, document-wide default style).
 pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
+    let blocks = md_to_blocks(content_md);
+    let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
+    render_blocks_pdf(&resolved, photo)
+}
+
+/// Maps a user font family + weight to the nearest PDF base font. printpdf only
+/// ships the 14 base fonts, so exact custom fonts (Calibri, Lato) can't render
+/// in PDF without embedding TTFs — a deliberate follow-up. DOCX keeps the real
+/// font name, so only PDF approximates.
+fn pick_pdf_font<'a>(
+    family: &str,
+    bold: bool,
+    helv: &'a printpdf::IndirectFontRef,
+    helv_b: &'a printpdf::IndirectFontRef,
+    times: &'a printpdf::IndirectFontRef,
+    times_b: &'a printpdf::IndirectFontRef,
+    courier: &'a printpdf::IndirectFontRef,
+    courier_b: &'a printpdf::IndirectFontRef,
+) -> &'a printpdf::IndirectFontRef {
+    let f = family.to_lowercase();
+    let mono = ["courier", "mono", "consolas"]
+        .iter()
+        .any(|s| f.contains(s));
+    let serif = [
+        "times",
+        "georgia",
+        "garamond",
+        "serif",
+        "cambria",
+        "book antiqua",
+    ]
+    .iter()
+    .any(|s| f.contains(s));
+    if mono {
+        if bold {
+            courier_b
+        } else {
+            courier
+        }
+    } else if serif {
+        if bold {
+            times_b
+        } else {
+            times
+        }
+    } else if bold {
+        helv_b
+    } else {
+        helv
+    }
+}
+
+/// Average glyph-advance as a fraction of point size, used to estimate text
+/// width for wrapping. printpdf's base fonts expose no metrics, so this is a
+/// deliberately conservative heuristic (slightly over-estimating width keeps
+/// wide-glyph lines inside the margin rather than clipping).
+fn char_ratio(family: &str) -> f32 {
+    let f = family.to_lowercase();
+    if ["courier", "mono", "consolas"]
+        .iter()
+        .any(|s| f.contains(s))
+    {
+        0.62 // monospace advances are wider
+    } else {
+        0.53
+    }
+}
+
+/// Greedy word-wrap to a max character count. A word longer than the limit
+/// (e.g. a long URL) is hard-split so it can never overflow the page width.
+fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
+    if max_chars == 0 {
+        return vec![text.to_string()];
+    }
+    let mut lines: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let mut cur_len = 0usize;
+    for word in text.split_whitespace() {
+        let wlen = word.chars().count();
+        if wlen > max_chars {
+            if !cur.is_empty() {
+                lines.push(std::mem::take(&mut cur));
+            }
+            let mut rest = word;
+            while rest.chars().count() > max_chars {
+                let idx = rest
+                    .char_indices()
+                    .nth(max_chars)
+                    .map(|(i, _)| i)
+                    .unwrap_or(rest.len());
+                lines.push(rest[..idx].to_string());
+                rest = &rest[idx..];
+            }
+            cur = rest.to_string();
+            cur_len = cur.chars().count();
+            continue;
+        }
+        let projected = if cur.is_empty() {
+            wlen
+        } else {
+            cur_len + 1 + wlen
+        };
+        if projected > max_chars {
+            lines.push(std::mem::take(&mut cur));
+            cur = word.to_string();
+            cur_len = wlen;
+        } else {
+            if !cur.is_empty() {
+                cur.push(' ');
+                cur_len += 1;
+            }
+            cur.push_str(word);
+            cur_len += wlen;
+        }
+    }
+    if !cur.is_empty() {
+        lines.push(cur);
+    }
+    if lines.is_empty() {
+        lines.push(String::new());
+    }
+    lines
+}
+
+/// `pub(crate)`: the library CV/cover-letter export in `commands::documents`
+/// builds section-tagged blocks and calls this directly.
+pub(crate) fn render_blocks_pdf(
+    blocks: &[RenderBlock],
+    photo: Option<&[u8]>,
+) -> Result<Vec<u8>, String> {
     use printpdf::*;
 
-    let (doc, page1, layer1) = PdfDocument::new("Tailored CV", Mm(210.0), Mm(297.0), "Layer 1");
+    let (doc, page1, layer1) = PdfDocument::new("CV", Mm(210.0), Mm(297.0), "Layer 1");
 
-    let font_bold = doc
-        .add_builtin_font(BuiltinFont::HelveticaBold)
-        .map_err(|e| format!("pdf font bold: {e}"))?;
-    let font_reg = doc
+    let helv = doc
         .add_builtin_font(BuiltinFont::Helvetica)
+        .map_err(|e| format!("pdf font: {e}"))?;
+    let helv_b = doc
+        .add_builtin_font(BuiltinFont::HelveticaBold)
+        .map_err(|e| format!("pdf font: {e}"))?;
+    let times = doc
+        .add_builtin_font(BuiltinFont::TimesRoman)
+        .map_err(|e| format!("pdf font: {e}"))?;
+    let times_b = doc
+        .add_builtin_font(BuiltinFont::TimesBold)
+        .map_err(|e| format!("pdf font: {e}"))?;
+    let courier = doc
+        .add_builtin_font(BuiltinFont::Courier)
+        .map_err(|e| format!("pdf font: {e}"))?;
+    let courier_b = doc
+        .add_builtin_font(BuiltinFont::CourierBold)
         .map_err(|e| format!("pdf font: {e}"))?;
 
     let margin = Mm(18.0_f32);
-    let indent = Mm(21.0_f32);
+    let margin_mm = 18.0_f32;
+    let indent_mm = 23.0_f32;
+    let right_margin_mm = 18.0_f32;
+    let page_w_mm = 210.0_f32;
     let top_y = 277.0_f32;
     let mut y: f32 = top_y;
     let mut cur_page = page1;
     let mut cur_layer = layer1;
 
     if let Some(bytes) = photo {
-        // printpdf 0.7 (`embedded_images` feature): decode with the crate's own
-        // re-exported `image` (0.24) so the `DynamicImage` type matches
-        // `Image::from_dynamic_image`, then paint it top-right on the first
-        // layer. Text still starts at `top_y` and flows down the left column.
+        // printpdf 0.7 (`embedded_images`): decode with the crate's re-exported
+        // `image` (0.24) so the `DynamicImage` type matches. Force the same
+        // ~2.7cm x 3.6cm box as DOCX (independent x/y scale) and place it
+        // top-left; text then starts below it — mirroring the DOCX inline-top
+        // placement instead of the old top-right overlay that clipped headings.
         let dynimg = printpdf::image_crate::load_from_memory(bytes)
             .map_err(|e| format!("pdf photo decode: {e}"))?;
+        let (px_w, px_h) = (dynimg.width() as f32, dynimg.height() as f32);
         let img = Image::from_dynamic_image(&dynimg);
+        let dpi = 300.0_f32;
+        let nat_w_mm = px_w / dpi * 25.4;
+        let nat_h_mm = px_h / dpi * 25.4;
+        let (box_w, box_h) = (27.0_f32, 36.0_f32);
         let layer = doc.get_page(page1).get_layer(layer1);
         img.add_to_layer(
             layer,
             ImageTransform {
-                translate_x: Some(Mm(158.0)),
-                translate_y: Some(Mm(251.0)),
-                scale_x: Some(0.5),
-                scale_y: Some(0.5),
-                dpi: Some(300.0),
+                translate_x: Some(margin),
+                translate_y: Some(Mm(top_y - box_h)),
+                scale_x: Some(if nat_w_mm > 0.0 {
+                    box_w / nat_w_mm
+                } else {
+                    1.0
+                }),
+                scale_y: Some(if nat_h_mm > 0.0 {
+                    box_h / nat_h_mm
+                } else {
+                    1.0
+                }),
+                dpi: Some(dpi),
                 ..Default::default()
             },
         );
+        y = top_y - box_h - 8.0;
     }
 
-    for line in content_md.lines() {
-        if y < 18.0_f32 {
-            let (p, l) = doc.add_page(Mm(210.0_f32), Mm(297.0_f32), "Layer 1");
-            cur_page = p;
-            cur_layer = l;
-            y = top_y;
-        }
-        let layer = doc.get_page(cur_page).get_layer(cur_layer);
+    for b in blocks {
+        let (r, g, bl) = b.rgb;
+        let font = pick_pdf_font(
+            &b.font_family,
+            b.bold,
+            &helv,
+            &helv_b,
+            &times,
+            &times_b,
+            &courier,
+            &courier_b,
+        );
+        let bullet = b.level == BlockLevel::Bullet;
+        let base_x = if bullet { indent_mm } else { margin_mm };
 
-        if let Some(text) = line.strip_prefix("# ") {
-            y -= 4.0_f32;
-            layer.use_text(text, 16.0_f32, margin, Mm(y), &font_bold);
-            y -= 9.0_f32;
-        } else if let Some(text) = line.strip_prefix("## ") {
-            y -= 2.0_f32;
-            layer.use_text(text, 13.0_f32, margin, Mm(y), &font_bold);
-            y -= 7.0_f32;
-        } else if let Some(text) = line.strip_prefix("### ") {
-            layer.use_text(text, 11.0_f32, margin, Mm(y), &font_bold);
-            y -= 6.0_f32;
-        } else if let Some(text) = line.strip_prefix("- ").or_else(|| line.strip_prefix("* ")) {
-            let bullet = format!("- {text}");
-            layer.use_text(&bullet, 10.0_f32, indent, Mm(y), &font_reg);
-            y -= 5.5_f32;
-        } else if line.is_empty() {
-            y -= 3.0_f32;
+        // Wrap to the printable width — printpdf's `use_text` never wraps, so a
+        // long line would run off the right edge and be clipped. Estimate the
+        // character budget from the font's average advance (base fonts expose
+        // no metrics) and greedily fold words onto new lines.
+        let char_w_mm = b.size_pt as f32 * 0.3528 * char_ratio(&b.font_family);
+        let avail_mm = page_w_mm - base_x - right_margin_mm;
+        let max_chars = if char_w_mm > 0.0 {
+            (avail_mm / char_w_mm).floor().max(1.0) as usize
         } else {
-            layer.use_text(line, 10.0_f32, margin, Mm(y), &font_reg);
-            y -= 5.5_f32;
+            usize::MAX
+        };
+        let wrapped = wrap_text(&b.text, max_chars);
+        // pt → mm (×0.3528) with ~1.35 leading.
+        let line_h = b.size_pt as f32 * 0.3528 * 1.35;
+
+        if b.level.is_heading() {
+            y -= 3.0_f32;
         }
+        for (i, line) in wrapped.iter().enumerate() {
+            if y < 18.0_f32 {
+                let (p, l) = doc.add_page(Mm(page_w_mm), Mm(297.0_f32), "Layer 1");
+                cur_page = p;
+                cur_layer = l;
+                y = top_y;
+            }
+            let layer = doc.get_page(cur_page).get_layer(cur_layer);
+            layer.set_fill_color(Color::Rgb(Rgb::new(
+                r as f32 / 255.0,
+                g as f32 / 255.0,
+                bl as f32 / 255.0,
+                None,
+            )));
+            // Bullet glyph on the first wrapped line only; continuation lines
+            // hang-indent so they align under the text, not the bullet.
+            let (draw_x, draw_text) = if bullet {
+                if i == 0 {
+                    (base_x, format!("•  {line}"))
+                } else {
+                    (base_x + 4.0, line.clone())
+                }
+            } else {
+                (base_x, line.clone())
+            };
+            layer.use_text(&draw_text, b.size_pt as f32, Mm(draw_x), Mm(y), font);
+            y -= line_h;
+        }
+        y -= if b.level.is_heading() { 2.5 } else { 1.5 };
     }
 
     let mut buf = Vec::new();
@@ -461,4 +871,164 @@ pub fn reveal_in_folder(path: String) -> Result<(), String> {
             .map_err(|e| format!("reveal_in_folder: {e}"))?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::commands::documents::{CvSectionStyle, CvStyle};
+    use std::collections::HashMap;
+
+    fn section(
+        font: Option<&str>,
+        size: Option<f64>,
+        color: Option<&str>,
+        weight: Option<i64>,
+    ) -> CvSectionStyle {
+        CvSectionStyle {
+            font_family: font.map(str::to_string),
+            font_size_pt: size,
+            color_hex: color.map(str::to_string),
+            font_weight: weight,
+        }
+    }
+
+    #[test]
+    fn hex_to_rgb_parses_and_falls_back() {
+        assert_eq!(hex_to_rgb("#FF8000"), (255, 128, 0));
+        assert_eq!(hex_to_rgb("00ff00"), (0, 255, 0));
+        assert_eq!(hex_to_rgb("bogus"), (51, 51, 51)); // malformed → #333333
+        assert_eq!(hex_to_rgb("#12345"), (51, 51, 51)); // wrong length → default
+    }
+
+    #[test]
+    fn effective_cv_uses_global_without_override() {
+        let style = CvStyle::default(); // Calibri 11 #333333 400
+        let eff = effective_cv(&style, Some("summary"));
+        assert_eq!(eff.font_family, "Calibri");
+        assert_eq!(eff.size_pt, 11.0);
+        assert_eq!(eff.weight, 400);
+        assert_eq!(eff.rgb, (51, 51, 51));
+    }
+
+    #[test]
+    fn effective_cv_section_override_wins_field_by_field() {
+        let mut style = CvStyle::default();
+        // Only override size + colour for `experience`; font/weight inherit.
+        style.section_styles.insert(
+            "experience".into(),
+            section(None, Some(13.0), Some("#000000"), None),
+        );
+        let eff = effective_cv(&style, Some("experience"));
+        assert_eq!(eff.font_family, "Calibri"); // inherited
+        assert_eq!(eff.size_pt, 13.0); // overridden
+        assert_eq!(eff.rgb, (0, 0, 0)); // overridden
+        assert_eq!(eff.weight, 400); // inherited
+    }
+
+    #[test]
+    fn effective_cl_paragraph_cascades_through_body_block() {
+        let mut style = CvStyle::default();
+        let mut map: HashMap<String, CvSectionStyle> = HashMap::new();
+        // body block sets font Georgia + weight 600; paragraph 1 overrides size only.
+        map.insert(
+            "body".into(),
+            section(Some("Georgia"), None, None, Some(600)),
+        );
+        map.insert("body_1".into(), section(None, Some(12.0), None, None));
+        style.section_styles = map;
+
+        let p1 = effective_cl(&style, Some("body_1"));
+        assert_eq!(p1.font_family, "Georgia"); // from body block
+        assert_eq!(p1.weight, 600); // from body block
+        assert_eq!(p1.size_pt, 12.0); // paragraph override
+        assert_eq!(p1.rgb, (51, 51, 51)); // global default
+
+        // A paragraph with no own override inherits the body block fully.
+        let p0 = effective_cl(&style, Some("body_0"));
+        assert_eq!(p0.font_family, "Georgia");
+        assert_eq!(p0.size_pt, 11.0); // body block inherits global size
+    }
+
+    #[test]
+    fn resolve_blocks_scales_headings_and_forces_bold() {
+        let style = CvStyle::default();
+        let blocks = vec![
+            StyledBlock {
+                level: BlockLevel::H1,
+                section_key: Some("personal_details".into()),
+                text: "Jane Doe".into(),
+                bold: false,
+            },
+            StyledBlock {
+                level: BlockLevel::Bullet,
+                section_key: Some("experience".into()),
+                text: "Shipped X".into(),
+                bold: false,
+            },
+        ];
+        let resolved = resolve_blocks(&style, &blocks, false);
+        // H1: 11 * 1.6 = 17.6, bold forced despite tag=false.
+        assert!((resolved[0].size_pt - 17.6).abs() < 1e-9);
+        assert!(resolved[0].bold);
+        // Bullet: base size, weight 400 → not bold.
+        assert_eq!(resolved[1].size_pt, 11.0);
+        assert!(!resolved[1].bold);
+    }
+
+    #[test]
+    fn resolve_blocks_bold_when_weight_is_semibold() {
+        let mut style = CvStyle::default();
+        style.font_weight = 600;
+        let blocks = vec![StyledBlock {
+            level: BlockLevel::Body,
+            section_key: None,
+            text: "hi".into(),
+            bold: false,
+        }];
+        assert!(resolve_blocks(&style, &blocks, false)[0].bold);
+    }
+
+    #[test]
+    fn md_to_blocks_maps_prefixes_and_strips_bold() {
+        let md =
+            "# Name\n\n## Summary\n\n**Fully Bold**\n**Lead Dev**, Acme\n- did a thing\nplain line";
+        let blocks = md_to_blocks(md);
+        assert_eq!(blocks.len(), 6); // blank lines dropped
+        assert_eq!(blocks[0].level, BlockLevel::H1);
+        assert_eq!(blocks[1].level, BlockLevel::H2);
+        // Fully wrapped `**…**` → bold body, wrap stripped.
+        assert_eq!(blocks[2].level, BlockLevel::Body);
+        assert!(blocks[2].bold);
+        assert_eq!(blocks[2].text, "Fully Bold");
+        // Partial wrap (does not end in `**`) → left literal, not bold.
+        assert!(!blocks[3].bold);
+        assert_eq!(blocks[3].text, "**Lead Dev**, Acme");
+        assert_eq!(blocks[4].level, BlockLevel::Bullet);
+        assert_eq!(blocks[5].level, BlockLevel::Body);
+        assert!(!blocks[5].bold);
+    }
+
+    #[test]
+    fn wrap_text_folds_words_greedily() {
+        let lines = wrap_text("one two three four", 8);
+        // "one two" = 7 fits; +" three" would be 13 > 8 → break.
+        assert_eq!(lines, vec!["one two", "three", "four"]);
+        for l in &lines {
+            assert!(l.chars().count() <= 8);
+        }
+    }
+
+    #[test]
+    fn wrap_text_hard_splits_overlong_word() {
+        let lines = wrap_text("supercalifragilistic", 5);
+        assert!(lines.iter().all(|l| l.chars().count() <= 5));
+        assert_eq!(lines.concat(), "supercalifragilistic"); // nothing lost
+    }
+
+    #[test]
+    fn wrap_text_handles_empty_and_zero_budget() {
+        assert_eq!(wrap_text("", 10), vec![String::new()]);
+        assert_eq!(wrap_text("keep whole", 0), vec!["keep whole"]);
+    }
 }

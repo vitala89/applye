@@ -43,6 +43,7 @@ import {
   cleanJsonText,
   effectiveCoverLetterBlockStyle,
   effectiveCoverLetterParagraphStyle,
+  resolvePageSettings,
 } from '../cv-content.util';
 
 @Component({
@@ -238,6 +239,24 @@ export class CoverLetterDetailComponent {
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
+
+  setPageSize(size: 'a4' | 'letter'): void {
+    this.updateStyle({
+      page: { ...(this.style().page ?? { size: 'a4', margin: 'normal' }), size },
+    });
+  }
+
+  setPageMargin(margin: 'narrow' | 'normal' | 'wide'): void {
+    this.updateStyle({
+      page: { ...(this.style().page ?? { size: 'a4', margin: 'normal' }), margin },
+    });
+  }
+
+  /** Preview page geometry — aspect ratio + margin padding from the resolver. */
+  readonly pageStyle = computed(() => {
+    const r = resolvePageSettings(this.style().page);
+    return { 'aspect-ratio': `${r.widthMm} / ${r.heightMm}`, padding: `${r.marginPct}%` };
+  });
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));

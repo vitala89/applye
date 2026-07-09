@@ -1,5 +1,10 @@
-<div class="crop-backdrop" (click)="cancel()">
-  <div class="crop-dialog" (click)="$event.stopPropagation()">
+<div
+  class="crop-backdrop"
+  tabindex="0"
+  (click)="onBackdropClick($event)"
+  (keydown.escape)="cancel()"
+>
+  <div class="crop-dialog">
     <h3>{{ t()('documents.cv_photo_crop_title') }}</h3>
     <div
       class="crop-stage"

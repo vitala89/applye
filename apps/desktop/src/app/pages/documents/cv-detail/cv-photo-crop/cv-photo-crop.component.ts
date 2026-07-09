@@ -112,6 +112,10 @@ export class CvPhotoCropComponent {
     this.confirmed.emit(canvas.toDataURL('image/jpeg', 0.85));
   }
 
+  onBackdropClick(ev: MouseEvent): void {
+    if (ev.target === ev.currentTarget) this.cancel();
+  }
+
   cancel() {
     this.cancelled.emit();
   }

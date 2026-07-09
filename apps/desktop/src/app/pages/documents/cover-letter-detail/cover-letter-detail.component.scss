@@ -678,6 +678,29 @@
     visibility: visible;
   }
   body.printing-cv .letter-sheet {
+    // Pin to light "paper" colors regardless of active app theme (dark is
+    // default). Browsers print text color but not background-color, so
+    // without this the sheet renders near-white text on a white page.
+    --surface-1: #ffffff;
+    --surface-2: #fafaf8;
+    --surface-hover: #f4f4f2;
+    --surface-sunken: #f4f4f2;
+    --text-primary: #16161a;
+    --text-secondary: #5a5a63;
+    --text-tertiary: #6b6b73;
+    --border-subtle: #ececee;
+    --border-default: #d6d6da;
+    --border-strong: #b8b8bf;
+    --border-accent: #4f5bff;
+    --accent: #4f5bff;
+    --accent-hover: #3a33d6;
+    --accent-fg: #ffffff;
+    --accent-tint: rgba(79, 91, 255, 0.08);
+    --danger: #e05656;
+    --warning: #e0a23b;
+    --warning-tint: rgba(224, 162, 59, 0.12);
+    --success: #2bb673;
+
     position: absolute;
     inset: 0;
     width: auto;
@@ -687,5 +710,9 @@
     border: 0;
     box-shadow: none;
     background-image: none; // hide the on-screen break guides
+    background-color: #fff;
+    color: #16161a;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }

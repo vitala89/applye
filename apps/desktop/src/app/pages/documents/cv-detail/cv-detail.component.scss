@@ -1,4 +1,6 @@
-@use '../_editor-shell' as *;
+// Shared `.docedit-*` editor-shell styles are emitted globally from
+// apps/desktop/src/styles.scss (not @use'd here) to avoid duplicating them
+// into this component's bundle.
 
 .cvdetail__state {
   padding: var(--space-9);

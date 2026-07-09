@@ -5,6 +5,13 @@
 @use '../../../libs/ui/src/styles/global' as *;
 @use '../../../libs/ui/src/styles/paper' as paper;
 
+// Shared document-editor shell (Region/Style cards, collapsible sections,
+// style grid). Emitted once here — plain `.docedit-*` classes used by the CV
+// and cover-letter editor templates — rather than `@use`d into each
+// component's encapsulated SCSS, which duplicated ~11.5 kB per component and
+// blew the per-component style budget.
+@use './app/pages/documents/editor-shell' as *;
+
 // App-level overrides (if any) go here
 
 // WYSIWYG PDF export. While `body.printing-cv` is set (toggled by

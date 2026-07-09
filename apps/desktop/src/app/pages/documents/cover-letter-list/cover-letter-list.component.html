@@ -8,8 +8,6 @@
     </div>
   </header>
 
-  <p class="cvlist__pdf-hint">{{ t()('documents.cv_export_pdf_moved') }}</p>
-
   @if (loading()) {
     <p class="cvlist__state">{{ t()('common.loading') }}</p>
   } @else if (loadError()) {
@@ -69,6 +67,7 @@
                 "
               >
                 <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
+                <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
                 <option value="docx">{{ t()('documents.cv_export_docx_action') }}</option>
               </select>
             </label>

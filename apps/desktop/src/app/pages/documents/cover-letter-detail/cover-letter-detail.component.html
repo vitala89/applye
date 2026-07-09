@@ -713,99 +713,106 @@
         <!-- PREVIEW MODE -->
         <div class="coverdetail__preview-col">
           <div class="letter-sheet-viewport">
-            <div
-              class="letter-sheet"
-              #letterSheet
-              [style]="pageVars()"
-              [style.font-family]="style().fontFamily"
-              [style.font-size.pt]="style().fontSizePt"
-              [style.font-weight]="style().fontWeight"
-            >
-              <div
-                class="letter-recipient"
-                [ngStyle]="blockCss('recipient')"
-                [style.color]="effBlockStyle('recipient').colorHex"
-              >
-                @if (content().address.recipientName) {
-                  <div>{{ content().address.recipientName }}</div>
-                }
-                @if (content().address.company) {
-                  <div>{{ content().address.company }}</div>
-                }
-                @if (content().address.street) {
-                  <div>{{ content().address.street }}</div>
-                }
-                @if (content().address.postalCode || content().address.city) {
-                  <div>
-                    {{ content().address.postalCode || '' }} {{ content().address.city || '' }}
-                  </div>
-                }
-                @if (content().address.country) {
-                  <div>{{ content().address.country }}</div>
-                }
-              </div>
-
-              <div
-                class="letter-date"
-                [ngStyle]="blockCss('date')"
-                [style.color]="effBlockStyle('date').colorHex"
-              >
-                {{ content().date }}
-              </div>
-
-              <div
-                class="letter-subject"
-                [ngStyle]="blockCss('subject')"
-                [style.color]="effBlockStyle('subject').colorHex"
-              >
-                {{ content().subject }}
-              </div>
-
-              <div
-                class="letter-greeting"
-                [ngStyle]="blockCss('greeting')"
-                [style.color]="effBlockStyle('greeting').colorHex"
-              >
-                {{ content().greeting }}
-              </div>
-
-              <div class="letter-body">
-                @for (para of content().bodyParagraphs || []; track $index) {
-                  @if (para) {
-                    <p [ngStyle]="paraCss($index)" [style.color]="effParaStyle($index).colorHex">
-                      {{ para }}
-                    </p>
-                  }
-                }
-              </div>
-
-              <div
-                class="letter-closing"
-                [ngStyle]="blockCss('closing')"
-                [style.color]="effBlockStyle('closing').colorHex"
-              >
-                {{ content().closing }}
-              </div>
-              <div class="letter-signature-space"></div>
-              <div
-                class="letter-signature"
-                [ngStyle]="blockCss('signature')"
-                [style.color]="effBlockStyle('signature').colorHex"
-              >
-                {{ content().signature }}
-              </div>
-            </div>
-            <div class="cvpreview__pagebar">
-              <span class="cvpreview__pagecount">{{
-                t()('documents.cv_style_page_count').replace('{n}', pageCount().toString())
-              }}</span>
-            </div>
+            <lib-paginated-sheet
+              [atoms]="atoms()"
+              [geometry]="geometry()"
+              [captionFn]="captionFn"
+              [continuationFn]="continuationFn"
+              (blockOverflow)="blockOverflow.set($event)"
+            />
             @if (blockOverflow()) {
               <p class="cvpreview__warning" role="status">
                 {{ t()('documents.cv_style_overflow_warning') }}
               </p>
             }
           </div>
+
+          <!-- Atom templates: preview fragments rendered once per atom by
+               `<lib-paginated-sheet>` (measure pass + final page cards). -->
+          <ng-template #addressTpl let-address>
+            <div
+              class="letter-recipient"
+              [ngStyle]="blockCss('recipient')"
+              [style.color]="effBlockStyle('recipient').colorHex"
+            >
+              @if (address.recipientName) {
+                <div>{{ address.recipientName }}</div>
+              }
+              @if (address.company) {
+                <div>{{ address.company }}</div>
+              }
+              @if (address.street) {
+                <div>{{ address.street }}</div>
+              }
+              @if (address.postalCode || address.city) {
+                <div>{{ address.postalCode || '' }} {{ address.city || '' }}</div>
+              }
+              @if (address.country) {
+                <div>{{ address.country }}</div>
+              }
+            </div>
+          </ng-template>
+
+          <ng-template #dateTpl let-date>
+            <div
+              class="letter-date"
+              [ngStyle]="blockCss('date')"
+              [style.color]="effBlockStyle('date').colorHex"
+            >
+              {{ date }}
+            </div>
+          </ng-template>
+
+          <ng-template #subjectTpl let-subject>
+            <div
+              class="letter-subject"
+              [ngStyle]="blockCss('subject')"
+              [style.color]="effBlockStyle('subject').colorHex"
+            >
+              {{ subject }}
+            </div>
+          </ng-template>
+
+          <ng-template #greetingTpl let-greeting>
+            <div
+              class="letter-greeting"
+              [ngStyle]="blockCss('greeting')"
+              [style.color]="effBlockStyle('greeting').colorHex"
+            >
+              {{ greeting }}
+            </div>
+          </ng-template>
+
+          <ng-template #bodyTpl let-para let-index="index">
+            <div class="letter-body">
+              @if (para) {
+                <p [ngStyle]="paraCss(index)" [style.color]="effParaStyle(index).colorHex">
+                  {{ para }}
+                </p>
+              }
+            </div>
+          </ng-template>
+
+          <ng-template #closingTpl let-closing>
+            <div
+              class="letter-closing"
+              [ngStyle]="blockCss('closing')"
+              [style.color]="effBlockStyle('closing').colorHex"
+            >
+              {{ closing }}
+            </div>
+          </ng-template>
+
+          <ng-template #signatureTpl let-signature>
+            <div class="letter-signature-space"></div>
+            <div
+              class="letter-signature"
+              [ngStyle]="blockCss('signature')"
+              [style.color]="effBlockStyle('signature').colorHex"
+            >
+              {{ signature }}
+            </div>
+          </ng-template>
         </div>
       }
     </div>

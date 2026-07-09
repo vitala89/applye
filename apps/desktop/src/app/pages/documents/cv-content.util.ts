@@ -13,6 +13,7 @@ import {
   CvTemplate,
   CoverLetterBlockKey,
   CoverLetterStyle,
+  PageMargins,
   PageSettings,
 } from '@applye/core';
 
@@ -521,18 +522,58 @@ export function effectiveSectionStyle(
 export interface ResolvedPage {
   widthMm: number;
   heightMm: number;
-  marginMm: number;
-  /** Margin as a % of page width — resolution-independent padding for preview. */
-  marginPct: number;
+  /** Clamped 4-side margins in mm. */
+  margin: { top: number; right: number; bottom: number; left: number };
+  /** Each side as a % of the relevant page dimension — resolution-independent
+   * padding for the preview (top/bottom of height, left/right of width). */
+  marginPct: { top: number; right: number; bottom: number; left: number };
 }
 
-/** Resolves a `PageSettings` preset to concrete mm. Single source of truth for
- * the preview; the Rust `resolve_page` mirrors these exact numbers for export. */
+const PRESET_MM: Record<string, number> = { narrow: 12.7, normal: 20, wide: 30 };
+const clampMm = (v: number): number => Math.min(50, Math.max(0, Number.isFinite(v) ? v : 20));
+
+/** Normalises the stored margin (new 4-side object, legacy preset string, or
+ * absent) into clamped 4-side mm. */
+function normalizeMargins(margin: unknown): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
+  if (typeof margin === 'string') {
+    const mm = PRESET_MM[margin] ?? 20;
+    return { top: mm, right: mm, bottom: mm, left: mm };
+  }
+  if (margin && typeof margin === 'object') {
+    const m = margin as Partial<PageMargins>;
+    return {
+      top: clampMm(m.top ?? 20),
+      right: clampMm(m.right ?? 20),
+      bottom: clampMm(m.bottom ?? 20),
+      left: clampMm(m.left ?? 20),
+    };
+  }
+  return { top: 20, right: 20, bottom: 20, left: 20 };
+}
+
+/** Resolves `PageSettings` (new or legacy) to concrete mm + %. Single source of
+ * truth for the preview; the Rust `resolve_page` mirrors these numbers for
+ * DOCX export. */
 export function resolvePageSettings(page: PageSettings | undefined): ResolvedPage {
-  const p = page ?? { size: 'a4', margin: 'normal' };
-  const [widthMm, heightMm] = p.size === 'letter' ? [215.9, 279.4] : [210, 297];
-  const marginMm = p.margin === 'narrow' ? 12.7 : p.margin === 'wide' ? 30 : 20;
-  return { widthMm, heightMm, marginMm, marginPct: (marginMm / widthMm) * 100 };
+  const size = page?.size === 'letter' ? 'letter' : 'a4';
+  const [widthMm, heightMm] = size === 'letter' ? [215.9, 279.4] : [210, 297];
+  const margin = normalizeMargins(page?.margin);
+  return {
+    widthMm,
+    heightMm,
+    margin,
+    marginPct: {
+      top: (margin.top / heightMm) * 100,
+      bottom: (margin.bottom / heightMm) * 100,
+      left: (margin.left / widthMm) * 100,
+      right: (margin.right / widthMm) * 100,
+    },
+  };
 }
 
 /** Effective per-block cover-letter style — the block's override merged over

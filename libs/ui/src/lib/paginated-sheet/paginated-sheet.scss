@@ -32,15 +32,6 @@
   font-family: var(--font-sans);
 }
 
-.page-card__cont {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--text-tertiary);
-  margin: 0 0 var(--space-3);
-}
-
 .page-card__caption {
   // Chrome around the paper: use the app theme, not the pinned paper colours.
   margin: 0;

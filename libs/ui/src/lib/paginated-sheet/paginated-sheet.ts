@@ -31,12 +31,6 @@ export interface SheetAtom {
   tpl: TemplateRef<unknown>;
   /** context object passed to the template outlet (e.g. { $implicit: entry }) */
   ctx?: unknown;
-  /** localized base label of the section this atom belongs to (e.g.
-   *  "Berufserfahrung"); null for atoms with no section (header, summary). */
-  sectionLabel?: string | null;
-  /** true when this atom is the section's own title (its start); false/absent
-   *  for the section's entries. Drives the "(cont.)" reprint. */
-  isSectionStart?: boolean;
   /** true when this atom must stay with the next atom (section title → first entry) */
   glueToNext?: boolean;
 }
@@ -52,7 +46,6 @@ export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
   readonly atoms = input.required<SheetAtom[]>();
   readonly geometry = input.required<SheetGeometry>();
   readonly captionFn = input.required<(page: number, total: number) => string>();
-  readonly continuationFn = input.required<(sectionLabel: string) => string>();
   readonly blockOverflow = output<boolean>();
 
   /** Wrappers around each atom in the hidden measure pass. */
@@ -128,16 +121,6 @@ export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
   /** Caption text for card `pageIndex` (0-based). */
   captionFor(pageIndex: number): string {
     return this.captionFn()(pageIndex + 1, this.pages().length);
-  }
-
-  /** When a card's first atom is a mid-section continuation (its section's
-   *  title was on an earlier page), returns the "(cont.)" reprint; else null. */
-  continuationFor(page: number[]): string | null {
-    const first = page[0];
-    if (first == null) return null;
-    const atom = this.atoms()[first];
-    if (!atom?.sectionLabel || atom.isSectionStart) return null;
-    return this.continuationFn()(atom.sectionLabel);
   }
 
   atomAt(index: number): SheetAtom {

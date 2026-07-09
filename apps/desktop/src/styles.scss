@@ -30,8 +30,7 @@
   // Drop the off-screen measure column and the on-screen caption chrome so
   // the browser paginates the real content via @page.
   body.printing-cv .paginated-sheet__measure,
-  body.printing-cv .page-card__caption,
-  body.printing-cv .page-card__cont {
+  body.printing-cv .page-card__caption {
     display: none !important;
   }
 

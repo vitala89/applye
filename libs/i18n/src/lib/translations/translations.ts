@@ -597,7 +597,6 @@ const en: TranslationMap = {
     cv_export_tex_action: 'Export as LaTeX source (.tex)',
     cv_export_tex_note:
       'LaTeX export is optimised for visual/print quality for a human reader, not ATS parsing. Applye never compiles it — open the .tex file in Overleaf or your local pdflatex.',
-    cv_export_pdf_moved: 'Open a document and use Export PDF for a pixel-exact PDF.',
     cv_delete_action: 'Delete',
     cv_delete_confirm_title: 'Delete this CV?',
     cv_delete_confirm_msg: 'This removes it from your library. It cannot be undone.',
@@ -743,7 +742,6 @@ const en: TranslationMap = {
     cv_section_move_down: 'Move section down',
     cv_section_drag_handle: 'Drag to reorder',
     preview_page_of: 'Page {i} of {n}',
-    preview_section_continued: '{section} (cont.)',
     preview_block_overflow:
       'A block is too tall to fit one page — shorten it so the preview and PDF paginate cleanly.',
   },
@@ -1573,7 +1571,6 @@ const de: TranslationMap = {
     cv_export_tex_action: 'Als LaTeX-Quelltext exportieren (.tex)',
     cv_export_tex_note:
       'Der LaTeX-Export ist auf visuelle Druckqualität für menschliche Leser optimiert, nicht auf ATS-Parsing. Applye kompiliert ihn nie — öffne die .tex-Datei in Overleaf oder deinem lokalen pdflatex.',
-    cv_export_pdf_moved: 'Öffne ein Dokument und nutze „PDF exportieren“ für ein pixelgenaues PDF.',
     cv_delete_action: 'Löschen',
     cv_delete_confirm_title: 'Diesen Lebenslauf löschen?',
     cv_delete_confirm_msg:
@@ -1722,7 +1719,6 @@ const de: TranslationMap = {
     cv_section_move_down: 'Abschnitt nach unten verschieben',
     cv_section_drag_handle: 'Zum Sortieren ziehen',
     preview_page_of: 'Seite {i} von {n}',
-    preview_section_continued: '{section} (Fortsetzung)',
     preview_block_overflow:
       'Ein Block ist zu hoch für eine Seite — kürze ihn, damit Vorschau und PDF sauber umbrechen.',
   },

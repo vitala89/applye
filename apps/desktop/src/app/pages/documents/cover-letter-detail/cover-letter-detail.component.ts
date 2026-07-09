@@ -325,7 +325,7 @@ export class CoverLetterDetailComponent {
 
   /** Flattens the letter's fixed block order into ordered page atoms for
    * `<lib-paginated-sheet>`. The letter has no section titles, so no atom
-   * ever carries `sectionLabel`/`isSectionStart`/`glueToNext`. */
+   * ever carries `glueToNext`. */
   readonly atoms = computed<SheetAtom[]>(() => {
     const c = this.content();
     const out: SheetAtom[] = [];
@@ -345,13 +345,11 @@ export class CoverLetterDetailComponent {
 
   /** `t()` has no interpolation support, so page captions substitute `{i}`/
    * `{n}` manually — same pattern as `styleNoteMessage`'s `{value}`
-   * substitution above. The letter never has section continuations, so
-   * `continuationFn` is an identity — required by the input, never invoked. */
+   * substitution above. */
   readonly captionFn = (page: number, total: number): string =>
     this.t()('documents.preview_page_of')
       .replace('{i}', String(page))
       .replace('{n}', String(total));
-  readonly continuationFn = (label: string): string => label;
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));

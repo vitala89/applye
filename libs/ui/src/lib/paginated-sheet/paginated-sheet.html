@@ -22,9 +22,7 @@
     [style.paddingBottom.px]="geometry().marginBottomPx"
     [style.paddingLeft.px]="geometry().marginLeftPx"
   >
-    @if (continuationFor(page); as cont) {
-    <p class="page-card__cont">{{ cont }}</p>
-    } @for (idx of page; track atomAt(idx).id) {
+    @for (idx of page; track atomAt(idx).id) {
     <div class="page-card__atom">
       <ng-container
         [ngTemplateOutlet]="atomAt(idx).tpl"

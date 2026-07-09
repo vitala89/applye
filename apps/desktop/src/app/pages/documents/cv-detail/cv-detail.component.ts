@@ -304,8 +304,6 @@ export class CvDetailComponent {
             id: 'sec:experience:title',
             tpl: this.sectionTitleTpl(),
             ctx: { $implicit: label, key: 'experience' },
-            sectionLabel: label,
-            isSectionStart: true,
             glueToNext: true,
           });
           section.entries.forEach((entry, i) =>
@@ -313,7 +311,6 @@ export class CvDetailComponent {
               id: `sec:experience:e${i}`,
               tpl: this.expEntryTpl(),
               ctx: { $implicit: entry, key: 'experience' },
-              sectionLabel: label,
             }),
           );
           break;
@@ -325,8 +322,6 @@ export class CvDetailComponent {
             id: 'sec:education:title',
             tpl: this.sectionTitleTpl(),
             ctx: { $implicit: label, key: 'education' },
-            sectionLabel: label,
-            isSectionStart: true,
             glueToNext: true,
           });
           section.entries.forEach((entry, i) =>
@@ -334,7 +329,6 @@ export class CvDetailComponent {
               id: `sec:education:e${i}`,
               tpl: this.eduEntryTpl(),
               ctx: { $implicit: entry, key: 'education' },
-              sectionLabel: label,
             }),
           );
           break;
@@ -346,14 +340,12 @@ export class CvDetailComponent {
   });
 
   /** `t()` has no interpolation support (see `TranslateService.t`), so page
-   * captions/continuations substitute `{i}`/`{n}`/`{section}` manually —
-   * same pattern as `styleNoteMessage`'s `{value}` substitution above. */
+   * captions substitute `{i}`/`{n}` manually — same pattern as
+   * `styleNoteMessage`'s `{value}` substitution above. */
   readonly captionFn = (page: number, total: number): string =>
     this.t()('documents.preview_page_of')
       .replace('{i}', String(page))
       .replace('{n}', String(total));
-  readonly continuationFn = (label: string): string =>
-    this.t()('documents.preview_section_continued').replace('{section}', label);
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));

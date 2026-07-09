@@ -7,12 +7,7 @@ import { PaginatedSheetComponent, SheetAtom, SheetGeometry } from './paginated-s
   imports: [PaginatedSheetComponent],
   template: `
     <ng-template #box><div class="box" style="height:400px"></div></ng-template>
-    <lib-paginated-sheet
-      [atoms]="atoms()"
-      [geometry]="geometry"
-      [captionFn]="captionFn"
-      [continuationFn]="contFn"
-    />
+    <lib-paginated-sheet [atoms]="atoms()" [geometry]="geometry" [captionFn]="captionFn" />
   `,
 })
 class HostComponent {
@@ -27,7 +22,6 @@ class HostComponent {
     marginLeftPx: 40,
   };
   readonly captionFn = (p: number, n: number): string => `Page ${p} of ${n}`;
-  readonly contFn = (label: string): string => `${label} (cont.)`;
 }
 
 describe('PaginatedSheetComponent', () => {

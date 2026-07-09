@@ -128,6 +128,7 @@ export class CvDetailComponent {
     dragHandle: GripVertical,
     moveUp: ChevronUp,
     moveDown: ChevronDown,
+    chevron: ChevronDown,
     sparkles: Sparkles,
     plus: Plus,
     close: X,
@@ -386,6 +387,29 @@ export class CvDetailComponent {
 
   toggleStylePopover(key: CvSectionKey): void {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
+  }
+
+  /** Per-section collapse state for the content-section accordion — session
+   * only (not persisted); every section starts expanded (an empty set means
+   * nothing is collapsed). */
+  readonly collapsedSections = signal<Set<CvSectionKey>>(new Set());
+
+  isSectionOpen(key: CvSectionKey): boolean {
+    return !this.collapsedSections().has(key);
+  }
+
+  toggleSectionCollapse(key: CvSectionKey): void {
+    const next = new Set(this.collapsedSections());
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    this.collapsedSections.set(next);
+  }
+
+  /** Collapse state for the "Style" card — open by default. */
+  readonly styleOpen = signal(true);
+
+  toggleStyleOpen(): void {
+    this.styleOpen.set(!this.styleOpen());
   }
 
   /** The section's own style override, if any — used by the popover template

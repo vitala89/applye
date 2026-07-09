@@ -63,6 +63,26 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.effStyle('experience').colorHex).toBe(component.style().accentColorHex);
   });
 
+  it('toggleSectionCollapse flips isSectionOpen and defaults to expanded', () => {
+    expect(component.isSectionOpen('experience')).toBe(true);
+    component.toggleSectionCollapse('experience');
+    expect(component.isSectionOpen('experience')).toBe(false);
+    component.toggleSectionCollapse('experience');
+    expect(component.isSectionOpen('experience')).toBe(true);
+    // Collapsing one section leaves others expanded.
+    component.toggleSectionCollapse('summary');
+    expect(component.isSectionOpen('summary')).toBe(false);
+    expect(component.isSectionOpen('experience')).toBe(true);
+  });
+
+  it('toggleStyleOpen flips the Style card open state, default open', () => {
+    expect(component.styleOpen()).toBe(true);
+    component.toggleStyleOpen();
+    expect(component.styleOpen()).toBe(false);
+    component.toggleStyleOpen();
+    expect(component.styleOpen()).toBe(true);
+  });
+
   it('toggleStylePopover opens and closes the same key', () => {
     expect(component.openStyleKey()).toBeNull();
     component.toggleStylePopover('summary');

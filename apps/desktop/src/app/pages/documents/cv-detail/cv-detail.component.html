@@ -57,7 +57,7 @@
     <div class="cvdetail__body">
       @if (!previewMode()) {
         <div class="cvdetail__editor-col">
-          <div class="cvdetail__panel">
+          <div class="cvdetail__card cvdetail__card--region">
             <div class="cvdetail__meta-field">
               <span class="cvdetail__style-label">{{ t()('documents.cv_field_region') }}</span>
               <div class="cvdetail__meta-row">
@@ -82,8 +82,6 @@
                 </button>
               </div>
             </div>
-
-            <div class="cvdetail__panel-divider"></div>
 
             <div class="cvdetail__toggles">
               <button
@@ -122,16 +120,30 @@
                 }
               </div>
             }
+          </div>
 
-            <div class="cvdetail__panel-divider"></div>
-
-            <div class="cvdetail__style-header">
-              <span class="cvdetail__style-label">{{ t()('documents.cv_section_style') }}</span>
-              @if (hasAnyCustomStyle()) {
-                <span class="cvdetail__custom-badge">{{
-                  t()('documents.cv_style_customized')
-                }}</span>
-              }
+          <div class="cvdetail__card cvdetail__card--style">
+            <div class="cvdetail__card-head">
+              <button
+                type="button"
+                class="cvdetail__card-head-toggle"
+                [attr.aria-expanded]="styleOpen()"
+                (click)="toggleStyleOpen()"
+              >
+                <span class="cvdetail__style-label">{{ t()('documents.cv_section_style') }}</span>
+                @if (hasAnyCustomStyle()) {
+                  <span class="cvdetail__custom-badge">{{
+                    t()('documents.cv_style_customized')
+                  }}</span>
+                }
+                <lucide-icon
+                  [img]="icons.chevron"
+                  [size]="16"
+                  aria-hidden="true"
+                  class="cvdetail__chevron"
+                  [class.cvdetail__chevron--closed]="!styleOpen()"
+                />
+              </button>
               <span class="cvdetail__spacer"></span>
               <button
                 type="button"
@@ -144,93 +156,101 @@
               </button>
             </div>
 
-            <div class="cvdetail__style">
-              <div class="cvdetail__style-field">
-                <span
-                  class="cvdetail__style-label"
-                  [attr.title]="t()('documents.cv_style_hint_font')"
-                  >{{ t()('documents.cv_style_font') }}</span
-                >
-                <select
-                  [ngModel]="style().fontFamily"
-                  (ngModelChange)="updateStyle({ fontFamily: $event })"
-                >
-                  @for (font of atsSafeFonts; track font) {
-                    <option [value]="font">{{ font }}</option>
-                  }
-                </select>
-              </div>
-              <div class="cvdetail__style-field">
-                <span
-                  class="cvdetail__style-label"
-                  [attr.title]="t()('documents.cv_style_hint_size')"
-                  >{{ t()('documents.cv_style_size') }}</span
-                >
-                <input
-                  type="number"
-                  min="6"
-                  max="24"
-                  step="0.5"
-                  [ngModel]="style().fontSizePt"
-                  (ngModelChange)="updateStyle({ fontSizePt: +$event })"
-                />
-              </div>
-              <div class="cvdetail__style-field">
-                <span
-                  class="cvdetail__style-label"
-                  [attr.title]="t()('documents.cv_style_hint_color')"
-                  >{{ t()('documents.cv_style_color') }}</span
-                >
-                <div class="cvdetail__style-color-row">
-                  <input
-                    type="color"
-                    [ngModel]="style().accentColorHex"
-                    (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                  />
-                  <input
-                    type="text"
-                    class="cvdetail__style-color-hex"
-                    [ngModel]="style().accentColorHex"
-                    (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                  />
-                </div>
-              </div>
-              <div class="cvdetail__style-field">
-                <span class="cvdetail__style-label">{{ t()('documents.cv_style_page_size') }}</span>
-                <select
-                  [ngModel]="style().page?.size ?? 'a4'"
-                  (ngModelChange)="setPageSize($event)"
-                >
-                  <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
-                  <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
-                </select>
-              </div>
-              <div class="cvdetail__style-field">
-                <span class="cvdetail__style-label">{{ t()('documents.cv_style_margins') }}</span>
-                <div class="cvdetail__margin-grid">
-                  @for (side of marginSides; track side.key) {
-                    <label class="cvdetail__margin-input">
-                      <span>{{ t()(side.label) }}</span>
+            <div class="cvdetail__collapse" [class.cvdetail__collapse--closed]="!styleOpen()">
+              <div>
+                <div class="cvdetail__style">
+                  <div class="cvdetail__style-field">
+                    <span
+                      class="cvdetail__style-label"
+                      [attr.title]="t()('documents.cv_style_hint_font')"
+                      >{{ t()('documents.cv_style_font') }}</span
+                    >
+                    <select
+                      [ngModel]="style().fontFamily"
+                      (ngModelChange)="updateStyle({ fontFamily: $event })"
+                    >
+                      @for (font of atsSafeFonts; track font) {
+                        <option [value]="font">{{ font }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="cvdetail__style-field">
+                    <span
+                      class="cvdetail__style-label"
+                      [attr.title]="t()('documents.cv_style_hint_size')"
+                      >{{ t()('documents.cv_style_size') }}</span
+                    >
+                    <input
+                      type="number"
+                      min="6"
+                      max="24"
+                      step="0.5"
+                      [ngModel]="style().fontSizePt"
+                      (ngModelChange)="updateStyle({ fontSizePt: +$event })"
+                    />
+                  </div>
+                  <div class="cvdetail__style-field">
+                    <span
+                      class="cvdetail__style-label"
+                      [attr.title]="t()('documents.cv_style_hint_color')"
+                      >{{ t()('documents.cv_style_color') }}</span
+                    >
+                    <div class="cvdetail__style-color-row">
                       <input
-                        type="number"
-                        min="0"
-                        max="50"
-                        step="1"
-                        [ngModel]="currentMargin()[side.key]"
-                        (ngModelChange)="setMarginSide(side.key, $event)"
+                        type="color"
+                        [ngModel]="style().accentColorHex"
+                        (ngModelChange)="updateStyle({ accentColorHex: $event })"
                       />
-                    </label>
-                  }
+                      <input
+                        type="text"
+                        class="cvdetail__style-color-hex"
+                        [ngModel]="style().accentColorHex"
+                        (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                      />
+                    </div>
+                  </div>
+                  <div class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{
+                      t()('documents.cv_style_page_size')
+                    }}</span>
+                    <select
+                      [ngModel]="style().page?.size ?? 'a4'"
+                      (ngModelChange)="setPageSize($event)"
+                    >
+                      <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
+                      <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
+                    </select>
+                  </div>
+                  <div class="cvdetail__style-field cvdetail__style-field--full">
+                    <span class="cvdetail__style-label">{{
+                      t()('documents.cv_style_margins')
+                    }}</span>
+                    <div class="cvdetail__margin-grid">
+                      @for (side of marginSides; track side.key) {
+                        <label class="cvdetail__margin-input">
+                          <span>{{ t()(side.label) }}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="1"
+                            [ngModel]="currentMargin()[side.key]"
+                            (ngModelChange)="setMarginSide(side.key, $event)"
+                          />
+                        </label>
+                      }
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            @if (styleNotes().length) {
-              <div class="cvdetail__ats-note">
-                @for (note of styleNotes(); track note.kind + note.detail) {
-                  <p>{{ styleNoteMessage(note) }}</p>
+                @if (styleNotes().length) {
+                  <div class="cvdetail__ats-note">
+                    @for (note of styleNotes(); track note.kind + note.detail) {
+                      <p>{{ styleNoteMessage(note) }}</p>
+                    }
+                  </div>
                 }
               </div>
-            }
+            </div>
           </div>
 
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
@@ -246,9 +266,24 @@
                     >
                       <lucide-icon [img]="icons.dragHandle" [size]="15" aria-hidden="true" />
                     </button>
-                    <span class="cvdetail__section-title">{{
-                      t()(sectionLabelKey(section.key))
-                    }}</span>
+                    <button
+                      type="button"
+                      class="cvdetail__section-toggle"
+                      [attr.aria-expanded]="isSectionOpen(section.key)"
+                      [attr.aria-label]="t()(sectionLabelKey(section.key))"
+                      (click)="toggleSectionCollapse(section.key)"
+                    >
+                      <lucide-icon
+                        [img]="icons.chevron"
+                        [size]="15"
+                        aria-hidden="true"
+                        class="cvdetail__chevron"
+                        [class.cvdetail__chevron--closed]="!isSectionOpen(section.key)"
+                      />
+                      <span class="cvdetail__section-title">{{
+                        t()(sectionLabelKey(section.key))
+                      }}</span>
+                    </button>
                   </div>
                   <div class="cvdetail__section-head-actions">
                     @if (section.key !== 'photo') {
@@ -305,343 +340,359 @@
                   ></ng-container>
                 }
 
-                @switch (section.key) {
-                  @case ('personal_details') {
-                    <button
-                      type="button"
-                      class="cvdetail__pull-btn"
-                      [disabled]="pullingProfile()"
-                      (click)="pullFromProfile()"
-                    >
-                      <lucide-icon
-                        class="cvdetail__pull-icon"
-                        [img]="icons.sparkles"
-                        [size]="13"
-                        aria-hidden="true"
-                      />
-                      {{
-                        pullingProfile()
-                          ? t()('common.loading')
-                          : t()('documents.cv_pull_from_profile')
-                      }}
-                    </button>
-                    <div class="cvdetail__grid">
-                      <input
-                        type="text"
-                        [ngModel]="$any(section).fullName"
-                        (ngModelChange)="$any(section).fullName = $event"
-                        [placeholder]="t()('documents.cv_field_full_name')"
-                      />
-                      <input
-                        type="text"
-                        [ngModel]="$any(section).title"
-                        (ngModelChange)="$any(section).title = $event"
-                        [placeholder]="t()('documents.cv_field_title')"
-                      />
-                      <input
-                        type="text"
-                        [ngModel]="$any(section).email"
-                        (ngModelChange)="$any(section).email = $event"
-                        [placeholder]="t()('documents.cv_field_email')"
-                      />
-                      <input
-                        type="text"
-                        [ngModel]="$any(section).phone"
-                        (ngModelChange)="$any(section).phone = $event"
-                        [placeholder]="t()('documents.cv_field_phone')"
-                      />
-                      <input
-                        type="text"
-                        [ngModel]="$any(section).address"
-                        (ngModelChange)="$any(section).address = $event"
-                        [placeholder]="t()('documents.cv_field_address')"
-                      />
-                      <input
-                        type="text"
-                        [ngModel]="$any(section).website"
-                        (ngModelChange)="$any(section).website = $event"
-                        [placeholder]="t()('documents.cv_field_website')"
-                      />
-                      <input
-                        type="text"
-                        class="cvdetail__grid-full"
-                        [ngModel]="$any(section).linkedin"
-                        (ngModelChange)="$any(section).linkedin = $event"
-                        [placeholder]="t()('documents.cv_field_linkedin')"
-                      />
-                      @if (includeBirthdate()) {
-                        <input
-                          type="text"
-                          [ngModel]="$any(section).birthDate"
-                          (ngModelChange)="$any(section).birthDate = $event"
-                          [placeholder]="t()('documents.cv_field_birthdate')"
-                        />
-                      }
-                      @if (includeMaritalStatus()) {
-                        <input
-                          type="text"
-                          [ngModel]="$any(section).maritalStatus"
-                          (ngModelChange)="$any(section).maritalStatus = $event"
-                          [placeholder]="t()('documents.cv_field_marital')"
-                        />
-                      }
-                    </div>
-                  }
-                  @case ('summary') {
-                    <textarea
-                      [ngModel]="$any(section).text"
-                      (ngModelChange)="$any(section).text = $event"
-                      rows="4"
-                    ></textarea>
-                  }
-                  @case ('experience') {
-                    @for (entry of $any(section).entries; track $index) {
-                      <div class="cvdetail__entry">
+                <div
+                  class="cvdetail__collapse"
+                  [class.cvdetail__collapse--closed]="!isSectionOpen(section.key)"
+                >
+                  <div>
+                    @switch (section.key) {
+                      @case ('personal_details') {
+                        <button
+                          type="button"
+                          class="cvdetail__pull-btn"
+                          [disabled]="pullingProfile()"
+                          (click)="pullFromProfile()"
+                        >
+                          <lucide-icon
+                            class="cvdetail__pull-icon"
+                            [img]="icons.sparkles"
+                            [size]="13"
+                            aria-hidden="true"
+                          />
+                          {{
+                            pullingProfile()
+                              ? t()('common.loading')
+                              : t()('documents.cv_pull_from_profile')
+                          }}
+                        </button>
                         <div class="cvdetail__grid">
                           <input
                             type="text"
-                            [ngModel]="entry.role"
-                            (ngModelChange)="entry.role = $event"
-                            [placeholder]="t()('documents.cv_field_role')"
+                            [ngModel]="$any(section).fullName"
+                            (ngModelChange)="$any(section).fullName = $event"
+                            [placeholder]="t()('documents.cv_field_full_name')"
                           />
                           <input
                             type="text"
-                            [ngModel]="entry.company"
-                            (ngModelChange)="entry.company = $event"
-                            [placeholder]="t()('documents.cv_field_company')"
+                            [ngModel]="$any(section).title"
+                            (ngModelChange)="$any(section).title = $event"
+                            [placeholder]="t()('documents.cv_field_title')"
                           />
                           <input
                             type="text"
-                            class="cvdetail__input-mono"
-                            [ngModel]="entry.startDate"
-                            (ngModelChange)="entry.startDate = $event"
-                            [placeholder]="t()('documents.cv_field_start_date')"
+                            [ngModel]="$any(section).email"
+                            (ngModelChange)="$any(section).email = $event"
+                            [placeholder]="t()('documents.cv_field_email')"
                           />
                           <input
                             type="text"
-                            class="cvdetail__input-mono"
-                            [ngModel]="entry.endDate"
-                            (ngModelChange)="entry.endDate = $event"
-                            [placeholder]="t()('documents.cv_field_end_date')"
+                            [ngModel]="$any(section).phone"
+                            (ngModelChange)="$any(section).phone = $event"
+                            [placeholder]="t()('documents.cv_field_phone')"
                           />
-                        </div>
-                        @for (bullet of entry.bullets; track $index) {
-                          <div class="cvdetail__bullet-row">
-                            <span class="cvdetail__bullet-dot">•</span>
+                          <input
+                            type="text"
+                            [ngModel]="$any(section).address"
+                            (ngModelChange)="$any(section).address = $event"
+                            [placeholder]="t()('documents.cv_field_address')"
+                          />
+                          <input
+                            type="text"
+                            [ngModel]="$any(section).website"
+                            (ngModelChange)="$any(section).website = $event"
+                            [placeholder]="t()('documents.cv_field_website')"
+                          />
+                          <input
+                            type="text"
+                            class="cvdetail__grid-full"
+                            [ngModel]="$any(section).linkedin"
+                            (ngModelChange)="$any(section).linkedin = $event"
+                            [placeholder]="t()('documents.cv_field_linkedin')"
+                          />
+                          @if (includeBirthdate()) {
                             <input
                               type="text"
-                              [ngModel]="bullet"
-                              (ngModelChange)="entry.bullets[$index] = $event"
-                              [placeholder]="t()('documents.cv_field_bullet')"
+                              [ngModel]="$any(section).birthDate"
+                              (ngModelChange)="$any(section).birthDate = $event"
+                              [placeholder]="t()('documents.cv_field_birthdate')"
                             />
-                            <button
-                              class="cvdetail__bullet-remove"
-                              type="button"
-                              [attr.aria-label]="t()('documents.cv_remove_bullet')"
-                              (click)="removeBullet(entry, $index)"
-                            >
-                              <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
-                            </button>
+                          }
+                          @if (includeMaritalStatus()) {
+                            <input
+                              type="text"
+                              [ngModel]="$any(section).maritalStatus"
+                              (ngModelChange)="$any(section).maritalStatus = $event"
+                              [placeholder]="t()('documents.cv_field_marital')"
+                            />
+                          }
+                        </div>
+                      }
+                      @case ('summary') {
+                        <textarea
+                          [ngModel]="$any(section).text"
+                          (ngModelChange)="$any(section).text = $event"
+                          rows="4"
+                        ></textarea>
+                      }
+                      @case ('experience') {
+                        @for (entry of $any(section).entries; track $index) {
+                          <div class="cvdetail__entry">
+                            <div class="cvdetail__grid">
+                              <input
+                                type="text"
+                                [ngModel]="entry.role"
+                                (ngModelChange)="entry.role = $event"
+                                [placeholder]="t()('documents.cv_field_role')"
+                              />
+                              <input
+                                type="text"
+                                [ngModel]="entry.company"
+                                (ngModelChange)="entry.company = $event"
+                                [placeholder]="t()('documents.cv_field_company')"
+                              />
+                              <input
+                                type="text"
+                                class="cvdetail__input-mono"
+                                [ngModel]="entry.startDate"
+                                (ngModelChange)="entry.startDate = $event"
+                                [placeholder]="t()('documents.cv_field_start_date')"
+                              />
+                              <input
+                                type="text"
+                                class="cvdetail__input-mono"
+                                [ngModel]="entry.endDate"
+                                (ngModelChange)="entry.endDate = $event"
+                                [placeholder]="t()('documents.cv_field_end_date')"
+                              />
+                            </div>
+                            @for (bullet of entry.bullets; track $index) {
+                              <div class="cvdetail__bullet-row">
+                                <span class="cvdetail__bullet-dot">•</span>
+                                <input
+                                  type="text"
+                                  [ngModel]="bullet"
+                                  (ngModelChange)="entry.bullets[$index] = $event"
+                                  [placeholder]="t()('documents.cv_field_bullet')"
+                                />
+                                <button
+                                  class="cvdetail__bullet-remove"
+                                  type="button"
+                                  [attr.aria-label]="t()('documents.cv_remove_bullet')"
+                                  (click)="removeBullet(entry, $index)"
+                                >
+                                  <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+                                </button>
+                              </div>
+                            }
+                            <div class="cvdetail__entry-actions">
+                              <button
+                                type="button"
+                                class="cvdetail__add-btn"
+                                (click)="addBullet(entry)"
+                              >
+                                <lucide-icon [img]="icons.plus" [size]="12" aria-hidden="true" />
+                                {{ t()('documents.cv_add_bullet') }}
+                              </button>
+                              <button
+                                type="button"
+                                class="cvdetail__remove-btn"
+                                (click)="removeEntry($any(section), $index)"
+                              >
+                                <lucide-icon [img]="icons.trash" [size]="12" aria-hidden="true" />
+                                {{ t()('documents.cv_remove_entry') }}
+                              </button>
+                            </div>
                           </div>
                         }
-                        <div class="cvdetail__entry-actions">
+                        <button
+                          type="button"
+                          class="cvdetail__add-btn"
+                          (click)="addEntry($any(section))"
+                        >
+                          <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+                          {{ t()('documents.cv_add_experience') }}
+                        </button>
+                      }
+                      @case ('education') {
+                        @for (entry of $any(section).entries; track $index) {
+                          <div class="cvdetail__entry">
+                            <div class="cvdetail__grid">
+                              <input
+                                type="text"
+                                [ngModel]="entry.degree"
+                                (ngModelChange)="entry.degree = $event"
+                                [placeholder]="t()('documents.cv_field_degree')"
+                              />
+                              <input
+                                type="text"
+                                [ngModel]="entry.institution"
+                                (ngModelChange)="entry.institution = $event"
+                                [placeholder]="t()('documents.cv_field_institution')"
+                              />
+                              <input
+                                type="text"
+                                class="cvdetail__input-mono"
+                                [ngModel]="entry.startDate"
+                                (ngModelChange)="entry.startDate = $event"
+                                [placeholder]="t()('documents.cv_field_start_date')"
+                              />
+                              <input
+                                type="text"
+                                class="cvdetail__input-mono"
+                                [ngModel]="entry.endDate"
+                                (ngModelChange)="entry.endDate = $event"
+                                [placeholder]="t()('documents.cv_field_end_date')"
+                              />
+                            </div>
+                            <div class="cvdetail__entry-actions cvdetail__entry-actions--end">
+                              <button
+                                type="button"
+                                class="cvdetail__remove-btn"
+                                (click)="removeEntry($any(section), $index)"
+                              >
+                                <lucide-icon [img]="icons.trash" [size]="12" aria-hidden="true" />
+                                {{ t()('documents.cv_remove_entry') }}
+                              </button>
+                            </div>
+                          </div>
+                        }
+                        <button
+                          type="button"
+                          class="cvdetail__add-btn"
+                          (click)="addEntry($any(section))"
+                        >
+                          <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+                          {{ t()('documents.cv_add_education') }}
+                        </button>
+                      }
+                      @case ('skills') {
+                        <div class="cvdetail__skills">
+                          @for (group of $any(section).groups; track $index; let gi = $index) {
+                            <div class="cvdetail__skill-group">
+                              <div class="cvdetail__skill-group-head">
+                                <input
+                                  type="text"
+                                  class="cvdetail__skill-group-label"
+                                  [ngModel]="group.label"
+                                  (ngModelChange)="setSkillGroupLabel($any(section), gi, $event)"
+                                  [placeholder]="t()('documents.cv_field_skill_group')"
+                                />
+                                <span class="cvdetail__skill-group-line"></span>
+                                <button
+                                  type="button"
+                                  class="cvdetail__skill-group-remove"
+                                  [attr.aria-label]="t()('documents.cv_skill_remove_group')"
+                                  (click)="removeSkillGroup($any(section), gi)"
+                                >
+                                  <lucide-icon [img]="icons.close" [size]="13" aria-hidden="true" />
+                                </button>
+                              </div>
+                              <div class="cvdetail__skill-chips">
+                                @for (val of group.values; track $index; let vi = $index) {
+                                  <span class="cvdetail__skill-chip">
+                                    {{ val }}
+                                    <button
+                                      type="button"
+                                      class="cvdetail__skill-chip-remove"
+                                      [attr.aria-label]="t()('documents.cv_skill_remove')"
+                                      (click)="removeSkill($any(section), gi, vi)"
+                                    >
+                                      <lucide-icon
+                                        [img]="icons.close"
+                                        [size]="10"
+                                        aria-hidden="true"
+                                      />
+                                    </button>
+                                  </span>
+                                }
+                                <input
+                                  type="text"
+                                  class="cvdetail__skill-add"
+                                  [placeholder]="t()('documents.cv_skill_add_hint')"
+                                  (keydown.enter)="addSkill($any(section), gi, $event)"
+                                />
+                              </div>
+                            </div>
+                          }
                           <button
                             type="button"
                             class="cvdetail__add-btn"
-                            (click)="addBullet(entry)"
+                            (click)="addSkillGroup($any(section))"
                           >
-                            <lucide-icon [img]="icons.plus" [size]="12" aria-hidden="true" />
-                            {{ t()('documents.cv_add_bullet') }}
+                            <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+                            {{ t()('documents.cv_skill_add_group') }}
                           </button>
+                        </div>
+                      }
+                      @case ('languages') {
+                        <div class="cvdetail__langs">
+                          @for (lang of $any(section).items; track $index; let li = $index) {
+                            <div class="cvdetail__lang-row">
+                              <input
+                                type="text"
+                                [ngModel]="lang.language"
+                                (ngModelChange)="lang.language = $event"
+                                [placeholder]="t()('documents.cv_field_language')"
+                              />
+                              <select
+                                class="cvdetail__lang-level"
+                                [ngModel]="lang.level"
+                                (ngModelChange)="lang.level = $event"
+                              >
+                                @for (lv of languageLevels; track lv) {
+                                  <option [value]="lv">
+                                    {{ lv || t()('documents.cv_lang_level_none') }}
+                                  </option>
+                                }
+                              </select>
+                              <button
+                                type="button"
+                                class="cvdetail__lang-remove"
+                                [attr.aria-label]="t()('documents.cv_lang_remove')"
+                                (click)="removeLanguage($any(section), li)"
+                              >
+                                <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+                              </button>
+                            </div>
+                          }
                           <button
                             type="button"
-                            class="cvdetail__remove-btn"
-                            (click)="removeEntry($any(section), $index)"
+                            class="cvdetail__add-btn"
+                            (click)="addLanguage($any(section))"
                           >
-                            <lucide-icon [img]="icons.trash" [size]="12" aria-hidden="true" />
-                            {{ t()('documents.cv_remove_entry') }}
+                            <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+                            {{ t()('documents.cv_lang_add') }}
                           </button>
                         </div>
-                      </div>
-                    }
-                    <button
-                      type="button"
-                      class="cvdetail__add-btn"
-                      (click)="addEntry($any(section))"
-                    >
-                      <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                      {{ t()('documents.cv_add_experience') }}
-                    </button>
-                  }
-                  @case ('education') {
-                    @for (entry of $any(section).entries; track $index) {
-                      <div class="cvdetail__entry">
-                        <div class="cvdetail__grid">
-                          <input
-                            type="text"
-                            [ngModel]="entry.degree"
-                            (ngModelChange)="entry.degree = $event"
-                            [placeholder]="t()('documents.cv_field_degree')"
-                          />
-                          <input
-                            type="text"
-                            [ngModel]="entry.institution"
-                            (ngModelChange)="entry.institution = $event"
-                            [placeholder]="t()('documents.cv_field_institution')"
-                          />
-                          <input
-                            type="text"
-                            class="cvdetail__input-mono"
-                            [ngModel]="entry.startDate"
-                            (ngModelChange)="entry.startDate = $event"
-                            [placeholder]="t()('documents.cv_field_start_date')"
-                          />
-                          <input
-                            type="text"
-                            class="cvdetail__input-mono"
-                            [ngModel]="entry.endDate"
-                            (ngModelChange)="entry.endDate = $event"
-                            [placeholder]="t()('documents.cv_field_end_date')"
-                          />
-                        </div>
-                        <div class="cvdetail__entry-actions cvdetail__entry-actions--end">
-                          <button
-                            type="button"
-                            class="cvdetail__remove-btn"
-                            (click)="removeEntry($any(section), $index)"
-                          >
-                            <lucide-icon [img]="icons.trash" [size]="12" aria-hidden="true" />
-                            {{ t()('documents.cv_remove_entry') }}
-                          </button>
-                        </div>
-                      </div>
-                    }
-                    <button
-                      type="button"
-                      class="cvdetail__add-btn"
-                      (click)="addEntry($any(section))"
-                    >
-                      <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                      {{ t()('documents.cv_add_education') }}
-                    </button>
-                  }
-                  @case ('skills') {
-                    <div class="cvdetail__skills">
-                      @for (group of $any(section).groups; track $index; let gi = $index) {
-                        <div class="cvdetail__skill-group">
-                          <div class="cvdetail__skill-group-head">
-                            <input
-                              type="text"
-                              class="cvdetail__skill-group-label"
-                              [ngModel]="group.label"
-                              (ngModelChange)="setSkillGroupLabel($any(section), gi, $event)"
-                              [placeholder]="t()('documents.cv_field_skill_group')"
-                            />
-                            <span class="cvdetail__skill-group-line"></span>
-                            <button
-                              type="button"
-                              class="cvdetail__skill-group-remove"
-                              [attr.aria-label]="t()('documents.cv_skill_remove_group')"
-                              (click)="removeSkillGroup($any(section), gi)"
-                            >
-                              <lucide-icon [img]="icons.close" [size]="13" aria-hidden="true" />
+                      }
+                      @case ('photo') {
+                        <div class="cvdetail__photo-editor">
+                          @if (photoDataUri(); as uri) {
+                            <img class="cvdetail__photo-thumb" [src]="uri" alt="" />
+                            <div class="cvdetail__photo-actions">
+                              <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
+                                {{ t()('documents.cv_photo_replace') }}
+                              </button>
+                              <button
+                                appButton
+                                variant="secondary"
+                                size="sm"
+                                (click)="removePhoto()"
+                              >
+                                {{ t()('documents.cv_photo_remove') }}
+                              </button>
+                            </div>
+                          } @else {
+                            <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
+                              {{ t()('documents.cv_photo_upload') }}
                             </button>
-                          </div>
-                          <div class="cvdetail__skill-chips">
-                            @for (val of group.values; track $index; let vi = $index) {
-                              <span class="cvdetail__skill-chip">
-                                {{ val }}
-                                <button
-                                  type="button"
-                                  class="cvdetail__skill-chip-remove"
-                                  [attr.aria-label]="t()('documents.cv_skill_remove')"
-                                  (click)="removeSkill($any(section), gi, vi)"
-                                >
-                                  <lucide-icon [img]="icons.close" [size]="10" aria-hidden="true" />
-                                </button>
-                              </span>
-                            }
-                            <input
-                              type="text"
-                              class="cvdetail__skill-add"
-                              [placeholder]="t()('documents.cv_skill_add_hint')"
-                              (keydown.enter)="addSkill($any(section), gi, $event)"
-                            />
-                          </div>
+                            <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
+                          }
                         </div>
                       }
-                      <button
-                        type="button"
-                        class="cvdetail__add-btn"
-                        (click)="addSkillGroup($any(section))"
-                      >
-                        <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                        {{ t()('documents.cv_skill_add_group') }}
-                      </button>
-                    </div>
-                  }
-                  @case ('languages') {
-                    <div class="cvdetail__langs">
-                      @for (lang of $any(section).items; track $index; let li = $index) {
-                        <div class="cvdetail__lang-row">
-                          <input
-                            type="text"
-                            [ngModel]="lang.language"
-                            (ngModelChange)="lang.language = $event"
-                            [placeholder]="t()('documents.cv_field_language')"
-                          />
-                          <select
-                            class="cvdetail__lang-level"
-                            [ngModel]="lang.level"
-                            (ngModelChange)="lang.level = $event"
-                          >
-                            @for (lv of languageLevels; track lv) {
-                              <option [value]="lv">
-                                {{ lv || t()('documents.cv_lang_level_none') }}
-                              </option>
-                            }
-                          </select>
-                          <button
-                            type="button"
-                            class="cvdetail__lang-remove"
-                            [attr.aria-label]="t()('documents.cv_lang_remove')"
-                            (click)="removeLanguage($any(section), li)"
-                          >
-                            <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
-                          </button>
-                        </div>
-                      }
-                      <button
-                        type="button"
-                        class="cvdetail__add-btn"
-                        (click)="addLanguage($any(section))"
-                      >
-                        <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                        {{ t()('documents.cv_lang_add') }}
-                      </button>
-                    </div>
-                  }
-                  @case ('photo') {
-                    <div class="cvdetail__photo-editor">
-                      @if (photoDataUri(); as uri) {
-                        <img class="cvdetail__photo-thumb" [src]="uri" alt="" />
-                        <div class="cvdetail__photo-actions">
-                          <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
-                            {{ t()('documents.cv_photo_replace') }}
-                          </button>
-                          <button appButton variant="secondary" size="sm" (click)="removePhoto()">
-                            {{ t()('documents.cv_photo_remove') }}
-                          </button>
-                        </div>
-                      } @else {
-                        <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
-                          {{ t()('documents.cv_photo_upload') }}
-                        </button>
-                        <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
-                      }
-                    </div>
-                  }
-                }
+                    }
+                  </div>
+                </div>
               </div>
             }
           </div>

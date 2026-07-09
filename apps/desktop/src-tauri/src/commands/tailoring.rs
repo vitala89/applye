@@ -312,29 +312,50 @@ fn hex_to_rgb(hex: &str) -> (u8, u8, u8) {
     }
 }
 
-/// Concrete page geometry in millimetres, resolved from a `PageSettings` preset.
+/// Concrete page geometry in millimetres, resolved from `PageSettings`.
 pub(crate) struct PageConfig {
     pub width_mm: f32,
     pub height_mm: f32,
-    pub margin_mm: f32,
+    pub margin: crate::commands::documents::PageMargins,
 }
 
-/// Mirrors the TS `resolvePageSettings` exactly. Unknown values fall back to
-/// A4 / normal so a malformed `style_json` never breaks export.
+fn clamp_mm(v: f32) -> f32 {
+    v.clamp(0.0, 50.0)
+}
+
+/// Mirrors the TS `resolvePageSettings`. Accepts legacy presets and 4-side mm;
+/// unknown size falls back to A4 so a malformed `style_json` never breaks export.
 pub(crate) fn resolve_page(p: &crate::commands::documents::PageSettings) -> PageConfig {
+    use crate::commands::documents::{MarginSpec, PageMargins};
     let (width_mm, height_mm) = match p.size.as_str() {
         "letter" => (215.9, 279.4),
         _ => (210.0, 297.0),
     };
-    let margin_mm = match p.margin.as_str() {
-        "narrow" => 12.7,
-        "wide" => 30.0,
-        _ => 20.0,
+    let margin = match &p.margin {
+        MarginSpec::Preset(s) => {
+            let mm = match s.as_str() {
+                "narrow" => 12.7,
+                "wide" => 30.0,
+                _ => 20.0,
+            };
+            PageMargins {
+                top: mm,
+                right: mm,
+                bottom: mm,
+                left: mm,
+            }
+        }
+        MarginSpec::Sides(m) => PageMargins {
+            top: clamp_mm(m.top),
+            right: clamp_mm(m.right),
+            bottom: clamp_mm(m.bottom),
+            left: clamp_mm(m.left),
+        },
     };
     PageConfig {
         width_mm,
         height_mm,
-        margin_mm,
+        margin,
     }
 }
 
@@ -472,10 +493,10 @@ pub(crate) fn render_blocks_docx(
         .page_size(tw(page.width_mm) as u32, tw(page.height_mm) as u32)
         .page_margin(
             PageMargin::new()
-                .top(tw(page.margin_mm))
-                .bottom(tw(page.margin_mm))
-                .left(tw(page.margin_mm))
-                .right(tw(page.margin_mm)),
+                .top(tw(page.margin.top))
+                .bottom(tw(page.margin.bottom))
+                .left(tw(page.margin.left))
+                .right(tw(page.margin.right)),
         );
 
     if let Some(bytes) = photo {
@@ -725,12 +746,17 @@ pub(crate) fn render_blocks_pdf(
         .add_builtin_font(BuiltinFont::CourierBold)
         .map_err(|e| format!("pdf font: {e}"))?;
 
-    let margin = Mm(page.margin_mm);
-    let margin_mm = page.margin_mm;
-    let indent_mm = page.margin_mm + 5.0;
-    let right_margin_mm = page.margin_mm;
+    // PDF geometry uses a single margin value; the per-side model has richer
+    // data (top/right/bottom/left) but this legacy `printpdf` path predates it
+    // and is retired from the CV/cover-letter flow in a later phase, so we
+    // keep it simple and use `margin.top` uniformly rather than threading all
+    // four sides through the pdf layout math.
+    let margin = Mm(page.margin.top);
+    let margin_mm = page.margin.top;
+    let indent_mm = page.margin.top + 5.0;
+    let right_margin_mm = page.margin.top;
     let page_w_mm = page.width_mm;
-    let top_y = page.height_mm - page.margin_mm;
+    let top_y = page.height_mm - page.margin.top;
     let mut y: f32 = top_y;
     let mut cur_page = page1;
     let mut cur_layer = layer1;
@@ -1075,33 +1101,78 @@ mod tests {
 
     #[test]
     fn resolve_page_maps_presets_to_mm() {
-        use crate::commands::documents::PageSettings;
+        use crate::commands::documents::{MarginSpec, PageSettings};
         let a4_normal = resolve_page(&PageSettings {
             size: "a4".into(),
-            margin: "normal".into(),
+            margin: MarginSpec::Preset("normal".into()),
         });
         assert_eq!(
-            (a4_normal.width_mm, a4_normal.height_mm, a4_normal.margin_mm),
+            (
+                a4_normal.width_mm,
+                a4_normal.height_mm,
+                a4_normal.margin.top
+            ),
             (210.0, 297.0, 20.0)
         );
 
         let letter_narrow = resolve_page(&PageSettings {
             size: "letter".into(),
-            margin: "narrow".into(),
+            margin: MarginSpec::Preset("narrow".into()),
         });
         assert_eq!(letter_narrow.width_mm, 215.9);
         assert_eq!(letter_narrow.height_mm, 279.4);
-        assert_eq!(letter_narrow.margin_mm, 12.7);
+        assert_eq!(letter_narrow.margin.top, 12.7);
 
         // Unknown values fall back to A4 / normal.
         let junk = resolve_page(&PageSettings {
             size: "x".into(),
-            margin: "y".into(),
+            margin: MarginSpec::Preset("y".into()),
         });
         assert_eq!(
-            (junk.width_mm, junk.height_mm, junk.margin_mm),
+            (junk.width_mm, junk.height_mm, junk.margin.top),
             (210.0, 297.0, 20.0)
         );
+    }
+
+    #[test]
+    fn resolve_page_maps_legacy_preset_and_four_side_mm() {
+        use crate::commands::documents::{MarginSpec, PageMargins, PageSettings};
+        // legacy preset
+        let legacy = PageSettings {
+            size: "a4".into(),
+            margin: MarginSpec::Preset("wide".into()),
+        };
+        let c = resolve_page(&legacy);
+        assert_eq!(c.width_mm, 210.0);
+        assert_eq!(c.margin.top, 30.0);
+        assert_eq!(c.margin.left, 30.0);
+        // 4-side object
+        let sides = PageSettings {
+            size: "letter".into(),
+            margin: MarginSpec::Sides(PageMargins {
+                top: 10.0,
+                right: 15.0,
+                bottom: 20.0,
+                left: 25.0,
+            }),
+        };
+        let c2 = resolve_page(&sides);
+        assert_eq!(c2.width_mm, 215.9);
+        assert_eq!(c2.margin.right, 15.0);
+        assert_eq!(c2.margin.left, 25.0);
+        // clamp
+        let bad = PageSettings {
+            size: "a4".into(),
+            margin: MarginSpec::Sides(PageMargins {
+                top: -5.0,
+                right: 80.0,
+                bottom: 20.0,
+                left: 20.0,
+            }),
+        };
+        let c3 = resolve_page(&bad);
+        assert_eq!(c3.margin.top, 0.0);
+        assert_eq!(c3.margin.right, 50.0);
     }
 
     #[test]
@@ -1119,7 +1190,7 @@ mod tests {
         );
         let page = resolve_page(&crate::commands::documents::PageSettings {
             size: "letter".into(),
-            margin: "wide".into(),
+            margin: crate::commands::documents::MarginSpec::Preset("wide".into()),
         });
         assert!(!render_blocks_pdf(&blocks, None, &page)
             .expect("pdf")

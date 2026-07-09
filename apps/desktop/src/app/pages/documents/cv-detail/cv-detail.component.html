@@ -190,6 +190,27 @@
                   />
                 </div>
               </div>
+              <div class="cvdetail__style-field">
+                <span class="cvdetail__style-label">{{ t()('documents.cv_style_page_size') }}</span>
+                <select
+                  [ngModel]="style().page?.size ?? 'a4'"
+                  (ngModelChange)="setPageSize($event)"
+                >
+                  <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
+                  <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
+                </select>
+              </div>
+              <div class="cvdetail__style-field">
+                <span class="cvdetail__style-label">{{ t()('documents.cv_style_margin') }}</span>
+                <select
+                  [ngModel]="style().page?.margin ?? 'normal'"
+                  (ngModelChange)="setPageMargin($event)"
+                >
+                  <option value="narrow">{{ t()('documents.cv_style_margin_narrow') }}</option>
+                  <option value="normal">{{ t()('documents.cv_style_margin_normal') }}</option>
+                  <option value="wide">{{ t()('documents.cv_style_margin_wide') }}</option>
+                </select>
+              </div>
             </div>
             @if (styleNotes().length) {
               <div class="cvdetail__ats-note">
@@ -675,6 +696,8 @@
             [style.font-family]="style().fontFamily"
             [style.font-size.pt]="style().fontSizePt"
             [style.font-weight]="style().fontWeight"
+            [style.aspect-ratio]="pageStyle()['aspect-ratio']"
+            [style.padding]="pageStyle()['padding']"
           >
             @if (!previewSections().length) {
               <p class="cvpreview__empty">{{ t()('documents.cv_preview_empty') }}</p>

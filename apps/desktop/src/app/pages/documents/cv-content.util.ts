@@ -13,6 +13,7 @@ import {
   CvTemplate,
   CoverLetterBlockKey,
   CoverLetterStyle,
+  PageSettings,
 } from '@applye/core';
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
@@ -515,6 +516,23 @@ export function effectiveSectionStyle(
     fontWeight: o.fontWeight ?? style.fontWeight,
     colorHex: o.colorHex ?? style.accentColorHex,
   };
+}
+
+export interface ResolvedPage {
+  widthMm: number;
+  heightMm: number;
+  marginMm: number;
+  /** Margin as a % of page width — resolution-independent padding for preview. */
+  marginPct: number;
+}
+
+/** Resolves a `PageSettings` preset to concrete mm. Single source of truth for
+ * the preview; the Rust `resolve_page` mirrors these exact numbers for export. */
+export function resolvePageSettings(page: PageSettings | undefined): ResolvedPage {
+  const p = page ?? { size: 'a4', margin: 'normal' };
+  const [widthMm, heightMm] = p.size === 'letter' ? [215.9, 279.4] : [210, 297];
+  const marginMm = p.margin === 'narrow' ? 12.7 : p.margin === 'wide' ? 30 : 20;
+  return { widthMm, heightMm, marginMm, marginPct: (marginMm / widthMm) * 100 };
 }
 
 /** Effective per-block cover-letter style — the block's override merged over

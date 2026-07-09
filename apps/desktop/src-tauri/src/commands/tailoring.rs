@@ -569,6 +569,78 @@ fn pick_pdf_font<'a>(
     }
 }
 
+/// Average glyph-advance as a fraction of point size, used to estimate text
+/// width for wrapping. printpdf's base fonts expose no metrics, so this is a
+/// deliberately conservative heuristic (slightly over-estimating width keeps
+/// wide-glyph lines inside the margin rather than clipping).
+fn char_ratio(family: &str) -> f32 {
+    let f = family.to_lowercase();
+    if ["courier", "mono", "consolas"]
+        .iter()
+        .any(|s| f.contains(s))
+    {
+        0.62 // monospace advances are wider
+    } else {
+        0.53
+    }
+}
+
+/// Greedy word-wrap to a max character count. A word longer than the limit
+/// (e.g. a long URL) is hard-split so it can never overflow the page width.
+fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
+    if max_chars == 0 {
+        return vec![text.to_string()];
+    }
+    let mut lines: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let mut cur_len = 0usize;
+    for word in text.split_whitespace() {
+        let wlen = word.chars().count();
+        if wlen > max_chars {
+            if !cur.is_empty() {
+                lines.push(std::mem::take(&mut cur));
+            }
+            let mut rest = word;
+            while rest.chars().count() > max_chars {
+                let idx = rest
+                    .char_indices()
+                    .nth(max_chars)
+                    .map(|(i, _)| i)
+                    .unwrap_or(rest.len());
+                lines.push(rest[..idx].to_string());
+                rest = &rest[idx..];
+            }
+            cur = rest.to_string();
+            cur_len = cur.chars().count();
+            continue;
+        }
+        let projected = if cur.is_empty() {
+            wlen
+        } else {
+            cur_len + 1 + wlen
+        };
+        if projected > max_chars {
+            lines.push(std::mem::take(&mut cur));
+            cur = word.to_string();
+            cur_len = wlen;
+        } else {
+            if !cur.is_empty() {
+                cur.push(' ');
+                cur_len += 1;
+            }
+            cur.push_str(word);
+            cur_len += wlen;
+        }
+    }
+    if !cur.is_empty() {
+        lines.push(cur);
+    }
+    if lines.is_empty() {
+        lines.push(String::new());
+    }
+    lines
+}
+
 /// `pub(crate)`: the library CV/cover-letter export in `commands::documents`
 /// builds section-tagged blocks and calls this directly.
 pub(crate) fn render_blocks_pdf(
@@ -599,7 +671,10 @@ pub(crate) fn render_blocks_pdf(
         .map_err(|e| format!("pdf font: {e}"))?;
 
     let margin = Mm(18.0_f32);
-    let indent = Mm(23.0_f32);
+    let margin_mm = 18.0_f32;
+    let indent_mm = 23.0_f32;
+    let right_margin_mm = 18.0_f32;
+    let page_w_mm = 210.0_f32;
     let top_y = 277.0_f32;
     let mut y: f32 = top_y;
     let mut cur_page = page1;
@@ -611,7 +686,6 @@ pub(crate) fn render_blocks_pdf(
         // ~2.7cm x 3.6cm box as DOCX (independent x/y scale) and place it
         // top-left; text then starts below it — mirroring the DOCX inline-top
         // placement instead of the old top-right overlay that clipped headings.
-        use printpdf::image_crate::GenericImageView;
         let dynimg = printpdf::image_crate::load_from_memory(bytes)
             .map_err(|e| format!("pdf photo decode: {e}"))?;
         let (px_w, px_h) = (dynimg.width() as f32, dynimg.height() as f32);
@@ -644,22 +718,7 @@ pub(crate) fn render_blocks_pdf(
     }
 
     for b in blocks {
-        if y < 18.0_f32 {
-            let (p, l) = doc.add_page(Mm(210.0_f32), Mm(297.0_f32), "Layer 1");
-            cur_page = p;
-            cur_layer = l;
-            y = top_y;
-        }
-        let layer = doc.get_page(cur_page).get_layer(cur_layer);
-
         let (r, g, bl) = b.rgb;
-        layer.set_fill_color(Color::Rgb(Rgb::new(
-            r as f32 / 255.0,
-            g as f32 / 255.0,
-            bl as f32 / 255.0,
-            None,
-        )));
-
         let font = pick_pdf_font(
             &b.font_family,
             b.bold,
@@ -671,21 +730,55 @@ pub(crate) fn render_blocks_pdf(
             &courier_b,
         );
         let bullet = b.level == BlockLevel::Bullet;
-        let x = if bullet { indent } else { margin };
-        let text = if bullet {
-            format!("•  {}", b.text)
+        let base_x = if bullet { indent_mm } else { margin_mm };
+
+        // Wrap to the printable width — printpdf's `use_text` never wraps, so a
+        // long line would run off the right edge and be clipped. Estimate the
+        // character budget from the font's average advance (base fonts expose
+        // no metrics) and greedily fold words onto new lines.
+        let char_w_mm = b.size_pt as f32 * 0.3528 * char_ratio(&b.font_family);
+        let avail_mm = page_w_mm - base_x - right_margin_mm;
+        let max_chars = if char_w_mm > 0.0 {
+            (avail_mm / char_w_mm).floor().max(1.0) as usize
         } else {
-            b.text.clone()
+            usize::MAX
         };
+        let wrapped = wrap_text(&b.text, max_chars);
+        // pt → mm (×0.3528) with ~1.35 leading.
+        let line_h = b.size_pt as f32 * 0.3528 * 1.35;
 
         if b.level.is_heading() {
             y -= 3.0_f32;
         }
-        layer.use_text(&text, b.size_pt as f32, x, Mm(y), font);
-
-        // pt → mm (×0.3528) with ~1.35 leading, plus a small inter-block gap.
-        let line_h = b.size_pt as f32 * 0.3528 * 1.35;
-        y -= line_h + if b.level.is_heading() { 2.5 } else { 1.5 };
+        for (i, line) in wrapped.iter().enumerate() {
+            if y < 18.0_f32 {
+                let (p, l) = doc.add_page(Mm(page_w_mm), Mm(297.0_f32), "Layer 1");
+                cur_page = p;
+                cur_layer = l;
+                y = top_y;
+            }
+            let layer = doc.get_page(cur_page).get_layer(cur_layer);
+            layer.set_fill_color(Color::Rgb(Rgb::new(
+                r as f32 / 255.0,
+                g as f32 / 255.0,
+                bl as f32 / 255.0,
+                None,
+            )));
+            // Bullet glyph on the first wrapped line only; continuation lines
+            // hang-indent so they align under the text, not the bullet.
+            let (draw_x, draw_text) = if bullet {
+                if i == 0 {
+                    (base_x, format!("•  {line}"))
+                } else {
+                    (base_x + 4.0, line.clone())
+                }
+            } else {
+                (base_x, line.clone())
+            };
+            layer.use_text(&draw_text, b.size_pt as f32, Mm(draw_x), Mm(y), font);
+            y -= line_h;
+        }
+        y -= if b.level.is_heading() { 2.5 } else { 1.5 };
     }
 
     let mut buf = Vec::new();
@@ -900,5 +993,28 @@ mod tests {
         assert_eq!(blocks[4].level, BlockLevel::Bullet);
         assert_eq!(blocks[5].level, BlockLevel::Body);
         assert!(!blocks[5].bold);
+    }
+
+    #[test]
+    fn wrap_text_folds_words_greedily() {
+        let lines = wrap_text("one two three four", 8);
+        // "one two" = 7 fits; +" three" would be 13 > 8 → break.
+        assert_eq!(lines, vec!["one two", "three", "four"]);
+        for l in &lines {
+            assert!(l.chars().count() <= 8);
+        }
+    }
+
+    #[test]
+    fn wrap_text_hard_splits_overlong_word() {
+        let lines = wrap_text("supercalifragilistic", 5);
+        assert!(lines.iter().all(|l| l.chars().count() <= 5));
+        assert_eq!(lines.concat(), "supercalifragilistic"); // nothing lost
+    }
+
+    #[test]
+    fn wrap_text_handles_empty_and_zero_budget() {
+        assert_eq!(wrap_text("", 10), vec![String::new()]);
+        assert_eq!(wrap_text("keep whole", 0), vec!["keep whole"]);
     }
 }

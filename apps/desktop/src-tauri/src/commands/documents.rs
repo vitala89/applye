@@ -264,147 +264,7 @@ fn read_pdf_text(path: &str) -> Result<String, String> {
 /// `content_json` generically via `serde_json::Value` rather than a full
 /// typed mirror of the `libs/core` union — this module only ever needs to
 /// walk it in visible/order sequence, not round-trip it.
-fn cv_content_to_markdown(content_json: &str) -> Result<String, String> {
-    let parsed: serde_json::Value = serde_json::from_str(content_json)
-        .map_err(|e| format!("cv_content_to_markdown: invalid content_json: {e}"))?;
-    let mut sections: Vec<serde_json::Value> = parsed
-        .get("sections")
-        .and_then(|s| s.as_array())
-        .cloned()
-        .unwrap_or_default();
-    sections.sort_by_key(|s| s.get("order").and_then(|o| o.as_i64()).unwrap_or(0));
-
-    let mut md = String::new();
-    for section in sections {
-        if section.get("visible").and_then(|v| v.as_bool()) == Some(false) {
-            continue;
-        }
-        let str_field = |field: &str| -> Option<String> {
-            section
-                .get(field)
-                .and_then(|v| v.as_str())
-                .map(str::to_string)
-        };
-        match section.get("key").and_then(|k| k.as_str()).unwrap_or("") {
-            "personal_details" => {
-                if let Some(name) = str_field("fullName") {
-                    md.push_str(&format!("# {name}\n\n"));
-                }
-                let contact: Vec<String> = ["email", "phone", "address"]
-                    .into_iter()
-                    .filter_map(str_field)
-                    .collect();
-                if !contact.is_empty() {
-                    md.push_str(&contact.join(" · "));
-                    md.push_str("\n\n");
-                }
-            }
-            "summary" => {
-                if let Some(text) = str_field("text") {
-                    md.push_str("## Summary\n\n");
-                    md.push_str(&text);
-                    md.push_str("\n\n");
-                }
-            }
-            "experience" => {
-                md.push_str("## Experience\n\n");
-                if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
-                    for entry in entries {
-                        let company = entry.get("company").and_then(|v| v.as_str()).unwrap_or("");
-                        let role = entry.get("role").and_then(|v| v.as_str()).unwrap_or("");
-                        let start = entry
-                            .get("startDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let end = entry
-                            .get("endDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Present");
-                        md.push_str(&format!("**{role}**, {company} ({start} – {end})\n\n"));
-                        if let Some(bullets) = entry.get("bullets").and_then(|b| b.as_array()) {
-                            for bullet in bullets {
-                                if let Some(text) = bullet.as_str() {
-                                    md.push_str(&format!("- {text}\n"));
-                                }
-                            }
-                        }
-                        md.push('\n');
-                    }
-                }
-            }
-            "education" => {
-                md.push_str("## Education\n\n");
-                if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
-                    for entry in entries {
-                        let institution = entry
-                            .get("institution")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let degree = entry.get("degree").and_then(|v| v.as_str()).unwrap_or("");
-                        let start = entry
-                            .get("startDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let end = entry
-                            .get("endDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Present");
-                        md.push_str(&format!(
-                            "**{degree}**, {institution} ({start} – {end})\n\n"
-                        ));
-                    }
-                }
-            }
-            "skills" => {
-                if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
-                    let list: Vec<&str> = items.iter().filter_map(|v| v.as_str()).collect();
-                    if !list.is_empty() {
-                        md.push_str("## Skills\n\n");
-                        md.push_str(&list.join(", "));
-                        md.push_str("\n\n");
-                    }
-                } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
-                    let mut lines: Vec<String> = Vec::new();
-                    for group in groups {
-                        let label = group.get("label").and_then(|v| v.as_str()).unwrap_or("");
-                        let values: Vec<&str> = group
-                            .get("values")
-                            .and_then(|v| v.as_array())
-                            .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
-                            .unwrap_or_default();
-                        if !values.is_empty() {
-                            lines.push(format!("**{label}:** {}", values.join(", ")));
-                        }
-                    }
-                    if !lines.is_empty() {
-                        md.push_str("## Skills\n\n");
-                        md.push_str(&lines.join("\n"));
-                        md.push_str("\n\n");
-                    }
-                }
-            }
-            "languages" => {
-                if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
-                    if !items.is_empty() {
-                        md.push_str("## Languages\n\n");
-                        for item in items {
-                            let language =
-                                item.get("language").and_then(|v| v.as_str()).unwrap_or("");
-                            let level = item.get("level").and_then(|v| v.as_str()).unwrap_or("");
-                            md.push_str(&format!("- {language}: {level}\n"));
-                        }
-                        md.push('\n');
-                    }
-                }
-            }
-            // "photo" has no plain-text representation in this renderer.
-            _ => {}
-        }
-    }
-    Ok(md)
-}
-
-/// Structured, section-tagged version of `cv_content_to_markdown` for the
+/// Structured, section-tagged block list for the
 /// styled DOCX/PDF exporters: same section walk, but each line is emitted as a
 /// `StyledBlock` carrying its `CvSectionKey` so the renderer can apply that
 /// section's effective style. Section titles stay in English (export
@@ -675,7 +535,7 @@ fn tex_escape(text: &str) -> String {
 /// Renders a `CvContent` JSON blob into a clean, minimal LaTeX source
 /// (ROADMAP §16.6) — string templating only, never compiled here (no TeX
 /// toolchain bundled, keeps the binary tiny and local-first). Same section
-/// walk as `cv_content_to_markdown`, escaped for LaTeX instead.
+/// walk as `cv_content_to_blocks`, escaped for LaTeX instead.
 fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
     let parsed: serde_json::Value = serde_json::from_str(content_json)
         .map_err(|e| format!("cv_content_to_tex: invalid content_json: {e}"))?;
@@ -1591,29 +1451,54 @@ mod tests {
     }
 
     #[test]
-    fn cv_content_to_markdown_renders_visible_sections_in_order() {
+    fn cv_content_to_blocks_orders_sections_tags_keys_and_hides_invisible() {
+        use crate::commands::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"summary","order":1,"visible":true,"text":"Backend engineer."},
             {"key":"personal_details","order":0,"visible":true,"fullName":"Jane Doe","email":"jane@example.com"},
             {"key":"experience","order":2,"visible":true,"entries":[{"company":"Acme","role":"Engineer","startDate":"2020","endDate":"2023","bullets":["Built things"]}]},
             {"key":"skills","order":3,"visible":false,"items":["Rust"]}
         ]}"#;
-        let md = cv_content_to_markdown(content_json).expect("render");
-        assert!(md.find("Jane Doe").unwrap() < md.find("Backend engineer.").unwrap());
-        assert!(md.find("Backend engineer.").unwrap() < md.find("Acme").unwrap());
-        assert!(!md.contains("Rust"), "hidden section must not render");
+        let blocks = cv_content_to_blocks(content_json).expect("render");
+        let pos = |needle: &str| {
+            blocks
+                .iter()
+                .position(|b| b.text.contains(needle))
+                .unwrap_or_else(|| panic!("missing {needle}"))
+        };
+        assert!(pos("Jane Doe") < pos("Backend engineer."));
+        assert!(pos("Backend engineer.") < pos("Acme"));
+        assert!(
+            !blocks.iter().any(|b| b.text.contains("Rust")),
+            "hidden section must not render"
+        );
+        // Name is the H1, tagged to its owning section for style resolution.
+        assert_eq!(blocks[0].level, BlockLevel::H1);
+        assert_eq!(blocks[0].section_key.as_deref(), Some("personal_details"));
+        // The experience bullet keeps the section tag so overrides resolve.
+        let bullet = blocks
+            .iter()
+            .find(|b| b.text.contains("Built things"))
+            .unwrap();
+        assert_eq!(bullet.level, BlockLevel::Bullet);
+        assert_eq!(bullet.section_key.as_deref(), Some("experience"));
     }
 
     #[test]
-    fn cv_content_to_markdown_renders_grouped_skills_when_items_absent() {
+    fn cv_content_to_blocks_renders_grouped_skills_when_items_absent() {
+        use crate::commands::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
             {"key":"skills","order":0,"visible":true,"groups":[
                 {"label":"Languages","values":["TypeScript","Angular"]}
             ]}
         ]}"#;
-        let md = cv_content_to_markdown(content_json).expect("render");
-        assert!(md.contains("## Skills"));
-        assert!(md.contains("**Languages:** TypeScript, Angular"));
+        let blocks = cv_content_to_blocks(content_json).expect("render");
+        assert!(blocks
+            .iter()
+            .any(|b| b.level == BlockLevel::H2 && b.text == "Skills"));
+        assert!(blocks
+            .iter()
+            .any(|b| b.text == "Languages: TypeScript, Angular"));
     }
 
     #[tokio::test]

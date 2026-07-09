@@ -1,0 +1,35 @@
+.crop-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.crop-dialog {
+  background: var(--surface, #fff);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.crop-stage {
+  width: 270px;
+  height: 360px; /* 3:4 */
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+}
+.crop-canvas {
+  width: 270px;
+  height: 360px;
+}
+.crop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

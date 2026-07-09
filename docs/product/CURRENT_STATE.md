@@ -1,8 +1,9 @@
 # Current Operational State
 
-- **Current version**: `0.23.0` (package.json / tauri.conf.json; CV work below is on `main`, unreleased/untagged)
-- **Current branch / focus**: `main` — no feature branch open. Documents CV & Cover Letter Library (§16) is fully shipped and extended; next up is CV photo upload (spawned task, not started).
+- **Current version**: `0.23.0` (package.json / tauri.conf.json; CV photo upload work below is on `main`, unreleased/untagged)
+- **Current branch / focus**: `feat/cv-photo-upload` — CV photo upload complete, pending merge. Documents CV & Cover Letter Library (§16) is fully shipped and extended.
 - **Recently completed**:
+  - CV photo upload: pick/crop (3:4) a local photo, preview render when "Include photo" is on, base64 stored in the CV document, embedded in DOCX + PDF export (LaTeX omits). Branch `feat/cv-photo-upload`. [Spec](../superpowers/specs/2026-07-09-cv-photo-upload-design.md)
   - CV builder — per-section style constructor (Wave B): font/size/colour/weight settable per section (Personal Details, Summary, Experience, Education, Skills, Languages) via an inline "Style" popover, inheriting from a global default with "reset to common"; new global font-weight control (Light/Normal/Semibold/Bold); editor shell reconciled to the design mock (`CV Editor.dc.html`); Rust `check_style_safety` extended to check per-section overrides. Preview-only (export unchanged). Merged PR #60 → `main` (`2912bd2`). Includes a same-day follow-up fix: preview mode now fills the full pane and hides editor-only controls (region/toggles/style), edit mode no longer reserves dead space for a preview column. [Brief](feature-briefs/documents-cv-cover-letter.md)
   - CV builder — default template rebuild + Wave A blocker fixes: all built-in region templates now guarantee a Personal Details section (migration `0013`); add/remove Experience & Education entries and bullets; fixed AI-import truncation (configurable token cap + JSON repair, `cv-import.md` schema synced); profile↔CV field propagation (title/website/LinkedIn, "pull from profile" action). Merged PR #59 → `main` (`ace5986`). [Brief](feature-briefs/documents-cv-cover-letter.md)
   - First-run Onboarding Wizard: a skippable first-run overlay gated in `app.ts` after the health-check via a new `settings.onboardingSeen` flag (migration `0012_onboarding_seen.sql`). Steps: Welcome → AI-setup (per-provider key guide + keyring via `KeysService`) → Resume input (PDF/DOCX + paste, reuses `cv-import`) → Preview (editable profile markdown) → Archetypes+comp (new `onboarding-archetypes` skill, suggestion-only, user confirms) → Done (CTAs route to `/jobs/new` and `/documents`). Writes the existing `Profile` schema (`fullMd` + `targetArchetypes`), all local, key stored in the OS keyring. Adds a dashboard `OnboardingBannerComponent` and "Re-run onboarding" entry points in Settings and Profile. i18n EN+DE throughout. Merged, v0.22.0.
@@ -14,7 +15,6 @@
 - **Currently working on**:
   - Nothing in-flight. `main` is clean and up to date with `origin/main`.
 - **Next recommended action**:
-  - CV photo upload (pick a local image, crop/fit to CV-photo proportions, decide local storage, render in preview when "Include photo" is on). Scoped as its own brainstorm/spec — touches file storage + privacy, not a bugfix. A follow-up task is already queued for this.
   - Lower priority: a handful of cosmetic minors deferred from the Wave B code review (stale doc-comment, `$any` weight cast, no Rust-side weight-domain guard) — batch these whenever convenient, none are user-visible.
 - **Active feature briefs**:
   - [Documents CV & Cover Letter Library](feature-briefs/documents-cv-cover-letter.md) — Step 1, shipped (1a–1d complete, plus two follow-on efforts: default-template/Wave A and per-section style/Wave B).
@@ -28,4 +28,4 @@
   - [PROJECT_CONTEXT.md](../../PROJECT_CONTEXT.md)
   - [CURRENT_STATE.md](CURRENT_STATE.md)
   - [AGENTS.md](../../AGENTS.md)
-- **Last updated**: 2026-07-08 (CV builder Wave B merged, PR #59 + #60 reflected, `main` clean)
+- **Last updated**: 2026-07-09 (CV photo upload shipped on `feat/cv-photo-upload`, documentation updated)

@@ -271,6 +271,12 @@ export class DbService {
     return tauriInvoke<CvImportFile>('cv_import_read_file', { path });
   }
 
+  /** Reads a picked CV photo file and returns it as a base64 data URI,
+   * ready for inline storage/preview in a `CvPhotoSection`. */
+  async cvPhotoReadFile(path: string): Promise<string> {
+    return tauriInvoke<string>('cv_photo_read_file', { path });
+  }
+
   /** Exports a library CV to `savePath` as DOCX, PDF, or LaTeX source (never
    * compiled — no TeX toolchain bundled) — a library export, distinct from
    * the job-specific tailoring export journal. */

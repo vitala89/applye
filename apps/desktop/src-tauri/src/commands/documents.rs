@@ -184,6 +184,48 @@ pub fn cv_import_read_file(path: String) -> Result<CvImportFile, String> {
     })
 }
 
+use base64::Engine as _;
+
+/// Sniff image MIME from magic bytes; default to octet-stream.
+fn image_mime(bytes: &[u8]) -> &'static str {
+    if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        "image/png"
+    } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        "image/jpeg"
+    } else if bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP") {
+        "image/webp"
+    } else {
+        "application/octet-stream"
+    }
+}
+
+fn bytes_to_data_uri(bytes: &[u8]) -> String {
+    let mime = image_mime(bytes);
+    let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+    format!("data:{mime};base64,{b64}")
+}
+
+/// Strip a `data:...;base64,` prefix and base64-decode the payload to raw bytes.
+/// Returns `None` if there is no `,` separator or the payload is not valid base64.
+fn data_uri_to_bytes(uri: &str) -> Option<Vec<u8>> {
+    let comma = uri.find(',')?;
+    let b64 = &uri[comma + 1..];
+    base64::engine::general_purpose::STANDARD.decode(b64).ok()
+}
+
+/// Reads a picked CV photo file and returns it as a base64 data URI for
+/// inline storage/preview — no separate asset file, matches the
+/// `content_json`-opaque-blob convention used elsewhere in this module.
+#[tauri::command]
+pub fn cv_photo_read_file(path: String) -> Result<String, String> {
+    let bytes = std::fs::read(&path).map_err(|e| format!("read photo: {e}"))?;
+    // Guard: reject files that are not a supported image type.
+    match image_mime(&bytes) {
+        "application/octet-stream" => Err("unsupported image format".into()),
+        _ => Ok(bytes_to_data_uri(&bytes)),
+    }
+}
+
 fn read_docx_text(path: &str) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("read_docx_text: {e}"))?;
     let docx = docx_rs::read_docx(&bytes).map_err(|e| format!("read_docx_text: {e}"))?;
@@ -552,7 +594,10 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
                     }
                 }
             }
-            // "photo" has no plain LaTeX representation in this string-templated renderer.
+            // "photo" is intentionally omitted from .tex export: the app never
+            // compiles the .tex itself, and there is no companion-asset
+            // mechanism to ship the image alongside for \includegraphics.
+            // DOCX/PDF embed the photo; LaTeX stays photo-less by design.
             _ => {}
         }
     }
@@ -779,13 +824,44 @@ async fn cv_document_export_bytes_core(
     let content_json = doc
         .content_json
         .ok_or_else(|| "cv_document_export: document has no content".to_string())?;
+
+    // Extract the CV photo (a base64 data URI) from the `photo` section, but only
+    // when that section is present and visible. Decoded once here and threaded
+    // into the DOCX/PDF renderers; `.tex` deliberately omits it (see below).
+    let photo_bytes: Option<Vec<u8>> = serde_json::from_str::<serde_json::Value>(&content_json)
+        .ok()
+        .and_then(|v| {
+            v.get("sections")
+                .and_then(|s| s.as_array())
+                .and_then(|sections| {
+                    sections
+                        .iter()
+                        .find(|s| s.get("key").and_then(|k| k.as_str()) == Some("photo"))
+                        .cloned()
+                })
+        })
+        .filter(|photo| {
+            photo
+                .get("visible")
+                .and_then(|b| b.as_bool())
+                .unwrap_or(false)
+        })
+        .and_then(|photo| {
+            photo
+                .get("dataUri")
+                .and_then(|d| d.as_str())
+                .and_then(data_uri_to_bytes)
+        });
+
     match format {
-        "docx" => {
-            crate::commands::tailoring::md_to_docx_bytes(&cv_content_to_markdown(&content_json)?)
-        }
-        "pdf" => {
-            crate::commands::tailoring::md_to_pdf_bytes(&cv_content_to_markdown(&content_json)?)
-        }
+        "docx" => crate::commands::tailoring::md_to_docx_bytes(
+            &cv_content_to_markdown(&content_json)?,
+            photo_bytes.as_deref(),
+        ),
+        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(
+            &cv_content_to_markdown(&content_json)?,
+            photo_bytes.as_deref(),
+        ),
         "tex" => Ok(cv_content_to_tex(&content_json)?.into_bytes()),
         other => Err(format!("cv_document_export: unsupported format '{other}'")),
     }
@@ -816,12 +892,14 @@ async fn cover_letter_document_export_bytes_core(
         .content_json
         .ok_or_else(|| "cover_letter_document_export: document has no content".to_string())?;
     match format {
-        "docx" => crate::commands::tailoring::md_to_docx_bytes(&cover_letter_content_to_markdown(
-            &content_json,
-        )?),
-        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(&cover_letter_content_to_markdown(
-            &content_json,
-        )?),
+        "docx" => crate::commands::tailoring::md_to_docx_bytes(
+            &cover_letter_content_to_markdown(&content_json)?,
+            None,
+        ),
+        "pdf" => crate::commands::tailoring::md_to_pdf_bytes(
+            &cover_letter_content_to_markdown(&content_json)?,
+            None,
+        ),
         other => Err(format!(
             "cover_letter_document_export: unsupported format '{other}'"
         )),
@@ -1467,5 +1545,31 @@ mod tests {
             r#"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"not-a-color"}"#;
         let notes = check_style_safety_core(Some(malformed.to_string()));
         assert!(notes.iter().all(|n| n.kind != "color_readability_risk"));
+    }
+}
+
+#[cfg(test)]
+mod photo_tests {
+    use super::*;
+
+    #[test]
+    fn detects_png_mime_and_encodes() {
+        // 1x1 transparent PNG
+        let png: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
+            0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78,
+            0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+        ];
+        let uri = bytes_to_data_uri(png);
+        assert!(uri.starts_with("data:image/png;base64,"));
+    }
+
+    #[test]
+    fn decodes_data_uri_to_bytes() {
+        let uri = "data:image/png;base64,AAAA";
+        let bytes = data_uri_to_bytes(uri).unwrap();
+        assert_eq!(bytes, vec![0, 0, 0]);
     }
 }

@@ -42,6 +42,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
+import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
 import {
   blankEducationEntry,
   blankExperienceEntry,
@@ -79,6 +80,7 @@ export function mergePersonalField<T extends string | undefined>(
     CdkDragHandle,
     NgStyle,
     NgTemplateOutlet,
+    CvPhotoCropComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -134,6 +136,9 @@ export class CvDetailComponent {
   readonly regionTag = signal('generic');
   readonly isDefault = signal(false);
   readonly includePhoto = signal(false);
+  readonly photoDataUri = signal<string | null>(null);
+  /** Non-null while the crop modal is open, holding the freshly picked source image. */
+  readonly cropSourceUri = signal<string | null>(null);
   readonly includeBirthdate = signal(false);
   readonly includeMaritalStatus = signal(false);
 
@@ -295,8 +300,11 @@ export class CvDetailComponent {
       const ordered = [...content.sections].sort((a, b) => a.order - b.order);
       this.sections.set(ordered);
 
-      const photo = ordered.find((s) => s.key === 'photo');
+      const photo = ordered.find((s) => s.key === 'photo') as
+        | Extract<CvSection, { key: 'photo' }>
+        | undefined;
       this.includePhoto.set(photo?.visible ?? false);
+      this.photoDataUri.set(photo?.dataUri ?? null);
       const personal = ordered.find(
         (s): s is Extract<CvSection, { key: 'personal_details' }> => s.key === 'personal_details',
       );
@@ -541,13 +549,64 @@ export class CvDetailComponent {
     }
   }
 
+  /** Opens a native file picker for an image, reads it via the backend into a
+   * data URI, then opens the crop modal on that source image. */
+  async pickPhoto(): Promise<void> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
+    });
+    if (typeof selected !== 'string') return;
+    try {
+      const uri = await this.db.cvPhotoReadFile(selected);
+      this.cropSourceUri.set(uri);
+    } catch (e) {
+      this.toast.error(String(e));
+    }
+  }
+
+  onCropConfirmed(uri: string): void {
+    this.photoDataUri.set(uri);
+    this.cropSourceUri.set(null);
+  }
+
+  onCropCancelled(): void {
+    this.cropSourceUri.set(null);
+  }
+
+  removePhoto(): void {
+    this.photoDataUri.set(null);
+  }
+
+  /**
+   * Toggle the "Include photo" chip. Turning it ON guarantees a `photo`
+   * section exists in the editor (most templates don't seed one), so the
+   * upload card actually appears; turning it OFF just hides the photo in the
+   * preview while keeping the stored bytes.
+   */
+  toggleIncludePhoto(): void {
+    const next = !this.includePhoto();
+    this.includePhoto.set(next);
+    if (!next || this.sections().some((s) => s.key === 'photo')) return;
+    const photo: Extract<CvSection, { key: 'photo' }> = {
+      key: 'photo',
+      order: 0,
+      visible: true,
+      dataUri: this.photoDataUri() ?? undefined,
+    };
+    this.sections.set([photo, ...this.sections()].map((s, i) => ({ ...s, order: i })));
+  }
+
   async save(): Promise<void> {
     const doc = this.doc();
     if (!doc || this.saving()) return;
     this.saving.set(true);
     try {
       const sections = this.sections().map((s) => {
-        if (s.key === 'photo') return { ...s, visible: this.includePhoto() };
+        if (s.key === 'photo') {
+          return { ...s, visible: this.includePhoto(), dataUri: this.photoDataUri() ?? undefined };
+        }
         if (s.key === 'personal_details') {
           return {
             ...s,

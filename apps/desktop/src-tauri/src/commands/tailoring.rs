@@ -235,10 +235,19 @@ fn cv_filename(title: &str, company: &str, hash: &str, ext: &str) -> String {
 
 // `pub(crate)`, not private: reused by `commands::documents` to export a
 // library CV (a different journal/caching path — no `generated_docs` row).
-pub(crate) fn md_to_docx_bytes(content_md: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     use docx_rs::*;
 
     let mut doc = Docx::new();
+
+    if let Some(bytes) = photo {
+        // docx-rs 0.4: `Pic::new(&[u8])` decodes the image via its bundled
+        // `image` crate, re-encodes to PNG, and computes the pixel size; we then
+        // override the rendered box to ~2.7cm x 3.6cm (3:4) in EMU
+        // (914400 EMU/inch). Embedded as the first paragraph.
+        let pic = Pic::new(bytes).size(972_000, 1_296_000);
+        doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_image(pic)));
+    }
 
     for line in content_md.lines() {
         let para = if let Some(text) = line.strip_prefix("# ") {
@@ -286,7 +295,7 @@ pub async fn export_docx(
         }
     }
 
-    let bytes = md_to_docx_bytes(&content_md)?;
+    let bytes = md_to_docx_bytes(&content_md, None)?;
     let dir = cv_dir(&app, &company, &job_title)?;
     let path = dir.join(cv_filename(&job_title, &company, &input_hash, "docx"));
     std::fs::write(&path, &bytes).map_err(|e| format!("write docx: {e}"))?;
@@ -303,7 +312,7 @@ pub async fn export_docx(
 
 // ── PDF export ───────────────────────────────────────────────────────────────
 
-pub(crate) fn md_to_pdf_bytes(content_md: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     use printpdf::*;
 
     let (doc, page1, layer1) = PdfDocument::new("Tailored CV", Mm(210.0), Mm(297.0), "Layer 1");
@@ -321,6 +330,28 @@ pub(crate) fn md_to_pdf_bytes(content_md: &str) -> Result<Vec<u8>, String> {
     let mut y: f32 = top_y;
     let mut cur_page = page1;
     let mut cur_layer = layer1;
+
+    if let Some(bytes) = photo {
+        // printpdf 0.7 (`embedded_images` feature): decode with the crate's own
+        // re-exported `image` (0.24) so the `DynamicImage` type matches
+        // `Image::from_dynamic_image`, then paint it top-right on the first
+        // layer. Text still starts at `top_y` and flows down the left column.
+        let dynimg = printpdf::image_crate::load_from_memory(bytes)
+            .map_err(|e| format!("pdf photo decode: {e}"))?;
+        let img = Image::from_dynamic_image(&dynimg);
+        let layer = doc.get_page(page1).get_layer(layer1);
+        img.add_to_layer(
+            layer,
+            ImageTransform {
+                translate_x: Some(Mm(158.0)),
+                translate_y: Some(Mm(251.0)),
+                scale_x: Some(0.5),
+                scale_y: Some(0.5),
+                dpi: Some(300.0),
+                ..Default::default()
+            },
+        );
+    }
 
     for line in content_md.lines() {
         if y < 18.0_f32 {
@@ -376,7 +407,7 @@ pub async fn export_pdf(
         }
     }
 
-    let bytes = md_to_pdf_bytes(&content_md)?;
+    let bytes = md_to_pdf_bytes(&content_md, None)?;
     let dir = cv_dir(&app, &company, &job_title)?;
     let path = dir.join(cv_filename(&job_title, &company, &input_hash, "pdf"));
     std::fs::write(&path, &bytes).map_err(|e| format!("write pdf: {e}"))?;

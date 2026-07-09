@@ -107,6 +107,26 @@ describe('CoverLetterDetailComponent preview atoms', () => {
     expect(g.marginTopPx).toBeCloseTo((20 * 96) / 25.4);
   });
 
+  it('toggleBlockCollapse flips isBlockOpen and defaults to expanded', () => {
+    expect(component.isBlockOpen('recipient')).toBe(true);
+    component.toggleBlockCollapse('recipient');
+    expect(component.isBlockOpen('recipient')).toBe(false);
+    component.toggleBlockCollapse('recipient');
+    expect(component.isBlockOpen('recipient')).toBe(true);
+    // Collapsing one block leaves others expanded.
+    component.toggleBlockCollapse('body');
+    expect(component.isBlockOpen('body')).toBe(false);
+    expect(component.isBlockOpen('recipient')).toBe(true);
+  });
+
+  it('toggleStyleOpen flips the Style card open state, default open', () => {
+    expect(component.styleOpen()).toBe(true);
+    component.toggleStyleOpen();
+    expect(component.styleOpen()).toBe(false);
+    component.toggleStyleOpen();
+    expect(component.styleOpen()).toBe(true);
+  });
+
   it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     document.body.classList.remove('printing-cv');

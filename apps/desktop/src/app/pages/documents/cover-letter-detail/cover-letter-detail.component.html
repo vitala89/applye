@@ -92,11 +92,11 @@
       <!-- EDIT MODE -->
       @if (!previewMode()) {
         <div class="coverdetail__editor-col">
-          <!-- Config panel: region + tone/length + style -->
-          <div class="coverdetail__panel">
-            <div class="coverdetail__meta-field">
-              <span class="coverdetail__style-label">{{ t()('documents.cv_field_region') }}</span>
-              <div class="coverdetail__meta-row">
+          <!-- Region card: region + default toggle + tone/length -->
+          <div class="docedit-card">
+            <div class="docedit-meta">
+              <span class="docedit-field__label">{{ t()('documents.cv_field_region') }}</span>
+              <div class="docedit-meta-row">
                 <select [ngModel]="regionTag()" (ngModelChange)="regionTag.set($event)">
                   @for (r of regionTags; track r) {
                     <option [value]="r">{{ r.toUpperCase() }}</option>
@@ -119,13 +119,9 @@
               </div>
             </div>
 
-            <div class="coverdetail__panel-divider"></div>
-
-            <div class="coverdetail__style">
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{
-                  t()('documents.cover_letter_tone')
-                }}</span>
+            <div class="docedit-style-grid">
+              <div class="docedit-field">
+                <span class="docedit-field__label">{{ t()('documents.cover_letter_tone') }}</span>
                 <select [ngModel]="tone()" (ngModelChange)="setTone($event)">
                   @for (opt of toneOptions; track opt) {
                     <option [value]="opt">
@@ -134,10 +130,8 @@
                   }
                 </select>
               </div>
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{
-                  t()('documents.cover_letter_length')
-                }}</span>
+              <div class="docedit-field">
+                <span class="docedit-field__label">{{ t()('documents.cover_letter_length') }}</span>
                 <select [ngModel]="length()" (ngModelChange)="setLength($event)">
                   @for (opt of lengthOptions; track opt) {
                     <option [value]="opt">
@@ -147,20 +141,35 @@
                 </select>
               </div>
             </div>
+          </div>
 
-            <div class="coverdetail__panel-divider"></div>
-
-            <div class="coverdetail__style-header">
-              <span class="coverdetail__style-label">{{ t()('documents.cv_section_style') }}</span>
-              @if (hasAnyCustomStyle()) {
-                <span class="coverdetail__custom-badge">{{
-                  t()('documents.cv_style_customized')
-                }}</span>
-              }
+          <!-- Style card: collapsible font/size/weight/colour/page/margins -->
+          <div class="docedit-card">
+            <div class="docedit-card__head">
+              <button
+                type="button"
+                class="docedit-card__toggle"
+                [attr.aria-expanded]="styleOpen()"
+                (click)="toggleStyleOpen()"
+              >
+                <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
+                @if (hasAnyCustomStyle()) {
+                  <span class="coverdetail__custom-badge">{{
+                    t()('documents.cv_style_customized')
+                  }}</span>
+                }
+                <lucide-icon
+                  [img]="icons.chevron"
+                  [size]="16"
+                  aria-hidden="true"
+                  class="docedit-chevron"
+                  [class.docedit-chevron--closed]="!styleOpen()"
+                />
+              </button>
               <span class="coverdetail__spacer"></span>
               <button
                 type="button"
-                class="coverdetail__reset-all"
+                class="docedit-reset"
                 [disabled]="!hasAnyCustomStyle()"
                 (click)="resetAllStyles()"
               >
@@ -169,109 +178,125 @@
               </button>
             </div>
 
-            <div class="coverdetail__style">
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
-                <select
-                  [ngModel]="style().fontFamily"
-                  (ngModelChange)="updateStyle({ fontFamily: $event })"
-                >
-                  @for (f of fontOptions; track f) {
-                    <option [value]="f">{{ f }}</option>
-                  }
-                </select>
-              </div>
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
-                <input
-                  type="number"
-                  min="6"
-                  max="24"
-                  step="0.5"
-                  [ngModel]="style().fontSizePt"
-                  (ngModelChange)="updateStyle({ fontSizePt: +$event })"
-                />
-              </div>
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
-                <select
-                  [ngModel]="style().fontWeight"
-                  (ngModelChange)="updateStyle({ fontWeight: $any(+$event) })"
-                >
-                  <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-                  <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-                  <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-                  <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-                </select>
-              </div>
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
-                <div class="coverdetail__style-color-row">
-                  <input
-                    type="color"
-                    [ngModel]="style().accentColorHex"
-                    (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                  />
-                  <input
-                    type="text"
-                    class="coverdetail__style-color-hex"
-                    [ngModel]="style().accentColorHex"
-                    (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                  />
-                </div>
-              </div>
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{
-                  t()('documents.cv_style_page_size')
-                }}</span>
-                <select
-                  [ngModel]="style().page?.size ?? 'a4'"
-                  (ngModelChange)="setPageSize($event)"
-                >
-                  <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
-                  <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
-                </select>
-              </div>
-              <div class="coverdetail__style-field">
-                <span class="coverdetail__style-label">{{
-                  t()('documents.cv_style_margins')
-                }}</span>
-                <div class="cvdetail__margin-grid">
-                  @for (side of marginSides; track side.key) {
-                    <label class="cvdetail__margin-input">
-                      <span>{{ t()(side.label) }}</span>
+            <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
+              <div>
+                <div class="docedit-style-grid">
+                  <div class="docedit-field">
+                    <span class="docedit-field__label">{{ t()('documents.cv_style_font') }}</span>
+                    <select
+                      [ngModel]="style().fontFamily"
+                      (ngModelChange)="updateStyle({ fontFamily: $event })"
+                    >
+                      @for (f of fontOptions; track f) {
+                        <option [value]="f">{{ f }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="docedit-field">
+                    <span class="docedit-field__label">{{ t()('documents.cv_style_size') }}</span>
+                    <input
+                      type="number"
+                      min="6"
+                      max="24"
+                      step="0.5"
+                      [ngModel]="style().fontSizePt"
+                      (ngModelChange)="updateStyle({ fontSizePt: +$event })"
+                    />
+                  </div>
+                  <div class="docedit-field">
+                    <span class="docedit-field__label">{{ t()('documents.cv_style_weight') }}</span>
+                    <select
+                      [ngModel]="style().fontWeight"
+                      (ngModelChange)="updateStyle({ fontWeight: $any(+$event) })"
+                    >
+                      <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                      <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                      <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                      <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+                    </select>
+                  </div>
+                  <div class="docedit-field">
+                    <span class="docedit-field__label">{{ t()('documents.cv_style_color') }}</span>
+                    <div class="docedit-color-row">
                       <input
-                        type="number"
-                        min="0"
-                        max="50"
-                        step="1"
-                        [ngModel]="currentMargin()[side.key]"
-                        (ngModelChange)="setMarginSide(side.key, $event)"
+                        type="color"
+                        [ngModel]="style().accentColorHex"
+                        (ngModelChange)="updateStyle({ accentColorHex: $event })"
                       />
-                    </label>
-                  }
+                      <input
+                        type="text"
+                        [ngModel]="style().accentColorHex"
+                        (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                      />
+                    </div>
+                  </div>
+                  <div class="docedit-field docedit-field--full">
+                    <span class="docedit-field__label">{{
+                      t()('documents.cv_style_page_size')
+                    }}</span>
+                    <select
+                      [ngModel]="style().page?.size ?? 'a4'"
+                      (ngModelChange)="setPageSize($event)"
+                    >
+                      <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
+                      <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
+                    </select>
+                  </div>
+                  <div class="docedit-field docedit-field--full">
+                    <span class="docedit-field__label">{{
+                      t()('documents.cv_style_margins')
+                    }}</span>
+                    <div class="docedit-margin-grid">
+                      @for (side of marginSides; track side.key) {
+                        <label class="docedit-margin-field">
+                          <span>{{ t()(side.label) }}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="1"
+                            [ngModel]="currentMargin()[side.key]"
+                            (ngModelChange)="setMarginSide(side.key, $event)"
+                          />
+                        </label>
+                      }
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            @if (styleNotes().length) {
-              <div class="coverdetail__ats-note">
-                @for (note of styleNotes(); track note.kind + note.detail) {
-                  <p>{{ styleNoteMessage(note) }}</p>
+                @if (styleNotes().length) {
+                  <div class="docedit-note">
+                    @for (note of styleNotes(); track note.kind + note.detail) {
+                      <p>{{ styleNoteMessage(note) }}</p>
+                    }
+                  </div>
                 }
               </div>
-            }
+            </div>
           </div>
 
           <!-- Blocks -->
           <div class="coverdetail__blocks">
             <!-- Recipient address -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_field_recipient_address')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('recipient')"
+                  (click)="toggleBlockCollapse('recipient')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('recipient')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_field_recipient_address')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <button
                     type="button"
                     class="coverdetail__style-btn"
@@ -289,65 +314,84 @@
                   [ngTemplateOutletContext]="{ $implicit: 'recipient' }"
                 ></ng-container>
               }
-              <div class="coverdetail__grid">
-                <label class="coverdetail__field">
-                  <span>{{ t()('documents.cover_letter_field_recipient') }}</span>
-                  <input
-                    type="text"
-                    [ngModel]="content().address.recipientName"
-                    (ngModelChange)="updateAddress('recipientName', $event)"
-                  />
-                </label>
-                <label class="coverdetail__field">
-                  <span>{{ t()('documents.cover_letter_field_company') }}</span>
-                  <input
-                    type="text"
-                    [ngModel]="content().address.company"
-                    (ngModelChange)="updateAddress('company', $event)"
-                  />
-                </label>
-                <label class="coverdetail__field coverdetail__field--wide">
-                  <span>{{ t()('documents.cover_letter_field_street') }}</span>
-                  <input
-                    type="text"
-                    [ngModel]="content().address.street"
-                    (ngModelChange)="updateAddress('street', $event)"
-                  />
-                </label>
-                <label class="coverdetail__field">
-                  <span>{{ t()('documents.cover_letter_field_postal_code') }}</span>
-                  <input
-                    type="text"
-                    [ngModel]="content().address.postalCode"
-                    (ngModelChange)="updateAddress('postalCode', $event)"
-                  />
-                </label>
-                <label class="coverdetail__field">
-                  <span>{{ t()('documents.cover_letter_field_city') }}</span>
-                  <input
-                    type="text"
-                    [ngModel]="content().address.city"
-                    (ngModelChange)="updateAddress('city', $event)"
-                  />
-                </label>
-                <label class="coverdetail__field coverdetail__field--wide">
-                  <span>{{ t()('documents.cover_letter_field_country') }}</span>
-                  <input
-                    type="text"
-                    [ngModel]="content().address.country"
-                    (ngModelChange)="updateAddress('country', $event)"
-                  />
-                </label>
+              <div
+                class="docedit-collapse"
+                [class.docedit-collapse--closed]="!isBlockOpen('recipient')"
+              >
+                <div class="coverdetail__grid">
+                  <label class="coverdetail__field">
+                    <span>{{ t()('documents.cover_letter_field_recipient') }}</span>
+                    <input
+                      type="text"
+                      [ngModel]="content().address.recipientName"
+                      (ngModelChange)="updateAddress('recipientName', $event)"
+                    />
+                  </label>
+                  <label class="coverdetail__field">
+                    <span>{{ t()('documents.cover_letter_field_company') }}</span>
+                    <input
+                      type="text"
+                      [ngModel]="content().address.company"
+                      (ngModelChange)="updateAddress('company', $event)"
+                    />
+                  </label>
+                  <label class="coverdetail__field coverdetail__field--wide">
+                    <span>{{ t()('documents.cover_letter_field_street') }}</span>
+                    <input
+                      type="text"
+                      [ngModel]="content().address.street"
+                      (ngModelChange)="updateAddress('street', $event)"
+                    />
+                  </label>
+                  <label class="coverdetail__field">
+                    <span>{{ t()('documents.cover_letter_field_postal_code') }}</span>
+                    <input
+                      type="text"
+                      [ngModel]="content().address.postalCode"
+                      (ngModelChange)="updateAddress('postalCode', $event)"
+                    />
+                  </label>
+                  <label class="coverdetail__field">
+                    <span>{{ t()('documents.cover_letter_field_city') }}</span>
+                    <input
+                      type="text"
+                      [ngModel]="content().address.city"
+                      (ngModelChange)="updateAddress('city', $event)"
+                    />
+                  </label>
+                  <label class="coverdetail__field coverdetail__field--wide">
+                    <span>{{ t()('documents.cover_letter_field_country') }}</span>
+                    <input
+                      type="text"
+                      [ngModel]="content().address.country"
+                      (ngModelChange)="updateAddress('country', $event)"
+                    />
+                  </label>
+                </div>
               </div>
             </section>
 
             <!-- Date -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_field_date')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('date')"
+                  (click)="toggleBlockCollapse('date')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('date')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_field_date')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <button
                     type="button"
                     class="coverdetail__style-btn"
@@ -365,21 +409,39 @@
                   [ngTemplateOutletContext]="{ $implicit: 'date' }"
                 ></ng-container>
               }
-              <input
-                type="text"
-                class="coverdetail__full"
-                [ngModel]="content().date"
-                (ngModelChange)="updateField('date', $event)"
-              />
+              <div class="docedit-collapse" [class.docedit-collapse--closed]="!isBlockOpen('date')">
+                <div>
+                  <input
+                    type="text"
+                    class="coverdetail__full"
+                    [ngModel]="content().date"
+                    (ngModelChange)="updateField('date', $event)"
+                  />
+                </div>
+              </div>
             </section>
 
             <!-- Subject -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_field_subject')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('subject')"
+                  (click)="toggleBlockCollapse('subject')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('subject')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_field_subject')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <button
                     type="button"
                     class="coverdetail__style-btn"
@@ -411,21 +473,42 @@
                   [ngTemplateOutletContext]="{ $implicit: 'subject' }"
                 ></ng-container>
               }
-              <input
-                type="text"
-                class="coverdetail__full"
-                [ngModel]="content().subject"
-                (ngModelChange)="updateField('subject', $event)"
-              />
+              <div
+                class="docedit-collapse"
+                [class.docedit-collapse--closed]="!isBlockOpen('subject')"
+              >
+                <div>
+                  <input
+                    type="text"
+                    class="coverdetail__full"
+                    [ngModel]="content().subject"
+                    (ngModelChange)="updateField('subject', $event)"
+                  />
+                </div>
+              </div>
             </section>
 
             <!-- Greeting -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_field_greeting')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('greeting')"
+                  (click)="toggleBlockCollapse('greeting')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('greeting')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_field_greeting')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <button
                     type="button"
                     class="coverdetail__style-btn"
@@ -457,21 +540,42 @@
                   [ngTemplateOutletContext]="{ $implicit: 'greeting' }"
                 ></ng-container>
               }
-              <input
-                type="text"
-                class="coverdetail__full"
-                [ngModel]="content().greeting"
-                (ngModelChange)="updateField('greeting', $event)"
-              />
+              <div
+                class="docedit-collapse"
+                [class.docedit-collapse--closed]="!isBlockOpen('greeting')"
+              >
+                <div>
+                  <input
+                    type="text"
+                    class="coverdetail__full"
+                    [ngModel]="content().greeting"
+                    (ngModelChange)="updateField('greeting', $event)"
+                  />
+                </div>
+              </div>
             </section>
 
             <!-- Body paragraphs -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_body_paragraphs')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('body')"
+                  (click)="toggleBlockCollapse('body')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('body')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_body_paragraphs')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <span class="coverdetail__count">{{
                     (content().bodyParagraphs || []).length
                   }}</span>
@@ -492,81 +596,99 @@
                   [ngTemplateOutletContext]="{ $implicit: 'body' }"
                 ></ng-container>
               }
-              <div class="coverdetail__paragraphs">
-                @for (para of content().bodyParagraphs || []; track $index) {
-                  <div class="coverdetail__paragraph">
-                    <div class="coverdetail__paragraph-head">
-                      <span>{{
-                        t()('documents.cover_letter_field_paragraph').replace(
-                          '{index}',
-                          '' + ($index + 1)
-                        )
-                      }}</span>
-                      <div class="coverdetail__paragraph-actions">
-                        <button
-                          type="button"
-                          class="coverdetail__style-btn"
-                          [class.coverdetail__style-btn--active]="
-                            openStyleKey() === paragraphStyleKey($index)
-                          "
-                          [class.coverdetail__style-btn--custom]="
-                            hasCustomStyle(paragraphStyleKey($index))
-                          "
-                          (click)="toggleStylePopover(paragraphStyleKey($index))"
-                        >
-                          {{ t()('documents.cv_section_style') }}
-                        </button>
-                        <button
-                          class="coverdetail__regen"
-                          type="button"
-                          [disabled]="regeneratingBlock() === 'body_' + $index"
-                          (click)="regenerateBlock('body', $index)"
-                        >
-                          <lucide-icon
-                            [img]="icons.regenerate"
-                            [size]="13"
-                            [class.spin]="regeneratingBlock() === 'body_' + $index"
-                            aria-hidden="true"
-                          />
-                          {{ t()('documents.cover_letter_regen') }}
-                        </button>
-                        <button
-                          class="icon-btn icon-btn--danger"
-                          type="button"
-                          (click)="removeParagraph($index)"
-                          [attr.aria-label]="t()('actions.delete')"
-                        >
-                          <lucide-icon [img]="icons.trash" [size]="13" aria-hidden="true" />
-                        </button>
+              <div class="docedit-collapse" [class.docedit-collapse--closed]="!isBlockOpen('body')">
+                <div>
+                  <div class="coverdetail__paragraphs">
+                    @for (para of content().bodyParagraphs || []; track $index) {
+                      <div class="coverdetail__paragraph">
+                        <div class="coverdetail__paragraph-head">
+                          <span>{{
+                            t()('documents.cover_letter_field_paragraph').replace(
+                              '{index}',
+                              '' + ($index + 1)
+                            )
+                          }}</span>
+                          <div class="coverdetail__paragraph-actions">
+                            <button
+                              type="button"
+                              class="coverdetail__style-btn"
+                              [class.coverdetail__style-btn--active]="
+                                openStyleKey() === paragraphStyleKey($index)
+                              "
+                              [class.coverdetail__style-btn--custom]="
+                                hasCustomStyle(paragraphStyleKey($index))
+                              "
+                              (click)="toggleStylePopover(paragraphStyleKey($index))"
+                            >
+                              {{ t()('documents.cv_section_style') }}
+                            </button>
+                            <button
+                              class="coverdetail__regen"
+                              type="button"
+                              [disabled]="regeneratingBlock() === 'body_' + $index"
+                              (click)="regenerateBlock('body', $index)"
+                            >
+                              <lucide-icon
+                                [img]="icons.regenerate"
+                                [size]="13"
+                                [class.spin]="regeneratingBlock() === 'body_' + $index"
+                                aria-hidden="true"
+                              />
+                              {{ t()('documents.cover_letter_regen') }}
+                            </button>
+                            <button
+                              class="icon-btn icon-btn--danger"
+                              type="button"
+                              (click)="removeParagraph($index)"
+                              [attr.aria-label]="t()('actions.delete')"
+                            >
+                              <lucide-icon [img]="icons.trash" [size]="13" aria-hidden="true" />
+                            </button>
+                          </div>
+                        </div>
+                        @if (openStyleKey() === paragraphStyleKey($index)) {
+                          <ng-container
+                            [ngTemplateOutlet]="stylePopover"
+                            [ngTemplateOutletContext]="{ $implicit: paragraphStyleKey($index) }"
+                          ></ng-container>
+                        }
+                        <textarea
+                          class="coverdetail__textarea"
+                          [ngModel]="para"
+                          (ngModelChange)="updateParagraph($index, $event)"
+                        ></textarea>
                       </div>
-                    </div>
-                    @if (openStyleKey() === paragraphStyleKey($index)) {
-                      <ng-container
-                        [ngTemplateOutlet]="stylePopover"
-                        [ngTemplateOutletContext]="{ $implicit: paragraphStyleKey($index) }"
-                      ></ng-container>
                     }
-                    <textarea
-                      class="coverdetail__textarea"
-                      [ngModel]="para"
-                      (ngModelChange)="updateParagraph($index, $event)"
-                    ></textarea>
                   </div>
-                }
+                  <button class="coverdetail__add" type="button" (click)="addParagraph()">
+                    <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+                    {{ t()('documents.cover_letter_add_paragraph') }}
+                  </button>
+                </div>
               </div>
-              <button class="coverdetail__add" type="button" (click)="addParagraph()">
-                <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                {{ t()('documents.cover_letter_add_paragraph') }}
-              </button>
             </section>
 
             <!-- Closing -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_field_closing')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('closing')"
+                  (click)="toggleBlockCollapse('closing')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('closing')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_field_closing')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <button
                     type="button"
                     class="coverdetail__style-btn"
@@ -598,21 +720,42 @@
                   [ngTemplateOutletContext]="{ $implicit: 'closing' }"
                 ></ng-container>
               }
-              <input
-                type="text"
-                class="coverdetail__full"
-                [ngModel]="content().closing"
-                (ngModelChange)="updateField('closing', $event)"
-              />
+              <div
+                class="docedit-collapse"
+                [class.docedit-collapse--closed]="!isBlockOpen('closing')"
+              >
+                <div>
+                  <input
+                    type="text"
+                    class="coverdetail__full"
+                    [ngModel]="content().closing"
+                    (ngModelChange)="updateField('closing', $event)"
+                  />
+                </div>
+              </div>
             </section>
 
             <!-- Signature -->
-            <section class="coverdetail__block">
-              <div class="coverdetail__block-head">
-                <span class="coverdetail__block-title">{{
-                  t()('documents.cover_letter_field_signature')
-                }}</span>
-                <div class="coverdetail__block-actions">
+            <section class="docedit-section">
+              <div class="docedit-section__head">
+                <button
+                  type="button"
+                  class="docedit-section__toggle"
+                  [attr.aria-expanded]="isBlockOpen('signature')"
+                  (click)="toggleBlockCollapse('signature')"
+                >
+                  <lucide-icon
+                    [img]="icons.chevron"
+                    [size]="15"
+                    aria-hidden="true"
+                    class="docedit-chevron"
+                    [class.docedit-chevron--closed]="!isBlockOpen('signature')"
+                  />
+                  <span class="docedit-section__title">{{
+                    t()('documents.cover_letter_field_signature')
+                  }}</span>
+                </button>
+                <div class="docedit-section__actions">
                   <button
                     type="button"
                     class="coverdetail__style-btn"
@@ -644,12 +787,19 @@
                   [ngTemplateOutletContext]="{ $implicit: 'signature' }"
                 ></ng-container>
               }
-              <input
-                type="text"
-                class="coverdetail__full"
-                [ngModel]="content().signature"
-                (ngModelChange)="updateField('signature', $event)"
-              />
+              <div
+                class="docedit-collapse"
+                [class.docedit-collapse--closed]="!isBlockOpen('signature')"
+              >
+                <div>
+                  <input
+                    type="text"
+                    class="coverdetail__full"
+                    [ngModel]="content().signature"
+                    (ngModelChange)="updateField('signature', $event)"
+                  />
+                </div>
+              </div>
             </section>
           </div>
         </div>

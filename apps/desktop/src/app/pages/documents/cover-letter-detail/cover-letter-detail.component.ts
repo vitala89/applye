@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   ArrowLeft,
+  ChevronDown,
   LucideAngularModule,
   RefreshCw,
   Save,
@@ -97,6 +98,7 @@ export class CoverLetterDetailComponent {
     preview: Eye,
     edit: Pencil,
     draft: Sparkles,
+    chevron: ChevronDown,
   };
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
   protected readonly toneOptions = COVER_LETTER_TONES;
@@ -404,6 +406,30 @@ export class CoverLetterDetailComponent {
 
   toggleStylePopover(key: string): void {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
+  }
+
+  /** Per-block collapse state for the content-block accordion — session only
+   * (not persisted); every block starts expanded (an empty set means nothing
+   * is collapsed). Keyed by the same string keys as `openStyleKey`/
+   * `hasCustomStyle` (`'recipient'`, `'date'`, ..., `'body'`). */
+  readonly collapsedBlocks = signal<Set<string>>(new Set());
+
+  isBlockOpen(key: string): boolean {
+    return !this.collapsedBlocks().has(key);
+  }
+
+  toggleBlockCollapse(key: string): void {
+    const next = new Set(this.collapsedBlocks());
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    this.collapsedBlocks.set(next);
+  }
+
+  /** Collapse state for the "Style" card — open by default. */
+  readonly styleOpen = signal(true);
+
+  toggleStyleOpen(): void {
+    this.styleOpen.set(!this.styleOpen());
   }
 
   sectionOverride(key: string): CvSectionStyle | undefined {

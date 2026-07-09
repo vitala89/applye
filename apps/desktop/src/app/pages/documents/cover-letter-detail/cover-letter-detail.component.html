@@ -789,6 +789,16 @@
                 {{ content().signature }}
               </div>
             </div>
+            <div class="cvpreview__pagebar">
+              <span class="cvpreview__pagecount">{{
+                t()('documents.cv_style_page_count').replace('{n}', pageCount().toString())
+              }}</span>
+            </div>
+            @if (blockOverflow()) {
+              <p class="cvpreview__warning" role="status">
+                {{ t()('documents.cv_style_overflow_warning') }}
+              </p>
+            }
           </div>
         </div>
       }

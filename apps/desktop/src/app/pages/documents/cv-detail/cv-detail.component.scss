@@ -828,7 +828,8 @@
 .cvpreview-viewport {
   overflow: auto;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding: var(--space-4);
   background: var(--surface-2);
 }
@@ -893,6 +894,21 @@
   font-size: var(--text-sm);
   text-align: center;
   padding: var(--space-8);
+}
+.cvpreview__pagebar {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  padding: var(--space-2) 0;
+}
+.cvpreview__warning {
+  margin: var(--space-2) auto 0;
+  max-width: var(--page-w, 720px);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--warning-tint, #fff4e5);
+  color: var(--warning-strong, #8a5a00);
+  font-size: var(--text-sm);
 }
 .cvpreview__name {
   text-transform: uppercase;

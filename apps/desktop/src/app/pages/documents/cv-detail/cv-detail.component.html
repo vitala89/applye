@@ -254,17 +254,19 @@
 
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
             @for (section of sections(); track section.key; let i = $index; let count = $count) {
-              <div cdkDrag class="docedit-section">
+              <div cdkDrag [cdkDragDisabled]="isSectionLocked(section.key)" class="docedit-section">
                 <div class="docedit-section__head">
                   <div class="docedit-section__head-main">
-                    <button
-                      type="button"
-                      class="cvdetail__drag-handle"
-                      cdkDragHandle
-                      [attr.aria-label]="t()('documents.cv_section_drag_handle')"
-                    >
-                      <lucide-icon [img]="icons.dragHandle" [size]="15" aria-hidden="true" />
-                    </button>
+                    @if (!isSectionLocked(section.key)) {
+                      <button
+                        type="button"
+                        class="cvdetail__drag-handle"
+                        cdkDragHandle
+                        [attr.aria-label]="t()('documents.cv_section_drag_handle')"
+                      >
+                        <lucide-icon [img]="icons.dragHandle" [size]="15" aria-hidden="true" />
+                      </button>
+                    }
                     <button
                       type="button"
                       class="docedit-section__toggle"
@@ -312,24 +314,26 @@
                         />
                       </button>
                     }
-                    <button
-                      class="icon-btn"
-                      type="button"
-                      [disabled]="i === 0"
-                      [attr.aria-label]="t()('documents.cv_section_move_up')"
-                      (click)="moveSectionUp(section.key)"
-                    >
-                      <lucide-icon [img]="icons.moveUp" [size]="15" aria-hidden="true" />
-                    </button>
-                    <button
-                      class="icon-btn"
-                      type="button"
-                      [disabled]="i === count - 1"
-                      [attr.aria-label]="t()('documents.cv_section_move_down')"
-                      (click)="moveSectionDown(section.key)"
-                    >
-                      <lucide-icon [img]="icons.moveDown" [size]="15" aria-hidden="true" />
-                    </button>
+                    @if (!isSectionLocked(section.key)) {
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [disabled]="i === 0 || isSectionLocked(sections()[i - 1].key)"
+                        [attr.aria-label]="t()('documents.cv_section_move_up')"
+                        (click)="moveSectionUp(section.key)"
+                      >
+                        <lucide-icon [img]="icons.moveUp" [size]="15" aria-hidden="true" />
+                      </button>
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [disabled]="i === count - 1"
+                        [attr.aria-label]="t()('documents.cv_section_move_down')"
+                        (click)="moveSectionDown(section.key)"
+                      >
+                        <lucide-icon [img]="icons.moveDown" [size]="15" aria-hidden="true" />
+                      </button>
+                    }
                   </div>
                 </div>
                 @if (openStyleKey() === section.key) {

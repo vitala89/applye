@@ -467,6 +467,15 @@
 .cvdetail__skill-chip-remove:hover {
   color: var(--danger);
 }
+.cvdetail__photo-thumb {
+  display: block;
+  width: 132px;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
 .cvdetail__photo-placement {
   margin-top: 12px;
   display: flex;

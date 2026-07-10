@@ -604,19 +604,46 @@ export class CvDetailComponent {
     });
   }
 
+  /** Header sections whose position is fixed — they carry the document's
+   *  identity (photo + personal details) and must stay pinned to the top,
+   *  so reordering (drag or move buttons) is disabled for them. */
+  private static readonly LOCKED_SECTION_KEYS: readonly CvSectionKey[] = [
+    'photo',
+    'personal_details',
+  ];
+
+  isSectionLocked(key: CvSectionKey): boolean {
+    return CvDetailComponent.LOCKED_SECTION_KEYS.includes(key);
+  }
+
+  /** Pins the locked header sections to the top in their canonical order
+   *  (photo, then personal_details), leaving the rest in their given order,
+   *  then reassigns the `order` index. Guarantees a reorder can never move a
+   *  locked section or push another section above it. */
+  private pinLockedSections(list: CvSection[]): CvSection[] {
+    const locked = CvDetailComponent.LOCKED_SECTION_KEYS.map((k) =>
+      list.find((s) => s.key === k),
+    ).filter((s): s is CvSection => !!s);
+    const rest = list.filter((s) => !this.isSectionLocked(s.key));
+    return [...locked, ...rest].map((s, index) => ({ ...s, order: index }));
+  }
+
   drop(event: CdkDragDrop<CvSection[]>): void {
     const list = this.sections().slice();
     moveItemInArray(list, event.previousIndex, event.currentIndex);
-    this.sections.set(list.map((s, index) => ({ ...s, order: index })));
+    this.sections.set(this.pinLockedSections(list));
   }
 
   private moveSection(key: CvSectionKey, offset: -1 | 1): void {
+    if (this.isSectionLocked(key)) return;
     const list = this.sections().slice();
     const index = list.findIndex((s) => s.key === key);
     const target = index + offset;
     if (index < 0 || target < 0 || target >= list.length) return;
+    // Never swap a movable section past a locked header section.
+    if (this.isSectionLocked(list[target].key)) return;
     moveItemInArray(list, index, target);
-    this.sections.set(list.map((s, i) => ({ ...s, order: i })));
+    this.sections.set(this.pinLockedSections(list));
   }
 
   moveSectionUp(key: CvSectionKey): void {

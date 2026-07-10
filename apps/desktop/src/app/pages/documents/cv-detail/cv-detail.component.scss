@@ -467,6 +467,43 @@
 .cvdetail__skill-chip-remove:hover {
   color: var(--danger);
 }
+.cvdetail__photo-placement {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cvdetail__photo-placement-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.cvdetail__chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+.cvdetail__chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.cvdetail__chip:hover {
+  border-color: var(--accent);
+}
+.cvdetail__chip--active {
+  background: var(--accent-tint, var(--surface-hover));
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .cvdetail__skills .cvdetail__skill-add {
   height: 28px;
   width: 150px;

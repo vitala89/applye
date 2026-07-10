@@ -687,6 +687,25 @@
                             </button>
                             <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
                           }
+                          @if (photoDataUri()) {
+                            <div class="cvdetail__photo-placement">
+                              <span class="cvdetail__photo-placement-label">
+                                {{ t()('documents.cv_photo_placement') }}
+                              </span>
+                              <div class="cvdetail__chip-row" role="group">
+                                @for (opt of photoPlacementOptions; track opt.value) {
+                                  <button
+                                    type="button"
+                                    class="cvdetail__chip"
+                                    [class.cvdetail__chip--active]="photoPlacement() === opt.value"
+                                    (click)="setPhotoPlacement(opt.value)"
+                                  >
+                                    {{ t()(opt.labelKey) }}
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          }
                         </div>
                       }
                     }

@@ -46,6 +46,7 @@ import type {
   PageMargins,
   PageSettings,
   PageSize,
+  PhotoPlacement,
   StyleNote,
 } from '@applye/core';
 import {
@@ -161,6 +162,12 @@ export class CvDetailComponent {
   readonly isDefault = signal(false);
   readonly includePhoto = signal(false);
   readonly photoDataUri = signal<string | null>(null);
+  readonly photoPlacement = signal<PhotoPlacement>('above_left');
+  readonly photoPlacementOptions: { value: PhotoPlacement; labelKey: string }[] = [
+    { value: 'above_left', labelKey: 'documents.cv_photo_placement_left' },
+    { value: 'above_center', labelKey: 'documents.cv_photo_placement_center' },
+    { value: 'above_right', labelKey: 'documents.cv_photo_placement_right' },
+  ];
   /** Non-null while the crop modal is open, holding the freshly picked source image. */
   readonly cropSourceUri = signal<string | null>(null);
   readonly includeBirthdate = signal(false);
@@ -550,6 +557,7 @@ export class CvDetailComponent {
         | undefined;
       this.includePhoto.set(photo?.visible ?? false);
       this.photoDataUri.set(photo?.dataUri ?? null);
+      this.photoPlacement.set(photo?.placement ?? 'above_left');
       const personal = ordered.find(
         (s): s is Extract<CvSection, { key: 'personal_details' }> => s.key === 'personal_details',
       );
@@ -824,6 +832,10 @@ export class CvDetailComponent {
     this.photoDataUri.set(null);
   }
 
+  setPhotoPlacement(placement: PhotoPlacement): void {
+    this.photoPlacement.set(placement);
+  }
+
   /**
    * Toggle the "Include photo" chip. Turning it ON guarantees a `photo`
    * section exists in the editor (most templates don't seed one), so the
@@ -850,7 +862,12 @@ export class CvDetailComponent {
     try {
       const sections = this.sections().map((s) => {
         if (s.key === 'photo') {
-          return { ...s, visible: this.includePhoto(), dataUri: this.photoDataUri() ?? undefined };
+          return {
+            ...s,
+            visible: this.includePhoto(),
+            dataUri: this.photoDataUri() ?? undefined,
+            placement: this.photoPlacement(),
+          };
         }
         if (s.key === 'personal_details') {
           return {

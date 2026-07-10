@@ -676,114 +676,175 @@ pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<
     )
 }
 
-/// Maps a user font family + weight to the nearest PDF base font. printpdf only
-/// ships the 14 base fonts, so exact custom fonts (Calibri, Lato) can't render
-/// in PDF without embedding TTFs — a deliberate follow-up. DOCX keeps the real
-/// font name, so only PDF approximates.
-fn pick_pdf_font<'a>(
-    family: &str,
-    bold: bool,
-    helv: &'a printpdf::IndirectFontRef,
-    helv_b: &'a printpdf::IndirectFontRef,
-    times: &'a printpdf::IndirectFontRef,
-    times_b: &'a printpdf::IndirectFontRef,
-    courier: &'a printpdf::IndirectFontRef,
-    courier_b: &'a printpdf::IndirectFontRef,
-) -> &'a printpdf::IndirectFontRef {
+// ── Embedded CV fonts ───────────────────────────────────────────────────────
+// Metric-compatible, freely-redistributable clones of the proprietary ATS-safe
+// fonts, embedded so the printpdf export renders the user's chosen family
+// instead of a base-font approximation. Regular + Bold per family; monospace
+// families keep the printpdf builtin Courier (already a real monospace metric).
+// See assets/fonts/NOTICE.md for the clone→original mapping and licenses.
+const FONT_CARLITO_R: &[u8] = include_bytes!("../../assets/fonts/Carlito-Regular.ttf");
+const FONT_CARLITO_B: &[u8] = include_bytes!("../../assets/fonts/Carlito-Bold.ttf");
+const FONT_ARIMO_R: &[u8] = include_bytes!("../../assets/fonts/Arimo-Regular.ttf");
+const FONT_ARIMO_B: &[u8] = include_bytes!("../../assets/fonts/Arimo-Bold.ttf");
+const FONT_TINOS_R: &[u8] = include_bytes!("../../assets/fonts/Tinos-Regular.ttf");
+const FONT_TINOS_B: &[u8] = include_bytes!("../../assets/fonts/Tinos-Bold.ttf");
+const FONT_GELASIO_R: &[u8] = include_bytes!("../../assets/fonts/Gelasio-Regular.ttf");
+const FONT_GELASIO_B: &[u8] = include_bytes!("../../assets/fonts/Gelasio-Bold.ttf");
+const FONT_LATO_R: &[u8] = include_bytes!("../../assets/fonts/Lato-Regular.ttf");
+const FONT_LATO_B: &[u8] = include_bytes!("../../assets/fonts/Lato-Bold.ttf");
+const FONT_OPENSANS_R: &[u8] = include_bytes!("../../assets/fonts/OpenSans-Regular.ttf");
+const FONT_OPENSANS_B: &[u8] = include_bytes!("../../assets/fonts/OpenSans-Bold.ttf");
+
+/// Which embedded face renders a given user font family. `Courier` is the odd
+/// one out: no bundled clone, it falls back to the printpdf builtin.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+enum PdfFamily {
+    Carlito,  // Calibri clone (also the default fallback — matches CvStyle default)
+    Arimo,    // Arial / Helvetica clone; also covers Verdana/Tahoma (no closer ATS clone)
+    Tinos,    // Times New Roman clone; also covers Garamond/Cambria/generic serif
+    Gelasio,  // Georgia clone
+    Lato,     // native OFL font
+    OpenSans, // native OFL font
+    Courier,  // builtin (monospace) — no embedded bytes
+}
+
+/// Map a user font-family string to the nearest bundled face. Specific names are
+/// matched before the generic `serif`/`sans` fallbacks so e.g. "Georgia" hits
+/// Gelasio rather than the serif catch-all.
+fn pick_pdf_family(family: &str) -> PdfFamily {
     let f = family.to_lowercase();
-    let mono = ["courier", "mono", "consolas"]
-        .iter()
-        .any(|s| f.contains(s));
-    let serif = [
+    let has = |needles: &[&str]| needles.iter().any(|s| f.contains(s));
+    if has(&["courier", "mono", "consolas"]) {
+        PdfFamily::Courier
+    } else if has(&["calibri", "carlito"]) {
+        PdfFamily::Carlito
+    } else if has(&["georgia", "gelasio"]) {
+        PdfFamily::Gelasio
+    } else if has(&["lato"]) {
+        PdfFamily::Lato
+    } else if has(&["open sans", "opensans"]) {
+        PdfFamily::OpenSans
+    } else if has(&[
         "times",
-        "georgia",
+        "tinos",
         "garamond",
-        "serif",
         "cambria",
         "book antiqua",
-    ]
-    .iter()
-    .any(|s| f.contains(s));
-    if mono {
-        if bold {
-            courier_b
-        } else {
-            courier
-        }
-    } else if serif {
-        if bold {
-            times_b
-        } else {
-            times
-        }
-    } else if bold {
-        helv_b
+        "serif",
+    ]) {
+        PdfFamily::Tinos
+    } else if has(&["arial", "helvetica", "arimo", "verdana", "tahoma", "sans"]) {
+        PdfFamily::Arimo
     } else {
-        helv
+        PdfFamily::Carlito
     }
 }
 
-/// Average glyph-advance as a fraction of point size, used to estimate text
-/// width for wrapping. printpdf's base fonts expose no metrics, so this is a
-/// deliberately conservative heuristic (slightly over-estimating width keeps
-/// wide-glyph lines inside the margin rather than clipping).
-fn char_ratio(family: &str) -> f32 {
-    let f = family.to_lowercase();
-    if ["courier", "mono", "consolas"]
-        .iter()
-        .any(|s| f.contains(s))
-    {
-        0.62 // monospace advances are wider
-    } else {
-        0.53
-    }
+/// Raw TTF bytes for an embedded face, or `None` for `Courier` (builtin).
+fn pdf_font_bytes(fam: PdfFamily, bold: bool) -> Option<&'static [u8]> {
+    Some(match (fam, bold) {
+        (PdfFamily::Carlito, false) => FONT_CARLITO_R,
+        (PdfFamily::Carlito, true) => FONT_CARLITO_B,
+        (PdfFamily::Arimo, false) => FONT_ARIMO_R,
+        (PdfFamily::Arimo, true) => FONT_ARIMO_B,
+        (PdfFamily::Tinos, false) => FONT_TINOS_R,
+        (PdfFamily::Tinos, true) => FONT_TINOS_B,
+        (PdfFamily::Gelasio, false) => FONT_GELASIO_R,
+        (PdfFamily::Gelasio, true) => FONT_GELASIO_B,
+        (PdfFamily::Lato, false) => FONT_LATO_R,
+        (PdfFamily::Lato, true) => FONT_LATO_B,
+        (PdfFamily::OpenSans, false) => FONT_OPENSANS_R,
+        (PdfFamily::OpenSans, true) => FONT_OPENSANS_B,
+        (PdfFamily::Courier, _) => return None,
+    })
 }
 
-/// Greedy word-wrap to a max character count. A word longer than the limit
-/// (e.g. a long URL) is hard-split so it can never overflow the page width.
-fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
-    if max_chars == 0 {
-        return vec![text.to_string()];
+/// Every proportional (family, bold) pair we bundle. Production loads only the
+/// faces a document actually uses; this full list backs the coverage test.
+#[cfg(test)]
+const EMBEDDED_FACES: &[(PdfFamily, bool)] = &[
+    (PdfFamily::Carlito, false),
+    (PdfFamily::Carlito, true),
+    (PdfFamily::Arimo, false),
+    (PdfFamily::Arimo, true),
+    (PdfFamily::Tinos, false),
+    (PdfFamily::Tinos, true),
+    (PdfFamily::Gelasio, false),
+    (PdfFamily::Gelasio, true),
+    (PdfFamily::Lato, false),
+    (PdfFamily::Lato, true),
+    (PdfFamily::OpenSans, false),
+    (PdfFamily::OpenSans, true),
+];
+
+/// Rendered width of `text` at `size_pt`, in points, from the real glyph
+/// advances of `face`. Missing glyphs contribute zero — a negligible
+/// under-estimate for the odd unsupported character.
+fn text_width_pt(text: &str, size_pt: f32, face: &ttf_parser::Face) -> f32 {
+    let upem = face.units_per_em() as f32;
+    if upem <= 0.0 {
+        return 0.0;
     }
+    text.chars()
+        .map(|ch| {
+            face.glyph_index(ch)
+                .and_then(|g| face.glyph_hor_advance(g))
+                .unwrap_or(0) as f32
+                / upem
+                * size_pt
+        })
+        .sum()
+}
+
+/// Greedy word-wrap to a printable width (mm), measuring each candidate line
+/// against real font metrics (`face`) or, for the builtin Courier, a fixed
+/// monospace advance of 0.6·em. A single word wider than the line is hard-split
+/// by character so it can never overflow the page.
+fn wrap_measured(
+    text: &str,
+    size_pt: f32,
+    avail_mm: f32,
+    face: Option<&ttf_parser::Face>,
+) -> Vec<String> {
+    const PT_TO_MM: f32 = 0.352_777_8;
+    let width_mm = |s: &str| -> f32 {
+        match face {
+            Some(f) => text_width_pt(s, size_pt, f) * PT_TO_MM,
+            None => s.chars().count() as f32 * 0.6 * size_pt * PT_TO_MM,
+        }
+    };
     let mut lines: Vec<String> = Vec::new();
     let mut cur = String::new();
-    let mut cur_len = 0usize;
     for word in text.split_whitespace() {
-        let wlen = word.chars().count();
-        if wlen > max_chars {
+        // Hard-split a word that cannot fit on its own line.
+        if width_mm(word) > avail_mm && avail_mm > 0.0 {
             if !cur.is_empty() {
                 lines.push(std::mem::take(&mut cur));
             }
-            let mut rest = word;
-            while rest.chars().count() > max_chars {
-                let idx = rest
-                    .char_indices()
-                    .nth(max_chars)
-                    .map(|(i, _)| i)
-                    .unwrap_or(rest.len());
-                lines.push(rest[..idx].to_string());
-                rest = &rest[idx..];
+            let mut piece = String::new();
+            for ch in word.chars() {
+                let mut cand = piece.clone();
+                cand.push(ch);
+                if width_mm(&cand) > avail_mm && !piece.is_empty() {
+                    lines.push(std::mem::take(&mut piece));
+                    piece.push(ch);
+                } else {
+                    piece = cand;
+                }
             }
-            cur = rest.to_string();
-            cur_len = cur.chars().count();
+            cur = piece;
             continue;
         }
-        let projected = if cur.is_empty() {
-            wlen
+        let cand = if cur.is_empty() {
+            word.to_string()
         } else {
-            cur_len + 1 + wlen
+            format!("{cur} {word}")
         };
-        if projected > max_chars {
+        if cur.is_empty() || width_mm(&cand) <= avail_mm {
+            cur = cand;
+        } else {
             lines.push(std::mem::take(&mut cur));
             cur = word.to_string();
-            cur_len = wlen;
-        } else {
-            if !cur.is_empty() {
-                cur.push(' ');
-                cur_len += 1;
-            }
-            cur.push_str(word);
-            cur_len += wlen;
         }
     }
     if !cur.is_empty() {
@@ -809,24 +870,38 @@ pub(crate) fn render_blocks_pdf(
     let (doc, page1, layer1) =
         PdfDocument::new("CV", Mm(page.width_mm), Mm(page.height_mm), "Layer 1");
 
-    let helv = doc
-        .add_builtin_font(BuiltinFont::Helvetica)
-        .map_err(|e| format!("pdf font: {e}"))?;
-    let helv_b = doc
-        .add_builtin_font(BuiltinFont::HelveticaBold)
-        .map_err(|e| format!("pdf font: {e}"))?;
-    let times = doc
-        .add_builtin_font(BuiltinFont::TimesRoman)
-        .map_err(|e| format!("pdf font: {e}"))?;
-    let times_b = doc
-        .add_builtin_font(BuiltinFont::TimesBold)
-        .map_err(|e| format!("pdf font: {e}"))?;
+    // Monospace families keep the printpdf builtin Courier; everything else
+    // uses an embedded metric-clone loaded once here. `refs` feeds `use_text`;
+    // `faces` gives real glyph advances for line-wrapping.
     let courier = doc
         .add_builtin_font(BuiltinFont::Courier)
         .map_err(|e| format!("pdf font: {e}"))?;
     let courier_b = doc
         .add_builtin_font(BuiltinFont::CourierBold)
         .map_err(|e| format!("pdf font: {e}"))?;
+    // printpdf embeds every font added to the document, with no subsetting, so
+    // only load the (family, weight) pairs the blocks actually use — otherwise
+    // every PDF would carry all ~5 MB of bundled faces.
+    let mut needed: std::collections::HashSet<(PdfFamily, bool)> = std::collections::HashSet::new();
+    for b in blocks {
+        let fam = pick_pdf_family(&b.font_family);
+        if fam != PdfFamily::Courier {
+            needed.insert((fam, b.bold));
+        }
+    }
+    let mut refs: std::collections::HashMap<(PdfFamily, bool), printpdf::IndirectFontRef> =
+        std::collections::HashMap::new();
+    let mut faces: std::collections::HashMap<(PdfFamily, bool), ttf_parser::Face<'static>> =
+        std::collections::HashMap::new();
+    for (fam, bold) in needed {
+        let bytes = pdf_font_bytes(fam, bold).expect("embedded face has bytes");
+        let font_ref = doc
+            .add_external_font(std::io::Cursor::new(bytes))
+            .map_err(|e| format!("pdf font: {e}"))?;
+        let face = ttf_parser::Face::parse(bytes, 0).map_err(|e| format!("pdf font parse: {e}"))?;
+        refs.insert((fam, bold), font_ref);
+        faces.insert((fam, bold), face);
+    }
 
     // PDF geometry uses a single margin value; the per-side model has richer
     // data (top/right/bottom/left) but this legacy `printpdf` path predates it
@@ -895,31 +970,22 @@ pub(crate) fn render_blocks_pdf(
 
     for b in blocks {
         let (r, g, bl) = b.rgb;
-        let font = pick_pdf_font(
-            &b.font_family,
-            b.bold,
-            &helv,
-            &helv_b,
-            &times,
-            &times_b,
-            &courier,
-            &courier_b,
-        );
+        let fam = pick_pdf_family(&b.font_family);
+        let (font, face) = match fam {
+            PdfFamily::Courier => (if b.bold { &courier_b } else { &courier }, None),
+            _ => (
+                refs.get(&(fam, b.bold)).expect("embedded ref loaded"),
+                Some(faces.get(&(fam, b.bold)).expect("embedded face loaded")),
+            ),
+        };
         let bullet = b.level == BlockLevel::Bullet;
         let base_x = if bullet { indent_mm } else { margin_mm };
 
         // Wrap to the printable width — printpdf's `use_text` never wraps, so a
-        // long line would run off the right edge and be clipped. Estimate the
-        // character budget from the font's average advance (base fonts expose
-        // no metrics) and greedily fold words onto new lines.
-        let char_w_mm = b.size_pt as f32 * 0.3528 * char_ratio(&b.font_family);
+        // long line would run off the right edge and be clipped. Measure each
+        // candidate line against the embedded font's real glyph advances.
         let avail_mm = page_w_mm - base_x - right_margin_mm;
-        let max_chars = if char_w_mm > 0.0 {
-            (avail_mm / char_w_mm).floor().max(1.0) as usize
-        } else {
-            usize::MAX
-        };
-        let wrapped = wrap_text(&b.text, max_chars);
+        let wrapped = wrap_measured(&b.text, b.size_pt as f32, avail_mm, face);
         // pt → mm (×0.3528) with ~1.35 leading.
         let line_h = b.size_pt as f32 * 0.3528 * 1.35;
 
@@ -1140,8 +1206,10 @@ mod tests {
 
     #[test]
     fn resolve_blocks_bold_when_weight_is_semibold() {
-        let mut style = CvStyle::default();
-        style.font_weight = 600;
+        let style = CvStyle {
+            font_weight: 600,
+            ..CvStyle::default()
+        };
         let blocks = vec![StyledBlock {
             level: BlockLevel::Body,
             section_key: None,
@@ -1172,26 +1240,76 @@ mod tests {
     }
 
     #[test]
-    fn wrap_text_folds_words_greedily() {
-        let lines = wrap_text("one two three four", 8);
-        // "one two" = 7 fits; +" three" would be 13 > 8 → break.
-        assert_eq!(lines, vec!["one two", "three", "four"]);
+    fn pick_pdf_family_maps_known_families() {
+        assert_eq!(pick_pdf_family("Calibri"), PdfFamily::Carlito);
+        assert_eq!(pick_pdf_family("Arial"), PdfFamily::Arimo);
+        assert_eq!(pick_pdf_family("Helvetica Neue"), PdfFamily::Arimo);
+        assert_eq!(pick_pdf_family("Times New Roman"), PdfFamily::Tinos);
+        assert_eq!(pick_pdf_family("Garamond"), PdfFamily::Tinos);
+        assert_eq!(pick_pdf_family("Georgia"), PdfFamily::Gelasio);
+        assert_eq!(pick_pdf_family("Lato"), PdfFamily::Lato);
+        assert_eq!(pick_pdf_family("Open Sans"), PdfFamily::OpenSans);
+        assert_eq!(pick_pdf_family("Consolas"), PdfFamily::Courier);
+        // Unknown family falls back to the Calibri clone (CvStyle default).
+        assert_eq!(pick_pdf_family("Wingdings"), PdfFamily::Carlito);
+    }
+
+    #[test]
+    fn every_embedded_face_parses_and_has_bytes() {
+        for &(fam, bold) in EMBEDDED_FACES {
+            let bytes = pdf_font_bytes(fam, bold).expect("bytes present");
+            let face = ttf_parser::Face::parse(bytes, 0).expect("valid ttf");
+            assert!(face.units_per_em() > 0);
+        }
+        assert!(pdf_font_bytes(PdfFamily::Courier, false).is_none());
+    }
+
+    #[test]
+    fn text_width_pt_scales_linearly_with_size() {
+        let face = ttf_parser::Face::parse(FONT_CARLITO_R, 0).unwrap();
+        let w10 = text_width_pt("Experience", 10.0, &face);
+        let w20 = text_width_pt("Experience", 20.0, &face);
+        assert!(w10 > 0.0);
+        assert!((w20 - 2.0 * w10).abs() < 0.01);
+    }
+
+    #[test]
+    fn wrap_measured_keeps_lines_within_width() {
+        let face = ttf_parser::Face::parse(FONT_CARLITO_R, 0).unwrap();
+        let avail = 40.0_f32;
+        let lines = wrap_measured(
+            "Led a cross functional team delivering privacy first features",
+            11.0,
+            avail,
+            Some(&face),
+        );
+        assert!(lines.len() > 1, "long text should wrap");
         for l in &lines {
-            assert!(l.chars().count() <= 8);
+            assert!(
+                text_width_pt(l, 11.0, &face) * 0.352_777_8 <= avail + 0.01,
+                "line over width: {l:?}"
+            );
         }
     }
 
     #[test]
-    fn wrap_text_hard_splits_overlong_word() {
-        let lines = wrap_text("supercalifragilistic", 5);
-        assert!(lines.iter().all(|l| l.chars().count() <= 5));
-        assert_eq!(lines.concat(), "supercalifragilistic"); // nothing lost
+    fn wrap_measured_hard_splits_overlong_word_without_loss() {
+        let face = ttf_parser::Face::parse(FONT_CARLITO_R, 0).unwrap();
+        let word = "supercalifragilisticexpialidocious";
+        let lines = wrap_measured(word, 11.0, 12.0, Some(&face));
+        assert_eq!(lines.concat(), word, "no characters lost");
     }
 
     #[test]
-    fn wrap_text_handles_empty_and_zero_budget() {
-        assert_eq!(wrap_text("", 10), vec![String::new()]);
-        assert_eq!(wrap_text("keep whole", 0), vec!["keep whole"]);
+    fn wrap_measured_handles_empty_and_courier_fallback() {
+        let face = ttf_parser::Face::parse(FONT_CARLITO_R, 0).unwrap();
+        assert_eq!(
+            wrap_measured("", 11.0, 40.0, Some(&face)),
+            vec![String::new()]
+        );
+        // No face (Courier builtin path) still wraps via the monospace estimate.
+        let mono = wrap_measured("alpha beta gamma delta", 11.0, 20.0, None);
+        assert!(mono.len() > 1);
     }
 
     #[test]
@@ -1268,6 +1386,48 @@ mod tests {
         let c3 = resolve_page(&bad);
         assert_eq!(c3.margin.top, 0.0);
         assert_eq!(c3.margin.right, 50.0);
+    }
+
+    #[test]
+    fn pdf_embeds_font_for_proprietary_family() {
+        // A "Calibri" CV renders through the embedded Carlito clone, so the PDF
+        // carries an embedded TTF and is far larger than the same text drawn
+        // with a builtin (non-embedded) monospace font. printpdf compresses
+        // object streams, so we assert on the embedded-font footprint rather
+        // than grepping for the font name.
+        let render = |family: &str| {
+            let style = crate::commands::documents::CvStyle {
+                font_family: family.into(),
+                ..crate::commands::documents::CvStyle::default()
+            };
+            let blocks = resolve_blocks(
+                &style,
+                &[StyledBlock {
+                    level: BlockLevel::Body,
+                    section_key: None,
+                    text: "Experienced engineer".into(),
+                    bold: false,
+                }],
+                false,
+            );
+            let page = resolve_page(&crate::commands::documents::PageSettings::default());
+            render_blocks_pdf(&blocks, None, PhotoPlacement::AboveCenter, &page).expect("pdf")
+        };
+        let embedded = render("Calibri"); // → Carlito, embedded TTF
+        let builtin = render("Courier New"); // → builtin Courier, no embed
+        assert!(
+            embedded.len() > builtin.len() + 50_000,
+            "embedded-font PDF ({} B) should dwarf the builtin one ({} B)",
+            embedded.len(),
+            builtin.len()
+        );
+        // Regression guard: only the used face is embedded, not all ~5 MB of
+        // bundled fonts. One regular face (Carlito ≈ 0.6 MB) stays well under 2 MB.
+        assert!(
+            embedded.len() < 2_000_000,
+            "PDF embeds only the used face, not the whole bundle ({} B)",
+            embedded.len()
+        );
     }
 
     #[test]

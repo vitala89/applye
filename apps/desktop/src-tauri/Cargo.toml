@@ -34,6 +34,10 @@ docx-rs = "0.4"
 # `embedded_images` pulls printpdf's bundled `image` crate (0.24) and the
 # `image_crate` re-export used to decode the CV photo for PDF embedding.
 printpdf = { version = "0.7", features = ["embedded_images"] }
+# Read glyph advances from the embedded CV fonts so PDF line-wrapping matches
+# the real font metrics instead of a per-family char-width guess. printpdf 0.7
+# embeds the TTF but does not expose per-glyph widths to callers.
+ttf-parser = "0.25"
 # Import tracklist (Phase 6.4): XLSX parsing, read-only. CSV/JSON/text are
 # forwarded as raw text — the import-tracklist skill does structure
 # detection on the text directly, no Rust-side CSV parsing needed.

@@ -14,10 +14,16 @@
 // Card
 // ---------------------------------------------------------------------------
 
+// Comfortable form-column width so cards don't stretch full-bleed across the
+// wide edit pane (controls inside are width:100% and would otherwise sprawl).
+$docedit-max: 640px;
+
 .docedit-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  width: 100%;
+  max-width: $docedit-max;
   background: var(--surface-1);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius-card);
@@ -152,10 +158,13 @@
 .docedit-meta-row {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
 }
 .docedit-meta-row select {
+  flex: 0 1 auto;
   width: auto;
+  max-width: 100%;
   height: var(--control-h, 36px);
   min-width: 130px;
   padding: 0 var(--space-4);
@@ -236,8 +245,10 @@
   appearance: auto;
   -webkit-appearance: auto;
 }
+// Short numeric fields (Size) read as compact boxes, not full-cell inputs.
 .docedit-style-grid input[type='number'] {
   text-align: left;
+  max-width: 120px;
 }
 .docedit-style-grid select:focus,
 .docedit-style-grid input:focus {
@@ -249,6 +260,7 @@
   display: flex;
   align-items: center;
   gap: 0;
+  max-width: 200px;
   background: var(--surface-sunken);
   border: var(--border-width) solid var(--border-default);
   border-radius: var(--radius-input);
@@ -291,20 +303,23 @@
   height: 100%;
 }
 
-// Margins — one tidy row of 4 labelled inputs, wraps to 2x2 when narrow.
+// Margins — one tidy row of 4 compact labelled boxes, left-clustered so they
+// read as small numeric fields (not stretched full-width inputs). Wraps when
+// the pane is narrow.
 .docedit-margin-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 96px));
+  justify-content: start;
   gap: var(--space-3);
 }
 @container (max-width: 420px) {
   .docedit-margin-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 96px));
   }
 }
 @media (max-width: 620px) {
   .docedit-margin-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 96px));
   }
 }
 .docedit-margin-field {
@@ -392,6 +407,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  width: 100%;
+  max-width: $docedit-max;
   background: var(--surface-1);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius-card);

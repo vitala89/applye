@@ -172,6 +172,18 @@ describe('CvDetailComponent per-section style', () => {
     expect(ids.filter((id) => id.startsWith('sec:experience:e')).length).toBe(2);
   });
 
+  it('defaults photoPlacement to above_left and updates on chip select', () => {
+    expect(component.photoPlacement()).toBe('above_left');
+    component.setPhotoPlacement('above_right');
+    expect(component.photoPlacement()).toBe('above_right');
+  });
+
+  it('maps placement to a header modifier class', () => {
+    expect(component.headerPlacementClass('above_left')).toBe('cvpreview__header--left');
+    expect(component.headerPlacementClass('above_center')).toBe('cvpreview__header--center');
+    expect(component.headerPlacementClass('above_right')).toBe('cvpreview__header--right');
+  });
+
   it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     document.body.classList.remove('printing-cv');

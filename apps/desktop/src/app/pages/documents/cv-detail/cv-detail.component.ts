@@ -46,6 +46,7 @@ import type {
   PageMargins,
   PageSettings,
   PageSize,
+  PhotoPlacement,
   StyleNote,
 } from '@applye/core';
 import {
@@ -161,6 +162,12 @@ export class CvDetailComponent {
   readonly isDefault = signal(false);
   readonly includePhoto = signal(false);
   readonly photoDataUri = signal<string | null>(null);
+  readonly photoPlacement = signal<PhotoPlacement>('above_left');
+  readonly photoPlacementOptions: { value: PhotoPlacement; labelKey: string }[] = [
+    { value: 'above_left', labelKey: 'documents.cv_photo_placement_left' },
+    { value: 'above_center', labelKey: 'documents.cv_photo_placement_center' },
+    { value: 'above_right', labelKey: 'documents.cv_photo_placement_right' },
+  ];
   /** Non-null while the crop modal is open, holding the freshly picked source image. */
   readonly cropSourceUri = signal<string | null>(null);
   readonly includeBirthdate = signal(false);
@@ -280,7 +287,7 @@ export class CvDetailComponent {
           out.push({
             id: 'header',
             tpl: this.headerTpl(),
-            ctx: { $implicit: section, photoUri },
+            ctx: { $implicit: section, photoUri, placement: this.photoPlacement() },
           });
           break;
         case 'summary':
@@ -550,6 +557,7 @@ export class CvDetailComponent {
         | undefined;
       this.includePhoto.set(photo?.visible ?? false);
       this.photoDataUri.set(photo?.dataUri ?? null);
+      this.photoPlacement.set(photo?.placement ?? 'above_left');
       const personal = ordered.find(
         (s): s is Extract<CvSection, { key: 'personal_details' }> => s.key === 'personal_details',
       );
@@ -596,19 +604,46 @@ export class CvDetailComponent {
     });
   }
 
+  /** Header sections whose position is fixed — they carry the document's
+   *  identity (photo + personal details) and must stay pinned to the top,
+   *  so reordering (drag or move buttons) is disabled for them. */
+  private static readonly LOCKED_SECTION_KEYS: readonly CvSectionKey[] = [
+    'photo',
+    'personal_details',
+  ];
+
+  isSectionLocked(key: CvSectionKey): boolean {
+    return CvDetailComponent.LOCKED_SECTION_KEYS.includes(key);
+  }
+
+  /** Pins the locked header sections to the top in their canonical order
+   *  (photo, then personal_details), leaving the rest in their given order,
+   *  then reassigns the `order` index. Guarantees a reorder can never move a
+   *  locked section or push another section above it. */
+  private pinLockedSections(list: CvSection[]): CvSection[] {
+    const locked = CvDetailComponent.LOCKED_SECTION_KEYS.map((k) =>
+      list.find((s) => s.key === k),
+    ).filter((s): s is CvSection => !!s);
+    const rest = list.filter((s) => !this.isSectionLocked(s.key));
+    return [...locked, ...rest].map((s, index) => ({ ...s, order: index }));
+  }
+
   drop(event: CdkDragDrop<CvSection[]>): void {
     const list = this.sections().slice();
     moveItemInArray(list, event.previousIndex, event.currentIndex);
-    this.sections.set(list.map((s, index) => ({ ...s, order: index })));
+    this.sections.set(this.pinLockedSections(list));
   }
 
   private moveSection(key: CvSectionKey, offset: -1 | 1): void {
+    if (this.isSectionLocked(key)) return;
     const list = this.sections().slice();
     const index = list.findIndex((s) => s.key === key);
     const target = index + offset;
     if (index < 0 || target < 0 || target >= list.length) return;
+    // Never swap a movable section past a locked header section.
+    if (this.isSectionLocked(list[target].key)) return;
     moveItemInArray(list, index, target);
-    this.sections.set(list.map((s, i) => ({ ...s, order: i })));
+    this.sections.set(this.pinLockedSections(list));
   }
 
   moveSectionUp(key: CvSectionKey): void {
@@ -824,6 +859,16 @@ export class CvDetailComponent {
     this.photoDataUri.set(null);
   }
 
+  setPhotoPlacement(placement: PhotoPlacement): void {
+    this.photoPlacement.set(placement);
+  }
+
+  headerPlacementClass(placement: PhotoPlacement): string {
+    const suffix =
+      placement === 'above_center' ? 'center' : placement === 'above_right' ? 'right' : 'left';
+    return `cvpreview__header--${suffix}`;
+  }
+
   /**
    * Toggle the "Include photo" chip. Turning it ON guarantees a `photo`
    * section exists in the editor (most templates don't seed one), so the
@@ -850,7 +895,12 @@ export class CvDetailComponent {
     try {
       const sections = this.sections().map((s) => {
         if (s.key === 'photo') {
-          return { ...s, visible: this.includePhoto(), dataUri: this.photoDataUri() ?? undefined };
+          return {
+            ...s,
+            visible: this.includePhoto(),
+            dataUri: this.photoDataUri() ?? undefined,
+            placement: this.photoPlacement(),
+          };
         }
         if (s.key === 'personal_details') {
           return {

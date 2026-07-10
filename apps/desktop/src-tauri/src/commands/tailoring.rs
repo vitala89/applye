@@ -291,6 +291,10 @@ pub(crate) struct RenderBlock {
     pub rgb: (u8, u8, u8),
     pub bold: bool,
     pub text: String,
+    /// Section this block belongs to; the DOCX renderer uses
+    /// `Some("personal_details")` to find the leading blocks for the
+    /// photo-beside-header table cell in side placements.
+    pub section_key: Option<String>,
 }
 
 struct EffStyle {
@@ -422,6 +426,7 @@ pub(crate) fn resolve_blocks(
                 rgb: eff.rgb,
                 bold: b.level.is_heading() || b.bold || eff.weight >= 600,
                 text: b.text.clone(),
+                section_key: b.section_key.clone(),
             }
         })
         .collect()
@@ -475,16 +480,83 @@ pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
     let page = resolve_page(&crate::commands::documents::PageSettings::default());
-    render_blocks_docx(&resolved, photo, &page)
+    // Journal exports have no section tags; a photo (when present) sits at the
+    // top of the document — AboveCenter mirrors that top placement.
+    render_blocks_docx(
+        &resolved,
+        photo,
+        crate::commands::documents::PhotoPlacement::AboveCenter,
+        &page,
+    )
+}
+
+/// Builds a styled DOCX paragraph from a `RenderBlock`. Single source of the
+/// per-block run styling + vertical rhythm, reused by the main body flow, the
+/// photo-beside-header table cell, and the below-table blocks so all three stay
+/// pixel-identical. docx-rs paragraphs are flush by default, which reads as
+/// cramped next to the spaced PDF; the before/after (twips, 1/20 pt) scale to
+/// the block size so headings breathe and body/bullets stay tight.
+fn block_paragraph(b: &RenderBlock) -> docx_rs::Paragraph {
+    use docx_rs::*;
+
+    let (r, g, bl) = b.rgb;
+    let text = if b.level == BlockLevel::Bullet {
+        format!("•  {}", b.text)
+    } else {
+        b.text.clone()
+    };
+    let mut run = Run::new()
+        .add_text(&text)
+        .size((b.size_pt * 2.0).round() as usize) // docx size is half-points
+        .color(format!("{r:02X}{g:02X}{bl:02X}"))
+        .fonts(
+            RunFonts::new()
+                .ascii(&b.font_family)
+                .hi_ansi(&b.font_family),
+        );
+    if b.bold {
+        run = run.bold();
+    }
+    let (before, after) = match b.level {
+        BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3 => (
+            (b.size_pt * 9.0).round() as u32,
+            (b.size_pt * 3.0).round() as u32,
+        ),
+        BlockLevel::Bullet => (0, (b.size_pt * 2.0).round() as u32),
+        BlockLevel::Body => (0, (b.size_pt * 3.5).round() as u32),
+    };
+    let mut para = Paragraph::new()
+        .add_run(run)
+        .line_spacing(LineSpacing::new().before(before).after(after));
+    if b.level == BlockLevel::Bullet {
+        para = para.indent(Some(360), None, None, None);
+    }
+    para
+}
+
+/// Serialises a built `Docx` to the in-memory .docx byte stream.
+fn finish_docx(doc: docx_rs::Docx) -> Result<Vec<u8>, String> {
+    let mut buf = Vec::new();
+    doc.build()
+        .pack(std::io::Cursor::new(&mut buf))
+        .map_err(|e| format!("docx pack: {e}"))?;
+    Ok(buf)
 }
 
 /// `pub(crate)`, not private: the library CV/cover-letter export in
 /// `commands::documents` builds section-tagged blocks and calls this directly.
+///
+/// `placement` controls the CV photo: `AboveCenter` centres the photo in its
+/// own paragraph with all content below; `AboveLeft`/`AboveRight` place the
+/// photo in a borderless 2-cell table beside the leading `personal_details`
+/// blocks (cell order sets the side), with the remaining blocks below.
 pub(crate) fn render_blocks_docx(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
+    placement: crate::commands::documents::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
+    use crate::commands::documents::PhotoPlacement;
     use docx_rs::*;
 
     // Page size + margins. docx-rs takes twips (1 mm ≈ 56.6929 twips / DXA).
@@ -499,60 +571,63 @@ pub(crate) fn render_blocks_docx(
                 .right(tw(page.margin.right)),
         );
 
-    if let Some(bytes) = photo {
-        // docx-rs 0.4: `Pic::new(&[u8])` decodes/re-encodes and computes pixel
-        // size; we override the box to ~2.7cm x 3.6cm (3:4) in EMU
-        // (914400 EMU/inch). First paragraph, so text flows below it — the same
-        // top-of-document placement the PDF renderer mirrors.
-        let pic = Pic::new(bytes).size(972_000, 1_296_000);
-        doc = doc.add_paragraph(Paragraph::new().add_run(Run::new().add_image(pic)));
-    }
+    // docx-rs 0.4: `Pic::new(&[u8])` decodes/re-encodes and computes pixel
+    // size; we override the box to ~2.7cm x 3.6cm (3:4) in EMU (914400 EMU/inch).
+    let pic = photo.map(|bytes| Pic::new(bytes).size(972_000, 1_296_000));
+    let is_personal = |b: &RenderBlock| b.section_key.as_deref() == Some("personal_details");
 
-    for b in blocks {
-        let (r, g, bl) = b.rgb;
-        let text = if b.level == BlockLevel::Bullet {
-            format!("•  {}", b.text)
-        } else {
-            b.text.clone()
-        };
-        let mut run = Run::new()
-            .add_text(&text)
-            .size((b.size_pt * 2.0).round() as usize) // docx size is half-points
-            .color(format!("{r:02X}{g:02X}{bl:02X}"))
-            .fonts(
-                RunFonts::new()
-                    .ascii(&b.font_family)
-                    .hi_ansi(&b.font_family),
+    match (pic, placement) {
+        (Some(pic), PhotoPlacement::AboveLeft) | (Some(pic), PhotoPlacement::AboveRight) => {
+            // Leading personal_details blocks share a row with the photo; the
+            // rest of the CV flows below the table.
+            let split = blocks
+                .iter()
+                .position(|b| !is_personal(b))
+                .unwrap_or(blocks.len());
+            let (head, rest) = blocks.split_at(split);
+
+            let photo_cell = TableCell::new()
+                .clear_all_border()
+                .add_paragraph(Paragraph::new().add_run(Run::new().add_image(pic)));
+            let mut text_cell = TableCell::new().clear_all_border();
+            if head.is_empty() {
+                text_cell = text_cell.add_paragraph(Paragraph::new());
+            } else {
+                for b in head {
+                    text_cell = text_cell.add_paragraph(block_paragraph(b));
+                }
+            }
+
+            let cells = if placement == PhotoPlacement::AboveLeft {
+                vec![photo_cell, text_cell]
+            } else {
+                vec![text_cell, photo_cell]
+            };
+            let table =
+                Table::new(vec![TableRow::new(cells)]).set_borders(TableBorders::new().clear_all());
+            doc = doc.add_table(table);
+            for b in rest {
+                doc = doc.add_paragraph(block_paragraph(b));
+            }
+        }
+        (Some(pic), PhotoPlacement::AboveCenter) => {
+            doc = doc.add_paragraph(
+                Paragraph::new()
+                    .align(AlignmentType::Center)
+                    .add_run(Run::new().add_image(pic)),
             );
-        if b.bold {
-            run = run.bold();
+            for b in blocks {
+                doc = doc.add_paragraph(block_paragraph(b));
+            }
         }
-        // Vertical rhythm — docx-rs paragraphs are flush by default, which reads
-        // as cramped next to the spaced PDF. Add space before/after (twips,
-        // 1/20 pt) scaled to the block size so headings breathe and body/bullets
-        // stay tight, mirroring the PDF's inter-block gaps.
-        let (before, after) = match b.level {
-            BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3 => (
-                (b.size_pt * 9.0).round() as u32,
-                (b.size_pt * 3.0).round() as u32,
-            ),
-            BlockLevel::Bullet => (0, (b.size_pt * 2.0).round() as u32),
-            BlockLevel::Body => (0, (b.size_pt * 3.5).round() as u32),
-        };
-        let mut para = Paragraph::new()
-            .add_run(run)
-            .line_spacing(LineSpacing::new().before(before).after(after));
-        if b.level == BlockLevel::Bullet {
-            para = para.indent(Some(360), None, None, None);
+        (None, _) => {
+            for b in blocks {
+                doc = doc.add_paragraph(block_paragraph(b));
+            }
         }
-        doc = doc.add_paragraph(para);
     }
 
-    let mut buf = Vec::new();
-    doc.build()
-        .pack(std::io::Cursor::new(&mut buf))
-        .map_err(|e| format!("docx pack: {e}"))?;
-    Ok(buf)
+    finish_docx(doc)
 }
 
 #[tauri::command]
@@ -593,7 +668,12 @@ pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
     let page = resolve_page(&crate::commands::documents::PageSettings::default());
-    render_blocks_pdf(&resolved, photo, &page)
+    render_blocks_pdf(
+        &resolved,
+        photo,
+        crate::commands::documents::PhotoPlacement::default(),
+        &page,
+    )
 }
 
 /// Maps a user font family + weight to the nearest PDF base font. printpdf only
@@ -720,8 +800,10 @@ fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
 pub(crate) fn render_blocks_pdf(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
+    placement: crate::commands::documents::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
+    use crate::commands::documents::PhotoPlacement;
     use printpdf::*;
 
     let (doc, page1, layer1) =
@@ -775,11 +857,24 @@ pub(crate) fn render_blocks_pdf(
         let nat_w_mm = px_w / dpi * 25.4;
         let nat_h_mm = px_h / dpi * 25.4;
         let (box_w, box_h) = (27.0_f32, 36.0_f32);
+        // Photo x-origin. `AboveCenter` horizontally centers the photo within
+        // the usable width (same uniform `margin.top` used for left/right in
+        // this legacy printpdf path). `AboveLeft`/`AboveRight` approximate as
+        // top-of-document here: printpdf left/right float-beside text is
+        // intentionally NOT built (plan non-goal: no Rust-PDF table). The
+        // detail-view WYSIWYG print PDF is the full-fidelity path for all slots.
+        let photo_x = match placement {
+            PhotoPlacement::AboveCenter => {
+                let usable_w = page_w_mm - margin_mm - right_margin_mm;
+                Mm(margin_mm + (usable_w - box_w) / 2.0)
+            }
+            PhotoPlacement::AboveLeft | PhotoPlacement::AboveRight => margin,
+        };
         let layer = doc.get_page(page1).get_layer(layer1);
         img.add_to_layer(
             layer,
             ImageTransform {
-                translate_x: Some(margin),
+                translate_x: Some(photo_x),
                 translate_y: Some(Mm(top_y - box_h)),
                 scale_x: Some(if nat_w_mm > 0.0 {
                     box_w / nat_w_mm
@@ -943,7 +1038,7 @@ pub fn reveal_in_folder(path: String) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::documents::{CvSectionStyle, CvStyle};
+    use crate::commands::documents::{CvSectionStyle, CvStyle, PhotoPlacement};
     use std::collections::HashMap;
 
     fn section(
@@ -1192,11 +1287,92 @@ mod tests {
             size: "letter".into(),
             margin: crate::commands::documents::MarginSpec::Preset("wide".into()),
         });
-        assert!(!render_blocks_pdf(&blocks, None, &page)
-            .expect("pdf")
-            .is_empty());
-        assert!(!render_blocks_docx(&blocks, None, &page)
-            .expect("docx")
-            .is_empty());
+        assert!(
+            !render_blocks_pdf(&blocks, None, PhotoPlacement::AboveLeft, &page)
+                .expect("pdf")
+                .is_empty()
+        );
+        assert!(
+            !render_blocks_docx(&blocks, None, PhotoPlacement::AboveLeft, &page)
+                .expect("docx")
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn docx_photo_center_and_side_placements_render() {
+        let style = crate::commands::documents::CvStyle::default();
+        let blocks = vec![
+            StyledBlock {
+                level: BlockLevel::H1,
+                section_key: Some("personal_details".into()),
+                text: "Jane Doe".into(),
+                bold: true,
+            },
+            StyledBlock {
+                level: BlockLevel::Body,
+                section_key: Some("personal_details".into()),
+                text: "jane@example.com".into(),
+                bold: false,
+            },
+            StyledBlock {
+                level: BlockLevel::H2,
+                section_key: Some("summary".into()),
+                text: "Summary".into(),
+                bold: true,
+            },
+        ];
+        let resolved = resolve_blocks(&style, &blocks, false);
+        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let photo: &[u8] = include_bytes!("../../test-assets/1x1.png"); // tiny valid PNG
+
+        // All three placements produce a non-empty valid .docx byte stream.
+        for p in [
+            PhotoPlacement::AboveLeft,
+            PhotoPlacement::AboveCenter,
+            PhotoPlacement::AboveRight,
+        ] {
+            let out = render_blocks_docx(&resolved, Some(photo), p, &page).unwrap();
+            assert!(out.len() > 100, "docx bytes empty for {p:?}");
+        }
+    }
+
+    #[test]
+    fn pdf_photo_center_and_side_placements_render() {
+        let style = crate::commands::documents::CvStyle::default();
+        let blocks = vec![
+            StyledBlock {
+                level: BlockLevel::H1,
+                section_key: Some("personal_details".into()),
+                text: "Jane Doe".into(),
+                bold: true,
+            },
+            StyledBlock {
+                level: BlockLevel::Body,
+                section_key: Some("personal_details".into()),
+                text: "jane@example.com".into(),
+                bold: false,
+            },
+            StyledBlock {
+                level: BlockLevel::H2,
+                section_key: Some("summary".into()),
+                text: "Summary".into(),
+                bold: true,
+            },
+        ];
+        let resolved = resolve_blocks(&style, &blocks, false);
+        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let photo: &[u8] = include_bytes!("../../test-assets/1x1.png"); // tiny valid PNG
+
+        // Center centers the x-origin; left/right approximate as top-of-document.
+        // All three placements must produce non-empty valid PDF bytes.
+        for p in [
+            PhotoPlacement::AboveLeft,
+            PhotoPlacement::AboveCenter,
+            PhotoPlacement::AboveRight,
+        ] {
+            let out = render_blocks_pdf(&resolved, Some(photo), p, &page).unwrap();
+            assert!(out.len() > 100, "pdf bytes empty for {p:?}");
+        }
     }
 }

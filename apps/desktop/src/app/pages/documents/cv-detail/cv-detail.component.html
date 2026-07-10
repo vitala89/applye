@@ -254,17 +254,19 @@
 
           <div cdkDropList class="cvdetail__sections" (cdkDropListDropped)="drop($event)">
             @for (section of sections(); track section.key; let i = $index; let count = $count) {
-              <div cdkDrag class="docedit-section">
+              <div cdkDrag [cdkDragDisabled]="isSectionLocked(section.key)" class="docedit-section">
                 <div class="docedit-section__head">
                   <div class="docedit-section__head-main">
-                    <button
-                      type="button"
-                      class="cvdetail__drag-handle"
-                      cdkDragHandle
-                      [attr.aria-label]="t()('documents.cv_section_drag_handle')"
-                    >
-                      <lucide-icon [img]="icons.dragHandle" [size]="15" aria-hidden="true" />
-                    </button>
+                    @if (!isSectionLocked(section.key)) {
+                      <button
+                        type="button"
+                        class="cvdetail__drag-handle"
+                        cdkDragHandle
+                        [attr.aria-label]="t()('documents.cv_section_drag_handle')"
+                      >
+                        <lucide-icon [img]="icons.dragHandle" [size]="15" aria-hidden="true" />
+                      </button>
+                    }
                     <button
                       type="button"
                       class="docedit-section__toggle"
@@ -312,24 +314,26 @@
                         />
                       </button>
                     }
-                    <button
-                      class="icon-btn"
-                      type="button"
-                      [disabled]="i === 0"
-                      [attr.aria-label]="t()('documents.cv_section_move_up')"
-                      (click)="moveSectionUp(section.key)"
-                    >
-                      <lucide-icon [img]="icons.moveUp" [size]="15" aria-hidden="true" />
-                    </button>
-                    <button
-                      class="icon-btn"
-                      type="button"
-                      [disabled]="i === count - 1"
-                      [attr.aria-label]="t()('documents.cv_section_move_down')"
-                      (click)="moveSectionDown(section.key)"
-                    >
-                      <lucide-icon [img]="icons.moveDown" [size]="15" aria-hidden="true" />
-                    </button>
+                    @if (!isSectionLocked(section.key)) {
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [disabled]="i === 0 || isSectionLocked(sections()[i - 1].key)"
+                        [attr.aria-label]="t()('documents.cv_section_move_up')"
+                        (click)="moveSectionUp(section.key)"
+                      >
+                        <lucide-icon [img]="icons.moveUp" [size]="15" aria-hidden="true" />
+                      </button>
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        [disabled]="i === count - 1"
+                        [attr.aria-label]="t()('documents.cv_section_move_down')"
+                        (click)="moveSectionDown(section.key)"
+                      >
+                        <lucide-icon [img]="icons.moveDown" [size]="15" aria-hidden="true" />
+                      </button>
+                    }
                   </div>
                 </div>
                 @if (openStyleKey() === section.key) {
@@ -687,6 +691,25 @@
                             </button>
                             <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
                           }
+                          @if (photoDataUri()) {
+                            <div class="cvdetail__photo-placement">
+                              <span class="cvdetail__photo-placement-label">
+                                {{ t()('documents.cv_photo_placement') }}
+                              </span>
+                              <div class="cvdetail__chip-row" role="group">
+                                @for (opt of photoPlacementOptions; track opt.value) {
+                                  <button
+                                    type="button"
+                                    class="cvdetail__chip"
+                                    [class.cvdetail__chip--active]="photoPlacement() === opt.value"
+                                    (click)="setPhotoPlacement(opt.value)"
+                                  >
+                                    {{ t()(opt.labelKey) }}
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          }
                         </div>
                       }
                     }
@@ -769,8 +792,11 @@
 
           <!-- Atom templates: preview fragments rendered once per atom by
                `<lib-paginated-sheet>` (measure pass + final page cards). -->
-          <ng-template #headerTpl let-section let-photoUri="photoUri">
-            <div [ngStyle]="sectionCss('personal_details')">
+          <ng-template #headerTpl let-section let-photoUri="photoUri" let-placement="placement">
+            <div
+              [class]="'cvpreview__header ' + headerPlacementClass(placement)"
+              [ngStyle]="sectionCss('personal_details')"
+            >
               @if (photoUri) {
                 <div class="cvpreview__photo">
                   <img [src]="photoUri" alt="" />

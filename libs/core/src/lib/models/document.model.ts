@@ -29,12 +29,16 @@ interface CvSectionBase {
   sourceHash?: string;
 }
 
+export type PhotoPlacement = 'above_left' | 'above_center' | 'above_right';
+
 export interface CvPhotoSection extends CvSectionBase {
   key: 'photo';
   /** Cropped photo as a JPEG data URI: `data:image/jpeg;base64,...`. */
   dataUri?: string;
   /** Legacy/unused; retained for back-compat with older documents. */
   filePath?: string;
+  /** Header slot for the photo. Absent → `above_left` (legacy inline top box). */
+  placement?: PhotoPlacement;
 }
 
 export interface CvPersonalDetailsSection extends CvSectionBase {

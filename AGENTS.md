@@ -72,6 +72,7 @@ Escalate model depth only for task risk, ambiguity, or blast radius.
 - Do feature/fix/change work on a dedicated branch (see Before Coding step 2), never directly on `main`.
 - Commit atomically: one logical change per commit, not one giant end-of-session commit.
 - Push after each commit on a feature branch, so remote stays in sync as work lands.
+- NEVER include "Co-authored-by" or mention AI assistants/agents in commit messages. Commits must be clean and authored entirely under the user's name.
 
 ## Safety Rules
 

@@ -1032,6 +1032,24 @@ async fn cv_document_export_bytes_core(
                 .and_then(data_uri_to_bytes)
         });
 
+    // Photo placement (above-left/center/right) lives on the `photo` section;
+    // a missing/legacy value defaults to `AboveLeft`. Only the DOCX renderer
+    // consumes it — the user-facing PDF is WYSIWYG browser print.
+    let placement: PhotoPlacement = serde_json::from_str::<serde_json::Value>(&content_json)
+        .ok()
+        .and_then(|v| {
+            v.get("sections")
+                .and_then(|s| s.as_array())
+                .and_then(|sections| {
+                    sections
+                        .iter()
+                        .find(|s| s.get("key").and_then(|k| k.as_str()) == Some("photo"))
+                        .and_then(|p| p.get("placement"))
+                        .and_then(|p| serde_json::from_value(p.clone()).ok())
+                })
+        })
+        .unwrap_or_default();
+
     match format {
         "docx" | "pdf" => {
             let blocks = cv_content_to_blocks(&content_json)?;
@@ -1041,6 +1059,7 @@ async fn cv_document_export_bytes_core(
                 crate::commands::tailoring::render_blocks_docx(
                     &resolved,
                     photo_bytes.as_deref(),
+                    placement,
                     &page,
                 )
             } else {
@@ -1091,7 +1110,12 @@ async fn cover_letter_document_export_bytes_core(
             let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, true);
             let page = crate::commands::tailoring::resolve_page(&style.page);
             if format == "docx" {
-                crate::commands::tailoring::render_blocks_docx(&resolved, None, &page)
+                crate::commands::tailoring::render_blocks_docx(
+                    &resolved,
+                    None,
+                    PhotoPlacement::default(),
+                    &page,
+                )
             } else {
                 crate::commands::tailoring::render_blocks_pdf(&resolved, None, &page)
             }

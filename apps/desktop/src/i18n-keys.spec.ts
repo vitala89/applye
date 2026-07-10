@@ -49,6 +49,13 @@ function extractKeys(content: string): string[] {
   const keys: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = KEY_PATTERN.exec(content))) {
+    // Skip dynamic-key prefixes: `t()('documents.cover_letter_tone_' + opt)`
+    // matches the literal `documents.cover_letter_tone_`, but the real keys
+    // are formed at runtime (`..._formal`, `..._friendly`, …). A trailing
+    // `+` right after the closing quote means this is a concatenation prefix,
+    // not a complete key — the runtime-resolved key can't be checked statically.
+    const rest = content.slice(match.index + match[0].length).trimStart();
+    if (rest.startsWith('+')) continue;
     keys.push((match[1] ?? match[2]) as string);
   }
   return keys;

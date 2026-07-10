@@ -184,6 +184,25 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.headerPlacementClass('above_right')).toBe('cvpreview__header--right');
   });
 
+  it('locks photo and personal_details from reordering', () => {
+    expect(component.isSectionLocked('photo')).toBe(true);
+    expect(component.isSectionLocked('personal_details')).toBe(true);
+    expect(component.isSectionLocked('summary')).toBe(false);
+  });
+
+  it('drop pins photo and personal_details to the top regardless of target', () => {
+    component.sections.set([
+      { key: 'photo', order: 0, visible: true, dataUri: 'data:image/jpeg;base64,AAAA' },
+      { key: 'personal_details', order: 1, visible: true, fullName: 'X' },
+      { key: 'summary', order: 2, visible: true, text: 'S' },
+    ]);
+    // Attempt to drag `summary` (index 2) to the very top (index 0).
+    component.drop({ previousIndex: 2, currentIndex: 0 } as never);
+    const keys = component.sections().map((s) => s.key);
+    expect(keys).toEqual(['photo', 'personal_details', 'summary']);
+    expect(component.sections().map((s) => s.order)).toEqual([0, 1, 2]);
+  });
+
   it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     document.body.classList.remove('printing-cv');

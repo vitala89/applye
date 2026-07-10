@@ -73,6 +73,15 @@ pub struct UpsertDocumentLibraryItemInput {
     pub tokens_output: Option<i64>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, PartialEq, Eq, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum PhotoPlacement {
+    #[default]
+    AboveLeft,
+    AboveCenter,
+    AboveRight,
+}
+
 #[tauri::command]
 pub async fn cv_templates_list(db: State<'_, Db>) -> Result<Vec<CvTemplate>, String> {
     cv_templates_list_core(&db.pool).await
@@ -1699,5 +1708,27 @@ mod photo_tests {
         let uri = "data:image/png;base64,AAAA";
         let bytes = data_uri_to_bytes(uri).unwrap();
         assert_eq!(bytes, vec![0, 0, 0]);
+    }
+
+    #[test]
+    fn photo_placement_defaults_and_roundtrips() {
+        use super::PhotoPlacement;
+        // Missing field → default AboveLeft.
+        #[derive(serde::Deserialize)]
+        struct Holder {
+            #[serde(default)]
+            placement: PhotoPlacement,
+        }
+        let h: Holder = serde_json::from_str("{}").unwrap();
+        assert_eq!(h.placement, PhotoPlacement::AboveLeft);
+        // snake_case round-trip for each variant.
+        for (v, s) in [
+            (PhotoPlacement::AboveLeft, "\"above_left\""),
+            (PhotoPlacement::AboveCenter, "\"above_center\""),
+            (PhotoPlacement::AboveRight, "\"above_right\""),
+        ] {
+            assert_eq!(serde_json::to_string(&v).unwrap(), s);
+            assert_eq!(serde_json::from_str::<PhotoPlacement>(s).unwrap(), v);
+        }
     }
 }

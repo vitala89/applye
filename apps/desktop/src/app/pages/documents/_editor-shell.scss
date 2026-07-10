@@ -14,16 +14,10 @@
 // Card
 // ---------------------------------------------------------------------------
 
-// Comfortable form-column width so cards don't stretch full-bleed across the
-// wide edit pane (controls inside are width:100% and would otherwise sprawl).
-$docedit-max: 640px;
-
 .docedit-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  width: 100%;
-  max-width: $docedit-max;
   background: var(--surface-1);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius-card);
@@ -186,21 +180,24 @@ $docedit-max: 640px;
 // Style grid — the polished control layout
 // ---------------------------------------------------------------------------
 
+// Two compact columns, left-clustered — the card is full width, but the
+// controls stay a comfortable size instead of stretching edge-to-edge.
 .docedit-style-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 280px));
+  justify-content: start;
   gap: var(--space-4) var(--space-5);
   align-items: end;
 }
 @container (max-width: 420px) {
   .docedit-style-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 280px);
   }
 }
 // Fallback for browsers/contexts without a container-query ancestor.
 @media (max-width: 620px) {
   .docedit-style-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 280px);
   }
 }
 
@@ -407,8 +404,6 @@ $docedit-max: 640px;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  width: 100%;
-  max-width: $docedit-max;
   background: var(--surface-1);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius-card);

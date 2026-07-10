@@ -467,6 +467,12 @@
 .cvdetail__skill-chip-remove:hover {
   color: var(--danger);
 }
+.cvdetail__photo-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
 .cvdetail__photo-thumb {
   display: block;
   width: 132px;
@@ -475,6 +481,11 @@
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
+}
+.cvdetail__photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .cvdetail__photo-placement {
   margin-top: 12px;

@@ -1066,6 +1066,7 @@ async fn cv_document_export_bytes_core(
                 crate::commands::tailoring::render_blocks_pdf(
                     &resolved,
                     photo_bytes.as_deref(),
+                    placement,
                     &page,
                 )
             }
@@ -1117,7 +1118,12 @@ async fn cover_letter_document_export_bytes_core(
                     &page,
                 )
             } else {
-                crate::commands::tailoring::render_blocks_pdf(&resolved, None, &page)
+                crate::commands::tailoring::render_blocks_pdf(
+                    &resolved,
+                    None,
+                    PhotoPlacement::default(),
+                    &page,
+                )
             }
         }
         other => Err(format!(

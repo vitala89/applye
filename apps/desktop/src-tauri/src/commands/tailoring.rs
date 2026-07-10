@@ -668,7 +668,12 @@ pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
     let page = resolve_page(&crate::commands::documents::PageSettings::default());
-    render_blocks_pdf(&resolved, photo, &page)
+    render_blocks_pdf(
+        &resolved,
+        photo,
+        crate::commands::documents::PhotoPlacement::default(),
+        &page,
+    )
 }
 
 /// Maps a user font family + weight to the nearest PDF base font. printpdf only
@@ -795,8 +800,10 @@ fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
 pub(crate) fn render_blocks_pdf(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
+    placement: crate::commands::documents::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
+    use crate::commands::documents::PhotoPlacement;
     use printpdf::*;
 
     let (doc, page1, layer1) =
@@ -850,11 +857,24 @@ pub(crate) fn render_blocks_pdf(
         let nat_w_mm = px_w / dpi * 25.4;
         let nat_h_mm = px_h / dpi * 25.4;
         let (box_w, box_h) = (27.0_f32, 36.0_f32);
+        // Photo x-origin. `AboveCenter` horizontally centers the photo within
+        // the usable width (same uniform `margin.top` used for left/right in
+        // this legacy printpdf path). `AboveLeft`/`AboveRight` approximate as
+        // top-of-document here: printpdf left/right float-beside text is
+        // intentionally NOT built (plan non-goal: no Rust-PDF table). The
+        // detail-view WYSIWYG print PDF is the full-fidelity path for all slots.
+        let photo_x = match placement {
+            PhotoPlacement::AboveCenter => {
+                let usable_w = page_w_mm - margin_mm - right_margin_mm;
+                Mm(margin_mm + (usable_w - box_w) / 2.0)
+            }
+            PhotoPlacement::AboveLeft | PhotoPlacement::AboveRight => margin,
+        };
         let layer = doc.get_page(page1).get_layer(layer1);
         img.add_to_layer(
             layer,
             ImageTransform {
-                translate_x: Some(margin),
+                translate_x: Some(photo_x),
                 translate_y: Some(Mm(top_y - box_h)),
                 scale_x: Some(if nat_w_mm > 0.0 {
                     box_w / nat_w_mm
@@ -1267,9 +1287,11 @@ mod tests {
             size: "letter".into(),
             margin: crate::commands::documents::MarginSpec::Preset("wide".into()),
         });
-        assert!(!render_blocks_pdf(&blocks, None, &page)
-            .expect("pdf")
-            .is_empty());
+        assert!(
+            !render_blocks_pdf(&blocks, None, PhotoPlacement::AboveLeft, &page)
+                .expect("pdf")
+                .is_empty()
+        );
         assert!(
             !render_blocks_docx(&blocks, None, PhotoPlacement::AboveLeft, &page)
                 .expect("docx")
@@ -1312,6 +1334,45 @@ mod tests {
         ] {
             let out = render_blocks_docx(&resolved, Some(photo), p, &page).unwrap();
             assert!(out.len() > 100, "docx bytes empty for {p:?}");
+        }
+    }
+
+    #[test]
+    fn pdf_photo_center_and_side_placements_render() {
+        let style = crate::commands::documents::CvStyle::default();
+        let blocks = vec![
+            StyledBlock {
+                level: BlockLevel::H1,
+                section_key: Some("personal_details".into()),
+                text: "Jane Doe".into(),
+                bold: true,
+            },
+            StyledBlock {
+                level: BlockLevel::Body,
+                section_key: Some("personal_details".into()),
+                text: "jane@example.com".into(),
+                bold: false,
+            },
+            StyledBlock {
+                level: BlockLevel::H2,
+                section_key: Some("summary".into()),
+                text: "Summary".into(),
+                bold: true,
+            },
+        ];
+        let resolved = resolve_blocks(&style, &blocks, false);
+        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let photo: &[u8] = include_bytes!("../../test-assets/1x1.png"); // tiny valid PNG
+
+        // Center centers the x-origin; left/right approximate as top-of-document.
+        // All three placements must produce non-empty valid PDF bytes.
+        for p in [
+            PhotoPlacement::AboveLeft,
+            PhotoPlacement::AboveCenter,
+            PhotoPlacement::AboveRight,
+        ] {
+            let out = render_blocks_pdf(&resolved, Some(photo), p, &page).unwrap();
+            assert!(out.len() > 100, "pdf bytes empty for {p:?}");
         }
     }
 }

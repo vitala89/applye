@@ -287,7 +287,7 @@ export class CvDetailComponent {
           out.push({
             id: 'header',
             tpl: this.headerTpl(),
-            ctx: { $implicit: section, photoUri },
+            ctx: { $implicit: section, photoUri, placement: this.photoPlacement() },
           });
           break;
         case 'summary':
@@ -834,6 +834,12 @@ export class CvDetailComponent {
 
   setPhotoPlacement(placement: PhotoPlacement): void {
     this.photoPlacement.set(placement);
+  }
+
+  headerPlacementClass(placement: PhotoPlacement): string {
+    const suffix =
+      placement === 'above_center' ? 'center' : placement === 'above_right' ? 'right' : 'left';
+    return `cvpreview__header--${suffix}`;
   }
 
   /**

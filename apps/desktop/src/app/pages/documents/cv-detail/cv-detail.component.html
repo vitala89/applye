@@ -788,8 +788,11 @@
 
           <!-- Atom templates: preview fragments rendered once per atom by
                `<lib-paginated-sheet>` (measure pass + final page cards). -->
-          <ng-template #headerTpl let-section let-photoUri="photoUri">
-            <div [ngStyle]="sectionCss('personal_details')">
+          <ng-template #headerTpl let-section let-photoUri="photoUri" let-placement="placement">
+            <div
+              [class]="'cvpreview__header ' + headerPlacementClass(placement)"
+              [ngStyle]="sectionCss('personal_details')"
+            >
               @if (photoUri) {
                 <div class="cvpreview__photo">
                   <img [src]="photoUri" alt="" />

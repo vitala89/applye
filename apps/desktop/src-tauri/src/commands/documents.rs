@@ -1033,8 +1033,10 @@ async fn cv_document_export_bytes_core(
         });
 
     // Photo placement (above-left/center/right) lives on the `photo` section;
-    // a missing/legacy value defaults to `AboveLeft`. Only the DOCX renderer
-    // consumes it — the user-facing PDF is WYSIWYG browser print.
+    // a missing/legacy value defaults to `AboveLeft`. Consumed by the DOCX
+    // renderer (full float-beside) and the Rust-PDF renderer (center only;
+    // left/right approximate as top-of-document). The detail-view WYSIWYG
+    // browser-print PDF is the full-fidelity path for all slots.
     let placement: PhotoPlacement = serde_json::from_str::<serde_json::Value>(&content_json)
         .ok()
         .and_then(|v| {

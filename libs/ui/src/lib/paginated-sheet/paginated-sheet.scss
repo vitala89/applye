@@ -1,0 +1,41 @@
+// libs/ui/src/lib/paginated-sheet/paginated-sheet.scss
+@use '../../styles/paper' as paper;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.paginated-sheet__measure {
+  position: absolute;
+  left: -99999px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.page-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.page-card {
+  @include paper.paper-light;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: var(--border-width) solid var(--border-default);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+  font-family: var(--font-sans);
+}
+
+.page-card__caption {
+  // Chrome around the paper: use the app theme, not the pinned paper colours.
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-align: center;
+}

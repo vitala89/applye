@@ -1,0 +1,31 @@
+// libs/ui/src/styles/_paper.scss
+// Pins an element (and its cascade) to light "paper" colours regardless of the
+// active app theme. Used by the on-screen page cards AND the print block so
+// screen == printed PDF. Do not fork these values — change them here only.
+@mixin paper-light {
+  --surface-1: #ffffff;
+  --surface-2: #fafaf8;
+  --surface-hover: #f4f4f2;
+  --surface-sunken: #f4f4f2;
+  --text-primary: #16161a;
+  --text-secondary: #5a5a63;
+  --text-tertiary: #6b6b73;
+  --text-accent: #4f5bff;
+  --border-subtle: #ececee;
+  --border-default: #d6d6da;
+  --border-strong: #b8b8bf;
+  --border-accent: #4f5bff;
+  --accent: #4f5bff;
+  --accent-hover: #3a33d6;
+  --accent-fg: #ffffff;
+  --accent-tint: rgba(79, 91, 255, 0.08);
+  --danger: #e05656;
+  --danger-tint: rgba(224, 86, 86, 0.1);
+  --warning: #e0a23b;
+  --warning-tint: rgba(224, 162, 59, 0.12);
+  --success: #2bb673;
+  background-color: #fff;
+  color: #16161a;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}

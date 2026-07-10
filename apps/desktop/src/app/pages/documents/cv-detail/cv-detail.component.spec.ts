@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -16,6 +16,7 @@ describe('mergePersonalField', () => {
 
 describe('CvDetailComponent per-section style', () => {
   let component: CvDetailComponent;
+  let fixture: ComponentFixture<CvDetailComponent>;
 
   beforeEach(async () => {
     const dbStub: Partial<DbService> = {
@@ -44,7 +45,7 @@ describe('CvDetailComponent per-section style', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(CvDetailComponent);
+    fixture = TestBed.createComponent(CvDetailComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -60,6 +61,26 @@ describe('CvDetailComponent per-section style', () => {
     component.resetSectionStyle('experience');
     expect(component.style().sectionStyles?.experience).toBeUndefined();
     expect(component.effStyle('experience').colorHex).toBe(component.style().accentColorHex);
+  });
+
+  it('toggleSectionCollapse flips isSectionOpen and defaults to expanded', () => {
+    expect(component.isSectionOpen('experience')).toBe(true);
+    component.toggleSectionCollapse('experience');
+    expect(component.isSectionOpen('experience')).toBe(false);
+    component.toggleSectionCollapse('experience');
+    expect(component.isSectionOpen('experience')).toBe(true);
+    // Collapsing one section leaves others expanded.
+    component.toggleSectionCollapse('summary');
+    expect(component.isSectionOpen('summary')).toBe(false);
+    expect(component.isSectionOpen('experience')).toBe(true);
+  });
+
+  it('toggleStyleOpen flips the Style card open state, default open', () => {
+    expect(component.styleOpen()).toBe(true);
+    component.toggleStyleOpen();
+    expect(component.styleOpen()).toBe(false);
+    component.toggleStyleOpen();
+    expect(component.styleOpen()).toBe(true);
   });
 
   it('toggleStylePopover opens and closes the same key', () => {
@@ -102,14 +123,14 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.sections().some((s) => s.key === 'photo')).toBe(true);
   });
 
-  it('exposes A4 sheet dimensions via pageVars', () => {
+  it('exposes A4 sheet dimensions via geometry', () => {
     component.style.set({
       ...component.style(),
       page: { size: 'a4', margin: { top: 20, right: 20, bottom: 20, left: 20 } },
     });
-    const vars = component.pageVars();
-    expect(vars['--page-w']).toBe(`${(210 * 96) / 25.4}px`);
-    expect(vars['--mt']).toBe(`${(20 * 96) / 25.4}px`);
+    const g = component.geometry();
+    expect(g.pageWidthPx).toBeCloseTo((210 * 96) / 25.4);
+    expect(g.marginTopPx).toBeCloseTo((20 * 96) / 25.4);
   });
 
   it('produces different width for Letter', () => {
@@ -117,7 +138,38 @@ describe('CvDetailComponent per-section style', () => {
       ...component.style(),
       page: { size: 'letter', margin: { top: 20, right: 20, bottom: 20, left: 20 } },
     });
-    expect(component.pageVars()['--page-w']).toBe(`${(215.9 * 96) / 25.4}px`);
+    expect(component.geometry().pageWidthPx).toBeCloseTo((215.9 * 96) / 25.4);
+  });
+
+  it('renders the paginated sheet in preview mode', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('lib-paginated-sheet')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.cvpreview__pagebar')).toBeNull();
+  });
+
+  it('builds one atom per experience entry plus a section-title atom', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([
+      { key: 'personal_details', order: 0, visible: true, fullName: 'X' },
+      {
+        key: 'experience',
+        order: 1,
+        visible: true,
+        entries: [
+          { company: 'A', role: 'Dev', startDate: '2020', bullets: [] },
+          { company: 'B', role: 'Lead', startDate: '2022', bullets: [] },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+    const ids = component.atoms().map((a) => a.id);
+    expect(ids).toContain('sec:experience:title');
+    expect(ids.filter((id) => id.startsWith('sec:experience:e')).length).toBe(2);
   });
 
   it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {

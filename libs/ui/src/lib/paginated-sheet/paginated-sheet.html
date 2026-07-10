@@ -1,0 +1,36 @@
+<!-- libs/ui/src/lib/paginated-sheet/paginated-sheet.html -->
+<!-- Hidden measure pass: every atom rendered once in a single page-width
+     column so we can read its natural height. Positioned off-screen. -->
+<div class="paginated-sheet__measure" aria-hidden="true" [style.width.px]="contentWidthPx()">
+  @for (atom of atoms(); track atom.id) {
+  <div #measureAtom>
+    <ng-container [ngTemplateOutlet]="atom.tpl" [ngTemplateOutletContext]="atom.ctx ?? {}" />
+  </div>
+  }
+</div>
+
+<!-- Rendered page cards. -->
+@for (page of pages(); track $index) {
+<div class="page-card-wrap">
+  <div
+    class="page-card"
+    [style.width.px]="geometry().pageWidthPx"
+    [style.height.px]="geometry().pageHeightPx"
+    [style.padding.px]="0"
+    [style.paddingTop.px]="geometry().marginTopPx"
+    [style.paddingRight.px]="geometry().marginRightPx"
+    [style.paddingBottom.px]="geometry().marginBottomPx"
+    [style.paddingLeft.px]="geometry().marginLeftPx"
+  >
+    @for (idx of page; track atomAt(idx).id) {
+    <div class="page-card__atom">
+      <ng-container
+        [ngTemplateOutlet]="atomAt(idx).tpl"
+        [ngTemplateOutletContext]="atomAt(idx).ctx ?? {}"
+      />
+    </div>
+    }
+  </div>
+  <p class="page-card__caption">{{ captionFor($index) }}</p>
+</div>
+}

@@ -2,11 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
-  ElementRef,
   inject,
-  OnDestroy,
   signal,
+  TemplateRef,
   viewChild,
 } from '@angular/core';
 import { NgStyle, NgTemplateOutlet } from '@angular/common';
@@ -58,7 +56,12 @@ import {
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ButtonDirective } from '@applye/ui';
+import {
+  ButtonDirective,
+  PaginatedSheetComponent,
+  type SheetAtom,
+  type SheetGeometry,
+} from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
 import {
@@ -100,11 +103,12 @@ export function mergePersonalField<T extends string | undefined>(
     NgStyle,
     NgTemplateOutlet,
     CvPhotoCropComponent,
+    PaginatedSheetComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
 })
-export class CvDetailComponent implements OnDestroy {
+export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly db = inject(DbService);
@@ -124,6 +128,7 @@ export class CvDetailComponent implements OnDestroy {
     dragHandle: GripVertical,
     moveUp: ChevronUp,
     moveDown: ChevronDown,
+    chevron: ChevronDown,
     sparkles: Sparkles,
     plus: Plus,
     close: X,
@@ -233,63 +238,115 @@ export class CvDetailComponent implements OnDestroy {
   /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
   private static readonly PX_PER_MM = 96 / 25.4;
 
-  /** Preview page geometry as CSS custom properties — real A4/Letter proportions
-   * plus margins, consumed by the `.cvpreview` sheet in the template/SCSS. */
-  readonly pageVars = computed(() => {
+  /** Preview page geometry (px) — real A4/Letter proportions plus margins,
+   * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement. */
+  readonly geometry = computed<SheetGeometry>(() => {
     const r = resolvePageSettings(this.style().page);
     const px = CvDetailComponent.PX_PER_MM;
-    const w = r.widthMm * px;
-    const h = r.heightMm * px;
     return {
-      '--page-w': `${w}px`,
-      '--page-h': `${h}px`,
-      '--mt': `${r.margin.top * px}px`,
-      '--mr': `${r.margin.right * px}px`,
-      '--mb': `${r.margin.bottom * px}px`,
-      '--ml': `${r.margin.left * px}px`,
-    } as Record<string, string>;
+      pageWidthPx: r.widthMm * px,
+      pageHeightPx: r.heightMm * px,
+      marginTopPx: r.margin.top * px,
+      marginRightPx: r.margin.right * px,
+      marginBottomPx: r.margin.bottom * px,
+      marginLeftPx: r.margin.left * px,
+    };
   });
 
-  /** The rendered sheet element — measured by `observeSheet()` for page count. */
-  readonly sheetEl = viewChild<ElementRef<HTMLElement>>('cvSheet');
-  readonly pageCount = signal(1);
+  /** True when any single atom is taller than one usable page — set from
+   * `<lib-paginated-sheet>`'s `(blockOverflow)` output. */
   readonly blockOverflow = signal(false);
 
-  private ro?: ResizeObserver;
+  // Atom templates for the paginated sheet — declared in the HTML (`#headerTpl` etc).
+  readonly headerTpl = viewChild.required<TemplateRef<unknown>>('headerTpl');
+  readonly summaryTpl = viewChild.required<TemplateRef<unknown>>('summaryTpl');
+  readonly sectionTitleTpl = viewChild.required<TemplateRef<unknown>>('sectionTitleTpl');
+  readonly skillsTpl = viewChild.required<TemplateRef<unknown>>('skillsTpl');
+  readonly expEntryTpl = viewChild.required<TemplateRef<unknown>>('expEntryTpl');
+  readonly eduEntryTpl = viewChild.required<TemplateRef<unknown>>('eduEntryTpl');
+  readonly languagesTpl = viewChild.required<TemplateRef<unknown>>('languagesTpl');
 
-  private observeSheet(): void {
-    const el = this.sheetEl()?.nativeElement;
-    if (!el) return;
-    this.ro?.disconnect();
-    this.ro = new ResizeObserver(() => this.recomputePages(el));
-    this.ro.observe(el);
-    this.recomputePages(el);
-  }
+  /** Flattens `previewSections()` (in order) into ordered page atoms for
+   * `<lib-paginated-sheet>`. `photo` has no atom of its own — it folds into
+   * the header atom's render, mirroring the CSS float it always relied on. */
+  readonly atoms = computed<SheetAtom[]>(() => {
+    const out: SheetAtom[] = [];
+    const t = this.t();
+    const photoUri = this.includePhoto() ? this.photoDataUri() : null;
 
-  private recomputePages(el: HTMLElement): void {
-    const r = resolvePageSettings(this.style().page);
-    const px = CvDetailComponent.PX_PER_MM;
-    const usableH = (r.heightMm - r.margin.top - r.margin.bottom) * px;
-    const contentH = el.scrollHeight - (r.margin.top + r.margin.bottom) * px;
-    this.pageCount.set(Math.max(1, Math.ceil(contentH / Math.max(1, usableH))));
-    // Block-too-tall: any direct child taller than one usable page.
-    const tooTall = Array.from(el.children).some(
-      (c) => (c as HTMLElement).offsetHeight > usableH + 1,
-    );
-    this.blockOverflow.set(tooTall || usableH <= 0);
-  }
-
-  private readonly observeSheetEffect = effect(() => {
-    // Re-run when previewMode flips to true (sheet enters the DOM) and when
-    // the sheet element or page geometry changes.
-    this.previewMode();
-    this.pageVars();
-    this.observeSheet();
+    for (const section of this.previewSections()) {
+      switch (section.key) {
+        case 'personal_details':
+          out.push({
+            id: 'header',
+            tpl: this.headerTpl(),
+            ctx: { $implicit: section, photoUri },
+          });
+          break;
+        case 'summary':
+          if (section.text) {
+            out.push({ id: 'summary', tpl: this.summaryTpl(), ctx: { $implicit: section } });
+          }
+          break;
+        case 'skills':
+          if (section.groups.length) {
+            out.push({ id: 'skills', tpl: this.skillsTpl(), ctx: { $implicit: section } });
+          }
+          break;
+        case 'languages':
+          if (section.items.length) {
+            out.push({ id: 'languages', tpl: this.languagesTpl(), ctx: { $implicit: section } });
+          }
+          break;
+        case 'experience': {
+          if (!section.entries.length) break;
+          const label = t(sectionLabelKey('experience'));
+          out.push({
+            id: 'sec:experience:title',
+            tpl: this.sectionTitleTpl(),
+            ctx: { $implicit: label, key: 'experience' },
+            glueToNext: true,
+          });
+          section.entries.forEach((entry, i) =>
+            out.push({
+              id: `sec:experience:e${i}`,
+              tpl: this.expEntryTpl(),
+              ctx: { $implicit: entry, key: 'experience' },
+            }),
+          );
+          break;
+        }
+        case 'education': {
+          if (!section.entries.length) break;
+          const label = t(sectionLabelKey('education'));
+          out.push({
+            id: 'sec:education:title',
+            tpl: this.sectionTitleTpl(),
+            ctx: { $implicit: label, key: 'education' },
+            glueToNext: true,
+          });
+          section.entries.forEach((entry, i) =>
+            out.push({
+              id: `sec:education:e${i}`,
+              tpl: this.eduEntryTpl(),
+              ctx: { $implicit: entry, key: 'education' },
+            }),
+          );
+          break;
+        }
+        // 'photo' folds into the header render — no standalone atom.
+      }
+    }
+    return out;
   });
 
-  ngOnDestroy(): void {
-    this.ro?.disconnect();
-  }
+  /** `t()` has no interpolation support (see `TranslateService.t`), so page
+   * captions substitute `{i}`/`{n}` manually — same pattern as
+   * `styleNoteMessage`'s `{value}` substitution above. */
+  readonly captionFn = (page: number, total: number): string =>
+    this.t()('documents.preview_page_of')
+      .replace('{i}', String(page))
+      .replace('{n}', String(total));
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
@@ -330,6 +387,29 @@ export class CvDetailComponent implements OnDestroy {
 
   toggleStylePopover(key: CvSectionKey): void {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
+  }
+
+  /** Per-section collapse state for the content-section accordion — session
+   * only (not persisted); every section starts expanded (an empty set means
+   * nothing is collapsed). */
+  readonly collapsedSections = signal<Set<CvSectionKey>>(new Set());
+
+  isSectionOpen(key: CvSectionKey): boolean {
+    return !this.collapsedSections().has(key);
+  }
+
+  toggleSectionCollapse(key: CvSectionKey): void {
+    const next = new Set(this.collapsedSections());
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    this.collapsedSections.set(next);
+  }
+
+  /** Collapse state for the "Style" card — open by default. */
+  readonly styleOpen = signal(true);
+
+  toggleStyleOpen(): void {
+    this.styleOpen.set(!this.styleOpen());
   }
 
   /** The section's own style override, if any — used by the popover template

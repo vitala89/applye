@@ -175,26 +175,35 @@ describe('CvDetailComponent per-section style', () => {
     expect(fixture.nativeElement.querySelector('.cvpreview__pagebar')).toBeNull();
   });
 
-  it('builds one atom per experience entry plus a section-title atom', () => {
+  it('splits an experience entry into a head atom + one atom per bullet, head glued', () => {
     component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
     component.loadError.set(false);
     component.previewMode.set(true);
     component.sections.set([
-      { key: 'personal_details', order: 0, visible: true, fullName: 'X' },
       {
         key: 'experience',
-        order: 1,
+        order: 0,
         visible: true,
         entries: [
-          { company: 'A', role: 'Dev', startDate: '2020', bullets: [] },
+          { company: 'A', role: 'Dev', startDate: '2020', bullets: ['one', 'two', 'three'] },
           { company: 'B', role: 'Lead', startDate: '2022', bullets: [] },
         ],
       },
     ]);
     fixture.detectChanges();
-    const ids = component.atoms().map((a) => a.id);
+    const atoms = component.atoms();
+    const ids = atoms.map((a) => a.id);
     expect(ids).toContain('sec:experience:title');
-    expect(ids.filter((id) => id.startsWith('sec:experience:e')).length).toBe(2);
+    // Entry A: one head atom + three bullet atoms; entry B: head only (no bullets).
+    expect(ids).toContain('sec:experience:e0:head');
+    expect(ids.filter((id) => /^sec:experience:e0:b\d+$/.test(id)).length).toBe(3);
+    expect(ids).toContain('sec:experience:e1:head');
+    expect(ids.filter((id) => /^sec:experience:e1:b\d+$/.test(id)).length).toBe(0);
+    // Head with bullets is glued to its first bullet; a bulletless head is not.
+    expect(atoms.find((a) => a.id === 'sec:experience:e0:head')?.glueToNext).toBe(true);
+    expect(atoms.find((a) => a.id === 'sec:experience:e1:head')?.glueToNext).toBe(false);
+    // Bullets themselves are free to flow across a page break.
+    expect(atoms.find((a) => a.id === 'sec:experience:e0:b0')?.glueToNext).toBeFalsy();
   });
 
   it('applies the effective font to every rendered section title (no mono fallback)', () => {

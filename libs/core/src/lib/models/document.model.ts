@@ -263,11 +263,26 @@ export type DocumentContent = CvContent | CoverLetterContent;
 
 export type CvFontWeight = 300 | 400 | 600 | 700; // Light / Normal / Semibold / Bold
 
+export type CvBorderStyle = 'none' | 'solid' | 'dotted' | 'dashed';
+
+/** Font properties for one text group (a section's title or its body). All
+ * optional; an unset field inherits its parent in the style cascade. */
+export interface CvTextStyle {
+  fontFamily?: string;
+  fontSizePt?: number;
+  fontWeight?: CvFontWeight;
+  colorHex?: string;
+}
+
 export interface CvSectionStyle {
   fontFamily?: string;
   fontSizePt?: number;
   colorHex?: string;
   fontWeight?: CvFontWeight;
+  /** Per-section title override; unset fields inherit the document title style. */
+  title?: CvTextStyle;
+  /** Per-section title underline; unset inherits the document title border. */
+  titleBorder?: CvBorderStyle;
 }
 
 /** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
@@ -279,6 +294,10 @@ export interface CvStyle {
   accentColorHex: string;
   fontWeight: CvFontWeight;
   sectionStyles?: Partial<Record<CvSectionKey, CvSectionStyle>>;
+  /** Document-wide defaults for section titles; unset fields inherit the body. */
+  titleStyle?: CvTextStyle;
+  /** Document-wide title underline style; defaults to 'solid' when unset. */
+  titleBorder?: CvBorderStyle;
   /** Page geometry (size + margin preset); absent → A4 / normal. */
   page?: PageSettings;
 }

@@ -158,86 +158,199 @@
 
             <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
               <div>
-                <div class="docedit-style-grid">
-                  <div class="docedit-field">
-                    <span
-                      class="docedit-field__label"
-                      [attr.title]="t()('documents.cv_style_hint_font')"
-                      >{{ t()('documents.cv_style_font') }}</span
-                    >
-                    <select
-                      [ngModel]="style().fontFamily"
-                      (ngModelChange)="updateStyle({ fontFamily: $event })"
-                    >
-                      @for (font of atsSafeFonts; track font) {
-                        <option [value]="font">{{ font }}</option>
-                      }
-                    </select>
-                  </div>
-                  <div class="docedit-field">
-                    <span
-                      class="docedit-field__label"
-                      [attr.title]="t()('documents.cv_style_hint_size')"
-                      >{{ t()('documents.cv_style_size') }}</span
-                    >
-                    <input
-                      type="number"
-                      min="6"
-                      max="24"
-                      step="0.5"
-                      [ngModel]="style().fontSizePt"
-                      (ngModelChange)="updateStyle({ fontSizePt: +$event })"
-                    />
-                  </div>
-                  <div class="docedit-field">
-                    <span
-                      class="docedit-field__label"
-                      [attr.title]="t()('documents.cv_style_hint_color')"
-                      >{{ t()('documents.cv_style_color') }}</span
-                    >
-                    <div class="docedit-color-row">
+                <div class="docedit-style-section">
+                  <span class="docedit-style-section__header">{{
+                    t()('documents.cv_style_group_body')
+                  }}</span>
+                  <div class="docedit-style-grid">
+                    <div class="docedit-field">
+                      <span
+                        class="docedit-field__label"
+                        [attr.title]="t()('documents.cv_style_hint_font')"
+                        >{{ t()('documents.cv_style_font') }}</span
+                      >
+                      <select
+                        [ngModel]="style().fontFamily"
+                        (ngModelChange)="updateStyle({ fontFamily: $event })"
+                      >
+                        @for (font of atsSafeFonts; track font) {
+                          <option [value]="font">{{ font }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{ t()('documents.cv_style_size') }}</span>
                       <input
-                        type="color"
-                        [ngModel]="style().accentColorHex"
-                        (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                      />
-                      <input
-                        type="text"
-                        [ngModel]="style().accentColorHex"
-                        (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                        type="number"
+                        min="6"
+                        max="24"
+                        step="0.5"
+                        [ngModel]="style().fontSizePt"
+                        (ngModelChange)="updateStyle({ fontSizePt: +$event })"
                       />
                     </div>
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{
+                        t()('documents.cv_style_weight')
+                      }}</span>
+                      <select
+                        [ngModel]="style().fontWeight"
+                        (ngModelChange)="updateStyle({ fontWeight: $any(+$event) })"
+                      >
+                        <option [ngValue]="300">
+                          {{ t()('documents.cv_style_weight_300') }}
+                        </option>
+                        <option [ngValue]="400">
+                          {{ t()('documents.cv_style_weight_400') }}
+                        </option>
+                        <option [ngValue]="600">
+                          {{ t()('documents.cv_style_weight_600') }}
+                        </option>
+                        <option [ngValue]="700">
+                          {{ t()('documents.cv_style_weight_700') }}
+                        </option>
+                      </select>
+                    </div>
+                    <div class="docedit-field">
+                      <span
+                        class="docedit-field__label"
+                        [attr.title]="t()('documents.cv_style_hint_color')"
+                        >{{ t()('documents.cv_style_color') }}</span
+                      >
+                      <div class="docedit-color-row">
+                        <input
+                          type="color"
+                          [ngModel]="style().accentColorHex"
+                          (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                        />
+                        <input
+                          type="text"
+                          [ngModel]="style().accentColorHex"
+                          (ngModelChange)="updateStyle({ accentColorHex: $event })"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div class="docedit-field">
-                    <span class="docedit-field__label">{{
-                      t()('documents.cv_style_page_size')
-                    }}</span>
-                    <select
-                      [ngModel]="style().page?.size ?? 'a4'"
-                      (ngModelChange)="setPageSize($event)"
-                    >
-                      <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
-                      <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
-                    </select>
+                </div>
+
+                <div class="docedit-style-section">
+                  <span class="docedit-style-section__header">{{
+                    t()('documents.cv_style_group_titles')
+                  }}</span>
+                  <div class="docedit-style-grid">
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{ t()('documents.cv_style_font') }}</span>
+                      <select
+                        [ngModel]="style().titleStyle?.fontFamily ?? ''"
+                        (ngModelChange)="updateTitleStyle({ fontFamily: $event || undefined })"
+                      >
+                        <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                        @for (font of atsSafeFonts; track font) {
+                          <option [value]="font">{{ font }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{ t()('documents.cv_style_size') }}</span>
+                      <input
+                        type="number"
+                        min="6"
+                        max="28"
+                        step="0.5"
+                        [ngModel]="style().titleStyle?.fontSizePt ?? null"
+                        [placeholder]="style().fontSizePt"
+                        (ngModelChange)="
+                          updateTitleStyle({ fontSizePt: $event ? +$event : undefined })
+                        "
+                      />
+                    </div>
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{
+                        t()('documents.cv_style_weight')
+                      }}</span>
+                      <select
+                        [ngModel]="style().titleStyle?.fontWeight ?? null"
+                        (ngModelChange)="
+                          updateTitleStyle({ fontWeight: $event ? $any(+$event) : undefined })
+                        "
+                      >
+                        <option [ngValue]="null">
+                          {{ t()('documents.cv_section_style_inherit') }}
+                        </option>
+                        <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                        <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                        <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                        <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+                      </select>
+                    </div>
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{
+                        t()('documents.cv_style_color')
+                      }}</span>
+                      <div class="docedit-color-row">
+                        <input
+                          type="color"
+                          [ngModel]="style().titleStyle?.colorHex ?? style().accentColorHex"
+                          (ngModelChange)="updateTitleStyle({ colorHex: $event })"
+                        />
+                        <input
+                          type="text"
+                          [ngModel]="style().titleStyle?.colorHex ?? style().accentColorHex"
+                          (ngModelChange)="updateTitleStyle({ colorHex: $event })"
+                        />
+                      </div>
+                    </div>
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{ t()('documents.cv_style_line') }}</span>
+                      <select
+                        [ngModel]="style().titleBorder ?? 'solid'"
+                        (ngModelChange)="updateStyle({ titleBorder: $event })"
+                      >
+                        <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
+                        <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
+                        <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
+                        <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
+                      </select>
+                    </div>
                   </div>
-                  <div class="docedit-field docedit-field--full">
-                    <span class="docedit-field__label">{{
-                      t()('documents.cv_style_margins')
-                    }}</span>
-                    <div class="docedit-margin-grid">
-                      @for (side of marginSides; track side.key) {
-                        <label class="docedit-margin-field">
-                          <span>{{ t()(side.label) }}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="50"
-                            step="1"
-                            [ngModel]="currentMargin()[side.key]"
-                            (ngModelChange)="setMarginSide(side.key, $event)"
-                          />
-                        </label>
-                      }
+                </div>
+
+                <div class="docedit-style-section">
+                  <span class="docedit-style-section__header">{{
+                    t()('documents.cv_style_group_page')
+                  }}</span>
+                  <div class="docedit-style-grid">
+                    <div class="docedit-field">
+                      <span class="docedit-field__label">{{
+                        t()('documents.cv_style_page_size')
+                      }}</span>
+                      <select
+                        [ngModel]="style().page?.size ?? 'a4'"
+                        (ngModelChange)="setPageSize($event)"
+                      >
+                        <option value="a4">{{ t()('documents.cv_style_page_a4') }}</option>
+                        <option value="letter">{{ t()('documents.cv_style_page_letter') }}</option>
+                      </select>
+                    </div>
+                    <div class="docedit-field docedit-field--full">
+                      <span class="docedit-field__label">{{
+                        t()('documents.cv_style_margins')
+                      }}</span>
+                      <div class="docedit-margin-grid">
+                        @for (side of marginSides; track side.key) {
+                          <label class="docedit-margin-field">
+                            <span>{{ t()(side.label) }}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="50"
+                              step="1"
+                              [ngModel]="currentMargin()[side.key]"
+                              (ngModelChange)="setMarginSide(side.key, $event)"
+                            />
+                          </label>
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -722,53 +835,147 @@
 
         <ng-template #stylePopover let-key>
           <div class="cvdetail__style-pop">
-            <label class="cvdetail__style-field">
-              <span class="cvdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
-              <select
-                [ngModel]="sectionOverride(key)?.fontFamily ?? ''"
-                (ngModelChange)="setSectionStyle(key, { fontFamily: $event || undefined })"
-              >
-                <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                @for (font of atsSafeFonts; track font) {
-                  <option [value]="font">{{ font }}</option>
-                }
-              </select>
-            </label>
-            <label class="cvdetail__style-field">
-              <span class="cvdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
-              <input
-                type="number"
-                min="8"
-                max="14"
-                step="0.5"
-                [ngModel]="sectionOverride(key)?.fontSizePt ?? null"
-                [placeholder]="style().fontSizePt"
-                (ngModelChange)="setSectionStyle(key, { fontSizePt: $event ? +$event : undefined })"
-              />
-            </label>
-            <label class="cvdetail__style-field">
-              <span class="cvdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
-              <input
-                type="color"
-                [ngModel]="sectionOverride(key)?.colorHex ?? style().accentColorHex"
-                (ngModelChange)="setSectionStyle(key, { colorHex: $event })"
-              />
-            </label>
-            <label class="cvdetail__style-field">
-              <span class="cvdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
-              <select
-                [ngModel]="sectionOverride(key)?.fontWeight ?? null"
-                (ngModelChange)="
-                  setSectionStyle(key, { fontWeight: $event ? $any(+$event) : undefined })
-                "
-              >
-                <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
-                <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-                <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-                <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-                <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-              </select>
-            </label>
+            <div class="cvdetail__style-cols">
+              <div class="cvdetail__style-col">
+                <span class="cvdetail__style-group">{{
+                  t()('documents.cv_style_group_body')
+                }}</span>
+                <div class="cvdetail__style-col-fields">
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+                    <select
+                      [ngModel]="sectionOverride(key)?.fontFamily ?? ''"
+                      (ngModelChange)="setSectionStyle(key, { fontFamily: $event || undefined })"
+                    >
+                      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                      @for (font of atsSafeFonts; track font) {
+                        <option [value]="font">{{ font }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+                    <input
+                      type="number"
+                      min="8"
+                      max="14"
+                      step="0.5"
+                      [ngModel]="sectionOverride(key)?.fontSizePt ?? null"
+                      [placeholder]="style().fontSizePt"
+                      (ngModelChange)="
+                        setSectionStyle(key, { fontSizePt: $event ? +$event : undefined })
+                      "
+                    />
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{
+                      t()('documents.cv_style_weight')
+                    }}</span>
+                    <select
+                      [ngModel]="sectionOverride(key)?.fontWeight ?? null"
+                      (ngModelChange)="
+                        setSectionStyle(key, { fontWeight: $event ? $any(+$event) : undefined })
+                      "
+                    >
+                      <option [ngValue]="null">
+                        {{ t()('documents.cv_section_style_inherit') }}
+                      </option>
+                      <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                      <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                      <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                      <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+                    </select>
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+                    <input
+                      type="color"
+                      [ngModel]="sectionOverride(key)?.colorHex ?? style().accentColorHex"
+                      (ngModelChange)="setSectionStyle(key, { colorHex: $event })"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div class="cvdetail__style-col">
+                <span class="cvdetail__style-group">{{
+                  t()('documents.cv_style_group_titles')
+                }}</span>
+                <div class="cvdetail__style-col-fields">
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+                    <select
+                      [ngModel]="sectionOverride(key)?.title?.fontFamily ?? ''"
+                      (ngModelChange)="
+                        setSectionTitleStyle(key, { fontFamily: $event || undefined })
+                      "
+                    >
+                      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                      @for (font of atsSafeFonts; track font) {
+                        <option [value]="font">{{ font }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+                    <input
+                      type="number"
+                      min="6"
+                      max="28"
+                      step="0.5"
+                      [ngModel]="sectionOverride(key)?.title?.fontSizePt ?? null"
+                      [placeholder]="style().titleStyle?.fontSizePt ?? style().fontSizePt"
+                      (ngModelChange)="
+                        setSectionTitleStyle(key, { fontSizePt: $event ? +$event : undefined })
+                      "
+                    />
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{
+                      t()('documents.cv_style_weight')
+                    }}</span>
+                    <select
+                      [ngModel]="sectionOverride(key)?.title?.fontWeight ?? null"
+                      (ngModelChange)="
+                        setSectionTitleStyle(key, {
+                          fontWeight: $event ? $any(+$event) : undefined,
+                        })
+                      "
+                    >
+                      <option [ngValue]="null">
+                        {{ t()('documents.cv_section_style_inherit') }}
+                      </option>
+                      <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                      <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                      <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                      <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+                    </select>
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+                    <input
+                      type="color"
+                      [ngModel]="sectionOverride(key)?.title?.colorHex ?? style().accentColorHex"
+                      (ngModelChange)="setSectionTitleStyle(key, { colorHex: $event })"
+                    />
+                  </label>
+                  <label class="cvdetail__style-field">
+                    <span class="cvdetail__style-label">{{ t()('documents.cv_style_line') }}</span>
+                    <select
+                      [ngModel]="sectionOverride(key)?.titleBorder ?? ''"
+                      (ngModelChange)="setSectionStyle(key, { titleBorder: $event || undefined })"
+                    >
+                      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                      <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
+                      <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
+                      <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
+                      <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <button type="button" class="cvdetail__style-reset" (click)="resetSectionStyle(key)">
               {{ t()('documents.cv_section_style_reset') }}
             </button>
@@ -795,7 +1002,7 @@
           <ng-template #headerTpl let-section let-photoUri="photoUri" let-placement="placement">
             <div
               [class]="'cvpreview__header ' + headerPlacementClass(placement)"
-              [ngStyle]="sectionCss('personal_details')"
+              [ngStyle]="bodyCss('personal_details')"
             >
               @if (photoUri) {
                 <div class="cvpreview__photo">
@@ -820,8 +1027,12 @@
           </ng-template>
 
           <ng-template #summaryTpl let-section>
-            <div class="cvpreview__section" [ngStyle]="sectionCss('summary')">
-              <h3 class="cvpreview__section-title" [style.color]="effStyle('summary').colorHex">
+            <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('summary')">
+              <h3
+                class="cvpreview__section-title"
+                [ngStyle]="titleCss('summary')"
+                [style.borderBottom]="titleBorderCss('summary')"
+              >
                 {{ t()(sectionLabelKey('summary')) }}
               </h3>
               <p class="cvpreview__summary">{{ section.text }}</p>
@@ -830,17 +1041,21 @@
 
           <ng-template #sectionTitleTpl let-label let-key="key">
             <h3
-              class="cvpreview__section-title"
-              [ngStyle]="sectionCss(key)"
-              [style.color]="effStyle(key).colorHex"
+              class="cvpreview__section-title cvpreview__section-start"
+              [ngStyle]="titleCss(key)"
+              [style.borderBottom]="titleBorderCss(key)"
             >
               {{ label }}
             </h3>
           </ng-template>
 
           <ng-template #skillsTpl let-section>
-            <div class="cvpreview__section" [ngStyle]="sectionCss('skills')">
-              <h3 class="cvpreview__section-title" [style.color]="effStyle('skills').colorHex">
+            <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('skills')">
+              <h3
+                class="cvpreview__section-title"
+                [ngStyle]="titleCss('skills')"
+                [style.borderBottom]="titleBorderCss('skills')"
+              >
                 {{ t()(sectionLabelKey('skills')) }}
               </h3>
               @for (group of section.groups; track $index) {
@@ -853,8 +1068,15 @@
             </div>
           </ng-template>
 
-          <ng-template #expEntryTpl let-entry let-key="key">
-            <div class="cvpreview__entry" [ngStyle]="sectionCss(key)">
+          <!-- An experience entry is split into a head atom + one atom per
+               bullet so a long entry can flow across a page break (the head is
+               glued to its first bullet; later bullets are free). See atoms(). -->
+          <ng-template #expHeadTpl let-entry let-key="key" let-first="first">
+            <div
+              class="cvpreview__entry"
+              [class.cvpreview__entry--sep]="!first"
+              [ngStyle]="bodyCss(key)"
+            >
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-company">{{ entry.company }}</span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
@@ -866,26 +1088,25 @@
                   {{ entry.endDate || t()('documents.cv_present') }}
                 </span>
               </div>
-              @if (entry.bullets.length) {
-                <ul>
-                  @for (bullet of entry.bullets; track $index) {
-                    <li>
-                      @for (run of runs(bullet); track $index) {
-                        @if (run.bold) {
-                          <strong>{{ run.text }}</strong>
-                        } @else {
-                          {{ run.text }}
-                        }
-                      }
-                    </li>
-                  }
-                </ul>
-              }
             </div>
           </ng-template>
 
+          <ng-template #expBulletTpl let-bullet let-key="key">
+            <ul class="cvpreview__bullets" [ngStyle]="bodyCss(key)">
+              <li>
+                @for (run of runs(bullet); track $index) {
+                  @if (run.bold) {
+                    <strong>{{ run.text }}</strong>
+                  } @else {
+                    {{ run.text }}
+                  }
+                }
+              </li>
+            </ul>
+          </ng-template>
+
           <ng-template #eduEntryTpl let-entry let-key="key">
-            <div class="cvpreview__entry" [ngStyle]="sectionCss(key)">
+            <div class="cvpreview__entry" [ngStyle]="bodyCss(key)">
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-role"
                   >{{ entry.degree }}, {{ entry.institution }}</span
@@ -899,8 +1120,15 @@
           </ng-template>
 
           <ng-template #languagesTpl let-section>
-            <div class="cvpreview__section" [ngStyle]="sectionCss('languages')">
-              <h3 class="cvpreview__section-title" [style.color]="effStyle('languages').colorHex">
+            <div
+              class="cvpreview__section cvpreview__section-start"
+              [ngStyle]="bodyCss('languages')"
+            >
+              <h3
+                class="cvpreview__section-title"
+                [ngStyle]="titleCss('languages')"
+                [style.borderBottom]="titleBorderCss('languages')"
+              >
                 {{ t()(sectionLabelKey('languages')) }}
               </h3>
               <p class="cvpreview__languages">

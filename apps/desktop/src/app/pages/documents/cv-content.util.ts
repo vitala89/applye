@@ -1,4 +1,5 @@
 import {
+  CvBorderStyle,
   CvContent,
   CvEducationEntry,
   CvExperienceEntry,
@@ -13,6 +14,7 @@ import {
   CvTemplate,
   CoverLetterBlockKey,
   CoverLetterStyle,
+  CvTextStyle,
   PageMargins,
   PageSettings,
 } from '@applye/core';
@@ -517,6 +519,28 @@ export function effectiveSectionStyle(
     fontWeight: o.fontWeight ?? style.fontWeight,
     colorHex: o.colorHex ?? style.accentColorHex,
   };
+}
+
+/** Resolved title style for a section: per-section title override, then the
+ * document-wide `titleStyle`, then the document body defaults as the ultimate
+ * fallback so every property is a concrete value. */
+export function effectiveTitleStyle(
+  style: CvStyle,
+  key: CvSectionKey,
+): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+  const t: CvTextStyle = style.sectionStyles?.[key]?.title ?? {};
+  const d: CvTextStyle = style.titleStyle ?? {};
+  return {
+    fontFamily: t.fontFamily ?? d.fontFamily ?? style.fontFamily,
+    fontSizePt: t.fontSizePt ?? d.fontSizePt ?? style.fontSizePt,
+    fontWeight: t.fontWeight ?? d.fontWeight ?? style.fontWeight,
+    colorHex: t.colorHex ?? d.colorHex ?? style.accentColorHex,
+  };
+}
+
+/** Resolved title underline: per-section, then document-wide, then 'solid'. */
+export function effectiveTitleBorder(style: CvStyle, key: CvSectionKey): CvBorderStyle {
+  return style.sectionStyles?.[key]?.titleBorder ?? style.titleBorder ?? 'solid';
 }
 
 export interface ResolvedPage {

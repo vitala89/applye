@@ -11,6 +11,8 @@ import {
   buildCvContent,
   cvContentToMd,
   effectiveSectionStyle,
+  effectiveTitleStyle,
+  effectiveTitleBorder,
   normalizeCvContent,
   parseCvSkillResponse,
   repairTruncatedJson,
@@ -506,5 +508,51 @@ describe('resolvePageSettings', () => {
     } as any);
     expect(r.margin.top).toBe(0);
     expect(r.margin.right).toBe(50);
+  });
+});
+
+describe('title/body style resolution', () => {
+  const base: CvStyle = {
+    fontFamily: 'Calibri',
+    fontSizePt: 11,
+    accentColorHex: '#333333',
+    fontWeight: 400,
+  };
+
+  it('title falls back to document titleStyle, then to body defaults', () => {
+    const s: CvStyle = { ...base, titleStyle: { fontFamily: 'Georgia', fontSizePt: 14 } };
+    const t = effectiveTitleStyle(s, 'summary');
+    expect(t.fontFamily).toBe('Georgia'); // from titleStyle
+    expect(t.fontSizePt).toBe(14); // from titleStyle
+    expect(t.fontWeight).toBe(400); // falls back to body default
+    expect(t.colorHex).toBe('#333333'); // falls back to accentColorHex
+  });
+
+  it('per-section title override beats document titleStyle', () => {
+    const s: CvStyle = {
+      ...base,
+      titleStyle: { fontFamily: 'Georgia' },
+      sectionStyles: { skills: { title: { fontFamily: 'Arial', fontSizePt: 16 } } },
+    };
+    const t = effectiveTitleStyle(s, 'skills');
+    expect(t.fontFamily).toBe('Arial');
+    expect(t.fontSizePt).toBe(16);
+  });
+
+  it('body resolution is unchanged (section body over document body)', () => {
+    const s: CvStyle = { ...base, sectionStyles: { skills: { fontFamily: 'Arial' } } };
+    expect(effectiveSectionStyle(s, 'skills').fontFamily).toBe('Arial');
+    expect(effectiveSectionStyle(s, 'summary').fontFamily).toBe('Calibri');
+  });
+
+  it('titleBorder resolves section over document over default solid', () => {
+    expect(effectiveTitleBorder(base, 'summary')).toBe('solid');
+    expect(effectiveTitleBorder({ ...base, titleBorder: 'none' }, 'summary')).toBe('none');
+    expect(
+      effectiveTitleBorder(
+        { ...base, titleBorder: 'none', sectionStyles: { skills: { titleBorder: 'dotted' } } },
+        'skills',
+      ),
+    ).toBe('dotted');
   });
 });

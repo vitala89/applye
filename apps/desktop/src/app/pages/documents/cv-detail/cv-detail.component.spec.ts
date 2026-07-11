@@ -83,6 +83,31 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.styleOpen()).toBe(true);
   });
 
+  it('hasAnyCustomStyle detects document-wide changes, not only per-section', () => {
+    expect(component.hasAnyCustomStyle()).toBe(false); // pristine default
+
+    component.updateStyle({ fontFamily: 'Open Sans' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // document-wide font
+
+    component.resetAllStyles();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+
+    component.updateStyle({ fontSizePt: 22 });
+    expect(component.hasAnyCustomStyle()).toBe(true); // document-wide size
+    component.resetAllStyles();
+
+    component.updateTitleStyle({ fontFamily: 'Georgia' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // title style
+    component.resetAllStyles();
+
+    component.updateStyle({ titleBorder: 'dotted' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // title line
+    component.resetAllStyles();
+
+    component.setSectionStyle('skills', { fontFamily: 'Arial' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // per-section still works
+  });
+
   it('toggleStylePopover opens and closes the same key', () => {
     expect(component.openStyleKey()).toBeNull();
     component.toggleStylePopover('summary');
@@ -172,6 +197,96 @@ describe('CvDetailComponent per-section style', () => {
     expect(ids.filter((id) => id.startsWith('sec:experience:e')).length).toBe(2);
   });
 
+  it('applies the effective font to every rendered section title (no mono fallback)', () => {
+    // Regression: summary/skills/languages titles omitted a title-style binding
+    // and fell back to the hardcoded `.cvpreview__section-title` mono font, while
+    // experience/education titles (via #sectionTitleTpl) inherited the CV font.
+    // All section titles must carry the effective font uniformly.
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.style.set({ ...component.style(), fontFamily: 'Georgia' });
+    component.sections.set([
+      {
+        key: 'skills',
+        order: 0,
+        visible: true,
+        groups: [{ label: 'Languages', values: ['TypeScript'] }],
+      },
+      {
+        key: 'languages',
+        order: 1,
+        visible: true,
+        items: [{ language: 'English', level: '' }],
+      },
+    ]);
+    fixture.detectChanges();
+
+    const titles = fixture.nativeElement.querySelectorAll('.cvpreview__section-title');
+    expect(titles.length).toBeGreaterThan(0);
+    titles.forEach((h3: HTMLElement) => expect(h3.style.fontFamily).toContain('Georgia'));
+  });
+
+  it('renders section title in the title font and body in the body font', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.style.set({
+      ...component.style(),
+      fontFamily: 'Calibri', // body
+      titleStyle: { fontFamily: 'Georgia' }, // title
+      titleBorder: 'none',
+    });
+    component.sections.set([
+      { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+    ]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const title = root.querySelector('.cvpreview__section-title') as HTMLElement;
+    const body = root.querySelector('.cvpreview__section') as HTMLElement;
+    expect(title.style.fontFamily).toContain('Georgia');
+    expect(body.style.fontFamily).toContain('Calibri');
+    expect(title.style.borderBottom === '' || title.style.borderBottom === 'none').toBe(true);
+  });
+
+  it('marks every section start for spacing (measured padding, not sibling margin)', () => {
+    // Regression: inter-section spacing relied on `.cvpreview__section +
+    // .cvpreview__section` sibling adjacency, which never matches because the
+    // paginated sheet wraps each atom separately. Each section root must carry
+    // `cvpreview__section-start` so the padding-based gap applies (and is
+    // measured by the sheet).
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([
+      { key: 'summary', order: 0, visible: true, text: 'Hi' },
+      {
+        key: 'experience',
+        order: 1,
+        visible: true,
+        entries: [{ company: 'A', role: 'Dev', startDate: '2020', bullets: [] }],
+      },
+      { key: 'skills', order: 2, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+      { key: 'languages', order: 3, visible: true, items: [{ language: 'English', level: '' }] },
+    ]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    // summary/skills/languages section wrappers
+    const sections = root.querySelectorAll('.cvpreview__section');
+    expect(sections.length).toBeGreaterThan(0);
+    sections.forEach((el) => expect(el.classList.contains('cvpreview__section-start')).toBe(true));
+    // experience's standalone section title (not nested inside a section wrapper)
+    const standaloneTitles = [...root.querySelectorAll('.cvpreview__section-title')].filter(
+      (h) => !h.closest('.cvpreview__section'),
+    );
+    expect(standaloneTitles.length).toBeGreaterThan(0);
+    standaloneTitles.forEach((h) =>
+      expect(h.classList.contains('cvpreview__section-start')).toBe(true),
+    );
+  });
+
   it('defaults photoPlacement to above_left and updates on chip select', () => {
     expect(component.photoPlacement()).toBe('above_left');
     component.setPhotoPlacement('above_right');
@@ -220,5 +335,43 @@ describe('CvDetailComponent per-section style', () => {
     expect(document.body.classList.contains('printing-cv')).toBe(false);
 
     printSpy.mockRestore();
+  });
+
+  it('titleCss and bodyCss resolve independent fonts; titleBorderCss maps the line', () => {
+    component.style.set({
+      ...component.style(),
+      fontFamily: 'Calibri',
+      titleStyle: { fontFamily: 'Georgia' },
+      titleBorder: 'dotted',
+    });
+    expect(component.bodyCss('summary')['font-family']).toBe('Calibri');
+    expect(component.titleCss('summary')['font-family']).toBe('Georgia');
+    expect(component.titleBorderCss('summary')).toContain('dotted');
+
+    component.style.set({ ...component.style(), titleBorder: 'none' });
+    expect(component.titleBorderCss('summary')).toBe('none');
+  });
+
+  it('setSectionTitleStyle deep-merges into the section title override', () => {
+    component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
+    component.setSectionTitleStyle('skills', { fontSizePt: 15 });
+    expect(component.style().sectionStyles?.skills?.title).toEqual({
+      fontFamily: 'Arial',
+      fontSizePt: 15,
+    });
+  });
+
+  it('per-section title override renders over the document title style', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.style.set({ ...component.style(), titleStyle: { fontFamily: 'Georgia' } });
+    component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
+    component.sections.set([
+      { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+    ]);
+    fixture.detectChanges();
+    const title = fixture.nativeElement.querySelector('.cvpreview__section-title') as HTMLElement;
+    expect(title.style.fontFamily).toContain('Arial');
   });
 });

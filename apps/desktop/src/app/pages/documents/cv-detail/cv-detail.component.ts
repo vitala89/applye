@@ -42,6 +42,7 @@ import type {
   CvStyle,
   CvTemplate,
   CvTextRun,
+  CvTextStyle,
   DocumentLibraryItem,
   PageMargins,
   PageSettings,
@@ -71,6 +72,8 @@ import {
   buildContactLine,
   cvFieldAtsNoteKeys,
   effectiveSectionStyle,
+  effectiveTitleStyle,
+  effectiveTitleBorder,
   mergeRegeneratedSection,
   normalizeCvContent,
   orderedVisibleSections,
@@ -269,7 +272,8 @@ export class CvDetailComponent {
   readonly summaryTpl = viewChild.required<TemplateRef<unknown>>('summaryTpl');
   readonly sectionTitleTpl = viewChild.required<TemplateRef<unknown>>('sectionTitleTpl');
   readonly skillsTpl = viewChild.required<TemplateRef<unknown>>('skillsTpl');
-  readonly expEntryTpl = viewChild.required<TemplateRef<unknown>>('expEntryTpl');
+  readonly expHeadTpl = viewChild.required<TemplateRef<unknown>>('expHeadTpl');
+  readonly expBulletTpl = viewChild.required<TemplateRef<unknown>>('expBulletTpl');
   readonly eduEntryTpl = viewChild.required<TemplateRef<unknown>>('eduEntryTpl');
   readonly languagesTpl = viewChild.required<TemplateRef<unknown>>('languagesTpl');
 
@@ -314,13 +318,25 @@ export class CvDetailComponent {
             ctx: { $implicit: label, key: 'experience' },
             glueToNext: true,
           });
-          section.entries.forEach((entry, i) =>
+          section.entries.forEach((entry, i) => {
+            const bullets = entry.bullets ?? [];
+            // Head glued to its first bullet so a heading never sits alone at a
+            // page bottom; the remaining bullets are free to flow to the next
+            // page, filling the current one instead of jumping the whole entry.
             out.push({
-              id: `sec:experience:e${i}`,
-              tpl: this.expEntryTpl(),
-              ctx: { $implicit: entry, key: 'experience' },
-            }),
-          );
+              id: `sec:experience:e${i}:head`,
+              tpl: this.expHeadTpl(),
+              ctx: { $implicit: entry, key: 'experience', first: i === 0 },
+              glueToNext: bullets.length > 0,
+            });
+            bullets.forEach((bullet, b) =>
+              out.push({
+                id: `sec:experience:e${i}:b${b}`,
+                tpl: this.expBulletTpl(),
+                ctx: { $implicit: bullet, key: 'experience' },
+              }),
+            );
+          });
           break;
         }
         case 'education': {
@@ -380,16 +396,31 @@ export class CvDetailComponent {
     return effectiveSectionStyle(this.style(), key);
   }
 
-  /** Bindable style object for a section wrapper's font-family/size/weight,
-   * so preview templates use a single `[ngStyle]` instead of three
-   * `[style.*]` bindings per section. */
-  sectionCss(key: CvSectionKey): Record<string, string> {
+  /** Body-text style for a section wrapper. */
+  bodyCss(key: CvSectionKey): Record<string, string> {
     const s = this.effStyle(key);
     return {
       'font-family': s.fontFamily,
       'font-size': `${s.fontSizePt}pt`,
       'font-weight': String(s.fontWeight),
     };
+  }
+
+  /** Title style for a section heading. */
+  titleCss(key: CvSectionKey): Record<string, string> {
+    const s = effectiveTitleStyle(this.style(), key);
+    return {
+      'font-family': s.fontFamily,
+      'font-size': `${s.fontSizePt}pt`,
+      'font-weight': String(s.fontWeight),
+      color: s.colorHex,
+    };
+  }
+
+  /** Title underline as a `border-bottom` string for `[style.borderBottom]`. */
+  titleBorderCss(key: CvSectionKey): string {
+    const b = effectiveTitleBorder(this.style(), key);
+    return b === 'none' ? 'none' : `var(--border-width) ${b} var(--border-subtle)`;
   }
 
   toggleStylePopover(key: CvSectionKey): void {
@@ -435,6 +466,20 @@ export class CvDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
+  /** Deep-merge a patch into a section's title override (a nested object that
+   * `setSectionStyle`'s shallow merge would otherwise replace wholesale). */
+  setSectionTitleStyle(key: CvSectionKey, patch: Partial<CvTextStyle>): void {
+    const current = this.style();
+    const existing = current.sectionStyles?.[key]?.title ?? {};
+    this.setSectionStyle(key, { title: { ...existing, ...patch } });
+  }
+
+  /** Deep-merge a patch into the document-wide title style (template
+   * expressions can't spread, so the merge happens here). */
+  updateTitleStyle(patch: Partial<CvTextStyle>): void {
+    this.updateStyle({ titleStyle: { ...(this.style().titleStyle ?? {}), ...patch } });
+  }
+
   resetSectionStyle(key: CvSectionKey): void {
     const current = this.style();
     const sectionStyles = { ...(current.sectionStyles ?? {}) };
@@ -451,10 +496,32 @@ export class CvDetailComponent {
     return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
   }
 
-  /** Any section carries an override. */
+  /** True when the style differs from `CV_STYLE_DEFAULT` in any way — a
+   * document-wide field (body font/size/weight/colour, title style, title
+   * line, page geometry) OR a per-section override. Drives the "Reset styles"
+   * button's enabled state and the "Customized" badge, so both react to global
+   * changes, not only per-section ones. */
   readonly hasAnyCustomStyle = computed(() => {
-    const s = this.style().sectionStyles ?? {};
-    return Object.values(s).some((o) => o && Object.values(o).some((v) => v != null));
+    const s = this.style();
+    const d = CV_STYLE_DEFAULT;
+    const nonEmpty = (o: Record<string, unknown> | undefined): boolean =>
+      !!o && Object.values(o).some((v) => v != null);
+    const sectionCustom = Object.values(s.sectionStyles ?? {}).some(
+      (o) =>
+        o &&
+        Object.values(o).some((v) =>
+          v && typeof v === 'object' ? nonEmpty(v as Record<string, unknown>) : v != null,
+        ),
+    );
+    return (
+      s.fontFamily !== d.fontFamily ||
+      s.fontSizePt !== d.fontSizePt ||
+      s.fontWeight !== d.fontWeight ||
+      s.accentColorHex !== d.accentColorHex ||
+      !!s.titleBorder ||
+      nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
+      sectionCustom
+    );
   });
 
   /** Reset every section and the document-wide style to the default. */
@@ -493,9 +560,12 @@ export class CvDetailComponent {
    */
   async exportPdfWysiwyg(): Promise<void> {
     const r = resolvePageSettings(this.style().page);
-    const rule =
-      `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
-      ` margin: ${r.margin.top}mm ${r.margin.right}mm ${r.margin.bottom}mm ${r.margin.left}mm; }`;
+    // margin: 0 — each `.page-card` keeps its own per-side padding (the
+    // simulated margins) and is forced to exactly one physical page in the
+    // print stylesheet, so the printed page count matches the preview's
+    // page-cards 1:1. A non-zero @page margin here would double the margin
+    // and let the browser re-paginate, drifting from the preview.
+    const rule = `@page { size: ${r.widthMm}mm ${r.heightMm}mm; margin: 0; }`;
     let el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement('style');

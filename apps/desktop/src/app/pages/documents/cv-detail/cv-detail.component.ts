@@ -272,7 +272,8 @@ export class CvDetailComponent {
   readonly summaryTpl = viewChild.required<TemplateRef<unknown>>('summaryTpl');
   readonly sectionTitleTpl = viewChild.required<TemplateRef<unknown>>('sectionTitleTpl');
   readonly skillsTpl = viewChild.required<TemplateRef<unknown>>('skillsTpl');
-  readonly expEntryTpl = viewChild.required<TemplateRef<unknown>>('expEntryTpl');
+  readonly expHeadTpl = viewChild.required<TemplateRef<unknown>>('expHeadTpl');
+  readonly expBulletTpl = viewChild.required<TemplateRef<unknown>>('expBulletTpl');
   readonly eduEntryTpl = viewChild.required<TemplateRef<unknown>>('eduEntryTpl');
   readonly languagesTpl = viewChild.required<TemplateRef<unknown>>('languagesTpl');
 
@@ -317,13 +318,25 @@ export class CvDetailComponent {
             ctx: { $implicit: label, key: 'experience' },
             glueToNext: true,
           });
-          section.entries.forEach((entry, i) =>
+          section.entries.forEach((entry, i) => {
+            const bullets = entry.bullets ?? [];
+            // Head glued to its first bullet so a heading never sits alone at a
+            // page bottom; the remaining bullets are free to flow to the next
+            // page, filling the current one instead of jumping the whole entry.
             out.push({
-              id: `sec:experience:e${i}`,
-              tpl: this.expEntryTpl(),
-              ctx: { $implicit: entry, key: 'experience' },
-            }),
-          );
+              id: `sec:experience:e${i}:head`,
+              tpl: this.expHeadTpl(),
+              ctx: { $implicit: entry, key: 'experience', first: i === 0 },
+              glueToNext: bullets.length > 0,
+            });
+            bullets.forEach((bullet, b) =>
+              out.push({
+                id: `sec:experience:e${i}:b${b}`,
+                tpl: this.expBulletTpl(),
+                ctx: { $implicit: bullet, key: 'experience' },
+              }),
+            );
+          });
           break;
         }
         case 'education': {

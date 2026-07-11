@@ -23,7 +23,8 @@
 // Global (not component-scoped): `.page-card__atom` belongs to the
 // view-encapsulated paginated-sheet, `.cvpreview__section-start` to the CV
 // editor — only an unencapsulated rule can span both.
-.page-card__atom:first-child .cvpreview__section-start {
+.page-card__atom:first-child .cvpreview__section-start,
+.page-card__atom:first-child .cvpreview__entry--sep {
   padding-top: 0;
 }
 

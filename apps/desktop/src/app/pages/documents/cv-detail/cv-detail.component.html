@@ -1068,8 +1068,15 @@
             </div>
           </ng-template>
 
-          <ng-template #expEntryTpl let-entry let-key="key">
-            <div class="cvpreview__entry" [ngStyle]="bodyCss(key)">
+          <!-- An experience entry is split into a head atom + one atom per
+               bullet so a long entry can flow across a page break (the head is
+               glued to its first bullet; later bullets are free). See atoms(). -->
+          <ng-template #expHeadTpl let-entry let-key="key" let-first="first">
+            <div
+              class="cvpreview__entry"
+              [class.cvpreview__entry--sep]="!first"
+              [ngStyle]="bodyCss(key)"
+            >
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-company">{{ entry.company }}</span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
@@ -1081,22 +1088,21 @@
                   {{ entry.endDate || t()('documents.cv_present') }}
                 </span>
               </div>
-              @if (entry.bullets.length) {
-                <ul>
-                  @for (bullet of entry.bullets; track $index) {
-                    <li>
-                      @for (run of runs(bullet); track $index) {
-                        @if (run.bold) {
-                          <strong>{{ run.text }}</strong>
-                        } @else {
-                          {{ run.text }}
-                        }
-                      }
-                    </li>
-                  }
-                </ul>
-              }
             </div>
+          </ng-template>
+
+          <ng-template #expBulletTpl let-bullet let-key="key">
+            <ul class="cvpreview__bullets" [ngStyle]="bodyCss(key)">
+              <li>
+                @for (run of runs(bullet); track $index) {
+                  @if (run.bold) {
+                    <strong>{{ run.text }}</strong>
+                  } @else {
+                    {{ run.text }}
+                  }
+                }
+              </li>
+            </ul>
           </ng-template>
 
           <ng-template #eduEntryTpl let-entry let-key="key">

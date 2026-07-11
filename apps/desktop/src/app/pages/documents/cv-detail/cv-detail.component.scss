@@ -679,16 +679,25 @@
   line-height: var(--leading-normal);
   margin: 0;
 }
-.cvpreview__entry + .cvpreview__entry {
-  margin-top: var(--space-4);
+// Gap above every experience entry except the first. Padding (not an adjacency
+// margin) because each entry head is a separate atom in its own page-card
+// wrapper — sibling `+` selectors never match across atoms, and padding is
+// included in the atom's measured height so pagination stays accurate.
+.cvpreview__entry--sep {
+  padding-top: var(--space-4);
 }
 .cvpreview__entry-role {
   font-weight: var(--weight-medium);
 }
-.cvpreview__entry ul {
-  margin: var(--space-2) 0 0;
+// One `<ul>` per bullet atom; margin 0 so consecutive single-item lists stack
+// seamlessly like one list, with the per-item bottom margin providing rhythm.
+.cvpreview__bullets {
+  margin: 0;
   padding-left: var(--space-5);
   color: var(--text-secondary);
+}
+.cvpreview__bullets li {
+  margin: 0 0 var(--space-1);
 }
 .cvpreview__languages {
   color: var(--text-secondary);

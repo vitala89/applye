@@ -780,7 +780,7 @@
           <ng-template #headerTpl let-section let-photoUri="photoUri" let-placement="placement">
             <div
               [class]="'cvpreview__header ' + headerPlacementClass(placement)"
-              [ngStyle]="sectionCss('personal_details')"
+              [ngStyle]="bodyCss('personal_details')"
             >
               @if (photoUri) {
                 <div class="cvpreview__photo">
@@ -805,14 +805,11 @@
           </ng-template>
 
           <ng-template #summaryTpl let-section>
-            <div
-              class="cvpreview__section cvpreview__section-start"
-              [ngStyle]="sectionCss('summary')"
-            >
+            <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('summary')">
               <h3
                 class="cvpreview__section-title"
-                [ngStyle]="sectionCss('summary')"
-                [style.color]="effStyle('summary').colorHex"
+                [ngStyle]="titleCss('summary')"
+                [style.borderBottom]="titleBorderCss('summary')"
               >
                 {{ t()(sectionLabelKey('summary')) }}
               </h3>
@@ -823,22 +820,19 @@
           <ng-template #sectionTitleTpl let-label let-key="key">
             <h3
               class="cvpreview__section-title cvpreview__section-start"
-              [ngStyle]="sectionCss(key)"
-              [style.color]="effStyle(key).colorHex"
+              [ngStyle]="titleCss(key)"
+              [style.borderBottom]="titleBorderCss(key)"
             >
               {{ label }}
             </h3>
           </ng-template>
 
           <ng-template #skillsTpl let-section>
-            <div
-              class="cvpreview__section cvpreview__section-start"
-              [ngStyle]="sectionCss('skills')"
-            >
+            <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('skills')">
               <h3
                 class="cvpreview__section-title"
-                [ngStyle]="sectionCss('skills')"
-                [style.color]="effStyle('skills').colorHex"
+                [ngStyle]="titleCss('skills')"
+                [style.borderBottom]="titleBorderCss('skills')"
               >
                 {{ t()(sectionLabelKey('skills')) }}
               </h3>
@@ -853,7 +847,7 @@
           </ng-template>
 
           <ng-template #expEntryTpl let-entry let-key="key">
-            <div class="cvpreview__entry" [ngStyle]="sectionCss(key)">
+            <div class="cvpreview__entry" [ngStyle]="bodyCss(key)">
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-company">{{ entry.company }}</span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
@@ -884,7 +878,7 @@
           </ng-template>
 
           <ng-template #eduEntryTpl let-entry let-key="key">
-            <div class="cvpreview__entry" [ngStyle]="sectionCss(key)">
+            <div class="cvpreview__entry" [ngStyle]="bodyCss(key)">
               <div class="cvpreview__entry-head">
                 <span class="cvpreview__entry-role"
                   >{{ entry.degree }}, {{ entry.institution }}</span
@@ -900,12 +894,12 @@
           <ng-template #languagesTpl let-section>
             <div
               class="cvpreview__section cvpreview__section-start"
-              [ngStyle]="sectionCss('languages')"
+              [ngStyle]="bodyCss('languages')"
             >
               <h3
                 class="cvpreview__section-title"
-                [ngStyle]="sectionCss('languages')"
-                [style.color]="effStyle('languages').colorHex"
+                [ngStyle]="titleCss('languages')"
+                [style.borderBottom]="titleBorderCss('languages')"
               >
                 {{ t()(sectionLabelKey('languages')) }}
               </h3>

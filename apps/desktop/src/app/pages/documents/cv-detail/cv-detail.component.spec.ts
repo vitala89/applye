@@ -173,7 +173,7 @@ describe('CvDetailComponent per-section style', () => {
   });
 
   it('applies the effective font to every rendered section title (no mono fallback)', () => {
-    // Regression: summary/skills/languages titles omitted [ngStyle]="sectionCss()"
+    // Regression: summary/skills/languages titles omitted a title-style binding
     // and fell back to the hardcoded `.cvpreview__section-title` mono font, while
     // experience/education titles (via #sectionTitleTpl) inherited the CV font.
     // All section titles must carry the effective font uniformly.
@@ -200,6 +200,29 @@ describe('CvDetailComponent per-section style', () => {
     const titles = fixture.nativeElement.querySelectorAll('.cvpreview__section-title');
     expect(titles.length).toBeGreaterThan(0);
     titles.forEach((h3: HTMLElement) => expect(h3.style.fontFamily).toContain('Georgia'));
+  });
+
+  it('renders section title in the title font and body in the body font', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.style.set({
+      ...component.style(),
+      fontFamily: 'Calibri', // body
+      titleStyle: { fontFamily: 'Georgia' }, // title
+      titleBorder: 'none',
+    });
+    component.sections.set([
+      { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+    ]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const title = root.querySelector('.cvpreview__section-title') as HTMLElement;
+    const body = root.querySelector('.cvpreview__section') as HTMLElement;
+    expect(title.style.fontFamily).toContain('Georgia');
+    expect(body.style.fontFamily).toContain('Calibri');
+    expect(title.style.borderBottom === '' || title.style.borderBottom === 'none').toBe(true);
   });
 
   it('marks every section start for spacing (measured padding, not sibling margin)', () => {

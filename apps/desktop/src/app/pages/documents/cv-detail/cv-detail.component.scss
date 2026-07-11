@@ -636,17 +636,12 @@
   padding-top: var(--space-6);
 }
 .cvpreview__section-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--text-tertiary);
-  border-bottom: var(--border-width) solid var(--border-subtle);
   padding-bottom: var(--space-2);
   margin: 0 0 var(--space-3);
 }
 .cvpreview__summary {
-  font-size: var(--text-sm);
   line-height: var(--leading-normal);
   margin: 0;
 }
@@ -659,11 +654,9 @@
 .cvpreview__entry ul {
   margin: var(--space-2) 0 0;
   padding-left: var(--space-5);
-  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 .cvpreview__languages {
-  font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: 0;
 }

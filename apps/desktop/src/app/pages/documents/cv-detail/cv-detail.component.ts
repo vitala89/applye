@@ -393,12 +393,6 @@ export class CvDetailComponent {
     };
   }
 
-  /** Alias for bodyCss — kept for backward compatibility with existing templates
-   * until Task 3 updates them to use bodyCss directly. */
-  sectionCss(key: CvSectionKey): Record<string, string> {
-    return this.bodyCss(key);
-  }
-
   /** Title style for a section heading. */
   titleCss(key: CvSectionKey): Record<string, string> {
     const s = effectiveTitleStyle(this.style(), key);

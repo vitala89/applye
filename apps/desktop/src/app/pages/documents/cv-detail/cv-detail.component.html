@@ -983,7 +983,7 @@
         </ng-template>
       } @else {
         <div class="cvdetail__preview-col">
-          <div class="cvpreview-viewport">
+          <div class="cvpreview-viewport" [ngStyle]="themeVars()">
             <lib-paginated-sheet
               [atoms]="atoms()"
               [geometry]="geometry()"

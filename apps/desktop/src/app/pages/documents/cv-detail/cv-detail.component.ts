@@ -55,6 +55,9 @@ import {
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
   parseInlineEmphasis,
+  getBuiltinTheme,
+  themeCssVars,
+  themeStyleSeed,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -198,6 +201,10 @@ export class CvDetailComponent {
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
+  readonly themeId = signal<number>(1);
+  readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
+  /** Theme custom properties for the preview viewport; inherited by all page cards. */
+  readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
   readonly styleNotes = signal<StyleNote[]>([]);
   private styleCheckTimer?: ReturnType<typeof setTimeout>;
 
@@ -532,6 +539,17 @@ export class CvDetailComponent {
     void this.refreshStyleNotes();
   }
 
+  /** Switch theme: reseed the four base tokens to the theme's defaults but keep
+   * the user's explicit per-section overrides, title style, title border, and
+   * page geometry. */
+  selectTheme(id: number): void {
+    this.themeId.set(id);
+    const seed = themeStyleSeed(getBuiltinTheme(id));
+    this.style.set({ ...this.style(), ...seed });
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    void this.refreshStyleNotes();
+  }
+
   readonly previewMode = signal(false);
 
   /** Ordered, visible sections as they'd actually render — the photo
@@ -634,9 +652,12 @@ export class CvDetailComponent {
       this.includeBirthdate.set(!!personal?.birthDate);
       this.includeMaritalStatus.set(!!personal?.maritalStatus);
 
+      const themeId = item.themeId ?? 1;
+      this.themeId.set(themeId);
+      const seed = themeStyleSeed(getBuiltinTheme(themeId));
       const style: CvStyle = item.styleJson
-        ? { ...CV_STYLE_DEFAULT, ...JSON.parse(item.styleJson) }
-        : CV_STYLE_DEFAULT;
+        ? { ...CV_STYLE_DEFAULT, ...seed, ...JSON.parse(item.styleJson) }
+        : { ...CV_STYLE_DEFAULT, ...seed };
       this.style.set(style);
       await this.refreshStyleNotes();
     } catch {
@@ -1004,6 +1025,7 @@ export class CvDetailComponent {
         contentJson: JSON.stringify({ sections }),
         templateId: doc.templateId,
         styleJson: JSON.stringify(this.style()),
+        themeId: this.themeId(),
         regionTag: this.regionTag(),
         language: doc.language,
         archetypeTag: doc.archetypeTag,

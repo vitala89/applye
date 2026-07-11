@@ -483,10 +483,32 @@ export class CvDetailComponent {
     return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
   }
 
-  /** Any section carries an override. */
+  /** True when the style differs from `CV_STYLE_DEFAULT` in any way — a
+   * document-wide field (body font/size/weight/colour, title style, title
+   * line, page geometry) OR a per-section override. Drives the "Reset styles"
+   * button's enabled state and the "Customized" badge, so both react to global
+   * changes, not only per-section ones. */
   readonly hasAnyCustomStyle = computed(() => {
-    const s = this.style().sectionStyles ?? {};
-    return Object.values(s).some((o) => o && Object.values(o).some((v) => v != null));
+    const s = this.style();
+    const d = CV_STYLE_DEFAULT;
+    const nonEmpty = (o: Record<string, unknown> | undefined): boolean =>
+      !!o && Object.values(o).some((v) => v != null);
+    const sectionCustom = Object.values(s.sectionStyles ?? {}).some(
+      (o) =>
+        o &&
+        Object.values(o).some((v) =>
+          v && typeof v === 'object' ? nonEmpty(v as Record<string, unknown>) : v != null,
+        ),
+    );
+    return (
+      s.fontFamily !== d.fontFamily ||
+      s.fontSizePt !== d.fontSizePt ||
+      s.fontWeight !== d.fontWeight ||
+      s.accentColorHex !== d.accentColorHex ||
+      !!s.titleBorder ||
+      nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
+      sectionCustom
+    );
   });
 
   /** Reset every section and the document-wide style to the default. */

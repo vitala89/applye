@@ -83,6 +83,31 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.styleOpen()).toBe(true);
   });
 
+  it('hasAnyCustomStyle detects document-wide changes, not only per-section', () => {
+    expect(component.hasAnyCustomStyle()).toBe(false); // pristine default
+
+    component.updateStyle({ fontFamily: 'Open Sans' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // document-wide font
+
+    component.resetAllStyles();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+
+    component.updateStyle({ fontSizePt: 22 });
+    expect(component.hasAnyCustomStyle()).toBe(true); // document-wide size
+    component.resetAllStyles();
+
+    component.updateTitleStyle({ fontFamily: 'Georgia' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // title style
+    component.resetAllStyles();
+
+    component.updateStyle({ titleBorder: 'dotted' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // title line
+    component.resetAllStyles();
+
+    component.setSectionStyle('skills', { fontFamily: 'Arial' });
+    expect(component.hasAnyCustomStyle()).toBe(true); // per-section still works
+  });
+
   it('toggleStylePopover opens and closes the same key', () => {
     expect(component.openStyleKey()).toBeNull();
     component.toggleStylePopover('summary');

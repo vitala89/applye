@@ -335,4 +335,18 @@ describe('CvDetailComponent per-section style', () => {
       fontSizePt: 15,
     });
   });
+
+  it('per-section title override renders over the document title style', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.style.set({ ...component.style(), titleStyle: { fontFamily: 'Georgia' } });
+    component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
+    component.sections.set([
+      { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+    ]);
+    fixture.detectChanges();
+    const title = fixture.nativeElement.querySelector('.cvpreview__section-title') as HTMLElement;
+    expect(title.style.fontFamily).toContain('Arial');
+  });
 });

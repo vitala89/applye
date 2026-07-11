@@ -134,6 +134,13 @@
 .cvdetail__style-field input[type='number'] {
   width: 80px;
 }
+.cvdetail__style-group {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin: var(--space-3) 0 var(--space-1);
+}
 .cvdetail__sections {
   display: flex;
   flex-direction: column;

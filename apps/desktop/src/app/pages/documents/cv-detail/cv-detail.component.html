@@ -801,6 +801,7 @@
 
         <ng-template #stylePopover let-key>
           <div class="cvdetail__style-pop">
+            <span class="cvdetail__style-group">{{ t()('documents.cv_style_group_body') }}</span>
             <label class="cvdetail__style-field">
               <span class="cvdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
               <select
@@ -848,6 +849,71 @@
                 <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
               </select>
             </label>
+
+            <span class="cvdetail__style-group">{{ t()('documents.cv_style_group_titles') }}</span>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.title?.fontFamily ?? ''"
+                (ngModelChange)="setSectionTitleStyle(key, { fontFamily: $event || undefined })"
+              >
+                <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                @for (font of atsSafeFonts; track font) {
+                  <option [value]="font">{{ font }}</option>
+                }
+              </select>
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+              <input
+                type="number"
+                min="6"
+                max="28"
+                step="0.5"
+                [ngModel]="sectionOverride(key)?.title?.fontSizePt ?? null"
+                [placeholder]="style().titleStyle?.fontSizePt ?? style().fontSizePt"
+                (ngModelChange)="
+                  setSectionTitleStyle(key, { fontSizePt: $event ? +$event : undefined })
+                "
+              />
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+              <input
+                type="color"
+                [ngModel]="sectionOverride(key)?.title?.colorHex ?? style().accentColorHex"
+                (ngModelChange)="setSectionTitleStyle(key, { colorHex: $event })"
+              />
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.title?.fontWeight ?? null"
+                (ngModelChange)="
+                  setSectionTitleStyle(key, { fontWeight: $event ? $any(+$event) : undefined })
+                "
+              >
+                <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+                <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+              </select>
+            </label>
+            <label class="cvdetail__style-field">
+              <span class="cvdetail__style-label">{{ t()('documents.cv_style_line') }}</span>
+              <select
+                [ngModel]="sectionOverride(key)?.titleBorder ?? ''"
+                (ngModelChange)="setSectionStyle(key, { titleBorder: $event || undefined })"
+              >
+                <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
+                <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
+                <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
+                <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
+              </select>
+            </label>
+
             <button type="button" class="cvdetail__style-reset" (click)="resetSectionStyle(key)">
               {{ t()('documents.cv_section_style_reset') }}
             </button>

@@ -177,21 +177,6 @@
                   <div class="docedit-field">
                     <span
                       class="docedit-field__label"
-                      [attr.title]="t()('documents.cv_style_hint_size')"
-                      >{{ t()('documents.cv_style_size') }}</span
-                    >
-                    <input
-                      type="number"
-                      min="6"
-                      max="24"
-                      step="0.5"
-                      [ngModel]="style().fontSizePt"
-                      (ngModelChange)="updateStyle({ fontSizePt: +$event })"
-                    />
-                  </div>
-                  <div class="docedit-field">
-                    <span
-                      class="docedit-field__label"
                       [attr.title]="t()('documents.cv_style_hint_color')"
                       >{{ t()('documents.cv_style_color') }}</span
                     >
@@ -821,7 +806,11 @@
 
           <ng-template #summaryTpl let-section>
             <div class="cvpreview__section" [ngStyle]="sectionCss('summary')">
-              <h3 class="cvpreview__section-title" [style.color]="effStyle('summary').colorHex">
+              <h3
+                class="cvpreview__section-title"
+                [ngStyle]="sectionCss('summary')"
+                [style.color]="effStyle('summary').colorHex"
+              >
                 {{ t()(sectionLabelKey('summary')) }}
               </h3>
               <p class="cvpreview__summary">{{ section.text }}</p>
@@ -840,7 +829,11 @@
 
           <ng-template #skillsTpl let-section>
             <div class="cvpreview__section" [ngStyle]="sectionCss('skills')">
-              <h3 class="cvpreview__section-title" [style.color]="effStyle('skills').colorHex">
+              <h3
+                class="cvpreview__section-title"
+                [ngStyle]="sectionCss('skills')"
+                [style.color]="effStyle('skills').colorHex"
+              >
                 {{ t()(sectionLabelKey('skills')) }}
               </h3>
               @for (group of section.groups; track $index) {
@@ -900,7 +893,11 @@
 
           <ng-template #languagesTpl let-section>
             <div class="cvpreview__section" [ngStyle]="sectionCss('languages')">
-              <h3 class="cvpreview__section-title" [style.color]="effStyle('languages').colorHex">
+              <h3
+                class="cvpreview__section-title"
+                [ngStyle]="sectionCss('languages')"
+                [style.color]="effStyle('languages').colorHex"
+              >
                 {{ t()(sectionLabelKey('languages')) }}
               </h3>
               <p class="cvpreview__languages">

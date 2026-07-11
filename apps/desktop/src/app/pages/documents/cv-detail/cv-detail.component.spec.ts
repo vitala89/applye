@@ -172,6 +172,36 @@ describe('CvDetailComponent per-section style', () => {
     expect(ids.filter((id) => id.startsWith('sec:experience:e')).length).toBe(2);
   });
 
+  it('applies the effective font to every rendered section title (no mono fallback)', () => {
+    // Regression: summary/skills/languages titles omitted [ngStyle]="sectionCss()"
+    // and fell back to the hardcoded `.cvpreview__section-title` mono font, while
+    // experience/education titles (via #sectionTitleTpl) inherited the CV font.
+    // All section titles must carry the effective font uniformly.
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.style.set({ ...component.style(), fontFamily: 'Georgia' });
+    component.sections.set([
+      {
+        key: 'skills',
+        order: 0,
+        visible: true,
+        groups: [{ label: 'Languages', values: ['TypeScript'] }],
+      },
+      {
+        key: 'languages',
+        order: 1,
+        visible: true,
+        items: [{ language: 'English', level: '' }],
+      },
+    ]);
+    fixture.detectChanges();
+
+    const titles = fixture.nativeElement.querySelectorAll('.cvpreview__section-title');
+    expect(titles.length).toBeGreaterThan(0);
+    titles.forEach((h3: HTMLElement) => expect(h3.style.fontFamily).toContain('Georgia'));
+  });
+
   it('defaults photoPlacement to above_left and updates on chip select', () => {
     expect(component.photoPlacement()).toBe('above_left');
     component.setPhotoPlacement('above_right');

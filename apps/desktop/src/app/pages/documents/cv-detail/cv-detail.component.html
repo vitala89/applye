@@ -245,16 +245,18 @@
                       {{ t()('documents.cv_style_weight') }}</span
                     >
                     <select
-                      [ngModel]="style().titleStyle?.fontWeight ?? ''"
+                      [ngModel]="style().titleStyle?.fontWeight ?? null"
                       (ngModelChange)="
                         updateTitleStyle({ fontWeight: $event ? $any(+$event) : undefined })
                       "
                     >
-                      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                      <option value="300">{{ t()('documents.cv_style_weight_300') }}</option>
-                      <option value="400">{{ t()('documents.cv_style_weight_400') }}</option>
-                      <option value="600">{{ t()('documents.cv_style_weight_600') }}</option>
-                      <option value="700">{{ t()('documents.cv_style_weight_700') }}</option>
+                      <option [ngValue]="null">
+                        {{ t()('documents.cv_section_style_inherit') }}
+                      </option>
+                      <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+                      <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+                      <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+                      <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
                     </select>
                   </div>
                   <div class="docedit-field">

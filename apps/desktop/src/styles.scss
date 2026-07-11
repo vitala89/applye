@@ -14,6 +14,19 @@
 
 // App-level overrides (if any) go here
 
+// A CV section carries top padding (`.cvpreview__section-start`) to space it
+// from the section above. When a section lands as the first atom on a page,
+// that padding stacks on top of the page's own top margin and reads as an
+// oversized leading gap. Zero it for the first atom of every page-card so a
+// section at the top of a page begins flush with the margin — identical on
+// screen and in the printed / exported PDF (both render the same page-cards).
+// Global (not component-scoped): `.page-card__atom` belongs to the
+// view-encapsulated paginated-sheet, `.cvpreview__section-start` to the CV
+// editor — only an unencapsulated rule can span both.
+.page-card__atom:first-child .cvpreview__section-start {
+  padding-top: 0;
+}
+
 // WYSIWYG PDF export. While `body.printing-cv` is set (toggled by
 // `exportPdfWysiwyg()` in the CV / cover-letter editors), hide the entire app
 // except the paginated-sheet content so only it prints. This MUST be global,

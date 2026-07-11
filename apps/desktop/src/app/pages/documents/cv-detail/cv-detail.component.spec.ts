@@ -383,4 +383,32 @@ describe('CvDetailComponent per-section style', () => {
     const title = fixture.nativeElement.querySelector('.cvpreview__section-title') as HTMLElement;
     expect(title.style.fontFamily).toContain('Arial');
   });
+
+  it('Aurora theme exposes teal accent var and shows industry', async () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([
+      {
+        key: 'experience',
+        order: 0,
+        visible: true,
+        entries: [
+          {
+            company: 'Acme',
+            role: 'Engineer',
+            startDate: '2020',
+            industry: 'SaaS',
+            bullets: [],
+          },
+        ],
+      },
+    ]);
+    component.selectTheme(2);
+    fixture.detectChanges();
+    const viewport: HTMLElement = fixture.nativeElement.querySelector('.cvpreview-viewport');
+    expect(viewport.style.getPropertyValue('--cv-accent')).toBe('#1B7464');
+    expect(viewport.style.getPropertyValue('--cv-role-style')).toBe('italic');
+    expect(fixture.nativeElement.textContent).toContain('SaaS');
+  });
 });

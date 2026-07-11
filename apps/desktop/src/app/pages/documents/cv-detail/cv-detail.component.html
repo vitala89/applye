@@ -159,6 +159,31 @@
             <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
               <div>
                 <div class="docedit-style-section">
+                  <div class="docedit-style-grid">
+                    <label class="docedit-field">
+                      <span class="docedit-field__label">{{
+                        t()('documents.cv_theme_label')
+                      }}</span>
+                      <select
+                        [value]="themeId()"
+                        (change)="selectTheme(+$any($event.target).value)"
+                      >
+                        <option [value]="1">{{ t()('documents.cv_theme_classic') }}</option>
+                        <option [value]="2">{{ t()('documents.cv_theme_aurora') }}</option>
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      class="docedit-import-theme"
+                      disabled
+                      [title]="t()('documents.cv_theme_import_soon')"
+                    >
+                      {{ t()('documents.cv_theme_import') }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="docedit-style-section">
                   <span class="docedit-style-section__header">{{
                     t()('documents.cv_style_group_body')
                   }}</span>
@@ -1078,7 +1103,12 @@
               [ngStyle]="bodyCss(key)"
             >
               <div class="cvpreview__entry-head">
-                <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                <span class="cvpreview__entry-lead">
+                  <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                  @if (activeTheme().entry.showIndustry && entry.industry) {
+                    <span class="cvpreview__entry-industry"> - {{ entry.industry }}</span>
+                  }
+                </span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
               </div>
               <div class="cvpreview__entry-head">

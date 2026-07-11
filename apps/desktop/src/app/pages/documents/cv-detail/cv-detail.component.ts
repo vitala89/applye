@@ -424,10 +424,25 @@ export class CvDetailComponent {
     };
   }
 
-  /** Title underline as a `border-bottom` string for `[style.borderBottom]`. */
+  /** Title underline as a `border-bottom` string for `[style.borderBottom]`.
+   * When the active theme defines an accent/muted section rule and the user
+   * hasn't explicitly set their own title border, the theme's colour/weight
+   * wins (Aurora); otherwise falls back to the neutral default (Classic,
+   * whose `ruleColor` is `'none'`, always takes this branch). */
   titleBorderCss(key: CvSectionKey): string {
     const b = effectiveTitleBorder(this.style(), key);
-    return b === 'none' ? 'none' : `var(--border-width) ${b} var(--border-subtle)`;
+    if (b === 'none') return 'none';
+    const sh = this.activeTheme().sectionHeader;
+    if (sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key)) {
+      const color = sh.ruleColor === 'accent' ? 'var(--cv-accent)' : 'var(--cv-muted)';
+      return `${sh.ruleWeightPt}pt ${b} ${color}`;
+    }
+    return `var(--border-width) ${b} var(--border-subtle)`;
+  }
+
+  private hasExplicitTitleBorder(key: CvSectionKey): boolean {
+    const s = this.style();
+    return s.sectionStyles?.[key]?.titleBorder != null || s.titleBorder != null;
   }
 
   toggleStylePopover(key: CvSectionKey): void {

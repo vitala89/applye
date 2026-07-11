@@ -805,7 +805,10 @@
           </ng-template>
 
           <ng-template #summaryTpl let-section>
-            <div class="cvpreview__section" [ngStyle]="sectionCss('summary')">
+            <div
+              class="cvpreview__section cvpreview__section-start"
+              [ngStyle]="sectionCss('summary')"
+            >
               <h3
                 class="cvpreview__section-title"
                 [ngStyle]="sectionCss('summary')"
@@ -819,7 +822,7 @@
 
           <ng-template #sectionTitleTpl let-label let-key="key">
             <h3
-              class="cvpreview__section-title"
+              class="cvpreview__section-title cvpreview__section-start"
               [ngStyle]="sectionCss(key)"
               [style.color]="effStyle(key).colorHex"
             >
@@ -828,7 +831,10 @@
           </ng-template>
 
           <ng-template #skillsTpl let-section>
-            <div class="cvpreview__section" [ngStyle]="sectionCss('skills')">
+            <div
+              class="cvpreview__section cvpreview__section-start"
+              [ngStyle]="sectionCss('skills')"
+            >
               <h3
                 class="cvpreview__section-title"
                 [ngStyle]="sectionCss('skills')"
@@ -892,7 +898,10 @@
           </ng-template>
 
           <ng-template #languagesTpl let-section>
-            <div class="cvpreview__section" [ngStyle]="sectionCss('languages')">
+            <div
+              class="cvpreview__section cvpreview__section-start"
+              [ngStyle]="sectionCss('languages')"
+            >
               <h3
                 class="cvpreview__section-title"
                 [ngStyle]="sectionCss('languages')"

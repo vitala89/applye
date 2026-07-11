@@ -202,6 +202,43 @@ describe('CvDetailComponent per-section style', () => {
     titles.forEach((h3: HTMLElement) => expect(h3.style.fontFamily).toContain('Georgia'));
   });
 
+  it('marks every section start for spacing (measured padding, not sibling margin)', () => {
+    // Regression: inter-section spacing relied on `.cvpreview__section +
+    // .cvpreview__section` sibling adjacency, which never matches because the
+    // paginated sheet wraps each atom separately. Each section root must carry
+    // `cvpreview__section-start` so the padding-based gap applies (and is
+    // measured by the sheet).
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([
+      { key: 'summary', order: 0, visible: true, text: 'Hi' },
+      {
+        key: 'experience',
+        order: 1,
+        visible: true,
+        entries: [{ company: 'A', role: 'Dev', startDate: '2020', bullets: [] }],
+      },
+      { key: 'skills', order: 2, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+      { key: 'languages', order: 3, visible: true, items: [{ language: 'English', level: '' }] },
+    ]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    // summary/skills/languages section wrappers
+    const sections = root.querySelectorAll('.cvpreview__section');
+    expect(sections.length).toBeGreaterThan(0);
+    sections.forEach((el) => expect(el.classList.contains('cvpreview__section-start')).toBe(true));
+    // experience's standalone section title (not nested inside a section wrapper)
+    const standaloneTitles = [...root.querySelectorAll('.cvpreview__section-title')].filter(
+      (h) => !h.closest('.cvpreview__section'),
+    );
+    expect(standaloneTitles.length).toBeGreaterThan(0);
+    standaloneTitles.forEach((h) =>
+      expect(h.classList.contains('cvpreview__section-start')).toBe(true),
+    );
+  });
+
   it('defaults photoPlacement to above_left and updates on chip select', () => {
     expect(component.photoPlacement()).toBe('above_left');
     component.setPhotoPlacement('above_right');

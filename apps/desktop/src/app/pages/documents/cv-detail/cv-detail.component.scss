@@ -628,8 +628,12 @@
   padding: var(--space-4);
   background: var(--surface-2);
 }
-.cvpreview__section + .cvpreview__section {
-  margin-top: var(--space-6);
+// Space above each new section. Uses padding (not margin) on the section's
+// first element so the paginated sheet — which measures each atom's
+// offsetHeight in isolation and can't see sibling margins across its
+// per-atom wrappers — includes the gap in its page-fit math.
+.cvpreview__section-start {
+  padding-top: var(--space-6);
 }
 .cvpreview__section-title {
   font-family: var(--font-mono);

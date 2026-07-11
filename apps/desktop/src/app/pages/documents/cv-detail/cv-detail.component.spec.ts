@@ -288,4 +288,28 @@ describe('CvDetailComponent per-section style', () => {
 
     printSpy.mockRestore();
   });
+
+  it('titleCss and bodyCss resolve independent fonts; titleBorderCss maps the line', () => {
+    component.style.set({
+      ...component.style(),
+      fontFamily: 'Calibri',
+      titleStyle: { fontFamily: 'Georgia' },
+      titleBorder: 'dotted',
+    });
+    expect(component.bodyCss('summary')['font-family']).toBe('Calibri');
+    expect(component.titleCss('summary')['font-family']).toBe('Georgia');
+    expect(component.titleBorderCss('summary')).toContain('dotted');
+
+    component.style.set({ ...component.style(), titleBorder: 'none' });
+    expect(component.titleBorderCss('summary')).toBe('none');
+  });
+
+  it('setSectionTitleStyle deep-merges into the section title override', () => {
+    component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
+    component.setSectionTitleStyle('skills', { fontSizePt: 15 });
+    expect(component.style().sectionStyles?.skills?.title).toEqual({
+      fontFamily: 'Arial',
+      fontSizePt: 15,
+    });
+  });
 });

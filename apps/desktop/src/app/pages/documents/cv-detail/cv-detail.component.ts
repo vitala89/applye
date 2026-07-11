@@ -42,6 +42,7 @@ import type {
   CvStyle,
   CvTemplate,
   CvTextRun,
+  CvTextStyle,
   DocumentLibraryItem,
   PageMargins,
   PageSettings,
@@ -71,6 +72,8 @@ import {
   buildContactLine,
   cvFieldAtsNoteKeys,
   effectiveSectionStyle,
+  effectiveTitleStyle,
+  effectiveTitleBorder,
   mergeRegeneratedSection,
   normalizeCvContent,
   orderedVisibleSections,
@@ -380,16 +383,37 @@ export class CvDetailComponent {
     return effectiveSectionStyle(this.style(), key);
   }
 
-  /** Bindable style object for a section wrapper's font-family/size/weight,
-   * so preview templates use a single `[ngStyle]` instead of three
-   * `[style.*]` bindings per section. */
-  sectionCss(key: CvSectionKey): Record<string, string> {
+  /** Body-text style for a section wrapper. */
+  bodyCss(key: CvSectionKey): Record<string, string> {
     const s = this.effStyle(key);
     return {
       'font-family': s.fontFamily,
       'font-size': `${s.fontSizePt}pt`,
       'font-weight': String(s.fontWeight),
     };
+  }
+
+  /** Alias for bodyCss — kept for backward compatibility with existing templates
+   * until Task 3 updates them to use bodyCss directly. */
+  sectionCss(key: CvSectionKey): Record<string, string> {
+    return this.bodyCss(key);
+  }
+
+  /** Title style for a section heading. */
+  titleCss(key: CvSectionKey): Record<string, string> {
+    const s = effectiveTitleStyle(this.style(), key);
+    return {
+      'font-family': s.fontFamily,
+      'font-size': `${s.fontSizePt}pt`,
+      'font-weight': String(s.fontWeight),
+      color: s.colorHex,
+    };
+  }
+
+  /** Title underline as a `border-bottom` string for `[style.borderBottom]`. */
+  titleBorderCss(key: CvSectionKey): string {
+    const b = effectiveTitleBorder(this.style(), key);
+    return b === 'none' ? 'none' : `var(--border-width) ${b} var(--border-subtle)`;
   }
 
   toggleStylePopover(key: CvSectionKey): void {
@@ -433,6 +457,20 @@ export class CvDetailComponent {
     this.style.set({ ...current, sectionStyles });
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  /** Deep-merge a patch into a section's title override (a nested object that
+   * `setSectionStyle`'s shallow merge would otherwise replace wholesale). */
+  setSectionTitleStyle(key: CvSectionKey, patch: Partial<CvTextStyle>): void {
+    const current = this.style();
+    const existing = current.sectionStyles?.[key]?.title ?? {};
+    this.setSectionStyle(key, { title: { ...existing, ...patch } });
+  }
+
+  /** Deep-merge a patch into the document-wide title style (template
+   * expressions can't spread, so the merge happens here). */
+  updateTitleStyle(patch: Partial<CvTextStyle>): void {
+    this.updateStyle({ titleStyle: { ...(this.style().titleStyle ?? {}), ...patch } });
   }
 
   resetSectionStyle(key: CvSectionKey): void {

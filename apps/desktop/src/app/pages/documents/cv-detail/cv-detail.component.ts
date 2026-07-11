@@ -493,9 +493,12 @@ export class CvDetailComponent {
    */
   async exportPdfWysiwyg(): Promise<void> {
     const r = resolvePageSettings(this.style().page);
-    const rule =
-      `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
-      ` margin: ${r.margin.top}mm ${r.margin.right}mm ${r.margin.bottom}mm ${r.margin.left}mm; }`;
+    // margin: 0 — each `.page-card` keeps its own per-side padding (the
+    // simulated margins) and is forced to exactly one physical page in the
+    // print stylesheet, so the printed page count matches the preview's
+    // page-cards 1:1. A non-zero @page margin here would double the margin
+    // and let the browser re-paginate, drifting from the preview.
+    const rule = `@page { size: ${r.widthMm}mm ${r.heightMm}mm; margin: 0; }`;
     let el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement('style');

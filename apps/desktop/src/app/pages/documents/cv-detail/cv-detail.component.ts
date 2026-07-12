@@ -1,13 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-  TemplateRef,
-  viewChild,
-} from '@angular/core';
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -41,7 +33,6 @@ import type {
   CvSectionStyle,
   CvStyle,
   CvTemplate,
-  CvTextRun,
   CvTextStyle,
   DocumentLibraryItem,
   PageMargins,
@@ -54,33 +45,22 @@ import {
   CV_ATS_SAFE_FONTS,
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
-  parseInlineEmphasis,
   toggleBoldWrap,
   getBuiltinTheme,
-  themeCssVars,
   themeStyleSeed,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import {
-  ButtonDirective,
-  PaginatedSheetComponent,
-  type SheetAtom,
-  type SheetGeometry,
-} from '@applye/ui';
+import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
+import { CvPreviewComponent } from './cv-preview/cv-preview.component';
 import {
   blankEducationEntry,
   blankExperienceEntry,
-  buildContactLine,
   cvFieldAtsNoteKeys,
-  effectiveSectionStyle,
-  effectiveTitleStyle,
-  effectiveTitleBorder,
   mergeRegeneratedSection,
   normalizeCvContent,
-  orderedVisibleSections,
   parseCvSkillResponse,
   REGENERATABLE_SECTION_KEYS,
   resolvePageSettings,
@@ -108,10 +88,9 @@ export function mergePersonalField<T extends string | undefined>(
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
-    NgStyle,
     NgTemplateOutlet,
     CvPhotoCropComponent,
-    PaginatedSheetComponent,
+    CvPreviewComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -145,7 +124,6 @@ export class CvDetailComponent {
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
-  protected readonly buildContactLine = buildContactLine;
 
   readonly regionOptions = computed(() =>
     this.regionTags.map((tag) => ({
@@ -153,10 +131,6 @@ export class CvDetailComponent {
       label: `${tag.toUpperCase()} — ${this.t()(`documents.cv_region_${tag}`)}`,
     })),
   );
-
-  runs(text: string): CvTextRun[] {
-    return parseInlineEmphasis(text);
-  }
 
   /** Wrap/unwrap **bold** around the field's current selection, then write the
    * result back to the model and restore the caret. Bound to the Bold button
@@ -241,8 +215,6 @@ export class CvDetailComponent {
     ...CV_STYLE_DEFAULT,
     ...themeStyleSeed(this.activeTheme()),
   }));
-  /** Theme custom properties for the preview viewport; inherited by all page cards. */
-  readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
   readonly styleNotes = signal<StyleNote[]>([]);
   private styleCheckTimer?: ReturnType<typeof setTimeout>;
 
@@ -290,131 +262,10 @@ export class CvDetailComponent {
     this.updatePage({ size, margin: this.currentMargin() });
   }
 
-  /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
-  private static readonly PX_PER_MM = 96 / 25.4;
-
-  /** Preview page geometry (px) — real A4/Letter proportions plus margins,
-   * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement. */
-  readonly geometry = computed<SheetGeometry>(() => {
-    const r = resolvePageSettings(this.style().page);
-    const px = CvDetailComponent.PX_PER_MM;
-    return {
-      pageWidthPx: r.widthMm * px,
-      pageHeightPx: r.heightMm * px,
-      marginTopPx: r.margin.top * px,
-      marginRightPx: r.margin.right * px,
-      marginBottomPx: r.margin.bottom * px,
-      marginLeftPx: r.margin.left * px,
-    };
-  });
-
-  /** True when any single atom is taller than one usable page — set from
-   * `<lib-paginated-sheet>`'s `(blockOverflow)` output. */
+  /** True when any single atom is taller than one usable page — mirrored up
+   * from `<app-cv-preview>`'s `(blockOverflow)` output (which itself tracks
+   * `<lib-paginated-sheet>`'s own `(blockOverflow)` output). */
   readonly blockOverflow = signal(false);
-
-  // Atom templates for the paginated sheet — declared in the HTML (`#headerTpl` etc).
-  readonly headerTpl = viewChild.required<TemplateRef<unknown>>('headerTpl');
-  readonly summaryTpl = viewChild.required<TemplateRef<unknown>>('summaryTpl');
-  readonly sectionTitleTpl = viewChild.required<TemplateRef<unknown>>('sectionTitleTpl');
-  readonly skillsTpl = viewChild.required<TemplateRef<unknown>>('skillsTpl');
-  readonly expHeadTpl = viewChild.required<TemplateRef<unknown>>('expHeadTpl');
-  readonly expBulletTpl = viewChild.required<TemplateRef<unknown>>('expBulletTpl');
-  readonly eduEntryTpl = viewChild.required<TemplateRef<unknown>>('eduEntryTpl');
-  readonly languagesTpl = viewChild.required<TemplateRef<unknown>>('languagesTpl');
-
-  /** Flattens `previewSections()` (in order) into ordered page atoms for
-   * `<lib-paginated-sheet>`. `photo` has no atom of its own — it folds into
-   * the header atom's render, mirroring the CSS float it always relied on. */
-  readonly atoms = computed<SheetAtom[]>(() => {
-    const out: SheetAtom[] = [];
-    const t = this.t();
-    const photoUri = this.includePhoto() ? this.photoDataUri() : null;
-
-    for (const section of this.previewSections()) {
-      switch (section.key) {
-        case 'personal_details':
-          out.push({
-            id: 'header',
-            tpl: this.headerTpl(),
-            ctx: { $implicit: section, photoUri, placement: this.photoPlacement() },
-          });
-          break;
-        case 'summary':
-          if (section.text) {
-            out.push({ id: 'summary', tpl: this.summaryTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'skills':
-          if (section.groups.length) {
-            out.push({ id: 'skills', tpl: this.skillsTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'languages':
-          if (section.items.length) {
-            out.push({ id: 'languages', tpl: this.languagesTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'experience': {
-          if (!section.entries.length) break;
-          const label = t(sectionLabelKey('experience'));
-          out.push({
-            id: 'sec:experience:title',
-            tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label, key: 'experience' },
-            glueToNext: true,
-          });
-          section.entries.forEach((entry, i) => {
-            const bullets = entry.bullets ?? [];
-            // Head glued to its first bullet so a heading never sits alone at a
-            // page bottom; the remaining bullets are free to flow to the next
-            // page, filling the current one instead of jumping the whole entry.
-            out.push({
-              id: `sec:experience:e${i}:head`,
-              tpl: this.expHeadTpl(),
-              ctx: { $implicit: entry, key: 'experience', first: i === 0 },
-              glueToNext: bullets.length > 0,
-            });
-            bullets.forEach((bullet, b) =>
-              out.push({
-                id: `sec:experience:e${i}:b${b}`,
-                tpl: this.expBulletTpl(),
-                ctx: { $implicit: bullet, key: 'experience' },
-              }),
-            );
-          });
-          break;
-        }
-        case 'education': {
-          if (!section.entries.length) break;
-          const label = t(sectionLabelKey('education'));
-          out.push({
-            id: 'sec:education:title',
-            tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label, key: 'education' },
-            glueToNext: true,
-          });
-          section.entries.forEach((entry, i) =>
-            out.push({
-              id: `sec:education:e${i}`,
-              tpl: this.eduEntryTpl(),
-              ctx: { $implicit: entry, key: 'education' },
-            }),
-          );
-          break;
-        }
-        // 'photo' folds into the header render — no standalone atom.
-      }
-    }
-    return out;
-  });
-
-  /** `t()` has no interpolation support (see `TranslateService.t`), so page
-   * captions substitute `{i}`/`{n}` manually — same pattern as
-   * `styleNoteMessage`'s `{value}` substitution above. */
-  readonly captionFn = (page: number, total: number): string =>
-    this.t()('documents.preview_page_of')
-      .replace('{i}', String(page))
-      .replace('{n}', String(total));
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
@@ -434,54 +285,6 @@ export class CvDetailComponent {
 
   /** Which section's "Style" popover is open, if any — only one at a time. */
   readonly openStyleKey = signal<CvSectionKey | null>(null);
-
-  /** Effective font/size/weight/colour for a section — its own override
-   * merged over the document-wide style (Task 1's `effectiveSectionStyle`). */
-  effStyle(key: CvSectionKey) {
-    return effectiveSectionStyle(this.style(), key);
-  }
-
-  /** Body-text style for a section wrapper. */
-  bodyCss(key: CvSectionKey): Record<string, string> {
-    const s = this.effStyle(key);
-    return {
-      'font-family': s.fontFamily,
-      'font-size': `${s.fontSizePt}pt`,
-      'font-weight': String(s.fontWeight),
-    };
-  }
-
-  /** Title style for a section heading. */
-  titleCss(key: CvSectionKey): Record<string, string> {
-    const s = effectiveTitleStyle(this.style(), key);
-    return {
-      'font-family': s.fontFamily,
-      'font-size': `${s.fontSizePt}pt`,
-      'font-weight': String(s.fontWeight),
-      color: s.colorHex,
-    };
-  }
-
-  /** Title underline as a `border-bottom` string for `[style.borderBottom]`.
-   * When the active theme defines an accent/muted section rule and the user
-   * hasn't explicitly set their own title border, the theme's colour/weight
-   * wins (Aurora); otherwise falls back to the neutral default (Classic,
-   * whose `ruleColor` is `'none'`, always takes this branch). */
-  titleBorderCss(key: CvSectionKey): string {
-    const b = effectiveTitleBorder(this.style(), key);
-    if (b === 'none') return 'none';
-    const sh = this.activeTheme().sectionHeader;
-    if (sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key)) {
-      const color = sh.ruleColor === 'accent' ? 'var(--cv-accent)' : 'var(--cv-muted)';
-      return `${sh.ruleWeightPt}pt ${b} ${color}`;
-    }
-    return `var(--border-width) ${b} var(--border-subtle)`;
-  }
-
-  private hasExplicitTitleBorder(key: CvSectionKey): boolean {
-    const s = this.style();
-    return s.sectionStyles?.[key]?.titleBorder != null || s.titleBorder != null;
-  }
 
   toggleStylePopover(key: CvSectionKey): void {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
@@ -606,16 +409,6 @@ export class CvDetailComponent {
   }
 
   readonly previewMode = signal(false);
-
-  /** Ordered, visible sections as they'd actually render — the photo
-   * toggle isn't written back into `section.visible` until Save, so this
-   * mirrors the live toggle state rather than trusting the stored value. */
-  readonly previewSections = computed(() => {
-    const live = this.sections().map((s) =>
-      s.key === 'photo' ? { ...s, visible: this.includePhoto() } : s,
-    );
-    return orderedVisibleSections(live);
-  });
 
   togglePreview(): void {
     this.previewMode.set(!this.previewMode());
@@ -1007,12 +800,6 @@ export class CvDetailComponent {
 
   setPhotoPlacement(placement: PhotoPlacement): void {
     this.photoPlacement.set(placement);
-  }
-
-  headerPlacementClass(placement: PhotoPlacement): string {
-    const suffix =
-      placement === 'above_center' ? 'center' : placement === 'above_right' ? 'right' : 'left';
-    return `cvpreview__header--${suffix}`;
   }
 
   /**

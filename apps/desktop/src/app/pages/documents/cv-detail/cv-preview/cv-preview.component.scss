@@ -1,0 +1,154 @@
+// NOTE: the WYSIWYG print rules live in the GLOBAL stylesheet
+// (apps/desktop/src/styles.scss), not here. Component styles are view-
+// encapsulated, so a `body.printing-cv *` rule in this file would only match
+// this component's own elements and could not hide the app shell/sidebar.
+// The global print stylesheet targets `lib-paginated-sheet` and `.page-card*`
+// by plain class name (unencapsulated), so it matches this component's
+// rendered DOM regardless of which component declares these `.cvpreview__*`
+// rules — moving them here from `cv-detail.component.scss` changes nothing
+// about the print seam.
+
+.cvpreview-viewport {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--surface-2);
+}
+// Space above each new section. Uses padding (not margin) on the section's
+// first element so the paginated sheet — which measures each atom's
+// offsetHeight in isolation and can't see sibling margins across its
+// per-atom wrappers — includes the gap in its page-fit math.
+.cvpreview__section-start {
+  padding-top: var(--space-6);
+}
+.cvpreview__section-title {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding-bottom: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+.cvpreview__summary {
+  line-height: var(--leading-normal);
+  margin: 0;
+}
+// Gap above every experience entry except the first. Padding (not an adjacency
+// margin) because each entry head is a separate atom in its own page-card
+// wrapper — sibling `+` selectors never match across atoms, and padding is
+// included in the atom's measured height so pagination stays accurate.
+.cvpreview__entry--sep {
+  padding-top: var(--space-4);
+}
+.cvpreview__entry-role {
+  font-weight: var(--weight-medium);
+  font-style: var(--cv-role-style, normal);
+}
+// One `<ul>` per bullet atom; margin 0 so consecutive single-item lists stack
+// seamlessly like one list, with the per-item bottom margin providing rhythm.
+.cvpreview__bullets {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--text-secondary);
+}
+.cvpreview__bullets li {
+  margin: 0 0 var(--space-1);
+}
+.cvpreview__languages {
+  color: var(--text-secondary);
+  margin: 0;
+}
+.cvpreview__warning {
+  margin: var(--space-2) auto 0;
+  max-width: 720px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--warning-tint, #fff4e5);
+  color: var(--warning-strong, #8a5a00);
+  font-size: var(--text-sm);
+}
+.cvpreview__name {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1.6rem;
+  font-weight: var(--weight-bold);
+  margin: 0;
+}
+.cvpreview__title {
+  font-weight: 600;
+  margin: 0.1rem 0 0.4rem;
+}
+.cvpreview__contact {
+  margin: 0 0 0.8rem;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+}
+.cvpreview__skill-row {
+  margin: 0.15rem 0;
+}
+.cvpreview__entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+.cvpreview__entry-lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.cvpreview__entry-company {
+  font-weight: 700;
+  color: var(--cv-company-color, inherit);
+}
+.cvpreview__entry-industry {
+  color: var(--cv-muted, var(--text-tertiary));
+}
+.cvpreview__entry-meta,
+.cvpreview__entry-dates {
+  white-space: nowrap;
+  font-size: 0.85em;
+  color: var(--text-tertiary);
+}
+.cvpreview__entry-head--rule {
+  // Aurora draws a thin rule under the experience role/dates line; Classic
+  // width 0. Scoped to the experience head only (not education) via the
+  // explicit --rule modifier class — see #expHeadTpl.
+  padding-bottom: var(--space-1);
+  border-bottom: var(--cv-entry-rule-width, 0pt) solid var(--cv-entry-rule-color, transparent);
+}
+.cvpreview__photo {
+  width: 90px;
+  height: 120px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+}
+
+.cvpreview__header {
+  &--left .cvpreview__photo {
+    float: left;
+    margin: 0 12px 8px 0;
+  }
+  &--right .cvpreview__photo {
+    float: right;
+    margin: 0 0 8px 12px;
+  }
+  &--center {
+    text-align: center;
+    .cvpreview__photo {
+      float: none;
+      margin: 0 auto 8px;
+      display: block;
+    }
+  }
+  &::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+  border-bottom: var(--cv-header-rule-width, 0pt) solid var(--cv-header-rule-color, transparent);
+}

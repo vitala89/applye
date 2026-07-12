@@ -525,234 +525,6 @@ fn cover_letter_content_to_blocks(
     Ok(out)
 }
 
-/// Escapes LaTeX special characters in plain (non-math) text.
-fn tex_escape(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    for c in text.chars() {
-        match c {
-            '&' | '%' | '$' | '#' | '_' | '{' | '}' => {
-                out.push('\\');
-                out.push(c);
-            }
-            '~' => out.push_str("\\textasciitilde{}"),
-            '^' => out.push_str("\\textasciicircum{}"),
-            '\\' => out.push_str("\\textbackslash{}"),
-            _ => out.push(c),
-        }
-    }
-    out
-}
-
-/// Escapes text for LaTeX, then renders `**bold**` spans as `\textbf{...}`.
-/// `tex_escape` leaves `*` untouched, so escaping first and scanning the
-/// escaped string for `**` markers is safe (verified against `tex_escape`
-/// above — no case maps `*` to anything else).
-fn tex_inline(text: &str) -> String {
-    let escaped = tex_escape(text);
-    let runs = crate::commands::tailoring::parse_inline_runs(&escaped);
-    let mut out = String::new();
-    for r in runs {
-        if r.bold {
-            out.push_str(&format!("\\textbf{{{}}}", r.text));
-        } else {
-            out.push_str(&r.text);
-        }
-    }
-    out
-}
-
-/// Renders a `CvContent` JSON blob into a clean, minimal LaTeX source
-/// (ROADMAP §16.6) — string templating only, never compiled here (no TeX
-/// toolchain bundled, keeps the binary tiny and local-first). Same section
-/// walk as `cv_content_to_blocks`, escaped for LaTeX instead.
-fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
-    let parsed: serde_json::Value = serde_json::from_str(content_json)
-        .map_err(|e| format!("cv_content_to_tex: invalid content_json: {e}"))?;
-    let mut sections: Vec<serde_json::Value> = parsed
-        .get("sections")
-        .and_then(|s| s.as_array())
-        .cloned()
-        .unwrap_or_default();
-    sections.sort_by_key(|s| s.get("order").and_then(|o| o.as_i64()).unwrap_or(0));
-
-    let mut body = String::new();
-    for section in sections {
-        if section.get("visible").and_then(|v| v.as_bool()) == Some(false) {
-            continue;
-        }
-        let str_field = |field: &str| -> Option<String> {
-            section
-                .get(field)
-                .and_then(|v| v.as_str())
-                .map(str::to_string)
-        };
-        match section.get("key").and_then(|k| k.as_str()).unwrap_or("") {
-            "personal_details" => {
-                if let Some(name) = str_field("fullName") {
-                    body.push_str(&format!(
-                        "{{\\LARGE \\textbf{{{}}}}}\\\\\n",
-                        tex_escape(&name)
-                    ));
-                }
-                let contact: Vec<String> = ["email", "phone", "address"]
-                    .into_iter()
-                    .filter_map(str_field)
-                    .map(|v| tex_escape(&v))
-                    .collect();
-                if !contact.is_empty() {
-                    body.push_str(&contact.join(" \\textbullet\\ "));
-                    body.push_str("\n\n");
-                }
-            }
-            "summary" => {
-                if let Some(text) = str_field("text") {
-                    body.push_str("\\section*{Summary}\n");
-                    body.push_str(&tex_inline(&text));
-                    body.push_str("\n\n");
-                }
-            }
-            "experience" => {
-                body.push_str("\\section*{Experience}\n");
-                if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
-                    for entry in entries {
-                        let company = entry.get("company").and_then(|v| v.as_str()).unwrap_or("");
-                        let role = entry.get("role").and_then(|v| v.as_str()).unwrap_or("");
-                        let start = entry
-                            .get("startDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let end = entry
-                            .get("endDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Present");
-                        body.push_str(&format!(
-                            "\\textbf{{{}}}, {} \\hfill {} -- {}\\\\\n",
-                            tex_escape(role),
-                            tex_escape(company),
-                            tex_escape(start),
-                            tex_escape(end)
-                        ));
-                        if let Some(bullets) = entry.get("bullets").and_then(|b| b.as_array()) {
-                            let items: Vec<&str> =
-                                bullets.iter().filter_map(|b| b.as_str()).collect();
-                            if !items.is_empty() {
-                                body.push_str("\\begin{itemize}\n");
-                                for bullet in items {
-                                    body.push_str(&format!("\\item {}\n", tex_inline(bullet)));
-                                }
-                                body.push_str("\\end{itemize}\n");
-                            }
-                        }
-                        body.push('\n');
-                    }
-                }
-            }
-            "education" => {
-                body.push_str("\\section*{Education}\n");
-                if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
-                    for entry in entries {
-                        let institution = entry
-                            .get("institution")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let degree = entry.get("degree").and_then(|v| v.as_str()).unwrap_or("");
-                        let start = entry
-                            .get("startDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let end = entry
-                            .get("endDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Present");
-                        body.push_str(&format!(
-                            "\\textbf{{{}}}, {} \\hfill {} -- {}\\\\\n\n",
-                            tex_escape(degree),
-                            tex_escape(institution),
-                            tex_escape(start),
-                            tex_escape(end)
-                        ));
-                    }
-                }
-            }
-            "skills" => {
-                if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
-                    let list: Vec<String> = items
-                        .iter()
-                        .filter_map(|v| v.as_str())
-                        .map(tex_escape)
-                        .collect();
-                    if !list.is_empty() {
-                        body.push_str("\\section*{Skills}\n");
-                        body.push_str(&list.join(", "));
-                        body.push_str("\n\n");
-                    }
-                } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
-                    let mut lines: Vec<String> = Vec::new();
-                    for group in groups {
-                        let label = group.get("label").and_then(|v| v.as_str()).unwrap_or("");
-                        let values: Vec<String> = group
-                            .get("values")
-                            .and_then(|v| v.as_array())
-                            .map(|arr| {
-                                arr.iter()
-                                    .filter_map(|v| v.as_str())
-                                    .map(tex_escape)
-                                    .collect()
-                            })
-                            .unwrap_or_default();
-                        if !values.is_empty() {
-                            lines.push(format!(
-                                "\\textbf{{{}:}} {}",
-                                tex_escape(label),
-                                values.join(", ")
-                            ));
-                        }
-                    }
-                    if !lines.is_empty() {
-                        body.push_str("\\section*{Skills}\n");
-                        body.push_str(&lines.join("\\\\\n"));
-                        body.push_str("\n\n");
-                    }
-                }
-            }
-            "languages" => {
-                if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
-                    if !items.is_empty() {
-                        body.push_str("\\section*{Languages}\n");
-                        for item in items {
-                            let language =
-                                item.get("language").and_then(|v| v.as_str()).unwrap_or("");
-                            let level = item.get("level").and_then(|v| v.as_str()).unwrap_or("");
-                            body.push_str(&format!(
-                                "{}: {}\\\\\n",
-                                tex_escape(language),
-                                tex_escape(level)
-                            ));
-                        }
-                        body.push('\n');
-                    }
-                }
-            }
-            // "photo" is intentionally omitted from .tex export: the app never
-            // compiles the .tex itself, and there is no companion-asset
-            // mechanism to ship the image alongside for \includegraphics.
-            // DOCX/PDF embed the photo; LaTeX stays photo-less by design.
-            _ => {}
-        }
-    }
-
-    Ok(format!(
-        "\\documentclass[11pt]{{article}}\n\
-         \\usepackage[margin=1in]{{geometry}}\n\
-         \\usepackage[utf8]{{inputenc}}\n\
-         \\pagestyle{{empty}}\n\
-         \\setlength{{\\parindent}}{{0pt}}\n\n\
-         \\begin{{document}}\n\n\
-         {body}\
-         \\end{{document}}\n"
-    ))
-}
-
 /// CV style choices (ROADMAP §16.5) — layout-adjacent but distinct from
 /// `cv_templates` (section order/toggles): font, size, one accent colour.
 /// Deserializes with safe defaults so a document with no `style_json` yet
@@ -1225,7 +997,6 @@ async fn cv_document_export_bytes_core(
                 )
             }
         }
-        "tex" => Ok(cv_content_to_tex(&content_json)?.into_bytes()),
         other => Err(format!("cv_document_export: unsupported format '{other}'")),
     }
 }
@@ -1779,7 +1550,7 @@ mod tests {
         ));
         std::fs::create_dir_all(&dir).unwrap();
 
-        for format in ["docx", "pdf", "tex"] {
+        for format in ["docx", "pdf"] {
             let save_path = dir.join(format!("cv.{format}"));
             let bytes = cv_document_export_bytes_core(doc.id, format, &pool)
                 .await
@@ -1793,31 +1564,6 @@ mod tests {
         assert!(unsupported.is_err());
 
         std::fs::remove_dir_all(&dir).ok();
-    }
-
-    #[test]
-    fn cv_content_to_tex_escapes_special_characters_and_hides_invisible_sections() {
-        let content_json = r#"{"sections":[
-            {"key":"personal_details","order":0,"visible":true,"fullName":"Jane & Doe","email":"jane@example.com"},
-            {"key":"summary","order":1,"visible":true,"text":"Grew revenue 50% using C# & R&D budget."},
-            {"key":"skills","order":2,"visible":false,"items":["Rust"]}
-        ]}"#;
-        let tex = cv_content_to_tex(content_json).expect("render");
-        assert!(tex.starts_with("\\documentclass"));
-        assert!(tex.contains("\\end{document}"));
-        assert!(tex.contains("Jane \\& Doe"));
-        assert!(tex.contains("50\\%"));
-        assert!(!tex.contains("Rust"), "hidden section must not render");
-    }
-
-    #[test]
-    fn cv_content_to_tex_renders_inline_bold_as_textbf() {
-        let content_json = r#"{"sections":[
-            {"key":"summary","order":0,"visible":true,"text":"A **Key** point"}
-        ]}"#;
-        let tex = cv_content_to_tex(content_json).expect("render");
-        assert!(tex.contains("\\textbf{Key}"));
-        assert!(!tex.contains("**Key**"));
     }
 
     #[test]

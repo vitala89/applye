@@ -473,6 +473,60 @@ fn strip_bold_wrap(line: &str) -> (&str, bool) {
     }
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct InlineRun {
+    pub text: String,
+    pub bold: bool,
+}
+
+/// Splits a line into `**bold**` / plain runs, mirroring the TS
+/// `parseInlineEmphasis`. Unmatched `**` stays literal; no spans → one plain
+/// run. Never panics on odd markers.
+pub(crate) fn parse_inline_runs(s: &str) -> Vec<InlineRun> {
+    let bytes = s.as_bytes();
+    let mut runs: Vec<InlineRun> = Vec::new();
+    let mut i = 0usize;
+    let mut plain_start = 0usize;
+    while i + 1 < bytes.len() {
+        if bytes[i] == b'*' && bytes[i + 1] == b'*' {
+            // find closing ** after i+2
+            if let Some(rel) = s[i + 2..].find("**") {
+                let inner_start = i + 2;
+                let inner_end = inner_start + rel;
+                if inner_end > inner_start {
+                    if i > plain_start {
+                        runs.push(InlineRun {
+                            text: s[plain_start..i].to_string(),
+                            bold: false,
+                        });
+                    }
+                    runs.push(InlineRun {
+                        text: s[inner_start..inner_end].to_string(),
+                        bold: true,
+                    });
+                    i = inner_end + 2;
+                    plain_start = i;
+                    continue;
+                }
+            }
+        }
+        i += 1;
+    }
+    if plain_start < s.len() {
+        runs.push(InlineRun {
+            text: s[plain_start..].to_string(),
+            bold: false,
+        });
+    }
+    if runs.is_empty() {
+        runs.push(InlineRun {
+            text: s.to_string(),
+            bold: false,
+        });
+    }
+    runs
+}
+
 // ── DOCX rendering ────────────────────────────────────────────────────────────
 
 /// Tailored-CV journal export (markdown in, document-wide default style).
@@ -500,23 +554,22 @@ fn block_paragraph(b: &RenderBlock) -> docx_rs::Paragraph {
     use docx_rs::*;
 
     let (r, g, bl) = b.rgb;
-    let text = if b.level == BlockLevel::Bullet {
-        format!("•  {}", b.text)
-    } else {
-        b.text.clone()
+    let color = format!("{r:02X}{g:02X}{bl:02X}");
+    let mk_run = |seg: &str, bold: bool| {
+        let mut run = Run::new()
+            .add_text(seg)
+            .size((b.size_pt * 2.0).round() as usize) // docx size is half-points
+            .color(&color)
+            .fonts(
+                RunFonts::new()
+                    .ascii(&b.font_family)
+                    .hi_ansi(&b.font_family),
+            );
+        if bold {
+            run = run.bold();
+        }
+        run
     };
-    let mut run = Run::new()
-        .add_text(&text)
-        .size((b.size_pt * 2.0).round() as usize) // docx size is half-points
-        .color(format!("{r:02X}{g:02X}{bl:02X}"))
-        .fonts(
-            RunFonts::new()
-                .ascii(&b.font_family)
-                .hi_ansi(&b.font_family),
-        );
-    if b.bold {
-        run = run.bold();
-    }
     let (before, after) = match b.level {
         BlockLevel::H1 | BlockLevel::H2 | BlockLevel::H3 => (
             (b.size_pt * 9.0).round() as u32,
@@ -525,9 +578,13 @@ fn block_paragraph(b: &RenderBlock) -> docx_rs::Paragraph {
         BlockLevel::Bullet => (0, (b.size_pt * 2.0).round() as u32),
         BlockLevel::Body => (0, (b.size_pt * 3.5).round() as u32),
     };
-    let mut para = Paragraph::new()
-        .add_run(run)
-        .line_spacing(LineSpacing::new().before(before).after(after));
+    let mut para = Paragraph::new().line_spacing(LineSpacing::new().before(before).after(after));
+    if b.level == BlockLevel::Bullet {
+        para = para.add_run(mk_run("•  ", b.bold));
+    }
+    for seg in parse_inline_runs(&b.text) {
+        para = para.add_run(mk_run(&seg.text, b.bold || seg.bold));
+    }
     if b.level == BlockLevel::Bullet {
         para = para.indent(Some(360), None, None, None);
     }
@@ -1119,6 +1176,24 @@ mod tests {
             color_hex: color.map(str::to_string),
             font_weight: weight,
         }
+    }
+
+    #[test]
+    fn parse_inline_runs_plain_and_spans() {
+        assert_eq!(parse_inline_runs("plain").len(), 1);
+        let r = parse_inline_runs("a **b** c");
+        assert_eq!(r.len(), 3);
+        assert_eq!((r[1].text.as_str(), r[1].bold), ("b", true));
+        assert_eq!((r[0].text.as_str(), r[0].bold), ("a ", false));
+    }
+
+    #[test]
+    fn parse_inline_runs_multiple_and_unmatched() {
+        let r = parse_inline_runs("**x** y **z**");
+        assert_eq!(r.iter().filter(|s| s.bold).count(), 2);
+        // unmatched trailing ** stays literal, not a panic
+        let u = parse_inline_runs("a **b");
+        assert_eq!(u.iter().any(|s| s.bold), false);
     }
 
     #[test]

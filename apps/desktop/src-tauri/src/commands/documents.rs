@@ -543,6 +543,24 @@ fn tex_escape(text: &str) -> String {
     out
 }
 
+/// Escapes text for LaTeX, then renders `**bold**` spans as `\textbf{...}`.
+/// `tex_escape` leaves `*` untouched, so escaping first and scanning the
+/// escaped string for `**` markers is safe (verified against `tex_escape`
+/// above — no case maps `*` to anything else).
+fn tex_inline(text: &str) -> String {
+    let escaped = tex_escape(text);
+    let runs = crate::commands::tailoring::parse_inline_runs(&escaped);
+    let mut out = String::new();
+    for r in runs {
+        if r.bold {
+            out.push_str(&format!("\\textbf{{{}}}", r.text));
+        } else {
+            out.push_str(&r.text);
+        }
+    }
+    out
+}
+
 /// Renders a `CvContent` JSON blob into a clean, minimal LaTeX source
 /// (ROADMAP §16.6) — string templating only, never compiled here (no TeX
 /// toolchain bundled, keeps the binary tiny and local-first). Same section
@@ -589,7 +607,7 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
             "summary" => {
                 if let Some(text) = str_field("text") {
                     body.push_str("\\section*{Summary}\n");
-                    body.push_str(&tex_escape(&text));
+                    body.push_str(&tex_inline(&text));
                     body.push_str("\n\n");
                 }
             }
@@ -620,7 +638,7 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
                             if !items.is_empty() {
                                 body.push_str("\\begin{itemize}\n");
                                 for bullet in items {
-                                    body.push_str(&format!("\\item {}\n", tex_escape(bullet)));
+                                    body.push_str(&format!("\\item {}\n", tex_inline(bullet)));
                                 }
                                 body.push_str("\\end{itemize}\n");
                             }

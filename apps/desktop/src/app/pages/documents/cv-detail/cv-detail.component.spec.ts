@@ -307,7 +307,7 @@ describe('CvDetailComponent per-section style', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const editTextarea = root.querySelector(
-      '.cvdetail__bold-field textarea',
+      'app-cv-summary-editor textarea',
     ) as HTMLTextAreaElement;
     expect(editTextarea.value).toBe('New summary from live preview');
 

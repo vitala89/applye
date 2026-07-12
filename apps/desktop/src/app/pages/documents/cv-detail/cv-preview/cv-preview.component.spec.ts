@@ -631,6 +631,31 @@ describe('CvPreviewComponent', () => {
       expect(textarea.value).toBe('**Key** point');
       expect(emitted).toEqual([]);
     });
+
+    it('a visible Bold button wraps the selection with ** via toggleBoldWrap, without committing', () => {
+      const { textarea, root } = setup('Key point');
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const boldBtn = root.querySelector(
+        '.page-card .cvpreview__bold-btn',
+      ) as HTMLButtonElement | null;
+      expect(boldBtn).toBeTruthy();
+      textarea.setSelectionRange(0, 3); // "Key"
+      boldBtn!.click();
+      fixture.detectChanges();
+      expect(textarea.value).toBe('**Key** point');
+      expect(emitted).toEqual([]);
+    });
+
+    it('the Bold button uses (mousedown) preventDefault so clicking it does not blur the textarea first', () => {
+      const { root } = setup('Key point');
+      const boldBtn = root.querySelector(
+        '.page-card .cvpreview__bold-btn',
+      ) as HTMLButtonElement | null;
+      const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+      boldBtn!.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    });
   });
 
   describe('inline leaf editing — personal details', () => {
@@ -853,6 +878,24 @@ describe('CvPreviewComponent', () => {
       const updated = emitted[0] as { entries: { bullets: string[] }[] };
       expect(updated.entries[0].bullets).toEqual(['Shipped **X**', 'Led Y and Z']);
       expect(originalBullets[1]).toBe('Led Y'); // original untouched
+    });
+
+    it('a visible Bold button wraps a bullet selection with ** via toggleBoldWrap, without committing', () => {
+      const root = setup(2);
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const textarea = root.querySelectorAll(
+        'textarea.cvpreview__leaf-editor',
+      )[1] as HTMLTextAreaElement; // second bullet: "Led Y"
+      const boldBtn = textarea
+        .closest('li')
+        ?.querySelector('.cvpreview__bold-btn') as HTMLButtonElement | null;
+      expect(boldBtn).toBeTruthy();
+      textarea.setSelectionRange(0, 3); // "Led"
+      boldBtn!.click();
+      fixture.detectChanges();
+      expect(textarea.value).toBe('**Led** Y');
+      expect(emitted).toEqual([]);
     });
 
     it('drafting (typing) emits nothing', () => {

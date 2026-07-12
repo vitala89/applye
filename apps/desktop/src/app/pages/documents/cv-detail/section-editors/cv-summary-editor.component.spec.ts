@@ -21,16 +21,6 @@ describe('CvSummaryEditorComponent', () => {
     fixture.detectChanges();
   });
 
-  function makeTextarea(value: string, start: number, end: number): HTMLTextAreaElement {
-    const el = document.createElement('textarea');
-    el.value = value;
-    el.setSelectionRange = jest.fn();
-    el.focus = jest.fn();
-    Object.defineProperty(el, 'selectionStart', { value: start, configurable: true });
-    Object.defineProperty(el, 'selectionEnd', { value: end, configurable: true });
-    return el;
-  }
-
   it('renders the section text in the textarea', () => {
     const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
     expect(textarea.value).toBe('Hello');
@@ -47,37 +37,7 @@ describe('CvSummaryEditorComponent', () => {
     expect(section.text).toBe('Hello');
   });
 
-  it('applyBold wraps the selection in ** and emits the updated section', () => {
-    const emitted = jest.fn();
-    component.sectionChange.subscribe(emitted);
-    const el = makeTextarea('Led a big refactor', 6, 9);
-
-    component.applyBold(el);
-
-    expect(emitted).toHaveBeenCalledWith({ ...section, text: 'Led a **big** refactor' });
-  });
-
-  it('onBoldKeydown triggers applyBold on Cmd/Ctrl+B and prevents default', () => {
-    const emitted = jest.fn();
-    component.sectionChange.subscribe(emitted);
-    const el = makeTextarea('Led a big refactor', 6, 9);
-    const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true });
-    const preventDefault = jest.spyOn(event, 'preventDefault');
-
-    component.onBoldKeydown(event, el);
-
-    expect(preventDefault).toHaveBeenCalled();
-    expect(emitted).toHaveBeenCalledWith({ ...section, text: 'Led a **big** refactor' });
-  });
-
-  it('onBoldKeydown ignores plain keystrokes', () => {
-    const emitted = jest.fn();
-    component.sectionChange.subscribe(emitted);
-    const el = makeTextarea('Led a big refactor', 6, 9);
-    const event = new KeyboardEvent('keydown', { key: 'b' });
-
-    component.onBoldKeydown(event, el);
-
-    expect(emitted).not.toHaveBeenCalled();
+  it('does not render a Bold button — bold formatting moved to the live preview', () => {
+    expect(fixture.nativeElement.querySelector('.cvdetail__bold-btn')).toBeNull();
   });
 });

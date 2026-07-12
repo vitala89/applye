@@ -32,22 +32,11 @@
       <div class="cvdetail__bullet-row">
         <span class="cvdetail__bullet-dot">•</span>
         <input
-          #bulletEl
           type="text"
           [ngModel]="bullet"
           (ngModelChange)="updateBullet(ei, bi, $event)"
-          (keydown)="onBoldKeydown($event, ei, bi, bulletEl)"
           [placeholder]="t()('documents.cv_field_bullet')"
         />
-        <button
-          type="button"
-          class="cvdetail__bold-btn"
-          [attr.aria-label]="t()('documents.cv_bold_action')"
-          (mousedown)="$event.preventDefault()"
-          (click)="applyBold(ei, bi, bulletEl)"
-        >
-          B
-        </button>
         <button
           class="cvdetail__bullet-remove"
           type="button"

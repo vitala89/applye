@@ -17,25 +17,3 @@ textarea {
 textarea:focus {
   border-color: var(--accent);
 }
-
-.cvdetail__bold-field {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-.cvdetail__bold-btn {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  font-weight: 700;
-  border: var(--border-width) solid var(--border-strong);
-  border-radius: var(--radius-input);
-  background: var(--surface-1);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.cvdetail__bold-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}

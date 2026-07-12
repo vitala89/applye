@@ -141,6 +141,29 @@ textarea.cvpreview__leaf-editor {
   resize: vertical;
   line-height: var(--cv-section-line-height, var(--leading-normal));
 }
+// Wraps a bold-capable textarea (summary/bullet) with its visible Bold
+// button — the button only ever renders alongside an already-selected leaf
+// editor (page render only), so it never reaches the inert measurement pass.
+.cvpreview__bold-field {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.cvpreview__bold-btn {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  font-weight: 700;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-input);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.cvpreview__bold-btn:hover {
+  border-color: var(--cv-accent, var(--accent));
+  color: var(--cv-accent, var(--accent));
+}
 .cvpreview__skill-row {
   margin: 0.15rem 0;
 }

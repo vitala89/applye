@@ -2,25 +2,26 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Trash2, X } from 'lucide-angular';
 import type { CvExperienceEntry, CvExperienceSection } from '@applye/core';
-import { toggleBoldWrap } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { blankExperienceEntry } from '../../cv-content.util';
 
 /** Entry field names editable via a plain text input (i.e. everything on a
  * `CvExperienceEntry` except the `bullets` array, which has its own nested
- * add/remove/edit/bold methods below). */
+ * add/remove/edit methods below). */
 type CvExperienceTextField = Exclude<keyof CvExperienceEntry, 'bullets'>;
 
 /**
  * Editor arm for the `experience` CV section: a list of role/company entries,
- * each with its own bold-capable bullet list. Behavior-preserving extraction
- * from `CvDetailComponent` — same fields and buttons, only the mutation model
- * is now immutable. This is the most nested arm: every edit (entry field,
- * bullet text, bullet bold, add/remove entry, add/remove bullet) emits a
- * brand-new `CvExperienceSection` — with brand-new `entries` and, for
- * bullet-level edits, a brand-new `bullets` array on the affected entry —
- * via `sectionChange`, instead of mutating `section.entries` (or any nested
- * entry/bullets array) in place.
+ * each with its own bullet list. Behavior-preserving extraction from
+ * `CvDetailComponent` — same fields, only the mutation model is now
+ * immutable. This is the most nested arm: every edit (entry field, bullet
+ * text, add/remove entry, add/remove bullet) emits a brand-new
+ * `CvExperienceSection` — with brand-new `entries` and, for bullet-level
+ * edits, a brand-new `bullets` array on the affected entry — via
+ * `sectionChange`, instead of mutating `section.entries` (or any nested
+ * entry/bullets array) in place. Bullet bold formatting is no longer
+ * available here — it moved to the live preview's inline editor (see
+ * `CvPreviewComponent.applyBulletBold`).
  */
 @Component({
   selector: 'app-cv-experience-editor',
@@ -82,34 +83,5 @@ export class CvExperienceEditorComponent {
         : entry,
     );
     this.sectionChange.emit({ ...this.section(), entries });
-  }
-
-  /** Wrap/unwrap **bold** around a bullet input's current selection, emit the
-   * updated section, then restore the caret. Bound to the bullet's Bold
-   * button and Cmd/Ctrl+B. */
-  applyBold(entryIndex: number, bulletIndex: number, el: HTMLInputElement): void {
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
-    const r = toggleBoldWrap(el.value, start, end);
-    this.updateBullet(entryIndex, bulletIndex, r.text);
-    queueMicrotask(() => {
-      el.value = r.text;
-      el.setSelectionRange(r.selStart, r.selEnd);
-      el.focus();
-    });
-  }
-
-  /** Cmd/Ctrl+B handler for a bullet input — delegates to `applyBold` and
-   * prevents the browser's native bold shortcut. */
-  onBoldKeydown(
-    event: KeyboardEvent,
-    entryIndex: number,
-    bulletIndex: number,
-    el: HTMLInputElement,
-  ): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
-      event.preventDefault();
-      this.applyBold(entryIndex, bulletIndex, el);
-    }
   }
 }

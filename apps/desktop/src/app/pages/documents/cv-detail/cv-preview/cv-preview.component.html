@@ -129,16 +129,28 @@
       {{ t()(sectionLabelKey('summary')) }}
     </h3>
     @if (isSelected('summary', 'body') && selectable(renderMode)) {
-      <textarea
-        #summaryEl
-        class="cvpreview__summary cvpreview__leaf-editor"
-        [class.cvpreview__selected]="true"
-        [value]="leafDraft('summary', section.text)"
-        (input)="onLeafInput('summary', $any($event.target).value)"
-        (blur)="commitSummary(section, section.text)"
-        (keydown.escape)="onLeafEscape('summary')"
-        (keydown)="onSummaryBoldKeydown($event, summaryEl, section.text)"
-      ></textarea>
+      <div class="cvpreview__bold-field">
+        <textarea
+          #summaryEl
+          class="cvpreview__summary cvpreview__leaf-editor"
+          [class.cvpreview__selected]="true"
+          [value]="leafDraft('summary', section.text)"
+          (input)="onLeafInput('summary', $any($event.target).value)"
+          (blur)="commitSummary(section, section.text)"
+          (keydown.escape)="onLeafEscape('summary')"
+          (keydown)="onSummaryBoldKeydown($event, summaryEl, section.text)"
+        ></textarea>
+        <button
+          type="button"
+          class="cvpreview__bold-btn"
+          [attr.aria-label]="t()('documents.cv_bold_action')"
+          [attr.title]="t()('documents.cv_bold_action')"
+          (mousedown)="$event.preventDefault()"
+          (click)="applySummaryBold(summaryEl, section.text)"
+        >
+          B
+        </button>
+      </div>
     } @else {
       <p
         class="cvpreview__summary"
@@ -385,15 +397,27 @@
   >
     @if (isSelected(key, 'body') && selectable(renderMode)) {
       <li>
-        <textarea
-          #bulletEl
-          class="cvpreview__leaf-editor cvpreview__bullet-editor"
-          [value]="leafDraft('exp.' + i + '.bullet.' + b, bullet)"
-          (input)="onLeafInput('exp.' + i + '.bullet.' + b, $any($event.target).value)"
-          (blur)="commitExperienceBullet(section, i, b, bullet)"
-          (keydown.escape)="onLeafEscape('exp.' + i + '.bullet.' + b)"
-          (keydown)="onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
-        ></textarea>
+        <div class="cvpreview__bold-field">
+          <textarea
+            #bulletEl
+            class="cvpreview__leaf-editor cvpreview__bullet-editor"
+            [value]="leafDraft('exp.' + i + '.bullet.' + b, bullet)"
+            (input)="onLeafInput('exp.' + i + '.bullet.' + b, $any($event.target).value)"
+            (blur)="commitExperienceBullet(section, i, b, bullet)"
+            (keydown.escape)="onLeafEscape('exp.' + i + '.bullet.' + b)"
+            (keydown)="onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
+          ></textarea>
+          <button
+            type="button"
+            class="cvpreview__bold-btn"
+            [attr.aria-label]="t()('documents.cv_bold_action')"
+            [attr.title]="t()('documents.cv_bold_action')"
+            (mousedown)="$event.preventDefault()"
+            (click)="applyBulletBold(bulletEl, i, b, bullet)"
+          >
+            B
+          </button>
+        </div>
       </li>
     } @else {
       <li>

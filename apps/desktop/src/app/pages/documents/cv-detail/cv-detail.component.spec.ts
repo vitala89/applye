@@ -254,6 +254,78 @@ describe('CvDetailComponent per-section style', () => {
     });
   });
 
+  it('Edit ↔ Live-preview synchronization: an inline preview commit shows in the edit-mode form, and vice versa, with no save/reload', async () => {
+    // Single source of truth: `sections` is the one signal both the preview's
+    // inline editors and the sidebar edit-mode form read from and write to
+    // via `replaceSection`. Committing on either surface must show up on the
+    // other purely because they share that signal — no save call, no
+    // re-fetch, no reload.
+    // The outer `@else if (loadError() || !doc())` branch hides the whole
+    // editor (preview included) until a document is loaded; `load()` in this
+    // suite's stub resolves null (loadError), so drive the loaded state
+    // directly — this test only needs the template to render, not the async
+    // load flow itself.
+    component.doc.set({ id: 1, docType: 'cv', source: 'generated', isDefault: false });
+    component.loading.set(false);
+    component.loadError.set(false);
+    component.sections.set([{ key: 'summary', order: 0, visible: true, text: 'Old summary' }]);
+
+    // 1) Preview mode: select the summary body so its native textarea mounts,
+    // then type + blur to commit an inline edit through the real child tree
+    // (CvPreviewComponent → sectionChange → replaceSection), not a mock.
+    component.previewMode.set(true);
+    component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const previewTextarea = root.querySelector(
+      '.page-card textarea.cvpreview__summary',
+    ) as HTMLTextAreaElement;
+    expect(previewTextarea).toBeTruthy();
+    previewTextarea.value = 'New summary from live preview';
+    previewTextarea.dispatchEvent(new Event('input'));
+    previewTextarea.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+
+    expect(component.sections().find((s) => s.key === 'summary')).toEqual({
+      key: 'summary',
+      order: 0,
+      visible: true,
+      text: 'New summary from live preview',
+    });
+
+    // 2) Switch to edit mode (no save/reload in between) — the sidebar form's
+    // textarea must already reflect the value committed from the preview.
+    // `NgModel` defers its initial `writeValue` to a resolved-promise
+    // microtask (to avoid ExpressionChangedAfterItHasBeenCheckedError), so a
+    // freshly-mounted `[ngModel]` control needs a stability flush before its
+    // DOM value settles — `whenStable()` does that.
+    component.previewMode.set(false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const editTextarea = root.querySelector(
+      '.cvdetail__bold-field textarea',
+    ) as HTMLTextAreaElement;
+    expect(editTextarea.value).toBe('New summary from live preview');
+
+    // 3) Edit via the sidebar form instead, then flip back to preview mode —
+    // the live preview's resting render must reflect it immediately.
+    editTextarea.value = 'Edited from the sidebar form';
+    editTextarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(component.sections().find((s) => s.key === 'summary')?.text).toBe(
+      'Edited from the sidebar form',
+    );
+
+    component.previewMode.set(true);
+    component.liveSelection.set(null); // resting (non-editing) render
+    fixture.detectChanges();
+    expect(root.querySelector('.page-card .cvpreview__summary')?.textContent).toContain(
+      'Edited from the sidebar form',
+    );
+  });
+
   it('setSectionTitleStyle deep-merges into the section title override', () => {
     component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
     component.setSectionTitleStyle('skills', { fontSizePt: 15 });

@@ -509,6 +509,48 @@ export function buildContactLine(
     .join(' | ');
 }
 
+/** Contact fields addressable as individual inline-edit leaves — the same
+ * fields, same order, as `buildContactLine`. */
+export type CvContactFieldKey =
+  | 'address'
+  | 'phone'
+  | 'email'
+  | 'website'
+  | 'linkedin'
+  | 'birthDate'
+  | 'maritalStatus';
+
+export interface CvContactFieldLeaf {
+  field: CvContactFieldKey;
+  value: string;
+}
+
+/** The contact fields that currently render in `buildContactLine`'s output,
+ * as individually addressable leaves (same order). The five base fields
+ * (address/phone/email/website/linkedin) only become a leaf once they already
+ * carry a value — matching what's actually visible in the resting contact
+ * line, since this task doesn't add an "add a new contact field" affordance.
+ * `birthDate`/`maritalStatus` become a leaf whenever their toggle is on, value
+ * or not — mirroring the sidebar editor, which shows the input as soon as the
+ * toggle is enabled so the user can fill it in for the first time. */
+export function visiblePersonalContactFields(
+  p: CvPersonalDetailsSection,
+  opts: { includeBirthdate: boolean; includeMaritalStatus: boolean },
+): CvContactFieldLeaf[] {
+  const hasText = (v: string | undefined): v is string => !!v && v.trim().length > 0;
+  const out: CvContactFieldLeaf[] = [];
+  if (hasText(p.address)) out.push({ field: 'address', value: p.address });
+  if (hasText(p.phone)) out.push({ field: 'phone', value: p.phone });
+  if (hasText(p.email)) out.push({ field: 'email', value: p.email });
+  if (hasText(p.website)) out.push({ field: 'website', value: p.website });
+  if (hasText(p.linkedin)) out.push({ field: 'linkedin', value: p.linkedin });
+  if (opts.includeBirthdate) out.push({ field: 'birthDate', value: p.birthDate ?? '' });
+  if (opts.includeMaritalStatus) {
+    out.push({ field: 'maritalStatus', value: p.maritalStatus ?? '' });
+  }
+  return out;
+}
+
 /** Applies an immutable per-section style patch while keeping the persisted
  * override tree minimal. Nested title fields are deep-merged; inherited
  * (`undefined`/`null`) values, empty title objects, empty section overrides,

@@ -39,20 +39,68 @@
         <img [src]="photoUri" alt="" />
       </div>
     }
-    <h2 class="cvpreview__name" [style.color]="effStyle('personal_details').colorHex">
-      {{ section.fullName || t()('documents.cv_untitled') }}
-    </h2>
-    @if (section.title) {
-      <p class="cvpreview__title">{{ section.title }}</p>
+    @if (isSelected('personal_details', 'body') && selectable(renderMode)) {
+      <input
+        type="text"
+        class="cvpreview__name cvpreview__leaf-editor"
+        [style.color]="effStyle('personal_details').colorHex"
+        [value]="leafDraft('pd.fullName', section.fullName)"
+        [placeholder]="t()('documents.cv_untitled')"
+        (input)="onLeafInput('pd.fullName', $any($event.target).value)"
+        (blur)="commitPersonalField(section, 'fullName', section.fullName)"
+        (keydown.escape)="onLeafEscape('pd.fullName', section.fullName)"
+        (keydown.enter)="$any($event.target).blur()"
+      />
+      @if (section.title) {
+        <input
+          type="text"
+          class="cvpreview__title cvpreview__leaf-editor"
+          [value]="leafDraft('pd.title', section.title)"
+          (input)="onLeafInput('pd.title', $any($event.target).value)"
+          (blur)="commitPersonalField(section, 'title', section.title)"
+          (keydown.escape)="onLeafEscape('pd.title', section.title)"
+          (keydown.enter)="$any($event.target).blur()"
+        />
+      }
+      <p class="cvpreview__contact cvpreview__contact--editor">
+        @for (
+          leaf of visiblePersonalContactFields(section, {
+            includeBirthdate: includeBirthdate(),
+            includeMaritalStatus: includeMaritalStatus(),
+          });
+          track leaf.field;
+          let i = $index
+        ) {
+          @if (i > 0) {
+            <span class="cvpreview__contact-sep"> | </span>
+          }
+          <input
+            type="text"
+            class="cvpreview__contact-input cvpreview__leaf-editor"
+            [value]="leafDraft('pd.' + leaf.field, leaf.value)"
+            (input)="onLeafInput('pd.' + leaf.field, $any($event.target).value)"
+            (blur)="commitPersonalField(section, leaf.field, leaf.value)"
+            (keydown.escape)="onLeafEscape('pd.' + leaf.field, leaf.value)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+        }
+      </p>
+    } @else {
+      <h2 class="cvpreview__name" [style.color]="effStyle('personal_details').colorHex">
+        {{ section.fullName || t()('documents.cv_untitled') }}
+      </h2>
+      @if (section.title) {
+        <p class="cvpreview__title">{{ section.title }}</p>
+      }
+      <p class="cvpreview__contact">
+        {{
+          buildContactLine(section, {
+            includeBirthdate: includeBirthdate(),
+            includeMaritalStatus: includeMaritalStatus(),
+          })
+        }}
+      </p>
     }
-    <p class="cvpreview__contact">
-      {{
-        buildContactLine(section, {
-          includeBirthdate: includeBirthdate(),
-          includeMaritalStatus: includeMaritalStatus(),
-        })
-      }}
-    </p>
   </div>
 </ng-template>
 
@@ -71,23 +119,36 @@
     >
       {{ t()(sectionLabelKey('summary')) }}
     </h3>
-    <p
-      class="cvpreview__summary"
-      [class.cvpreview__selectable]="selectable(renderMode)"
-      [class.cvpreview__selected]="isSelected('summary', 'body')"
-      [attr.role]="selectable(renderMode) ? 'button' : null"
-      [attr.tabindex]="selectable(renderMode) ? 0 : null"
-      (click)="selectPart('summary', 'body', renderMode, $event)"
-      (keydown.enter)="selectPart('summary', 'body', renderMode, $event)"
-    >
-      @for (run of runs(section.text); track $index) {
-        @if (run.bold) {
-          <strong>{{ run.text }}</strong>
-        } @else {
-          {{ run.text }}
+    @if (isSelected('summary', 'body') && selectable(renderMode)) {
+      <textarea
+        #summaryEl
+        class="cvpreview__summary cvpreview__leaf-editor"
+        [class.cvpreview__selected]="true"
+        [value]="leafDraft('summary', section.text)"
+        (input)="onLeafInput('summary', $any($event.target).value)"
+        (blur)="commitSummary(section, section.text)"
+        (keydown.escape)="onLeafEscape('summary', section.text)"
+        (keydown)="onSummaryBoldKeydown($event, summaryEl, section.text)"
+      ></textarea>
+    } @else {
+      <p
+        class="cvpreview__summary"
+        [class.cvpreview__selectable]="selectable(renderMode)"
+        [class.cvpreview__selected]="isSelected('summary', 'body')"
+        [attr.role]="selectable(renderMode) ? 'button' : null"
+        [attr.tabindex]="selectable(renderMode) ? 0 : null"
+        (click)="selectPart('summary', 'body', renderMode, $event)"
+        (keydown.enter)="selectPart('summary', 'body', renderMode, $event)"
+      >
+        @for (run of runs(section.text); track $index) {
+          @if (run.bold) {
+            <strong>{{ run.text }}</strong>
+          } @else {
+            {{ run.text }}
+          }
         }
-      }
-    </p>
+      </p>
+    }
   </div>
 </ng-template>
 

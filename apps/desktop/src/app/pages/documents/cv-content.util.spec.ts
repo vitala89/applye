@@ -20,6 +20,7 @@ import {
   repairTruncatedJson,
   resetCvSectionStyle,
   resolvePageSettings,
+  visiblePersonalContactFields,
 } from './cv-content.util';
 import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
 
@@ -95,6 +96,69 @@ describe('buildContactLine', () => {
     expect(
       buildContactLine(withExtra, { includeBirthdate: false, includeMaritalStatus: false }),
     ).not.toContain('1990-01-01');
+  });
+});
+
+describe('visiblePersonalContactFields', () => {
+  const base: CvPersonalDetailsSection = {
+    key: 'personal_details',
+    order: 0,
+    visible: true,
+    fullName: 'Vitalii Kasap',
+    address: 'Nuremberg, Germany',
+    phone: '+49 171 206 4899',
+    email: 'v@icloud.com',
+    website: 'vitaliikasap.com',
+    linkedin: 'linkedin.com/in/vitaliikasap',
+  };
+
+  it('returns the base contact fields in reference order, matching buildContactLine', () => {
+    const leaves = visiblePersonalContactFields(base, {
+      includeBirthdate: false,
+      includeMaritalStatus: false,
+    });
+    expect(leaves.map((l) => l.field)).toEqual([
+      'address',
+      'phone',
+      'email',
+      'website',
+      'linkedin',
+    ]);
+    expect(leaves.map((l) => l.value).join(' | ')).toBe(
+      buildContactLine(base, { includeBirthdate: false, includeMaritalStatus: false }),
+    );
+  });
+
+  it('omits empty base fields — no leaf for a field with no content', () => {
+    const leaves = visiblePersonalContactFields(
+      { ...base, website: undefined, linkedin: '' },
+      { includeBirthdate: false, includeMaritalStatus: false },
+    );
+    expect(leaves.map((l) => l.field)).toEqual(['address', 'phone', 'email']);
+  });
+
+  it('includes birthDate/maritalStatus leaves once toggled on, even when empty', () => {
+    const withoutValues = visiblePersonalContactFields(base, {
+      includeBirthdate: true,
+      includeMaritalStatus: true,
+    });
+    expect(withoutValues.map((l) => l.field)).toEqual([
+      'address',
+      'phone',
+      'email',
+      'website',
+      'linkedin',
+      'birthDate',
+      'maritalStatus',
+    ]);
+    expect(withoutValues.find((l) => l.field === 'birthDate')?.value).toBe('');
+
+    const toggledOff = visiblePersonalContactFields(
+      { ...base, birthDate: '1990-01-01', maritalStatus: 'single' },
+      { includeBirthdate: false, includeMaritalStatus: false },
+    );
+    expect(toggledOff.map((l) => l.field)).not.toContain('birthDate');
+    expect(toggledOff.map((l) => l.field)).not.toContain('maritalStatus');
   });
 });
 

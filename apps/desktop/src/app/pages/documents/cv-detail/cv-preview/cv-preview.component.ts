@@ -10,12 +10,21 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
-import type { CvSection, CvSectionKey, CvStyle, CvTextRun, PhotoPlacement } from '@applye/core';
-import { getBuiltinTheme, parseInlineEmphasis, themeCssVars } from '@applye/core';
+import type {
+  CvPersonalDetailsSection,
+  CvSection,
+  CvSectionKey,
+  CvStyle,
+  CvSummarySection,
+  CvTextRun,
+  PhotoPlacement,
+} from '@applye/core';
+import { getBuiltinTheme, parseInlineEmphasis, themeCssVars, toggleBoldWrap } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
 import {
   buildContactLine,
+  type CvContactFieldKey,
   type CvPreviewSelection,
   effectiveSectionStyle,
   effectiveTitleBorder,
@@ -23,6 +32,7 @@ import {
   orderedVisibleSections,
   resolvePageSettings,
   sectionLabelKey,
+  visiblePersonalContactFields,
 } from '../../cv-content.util';
 
 /**
@@ -72,8 +82,8 @@ export class CvPreviewComponent {
   /** Emitted when the user clicks a selectable body/title target (page pass
    * only). */
   readonly selectionChange = output<CvPreviewSelection | null>();
-  /** Immutable section-change sink for inline content edits. Declared here for
-   * the stable Phase D interface; wiring inline leaf editors is Task 4. */
+  /** Immutable section-change sink for inline content edits — emitted once per
+   * committed leaf edit (see `commitSummary`/`commitPersonalField`). */
   readonly sectionChange = output<CvSection>();
 
   /** True only for a visible page-card render while interactive — the single
@@ -103,6 +113,102 @@ export class CvPreviewComponent {
 
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly buildContactLine = buildContactLine;
+  protected readonly visiblePersonalContactFields = visiblePersonalContactFields;
+
+  // --- Inline leaf editing (summary + personal_details) -----------------
+  //
+  // A leaf becomes a native editor while it is BOTH the active `selection`
+  // (Task 3) and on a selectable (page, interactive) render — the measure
+  // pass is never selectable, so it can never mount an editor. Typing only
+  // updates this local draft map (`drafts`); nothing is emitted until the
+  // control blurs (or an explicit apply keystroke triggers blur), and only
+  // if the draft actually differs from the resting model value — which also
+  // makes "Escape then blur" a no-op for free: Escape resets the draft back
+  // to the resting value, so the following blur sees no change and emits
+  // nothing.
+  private readonly drafts = signal<Record<string, string>>({});
+
+  /** Current draft text for a leaf, or the resting model value if the leaf
+   * has no in-progress edit yet (e.g. right after mounting the editor). */
+  leafDraft(id: string, resting: string): string {
+    return this.drafts()[id] ?? resting;
+  }
+
+  /** Drafting — updates local state only, emits nothing. */
+  onLeafInput(id: string, value: string): void {
+    this.drafts.update((d) => ({ ...d, [id]: value }));
+  }
+
+  /** Escape — revert the draft to the resting value. Does not itself emit or
+   * end editing; a subsequent blur will see an unchanged value and skip the
+   * commit. */
+  onLeafEscape(id: string, resting: string): void {
+    this.drafts.update((d) => ({ ...d, [id]: resting }));
+  }
+
+  private clearDraft(id: string): void {
+    this.drafts.update((d) => {
+      if (!(id in d)) return d;
+      const next = { ...d };
+      delete next[id];
+      return next;
+    });
+  }
+
+  /** Commit the summary leaf on blur: emits one new immutable
+   * `CvSummarySection` only if the draft actually changed the text. */
+  commitSummary(section: CvSummarySection, resting: string): void {
+    const id = 'summary';
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit({ ...section, text: value });
+    }
+  }
+
+  /** Wrap/unwrap `**bold**` around the summary textarea's current selection —
+   * modifies the draft only (still drafting; the eventual blur commits it),
+   * then restores the caret. Bound to the Bold button and Cmd/Ctrl+B. */
+  applySummaryBold(el: HTMLTextAreaElement, resting: string): void {
+    const id = 'summary';
+    const current = this.drafts()[id] ?? resting;
+    const start = el.selectionStart ?? current.length;
+    const end = el.selectionEnd ?? current.length;
+    const r = toggleBoldWrap(current, start, end);
+    this.drafts.update((d) => ({ ...d, [id]: r.text }));
+    queueMicrotask(() => {
+      el.value = r.text;
+      el.setSelectionRange(r.selStart, r.selEnd);
+      el.focus();
+    });
+  }
+
+  /** Cmd/Ctrl+B handler for the summary textarea. */
+  onSummaryBoldKeydown(event: KeyboardEvent, el: HTMLTextAreaElement, resting: string): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      event.preventDefault();
+      this.applySummaryBold(el, resting);
+    }
+  }
+
+  /** Commit a single personal-details field on blur: emits one new immutable
+   * `CvPersonalDetailsSection` only if the draft actually changed the value —
+   * this is what keeps a localized fallback (e.g. the "Untitled" placeholder)
+   * from ever becoming persisted content: the draft starts at the real
+   * (possibly empty) field value, never at the fallback label, so an
+   * untouched field never diffs from `resting` and never commits. */
+  commitPersonalField(
+    section: CvPersonalDetailsSection,
+    field: CvContactFieldKey | 'fullName' | 'title',
+    resting: string,
+  ): void {
+    const id = `pd.${field}`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit({ ...section, [field]: value });
+    }
+  }
 
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
 

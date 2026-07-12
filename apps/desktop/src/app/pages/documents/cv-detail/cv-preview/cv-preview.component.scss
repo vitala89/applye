@@ -98,6 +98,42 @@
   font-size: 0.85em;
   color: var(--text-tertiary);
 }
+.cvpreview__contact--editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.cvpreview__contact-sep {
+  color: var(--text-tertiary);
+  white-space: pre;
+}
+// Native leaf editors: swapped in over the resting text/paragraph while a
+// leaf is selected (page render only — see `selectable()`). Reset to blend
+// with the surrounding typography instead of looking like a form control;
+// `outline` (not `border`) marks focus so no box metrics shift.
+.cvpreview__leaf-editor {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
+  outline-offset: 2px;
+}
+input.cvpreview__leaf-editor {
+  width: 100%;
+}
+.cvpreview__contact-input.cvpreview__leaf-editor {
+  width: auto;
+  min-width: 4ch;
+  flex: 0 1 auto;
+}
+textarea.cvpreview__leaf-editor {
+  width: 100%;
+  resize: vertical;
+  line-height: var(--cv-section-line-height, var(--leading-normal));
+}
 .cvpreview__skill-row {
   margin: 0.15rem 0;
 }

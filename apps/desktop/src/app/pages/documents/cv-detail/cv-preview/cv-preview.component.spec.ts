@@ -343,4 +343,182 @@ describe('CvPreviewComponent', () => {
     expect(measured.length).toBeGreaterThan(0);
     measured.forEach((el) => expect(el.classList.contains('cvpreview__selectable')).toBe(false));
   });
+
+  describe('inline leaf editing — summary', () => {
+    function setup(text = 'A **Key** point') {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const textarea = root.querySelector(
+        '.page-card textarea.cvpreview__summary',
+      ) as HTMLTextAreaElement;
+      return { root, textarea };
+    }
+
+    it('mounts a native textarea only on the selected, interactive page render', () => {
+      const { textarea } = setup();
+      expect(textarea).toBeTruthy();
+      // Measurement mirror never gets an editor, even though it's "selected".
+      const measured = (fixture.nativeElement as HTMLElement).querySelector(
+        '.paginated-sheet__measure textarea',
+      );
+      expect(measured).toBeNull();
+    });
+
+    it('exposes the raw ** markers while focused; resting render keeps <strong>', () => {
+      const { textarea, root } = setup();
+      expect(textarea.value).toBe('A **Key** point');
+      // Not selected → resting <p> shows parsed <strong>, no raw markers.
+      fixture.componentRef.setInput('selection', null);
+      fixture.detectChanges();
+      const strongs = root.querySelectorAll('.cvpreview__summary strong');
+      expect(Array.from(strongs).some((s) => s.textContent?.trim() === 'Key')).toBe(true);
+      expect(root.querySelector('.page-card p.cvpreview__summary')?.textContent).not.toContain(
+        '**',
+      );
+    });
+
+    it('drafting (typing) emits nothing', () => {
+      const { textarea } = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      textarea.value = 'A **Key** point, edited';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(emitted).toEqual([]);
+    });
+
+    it('blur commits exactly one new immutable section', () => {
+      const { textarea } = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const original = component.sections()[0];
+      textarea.value = 'Edited summary';
+      textarea.dispatchEvent(new Event('input'));
+      textarea.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+      expect(emitted).toEqual([
+        { key: 'summary', order: 0, visible: true, text: 'Edited summary' },
+      ]);
+      // Immutability: the original section object passed in is untouched.
+      expect(original.key === 'summary' && original.text).toBe('A **Key** point');
+    });
+
+    it('Escape restores resting text; a subsequent blur emits nothing', () => {
+      const { textarea } = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      textarea.value = 'Something typed';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges(); // let Angular record the typed value as the last-bound value
+      textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+      expect(textarea.value).toBe('A **Key** point');
+      textarea.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+      expect(emitted).toEqual([]);
+    });
+
+    it('Cmd/Ctrl+B wraps the selection with ** via toggleBoldWrap, without committing', () => {
+      const { textarea } = setup('Key point');
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      textarea.setSelectionRange(0, 3); // "Key"
+      textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', metaKey: true }));
+      fixture.detectChanges();
+      expect(textarea.value).toBe('**Key** point');
+      expect(emitted).toEqual([]);
+    });
+  });
+
+  describe('inline leaf editing — personal details', () => {
+    function setup(section: Record<string, unknown> = {}) {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'personal_details',
+        part: 'body',
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'personal_details',
+          order: 0,
+          visible: true,
+          fullName: 'Vitalii Kasap',
+          title: 'Senior Engineer',
+          address: 'Nuremberg',
+          phone: '+49 171',
+          email: 'v@icloud.com',
+          ...section,
+        },
+      ]);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('renders full name, title, and each visible contact field as individual leaves in order', () => {
+      const root = setup();
+      const card = root.querySelector('.page-card') as HTMLElement;
+      const name = card.querySelector('input.cvpreview__name') as HTMLInputElement;
+      const title = card.querySelector('input.cvpreview__title') as HTMLInputElement;
+      const contactInputs = Array.from(
+        card.querySelectorAll('input.cvpreview__contact-input'),
+      ) as HTMLInputElement[];
+      expect(name.value).toBe('Vitalii Kasap');
+      expect(title.value).toBe('Senior Engineer');
+      expect(contactInputs.map((i) => i.value)).toEqual(['Nuremberg', '+49 171', 'v@icloud.com']);
+      // Separators are derived, non-editable text nodes between leaves.
+      const seps = card.querySelectorAll('.cvpreview__contact-sep');
+      expect(seps.length).toBe(contactInputs.length - 1);
+      seps.forEach((s) => expect(s.tagName).not.toBe('INPUT'));
+    });
+
+    it('localized fallback activates the underlying (empty) fullName field without persisting it', () => {
+      const root = setup({ fullName: '' });
+      const name = root.querySelector('.page-card input.cvpreview__name') as HTMLInputElement;
+      expect(name.value).toBe(''); // real value, not the fallback label
+      expect(name.placeholder.length).toBeGreaterThan(0); // localized fallback, shown only as a hint
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      name.dispatchEvent(new Event('blur')); // untouched → no commit
+      expect(emitted).toEqual([]);
+    });
+
+    it('committing one field emits one new immutable section touching only that field', () => {
+      const root = setup();
+      const emitted: Record<string, unknown>[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v as Record<string, unknown>));
+      const contactInputs = Array.from(
+        root.querySelectorAll('.page-card input.cvpreview__contact-input'),
+      ) as HTMLInputElement[];
+      const emailInput = contactInputs.find((i) => i.value === 'v@icloud.com')!;
+      emailInput.value = 'new@icloud.com';
+      emailInput.dispatchEvent(new Event('input'));
+      emailInput.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      expect(emitted[0]).toMatchObject({ email: 'new@icloud.com', fullName: 'Vitalii Kasap' });
+    });
+
+    it('drafting a contact field emits nothing until blur', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const contactInputs = Array.from(
+        root.querySelectorAll('.page-card input.cvpreview__contact-input'),
+      ) as HTMLInputElement[];
+      const phoneInput = contactInputs.find((i) => i.value === '+49 171')!;
+      phoneInput.value = '+49 999';
+      phoneInput.dispatchEvent(new Event('input'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('measurement mirror never renders personal-details editors, even when selected', () => {
+      const root = setup();
+      const measured = root.querySelectorAll('.paginated-sheet__measure input.cvpreview__name');
+      expect(measured.length).toBe(0);
+    });
+  });
 });

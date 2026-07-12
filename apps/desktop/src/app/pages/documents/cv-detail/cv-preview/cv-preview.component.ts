@@ -603,13 +603,13 @@ export class CvPreviewComponent {
       'font-family': s.fontFamily,
       'font-size': `${s.fontSizePt}pt`,
       'font-weight': String(s.fontWeight),
-      color: s.colorHex,
     };
     if (s.lineHeight !== undefined) {
       css['line-height'] = String(s.lineHeight);
       css['--cv-section-line-height'] = String(s.lineHeight);
     }
     if (this.style().sectionStyles?.[key]?.colorHex) {
+      css['color'] = s.colorHex;
       css['--cv-section-body-color'] = s.colorHex;
     }
     return css;

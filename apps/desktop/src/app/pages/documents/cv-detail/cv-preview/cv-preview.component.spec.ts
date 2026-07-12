@@ -203,6 +203,35 @@ describe('CvPreviewComponent', () => {
     });
   });
 
+  it('bodyCss omits body colour for a themed document when the section has no override', () => {
+    // Regression: an Aurora-like accent colour must not leak into body text via
+    // the document-wide accentColorHex fallback in effectiveSectionStyle — only
+    // an explicit per-section colorHex override should set body colour.
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      accentColorHex: '#1B7464',
+    });
+    const css = component.bodyCss('summary');
+    expect(css['color']).toBeUndefined();
+    expect(css['--cv-section-body-color']).toBeUndefined();
+  });
+
+  it('bodyCss sets body colour only for the section with an explicit override', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      accentColorHex: '#1B7464',
+      sectionStyles: { summary: { colorHex: '#1b7464' } },
+    });
+    expect(component.bodyCss('summary')).toMatchObject({
+      color: '#1b7464',
+      '--cv-section-body-color': '#1b7464',
+    });
+    // A sibling section without its own override stays uncoloured.
+    const skillsCss = component.bodyCss('skills');
+    expect(skillsCss['color']).toBeUndefined();
+    expect(skillsCss['--cv-section-body-color']).toBeUndefined();
+  });
+
   it('applies an explicit line height to rendered summary text', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,

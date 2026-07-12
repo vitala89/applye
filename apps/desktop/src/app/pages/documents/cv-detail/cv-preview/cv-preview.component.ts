@@ -689,6 +689,35 @@ export class CvPreviewComponent {
     return css;
   }
 
+  /** Element-scope style DELTA for a single body leaf (Phase D.2's per-element
+   * cascade layer) — ONLY the CSS properties actually SET in
+   * `style().elementStyles[path]`, mapped 1:1: `fontFamily`→`font-family`,
+   * `fontSizePt`→`font-size:<n>pt`, `fontWeight`→`font-weight`,
+   * `colorHex`→`color`, `lineHeight`→`line-height`. Deliberately NOT the full
+   * resolved cascade (`effectiveLeafStyle`): a leaf with no override returns
+   * `{}` so it renders with no leaf-level inline style at all (byte-identical
+   * resting output to before this task) and keeps inheriting the section's
+   * `bodyCss`, already applied on the section wrapper, through normal CSS
+   * inheritance. `color` therefore only ever appears here when the ELEMENT
+   * override itself set it — this layer never falls back to the section or
+   * document accent colour (mirrors the no-accent-leak rule already enforced
+   * by `bodyCss`/`effectiveLeafStyle`, see `015c2e3`). Bound on the leaf
+   * element itself (not the wrapper) in both the resting `@else` branch
+   * (rendered in the page card AND the hidden measurement mirror — pure
+   * typography, so it must affect pagination) and the inline editor branch,
+   * so an editing leaf looks the same as its resting counterpart. */
+  leafCss(path: string): Record<string, string> {
+    const o = this.style().elementStyles?.[path];
+    if (!o) return {};
+    const css: Record<string, string> = {};
+    if (o.fontFamily !== undefined) css['font-family'] = o.fontFamily;
+    if (o.fontSizePt !== undefined) css['font-size'] = `${o.fontSizePt}pt`;
+    if (o.fontWeight !== undefined) css['font-weight'] = String(o.fontWeight);
+    if (o.colorHex !== undefined) css['color'] = o.colorHex;
+    if (o.lineHeight !== undefined) css['line-height'] = String(o.lineHeight);
+    return css;
+  }
+
   /** Title style for a section heading. */
   titleCss(key: CvSectionKey): Record<string, string> {
     const s = effectiveTitleStyle(this.style(), key);

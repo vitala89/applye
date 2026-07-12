@@ -51,6 +51,7 @@
         class="cvpreview__name cvpreview__leaf-editor"
         [class.cvpreview__element-selected]="isElementSelected(leafPath('pd', 'fullName'))"
         [style.color]="effStyle('personal_details').colorHex"
+        [ngStyle]="leafCss(leafPath('pd', 'fullName'))"
         [value]="leafDraft(leafPath('pd', 'fullName'), section.fullName)"
         [placeholder]="t()('documents.cv_untitled')"
         (input)="onLeafInput(leafPath('pd', 'fullName'), $any($event.target).value)"
@@ -63,6 +64,7 @@
           type="text"
           class="cvpreview__title cvpreview__leaf-editor"
           [class.cvpreview__element-selected]="isElementSelected(leafPath('pd', 'title'))"
+          [ngStyle]="leafCss(leafPath('pd', 'title'))"
           [value]="leafDraft(leafPath('pd', 'title'), section.title)"
           (input)="onLeafInput(leafPath('pd', 'title'), $any($event.target).value)"
           (blur)="commitPersonalField(section, 'title', section.title)"
@@ -97,6 +99,7 @@
       <h2
         class="cvpreview__name"
         [style.color]="effStyle('personal_details').colorHex"
+        [ngStyle]="leafCss(leafPath('pd', 'fullName'))"
         [class.cvpreview__selectable]="selectable(renderMode)"
         [class.cvpreview__element-selected]="
           isElementSelected(leafPath('pd', 'fullName')) && selectable(renderMode)
@@ -119,6 +122,7 @@
       @if (section.title) {
         <p
           class="cvpreview__title"
+          [ngStyle]="leafCss(leafPath('pd', 'title'))"
           [class.cvpreview__selectable]="selectable(renderMode)"
           [class.cvpreview__element-selected]="
             isElementSelected(leafPath('pd', 'title')) && selectable(renderMode)
@@ -176,6 +180,7 @@
           class="cvpreview__summary cvpreview__leaf-editor"
           [class.cvpreview__selected]="true"
           [class.cvpreview__element-selected]="isElementSelected(leafPath('summary'))"
+          [ngStyle]="leafCss(leafPath('summary'))"
           [value]="leafDraft(leafPath('summary'), section.text)"
           (input)="onLeafInput(leafPath('summary'), $any($event.target).value)"
           (blur)="commitSummary(section, section.text)"
@@ -196,6 +201,7 @@
     } @else {
       <p
         class="cvpreview__summary"
+        [ngStyle]="leafCss(leafPath('summary'))"
         [class.cvpreview__selectable]="selectable(renderMode)"
         [class.cvpreview__selected]="isSelected('summary', 'body') && selectable(renderMode)"
         [attr.role]="selectable(renderMode) ? 'button' : null"
@@ -265,6 +271,7 @@
               [class.cvpreview__element-selected]="
                 isElementSelected(leafPath('skills', i, 'label'))
               "
+              [ngStyle]="leafCss(leafPath('skills', i, 'label'))"
               [value]="leafDraft(leafPath('skills', i, 'label'), group.label)"
               (input)="onLeafInput(leafPath('skills', i, 'label'), $any($event.target).value)"
               (blur)="commitSkillLabel(section, i, group.label)"
@@ -278,6 +285,7 @@
               [class.cvpreview__element-selected]="
                 isElementSelected(leafPath('skills', i, 'values'))
               "
+              [ngStyle]="leafCss(leafPath('skills', i, 'values'))"
               [value]="leafDraft(leafPath('skills', i, 'values'), group.values.join(', '))"
               (input)="onLeafInput(leafPath('skills', i, 'values'), $any($event.target).value)"
               (blur)="commitSkillValues(section, i, group.values.join(', '))"
@@ -300,6 +308,7 @@
           >
             <strong
               class="cvpreview__skill-label-view"
+              [ngStyle]="leafCss(leafPath('skills', i, 'label'))"
               [class.cvpreview__selectable]="selectable(renderMode)"
               [class.cvpreview__element-selected]="
                 isElementSelected(leafPath('skills', i, 'label')) && selectable(renderMode)
@@ -318,6 +327,7 @@
             >
             <span
               class="cvpreview__skill-values-view"
+              [ngStyle]="leafCss(leafPath('skills', i, 'values'))"
               [class.cvpreview__selectable]="selectable(renderMode)"
               [class.cvpreview__element-selected]="
                 isElementSelected(leafPath('skills', i, 'values')) && selectable(renderMode)
@@ -374,6 +384,7 @@
             type="text"
             class="cvpreview__entry-company cvpreview__leaf-editor"
             [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'company'))"
+            [ngStyle]="leafCss(leafPath('exp', i, 'company'))"
             [value]="leafDraft(leafPath('exp', i, 'company'), entry.company)"
             (input)="onLeafInput(leafPath('exp', i, 'company'), $any($event.target).value)"
             (blur)="commitExperienceField(section, i, 'company', entry.company)"
@@ -388,6 +399,7 @@
               [class.cvpreview__element-selected]="
                 isElementSelected(leafPath('exp', i, 'industry'))
               "
+              [ngStyle]="leafCss(leafPath('exp', i, 'industry'))"
               [value]="leafDraft(leafPath('exp', i, 'industry'), entry.industry || '')"
               (input)="onLeafInput(leafPath('exp', i, 'industry'), $any($event.target).value)"
               (blur)="commitExperienceField(section, i, 'industry', entry.industry || '')"
@@ -400,6 +412,7 @@
           type="text"
           class="cvpreview__entry-meta cvpreview__leaf-editor"
           [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'location'))"
+          [ngStyle]="leafCss(leafPath('exp', i, 'location'))"
           [value]="leafDraft(leafPath('exp', i, 'location'), entry.location || '')"
           (input)="onLeafInput(leafPath('exp', i, 'location'), $any($event.target).value)"
           (blur)="commitExperienceField(section, i, 'location', entry.location || '')"
@@ -412,6 +425,7 @@
           type="text"
           class="cvpreview__entry-role cvpreview__leaf-editor"
           [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'role'))"
+          [ngStyle]="leafCss(leafPath('exp', i, 'role'))"
           [value]="leafDraft(leafPath('exp', i, 'role'), entry.role)"
           (input)="onLeafInput(leafPath('exp', i, 'role'), $any($event.target).value)"
           (blur)="commitExperienceField(section, i, 'role', entry.role)"
@@ -446,6 +460,7 @@
         <span class="cvpreview__entry-lead">
           <span
             class="cvpreview__entry-company"
+            [ngStyle]="leafCss(leafPath('exp', i, 'company'))"
             [class.cvpreview__selectable]="selectable(renderMode)"
             [class.cvpreview__element-selected]="
               isElementSelected(leafPath('exp', i, 'company')) && selectable(renderMode)
@@ -463,6 +478,7 @@
           @if (activeTheme().entry.showIndustry && entry.industry) {
             <span
               class="cvpreview__entry-industry"
+              [ngStyle]="leafCss(leafPath('exp', i, 'industry'))"
               [class.cvpreview__selectable]="selectable(renderMode)"
               [class.cvpreview__element-selected]="
                 isElementSelected(leafPath('exp', i, 'industry')) && selectable(renderMode)
@@ -482,6 +498,7 @@
         </span>
         <span
           class="cvpreview__entry-meta"
+          [ngStyle]="leafCss(leafPath('exp', i, 'location'))"
           [class.cvpreview__selectable]="selectable(renderMode)"
           [class.cvpreview__element-selected]="
             isElementSelected(leafPath('exp', i, 'location')) && selectable(renderMode)
@@ -500,6 +517,7 @@
       <div class="cvpreview__entry-head cvpreview__entry-head--rule">
         <span
           class="cvpreview__entry-role"
+          [ngStyle]="leafCss(leafPath('exp', i, 'role'))"
           [class.cvpreview__selectable]="selectable(renderMode)"
           [class.cvpreview__element-selected]="
             isElementSelected(leafPath('exp', i, 'role')) && selectable(renderMode)
@@ -550,6 +568,7 @@
             #bulletEl
             class="cvpreview__leaf-editor cvpreview__bullet-editor"
             [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'bullet', b))"
+            [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))"
             [value]="leafDraft(leafPath('exp', i, 'bullet', b), bullet)"
             (input)="onLeafInput(leafPath('exp', i, 'bullet', b), $any($event.target).value)"
             (blur)="commitExperienceBullet(section, i, b, bullet)"
@@ -569,7 +588,7 @@
         </div>
       </li>
     } @else {
-      <li>
+      <li [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))">
         @for (run of runs(bullet); track $index) {
           @if (run.bold) {
             <strong>{{ run.text }}</strong>
@@ -689,6 +708,7 @@
             type="text"
             class="cvpreview__leaf-editor cvpreview__language-input"
             [class.cvpreview__element-selected]="isElementSelected(leafPath('lang', i, 'language'))"
+            [ngStyle]="leafCss(leafPath('lang', i, 'language'))"
             [value]="leafDraft(leafPath('lang', i, 'language'), item.language)"
             (input)="onLeafInput(leafPath('lang', i, 'language'), $any($event.target).value)"
             (blur)="commitLanguageValue(section, i, item.language)"
@@ -716,6 +736,7 @@
           }
           <span
             class="cvpreview__language-value"
+            [ngStyle]="leafCss(leafPath('lang', i, 'language'))"
             [class.cvpreview__selectable]="selectable(renderMode)"
             [class.cvpreview__element-selected]="
               isElementSelected(leafPath('lang', i, 'language')) && selectable(renderMode)

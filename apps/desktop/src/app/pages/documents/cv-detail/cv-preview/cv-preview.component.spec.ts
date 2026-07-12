@@ -232,6 +232,154 @@ describe('CvPreviewComponent', () => {
     expect(skillsCss['--cv-section-body-color']).toBeUndefined();
   });
 
+  describe('leafCss — per-element style override (Phase D.2)', () => {
+    it('returns an empty style object for a leaf with no elementStyles override', () => {
+      expect(component.leafCss('summary')).toEqual({});
+      expect(component.leafCss('pd.fullName')).toEqual({});
+    });
+
+    it('returns only the CSS properties actually set on the element override — not the full resolved cascade', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { summary: { fontFamily: 'Georgia', fontSizePt: 14 } },
+      });
+      // fontWeight/colorHex/lineHeight were never set on the override, so they
+      // must be absent here even though the section/document cascade has
+      // concrete values for them (effectiveLeafStyle would fill them in).
+      expect(component.leafCss('summary')).toEqual({
+        'font-family': 'Georgia',
+        'font-size': '14pt',
+      });
+    });
+
+    it('maps every element-style field to its CSS property when all are set', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: {
+          'exp.0.role': {
+            fontFamily: 'Arial',
+            fontSizePt: 12,
+            fontWeight: 700,
+            colorHex: '#123456',
+            lineHeight: 1.5,
+          },
+        },
+      });
+      expect(component.leafCss('exp.0.role')).toEqual({
+        'font-family': 'Arial',
+        'font-size': '12pt',
+        'font-weight': '700',
+        color: '#123456',
+        'line-height': '1.5',
+      });
+    });
+
+    it('never falls back to the section or document accent colour — only an explicit element colorHex appears', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        accentColorHex: '#1B7464',
+        sectionStyles: { summary: { colorHex: '#111111' } },
+        elementStyles: { summary: { fontSizePt: 13 } },
+      });
+      expect(component.leafCss('summary')['color']).toBeUndefined();
+    });
+
+    it('renders the element override as inline style on the summary leaf in BOTH the page card and the hidden measurement mirror (typography parity for pagination)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { summary: { fontFamily: 'Georgia', fontSizePt: 16, colorHex: '#1b7464' } },
+      });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello world' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+      const measured = root.querySelector(
+        '.paginated-sheet__measure .cvpreview__summary',
+      ) as HTMLElement;
+      expect(page).toBeTruthy();
+      expect(measured).toBeTruthy();
+      for (const el of [page, measured]) {
+        expect(el.style.fontFamily).toContain('Georgia');
+        expect(el.style.fontSize).toBe('16pt');
+        expect(el.style.color).not.toBe('');
+      }
+    });
+
+    it('a leaf without an element override renders no leaf-level inline style (resting output unchanged) while still inheriting the section wrapper body style', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, fontFamily: 'Georgia' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello world' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+      // No leaf-level override was ever set — leafCss must contribute nothing.
+      expect(page.style.fontFamily).toBe('');
+      expect(page.style.fontSize).toBe('');
+      expect(page.style.color).toBe('');
+      // The section wrapper (bodyCss) still carries the effective font —
+      // inheritance, not the new element layer, gives the leaf its font.
+      const wrapper = page.closest('.cvpreview__section') as HTMLElement;
+      expect(wrapper.style.fontFamily).toContain('Georgia');
+    });
+
+    it('an un-overridden leaf has no inline colour (no accent leak); an element colorHex override shows colour', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, accentColorHex: '#1B7464' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello world' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      let page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+      expect(page.style.color).toBe('');
+
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        accentColorHex: '#1B7464',
+        elementStyles: { summary: { colorHex: '#222222' } },
+      });
+      fixture.detectChanges();
+      page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+      expect(page.style.color).not.toBe('');
+    });
+
+    it('an element override on the inline editor renders the same style while the leaf is being edited', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { summary: { fontFamily: 'Georgia', fontSizePt: 15 } },
+      });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello world' },
+      ]);
+      fixture.detectChanges();
+      const textarea = (fixture.nativeElement as HTMLElement).querySelector(
+        '.page-card textarea.cvpreview__summary',
+      ) as HTMLTextAreaElement;
+      expect(textarea.style.fontFamily).toContain('Georgia');
+      expect(textarea.style.fontSize).toBe('15pt');
+    });
+
+    it('an element colorHex override on personal-details fullName wins over the section colour on the same leaf', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { personal_details: { colorHex: '#111111' } },
+        elementStyles: { 'pd.fullName': { colorHex: '#ff0000' } },
+      });
+      fixture.componentRef.setInput('sections', [
+        { key: 'personal_details', order: 0, visible: true, fullName: 'Ada Lovelace' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const name = root.querySelector('.page-card h2.cvpreview__name') as HTMLElement;
+      expect(name.style.color).not.toBe('');
+      expect(name.style.color).not.toBe('#111111');
+    });
+  });
+
   it('applies an explicit line height to rendered summary text', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,

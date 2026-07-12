@@ -3,6 +3,7 @@ import {
   CvContent,
   CvEducationEntry,
   CvEducationSection,
+  CvElementStyle,
   CvExperienceEntry,
   CvExperienceSection,
   CvFontWeight,
@@ -623,6 +624,91 @@ export function effectiveSectionStyle(
 
 function isValidCvLineHeight(value: number | undefined): value is number {
   return value !== undefined && Number.isFinite(value) && value >= 1 && value <= 2;
+}
+
+/** Applies an immutable per-element style patch while keeping the persisted
+ * override tree minimal. Mirrors `patchCvSectionStyle` at the leaf level:
+ * inherited (`undefined`/`null`) values, an emptied element override, and an
+ * emptied `elementStyles` map are all removed; sibling paths are untouched. */
+export function patchCvElementStyle(
+  style: CvStyle,
+  path: string,
+  patch: Partial<CvElementStyle>,
+): CvStyle {
+  const current = style.elementStyles?.[path] ?? {};
+  const normalizedPatch = { ...patch };
+  if ('lineHeight' in patch && !isValidCvLineHeight(patch.lineHeight)) {
+    normalizedPatch.lineHeight = undefined;
+  }
+  const merged = Object.fromEntries(
+    Object.entries({ ...current, ...normalizedPatch }).filter(([, value]) => value != null),
+  ) as CvElementStyle;
+  const elementStyles = { ...(style.elementStyles ?? {}) };
+  if (Object.keys(merged).length) elementStyles[path] = merged;
+  else delete elementStyles[path];
+  return {
+    ...style,
+    elementStyles: Object.keys(elementStyles).length ? elementStyles : undefined,
+  };
+}
+
+/** Removes one complete per-element override and omits the map when it
+ * becomes empty. Document defaults, section overrides, and sibling element
+ * overrides are preserved. */
+export function resetCvElementStyle(style: CvStyle, path: string): CvStyle {
+  const elementStyles = { ...(style.elementStyles ?? {}) };
+  delete elementStyles[path];
+  return {
+    ...style,
+    elementStyles: Object.keys(elementStyles).length ? elementStyles : undefined,
+  };
+}
+
+/** Applies an element-style patch onto the `CvStyle` root/document-wide body
+ * fields (`fontFamily`/`fontSizePt`/`fontWeight`/`accentColorHex`) — the
+ * least-specific layer of the cascade. Only the provided keys are written;
+ * `sectionStyles`/`elementStyles`/`titleStyle` are left untouched.
+ * `lineHeight` has no document-body root field, so it is intentionally
+ * ignored here. */
+export function patchCvDocumentBody(style: CvStyle, patch: Partial<CvElementStyle>): CvStyle {
+  const next: CvStyle = { ...style };
+  if (patch.fontFamily !== undefined) next.fontFamily = patch.fontFamily;
+  if (patch.fontSizePt !== undefined) next.fontSizePt = patch.fontSizePt;
+  if (patch.fontWeight !== undefined) next.fontWeight = patch.fontWeight;
+  if (patch.colorHex !== undefined) next.accentColorHex = patch.colorHex;
+  return next;
+}
+
+/** Resolved style for a single body leaf: `elementStyles[elementPath]`
+ * layered over `effectiveSectionStyle(style, key)` — element → section →
+ * document, most-specific first. An absent `elementPath` (or one with no
+ * override) resolves to the section value unchanged. `colorHex` stays
+ * `undefined` unless explicitly overridden at the element or section scope —
+ * it must NOT fall back to `accentColorHex` (the no-accent-leak rule from
+ * `015c2e3`); un-overridden body text keeps its inherited/theme colour.
+ * `lineHeight` is validated 1.0–2.0, falling back to the section's
+ * (already-validated) value when the element override is out of range. */
+export function effectiveLeafStyle(
+  style: CvStyle,
+  key: CvSectionKey,
+  elementPath: string | undefined,
+): {
+  fontFamily: string;
+  fontSizePt: number;
+  fontWeight: CvFontWeight;
+  colorHex?: string;
+  lineHeight?: number;
+} {
+  const section = effectiveSectionStyle(style, key);
+  const sectionOverride = style.sectionStyles?.[key] ?? {};
+  const element: CvElementStyle = (elementPath && style.elementStyles?.[elementPath]) || {};
+  return {
+    fontFamily: element.fontFamily ?? section.fontFamily,
+    fontSizePt: element.fontSizePt ?? section.fontSizePt,
+    fontWeight: element.fontWeight ?? section.fontWeight,
+    colorHex: element.colorHex ?? sectionOverride.colorHex ?? undefined,
+    lineHeight: isValidCvLineHeight(element.lineHeight) ? element.lineHeight : section.lineHeight,
+  };
 }
 
 /** Resolved title style for a section: per-section title override, then the

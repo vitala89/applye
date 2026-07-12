@@ -291,6 +291,19 @@ export interface CvSectionStyle {
   titleBorder?: CvBorderStyle;
 }
 
+/** Per-leaf (single-element) style override — the most specific layer of the
+ * CV style cascade (element → section → document → theme). Same optional
+ * shape as `CvSectionStyle`'s body fields, minus the section-only `title` /
+ * `titleBorder` nesting: an individual leaf (e.g. one bullet, one contact
+ * field) has no title of its own. */
+export interface CvElementStyle {
+  fontFamily?: string;
+  fontSizePt?: number;
+  fontWeight?: CvFontWeight;
+  colorHex?: string;
+  lineHeight?: number;
+}
+
 /** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
  * Deliberately small: font, size, one accent colour. Layout/order lives in
  * `CvTemplate` instead. Safe default: Calibri 11pt, dark-grey (#333333). */
@@ -306,6 +319,11 @@ export interface CvStyle {
   titleBorder?: CvBorderStyle;
   /** Page geometry (size + margin preset); absent → A4 / normal. */
   page?: PageSettings;
+  /** Per-element (single-leaf) style overrides, keyed by a positional path
+   * (e.g. `summary.body`, `experience.0.bullet.1`) — most specific layer of
+   * the style cascade, resolved over `sectionStyles` then the document
+   * defaults above. Additive-only storage; absent → no per-leaf overrides. */
+  elementStyles?: Record<string, CvElementStyle>;
 }
 
 export const CV_STYLE_DEFAULT: CvStyle = {

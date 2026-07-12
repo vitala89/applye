@@ -14,6 +14,7 @@ import {
   buildContactLine,
   buildCvContent,
   cvContentToMd,
+  effectiveLeafStyle,
   effectiveSectionStyle,
   effectiveTitleStyle,
   effectiveTitleBorder,
@@ -21,6 +22,8 @@ import {
   normalizeCvContent,
   parseCvSkillResponse,
   parseSkillValues,
+  patchCvDocumentBody,
+  patchCvElementStyle,
   patchCvSectionStyle,
   repairTruncatedJson,
   replaceEducationEntryField,
@@ -29,6 +32,7 @@ import {
   replaceLanguageValue,
   replaceSkillGroupLabel,
   replaceSkillGroupValues,
+  resetCvElementStyle,
   resetCvSectionStyle,
   resolvePageSettings,
   visiblePersonalContactFields,
@@ -782,6 +786,204 @@ describe('patchCvSectionStyle', () => {
         'summary',
       ).sectionStyles,
     ).toBeUndefined();
+  });
+});
+
+describe('patchCvElementStyle', () => {
+  it('writes a new element override', () => {
+    const original: CvStyle = { ...CV_STYLE_DEFAULT };
+    const changed = patchCvElementStyle(original, 'summary.body', {
+      fontFamily: 'Arial',
+      fontSizePt: 12,
+    });
+    expect(changed.elementStyles).toEqual({
+      'summary.body': { fontFamily: 'Arial', fontSizePt: 12 },
+    });
+    expect(original.elementStyles).toBeUndefined();
+  });
+
+  it('merges into an existing override and prunes inherited (undefined) fields', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      elementStyles: { 'summary.body': { fontFamily: 'Arial', colorHex: '#111111' } },
+    };
+    const changed = patchCvElementStyle(original, 'summary.body', {
+      fontFamily: undefined,
+      fontWeight: 700,
+    });
+    expect(changed.elementStyles).toEqual({
+      'summary.body': { colorHex: '#111111', fontWeight: 700 },
+    });
+  });
+
+  it('removes the element override once every field is pruned, and drops an emptied elementStyles map', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      elementStyles: { 'summary.body': { fontFamily: 'Arial' } },
+    };
+    const pruned = patchCvElementStyle(original, 'summary.body', { fontFamily: undefined });
+    expect(pruned.elementStyles).toBeUndefined();
+  });
+
+  it('preserves sibling element overrides untouched', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      elementStyles: {
+        'summary.body': { fontFamily: 'Arial' },
+        'experience.0.bullet.0': { colorHex: '#0a5' },
+      },
+    };
+    const changed = patchCvElementStyle(original, 'summary.body', { fontSizePt: 13 });
+    expect(changed.elementStyles).toEqual({
+      'summary.body': { fontFamily: 'Arial', fontSizePt: 13 },
+      'experience.0.bullet.0': { colorHex: '#0a5' },
+    });
+  });
+
+  it('prunes an invalid line-height patch instead of persisting it', () => {
+    const original: CvStyle = { ...CV_STYLE_DEFAULT };
+    const changed = patchCvElementStyle(original, 'summary.body', {
+      fontFamily: 'Arial',
+      lineHeight: 3,
+    });
+    expect(changed.elementStyles).toEqual({ 'summary.body': { fontFamily: 'Arial' } });
+  });
+});
+
+describe('resetCvElementStyle', () => {
+  it('removes only the targeted path, preserving siblings', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      elementStyles: {
+        'summary.body': { fontFamily: 'Arial' },
+        'experience.0.bullet.0': { colorHex: '#0a5' },
+      },
+    };
+    expect(resetCvElementStyle(original, 'summary.body').elementStyles).toEqual({
+      'experience.0.bullet.0': { colorHex: '#0a5' },
+    });
+  });
+
+  it('drops the elementStyles map once it becomes empty', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      elementStyles: { 'summary.body': { fontFamily: 'Arial' } },
+    };
+    expect(resetCvElementStyle(original, 'summary.body').elementStyles).toBeUndefined();
+  });
+});
+
+describe('patchCvDocumentBody', () => {
+  it('maps colorHex to accentColorHex and applies the other root fields', () => {
+    const original: CvStyle = { ...CV_STYLE_DEFAULT };
+    const changed = patchCvDocumentBody(original, {
+      fontFamily: 'Georgia',
+      fontSizePt: 12,
+      fontWeight: 700,
+      colorHex: '#123456',
+    });
+    expect(changed).toEqual({
+      ...CV_STYLE_DEFAULT,
+      fontFamily: 'Georgia',
+      fontSizePt: 12,
+      fontWeight: 700,
+      accentColorHex: '#123456',
+    });
+  });
+
+  it('ignores lineHeight (no root field for it) and leaves other maps untouched', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { summary: { fontFamily: 'Arial' } },
+      elementStyles: { 'summary.body': { colorHex: '#0a5' } },
+      titleStyle: { fontSizePt: 14 },
+    };
+    const changed = patchCvDocumentBody(original, { fontSizePt: 13, lineHeight: 1.6 });
+    expect(changed.fontSizePt).toBe(13);
+    expect(changed.sectionStyles).toBe(original.sectionStyles);
+    expect(changed.elementStyles).toBe(original.elementStyles);
+    expect(changed.titleStyle).toBe(original.titleStyle);
+    expect('lineHeight' in changed).toBe(false);
+  });
+
+  it('only applies provided keys, leaving the rest as-is', () => {
+    const original: CvStyle = { ...CV_STYLE_DEFAULT };
+    const changed = patchCvDocumentBody(original, { fontSizePt: 13 });
+    expect(changed.fontFamily).toBe(original.fontFamily);
+    expect(changed.accentColorHex).toBe(original.accentColorHex);
+    expect(changed.fontWeight).toBe(original.fontWeight);
+    expect(changed.fontSizePt).toBe(13);
+  });
+});
+
+describe('effectiveLeafStyle', () => {
+  const base: CvStyle = { ...CV_STYLE_DEFAULT };
+
+  it('with no elementPath, returns the section resolution unchanged (colorHex undefined when un-overridden)', () => {
+    expect(effectiveLeafStyle(base, 'summary', undefined)).toEqual({
+      fontFamily: 'Calibri',
+      fontSizePt: 11,
+      fontWeight: 400,
+      colorHex: undefined,
+      lineHeight: undefined,
+    });
+  });
+
+  it('with an elementPath but no override at that path, returns the section resolution', () => {
+    const s: CvStyle = { ...base, sectionStyles: { summary: { fontSizePt: 13 } } };
+    expect(effectiveLeafStyle(s, 'summary', 'summary.body')).toEqual({
+      fontFamily: 'Calibri',
+      fontSizePt: 13,
+      fontWeight: 400,
+      colorHex: undefined,
+      lineHeight: undefined,
+    });
+  });
+
+  it('layers the element override over the section resolution', () => {
+    const s: CvStyle = {
+      ...base,
+      sectionStyles: { summary: { fontSizePt: 13, fontFamily: 'Arial' } },
+      elementStyles: { 'summary.body': { fontSizePt: 15 } },
+    };
+    expect(effectiveLeafStyle(s, 'summary', 'summary.body')).toEqual({
+      fontFamily: 'Arial',
+      fontSizePt: 15,
+      fontWeight: 400,
+      colorHex: undefined,
+      lineHeight: undefined,
+    });
+  });
+
+  it('colorHex stays undefined unless explicitly overridden at section or element scope (no accent leak)', () => {
+    expect(effectiveLeafStyle(base, 'summary', 'summary.body').colorHex).toBeUndefined();
+
+    const sectionOverride: CvStyle = { ...base, sectionStyles: { summary: { colorHex: '#0a5' } } };
+    expect(effectiveLeafStyle(sectionOverride, 'summary', 'summary.body').colorHex).toBe('#0a5');
+    expect(effectiveLeafStyle(sectionOverride, 'summary', undefined).colorHex).toBe('#0a5');
+
+    const elementOverride: CvStyle = {
+      ...base,
+      sectionStyles: { summary: { colorHex: '#0a5' } },
+      elementStyles: { 'summary.body': { colorHex: '#123456' } },
+    };
+    expect(effectiveLeafStyle(elementOverride, 'summary', 'summary.body').colorHex).toBe('#123456');
+  });
+
+  it('validates lineHeight 1.0-2.0, falling back to the section value when the element override is invalid', () => {
+    const s: CvStyle = {
+      ...base,
+      sectionStyles: { summary: { lineHeight: 1.6 } },
+      elementStyles: { 'summary.body': { lineHeight: 3 } },
+    };
+    expect(effectiveLeafStyle(s, 'summary', 'summary.body').lineHeight).toBe(1.6);
+
+    const validElement: CvStyle = {
+      ...base,
+      sectionStyles: { summary: { lineHeight: 1.6 } },
+      elementStyles: { 'summary.body': { lineHeight: 1.8 } },
+    };
+    expect(effectiveLeafStyle(validElement, 'summary', 'summary.body').lineHeight).toBe(1.8);
   });
 });
 

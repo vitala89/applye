@@ -57,8 +57,9 @@ import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
 import { CvPreviewComponent } from './cv-preview/cv-preview.component';
 import { CvSummaryEditorComponent } from './section-editors/cv-summary-editor.component';
 import { CvLanguagesEditorComponent } from './section-editors/cv-languages-editor.component';
+import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.component';
+import { CvEducationEditorComponent } from './section-editors/cv-education-editor.component';
 import {
-  blankEducationEntry,
   blankExperienceEntry,
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
@@ -95,6 +96,8 @@ export function mergePersonalField<T extends string | undefined>(
     CvPreviewComponent,
     CvSummaryEditorComponent,
     CvLanguagesEditorComponent,
+    CvSkillsEditorComponent,
+    CvEducationEditorComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -604,58 +607,15 @@ export class CvDetailComponent {
     this.sections.update((list) => list.map((s) => (s.key === updated.key ? updated : s)));
   }
 
-  setSkillGroupLabel(
-    section: Extract<CvSection, { key: 'skills' }>,
-    groupIndex: number,
-    label: string,
-  ): void {
-    const group = section.groups[groupIndex];
-    if (group) group.label = label;
-  }
-
-  addSkillGroup(section: Extract<CvSection, { key: 'skills' }>): void {
-    section.groups.push({ label: 'Skills', values: [] });
+  /** Experience-only now — the education arm owns its own local `addEntry`
+   * (see `CvEducationEditorComponent`) since the blank-entry shape differs
+   * and that section has already been extracted. */
+  addEntry(section: Extract<CvSection, { key: 'experience' }>): void {
+    section.entries.push(blankExperienceEntry());
     this.sections.set([...this.sections()]);
   }
 
-  removeSkillGroup(section: Extract<CvSection, { key: 'skills' }>, groupIndex: number): void {
-    section.groups.splice(groupIndex, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  /** Adds the trimmed input value as a skill chip on Enter, then clears the
-   * input. Ignores empty values and duplicates within the group. */
-  addSkill(section: Extract<CvSection, { key: 'skills' }>, groupIndex: number, event: Event): void {
-    event.preventDefault();
-    const input = event.target as HTMLInputElement;
-    const value = input.value.trim();
-    if (!value) return;
-    const group = section.groups[groupIndex];
-    if (!group) return;
-    if (!group.values.includes(value)) group.values.push(value);
-    input.value = '';
-    this.sections.set([...this.sections()]);
-  }
-
-  removeSkill(
-    section: Extract<CvSection, { key: 'skills' }>,
-    groupIndex: number,
-    valueIndex: number,
-  ): void {
-    section.groups[groupIndex]?.values.splice(valueIndex, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  addEntry(section: Extract<CvSection, { key: 'experience' | 'education' }>): void {
-    if (section.key === 'experience') section.entries.push(blankExperienceEntry());
-    else section.entries.push(blankEducationEntry());
-    this.sections.set([...this.sections()]);
-  }
-
-  removeEntry(
-    section: Extract<CvSection, { key: 'experience' | 'education' }>,
-    index: number,
-  ): void {
+  removeEntry(section: Extract<CvSection, { key: 'experience' }>, index: number): void {
     section.entries.splice(index, 1);
     this.sections.set([...this.sections()]);
   }

@@ -1,0 +1,49 @@
+<div class="cvdetail__skills">
+  @for (group of section().groups; track $index; let gi = $index) {
+    <div class="cvdetail__skill-group">
+      <div class="cvdetail__skill-group-head">
+        <input
+          type="text"
+          class="cvdetail__skill-group-label"
+          [ngModel]="group.label"
+          (ngModelChange)="setGroupLabel(gi, $event)"
+          [placeholder]="t()('documents.cv_field_skill_group')"
+        />
+        <span class="cvdetail__skill-group-line"></span>
+        <button
+          type="button"
+          class="cvdetail__skill-group-remove"
+          [attr.aria-label]="t()('documents.cv_skill_remove_group')"
+          (click)="removeGroup(gi)"
+        >
+          <lucide-icon [img]="icons.close" [size]="13" aria-hidden="true" />
+        </button>
+      </div>
+      <div class="cvdetail__skill-chips">
+        @for (val of group.values; track $index; let vi = $index) {
+          <span class="cvdetail__skill-chip">
+            {{ val }}
+            <button
+              type="button"
+              class="cvdetail__skill-chip-remove"
+              [attr.aria-label]="t()('documents.cv_skill_remove')"
+              (click)="removeSkill(gi, vi)"
+            >
+              <lucide-icon [img]="icons.close" [size]="10" aria-hidden="true" />
+            </button>
+          </span>
+        }
+        <input
+          type="text"
+          class="cvdetail__skill-add"
+          [placeholder]="t()('documents.cv_skill_add_hint')"
+          (keydown.enter)="addSkill(gi, $event)"
+        />
+      </div>
+    </div>
+  }
+  <button type="button" class="cvdetail__add-btn" (click)="addGroup()">
+    <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+    {{ t()('documents.cv_skill_add_group') }}
+  </button>
+</div>

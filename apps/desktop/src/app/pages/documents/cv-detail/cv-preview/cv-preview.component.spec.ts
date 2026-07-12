@@ -521,4 +521,387 @@ describe('CvPreviewComponent', () => {
       expect(measured.length).toBe(0);
     });
   });
+
+  describe('inline leaf editing — experience', () => {
+    function setup(themeId = 1) {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('themeId', themeId);
+      fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [
+            {
+              company: 'Acme',
+              role: 'Engineer',
+              startDate: '2020',
+              endDate: '2022',
+              location: 'Berlin',
+              industry: 'SaaS',
+              bullets: ['Shipped **X**', 'Led Y'],
+            },
+            {
+              company: 'Globex',
+              role: 'Lead',
+              startDate: '2022',
+              bullets: [],
+            },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('renders company/location/role/dates as individual leaves for every entry, and bullets as textareas', () => {
+      const root = setup(2); // Aurora theme so industry also renders
+      const cards = root.querySelectorAll('.page-card');
+      const card = cards[0] as HTMLElement;
+      const company = card.querySelector('input.cvpreview__entry-company') as HTMLInputElement;
+      const industry = card.querySelector('input.cvpreview__entry-industry') as HTMLInputElement;
+      const location = card.querySelector('input.cvpreview__entry-meta') as HTMLInputElement;
+      const role = card.querySelector('input.cvpreview__entry-role') as HTMLInputElement;
+      const dateInputs = Array.from(
+        card.querySelectorAll('input.cvpreview__date-input'),
+      ) as HTMLInputElement[];
+      expect(company.value).toBe('Acme');
+      expect(industry.value).toBe('SaaS');
+      expect(location.value).toBe('Berlin');
+      expect(role.value).toBe('Engineer');
+      // Section-level selection mounts editors for every entry on the page card:
+      // entry 0 (2020–2022) and entry 1 (2022–<empty, Present placeholder>).
+      expect(dateInputs.map((i) => i.value)).toEqual(['2020', '2022', '2022', '']);
+      const bulletAreas = root.querySelectorAll('textarea.cvpreview__leaf-editor');
+      expect(bulletAreas.length).toBe(2); // both bullets of entry 0
+    });
+
+    it('industry is not editable on a theme that does not render it (Classic)', () => {
+      const root = setup(1);
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      expect(card.querySelector('input.cvpreview__entry-industry')).toBeNull();
+    });
+
+    it('empty endDate shows the localized Present placeholder without persisting it', () => {
+      const root = setup(2);
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      const dateInputs = Array.from(
+        card.querySelectorAll('input.cvpreview__date-input'),
+      ) as HTMLInputElement[];
+      // Entry 1 (Globex) has no endDate — its endDate input is the 4th date input (2 per entry).
+      const globexEnd = dateInputs[3];
+      expect(globexEnd.value).toBe('');
+      expect(globexEnd.placeholder.length).toBeGreaterThan(0);
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      globexEnd.dispatchEvent(new Event('blur'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('the en-dash date separator and bullet list markup stay non-editable', () => {
+      const root = setup(2);
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      const seps = card.querySelectorAll('.cvpreview__date-sep');
+      expect(seps.length).toBeGreaterThan(0);
+      seps.forEach((s) => expect(s.tagName).not.toBe('INPUT'));
+    });
+
+    it('committing company emits one new immutable section touching only that entry/field', () => {
+      const root = setup(2);
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const original = component.sections()[0] as Record<string, unknown> & {
+        entries: unknown[];
+      };
+      const originalEntries = original.entries;
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      const company = card.querySelector('input.cvpreview__entry-company') as HTMLInputElement;
+      company.value = 'Acme Corp';
+      company.dispatchEvent(new Event('input'));
+      company.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      const updated = emitted[0] as { entries: { company: string }[] };
+      expect(updated.entries[0].company).toBe('Acme Corp');
+      expect(updated.entries[1]).toBe(originalEntries[1]); // untouched entry same reference
+      expect(originalEntries[0]).toMatchObject({ company: 'Acme' }); // original untouched
+    });
+
+    it('committing a bullet emits one new immutable section touching only that bullet', () => {
+      const root = setup(2);
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const original = component.sections()[0] as { entries: { bullets: string[] }[] };
+      const originalBullets = original.entries[0].bullets;
+      const textarea = root.querySelectorAll(
+        'textarea.cvpreview__leaf-editor',
+      )[1] as HTMLTextAreaElement; // second bullet: "Led Y"
+      textarea.value = 'Led Y and Z';
+      textarea.dispatchEvent(new Event('input'));
+      textarea.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      const updated = emitted[0] as { entries: { bullets: string[] }[] };
+      expect(updated.entries[0].bullets).toEqual(['Shipped **X**', 'Led Y and Z']);
+      expect(originalBullets[1]).toBe('Led Y'); // original untouched
+    });
+
+    it('drafting (typing) emits nothing', () => {
+      const root = setup(2);
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      const role = card.querySelector('input.cvpreview__entry-role') as HTMLInputElement;
+      role.value = 'Staff Engineer';
+      role.dispatchEvent(new Event('input'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('measurement mirror never renders experience editors, even when selected', () => {
+      const root = setup(2);
+      const measured = root.querySelectorAll(
+        '.paginated-sheet__measure input.cvpreview__entry-company',
+      );
+      expect(measured.length).toBe(0);
+    });
+  });
+
+  describe('inline leaf editing — education', () => {
+    function setup() {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'education', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'education',
+          order: 0,
+          visible: true,
+          entries: [
+            { institution: 'MIT', degree: 'BSc', startDate: '2016', endDate: '2020' },
+            { institution: 'Stanford', degree: 'MSc', startDate: '2020' },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('renders degree, institution, and dates as individual leaves for every entry', () => {
+      const root = setup();
+      const cards = root.querySelectorAll('.page-card');
+      const inputs = Array.from(
+        cards[0].querySelectorAll('input.cvpreview__leaf-editor'),
+      ) as HTMLInputElement[];
+      // 2 entries × (degree, institution, startDate, endDate) = 8 inputs.
+      expect(inputs.length).toBe(8);
+      expect(inputs.map((i) => i.value)).toEqual([
+        'BSc',
+        'MIT',
+        '2016',
+        '2020',
+        'MSc',
+        'Stanford',
+        '2020',
+        '',
+      ]);
+    });
+
+    it('empty endDate shows the localized Present placeholder without persisting it', () => {
+      const root = setup();
+      const inputs = Array.from(
+        root.querySelectorAll('input.cvpreview__date-input'),
+      ) as HTMLInputElement[];
+      const stanfordEnd = inputs[3];
+      expect(stanfordEnd.value).toBe('');
+      expect(stanfordEnd.placeholder.length).toBeGreaterThan(0);
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      stanfordEnd.dispatchEvent(new Event('blur'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('committing degree emits one new immutable section touching only that entry/field', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const original = component.sections()[0] as { entries: { degree: string }[] };
+      const originalEntries = original.entries;
+      const degreeInput = root.querySelector('input.cvpreview__leaf-editor') as HTMLInputElement;
+      degreeInput.value = 'BA';
+      degreeInput.dispatchEvent(new Event('input'));
+      degreeInput.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      const updated = emitted[0] as { entries: { degree: string }[] };
+      expect(updated.entries[0].degree).toBe('BA');
+      expect(updated.entries[1]).toBe(originalEntries[1]); // untouched entry same reference
+    });
+
+    it('drafting emits nothing', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const degreeInput = root.querySelector('input.cvpreview__leaf-editor') as HTMLInputElement;
+      degreeInput.value = 'BA';
+      degreeInput.dispatchEvent(new Event('input'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('measurement mirror never renders education editors, even when selected', () => {
+      const root = setup();
+      const measured = root.querySelectorAll(
+        '.paginated-sheet__measure input.cvpreview__leaf-editor',
+      );
+      expect(measured.length).toBe(0);
+    });
+  });
+
+  describe('inline leaf editing — skills', () => {
+    function setup() {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'skills', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'skills',
+          order: 0,
+          visible: true,
+          groups: [
+            { label: 'Languages', values: ['TypeScript', 'Rust'] },
+            { label: 'Empty', values: [] },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('renders a label leaf and a values leaf for a non-empty group only', () => {
+      const root = setup();
+      const label = root.querySelector('input.cvpreview__skill-label') as HTMLInputElement;
+      const values = root.querySelector('input.cvpreview__skill-values') as HTMLInputElement;
+      expect(label.value).toBe('Languages');
+      expect(values.value).toBe('TypeScript, Rust');
+      // The empty group stays entirely non-rendered (non-visible/empty field rule).
+      const allLabels = root.querySelectorAll('input.cvpreview__skill-label');
+      expect(allLabels.length).toBe(1);
+    });
+
+    it('committing the label emits one new immutable section touching only that group', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const original = component.sections()[0] as { groups: { label: string }[] };
+      const label = root.querySelector('input.cvpreview__skill-label') as HTMLInputElement;
+      label.value = 'Tech';
+      label.dispatchEvent(new Event('input'));
+      label.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      const updated = emitted[0] as { groups: { label: string; values: string[] }[] };
+      expect(updated.groups[0]).toMatchObject({ label: 'Tech', values: ['TypeScript', 'Rust'] });
+      expect(original.groups[0].label).toBe('Languages'); // original untouched
+    });
+
+    it('committing values re-splits the comma-separated text into a fresh array', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const values = root.querySelector('input.cvpreview__skill-values') as HTMLInputElement;
+      values.value = 'TypeScript, Angular, Go';
+      values.dispatchEvent(new Event('input'));
+      values.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      const updated = emitted[0] as { groups: { values: string[] }[] };
+      expect(updated.groups[0].values).toEqual(['TypeScript', 'Angular', 'Go']);
+    });
+
+    it('drafting emits nothing', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const label = root.querySelector('input.cvpreview__skill-label') as HTMLInputElement;
+      label.value = 'Tech';
+      label.dispatchEvent(new Event('input'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('measurement mirror never renders skills editors, even when selected', () => {
+      const root = setup();
+      const measured = root.querySelectorAll(
+        '.paginated-sheet__measure input.cvpreview__skill-label',
+      );
+      expect(measured.length).toBe(0);
+    });
+  });
+
+  describe('inline leaf editing — languages', () => {
+    function setup() {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'languages', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'languages',
+          order: 0,
+          visible: true,
+          items: [
+            { language: 'English', level: 'C2' },
+            { language: 'German', level: 'B1' },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('renders each language value as an individual leaf, separated by non-editable separators', () => {
+      const root = setup();
+      const inputs = Array.from(
+        root.querySelectorAll('input.cvpreview__language-input'),
+      ) as HTMLInputElement[];
+      expect(inputs.map((i) => i.value)).toEqual(['English', 'German']);
+      const seps = root.querySelectorAll('.cvpreview__languages-sep');
+      expect(seps.length).toBe(1);
+      seps.forEach((s) => expect(s.tagName).not.toBe('INPUT'));
+    });
+
+    it('does not render a level editor (level stays Edit-only, not in the preview)', () => {
+      const root = setup();
+      expect(root.querySelector('[class*="level"]')).toBeNull();
+    });
+
+    it('committing one language value emits one new immutable section touching only that item', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const original = component.sections()[0] as { items: { language: string; level: string }[] };
+      const inputs = Array.from(
+        root.querySelectorAll('input.cvpreview__language-input'),
+      ) as HTMLInputElement[];
+      const germanInput = inputs[1];
+      germanInput.value = 'Deutsch';
+      germanInput.dispatchEvent(new Event('input'));
+      germanInput.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      const updated = emitted[0] as { items: { language: string; level: string }[] };
+      expect(updated.items[1]).toEqual({ language: 'Deutsch', level: 'B1' }); // level untouched
+      expect(updated.items[0]).toBe(original.items[0]); // untouched item same reference
+      expect(original.items[1].language).toBe('German'); // original untouched
+    });
+
+    it('drafting emits nothing', () => {
+      const root = setup();
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      const inputs = Array.from(
+        root.querySelectorAll('input.cvpreview__language-input'),
+      ) as HTMLInputElement[];
+      inputs[0].value = 'Anglais';
+      inputs[0].dispatchEvent(new Event('input'));
+      expect(emitted).toEqual([]);
+    });
+
+    it('measurement mirror never renders language editors, even when selected', () => {
+      const root = setup();
+      const measured = root.querySelectorAll(
+        '.paginated-sheet__measure input.cvpreview__language-input',
+      );
+      expect(measured.length).toBe(0);
+    });
+  });
 });

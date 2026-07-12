@@ -183,19 +183,43 @@
     >
       {{ t()(sectionLabelKey('skills')) }}
     </h3>
-    @for (group of section.groups; track $index) {
+    @for (group of section.groups; track $index; let i = $index) {
       @if (group.values.length) {
-        <p
-          class="cvpreview__skill-row"
-          [class.cvpreview__selectable]="selectable(renderMode)"
-          [class.cvpreview__selected]="isSelected('skills', 'body')"
-          [attr.role]="selectable(renderMode) ? 'button' : null"
-          [attr.tabindex]="selectable(renderMode) ? 0 : null"
-          (click)="selectPart('skills', 'body', renderMode, $event)"
-          (keydown.enter)="selectPart('skills', 'body', renderMode, $event)"
-        >
-          <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
-        </p>
+        @if (isSelected('skills', 'body') && selectable(renderMode)) {
+          <p class="cvpreview__skill-row cvpreview__skill-row--editor">
+            <input
+              type="text"
+              class="cvpreview__leaf-editor cvpreview__skill-label"
+              [value]="leafDraft('skills.' + i + '.label', group.label)"
+              (input)="onLeafInput('skills.' + i + '.label', $any($event.target).value)"
+              (blur)="commitSkillLabel(section, i, group.label)"
+              (keydown.escape)="onLeafEscape('skills.' + i + '.label', group.label)"
+              (keydown.enter)="$any($event.target).blur()"
+            />
+            <span class="cvpreview__skill-sep">: </span>
+            <input
+              type="text"
+              class="cvpreview__leaf-editor cvpreview__skill-values"
+              [value]="leafDraft('skills.' + i + '.values', group.values.join(', '))"
+              (input)="onLeafInput('skills.' + i + '.values', $any($event.target).value)"
+              (blur)="commitSkillValues(section, i, group.values.join(', '))"
+              (keydown.escape)="onLeafEscape('skills.' + i + '.values', group.values.join(', '))"
+              (keydown.enter)="$any($event.target).blur()"
+            />
+          </p>
+        } @else {
+          <p
+            class="cvpreview__skill-row"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__selected]="isSelected('skills', 'body')"
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            (click)="selectPart('skills', 'body', renderMode, $event)"
+            (keydown.enter)="selectPart('skills', 'body', renderMode, $event)"
+          >
+            <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
+          </p>
+        }
       }
     }
   </div>
@@ -209,6 +233,8 @@
   let-entry
   let-key="key"
   let-first="first"
+  let-i="i"
+  let-section="section"
   let-renderMode="$sheetRenderMode"
 >
   <div
@@ -222,26 +248,104 @@
     (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
     [ngStyle]="bodyCss(key)"
   >
-    <div class="cvpreview__entry-head">
-      <span class="cvpreview__entry-lead">
-        <span class="cvpreview__entry-company">{{ entry.company }}</span>
-        @if (activeTheme().entry.showIndustry && entry.industry) {
-          <span class="cvpreview__entry-industry"> - {{ entry.industry }}</span>
-        }
-      </span>
-      <span class="cvpreview__entry-meta">{{ entry.location }}</span>
-    </div>
-    <div class="cvpreview__entry-head cvpreview__entry-head--rule">
-      <span class="cvpreview__entry-role">{{ entry.role }}</span>
-      <span class="cvpreview__entry-dates">
-        {{ entry.startDate }} –
-        {{ entry.endDate || t()('documents.cv_present') }}
-      </span>
-    </div>
+    @if (isSelected(key, 'body') && selectable(renderMode)) {
+      <div class="cvpreview__entry-head">
+        <span class="cvpreview__entry-lead">
+          <input
+            type="text"
+            class="cvpreview__entry-company cvpreview__leaf-editor"
+            [value]="leafDraft('exp.' + i + '.company', entry.company)"
+            (input)="onLeafInput('exp.' + i + '.company', $any($event.target).value)"
+            (blur)="commitExperienceField(section, i, 'company', entry.company)"
+            (keydown.escape)="onLeafEscape('exp.' + i + '.company', entry.company)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+          @if (activeTheme().entry.showIndustry) {
+            <span class="cvpreview__entry-industry"> - </span>
+            <input
+              type="text"
+              class="cvpreview__entry-industry cvpreview__leaf-editor"
+              [value]="leafDraft('exp.' + i + '.industry', entry.industry || '')"
+              (input)="onLeafInput('exp.' + i + '.industry', $any($event.target).value)"
+              (blur)="commitExperienceField(section, i, 'industry', entry.industry || '')"
+              (keydown.escape)="onLeafEscape('exp.' + i + '.industry', entry.industry || '')"
+              (keydown.enter)="$any($event.target).blur()"
+            />
+          }
+        </span>
+        <input
+          type="text"
+          class="cvpreview__entry-meta cvpreview__leaf-editor"
+          [value]="leafDraft('exp.' + i + '.location', entry.location || '')"
+          (input)="onLeafInput('exp.' + i + '.location', $any($event.target).value)"
+          (blur)="commitExperienceField(section, i, 'location', entry.location || '')"
+          (keydown.escape)="onLeafEscape('exp.' + i + '.location', entry.location || '')"
+          (keydown.enter)="$any($event.target).blur()"
+        />
+      </div>
+      <div class="cvpreview__entry-head cvpreview__entry-head--rule">
+        <input
+          type="text"
+          class="cvpreview__entry-role cvpreview__leaf-editor"
+          [value]="leafDraft('exp.' + i + '.role', entry.role)"
+          (input)="onLeafInput('exp.' + i + '.role', $any($event.target).value)"
+          (blur)="commitExperienceField(section, i, 'role', entry.role)"
+          (keydown.escape)="onLeafEscape('exp.' + i + '.role', entry.role)"
+          (keydown.enter)="$any($event.target).blur()"
+        />
+        <span class="cvpreview__entry-dates cvpreview__entry-dates--editor">
+          <input
+            type="text"
+            class="cvpreview__date-input cvpreview__leaf-editor"
+            [value]="leafDraft('exp.' + i + '.startDate', entry.startDate)"
+            (input)="onLeafInput('exp.' + i + '.startDate', $any($event.target).value)"
+            (blur)="commitExperienceField(section, i, 'startDate', entry.startDate)"
+            (keydown.escape)="onLeafEscape('exp.' + i + '.startDate', entry.startDate)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+          <span class="cvpreview__date-sep"> – </span>
+          <input
+            type="text"
+            class="cvpreview__date-input cvpreview__leaf-editor"
+            [value]="leafDraft('exp.' + i + '.endDate', entry.endDate || '')"
+            [placeholder]="t()('documents.cv_present')"
+            (input)="onLeafInput('exp.' + i + '.endDate', $any($event.target).value)"
+            (blur)="commitExperienceField(section, i, 'endDate', entry.endDate || '')"
+            (keydown.escape)="onLeafEscape('exp.' + i + '.endDate', entry.endDate || '')"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+        </span>
+      </div>
+    } @else {
+      <div class="cvpreview__entry-head">
+        <span class="cvpreview__entry-lead">
+          <span class="cvpreview__entry-company">{{ entry.company }}</span>
+          @if (activeTheme().entry.showIndustry && entry.industry) {
+            <span class="cvpreview__entry-industry"> - {{ entry.industry }}</span>
+          }
+        </span>
+        <span class="cvpreview__entry-meta">{{ entry.location }}</span>
+      </div>
+      <div class="cvpreview__entry-head cvpreview__entry-head--rule">
+        <span class="cvpreview__entry-role">{{ entry.role }}</span>
+        <span class="cvpreview__entry-dates">
+          {{ entry.startDate }} –
+          {{ entry.endDate || t()('documents.cv_present') }}
+        </span>
+      </div>
+    }
   </div>
 </ng-template>
 
-<ng-template #expBulletTpl let-bullet let-key="key" let-renderMode="$sheetRenderMode">
+<ng-template
+  #expBulletTpl
+  let-bullet
+  let-key="key"
+  let-i="i"
+  let-b="b"
+  let-section="section"
+  let-renderMode="$sheetRenderMode"
+>
   <ul
     class="cvpreview__bullets"
     [class.cvpreview__selectable]="selectable(renderMode)"
@@ -252,19 +356,40 @@
     (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
     [ngStyle]="bodyCss(key)"
   >
-    <li>
-      @for (run of runs(bullet); track $index) {
-        @if (run.bold) {
-          <strong>{{ run.text }}</strong>
-        } @else {
-          {{ run.text }}
+    @if (isSelected(key, 'body') && selectable(renderMode)) {
+      <li>
+        <textarea
+          #bulletEl
+          class="cvpreview__leaf-editor cvpreview__bullet-editor"
+          [value]="leafDraft('exp.' + i + '.bullet.' + b, bullet)"
+          (input)="onLeafInput('exp.' + i + '.bullet.' + b, $any($event.target).value)"
+          (blur)="commitExperienceBullet(section, i, b, bullet)"
+          (keydown.escape)="onLeafEscape('exp.' + i + '.bullet.' + b, bullet)"
+          (keydown)="onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
+        ></textarea>
+      </li>
+    } @else {
+      <li>
+        @for (run of runs(bullet); track $index) {
+          @if (run.bold) {
+            <strong>{{ run.text }}</strong>
+          } @else {
+            {{ run.text }}
+          }
         }
-      }
-    </li>
+      </li>
+    }
   </ul>
 </ng-template>
 
-<ng-template #eduEntryTpl let-entry let-key="key" let-renderMode="$sheetRenderMode">
+<ng-template
+  #eduEntryTpl
+  let-entry
+  let-key="key"
+  let-i="i"
+  let-section="section"
+  let-renderMode="$sheetRenderMode"
+>
   <div
     class="cvpreview__entry"
     [class.cvpreview__selectable]="selectable(renderMode)"
@@ -275,13 +400,61 @@
     (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
     [ngStyle]="bodyCss(key)"
   >
-    <div class="cvpreview__entry-head">
-      <span class="cvpreview__entry-role">{{ entry.degree }}, {{ entry.institution }}</span>
-      <span class="cvpreview__entry-dates">
-        {{ entry.startDate }} –
-        {{ entry.endDate || t()('documents.cv_present') }}
-      </span>
-    </div>
+    @if (isSelected(key, 'body') && selectable(renderMode)) {
+      <div class="cvpreview__entry-head">
+        <span class="cvpreview__entry-role cvpreview__entry-role--editor">
+          <input
+            type="text"
+            class="cvpreview__leaf-editor"
+            [value]="leafDraft('edu.' + i + '.degree', entry.degree)"
+            (input)="onLeafInput('edu.' + i + '.degree', $any($event.target).value)"
+            (blur)="commitEducationField(section, i, 'degree', entry.degree)"
+            (keydown.escape)="onLeafEscape('edu.' + i + '.degree', entry.degree)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+          <span class="cvpreview__entry-role-sep">, </span>
+          <input
+            type="text"
+            class="cvpreview__leaf-editor"
+            [value]="leafDraft('edu.' + i + '.institution', entry.institution)"
+            (input)="onLeafInput('edu.' + i + '.institution', $any($event.target).value)"
+            (blur)="commitEducationField(section, i, 'institution', entry.institution)"
+            (keydown.escape)="onLeafEscape('edu.' + i + '.institution', entry.institution)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+        </span>
+        <span class="cvpreview__entry-dates cvpreview__entry-dates--editor">
+          <input
+            type="text"
+            class="cvpreview__date-input cvpreview__leaf-editor"
+            [value]="leafDraft('edu.' + i + '.startDate', entry.startDate)"
+            (input)="onLeafInput('edu.' + i + '.startDate', $any($event.target).value)"
+            (blur)="commitEducationField(section, i, 'startDate', entry.startDate)"
+            (keydown.escape)="onLeafEscape('edu.' + i + '.startDate', entry.startDate)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+          <span class="cvpreview__date-sep"> – </span>
+          <input
+            type="text"
+            class="cvpreview__date-input cvpreview__leaf-editor"
+            [value]="leafDraft('edu.' + i + '.endDate', entry.endDate || '')"
+            [placeholder]="t()('documents.cv_present')"
+            (input)="onLeafInput('edu.' + i + '.endDate', $any($event.target).value)"
+            (blur)="commitEducationField(section, i, 'endDate', entry.endDate || '')"
+            (keydown.escape)="onLeafEscape('edu.' + i + '.endDate', entry.endDate || '')"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+        </span>
+      </div>
+    } @else {
+      <div class="cvpreview__entry-head">
+        <span class="cvpreview__entry-role">{{ entry.degree }}, {{ entry.institution }}</span>
+        <span class="cvpreview__entry-dates">
+          {{ entry.startDate }} –
+          {{ entry.endDate || t()('documents.cv_present') }}
+        </span>
+      </div>
+    }
   </div>
 </ng-template>
 
@@ -300,16 +473,35 @@
     >
       {{ t()(sectionLabelKey('languages')) }}
     </h3>
-    <p
-      class="cvpreview__languages"
-      [class.cvpreview__selectable]="selectable(renderMode)"
-      [class.cvpreview__selected]="isSelected('languages', 'body')"
-      [attr.role]="selectable(renderMode) ? 'button' : null"
-      [attr.tabindex]="selectable(renderMode) ? 0 : null"
-      (click)="selectPart('languages', 'body', renderMode, $event)"
-      (keydown.enter)="selectPart('languages', 'body', renderMode, $event)"
-    >
-      {{ section.items.map((i) => i.language).join(' | ') }}
-    </p>
+    @if (isSelected('languages', 'body') && selectable(renderMode)) {
+      <p class="cvpreview__languages cvpreview__languages--editor">
+        @for (item of section.items; track $index; let i = $index) {
+          @if (i > 0) {
+            <span class="cvpreview__languages-sep"> | </span>
+          }
+          <input
+            type="text"
+            class="cvpreview__leaf-editor cvpreview__language-input"
+            [value]="leafDraft('lang.' + i + '.language', item.language)"
+            (input)="onLeafInput('lang.' + i + '.language', $any($event.target).value)"
+            (blur)="commitLanguageValue(section, i, item.language)"
+            (keydown.escape)="onLeafEscape('lang.' + i + '.language', item.language)"
+            (keydown.enter)="$any($event.target).blur()"
+          />
+        }
+      </p>
+    } @else {
+      <p
+        class="cvpreview__languages"
+        [class.cvpreview__selectable]="selectable(renderMode)"
+        [class.cvpreview__selected]="isSelected('languages', 'body')"
+        [attr.role]="selectable(renderMode) ? 'button' : null"
+        [attr.tabindex]="selectable(renderMode) ? 0 : null"
+        (click)="selectPart('languages', 'body', renderMode, $event)"
+        (keydown.enter)="selectPart('languages', 'body', renderMode, $event)"
+      >
+        {{ section.items.map((i) => i.language).join(' | ') }}
+      </p>
+    }
   </div>
 </ng-template>

@@ -137,6 +137,58 @@ textarea.cvpreview__leaf-editor {
 .cvpreview__skill-row {
   margin: 0.15rem 0;
 }
+.cvpreview__skill-row--editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0.15rem 0;
+}
+.cvpreview__skill-sep {
+  color: var(--text-tertiary);
+  white-space: pre;
+}
+// Inline leaf editors sized to their content (not the block-level 100%
+// default from `.cvpreview__leaf-editor`) — mirrors `.cvpreview__contact-input`.
+.cvpreview__entry-company.cvpreview__leaf-editor,
+.cvpreview__entry-industry.cvpreview__leaf-editor,
+.cvpreview__entry-meta.cvpreview__leaf-editor,
+.cvpreview__entry-role.cvpreview__leaf-editor,
+.cvpreview__date-input.cvpreview__leaf-editor,
+.cvpreview__skill-label.cvpreview__leaf-editor,
+.cvpreview__skill-values.cvpreview__leaf-editor,
+.cvpreview__language-input.cvpreview__leaf-editor {
+  width: auto;
+  min-width: 3ch;
+  flex: 0 1 auto;
+}
+.cvpreview__entry-role--editor {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.cvpreview__entry-role-sep {
+  color: var(--text-tertiary);
+  white-space: pre;
+}
+.cvpreview__entry-dates--editor {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.cvpreview__date-sep {
+  color: var(--text-tertiary);
+  white-space: pre;
+}
+.cvpreview__languages--editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+}
+.cvpreview__languages-sep {
+  color: var(--text-tertiary);
+  white-space: pre;
+}
 .cvpreview__entry-head {
   display: flex;
   justify-content: space-between;

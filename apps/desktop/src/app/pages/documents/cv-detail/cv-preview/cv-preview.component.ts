@@ -11,9 +11,15 @@ import {
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import type {
+  CvEducationEntry,
+  CvEducationSection,
+  CvExperienceEntry,
+  CvExperienceSection,
+  CvLanguagesSection,
   CvPersonalDetailsSection,
   CvSection,
   CvSectionKey,
+  CvSkillsSection,
   CvStyle,
   CvSummarySection,
   CvTextRun,
@@ -30,6 +36,13 @@ import {
   effectiveTitleBorder,
   effectiveTitleStyle,
   orderedVisibleSections,
+  parseSkillValues,
+  replaceEducationEntryField,
+  replaceExperienceBullet,
+  replaceExperienceEntryField,
+  replaceLanguageValue,
+  replaceSkillGroupLabel,
+  replaceSkillGroupValues,
   resolvePageSettings,
   sectionLabelKey,
   visiblePersonalContactFields,
@@ -210,6 +223,153 @@ export class CvPreviewComponent {
     }
   }
 
+  /** Text fields of an experience entry editable in the preview — dates stay
+   * plain strings (no date-picker), matching the resting render. */
+  private static readonly EXP_TEXT_FIELDS = [
+    'company',
+    'industry',
+    'location',
+    'role',
+    'startDate',
+    'endDate',
+  ] as const;
+
+  /** Commit a single experience-entry field on blur: emits one new immutable
+   * `CvExperienceSection` (only the targeted entry/field replaced) — only if
+   * the draft actually changed the value. */
+  commitExperienceField(
+    section: CvExperienceSection,
+    index: number,
+    field: (typeof CvPreviewComponent.EXP_TEXT_FIELDS)[number],
+    resting: string,
+  ): void {
+    const id = `exp.${index}.${field}`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit(
+        replaceExperienceEntryField(
+          section,
+          index,
+          field,
+          value as CvExperienceEntry[typeof field],
+        ),
+      );
+    }
+  }
+
+  /** Commit a single experience bullet on blur: emits one new immutable
+   * `CvExperienceSection` touching only that entry's targeted bullet. */
+  commitExperienceBullet(
+    section: CvExperienceSection,
+    entryIndex: number,
+    bulletIndex: number,
+    resting: string,
+  ): void {
+    const id = `exp.${entryIndex}.bullet.${bulletIndex}`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit(replaceExperienceBullet(section, entryIndex, bulletIndex, value));
+    }
+  }
+
+  /** Wrap/unwrap `**bold**` around an experience bullet textarea's current
+   * selection — mirrors `applySummaryBold` for the per-bullet draft id. */
+  applyBulletBold(
+    el: HTMLTextAreaElement,
+    entryIndex: number,
+    bulletIndex: number,
+    resting: string,
+  ): void {
+    const id = `exp.${entryIndex}.bullet.${bulletIndex}`;
+    const current = this.drafts()[id] ?? resting;
+    const start = el.selectionStart ?? current.length;
+    const end = el.selectionEnd ?? current.length;
+    const r = toggleBoldWrap(current, start, end);
+    this.drafts.update((d) => ({ ...d, [id]: r.text }));
+    queueMicrotask(() => {
+      el.value = r.text;
+      el.setSelectionRange(r.selStart, r.selEnd);
+      el.focus();
+    });
+  }
+
+  /** Cmd/Ctrl+B handler for an experience bullet textarea. */
+  onBulletBoldKeydown(
+    event: KeyboardEvent,
+    el: HTMLTextAreaElement,
+    entryIndex: number,
+    bulletIndex: number,
+    resting: string,
+  ): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      event.preventDefault();
+      this.applyBulletBold(el, entryIndex, bulletIndex, resting);
+    }
+  }
+
+  private static readonly EDU_TEXT_FIELDS = [
+    'degree',
+    'institution',
+    'startDate',
+    'endDate',
+  ] as const;
+
+  /** Commit a single education-entry field on blur: emits one new immutable
+   * `CvEducationSection` (only the targeted entry/field replaced). */
+  commitEducationField(
+    section: CvEducationSection,
+    index: number,
+    field: (typeof CvPreviewComponent.EDU_TEXT_FIELDS)[number],
+    resting: string,
+  ): void {
+    const id = `edu.${index}.${field}`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit(
+        replaceEducationEntryField(section, index, field, value as CvEducationEntry[typeof field]),
+      );
+    }
+  }
+
+  /** Commit a skill group's label on blur: emits one new immutable
+   * `CvSkillsSection` touching only that group's label. */
+  commitSkillLabel(section: CvSkillsSection, groupIndex: number, resting: string): void {
+    const id = `skills.${groupIndex}.label`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit(replaceSkillGroupLabel(section, groupIndex, value));
+    }
+  }
+
+  /** Commit a skill group's comma-separated values on blur: emits one new
+   * immutable `CvSkillsSection` touching only that group's values array. */
+  commitSkillValues(section: CvSkillsSection, groupIndex: number, resting: string): void {
+    const id = `skills.${groupIndex}.values`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit(
+        replaceSkillGroupValues(section, groupIndex, parseSkillValues(value)),
+      );
+    }
+  }
+
+  /** Commit a single language's visible value on blur: emits one new
+   * immutable `CvLanguagesSection` touching only that item's `language` —
+   * the (non-rendered) `level` field is left untouched. */
+  commitLanguageValue(section: CvLanguagesSection, index: number, resting: string): void {
+    const id = `lang.${index}.language`;
+    const value = this.drafts()[id] ?? resting;
+    this.clearDraft(id);
+    if (value !== resting) {
+      this.sectionChange.emit(replaceLanguageValue(section, index, value));
+    }
+  }
+
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
 
   /** Theme custom properties for the preview viewport; inherited by all page cards. */
@@ -312,14 +472,14 @@ export class CvPreviewComponent {
             out.push({
               id: `sec:experience:e${i}:head`,
               tpl: this.expHeadTpl(),
-              ctx: { $implicit: entry, key: 'experience', first: i === 0 },
+              ctx: { $implicit: entry, key: 'experience', first: i === 0, i, section },
               glueToNext: bullets.length > 0,
             });
             bullets.forEach((bullet, b) =>
               out.push({
                 id: `sec:experience:e${i}:b${b}`,
                 tpl: this.expBulletTpl(),
-                ctx: { $implicit: bullet, key: 'experience' },
+                ctx: { $implicit: bullet, key: 'experience', i, b, section },
               }),
             );
           });
@@ -338,7 +498,7 @@ export class CvPreviewComponent {
             out.push({
               id: `sec:education:e${i}`,
               tpl: this.eduEntryTpl(),
-              ctx: { $implicit: entry, key: 'education' },
+              ctx: { $implicit: entry, key: 'education', i, section },
             }),
           );
           break;

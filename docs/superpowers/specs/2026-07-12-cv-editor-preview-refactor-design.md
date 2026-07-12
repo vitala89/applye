@@ -197,3 +197,56 @@ Resolved for Phase D:
   DOCX/list-PDF tolerance is sufficient until Phase E.
 
 [Phase D implementation plan](../plans/2026-07-12-cv-refactor-phase-d-live-preview-editor.md)
+
+## Phase D — as-built (Task 6: hardening, cleanup, docs)
+
+Delivered behaviour:
+
+- **Selection + inline editing.** Every visible page-card leaf across all section
+  families is a click/keyboard-selectable host, gated on
+  `interactive() && $sheetRenderMode === 'page'`, so the hidden measurement pass is
+  never interactive and pagination is measured from committed text only (drafting
+  never repaginates; commit → new `sections` → re-measure). Selecting a body region
+  mounts a native input/textarea; typing updates a local `drafts` map and emits
+  nothing until blur/Enter, and only when the value changed. Commit emits one
+  immutable `CvSection` via `sectionChange` → parent `replaceSection`.
+- **Keyboard.** Enter and Space both activate a host (Space `preventDefault`s to
+  avoid scroll — native-button parity); each host has an accessible name
+  (`"<section> — <scope>"`), `data-cv-select` handle, and a `:focus-visible` ring;
+  the live-style panel is a labelled `region`. Selecting autofocuses the region's
+  primary editor; Escape discards the draft (clears the map entry so no stale draft
+  survives an unmount); Enter on a single-line leaf commits, drops the selection,
+  and returns focus to the restored host.
+- **Print/export (committed-only).** The Export PDF action commits the active draft
+  (blur), clears the selection so all editor chrome/caret/outline/panel unmount,
+  then awaits a stable render + a fresh pagination pass before `window.print()`. A
+  direct OS/browser `Cmd/Ctrl+P` is caught by a `beforeprint` listener that clears
+  the selection and flushes CD synchronously (`ApplicationRef.tick()` — the app is
+  zoneless) so the page cards show last-committed text; unlike Export it does NOT
+  commit the draft (a raw Cmd+P must not silently persist a half-typed edit).
+
+Verification (Task 6): desktop 281, ui 32, i18n 1, core 35 tests green; production
+`nx build desktop` clean (only pre-existing bundle-budget + Sass `@import`
+deprecation warnings); ESLint clean on changed files; prettier-formatted.
+
+### LIMITATION — export parity (Phase E)
+
+`CvSectionStyle.lineHeight` and the live-panel per-section styling apply in the
+Angular preview and the WYSIWYG print → PDF path only. The Rust exporters
+(`render_blocks_*`: DOCX and the legacy list-view PDF) do **not** read
+`lineHeight`; they render at their own leading. Full DOCX/PDF export parity for
+line-height (and any theme-specific styling) is deferred to Phase E. The WYSIWYG
+Export PDF is full-fidelity because it prints the HTML preview.
+
+### Manual Tauri gate (pending)
+
+Run a real desktop build and confirm, on macOS webview:
+
+- Keyboard-only select → edit → style → reset across all visible section families.
+- Classic and Aurora, A4 and Letter; multi-page repagination happens after a
+  commit (not while drafting).
+- Narrow desktop width: the fixed side panel stays usable without changing paper
+  geometry.
+- Export PDF / OS print contains no interactive chrome (no caret, outline, panel)
+  and matches the committed preview.
+- Save then reload preserves content, per-section overrides, and line height.

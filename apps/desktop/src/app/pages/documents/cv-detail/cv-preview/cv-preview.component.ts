@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
+  ElementRef,
   inject,
   input,
   output,
@@ -67,6 +69,7 @@ import {
 export class CvPreviewComponent {
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly sections = input.required<CvSection[]>();
   readonly style = input.required<CvStyle>();
@@ -124,6 +127,75 @@ export class CvPreviewComponent {
     this.selectionChange.emit({ sectionKey, part });
   }
 
+  /** Keyboard activation of a selectable host. Space would otherwise scroll the
+   * page, so we always `preventDefault` before selecting — this gives Space the
+   * same activation semantics as Enter and a native `<button>`. */
+  onSelectKey(
+    event: Event,
+    sectionKey: CvSectionKey,
+    part: 'body' | 'title',
+    renderMode: unknown,
+  ): void {
+    if (!this.selectable(renderMode)) return;
+    event.preventDefault();
+    this.selectPart(sectionKey, part, renderMode, event);
+  }
+
+  /** Accessible name for a selectable body/title host — "<section> — <scope>"
+   * (e.g. "Summary — Body text"), built from existing localized strings so the
+   * `role="button"` regions are never announced as unnamed buttons. */
+  selectAriaLabel(sectionKey: CvSectionKey, part: 'body' | 'title'): string {
+    const section = this.t()(sectionLabelKey(sectionKey));
+    const scope = this.t()(
+      part === 'title' ? 'documents.cv_style_group_titles' : 'documents.cv_style_group_body',
+    );
+    return `${section} — ${scope}`;
+  }
+
+  /** The selectable host to return keyboard focus to once a committing edit
+   * clears the selection and the resting markup re-renders (see the focus
+   * effect below). Keyed as `"<sectionKey>:<part>"` to match `data-cv-select`. */
+  private returnFocusTo: string | null = null;
+
+  /**
+   * Focus management for the inline editors, in one place:
+   * - selecting a region moves focus INTO its primary editor (restores the
+   *   autofocus dropped in Task 4, so keyboard users don't need an extra tab);
+   * - finishing a single-line edit with Enter (via `finishLeafEdit`) drops the
+   *   selection and returns focus to the now-restored selectable host.
+   * Both run in a microtask so the DOM has rendered the new state first.
+   */
+  constructor() {
+    effect(() => {
+      const sel = this.selection();
+      if (!this.interactive()) return;
+      if (sel) {
+        queueMicrotask(() =>
+          this.el.nativeElement
+            .querySelector<HTMLElement>('.page-card .cvpreview__leaf-editor')
+            ?.focus(),
+        );
+      } else if (this.returnFocusTo) {
+        const target = this.returnFocusTo;
+        this.returnFocusTo = null;
+        queueMicrotask(() =>
+          this.el.nativeElement
+            .querySelector<HTMLElement>(`.page-card [data-cv-select="${target}"]`)
+            ?.focus(),
+        );
+      }
+    });
+  }
+
+  /** Finish editing a single-line leaf via Enter: blur commits the draft (the
+   * element's own `(blur)` handler), then we drop the selection so the resting,
+   * committed markup returns and keyboard focus lands back on its host. */
+  finishLeafEdit(el: HTMLElement, sectionKey: CvSectionKey, part: 'body' | 'title'): void {
+    el.blur();
+    this.returnFocusTo = `${sectionKey}:${part}`;
+    this.selectionChange.emit(null);
+  }
+
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly buildContactLine = buildContactLine;
   protected readonly visiblePersonalContactFields = visiblePersonalContactFields;
@@ -152,11 +224,13 @@ export class CvPreviewComponent {
     this.drafts.update((d) => ({ ...d, [id]: value }));
   }
 
-  /** Escape — revert the draft to the resting value. Does not itself emit or
-   * end editing; a subsequent blur will see an unchanged value and skip the
-   * commit. */
-  onLeafEscape(id: string, resting: string): void {
-    this.drafts.update((d) => ({ ...d, [id]: resting }));
+  /** Escape — discard the in-progress draft. Dropping the entry (rather than
+   * writing the resting value back into it) makes `leafDraft` fall through to
+   * the live resting value, so the editor reverts AND no stale draft can
+   * survive an unmount or selection change that never fires a blur. A
+   * subsequent blur then sees an unchanged value and skips the commit. */
+  onLeafEscape(id: string): void {
+    this.clearDraft(id);
   }
 
   private clearDraft(id: string): void {

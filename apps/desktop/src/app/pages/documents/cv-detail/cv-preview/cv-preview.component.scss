@@ -27,6 +27,13 @@
   outline: var(--border-width) solid var(--cv-accent, var(--accent, var(--border-strong)));
   outline-offset: 2px;
 }
+// Keyboard focus ring: a selectable host reached by Tab must show the same
+// affordance a mouse hover does, so keyboard-only users can see what Enter or
+// Space will select. `:focus-visible` keeps mouse clicks from painting it.
+.cvpreview__selectable:focus-visible {
+  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
+  outline-offset: 2px;
+}
 .cvpreview__selected {
   outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
   outline-offset: 2px;

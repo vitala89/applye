@@ -344,6 +344,119 @@ describe('CvPreviewComponent', () => {
     measured.forEach((el) => expect(el.classList.contains('cvpreview__selectable')).toBe(false));
   });
 
+  describe('keyboard hardening', () => {
+    function setupSummary() {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      return {
+        root,
+        body: root.querySelector('.page-card .cvpreview__summary') as HTMLElement,
+        title: root.querySelector('.page-card .cvpreview__section-title') as HTMLElement,
+      };
+    }
+
+    it('Space activates a selectable host (native-button parity with Enter)', () => {
+      const { body } = setupSummary();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const ev = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+      body.dispatchEvent(ev);
+      expect(emitted).toEqual([{ sectionKey: 'summary', part: 'body' }]);
+      expect(ev.defaultPrevented).toBe(true); // Space must not scroll the page
+    });
+
+    it('gives every selectable host an accessible name and a data-cv-select handle', () => {
+      const { body, title } = setupSummary();
+      expect(body.getAttribute('aria-label')).toBe('Summary — Body text');
+      expect(title.getAttribute('aria-label')).toBe('Summary — Section titles');
+      expect(body.getAttribute('data-cv-select')).toBe('summary:body');
+      expect(title.getAttribute('data-cv-select')).toBe('summary:title');
+    });
+
+    it('the selected outline never paints on the inert measurement pass', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const measuredTitle = root.querySelector(
+        '.paginated-sheet__measure .cvpreview__section-title',
+      ) as HTMLElement;
+      expect(measuredTitle.classList.contains('cvpreview__selected')).toBe(false);
+    });
+
+    it('Escape discards the draft so a later model change is not shadowed by a stale draft', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Original' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const textarea = root.querySelector(
+        '.page-card textarea.cvpreview__summary',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Half-typed draft';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      // The model changes (e.g. a regenerate lands) while still selected. With a
+      // cleared draft the editor reflects the NEW value; a stale `drafts[id]`
+      // (the old behaviour) would keep shadowing it.
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Regenerated' },
+      ]);
+      fixture.detectChanges();
+      expect(textarea.value).toBe('Regenerated');
+    });
+
+    it('selecting a region moves focus into its primary editor (autofocus restored)', async () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello' },
+      ]);
+      fixture.detectChanges();
+      await Promise.resolve(); // flush the queued focus microtask
+      const textarea = (fixture.nativeElement as HTMLElement).querySelector(
+        '.page-card textarea.cvpreview__summary',
+      );
+      expect(document.activeElement).toBe(textarea);
+    });
+
+    it('Enter on a single-line leaf commits, drops the selection, and returns focus to the host', async () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'personal_details',
+        part: 'body',
+      });
+      fixture.componentRef.setInput('sections', [
+        { key: 'personal_details', order: 0, visible: true, fullName: 'Ada', title: '', email: '' },
+      ]);
+      fixture.detectChanges();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const root = fixture.nativeElement as HTMLElement;
+      const name = root.querySelector('.page-card input.cvpreview__name') as HTMLInputElement;
+      name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(emitted).toContain(null); // selection dropped → resting markup returns
+      // Parent clears the selection; the resting host regains focus after render.
+      fixture.componentRef.setInput('selection', null);
+      fixture.detectChanges();
+      await Promise.resolve();
+      const host = root.querySelector(
+        '.page-card [data-cv-select="personal_details:body"]',
+      ) as HTMLElement;
+      expect(document.activeElement).toBe(host);
+    });
+  });
+
   describe('inline leaf editing — summary', () => {
     function setup(text = 'A **Key** point') {
       fixture.componentRef.setInput('interactive', true);
@@ -762,6 +875,17 @@ describe('CvPreviewComponent', () => {
         '.paginated-sheet__measure input.cvpreview__leaf-editor',
       );
       expect(measured.length).toBe(0);
+    });
+
+    it('the degree/institution comma and the en-dash date separator stay non-editable', () => {
+      const root = setup();
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      const roleSeps = card.querySelectorAll('.cvpreview__entry-role-sep');
+      const dateSeps = card.querySelectorAll('.cvpreview__date-sep');
+      expect(roleSeps.length).toBeGreaterThan(0);
+      expect(dateSeps.length).toBeGreaterThan(0);
+      roleSeps.forEach((s) => expect(s.tagName).not.toBe('INPUT'));
+      dateSeps.forEach((s) => expect(s.tagName).not.toBe('INPUT'));
     });
   });
 

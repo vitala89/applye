@@ -571,7 +571,11 @@
             (sectionChange)="replaceSection($event)"
             (blockOverflow)="blockOverflow.set($event)"
           />
-          <aside class="cvdetail__live-panel">
+          <aside
+            class="cvdetail__live-panel"
+            role="region"
+            [attr.aria-label]="t()('documents.cv_live_style_title')"
+          >
             <p class="cvdetail__live-hint">{{ t()('documents.cv_live_style_hint') }}</p>
             <app-cv-live-style-panel
               [selection]="liveSelection()"

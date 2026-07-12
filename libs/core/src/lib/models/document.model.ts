@@ -282,6 +282,9 @@ export interface CvSectionStyle {
   fontSizePt?: number;
   colorHex?: string;
   fontWeight?: CvFontWeight;
+  /** Optional unitless body leading. Unset preserves the renderer's existing
+   * per-element line-height instead of imposing a document-wide baseline. */
+  lineHeight?: number;
   /** Per-section title override; unset fields inherit the document title style. */
   title?: CvTextStyle;
   /** Per-section title underline; unset inherits the document title border. */

@@ -224,11 +224,20 @@ export class CvPreviewComponent {
   /** Body-text style for a section wrapper. */
   bodyCss(key: CvSectionKey): Record<string, string> {
     const s = this.effStyle(key);
-    return {
+    const css: Record<string, string> = {
       'font-family': s.fontFamily,
       'font-size': `${s.fontSizePt}pt`,
       'font-weight': String(s.fontWeight),
+      color: s.colorHex,
     };
+    if (s.lineHeight !== undefined) {
+      css['line-height'] = String(s.lineHeight);
+      css['--cv-section-line-height'] = String(s.lineHeight);
+    }
+    if (this.style().sectionStyles?.[key]?.colorHex) {
+      css['--cv-section-body-color'] = s.colorHex;
+    }
+    return css;
   }
 
   /** Title style for a section heading. */

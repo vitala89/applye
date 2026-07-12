@@ -30,7 +30,7 @@
   margin: 0 0 var(--space-3);
 }
 .cvpreview__summary {
-  line-height: var(--leading-normal);
+  line-height: var(--cv-section-line-height, var(--leading-normal));
   margin: 0;
 }
 // Gap above every experience entry except the first. Padding (not an adjacency
@@ -49,13 +49,13 @@
 .cvpreview__bullets {
   margin: 0;
   padding-left: var(--space-5);
-  color: var(--text-secondary);
+  color: var(--cv-section-body-color, var(--text-secondary));
 }
 .cvpreview__bullets li {
   margin: 0 0 var(--space-1);
 }
 .cvpreview__languages {
-  color: var(--text-secondary);
+  color: var(--cv-section-body-color, var(--text-secondary));
   margin: 0;
 }
 .cvpreview__warning {

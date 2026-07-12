@@ -65,7 +65,9 @@ import {
   mergeRegeneratedSection,
   normalizeCvContent,
   parseCvSkillResponse,
+  patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
+  resetCvSectionStyle,
   resolvePageSettings,
   sectionLabelKey,
 } from '../cv-content.util';
@@ -302,10 +304,7 @@ export class CvDetailComponent {
   }
 
   setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
-    const current = this.style();
-    const sectionStyles = { ...(current.sectionStyles ?? {}) };
-    sectionStyles[key] = { ...(sectionStyles[key] ?? {}), ...patch };
-    this.style.set({ ...current, sectionStyles });
+    this.style.set(patchCvSectionStyle(this.style(), key, patch));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
@@ -313,9 +312,7 @@ export class CvDetailComponent {
   /** Deep-merge a patch into a section's title override (a nested object that
    * `setSectionStyle`'s shallow merge would otherwise replace wholesale). */
   setSectionTitleStyle(key: CvSectionKey, patch: Partial<CvTextStyle>): void {
-    const current = this.style();
-    const existing = current.sectionStyles?.[key]?.title ?? {};
-    this.setSectionStyle(key, { title: { ...existing, ...patch } });
+    this.setSectionStyle(key, { title: patch });
   }
 
   /** Deep-merge a patch into the document-wide title style (template
@@ -325,10 +322,7 @@ export class CvDetailComponent {
   }
 
   resetSectionStyle(key: CvSectionKey): void {
-    const current = this.style();
-    const sectionStyles = { ...(current.sectionStyles ?? {}) };
-    delete sectionStyles[key];
-    this.style.set({ ...current, sectionStyles });
+    this.style.set(resetCvSectionStyle(this.style(), key));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }

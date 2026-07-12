@@ -16,7 +16,9 @@ import {
   mergeRegeneratedSection,
   normalizeCvContent,
   parseCvSkillResponse,
+  patchCvSectionStyle,
   repairTruncatedJson,
+  resetCvSectionStyle,
   resolvePageSettings,
 } from './cv-content.util';
 import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
@@ -459,11 +461,95 @@ describe('effectiveSectionStyle', () => {
     expect(effectiveSectionStyle(s, 'skills').colorHex).toBe('#0a5');
   });
 
+  it('preserves the CSS baseline when line height is absent and resolves an explicit override', () => {
+    expect(effectiveSectionStyle(base, 'summary').lineHeight).toBeUndefined();
+    const s: CvStyle = { ...base, sectionStyles: { summary: { lineHeight: 1.6 } } };
+    expect(effectiveSectionStyle(s, 'summary').lineHeight).toBe(1.6);
+  });
+
+  it('ignores loaded line heights outside the supported 1.0–2.0 range', () => {
+    const low: CvStyle = { ...base, sectionStyles: { summary: { lineHeight: 0.9 } } };
+    const high: CvStyle = { ...base, sectionStyles: { summary: { lineHeight: 2.1 } } };
+    const nonFinite: CvStyle = {
+      ...base,
+      sectionStyles: { summary: { lineHeight: Number.NaN } },
+    };
+    expect(effectiveSectionStyle(low, 'summary').lineHeight).toBeUndefined();
+    expect(effectiveSectionStyle(high, 'summary').lineHeight).toBeUndefined();
+    expect(effectiveSectionStyle(nonFinite, 'summary').lineHeight).toBeUndefined();
+  });
+
   it('legacy style_json (no fontWeight) defaults to 400 after CV_STYLE_DEFAULT merge', () => {
     const legacy = { fontFamily: 'Arial', fontSizePt: 10, accentColorHex: '#111111' };
     const merged: CvStyle = { ...CV_STYLE_DEFAULT, ...legacy };
     expect(effectiveSectionStyle(merged, 'summary').fontWeight).toBe(400);
     expect(effectiveSectionStyle(merged, 'summary').fontFamily).toBe('Arial');
+  });
+});
+
+describe('patchCvSectionStyle', () => {
+  it('deep-merges title changes and recursively prunes inherited empty overrides', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: {
+        summary: {
+          fontFamily: 'Arial',
+          colorHex: '#111111',
+          title: { fontSizePt: 14, colorHex: '#222222' },
+        },
+      },
+    };
+
+    const changed = patchCvSectionStyle(original, 'summary', {
+      fontFamily: undefined,
+      title: { colorHex: undefined, fontWeight: 700 },
+    });
+    expect(changed.sectionStyles?.summary).toEqual({
+      colorHex: '#111111',
+      title: { fontSizePt: 14, fontWeight: 700 },
+    });
+    expect(original.sectionStyles?.summary).toEqual({
+      fontFamily: 'Arial',
+      colorHex: '#111111',
+      title: { fontSizePt: 14, colorHex: '#222222' },
+    });
+
+    const pruned = patchCvSectionStyle(changed, 'summary', {
+      colorHex: undefined,
+      title: { fontSizePt: undefined, fontWeight: undefined },
+    });
+    expect(pruned.sectionStyles).toBeUndefined();
+  });
+
+  it('prunes an invalid line-height patch instead of persisting it', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { summary: { lineHeight: 1.6, fontFamily: 'Arial' } },
+    };
+    expect(patchCvSectionStyle(original, 'summary', { lineHeight: 3 }).sectionStyles).toEqual({
+      summary: { fontFamily: 'Arial' },
+    });
+    expect(patchCvSectionStyle(original, 'summary', { colorHex: '#111111' }).sectionStyles).toEqual(
+      {
+        summary: { fontFamily: 'Arial', lineHeight: 1.6, colorHex: '#111111' },
+      },
+    );
+  });
+
+  it('resets one section without disturbing other overrides', () => {
+    const original: CvStyle = {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { summary: { lineHeight: 1.6 }, skills: { fontFamily: 'Arial' } },
+    };
+    expect(resetCvSectionStyle(original, 'summary').sectionStyles).toEqual({
+      skills: { fontFamily: 'Arial' },
+    });
+    expect(
+      resetCvSectionStyle(
+        { ...original, sectionStyles: { summary: { lineHeight: 1.6 } } },
+        'summary',
+      ).sectionStyles,
+    ).toBeUndefined();
   });
 });
 

@@ -190,6 +190,51 @@ describe('CvPreviewComponent', () => {
     expect(component.titleBorderCss('summary')).toBe('none');
   });
 
+  it('bodyCss applies explicit section colour and line height without imposing a baseline', () => {
+    expect(component.bodyCss('summary')['line-height']).toBeUndefined();
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { summary: { colorHex: '#1b7464', lineHeight: 1.6 } },
+    });
+    expect(component.bodyCss('summary')).toMatchObject({
+      color: '#1b7464',
+      'line-height': '1.6',
+    });
+  });
+
+  it('applies an explicit line height to rendered summary text', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { summary: { lineHeight: 1.6 } },
+    });
+    fixture.componentRef.setInput('sections', [
+      { key: 'summary', order: 0, visible: true, text: 'Summary text' },
+    ]);
+    fixture.detectChanges();
+    const summarySection = fixture.nativeElement.querySelector('.cvpreview__summary')
+      .parentElement as HTMLElement;
+    expect(summarySection.style.getPropertyValue('--cv-section-line-height')).toBe('1.6');
+  });
+
+  it('applies an explicit section colour to rendered languages without changing inheritance', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { languages: { colorHex: '#1b7464' } },
+    });
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'languages',
+        order: 0,
+        visible: true,
+        items: [{ language: 'English', level: 'C1' }],
+      },
+    ]);
+    fixture.detectChanges();
+    const languagesSection = fixture.nativeElement.querySelector('.cvpreview__languages')
+      .parentElement as HTMLElement;
+    expect(languagesSection.style.getPropertyValue('--cv-section-body-color')).toBe('#1b7464');
+  });
+
   it('per-section title override renders over the document title style', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -250,6 +251,7 @@ describe('CvDetailComponent per-section style', () => {
 describe('CvDetailComponent personal-details top card visibility', () => {
   let component: CvDetailComponent;
   let fixture: ComponentFixture<CvDetailComponent>;
+  let dbStub: Partial<DbService>;
 
   beforeEach(async () => {
     // A real document (not null) so the component's own async `load()` —
@@ -264,6 +266,10 @@ describe('CvDetailComponent personal-details top card visibility', () => {
       source: 'generated' as const,
       isDefault: false,
       regionTag: 'generic',
+      styleJson: JSON.stringify({
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { summary: { lineHeight: 1.6 } },
+      }),
       contentJson: JSON.stringify({
         sections: [
           {
@@ -277,10 +283,11 @@ describe('CvDetailComponent personal-details top card visibility', () => {
         ],
       }),
     };
-    const dbStub: Partial<DbService> = {
+    dbStub = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
+      documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
     };
 
     await TestBed.configureTestingModule({
@@ -370,5 +377,15 @@ describe('CvDetailComponent personal-details top card visibility', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.docedit-note')).toBeNull();
+  });
+
+  it('loads and saves a per-section line-height override through styleJson', async () => {
+    expect(component.style().sectionStyles?.summary?.lineHeight).toBe(1.6);
+
+    await component.save();
+
+    const upsert = dbStub.documentLibraryUpsert as jest.Mock;
+    const savedStyle = JSON.parse(upsert.mock.calls[0][0].styleJson);
+    expect(savedStyle.sectionStyles.summary.lineHeight).toBe(1.6);
   });
 });

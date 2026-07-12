@@ -8,6 +8,7 @@ import {
   CvPersonalDetailsSection,
   CvSection,
   CvSectionKey,
+  CvSectionStyle,
   CvSkillGroup,
   CvSkillsSection,
   CvStyle,
@@ -500,17 +501,75 @@ export function buildContactLine(
     .join(' | ');
 }
 
+/** Applies an immutable per-section style patch while keeping the persisted
+ * override tree minimal. Nested title fields are deep-merged; inherited
+ * (`undefined`/`null`) values, empty title objects, empty section overrides,
+ * and an empty `sectionStyles` map are removed. */
+export function patchCvSectionStyle(
+  style: CvStyle,
+  key: CvSectionKey,
+  patch: Partial<CvSectionStyle>,
+): CvStyle {
+  const current = style.sectionStyles?.[key] ?? {};
+  const normalizedPatch = { ...patch };
+  if ('lineHeight' in patch && !isValidCvLineHeight(patch.lineHeight)) {
+    normalizedPatch.lineHeight = undefined;
+  }
+  const title =
+    normalizedPatch.title === undefined
+      ? current.title
+      : Object.fromEntries(
+          Object.entries({ ...(current.title ?? {}), ...normalizedPatch.title }).filter(
+            ([, value]) => value != null,
+          ),
+        );
+  const merged = Object.fromEntries(
+    Object.entries({ ...current, ...normalizedPatch, title }).filter(
+      ([, value]) => value != null && !(typeof value === 'object' && !Object.keys(value).length),
+    ),
+  ) as CvSectionStyle;
+  const sectionStyles = { ...(style.sectionStyles ?? {}) };
+  if (Object.keys(merged).length) sectionStyles[key] = merged;
+  else delete sectionStyles[key];
+  return {
+    ...style,
+    sectionStyles: Object.keys(sectionStyles).length ? sectionStyles : undefined,
+  };
+}
+
+/** Removes one complete per-section override and omits the map when it becomes
+ * empty. Document defaults and sibling section overrides are preserved. */
+export function resetCvSectionStyle(style: CvStyle, key: CvSectionKey): CvStyle {
+  const sectionStyles = { ...(style.sectionStyles ?? {}) };
+  delete sectionStyles[key];
+  return {
+    ...style,
+    sectionStyles: Object.keys(sectionStyles).length ? sectionStyles : undefined,
+  };
+}
+
 export function effectiveSectionStyle(
   style: CvStyle,
   key: CvSectionKey,
-): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+): {
+  fontFamily: string;
+  fontSizePt: number;
+  fontWeight: CvFontWeight;
+  colorHex: string;
+  lineHeight?: number;
+} {
   const o = style.sectionStyles?.[key] ?? {};
   return {
     fontFamily: o.fontFamily ?? style.fontFamily,
     fontSizePt: o.fontSizePt ?? style.fontSizePt,
     fontWeight: o.fontWeight ?? style.fontWeight,
     colorHex: o.colorHex ?? style.accentColorHex,
+    lineHeight: isValidCvLineHeight(o.lineHeight) ? o.lineHeight : undefined,
   };
+}
+
+function isValidCvLineHeight(value: number | undefined): value is number {
+  return value !== undefined && Number.isFinite(value) && value >= 1 && value <= 2;
 }
 
 /** Resolved title style for a section: per-section title override, then the

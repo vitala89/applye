@@ -68,32 +68,3 @@
     />
   }
 </div>
-
-<div class="docedit-chip-row">
-  <button
-    type="button"
-    class="docedit-chip"
-    [class.docedit-chip--active]="includeBirthdate()"
-    (click)="toggleBirthdate()"
-  >
-    <span class="docedit-chip__dot"></span>
-    {{ t()('documents.cv_toggle_birthdate') }}
-  </button>
-  <button
-    type="button"
-    class="docedit-chip"
-    [class.docedit-chip--active]="includeMaritalStatus()"
-    (click)="toggleMaritalStatus()"
-  >
-    <span class="docedit-chip__dot"></span>
-    {{ t()('documents.cv_toggle_marital') }}
-  </button>
-</div>
-
-@if (atsNoteKeys().length) {
-  <div class="docedit-note">
-    @for (key of atsNoteKeys(); track key) {
-      <p>{{ t()(key) }}</p>
-    }
-  </div>
-}

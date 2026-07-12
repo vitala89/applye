@@ -246,3 +246,129 @@ describe('CvDetailComponent per-section style', () => {
     });
   });
 });
+
+describe('CvDetailComponent personal-details top card visibility', () => {
+  let component: CvDetailComponent;
+  let fixture: ComponentFixture<CvDetailComponent>;
+
+  beforeEach(async () => {
+    // A real document (not null) so the component's own async `load()` —
+    // fired from the constructor — settles into the editor body render
+    // instead of racing our test into the loading/error branch. Giving the
+    // personal_details section a birthDate/maritalStatus also drives
+    // `includeBirthdate`/`includeMaritalStatus` to true via `load()`, so the
+    // ATS notes are populated without touching those signals directly.
+    const docItem = {
+      id: 1,
+      docType: 'cv' as const,
+      source: 'generated' as const,
+      isDefault: false,
+      regionTag: 'generic',
+      contentJson: JSON.stringify({
+        sections: [
+          {
+            key: 'personal_details',
+            order: 0,
+            visible: true,
+            fullName: 'Jane Doe',
+            birthDate: '1990-01-01',
+            maritalStatus: 'single',
+          },
+        ],
+      }),
+    };
+    const dbStub: Partial<DbService> = {
+      documentLibraryGet: jest.fn().mockResolvedValue(docItem),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [CvDetailComponent],
+      providers: [
+        { provide: DbService, useValue: dbStub },
+        { provide: AiService, useValue: {} },
+        TranslateService,
+        ToastService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: { get: () => '1' },
+              queryParamMap: { get: () => null },
+            },
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(CvDetailComponent);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('keeps the birthdate/marital toggle chips and ATS notes visible when personal_details is collapsed', () => {
+    // Regression test: before a refactor these lived in a fixed top card,
+    // always visible regardless of section collapse state. A later change
+    // moved them inside the collapsible personal_details section editor,
+    // which hid them whenever that section was collapsed. They must render
+    // outside the `docedit-collapse` machinery, in the parent's own top card.
+    expect(component.isSectionOpen('personal_details')).toBe(true);
+    expect(fixture.nativeElement.querySelectorAll('.docedit-chip-row .docedit-chip').length).toBe(
+      3,
+    );
+    expect(fixture.nativeElement.querySelector('.docedit-note')).not.toBeNull();
+
+    component.toggleSectionCollapse('personal_details');
+    fixture.detectChanges();
+
+    expect(component.isSectionOpen('personal_details')).toBe(false);
+
+    const chips: HTMLButtonElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('.docedit-chip-row .docedit-chip'),
+    );
+    // includePhoto + includeBirthdate + includeMaritalStatus chips, still all present.
+    expect(chips.length).toBe(3);
+    for (const chip of chips) {
+      expect(chip.closest('.docedit-collapse--closed')).toBeNull();
+    }
+
+    const atsNote = fixture.nativeElement.querySelector('.docedit-note');
+    expect(atsNote).not.toBeNull();
+    expect(atsNote.closest('.docedit-collapse--closed')).toBeNull();
+  });
+
+  it('clicking the birthdate chip in the DOM flips includeBirthdate on the parent directly', () => {
+    expect(component.includeBirthdate()).toBe(true);
+
+    const birthdateChip: HTMLButtonElement = fixture.nativeElement.querySelectorAll(
+      '.docedit-chip-row .docedit-chip',
+    )[1];
+    birthdateChip.click();
+    fixture.detectChanges();
+
+    expect(component.includeBirthdate()).toBe(false);
+  });
+
+  it('clicking the marital-status chip in the DOM flips includeMaritalStatus on the parent directly', () => {
+    expect(component.includeMaritalStatus()).toBe(true);
+
+    const maritalChip: HTMLButtonElement = fixture.nativeElement.querySelectorAll(
+      '.docedit-chip-row .docedit-chip',
+    )[2];
+    maritalChip.click();
+    fixture.detectChanges();
+
+    expect(component.includeMaritalStatus()).toBe(false);
+  });
+
+  it('hides the ATS note card once both toggles are switched off', () => {
+    component.includeBirthdate.set(false);
+    component.includeMaritalStatus.set(false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.docedit-note')).toBeNull();
+  });
+});

@@ -93,7 +93,33 @@
                 <span class="docedit-chip__dot"></span>
                 {{ t()('documents.cv_toggle_photo') }}
               </button>
+              <button
+                type="button"
+                class="docedit-chip"
+                [class.docedit-chip--active]="includeBirthdate()"
+                (click)="includeBirthdate.set(!includeBirthdate())"
+              >
+                <span class="docedit-chip__dot"></span>
+                {{ t()('documents.cv_toggle_birthdate') }}
+              </button>
+              <button
+                type="button"
+                class="docedit-chip"
+                [class.docedit-chip--active]="includeMaritalStatus()"
+                (click)="includeMaritalStatus.set(!includeMaritalStatus())"
+              >
+                <span class="docedit-chip__dot"></span>
+                {{ t()('documents.cv_toggle_marital') }}
+              </button>
             </div>
+
+            @if (atsNoteKeys().length) {
+              <div class="docedit-note">
+                @for (key of atsNoteKeys(); track key) {
+                  <p>{{ t()(key) }}</p>
+                }
+              </div>
+            }
           </div>
 
           <div class="docedit-card">
@@ -460,11 +486,8 @@
                           [section]="$any(section)"
                           [includeBirthdate]="includeBirthdate()"
                           [includeMaritalStatus]="includeMaritalStatus()"
-                          [atsNoteKeys]="atsNoteKeys()"
                           [pulling]="pullingProfile()"
                           (sectionChange)="replaceSection($event)"
-                          (includeBirthdateChange)="includeBirthdate.set($event)"
-                          (includeMaritalStatusChange)="includeMaritalStatus.set($event)"
                           (pullProfile)="pullFromProfile()"
                         />
                       }

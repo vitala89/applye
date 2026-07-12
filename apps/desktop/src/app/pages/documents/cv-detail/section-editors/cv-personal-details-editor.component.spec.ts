@@ -26,7 +26,6 @@ describe('CvPersonalDetailsEditorComponent', () => {
     overrides: {
       includeBirthdate?: boolean;
       includeMaritalStatus?: boolean;
-      atsNoteKeys?: string[];
       pulling?: boolean;
     } = {},
   ): void {
@@ -35,7 +34,6 @@ describe('CvPersonalDetailsEditorComponent', () => {
     fixture.componentRef.setInput('section', section);
     fixture.componentRef.setInput('includeBirthdate', overrides.includeBirthdate ?? false);
     fixture.componentRef.setInput('includeMaritalStatus', overrides.includeMaritalStatus ?? false);
-    fixture.componentRef.setInput('atsNoteKeys', overrides.atsNoteKeys ?? []);
     fixture.componentRef.setInput('pulling', overrides.pulling ?? false);
     fixture.detectChanges();
   }
@@ -101,43 +99,9 @@ describe('CvPersonalDetailsEditorComponent', () => {
     expect(inputs.length).toBe(9);
   });
 
-  it('birthdate chip click emits includeBirthdateChange with the flipped value', () => {
-    setup({ includeBirthdate: false });
-    const emitted = jest.fn();
-    component.includeBirthdateChange.subscribe(emitted);
-
-    const chip = fixture.nativeElement.querySelectorAll('.docedit-chip-row .docedit-chip')[0];
-    chip.click();
-
-    expect(emitted).toHaveBeenCalledWith(true);
-  });
-
-  it('marital-status chip click emits includeMaritalStatusChange with the flipped value', () => {
-    setup({ includeMaritalStatus: true });
-    const emitted = jest.fn();
-    component.includeMaritalStatusChange.subscribe(emitted);
-
-    const chip = fixture.nativeElement.querySelectorAll('.docedit-chip-row .docedit-chip')[1];
-    chip.click();
-
-    expect(emitted).toHaveBeenCalledWith(false);
-  });
-
-  it('marks the active chip via docedit-chip--active', () => {
-    setup({ includeBirthdate: true, includeMaritalStatus: false });
-    const chips = fixture.nativeElement.querySelectorAll('.docedit-chip-row .docedit-chip');
-    expect(chips[0].classList.contains('docedit-chip--active')).toBe(true);
-    expect(chips[1].classList.contains('docedit-chip--active')).toBe(false);
-  });
-
-  it('renders the ATS note keys passed in atsNoteKeys', () => {
-    setup({ atsNoteKeys: ['documents.cv_ats_note_birthdate', 'documents.cv_ats_note_marital'] });
-    const notes = fixture.nativeElement.querySelectorAll('.docedit-note p');
-    expect(notes.length).toBe(2);
-  });
-
-  it('renders no ATS note block when atsNoteKeys is empty', () => {
-    setup({ atsNoteKeys: [] });
+  it('does not render the birthdate/marital-status toggle chips or ATS notes (they live in the parent top card)', () => {
+    setup({ includeBirthdate: true, includeMaritalStatus: true });
+    expect(fixture.nativeElement.querySelector('.docedit-chip-row')).toBeNull();
     expect(fixture.nativeElement.querySelector('.docedit-note')).toBeNull();
   });
 

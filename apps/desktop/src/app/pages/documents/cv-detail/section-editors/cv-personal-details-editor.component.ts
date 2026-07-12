@@ -13,19 +13,25 @@ type CvPersonalDetailsField = Exclude<
 
 /**
  * Editor arm for the `personal_details` CV section: name/title/contact
- * fields, the birthdate/marital-status field toggles + their ATS notes, and
- * the "pull from profile" action. Behavior-preserving extraction from
- * `CvDetailComponent` — same fields, same toggles, same notes, same button.
+ * fields and the "pull from profile" action. Behavior-preserving extraction
+ * from `CvDetailComponent` — same fields, same button.
+ *
+ * The birthdate/marital-status toggle chips and their ATS notes live in the
+ * parent's fixed top card (before the collapsible sections loop), NOT here —
+ * that card is always visible regardless of section collapse state, whereas
+ * this editor only renders while the `personal_details` section is expanded.
+ * Moving the toggles/notes into this component would hide them whenever the
+ * user collapses the section, which regressed prior always-visible behavior
+ * (see the fix that restored them to the parent). This component still
+ * needs to know whether birthdate/marital-status are included so it can
+ * gate rendering of their value inputs, hence the read-only
+ * `includeBirthdate`/`includeMaritalStatus` inputs — but it does not own or
+ * mutate that state, so it has no corresponding change outputs.
  *
  * Every field edit emits a brand-new `CvPersonalDetailsSection` via
  * `sectionChange` (immutable), matching the other extracted section
- * editors. The birthdate/marital-status toggles are booleans owned by the
- * parent (they also feed the parent's PDF-export field selection), so this
- * component only reflects their current value (`includeBirthdate`/
- * `includeMaritalStatus` inputs) and asks the parent to flip them
- * (`includeBirthdateChange`/`includeMaritalStatusChange` outputs) rather than
- * owning the state itself. The AI "pull from profile" call stays in the
- * parent (`AiService`/`DbService` access) — this component only emits
+ * editors. The AI "pull from profile" call stays in the parent
+ * (`AiService`/`DbService` access) — this component only emits
  * `pullProfile` and reflects the in-flight state via the `pulling` input.
  */
 @Component({
@@ -45,23 +51,12 @@ export class CvPersonalDetailsEditorComponent {
   readonly section = input.required<CvPersonalDetailsSection>();
   readonly includeBirthdate = input.required<boolean>();
   readonly includeMaritalStatus = input.required<boolean>();
-  readonly atsNoteKeys = input.required<string[]>();
   readonly pulling = input.required<boolean>();
 
   readonly sectionChange = output<CvPersonalDetailsSection>();
-  readonly includeBirthdateChange = output<boolean>();
-  readonly includeMaritalStatusChange = output<boolean>();
   readonly pullProfile = output<void>();
 
   updateField(field: CvPersonalDetailsField, value: string): void {
     this.sectionChange.emit({ ...this.section(), [field]: value });
-  }
-
-  toggleBirthdate(): void {
-    this.includeBirthdateChange.emit(!this.includeBirthdate());
-  }
-
-  toggleMaritalStatus(): void {
-    this.includeMaritalStatusChange.emit(!this.includeMaritalStatus());
   }
 }

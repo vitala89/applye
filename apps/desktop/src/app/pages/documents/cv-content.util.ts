@@ -45,6 +45,23 @@ export interface CvPreviewSelection {
   elementPath?: string;
 }
 
+/** Builds the canonical leaf-path string — the single source of truth for a
+ * leaf's identity, consumed at every place that currently spells the same
+ * path out as a raw template literal: `leafDraft`/`onLeafInput`/
+ * `onLeafEscape` (the transient draft key) and `selectLeaf`/`selectPart`/
+ * `onSelectKey` (the emitted `CvPreviewSelection.elementPath`, i.e. the
+ * persisted `elementStyles` override key). Segments are joined with `.`,
+ * reproducing every leaf id already in use, byte-for-byte:
+ * `leafPath('summary')` → `'summary'`; `leafPath('pd', 'fullName')` →
+ * `'pd.fullName'`; `leafPath('exp', 1, 'role')` → `'exp.1.role'`;
+ * `leafPath('exp', 1, 'bullet', 0)` → `'exp.1.bullet.0'`;
+ * `leafPath('edu', 0, 'degree')` → `'edu.0.degree'`;
+ * `leafPath('skills', 0, 'values')` → `'skills.0.values'`;
+ * `leafPath('lang', 0, 'language')` → `'lang.0.language'`. */
+export function leafPath(kind: string, ...parts: (string | number)[]): string {
+  return [kind, ...parts].join('.');
+}
+
 /** Fallback order when a template has no `sectionsJson` (should not happen
  * for the seeded built-ins, but keeps the builder total). */
 const DEFAULT_SECTION_ORDER: CvSectionKey[] = [

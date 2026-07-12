@@ -1470,6 +1470,53 @@ describe('CvPreviewComponent', () => {
       expect(component.isSelected('experience', 'body')).toBe(true);
     });
 
+    it('the element-selected highlight never leaks into the inert measurement pass (review fix)', () => {
+      // Regression: the resting (@else) leaf branches' `cvpreview__element-
+      // selected` bindings used to read only `isElementSelected(path)`,
+      // omitting the `selectable(renderMode)` guard the sibling
+      // `cvpreview__selected` binding always carries. Since resting leaf
+      // spans render in BOTH the page pass and the hidden measurement
+      // mirror, an active elementPath selection leaked the highlight
+      // outline into the measure pass — a contract violation (the measure
+      // pass must render no selection chrome at all). Scoped to `.page-card`
+      // vs `.paginated-sheet__measure`, mirroring the existing measurement-
+      // mirror tests above.
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      // On a page-card render `selectable(renderMode)` is true, so the
+      // section+part selection mounts the inline editor (an <input>), not
+      // the resting <span> — the resting branch this bug lives in only
+      // renders when NOT selectable, i.e. only in the measurement mirror.
+      const pageRole = root.querySelector(
+        '.page-card input.cvpreview__entry-role',
+      ) as HTMLInputElement;
+      const measuredRole = root.querySelector(
+        '.paginated-sheet__measure .cvpreview__entry-role',
+      ) as HTMLElement;
+      expect(pageRole).toBeTruthy();
+      expect(measuredRole).toBeTruthy();
+      // The page-card input reflects the pinned selection via its own
+      // (already-gated-by-context) binding...
+      expect(pageRole.classList.contains('cvpreview__element-selected')).toBe(true);
+      // ...but the measure pass's resting span must NEVER carry it, even
+      // though `isElementSelected('exp.0.role')` alone would say true.
+      expect(measuredRole.classList.contains('cvpreview__element-selected')).toBe(false);
+    });
+
     it('selecting a different leaf in the same section emits (guard is element-aware, not just section-aware)', () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {

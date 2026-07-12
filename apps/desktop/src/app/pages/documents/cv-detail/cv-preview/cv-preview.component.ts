@@ -37,6 +37,7 @@ import {
   effectiveSectionStyle,
   effectiveTitleBorder,
   effectiveTitleStyle,
+  leafPath,
   orderedVisibleSections,
   parseSkillValues,
   replaceEducationEntryField,
@@ -263,6 +264,11 @@ export class CvPreviewComponent {
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly buildContactLine = buildContactLine;
   protected readonly visiblePersonalContactFields = visiblePersonalContactFields;
+  /** Exposed for the template — see `leafPath`'s doc for why every leaf-id
+   * template literal now goes through this single builder instead of a raw
+   * string, so `leafDraft`'s draft key and `selectLeaf`/`selectPart`'s
+   * emitted `elementPath` can never drift apart. */
+  protected readonly leafPath = leafPath;
 
   // --- Inline leaf editing (summary + personal_details) -----------------
   //

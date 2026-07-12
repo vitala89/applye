@@ -166,15 +166,12 @@
                   }}</span>
                   <div class="docedit-style-grid">
                     <label class="docedit-field">
-                      <span class="docedit-field__label">{{
-                        t()('documents.cv_theme_label')
-                      }}</span>
                       <select
-                        [value]="themeId()"
+                        [value]="themeId().toString()"
                         (change)="selectTheme(+$any($event.target).value)"
                       >
-                        <option [value]="1">{{ t()('documents.cv_theme_classic') }}</option>
-                        <option [value]="2">{{ t()('documents.cv_theme_aurora') }}</option>
+                        <option value="1">{{ t()('documents.cv_theme_classic') }}</option>
+                        <option value="2">{{ t()('documents.cv_theme_aurora') }}</option>
                       </select>
                     </label>
                   </div>

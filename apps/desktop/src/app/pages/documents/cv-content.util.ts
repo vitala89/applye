@@ -179,27 +179,6 @@ export const REGENERATABLE_SECTION_KEYS: CvSectionKey[] = [
   'languages',
 ];
 
-function emptyParsedContent(): CvParsedContent {
-  return {
-    personalDetails: {
-      fullName: null,
-      title: null,
-      email: null,
-      phone: null,
-      address: null,
-      website: null,
-      linkedin: null,
-    },
-    summary: null,
-    experience: [],
-    education: [],
-    skills: [],
-    skillGroups: undefined,
-    languages: [],
-    lowConfidenceNotes: [],
-  };
-}
-
 /** Parses a `cv-import`/`cv-generate-baseline` skill response (JSON, possibly
  * fenced) into `CvParsedContent`. Throws with the raw text on invalid JSON
  * so the caller can surface a real error instead of a silent empty draft. */
@@ -294,11 +273,24 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
   if (!parsed) {
     throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
   }
-  const base = emptyParsedContent();
+  const p: Partial<CvParsedContent['personalDetails']> = parsed.personalDetails ?? {};
   return {
-    ...base,
-    ...parsed,
-    personalDetails: { ...base.personalDetails, ...(parsed.personalDetails ?? {}) },
+    personalDetails: {
+      fullName: p.fullName ?? null,
+      title: p.title ?? null,
+      email: p.email ?? null,
+      phone: p.phone ?? null,
+      address: p.address ?? null,
+      website: p.website ?? null,
+      linkedin: p.linkedin ?? null,
+    },
+    summary: parsed.summary ?? null,
+    experience: parsed.experience ?? [],
+    education: parsed.education ?? [],
+    skills: parsed.skills ?? [],
+    skillGroups: parsed.skillGroups,
+    languages: parsed.languages ?? [],
+    lowConfidenceNotes: parsed.lowConfidenceNotes ?? [],
   };
 }
 

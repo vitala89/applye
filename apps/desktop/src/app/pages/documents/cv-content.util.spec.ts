@@ -13,6 +13,7 @@ import {
   effectiveSectionStyle,
   effectiveTitleStyle,
   effectiveTitleBorder,
+  mergeRegeneratedSection,
   normalizeCvContent,
   parseCvSkillResponse,
   repairTruncatedJson,
@@ -554,5 +555,131 @@ describe('title/body style resolution', () => {
         'skills',
       ),
     ).toBe('dotted');
+  });
+});
+
+describe('parseCvSkillResponse — content-only boundary', () => {
+  it('strips unknown top-level keys (style/theme/fontFamily) from AI JSON', () => {
+    const res = parseCvSkillResponse(
+      JSON.stringify({
+        summary: 'Hi',
+        style: { fontFamily: 'Comic Sans', accentColorHex: '#ff0000' },
+        theme: 2,
+        themeId: 9,
+        fontFamily: 'Arial',
+      }),
+    );
+    expect(res.summary).toBe('Hi');
+    expect(Object.keys(res).sort()).toEqual(
+      [
+        'education',
+        'experience',
+        'languages',
+        'lowConfidenceNotes',
+        'personalDetails',
+        'skillGroups',
+        'skills',
+        'summary',
+      ].sort(),
+    );
+    expect((res as Record<string, unknown>)['style']).toBeUndefined();
+    expect((res as Record<string, unknown>)['theme']).toBeUndefined();
+    expect((res as Record<string, unknown>)['themeId']).toBeUndefined();
+    expect((res as Record<string, unknown>)['fontFamily']).toBeUndefined();
+  });
+
+  it('strips unknown keys nested inside personalDetails', () => {
+    const res = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: { fullName: 'Ada', fontFamily: 'Arial', accentColorHex: '#000' },
+      }),
+    );
+    expect(res.personalDetails.fullName).toBe('Ada');
+    expect(Object.keys(res.personalDetails).sort()).toEqual(
+      ['address', 'email', 'fullName', 'linkedin', 'phone', 'title', 'website'].sort(),
+    );
+    expect((res.personalDetails as Record<string, unknown>)['fontFamily']).toBeUndefined();
+    expect((res.personalDetails as Record<string, unknown>)['accentColorHex']).toBeUndefined();
+  });
+
+  it('preserves all valid content fields unchanged', () => {
+    const res = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: { fullName: 'Ada', email: 'a@b.c' },
+        summary: 'S',
+        experience: [
+          { company: 'X', role: 'Y', startDate: '2020', endDate: '2021', bullets: ['b'] },
+        ],
+        skills: ['ts'],
+        languages: [{ language: 'EN', level: 'C2' }],
+      }),
+    );
+    expect(res.personalDetails.fullName).toBe('Ada');
+    expect(res.personalDetails.email).toBe('a@b.c');
+    expect(res.personalDetails.title).toBeNull();
+    expect(res.summary).toBe('S');
+    expect(res.experience).toHaveLength(1);
+    expect(res.skills).toEqual(['ts']);
+    expect(res.languages).toEqual([{ language: 'EN', level: 'C2' }]);
+  });
+
+  it('contract: a rogue style key in AI JSON never reaches a saved CvContent', () => {
+    const parsed = parseCvSkillResponse(
+      JSON.stringify({ summary: 'S', style: { fontFamily: 'Comic Sans' }, accentColorHex: '#f00' }),
+    );
+    const content = buildCvContent(parsed, null);
+    const serialized = JSON.stringify(content);
+    expect(serialized).not.toContain('fontFamily');
+    expect(serialized).not.toContain('accentColorHex');
+    expect(serialized.toLowerCase()).not.toContain('comic sans');
+  });
+});
+
+describe('mergeRegeneratedSection', () => {
+  const baseContent: CvContent = {
+    sections: [
+      { key: 'personal_details', order: 0, visible: true, fullName: 'Ada' } as never,
+      { key: 'summary', order: 1, visible: true, text: 'old summary' } as never,
+      { key: 'experience', order: 2, visible: true, entries: [] } as never,
+    ],
+  };
+
+  it('updates only the targeted section and stamps its sourceHash', () => {
+    const parsed = parseCvSkillResponse(JSON.stringify({ summary: 'new summary' }));
+    const out = mergeRegeneratedSection(baseContent, 'summary', parsed, 'hash-1');
+    const summary = out.sections.find((s) => s.key === 'summary') as {
+      text: string;
+      sourceHash: string;
+    };
+    expect(summary.text).toBe('new summary');
+    expect(summary.sourceHash).toBe('hash-1');
+  });
+
+  it('leaves non-targeted sections untouched (content, order, visible)', () => {
+    const parsed = parseCvSkillResponse(JSON.stringify({ summary: 'new summary' }));
+    const out = mergeRegeneratedSection(baseContent, 'summary', parsed, 'hash-1');
+    const personal = out.sections.find((s) => s.key === 'personal_details') as {
+      fullName: string;
+      order: number;
+    };
+    const exp = out.sections.find((s) => s.key === 'experience') as {
+      order: number;
+      visible: boolean;
+    };
+    expect(personal.fullName).toBe('Ada');
+    expect(personal.order).toBe(0);
+    expect(exp.order).toBe(2);
+    expect(exp.visible).toBe(true);
+  });
+
+  it('preserves the targeted section order and visible flag', () => {
+    const parsed = parseCvSkillResponse(JSON.stringify({ summary: 'x' }));
+    const out = mergeRegeneratedSection(baseContent, 'summary', parsed, 'h');
+    const summary = out.sections.find((s) => s.key === 'summary') as {
+      order: number;
+      visible: boolean;
+    };
+    expect(summary.order).toBe(1);
+    expect(summary.visible).toBe(true);
   });
 });

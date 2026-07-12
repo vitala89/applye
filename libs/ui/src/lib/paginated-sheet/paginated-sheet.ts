@@ -35,6 +35,18 @@ export interface SheetAtom {
   glueToNext?: boolean;
 }
 
+/** Which pass is rendering an atom template: the hidden measurement pass, or
+ *  a visible page card. Atom templates use this to gate interactive affordances
+ *  (click-to-select, inline edit) so they only ever appear in the 'page' pass. */
+export type SheetRenderMode = 'measure' | 'page';
+
+/**
+ * Namespaced outlet-context key carrying the current {@link SheetRenderMode}.
+ * The leading `$` avoids colliding with atom-supplied context fields (e.g.
+ * `$implicit`). Reserved: atoms must not supply this key themselves.
+ */
+export const SHEET_RENDER_MODE_KEY = '$sheetRenderMode';
+
 @Component({
   selector: 'lib-paginated-sheet',
   standalone: true,
@@ -125,5 +137,30 @@ export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
 
   atomAt(index: number): SheetAtom {
     return this.atoms()[index];
+  }
+
+  /** Outlet context for atom `index` in the visible page-card pass. */
+  pageCtx(index: number): Record<string, unknown> {
+    return this.ctxWithRenderMode(this.atomAt(index), 'page');
+  }
+
+  /** Outlet context for `atom` in the hidden measurement pass. */
+  measureCtx(atom: SheetAtom): Record<string, unknown> {
+    return this.ctxWithRenderMode(atom, 'measure');
+  }
+
+  /**
+   * Merges the namespaced render-mode signal into an atom's own context.
+   * Throws if the atom already supplies the reserved key, so callers can't
+   * silently override which pass a template thinks it's rendering in.
+   */
+  private ctxWithRenderMode(atom: SheetAtom, mode: SheetRenderMode): Record<string, unknown> {
+    const base = (atom.ctx ?? {}) as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(base, SHEET_RENDER_MODE_KEY)) {
+      throw new Error(
+        `SheetAtom "${atom.id}" ctx must not supply the reserved "${SHEET_RENDER_MODE_KEY}" key.`,
+      );
+    }
+    return { ...base, [SHEET_RENDER_MODE_KEY]: mode };
   }
 }

@@ -1,10 +1,10 @@
 <!-- libs/ui/src/lib/paginated-sheet/paginated-sheet.html -->
 <!-- Hidden measure pass: every atom rendered once in a single page-width
      column so we can read its natural height. Positioned off-screen. -->
-<div class="paginated-sheet__measure" aria-hidden="true" [style.width.px]="contentWidthPx()">
+<div class="paginated-sheet__measure" aria-hidden="true" inert [style.width.px]="contentWidthPx()">
   @for (atom of atoms(); track atom.id) {
   <div #measureAtom>
-    <ng-container [ngTemplateOutlet]="atom.tpl" [ngTemplateOutletContext]="atom.ctx ?? {}" />
+    <ng-container [ngTemplateOutlet]="atom.tpl" [ngTemplateOutletContext]="measureCtx(atom)" />
   </div>
   }
 </div>
@@ -24,10 +24,7 @@
   >
     @for (idx of page; track atomAt(idx).id) {
     <div class="page-card__atom">
-      <ng-container
-        [ngTemplateOutlet]="atomAt(idx).tpl"
-        [ngTemplateOutletContext]="atomAt(idx).ctx ?? {}"
-      />
+      <ng-container [ngTemplateOutlet]="atomAt(idx).tpl" [ngTemplateOutletContext]="pageCtx(idx)" />
     </div>
     }
   </div>

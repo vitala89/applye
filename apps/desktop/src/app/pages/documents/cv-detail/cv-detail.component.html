@@ -93,33 +93,7 @@
                 <span class="docedit-chip__dot"></span>
                 {{ t()('documents.cv_toggle_photo') }}
               </button>
-              <button
-                type="button"
-                class="docedit-chip"
-                [class.docedit-chip--active]="includeBirthdate()"
-                (click)="includeBirthdate.set(!includeBirthdate())"
-              >
-                <span class="docedit-chip__dot"></span>
-                {{ t()('documents.cv_toggle_birthdate') }}
-              </button>
-              <button
-                type="button"
-                class="docedit-chip"
-                [class.docedit-chip--active]="includeMaritalStatus()"
-                (click)="includeMaritalStatus.set(!includeMaritalStatus())"
-              >
-                <span class="docedit-chip__dot"></span>
-                {{ t()('documents.cv_toggle_marital') }}
-              </button>
             </div>
-
-            @if (atsNoteKeys().length) {
-              <div class="docedit-note">
-                @for (key of atsNoteKeys(); track key) {
-                  <p>{{ t()(key) }}</p>
-                }
-              </div>
-            }
           </div>
 
           <div class="docedit-card">
@@ -482,85 +456,17 @@
                   <div>
                     @switch (section.key) {
                       @case ('personal_details') {
-                        <button
-                          type="button"
-                          class="cvdetail__pull-btn"
-                          [disabled]="pullingProfile()"
-                          (click)="pullFromProfile()"
-                        >
-                          <lucide-icon
-                            class="cvdetail__pull-icon"
-                            [img]="icons.sparkles"
-                            [size]="13"
-                            aria-hidden="true"
-                          />
-                          {{
-                            pullingProfile()
-                              ? t()('common.loading')
-                              : t()('documents.cv_pull_from_profile')
-                          }}
-                        </button>
-                        <div class="cvdetail__grid">
-                          <input
-                            type="text"
-                            [ngModel]="$any(section).fullName"
-                            (ngModelChange)="$any(section).fullName = $event"
-                            [placeholder]="t()('documents.cv_field_full_name')"
-                          />
-                          <input
-                            type="text"
-                            [ngModel]="$any(section).title"
-                            (ngModelChange)="$any(section).title = $event"
-                            [placeholder]="t()('documents.cv_field_title')"
-                          />
-                          <input
-                            type="text"
-                            [ngModel]="$any(section).email"
-                            (ngModelChange)="$any(section).email = $event"
-                            [placeholder]="t()('documents.cv_field_email')"
-                          />
-                          <input
-                            type="text"
-                            [ngModel]="$any(section).phone"
-                            (ngModelChange)="$any(section).phone = $event"
-                            [placeholder]="t()('documents.cv_field_phone')"
-                          />
-                          <input
-                            type="text"
-                            [ngModel]="$any(section).address"
-                            (ngModelChange)="$any(section).address = $event"
-                            [placeholder]="t()('documents.cv_field_address')"
-                          />
-                          <input
-                            type="text"
-                            [ngModel]="$any(section).website"
-                            (ngModelChange)="$any(section).website = $event"
-                            [placeholder]="t()('documents.cv_field_website')"
-                          />
-                          <input
-                            type="text"
-                            class="cvdetail__grid-full"
-                            [ngModel]="$any(section).linkedin"
-                            (ngModelChange)="$any(section).linkedin = $event"
-                            [placeholder]="t()('documents.cv_field_linkedin')"
-                          />
-                          @if (includeBirthdate()) {
-                            <input
-                              type="text"
-                              [ngModel]="$any(section).birthDate"
-                              (ngModelChange)="$any(section).birthDate = $event"
-                              [placeholder]="t()('documents.cv_field_birthdate')"
-                            />
-                          }
-                          @if (includeMaritalStatus()) {
-                            <input
-                              type="text"
-                              [ngModel]="$any(section).maritalStatus"
-                              (ngModelChange)="$any(section).maritalStatus = $event"
-                              [placeholder]="t()('documents.cv_field_marital')"
-                            />
-                          }
-                        </div>
+                        <app-cv-personal-details-editor
+                          [section]="$any(section)"
+                          [includeBirthdate]="includeBirthdate()"
+                          [includeMaritalStatus]="includeMaritalStatus()"
+                          [atsNoteKeys]="atsNoteKeys()"
+                          [pulling]="pullingProfile()"
+                          (sectionChange)="replaceSection($event)"
+                          (includeBirthdateChange)="includeBirthdate.set($event)"
+                          (includeMaritalStatusChange)="includeMaritalStatus.set($event)"
+                          (pullProfile)="pullFromProfile()"
+                        />
                       }
                       @case ('summary') {
                         <app-cv-summary-editor

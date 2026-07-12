@@ -1,0 +1,99 @@
+<button
+  type="button"
+  class="cvdetail__pull-btn"
+  [disabled]="pulling()"
+  (click)="pullProfile.emit()"
+>
+  <lucide-icon class="cvdetail__pull-icon" [img]="icons.sparkles" [size]="13" aria-hidden="true" />
+  {{ pulling() ? t()('common.loading') : t()('documents.cv_pull_from_profile') }}
+</button>
+<div class="cvdetail__grid">
+  <input
+    type="text"
+    [ngModel]="section().fullName"
+    (ngModelChange)="updateField('fullName', $event)"
+    [placeholder]="t()('documents.cv_field_full_name')"
+  />
+  <input
+    type="text"
+    [ngModel]="section().title"
+    (ngModelChange)="updateField('title', $event)"
+    [placeholder]="t()('documents.cv_field_title')"
+  />
+  <input
+    type="text"
+    [ngModel]="section().email"
+    (ngModelChange)="updateField('email', $event)"
+    [placeholder]="t()('documents.cv_field_email')"
+  />
+  <input
+    type="text"
+    [ngModel]="section().phone"
+    (ngModelChange)="updateField('phone', $event)"
+    [placeholder]="t()('documents.cv_field_phone')"
+  />
+  <input
+    type="text"
+    [ngModel]="section().address"
+    (ngModelChange)="updateField('address', $event)"
+    [placeholder]="t()('documents.cv_field_address')"
+  />
+  <input
+    type="text"
+    [ngModel]="section().website"
+    (ngModelChange)="updateField('website', $event)"
+    [placeholder]="t()('documents.cv_field_website')"
+  />
+  <input
+    type="text"
+    class="cvdetail__grid-full"
+    [ngModel]="section().linkedin"
+    (ngModelChange)="updateField('linkedin', $event)"
+    [placeholder]="t()('documents.cv_field_linkedin')"
+  />
+  @if (includeBirthdate()) {
+    <input
+      type="text"
+      [ngModel]="section().birthDate"
+      (ngModelChange)="updateField('birthDate', $event)"
+      [placeholder]="t()('documents.cv_field_birthdate')"
+    />
+  }
+  @if (includeMaritalStatus()) {
+    <input
+      type="text"
+      [ngModel]="section().maritalStatus"
+      (ngModelChange)="updateField('maritalStatus', $event)"
+      [placeholder]="t()('documents.cv_field_marital')"
+    />
+  }
+</div>
+
+<div class="docedit-chip-row">
+  <button
+    type="button"
+    class="docedit-chip"
+    [class.docedit-chip--active]="includeBirthdate()"
+    (click)="toggleBirthdate()"
+  >
+    <span class="docedit-chip__dot"></span>
+    {{ t()('documents.cv_toggle_birthdate') }}
+  </button>
+  <button
+    type="button"
+    class="docedit-chip"
+    [class.docedit-chip--active]="includeMaritalStatus()"
+    (click)="toggleMaritalStatus()"
+  >
+    <span class="docedit-chip__dot"></span>
+    {{ t()('documents.cv_toggle_marital') }}
+  </button>
+</div>
+
+@if (atsNoteKeys().length) {
+  <div class="docedit-note">
+    @for (key of atsNoteKeys(); track key) {
+      <p>{{ t()(key) }}</p>
+    }
+  </div>
+}

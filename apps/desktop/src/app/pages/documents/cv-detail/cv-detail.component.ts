@@ -59,6 +59,7 @@ import { CvLanguagesEditorComponent } from './section-editors/cv-languages-edito
 import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.component';
 import { CvEducationEditorComponent } from './section-editors/cv-education-editor.component';
 import { CvExperienceEditorComponent } from './section-editors/cv-experience-editor.component';
+import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
 import {
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
@@ -98,6 +99,7 @@ export function mergePersonalField<T extends string | undefined>(
     CvSkillsEditorComponent,
     CvEducationEditorComponent,
     CvExperienceEditorComponent,
+    CvPersonalDetailsEditorComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',

@@ -1,0 +1,64 @@
+// Self-contained field styling — Angular's emulated view encapsulation scopes
+// the parent's `.cvdetail` rules to its own template, so this editor (a
+// separate component) needs its own copy to render identically. Mirrors the
+// base field rules + pull-button/grid rules in ../cv-detail.component.scss.
+// The `.docedit-*` chip/note classes are NOT duplicated here — they're
+// emitted globally from apps/desktop/src/styles.scss (see
+// ../../_editor-shell.scss) so they already apply unscoped.
+input:not([type='checkbox']) {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+}
+input:focus {
+  border-color: var(--accent);
+}
+
+.cvdetail__pull-btn {
+  align-self: flex-start;
+  margin-bottom: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.cvdetail__pull-btn:hover {
+  background: var(--surface-hover);
+}
+.cvdetail__pull-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.cvdetail__pull-icon {
+  color: var(--accent);
+  display: inline-flex;
+}
+
+.cvdetail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: var(--space-3);
+}
+.cvdetail__grid-full {
+  grid-column: 1 / -1;
+}
+.cvdetail__grid input {
+  height: 38px;
+  padding: 0 12px;
+}

@@ -24,12 +24,25 @@ import {
   PageSettings,
 } from '@applye/core';
 
-/** A semantic click target in the live CV preview: which section, and which
- * styling scope (body text vs. section title) the user selected. Consumed by
- * the contextual `CvLiveStylePanelComponent`. */
+/** A semantic click target in the live CV preview: which section, which
+ * styling scope (body text vs. section title), and — for a body click that
+ * landed on a specific leaf — which element the user selected. Consumed by
+ * the contextual `CvLiveStylePanelComponent`.
+ *
+ * `elementPath` is additive on top of section-level gating: it is the SAME
+ * transient draft-id string already passed to `CvPreviewComponent.leafDraft`
+ * for that leaf (e.g. `'summary'`, `'exp.1.role'`, `'exp.1.bullet.0'`,
+ * `'skills.0.values'`, `'lang.0.language'`) — one string, reused as both the
+ * inline-edit draft key and the `elementStyles` override key, so there is a
+ * single source of truth for "which leaf is this" with no separate mapping
+ * table to keep in sync. It is only ever set alongside `part: 'body'`; a
+ * section-title selection never carries one. Absence means the whole
+ * section body is the target (no single leaf singled out), matching the
+ * pre-existing (Phase D) behaviour. */
 export interface CvPreviewSelection {
   sectionKey: CvSectionKey;
   part: 'body' | 'title';
+  elementPath?: string;
 }
 
 /** Fallback order when a template has no `sectionsJson` (should not happen

@@ -49,6 +49,7 @@
       <input
         type="text"
         class="cvpreview__name cvpreview__leaf-editor"
+        [class.cvpreview__element-selected]="isElementSelected('pd.fullName')"
         [style.color]="effStyle('personal_details').colorHex"
         [value]="leafDraft('pd.fullName', section.fullName)"
         [placeholder]="t()('documents.cv_untitled')"
@@ -61,6 +62,7 @@
         <input
           type="text"
           class="cvpreview__title cvpreview__leaf-editor"
+          [class.cvpreview__element-selected]="isElementSelected('pd.title')"
           [value]="leafDraft('pd.title', section.title)"
           (input)="onLeafInput('pd.title', $any($event.target).value)"
           (blur)="commitPersonalField(section, 'title', section.title)"
@@ -92,11 +94,38 @@
         }
       </p>
     } @else {
-      <h2 class="cvpreview__name" [style.color]="effStyle('personal_details').colorHex">
+      <h2
+        class="cvpreview__name"
+        [style.color]="effStyle('personal_details').colorHex"
+        [class.cvpreview__selectable]="selectable(renderMode)"
+        [class.cvpreview__element-selected]="isElementSelected('pd.fullName')"
+        [attr.role]="selectable(renderMode) ? 'button' : null"
+        [attr.tabindex]="selectable(renderMode) ? 0 : null"
+        [attr.aria-label]="
+          selectable(renderMode) ? selectAriaLabel('personal_details', 'body') : null
+        "
+        (click)="selectLeaf('personal_details', 'pd.fullName', renderMode, $event)"
+        (keydown.enter)="selectLeaf('personal_details', 'pd.fullName', renderMode, $event)"
+        (keydown.space)="onSelectKey($event, 'personal_details', 'body', renderMode, 'pd.fullName')"
+      >
         {{ section.fullName || t()('documents.cv_untitled') }}
       </h2>
       @if (section.title) {
-        <p class="cvpreview__title">{{ section.title }}</p>
+        <p
+          class="cvpreview__title"
+          [class.cvpreview__selectable]="selectable(renderMode)"
+          [class.cvpreview__element-selected]="isElementSelected('pd.title')"
+          [attr.role]="selectable(renderMode) ? 'button' : null"
+          [attr.tabindex]="selectable(renderMode) ? 0 : null"
+          [attr.aria-label]="
+            selectable(renderMode) ? selectAriaLabel('personal_details', 'body') : null
+          "
+          (click)="selectLeaf('personal_details', 'pd.title', renderMode, $event)"
+          (keydown.enter)="selectLeaf('personal_details', 'pd.title', renderMode, $event)"
+          (keydown.space)="onSelectKey($event, 'personal_details', 'body', renderMode, 'pd.title')"
+        >
+          {{ section.title }}
+        </p>
       }
       <p class="cvpreview__contact">
         {{
@@ -134,6 +163,7 @@
           #summaryEl
           class="cvpreview__summary cvpreview__leaf-editor"
           [class.cvpreview__selected]="true"
+          [class.cvpreview__element-selected]="isElementSelected('summary')"
           [value]="leafDraft('summary', section.text)"
           (input)="onLeafInput('summary', $any($event.target).value)"
           (blur)="commitSummary(section, section.text)"
@@ -160,9 +190,9 @@
         [attr.tabindex]="selectable(renderMode) ? 0 : null"
         [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('summary', 'body') : null"
         [attr.data-cv-select]="'summary:body'"
-        (click)="selectPart('summary', 'body', renderMode, $event)"
-        (keydown.enter)="selectPart('summary', 'body', renderMode, $event)"
-        (keydown.space)="onSelectKey($event, 'summary', 'body', renderMode)"
+        (click)="selectPart('summary', 'body', renderMode, $event, 'summary')"
+        (keydown.enter)="selectPart('summary', 'body', renderMode, $event, 'summary')"
+        (keydown.space)="onSelectKey($event, 'summary', 'body', renderMode, 'summary')"
       >
         @for (run of runs(section.text); track $index) {
           @if (run.bold) {
@@ -220,6 +250,7 @@
             <input
               type="text"
               class="cvpreview__leaf-editor cvpreview__skill-label"
+              [class.cvpreview__element-selected]="isElementSelected('skills.' + i + '.label')"
               [value]="leafDraft('skills.' + i + '.label', group.label)"
               (input)="onLeafInput('skills.' + i + '.label', $any($event.target).value)"
               (blur)="commitSkillLabel(section, i, group.label)"
@@ -230,6 +261,7 @@
             <input
               type="text"
               class="cvpreview__leaf-editor cvpreview__skill-values"
+              [class.cvpreview__element-selected]="isElementSelected('skills.' + i + '.values')"
               [value]="leafDraft('skills.' + i + '.values', group.values.join(', '))"
               (input)="onLeafInput('skills.' + i + '.values', $any($event.target).value)"
               (blur)="commitSkillValues(section, i, group.values.join(', '))"
@@ -250,7 +282,34 @@
             (keydown.enter)="selectPart('skills', 'body', renderMode, $event)"
             (keydown.space)="onSelectKey($event, 'skills', 'body', renderMode)"
           >
-            <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
+            <strong
+              class="cvpreview__skill-label-view"
+              [class.cvpreview__selectable]="selectable(renderMode)"
+              [class.cvpreview__element-selected]="isElementSelected('skills.' + i + '.label')"
+              [attr.role]="selectable(renderMode) ? 'button' : null"
+              [attr.tabindex]="selectable(renderMode) ? 0 : null"
+              [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('skills', 'body') : null"
+              (click)="selectLeaf('skills', 'skills.' + i + '.label', renderMode, $event)"
+              (keydown.enter)="selectLeaf('skills', 'skills.' + i + '.label', renderMode, $event)"
+              (keydown.space)="
+                onSelectKey($event, 'skills', 'body', renderMode, 'skills.' + i + '.label')
+              "
+              >{{ group.label }}:</strong
+            >
+            <span
+              class="cvpreview__skill-values-view"
+              [class.cvpreview__selectable]="selectable(renderMode)"
+              [class.cvpreview__element-selected]="isElementSelected('skills.' + i + '.values')"
+              [attr.role]="selectable(renderMode) ? 'button' : null"
+              [attr.tabindex]="selectable(renderMode) ? 0 : null"
+              [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('skills', 'body') : null"
+              (click)="selectLeaf('skills', 'skills.' + i + '.values', renderMode, $event)"
+              (keydown.enter)="selectLeaf('skills', 'skills.' + i + '.values', renderMode, $event)"
+              (keydown.space)="
+                onSelectKey($event, 'skills', 'body', renderMode, 'skills.' + i + '.values')
+              "
+              >{{ group.values.join(', ') }}</span
+            >
           </p>
         }
       }
@@ -290,6 +349,7 @@
           <input
             type="text"
             class="cvpreview__entry-company cvpreview__leaf-editor"
+            [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.company')"
             [value]="leafDraft('exp.' + i + '.company', entry.company)"
             (input)="onLeafInput('exp.' + i + '.company', $any($event.target).value)"
             (blur)="commitExperienceField(section, i, 'company', entry.company)"
@@ -301,6 +361,7 @@
             <input
               type="text"
               class="cvpreview__entry-industry cvpreview__leaf-editor"
+              [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.industry')"
               [value]="leafDraft('exp.' + i + '.industry', entry.industry || '')"
               (input)="onLeafInput('exp.' + i + '.industry', $any($event.target).value)"
               (blur)="commitExperienceField(section, i, 'industry', entry.industry || '')"
@@ -312,6 +373,7 @@
         <input
           type="text"
           class="cvpreview__entry-meta cvpreview__leaf-editor"
+          [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.location')"
           [value]="leafDraft('exp.' + i + '.location', entry.location || '')"
           (input)="onLeafInput('exp.' + i + '.location', $any($event.target).value)"
           (blur)="commitExperienceField(section, i, 'location', entry.location || '')"
@@ -323,6 +385,7 @@
         <input
           type="text"
           class="cvpreview__entry-role cvpreview__leaf-editor"
+          [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.role')"
           [value]="leafDraft('exp.' + i + '.role', entry.role)"
           (input)="onLeafInput('exp.' + i + '.role', $any($event.target).value)"
           (blur)="commitExperienceField(section, i, 'role', entry.role)"
@@ -355,15 +418,62 @@
     } @else {
       <div class="cvpreview__entry-head">
         <span class="cvpreview__entry-lead">
-          <span class="cvpreview__entry-company">{{ entry.company }}</span>
+          <span
+            class="cvpreview__entry-company"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.company')"
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+            (click)="selectLeaf(key, 'exp.' + i + '.company', renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, 'exp.' + i + '.company', renderMode, $event)"
+            (keydown.space)="onSelectKey($event, key, 'body', renderMode, 'exp.' + i + '.company')"
+            >{{ entry.company }}</span
+          >
           @if (activeTheme().entry.showIndustry && entry.industry) {
-            <span class="cvpreview__entry-industry"> - {{ entry.industry }}</span>
+            <span
+              class="cvpreview__entry-industry"
+              [class.cvpreview__selectable]="selectable(renderMode)"
+              [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.industry')"
+              [attr.role]="selectable(renderMode) ? 'button' : null"
+              [attr.tabindex]="selectable(renderMode) ? 0 : null"
+              [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+              (click)="selectLeaf(key, 'exp.' + i + '.industry', renderMode, $event)"
+              (keydown.enter)="selectLeaf(key, 'exp.' + i + '.industry', renderMode, $event)"
+              (keydown.space)="
+                onSelectKey($event, key, 'body', renderMode, 'exp.' + i + '.industry')
+              "
+            >
+              - {{ entry.industry }}</span
+            >
           }
         </span>
-        <span class="cvpreview__entry-meta">{{ entry.location }}</span>
+        <span
+          class="cvpreview__entry-meta"
+          [class.cvpreview__selectable]="selectable(renderMode)"
+          [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.location')"
+          [attr.role]="selectable(renderMode) ? 'button' : null"
+          [attr.tabindex]="selectable(renderMode) ? 0 : null"
+          [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+          (click)="selectLeaf(key, 'exp.' + i + '.location', renderMode, $event)"
+          (keydown.enter)="selectLeaf(key, 'exp.' + i + '.location', renderMode, $event)"
+          (keydown.space)="onSelectKey($event, key, 'body', renderMode, 'exp.' + i + '.location')"
+          >{{ entry.location }}</span
+        >
       </div>
       <div class="cvpreview__entry-head cvpreview__entry-head--rule">
-        <span class="cvpreview__entry-role">{{ entry.role }}</span>
+        <span
+          class="cvpreview__entry-role"
+          [class.cvpreview__selectable]="selectable(renderMode)"
+          [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.role')"
+          [attr.role]="selectable(renderMode) ? 'button' : null"
+          [attr.tabindex]="selectable(renderMode) ? 0 : null"
+          [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+          (click)="selectLeaf(key, 'exp.' + i + '.role', renderMode, $event)"
+          (keydown.enter)="selectLeaf(key, 'exp.' + i + '.role', renderMode, $event)"
+          (keydown.space)="onSelectKey($event, key, 'body', renderMode, 'exp.' + i + '.role')"
+          >{{ entry.role }}</span
+        >
         <span class="cvpreview__entry-dates">
           {{ entry.startDate }} –
           {{ entry.endDate || t()('documents.cv_present') }}
@@ -390,9 +500,9 @@
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
     [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
     [attr.data-cv-select]="key + ':body'"
-    (click)="selectPart(key, 'body', renderMode, $event)"
-    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
-    (keydown.space)="onSelectKey($event, key, 'body', renderMode)"
+    (click)="selectPart(key, 'body', renderMode, $event, 'exp.' + i + '.bullet.' + b)"
+    (keydown.enter)="selectPart(key, 'body', renderMode, $event, 'exp.' + i + '.bullet.' + b)"
+    (keydown.space)="onSelectKey($event, key, 'body', renderMode, 'exp.' + i + '.bullet.' + b)"
     [ngStyle]="bodyCss(key)"
   >
     @if (isSelected(key, 'body') && selectable(renderMode)) {
@@ -401,6 +511,7 @@
           <textarea
             #bulletEl
             class="cvpreview__leaf-editor cvpreview__bullet-editor"
+            [class.cvpreview__element-selected]="isElementSelected('exp.' + i + '.bullet.' + b)"
             [value]="leafDraft('exp.' + i + '.bullet.' + b, bullet)"
             (input)="onLeafInput('exp.' + i + '.bullet.' + b, $any($event.target).value)"
             (blur)="commitExperienceBullet(section, i, b, bullet)"
@@ -539,6 +650,7 @@
           <input
             type="text"
             class="cvpreview__leaf-editor cvpreview__language-input"
+            [class.cvpreview__element-selected]="isElementSelected('lang.' + i + '.language')"
             [value]="leafDraft('lang.' + i + '.language', item.language)"
             (input)="onLeafInput('lang.' + i + '.language', $any($event.target).value)"
             (blur)="commitLanguageValue(section, i, item.language)"
@@ -560,7 +672,25 @@
         (keydown.enter)="selectPart('languages', 'body', renderMode, $event)"
         (keydown.space)="onSelectKey($event, 'languages', 'body', renderMode)"
       >
-        {{ section.items.map((i) => i.language).join(' | ') }}
+        @for (item of section.items; track $index; let i = $index) {
+          @if (i > 0) {
+            <span class="cvpreview__languages-sep"> | </span>
+          }
+          <span
+            class="cvpreview__language-value"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="isElementSelected('lang.' + i + '.language')"
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('languages', 'body') : null"
+            (click)="selectLeaf('languages', 'lang.' + i + '.language', renderMode, $event)"
+            (keydown.enter)="selectLeaf('languages', 'lang.' + i + '.language', renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, 'languages', 'body', renderMode, 'lang.' + i + '.language')
+            "
+            >{{ item.language }}</span
+          >
+        }
       </p>
     }
   </div>

@@ -110,6 +110,30 @@ export class CvPreviewComponent {
     return !!s && s.sectionKey === sectionKey && s.part === part;
   }
 
+  /** Element-scope highlight: true when `path` is the specific leaf the
+   * current selection targets (`elementPath`) — distinct from `isSelected`,
+   * which only tracks section+part. `path` is the same transient draft-id
+   * string passed to `leafDraft` for that leaf (see `CvPreviewSelection`),
+   * so callers never need a separate lookup table to know "is this the
+   * element the live-style panel is scoped to". */
+  isElementSelected(path: string): boolean {
+    return this.selection()?.elementPath === path;
+  }
+
+  /** True only when `next` differs from the current selection in
+   * `sectionKey`, `part`, or `elementPath` — the shared guard behind both
+   * `selectPart` and `selectLeaf` (see their docs for why re-emitting an
+   * identical selection must be avoided). */
+  private isNewSelection(next: CvPreviewSelection): boolean {
+    const s = this.selection();
+    return (
+      !s ||
+      s.sectionKey !== next.sectionKey ||
+      s.part !== next.part ||
+      s.elementPath !== next.elementPath
+    );
+  }
+
   /** Emit a semantic selection for a clicked target — a no-op unless this is a
    * selectable page render, so the inert measurement pass can never emit.
    * Also a no-op (after stopping propagation) when the requested region is
@@ -118,17 +142,35 @@ export class CvPreviewComponent {
    * re-running the focus effect and yanking focus back to the section's
    * first leaf editor — stealing it from whatever leaf inside the same
    * section the user actually clicked (e.g. a bullet nested under an
-   * already-selected experience entry). */
+   * already-selected experience entry).
+   *
+   * `elementPath` is optional and additive (Phase D.2): passing it targets a
+   * single body leaf as the style-scope while still gating content editors
+   * at the section+part level (`isSelected` ignores it). Only ever pass it
+   * alongside `part: 'body'` — a title selection has no element scope. */
   selectPart(
     sectionKey: CvSectionKey,
     part: 'body' | 'title',
     renderMode: unknown,
     event?: Event,
+    elementPath?: string,
   ): void {
     if (!this.selectable(renderMode)) return;
     event?.stopPropagation();
-    if (this.isSelected(sectionKey, part)) return;
-    this.selectionChange.emit({ sectionKey, part });
+    const next: CvPreviewSelection =
+      elementPath !== undefined ? { sectionKey, part, elementPath } : { sectionKey, part };
+    if (!this.isNewSelection(next)) return;
+    this.selectionChange.emit(next);
+  }
+
+  /** Selects one specific body leaf — a thin wrapper over `selectPart` that
+   * always targets `part: 'body'` and stops the click from also being
+   * handled by the section-wrapper host's own `selectPart` binding (leaf
+   * hosts are nested inside the section body host in the template). `path`
+   * must be the exact same string passed to `leafDraft` for this leaf — see
+   * `CvPreviewSelection.elementPath`. */
+  selectLeaf(sectionKey: CvSectionKey, path: string, renderMode: unknown, event?: Event): void {
+    this.selectPart(sectionKey, 'body', renderMode, event, path);
   }
 
   /** Keyboard activation of a selectable host. Space would otherwise scroll the
@@ -139,10 +181,11 @@ export class CvPreviewComponent {
     sectionKey: CvSectionKey,
     part: 'body' | 'title',
     renderMode: unknown,
+    elementPath?: string,
   ): void {
     if (!this.selectable(renderMode)) return;
     event.preventDefault();
-    this.selectPart(sectionKey, part, renderMode, event);
+    this.selectPart(sectionKey, part, renderMode, event, elementPath);
   }
 
   /** Accessible name for a selectable body/title host — "<section> — <scope>"
@@ -161,6 +204,22 @@ export class CvPreviewComponent {
    * effect below). Keyed as `"<sectionKey>:<part>"` to match `data-cv-select`. */
   private returnFocusTo: string | null = null;
 
+  /** `"<sectionKey>:<part>"` (or `null`) — deliberately ignores `elementPath`.
+   * A `computed()` memoizes on its OUTPUT value, so changing only
+   * `elementPath` (Phase D.2: clicking a different leaf inside the same
+   * already-selected section/part to move the style-scope target) produces
+   * the same string and does not re-notify the focus effect below. Without
+   * this the focus-trap fix (see the effect's doc) would regress: an
+   * elementPath-only change would still swap the `selection` input's object
+   * reference, re-running the effect and yanking focus to the section's
+   * first leaf editor mid-click — exactly the bug that fix exists to
+   * prevent, just triggered by an element change instead of a redundant
+   * whole-selection re-emit. */
+  private readonly focusKey = computed<string | null>(() => {
+    const s = this.selection();
+    return s ? `${s.sectionKey}:${s.part}` : null;
+  });
+
   /**
    * Focus management for the inline editors, in one place:
    * - selecting a region moves focus INTO its primary editor (restores the
@@ -168,12 +227,13 @@ export class CvPreviewComponent {
    * - finishing a single-line edit with Enter (via `finishLeafEdit`) drops the
    *   selection and returns focus to the now-restored selectable host.
    * Both run in a microtask so the DOM has rendered the new state first.
-   */
+   * Keyed off `focusKey()` (section+part), not the raw `selection()` object,
+   * so an elementPath-only change never re-triggers this. */
   constructor() {
     effect(() => {
-      const sel = this.selection();
+      const key = this.focusKey();
       if (!this.interactive()) return;
-      if (sel) {
+      if (key) {
         queueMicrotask(() =>
           this.el.nativeElement
             .querySelector<HTMLElement>('.page-card .cvpreview__leaf-editor')

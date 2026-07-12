@@ -38,6 +38,15 @@
   outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
   outline-offset: 2px;
 }
+// Element-scope highlight (Phase D.2): marks the ONE leaf a body selection's
+// `elementPath` targets — distinct from `.cvpreview__selected` (section+part
+// gating for which editors render at all). Dashed, not solid, so a selected
+// section with one pinned leaf reads as two different affordances rather
+// than a duplicate outline.
+.cvpreview__element-selected {
+  outline: 2px dashed var(--cv-accent, var(--accent, var(--border-strong)));
+  outline-offset: 2px;
+}
 // Space above each new section. Uses padding (not margin) on the section's
 // first element so the paginated sheet — which measures each atom's
 // offsetHeight in isolation and can't see sibling margins across its

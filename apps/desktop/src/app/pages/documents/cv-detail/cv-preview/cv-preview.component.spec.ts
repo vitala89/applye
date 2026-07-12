@@ -331,7 +331,10 @@ describe('CvPreviewComponent', () => {
     body.click();
     title.click();
     expect(emitted).toEqual([
-      { sectionKey: 'summary', part: 'body' },
+      // The summary body atom is exactly one leaf, so its click carries that
+      // leaf's elementPath directly (see `selectPart(..., 'summary')` in the
+      // template) — same string `leafDraft('summary', ...)` uses.
+      { sectionKey: 'summary', part: 'body', elementPath: 'summary' },
       { sectionKey: 'summary', part: 'title' },
     ]);
   });
@@ -389,19 +392,78 @@ describe('CvPreviewComponent', () => {
       return fixture.nativeElement as HTMLElement;
     }
 
-    it('clicking a bullet host inside the already-selected experience body does not re-emit selection', () => {
-      // Regression: the bullet host shares the same sectionKey/part
-      // ('experience'/'body') as the entry head host that is already
-      // selected. Clicking it used to re-emit an identical-but-new
-      // selection object, which re-ran the focus effect and yanked focus
-      // back to the first leaf editor (company) — the click-to-focus-the-
-      // bullet never landed.
+    it('clicking a bullet host inside the already-selected experience body DOES emit — it now pins a specific elementPath', () => {
+      // Phase D.2 supersedes the old blanket "same section/part never
+      // re-emits" rule with an element-aware one: the current selection has
+      // no elementPath (whole-section state), and the bullet host carries
+      // its own leaf path (`exp.0.bullet.0`) — a genuinely more specific
+      // target, so this MUST emit to move the style-scope onto it. Re-
+      // emitting no longer risks yanking focus away: the focus effect is
+      // keyed on section+part only (see `focusKey`), so an elementPath-only
+      // change never re-triggers it.
       const root = setupExperience();
       const emitted: (CvPreviewSelection | null)[] = [];
       component.selectionChange.subscribe((v) => emitted.push(v));
       const bulletHost = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
       bulletHost.click();
+      expect(emitted).toEqual([
+        { sectionKey: 'experience', part: 'body', elementPath: 'exp.0.bullet.0' },
+      ]);
+    });
+
+    it('clicking the same already-pinned leaf again does not re-emit (guard still holds, element-aware)', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: ['One'] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const bulletHost = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
+      bulletHost.click();
       expect(emitted).toEqual([]);
+    });
+
+    it('an elementPath-only change never re-triggers the focus-into-editor effect', async () => {
+      // Guards the fix in `focusKey`: without it, pinning a new leaf inside
+      // an already-selected section would swap the `selection` input's
+      // object reference and re-run the autofocus effect, stealing focus
+      // from whatever the user just clicked into (here, the bullet
+      // textarea) back to the section's first editor (company).
+      const root = setupExperience();
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.company',
+      });
+      fixture.detectChanges();
+      await Promise.resolve();
+      const bulletTextarea = root.querySelector(
+        '.page-card textarea.cvpreview__bullet-editor',
+      ) as HTMLTextAreaElement;
+      bulletTextarea.focus();
+      expect(document.activeElement).toBe(bulletTextarea);
+      // Simulate the click-driven elementPath change the bullet host's own
+      // handler would produce.
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+      await Promise.resolve();
+      expect(document.activeElement).toBe(bulletTextarea);
     });
 
     it('clicking a different section/part still emits a new selection', () => {
@@ -450,7 +512,9 @@ describe('CvPreviewComponent', () => {
       component.selectionChange.subscribe((v) => emitted.push(v));
       const ev = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
       body.dispatchEvent(ev);
-      expect(emitted).toEqual([{ sectionKey: 'summary', part: 'body' }]);
+      // The summary body atom is exactly one leaf, so Space (like click)
+      // carries that leaf's elementPath — see `onSelectKey(..., 'summary')`.
+      expect(emitted).toEqual([{ sectionKey: 'summary', part: 'body', elementPath: 'summary' }]);
       expect(ev.defaultPrevented).toBe(true); // Space must not scroll the page
     });
 
@@ -1115,11 +1179,17 @@ describe('CvPreviewComponent', () => {
 
     it('renders each language value as an individual leaf, separated by non-editable separators', () => {
       const root = setup();
+      const card = root.querySelector('.page-card') as HTMLElement;
       const inputs = Array.from(
-        root.querySelectorAll('input.cvpreview__language-input'),
+        card.querySelectorAll('input.cvpreview__language-input'),
       ) as HTMLInputElement[];
       expect(inputs.map((i) => i.value)).toEqual(['English', 'German']);
-      const seps = root.querySelectorAll('.cvpreview__languages-sep');
+      // Scoped to the visible page-card (like its sibling separator
+      // assertions above): the hidden measurement mirror renders the same
+      // resting markup — including, since Phase D.2 made each language value
+      // its own clickable leaf, its own `.cvpreview__languages-sep` — and an
+      // unscoped query would double-count across both passes.
+      const seps = card.querySelectorAll('.cvpreview__languages-sep');
       expect(seps.length).toBe(1);
       seps.forEach((s) => expect(s.tagName).not.toBe('INPUT'));
     });
@@ -1166,6 +1236,272 @@ describe('CvPreviewComponent', () => {
         '.paginated-sheet__measure input.cvpreview__language-input',
       );
       expect(measured.length).toBe(0);
+    });
+  });
+
+  describe('element-level selection identity (Phase D.2)', () => {
+    it('clicking a section title never carries an elementPath', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello' },
+      ]);
+      fixture.detectChanges();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const title = (fixture.nativeElement as HTMLElement).querySelector(
+        '.page-card .cvpreview__section-title',
+      ) as HTMLElement;
+      title.click();
+      expect(emitted).toEqual([{ sectionKey: 'summary', part: 'title' }]);
+      expect(emitted[0] && 'elementPath' in emitted[0]).toBe(false);
+    });
+
+    it('the inert measurement pass never emits, even when a leaf-level span is clicked', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const measuredRole = (fixture.nativeElement as HTMLElement).querySelector(
+        '.paginated-sheet__measure .cvpreview__entry-role',
+      ) as HTMLElement;
+      expect(measuredRole).toBeTruthy();
+      measuredRole.click();
+      expect(emitted).toEqual([]);
+    });
+
+    // Representative leaves (per the task's example set): the string a leaf's
+    // click emits as `elementPath` must be the exact same string `leafDraft`
+    // uses to key that leaf's draft — one shared identity, asserted
+    // end-to-end (click → emitted path → set as selection → type into the
+    // now-mounted editor → read back via `leafDraft` using that same path).
+
+    it('summary — the emitted elementPath is the same key leafDraft uses', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const body = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+      body.click();
+      expect(emitted).toEqual([{ sectionKey: 'summary', part: 'body', elementPath: 'summary' }]);
+
+      fixture.componentRef.setInput('selection', emitted[0]);
+      fixture.detectChanges();
+      const textarea = root.querySelector(
+        '.page-card textarea.cvpreview__summary',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Edited';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(component.leafDraft('summary', 'unused-resting-fallback')).toBe('Edited');
+    });
+
+    it('exp.1.role — the emitted elementPath is the same key leafDraft uses', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [
+            { company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] },
+            { company: 'Globex', role: 'Lead', startDate: '2022', bullets: [] },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const entries = root.querySelectorAll('.page-card .cvpreview__entry');
+      const secondRole = entries[1].querySelector('.cvpreview__entry-role') as HTMLElement;
+      secondRole.click();
+      expect(emitted).toEqual([
+        { sectionKey: 'experience', part: 'body', elementPath: 'exp.1.role' },
+      ]);
+
+      fixture.componentRef.setInput('selection', emitted[0]);
+      fixture.detectChanges();
+      const roleInputs = root.querySelectorAll(
+        'input.cvpreview__entry-role',
+      ) as NodeListOf<HTMLInputElement>;
+      roleInputs[1].value = 'Staff Engineer';
+      roleInputs[1].dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(component.leafDraft('exp.1.role', 'unused')).toBe('Staff Engineer');
+    });
+
+    it('exp.1.bullet.0 — the emitted elementPath is the same key leafDraft uses', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [
+            { company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] },
+            { company: 'Globex', role: 'Lead', startDate: '2022', bullets: ['Shipped X'] },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      // Entry 0 has no bullets, so exactly one bullet host exists — entry 1's.
+      const bulletHost = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
+      bulletHost.click();
+      expect(emitted).toEqual([
+        { sectionKey: 'experience', part: 'body', elementPath: 'exp.1.bullet.0' },
+      ]);
+
+      fixture.componentRef.setInput('selection', emitted[0]);
+      fixture.detectChanges();
+      const textarea = root.querySelector(
+        'textarea.cvpreview__bullet-editor',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Shipped X and Y';
+      textarea.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(component.leafDraft('exp.1.bullet.0', 'unused')).toBe('Shipped X and Y');
+    });
+
+    it('skills.0.values — the emitted elementPath is the same key leafDraft uses', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'skills',
+          order: 0,
+          visible: true,
+          groups: [{ label: 'Languages', values: ['TypeScript', 'Rust'] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const valuesSpan = root.querySelector(
+        '.page-card .cvpreview__skill-values-view',
+      ) as HTMLElement;
+      valuesSpan.click();
+      expect(emitted).toEqual([
+        { sectionKey: 'skills', part: 'body', elementPath: 'skills.0.values' },
+      ]);
+
+      fixture.componentRef.setInput('selection', emitted[0]);
+      fixture.detectChanges();
+      const valuesInput = root.querySelector('input.cvpreview__skill-values') as HTMLInputElement;
+      valuesInput.value = 'TypeScript, Go';
+      valuesInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(component.leafDraft('skills.0.values', 'unused')).toBe('TypeScript, Go');
+    });
+
+    it('lang.0.language — the emitted elementPath is the same key leafDraft uses', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'languages',
+          order: 0,
+          visible: true,
+          items: [
+            { language: 'English', level: 'C2' },
+            { language: 'German', level: 'B1' },
+          ],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const values = root.querySelectorAll('.page-card .cvpreview__language-value');
+      (values[0] as HTMLElement).click();
+      expect(emitted).toEqual([
+        { sectionKey: 'languages', part: 'body', elementPath: 'lang.0.language' },
+      ]);
+
+      fixture.componentRef.setInput('selection', emitted[0]);
+      fixture.detectChanges();
+      const inputs = root.querySelectorAll(
+        'input.cvpreview__language-input',
+      ) as NodeListOf<HTMLInputElement>;
+      inputs[0].value = 'Anglais';
+      inputs[0].dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(component.leafDraft('lang.0.language', 'unused')).toBe('Anglais');
+    });
+
+    it('isElementSelected highlights only the pinned leaf — distinct from the section-level isSelected outline', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const roleInput = root.querySelector('input.cvpreview__entry-role') as HTMLElement;
+      const companyInput = root.querySelector('input.cvpreview__entry-company') as HTMLElement;
+      expect(roleInput.classList.contains('cvpreview__element-selected')).toBe(true);
+      expect(companyInput.classList.contains('cvpreview__element-selected')).toBe(false);
+      expect(component.isElementSelected('exp.0.role')).toBe(true);
+      expect(component.isElementSelected('exp.0.company')).toBe(false);
+      // isSelected ignores elementPath entirely — content-editor gating is
+      // unchanged by Phase D.2.
+      expect(component.isSelected('experience', 'body')).toBe(true);
+    });
+
+    it('selecting a different leaf in the same section emits (guard is element-aware, not just section-aware)', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      // Same sectionKey/part as current selection, different elementPath.
+      component.selectPart('experience', 'body', 'page', undefined, 'exp.0.company');
+      expect(emitted).toEqual([
+        { sectionKey: 'experience', part: 'body', elementPath: 'exp.0.company' },
+      ]);
+      // The parent would normally feed the emitted value back in as the new
+      // `selection` input — simulate that, then confirm re-selecting the
+      // exact same leaf is a no-op.
+      fixture.componentRef.setInput('selection', emitted[0]);
+      fixture.detectChanges();
+      component.selectPart('experience', 'body', 'page', undefined, 'exp.0.company');
+      expect(emitted).toEqual([
+        { sectionKey: 'experience', part: 'body', elementPath: 'exp.0.company' },
+      ]);
     });
   });
 });

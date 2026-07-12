@@ -775,8 +775,10 @@
   font-size: 0.85em;
   color: var(--text-tertiary);
 }
-.cvpreview__entry-head:last-of-type {
-  // Aurora draws a thin rule under the role/dates line; Classic width 0.
+.cvpreview__entry-head--rule {
+  // Aurora draws a thin rule under the experience role/dates line; Classic
+  // width 0. Scoped to the experience head only (not education) via the
+  // explicit --rule modifier class — see #expHeadTpl.
   padding-bottom: var(--space-1);
   border-bottom: var(--cv-entry-rule-width, 0pt) solid var(--cv-entry-rule-color, transparent);
 }

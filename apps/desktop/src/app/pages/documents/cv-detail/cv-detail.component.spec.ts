@@ -411,4 +411,12 @@ describe('CvDetailComponent per-section style', () => {
     expect(viewport.style.getPropertyValue('--cv-role-style')).toBe('italic');
     expect(fixture.nativeElement.textContent).toContain('SaaS');
   });
+
+  it('explicit user titleBorder wins over the Aurora theme accent rule', () => {
+    component.selectTheme(2);
+    component.style.set({ ...component.style(), titleBorder: 'dotted' });
+    const css = component.titleBorderCss('summary');
+    expect(css).toContain('dotted');
+    expect(css).not.toContain('--cv-accent');
+  });
 });

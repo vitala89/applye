@@ -159,6 +159,9 @@
             <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
               <div>
                 <div class="docedit-style-section">
+                  <span class="docedit-style-section__header">{{
+                    t()('documents.cv_theme_label')
+                  }}</span>
                   <div class="docedit-style-grid">
                     <label class="docedit-field">
                       <span class="docedit-field__label">{{
@@ -1111,7 +1114,7 @@
                 </span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
               </div>
-              <div class="cvpreview__entry-head">
+              <div class="cvpreview__entry-head cvpreview__entry-head--rule">
                 <span class="cvpreview__entry-role">{{ entry.role }}</span>
                 <span class="cvpreview__entry-dates">
                   {{ entry.startDate }} –

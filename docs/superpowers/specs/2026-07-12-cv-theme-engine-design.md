@@ -70,6 +70,11 @@ A theme is a JSON object of **typed/enumerated fields only** — no raw CSS/HTML
 ranges (sizes/weights), enum membership for every variant field. Anything failing → rejected. This
 is what makes an **uploaded or marketplace** theme safe: it cannot inject styles or execute code.
 
+**Not yet wired into rendering**: `header.contactLayout` and `bullets.marker` are validated and
+seeded as part of the descriptor, but the renderer does not consume them yet — the contact line is
+pipe-joined (`buildContactLine`) and bullets render as discs for both current themes. They are
+reserved fields for future themes.
+
 ## Renderer — one data-driven engine
 
 Refactor the CV preview so it no longer hardcodes one look:

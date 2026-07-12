@@ -55,8 +55,8 @@ import {
  * sheet, its 8 atom templates, and the pure styling resolvers they depend on.
  * Behavior-preserving extraction from `CvDetailComponent` — no visual or
  * pagination change. `sections`/`style`/`themeId`/photo state stay owned by
- * the parent (source of truth); this component only renders them and
- * reports overflow back up via `blockOverflow`.
+ * the parent (source of truth); this component only renders them and shows
+ * its own overflow warning.
  */
 @Component({
   selector: 'app-cv-preview',
@@ -83,10 +83,6 @@ export class CvPreviewComponent {
    * contact line's birthdate/marital-status inclusion would silently break. */
   readonly includeBirthdate = input.required<boolean>();
   readonly includeMaritalStatus = input.required<boolean>();
-
-  /** Mirrors `<lib-paginated-sheet>`'s `(blockOverflow)` output up to the
-   * parent, which owns the signal driving the export/editor-side warning. */
-  readonly blockOverflow = output<boolean>();
 
   /** When true, visible page-card atoms expose click-to-select affordances for
    * the contextual live-style panel. Measurement atoms are never interactive
@@ -468,13 +464,12 @@ export class CvPreviewComponent {
   });
 
   /** True when any single atom is taller than one usable page — set from
-   * `<lib-paginated-sheet>`'s `(blockOverflow)` output; also forwarded to the
-   * parent via the `blockOverflow` output. */
+   * `<lib-paginated-sheet>`'s `(blockOverflow)` output. Drives this component's
+   * own overflow warning; the parent no longer mirrors it. */
   protected readonly overflow = signal(false);
 
   protected onBlockOverflow(value: boolean): void {
     this.overflow.set(value);
-    this.blockOverflow.emit(value);
   }
 
   // Atom templates for the paginated sheet — declared in the HTML (`#headerTpl` etc).

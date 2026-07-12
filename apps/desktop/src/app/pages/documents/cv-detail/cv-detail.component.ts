@@ -7,7 +7,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -29,10 +28,6 @@ import {
   Save,
   Check,
   Info,
-  Sparkles,
-  Plus,
-  X,
-  Trash2,
 } from 'lucide-angular';
 import type {
   CvContent,
@@ -103,7 +98,6 @@ export function mergePersonalField<T extends string | undefined>(
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
-    NgTemplateOutlet,
     CvPhotoCropComponent,
     CvPreviewComponent,
     CvLiveStylePanelComponent,
@@ -140,10 +134,6 @@ export class CvDetailComponent {
     moveUp: ChevronUp,
     moveDown: ChevronDown,
     chevron: ChevronDown,
-    sparkles: Sparkles,
-    plus: Plus,
-    close: X,
-    trash: Trash2,
   };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
@@ -257,11 +247,6 @@ export class CvDetailComponent {
   setPageSize(size: PageSize): void {
     this.updatePage({ size, margin: this.currentMargin() });
   }
-
-  /** True when any single atom is taller than one usable page — mirrored up
-   * from `<app-cv-preview>`'s `(blockOverflow)` output (which itself tracks
-   * `<lib-paginated-sheet>`'s own `(blockOverflow)` output). */
-  readonly blockOverflow = signal(false);
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));

@@ -157,6 +157,10 @@ export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
   private ctxWithRenderMode(atom: SheetAtom, mode: SheetRenderMode): Record<string, unknown> {
     const base = (atom.ctx ?? {}) as Record<string, unknown>;
     if (Object.prototype.hasOwnProperty.call(base, SHEET_RENDER_MODE_KEY)) {
+      // Intentional fail-fast: a colliding `$sheetRenderMode` key is a contract
+      // violation, not a runtime condition to tolerate. Throwing here surfaces
+      // the offending atom immediately rather than letting a template silently
+      // mistake the measure pass for the page pass (or vice versa).
       throw new Error(
         `SheetAtom "${atom.id}" ctx must not supply the reserved "${SHEET_RENDER_MODE_KEY}" key.`,
       );

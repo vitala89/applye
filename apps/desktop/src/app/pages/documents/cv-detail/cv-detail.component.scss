@@ -247,54 +247,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.cvdetail__style-pop {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 8px 0 12px;
-  padding: 12px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-input);
-}
-// Body text / Section titles read as two clear blocks, side by side when
-// there's room, stacked on a narrow popover.
-.cvdetail__style-cols {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-start;
-}
-.cvdetail__style-col {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1 1 220px;
-  min-width: 200px;
-  padding: 10px 12px;
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-input);
-}
-.cvdetail__style-col-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-end;
-}
-.cvdetail__style-col .cvdetail__style-group {
-  margin: 0;
-}
-.cvdetail__style-reset {
-  height: 36px;
-  padding: 0 12px;
-  background: none;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-input);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
 .cvdetail__pull-btn {
   align-self: flex-start;
   margin-bottom: var(--space-3);

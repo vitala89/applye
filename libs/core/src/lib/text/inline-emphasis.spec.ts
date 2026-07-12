@@ -1,4 +1,4 @@
-import { parseInlineEmphasis } from './inline-emphasis';
+import { parseInlineEmphasis, toggleBoldWrap } from './inline-emphasis';
 
 describe('parseInlineEmphasis', () => {
   it('splits **bold** spans from plain text', () => {
@@ -36,5 +36,28 @@ describe('parseInlineEmphasis', () => {
   it('treats an unterminated or empty marker as literal plain text', () => {
     expect(parseInlineEmphasis('**bold')).toEqual([{ text: '**bold', bold: false }]);
     expect(parseInlineEmphasis('****')).toEqual([{ text: '****', bold: false }]);
+  });
+});
+
+describe('toggleBoldWrap', () => {
+  it('wraps a non-empty selection', () => {
+    // "Led a big refactor", select "big" (6..9)
+    const r = toggleBoldWrap('Led a big refactor', 6, 9);
+    expect(r.text).toBe('Led a **big** refactor');
+    expect(r.text.slice(r.selStart, r.selEnd)).toBe('big');
+  });
+
+  it('unwraps a selection that is already bold (toggle off)', () => {
+    // "Led a **big** refactor", select inner "big" (8..11)
+    const r = toggleBoldWrap('Led a **big** refactor', 8, 11);
+    expect(r.text).toBe('Led a big refactor');
+    expect(r.text.slice(r.selStart, r.selEnd)).toBe('big');
+  });
+
+  it('inserts empty markers at the caret when selection is empty', () => {
+    const r = toggleBoldWrap('abc', 1, 1);
+    expect(r.text).toBe('a****bc');
+    expect(r.selStart).toBe(3);
+    expect(r.selEnd).toBe(3);
   });
 });

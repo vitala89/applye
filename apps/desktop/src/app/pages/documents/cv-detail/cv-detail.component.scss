@@ -686,25 +686,6 @@
 .cvpreview__entry--sep {
   padding-top: var(--space-4);
 }
-// Theme picker's "Import theme…" placeholder — disabled until custom theme
-// import ships; styled like `.docedit-reset` but self-aligned in the grid
-// cell rather than the card-head trailing slot.
-.docedit-import-theme {
-  align-self: end;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--control-h, 36px);
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-input);
-  border: var(--border-width) solid var(--border-strong);
-  background: var(--surface-1);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  opacity: 0.45;
-  cursor: default;
-}
 .cvpreview__entry-role {
   font-weight: var(--weight-medium);
   font-style: var(--cv-role-style, normal);

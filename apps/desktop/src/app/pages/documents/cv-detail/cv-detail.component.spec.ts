@@ -108,6 +108,25 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.hasAnyCustomStyle()).toBe(true); // per-section still works
   });
 
+  it('is not "custom" on a pristine non-default theme, and resets to that theme', () => {
+    // Switch to Aurora: the four base tokens are reseeded, so a pristine
+    // Aurora doc is NOT custom — the badge shows the theme name, not "Custom".
+    component.selectTheme(2);
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    expect(component.activeTheme().name).toBe('Aurora');
+    expect(component.style().accentColorHex).toBe('#1B7464');
+
+    // Editing a token makes it custom.
+    component.updateStyle({ accentColorHex: '#000000' });
+    expect(component.hasAnyCustomStyle()).toBe(true);
+
+    // Reset returns to the SELECTED theme (Aurora), not the Classic default.
+    component.resetAllStyles();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    expect(component.style().accentColorHex).toBe('#1B7464');
+    expect(component.style().fontFamily).toBe('Lato');
+  });
+
   it('toggleStylePopover opens and closes the same key', () => {
     expect(component.openStyleKey()).toBeNull();
     component.toggleStylePopover('summary');

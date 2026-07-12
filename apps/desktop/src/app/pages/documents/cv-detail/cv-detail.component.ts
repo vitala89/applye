@@ -203,6 +203,15 @@ export class CvDetailComponent {
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
+  /** The clean baseline for the active theme: document defaults with the
+   * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
+   * "Reset styles" are measured against THIS, not the hard-coded Classic
+   * default — so a pristine Aurora doc reads as "Aurora", not "Custom", and
+   * Reset returns to the selected theme. */
+  readonly themeBaseStyle = computed<CvStyle>(() => ({
+    ...CV_STYLE_DEFAULT,
+    ...themeStyleSeed(this.activeTheme()),
+  }));
   /** Theme custom properties for the preview viewport; inherited by all page cards. */
   readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
   readonly styleNotes = signal<StyleNote[]>([]);
@@ -518,14 +527,15 @@ export class CvDetailComponent {
     return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
   }
 
-  /** True when the style differs from `CV_STYLE_DEFAULT` in any way — a
-   * document-wide field (body font/size/weight/colour, title style, title
+  /** True when the style differs from the active theme's baseline in any way —
+   * a document-wide field (body font/size/weight/colour, title style, title
    * line, page geometry) OR a per-section override. Drives the "Reset styles"
-   * button's enabled state and the "Customized" badge, so both react to global
-   * changes, not only per-section ones. */
+   * button's enabled state and the "Custom" badge, so both react to global
+   * changes, not only per-section ones. A pristine doc on a theme is NOT
+   * custom (badge shows the theme name instead). */
   readonly hasAnyCustomStyle = computed(() => {
     const s = this.style();
-    const d = CV_STYLE_DEFAULT;
+    const d = this.themeBaseStyle();
     const nonEmpty = (o: Record<string, unknown> | undefined): boolean =>
       !!o && Object.values(o).some((v) => v != null);
     const sectionCustom = Object.values(s.sectionStyles ?? {}).some(
@@ -546,9 +556,10 @@ export class CvDetailComponent {
     );
   });
 
-  /** Reset every section and the document-wide style to the default. */
+  /** Reset every section and the document-wide style back to the active
+   * theme's baseline (not the hard-coded Classic default). */
   resetAllStyles(): void {
-    this.style.set({ ...CV_STYLE_DEFAULT });
+    this.style.set({ ...this.themeBaseStyle() });
     this.openStyleKey.set(null);
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     void this.refreshStyleNotes();

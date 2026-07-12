@@ -131,11 +131,13 @@
                 (click)="toggleStyleOpen()"
               >
                 <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
-                @if (hasAnyCustomStyle()) {
-                  <span class="cvdetail__custom-badge">{{
-                    t()('documents.cv_style_customized')
-                  }}</span>
-                }
+                <span class="cvdetail__custom-badge">
+                  @if (hasAnyCustomStyle()) {
+                    {{ t()('documents.cv_style_customized') }}
+                  } @else {
+                    {{ activeTheme().name }}
+                  }
+                </span>
                 <lucide-icon
                   [img]="icons.chevron"
                   [size]="16"
@@ -175,14 +177,6 @@
                         <option [value]="2">{{ t()('documents.cv_theme_aurora') }}</option>
                       </select>
                     </label>
-                    <button
-                      type="button"
-                      class="docedit-import-theme"
-                      disabled
-                      [title]="t()('documents.cv_theme_import_soon')"
-                    >
-                      {{ t()('documents.cv_theme_import') }}
-                    </button>
                   </div>
                 </div>
 

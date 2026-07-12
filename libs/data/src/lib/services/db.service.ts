@@ -277,14 +277,9 @@ export class DbService {
     return tauriInvoke<string>('cv_photo_read_file', { path });
   }
 
-  /** Exports a library CV to `savePath` as DOCX, PDF, or LaTeX source (never
-   * compiled — no TeX toolchain bundled) — a library export, distinct from
-   * the job-specific tailoring export journal. */
-  async cvDocumentExport(
-    id: number,
-    format: 'docx' | 'pdf' | 'tex',
-    savePath: string,
-  ): Promise<string> {
+  /** Exports a library CV to `savePath` as DOCX or PDF — a library export,
+   * distinct from the job-specific tailoring export journal. */
+  async cvDocumentExport(id: number, format: 'docx' | 'pdf', savePath: string): Promise<string> {
     return tauriInvoke<string>('cv_document_export', { id, format, savePath });
   }
 

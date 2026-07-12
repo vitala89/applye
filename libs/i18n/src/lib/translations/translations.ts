@@ -594,9 +594,6 @@ const en: TranslationMap = {
     cv_export_action: 'Export',
     cv_export_docx_action: 'Export as DOCX',
     cv_export_pdf_action: 'Export as PDF',
-    cv_export_tex_action: 'Export as LaTeX source (.tex)',
-    cv_export_tex_note:
-      'LaTeX export is optimised for visual/print quality for a human reader, not ATS parsing. Applye never compiles it — open the .tex file in Overleaf or your local pdflatex.',
     cv_delete_action: 'Delete',
     cv_delete_confirm_title: 'Delete this CV?',
     cv_delete_confirm_msg: 'This removes it from your library. It cannot be undone.',
@@ -1582,9 +1579,6 @@ const de: TranslationMap = {
     cv_export_action: 'Exportieren',
     cv_export_docx_action: 'Als DOCX exportieren',
     cv_export_pdf_action: 'Als PDF exportieren',
-    cv_export_tex_action: 'Als LaTeX-Quelltext exportieren (.tex)',
-    cv_export_tex_note:
-      'Der LaTeX-Export ist auf visuelle Druckqualität für menschliche Leser optimiert, nicht auf ATS-Parsing. Applye kompiliert ihn nie — öffne die .tex-Datei in Overleaf oder deinem lokalen pdflatex.',
     cv_delete_action: 'Löschen',
     cv_delete_confirm_title: 'Diesen Lebenslauf löschen?',
     cv_delete_confirm_msg:

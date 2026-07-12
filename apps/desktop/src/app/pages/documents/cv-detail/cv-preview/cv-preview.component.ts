@@ -111,7 +111,14 @@ export class CvPreviewComponent {
   }
 
   /** Emit a semantic selection for a clicked target — a no-op unless this is a
-   * selectable page render, so the inert measurement pass can never emit. */
+   * selectable page render, so the inert measurement pass can never emit.
+   * Also a no-op (after stopping propagation) when the requested region is
+   * already the current selection: re-emitting an identical-but-new
+   * selection object would still change the `selection` signal's reference,
+   * re-running the focus effect and yanking focus back to the section's
+   * first leaf editor — stealing it from whatever leaf inside the same
+   * section the user actually clicked (e.g. a bullet nested under an
+   * already-selected experience entry). */
   selectPart(
     sectionKey: CvSectionKey,
     part: 'body' | 'title',
@@ -120,6 +127,7 @@ export class CvPreviewComponent {
   ): void {
     if (!this.selectable(renderMode)) return;
     event?.stopPropagation();
+    if (this.isSelected(sectionKey, part)) return;
     this.selectionChange.emit({ sectionKey, part });
   }
 

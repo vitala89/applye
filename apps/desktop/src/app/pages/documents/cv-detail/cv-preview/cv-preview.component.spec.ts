@@ -373,6 +373,62 @@ describe('CvPreviewComponent', () => {
     measured.forEach((el) => expect(el.classList.contains('cvpreview__selectable')).toBe(false));
   });
 
+  describe('focus trap fix — reselecting the same region (Change 1)', () => {
+    function setupExperience() {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: ['One'] }],
+        },
+      ]);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('clicking a bullet host inside the already-selected experience body does not re-emit selection', () => {
+      // Regression: the bullet host shares the same sectionKey/part
+      // ('experience'/'body') as the entry head host that is already
+      // selected. Clicking it used to re-emit an identical-but-new
+      // selection object, which re-ran the focus effect and yanked focus
+      // back to the first leaf editor (company) — the click-to-focus-the-
+      // bullet never landed.
+      const root = setupExperience();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const bulletHost = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
+      bulletHost.click();
+      expect(emitted).toEqual([]);
+    });
+
+    it('clicking a different section/part still emits a new selection', () => {
+      const root = setupExperience();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const title = root.querySelector('.page-card .cvpreview__section-title') as HTMLElement;
+      title.click();
+      expect(emitted).toEqual([{ sectionKey: 'experience', part: 'title' }]);
+    });
+
+    it('selectPart is a no-op (no emit) when the requested region is already selected', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello' },
+      ]);
+      fixture.detectChanges();
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      component.selectPart('summary', 'body', 'page');
+      expect(emitted).toEqual([]);
+      component.selectPart('summary', 'title', 'page');
+      expect(emitted).toEqual([{ sectionKey: 'summary', part: 'title' }]);
+    });
+  });
+
   describe('keyboard hardening', () => {
     function setupSummary() {
       fixture.componentRef.setInput('interactive', true);

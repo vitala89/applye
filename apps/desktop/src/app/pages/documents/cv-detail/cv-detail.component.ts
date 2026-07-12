@@ -54,6 +54,7 @@ import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
 import { CvPreviewComponent } from './cv-preview/cv-preview.component';
+import { CvLiveStylePanelComponent } from './cv-live-style-panel/cv-live-style-panel.component';
 import { CvSummaryEditorComponent } from './section-editors/cv-summary-editor.component';
 import { CvLanguagesEditorComponent } from './section-editors/cv-languages-editor.component';
 import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.component';
@@ -62,6 +63,7 @@ import { CvExperienceEditorComponent } from './section-editors/cv-experience-edi
 import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
 import {
   cvFieldAtsNoteKeys,
+  type CvPreviewSelection,
   mergeRegeneratedSection,
   normalizeCvContent,
   parseCvSkillResponse,
@@ -96,6 +98,7 @@ export function mergePersonalField<T extends string | undefined>(
     NgTemplateOutlet,
     CvPhotoCropComponent,
     CvPreviewComponent,
+    CvLiveStylePanelComponent,
     CvSummaryEditorComponent,
     CvLanguagesEditorComponent,
     CvSkillsEditorComponent,
@@ -266,12 +269,10 @@ export class CvDetailComponent {
     );
   }
 
-  /** Which section's "Style" popover is open, if any — only one at a time. */
-  readonly openStyleKey = signal<CvSectionKey | null>(null);
-
-  toggleStylePopover(key: CvSectionKey): void {
-    this.openStyleKey.set(this.openStyleKey() === key ? null : key);
-  }
+  /** The section/part the user has clicked in the live preview, driving the
+   * contextual `CvLiveStylePanelComponent` beside the paper. Null until the
+   * first selection; cleared is fine (panel shows its empty state). */
+  readonly liveSelection = signal<CvPreviewSelection | null>(null);
 
   /** Per-section collapse state for the content-section accordion — session
    * only (not persisted); every section starts expanded (an empty set means
@@ -296,13 +297,6 @@ export class CvDetailComponent {
     this.styleOpen.set(!this.styleOpen());
   }
 
-  /** The section's own style override, if any — used by the popover template
-   * (`stylePopover`), which is parameterized by key via `ngTemplateOutlet`
-   * and so can't index `sectionStyles` directly without losing type safety. */
-  sectionOverride(key: CvSectionKey): CvSectionStyle | undefined {
-    return this.style().sectionStyles?.[key];
-  }
-
   setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
     this.style.set(patchCvSectionStyle(this.style(), key, patch));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
@@ -325,13 +319,6 @@ export class CvDetailComponent {
     this.style.set(resetCvSectionStyle(this.style(), key));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
-  }
-
-  /** True when a section carries any style override — drives the "Custom"
-   * badge so the user can see which sections differ from the default. */
-  hasCustomStyle(key: CvSectionKey): boolean {
-    const o = this.style().sectionStyles?.[key];
-    return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
   }
 
   /** True when the style differs from the active theme's baseline in any way —
@@ -367,7 +354,6 @@ export class CvDetailComponent {
    * theme's baseline (not the hard-coded Classic default). */
   resetAllStyles(): void {
     this.style.set({ ...this.themeBaseStyle() });
-    this.openStyleKey.set(null);
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     void this.refreshStyleNotes();
   }

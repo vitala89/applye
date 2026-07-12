@@ -60,6 +60,32 @@
 }
 .cvdetail__preview-col {
   width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+// The paper fills the remaining width; `min-width: 0` lets the preview's own
+// horizontal scroll kick in instead of overflowing the flex row.
+.cvdetail__preview-col app-cv-preview {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+// Fixed contextual live-style panel beside the paper (Phase D decision: a
+// sticky side panel, not a floating selection toolbar). Sticks in view as the
+// preview scrolls. Hidden from print by the global `body.printing-cv` seam.
+.cvdetail__live-panel {
+  position: sticky;
+  top: var(--space-4);
+  flex: 0 0 280px;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.cvdetail__live-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .cvdetail__bar {

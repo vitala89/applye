@@ -13,10 +13,25 @@
 </div>
 
 <!-- Atom templates: preview fragments rendered once per atom by
-     `<lib-paginated-sheet>` (measure pass + final page cards). -->
-<ng-template #headerTpl let-section let-photoUri="photoUri" let-placement="placement">
+     `<lib-paginated-sheet>` (measure pass + final page cards). Interactive
+     click-to-select affordances are gated on `$sheetRenderMode === 'page'`
+     (via `selectable()`), so the hidden measurement pass stays inert and
+     geometry-identical — outline-only highlighting never changes box metrics. -->
+<ng-template
+  #headerTpl
+  let-section
+  let-photoUri="photoUri"
+  let-placement="placement"
+  let-renderMode="$sheetRenderMode"
+>
   <div
     [class]="'cvpreview__header ' + headerPlacementClass(placement)"
+    [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSelected('personal_details', 'body')"
+    [attr.role]="selectable(renderMode) ? 'button' : null"
+    [attr.tabindex]="selectable(renderMode) ? 0 : null"
+    (click)="selectPart('personal_details', 'body', renderMode, $event)"
+    (keydown.enter)="selectPart('personal_details', 'body', renderMode, $event)"
     [ngStyle]="bodyCss('personal_details')"
   >
     @if (photoUri) {
@@ -41,16 +56,30 @@
   </div>
 </ng-template>
 
-<ng-template #summaryTpl let-section>
+<ng-template #summaryTpl let-section let-renderMode="$sheetRenderMode">
   <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('summary')">
     <h3
       class="cvpreview__section-title"
+      [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__selected]="isSelected('summary', 'title')"
+      [attr.role]="selectable(renderMode) ? 'button' : null"
+      [attr.tabindex]="selectable(renderMode) ? 0 : null"
+      (click)="selectPart('summary', 'title', renderMode, $event)"
+      (keydown.enter)="selectPart('summary', 'title', renderMode, $event)"
       [ngStyle]="titleCss('summary')"
       [style.borderBottom]="titleBorderCss('summary')"
     >
       {{ t()(sectionLabelKey('summary')) }}
     </h3>
-    <p class="cvpreview__summary">
+    <p
+      class="cvpreview__summary"
+      [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__selected]="isSelected('summary', 'body')"
+      [attr.role]="selectable(renderMode) ? 'button' : null"
+      [attr.tabindex]="selectable(renderMode) ? 0 : null"
+      (click)="selectPart('summary', 'body', renderMode, $event)"
+      (keydown.enter)="selectPart('summary', 'body', renderMode, $event)"
+    >
       @for (run of runs(section.text); track $index) {
         @if (run.bold) {
           <strong>{{ run.text }}</strong>
@@ -62,9 +91,15 @@
   </div>
 </ng-template>
 
-<ng-template #sectionTitleTpl let-label let-key="key">
+<ng-template #sectionTitleTpl let-label let-key="key" let-renderMode="$sheetRenderMode">
   <h3
     class="cvpreview__section-title cvpreview__section-start"
+    [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSelected(key, 'title')"
+    [attr.role]="selectable(renderMode) ? 'button' : null"
+    [attr.tabindex]="selectable(renderMode) ? 0 : null"
+    (click)="selectPart(key, 'title', renderMode, $event)"
+    (keydown.enter)="selectPart(key, 'title', renderMode, $event)"
     [ngStyle]="titleCss(key)"
     [style.borderBottom]="titleBorderCss(key)"
   >
@@ -72,10 +107,16 @@
   </h3>
 </ng-template>
 
-<ng-template #skillsTpl let-section>
+<ng-template #skillsTpl let-section let-renderMode="$sheetRenderMode">
   <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('skills')">
     <h3
       class="cvpreview__section-title"
+      [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__selected]="isSelected('skills', 'title')"
+      [attr.role]="selectable(renderMode) ? 'button' : null"
+      [attr.tabindex]="selectable(renderMode) ? 0 : null"
+      (click)="selectPart('skills', 'title', renderMode, $event)"
+      (keydown.enter)="selectPart('skills', 'title', renderMode, $event)"
       [ngStyle]="titleCss('skills')"
       [style.borderBottom]="titleBorderCss('skills')"
     >
@@ -83,7 +124,15 @@
     </h3>
     @for (group of section.groups; track $index) {
       @if (group.values.length) {
-        <p class="cvpreview__skill-row">
+        <p
+          class="cvpreview__skill-row"
+          [class.cvpreview__selectable]="selectable(renderMode)"
+          [class.cvpreview__selected]="isSelected('skills', 'body')"
+          [attr.role]="selectable(renderMode) ? 'button' : null"
+          [attr.tabindex]="selectable(renderMode) ? 0 : null"
+          (click)="selectPart('skills', 'body', renderMode, $event)"
+          (keydown.enter)="selectPart('skills', 'body', renderMode, $event)"
+        >
           <strong>{{ group.label }}:</strong> {{ group.values.join(', ') }}
         </p>
       }
@@ -94,8 +143,24 @@
 <!-- An experience entry is split into a head atom + one atom per
      bullet so a long entry can flow across a page break (the head is
      glued to its first bullet; later bullets are free). See atoms(). -->
-<ng-template #expHeadTpl let-entry let-key="key" let-first="first">
-  <div class="cvpreview__entry" [class.cvpreview__entry--sep]="!first" [ngStyle]="bodyCss(key)">
+<ng-template
+  #expHeadTpl
+  let-entry
+  let-key="key"
+  let-first="first"
+  let-renderMode="$sheetRenderMode"
+>
+  <div
+    class="cvpreview__entry"
+    [class.cvpreview__entry--sep]="!first"
+    [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSelected(key, 'body')"
+    [attr.role]="selectable(renderMode) ? 'button' : null"
+    [attr.tabindex]="selectable(renderMode) ? 0 : null"
+    (click)="selectPart(key, 'body', renderMode, $event)"
+    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
+    [ngStyle]="bodyCss(key)"
+  >
     <div class="cvpreview__entry-head">
       <span class="cvpreview__entry-lead">
         <span class="cvpreview__entry-company">{{ entry.company }}</span>
@@ -115,8 +180,17 @@
   </div>
 </ng-template>
 
-<ng-template #expBulletTpl let-bullet let-key="key">
-  <ul class="cvpreview__bullets" [ngStyle]="bodyCss(key)">
+<ng-template #expBulletTpl let-bullet let-key="key" let-renderMode="$sheetRenderMode">
+  <ul
+    class="cvpreview__bullets"
+    [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSelected(key, 'body')"
+    [attr.role]="selectable(renderMode) ? 'button' : null"
+    [attr.tabindex]="selectable(renderMode) ? 0 : null"
+    (click)="selectPart(key, 'body', renderMode, $event)"
+    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
+    [ngStyle]="bodyCss(key)"
+  >
     <li>
       @for (run of runs(bullet); track $index) {
         @if (run.bold) {
@@ -129,8 +203,17 @@
   </ul>
 </ng-template>
 
-<ng-template #eduEntryTpl let-entry let-key="key">
-  <div class="cvpreview__entry" [ngStyle]="bodyCss(key)">
+<ng-template #eduEntryTpl let-entry let-key="key" let-renderMode="$sheetRenderMode">
+  <div
+    class="cvpreview__entry"
+    [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSelected(key, 'body')"
+    [attr.role]="selectable(renderMode) ? 'button' : null"
+    [attr.tabindex]="selectable(renderMode) ? 0 : null"
+    (click)="selectPart(key, 'body', renderMode, $event)"
+    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
+    [ngStyle]="bodyCss(key)"
+  >
     <div class="cvpreview__entry-head">
       <span class="cvpreview__entry-role">{{ entry.degree }}, {{ entry.institution }}</span>
       <span class="cvpreview__entry-dates">
@@ -141,16 +224,30 @@
   </div>
 </ng-template>
 
-<ng-template #languagesTpl let-section>
+<ng-template #languagesTpl let-section let-renderMode="$sheetRenderMode">
   <div class="cvpreview__section cvpreview__section-start" [ngStyle]="bodyCss('languages')">
     <h3
       class="cvpreview__section-title"
+      [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__selected]="isSelected('languages', 'title')"
+      [attr.role]="selectable(renderMode) ? 'button' : null"
+      [attr.tabindex]="selectable(renderMode) ? 0 : null"
+      (click)="selectPart('languages', 'title', renderMode, $event)"
+      (keydown.enter)="selectPart('languages', 'title', renderMode, $event)"
       [ngStyle]="titleCss('languages')"
       [style.borderBottom]="titleBorderCss('languages')"
     >
       {{ t()(sectionLabelKey('languages')) }}
     </h3>
-    <p class="cvpreview__languages">
+    <p
+      class="cvpreview__languages"
+      [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__selected]="isSelected('languages', 'body')"
+      [attr.role]="selectable(renderMode) ? 'button' : null"
+      [attr.tabindex]="selectable(renderMode) ? 0 : null"
+      (click)="selectPart('languages', 'body', renderMode, $event)"
+      (keydown.enter)="selectPart('languages', 'body', renderMode, $event)"
+    >
       {{ section.items.map((i) => i.language).join(' | ') }}
     </p>
   </div>

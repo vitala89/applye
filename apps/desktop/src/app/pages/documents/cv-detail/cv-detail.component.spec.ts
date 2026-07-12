@@ -67,6 +67,30 @@ describe('CvDetailComponent per-section style', () => {
     );
   });
 
+  it('applies a line-height patch as a cleaned override via the panel handler', () => {
+    // The panel emits a semantic patch; the parent applies it through the
+    // Task 1 reducer, which keeps the override minimal (no stray keys).
+    component.setSectionStyle('summary', { lineHeight: 1.6 });
+    expect(component.style().sectionStyles?.summary).toEqual({ lineHeight: 1.6 });
+    expect(effectiveSectionStyle(component.style(), 'summary').lineHeight).toBe(1.6);
+  });
+
+  it('resetSectionStyle removes only the selected section, leaving siblings intact', () => {
+    component.setSectionStyle('summary', { fontWeight: 700 });
+    component.setSectionStyle('skills', { colorHex: '#123456' });
+
+    component.resetSectionStyle('summary');
+
+    expect(component.style().sectionStyles?.summary).toBeUndefined();
+    expect(component.style().sectionStyles?.skills).toEqual({ colorHex: '#123456' });
+  });
+
+  it('records the live preview selection for the contextual panel', () => {
+    expect(component.liveSelection()).toBeNull();
+    component.liveSelection.set({ sectionKey: 'summary', part: 'title' });
+    expect(component.liveSelection()).toEqual({ sectionKey: 'summary', part: 'title' });
+  });
+
   it('toggleSectionCollapse flips isSectionOpen and defaults to expanded', () => {
     expect(component.isSectionOpen('experience')).toBe(true);
     component.toggleSectionCollapse('experience');
@@ -129,14 +153,6 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.hasAnyCustomStyle()).toBe(false);
     expect(component.style().accentColorHex).toBe('#1B7464');
     expect(component.style().fontFamily).toBe('Lato');
-  });
-
-  it('toggleStylePopover opens and closes the same key', () => {
-    expect(component.openStyleKey()).toBeNull();
-    component.toggleStylePopover('summary');
-    expect(component.openStyleKey()).toBe('summary');
-    component.toggleStylePopover('summary');
-    expect(component.openStyleKey()).toBeNull();
   });
 
   it('removePhoto clears the stored dataUri', () => {

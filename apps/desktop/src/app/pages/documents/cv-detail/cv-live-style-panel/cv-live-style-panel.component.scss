@@ -1,0 +1,65 @@
+.cvlive {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+}
+.cvlive__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.cvlive__scope {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.cvlive__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.cvlive__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.cvlive__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.cvlive__field select,
+.cvlive__field input[type='number'] {
+  width: 100%;
+}
+.cvlive__field input[type='color'] {
+  width: 48px;
+  height: 32px;
+  padding: 0;
+}
+.cvlive__reset {
+  align-self: flex-start;
+  height: 34px;
+  padding: 0 12px;
+  background: none;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.cvlive__empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}

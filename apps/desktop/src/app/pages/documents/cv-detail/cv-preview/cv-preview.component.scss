@@ -16,6 +16,21 @@
   padding: var(--space-4);
   background: var(--surface-2);
 }
+// Click-to-select affordance for the live-style panel. `outline` (never
+// `border`/`margin`/`padding`) so a selectable/selected leaf keeps the exact
+// box metrics the hidden measurement pass computes — pagination is unaffected.
+// Only attached on the visible page render (`selectable()` gates the class).
+.cvpreview__selectable {
+  cursor: pointer;
+}
+.cvpreview__selectable:hover {
+  outline: var(--border-width) solid var(--cv-accent, var(--accent, var(--border-strong)));
+  outline-offset: 2px;
+}
+.cvpreview__selected {
+  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
+  outline-offset: 2px;
+}
 // Space above each new section. Uses padding (not margin) on the section's
 // first element so the paginated sheet — which measures each atom's
 // offsetHeight in isolation and can't see sibling margins across its

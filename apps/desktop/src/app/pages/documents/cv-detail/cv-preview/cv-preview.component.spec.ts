@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CV_STYLE_DEFAULT } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import type { CvPreviewSelection } from '../../cv-content.util';
 import { CvPreviewComponent } from './cv-preview.component';
 
 describe('CvPreviewComponent', () => {
@@ -280,5 +281,66 @@ describe('CvPreviewComponent', () => {
     const css = component.titleBorderCss('summary');
     expect(css).toContain('dotted');
     expect(css).not.toContain('--cv-accent');
+  });
+
+  it('interactive page render marks body/title leaves selectable and emits semantic selection', () => {
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('sections', [
+      { key: 'summary', order: 0, visible: true, text: 'Hello' },
+    ]);
+    fixture.detectChanges();
+    const emitted: (CvPreviewSelection | null)[] = [];
+    component.selectionChange.subscribe((v) => emitted.push(v));
+
+    const root = fixture.nativeElement as HTMLElement;
+    const body = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+    const title = root.querySelector('.page-card .cvpreview__section-title') as HTMLElement;
+    expect(body.classList.contains('cvpreview__selectable')).toBe(true);
+    expect(body.getAttribute('role')).toBe('button');
+    expect(title.classList.contains('cvpreview__selectable')).toBe(true);
+
+    body.click();
+    title.click();
+    expect(emitted).toEqual([
+      { sectionKey: 'summary', part: 'body' },
+      { sectionKey: 'summary', part: 'title' },
+    ]);
+  });
+
+  it('reflects the active selection as a selected outline on the matching leaf', () => {
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
+    fixture.componentRef.setInput('sections', [
+      { key: 'summary', order: 0, visible: true, text: 'Hello' },
+    ]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const title = root.querySelector('.page-card .cvpreview__section-title') as HTMLElement;
+    const body = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+    expect(title.classList.contains('cvpreview__selected')).toBe(true);
+    expect(body.classList.contains('cvpreview__selected')).toBe(false);
+  });
+
+  it('non-interactive render exposes no selection affordance', () => {
+    fixture.componentRef.setInput('sections', [
+      { key: 'summary', order: 0, visible: true, text: 'Hello' },
+    ]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.cvpreview__selectable')).toBeNull();
+    const body = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+    expect(body.getAttribute('role')).toBeNull();
+  });
+
+  it('measurement render is never selectable even when interactive', () => {
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('sections', [
+      { key: 'summary', order: 0, visible: true, text: 'Hello' },
+    ]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const measured = root.querySelectorAll('.paginated-sheet__measure .cvpreview__summary');
+    expect(measured.length).toBeGreaterThan(0);
+    measured.forEach((el) => expect(el.classList.contains('cvpreview__selectable')).toBe(false));
   });
 });

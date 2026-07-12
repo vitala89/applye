@@ -16,6 +16,7 @@ import { TranslateService } from '@applye/i18n';
 import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
 import {
   buildContactLine,
+  type CvPreviewSelection,
   effectiveSectionStyle,
   effectiveTitleBorder,
   effectiveTitleStyle,
@@ -60,6 +61,45 @@ export class CvPreviewComponent {
   /** Mirrors `<lib-paginated-sheet>`'s `(blockOverflow)` output up to the
    * parent, which owns the signal driving the export/editor-side warning. */
   readonly blockOverflow = output<boolean>();
+
+  /** When true, visible page-card atoms expose click-to-select affordances for
+   * the contextual live-style panel. Measurement atoms are never interactive
+   * regardless — the render-mode gate below keeps the measure pass inert. */
+  readonly interactive = input(false);
+  /** The section/part the parent currently has selected — drives the selected
+   * outline. The parent owns this signal; the preview only reports changes. */
+  readonly selection = input<CvPreviewSelection | null>(null);
+  /** Emitted when the user clicks a selectable body/title target (page pass
+   * only). */
+  readonly selectionChange = output<CvPreviewSelection | null>();
+  /** Immutable section-change sink for inline content edits. Declared here for
+   * the stable Phase D interface; wiring inline leaf editors is Task 4. */
+  readonly sectionChange = output<CvSection>();
+
+  /** True only for a visible page-card render while interactive — the single
+   * gate every atom template uses so the hidden measurement pass (`'measure'`)
+   * never gains a role, tabindex, cursor, or click handler. */
+  selectable(renderMode: unknown): boolean {
+    return this.interactive() && renderMode === 'page';
+  }
+
+  isSelected(sectionKey: CvSectionKey, part: 'body' | 'title'): boolean {
+    const s = this.selection();
+    return !!s && s.sectionKey === sectionKey && s.part === part;
+  }
+
+  /** Emit a semantic selection for a clicked target — a no-op unless this is a
+   * selectable page render, so the inert measurement pass can never emit. */
+  selectPart(
+    sectionKey: CvSectionKey,
+    part: 'body' | 'title',
+    renderMode: unknown,
+    event?: Event,
+  ): void {
+    if (!this.selectable(renderMode)) return;
+    event?.stopPropagation();
+    this.selectionChange.emit({ sectionKey, part });
+  }
 
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly buildContactLine = buildContactLine;

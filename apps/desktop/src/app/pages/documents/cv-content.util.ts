@@ -20,6 +20,14 @@ import {
   PageSettings,
 } from '@applye/core';
 
+/** A semantic click target in the live CV preview: which section, and which
+ * styling scope (body text vs. section title) the user selected. Consumed by
+ * the contextual `CvLiveStylePanelComponent`. */
+export interface CvPreviewSelection {
+  sectionKey: CvSectionKey;
+  part: 'body' | 'title';
+}
+
 /** Fallback order when a template has no `sectionsJson` (should not happen
  * for the seeded built-ins, but keeps the builder total). */
 const DEFAULT_SECTION_ORDER: CvSectionKey[] = [

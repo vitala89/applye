@@ -563,11 +563,26 @@
                         </div>
                       }
                       @case ('summary') {
-                        <textarea
-                          [ngModel]="$any(section).text"
-                          (ngModelChange)="$any(section).text = $event"
-                          rows="4"
-                        ></textarea>
+                        <div class="cvdetail__bold-field">
+                          <textarea
+                            #summaryEl
+                            [ngModel]="$any(section).text"
+                            (ngModelChange)="$any(section).text = $event"
+                            (keydown)="
+                              onBoldKeydown($event, summaryEl, (v) => ($any(section).text = v))
+                            "
+                            rows="4"
+                          ></textarea>
+                          <button
+                            type="button"
+                            class="cvdetail__bold-btn"
+                            [attr.aria-label]="t()('documents.cv_bold_action')"
+                            (mousedown)="$event.preventDefault()"
+                            (click)="applyBold(summaryEl, (v) => ($any(section).text = v))"
+                          >
+                            B
+                          </button>
+                        </div>
                       }
                       @case ('experience') {
                         @for (entry of $any(section).entries; track $index) {
@@ -604,11 +619,28 @@
                               <div class="cvdetail__bullet-row">
                                 <span class="cvdetail__bullet-dot">•</span>
                                 <input
+                                  #bulletEl
                                   type="text"
                                   [ngModel]="bullet"
                                   (ngModelChange)="entry.bullets[$index] = $event"
+                                  (keydown)="
+                                    onBoldKeydown(
+                                      $event,
+                                      bulletEl,
+                                      (v) => (entry.bullets[$index] = v)
+                                    )
+                                  "
                                   [placeholder]="t()('documents.cv_field_bullet')"
                                 />
+                                <button
+                                  type="button"
+                                  class="cvdetail__bold-btn"
+                                  [attr.aria-label]="t()('documents.cv_bold_action')"
+                                  (mousedown)="$event.preventDefault()"
+                                  (click)="applyBold(bulletEl, (v) => (entry.bullets[$index] = v))"
+                                >
+                                  B
+                                </button>
                                 <button
                                   class="cvdetail__bullet-remove"
                                   type="button"
@@ -1054,7 +1086,15 @@
               >
                 {{ t()(sectionLabelKey('summary')) }}
               </h3>
-              <p class="cvpreview__summary">{{ section.text }}</p>
+              <p class="cvpreview__summary">
+                @for (run of runs(section.text); track $index) {
+                  @if (run.bold) {
+                    <strong>{{ run.text }}</strong>
+                  } @else {
+                    {{ run.text }}
+                  }
+                }
+              </p>
             </div>
           </ng-template>
 

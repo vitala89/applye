@@ -315,6 +315,18 @@ describe('CvDetailComponent per-section style', () => {
     );
   });
 
+  it('summary preview renders **bold** as <strong>', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([{ key: 'summary', order: 0, visible: true, text: 'A **Key** point' }]);
+    fixture.detectChanges();
+    const strongs = fixture.nativeElement.querySelectorAll('.cvpreview__summary strong');
+    expect(Array.from(strongs).some((s: HTMLElement) => s.textContent?.trim() === 'Key')).toBe(
+      true,
+    );
+  });
+
   it('defaults photoPlacement to above_left and updates on chip select', () => {
     expect(component.photoPlacement()).toBe('above_left');
     component.setPhotoPlacement('above_right');

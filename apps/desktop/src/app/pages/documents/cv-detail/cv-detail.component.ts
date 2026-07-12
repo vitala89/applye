@@ -55,6 +55,7 @@ import {
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
   parseInlineEmphasis,
+  toggleBoldWrap,
   getBuiltinTheme,
   themeCssVars,
   themeStyleSeed,
@@ -155,6 +156,34 @@ export class CvDetailComponent {
 
   runs(text: string): CvTextRun[] {
     return parseInlineEmphasis(text);
+  }
+
+  /** Wrap/unwrap **bold** around the field's current selection, then write the
+   * result back to the model and restore the caret. Bound to the Bold button
+   * and Cmd/Ctrl+B on summary + bullet fields. */
+  applyBold(el: HTMLTextAreaElement | HTMLInputElement, set: (v: string) => void): void {
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const r = toggleBoldWrap(el.value, start, end);
+    set(r.text);
+    queueMicrotask(() => {
+      el.value = r.text;
+      el.setSelectionRange(r.selStart, r.selEnd);
+      el.focus();
+    });
+  }
+
+  /** Cmd/Ctrl+B handler for the summary textarea and bullet inputs — delegates
+   * to `applyBold` and prevents the browser's native bold shortcut. */
+  onBoldKeydown(
+    event: KeyboardEvent,
+    el: HTMLTextAreaElement | HTMLInputElement,
+    set: (v: string) => void,
+  ): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      event.preventDefault();
+      this.applyBold(el, set);
+    }
   }
 
   readonly loading = signal(true);

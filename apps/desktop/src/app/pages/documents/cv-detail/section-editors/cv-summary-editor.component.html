@@ -1,0 +1,18 @@
+<div class="cvdetail__bold-field">
+  <textarea
+    #summaryEl
+    [ngModel]="section().text"
+    (ngModelChange)="onTextChange($event)"
+    (keydown)="onBoldKeydown($event, summaryEl)"
+    rows="4"
+  ></textarea>
+  <button
+    type="button"
+    class="cvdetail__bold-btn"
+    [attr.aria-label]="t()('documents.cv_bold_action')"
+    (mousedown)="$event.preventDefault()"
+    (click)="applyBold(summaryEl)"
+  >
+    B
+  </button>
+</div>

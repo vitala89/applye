@@ -358,12 +358,6 @@
   color: var(--danger);
 }
 
-.cvdetail__bold-field {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
 .cvdetail__bold-btn {
   flex: none;
   width: 28px;
@@ -596,52 +590,6 @@
 .cvdetail__skills .cvdetail__skill-add:focus {
   border-style: solid;
   border-color: var(--border-accent);
-}
-
-.cvdetail__langs {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.cvdetail__lang-row {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-}
-.cvdetail__langs .cvdetail__lang-row input {
-  flex: 1;
-  width: auto;
-  height: 36px;
-  padding: 0 11px;
-}
-.cvdetail__langs .cvdetail__lang-level {
-  width: 120px;
-  flex: 0 0 auto;
-  height: 36px;
-  padding: 0 11px;
-  appearance: auto;
-  -webkit-appearance: auto;
-  background-image: none;
-}
-.cvdetail__lang-remove {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  border-radius: var(--radius-input);
-  cursor: pointer;
-  transition:
-    background 120ms ease,
-    color 120ms ease;
-}
-.cvdetail__lang-remove:hover {
-  background: var(--danger-tint);
-  color: var(--danger);
 }
 
 .cvdetail__hint {

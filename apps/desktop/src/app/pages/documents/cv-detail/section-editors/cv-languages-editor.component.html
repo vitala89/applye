@@ -1,0 +1,35 @@
+<div class="cvdetail__langs">
+  @for (lang of section().items; track $index; let li = $index) {
+    <div class="cvdetail__lang-row">
+      <input
+        type="text"
+        [ngModel]="lang.language"
+        (ngModelChange)="updateField(li, 'language', $event)"
+        [placeholder]="t()('documents.cv_field_language')"
+      />
+      <select
+        class="cvdetail__lang-level"
+        [ngModel]="lang.level"
+        (ngModelChange)="updateField(li, 'level', $event)"
+      >
+        @for (lv of languageLevels; track lv) {
+          <option [value]="lv">
+            {{ lv || t()('documents.cv_lang_level_none') }}
+          </option>
+        }
+      </select>
+      <button
+        type="button"
+        class="cvdetail__lang-remove"
+        [attr.aria-label]="t()('documents.cv_lang_remove')"
+        (click)="removeLanguage(li)"
+      >
+        <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+      </button>
+    </div>
+  }
+  <button type="button" class="cvdetail__add-btn" (click)="addLanguage()">
+    <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+    {{ t()('documents.cv_lang_add') }}
+  </button>
+</div>

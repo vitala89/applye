@@ -214,6 +214,29 @@ describe('CvDetailComponent per-section style', () => {
     printSpy.mockRestore();
   });
 
+  it('replaceSection swaps the matching section by key, leaving others untouched', () => {
+    component.sections.set([
+      { key: 'photo', order: 0, visible: true, dataUri: 'data:image/jpeg;base64,AAAA' },
+      { key: 'summary', order: 1, visible: true, text: 'Old summary' },
+      { key: 'languages', order: 2, visible: true, items: [{ language: 'English', level: 'C1' }] },
+    ]);
+
+    component.replaceSection({ key: 'summary', order: 1, visible: true, text: 'New summary' });
+
+    const summary = component.sections().find((s) => s.key === 'summary');
+    expect(summary).toEqual({ key: 'summary', order: 1, visible: true, text: 'New summary' });
+    // Other sections are unaffected.
+    expect(component.sections().find((s) => s.key === 'photo')?.dataUri).toBe(
+      'data:image/jpeg;base64,AAAA',
+    );
+    expect(component.sections().find((s) => s.key === 'languages')).toEqual({
+      key: 'languages',
+      order: 2,
+      visible: true,
+      items: [{ language: 'English', level: 'C1' }],
+    });
+  });
+
   it('setSectionTitleStyle deep-merges into the section title override', () => {
     component.setSectionTitleStyle('skills', { fontFamily: 'Arial' });
     component.setSectionTitleStyle('skills', { fontSizePt: 15 });

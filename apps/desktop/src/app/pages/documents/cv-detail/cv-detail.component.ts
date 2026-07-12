@@ -55,6 +55,8 @@ import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
 import { CvPreviewComponent } from './cv-preview/cv-preview.component';
+import { CvSummaryEditorComponent } from './section-editors/cv-summary-editor.component';
+import { CvLanguagesEditorComponent } from './section-editors/cv-languages-editor.component';
 import {
   blankEducationEntry,
   blankExperienceEntry,
@@ -91,6 +93,8 @@ export function mergePersonalField<T extends string | undefined>(
     NgTemplateOutlet,
     CvPhotoCropComponent,
     CvPreviewComponent,
+    CvSummaryEditorComponent,
+    CvLanguagesEditorComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -593,18 +597,11 @@ export class CvDetailComponent {
     this.moveSection(key, 1);
   }
 
-  /** CEFR levels plus an empty option — a language may be listed with no
-   * level (e.g. just "English"), which some CV conventions prefer. */
-  protected readonly languageLevels = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'];
-
-  addLanguage(section: Extract<CvSection, { key: 'languages' }>): void {
-    section.items.push({ language: '', level: '' });
-    this.sections.set([...this.sections()]);
-  }
-
-  removeLanguage(section: Extract<CvSection, { key: 'languages' }>, index: number): void {
-    section.items.splice(index, 1);
-    this.sections.set([...this.sections()]);
+  /** Swaps a single section by key with a new immutable value — the sink for
+   * extracted section-editor children's `(sectionChange)` output (e.g.
+   * `CvSummaryEditorComponent`, `CvLanguagesEditorComponent`). */
+  replaceSection(updated: CvSection): void {
+    this.sections.update((list) => list.map((s) => (s.key === updated.key ? updated : s)));
   }
 
   setSkillGroupLabel(

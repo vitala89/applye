@@ -563,26 +563,10 @@
                         </div>
                       }
                       @case ('summary') {
-                        <div class="cvdetail__bold-field">
-                          <textarea
-                            #summaryEl
-                            [ngModel]="$any(section).text"
-                            (ngModelChange)="$any(section).text = $event"
-                            (keydown)="
-                              onBoldKeydown($event, summaryEl, (v) => ($any(section).text = v))
-                            "
-                            rows="4"
-                          ></textarea>
-                          <button
-                            type="button"
-                            class="cvdetail__bold-btn"
-                            [attr.aria-label]="t()('documents.cv_bold_action')"
-                            (mousedown)="$event.preventDefault()"
-                            (click)="applyBold(summaryEl, (v) => ($any(section).text = v))"
-                          >
-                            B
-                          </button>
-                        </div>
+                        <app-cv-summary-editor
+                          [section]="$any(section)"
+                          (sectionChange)="replaceSection($event)"
+                        />
                       }
                       @case ('experience') {
                         @for (entry of $any(section).entries; track $index) {
@@ -792,45 +776,10 @@
                         </div>
                       }
                       @case ('languages') {
-                        <div class="cvdetail__langs">
-                          @for (lang of $any(section).items; track $index; let li = $index) {
-                            <div class="cvdetail__lang-row">
-                              <input
-                                type="text"
-                                [ngModel]="lang.language"
-                                (ngModelChange)="lang.language = $event"
-                                [placeholder]="t()('documents.cv_field_language')"
-                              />
-                              <select
-                                class="cvdetail__lang-level"
-                                [ngModel]="lang.level"
-                                (ngModelChange)="lang.level = $event"
-                              >
-                                @for (lv of languageLevels; track lv) {
-                                  <option [value]="lv">
-                                    {{ lv || t()('documents.cv_lang_level_none') }}
-                                  </option>
-                                }
-                              </select>
-                              <button
-                                type="button"
-                                class="cvdetail__lang-remove"
-                                [attr.aria-label]="t()('documents.cv_lang_remove')"
-                                (click)="removeLanguage($any(section), li)"
-                              >
-                                <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
-                              </button>
-                            </div>
-                          }
-                          <button
-                            type="button"
-                            class="cvdetail__add-btn"
-                            (click)="addLanguage($any(section))"
-                          >
-                            <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                            {{ t()('documents.cv_lang_add') }}
-                          </button>
-                        </div>
+                        <app-cv-languages-editor
+                          [section]="$any(section)"
+                          (sectionChange)="replaceSection($event)"
+                        />
                       }
                       @case ('photo') {
                         <div class="cvdetail__photo-editor">

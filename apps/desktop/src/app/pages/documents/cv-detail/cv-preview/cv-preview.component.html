@@ -50,8 +50,10 @@
         type="text"
         class="cvpreview__name cvpreview__leaf-editor"
         [class.cvpreview__element-selected]="isElementSelected(leafPath('pd', 'fullName'))"
-        [style.color]="effStyle('personal_details').colorHex"
-        [ngStyle]="leafCss(leafPath('pd', 'fullName'))"
+        [ngStyle]="{
+          color: effStyle('personal_details').colorHex,
+          ...leafCss(leafPath('pd', 'fullName')),
+        }"
         [value]="leafDraft(leafPath('pd', 'fullName'), section.fullName)"
         [placeholder]="t()('documents.cv_untitled')"
         (input)="onLeafInput(leafPath('pd', 'fullName'), $any($event.target).value)"
@@ -98,8 +100,10 @@
     } @else {
       <h2
         class="cvpreview__name"
-        [style.color]="effStyle('personal_details').colorHex"
-        [ngStyle]="leafCss(leafPath('pd', 'fullName'))"
+        [ngStyle]="{
+          color: effStyle('personal_details').colorHex,
+          ...leafCss(leafPath('pd', 'fullName')),
+        }"
         [class.cvpreview__selectable]="selectable(renderMode)"
         [class.cvpreview__element-selected]="
           isElementSelected(leafPath('pd', 'fullName')) && selectable(renderMode)

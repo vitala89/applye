@@ -307,6 +307,36 @@ describe('CvPreviewComponent', () => {
       }
     });
 
+    it('renders the element override as inline style on an experience company leaf in BOTH the page card and the hidden measurement mirror (typography parity for pagination)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: {
+          'exp.0.company': { fontFamily: 'Georgia', fontSizePt: 16, colorHex: '#1b7464' },
+        },
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'experience',
+          order: 0,
+          visible: true,
+          entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const page = root.querySelector('.page-card .cvpreview__entry-company') as HTMLElement;
+      const measured = root.querySelector(
+        '.paginated-sheet__measure .cvpreview__entry-company',
+      ) as HTMLElement;
+      expect(page).toBeTruthy();
+      expect(measured).toBeTruthy();
+      for (const el of [page, measured]) {
+        expect(el.style.fontFamily).toContain('Georgia');
+        expect(el.style.fontSize).toBe('16pt');
+        expect(el.style.color).not.toBe('');
+      }
+    });
+
     it('a leaf without an element override renders no leaf-level inline style (resting output unchanged) while still inheriting the section wrapper body style', () => {
       fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, fontFamily: 'Georgia' });
       fixture.componentRef.setInput('sections', [
@@ -377,6 +407,29 @@ describe('CvPreviewComponent', () => {
       const name = root.querySelector('.page-card h2.cvpreview__name') as HTMLElement;
       expect(name.style.color).not.toBe('');
       expect(name.style.color).not.toBe('#111111');
+    });
+
+    it('resolves pd.fullName colour precedence deterministically: element colorHex always wins over the section colour, regardless of NgStyle/style-binding evaluation order (regression)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { personal_details: { colorHex: '#111111' } },
+        elementStyles: { 'pd.fullName': { colorHex: '#ff0000' } },
+      });
+      fixture.componentRef.setInput('sections', [
+        { key: 'personal_details', order: 0, visible: true, fullName: 'Ada Lovelace' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      // Resting <h2>.
+      const name = root.querySelector('.page-card h2.cvpreview__name') as HTMLElement;
+      expect(name.style.color).toBe('rgb(255, 0, 0)');
+
+      // Editor <input> — select the personal-details body to switch into edit mode.
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
+      fixture.detectChanges();
+      const nameInput = root.querySelector('.page-card input.cvpreview__name') as HTMLInputElement;
+      expect(nameInput.style.color).toBe('rgb(255, 0, 0)');
     });
   });
 

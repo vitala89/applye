@@ -177,7 +177,23 @@ clean components before layering interactive editing on top).
 
 ## Open questions
 
-- Preview mode surface: reuse the existing in-page preview toggle, or a dedicated
-  `/preview` sub-route? (Lean: toggle first, route later if deep-linking is wanted.)
-- Live editor control chrome: floating toolbar-on-selection vs a fixed side panel.
-  (Decide in Phase D brainstorm.)
+Resolved for Phase D:
+
+- **Preview mode surface:** reuse the existing in-page preview toggle. A dedicated
+  `/preview` sub-route adds route/session ownership before deep-linking is a proven
+  need; the current route keeps one unsaved local draft and one save/export owner.
+- **Live editor control chrome:** use a fixed contextual side panel. It is stable
+  across page reflow, does not cover the paper, and is keyboard/screen-reader
+  accessible. A floating quick-action toolbar may be reconsidered later, but is not
+  the formatting authority in Phase D.
+- **Inline editing:** swap one visible text leaf to a native input/textarea, keep a
+  local draft, and emit one immutable section change on commit. This avoids raw
+  `contenteditable` DOM mutation and prevents per-keystroke repagination from
+  destroying the caret.
+- **Spacing contract:** add optional, body-only, unitless
+  `CvSectionStyle.lineHeight`. Inherit/missing emits no inline override so existing
+  per-element layout and pagination remain unchanged; the explicit Normal option is
+  1.45. Phase D applies/persists it in the Angular preview/WYSIWYG PDF; Rust
+  DOCX/list-PDF tolerance is sufficient until Phase E.
+
+[Phase D implementation plan](../plans/2026-07-12-cv-refactor-phase-d-live-preview-editor.md)

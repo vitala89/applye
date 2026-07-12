@@ -45,13 +45,17 @@ The goal is bold that works end-to-end — edit → preview → export — for s
 
 ## Component 3 — Export: inline bold in DOCX / PDF / tex
 
-Today `tailoring.rs` bolds only whole lines via `strip_bold_wrap`, and the block model carries a single `bold: bool` per block. Upgrade to inline runs **without** a breaking change to the block struct — each renderer parses `**` at emit time:
+There are two PDF paths, which decides where Rust work is needed:
+
+- **Detail-view "Export PDF"** prints the HTML preview (`window.print()`). Once the summary preview renders `<strong>` (Component 2) — bullets already do — this path shows inline bold **automatically, with no Rust work**. This is the primary, full-fidelity PDF.
+- **List "Export as PDF"** uses the legacy Rust `printpdf` renderer (`render_blocks_pdf`), whose own comments note it is slated for retirement. **Decision: inline bold in this path is deferred** — it continues to show literal `**` for now. Manual mixed-font-mid-line work on a retiring renderer is not worth it while the detail Export PDF covers the real need.
+
+Rust work in this task is limited to DOCX and tex. The block model carries a single `bold: bool` per block; inline runs are added at emit time, so the block struct is unchanged:
 
 - New shared Rust helper `parse_inline_runs(&str) -> Vec<InlineRun>` where `InlineRun { text: String, bold: bool }`, mirroring the TS `parseInlineEmphasis` semantics (`**…**` → bold spans; unmatched `**` stays literal text; no spans → one non-bold run).
-- **DOCX** (`render_blocks_docx`): for each body block, emit one run per `InlineRun`; a run is bold when the block is bold (heading / effective weight ≥ 600 / block-level bold) **OR** the run's inline bold is set.
-- **PDF** (`render_blocks_pdf`): emit per-span segments with the same bold rule.
-- **tex** (`cv_content_to_tex` in `documents.rs`): replace inline `**x**` → `\textbf{x}` within body text (in addition to the existing whole-line/heading bolding).
-- Replace the whole-line-only `strip_bold_wrap` path with `parse_inline_runs` so whole-line bold falls out as the single-span case — no behavior regression for already-bold whole lines.
+- **DOCX** (`block_paragraph` in `tailoring.rs`): for each body/bullet block, emit one docx run per `InlineRun`; a run is bold when the block is bold (heading / effective weight ≥ 600 / block-level bold) **OR** the run's inline bold is set. The bullet `•  ` prefix stays a leading non-bold run.
+- **tex** (`cv_content_to_tex` in `documents.rs`): convert inline `**x**` → `\textbf{x}` within escaped body text (summary + bullets), in addition to the existing whole-line/heading bolding.
+- **List-PDF** (`render_blocks_pdf`): unchanged this task (deferred). The library CV path currently passes `**` through verbatim, so it renders literal — a known, documented gap covered by the detail Export PDF.
 
 ## Data model
 
@@ -62,13 +66,14 @@ No change. Bold remains encoded as `**` inside the existing summary/bullet strin
 - **`toggleBoldWrap`** (libs/core, pure): wrap a selection; unwrap when already wrapped (toggle); empty-selection inserts `****` with caret between; selection offsets returned correctly.
 - **`parse_inline_runs`** (Rust): no marks → one plain run; single `**x**`; multiple spans in one line; whole-line wrap → single bold run; unmatched `**` stays literal.
 - **Summary preview**: `**x**` in summary renders a `<strong>`; plain text stays plain.
-- **Export**: a body line with a mid-sentence `**x**` yields a bold run in DOCX and PDF, and `\textbf{x}` in tex; block-level bold still bolds the whole line.
+- **Export**: a body line with a mid-sentence `**x**` yields multiple runs (bold span + plain) in DOCX, and `\textbf{x}` in tex; block-level bold still bolds the whole line. (List-PDF inline bold deferred; detail Export PDF is HTML-based and covered by the preview test.)
 
 ## Scope boundaries (YAGNI)
 
 - Bold only; no other inline marks.
 - Only summary + experience bullets get the button.
 - No contenteditable / rich editor.
+- Legacy list-PDF (`printpdf`) inline bold deferred — detail Export PDF covers it.
 
 ## Known risks
 

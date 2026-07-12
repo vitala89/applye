@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ApplicationRef,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -116,6 +124,8 @@ export class CvDetailComponent {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
+  private readonly appRef = inject(ApplicationRef);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -386,6 +396,14 @@ export class CvDetailComponent {
    * is needed or available for this in the installed SDK version.
    */
   async exportPdfWysiwyg(): Promise<void> {
+    // Commit any in-progress inline edit and drop every editor affordance BEFORE
+    // printing: blur the focused leaf so its `(blur)` handler commits the draft,
+    // then clear the live selection so the page cards render committed text with
+    // no native control, caret, selection outline, or side panel. Then wait for
+    // Angular to render that resting state and for the sheet to finish a fresh
+    // pagination pass, so the exported PDF matches the on-screen preview exactly.
+    this.commitAndCloseEditors();
+    await this.nextStableFrame();
     const r = resolvePageSettings(this.style().page);
     // margin: 0 — each `.page-card` keeps its own per-side padding (the
     // simulated margins) and is forced to exactly one physical page in the
@@ -415,7 +433,46 @@ export class CvDetailComponent {
     window.print();
   }
 
+  /** Blur the focused inline editor — firing its `(blur)` handler, which commits
+   * the draft if it changed — and clear the live selection so all inline editor
+   * chrome unmounts and the page cards fall back to committed text. */
+  private commitAndCloseEditors(): void {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    this.liveSelection.set(null);
+  }
+
+  /** Resolve once Angular has applied pending signal changes and the paginated
+   * sheet has re-measured/repaginated. `tick()` flushes CD synchronously (the
+   * app is zoneless); two animation frames then bracket the sheet's
+   * measure-in-a-microtask + repaginate. Falls back to a microtask where rAF is
+   * unavailable (unit tests). */
+  private nextStableFrame(): Promise<void> {
+    this.appRef.tick();
+    if (typeof requestAnimationFrame === 'undefined') return Promise.resolve();
+    return new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  }
+
+  /**
+   * Direct OS/browser print (Cmd/Ctrl+P), bypassing the Export button. Drop the
+   * live selection so every inline editor unmounts and the page cards render
+   * their last-committed canonical text — the uncommitted draft and its native
+   * control never reach the print snapshot. Unlike the Export action this does
+   * NOT commit the draft (a raw Cmd+P should not silently persist a half-typed
+   * edit). `tick()` performs the swap synchronously, before the browser captures
+   * the page (zoneless CD is otherwise async and would miss the snapshot). */
+  private readonly handleBeforePrint = (): void => {
+    if (!this.previewMode() || this.liveSelection() === null) return;
+    this.liveSelection.set(null);
+    this.appRef.tick();
+  };
+
   constructor() {
+    window.addEventListener('beforeprint', this.handleBeforePrint);
+    this.destroyRef.onDestroy(() =>
+      window.removeEventListener('beforeprint', this.handleBeforePrint),
+    );
     void this.load();
   }
 

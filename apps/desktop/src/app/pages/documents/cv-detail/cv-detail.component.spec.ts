@@ -212,11 +212,13 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.sections().map((s) => s.order)).toEqual([0, 1, 2]);
   });
 
-  it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {
+  it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', async () => {
     const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
     document.body.classList.remove('printing-cv');
 
-    void component.exportPdfWysiwyg();
+    // Export now commits/closes editors and awaits a stable render + pagination
+    // pass before printing, so the print() call is asynchronous.
+    await component.exportPdfWysiwyg();
 
     // Root-cause guard: the class must survive the print() call. Removing it
     // synchronously stripped the @media-print styles before the async macOS
@@ -475,5 +477,115 @@ describe('CvDetailComponent personal-details top card visibility', () => {
     const upsert = dbStub.documentLibraryUpsert as jest.Mock;
     const savedStyle = JSON.parse(upsert.mock.calls[0][0].styleJson);
     expect(savedStyle.sectionStyles.summary.lineHeight).toBe(1.6);
+  });
+});
+
+describe('CvDetailComponent export/print hardening', () => {
+  let component: CvDetailComponent;
+  let fixture: ComponentFixture<CvDetailComponent>;
+  let printSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    const docItem = {
+      id: 1,
+      docType: 'cv' as const,
+      source: 'generated' as const,
+      isDefault: false,
+      regionTag: 'generic',
+      styleJson: JSON.stringify(CV_STYLE_DEFAULT),
+      contentJson: JSON.stringify({
+        sections: [
+          { key: 'personal_details', order: 0, visible: true, fullName: 'Jane Doe' },
+          { key: 'summary', order: 1, visible: true, text: 'Committed summary' },
+        ],
+      }),
+    };
+    const dbStub: Partial<DbService> = {
+      documentLibraryGet: jest.fn().mockResolvedValue(docItem),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [CvDetailComponent],
+      providers: [
+        { provide: DbService, useValue: dbStub },
+        { provide: AiService, useValue: {} },
+        TranslateService,
+        ToastService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '1' }, queryParamMap: { get: () => null } },
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(CvDetailComponent);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+    fixture.detectChanges();
+    printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    printSpy.mockRestore();
+    document.body.classList.remove('printing-cv');
+  });
+
+  /** Enter preview mode, select the summary body so its textarea mounts, focus
+   * it, and type an uncommitted draft. Returns the live editor element. */
+  function startInlineDraft(text: string): HTMLTextAreaElement {
+    component.previewMode.set(true);
+    component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    fixture.detectChanges();
+    const editor = (fixture.nativeElement as HTMLElement).querySelector(
+      '.page-card textarea.cvpreview__summary',
+    ) as HTMLTextAreaElement;
+    editor.focus();
+    editor.value = text;
+    editor.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    return editor;
+  }
+
+  it('Export action commits the active draft, drops all editor chrome, then prints', async () => {
+    startInlineDraft('Draft summary via export');
+
+    await component.exportPdfWysiwyg();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    // No native control, caret, selection outline, or panel-selection remains.
+    expect(component.liveSelection()).toBeNull();
+    expect(root.querySelector('.cvpreview__leaf-editor')).toBeNull();
+    expect(root.querySelector('.cvpreview__selected')).toBeNull();
+    // The Export action COMMITS the draft, so the printed page carries it.
+    const resting = root.querySelector('.page-card p.cvpreview__summary');
+    expect(resting?.textContent).toContain('Draft summary via export');
+    expect(printSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('Direct OS/browser print (beforeprint) shows last-committed text and discards the uncommitted draft', () => {
+    startInlineDraft('Half-typed, never committed');
+
+    // A raw Cmd/Ctrl+P fires `beforeprint`; the handler must strip the editor
+    // and reveal committed text WITHOUT persisting the half-typed draft.
+    window.dispatchEvent(new Event('beforeprint'));
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(component.liveSelection()).toBeNull();
+    expect(root.querySelector('.cvpreview__leaf-editor')).toBeNull();
+    expect(root.querySelector('.cvpreview__selected')).toBeNull();
+    const resting = root.querySelector('.page-card p.cvpreview__summary');
+    expect(resting?.textContent).toContain('Committed summary');
+    expect(resting?.textContent).not.toContain('Half-typed');
+    // The section signal was never mutated by the direct-print path.
+    expect(component.sections().find((s) => s.key === 'summary')).toMatchObject({
+      text: 'Committed summary',
+    });
   });
 });

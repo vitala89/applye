@@ -260,7 +260,7 @@
             (keydown.escape)="onLeafEscape('exp.' + i + '.company', entry.company)"
             (keydown.enter)="$any($event.target).blur()"
           />
-          @if (activeTheme().entry.showIndustry) {
+          @if (activeTheme().entry.showIndustry && entry.industry) {
             <span class="cvpreview__entry-industry"> - </span>
             <input
               type="text"

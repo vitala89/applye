@@ -583,6 +583,18 @@ describe('CvPreviewComponent', () => {
       expect(card.querySelector('input.cvpreview__entry-industry')).toBeNull();
     });
 
+    it('empty industry stays non-editable on a theme that renders industry (Aurora), matching the resting render', () => {
+      // Aurora (theme 2) has showIndustry: true, but entry 1 (Globex) has no
+      // industry value. The resting render shows nothing for industry on that
+      // entry, so the editor must not surface an editable industry field or
+      // its dash separator either — only visibly rendered fields are editable.
+      const root = setup(2);
+      const card = root.querySelectorAll('.page-card')[0] as HTMLElement;
+      const entryTwo = card.querySelectorAll('.cvpreview__entry')[1] as HTMLElement;
+      expect(entryTwo.querySelector('input.cvpreview__entry-industry')).toBeNull();
+      expect(entryTwo.querySelector('.cvpreview__entry-industry')).toBeNull();
+    });
+
     it('empty endDate shows the localized Present placeholder without persisting it', () => {
       const root = setup(2);
       const card = root.querySelectorAll('.page-card')[0] as HTMLElement;

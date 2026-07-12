@@ -55,6 +55,10 @@ import {
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
   parseInlineEmphasis,
+  toggleBoldWrap,
+  getBuiltinTheme,
+  themeCssVars,
+  themeStyleSeed,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -154,6 +158,34 @@ export class CvDetailComponent {
     return parseInlineEmphasis(text);
   }
 
+  /** Wrap/unwrap **bold** around the field's current selection, then write the
+   * result back to the model and restore the caret. Bound to the Bold button
+   * and Cmd/Ctrl+B on summary + bullet fields. */
+  applyBold(el: HTMLTextAreaElement | HTMLInputElement, set: (v: string) => void): void {
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const r = toggleBoldWrap(el.value, start, end);
+    set(r.text);
+    queueMicrotask(() => {
+      el.value = r.text;
+      el.setSelectionRange(r.selStart, r.selEnd);
+      el.focus();
+    });
+  }
+
+  /** Cmd/Ctrl+B handler for the summary textarea and bullet inputs — delegates
+   * to `applyBold` and prevents the browser's native bold shortcut. */
+  onBoldKeydown(
+    event: KeyboardEvent,
+    el: HTMLTextAreaElement | HTMLInputElement,
+    set: (v: string) => void,
+  ): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      event.preventDefault();
+      this.applyBold(el, set);
+    }
+  }
+
   readonly loading = signal(true);
   readonly loadError = signal(false);
   readonly doc = signal<DocumentLibraryItem | null>(null);
@@ -198,6 +230,19 @@ export class CvDetailComponent {
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
+  readonly themeId = signal<number>(1);
+  readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
+  /** The clean baseline for the active theme: document defaults with the
+   * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
+   * "Reset styles" are measured against THIS, not the hard-coded Classic
+   * default — so a pristine Aurora doc reads as "Aurora", not "Custom", and
+   * Reset returns to the selected theme. */
+  readonly themeBaseStyle = computed<CvStyle>(() => ({
+    ...CV_STYLE_DEFAULT,
+    ...themeStyleSeed(this.activeTheme()),
+  }));
+  /** Theme custom properties for the preview viewport; inherited by all page cards. */
+  readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
   readonly styleNotes = signal<StyleNote[]>([]);
   private styleCheckTimer?: ReturnType<typeof setTimeout>;
 
@@ -417,10 +462,25 @@ export class CvDetailComponent {
     };
   }
 
-  /** Title underline as a `border-bottom` string for `[style.borderBottom]`. */
+  /** Title underline as a `border-bottom` string for `[style.borderBottom]`.
+   * When the active theme defines an accent/muted section rule and the user
+   * hasn't explicitly set their own title border, the theme's colour/weight
+   * wins (Aurora); otherwise falls back to the neutral default (Classic,
+   * whose `ruleColor` is `'none'`, always takes this branch). */
   titleBorderCss(key: CvSectionKey): string {
     const b = effectiveTitleBorder(this.style(), key);
-    return b === 'none' ? 'none' : `var(--border-width) ${b} var(--border-subtle)`;
+    if (b === 'none') return 'none';
+    const sh = this.activeTheme().sectionHeader;
+    if (sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key)) {
+      const color = sh.ruleColor === 'accent' ? 'var(--cv-accent)' : 'var(--cv-muted)';
+      return `${sh.ruleWeightPt}pt ${b} ${color}`;
+    }
+    return `var(--border-width) ${b} var(--border-subtle)`;
+  }
+
+  private hasExplicitTitleBorder(key: CvSectionKey): boolean {
+    const s = this.style();
+    return s.sectionStyles?.[key]?.titleBorder != null || s.titleBorder != null;
   }
 
   toggleStylePopover(key: CvSectionKey): void {
@@ -496,14 +556,15 @@ export class CvDetailComponent {
     return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
   }
 
-  /** True when the style differs from `CV_STYLE_DEFAULT` in any way — a
-   * document-wide field (body font/size/weight/colour, title style, title
+  /** True when the style differs from the active theme's baseline in any way —
+   * a document-wide field (body font/size/weight/colour, title style, title
    * line, page geometry) OR a per-section override. Drives the "Reset styles"
-   * button's enabled state and the "Customized" badge, so both react to global
-   * changes, not only per-section ones. */
+   * button's enabled state and the "Custom" badge, so both react to global
+   * changes, not only per-section ones. A pristine doc on a theme is NOT
+   * custom (badge shows the theme name instead). */
   readonly hasAnyCustomStyle = computed(() => {
     const s = this.style();
-    const d = CV_STYLE_DEFAULT;
+    const d = this.themeBaseStyle();
     const nonEmpty = (o: Record<string, unknown> | undefined): boolean =>
       !!o && Object.values(o).some((v) => v != null);
     const sectionCustom = Object.values(s.sectionStyles ?? {}).some(
@@ -524,10 +585,22 @@ export class CvDetailComponent {
     );
   });
 
-  /** Reset every section and the document-wide style to the default. */
+  /** Reset every section and the document-wide style back to the active
+   * theme's baseline (not the hard-coded Classic default). */
   resetAllStyles(): void {
-    this.style.set({ ...CV_STYLE_DEFAULT });
+    this.style.set({ ...this.themeBaseStyle() });
     this.openStyleKey.set(null);
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    void this.refreshStyleNotes();
+  }
+
+  /** Switch theme: reseed the four base tokens to the theme's defaults but keep
+   * the user's explicit per-section overrides, title style, title border, and
+   * page geometry. */
+  selectTheme(id: number): void {
+    this.themeId.set(id);
+    const seed = themeStyleSeed(getBuiltinTheme(id));
+    this.style.set({ ...this.style(), ...seed });
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     void this.refreshStyleNotes();
   }
@@ -634,9 +707,12 @@ export class CvDetailComponent {
       this.includeBirthdate.set(!!personal?.birthDate);
       this.includeMaritalStatus.set(!!personal?.maritalStatus);
 
+      const themeId = item.themeId ?? 1;
+      this.themeId.set(themeId);
+      const seed = themeStyleSeed(getBuiltinTheme(themeId));
       const style: CvStyle = item.styleJson
-        ? { ...CV_STYLE_DEFAULT, ...JSON.parse(item.styleJson) }
-        : CV_STYLE_DEFAULT;
+        ? { ...CV_STYLE_DEFAULT, ...seed, ...JSON.parse(item.styleJson) }
+        : { ...CV_STYLE_DEFAULT, ...seed };
       this.style.set(style);
       await this.refreshStyleNotes();
     } catch {
@@ -1004,6 +1080,7 @@ export class CvDetailComponent {
         contentJson: JSON.stringify({ sections }),
         templateId: doc.templateId,
         styleJson: JSON.stringify(this.style()),
+        themeId: this.themeId(),
         regionTag: this.regionTag(),
         language: doc.language,
         archetypeTag: doc.archetypeTag,

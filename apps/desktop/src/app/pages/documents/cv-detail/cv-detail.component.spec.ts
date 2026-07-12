@@ -108,6 +108,25 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.hasAnyCustomStyle()).toBe(true); // per-section still works
   });
 
+  it('is not "custom" on a pristine non-default theme, and resets to that theme', () => {
+    // Switch to Aurora: the four base tokens are reseeded, so a pristine
+    // Aurora doc is NOT custom — the badge shows the theme name, not "Custom".
+    component.selectTheme(2);
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    expect(component.activeTheme().name).toBe('Aurora');
+    expect(component.style().accentColorHex).toBe('#1B7464');
+
+    // Editing a token makes it custom.
+    component.updateStyle({ accentColorHex: '#000000' });
+    expect(component.hasAnyCustomStyle()).toBe(true);
+
+    // Reset returns to the SELECTED theme (Aurora), not the Classic default.
+    component.resetAllStyles();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    expect(component.style().accentColorHex).toBe('#1B7464');
+    expect(component.style().fontFamily).toBe('Lato');
+  });
+
   it('toggleStylePopover opens and closes the same key', () => {
     expect(component.openStyleKey()).toBeNull();
     component.toggleStylePopover('summary');
@@ -296,6 +315,18 @@ describe('CvDetailComponent per-section style', () => {
     );
   });
 
+  it('summary preview renders **bold** as <strong>', () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([{ key: 'summary', order: 0, visible: true, text: 'A **Key** point' }]);
+    fixture.detectChanges();
+    const strongs = fixture.nativeElement.querySelectorAll('.cvpreview__summary strong');
+    expect(Array.from(strongs).some((s: HTMLElement) => s.textContent?.trim() === 'Key')).toBe(
+      true,
+    );
+  });
+
   it('defaults photoPlacement to above_left and updates on chip select', () => {
     expect(component.photoPlacement()).toBe('above_left');
     component.setPhotoPlacement('above_right');
@@ -382,5 +413,41 @@ describe('CvDetailComponent per-section style', () => {
     fixture.detectChanges();
     const title = fixture.nativeElement.querySelector('.cvpreview__section-title') as HTMLElement;
     expect(title.style.fontFamily).toContain('Arial');
+  });
+
+  it('Aurora theme exposes teal accent var and shows industry', async () => {
+    component.doc.set({ id: 1, docType: 'cv', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(true);
+    component.sections.set([
+      {
+        key: 'experience',
+        order: 0,
+        visible: true,
+        entries: [
+          {
+            company: 'Acme',
+            role: 'Engineer',
+            startDate: '2020',
+            industry: 'SaaS',
+            bullets: [],
+          },
+        ],
+      },
+    ]);
+    component.selectTheme(2);
+    fixture.detectChanges();
+    const viewport: HTMLElement = fixture.nativeElement.querySelector('.cvpreview-viewport');
+    expect(viewport.style.getPropertyValue('--cv-accent')).toBe('#1B7464');
+    expect(viewport.style.getPropertyValue('--cv-role-style')).toBe('italic');
+    expect(fixture.nativeElement.textContent).toContain('SaaS');
+  });
+
+  it('explicit user titleBorder wins over the Aurora theme accent rule', () => {
+    component.selectTheme(2);
+    component.style.set({ ...component.style(), titleBorder: 'dotted' });
+    const css = component.titleBorderCss('summary');
+    expect(css).toContain('dotted');
+    expect(css).not.toContain('--cv-accent');
   });
 });

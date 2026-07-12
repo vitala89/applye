@@ -86,6 +86,7 @@ pub fn run() {
             commands::documents::cv_document_export,
             commands::documents::cover_letter_document_export,
             commands::documents::check_style_safety,
+            commands::documents::validate_theme,
             commands::health::health_check,
             commands::tailoring::generated_doc_get,
             commands::tailoring::export_docx,

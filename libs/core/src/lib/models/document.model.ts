@@ -65,6 +65,9 @@ export interface CvExperienceEntry {
   startDate: string;
   endDate?: string;
   location?: string;
+  /** Optional industry / domain tag, shown by themes whose entry layout
+   * surfaces it (e.g. Aurora "Company - Industry"); ignored by others. */
+  industry?: string;
   bullets: string[];
 }
 
@@ -376,6 +379,8 @@ export interface DocumentLibraryItem {
   contentJson?: string;
   filePath?: string;
   templateId?: number;
+  /** Selected visual theme id (built-in: 1=Classic, 2=Aurora). Absent → Classic. */
+  themeId?: number;
   styleJson?: string;
   regionTag?: string;
   language?: SupportedLanguage;
@@ -397,6 +402,8 @@ export interface UpsertDocumentLibraryItemInput {
   contentJson?: string;
   filePath?: string;
   templateId?: number;
+  /** Selected visual theme id (built-in: 1=Classic, 2=Aurora). Absent → Classic. */
+  themeId?: number;
   styleJson?: string;
   regionTag?: string;
   language?: SupportedLanguage;

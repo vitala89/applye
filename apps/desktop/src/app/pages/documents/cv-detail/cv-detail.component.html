@@ -131,11 +131,13 @@
                 (click)="toggleStyleOpen()"
               >
                 <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
-                @if (hasAnyCustomStyle()) {
-                  <span class="cvdetail__custom-badge">{{
-                    t()('documents.cv_style_customized')
-                  }}</span>
-                }
+                <span class="cvdetail__custom-badge">
+                  @if (hasAnyCustomStyle()) {
+                    {{ t()('documents.cv_style_customized') }}
+                  } @else {
+                    {{ activeTheme().name }}
+                  }
+                </span>
                 <lucide-icon
                   [img]="icons.chevron"
                   [size]="16"
@@ -158,6 +160,23 @@
 
             <div class="docedit-collapse" [class.docedit-collapse--closed]="!styleOpen()">
               <div>
+                <div class="docedit-style-section">
+                  <span class="docedit-style-section__header">{{
+                    t()('documents.cv_theme_label')
+                  }}</span>
+                  <div class="docedit-style-grid">
+                    <label class="docedit-field">
+                      <select
+                        [value]="themeId().toString()"
+                        (change)="selectTheme(+$any($event.target).value)"
+                      >
+                        <option value="1">{{ t()('documents.cv_theme_classic') }}</option>
+                        <option value="2">{{ t()('documents.cv_theme_aurora') }}</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
                 <div class="docedit-style-section">
                   <span class="docedit-style-section__header">{{
                     t()('documents.cv_style_group_body')
@@ -544,11 +563,26 @@
                         </div>
                       }
                       @case ('summary') {
-                        <textarea
-                          [ngModel]="$any(section).text"
-                          (ngModelChange)="$any(section).text = $event"
-                          rows="4"
-                        ></textarea>
+                        <div class="cvdetail__bold-field">
+                          <textarea
+                            #summaryEl
+                            [ngModel]="$any(section).text"
+                            (ngModelChange)="$any(section).text = $event"
+                            (keydown)="
+                              onBoldKeydown($event, summaryEl, (v) => ($any(section).text = v))
+                            "
+                            rows="4"
+                          ></textarea>
+                          <button
+                            type="button"
+                            class="cvdetail__bold-btn"
+                            [attr.aria-label]="t()('documents.cv_bold_action')"
+                            (mousedown)="$event.preventDefault()"
+                            (click)="applyBold(summaryEl, (v) => ($any(section).text = v))"
+                          >
+                            B
+                          </button>
+                        </div>
                       }
                       @case ('experience') {
                         @for (entry of $any(section).entries; track $index) {
@@ -585,11 +619,28 @@
                               <div class="cvdetail__bullet-row">
                                 <span class="cvdetail__bullet-dot">•</span>
                                 <input
+                                  #bulletEl
                                   type="text"
                                   [ngModel]="bullet"
                                   (ngModelChange)="entry.bullets[$index] = $event"
+                                  (keydown)="
+                                    onBoldKeydown(
+                                      $event,
+                                      bulletEl,
+                                      (v) => (entry.bullets[$index] = v)
+                                    )
+                                  "
                                   [placeholder]="t()('documents.cv_field_bullet')"
                                 />
+                                <button
+                                  type="button"
+                                  class="cvdetail__bold-btn"
+                                  [attr.aria-label]="t()('documents.cv_bold_action')"
+                                  (mousedown)="$event.preventDefault()"
+                                  (click)="applyBold(bulletEl, (v) => (entry.bullets[$index] = v))"
+                                >
+                                  B
+                                </button>
                                 <button
                                   class="cvdetail__bullet-remove"
                                   type="button"
@@ -983,7 +1034,7 @@
         </ng-template>
       } @else {
         <div class="cvdetail__preview-col">
-          <div class="cvpreview-viewport">
+          <div class="cvpreview-viewport" [ngStyle]="themeVars()">
             <lib-paginated-sheet
               [atoms]="atoms()"
               [geometry]="geometry()"
@@ -1035,7 +1086,15 @@
               >
                 {{ t()(sectionLabelKey('summary')) }}
               </h3>
-              <p class="cvpreview__summary">{{ section.text }}</p>
+              <p class="cvpreview__summary">
+                @for (run of runs(section.text); track $index) {
+                  @if (run.bold) {
+                    <strong>{{ run.text }}</strong>
+                  } @else {
+                    {{ run.text }}
+                  }
+                }
+              </p>
             </div>
           </ng-template>
 
@@ -1078,10 +1137,15 @@
               [ngStyle]="bodyCss(key)"
             >
               <div class="cvpreview__entry-head">
-                <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                <span class="cvpreview__entry-lead">
+                  <span class="cvpreview__entry-company">{{ entry.company }}</span>
+                  @if (activeTheme().entry.showIndustry && entry.industry) {
+                    <span class="cvpreview__entry-industry"> - {{ entry.industry }}</span>
+                  }
+                </span>
                 <span class="cvpreview__entry-meta">{{ entry.location }}</span>
               </div>
-              <div class="cvpreview__entry-head">
+              <div class="cvpreview__entry-head cvpreview__entry-head--rule">
                 <span class="cvpreview__entry-role">{{ entry.role }}</span>
                 <span class="cvpreview__entry-dates">
                   {{ entry.startDate }} –

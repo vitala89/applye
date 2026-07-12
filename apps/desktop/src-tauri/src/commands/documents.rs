@@ -39,6 +39,7 @@ pub struct DocumentLibraryItem {
     pub content_json: Option<String>,
     pub file_path: Option<String>,
     pub template_id: Option<i64>,
+    pub theme_id: Option<i64>,
     pub style_json: Option<String>,
     pub region_tag: Option<String>,
     pub language: Option<String>,
@@ -62,6 +63,7 @@ pub struct UpsertDocumentLibraryItemInput {
     pub content_json: Option<String>,
     pub file_path: Option<String>,
     pub template_id: Option<i64>,
+    pub theme_id: Option<i64>,
     pub style_json: Option<String>,
     pub region_tag: Option<String>,
     pub language: Option<String>,
@@ -541,6 +543,24 @@ fn tex_escape(text: &str) -> String {
     out
 }
 
+/// Escapes text for LaTeX, then renders `**bold**` spans as `\textbf{...}`.
+/// `tex_escape` leaves `*` untouched, so escaping first and scanning the
+/// escaped string for `**` markers is safe (verified against `tex_escape`
+/// above — no case maps `*` to anything else).
+fn tex_inline(text: &str) -> String {
+    let escaped = tex_escape(text);
+    let runs = crate::commands::tailoring::parse_inline_runs(&escaped);
+    let mut out = String::new();
+    for r in runs {
+        if r.bold {
+            out.push_str(&format!("\\textbf{{{}}}", r.text));
+        } else {
+            out.push_str(&r.text);
+        }
+    }
+    out
+}
+
 /// Renders a `CvContent` JSON blob into a clean, minimal LaTeX source
 /// (ROADMAP §16.6) — string templating only, never compiled here (no TeX
 /// toolchain bundled, keeps the binary tiny and local-first). Same section
@@ -587,7 +607,7 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
             "summary" => {
                 if let Some(text) = str_field("text") {
                     body.push_str("\\section*{Summary}\n");
-                    body.push_str(&tex_escape(&text));
+                    body.push_str(&tex_inline(&text));
                     body.push_str("\n\n");
                 }
             }
@@ -618,7 +638,7 @@ fn cv_content_to_tex(content_json: &str) -> Result<String, String> {
                             if !items.is_empty() {
                                 body.push_str("\\begin{itemize}\n");
                                 for bullet in items {
-                                    body.push_str(&format!("\\item {}\n", tex_escape(bullet)));
+                                    body.push_str(&format!("\\item {}\n", tex_inline(bullet)));
                                 }
                                 body.push_str("\\end{itemize}\n");
                             }
@@ -902,6 +922,138 @@ fn check_style_safety_core(style_json: Option<String>) -> Vec<StyleNote> {
         if let Some(n) = weight_note(o.font_weight.unwrap_or(style.font_weight)) {
             notes.push(n);
         }
+    }
+    notes
+}
+
+/// Hard validator for an uploaded CvThemeDescriptor (future upload/marketplace
+/// path). Returns a note per problem; empty = safe to store. Built-in themes
+/// always pass. Deliberately strict: rejects malformed hex, out-of-range
+/// numerics, and unknown enum values so untrusted descriptors cannot smuggle
+/// unexpected values into the render path.
+#[tauri::command]
+pub fn validate_theme(descriptor_json: Option<String>) -> Vec<StyleNote> {
+    validate_theme_core(descriptor_json)
+}
+
+fn is_hex_color(s: &str) -> bool {
+    let b = s.as_bytes();
+    (b.len() == 4 || b.len() == 7) && b[0] == b'#' && b[1..].iter().all(|c| c.is_ascii_hexdigit())
+}
+
+fn validate_theme_core(descriptor_json: Option<String>) -> Vec<StyleNote> {
+    let mut notes: Vec<StyleNote> = Vec::new();
+    let Some(raw) = descriptor_json else {
+        return notes;
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&raw) else {
+        notes.push(StyleNote {
+            kind: "font_ats_risk".into(),
+            detail: "malformed theme".into(),
+        });
+        return notes;
+    };
+    // hex tokens
+    for path in [("tokens", "accentHex"), ("tokens", "mutedHex")] {
+        if let Some(s) = v
+            .get(path.0)
+            .and_then(|o| o.get(path.1))
+            .and_then(|x| x.as_str())
+        {
+            if !is_hex_color(s) {
+                notes.push(StyleNote {
+                    kind: "color_readability_risk".into(),
+                    detail: s.into(),
+                });
+            }
+        }
+    }
+    // size + weight ranges
+    if let Some(sz) = v
+        .get("tokens")
+        .and_then(|o| o.get("baseSizePt"))
+        .and_then(|x| x.as_f64())
+    {
+        if !(6.0..=18.0).contains(&sz) {
+            notes.push(StyleNote {
+                kind: "size_out_of_range".into(),
+                detail: sz.to_string(),
+            });
+        }
+    }
+    if let Some(w) = v
+        .get("tokens")
+        .and_then(|o| o.get("fontWeight"))
+        .and_then(|x| x.as_i64())
+    {
+        if ![300, 400, 600, 700].contains(&w) {
+            notes.push(StyleNote {
+                kind: "weight_unavailable_risk".into(),
+                detail: w.to_string(),
+            });
+        }
+    }
+    // enum membership
+    let check_enum = |notes: &mut Vec<StyleNote>, val: Option<&str>, allowed: &[&str]| {
+        if let Some(s) = val {
+            if !allowed.contains(&s) {
+                notes.push(StyleNote {
+                    kind: "font_ats_risk".into(),
+                    detail: s.into(),
+                });
+            }
+        }
+    };
+    check_enum(
+        &mut notes,
+        v.get("header")
+            .and_then(|o| o.get("titleColor"))
+            .and_then(|x| x.as_str()),
+        &["accent", "text"],
+    );
+    check_enum(
+        &mut notes,
+        v.get("header")
+            .and_then(|o| o.get("contactLayout"))
+            .and_then(|x| x.as_str()),
+        &["inline-pipe", "stacked"],
+    );
+    check_enum(
+        &mut notes,
+        v.get("sectionHeader")
+            .and_then(|o| o.get("case"))
+            .and_then(|x| x.as_str()),
+        &["upper", "none"],
+    );
+    check_enum(
+        &mut notes,
+        v.get("sectionHeader")
+            .and_then(|o| o.get("color"))
+            .and_then(|x| x.as_str()),
+        &["accent", "text"],
+    );
+    check_enum(
+        &mut notes,
+        v.get("entry")
+            .and_then(|o| o.get("companyColor"))
+            .and_then(|x| x.as_str()),
+        &["accent", "text"],
+    );
+    check_enum(
+        &mut notes,
+        v.get("bullets")
+            .and_then(|o| o.get("marker"))
+            .and_then(|x| x.as_str()),
+        &["disc", "textbullet"],
+    );
+    for k in ["header", "sectionHeader", "entry"] {
+        check_enum(
+            &mut notes,
+            v.get(k)
+                .and_then(|o| o.get("ruleColor"))
+                .and_then(|x| x.as_str()),
+            &["accent", "muted", "none"],
+        );
     }
     notes
 }
@@ -1205,6 +1357,7 @@ async fn document_library_upsert_core(
                content_json   = ?,
                file_path      = ?,
                template_id    = ?,
+               theme_id       = ?,
                style_json     = ?,
                region_tag     = ?,
                language       = ?,
@@ -1224,6 +1377,7 @@ async fn document_library_upsert_core(
         .bind(input.content_json)
         .bind(input.file_path)
         .bind(input.template_id)
+        .bind(input.theme_id)
         .bind(input.style_json)
         .bind(input.region_tag)
         .bind(input.language)
@@ -1240,10 +1394,10 @@ async fn document_library_upsert_core(
         None => sqlx::query_as::<_, DocumentLibraryItem>(
             "INSERT INTO document_library
                (doc_type, source, label, content_json, file_path, template_id,
-                style_json, region_tag, language, archetype_tag, is_default,
+                theme_id, style_json, region_tag, language, archetype_tag, is_default,
                 input_hash, model_used, tokens_input, tokens_output,
                 created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
              RETURNING *",
         )
         .bind(input.doc_type)
@@ -1252,6 +1406,7 @@ async fn document_library_upsert_core(
         .bind(input.content_json)
         .bind(input.file_path)
         .bind(input.template_id)
+        .bind(input.theme_id)
         .bind(input.style_json)
         .bind(input.region_tag)
         .bind(input.language)
@@ -1350,6 +1505,7 @@ mod tests {
             content_json: Some(r#"{"sections":[]}"#.to_string()),
             file_path: None,
             template_id: Some(template_id),
+            theme_id: None,
             style_json: None,
             region_tag: Some("de".to_string()),
             language: Some("de".to_string()),
@@ -1655,10 +1811,33 @@ mod tests {
     }
 
     #[test]
+    fn cv_content_to_tex_renders_inline_bold_as_textbf() {
+        let content_json = r#"{"sections":[
+            {"key":"summary","order":0,"visible":true,"text":"A **Key** point"}
+        ]}"#;
+        let tex = cv_content_to_tex(content_json).expect("render");
+        assert!(tex.contains("\\textbf{Key}"));
+        assert!(!tex.contains("**Key**"));
+    }
+
+    #[test]
     fn check_style_safety_is_quiet_on_the_safe_default() {
         assert!(check_style_safety_core(None).is_empty());
         let safe = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333"}"##;
         assert!(check_style_safety_core(Some(safe.to_string())).is_empty());
+    }
+
+    #[test]
+    fn validate_theme_accepts_builtin_aurora() {
+        let aurora = r##"{"id":2,"name":"Aurora","version":1,"tokens":{"accentHex":"#1B7464","mutedHex":"#666666","fontFamily":"Lato","baseSizePt":10,"fontWeight":400},"header":{"titleColor":"accent","contactLayout":"inline-pipe","ruleWeightPt":0.8,"ruleColor":"accent"},"sectionHeader":{"case":"upper","color":"accent","ruleWeightPt":0.8,"ruleColor":"accent"},"entry":{"companyColor":"accent","roleItalic":true,"showIndustry":true,"ruleWeightPt":0.4,"ruleColor":"muted"},"bullets":{"marker":"textbullet"}}"##;
+        assert!(validate_theme_core(Some(aurora.to_string())).is_empty());
+    }
+
+    #[test]
+    fn validate_theme_flags_bad_hex_and_enum() {
+        let bad = r##"{"id":9,"name":"X","version":1,"tokens":{"accentHex":"teal","mutedHex":"#666666","fontFamily":"Lato","baseSizePt":10,"fontWeight":400},"header":{"titleColor":"rainbow","contactLayout":"inline-pipe","ruleWeightPt":0.8,"ruleColor":"accent"},"sectionHeader":{"case":"upper","color":"accent","ruleWeightPt":0.8,"ruleColor":"accent"},"entry":{"companyColor":"accent","roleItalic":true,"showIndustry":true,"ruleWeightPt":0.4,"ruleColor":"muted"},"bullets":{"marker":"textbullet"}}"##;
+        let notes = validate_theme_core(Some(bad.to_string()));
+        assert!(!notes.is_empty());
     }
 
     #[test]

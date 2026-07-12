@@ -1197,6 +1197,25 @@ mod tests {
     }
 
     #[test]
+    fn block_paragraph_bold_merge_rule_on_inline_runs() {
+        // block_paragraph returns an opaque docx_rs::Paragraph, so this
+        // documents the exact `block.bold || run.bold` merge rule it applies
+        // per-run via parse_inline_runs, using the same "a **b** c" body line.
+        let runs = parse_inline_runs("a **b** c");
+        assert_eq!(runs.len(), 3);
+
+        // block.bold = false → bold only on the middle inline-emphasis run.
+        let block_bold = false;
+        let merged: Vec<bool> = runs.iter().map(|r| block_bold || r.bold).collect();
+        assert_eq!(merged, vec![false, true, false]);
+
+        // block.bold = true → every run renders bold, regardless of markers.
+        let block_bold = true;
+        let merged: Vec<bool> = runs.iter().map(|r| block_bold || r.bold).collect();
+        assert_eq!(merged, vec![true, true, true]);
+    }
+
+    #[test]
     fn hex_to_rgb_parses_and_falls_back() {
         assert_eq!(hex_to_rgb("#FF8000"), (255, 128, 0));
         assert_eq!(hex_to_rgb("00ff00"), (0, 255, 0));

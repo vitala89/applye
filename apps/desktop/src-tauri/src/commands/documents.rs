@@ -1811,6 +1811,16 @@ mod tests {
     }
 
     #[test]
+    fn cv_content_to_tex_renders_inline_bold_as_textbf() {
+        let content_json = r#"{"sections":[
+            {"key":"summary","order":0,"visible":true,"text":"A **Key** point"}
+        ]}"#;
+        let tex = cv_content_to_tex(content_json).expect("render");
+        assert!(tex.contains("\\textbf{Key}"));
+        assert!(!tex.contains("**Key**"));
+    }
+
+    #[test]
     fn check_style_safety_is_quiet_on_the_safe_default() {
         assert!(check_style_safety_core(None).is_empty());
         let safe = r##"{"fontFamily":"Calibri","fontSizePt":11,"accentColorHex":"#333333"}"##;

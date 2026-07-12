@@ -60,4 +60,11 @@ describe('toggleBoldWrap', () => {
     expect(r.selStart).toBe(3);
     expect(r.selEnd).toBe(3);
   });
+
+  it('unwraps a selection that includes the ** markers themselves (toggle off)', () => {
+    // "Led a **big** refactor", select "**big**" including markers (6..13)
+    const r = toggleBoldWrap('Led a **big** refactor', 6, 13);
+    expect(r.text).toBe('Led a big refactor');
+    expect(r.text.slice(r.selStart, r.selEnd)).toBe('big');
+  });
 });

@@ -45,7 +45,6 @@ import {
   CV_ATS_SAFE_FONTS,
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
-  toggleBoldWrap,
   getBuiltinTheme,
   themeStyleSeed,
 } from '@applye/core';
@@ -59,8 +58,8 @@ import { CvSummaryEditorComponent } from './section-editors/cv-summary-editor.co
 import { CvLanguagesEditorComponent } from './section-editors/cv-languages-editor.component';
 import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.component';
 import { CvEducationEditorComponent } from './section-editors/cv-education-editor.component';
+import { CvExperienceEditorComponent } from './section-editors/cv-experience-editor.component';
 import {
-  blankExperienceEntry,
   cvFieldAtsNoteKeys,
   mergeRegeneratedSection,
   normalizeCvContent,
@@ -98,6 +97,7 @@ export function mergePersonalField<T extends string | undefined>(
     CvLanguagesEditorComponent,
     CvSkillsEditorComponent,
     CvEducationEditorComponent,
+    CvExperienceEditorComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -138,34 +138,6 @@ export class CvDetailComponent {
       label: `${tag.toUpperCase()} — ${this.t()(`documents.cv_region_${tag}`)}`,
     })),
   );
-
-  /** Wrap/unwrap **bold** around the field's current selection, then write the
-   * result back to the model and restore the caret. Bound to the Bold button
-   * and Cmd/Ctrl+B on summary + bullet fields. */
-  applyBold(el: HTMLTextAreaElement | HTMLInputElement, set: (v: string) => void): void {
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
-    const r = toggleBoldWrap(el.value, start, end);
-    set(r.text);
-    queueMicrotask(() => {
-      el.value = r.text;
-      el.setSelectionRange(r.selStart, r.selEnd);
-      el.focus();
-    });
-  }
-
-  /** Cmd/Ctrl+B handler for the summary textarea and bullet inputs — delegates
-   * to `applyBold` and prevents the browser's native bold shortcut. */
-  onBoldKeydown(
-    event: KeyboardEvent,
-    el: HTMLTextAreaElement | HTMLInputElement,
-    set: (v: string) => void,
-  ): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
-      event.preventDefault();
-      this.applyBold(el, set);
-    }
-  }
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -605,29 +577,6 @@ export class CvDetailComponent {
    * `CvSummaryEditorComponent`, `CvLanguagesEditorComponent`). */
   replaceSection(updated: CvSection): void {
     this.sections.update((list) => list.map((s) => (s.key === updated.key ? updated : s)));
-  }
-
-  /** Experience-only now — the education arm owns its own local `addEntry`
-   * (see `CvEducationEditorComponent`) since the blank-entry shape differs
-   * and that section has already been extracted. */
-  addEntry(section: Extract<CvSection, { key: 'experience' }>): void {
-    section.entries.push(blankExperienceEntry());
-    this.sections.set([...this.sections()]);
-  }
-
-  removeEntry(section: Extract<CvSection, { key: 'experience' }>, index: number): void {
-    section.entries.splice(index, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  addBullet(entry: { bullets: string[] }): void {
-    entry.bullets.push('');
-    this.sections.set([...this.sections()]);
-  }
-
-  removeBullet(entry: { bullets: string[] }, index: number): void {
-    entry.bullets.splice(index, 1);
-    this.sections.set([...this.sections()]);
   }
 
   async regenerateSection(key: CvSectionKey): Promise<void> {

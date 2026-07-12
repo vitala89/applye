@@ -569,100 +569,10 @@
                         />
                       }
                       @case ('experience') {
-                        @for (entry of $any(section).entries; track $index) {
-                          <div class="cvdetail__entry">
-                            <div class="cvdetail__grid">
-                              <input
-                                type="text"
-                                [ngModel]="entry.role"
-                                (ngModelChange)="entry.role = $event"
-                                [placeholder]="t()('documents.cv_field_role')"
-                              />
-                              <input
-                                type="text"
-                                [ngModel]="entry.company"
-                                (ngModelChange)="entry.company = $event"
-                                [placeholder]="t()('documents.cv_field_company')"
-                              />
-                              <input
-                                type="text"
-                                class="cvdetail__input-mono"
-                                [ngModel]="entry.startDate"
-                                (ngModelChange)="entry.startDate = $event"
-                                [placeholder]="t()('documents.cv_field_start_date')"
-                              />
-                              <input
-                                type="text"
-                                class="cvdetail__input-mono"
-                                [ngModel]="entry.endDate"
-                                (ngModelChange)="entry.endDate = $event"
-                                [placeholder]="t()('documents.cv_field_end_date')"
-                              />
-                            </div>
-                            @for (bullet of entry.bullets; track $index) {
-                              <div class="cvdetail__bullet-row">
-                                <span class="cvdetail__bullet-dot">•</span>
-                                <input
-                                  #bulletEl
-                                  type="text"
-                                  [ngModel]="bullet"
-                                  (ngModelChange)="entry.bullets[$index] = $event"
-                                  (keydown)="
-                                    onBoldKeydown(
-                                      $event,
-                                      bulletEl,
-                                      (v) => (entry.bullets[$index] = v)
-                                    )
-                                  "
-                                  [placeholder]="t()('documents.cv_field_bullet')"
-                                />
-                                <button
-                                  type="button"
-                                  class="cvdetail__bold-btn"
-                                  [attr.aria-label]="t()('documents.cv_bold_action')"
-                                  (mousedown)="$event.preventDefault()"
-                                  (click)="applyBold(bulletEl, (v) => (entry.bullets[$index] = v))"
-                                >
-                                  B
-                                </button>
-                                <button
-                                  class="cvdetail__bullet-remove"
-                                  type="button"
-                                  [attr.aria-label]="t()('documents.cv_remove_bullet')"
-                                  (click)="removeBullet(entry, $index)"
-                                >
-                                  <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
-                                </button>
-                              </div>
-                            }
-                            <div class="cvdetail__entry-actions">
-                              <button
-                                type="button"
-                                class="cvdetail__add-btn"
-                                (click)="addBullet(entry)"
-                              >
-                                <lucide-icon [img]="icons.plus" [size]="12" aria-hidden="true" />
-                                {{ t()('documents.cv_add_bullet') }}
-                              </button>
-                              <button
-                                type="button"
-                                class="cvdetail__remove-btn"
-                                (click)="removeEntry($any(section), $index)"
-                              >
-                                <lucide-icon [img]="icons.trash" [size]="12" aria-hidden="true" />
-                                {{ t()('documents.cv_remove_entry') }}
-                              </button>
-                            </div>
-                          </div>
-                        }
-                        <button
-                          type="button"
-                          class="cvdetail__add-btn"
-                          (click)="addEntry($any(section))"
-                        >
-                          <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                          {{ t()('documents.cv_add_experience') }}
-                        </button>
+                        <app-cv-experience-editor
+                          [section]="$any(section)"
+                          (sectionChange)="replaceSection($event)"
+                        />
                       }
                       @case ('education') {
                         <app-cv-education-editor

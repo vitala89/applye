@@ -1,0 +1,76 @@
+@for (entry of section().entries; track $index; let ei = $index) {
+  <div class="cvdetail__entry">
+    <div class="cvdetail__grid">
+      <input
+        type="text"
+        [ngModel]="entry.role"
+        (ngModelChange)="updateField(ei, 'role', $event)"
+        [placeholder]="t()('documents.cv_field_role')"
+      />
+      <input
+        type="text"
+        [ngModel]="entry.company"
+        (ngModelChange)="updateField(ei, 'company', $event)"
+        [placeholder]="t()('documents.cv_field_company')"
+      />
+      <input
+        type="text"
+        class="cvdetail__input-mono"
+        [ngModel]="entry.startDate"
+        (ngModelChange)="updateField(ei, 'startDate', $event)"
+        [placeholder]="t()('documents.cv_field_start_date')"
+      />
+      <input
+        type="text"
+        class="cvdetail__input-mono"
+        [ngModel]="entry.endDate"
+        (ngModelChange)="updateField(ei, 'endDate', $event)"
+        [placeholder]="t()('documents.cv_field_end_date')"
+      />
+    </div>
+    @for (bullet of entry.bullets; track $index; let bi = $index) {
+      <div class="cvdetail__bullet-row">
+        <span class="cvdetail__bullet-dot">•</span>
+        <input
+          #bulletEl
+          type="text"
+          [ngModel]="bullet"
+          (ngModelChange)="updateBullet(ei, bi, $event)"
+          (keydown)="onBoldKeydown($event, ei, bi, bulletEl)"
+          [placeholder]="t()('documents.cv_field_bullet')"
+        />
+        <button
+          type="button"
+          class="cvdetail__bold-btn"
+          [attr.aria-label]="t()('documents.cv_bold_action')"
+          (mousedown)="$event.preventDefault()"
+          (click)="applyBold(ei, bi, bulletEl)"
+        >
+          B
+        </button>
+        <button
+          class="cvdetail__bullet-remove"
+          type="button"
+          [attr.aria-label]="t()('documents.cv_remove_bullet')"
+          (click)="removeBullet(ei, bi)"
+        >
+          <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+        </button>
+      </div>
+    }
+    <div class="cvdetail__entry-actions">
+      <button type="button" class="cvdetail__add-btn" (click)="addBullet(ei)">
+        <lucide-icon [img]="icons.plus" [size]="12" aria-hidden="true" />
+        {{ t()('documents.cv_add_bullet') }}
+      </button>
+      <button type="button" class="cvdetail__remove-btn" (click)="removeEntry(ei)">
+        <lucide-icon [img]="icons.trash" [size]="12" aria-hidden="true" />
+        {{ t()('documents.cv_remove_entry') }}
+      </button>
+    </div>
+  </div>
+}
+<button type="button" class="cvdetail__add-btn" (click)="addEntry()">
+  <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+  {{ t()('documents.cv_add_experience') }}
+</button>

@@ -160,6 +160,39 @@ describe('CvPreviewComponent', () => {
     expect(component.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
   });
 
+  it('a whole-entry selection frames only the clicked entry; languages body frames its <p>', () => {
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'experience',
+        order: 0,
+        visible: true,
+        entries: [
+          { company: 'Acme', role: 'Eng', startDate: '2020', bullets: ['x'] },
+          { company: 'Beta', role: 'Dev', startDate: '2018', bullets: ['y'] },
+        ],
+      },
+      { key: 'languages', order: 1, visible: true, items: [{ language: 'English', level: '' }] },
+    ]);
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'experience',
+      part: 'body',
+      elementPath: 'exp.1',
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    // Only the clicked entry's head is framed — not every experience entry.
+    expect(
+      root.querySelectorAll('.page-card .cvpreview__entry.cvpreview__element-selected'),
+    ).toHaveLength(1);
+
+    fixture.componentRef.setInput('selection', { sectionKey: 'languages', part: 'body' });
+    fixture.detectChanges();
+    expect(
+      root.querySelector('.page-card p.cvpreview__languages.cvpreview__selected'),
+    ).toBeTruthy();
+  });
+
   it('marks every section start for spacing (measured padding, not sibling margin)', () => {
     // Regression: inter-section spacing relied on `.cvpreview__section +
     // .cvpreview__section` sibling adjacency, which never matches because the

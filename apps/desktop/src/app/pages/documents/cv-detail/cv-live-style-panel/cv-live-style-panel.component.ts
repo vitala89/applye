@@ -6,6 +6,7 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgStyle } from '@angular/common';
@@ -97,24 +98,51 @@ export class CvLiveStylePanelComponent {
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
 
+  /** Collapsible-group state (session only): the Text group opens by default,
+   * the Line group starts collapsed — this keeps the panel short enough that
+   * the footer reset button stays reachable on small windows without
+   * scrolling. */
+  readonly textOpen = signal(true);
+  readonly lineOpen = signal(false);
+
   /** "Edit text" applies to editable content — any body selection. Titles are
    * fixed section labels, not user-authored text, so they get no Edit control. */
   readonly canEditText = computed<boolean>(() => {
     const sel = this.selection();
-    // The contact line is style-only (it's composed from several fields and
-    // has no single inline editor), so it never offers "Edit text".
-    return sel?.part === 'body' && sel.elementPath !== 'pd.contact';
+    // The contact line is style-only (composed from several fields, no single
+    // inline editor); a whole entry (exp.0/edu.0) likewise has no single text
+    // leaf to edit — both suppress "Edit text".
+    return (
+      sel?.part === 'body' && sel.elementPath !== 'pd.contact' && !this.isEntryPath(sel.elementPath)
+    );
   });
 
   /** The specific field label + short id for the current selection — shown in
    * the panel's "Editing" header so it names exactly what's selected (mirrors
    * the on-paper chip, e.g. "Name  #name"). Derived by parsing the selection's
    * `elementPath`; falls back to the generic body/title labels. */
+  /** An "entry" path (`exp.0`, `edu.1`) targets a whole experience/education
+   * entry, not a single text leaf — it behaves like a section selection
+   * (section-scope styling, section name in the header) but frames just the
+   * clicked entry on the paper. */
+  private isEntryPath(p: string | undefined): boolean {
+    return !!p && /^(?:exp|edu)\.\d+$/.test(p);
+  }
+
+  /** Whether the current selection is a whole experience/education entry —
+   * used to hide the meaningless "This element" scope for it. */
+  readonly isEntrySelection = computed<boolean>(() =>
+    this.isEntryPath(this.selection()?.elementPath),
+  );
+
   private fieldInfo(): { key: string; id: string } | null {
     const sel = this.selection();
     if (!sel) return null;
     if (sel.part === 'title') return { key: 'documents.cv_style_group_titles', id: sel.sectionKey };
     const p = sel.elementPath;
+    if (this.isEntryPath(p)) {
+      return { key: sectionLabelKey(sel.sectionKey), id: sel.sectionKey };
+    }
     // Whole-section selection (body, no specific leaf): name the section
     // itself so the header reads e.g. "Personal details" rather than the
     // generic "Body text".
@@ -236,7 +264,10 @@ export class CvLiveStylePanelComponent {
     const sel = this.selection();
     if (!sel) return 'element';
     if (sel.part === 'title') return 'section';
-    return sel.elementPath ? 'element' : 'section';
+    // A whole-entry or pathless body selection has no single leaf to target,
+    // so it defaults to section scope (element scope would land on nothing).
+    if (!sel.elementPath || this.isEntryPath(sel.elementPath)) return 'section';
+    return 'element';
   });
 
   setScope(value: CvStyleScope): void {

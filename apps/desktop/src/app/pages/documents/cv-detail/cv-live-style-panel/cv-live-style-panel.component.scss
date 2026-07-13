@@ -209,6 +209,38 @@
   font-size: 14px;
 }
 
+/* --- Collapsible groups ---------------------------------------------- */
+.cvlive__group {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+.cvlive__group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.cvlive__group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+}
+.cvlive__chevron {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 120ms ease;
+  transform: rotate(-90deg);
+}
+.cvlive__chevron--open {
+  transform: rotate(0deg);
+}
+
 /* --- Existing controls ----------------------------------------------- */
 .cvlive__fields {
   display: flex;

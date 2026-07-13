@@ -376,13 +376,17 @@
     class="cvpreview__entry"
     [class.cvpreview__entry--sep]="!first"
     [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__element-selected]="
+      isElementSelected(leafPath('exp', i)) && selectable(renderMode)
+    "
     [attr.role]="selectable(renderMode) ? 'button' : null"
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
     [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
     [attr.data-cv-select]="key + ':body'"
-    (click)="selectPart(key, 'body', renderMode, $event)"
-    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
-    (keydown.space)="onSelectKey($event, key, 'body', renderMode)"
+    [attr.data-cv-chip]="t()(sectionLabelKey('experience'))"
+    (click)="selectLeaf(key, leafPath('exp', i), renderMode, $event)"
+    (keydown.enter)="selectLeaf(key, leafPath('exp', i), renderMode, $event)"
+    (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i))"
     [ngStyle]="bodyCss(key)"
   >
     <div class="cvpreview__entry-head">
@@ -662,13 +666,17 @@
   <div
     class="cvpreview__entry"
     [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__element-selected]="
+      isElementSelected(leafPath('edu', i)) && selectable(renderMode)
+    "
     [attr.role]="selectable(renderMode) ? 'button' : null"
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
     [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
     [attr.data-cv-select]="key + ':body'"
-    (click)="selectPart(key, 'body', renderMode, $event)"
-    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
-    (keydown.space)="onSelectKey($event, key, 'body', renderMode)"
+    [attr.data-cv-chip]="t()(sectionLabelKey('education'))"
+    (click)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
+    (keydown.enter)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
+    (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('edu', i))"
     [ngStyle]="bodyCss(key)"
   >
     <div class="cvpreview__entry-head">
@@ -827,10 +835,12 @@
     <p
       class="cvpreview__languages"
       [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__selected]="isSectionSelected('languages') && selectable(renderMode)"
       [attr.role]="selectable(renderMode) ? 'button' : null"
       [attr.tabindex]="selectable(renderMode) ? 0 : null"
       [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('languages', 'body') : null"
       [attr.data-cv-select]="'languages:body'"
+      [attr.data-cv-chip]="t()(sectionLabelKey('languages'))"
       (click)="selectPart('languages', 'body', renderMode, $event)"
       (keydown.enter)="selectPart('languages', 'body', renderMode, $event)"
       (keydown.space)="onSelectKey($event, 'languages', 'body', renderMode)"

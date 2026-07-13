@@ -239,6 +239,21 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('a whole-entry selection (exp.0) behaves like a section, not a leaf', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'experience',
+      part: 'body',
+      elementPath: 'exp.0',
+    });
+    fixture.detectChanges();
+    expect(component.isEntrySelection()).toBe(true);
+    expect(component.scope()).toBe('section'); // element scope would land on nothing
+    expect(component.canEditText()).toBe(false); // no single text leaf to edit
+    // "This element" is hidden for an entry — only "This section" remains.
+    const btns = fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn');
+    expect(btns).toHaveLength(1);
+  });
+
   it('body-rule controls: shown for personal-details/experience, emit section-level width/colour', () => {
     fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
     fixture.detectChanges();

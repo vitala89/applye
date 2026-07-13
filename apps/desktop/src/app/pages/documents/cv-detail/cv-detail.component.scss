@@ -90,7 +90,11 @@
   // instead of scrolling, which is why the earlier scroll behaved erratically
   // and never reached the end. Plain block flow lets `.cvlive` keep its full
   // height so this container scrolls it.
+  // `dvh` (dynamic viewport height) excludes mobile browser chrome, so the
+  // last control (the reset button) clears the fold instead of hiding behind
+  // the address/home bar the way `vh` does. Fallback to `vh` first.
   max-height: calc(100vh - (var(--space-4) * 2));
+  max-height: calc(100dvh - (var(--space-4) * 2));
   overflow-y: auto;
 }
 .cvdetail__live-panel > app-cv-live-style-panel {

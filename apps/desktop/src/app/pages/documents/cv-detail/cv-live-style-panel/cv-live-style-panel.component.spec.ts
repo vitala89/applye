@@ -66,6 +66,19 @@ describe('CvLiveStylePanelComponent', () => {
     expect(component.scope()).toBe('section');
   });
 
+  it('defaults a pathless body selection (section-body wrapper, no leaf) to section scope', () => {
+    // Regression: several section-body wrapper hosts (personal_details, skills,
+    // experience/education, languages) emit a body selection with no
+    // `elementPath`. Defaulting those to `element` scope silently drops the
+    // edit, because the parent's element-scope branch requires a path.
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'skills',
+      part: 'body',
+    });
+    fixture.detectChanges();
+    expect(component.scope()).toBe('section');
+  });
+
   it('emits cleaned body patches tagged with the active (default element) scope', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',

@@ -65,12 +65,20 @@ export class CvLiveStylePanelComponent {
     { value: 1.6, labelKey: 'documents.cv_style_line_height_relaxed' },
   ];
 
-  /** Active scope. Resets to the default (`element` for a body leaf, `section`
-   * = this title for a title) whenever the selection changes; a manual switch
-   * survives subsequent edits (which mutate `style`, not `selection`). */
-  readonly scope = linkedSignal<CvStyleScope>(() =>
-    this.selection()?.part === 'title' ? 'section' : 'element',
-  );
+  /** Active scope. Resets to the default whenever the selection changes; a
+   * manual switch survives subsequent edits (which mutate `style`, not
+   * `selection`). Default is `section` for a title (= this title), `element`
+   * for a body leaf with an `elementPath`, and `section` for a pathless body
+   * selection (a section-body wrapper with no single leaf singled out) — the
+   * latter matters because `element` scope on a pathless selection would land
+   * on nothing (the parent's element-scope branch requires a path) and
+   * silently drop the edit. */
+  readonly scope = linkedSignal<CvStyleScope>(() => {
+    const sel = this.selection();
+    if (!sel) return 'element';
+    if (sel.part === 'title') return 'section';
+    return sel.elementPath ? 'element' : 'section';
+  });
 
   setScope(value: CvStyleScope): void {
     this.scope.set(value);

@@ -100,6 +100,24 @@ describe('CvDetailComponent per-section style', () => {
       expect(component.style().elementStyles).toBeUndefined();
     });
 
+    it('pathless body selection (section-body wrapper) at section scope lands on sectionStyles[key]', () => {
+      // Regression: several section-body wrapper hosts (personal_details,
+      // skills, experience/education, languages) select a body part with no
+      // elementPath. The live-style panel now defaults such selections to
+      // 'section' scope (not 'element', which would silently no-op below)
+      // so the edit actually lands instead of being dropped.
+      component.liveSelection.set({ sectionKey: 'skills', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', patch: { fontWeight: 700 } });
+      expect(component.style().sectionStyles?.skills).toEqual({ fontWeight: 700 });
+    });
+
+    it('pathless body selection at element scope is a no-op (defense-in-depth path guard)', () => {
+      component.liveSelection.set({ sectionKey: 'skills', part: 'body' });
+      const before = component.style();
+      component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });
+      expect(component.style()).toBe(before);
+    });
+
     it('body document scope writes the CvStyle root body fields', () => {
       component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
       component.onStylePanelChange({

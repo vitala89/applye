@@ -388,12 +388,15 @@ export class CvDetailComponent {
 
   /** True when the style differs from the active theme's baseline in any way —
    * a document-wide field (body font/size/weight/colour, title style, title
-   * line, page geometry), a per-section override, or a per-element override.
-   * Drives the live-style panel's "reset all styling" enabled state (Task 5 —
-   * the Edit-mode "Custom" badge that used to read this was removed along with
-   * the document-wide style groups), so it reacts to global, per-section, AND
-   * per-element changes alike. A pristine doc on a theme is NOT custom (a
-   * fresh Aurora doc doesn't count as "customized"). */
+   * line), a per-section override, or a per-element override. Page geometry
+   * is deliberately NOT part of this comparison: `resetAllStyles` preserves
+   * the current `page` rather than reseeding it, so page geometry never makes
+   * a document read as "custom" here. Drives the live-style panel's "reset
+   * all styling" enabled state (Task 5 — the Edit-mode "Custom" badge that
+   * used to read this was removed along with the document-wide style
+   * groups), so it reacts to global, per-section, AND per-element changes
+   * alike. A pristine doc on a theme is NOT custom (a fresh Aurora doc
+   * doesn't count as "customized"). */
   readonly hasAnyCustomStyle = computed(() => {
     const s = this.style();
     const d = this.themeBaseStyle();

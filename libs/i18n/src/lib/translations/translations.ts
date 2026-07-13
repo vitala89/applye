@@ -706,7 +706,6 @@ const en: TranslationMap = {
     cv_style_font: 'Font',
     cv_style_size: 'Size (pt)',
     cv_style_color: 'Color',
-    cv_style_hint_size: 'Recommended: 10–12pt body text.',
     cv_style_note_font:
       '"{value}" may not be reliably read by every ATS parser — safe choices: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
     cv_style_note_size:
@@ -1708,7 +1707,6 @@ const de: TranslationMap = {
     cv_style_font: 'Schriftart',
     cv_style_size: 'Größe (pt)',
     cv_style_color: 'Farbe',
-    cv_style_hint_size: 'Empfohlen: 10–12pt Fließtext.',
     cv_style_note_font:
       '„{value}" wird möglicherweise nicht von jedem ATS-Parser zuverlässig gelesen — sichere Wahl: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
     cv_style_note_size:

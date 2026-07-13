@@ -51,6 +51,44 @@ import {
   visiblePersonalContactFields,
 } from '../../cv-content.util';
 
+/** Field key for a per-leaf accessible-name suffix (Task 6 a11y hardening,
+ * review minor T2): every per-leaf selectable host — one with its own
+ * distinct `elementPath`, e.g. an experience entry's company/industry/
+ * location/role or a skill group's label/values — previously reused the
+ * generic `selectAriaLabel(key, 'body')` name for every field in the same
+ * section, so a screen reader announced "Experience — Body text" for company,
+ * industry, location, AND role alike. `leafAriaLabel` composes the section
+ * label with a field-specific label instead, reusing the SAME i18n field
+ * labels already shown in the Edit-mode section editors (`cv_field_company`,
+ * `cv_field_role`, …) rather than minting parallel strings. Hosts with no
+ * single leaf singled out (the whole-entry/whole-row/whole-body wrapper,
+ * which never carries an `elementPath`) keep the generic `selectAriaLabel`
+ * name — there is nothing to disambiguate there. */
+export type CvLeafFieldKey =
+  | 'fullName'
+  | 'title'
+  | 'company'
+  | 'industry'
+  | 'location'
+  | 'role'
+  | 'bullet'
+  | 'skillLabel'
+  | 'skillValues'
+  | 'language';
+
+const LEAF_FIELD_LABEL_KEYS: Record<CvLeafFieldKey, string> = {
+  fullName: 'documents.cv_field_full_name',
+  title: 'documents.cv_field_title',
+  company: 'documents.cv_field_company',
+  industry: 'documents.cv_field_industry',
+  location: 'documents.cv_field_location',
+  role: 'documents.cv_field_role',
+  bullet: 'documents.cv_field_bullet',
+  skillLabel: 'documents.cv_field_label',
+  skillValues: 'documents.cv_field_values',
+  language: 'documents.cv_field_language',
+};
+
 /**
  * Presentational live preview for the CV editor: the paginated page-card
  * sheet, its 8 atom templates, and the pure styling resolvers they depend on.
@@ -198,6 +236,16 @@ export class CvPreviewComponent {
       part === 'title' ? 'documents.cv_style_group_titles' : 'documents.cv_style_group_body',
     );
     return `${section} — ${scope}`;
+  }
+
+  /** Field-specific accessible name for a per-leaf selectable host — "<section>
+   * — <field>" (e.g. "Experience — Company"), so a screen reader can tell
+   * apart sibling leaves in the same section/part that `selectAriaLabel`
+   * alone would announce identically. See `CvLeafFieldKey`'s doc. */
+  leafAriaLabel(sectionKey: CvSectionKey, field: CvLeafFieldKey): string {
+    const section = this.t()(sectionLabelKey(sectionKey));
+    const fieldLabel = this.t()(LEAF_FIELD_LABEL_KEYS[field]);
+    return `${section} — ${fieldLabel}`;
   }
 
   /** The selectable host to return keyboard focus to once a committing edit

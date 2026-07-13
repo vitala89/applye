@@ -12,7 +12,11 @@
 
     <label class="cvlive__field cvlive__scope-select">
       <span class="cvlive__label">{{ t()('documents.cv_style_scope_label') }}</span>
-      <select [ngModel]="scope()" (ngModelChange)="setScope($event)">
+      <select
+        [attr.aria-label]="t()('documents.cv_style_scope_label')"
+        [ngModel]="scope()"
+        (ngModelChange)="setScope($event)"
+      >
         @if (sel.part === 'body') {
           <option value="element">{{ t()('documents.cv_style_scope_element') }}</option>
           <option value="section">{{ t()('documents.cv_style_scope_section') }}</option>

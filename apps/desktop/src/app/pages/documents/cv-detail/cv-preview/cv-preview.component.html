@@ -111,7 +111,7 @@
         [attr.role]="selectable(renderMode) ? 'button' : null"
         [attr.tabindex]="selectable(renderMode) ? 0 : null"
         [attr.aria-label]="
-          selectable(renderMode) ? selectAriaLabel('personal_details', 'body') : null
+          selectable(renderMode) ? leafAriaLabel('personal_details', 'fullName') : null
         "
         (click)="selectLeaf('personal_details', leafPath('pd', 'fullName'), renderMode, $event)"
         (keydown.enter)="
@@ -134,7 +134,7 @@
           [attr.role]="selectable(renderMode) ? 'button' : null"
           [attr.tabindex]="selectable(renderMode) ? 0 : null"
           [attr.aria-label]="
-            selectable(renderMode) ? selectAriaLabel('personal_details', 'body') : null
+            selectable(renderMode) ? leafAriaLabel('personal_details', 'title') : null
           "
           (click)="selectLeaf('personal_details', leafPath('pd', 'title'), renderMode, $event)"
           (keydown.enter)="
@@ -319,7 +319,9 @@
               "
               [attr.role]="selectable(renderMode) ? 'button' : null"
               [attr.tabindex]="selectable(renderMode) ? 0 : null"
-              [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('skills', 'body') : null"
+              [attr.aria-label]="
+                selectable(renderMode) ? leafAriaLabel('skills', 'skillLabel') : null
+              "
               (click)="selectLeaf('skills', leafPath('skills', i, 'label'), renderMode, $event)"
               (keydown.enter)="
                 selectLeaf('skills', leafPath('skills', i, 'label'), renderMode, $event)
@@ -338,7 +340,9 @@
               "
               [attr.role]="selectable(renderMode) ? 'button' : null"
               [attr.tabindex]="selectable(renderMode) ? 0 : null"
-              [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('skills', 'body') : null"
+              [attr.aria-label]="
+                selectable(renderMode) ? leafAriaLabel('skills', 'skillValues') : null
+              "
               (click)="selectLeaf('skills', leafPath('skills', i, 'values'), renderMode, $event)"
               (keydown.enter)="
                 selectLeaf('skills', leafPath('skills', i, 'values'), renderMode, $event)
@@ -471,7 +475,7 @@
             "
             [attr.role]="selectable(renderMode) ? 'button' : null"
             [attr.tabindex]="selectable(renderMode) ? 0 : null"
-            [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'company') : null"
             (click)="selectLeaf(key, leafPath('exp', i, 'company'), renderMode, $event)"
             (keydown.enter)="selectLeaf(key, leafPath('exp', i, 'company'), renderMode, $event)"
             (keydown.space)="
@@ -489,7 +493,7 @@
               "
               [attr.role]="selectable(renderMode) ? 'button' : null"
               [attr.tabindex]="selectable(renderMode) ? 0 : null"
-              [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+              [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'industry') : null"
               (click)="selectLeaf(key, leafPath('exp', i, 'industry'), renderMode, $event)"
               (keydown.enter)="selectLeaf(key, leafPath('exp', i, 'industry'), renderMode, $event)"
               (keydown.space)="
@@ -509,7 +513,7 @@
           "
           [attr.role]="selectable(renderMode) ? 'button' : null"
           [attr.tabindex]="selectable(renderMode) ? 0 : null"
-          [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+          [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'location') : null"
           (click)="selectLeaf(key, leafPath('exp', i, 'location'), renderMode, $event)"
           (keydown.enter)="selectLeaf(key, leafPath('exp', i, 'location'), renderMode, $event)"
           (keydown.space)="
@@ -528,7 +532,7 @@
           "
           [attr.role]="selectable(renderMode) ? 'button' : null"
           [attr.tabindex]="selectable(renderMode) ? 0 : null"
-          [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+          [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'role') : null"
           (click)="selectLeaf(key, leafPath('exp', i, 'role'), renderMode, $event)"
           (keydown.enter)="selectLeaf(key, leafPath('exp', i, 'role'), renderMode, $event)"
           (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'role'))"
@@ -558,7 +562,7 @@
     [class.cvpreview__selected]="isSelected(key, 'body') && selectable(renderMode)"
     [attr.role]="selectable(renderMode) ? 'button' : null"
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
-    [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
+    [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'bullet') : null"
     [attr.data-cv-select]="key + ':body'"
     (click)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.enter)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
@@ -747,7 +751,9 @@
             "
             [attr.role]="selectable(renderMode) ? 'button' : null"
             [attr.tabindex]="selectable(renderMode) ? 0 : null"
-            [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('languages', 'body') : null"
+            [attr.aria-label]="
+              selectable(renderMode) ? leafAriaLabel('languages', 'language') : null
+            "
             (click)="selectLeaf('languages', leafPath('lang', i, 'language'), renderMode, $event)"
             (keydown.enter)="
               selectLeaf('languages', leafPath('lang', i, 'language'), renderMode, $event)

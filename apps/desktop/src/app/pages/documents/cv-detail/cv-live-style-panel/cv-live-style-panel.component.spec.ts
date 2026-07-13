@@ -52,6 +52,27 @@ describe('CvLiveStylePanelComponent', () => {
     expect(titleOptions).toEqual(['section', 'document']);
   });
 
+  it('the scope selector is a native, keyboard-operable control with an accessible name (Task 6 a11y hardening)', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'summary',
+      part: 'body',
+      elementPath: 'summary',
+    });
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
+      '.cvlive__scope-select select',
+    );
+    expect(select).toBeTruthy();
+    // A native <select> is keyboard-reachable/operable by default (Tab moves
+    // focus to it, arrow keys/Enter change its value) — confirm nothing has
+    // opted it out of the tab order or hidden its accessible name.
+    expect(select.tabIndex).not.toBe(-1);
+    expect(select.getAttribute('aria-label')).toBe('Apply to');
+    // The visible <label>-wrapped text still doubles as a second, redundant
+    // accessible-name source — belt and suspenders, not a replacement.
+    expect(select.closest('label')?.textContent).toContain('Apply to');
+  });
+
   it('defaults to element scope for a body leaf and this-title (section) for a title', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',

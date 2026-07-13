@@ -1752,4 +1752,99 @@ describe('CvPreviewComponent', () => {
       ]);
     });
   });
+
+  describe('per-leaf accessible names (Task 6 a11y hardening — T2 review minor)', () => {
+    // Regression: every per-leaf selectable host used to reuse the generic
+    // `selectAriaLabel(key, 'body')` name, so a screen reader announced the
+    // SAME "<section> — Body text" label for every field in one entry (e.g.
+    // company/industry/location/role in a single experience entry). Each leaf
+    // with its own `elementPath` must now announce its specific field instead.
+    function setupFullEntry() {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'personal_details',
+          order: 0,
+          visible: true,
+          fullName: 'Ada Lovelace',
+          title: 'Engineer',
+        },
+        {
+          key: 'experience',
+          order: 1,
+          visible: true,
+          entries: [
+            {
+              company: 'Acme',
+              role: 'Engineer',
+              industry: 'SaaS',
+              location: 'Berlin',
+              startDate: '2020',
+              bullets: ['Shipped things'],
+            },
+          ],
+        },
+        {
+          key: 'skills',
+          order: 2,
+          visible: true,
+          groups: [{ label: 'Languages', values: ['TypeScript'] }],
+        },
+        {
+          key: 'languages',
+          order: 3,
+          visible: true,
+          items: [{ language: 'English', level: 'C1' }],
+        },
+      ]);
+      fixture.componentRef.setInput('themeId', 2); // Aurora — shows industry
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('gives the personal-details fullName and title leaves distinct field names', () => {
+      const root = setupFullEntry();
+      const fullName = root.querySelector('.page-card h2.cvpreview__name') as HTMLElement;
+      const title = root.querySelector('.page-card p.cvpreview__title') as HTMLElement;
+      expect(fullName.getAttribute('aria-label')).toBe('Personal Details — Full name');
+      expect(title.getAttribute('aria-label')).toBe('Personal Details — Job title');
+    });
+
+    it('gives each experience-entry leaf (company/industry/location/role/bullet) its own field name — no longer all "Experience — Body text"', () => {
+      const root = setupFullEntry();
+      const company = root.querySelector('.page-card .cvpreview__entry-company') as HTMLElement;
+      const industry = root.querySelector('.page-card .cvpreview__entry-industry') as HTMLElement;
+      const location = root.querySelector('.page-card .cvpreview__entry-meta') as HTMLElement;
+      const role = root.querySelector('.page-card .cvpreview__entry-role') as HTMLElement;
+      const bullet = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
+      expect(company.getAttribute('aria-label')).toBe('Experience — Company');
+      expect(industry.getAttribute('aria-label')).toBe('Experience — Industry');
+      expect(location.getAttribute('aria-label')).toBe('Experience — Location');
+      expect(role.getAttribute('aria-label')).toBe('Experience — Role');
+      expect(bullet.getAttribute('aria-label')).toBe('Experience — Achievement / responsibility');
+      // All five are genuinely distinct — the whole point of the fix.
+      const labels = [company, industry, location, role, bullet].map((el) =>
+        el.getAttribute('aria-label'),
+      );
+      expect(new Set(labels).size).toBe(labels.length);
+      // The whole-entry wrapper (no elementPath) keeps the generic name —
+      // there is no single leaf to disambiguate there.
+      const entryWrapper = root.querySelector('.page-card .cvpreview__entry') as HTMLElement;
+      expect(entryWrapper.getAttribute('aria-label')).toBe('Experience — Body text');
+    });
+
+    it('gives the skills label and values leaves distinct field names', () => {
+      const root = setupFullEntry();
+      const label = root.querySelector('.page-card .cvpreview__skill-label-view') as HTMLElement;
+      const values = root.querySelector('.page-card .cvpreview__skill-values-view') as HTMLElement;
+      expect(label.getAttribute('aria-label')).toBe('Skills — Label');
+      expect(values.getAttribute('aria-label')).toBe('Skills — Values');
+    });
+
+    it('gives the language-value leaf its field name', () => {
+      const root = setupFullEntry();
+      const value = root.querySelector('.page-card .cvpreview__language-value') as HTMLElement;
+      expect(value.getAttribute('aria-label')).toBe('Languages — Language');
+    });
+  });
 });

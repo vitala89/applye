@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   ElementRef,
+  HostListener,
   inject,
   input,
   output,
@@ -306,6 +307,49 @@ export class CvPreviewComponent {
   finishLeafEdit(el: HTMLElement, sectionKey: CvSectionKey, part: 'body' | 'title'): void {
     el.blur();
     this.returnFocusTo = `${sectionKey}:${part}`;
+    this.selectionChange.emit(null);
+  }
+
+  /** Toggle `**bold**` around the current selection of whichever inline leaf
+   * editor currently holds focus — the live-style panel's Bold control routes
+   * here so the user can bold selected words from the panel too (the inline
+   * editors keep their own Bold buttons). A no-op unless a bold-capable
+   * textarea (summary or an experience bullet — the only editors carrying a
+   * `data-draft-id`) is focused inside this preview. Reuses `toggleBoldWrap`
+   * and the SAME per-leaf draft id the editor's `(blur)` commit reads, so the
+   * eventual blur persists the change exactly like the inline button does. */
+  applyActiveBold(): void {
+    const ta = document.activeElement;
+    if (!(ta instanceof HTMLTextAreaElement) || !this.el.nativeElement.contains(ta)) return;
+    const id = ta.dataset['draftId'];
+    if (!id) return;
+    const current = this.drafts()[id] ?? ta.value;
+    const start = ta.selectionStart ?? current.length;
+    const end = ta.selectionEnd ?? current.length;
+    const r = toggleBoldWrap(current, start, end);
+    this.drafts.update((d) => ({ ...d, [id]: r.text }));
+    queueMicrotask(() => {
+      ta.value = r.text;
+      ta.setSelectionRange(r.selStart, r.selEnd);
+      ta.focus();
+    });
+  }
+
+  /** Clear the selection when the user clicks empty space in the preview —
+   * anywhere that is NOT a selectable host, an inline editor, or an editor's
+   * Bold button (selectable hosts already `stopPropagation`; this guard also
+   * covers the editor textareas/inputs, which don't). Keeps a focused edit
+   * alive: clicking the active editor never deselects. A no-op off the
+   * interactive page render or when nothing is selected. Any in-progress edit
+   * commits independently via the editor's own native `(blur)`. Bound as a
+   * host listener (not a template `(click)`) so the deselect catcher needs no
+   * focusable/keyboard affordance — selectable hosts already stop propagation,
+   * so only genuine empty-space clicks bubble up to here. */
+  @HostListener('click', ['$event'])
+  onBackgroundClick(event: Event): void {
+    if (!this.interactive() || !this.selection()) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('[data-cv-select], .cvpreview__leaf-editor, .cvpreview__bold-btn')) return;
     this.selectionChange.emit(null);
   }
 

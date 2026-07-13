@@ -39,38 +39,30 @@ describe('CvLiveStylePanelComponent', () => {
       elementPath: 'summary',
     });
     fixture.detectChanges();
-    const bodyOptions = Array.from(
-      fixture.nativeElement.querySelectorAll('.cvlive__scope-select option'),
-    ).map((o) => (o as HTMLOptionElement).value);
-    expect(bodyOptions).toEqual(['element', 'section', 'document']);
+    // Scope is a segmented button group (redesign): one <button> per scope.
+    expect(fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn')).toHaveLength(3);
 
     fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
     fixture.detectChanges();
-    const titleOptions = Array.from(
-      fixture.nativeElement.querySelectorAll('.cvlive__scope-select option'),
-    ).map((o) => (o as HTMLOptionElement).value);
-    expect(titleOptions).toEqual(['section', 'document']);
+    expect(fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn')).toHaveLength(2);
   });
 
-  it('the scope selector is a native, keyboard-operable control with an accessible name (Task 6 a11y hardening)', () => {
+  it('the scope selector is a keyboard-operable control group with an accessible name (Task 6 a11y hardening)', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',
       part: 'body',
       elementPath: 'summary',
     });
     fixture.detectChanges();
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
-      '.cvlive__scope-select select',
-    );
-    expect(select).toBeTruthy();
-    // A native <select> is keyboard-reachable/operable by default (Tab moves
-    // focus to it, arrow keys/Enter change its value) — confirm nothing has
-    // opted it out of the tab order or hidden its accessible name.
-    expect(select.tabIndex).not.toBe(-1);
-    expect(select.getAttribute('aria-label')).toBe('Apply to');
-    // The visible <label>-wrapped text still doubles as a second, redundant
-    // accessible-name source — belt and suspenders, not a replacement.
-    expect(select.closest('label')?.textContent).toContain('Apply to');
+    const group: HTMLElement = fixture.nativeElement.querySelector('.cvlive__seg');
+    expect(group).toBeTruthy();
+    // The segmented control is a labelled group of native <button>s — each is
+    // keyboard-reachable/operable by default (Tab focuses, Enter/Space clicks).
+    expect(group.getAttribute('role')).toBe('group');
+    expect(group.getAttribute('aria-label')).toBe('Apply to');
+    const buttons = group.querySelectorAll<HTMLButtonElement>('.cvlive__seg-btn');
+    expect(buttons.length).toBeGreaterThan(0);
+    buttons.forEach((b) => expect(b.tabIndex).not.toBe(-1));
   });
 
   it('defaults to element scope for a body leaf and this-title (section) for a title', () => {
@@ -296,5 +288,51 @@ describe('CvLiveStylePanelComponent', () => {
     component.setScope('document');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.cvlive__reset')).toBeNull();
+  });
+
+  describe('word-bold Format control', () => {
+    it('shows the Bold control for a summary body selection', () => {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'summary',
+        part: 'body',
+        elementPath: 'summary',
+      });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeTruthy();
+    });
+
+    it('shows the Bold control for an experience bullet selection', () => {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeTruthy();
+    });
+
+    it('hides the Bold control for a non-markdown body (skills) and for titles', () => {
+      fixture.componentRef.setInput('selection', { sectionKey: 'skills', part: 'body' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeNull();
+
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeNull();
+    });
+
+    it('emits boldSelection when the Bold control is pressed (mousedown)', () => {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'summary',
+        part: 'body',
+        elementPath: 'summary',
+      });
+      fixture.detectChanges();
+      let fired = 0;
+      component.boldSelection.subscribe(() => (fired += 1));
+      const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.cvlive__fmt-btn');
+      btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      expect(fired).toBe(1);
+    });
   });
 });

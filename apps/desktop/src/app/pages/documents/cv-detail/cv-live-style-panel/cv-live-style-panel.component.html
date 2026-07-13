@@ -1,166 +1,245 @@
 <div class="cvlive">
-  <h3 class="cvlive__title">{{ t()('documents.cv_live_style_title') }}</h3>
+  <div class="cvlive__head">
+    <div class="cvlive__head-row">
+      <span class="cvlive__eyebrow">{{ t()('documents.cv_live_style_title') }}</span>
+      <span class="cvlive__caret" aria-hidden="true"></span>
+    </div>
+    <p class="cvlive__intro">{{ t()('documents.cv_live_style_hint') }}</p>
+  </div>
 
   @if (selection(); as sel) {
-    <p class="cvlive__scope">
-      {{
-        t()(
-          sel.part === 'title' ? 'documents.cv_style_group_titles' : 'documents.cv_style_group_body'
-        )
-      }}
-    </p>
+    <div class="cvlive__body">
+      <div class="cvlive__editing">
+        <div class="cvlive__eyebrow cvlive__eyebrow--sm">
+          {{ t()('documents.cv_live_style_editing') }}
+        </div>
+        <div class="cvlive__editing-kind">
+          {{
+            t()(
+              sel.part === 'title'
+                ? 'documents.cv_style_group_titles'
+                : 'documents.cv_style_group_body'
+            )
+          }}
+        </div>
+      </div>
 
-    <label class="cvlive__field cvlive__scope-select">
-      <span class="cvlive__label">{{ t()('documents.cv_style_scope_label') }}</span>
-      <select
-        [attr.aria-label]="t()('documents.cv_style_scope_label')"
-        [ngModel]="scope()"
-        (ngModelChange)="setScope($event)"
-      >
+      <div class="cvlive__field">
+        <span class="cvlive__label">{{ t()('documents.cv_style_scope_label') }}</span>
+        <div
+          class="cvlive__seg"
+          role="group"
+          [attr.aria-label]="t()('documents.cv_style_scope_label')"
+        >
+          @if (sel.part === 'body') {
+            <button
+              type="button"
+              class="cvlive__seg-btn"
+              [class.cvlive__seg-btn--active]="scope() === 'element'"
+              (click)="setScope('element')"
+            >
+              {{ t()('documents.cv_style_scope_element') }}
+            </button>
+            <button
+              type="button"
+              class="cvlive__seg-btn"
+              [class.cvlive__seg-btn--active]="scope() === 'section'"
+              (click)="setScope('section')"
+            >
+              {{ t()('documents.cv_style_scope_section') }}
+            </button>
+            <button
+              type="button"
+              class="cvlive__seg-btn"
+              [class.cvlive__seg-btn--active]="scope() === 'document'"
+              (click)="setScope('document')"
+            >
+              {{ t()('documents.cv_style_scope_document') }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="cvlive__seg-btn"
+              [class.cvlive__seg-btn--active]="scope() === 'section'"
+              (click)="setScope('section')"
+            >
+              {{ t()('documents.cv_style_scope_this_title') }}
+            </button>
+            <button
+              type="button"
+              class="cvlive__seg-btn"
+              [class.cvlive__seg-btn--active]="scope() === 'document'"
+              (click)="setScope('document')"
+            >
+              {{ t()('documents.cv_style_scope_all_titles') }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="cvlive__sample">
+        <span class="cvlive__sample-glyph" [ngStyle]="sampleStyle()">Ag</span>
+        <span class="cvlive__sample-text" [ngStyle]="sampleStyle()">
+          {{ t()('documents.cv_live_style_sample') }}
+        </span>
+      </div>
+
+      @if (showBold()) {
+        <div class="cvlive__field">
+          <span class="cvlive__label">{{ t()('documents.cv_live_style_format') }}</span>
+          <button
+            type="button"
+            class="cvlive__fmt-btn"
+            [attr.aria-label]="t()('documents.cv_bold_action')"
+            [attr.title]="t()('documents.cv_bold_action')"
+            (mousedown)="onBoldMousedown($event)"
+          >
+            B
+          </button>
+          <p class="cvlive__hint">{{ t()('documents.cv_live_style_bold_hint') }}</p>
+        </div>
+      }
+
+      <div class="cvlive__fields">
         @if (sel.part === 'body') {
-          <option value="element">{{ t()('documents.cv_style_scope_element') }}</option>
-          <option value="section">{{ t()('documents.cv_style_scope_section') }}</option>
-          <option value="document">{{ t()('documents.cv_style_scope_document') }}</option>
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
+            <select
+              [ngModel]="activeBodyOverride().fontFamily ?? ''"
+              (ngModelChange)="setBodyFont($event)"
+            >
+              <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+              @for (font of atsSafeFonts; track font) {
+                <option [value]="font">{{ font }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
+            <input
+              type="number"
+              min="8"
+              max="14"
+              step="0.5"
+              [ngModel]="activeBodyOverride().fontSizePt ?? null"
+              [placeholder]="style().fontSizePt"
+              (ngModelChange)="setBodySize($event)"
+            />
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
+            <select
+              [ngModel]="activeBodyOverride().fontWeight ?? null"
+              (ngModelChange)="setBodyWeight($event)"
+            >
+              <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+              <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+              <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+              <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+              <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+            </select>
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
+            <input
+              type="color"
+              [ngModel]="activeBodyOverride().colorHex ?? style().accentColorHex"
+              (ngModelChange)="setBodyColor($event)"
+            />
+          </label>
+
+          <label class="cvlive__field cvlive__line-height">
+            <span class="cvlive__label">{{ t()('documents.cv_style_line_height') }}</span>
+            <select
+              [ngModel]="activeBodyOverride().lineHeight ?? null"
+              (ngModelChange)="setLineHeight($event)"
+            >
+              <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+              @for (o of lineHeightOptions; track o.value) {
+                <option [ngValue]="o.value">{{ t()(o.labelKey) }}</option>
+              }
+            </select>
+          </label>
         } @else {
-          <option value="section">{{ t()('documents.cv_style_scope_this_title') }}</option>
-          <option value="document">{{ t()('documents.cv_style_scope_all_titles') }}</option>
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
+            <select
+              [ngModel]="activeTitleOverride().fontFamily ?? ''"
+              (ngModelChange)="setTitleFont($event)"
+            >
+              <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+              @for (font of atsSafeFonts; track font) {
+                <option [value]="font">{{ font }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
+            <input
+              type="number"
+              min="6"
+              max="28"
+              step="0.5"
+              [ngModel]="activeTitleOverride().fontSizePt ?? null"
+              [placeholder]="style().titleStyle?.fontSizePt ?? style().fontSizePt"
+              (ngModelChange)="setTitleSize($event)"
+            />
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
+            <select
+              [ngModel]="activeTitleOverride().fontWeight ?? null"
+              (ngModelChange)="setTitleWeight($event)"
+            >
+              <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+              <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+              <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+              <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+              <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+            </select>
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
+            <input
+              type="color"
+              [ngModel]="activeTitleOverride().colorHex ?? style().accentColorHex"
+              (ngModelChange)="setTitleColor($event)"
+            />
+          </label>
+
+          <label class="cvlive__field">
+            <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
+            <select [ngModel]="activeTitleBorder()" (ngModelChange)="setTitleBorder($event)">
+              <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+              <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
+              <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
+              <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
+              <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
+            </select>
+          </label>
         }
-      </select>
-    </label>
+      </div>
 
-    <div class="cvlive__fields">
-      @if (sel.part === 'body') {
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
-          <select
-            [ngModel]="activeBodyOverride().fontFamily ?? ''"
-            (ngModelChange)="setBodyFont($event)"
-          >
-            <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-            @for (font of atsSafeFonts; track font) {
-              <option [value]="font">{{ font }}</option>
-            }
-          </select>
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
-          <input
-            type="number"
-            min="8"
-            max="14"
-            step="0.5"
-            [ngModel]="activeBodyOverride().fontSizePt ?? null"
-            [placeholder]="style().fontSizePt"
-            (ngModelChange)="setBodySize($event)"
-          />
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
-          <select
-            [ngModel]="activeBodyOverride().fontWeight ?? null"
-            (ngModelChange)="setBodyWeight($event)"
-          >
-            <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
-            <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-            <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-            <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-            <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-          </select>
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
-          <input
-            type="color"
-            [ngModel]="activeBodyOverride().colorHex ?? style().accentColorHex"
-            (ngModelChange)="setBodyColor($event)"
-          />
-        </label>
-
-        <label class="cvlive__field cvlive__line-height">
-          <span class="cvlive__label">{{ t()('documents.cv_style_line_height') }}</span>
-          <select
-            [ngModel]="activeBodyOverride().lineHeight ?? null"
-            (ngModelChange)="setLineHeight($event)"
-          >
-            <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
-            @for (o of lineHeightOptions; track o.value) {
-              <option [ngValue]="o.value">{{ t()(o.labelKey) }}</option>
-            }
-          </select>
-        </label>
-      } @else {
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_font') }}</span>
-          <select
-            [ngModel]="activeTitleOverride().fontFamily ?? ''"
-            (ngModelChange)="setTitleFont($event)"
-          >
-            <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-            @for (font of atsSafeFonts; track font) {
-              <option [value]="font">{{ font }}</option>
-            }
-          </select>
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
-          <input
-            type="number"
-            min="6"
-            max="28"
-            step="0.5"
-            [ngModel]="activeTitleOverride().fontSizePt ?? null"
-            [placeholder]="style().titleStyle?.fontSizePt ?? style().fontSizePt"
-            (ngModelChange)="setTitleSize($event)"
-          />
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_weight') }}</span>
-          <select
-            [ngModel]="activeTitleOverride().fontWeight ?? null"
-            (ngModelChange)="setTitleWeight($event)"
-          >
-            <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
-            <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-            <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-            <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-            <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-          </select>
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
-          <input
-            type="color"
-            [ngModel]="activeTitleOverride().colorHex ?? style().accentColorHex"
-            (ngModelChange)="setTitleColor($event)"
-          />
-        </label>
-
-        <label class="cvlive__field">
-          <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-          <select [ngModel]="activeTitleBorder()" (ngModelChange)="setTitleBorder($event)">
-            <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-            <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
-            <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
-            <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
-            <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
-          </select>
-        </label>
+      @if (!(sel.part === 'body' && scope() === 'document')) {
+        <div class="cvlive__reset-row">
+          <button type="button" class="cvlive__reset" (click)="reset()">
+            {{ t()('documents.cv_live_style_reset') }}
+          </button>
+        </div>
       }
     </div>
-
-    @if (!(sel.part === 'body' && scope() === 'document')) {
-      <button type="button" class="cvlive__reset" (click)="reset()">
-        {{ t()('documents.cv_live_style_reset') }}
-      </button>
-    }
   } @else {
-    <p class="cvlive__empty">{{ t()('documents.cv_live_style_empty') }}</p>
+    <div class="cvlive__empty">
+      <div class="cvlive__empty-glyph" aria-hidden="true">/_</div>
+      <div class="cvlive__empty-title">{{ t()('documents.cv_live_style_nothing') }}</div>
+      <p class="cvlive__empty-text">{{ t()('documents.cv_live_style_empty') }}</p>
+    </div>
   }
 
   <div class="cvlive__footer">

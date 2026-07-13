@@ -383,6 +383,7 @@
       } @else {
         <div class="cvdetail__preview-col">
           <app-cv-preview
+            #cvPreview
             [sections]="sections()"
             [style]="style()"
             [themeId]="themeId()"
@@ -401,13 +402,13 @@
             role="region"
             [attr.aria-label]="t()('documents.cv_live_style_title')"
           >
-            <p class="cvdetail__live-hint">{{ t()('documents.cv_live_style_hint') }}</p>
             <app-cv-live-style-panel
               [selection]="liveSelection()"
               [style]="style()"
               [hasCustomStyle]="hasAnyCustomStyle()"
               (panelChange)="onStylePanelChange($event)"
               (resetAll)="resetAllStyles()"
+              (boldSelection)="cvPreview.applyActiveBold()"
             />
           </aside>
         </div>

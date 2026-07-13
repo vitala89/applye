@@ -76,16 +76,11 @@
 .cvdetail__live-panel {
   position: sticky;
   top: var(--space-4);
-  flex: 0 0 280px;
+  flex: 0 0 340px;
   align-self: flex-start;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-.cvdetail__live-hint {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
 }
 
 .cvdetail__bar {

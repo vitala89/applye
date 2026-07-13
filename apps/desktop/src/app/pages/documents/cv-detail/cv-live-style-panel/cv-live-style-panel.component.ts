@@ -8,6 +8,7 @@ import {
   output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgStyle } from '@angular/common';
 import type {
   CvBorderStyle,
   CvElementStyle,
@@ -39,7 +40,7 @@ import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../..
   selector: 'app-cv-live-style-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, NgStyle],
   templateUrl: './cv-live-style-panel.component.html',
   styleUrl: './cv-live-style-panel.component.scss',
 })
@@ -65,7 +66,47 @@ export class CvLiveStylePanelComponent {
    * selection. */
   readonly resetAll = output<void>();
 
+  /** Fired when the user clicks the panel's Bold control. The parent routes it
+   * to `CvPreviewComponent.applyActiveBold()`, which toggles `**bold**` around
+   * the current selection of whichever inline editor is focused. The button
+   * uses `(mousedown)` + `preventDefault` (see `onBoldMousedown`) so the focused
+   * editor keeps focus and its text selection while the click is handled. */
+  readonly boldSelection = output<void>();
+
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
+
+  /** The Bold word-formatting control only applies to editors backed by the
+   * `**markdown**` inline-emphasis model — the summary body and experience
+   * bullets. Other body leaves (skills, languages, education, contact) have no
+   * inline-bold representation, so the control is hidden for them. */
+  readonly showBold = computed<boolean>(() => {
+    const sel = this.selection();
+    return (
+      !!sel &&
+      sel.part === 'body' &&
+      (sel.sectionKey === 'summary' || sel.sectionKey === 'experience')
+    );
+  });
+
+  /** Inline style for the "Ag" preview swatch — reflects the font/weight/colour
+   * of the ACTIVE scope's override so the user previews the edit target before
+   * committing. Unset properties fall through to the paper's Georgia default. */
+  readonly sampleStyle = computed<Record<string, string>>(() => {
+    const sel = this.selection();
+    if (!sel) return {};
+    const o = sel.part === 'title' ? this.activeTitleOverride() : this.activeBodyOverride();
+    const css: Record<string, string> = {
+      'font-family': o.fontFamily || 'Georgia, "Times New Roman", serif',
+    };
+    if (o.fontWeight != null) css['font-weight'] = String(o.fontWeight);
+    if (o.colorHex) css['color'] = o.colorHex;
+    return css;
+  });
+
+  onBoldMousedown(event: Event): void {
+    event.preventDefault();
+    this.boldSelection.emit();
+  }
 
   /** Curated body leading choices (unitless). `1.45` is the existing
    * `--leading-normal`; unset (Inherit) preserves each element's baseline. */

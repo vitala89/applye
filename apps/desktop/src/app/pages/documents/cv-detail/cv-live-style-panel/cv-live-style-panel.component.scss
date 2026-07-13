@@ -1,75 +1,279 @@
 .cvlive {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
   background: var(--surface-1);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius-card);
+  overflow: hidden;
 }
-.cvlive__title {
-  margin: 0;
-  font-size: var(--text-sm);
+
+/* --- Header ---------------------------------------------------------- */
+.cvlive__head {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cvlive__head-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cvlive__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.cvlive__eyebrow--sm {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.cvlive__caret {
+  width: 8px;
+  height: 15px;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: cvlive-caret 1.1s step-end infinite;
+}
+@keyframes cvlive-caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+.cvlive__intro {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+/* --- Body ------------------------------------------------------------ */
+.cvlive__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+}
+
+.cvlive__editing {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cvlive__editing-kind {
+  font-family: var(--font-mono);
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
 }
-.cvlive__scope {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.cvlive__scope-select {
-  margin-bottom: var(--space-3);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border-subtle);
-}
-.cvlive__fields {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
+
 .cvlive__field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 .cvlive__label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-tertiary);
 }
-.cvlive__field select,
-.cvlive__field input[type='number'] {
+
+/* --- Scope segmented control ----------------------------------------- */
+.cvlive__seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-sunken);
+  border-radius: 9px;
+}
+.cvlive__seg-btn {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.cvlive__seg-btn:hover {
+  color: var(--text-secondary);
+}
+.cvlive__seg-btn--active {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* --- Sample swatch --------------------------------------------------- */
+.cvlive__sample {
+  display: flex;
+  align-items: baseline;
+  gap: 13px;
+  padding: 13px 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.cvlive__sample-glyph {
+  flex: none;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.cvlive__sample-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Format (Bold) --------------------------------------------------- */
+.cvlive__fmt-btn {
+  align-self: flex-start;
+  width: 38px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  border-radius: 7px;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.cvlive__fmt-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+  background: var(--surface-hover);
+}
+.cvlive__hint {
+  margin: 1px 0 0;
+  padding: 9px 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: var(--accent-tint);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* --- Existing controls ----------------------------------------------- */
+.cvlive__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cvlive__fields select,
+.cvlive__fields input[type='number'] {
   width: 100%;
 }
-.cvlive__field input[type='color'] {
+.cvlive__fields input[type='color'] {
   width: 48px;
-  height: 32px;
+  height: 34px;
   padding: 0;
 }
+
+.cvlive__reset-row {
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
 .cvlive__reset {
-  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
   height: 34px;
   padding: 0 12px;
   background: none;
   border: var(--border-width) solid var(--border-default);
   border-radius: var(--radius-input);
   color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
   cursor: pointer;
 }
+.cvlive__reset:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+  background: var(--surface-hover);
+}
+
+/* --- Empty state ----------------------------------------------------- */
 .cvlive__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 48px 30px;
+}
+.cvlive__empty-glyph {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--accent);
+  animation: cvlive-pulse 2.4s ease-in-out infinite;
+}
+@keyframes cvlive-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.cvlive__empty-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.cvlive__empty-text {
   margin: 0;
-  font-size: var(--text-sm);
+  max-width: 230px;
+  font-size: 12.5px;
+  line-height: 1.55;
   color: var(--text-tertiary);
 }
+
+/* --- Footer ---------------------------------------------------------- */
 .cvlive__footer {
-  margin-top: var(--space-1);
-  padding-top: var(--space-3);
+  padding: 14px 18px;
   border-top: 1px solid var(--border-subtle);
 }

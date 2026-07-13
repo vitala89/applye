@@ -735,9 +735,16 @@ const en: TranslationMap = {
     cv_style_line_height_normal: 'Normal',
     cv_style_line_height_relaxed: 'Relaxed',
     cv_live_style_title: 'Live style',
-    cv_live_style_hint: 'Click any section in the preview to change its style.',
-    cv_live_style_empty: 'Select a section in the preview to style it.',
+    cv_live_style_hint: 'Every field is its own element. Style one, or apply to its whole group.',
+    cv_live_style_empty:
+      'Click any field on the paper — a title, a company name, a single bullet. Style just it, or its whole group.',
     cv_live_style_reset: 'Reset this section',
+    cv_live_style_editing: 'Editing',
+    cv_live_style_nothing: 'Nothing selected',
+    cv_live_style_sample: 'The quick brown fox',
+    cv_live_style_format: 'Format',
+    cv_live_style_bold_hint:
+      'Select words in the text on the paper, then click B (or press ⌘/Ctrl+B) to make them bold.',
     cv_style_scope_label: 'Apply to',
     cv_style_scope_element: 'This element',
     cv_style_scope_section: 'This section',
@@ -1736,9 +1743,17 @@ const de: TranslationMap = {
     cv_style_line_height_normal: 'Normal',
     cv_style_line_height_relaxed: 'Locker',
     cv_live_style_title: 'Live-Stil',
-    cv_live_style_hint: 'Klicke in der Vorschau auf einen Abschnitt, um seinen Stil zu ändern.',
-    cv_live_style_empty: 'Wähle in der Vorschau einen Abschnitt, um ihn zu gestalten.',
+    cv_live_style_hint:
+      'Jedes Feld ist ein eigenes Element. Gestalte eines oder wende es auf die ganze Gruppe an.',
+    cv_live_style_empty:
+      'Klicke auf ein Feld auf dem Blatt — einen Titel, einen Firmennamen, einen einzelnen Punkt. Gestalte nur dieses oder die ganze Gruppe.',
     cv_live_style_reset: 'Diesen Abschnitt zurücksetzen',
+    cv_live_style_editing: 'Bearbeiten',
+    cv_live_style_nothing: 'Nichts ausgewählt',
+    cv_live_style_sample: 'Franz jagt im Taxi',
+    cv_live_style_format: 'Format',
+    cv_live_style_bold_hint:
+      'Markiere Wörter im Text auf dem Blatt und klicke dann B (oder drücke ⌘/Strg+B), um sie fett zu machen.',
     cv_style_scope_label: 'Anwenden auf',
     cv_style_scope_element: 'Dieses Element',
     cv_style_scope_section: 'Diesen Abschnitt',

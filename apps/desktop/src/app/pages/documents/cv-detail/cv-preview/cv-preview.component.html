@@ -182,6 +182,7 @@
         <textarea
           #summaryEl
           class="cvpreview__summary cvpreview__leaf-editor"
+          data-draft-id="summary"
           [class.cvpreview__selected]="true"
           [class.cvpreview__element-selected]="isElementSelected(leafPath('summary'))"
           [ngStyle]="leafCss(leafPath('summary'))"
@@ -575,6 +576,7 @@
           <textarea
             #bulletEl
             class="cvpreview__leaf-editor cvpreview__bullet-editor"
+            [attr.data-draft-id]="leafPath('exp', i, 'bullet', b)"
             [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'bullet', b))"
             [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))"
             [value]="leafDraft(leafPath('exp', i, 'bullet', b), bullet)"

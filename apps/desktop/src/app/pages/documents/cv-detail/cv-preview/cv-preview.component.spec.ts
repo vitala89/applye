@@ -1967,4 +1967,62 @@ describe('CvPreviewComponent', () => {
       expect(value.getAttribute('aria-label')).toBe('Languages — Language');
     });
   });
+
+  describe('click-empty-space deselect', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+    });
+
+    it('clears the selection when the click is not on a selectable host or editor', () => {
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      // A detached element's closest() returns null → treated as empty space.
+      component.onBackgroundClick({ target: document.createElement('div') } as unknown as Event);
+      expect(emitted).toEqual([null]);
+    });
+
+    it('keeps the selection when the click lands on the active editor', () => {
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      const editor = document.createElement('textarea');
+      editor.className = 'cvpreview__leaf-editor';
+      component.onBackgroundClick({ target: editor } as unknown as Event);
+      expect(emitted).toEqual([]);
+    });
+
+    it('is inert on a non-interactive render', () => {
+      fixture.componentRef.setInput('interactive', false);
+      const emitted: (CvPreviewSelection | null)[] = [];
+      component.selectionChange.subscribe((v) => emitted.push(v));
+      component.onBackgroundClick({ target: document.createElement('div') } as unknown as Event);
+      expect(emitted).toEqual([]);
+    });
+  });
+
+  describe('applyActiveBold (panel-routed word bold)', () => {
+    it('wraps the focused editor selection in ** using its data-draft-id', async () => {
+      const ta = document.createElement('textarea');
+      ta.className = 'cvpreview__leaf-editor';
+      ta.setAttribute('data-draft-id', 'summary');
+      ta.value = 'hello world';
+      fixture.nativeElement.appendChild(ta);
+      ta.focus();
+      ta.setSelectionRange(0, 5);
+      component.applyActiveBold();
+      await Promise.resolve(); // flush the caret-restoring microtask
+      expect(ta.value).toBe('**hello** world');
+    });
+
+    it('is a no-op when the focused element is not a bold-capable editor', async () => {
+      const input = document.createElement('input');
+      input.className = 'cvpreview__leaf-editor'; // no data-draft-id
+      input.value = 'plain';
+      fixture.nativeElement.appendChild(input);
+      input.focus();
+      component.applyActiveBold();
+      await Promise.resolve();
+      expect(input.value).toBe('plain');
+    });
+  });
 });

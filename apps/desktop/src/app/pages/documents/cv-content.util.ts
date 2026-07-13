@@ -716,9 +716,13 @@ export function resetCvElementStyle(style: CvStyle, path: string): CvStyle {
 }
 
 /** Applies an element-style patch onto the `CvStyle` root/document-wide body
- * fields (`fontFamily`/`fontSizePt`/`fontWeight`/`accentColorHex`) — the
+ * fields (`fontFamily`/`fontSizePt`/`fontWeight`/`bodyColorHex`) — the
  * least-specific layer of the cascade. Only the provided keys are written;
  * `sectionStyles`/`elementStyles`/`titleStyle` are left untouched.
+ * `colorHex` maps to `bodyColorHex` — the document-wide BODY text colour —
+ * NOT `accentColorHex` (the accent/title/rule colour body text never reads;
+ * writing `accentColorHex` here was the Phase D.2 bug this fixes, since it
+ * recoloured titles instead of the body it was meant to target).
  * `lineHeight` has no document-body root field, so it is intentionally
  * ignored here. */
 export function patchCvDocumentBody(style: CvStyle, patch: Partial<CvElementStyle>): CvStyle {
@@ -726,19 +730,20 @@ export function patchCvDocumentBody(style: CvStyle, patch: Partial<CvElementStyl
   if (patch.fontFamily !== undefined) next.fontFamily = patch.fontFamily;
   if (patch.fontSizePt !== undefined) next.fontSizePt = patch.fontSizePt;
   if (patch.fontWeight !== undefined) next.fontWeight = patch.fontWeight;
-  if (patch.colorHex !== undefined) next.accentColorHex = patch.colorHex;
+  if (patch.colorHex !== undefined) next.bodyColorHex = patch.colorHex;
   return next;
 }
 
 /** Resolved style for a single body leaf: `elementStyles[elementPath]`
  * layered over `effectiveSectionStyle(style, key)` — element → section →
- * document, most-specific first. An absent `elementPath` (or one with no
- * override) resolves to the section value unchanged. `colorHex` stays
- * `undefined` unless explicitly overridden at the element or section scope —
- * it must NOT fall back to `accentColorHex` (the no-accent-leak rule from
- * `015c2e3`); un-overridden body text keeps its inherited/theme colour.
- * `lineHeight` is validated 1.0–2.0, falling back to the section's
- * (already-validated) value when the element override is out of range. */
+ * document → none, most-specific first. An absent `elementPath` (or one with
+ * no override) resolves to the section/document colour cascade unchanged.
+ * `colorHex` stays `undefined` unless explicitly overridden at the element,
+ * section, OR document (`bodyColorHex`) scope — it must NOT fall back to
+ * `accentColorHex` (the no-accent-leak rule from `015c2e3`); un-overridden
+ * body text keeps its inherited/theme colour. `lineHeight` is validated
+ * 1.0–2.0, falling back to the section's (already-validated) value when the
+ * element override is out of range. */
 export function effectiveLeafStyle(
   style: CvStyle,
   key: CvSectionKey,
@@ -757,7 +762,7 @@ export function effectiveLeafStyle(
     fontFamily: element.fontFamily ?? section.fontFamily,
     fontSizePt: element.fontSizePt ?? section.fontSizePt,
     fontWeight: element.fontWeight ?? section.fontWeight,
-    colorHex: element.colorHex ?? sectionOverride.colorHex ?? undefined,
+    colorHex: element.colorHex ?? sectionOverride.colorHex ?? style.bodyColorHex ?? undefined,
     lineHeight: isValidCvLineHeight(element.lineHeight) ? element.lineHeight : section.lineHeight,
   };
 }

@@ -718,7 +718,11 @@ export class CvPreviewComponent {
     return effectiveSectionStyle(this.style(), key);
   }
 
-  /** Body-text style for a section wrapper. */
+  /** Body-text style for a section wrapper. `color` resolves section colour
+   * over the document-wide `bodyColorHex` (element → section → document →
+   * none, per the no-accent-leak rule) — emitted ONLY when one of those two
+   * is actually set, so an untouched document/section never picks up
+   * `accentColorHex` via `effStyle`'s (title-oriented) fallback. */
   bodyCss(key: CvSectionKey): Record<string, string> {
     const s = this.effStyle(key);
     const css: Record<string, string> = {
@@ -730,9 +734,10 @@ export class CvPreviewComponent {
       css['line-height'] = String(s.lineHeight);
       css['--cv-section-line-height'] = String(s.lineHeight);
     }
-    if (this.style().sectionStyles?.[key]?.colorHex) {
-      css['color'] = s.colorHex;
-      css['--cv-section-body-color'] = s.colorHex;
+    const color = this.style().sectionStyles?.[key]?.colorHex ?? this.style().bodyColorHex;
+    if (color) {
+      css['color'] = color;
+      css['--cv-section-body-color'] = color;
     }
     return css;
   }

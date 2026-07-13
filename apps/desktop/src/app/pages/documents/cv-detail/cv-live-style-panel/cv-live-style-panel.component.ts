@@ -118,7 +118,11 @@ export class CvLiveStylePanelComponent {
           fontFamily: s.fontFamily,
           fontSizePt: s.fontSizePt,
           fontWeight: s.fontWeight,
-          colorHex: s.accentColorHex,
+          // Document-scope BODY colour reads `bodyColorHex` — distinct from
+          // `accentColorHex` (the title scope's document colour, read
+          // separately by `activeTitleOverride`/`setTitleColor`). Unset →
+          // Inherit (no forced body colour), per the no-accent-leak rule.
+          colorHex: s.bodyColorHex,
         };
       case 'element':
       default:

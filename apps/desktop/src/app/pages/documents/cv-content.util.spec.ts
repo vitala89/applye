@@ -891,7 +891,10 @@ describe('resetCvElementStyle', () => {
 });
 
 describe('patchCvDocumentBody', () => {
-  it('maps colorHex to accentColorHex and applies the other root fields', () => {
+  it('maps colorHex to bodyColorHex (NOT accentColorHex) and applies the other root fields', () => {
+    // Regression: the "Whole document" body colour scope used to write
+    // accentColorHex, which body text never reads (no-accent-leak rule) — so
+    // it recoloured titles/name instead of the body it was meant to target.
     const original: CvStyle = { ...CV_STYLE_DEFAULT };
     const changed = patchCvDocumentBody(original, {
       fontFamily: 'Georgia',
@@ -904,8 +907,10 @@ describe('patchCvDocumentBody', () => {
       fontFamily: 'Georgia',
       fontSizePt: 12,
       fontWeight: 700,
-      accentColorHex: '#123456',
+      bodyColorHex: '#123456',
     });
+    // accentColorHex (title/rule colour) must stay untouched by a body edit.
+    expect(changed.accentColorHex).toBe(CV_STYLE_DEFAULT.accentColorHex);
   });
 
   it('ignores lineHeight (no root field for it) and leaves other maps untouched', () => {
@@ -991,8 +996,11 @@ describe('effectiveLeafStyle', () => {
     });
   });
 
-  it('colorHex stays undefined unless explicitly overridden at section or element scope (no accent leak)', () => {
+  it('colorHex stays undefined unless explicitly overridden at element, section, or document scope (no accent leak)', () => {
     expect(effectiveLeafStyle(base, 'summary', 'summary.body').colorHex).toBeUndefined();
+    // An accent colour alone (no bodyColorHex) must never leak into the body.
+    const accentOnly: CvStyle = { ...base, accentColorHex: '#1B7464' };
+    expect(effectiveLeafStyle(accentOnly, 'summary', 'summary.body').colorHex).toBeUndefined();
 
     const sectionOverride: CvStyle = { ...base, sectionStyles: { summary: { colorHex: '#0a5' } } };
     expect(effectiveLeafStyle(sectionOverride, 'summary', 'summary.body').colorHex).toBe('#0a5');
@@ -1004,6 +1012,40 @@ describe('effectiveLeafStyle', () => {
       elementStyles: { 'summary.body': { colorHex: '#123456' } },
     };
     expect(effectiveLeafStyle(elementOverride, 'summary', 'summary.body').colorHex).toBe('#123456');
+  });
+
+  it('resolves the document-wide bodyColorHex cascade layer (element > section > document > none)', () => {
+    // Document bodyColorHex alone applies to every leaf with no section/
+    // element override.
+    const docOnly: CvStyle = { ...base, bodyColorHex: '#204060' };
+    expect(effectiveLeafStyle(docOnly, 'summary', 'summary.body').colorHex).toBe('#204060');
+    expect(effectiveLeafStyle(docOnly, 'skills', 'skills.0.values').colorHex).toBe('#204060');
+    expect(effectiveLeafStyle(docOnly, 'summary', undefined).colorHex).toBe('#204060');
+
+    // A section colorHex override beats the document bodyColorHex for that
+    // section only; a sibling section still falls through to the document.
+    const sectionBeatsDoc: CvStyle = {
+      ...base,
+      bodyColorHex: '#204060',
+      sectionStyles: { summary: { colorHex: '#0a5' } },
+    };
+    expect(effectiveLeafStyle(sectionBeatsDoc, 'summary', 'summary.body').colorHex).toBe('#0a5');
+    expect(effectiveLeafStyle(sectionBeatsDoc, 'skills', 'skills.0.values').colorHex).toBe(
+      '#204060',
+    );
+
+    // An element colorHex override beats both the section and the document.
+    const elementBeatsAll: CvStyle = {
+      ...base,
+      bodyColorHex: '#204060',
+      sectionStyles: { summary: { colorHex: '#0a5' } },
+      elementStyles: { 'summary.body': { colorHex: '#123456' } },
+    };
+    expect(effectiveLeafStyle(elementBeatsAll, 'summary', 'summary.body').colorHex).toBe('#123456');
+
+    // Unset bodyColorHex (and no section/element override) never leaks the
+    // accent colour into the body.
+    expect(effectiveLeafStyle(base, 'summary', 'summary.body').colorHex).toBeUndefined();
   });
 
   it('validates lineHeight 1.0-2.0, falling back to the section value when the element override is invalid', () => {

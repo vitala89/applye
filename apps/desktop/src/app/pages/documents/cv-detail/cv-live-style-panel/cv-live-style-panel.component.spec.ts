@@ -142,6 +142,31 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('document-scope body colour reads and writes bodyColorHex, not accentColorHex', () => {
+    // Regression: the "Whole document" body colour control used to read/write
+    // accentColorHex (the title/rule colour), so it never showed or changed
+    // the actual body colour.
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      accentColorHex: '#1B7464',
+      bodyColorHex: '#204060',
+    });
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'summary',
+      part: 'body',
+      elementPath: 'summary',
+    });
+    fixture.detectChanges();
+    component.setScope('document');
+    fixture.detectChanges();
+
+    expect(component.activeBodyOverride().colorHex).toBe('#204060');
+
+    const events = collect();
+    component.setBodyColor('#0a5');
+    expect(events).toEqual([{ scope: 'document', patch: { colorHex: '#0a5' } }]);
+  });
+
   it('switching scope re-targets subsequent edits', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',

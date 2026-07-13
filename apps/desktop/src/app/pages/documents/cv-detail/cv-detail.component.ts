@@ -414,6 +414,7 @@ export class CvDetailComponent {
       s.fontSizePt !== d.fontSizePt ||
       s.fontWeight !== d.fontWeight ||
       s.accentColorHex !== d.accentColorHex ||
+      s.bodyColorHex !== d.bodyColorHex ||
       !!s.titleBorder ||
       nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
       sectionCustom ||

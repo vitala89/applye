@@ -118,14 +118,17 @@ describe('CvDetailComponent per-section style', () => {
       expect(component.style()).toBe(before);
     });
 
-    it('body document scope writes the CvStyle root body fields', () => {
+    it('body document scope writes the CvStyle root body fields — colour to bodyColorHex, not accentColorHex', () => {
+      const accentBefore = component.style().accentColorHex;
       component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
       component.onStylePanelChange({
         scope: 'document',
         patch: { fontFamily: 'Arial', colorHex: '#101010' },
       });
       expect(component.style().fontFamily).toBe('Arial');
-      expect(component.style().accentColorHex).toBe('#101010');
+      expect(component.style().bodyColorHex).toBe('#101010');
+      // The accent/title/rule colour must stay untouched by a body edit.
+      expect(component.style().accentColorHex).toBe(accentBefore);
       expect(component.style().sectionStyles).toBeUndefined();
       expect(component.style().elementStyles).toBeUndefined();
     });
@@ -661,6 +664,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
   const richStyle = {
     ...CV_STYLE_DEFAULT,
     fontFamily: 'Georgia',
+    bodyColorHex: '#204060',
     elementStyles: { summary: { fontFamily: 'Arial', colorHex: '#112233' } },
     sectionStyles: { skills: { fontWeight: 700 } },
     titleStyle: { fontFamily: 'Verdana' },
@@ -718,6 +722,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     expect(component.style().titleStyle).toEqual({ fontFamily: 'Verdana' });
     expect(component.style().titleBorder).toBe('dashed');
     expect(component.style().fontFamily).toBe('Georgia');
+    expect(component.style().bodyColorHex).toBe('#204060');
   });
 
   it('saves the full override tree back through styleJson unchanged', async () => {
@@ -730,6 +735,20 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     expect(saved.titleStyle).toEqual({ fontFamily: 'Verdana' });
     expect(saved.titleBorder).toBe('dashed');
     expect(saved.fontFamily).toBe('Georgia');
+    expect(saved.bodyColorHex).toBe('#204060');
+  });
+
+  it('a bodyColorHex override alone makes hasAnyCustomStyle true (compared against the theme baseline, which has none)', () => {
+    // themeBaseStyle never sets bodyColorHex (CV_STYLE_DEFAULT omits it and
+    // themeStyleSeed can't set it), so any bodyColorHex on the live style is
+    // by definition a custom override.
+    expect(component.hasAnyCustomStyle()).toBe(true);
+    component.resetAllStyles();
+    expect(component.style().bodyColorHex).toBeUndefined();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+
+    component.updateStyle({ bodyColorHex: '#204060' });
+    expect(component.hasAnyCustomStyle()).toBe(true);
   });
 
   it('resetAllStyles (relocated to the live panel) clears every override before a subsequent save', async () => {
@@ -741,6 +760,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     expect(component.style().sectionStyles).toBeUndefined();
     expect(component.style().titleStyle).toBeUndefined();
     expect(component.style().titleBorder).toBeUndefined();
+    expect(component.style().bodyColorHex).toBeUndefined();
 
     await component.save();
     const upsert = dbStub.documentLibraryUpsert as jest.Mock;
@@ -749,6 +769,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     expect(saved.sectionStyles).toBeUndefined();
     expect(saved.titleStyle).toBeUndefined();
     expect(saved.titleBorder).toBeUndefined();
+    expect(saved.bodyColorHex).toBeUndefined();
   });
 });
 

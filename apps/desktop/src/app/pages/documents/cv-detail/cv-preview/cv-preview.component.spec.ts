@@ -232,6 +232,40 @@ describe('CvPreviewComponent', () => {
     expect(skillsCss['--cv-section-body-color']).toBeUndefined();
   });
 
+  it('bodyCss applies the document-wide bodyColorHex to every section wrapper (Phase D.2 body colour)', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      accentColorHex: '#1B7464',
+      bodyColorHex: '#204060',
+    });
+    expect(component.bodyCss('summary')).toMatchObject({
+      color: '#204060',
+      '--cv-section-body-color': '#204060',
+    });
+    expect(component.bodyCss('skills')).toMatchObject({
+      color: '#204060',
+      '--cv-section-body-color': '#204060',
+    });
+  });
+
+  it('bodyCss lets a section colorHex override beat the document-wide bodyColorHex for that section only', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      bodyColorHex: '#204060',
+      sectionStyles: { summary: { colorHex: '#0a5' } },
+    });
+    expect(component.bodyCss('summary')).toMatchObject({
+      color: '#0a5',
+      '--cv-section-body-color': '#0a5',
+    });
+    // The sibling section falls through to the document colour, not to
+    // accentColorHex and not to no-colour.
+    expect(component.bodyCss('skills')).toMatchObject({
+      color: '#204060',
+      '--cv-section-body-color': '#204060',
+    });
+  });
+
   describe('leafCss — per-element style override (Phase D.2)', () => {
     it('returns an empty style object for a leaf with no elementStyles override', () => {
       expect(component.leafCss('summary')).toEqual({});
@@ -441,6 +475,24 @@ describe('CvPreviewComponent', () => {
       fixture.detectChanges();
       page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
       expect(page.style.color).not.toBe('');
+    });
+
+    it('a document-wide bodyColorHex colours the section wrapper (inherited by every un-overridden leaf) in both the measure and page passes', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, bodyColorHex: '#204060' });
+      fixture.componentRef.setInput('sections', [
+        { key: 'summary', order: 0, visible: true, text: 'Hello world' },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      // The leaf itself gets no per-leaf inline colour (leafCss is untouched
+      // by the document layer) — colour comes from the wrapper via CSS
+      // inheritance, which is what actually shows on screen.
+      const page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
+      expect(page.style.color).toBe('');
+      const wrapper = page.closest('.cvpreview__section') as HTMLElement;
+      // jsdom normalizes the inline hex to an rgb() triplet — assert it's set
+      // rather than comparing string formats.
+      expect(wrapper.style.color).not.toBe('');
     });
 
     it('an element override on the inline editor renders the same style while the leaf is being edited', () => {

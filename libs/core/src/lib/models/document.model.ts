@@ -312,6 +312,15 @@ export interface CvStyle {
   fontSizePt: number;
   accentColorHex: string;
   fontWeight: CvFontWeight;
+  /** Document-wide body-text colour — distinct from `accentColorHex` (which
+   * stays the accent/title/rule colour body text never reads, by the
+   * no-accent-leak rule). Additive/optional: absent means no forced body
+   * colour at the document layer, so un-overridden body text keeps
+   * inheriting its theme/dark colour. Neither `CV_STYLE_DEFAULT` nor
+   * `themeStyleSeed` sets this — a fresh or reset document never forces a
+   * body colour until the user explicitly picks one at the "Whole document"
+   * scope. */
+  bodyColorHex?: string;
   sectionStyles?: Partial<Record<CvSectionKey, CvSectionStyle>>;
   /** Document-wide defaults for section titles; unset fields inherit the body. */
   titleStyle?: CvTextStyle;

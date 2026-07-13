@@ -424,7 +424,7 @@ export class CvDetailComponent {
   /** Reset every section and the document-wide style back to the active
    * theme's baseline (not the hard-coded Classic default). */
   resetAllStyles(): void {
-    this.style.set({ ...this.themeBaseStyle() });
+    this.style.set({ ...this.themeBaseStyle(), page: this.style().page });
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     void this.refreshStyleNotes();
   }

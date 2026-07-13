@@ -276,6 +276,26 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.style().fontFamily).toBe('Lato');
   });
 
+  it('resetAllStyles clears style overrides but leaves the custom page size/margins untouched', () => {
+    // Custom page geometry: non-default size AND a non-default margin side.
+    component.setPageSize('letter');
+    component.setMarginSide('top', 5);
+    const customPage = { size: 'letter', margin: { top: 5, right: 20, bottom: 20, left: 20 } };
+    expect(component.style().page).toEqual(customPage);
+
+    // Also dirty a style override so reset-all has something to clear.
+    component.updateStyle({ fontFamily: 'Open Sans' });
+    component.setSectionStyle('skills', { fontFamily: 'Arial' });
+    expect(component.hasAnyCustomStyle()).toBe(true);
+
+    component.resetAllStyles();
+
+    // Style overrides are back to the theme baseline...
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    // ...but the custom page settings survive the reset.
+    expect(component.style().page).toEqual(customPage);
+  });
+
   it('removePhoto clears the stored dataUri', () => {
     component.photoDataUri.set('data:image/jpeg;base64,AAAA');
     component.removePhoto();

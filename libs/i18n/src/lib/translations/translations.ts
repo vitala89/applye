@@ -703,11 +703,7 @@ const en: TranslationMap = {
     cv_style_font: 'Font',
     cv_style_size: 'Size (pt)',
     cv_style_color: 'Color',
-    cv_style_hint_font:
-      'Recommended: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans, or another common sans/serif face.',
     cv_style_hint_size: 'Recommended: 10–12pt body text.',
-    cv_style_hint_color:
-      'Recommended: a single dark, muted colour used only in headings — bright or pale colours risk poor contrast when printed.',
     cv_style_note_font:
       '"{value}" may not be reliably read by every ATS parser — safe choices: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
     cv_style_note_size:
@@ -1706,11 +1702,7 @@ const de: TranslationMap = {
     cv_style_font: 'Schriftart',
     cv_style_size: 'Größe (pt)',
     cv_style_color: 'Farbe',
-    cv_style_hint_font:
-      'Empfohlen: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans oder eine andere gängige Serifen-/serifenlose Schrift.',
     cv_style_hint_size: 'Empfohlen: 10–12pt Fließtext.',
-    cv_style_hint_color:
-      'Empfohlen: eine einzelne dunkle, gedeckte Farbe, nur in Überschriften — helle oder blasse Farben bergen ein Kontrastrisiko beim Ausdruck.',
     cv_style_note_font:
       '„{value}" wird möglicherweise nicht von jedem ATS-Parser zuverlässig gelesen — sichere Wahl: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
     cv_style_note_size:

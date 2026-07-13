@@ -18,6 +18,8 @@ import {
   effectiveSectionStyle,
   effectiveTitleStyle,
   effectiveTitleBorder,
+  effectiveTitleRuleColor,
+  effectiveTitleRuleWidth,
   leafPath,
   mergeRegeneratedSection,
   normalizeCvContent,
@@ -1153,6 +1155,22 @@ describe('title/body style resolution', () => {
         'skills',
       ),
     ).toBe('dotted');
+  });
+
+  it('title rule width/colour resolve section over document, undefined when unset', () => {
+    expect(effectiveTitleRuleWidth(base, 'summary')).toBeUndefined();
+    expect(effectiveTitleRuleColor(base, 'summary')).toBeUndefined();
+    const doc: CvStyle = { ...base, titleRuleWidthPt: 3, titleRuleColorHex: '#111' };
+    expect(effectiveTitleRuleWidth(doc, 'summary')).toBe(3);
+    expect(effectiveTitleRuleColor(doc, 'summary')).toBe('#111');
+    const sectioned: CvStyle = {
+      ...doc,
+      sectionStyles: { skills: { titleRuleWidthPt: 1.5, titleRuleColorHex: '#abc' } },
+    };
+    expect(effectiveTitleRuleWidth(sectioned, 'skills')).toBe(1.5);
+    expect(effectiveTitleRuleColor(sectioned, 'skills')).toBe('#abc');
+    // Section without its own override falls back to the document value.
+    expect(effectiveTitleRuleWidth(sectioned, 'summary')).toBe(3);
   });
 });
 

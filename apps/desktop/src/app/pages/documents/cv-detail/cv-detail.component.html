@@ -406,10 +406,13 @@
               [selection]="liveSelection()"
               [style]="style()"
               [sampleText]="selectedLeafText()"
+              [sampleBaseStyle]="sampleResolvedStyle()"
               [hasCustomStyle]="hasAnyCustomStyle()"
+              [editing]="cvPreview.editing()"
               (panelChange)="onStylePanelChange($event)"
               (resetAll)="resetAllStyles()"
               (editText)="cvPreview.startEditing()"
+              (bold)="cvPreview.applyBoldToActiveEditor()"
             />
           </aside>
         </div>

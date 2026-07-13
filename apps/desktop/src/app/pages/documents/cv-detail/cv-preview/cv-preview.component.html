@@ -30,10 +30,12 @@
   <div
     [class]="'cvpreview__header ' + headerPlacementClass(placement)"
     [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSectionSelected('personal_details') && selectable(renderMode)"
     [attr.role]="selectable(renderMode) ? 'button' : null"
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
     [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('personal_details', 'body') : null"
     [attr.data-cv-select]="'personal_details:body'"
+    [attr.data-cv-chip]="t()(sectionLabelKey('personal_details'))"
     (click)="selectPart('personal_details', 'body', renderMode, $event)"
     (keydown.enter)="selectPart('personal_details', 'body', renderMode, $event)"
     (keydown.space)="onSelectKey($event, 'personal_details', 'body', renderMode)"
@@ -125,7 +127,27 @@
         </p>
       }
     }
-    <p class="cvpreview__contact">
+    <p
+      class="cvpreview__contact"
+      [ngStyle]="leafCss(leafPath('pd', 'contact'))"
+      [class.cvpreview__selectable]="selectable(renderMode)"
+      [class.cvpreview__element-selected]="
+        isElementSelected(leafPath('pd', 'contact')) && selectable(renderMode)
+      "
+      [attr.role]="selectable(renderMode) ? 'button' : null"
+      [attr.tabindex]="selectable(renderMode) ? 0 : null"
+      [attr.aria-label]="
+        selectable(renderMode) ? leafAriaLabel('personal_details', 'contact') : null
+      "
+      [attr.data-cv-chip]="leafChipLabel('contact')"
+      (click)="selectLeaf('personal_details', leafPath('pd', 'contact'), renderMode, $event)"
+      (keydown.enter)="
+        selectLeaf('personal_details', leafPath('pd', 'contact'), renderMode, $event)
+      "
+      (keydown.space)="
+        onSelectKey($event, 'personal_details', 'body', renderMode, leafPath('pd', 'contact'))
+      "
+    >
       {{
         buildContactLine(section, {
           includeBirthdate: includeBirthdate(),
@@ -156,30 +178,18 @@
       {{ t()(sectionLabelKey('summary')) }}
     </h3>
     @if (isEditingLeaf(leafPath('summary')) && selectable(renderMode)) {
-      <div class="cvpreview__bold-field">
-        <textarea
-          #summaryEl
-          class="cvpreview__summary cvpreview__leaf-editor"
-          [class.cvpreview__selected]="true"
-          [class.cvpreview__element-selected]="isElementSelected(leafPath('summary'))"
-          [ngStyle]="leafCss(leafPath('summary'))"
-          [value]="leafDraft(leafPath('summary'), section.text)"
-          (input)="onLeafInput(leafPath('summary'), $any($event.target).value)"
-          (blur)="commitSummary(section, section.text)"
-          (keydown.escape)="onLeafEscape(leafPath('summary'))"
-          (keydown)="onSummaryBoldKeydown($event, summaryEl, section.text)"
-        ></textarea>
-        <button
-          type="button"
-          class="cvpreview__bold-btn"
-          [attr.aria-label]="t()('documents.cv_bold_action')"
-          [attr.title]="t()('documents.cv_bold_action')"
-          (mousedown)="$event.preventDefault()"
-          (click)="applySummaryBold(summaryEl, section.text)"
-        >
-          B
-        </button>
-      </div>
+      <textarea
+        #summaryEl
+        class="cvpreview__summary cvpreview__leaf-editor"
+        [class.cvpreview__selected]="true"
+        [class.cvpreview__element-selected]="isElementSelected(leafPath('summary'))"
+        [ngStyle]="leafCss(leafPath('summary'))"
+        [value]="leafDraft(leafPath('summary'), section.text)"
+        (input)="onLeafInput(leafPath('summary'), $any($event.target).value)"
+        (blur)="commitSummary(section, section.text)"
+        (keydown.escape)="onLeafEscape(leafPath('summary'))"
+        (keydown)="onSummaryBoldKeydown($event, summaryEl, section.text)"
+      ></textarea>
     } @else {
       <p
         class="cvpreview__summary"
@@ -366,10 +376,12 @@
     class="cvpreview__entry"
     [class.cvpreview__entry--sep]="!first"
     [class.cvpreview__selectable]="selectable(renderMode)"
+    [class.cvpreview__selected]="isSectionSelected(key) && selectable(renderMode)"
     [attr.role]="selectable(renderMode) ? 'button' : null"
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
     [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
     [attr.data-cv-select]="key + ':body'"
+    [attr.data-cv-chip]="t()(sectionLabelKey('experience'))"
     (click)="selectPart(key, 'body', renderMode, $event)"
     (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode)"
@@ -507,8 +519,70 @@
         >
       }
       <span class="cvpreview__entry-dates">
-        {{ entry.startDate }} –
-        {{ entry.endDate || t()('documents.cv_present') }}
+        @if (isEditingLeaf(leafPath('exp', i, 'startDate')) && selectable(renderMode)) {
+          <input
+            type="text"
+            class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
+            [ngStyle]="leafCss(leafPath('exp', i, 'startDate'))"
+            [value]="leafDraft(leafPath('exp', i, 'startDate'), entry.startDate)"
+            (input)="onLeafInput(leafPath('exp', i, 'startDate'), $any($event.target).value)"
+            (blur)="commitExperienceField(section, i, 'startDate', entry.startDate)"
+            (keydown.escape)="onLeafEscape(leafPath('exp', i, 'startDate'))"
+            (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
+          />
+        } @else {
+          <span
+            class="cvpreview__entry-date"
+            [ngStyle]="leafCss(leafPath('exp', i, 'startDate'))"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="
+              isElementSelected(leafPath('exp', i, 'startDate')) && selectable(renderMode)
+            "
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'startDate') : null"
+            [attr.data-cv-chip]="leafChipLabel('startDate')"
+            (click)="selectLeaf(key, leafPath('exp', i, 'startDate'), renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, leafPath('exp', i, 'startDate'), renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'startDate'))
+            "
+            >{{ entry.startDate }}</span
+          >
+        }
+        <span class="cvpreview__date-sep"> – </span>
+        @if (isEditingLeaf(leafPath('exp', i, 'endDate')) && selectable(renderMode)) {
+          <input
+            type="text"
+            class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
+            [ngStyle]="leafCss(leafPath('exp', i, 'endDate'))"
+            [value]="leafDraft(leafPath('exp', i, 'endDate'), entry.endDate || '')"
+            [placeholder]="t()('documents.cv_present')"
+            (input)="onLeafInput(leafPath('exp', i, 'endDate'), $any($event.target).value)"
+            (blur)="commitExperienceField(section, i, 'endDate', entry.endDate || '')"
+            (keydown.escape)="onLeafEscape(leafPath('exp', i, 'endDate'))"
+            (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
+          />
+        } @else {
+          <span
+            class="cvpreview__entry-date"
+            [ngStyle]="leafCss(leafPath('exp', i, 'endDate'))"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="
+              isElementSelected(leafPath('exp', i, 'endDate')) && selectable(renderMode)
+            "
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'endDate') : null"
+            [attr.data-cv-chip]="leafChipLabel('endDate')"
+            (click)="selectLeaf(key, leafPath('exp', i, 'endDate'), renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, leafPath('exp', i, 'endDate'), renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'endDate'))
+            "
+            >{{ entry.endDate || t()('documents.cv_present') }}</span
+          >
+        }
       </span>
     </div>
   </div>
@@ -541,29 +615,17 @@
   >
     @if (isEditingLeaf(leafPath('exp', i, 'bullet', b)) && selectable(renderMode)) {
       <li>
-        <div class="cvpreview__bold-field">
-          <textarea
-            #bulletEl
-            class="cvpreview__leaf-editor cvpreview__bullet-editor"
-            [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'bullet', b))"
-            [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))"
-            [value]="leafDraft(leafPath('exp', i, 'bullet', b), bullet)"
-            (input)="onLeafInput(leafPath('exp', i, 'bullet', b), $any($event.target).value)"
-            (blur)="commitExperienceBullet(section, i, b, bullet)"
-            (keydown.escape)="onLeafEscape(leafPath('exp', i, 'bullet', b))"
-            (keydown)="onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
-          ></textarea>
-          <button
-            type="button"
-            class="cvpreview__bold-btn"
-            [attr.aria-label]="t()('documents.cv_bold_action')"
-            [attr.title]="t()('documents.cv_bold_action')"
-            (mousedown)="$event.preventDefault()"
-            (click)="applyBulletBold(bulletEl, i, b, bullet)"
-          >
-            B
-          </button>
-        </div>
+        <textarea
+          #bulletEl
+          class="cvpreview__leaf-editor cvpreview__bullet-editor"
+          [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'bullet', b))"
+          [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))"
+          [value]="leafDraft(leafPath('exp', i, 'bullet', b), bullet)"
+          (input)="onLeafInput(leafPath('exp', i, 'bullet', b), $any($event.target).value)"
+          (blur)="commitExperienceBullet(section, i, b, bullet)"
+          (keydown.escape)="onLeafEscape(leafPath('exp', i, 'bullet', b))"
+          (keydown)="onBulletBoldKeydown($event, bulletEl, i, b, bullet)"
+        ></textarea>
       </li>
     } @else {
       <li [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))">
@@ -602,74 +664,148 @@
   <div
     class="cvpreview__entry"
     [class.cvpreview__selectable]="selectable(renderMode)"
-    [class.cvpreview__element-selected]="
-      isElementSelected(leafPath('edu', i)) && selectable(renderMode)
-    "
+    [class.cvpreview__selected]="isSectionSelected(key) && selectable(renderMode)"
     [attr.role]="selectable(renderMode) ? 'button' : null"
     [attr.tabindex]="selectable(renderMode) ? 0 : null"
     [attr.aria-label]="selectable(renderMode) ? selectAriaLabel(key, 'body') : null"
     [attr.data-cv-select]="key + ':body'"
     [attr.data-cv-chip]="t()(sectionLabelKey('education'))"
-    (click)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
-    (keydown.enter)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
-    (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('edu', i))"
+    (click)="selectPart(key, 'body', renderMode, $event)"
+    (keydown.enter)="selectPart(key, 'body', renderMode, $event)"
+    (keydown.space)="onSelectKey($event, key, 'body', renderMode)"
     [ngStyle]="bodyCss(key)"
   >
-    @if (isEditingLeaf(leafPath('edu', i)) && selectable(renderMode)) {
-      <div class="cvpreview__entry-head">
-        <span class="cvpreview__entry-role cvpreview__entry-role--editor">
+    <div class="cvpreview__entry-head">
+      <span class="cvpreview__entry-role cvpreview__entry-role--editor">
+        @if (isEditingLeaf(leafPath('edu', i, 'degree')) && selectable(renderMode)) {
           <input
             type="text"
-            class="cvpreview__leaf-editor"
-            [value]="leafDraft('edu.' + i + '.degree', entry.degree)"
-            (input)="onLeafInput('edu.' + i + '.degree', $any($event.target).value)"
+            class="cvpreview__leaf-editor cvpreview__element-selected"
+            [ngStyle]="leafCss(leafPath('edu', i, 'degree'))"
+            [value]="leafDraft(leafPath('edu', i, 'degree'), entry.degree)"
+            (input)="onLeafInput(leafPath('edu', i, 'degree'), $any($event.target).value)"
             (blur)="commitEducationField(section, i, 'degree', entry.degree)"
-            (keydown.escape)="onLeafEscape('edu.' + i + '.degree')"
+            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'degree'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
-          <span class="cvpreview__entry-role-sep">, </span>
+        } @else {
+          <span
+            [ngStyle]="leafCss(leafPath('edu', i, 'degree'))"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="
+              isElementSelected(leafPath('edu', i, 'degree')) && selectable(renderMode)
+            "
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'degree') : null"
+            [attr.data-cv-chip]="leafChipLabel('degree')"
+            (click)="selectLeaf(key, leafPath('edu', i, 'degree'), renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, leafPath('edu', i, 'degree'), renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, key, 'body', renderMode, leafPath('edu', i, 'degree'))
+            "
+            >{{ entry.degree }}</span
+          >
+        }
+        <span class="cvpreview__entry-role-sep">, </span>
+        @if (isEditingLeaf(leafPath('edu', i, 'institution')) && selectable(renderMode)) {
           <input
             type="text"
-            class="cvpreview__leaf-editor"
-            [value]="leafDraft('edu.' + i + '.institution', entry.institution)"
-            (input)="onLeafInput('edu.' + i + '.institution', $any($event.target).value)"
+            class="cvpreview__leaf-editor cvpreview__element-selected"
+            [ngStyle]="leafCss(leafPath('edu', i, 'institution'))"
+            [value]="leafDraft(leafPath('edu', i, 'institution'), entry.institution)"
+            (input)="onLeafInput(leafPath('edu', i, 'institution'), $any($event.target).value)"
             (blur)="commitEducationField(section, i, 'institution', entry.institution)"
-            (keydown.escape)="onLeafEscape('edu.' + i + '.institution')"
+            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'institution'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
-        </span>
-        <span class="cvpreview__entry-dates cvpreview__entry-dates--editor">
+        } @else {
+          <span
+            [ngStyle]="leafCss(leafPath('edu', i, 'institution'))"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="
+              isElementSelected(leafPath('edu', i, 'institution')) && selectable(renderMode)
+            "
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'institution') : null"
+            [attr.data-cv-chip]="leafChipLabel('institution')"
+            (click)="selectLeaf(key, leafPath('edu', i, 'institution'), renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, leafPath('edu', i, 'institution'), renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, key, 'body', renderMode, leafPath('edu', i, 'institution'))
+            "
+            >{{ entry.institution }}</span
+          >
+        }
+      </span>
+      <span class="cvpreview__entry-dates cvpreview__entry-dates--editor">
+        @if (isEditingLeaf(leafPath('edu', i, 'startDate')) && selectable(renderMode)) {
           <input
             type="text"
-            class="cvpreview__date-input cvpreview__leaf-editor"
-            [value]="leafDraft('edu.' + i + '.startDate', entry.startDate)"
-            (input)="onLeafInput('edu.' + i + '.startDate', $any($event.target).value)"
+            class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
+            [ngStyle]="leafCss(leafPath('edu', i, 'startDate'))"
+            [value]="leafDraft(leafPath('edu', i, 'startDate'), entry.startDate)"
+            (input)="onLeafInput(leafPath('edu', i, 'startDate'), $any($event.target).value)"
             (blur)="commitEducationField(section, i, 'startDate', entry.startDate)"
-            (keydown.escape)="onLeafEscape('edu.' + i + '.startDate')"
+            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'startDate'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
-          <span class="cvpreview__date-sep"> – </span>
+        } @else {
+          <span
+            class="cvpreview__entry-date"
+            [ngStyle]="leafCss(leafPath('edu', i, 'startDate'))"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="
+              isElementSelected(leafPath('edu', i, 'startDate')) && selectable(renderMode)
+            "
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'startDate') : null"
+            [attr.data-cv-chip]="leafChipLabel('startDate')"
+            (click)="selectLeaf(key, leafPath('edu', i, 'startDate'), renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, leafPath('edu', i, 'startDate'), renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, key, 'body', renderMode, leafPath('edu', i, 'startDate'))
+            "
+            >{{ entry.startDate }}</span
+          >
+        }
+        <span class="cvpreview__date-sep"> – </span>
+        @if (isEditingLeaf(leafPath('edu', i, 'endDate')) && selectable(renderMode)) {
           <input
             type="text"
-            class="cvpreview__date-input cvpreview__leaf-editor"
-            [value]="leafDraft('edu.' + i + '.endDate', entry.endDate || '')"
+            class="cvpreview__date-input cvpreview__leaf-editor cvpreview__element-selected"
+            [ngStyle]="leafCss(leafPath('edu', i, 'endDate'))"
+            [value]="leafDraft(leafPath('edu', i, 'endDate'), entry.endDate || '')"
             [placeholder]="t()('documents.cv_present')"
-            (input)="onLeafInput('edu.' + i + '.endDate', $any($event.target).value)"
+            (input)="onLeafInput(leafPath('edu', i, 'endDate'), $any($event.target).value)"
             (blur)="commitEducationField(section, i, 'endDate', entry.endDate || '')"
-            (keydown.escape)="onLeafEscape('edu.' + i + '.endDate')"
+            (keydown.escape)="onLeafEscape(leafPath('edu', i, 'endDate'))"
             (keydown.enter)="finishLeafEdit($any($event.target), key, 'body')"
           />
-        </span>
-      </div>
-    } @else {
-      <div class="cvpreview__entry-head">
-        <span class="cvpreview__entry-role">{{ entry.degree }}, {{ entry.institution }}</span>
-        <span class="cvpreview__entry-dates">
-          {{ entry.startDate }} –
-          {{ entry.endDate || t()('documents.cv_present') }}
-        </span>
-      </div>
-    }
+        } @else {
+          <span
+            class="cvpreview__entry-date"
+            [ngStyle]="leafCss(leafPath('edu', i, 'endDate'))"
+            [class.cvpreview__selectable]="selectable(renderMode)"
+            [class.cvpreview__element-selected]="
+              isElementSelected(leafPath('edu', i, 'endDate')) && selectable(renderMode)
+            "
+            [attr.role]="selectable(renderMode) ? 'button' : null"
+            [attr.tabindex]="selectable(renderMode) ? 0 : null"
+            [attr.aria-label]="selectable(renderMode) ? leafAriaLabel(key, 'endDate') : null"
+            [attr.data-cv-chip]="leafChipLabel('endDate')"
+            (click)="selectLeaf(key, leafPath('edu', i, 'endDate'), renderMode, $event)"
+            (keydown.enter)="selectLeaf(key, leafPath('edu', i, 'endDate'), renderMode, $event)"
+            (keydown.space)="
+              onSelectKey($event, key, 'body', renderMode, leafPath('edu', i, 'endDate'))
+            "
+            >{{ entry.endDate || t()('documents.cv_present') }}</span
+          >
+        }
+      </span>
+    </div>
   </div>
 </ng-template>
 

@@ -1,4 +1,5 @@
 import {
+  afterRenderEffect,
   ApplicationRef,
   ChangeDetectionStrategy,
   Component,
@@ -6,6 +7,7 @@ import {
   DestroyRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -282,6 +284,28 @@ export class CvDetailComponent {
     return cvLeafText(this.sections(), sel);
   });
 
+  /** The live preview, so we can read the selected leaf's REAL rendered style
+   * off the paper for the live-style panel's "Ag" swatch (bug: the swatch
+   * showed a flat serif instead of the field's actual colour/weight/font). */
+  private readonly cvPreviewCmp = viewChild(CvPreviewComponent);
+
+  /** Rendered typography of the selected leaf, mirrored into the swatch. */
+  readonly sampleResolvedStyle = signal<Record<string, string>>({});
+
+  /** After each render, re-read the selected leaf's computed style from the
+   * DOM (post-layout, so it reflects the current selection AND any just-applied
+   * style edit) and push it to the swatch. Guarded by value equality so the
+   * signal write doesn't loop with the render it triggers. */
+  private readonly sampleStyleSync = afterRenderEffect(() => {
+    // Track the inputs that change what's rendered so this re-runs on them.
+    this.liveSelection();
+    this.style();
+    const next = this.cvPreviewCmp()?.readSelectedHostStyle() ?? {};
+    if (JSON.stringify(this.sampleResolvedStyle()) !== JSON.stringify(next)) {
+      this.sampleResolvedStyle.set(next);
+    }
+  });
+
   /** Per-section collapse state for the content-section accordion — session
    * only (not persisted); every section starts expanded (an empty set means
    * nothing is collapsed). */
@@ -369,6 +393,18 @@ export class CvDetailComponent {
       else this.setSectionStyle(key, { titleBorder: border });
       return;
     }
+    if (change.titleRuleWidth !== undefined) {
+      const w = change.titleRuleWidth ?? undefined;
+      if (allTitles) this.updateStyle({ titleRuleWidthPt: w });
+      else this.setSectionStyle(key, { titleRuleWidthPt: w });
+      return;
+    }
+    if (change.titleRuleColor !== undefined) {
+      const c = change.titleRuleColor ?? undefined;
+      if (allTitles) this.updateStyle({ titleRuleColorHex: c });
+      else this.setSectionStyle(key, { titleRuleColorHex: c });
+      return;
+    }
     if (change.patch) {
       if (allTitles) this.updateTitleStyle(change.patch);
       else this.setSectionTitleStyle(key, change.patch);
@@ -430,6 +466,8 @@ export class CvDetailComponent {
       s.accentColorHex !== d.accentColorHex ||
       s.bodyColorHex !== d.bodyColorHex ||
       !!s.titleBorder ||
+      s.titleRuleWidthPt != null ||
+      !!s.titleRuleColorHex ||
       nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
       sectionCustom ||
       elementCustom

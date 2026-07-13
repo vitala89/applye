@@ -32,7 +32,7 @@ describe('CvLiveStylePanelComponent', () => {
     expect(fixture.nativeElement.querySelector('select')).toBeNull();
   });
 
-  it('offers three scopes for a body selection and two for a title', () => {
+  it('offers two scopes for a body selection (element + section) and two for a title', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',
       part: 'body',
@@ -40,7 +40,8 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     // Scope is a segmented button group (redesign): one <button> per scope.
-    expect(fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn')).toHaveLength(3);
+    // "Whole document" was removed (deferred) — body now offers element + section.
+    expect(fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn')).toHaveLength(2);
 
     fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
     fixture.detectChanges();
@@ -218,6 +219,24 @@ describe('CvLiveStylePanelComponent', () => {
     component.setTitleBorder('');
 
     expect(events).toEqual([{ scope: 'section', titleBorder: null }]);
+  });
+
+  it('title rule width/colour emit scope-tagged changes; empty/zero mean inherit (null)', () => {
+    fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
+    fixture.detectChanges();
+    const events = collect();
+
+    component.setTitleRuleWidth(2.5);
+    component.setTitleRuleColor('#0a5');
+    component.setTitleRuleWidth(null);
+    component.setTitleRuleColor('');
+
+    expect(events).toEqual([
+      { scope: 'section', titleRuleWidth: 2.5 },
+      { scope: 'section', titleRuleColor: '#0a5' },
+      { scope: 'section', titleRuleWidth: null },
+      { scope: 'section', titleRuleColor: null },
+    ]);
   });
 
   it('reset emits a scope-tagged reset for the active scope', () => {

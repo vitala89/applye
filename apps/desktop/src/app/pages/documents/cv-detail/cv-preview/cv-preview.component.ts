@@ -45,6 +45,8 @@ import {
   type CvPreviewSelection,
   effectiveSectionStyle,
   effectiveTitleBorder,
+  effectiveTitleRuleColor,
+  effectiveTitleRuleWidth,
   effectiveTitleStyle,
   leafPath,
   orderedVisibleSections,
@@ -80,6 +82,11 @@ export type CvLeafFieldKey =
   | 'industry'
   | 'location'
   | 'role'
+  | 'startDate'
+  | 'endDate'
+  | 'contact'
+  | 'degree'
+  | 'institution'
   | 'bullet'
   | 'skillLabel'
   | 'skillValues'
@@ -92,6 +99,11 @@ const LEAF_FIELD_LABEL_KEYS: Record<CvLeafFieldKey, string> = {
   industry: 'documents.cv_field_industry',
   location: 'documents.cv_field_location',
   role: 'documents.cv_field_role',
+  startDate: 'documents.cv_field_start_date',
+  endDate: 'documents.cv_field_end_date',
+  contact: 'documents.cv_field_contact',
+  degree: 'documents.cv_field_degree',
+  institution: 'documents.cv_field_institution',
   bullet: 'documents.cv_field_bullet',
   skillLabel: 'documents.cv_field_label',
   skillValues: 'documents.cv_field_values',
@@ -156,6 +168,17 @@ export class CvPreviewComponent {
   isSelected(sectionKey: CvSectionKey, part: 'body' | 'title'): boolean {
     const s = this.selection();
     return !!s && s.sectionKey === sectionKey && s.part === part;
+  }
+
+  /** True when the WHOLE section body is the selection — i.e. its body is
+   * selected with no specific leaf (`elementPath`) singled out. Drives the
+   * section-wrapper highlight + chip so selecting a group (e.g. the personal-
+   * details block or an experience entry) reads the same as selecting a single
+   * field. Kept distinct from `isSelected(key,'body')`, which stays true even
+   * when a leaf inside the section is the actual target. */
+  isSectionSelected(sectionKey: CvSectionKey): boolean {
+    const s = this.selection();
+    return !!s && s.sectionKey === sectionKey && s.part === 'body' && !s.elementPath;
   }
 
   /** Element-scope highlight: true when `path` is the specific leaf the
@@ -366,7 +389,7 @@ export class CvPreviewComponent {
   onBackgroundClick(event: Event): void {
     if (!this.interactive() || !this.selection()) return;
     const target = event.target as HTMLElement | null;
-    if (target?.closest('[data-cv-select], .cvpreview__leaf-editor, .cvpreview__bold-btn')) return;
+    if (target?.closest('[data-cv-select], .cvpreview__leaf-editor')) return;
     this.selectionChange.emit(null);
   }
 
@@ -559,6 +582,41 @@ export class CvPreviewComponent {
     if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
       event.preventDefault();
       this.applyBulletBold(el, entryIndex, bulletIndex, resting);
+    }
+  }
+
+  /** Whether the currently-EDITING leaf supports `**bold**` — the summary body
+   * and experience bullets are the only markdown-backed editors. Drives the
+   * live-style panel's Bold button (the inline "B" was removed in favour of a
+   * panel control), so it only appears where bold actually applies. */
+  canBoldActiveEditor(): boolean {
+    const p = this.editing() ? this.selection()?.elementPath : undefined;
+    return !!p && (p === 'summary' || p.split('.').includes('bullet'));
+  }
+
+  /** Apply `**bold**` to the active inline editor's current selection, driven
+   * by the live-style panel's Bold button. Locates the mounted textarea on the
+   * visible page (never the hidden measurement pass) and routes to the same
+   * summary/bullet bold helper the removed inline "B" button used. */
+  applyBoldToActiveEditor(): void {
+    const sel = this.selection();
+    if (!sel?.elementPath) return;
+    const nodes = this.el.nativeElement.querySelectorAll<HTMLTextAreaElement>(
+      'textarea.cvpreview__leaf-editor',
+    );
+    const el = Array.from(nodes).find((n) => !n.closest('.paginated-sheet__measure'));
+    if (!el) return;
+    const seg = sel.elementPath.split('.');
+    if (seg[0] === 'summary') {
+      const s = this.sections().find((x) => x.key === 'summary') as CvSummarySection | undefined;
+      this.applySummaryBold(el, s?.text ?? '');
+    } else if (seg[0] === 'exp' && seg[2] === 'bullet') {
+      const i = Number(seg[1]);
+      const b = Number(seg[3]);
+      const s = this.sections().find((x) => x.key === sel.sectionKey) as
+        | CvExperienceSection
+        | undefined;
+      this.applyBulletBold(el, i, b, s?.entries[i]?.bullets?.[b] ?? '');
     }
   }
 
@@ -876,6 +934,32 @@ export class CvPreviewComponent {
     return css;
   }
 
+  /** Live typography of the currently-selected host on the VISIBLE page —
+   * read straight from the rendered DOM (never the hidden `aria-hidden`
+   * measurement pass) so the live-style panel's "Ag" swatch mirrors exactly
+   * what's on the paper, including class/theme styling the `CvStyle` model
+   * doesn't carry (the name's uppercase bold monospace, a title's casing, an
+   * accent colour applied via a CSS var). Font SIZE is intentionally omitted
+   * — the swatch has its own fixed sizing. Returns `null` with nothing
+   * selected or before the node has rendered. */
+  readSelectedHostStyle(): Record<string, string> | null {
+    if (!this.selection()) return null;
+    const nodes = this.el.nativeElement.querySelectorAll<HTMLElement>(
+      '.cvpreview__element-selected, .cvpreview__selected',
+    );
+    const host = Array.from(nodes).find((n) => !n.closest('.paginated-sheet__measure'));
+    if (!host) return null;
+    const cs = getComputedStyle(host);
+    return {
+      'font-family': cs.fontFamily,
+      'font-weight': cs.fontWeight,
+      color: cs.color,
+      'font-style': cs.fontStyle,
+      'text-transform': cs.textTransform,
+      'letter-spacing': cs.letterSpacing,
+    };
+  }
+
   /** Title style for a section heading. */
   titleCss(key: CvSectionKey): Record<string, string> {
     const s = effectiveTitleStyle(this.style(), key);
@@ -895,12 +979,24 @@ export class CvPreviewComponent {
   titleBorderCss(key: CvSectionKey): string {
     const b = effectiveTitleBorder(this.style(), key);
     if (b === 'none') return 'none';
+    // User overrides (live-style "line size"/"line colour") win over the
+    // theme; each falls back independently — theme rule (accent/muted +
+    // weight) when the theme defines one and the user hasn't set the border
+    // style, otherwise the neutral default.
+    const userW = effectiveTitleRuleWidth(this.style(), key);
+    const userC = effectiveTitleRuleColor(this.style(), key);
     const sh = this.activeTheme().sectionHeader;
-    if (sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key)) {
-      const color = sh.ruleColor === 'accent' ? 'var(--cv-accent)' : 'var(--cv-muted)';
-      return `${sh.ruleWeightPt}pt ${b} ${color}`;
-    }
-    return `var(--border-width) ${b} var(--border-subtle)`;
+    const themed = sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key);
+    const width =
+      userW != null ? `${userW}pt` : themed ? `${sh.ruleWeightPt}pt` : 'var(--border-width)';
+    const color =
+      userC ??
+      (themed
+        ? sh.ruleColor === 'accent'
+          ? 'var(--cv-accent)'
+          : 'var(--cv-muted)'
+        : 'var(--border-subtle)');
+    return `${width} ${b} ${color}`;
   }
 
   private hasExplicitTitleBorder(key: CvSectionKey): boolean {

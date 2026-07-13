@@ -289,6 +289,12 @@ export interface CvSectionStyle {
   title?: CvTextStyle;
   /** Per-section title underline; unset inherits the document title border. */
   titleBorder?: CvBorderStyle;
+  /** Per-section title-underline thickness in points; unset inherits the
+   * document value, then the active theme's rule weight. */
+  titleRuleWidthPt?: number;
+  /** Per-section title-underline colour; unset inherits the document value,
+   * then the active theme's rule colour. */
+  titleRuleColorHex?: string;
 }
 
 /** Per-leaf (single-element) style override — the most specific layer of the
@@ -327,6 +333,12 @@ export interface CvStyle {
   titleStyle?: CvTextStyle;
   /** Document-wide title underline style; defaults to 'solid' when unset. */
   titleBorder?: CvBorderStyle;
+  /** Document-wide title-underline thickness in points; unset falls back to
+   * the active theme's rule weight. */
+  titleRuleWidthPt?: number;
+  /** Document-wide title-underline colour; unset falls back to the active
+   * theme's rule colour. */
+  titleRuleColorHex?: string;
   /** Page geometry (size + margin preset); absent → A4 / normal. */
   page?: PageSettings;
   /** Per-element (single-leaf) style overrides, keyed by a positional path

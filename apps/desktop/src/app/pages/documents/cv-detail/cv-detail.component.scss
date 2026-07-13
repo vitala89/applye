@@ -77,10 +77,20 @@
   position: sticky;
   top: var(--space-4);
   flex: 0 0 340px;
+  // Cap the fixed 340px basis: without this, an unshrinkable child (the
+  // nowrap sample-text) raises the panel's min-content width and the whole
+  // panel balloons past 340px, pushing content off-screen.
+  min-width: 0;
   align-self: flex-start;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  // Keep the sticky panel within the viewport and let ITS OWN content scroll
+  // when taller than the screen — otherwise, on a short window, the lower
+  // controls (colour, line size…) are unreachable because the whole page
+  // scrolls as one and the sticky panel's overflow is simply clipped/pinned.
+  max-height: calc(100vh - (var(--space-4) * 2));
+  overflow-y: auto;
 }
 
 .cvdetail__bar {

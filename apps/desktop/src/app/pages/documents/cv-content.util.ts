@@ -57,13 +57,17 @@ export type CvStyleScope = 'element' | 'section' | 'document';
  * plan's mapping table). `patch` carries the cleaned body/title font fields
  * (`colorHex` only when the user actually picked a colour — the no-accent-leak
  * rule); `titleBorder` (title selections only) carries the section-title
- * underline, with `null` meaning inherit/clear; `reset` requests a per-scope
- * reset. Exactly one of `patch` / `titleBorder` / `reset` is meaningful per
- * emission. */
+ * underline, with `null` meaning inherit/clear; `titleRuleWidth` /
+ * `titleRuleColor` (title selections only) carry the underline thickness (pt)
+ * and colour, `null` meaning inherit/clear; `reset` requests a per-scope
+ * reset. Exactly one of `patch` / `titleBorder` / `titleRuleWidth` /
+ * `titleRuleColor` / `reset` is meaningful per emission. */
 export interface CvStylePanelChange {
   scope: CvStyleScope;
   patch?: Partial<CvElementStyle>;
   titleBorder?: CvBorderStyle | null;
+  titleRuleWidth?: number | null;
+  titleRuleColor?: string | null;
   reset?: boolean;
 }
 
@@ -102,7 +106,9 @@ export function cvLeafText(sections: CvSection[], sel: CvPreviewSelection | null
         ? (pd.fullName ?? '')
         : seg[1] === 'title'
           ? (pd.title ?? '')
-          : '';
+          : seg[1] === 'contact'
+            ? buildContactLine(pd, { includeBirthdate: false, includeMaritalStatus: false })
+            : '';
     }
     case 'exp': {
       const entry = (section as CvExperienceSection).entries[Number(seg[1])];
@@ -120,7 +126,18 @@ export function cvLeafText(sections: CvSection[], sel: CvPreviewSelection | null
     case 'edu': {
       const entry = (section as CvEducationSection).entries[Number(seg[1])];
       if (!entry) return '';
-      return [entry.degree, entry.institution].filter(Boolean).join(', ');
+      switch (seg[2]) {
+        case 'degree':
+          return entry.degree ?? '';
+        case 'institution':
+          return entry.institution ?? '';
+        case 'startDate':
+          return entry.startDate ?? '';
+        case 'endDate':
+          return entry.endDate ?? '';
+        default:
+          return [entry.degree, entry.institution].filter(Boolean).join(', ');
+      }
     }
     default:
       return '';
@@ -831,6 +848,20 @@ export function effectiveTitleStyle(
 /** Resolved title underline: per-section, then document-wide, then 'solid'. */
 export function effectiveTitleBorder(style: CvStyle, key: CvSectionKey): CvBorderStyle {
   return style.sectionStyles?.[key]?.titleBorder ?? style.titleBorder ?? 'solid';
+}
+
+/** Effective title-underline thickness (pt) for a section: per-section, then
+ * document. `undefined` means "no user override" — the renderer falls back to
+ * the active theme's rule weight (or the neutral default). */
+export function effectiveTitleRuleWidth(style: CvStyle, key: CvSectionKey): number | undefined {
+  return style.sectionStyles?.[key]?.titleRuleWidthPt ?? style.titleRuleWidthPt;
+}
+
+/** Effective title-underline colour for a section: per-section, then document.
+ * `undefined` means "no user override" — the renderer falls back to the theme
+ * rule colour (accent/muted) or the neutral default. */
+export function effectiveTitleRuleColor(style: CvStyle, key: CvSectionKey): string | undefined {
+  return style.sectionStyles?.[key]?.titleRuleColorHex ?? style.titleRuleColorHex;
 }
 
 export interface ResolvedPage {

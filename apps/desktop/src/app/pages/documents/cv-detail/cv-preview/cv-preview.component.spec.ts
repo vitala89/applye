@@ -125,6 +125,24 @@ describe('CvPreviewComponent', () => {
     expect(title.style.borderBottom === '' || title.style.borderBottom === 'none').toBe(true);
   });
 
+  it('titleBorderCss applies the user line size (pt) and colour over the theme default', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      titleBorder: 'solid',
+      sectionStyles: { skills: { titleRuleWidthPt: 3, titleRuleColorHex: '#112233' } },
+    });
+    fixture.componentRef.setInput('sections', [
+      { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+    ]);
+    fixture.detectChanges();
+    const css = component.titleBorderCss('skills');
+    expect(css).toContain('3pt');
+    expect(css).toContain('solid');
+    expect(css).toContain('#112233');
+    // A section without its own override doesn't pick up skills' rule.
+    expect(component.titleBorderCss('summary')).not.toContain('#112233');
+  });
+
   it('marks every section start for spacing (measured padding, not sibling margin)', () => {
     // Regression: inter-section spacing relied on `.cvpreview__section +
     // .cvpreview__section` sibling adjacency, which never matches because the
@@ -1045,29 +1063,23 @@ describe('CvPreviewComponent', () => {
       expect(emitted).toEqual([]);
     });
 
-    it('a visible Bold button wraps the selection with ** via toggleBoldWrap, without committing', () => {
-      const { textarea, root } = setup('Key point');
+    it('applyBoldToActiveEditor (panel Bold) wraps the selection with ** via toggleBoldWrap, without committing', () => {
+      const { textarea } = setup('Key point');
       const emitted: unknown[] = [];
       component.sectionChange.subscribe((v) => emitted.push(v));
-      const boldBtn = root.querySelector(
-        '.page-card .cvpreview__bold-btn',
-      ) as HTMLButtonElement | null;
-      expect(boldBtn).toBeTruthy();
       textarea.setSelectionRange(0, 3); // "Key"
-      boldBtn!.click();
+      component.applyBoldToActiveEditor();
       fixture.detectChanges();
       expect(textarea.value).toBe('**Key** point');
       expect(emitted).toEqual([]);
     });
 
-    it('the Bold button uses (mousedown) preventDefault so clicking it does not blur the textarea first', () => {
-      const { root } = setup('Key point');
-      const boldBtn = root.querySelector(
-        '.page-card .cvpreview__bold-btn',
-      ) as HTMLButtonElement | null;
-      const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-      boldBtn!.dispatchEvent(event);
-      expect(event.defaultPrevented).toBe(true);
+    it('canBoldActiveEditor is true while editing the summary and false with nothing editing', () => {
+      setup('Key point');
+      expect(component.canBoldActiveEditor()).toBe(true);
+      fixture.componentRef.setInput('selection', null);
+      fixture.detectChanges();
+      expect(component.canBoldActiveEditor()).toBe(false);
     });
   });
 
@@ -1259,17 +1271,14 @@ describe('CvPreviewComponent', () => {
       expect(originalBullets[1]).toBe('Led Y'); // original untouched
     });
 
-    it('a visible Bold button wraps a bullet selection with ** via toggleBoldWrap, without committing', () => {
+    it('applyBoldToActiveEditor (panel Bold) wraps a bullet selection with ** via toggleBoldWrap, without committing', () => {
       const root = setup('exp.0.bullet.1', 2);
       const emitted: unknown[] = [];
       component.sectionChange.subscribe((v) => emitted.push(v));
       const textarea = root.querySelector('textarea.cvpreview__leaf-editor') as HTMLTextAreaElement; // the only mounted editor: the selected bullet "Led Y"
-      const boldBtn = textarea
-        .closest('li')
-        ?.querySelector('.cvpreview__bold-btn') as HTMLButtonElement | null;
-      expect(boldBtn).toBeTruthy();
+      expect(component.canBoldActiveEditor()).toBe(true);
       textarea.setSelectionRange(0, 3); // "Led"
-      boldBtn!.click();
+      component.applyBoldToActiveEditor();
       fixture.detectChanges();
       expect(textarea.value).toBe('**Led** Y');
       expect(emitted).toEqual([]);
@@ -1296,7 +1305,7 @@ describe('CvPreviewComponent', () => {
   });
 
   describe('inline leaf editing — education', () => {
-    function setup(elementPath = 'edu.0') {
+    function setup(elementPath = 'edu.0.degree') {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
         sectionKey: 'education',
@@ -1319,22 +1328,20 @@ describe('CvPreviewComponent', () => {
       return fixture.nativeElement as HTMLElement;
     }
 
-    it('Edit text on an entry mounts only that entry as degree/institution/date leaves', () => {
-      const root = setup('edu.0');
-      // The whole selected education entry becomes editable as one unit — degree,
-      // institution, startDate, endDate = 4 inputs. The other entry stays resting.
+    it('Edit text on a field mounts ONLY that field editor — siblings stay resting', () => {
+      const card = setup('edu.0.degree').querySelector('.page-card') as HTMLElement;
+      // Per-leaf editing (like experience): only the selected leaf becomes an
+      // editor. The degree input shows; institution/dates stay resting text.
       const inputs = Array.from(
-        root.querySelectorAll('input.cvpreview__leaf-editor'),
+        card.querySelectorAll('input.cvpreview__leaf-editor'),
       ) as HTMLInputElement[];
-      expect(inputs.map((i) => i.value)).toEqual(['BSc', 'MIT', '2016', '2020']);
+      expect(inputs.map((i) => i.value)).toEqual(['BSc']);
+      expect(card.textContent).toContain('MIT');
     });
 
     it('empty endDate shows the localized Present placeholder without persisting it', () => {
-      const root = setup('edu.1'); // Stanford entry — no endDate
-      const inputs = Array.from(
-        root.querySelectorAll('input.cvpreview__date-input'),
-      ) as HTMLInputElement[];
-      const stanfordEnd = inputs[1];
+      const card = setup('edu.1.endDate').querySelector('.page-card') as HTMLElement;
+      const stanfordEnd = card.querySelector('input.cvpreview__date-input') as HTMLInputElement;
       expect(stanfordEnd.value).toBe('');
       expect(stanfordEnd.placeholder.length).toBeGreaterThan(0);
       const emitted: unknown[] = [];
@@ -1343,13 +1350,28 @@ describe('CvPreviewComponent', () => {
       expect(emitted).toEqual([]);
     });
 
+    it('the date leaf is independently selectable/editable (was previously unreachable)', () => {
+      const card = setup('edu.0.startDate').querySelector('.page-card') as HTMLElement;
+      const startInput = card.querySelector('input.cvpreview__date-input') as HTMLInputElement;
+      expect(startInput.value).toBe('2016');
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((v) => emitted.push(v));
+      startInput.value = '2015';
+      startInput.dispatchEvent(new Event('input'));
+      startInput.dispatchEvent(new Event('blur'));
+      expect(emitted.length).toBe(1);
+      expect((emitted[0] as { entries: { startDate: string }[] }).entries[0].startDate).toBe(
+        '2015',
+      );
+    });
+
     it('committing degree emits one new immutable section touching only that entry/field', () => {
-      const root = setup();
+      const card = setup('edu.0.degree').querySelector('.page-card') as HTMLElement;
       const emitted: unknown[] = [];
       component.sectionChange.subscribe((v) => emitted.push(v));
       const original = component.sections()[0] as { entries: { degree: string }[] };
       const originalEntries = original.entries;
-      const degreeInput = root.querySelector('input.cvpreview__leaf-editor') as HTMLInputElement;
+      const degreeInput = card.querySelector('input.cvpreview__leaf-editor') as HTMLInputElement;
       degreeInput.value = 'BA';
       degreeInput.dispatchEvent(new Event('input'));
       degreeInput.dispatchEvent(new Event('blur'));
@@ -1360,10 +1382,10 @@ describe('CvPreviewComponent', () => {
     });
 
     it('drafting emits nothing', () => {
-      const root = setup();
+      const card = setup('edu.0.degree').querySelector('.page-card') as HTMLElement;
       const emitted: unknown[] = [];
       component.sectionChange.subscribe((v) => emitted.push(v));
-      const degreeInput = root.querySelector('input.cvpreview__leaf-editor') as HTMLInputElement;
+      const degreeInput = card.querySelector('input.cvpreview__leaf-editor') as HTMLInputElement;
       degreeInput.value = 'BA';
       degreeInput.dispatchEvent(new Event('input'));
       expect(emitted).toEqual([]);

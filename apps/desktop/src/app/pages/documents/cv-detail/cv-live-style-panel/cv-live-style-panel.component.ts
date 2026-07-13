@@ -18,6 +18,7 @@ import type {
 } from '@applye/core';
 import { CV_ATS_SAFE_FONTS } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { sectionLabelKey } from '../../cv-content.util';
 import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../../cv-content.util';
 
 /**
@@ -60,6 +61,14 @@ export class CvLiveStylePanelComponent {
    * parent from the selection + sections; empty for pathless selections. */
   readonly sampleText = input<string>('');
 
+  /** The selected leaf's REAL rendered typography, read from the paper's DOM by
+   * the parent (`CvPreviewComponent.readSelectedHostStyle`). Used as the "Ag"
+   * swatch's base so it mirrors the page exactly — including class/theme
+   * styling the `CvStyle` model doesn't carry (the name's bold uppercase
+   * monospace, an accent colour from a CSS var). The active-scope override is
+   * layered on top so a pending edit still previews live. */
+  readonly sampleBaseStyle = input<Record<string, string>>({});
+
   /** Single scope-tagged change — the parent picks the write target from the
    * current `selection` (part / sectionKey / elementPath) plus `scope`. */
   readonly panelChange = output<CvStylePanelChange>();
@@ -76,11 +85,26 @@ export class CvLiveStylePanelComponent {
    * enters edit mode. */
   readonly editText = output<void>();
 
+  /** Whether the selected leaf is currently in text-edit mode — mirrored from
+   * `CvPreviewComponent.editing()`. Gates the panel's Bold button (which
+   * replaced the inline "B" removed from the paper's editors). */
+  readonly editing = input<boolean>(false);
+
+  /** Fired when the user clicks the panel's Bold button while editing a
+   * bold-capable leaf; the parent routes it to
+   * `CvPreviewComponent.applyBoldToActiveEditor()`. */
+  readonly bold = output<void>();
+
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
 
   /** "Edit text" applies to editable content — any body selection. Titles are
    * fixed section labels, not user-authored text, so they get no Edit control. */
-  readonly canEditText = computed<boolean>(() => this.selection()?.part === 'body');
+  readonly canEditText = computed<boolean>(() => {
+    const sel = this.selection();
+    // The contact line is style-only (it's composed from several fields and
+    // has no single inline editor), so it never offers "Edit text".
+    return sel?.part === 'body' && sel.elementPath !== 'pd.contact';
+  });
 
   /** The specific field label + short id for the current selection — shown in
    * the panel's "Editing" header so it names exactly what's selected (mirrors
@@ -91,15 +115,23 @@ export class CvLiveStylePanelComponent {
     if (!sel) return null;
     if (sel.part === 'title') return { key: 'documents.cv_style_group_titles', id: sel.sectionKey };
     const p = sel.elementPath;
-    if (!p || p === 'summary') {
-      return { key: 'documents.cv_style_group_body', id: p || sel.sectionKey };
+    // Whole-section selection (body, no specific leaf): name the section
+    // itself so the header reads e.g. "Personal details" rather than the
+    // generic "Body text".
+    if (!p) {
+      return { key: sectionLabelKey(sel.sectionKey), id: sel.sectionKey };
+    }
+    if (p === 'summary') {
+      return { key: 'documents.cv_style_group_body', id: 'summary' };
     }
     const seg = p.split('.');
     switch (seg[0]) {
       case 'pd':
         return seg[1] === 'fullName'
           ? { key: 'documents.cv_field_full_name', id: 'name' }
-          : { key: 'documents.cv_field_title', id: 'title' };
+          : seg[1] === 'contact'
+            ? { key: 'documents.cv_field_contact', id: 'contact' }
+            : { key: 'documents.cv_field_title', id: 'title' };
       case 'exp': {
         if (seg.includes('bullet')) return { key: 'documents.cv_field_bullet', id: 'bullet' };
         const map: Record<string, string> = {
@@ -107,6 +139,8 @@ export class CvLiveStylePanelComponent {
           industry: 'documents.cv_field_industry',
           location: 'documents.cv_field_location',
           role: 'documents.cv_field_role',
+          startDate: 'documents.cv_field_start_date',
+          endDate: 'documents.cv_field_end_date',
         };
         return {
           key: map[seg[2]] ?? 'documents.cv_style_group_body',
@@ -119,8 +153,18 @@ export class CvLiveStylePanelComponent {
           : { key: 'documents.cv_field_values', id: 'values' };
       case 'lang':
         return { key: 'documents.cv_field_language', id: 'language' };
-      case 'edu':
-        return { key: 'documents.cv_section_education', id: 'edu' + (seg[1] ?? '') };
+      case 'edu': {
+        const map: Record<string, string> = {
+          degree: 'documents.cv_field_degree',
+          institution: 'documents.cv_field_institution',
+          startDate: 'documents.cv_field_start_date',
+          endDate: 'documents.cv_field_end_date',
+        };
+        return {
+          key: map[seg[2]] ?? 'documents.cv_section_education',
+          id: seg[2] ?? 'edu' + (seg[1] ?? ''),
+        };
+      }
       default:
         return { key: 'documents.cv_style_group_body', id: sel.sectionKey };
     }
@@ -141,16 +185,31 @@ export class CvLiveStylePanelComponent {
     );
   });
 
+  /** The selected leaf is one whose text supports `**bold**` — only the
+   * summary body and experience bullets. Drives the panel's Bold button
+   * (shown while editing such a leaf). */
+  readonly canBold = computed<boolean>(() => {
+    const p = this.selection()?.part === 'body' ? this.selection()?.elementPath : undefined;
+    return !!p && (p === 'summary' || p.split('.').includes('bullet'));
+  });
+
   /** Inline style for the "Ag" preview swatch — reflects the font/weight/colour
    * of the ACTIVE scope's override so the user previews the edit target before
    * committing. Unset properties fall through to the paper's Georgia default. */
   readonly sampleStyle = computed<Record<string, string>>(() => {
     const sel = this.selection();
-    if (!sel) return {};
-    const o = sel.part === 'title' ? this.activeTitleOverride() : this.activeBodyOverride();
+    // Start from the leaf's REAL rendered style (from the paper), falling back
+    // to Georgia only when the paper hasn't reported one yet.
+    const base = this.sampleBaseStyle();
     const css: Record<string, string> = {
-      'font-family': o.fontFamily || 'Georgia, "Times New Roman", serif',
+      'font-family': 'Georgia, "Times New Roman", serif',
+      ...base,
     };
+    if (!sel) return css;
+    // Layer the ACTIVE scope's pending override on top so a mid-edit change
+    // previews immediately (before the paper re-renders and re-reports).
+    const o = sel.part === 'title' ? this.activeTitleOverride() : this.activeBodyOverride();
+    if (o.fontFamily) css['font-family'] = o.fontFamily;
     if (o.fontWeight != null) css['font-weight'] = String(o.fontWeight);
     if (o.colorHex) css['color'] = o.colorHex;
     return css;
@@ -278,6 +337,43 @@ export class CvLiveStylePanelComponent {
         scope: this.scope(),
         titleBorder: (value || null) as CvBorderStyle | null,
       });
+    }
+  }
+
+  /** Raw title-underline thickness (pt) for the active title scope
+   * (`null` = Inherit → theme default). */
+  readonly activeTitleRuleWidth = computed<number | null>(() => {
+    const sel = this.selection();
+    if (!sel) return null;
+    const s = this.style();
+    return (
+      (this.scope() === 'document'
+        ? s.titleRuleWidthPt
+        : s.sectionStyles?.[sel.sectionKey]?.titleRuleWidthPt) ?? null
+    );
+  });
+
+  /** Raw title-underline colour for the active title scope
+   * (`null` = Inherit → theme rule colour). */
+  readonly activeTitleRuleColor = computed<string | null>(() => {
+    const sel = this.selection();
+    if (!sel) return null;
+    const s = this.style();
+    return (
+      (this.scope() === 'document'
+        ? s.titleRuleColorHex
+        : s.sectionStyles?.[sel.sectionKey]?.titleRuleColorHex) ?? null
+    );
+  });
+
+  setTitleRuleWidth(value: string | number | null): void {
+    if (this.selection()) {
+      this.panelChange.emit({ scope: this.scope(), titleRuleWidth: value ? +value : null });
+    }
+  }
+  setTitleRuleColor(value: string): void {
+    if (this.selection()) {
+      this.panelChange.emit({ scope: this.scope(), titleRuleColor: value || null });
     }
   }
 

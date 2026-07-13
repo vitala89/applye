@@ -47,14 +47,6 @@
             >
               {{ t()('documents.cv_style_scope_section') }}
             </button>
-            <button
-              type="button"
-              class="cvlive__seg-btn"
-              [class.cvlive__seg-btn--active]="scope() === 'document'"
-              (click)="setScope('document')"
-            >
-              {{ t()('documents.cv_style_scope_document') }}
-            </button>
           } @else {
             <button
               type="button"
@@ -83,7 +75,20 @@
         </span>
       </div>
 
-      @if (showWordBoldHint()) {
+      @if (editing() && canBold()) {
+        <div class="cvlive__field">
+          <span class="cvlive__label">{{ t()('documents.cv_live_style_format') }}</span>
+          <button
+            type="button"
+            class="cvlive__bold-btn"
+            (mousedown)="$event.preventDefault()"
+            (click)="bold.emit()"
+          >
+            <span class="cvlive__bold-glyph">B</span>
+            {{ t()('documents.cv_bold_action') }}
+          </button>
+        </div>
+      } @else if (showWordBoldHint()) {
         <div class="cvlive__field">
           <span class="cvlive__label">{{ t()('documents.cv_live_style_format') }}</span>
           <p class="cvlive__hint">{{ t()('documents.cv_live_style_bold_hint') }}</p>
@@ -213,6 +218,30 @@
               <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
             </select>
           </label>
+
+          @if (activeTitleBorder() !== 'none') {
+            <label class="cvlive__field">
+              <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
+              <input
+                type="number"
+                min="0.5"
+                max="6"
+                step="0.5"
+                [ngModel]="activeTitleRuleWidth()"
+                [placeholder]="t()('documents.cv_section_style_inherit')"
+                (ngModelChange)="setTitleRuleWidth($event)"
+              />
+            </label>
+
+            <label class="cvlive__field">
+              <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
+              <input
+                type="color"
+                [ngModel]="activeTitleRuleColor() ?? style().accentColorHex"
+                (ngModelChange)="setTitleRuleColor($event)"
+              />
+            </label>
+          }
         }
       </div>
 

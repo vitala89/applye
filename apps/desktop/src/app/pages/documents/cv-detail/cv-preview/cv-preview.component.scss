@@ -116,6 +116,12 @@
   letter-spacing: var(--tracking-wide);
   padding-bottom: var(--space-2);
   margin: 0 0 var(--space-3);
+  // The title's underline rule is a `border-bottom`; the selectable/selected
+  // 4px `border-radius` would curve its ends inward (the "angled corners"
+  // artefact). Square the bottom corners so the rule runs straight edge to
+  // edge; the top corners stay rounded for the hover/selection tint.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 .cvpreview__summary {
   line-height: var(--cv-section-line-height, var(--leading-normal));
@@ -210,26 +216,6 @@ textarea.cvpreview__leaf-editor {
 // Wraps a bold-capable textarea (summary/bullet) with its visible Bold
 // button — the button only ever renders alongside an already-selected leaf
 // editor (page render only), so it never reaches the inert measurement pass.
-.cvpreview__bold-field {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-.cvpreview__bold-btn {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  font-weight: 700;
-  border: var(--border-width) solid var(--border-strong);
-  border-radius: var(--radius-input);
-  background: var(--surface-1);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.cvpreview__bold-btn:hover {
-  border-color: var(--cv-accent, var(--accent));
-  color: var(--cv-accent, var(--accent));
-}
 .cvpreview__skill-row {
   margin: 0.15rem 0;
 }
@@ -296,18 +282,25 @@ textarea.cvpreview__leaf-editor {
   flex-wrap: wrap;
   align-items: baseline;
 }
+// These entry sub-parts carry their own theme colour by default (company =
+// accent, industry/meta/dates = muted). But a "This section" colour override
+// must recolour the WHOLE section uniformly — including the company — so each
+// reads `--cv-section-body-color` FIRST (set on the section wrapper by
+// `bodyCss` only when an override exists) and falls back to its theme colour
+// otherwise. An element-scope override still wins: `leafCss` writes an inline
+// `color` on the leaf itself, which beats these class rules.
 .cvpreview__entry-company {
   font-weight: 700;
-  color: var(--cv-company-color, inherit);
+  color: var(--cv-section-body-color, var(--cv-company-color, inherit));
 }
 .cvpreview__entry-industry {
-  color: var(--cv-muted, var(--text-tertiary));
+  color: var(--cv-section-body-color, var(--cv-muted, var(--text-tertiary)));
 }
 .cvpreview__entry-meta,
 .cvpreview__entry-dates {
   white-space: nowrap;
   font-size: 0.85em;
-  color: var(--text-tertiary);
+  color: var(--cv-section-body-color, var(--text-tertiary));
 }
 .cvpreview__entry-head--rule {
   // Aurora draws a thin rule under the experience role/dates line; Classic
@@ -350,4 +343,8 @@ textarea.cvpreview__leaf-editor {
     clear: both;
   }
   border-bottom: var(--cv-header-rule-width, 0pt) solid var(--cv-header-rule-color, transparent);
+  // Same square-corner fix as the section title: keep the header rule ends
+  // straight despite the selectable/selected border-radius.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }

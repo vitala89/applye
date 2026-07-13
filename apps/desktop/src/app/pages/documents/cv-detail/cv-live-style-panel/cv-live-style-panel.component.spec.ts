@@ -257,31 +257,47 @@ describe('CvLiveStylePanelComponent', () => {
     expect(component.effectiveColorHex()).toBe('#00ff00');
   });
 
-  it('a whole-entry selection (exp.0) behaves like a section, not a leaf', () => {
+  it('a whole-entry selection (exp.0) offers element + section, defaults element, no edit-text', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'experience',
       part: 'body',
       elementPath: 'exp.0',
     });
     fixture.detectChanges();
-    expect(component.isEntrySelection()).toBe(true);
-    expect(component.scope()).toBe('section'); // element scope would land on nothing
+    expect(component.scope()).toBe('element'); // colour hits just this entry by default
+    expect(component.showElementScope()).toBe(true);
+    expect(component.showSectionScope()).toBe(true);
     expect(component.canEditText()).toBe(false); // no single text leaf to edit
-    // "This element" is hidden for an entry — only "This section" remains.
     const btns = fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn');
-    expect(btns).toHaveLength(1);
+    expect(btns).toHaveLength(2);
   });
 
-  it('a skills group (skills.0) is treated as a group, not a leaf', () => {
+  it('a skills group (skills.0) offers element + section and defaults element', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'skills',
       part: 'body',
       elementPath: 'skills.0',
     });
     fixture.detectChanges();
-    expect(component.isEntrySelection()).toBe(true);
-    expect(component.scope()).toBe('section');
+    expect(component.scope()).toBe('element');
+    expect(component.showElementScope()).toBe(true);
+    expect(component.showSectionScope()).toBe(true);
     expect(component.canEditText()).toBe(false);
+  });
+
+  it('the languages line is a single element: element-only scope, no section, no edit-text', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'languages',
+      part: 'body',
+      elementPath: 'lang',
+    });
+    fixture.detectChanges();
+    expect(component.scope()).toBe('element');
+    expect(component.showElementScope()).toBe(true);
+    expect(component.showSectionScope()).toBe(false); // section == element here
+    expect(component.canEditText()).toBe(false);
+    const btns = fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn');
+    expect(btns).toHaveLength(1);
   });
 
   it('body-rule controls: shown for personal-details/experience, emit section-level width/colour', () => {

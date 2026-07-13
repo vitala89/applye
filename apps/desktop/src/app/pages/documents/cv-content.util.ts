@@ -126,8 +126,14 @@ export function cvLeafText(sections: CvSection[], sel: CvPreviewSelection | null
       if (!group) return '';
       return seg[2] === 'label' ? group.label : group.values.join(', ');
     }
-    case 'lang':
-      return (section as CvLanguagesSection).items[Number(seg[1])]?.language ?? '';
+    case 'lang': {
+      const items = (section as CvLanguagesSection).items;
+      // `lang` (no index) is the whole languages line; `lang.<i>.language` is
+      // one entry.
+      return seg.length === 1
+        ? items.map((it) => it.language).join(', ')
+        : (items[Number(seg[1])]?.language ?? '');
+    }
     case 'edu': {
       const entry = (section as CvEducationSection).entries[Number(seg[1])];
       if (!entry) return '';

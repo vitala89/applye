@@ -186,10 +186,14 @@ describe('CvPreviewComponent', () => {
       root.querySelectorAll('.page-card .cvpreview__entry.cvpreview__element-selected'),
     ).toHaveLength(1);
 
-    fixture.componentRef.setInput('selection', { sectionKey: 'languages', part: 'body' });
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'languages',
+      part: 'body',
+      elementPath: 'lang',
+    });
     fixture.detectChanges();
     expect(
-      root.querySelector('.page-card p.cvpreview__languages.cvpreview__selected'),
+      root.querySelector('.page-card p.cvpreview__languages.cvpreview__element-selected'),
     ).toBeTruthy();
   });
 

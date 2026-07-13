@@ -111,11 +111,12 @@ export class CvLiveStylePanelComponent {
    * fixed section labels, not user-authored text, so they get no Edit control. */
   readonly canEditText = computed<boolean>(() => {
     const sel = this.selection();
-    // The contact line is style-only (composed from several fields, no single
-    // inline editor); a whole entry (exp.0/edu.0) likewise has no single text
-    // leaf to edit — both suppress "Edit text".
+    const p = sel?.elementPath;
+    // "Edit text" only applies to a single editable TEXT leaf. Excluded: a
+    // pathless whole-section body, the composed contact line, the whole
+    // languages line, and group/entry paths — none has one inline editor.
     return (
-      sel?.part === 'body' && sel.elementPath !== 'pd.contact' && !this.isEntryPath(sel.elementPath)
+      sel?.part === 'body' && !!p && p !== 'pd.contact' && p !== 'lang' && !this.isEntryPath(p)
     );
   });
 
@@ -131,24 +132,15 @@ export class CvLiveStylePanelComponent {
     return !!p && /^(?:exp|edu|skills)\.\d+$/.test(p);
   }
 
-  /** Whether the current selection is a whole experience/education entry —
-   * used to hide the meaningless "This element" scope for it. */
-  readonly isEntrySelection = computed<boolean>(() =>
-    this.isEntryPath(this.selection()?.elementPath),
-  );
-
   private fieldInfo(): { key: string; id: string } | null {
     const sel = this.selection();
     if (!sel) return null;
     if (sel.part === 'title') return { key: 'documents.cv_style_group_titles', id: sel.sectionKey };
     const p = sel.elementPath;
-    if (this.isEntryPath(p)) {
-      return { key: sectionLabelKey(sel.sectionKey), id: sel.sectionKey };
-    }
-    // Whole-section selection (body, no specific leaf): name the section
-    // itself so the header reads e.g. "Personal details" rather than the
-    // generic "Body text".
-    if (!p) {
+    // A group/entry, the whole languages line, or a pathless body selection
+    // all name the SECTION itself in the header (e.g. "Education", "Languages")
+    // rather than a generic field label.
+    if (this.isEntryPath(p) || this.isWholeLanguages(p) || !p) {
       return { key: sectionLabelKey(sel.sectionKey), id: sel.sectionKey };
     }
     if (p === 'summary') {
@@ -292,11 +284,30 @@ export class CvLiveStylePanelComponent {
     const sel = this.selection();
     if (!sel) return 'element';
     if (sel.part === 'title') return 'section';
-    // A whole-entry or pathless body selection has no single leaf to target,
-    // so it defaults to section scope (element scope would land on nothing).
-    if (!sel.elementPath || this.isEntryPath(sel.elementPath)) return 'section';
-    return 'element';
+    // Any selection that carries a path (a leaf, a group/entry, or the whole
+    // languages line) defaults to element scope so a colour change hits just
+    // that target; a pathless body selection has no leaf, so it must be
+    // section scope (element scope would land on nothing).
+    return sel.elementPath ? 'element' : 'section';
   });
+
+  /** The languages line is a single whole-section element (`lang`): styling it
+   * is the same as styling the section, so the section scope is redundant and
+   * hidden. */
+  private isWholeLanguages(p: string | undefined): boolean {
+    return p === 'lang';
+  }
+
+  /** Show the "This element" scope whenever the selection targets a concrete
+   * element (leaf, group/entry, or the languages line); hide it for a pathless
+   * whole-section body selection where element scope would land on nothing. */
+  readonly showElementScope = computed<boolean>(() => !!this.selection()?.elementPath);
+
+  /** Show the "This section" scope for every body selection except the
+   * languages line (where element == section). */
+  readonly showSectionScope = computed<boolean>(
+    () => !this.isWholeLanguages(this.selection()?.elementPath),
+  );
 
   setScope(value: CvStyleScope): void {
     this.scope.set(value);

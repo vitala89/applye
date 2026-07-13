@@ -31,7 +31,7 @@
           [attr.aria-label]="t()('documents.cv_style_scope_label')"
         >
           @if (sel.part === 'body') {
-            @if (!isEntrySelection()) {
+            @if (showElementScope()) {
               <button
                 type="button"
                 class="cvlive__seg-btn"
@@ -41,14 +41,16 @@
                 {{ t()('documents.cv_style_scope_element') }}
               </button>
             }
-            <button
-              type="button"
-              class="cvlive__seg-btn"
-              [class.cvlive__seg-btn--active]="scope() === 'section'"
-              (click)="setScope('section')"
-            >
-              {{ t()('documents.cv_style_scope_section') }}
-            </button>
+            @if (showSectionScope()) {
+              <button
+                type="button"
+                class="cvlive__seg-btn"
+                [class.cvlive__seg-btn--active]="scope() === 'section'"
+                (click)="setScope('section')"
+              >
+                {{ t()('documents.cv_style_scope_section') }}
+              </button>
+            }
           } @else {
             <button
               type="button"

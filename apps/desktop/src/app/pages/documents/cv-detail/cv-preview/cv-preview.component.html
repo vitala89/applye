@@ -274,6 +274,7 @@
       @if (group.values.length) {
         <p
           class="cvpreview__skill-row"
+          [ngStyle]="leafCss(leafPath('skills', i))"
           [class.cvpreview__selectable]="selectable(renderMode)"
           [class.cvpreview__element-selected]="
             isElementSelected(leafPath('skills', i)) && selectable(renderMode)
@@ -391,7 +392,7 @@
     (click)="selectLeaf(key, leafPath('exp', i), renderMode, $event)"
     (keydown.enter)="selectLeaf(key, leafPath('exp', i), renderMode, $event)"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i))"
-    [ngStyle]="bodyCss(key)"
+    [ngStyle]="{ ...bodyCss(key), ...leafCss(leafPath('exp', i)) }"
   >
     <div class="cvpreview__entry-head">
       <span class="cvpreview__entry-lead">
@@ -617,7 +618,7 @@
     (click)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.enter)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'bullet', b))"
-    [ngStyle]="bodyCss(key)"
+    [ngStyle]="{ ...bodyCss(key), ...leafCss(leafPath('exp', i)) }"
   >
     @if (isEditingLeaf(leafPath('exp', i, 'bullet', b)) && selectable(renderMode)) {
       <li>
@@ -681,7 +682,7 @@
     (click)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
     (keydown.enter)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('edu', i))"
-    [ngStyle]="bodyCss(key)"
+    [ngStyle]="{ ...bodyCss(key), ...leafCss(leafPath('edu', i)) }"
   >
     <div class="cvpreview__entry-head">
       <span class="cvpreview__entry-role cvpreview__entry-role--editor">
@@ -838,16 +839,19 @@
     </h3>
     <p
       class="cvpreview__languages"
+      [ngStyle]="leafCss(leafPath('lang'))"
       [class.cvpreview__selectable]="selectable(renderMode)"
-      [class.cvpreview__selected]="isSectionSelected('languages') && selectable(renderMode)"
+      [class.cvpreview__element-selected]="
+        isElementSelected(leafPath('lang')) && selectable(renderMode)
+      "
       [attr.role]="selectable(renderMode) ? 'button' : null"
       [attr.tabindex]="selectable(renderMode) ? 0 : null"
       [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('languages', 'body') : null"
       [attr.data-cv-select]="'languages:body'"
       [attr.data-cv-chip]="t()(sectionLabelKey('languages'))"
-      (click)="selectPart('languages', 'body', renderMode, $event)"
-      (keydown.enter)="selectPart('languages', 'body', renderMode, $event)"
-      (keydown.space)="onSelectKey($event, 'languages', 'body', renderMode)"
+      (click)="selectLeaf('languages', leafPath('lang'), renderMode, $event)"
+      (keydown.enter)="selectLeaf('languages', leafPath('lang'), renderMode, $event)"
+      (keydown.space)="onSelectKey($event, 'languages', 'body', renderMode, leafPath('lang'))"
     >
       @for (item of section.items; track $index; let i = $index) {
         @if (i > 0) {

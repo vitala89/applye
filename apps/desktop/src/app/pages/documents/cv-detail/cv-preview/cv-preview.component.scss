@@ -34,18 +34,63 @@
   outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
   outline-offset: 2px;
 }
-.cvpreview__selected {
-  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
-}
-// Element-scope highlight (Phase D.2): marks the ONE leaf a body selection's
-// `elementPath` targets — distinct from `.cvpreview__selected` (section+part
-// gating for which editors render at all). Dashed, not solid, so a selected
-// section with one pinned leaf reads as two different affordances rather
-// than a duplicate outline.
+// Single-element selection highlight (design). `box-shadow` + `background`
+// (never border/margin/padding) so the box metrics the hidden measurement
+// pass computes are untouched — pagination is unaffected. The measure pass is
+// never selectable, so these classes never reach it. A `::before` chip labels
+// the field above the element, driven by `data-cv-chip`.
+.cvpreview__selected,
 .cvpreview__element-selected {
-  outline: 2px dashed var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
+  position: relative;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--cv-accent, var(--accent, var(--border-strong)));
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 12%, transparent);
+}
+.cvpreview__selected[data-cv-chip]::before,
+.cvpreview__element-selected[data-cv-chip]::before {
+  content: attr(data-cv-chip);
+  position: absolute;
+  top: -11px;
+  left: 6px;
+  height: 18px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--cv-accent, var(--accent));
+  color: var(--accent-fg, #fff);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 5px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 4;
+}
+// A selected CONTAINER (section+part wrapper) that holds a selected leaf shows
+// nothing itself — only the leaf's highlight + chip (design: one element at a
+// time). `:has()` keeps this in CSS, so no wrapper class binding is needed.
+.cvpreview__selected:has(.cvpreview__element-selected) {
+  box-shadow: none;
+  background: transparent;
+}
+.cvpreview__selected:has(.cvpreview__element-selected)::before {
+  content: none;
+}
+// Click-a-word-to-bold targets inside a selected summary/bullet (design). Only
+// rendered for the selected leaf, so they never reach the measurement pass.
+.cvpreview__word {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 100ms ease;
+}
+.cvpreview__word:hover {
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 16%, transparent);
+}
+.cvpreview__word--bold {
+  font-weight: 700;
 }
 // Space above each new section. Uses padding (not margin) on the section's
 // first element so the paginated sheet — which measures each atom's

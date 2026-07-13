@@ -66,20 +66,22 @@ export class CvLiveStylePanelComponent {
    * selection. */
   readonly resetAll = output<void>();
 
-  /** Fired when the user clicks the panel's Bold control. The parent routes it
-   * to `CvPreviewComponent.applyActiveBold()`, which toggles `**bold**` around
-   * the current selection of whichever inline editor is focused. The button
-   * uses `(mousedown)` + `preventDefault` (see `onBoldMousedown`) so the focused
-   * editor keeps focus and its text selection while the click is handled. */
-  readonly boldSelection = output<void>();
+  /** Fired when the user clicks "Edit text". The parent routes it to
+   * `CvPreviewComponent.startEditing()`, which mounts the selected element's
+   * inline editor so the wording can be changed — selection alone no longer
+   * enters edit mode. */
+  readonly editText = output<void>();
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
 
-  /** The Bold word-formatting control only applies to editors backed by the
-   * `**markdown**` inline-emphasis model — the summary body and experience
-   * bullets. Other body leaves (skills, languages, education, contact) have no
-   * inline-bold representation, so the control is hidden for them. */
-  readonly showBold = computed<boolean>(() => {
+  /** "Edit text" applies to editable content — any body selection. Titles are
+   * fixed section labels, not user-authored text, so they get no Edit control. */
+  readonly canEditText = computed<boolean>(() => this.selection()?.part === 'body');
+
+  /** The click-a-word-to-bold hint is shown only for the `**markdown**`-backed
+   * leaves — the summary body and experience bullets. Other body leaves have
+   * no inline-bold representation. */
+  readonly showWordBoldHint = computed<boolean>(() => {
     const sel = this.selection();
     return (
       !!sel &&
@@ -102,11 +104,6 @@ export class CvLiveStylePanelComponent {
     if (o.colorHex) css['color'] = o.colorHex;
     return css;
   });
-
-  onBoldMousedown(event: Event): void {
-    event.preventDefault();
-    this.boldSelection.emit();
-  }
 
   /** Curated body leading choices (unitless). `1.45` is the existing
    * `--leading-normal`; unset (Inherit) preserves each element's baseline. */

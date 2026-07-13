@@ -290,38 +290,22 @@ describe('CvLiveStylePanelComponent', () => {
     expect(fixture.nativeElement.querySelector('.cvlive__reset')).toBeNull();
   });
 
-  describe('word-bold Format control', () => {
-    it('shows the Bold control for a summary body selection', () => {
+  describe('edit text + word-bold hint', () => {
+    it('shows "Edit text" for a body selection and hides it for a title', () => {
       fixture.componentRef.setInput('selection', {
         sectionKey: 'summary',
         part: 'body',
         elementPath: 'summary',
       });
       fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeTruthy();
-    });
-
-    it('shows the Bold control for an experience bullet selection', () => {
-      fixture.componentRef.setInput('selection', {
-        sectionKey: 'experience',
-        part: 'body',
-        elementPath: 'exp.0.bullet.0',
-      });
-      fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeTruthy();
-    });
-
-    it('hides the Bold control for a non-markdown body (skills) and for titles', () => {
-      fixture.componentRef.setInput('selection', { sectionKey: 'skills', part: 'body' });
-      fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.cvlive__edit-text')).toBeTruthy();
 
       fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
       fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('.cvlive__fmt-btn')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.cvlive__edit-text')).toBeNull();
     });
 
-    it('emits boldSelection when the Bold control is pressed (mousedown)', () => {
+    it('emits editText when "Edit text" is clicked', () => {
       fixture.componentRef.setInput('selection', {
         sectionKey: 'summary',
         part: 'body',
@@ -329,10 +313,23 @@ describe('CvLiveStylePanelComponent', () => {
       });
       fixture.detectChanges();
       let fired = 0;
-      component.boldSelection.subscribe(() => (fired += 1));
-      const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.cvlive__fmt-btn');
-      btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      component.editText.subscribe(() => (fired += 1));
+      fixture.nativeElement.querySelector('.cvlive__edit-text').click();
       expect(fired).toBe(1);
+    });
+
+    it('shows the word-bold hint for summary/experience body, not skills or titles', () => {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'summary',
+        part: 'body',
+        elementPath: 'summary',
+      });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.cvlive__hint')).toBeTruthy();
+
+      fixture.componentRef.setInput('selection', { sectionKey: 'skills', part: 'body' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.cvlive__hint')).toBeNull();
     });
   });
 });

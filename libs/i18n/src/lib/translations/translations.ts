@@ -743,8 +743,8 @@ const en: TranslationMap = {
     cv_live_style_nothing: 'Nothing selected',
     cv_live_style_sample: 'The quick brown fox',
     cv_live_style_format: 'Format',
-    cv_live_style_bold_hint:
-      'Select words in the text on the paper, then click B (or press ⌘/Ctrl+B) to make them bold.',
+    cv_live_style_edit_text: 'Edit text',
+    cv_live_style_bold_hint: 'Click a word on the paper to make it bold — click it again to undo.',
     cv_style_scope_label: 'Apply to',
     cv_style_scope_element: 'This element',
     cv_style_scope_section: 'This section',
@@ -1752,8 +1752,9 @@ const de: TranslationMap = {
     cv_live_style_nothing: 'Nichts ausgewählt',
     cv_live_style_sample: 'Franz jagt im Taxi',
     cv_live_style_format: 'Format',
+    cv_live_style_edit_text: 'Text bearbeiten',
     cv_live_style_bold_hint:
-      'Markiere Wörter im Text auf dem Blatt und klicke dann B (oder drücke ⌘/Strg+B), um sie fett zu machen.',
+      'Klicke auf ein Wort auf dem Blatt, um es fett zu machen — klicke erneut, um es rückgängig zu machen.',
     cv_style_scope_label: 'Anwenden auf',
     cv_style_scope_element: 'Dieses Element',
     cv_style_scope_section: 'Diesen Abschnitt',

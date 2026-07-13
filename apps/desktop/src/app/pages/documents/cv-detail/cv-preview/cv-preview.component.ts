@@ -7,6 +7,7 @@ import {
   HostListener,
   inject,
   input,
+  linkedSignal,
   output,
   signal,
   TemplateRef,
@@ -28,7 +29,14 @@ import type {
   CvTextRun,
   PhotoPlacement,
 } from '@applye/core';
-import { getBuiltinTheme, parseInlineEmphasis, themeCssVars, toggleBoldWrap } from '@applye/core';
+import {
+  getBuiltinTheme,
+  parseInlineEmphasis,
+  themeCssVars,
+  toggleBoldWrap,
+  toggleWordBold,
+  wordTokens,
+} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
 import {
@@ -270,20 +278,39 @@ export class CvPreviewComponent {
     return s ? `${s.sectionKey}:${s.part}` : null;
   });
 
+  /** Whether the currently-selected section+part is in explicit text-EDIT mode
+   * (its inline editors mounted). Selecting a leaf no longer auto-mounts
+   * editors — that turned every field in the section into an input at once
+   * (the "all fields show lines" problem). The user now opts in per selection
+   * via the live-panel "Edit text" button (`startEditing`). A `linkedSignal`
+   * off `focusKey` so moving the selection to a different section+part always
+   * drops back to view mode. */
+  readonly editing = linkedSignal<boolean>(() => {
+    this.focusKey();
+    return false;
+  });
+
+  /** Enter text-edit mode for the current selection (live-panel "Edit text").
+   * A no-op with nothing selected. */
+  startEditing(): void {
+    if (this.selection()) this.editing.set(true);
+  }
+
   /**
    * Focus management for the inline editors, in one place:
-   * - selecting a region moves focus INTO its primary editor (restores the
-   *   autofocus dropped in Task 4, so keyboard users don't need an extra tab);
-   * - finishing a single-line edit with Enter (via `finishLeafEdit`) drops the
-   *   selection and returns focus to the now-restored selectable host.
-   * Both run in a microtask so the DOM has rendered the new state first.
-   * Keyed off `focusKey()` (section+part), not the raw `selection()` object,
-   * so an elementPath-only change never re-triggers this. */
+   * - ENTERING edit mode (`editing()` true) moves focus INTO the mounted leaf
+   *   editor, so keyboard users don't need an extra tab;
+   * - leaving edit mode via Enter (`finishLeafEdit`) returns focus to the
+   *   now-restored selectable host.
+   * Both run in a microtask so the DOM has rendered the new state first. Keyed
+   * off `focusKey()` (section+part) + `editing()`, not the raw `selection()`
+   * object, so an elementPath-only change never re-triggers this. */
   constructor() {
     effect(() => {
       const key = this.focusKey();
+      const editing = this.editing();
       if (!this.interactive()) return;
-      if (key) {
+      if (key && editing) {
         queueMicrotask(() =>
           this.el.nativeElement
             .querySelector<HTMLElement>('.page-card .cvpreview__leaf-editor')
@@ -302,37 +329,13 @@ export class CvPreviewComponent {
   }
 
   /** Finish editing a single-line leaf via Enter: blur commits the draft (the
-   * element's own `(blur)` handler), then we drop the selection so the resting,
-   * committed markup returns and keyboard focus lands back on its host. */
+   * element's own `(blur)` handler), then leave edit mode — the selection is
+   * KEPT (chip + outline stay, panel stays open) and focus returns to the
+   * now-restored selectable host. */
   finishLeafEdit(el: HTMLElement, sectionKey: CvSectionKey, part: 'body' | 'title'): void {
     el.blur();
     this.returnFocusTo = `${sectionKey}:${part}`;
-    this.selectionChange.emit(null);
-  }
-
-  /** Toggle `**bold**` around the current selection of whichever inline leaf
-   * editor currently holds focus — the live-style panel's Bold control routes
-   * here so the user can bold selected words from the panel too (the inline
-   * editors keep their own Bold buttons). A no-op unless a bold-capable
-   * textarea (summary or an experience bullet — the only editors carrying a
-   * `data-draft-id`) is focused inside this preview. Reuses `toggleBoldWrap`
-   * and the SAME per-leaf draft id the editor's `(blur)` commit reads, so the
-   * eventual blur persists the change exactly like the inline button does. */
-  applyActiveBold(): void {
-    const ta = document.activeElement;
-    if (!(ta instanceof HTMLTextAreaElement) || !this.el.nativeElement.contains(ta)) return;
-    const id = ta.dataset['draftId'];
-    if (!id) return;
-    const current = this.drafts()[id] ?? ta.value;
-    const start = ta.selectionStart ?? current.length;
-    const end = ta.selectionEnd ?? current.length;
-    const r = toggleBoldWrap(current, start, end);
-    this.drafts.update((d) => ({ ...d, [id]: r.text }));
-    queueMicrotask(() => {
-      ta.value = r.text;
-      ta.setSelectionRange(r.selStart, r.selEnd);
-      ta.focus();
-    });
+    this.editing.set(false);
   }
 
   /** Clear the selection when the user clicks empty space in the preview —
@@ -754,6 +757,50 @@ export class CvPreviewComponent {
 
   runs(text: string): CvTextRun[] {
     return parseInlineEmphasis(text);
+  }
+
+  /** Exposed for the template: split a summary/bullet line into clickable word
+   * tokens (see `wordTokens`). Rendered only for the SELECTED body leaf, so
+   * clicking a word toggles its bold. */
+  protected readonly wordTokens = wordTokens;
+
+  /** Toggle bold for one word of the summary body — click-a-word-on-the-paper
+   * (design). Emits a new immutable summary section with the rewritten
+   * `**markdown**` text (export-safe, same model the resting render reads). */
+  toggleSummaryWord(section: CvSummarySection, wordIndex: number, event: Event): void {
+    event.stopPropagation();
+    this.sectionChange.emit({ ...section, text: toggleWordBold(section.text, wordIndex) });
+  }
+
+  /** Toggle bold for one word of an experience bullet — click-a-word (design).
+   * Emits a new immutable `CvExperienceSection` touching only that bullet. */
+  toggleBulletWord(
+    section: CvExperienceSection,
+    entryIndex: number,
+    bulletIndex: number,
+    wordIndex: number,
+    event: Event,
+  ): void {
+    event.stopPropagation();
+    const bullet = section.entries[entryIndex]?.bullets?.[bulletIndex] ?? '';
+    this.sectionChange.emit(
+      replaceExperienceBullet(section, entryIndex, bulletIndex, toggleWordBold(bullet, wordIndex)),
+    );
+  }
+
+  /** Short chip label shown above a selected single leaf on the paper — the
+   * field name (e.g. "Company", "Skill values"), reusing the same i18n field
+   * labels as the a11y names and the Edit-mode section editors. */
+  leafChipLabel(field: CvLeafFieldKey): string {
+    return this.t()(LEAF_FIELD_LABEL_KEYS[field]);
+  }
+
+  /** Chip label for a selected section-level part (a title, or a whole-section
+   * body with no single leaf singled out). */
+  partChipLabel(part: 'body' | 'title'): string {
+    return this.t()(
+      part === 'title' ? 'documents.cv_style_group_titles' : 'documents.cv_style_group_body',
+    );
   }
 
   /** Effective font/size/weight/colour for a section — its own override

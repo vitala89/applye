@@ -1,4 +1,4 @@
-import { parseInlineEmphasis, toggleBoldWrap } from './inline-emphasis';
+import { parseInlineEmphasis, toggleBoldWrap, toggleWordBold, wordTokens } from './inline-emphasis';
 
 describe('parseInlineEmphasis', () => {
   it('splits **bold** spans from plain text', () => {
@@ -66,5 +66,49 @@ describe('toggleBoldWrap', () => {
     const r = toggleBoldWrap('Led a **big** refactor', 6, 13);
     expect(r.text).toBe('Led a big refactor');
     expect(r.text.slice(r.selStart, r.selEnd)).toBe('big');
+  });
+});
+
+describe('wordTokens', () => {
+  it('numbers words left-to-right and carries run bold state', () => {
+    expect(wordTokens('cut size by **25%** overall')).toEqual([
+      { text: 'cut ', bold: false, index: 0 },
+      { text: 'size ', bold: false, index: 1 },
+      { text: 'by ', bold: false, index: 2 },
+      { text: '25% ', bold: true, index: 3 },
+      { text: 'overall', bold: false, index: 4 },
+    ]);
+  });
+
+  it('returns a single token for a one-word line, no trailing space', () => {
+    expect(wordTokens('English')).toEqual([{ text: 'English', bold: false, index: 0 }]);
+  });
+});
+
+describe('toggleWordBold', () => {
+  it('bolds a plain word by index', () => {
+    expect(toggleWordBold('cut size by 25%', 3)).toBe('cut size by **25%**');
+  });
+
+  it('unbolds an already-bold word', () => {
+    expect(toggleWordBold('cut size by **25%**', 3)).toBe('cut size by 25%');
+  });
+
+  it('merges adjacent bold words under one wrapper', () => {
+    expect(toggleWordBold('a b c', 0)).toBe('**a** b c');
+    // Bolding word 2 (c) next to already-bold word 1 (b) → single **b c** span.
+    expect(toggleWordBold('a **b** c', 2)).toBe('a **b c**');
+    expect(toggleWordBold('a **b** c', 2)).not.toContain('****');
+    expect(toggleWordBold('**a** b c', 1)).toBe('**a b** c');
+  });
+
+  it('round-trips: toggling a word twice restores the text', () => {
+    const src = 'Rebuilt the legacy **analytics** dashboard';
+    expect(toggleWordBold(toggleWordBold(src, 1), 1)).toBe(src);
+  });
+
+  it('ignores out-of-range indices', () => {
+    expect(toggleWordBold('a b', 9)).toBe('a b');
+    expect(toggleWordBold('', 0)).toBe('');
   });
 });

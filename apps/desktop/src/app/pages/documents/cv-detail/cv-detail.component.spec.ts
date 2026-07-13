@@ -424,6 +424,10 @@ describe('CvDetailComponent per-section style', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
+    // Selection alone no longer mounts editors — enter text-edit mode via the
+    // panel's "Edit text" control.
+    (root.querySelector('.cvlive__edit-text') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const previewTextarea = root.querySelector(
       '.page-card textarea.cvpreview__summary',
     ) as HTMLTextAreaElement;
@@ -833,6 +837,10 @@ describe('CvDetailComponent export/print hardening', () => {
   function startInlineDraft(text: string): HTMLTextAreaElement {
     component.previewMode.set(true);
     component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    fixture.detectChanges();
+    // Selection alone no longer mounts editors — enter text-edit mode via the
+    // panel's "Edit text" control (routed to CvPreviewComponent.startEditing).
+    (fixture.nativeElement.querySelector('.cvlive__edit-text') as HTMLButtonElement).click();
     fixture.detectChanges();
     const editor = (fixture.nativeElement as HTMLElement).querySelector(
       '.page-card textarea.cvpreview__summary',

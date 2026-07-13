@@ -22,6 +22,11 @@
             )
           }}
         </div>
+        @if (canEditText()) {
+          <button type="button" class="cvlive__edit-text" (click)="editText.emit()">
+            {{ t()('documents.cv_live_style_edit_text') }}
+          </button>
+        }
       </div>
 
       <div class="cvlive__field">
@@ -84,18 +89,9 @@
         </span>
       </div>
 
-      @if (showBold()) {
+      @if (showWordBoldHint()) {
         <div class="cvlive__field">
           <span class="cvlive__label">{{ t()('documents.cv_live_style_format') }}</span>
-          <button
-            type="button"
-            class="cvlive__fmt-btn"
-            [attr.aria-label]="t()('documents.cv_bold_action')"
-            [attr.title]="t()('documents.cv_bold_action')"
-            (mousedown)="onBoldMousedown($event)"
-          >
-            B
-          </button>
           <p class="cvlive__hint">{{ t()('documents.cv_live_style_bold_hint') }}</p>
         </div>
       }

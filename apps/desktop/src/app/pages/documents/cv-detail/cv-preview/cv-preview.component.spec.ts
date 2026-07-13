@@ -505,6 +505,7 @@ describe('CvPreviewComponent', () => {
       fixture.componentRef.setInput('sections', [
         { key: 'summary', order: 0, visible: true, text: 'Hello world' },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       const textarea = (fixture.nativeElement as HTMLElement).querySelector(
         '.page-card textarea.cvpreview__summary',
@@ -547,6 +548,7 @@ describe('CvPreviewComponent', () => {
       // Editor <input> — select the personal-details body to switch into edit mode.
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
+      component.startEditing();
       fixture.detectChanges();
       const nameInput = root.querySelector('.page-card input.cvpreview__name') as HTMLInputElement;
       expect(nameInput.style.color).toBe('rgb(255, 0, 0)');
@@ -709,6 +711,8 @@ describe('CvPreviewComponent', () => {
           entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: ['One'] }],
         },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -747,6 +751,7 @@ describe('CvPreviewComponent', () => {
           entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: ['One'] }],
         },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       const emitted: (CvPreviewSelection | null)[] = [];
@@ -768,6 +773,7 @@ describe('CvPreviewComponent', () => {
         part: 'body',
         elementPath: 'exp.0.company',
       });
+      component.startEditing();
       fixture.detectChanges();
       await Promise.resolve();
       const bulletTextarea = root.querySelector(
@@ -802,6 +808,7 @@ describe('CvPreviewComponent', () => {
       fixture.componentRef.setInput('sections', [
         { key: 'summary', order: 0, visible: true, text: 'Hello' },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       const emitted: (CvPreviewSelection | null)[] = [];
       component.selectionChange.subscribe((v) => emitted.push(v));
@@ -867,6 +874,8 @@ describe('CvPreviewComponent', () => {
       fixture.componentRef.setInput('sections', [
         { key: 'summary', order: 0, visible: true, text: 'Original' },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       const textarea = root.querySelector(
@@ -892,6 +901,7 @@ describe('CvPreviewComponent', () => {
       fixture.componentRef.setInput('sections', [
         { key: 'summary', order: 0, visible: true, text: 'Hello' },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       await Promise.resolve(); // flush the queued focus microtask
       const textarea = (fixture.nativeElement as HTMLElement).querySelector(
@@ -900,7 +910,7 @@ describe('CvPreviewComponent', () => {
       expect(document.activeElement).toBe(textarea);
     });
 
-    it('Enter on a single-line leaf commits, drops the selection, and returns focus to the host', async () => {
+    it('Enter on a single-line leaf commits, exits edit mode (keeping the selection), and returns focus to the host', async () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
         sectionKey: 'personal_details',
@@ -909,15 +919,14 @@ describe('CvPreviewComponent', () => {
       fixture.componentRef.setInput('sections', [
         { key: 'personal_details', order: 0, visible: true, fullName: 'Ada', title: '', email: '' },
       ]);
+      component.startEditing();
       fixture.detectChanges();
-      const emitted: (CvPreviewSelection | null)[] = [];
-      component.selectionChange.subscribe((v) => emitted.push(v));
       const root = fixture.nativeElement as HTMLElement;
       const name = root.querySelector('.page-card input.cvpreview__name') as HTMLInputElement;
       name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-      expect(emitted).toContain(null); // selection dropped → resting markup returns
-      // Parent clears the selection; the resting host regains focus after render.
-      fixture.componentRef.setInput('selection', null);
+      // Enter leaves edit mode (resting markup returns) but the selection is
+      // KEPT — the panel stays open on the same element.
+      expect(component.editing()).toBe(false);
       fixture.detectChanges();
       await Promise.resolve();
       const host = root.querySelector(
@@ -934,6 +943,7 @@ describe('CvPreviewComponent', () => {
       fixture.componentRef.setInput('sections', [
         { key: 'summary', order: 0, visible: true, text },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       const textarea = root.querySelector(
@@ -1063,6 +1073,8 @@ describe('CvPreviewComponent', () => {
           ...section,
         },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -1159,6 +1171,8 @@ describe('CvPreviewComponent', () => {
           ],
         },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -1318,6 +1332,8 @@ describe('CvPreviewComponent', () => {
           ],
         },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -1417,6 +1433,8 @@ describe('CvPreviewComponent', () => {
           ],
         },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -1494,6 +1512,8 @@ describe('CvPreviewComponent', () => {
           ],
         },
       ]);
+      component.startEditing();
+      component.startEditing();
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -1618,6 +1638,7 @@ describe('CvPreviewComponent', () => {
       expect(emitted).toEqual([{ sectionKey: 'summary', part: 'body', elementPath: 'summary' }]);
 
       fixture.componentRef.setInput('selection', emitted[0]);
+      component.startEditing();
       fixture.detectChanges();
       const textarea = root.querySelector(
         '.page-card textarea.cvpreview__summary',
@@ -1653,6 +1674,7 @@ describe('CvPreviewComponent', () => {
       ]);
 
       fixture.componentRef.setInput('selection', emitted[0]);
+      component.startEditing();
       fixture.detectChanges();
       const roleInputs = root.querySelectorAll(
         'input.cvpreview__entry-role',
@@ -1688,6 +1710,7 @@ describe('CvPreviewComponent', () => {
       ]);
 
       fixture.componentRef.setInput('selection', emitted[0]);
+      component.startEditing();
       fixture.detectChanges();
       const textarea = root.querySelector(
         'textarea.cvpreview__bullet-editor',
@@ -1721,6 +1744,7 @@ describe('CvPreviewComponent', () => {
       ]);
 
       fixture.componentRef.setInput('selection', emitted[0]);
+      component.startEditing();
       fixture.detectChanges();
       const valuesInput = root.querySelector('input.cvpreview__skill-values') as HTMLInputElement;
       valuesInput.value = 'TypeScript, Go';
@@ -1753,6 +1777,7 @@ describe('CvPreviewComponent', () => {
       ]);
 
       fixture.componentRef.setInput('selection', emitted[0]);
+      component.startEditing();
       fixture.detectChanges();
       const inputs = root.querySelectorAll(
         'input.cvpreview__language-input',
@@ -1778,6 +1803,7 @@ describe('CvPreviewComponent', () => {
           entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
         },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       const roleInput = root.querySelector('input.cvpreview__entry-role') as HTMLElement;
@@ -1816,6 +1842,7 @@ describe('CvPreviewComponent', () => {
           entries: [{ company: 'Acme', role: 'Engineer', startDate: '2020', bullets: [] }],
         },
       ]);
+      component.startEditing();
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       // On a page-card render `selectable(renderMode)` is true, so the
@@ -1865,6 +1892,7 @@ describe('CvPreviewComponent', () => {
       // `selection` input — simulate that, then confirm re-selecting the
       // exact same leaf is a no-op.
       fixture.componentRef.setInput('selection', emitted[0]);
+      component.startEditing();
       fixture.detectChanges();
       component.selectPart('experience', 'body', 'page', undefined, 'exp.0.company');
       expect(emitted).toEqual([
@@ -2000,29 +2028,35 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('applyActiveBold (panel-routed word bold)', () => {
-    it('wraps the focused editor selection in ** using its data-draft-id', async () => {
-      const ta = document.createElement('textarea');
-      ta.className = 'cvpreview__leaf-editor';
-      ta.setAttribute('data-draft-id', 'summary');
-      ta.value = 'hello world';
-      fixture.nativeElement.appendChild(ta);
-      ta.focus();
-      ta.setSelectionRange(0, 5);
-      component.applyActiveBold();
-      await Promise.resolve(); // flush the caret-restoring microtask
-      expect(ta.value).toBe('**hello** world');
+  describe('word bold + edit mode', () => {
+    it('toggleSummaryWord emits a section with the word wrapped in **', () => {
+      const emitted: unknown[] = [];
+      component.sectionChange.subscribe((s) => emitted.push(s));
+      const section = { key: 'summary', order: 0, visible: true, text: 'cut size by 25%' };
+      component.toggleSummaryWord(
+        section as never,
+        3,
+        new MouseEvent('click', { cancelable: true }),
+      );
+      expect(emitted).toEqual([{ ...section, text: 'cut size by **25%**' }]);
     });
 
-    it('is a no-op when the focused element is not a bold-capable editor', async () => {
-      const input = document.createElement('input');
-      input.className = 'cvpreview__leaf-editor'; // no data-draft-id
-      input.value = 'plain';
-      fixture.nativeElement.appendChild(input);
-      input.focus();
-      component.applyActiveBold();
-      await Promise.resolve();
-      expect(input.value).toBe('plain');
+    it('startEditing enters edit mode only when something is selected', () => {
+      fixture.componentRef.setInput('interactive', true);
+      component.startEditing();
+      expect(component.editing()).toBe(false);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      component.startEditing();
+      expect(component.editing()).toBe(true);
+    });
+
+    it('drops back to view mode when the selected section+part changes', () => {
+      fixture.componentRef.setInput('interactive', true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'body' });
+      component.startEditing();
+      expect(component.editing()).toBe(true);
+      fixture.componentRef.setInput('selection', { sectionKey: 'skills', part: 'body' });
+      expect(component.editing()).toBe(false);
     });
   });
 });

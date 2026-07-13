@@ -150,31 +150,27 @@
   text-overflow: ellipsis;
 }
 
-/* --- Format (Bold) --------------------------------------------------- */
-.cvlive__fmt-btn {
+/* --- Edit text + word-bold hint -------------------------------------- */
+.cvlive__edit-text {
   align-self: flex-start;
-  width: 38px;
-  height: 34px;
+  margin-top: 6px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border-default);
-  background: var(--surface-sunken);
-  color: var(--text-secondary);
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent-tint);
+  color: var(--text-accent);
   border-radius: 7px;
-  font-family: Georgia, serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
-  transition:
-    background 120ms ease,
-    color 120ms ease,
-    border-color 120ms ease;
+  transition: background 120ms ease;
 }
-.cvlive__fmt-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--text-tertiary);
-  background: var(--surface-hover);
+.cvlive__edit-text:hover {
+  background: var(--accent-tint-strong);
 }
 .cvlive__hint {
   margin: 1px 0 0;

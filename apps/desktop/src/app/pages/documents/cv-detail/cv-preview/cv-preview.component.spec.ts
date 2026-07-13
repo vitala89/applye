@@ -193,6 +193,56 @@ describe('CvPreviewComponent', () => {
     ).toBeTruthy();
   });
 
+  it('selecting a skills group frames only that row', () => {
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'skills',
+        order: 0,
+        visible: true,
+        groups: [
+          { label: 'Frontend', values: ['TS'] },
+          { label: 'Backend', values: ['Go'] },
+        ],
+      },
+    ]);
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'skills',
+      part: 'body',
+      elementPath: 'skills.1',
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(
+      root.querySelectorAll('.page-card .cvpreview__skill-row.cvpreview__element-selected'),
+    ).toHaveLength(1);
+  });
+
+  it('onSelectKey ignores keys bubbling from an inline editor (Space stays a space)', () => {
+    fixture.componentRef.setInput('interactive', true);
+    fixture.componentRef.setInput('sections', [
+      { key: 'skills', order: 0, visible: true, groups: [{ label: 'L', values: ['TS'] }] },
+    ]);
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'skills',
+      part: 'body',
+      elementPath: 'skills.0.values',
+    });
+    component.startEditing();
+    fixture.detectChanges();
+    const editor = (fixture.nativeElement as HTMLElement).querySelector(
+      '.page-card .cvpreview__leaf-editor',
+    ) as HTMLElement;
+    const emitted: unknown[] = [];
+    component.selectionChange.subscribe((v) => emitted.push(v));
+    const evt = new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+    Object.defineProperty(evt, 'target', { value: editor });
+    const prevent = jest.spyOn(evt, 'preventDefault');
+    component.onSelectKey(evt, 'skills', 'body', 'page', 'skills.0');
+    expect(prevent).not.toHaveBeenCalled(); // space is NOT swallowed
+    expect(emitted).toEqual([]); // no re-selection steals focus
+  });
+
   it('marks every section start for spacing (measured padding, not sibling margin)', () => {
     // Regression: inter-section spacing relied on `.cvpreview__section +
     // .cvpreview__section` sibling adjacency, which never matches because the

@@ -255,6 +255,12 @@ export class CvPreviewComponent {
     elementPath?: string,
   ): void {
     if (!this.selectable(renderMode)) return;
+    // A key event bubbling up from an inline editor must NOT be treated as a
+    // host activation: otherwise typing Space into an input gets
+    // `preventDefault`'d (no space char) and re-selects the host, yanking
+    // focus out of the editor. Let the editor handle its own keys.
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.cvpreview__leaf-editor')) return;
     event.preventDefault();
     this.selectPart(sectionKey, part, renderMode, event, elementPath);
   }

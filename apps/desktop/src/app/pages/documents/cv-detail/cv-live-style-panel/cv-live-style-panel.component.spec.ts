@@ -272,6 +272,18 @@ describe('CvLiveStylePanelComponent', () => {
     expect(btns).toHaveLength(1);
   });
 
+  it('a skills group (skills.0) is treated as a group, not a leaf', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'skills',
+      part: 'body',
+      elementPath: 'skills.0',
+    });
+    fixture.detectChanges();
+    expect(component.isEntrySelection()).toBe(true);
+    expect(component.scope()).toBe('section');
+    expect(component.canEditText()).toBe(false);
+  });
+
   it('body-rule controls: shown for personal-details/experience, emit section-level width/colour', () => {
     fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
     fixture.detectChanges();

@@ -275,13 +275,17 @@
         <p
           class="cvpreview__skill-row"
           [class.cvpreview__selectable]="selectable(renderMode)"
+          [class.cvpreview__element-selected]="
+            isElementSelected(leafPath('skills', i)) && selectable(renderMode)
+          "
           [attr.role]="selectable(renderMode) ? 'button' : null"
           [attr.tabindex]="selectable(renderMode) ? 0 : null"
           [attr.aria-label]="selectable(renderMode) ? selectAriaLabel('skills', 'body') : null"
           [attr.data-cv-select]="'skills:body'"
-          (click)="selectPart('skills', 'body', renderMode, $event)"
-          (keydown.enter)="selectPart('skills', 'body', renderMode, $event)"
-          (keydown.space)="onSelectKey($event, 'skills', 'body', renderMode)"
+          [attr.data-cv-chip]="t()(sectionLabelKey('skills'))"
+          (click)="selectLeaf('skills', leafPath('skills', i), renderMode, $event)"
+          (keydown.enter)="selectLeaf('skills', leafPath('skills', i), renderMode, $event)"
+          (keydown.space)="onSelectKey($event, 'skills', 'body', renderMode, leafPath('skills', i))"
         >
           @if (isEditingLeaf(leafPath('skills', i, 'label')) && selectable(renderMode)) {
             <input

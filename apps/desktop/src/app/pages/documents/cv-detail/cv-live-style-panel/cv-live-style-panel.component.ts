@@ -123,12 +123,12 @@ export class CvLiveStylePanelComponent {
    * the panel's "Editing" header so it names exactly what's selected (mirrors
    * the on-paper chip, e.g. "Name  #name"). Derived by parsing the selection's
    * `elementPath`; falls back to the generic body/title labels. */
-  /** An "entry" path (`exp.0`, `edu.1`) targets a whole experience/education
-   * entry, not a single text leaf — it behaves like a section selection
-   * (section-scope styling, section name in the header) but frames just the
-   * clicked entry on the paper. */
+  /** A "group" path (`exp.0`, `edu.1`, `skills.0`) targets a whole
+   * experience/education entry or a skills group, not a single text leaf — it
+   * behaves like a section selection (section-scope styling, section name in
+   * the header) but frames just the clicked group on the paper. */
   private isEntryPath(p: string | undefined): boolean {
-    return !!p && /^(?:exp|edu)\.\d+$/.test(p);
+    return !!p && /^(?:exp|edu|skills)\.\d+$/.test(p);
   }
 
   /** Whether the current selection is a whole experience/education entry —

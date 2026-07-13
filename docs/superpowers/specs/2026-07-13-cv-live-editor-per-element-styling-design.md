@@ -1,6 +1,6 @@
 # CV Live Editor — Per-Element Styling & Edit-Mode Reduction (Phase D.2) — Design
 
-**Status:** Approved design, pending spec review → plan.
+**Status:** Implemented (Tasks 1–6 complete). See "As-built" below for the shipped result, deviations, and residual limitations.
 **Branch:** `feat/cv-editor-preview-refactor` (continues after Phase D + quick fixes `9ee10e8`, `c3c0287`).
 **Predecessor:** Phase D live-preview editor (per-section styling + inline content editing).
 
@@ -106,3 +106,37 @@ In `cv-detail.component.html`, the `cv_section_style` card currently holds three
 - Whether `Whole document` body scope reuses the existing root fields directly or a small wrapper reducer.
 - Reset/badge relocation decision (above).
 - Path-helper unification between inline-edit draft ids and style keys.
+
+## As-built (Task 6 — hardening, docs, final review)
+
+Implemented essentially as designed, resolving the open items as follows:
+
+- **Scope selector UX:** a plain `<select>` inside the panel (not a segmented control) — three `<option>`s for a body selection (`documents.cv_style_scope_element/section/document`), two for a title (`documents.cv_style_scope_this_title/all_titles`). Default scope on a fresh selection: `element` for a body leaf with a path, `section` for a pathless body selection (a whole-entry/whole-row click) and for a title (`this title`) — the pathless-body default was a fix (`1388ec2`) after the naive "always default `element`" silently dropped edits when there was no `elementPath` to write to.
+- **`Whole document` body scope:** a small new reducer, `patchCvDocumentBody(style, patch)`, writes the `CvStyle` root fields (`fontFamily`/`fontSizePt`/`fontWeight`/`accentColorHex`) directly — thinner than reusing the section reducer, and keeps `sectionStyles`/`elementStyles`/`titleStyle` untouched by construction.
+- **Reset relocation:** "Reset all styling" moved from Edit mode's Style-card header into the live panel's footer (`CvLiveStylePanelComponent`'s `resetAll` output → `CvDetailComponent.resetAllStyles()`), reachable even with nothing selected, disabled only when the document has no override at any scope (`hasAnyCustomStyle`, extended to also check `elementStyles`).
+- **Path-helper unification:** one `leafPath(kind, ...parts)` builder in `cv-content.util.ts` is the single source for both the inline-edit draft id and the `elementStyles`/`CvPreviewSelection.elementPath` key — no separate mapping table, no drift risk.
+
+### a11y / keyboard hardening (Task 6)
+
+- **Scope selector:** already a native `<select>`, so already Tab-reachable and Enter/arrow-operable with the browser's default focus ring (no CSS in this codebase disables `outline` on native controls outside the print stylesheet). Given an explicit `[attr.aria-label]="t()('documents.cv_style_scope_label')"` in addition to its existing visible `<label>` wrapping, for a robust, directly-testable accessible name.
+- **Per-leaf accessible names (T2 review minor, fixed):** every per-leaf selectable host used to reuse the generic `selectAriaLabel(key, 'body')` name, so a screen reader announced the identical "Experience — Body text" for an entry's company, industry, location, AND role. A new `leafAriaLabel(sectionKey, field)` helper (`cv-preview.component.ts`) composes the section label with a field-specific label — reusing the SAME i18n field labels already shown in Edit mode's section editors (`documents.cv_field_company`, `_role`, `_bullet`, `_label`, `_language`, …; two new labels, `cv_field_industry`/`cv_field_location`, added EN+DE for the two fields that had no existing short label). Applied to: personal-details fullName/title, experience company/industry/location/role/bullet, skills label/values, and the language value leaf. Whole-entry/whole-row/whole-body wrapper hosts (no single `elementPath`) intentionally keep the generic name — there's nothing to disambiguate there.
+- **Nested `role="button"` (accepted, not restructured):** several leaf hosts (e.g. an experience entry's company/role spans) sit INSIDE another selectable host (the whole-entry wrapper), so the rendered DOM has a `role="button"` nested inside another `role="button"`, which is technically non-conforming ARIA. Click handling already relies on `stopPropagation()` in `selectLeaf`/`selectPart` to keep the two independent, and restructuring the DOM (e.g. `aria-owns`, or moving the leaf host outside its section wrapper) would touch the whole selection/layout model for a cosmetic ARIA-validator complaint with no observed assistive-tech failure mode found — judged higher-risk than valuable for this task. Documented here as an accepted trade-off, not fixed.
+
+### Measurement/print verification
+
+- **Typography parity (element scope repaginates):** `leafCss(path)` (the element-scope CSS delta) is bound on the same leaf in both the page-card render and the hidden `.paginated-sheet__measure` mirror, so a per-leaf font-size/line-height override affects the pagination math identically to what's shown — proven for summary, an experience company leaf, a skills values leaf, and a language value leaf (Task 6 added the latter two — T3 review minor).
+- **Print/export has no panel/selection/scope chrome:** both print paths (`exportPdfWysiwyg()`, the direct `Cmd/Ctrl+P` `beforeprint` handler) clear the live `selection` before printing, and the global print stylesheet (`apps/desktop/src/styles.scss`) hides `.cvdetail__live-panel` entirely and strips the `.cvpreview__selectable`/`.cvpreview__selected` outlines. Task 6 closed a defensive gap: the per-element `.cvpreview__element-selected` dashed outline (new in this phase) was never added to that same stripping rule — unreachable in practice today (selection is always null at print time), but now covered explicitly rather than relying on that invariant silently. A new static test (`apps/desktop/src/cv-print-css.spec.ts`) locks in the print block's content, mirroring the existing `followup-no-transmit.spec.ts` file-scan pattern (Angular unit tests never render `@media print`, so this is the only way to regression-test it).
+
+### Test-coverage minors folded in (no production-code change)
+
+- `effectiveLeafStyle`/`leafCss`: an empty-string `elementPath`/path now has an explicit test proving it resolves exactly like an absent one (section resolution), including a case where a literal `''` key exists in `elementStyles` to prove the empty path is never used as a real lookup key.
+- `patchCvElementStyle`: added the missing reference-equality assertions — the merge-into-existing-override test now also asserts `original`/its nested override object are untouched and `changed !== original`; the sibling-preservation test now asserts the untouched sibling override is the SAME object reference, not just value-equal.
+
+### Known accepted follow-ups (not fixed in Task 6)
+
+- Resetting a section title's `this title` scope clears the title's font/size/weight/colour override but leaves an explicit `titleBorder` override on that section intact (it must be cleared via the `all titles`/document scope or "reset all styling"). Matches the shipped `setSectionTitleStyle` semantics from Phase D; flagged as a possible future UX tweak, not a bug in the T1–T5 contract.
+- Coverage gap carried from T2: the personal-details contact line, an education entry's degree/institution, and either entry's date range still render as combined, non-decomposed spans — not individually style-selectable. Only the leaf families enumerated above (and in the plan's path list) are per-leaf styleable today; splitting these combined spans into leaves is a larger follow-up that touches the resting-render markup, deferred pending product input.
+
+### Verification (Task 6)
+
+`npx nx test desktop` (364/364, 26 suites), `npx nx test ui` (32/32), `npx nx test i18n` (1/1) and the desktop `i18n-keys.spec.ts` guard (2/2), `npx nx test core` (35/35), `npx nx build desktop` (clean; only pre-existing warnings: bundle budget, Sass `@import`, `cdkDragPlaceholder`), prettier + eslint on every touched file (only pre-existing non-null-assertion warnings in test files; zero new lint errors — 5 pre-existing lint errors in unrelated `jobs`/`my-jobs` files were left untouched, out of scope).

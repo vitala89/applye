@@ -239,6 +239,30 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('body-rule controls: shown for personal-details/experience, emit section-level width/colour', () => {
+    fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
+    fixture.detectChanges();
+    expect(component.canBodyRule()).toBe(true);
+    const events = collect();
+    component.setBodyRuleWidth(2);
+    component.setBodyRuleColor('#0a5');
+    component.setBodyRuleWidth(null);
+    expect(events).toEqual([
+      { scope: 'section', bodyRuleWidth: 2 },
+      { scope: 'section', bodyRuleColor: '#0a5' },
+      { scope: 'section', bodyRuleWidth: null },
+    ]);
+
+    // Not offered for a section that draws no divider (e.g. summary).
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'summary',
+      part: 'body',
+      elementPath: 'summary',
+    });
+    fixture.detectChanges();
+    expect(component.canBodyRule()).toBe(false);
+  });
+
   it('reset emits a scope-tagged reset for the active scope', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'skills',

@@ -295,6 +295,13 @@ export interface CvSectionStyle {
   /** Per-section title-underline colour; unset inherits the document value,
    * then the active theme's rule colour. */
   titleRuleColorHex?: string;
+  /** Per-section BODY rule thickness in points — the divider a section draws
+   * around its body (the personal-details header underline, an experience
+   * entry's role/dates rule). Unset inherits the active theme's rule. */
+  bodyRuleWidthPt?: number;
+  /** Per-section BODY rule colour (see `bodyRuleWidthPt`). Unset inherits the
+   * active theme's rule colour. */
+  bodyRuleColorHex?: string;
 }
 
 /** Per-leaf (single-element) style override — the most specific layer of the

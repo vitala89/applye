@@ -902,6 +902,21 @@ export class CvPreviewComponent {
       css['color'] = color;
       css['--cv-section-body-color'] = color;
     }
+    // User overrides for the section's body divider (the personal-details
+    // header underline / an experience entry's role-dates rule). Both rule
+    // families read the SAME override — a section only draws one of them, so
+    // setting both here is harmless and keeps this generic. Unset → the theme
+    // rule (or none) stands.
+    const sec = this.style().sectionStyles?.[key];
+    if (sec?.bodyRuleWidthPt != null) {
+      const w = `${sec.bodyRuleWidthPt}pt`;
+      css['--cv-header-rule-width'] = w;
+      css['--cv-entry-rule-width'] = w;
+    }
+    if (sec?.bodyRuleColorHex) {
+      css['--cv-header-rule-color'] = sec.bodyRuleColorHex;
+      css['--cv-entry-rule-color'] = sec.bodyRuleColorHex;
+    }
     return css;
   }
 

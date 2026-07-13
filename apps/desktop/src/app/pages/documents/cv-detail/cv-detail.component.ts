@@ -413,6 +413,16 @@ export class CvDetailComponent {
 
   private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
     const key = sel.sectionKey;
+    // Section body-rule (divider) is a section-level property — written at
+    // section scope regardless of the font scope selector.
+    if (change.bodyRuleWidth !== undefined) {
+      this.setSectionStyle(key, { bodyRuleWidthPt: change.bodyRuleWidth ?? undefined });
+      return;
+    }
+    if (change.bodyRuleColor !== undefined) {
+      this.setSectionStyle(key, { bodyRuleColorHex: change.bodyRuleColor ?? undefined });
+      return;
+    }
     if (change.scope === 'section') {
       if (change.reset) this.resetSectionStyle(key);
       else this.setSectionStyle(key, change.patch ?? {});

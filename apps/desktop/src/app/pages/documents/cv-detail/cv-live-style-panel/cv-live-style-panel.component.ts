@@ -377,6 +377,42 @@ export class CvLiveStylePanelComponent {
     }
   }
 
+  /** Sections that draw a BODY divider the user can size/colour: the
+   * personal-details header underline and the experience entry rule. */
+  readonly canBodyRule = computed<boolean>(() => {
+    const sel = this.selection();
+    return (
+      !!sel &&
+      sel.part === 'body' &&
+      (sel.sectionKey === 'personal_details' || sel.sectionKey === 'experience')
+    );
+  });
+
+  /** Raw section body-rule width (pt) for the selected section
+   * (`null` = Inherit → theme rule). */
+  readonly activeBodyRuleWidth = computed<number | null>(() => {
+    const sel = this.selection();
+    return sel ? (this.style().sectionStyles?.[sel.sectionKey]?.bodyRuleWidthPt ?? null) : null;
+  });
+
+  /** Raw section body-rule colour for the selected section
+   * (`null` = Inherit → theme rule colour). */
+  readonly activeBodyRuleColor = computed<string | null>(() => {
+    const sel = this.selection();
+    return sel ? (this.style().sectionStyles?.[sel.sectionKey]?.bodyRuleColorHex ?? null) : null;
+  });
+
+  setBodyRuleWidth(value: string | number | null): void {
+    if (this.selection()) {
+      this.panelChange.emit({ scope: this.scope(), bodyRuleWidth: value ? +value : null });
+    }
+  }
+  setBodyRuleColor(value: string): void {
+    if (this.selection()) {
+      this.panelChange.emit({ scope: this.scope(), bodyRuleColor: value || null });
+    }
+  }
+
   reset(): void {
     if (this.selection()) this.panelChange.emit({ scope: this.scope(), reset: true });
   }

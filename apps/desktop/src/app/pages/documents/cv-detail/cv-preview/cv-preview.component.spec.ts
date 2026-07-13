@@ -143,6 +143,23 @@ describe('CvPreviewComponent', () => {
     expect(component.titleBorderCss('summary')).not.toContain('#112233');
   });
 
+  it('bodyCss emits the section body-rule vars (header + entry) from the override', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { personal_details: { bodyRuleWidthPt: 2, bodyRuleColorHex: '#123456' } },
+    });
+    fixture.componentRef.setInput('sections', [
+      { key: 'personal_details', order: 0, visible: true, fullName: 'V' },
+    ]);
+    fixture.detectChanges();
+    const css = component.bodyCss('personal_details');
+    expect(css['--cv-header-rule-width']).toBe('2pt');
+    expect(css['--cv-header-rule-color']).toBe('#123456');
+    expect(css['--cv-entry-rule-width']).toBe('2pt');
+    // A section without its own override emits no rule vars.
+    expect(component.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
+  });
+
   it('marks every section start for spacing (measured padding, not sibling margin)', () => {
     // Regression: inter-section spacing relied on `.cvpreview__section +
     // .cvpreview__section` sibling adjacency, which never matches because the

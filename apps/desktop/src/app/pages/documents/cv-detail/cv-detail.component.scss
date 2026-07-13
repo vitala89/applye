@@ -82,15 +82,19 @@
   // panel balloons past 340px, pushing content off-screen.
   min-width: 0;
   align-self: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  // Keep the sticky panel within the viewport and let ITS OWN content scroll
-  // when taller than the screen — otherwise, on a short window, the lower
-  // controls (colour, line size…) are unreachable because the whole page
-  // scrolls as one and the sticky panel's overflow is simply clipped/pinned.
+  // The aside IS the scroll container: capped to the viewport height and
+  // scrolling its own content when taller than the screen, so the lower
+  // controls (colour, line size…) stay reachable on a short window.
+  // It must NOT be a flex column — that let the single `.cvlive` child
+  // (which sets `overflow: hidden`) shrink to the cap and clip its content
+  // instead of scrolling, which is why the earlier scroll behaved erratically
+  // and never reached the end. Plain block flow lets `.cvlive` keep its full
+  // height so this container scrolls it.
   max-height: calc(100vh - (var(--space-4) * 2));
   overflow-y: auto;
+}
+.cvdetail__live-panel > app-cv-live-style-panel {
+  display: block;
 }
 
 .cvdetail__bar {

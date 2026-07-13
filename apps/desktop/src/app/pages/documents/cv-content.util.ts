@@ -68,6 +68,11 @@ export interface CvStylePanelChange {
   titleBorder?: CvBorderStyle | null;
   titleRuleWidth?: number | null;
   titleRuleColor?: string | null;
+  /** Section BODY-rule (divider) thickness/colour — carried on body
+   * selections for sections that draw a rule (personal details, experience);
+   * always written at section scope. `null` clears back to the theme. */
+  bodyRuleWidth?: number | null;
+  bodyRuleColor?: string | null;
   reset?: boolean;
 }
 

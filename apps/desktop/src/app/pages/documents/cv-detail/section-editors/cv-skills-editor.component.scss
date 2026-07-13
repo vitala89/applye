@@ -1,0 +1,138 @@
+// Self-contained field styling — Angular's emulated view encapsulation scopes
+// the parent's `.cvdetail` rules to its own template, so this editor (a
+// separate component) needs its own copy to render identically. Mirrors the
+// skills-specific rules in ../cv-detail.component.scss.
+.cvdetail__skills {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cvdetail__skill-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cvdetail__skill-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cvdetail__skills .cvdetail__skill-group-label {
+  width: 180px;
+  height: 32px;
+  padding: 0 11px;
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+  outline: none;
+}
+.cvdetail__skills .cvdetail__skill-group-label:hover {
+  background: var(--surface-sunken);
+}
+.cvdetail__skills .cvdetail__skill-group-label:focus {
+  background: var(--surface-sunken);
+  border-color: var(--border-accent);
+}
+.cvdetail__skill-group-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+.cvdetail__skill-group-remove {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+.cvdetail__skill-group-remove:hover {
+  color: var(--danger);
+}
+.cvdetail__skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+.cvdetail__skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px 0 10px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.cvdetail__skill-chip-remove {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 120ms ease;
+}
+.cvdetail__skill-chip-remove:hover {
+  color: var(--danger);
+}
+.cvdetail__skills .cvdetail__skill-add {
+  height: 28px;
+  width: 150px;
+  padding: 0 10px;
+  background: transparent;
+  border: var(--border-width) dashed var(--border-strong);
+  border-radius: var(--radius-badge);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+.cvdetail__skills .cvdetail__skill-add:focus {
+  border-style: solid;
+  border-color: var(--border-accent);
+}
+
+.cvdetail__add-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.cvdetail__add-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-accent);
+  border-color: var(--border-accent);
+}

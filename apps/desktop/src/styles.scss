@@ -94,4 +94,25 @@
   body.printing-cv .page-card__atom {
     break-inside: avoid;
   }
+
+  // Live-editor chrome must never print. The panel lives outside
+  // `lib-paginated-sheet` (so `visibility: hidden` already blanks it) — drop it
+  // from layout too. The click-to-select outline, however, is painted on atoms
+  // *inside* the sheet, so it survives the visibility reveal above; strip it
+  // explicitly so a section that happened to be selected doesn't print an
+  // outline over the exported PDF. `.cvpreview__element-selected` (Phase D.2's
+  // per-leaf dashed outline) is included defensively alongside the section-
+  // level classes: both print paths (`exportPdfWysiwyg`, the `beforeprint`
+  // handler) already clear `liveSelection` before printing, so no leaf is ever
+  // actually flagged `isElementSelected` at print time — this rule is a second,
+  // CSS-only guarantee in case that invariant is ever broken upstream.
+  body.printing-cv .cvdetail__live-panel {
+    display: none !important;
+  }
+  body.printing-cv .cvpreview__selectable,
+  body.printing-cv .cvpreview__selected,
+  body.printing-cv .cvpreview__element-selected {
+    outline: none !important;
+    cursor: default !important;
+  }
 }

@@ -1,0 +1,100 @@
+// Self-contained field styling — Angular's emulated view encapsulation scopes
+// the parent's `.cvdetail` rules to its own template, so this editor (a
+// separate component) needs its own copy to render identically. Mirrors the
+// base field rules + entry/grid/add/remove rules in ../cv-detail.component.scss.
+input:not([type='checkbox']) {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+}
+input:focus {
+  border-color: var(--accent);
+}
+
+.cvdetail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cvdetail__grid input {
+  height: 38px;
+  padding: 0 12px;
+}
+
+.cvdetail__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
+}
+.cvdetail__entry .cvdetail__grid {
+  gap: 9px;
+}
+.cvdetail__entry .cvdetail__grid input {
+  height: 36px;
+  padding: 0 11px;
+}
+.cvdetail__input-mono {
+  font-family: var(--font-mono) !important;
+}
+
+.cvdetail__entry-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cvdetail__entry-actions--end {
+  justify-content: flex-end;
+}
+.cvdetail__add-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.cvdetail__add-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-accent);
+  border-color: var(--border-accent);
+}
+.cvdetail__remove-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+.cvdetail__remove-btn:hover {
+  color: var(--danger);
+}

@@ -1,0 +1,19 @@
+// Self-contained field styling — Angular's emulated view encapsulation scopes
+// the parent's `.cvdetail` rules to its own template, so this editor (a
+// separate component) needs its own copy to render identically. Mirrors the
+// base field rules in ../cv-detail.component.scss.
+textarea {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+  resize: vertical;
+}
+textarea:focus {
+  border-color: var(--accent);
+}

@@ -118,16 +118,10 @@ export class CvListComponent {
   }
 
   readonly exportBusyId = signal<number | null>(null);
-  readonly texExportNoteOpen = signal(false);
 
-  async exportDoc(
-    item: DocumentLibraryItem,
-    format: 'pdf' | 'docx' | 'tex',
-    event: Event,
-  ): Promise<void> {
+  async exportDoc(item: DocumentLibraryItem, format: 'pdf' | 'docx', event: Event): Promise<void> {
     event.stopPropagation();
     if (!format || this.exportBusyId() != null) return;
-    if (format === 'tex') this.texExportNoteOpen.set(true);
     this.exportBusyId.set(item.id);
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');

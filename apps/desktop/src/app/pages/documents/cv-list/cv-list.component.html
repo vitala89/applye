@@ -12,13 +12,6 @@
     </div>
   </header>
 
-  @if (texExportNoteOpen()) {
-    <div class="cvlist__note">
-      <p>{{ t()('documents.cv_export_tex_note') }}</p>
-      <button class="icon-btn" type="button" (click)="texExportNoteOpen.set(false)">×</button>
-    </div>
-  }
-
   @if (loading()) {
     <p class="cvlist__state">{{ t()('common.loading') }}</p>
   } @else if (loadError()) {
@@ -78,7 +71,6 @@
                 <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
                 <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
                 <option value="docx">{{ t()('documents.cv_export_docx_action') }}</option>
-                <option value="tex">{{ t()('documents.cv_export_tex_action') }}</option>
               </select>
             </label>
             <button

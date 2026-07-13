@@ -1,0 +1,102 @@
+// Self-contained field styling — Angular's emulated view encapsulation scopes
+// the parent's `.cvdetail` rules to its own template, so this editor (a
+// separate component) needs its own copy to render identically. Mirrors the
+// base field rules + languages-specific rules in ../cv-detail.component.scss.
+input:not([type='checkbox']),
+select {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--space-8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-position: right var(--space-3) center;
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+select:focus,
+input:focus {
+  border-color: var(--accent);
+}
+
+.cvdetail__langs {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.cvdetail__lang-row {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.cvdetail__langs .cvdetail__lang-row input {
+  flex: 1;
+  width: auto;
+  height: 36px;
+  padding: 0 11px;
+}
+.cvdetail__langs .cvdetail__lang-level {
+  width: 120px;
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 11px;
+  appearance: auto;
+  -webkit-appearance: auto;
+  background-image: none;
+}
+.cvdetail__lang-remove {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.cvdetail__lang-remove:hover {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+.cvdetail__add-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.cvdetail__add-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-accent);
+  border-color: var(--border-accent);
+}

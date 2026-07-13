@@ -1,13 +1,12 @@
 import {
+  ApplicationRef,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   signal,
-  TemplateRef,
-  viewChild,
 } from '@angular/core';
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -29,10 +28,6 @@ import {
   Save,
   Check,
   Info,
-  Sparkles,
-  Plus,
-  X,
-  Trash2,
 } from 'lucide-angular';
 import type {
   CvContent,
@@ -41,7 +36,6 @@ import type {
   CvSectionStyle,
   CvStyle,
   CvTemplate,
-  CvTextRun,
   CvTextStyle,
   DocumentLibraryItem,
   PageMargins,
@@ -51,38 +45,37 @@ import type {
   StyleNote,
 } from '@applye/core';
 import {
-  CV_ATS_SAFE_FONTS,
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
-  parseInlineEmphasis,
-  toggleBoldWrap,
   getBuiltinTheme,
-  themeCssVars,
   themeStyleSeed,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import {
-  ButtonDirective,
-  PaginatedSheetComponent,
-  type SheetAtom,
-  type SheetGeometry,
-} from '@applye/ui';
+import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPhotoCropComponent } from './cv-photo-crop/cv-photo-crop.component';
+import { CvPreviewComponent } from './cv-preview/cv-preview.component';
+import { CvLiveStylePanelComponent } from './cv-live-style-panel/cv-live-style-panel.component';
+import { CvSummaryEditorComponent } from './section-editors/cv-summary-editor.component';
+import { CvLanguagesEditorComponent } from './section-editors/cv-languages-editor.component';
+import { CvSkillsEditorComponent } from './section-editors/cv-skills-editor.component';
+import { CvEducationEditorComponent } from './section-editors/cv-education-editor.component';
+import { CvExperienceEditorComponent } from './section-editors/cv-experience-editor.component';
+import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
 import {
-  blankEducationEntry,
-  blankExperienceEntry,
-  buildContactLine,
   cvFieldAtsNoteKeys,
-  effectiveSectionStyle,
-  effectiveTitleStyle,
-  effectiveTitleBorder,
+  type CvPreviewSelection,
+  type CvStylePanelChange,
   mergeRegeneratedSection,
   normalizeCvContent,
-  orderedVisibleSections,
   parseCvSkillResponse,
+  patchCvDocumentBody,
+  patchCvElementStyle,
+  patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
+  resetCvElementStyle,
+  resetCvSectionStyle,
   resolvePageSettings,
   sectionLabelKey,
 } from '../cv-content.util';
@@ -108,10 +101,15 @@ export function mergePersonalField<T extends string | undefined>(
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
-    NgStyle,
-    NgTemplateOutlet,
     CvPhotoCropComponent,
-    PaginatedSheetComponent,
+    CvPreviewComponent,
+    CvLiveStylePanelComponent,
+    CvSummaryEditorComponent,
+    CvLanguagesEditorComponent,
+    CvSkillsEditorComponent,
+    CvEducationEditorComponent,
+    CvExperienceEditorComponent,
+    CvPersonalDetailsEditorComponent,
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
@@ -123,6 +121,8 @@ export class CvDetailComponent {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
+  private readonly appRef = inject(ApplicationRef);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -137,15 +137,10 @@ export class CvDetailComponent {
     moveUp: ChevronUp,
     moveDown: ChevronDown,
     chevron: ChevronDown,
-    sparkles: Sparkles,
-    plus: Plus,
-    close: X,
-    trash: Trash2,
   };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
-  protected readonly buildContactLine = buildContactLine;
 
   readonly regionOptions = computed(() =>
     this.regionTags.map((tag) => ({
@@ -153,38 +148,6 @@ export class CvDetailComponent {
       label: `${tag.toUpperCase()} — ${this.t()(`documents.cv_region_${tag}`)}`,
     })),
   );
-
-  runs(text: string): CvTextRun[] {
-    return parseInlineEmphasis(text);
-  }
-
-  /** Wrap/unwrap **bold** around the field's current selection, then write the
-   * result back to the model and restore the caret. Bound to the Bold button
-   * and Cmd/Ctrl+B on summary + bullet fields. */
-  applyBold(el: HTMLTextAreaElement | HTMLInputElement, set: (v: string) => void): void {
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
-    const r = toggleBoldWrap(el.value, start, end);
-    set(r.text);
-    queueMicrotask(() => {
-      el.value = r.text;
-      el.setSelectionRange(r.selStart, r.selEnd);
-      el.focus();
-    });
-  }
-
-  /** Cmd/Ctrl+B handler for the summary textarea and bullet inputs — delegates
-   * to `applyBold` and prevents the browser's native bold shortcut. */
-  onBoldKeydown(
-    event: KeyboardEvent,
-    el: HTMLTextAreaElement | HTMLInputElement,
-    set: (v: string) => void,
-  ): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
-      event.preventDefault();
-      this.applyBold(el, set);
-    }
-  }
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
@@ -228,7 +191,6 @@ export class CvDetailComponent {
   readonly saveTemplateName = signal('');
   readonly savingTemplate = signal(false);
 
-  protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
@@ -241,8 +203,6 @@ export class CvDetailComponent {
     ...CV_STYLE_DEFAULT,
     ...themeStyleSeed(this.activeTheme()),
   }));
-  /** Theme custom properties for the preview viewport; inherited by all page cards. */
-  readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
   readonly styleNotes = signal<StyleNote[]>([]);
   private styleCheckTimer?: ReturnType<typeof setTimeout>;
 
@@ -290,132 +250,6 @@ export class CvDetailComponent {
     this.updatePage({ size, margin: this.currentMargin() });
   }
 
-  /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
-  private static readonly PX_PER_MM = 96 / 25.4;
-
-  /** Preview page geometry (px) — real A4/Letter proportions plus margins,
-   * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement. */
-  readonly geometry = computed<SheetGeometry>(() => {
-    const r = resolvePageSettings(this.style().page);
-    const px = CvDetailComponent.PX_PER_MM;
-    return {
-      pageWidthPx: r.widthMm * px,
-      pageHeightPx: r.heightMm * px,
-      marginTopPx: r.margin.top * px,
-      marginRightPx: r.margin.right * px,
-      marginBottomPx: r.margin.bottom * px,
-      marginLeftPx: r.margin.left * px,
-    };
-  });
-
-  /** True when any single atom is taller than one usable page — set from
-   * `<lib-paginated-sheet>`'s `(blockOverflow)` output. */
-  readonly blockOverflow = signal(false);
-
-  // Atom templates for the paginated sheet — declared in the HTML (`#headerTpl` etc).
-  readonly headerTpl = viewChild.required<TemplateRef<unknown>>('headerTpl');
-  readonly summaryTpl = viewChild.required<TemplateRef<unknown>>('summaryTpl');
-  readonly sectionTitleTpl = viewChild.required<TemplateRef<unknown>>('sectionTitleTpl');
-  readonly skillsTpl = viewChild.required<TemplateRef<unknown>>('skillsTpl');
-  readonly expHeadTpl = viewChild.required<TemplateRef<unknown>>('expHeadTpl');
-  readonly expBulletTpl = viewChild.required<TemplateRef<unknown>>('expBulletTpl');
-  readonly eduEntryTpl = viewChild.required<TemplateRef<unknown>>('eduEntryTpl');
-  readonly languagesTpl = viewChild.required<TemplateRef<unknown>>('languagesTpl');
-
-  /** Flattens `previewSections()` (in order) into ordered page atoms for
-   * `<lib-paginated-sheet>`. `photo` has no atom of its own — it folds into
-   * the header atom's render, mirroring the CSS float it always relied on. */
-  readonly atoms = computed<SheetAtom[]>(() => {
-    const out: SheetAtom[] = [];
-    const t = this.t();
-    const photoUri = this.includePhoto() ? this.photoDataUri() : null;
-
-    for (const section of this.previewSections()) {
-      switch (section.key) {
-        case 'personal_details':
-          out.push({
-            id: 'header',
-            tpl: this.headerTpl(),
-            ctx: { $implicit: section, photoUri, placement: this.photoPlacement() },
-          });
-          break;
-        case 'summary':
-          if (section.text) {
-            out.push({ id: 'summary', tpl: this.summaryTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'skills':
-          if (section.groups.length) {
-            out.push({ id: 'skills', tpl: this.skillsTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'languages':
-          if (section.items.length) {
-            out.push({ id: 'languages', tpl: this.languagesTpl(), ctx: { $implicit: section } });
-          }
-          break;
-        case 'experience': {
-          if (!section.entries.length) break;
-          const label = t(sectionLabelKey('experience'));
-          out.push({
-            id: 'sec:experience:title',
-            tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label, key: 'experience' },
-            glueToNext: true,
-          });
-          section.entries.forEach((entry, i) => {
-            const bullets = entry.bullets ?? [];
-            // Head glued to its first bullet so a heading never sits alone at a
-            // page bottom; the remaining bullets are free to flow to the next
-            // page, filling the current one instead of jumping the whole entry.
-            out.push({
-              id: `sec:experience:e${i}:head`,
-              tpl: this.expHeadTpl(),
-              ctx: { $implicit: entry, key: 'experience', first: i === 0 },
-              glueToNext: bullets.length > 0,
-            });
-            bullets.forEach((bullet, b) =>
-              out.push({
-                id: `sec:experience:e${i}:b${b}`,
-                tpl: this.expBulletTpl(),
-                ctx: { $implicit: bullet, key: 'experience' },
-              }),
-            );
-          });
-          break;
-        }
-        case 'education': {
-          if (!section.entries.length) break;
-          const label = t(sectionLabelKey('education'));
-          out.push({
-            id: 'sec:education:title',
-            tpl: this.sectionTitleTpl(),
-            ctx: { $implicit: label, key: 'education' },
-            glueToNext: true,
-          });
-          section.entries.forEach((entry, i) =>
-            out.push({
-              id: `sec:education:e${i}`,
-              tpl: this.eduEntryTpl(),
-              ctx: { $implicit: entry, key: 'education' },
-            }),
-          );
-          break;
-        }
-        // 'photo' folds into the header render — no standalone atom.
-      }
-    }
-    return out;
-  });
-
-  /** `t()` has no interpolation support (see `TranslateService.t`), so page
-   * captions substitute `{i}`/`{n}` manually — same pattern as
-   * `styleNoteMessage`'s `{value}` substitution above. */
-  readonly captionFn = (page: number, total: number): string =>
-    this.t()('documents.preview_page_of')
-      .replace('{i}', String(page))
-      .replace('{n}', String(total));
-
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
     // Global + per-section safety checks can surface the same (kind, detail)
@@ -432,60 +266,10 @@ export class CvDetailComponent {
     );
   }
 
-  /** Which section's "Style" popover is open, if any — only one at a time. */
-  readonly openStyleKey = signal<CvSectionKey | null>(null);
-
-  /** Effective font/size/weight/colour for a section — its own override
-   * merged over the document-wide style (Task 1's `effectiveSectionStyle`). */
-  effStyle(key: CvSectionKey) {
-    return effectiveSectionStyle(this.style(), key);
-  }
-
-  /** Body-text style for a section wrapper. */
-  bodyCss(key: CvSectionKey): Record<string, string> {
-    const s = this.effStyle(key);
-    return {
-      'font-family': s.fontFamily,
-      'font-size': `${s.fontSizePt}pt`,
-      'font-weight': String(s.fontWeight),
-    };
-  }
-
-  /** Title style for a section heading. */
-  titleCss(key: CvSectionKey): Record<string, string> {
-    const s = effectiveTitleStyle(this.style(), key);
-    return {
-      'font-family': s.fontFamily,
-      'font-size': `${s.fontSizePt}pt`,
-      'font-weight': String(s.fontWeight),
-      color: s.colorHex,
-    };
-  }
-
-  /** Title underline as a `border-bottom` string for `[style.borderBottom]`.
-   * When the active theme defines an accent/muted section rule and the user
-   * hasn't explicitly set their own title border, the theme's colour/weight
-   * wins (Aurora); otherwise falls back to the neutral default (Classic,
-   * whose `ruleColor` is `'none'`, always takes this branch). */
-  titleBorderCss(key: CvSectionKey): string {
-    const b = effectiveTitleBorder(this.style(), key);
-    if (b === 'none') return 'none';
-    const sh = this.activeTheme().sectionHeader;
-    if (sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key)) {
-      const color = sh.ruleColor === 'accent' ? 'var(--cv-accent)' : 'var(--cv-muted)';
-      return `${sh.ruleWeightPt}pt ${b} ${color}`;
-    }
-    return `var(--border-width) ${b} var(--border-subtle)`;
-  }
-
-  private hasExplicitTitleBorder(key: CvSectionKey): boolean {
-    const s = this.style();
-    return s.sectionStyles?.[key]?.titleBorder != null || s.titleBorder != null;
-  }
-
-  toggleStylePopover(key: CvSectionKey): void {
-    this.openStyleKey.set(this.openStyleKey() === key ? null : key);
-  }
+  /** The section/part the user has clicked in the live preview, driving the
+   * contextual `CvLiveStylePanelComponent` beside the paper. Null until the
+   * first selection; cleared is fine (panel shows its empty state). */
+  readonly liveSelection = signal<CvPreviewSelection | null>(null);
 
   /** Per-section collapse state for the content-section accordion — session
    * only (not persisted); every section starts expanded (an empty set means
@@ -510,18 +294,8 @@ export class CvDetailComponent {
     this.styleOpen.set(!this.styleOpen());
   }
 
-  /** The section's own style override, if any — used by the popover template
-   * (`stylePopover`), which is parameterized by key via `ngTemplateOutlet`
-   * and so can't index `sectionStyles` directly without losing type safety. */
-  sectionOverride(key: CvSectionKey): CvSectionStyle | undefined {
-    return this.style().sectionStyles?.[key];
-  }
-
   setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
-    const current = this.style();
-    const sectionStyles = { ...(current.sectionStyles ?? {}) };
-    sectionStyles[key] = { ...(sectionStyles[key] ?? {}), ...patch };
-    this.style.set({ ...current, sectionStyles });
+    this.style.set(patchCvSectionStyle(this.style(), key, patch));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
@@ -529,9 +303,7 @@ export class CvDetailComponent {
   /** Deep-merge a patch into a section's title override (a nested object that
    * `setSectionStyle`'s shallow merge would otherwise replace wholesale). */
   setSectionTitleStyle(key: CvSectionKey, patch: Partial<CvTextStyle>): void {
-    const current = this.style();
-    const existing = current.sectionStyles?.[key]?.title ?? {};
-    this.setSectionStyle(key, { title: { ...existing, ...patch } });
+    this.setSectionStyle(key, { title: patch });
   }
 
   /** Deep-merge a patch into the document-wide title style (template
@@ -541,27 +313,90 @@ export class CvDetailComponent {
   }
 
   resetSectionStyle(key: CvSectionKey): void {
-    const current = this.style();
-    const sectionStyles = { ...(current.sectionStyles ?? {}) };
-    delete sectionStyles[key];
-    this.style.set({ ...current, sectionStyles });
+    this.style.set(resetCvSectionStyle(this.style(), key));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
-  /** True when a section carries any style override — drives the "Custom"
-   * badge so the user can see which sections differ from the default. */
-  hasCustomStyle(key: CvSectionKey): boolean {
-    const o = this.style().sectionStyles?.[key];
-    return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
+  /** Immutably commits a fully-built next style and debounces the ATS safety
+   * re-check — shared by the element/document-scope panel paths that don't go
+   * through an existing single-target setter. */
+  private applyStyle(next: CvStyle): void {
+    this.style.set(next);
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  /** Routes a scope-tagged panel change to the correct write target for the
+   * current live selection (see the Phase D.2 mapping table): body →
+   * element/section/document; title → this-title (section) / all-titles
+   * (document). No-ops when there is no active selection. */
+  onStylePanelChange(change: CvStylePanelChange): void {
+    const sel = this.liveSelection();
+    if (!sel) return;
+    if (sel.part === 'title') this.applyTitleScopeChange(sel.sectionKey, change);
+    else this.applyBodyScopeChange(sel, change);
+  }
+
+  private applyTitleScopeChange(key: CvSectionKey, change: CvStylePanelChange): void {
+    const allTitles = change.scope === 'document';
+    if (change.reset) {
+      // Clear only the title override for this scope; body/border untouched.
+      if (allTitles) this.updateStyle({ titleStyle: undefined });
+      else
+        this.setSectionTitleStyle(key, {
+          fontFamily: undefined,
+          fontSizePt: undefined,
+          fontWeight: undefined,
+          colorHex: undefined,
+        });
+      return;
+    }
+    if (change.titleBorder !== undefined) {
+      const border = change.titleBorder ?? undefined;
+      if (allTitles) this.updateStyle({ titleBorder: border });
+      else this.setSectionStyle(key, { titleBorder: border });
+      return;
+    }
+    if (change.patch) {
+      if (allTitles) this.updateTitleStyle(change.patch);
+      else this.setSectionTitleStyle(key, change.patch);
+    }
+  }
+
+  private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
+    const key = sel.sectionKey;
+    if (change.scope === 'section') {
+      if (change.reset) this.resetSectionStyle(key);
+      else this.setSectionStyle(key, change.patch ?? {});
+      return;
+    }
+    if (change.scope === 'element') {
+      const path = sel.elementPath;
+      if (!path) return;
+      this.applyStyle(
+        change.reset
+          ? resetCvElementStyle(this.style(), path)
+          : patchCvElementStyle(this.style(), path, change.patch ?? {}),
+      );
+      return;
+    }
+    // document scope: reset is deferred to Task 5's global "reset all styling".
+    if (change.reset) return;
+    this.applyStyle(patchCvDocumentBody(this.style(), change.patch ?? {}));
   }
 
   /** True when the style differs from the active theme's baseline in any way —
    * a document-wide field (body font/size/weight/colour, title style, title
-   * line, page geometry) OR a per-section override. Drives the "Reset styles"
-   * button's enabled state and the "Custom" badge, so both react to global
-   * changes, not only per-section ones. A pristine doc on a theme is NOT
-   * custom (badge shows the theme name instead). */
+   * line), a per-section override, or a per-element override. Page geometry
+   * is deliberately NOT part of this comparison: `resetAllStyles` preserves
+   * the current `page` rather than reseeding it, so page geometry never makes
+   * a document read as "custom" here. Drives the live-style panel's "reset
+   * all styling" enabled state (Task 5 — the Edit-mode "Custom" badge that
+   * used to read this was removed along with the document-wide style
+   * groups), so it reacts to global, per-section, AND per-element changes
+   * alike. A pristine doc on a theme is NOT custom (a fresh Aurora doc
+   * doesn't count as "customized"). */
   readonly hasAnyCustomStyle = computed(() => {
     const s = this.style();
     const d = this.themeBaseStyle();
@@ -574,22 +409,26 @@ export class CvDetailComponent {
           v && typeof v === 'object' ? nonEmpty(v as Record<string, unknown>) : v != null,
         ),
     );
+    const elementCustom = Object.values(s.elementStyles ?? {}).some((o) =>
+      nonEmpty(o as Record<string, unknown> | undefined),
+    );
     return (
       s.fontFamily !== d.fontFamily ||
       s.fontSizePt !== d.fontSizePt ||
       s.fontWeight !== d.fontWeight ||
       s.accentColorHex !== d.accentColorHex ||
+      s.bodyColorHex !== d.bodyColorHex ||
       !!s.titleBorder ||
       nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
-      sectionCustom
+      sectionCustom ||
+      elementCustom
     );
   });
 
   /** Reset every section and the document-wide style back to the active
    * theme's baseline (not the hard-coded Classic default). */
   resetAllStyles(): void {
-    this.style.set({ ...this.themeBaseStyle() });
-    this.openStyleKey.set(null);
+    this.style.set({ ...this.themeBaseStyle(), page: this.style().page });
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     void this.refreshStyleNotes();
   }
@@ -607,16 +446,6 @@ export class CvDetailComponent {
 
   readonly previewMode = signal(false);
 
-  /** Ordered, visible sections as they'd actually render — the photo
-   * toggle isn't written back into `section.visible` until Save, so this
-   * mirrors the live toggle state rather than trusting the stored value. */
-  readonly previewSections = computed(() => {
-    const live = this.sections().map((s) =>
-      s.key === 'photo' ? { ...s, visible: this.includePhoto() } : s,
-    );
-    return orderedVisibleSections(live);
-  });
-
   togglePreview(): void {
     this.previewMode.set(!this.previewMode());
   }
@@ -632,6 +461,14 @@ export class CvDetailComponent {
    * is needed or available for this in the installed SDK version.
    */
   async exportPdfWysiwyg(): Promise<void> {
+    // Commit any in-progress inline edit and drop every editor affordance BEFORE
+    // printing: blur the focused leaf so its `(blur)` handler commits the draft,
+    // then clear the live selection so the page cards render committed text with
+    // no native control, caret, selection outline, or side panel. Then wait for
+    // Angular to render that resting state and for the sheet to finish a fresh
+    // pagination pass, so the exported PDF matches the on-screen preview exactly.
+    this.commitAndCloseEditors();
+    await this.nextStableFrame();
     const r = resolvePageSettings(this.style().page);
     // margin: 0 — each `.page-card` keeps its own per-side padding (the
     // simulated margins) and is forced to exactly one physical page in the
@@ -661,7 +498,46 @@ export class CvDetailComponent {
     window.print();
   }
 
+  /** Blur the focused inline editor — firing its `(blur)` handler, which commits
+   * the draft if it changed — and clear the live selection so all inline editor
+   * chrome unmounts and the page cards fall back to committed text. */
+  private commitAndCloseEditors(): void {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    this.liveSelection.set(null);
+  }
+
+  /** Resolve once Angular has applied pending signal changes and the paginated
+   * sheet has re-measured/repaginated. `tick()` flushes CD synchronously (the
+   * app is zoneless); two animation frames then bracket the sheet's
+   * measure-in-a-microtask + repaginate. Falls back to a microtask where rAF is
+   * unavailable (unit tests). */
+  private nextStableFrame(): Promise<void> {
+    this.appRef.tick();
+    if (typeof requestAnimationFrame === 'undefined') return Promise.resolve();
+    return new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  }
+
+  /**
+   * Direct OS/browser print (Cmd/Ctrl+P), bypassing the Export button. Drop the
+   * live selection so every inline editor unmounts and the page cards render
+   * their last-committed canonical text — the uncommitted draft and its native
+   * control never reach the print snapshot. Unlike the Export action this does
+   * NOT commit the draft (a raw Cmd+P should not silently persist a half-typed
+   * edit). `tick()` performs the swap synchronously, before the browser captures
+   * the page (zoneless CD is otherwise async and would miss the snapshot). */
+  private readonly handleBeforePrint = (): void => {
+    if (!this.previewMode() || this.liveSelection() === null) return;
+    this.liveSelection.set(null);
+    this.appRef.tick();
+  };
+
   constructor() {
+    window.addEventListener('beforeprint', this.handleBeforePrint);
+    this.destroyRef.onDestroy(() =>
+      window.removeEventListener('beforeprint', this.handleBeforePrint),
+    );
     void this.load();
   }
 
@@ -800,84 +676,11 @@ export class CvDetailComponent {
     this.moveSection(key, 1);
   }
 
-  /** CEFR levels plus an empty option — a language may be listed with no
-   * level (e.g. just "English"), which some CV conventions prefer. */
-  protected readonly languageLevels = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'];
-
-  addLanguage(section: Extract<CvSection, { key: 'languages' }>): void {
-    section.items.push({ language: '', level: '' });
-    this.sections.set([...this.sections()]);
-  }
-
-  removeLanguage(section: Extract<CvSection, { key: 'languages' }>, index: number): void {
-    section.items.splice(index, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  setSkillGroupLabel(
-    section: Extract<CvSection, { key: 'skills' }>,
-    groupIndex: number,
-    label: string,
-  ): void {
-    const group = section.groups[groupIndex];
-    if (group) group.label = label;
-  }
-
-  addSkillGroup(section: Extract<CvSection, { key: 'skills' }>): void {
-    section.groups.push({ label: 'Skills', values: [] });
-    this.sections.set([...this.sections()]);
-  }
-
-  removeSkillGroup(section: Extract<CvSection, { key: 'skills' }>, groupIndex: number): void {
-    section.groups.splice(groupIndex, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  /** Adds the trimmed input value as a skill chip on Enter, then clears the
-   * input. Ignores empty values and duplicates within the group. */
-  addSkill(section: Extract<CvSection, { key: 'skills' }>, groupIndex: number, event: Event): void {
-    event.preventDefault();
-    const input = event.target as HTMLInputElement;
-    const value = input.value.trim();
-    if (!value) return;
-    const group = section.groups[groupIndex];
-    if (!group) return;
-    if (!group.values.includes(value)) group.values.push(value);
-    input.value = '';
-    this.sections.set([...this.sections()]);
-  }
-
-  removeSkill(
-    section: Extract<CvSection, { key: 'skills' }>,
-    groupIndex: number,
-    valueIndex: number,
-  ): void {
-    section.groups[groupIndex]?.values.splice(valueIndex, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  addEntry(section: Extract<CvSection, { key: 'experience' | 'education' }>): void {
-    if (section.key === 'experience') section.entries.push(blankExperienceEntry());
-    else section.entries.push(blankEducationEntry());
-    this.sections.set([...this.sections()]);
-  }
-
-  removeEntry(
-    section: Extract<CvSection, { key: 'experience' | 'education' }>,
-    index: number,
-  ): void {
-    section.entries.splice(index, 1);
-    this.sections.set([...this.sections()]);
-  }
-
-  addBullet(entry: { bullets: string[] }): void {
-    entry.bullets.push('');
-    this.sections.set([...this.sections()]);
-  }
-
-  removeBullet(entry: { bullets: string[] }, index: number): void {
-    entry.bullets.splice(index, 1);
-    this.sections.set([...this.sections()]);
+  /** Swaps a single section by key with a new immutable value — the sink for
+   * extracted section-editor children's `(sectionChange)` output (e.g.
+   * `CvSummaryEditorComponent`, `CvLanguagesEditorComponent`). */
+  replaceSection(updated: CvSection): void {
+    this.sections.update((list) => list.map((s) => (s.key === updated.key ? updated : s)));
   }
 
   async regenerateSection(key: CvSectionKey): Promise<void> {
@@ -1007,12 +810,6 @@ export class CvDetailComponent {
 
   setPhotoPlacement(placement: PhotoPlacement): void {
     this.photoPlacement.set(placement);
-  }
-
-  headerPlacementClass(placement: PhotoPlacement): string {
-    const suffix =
-      placement === 'above_center' ? 'center' : placement === 'above_right' ? 'right' : 'left';
-    return `cvpreview__header--${suffix}`;
   }
 
   /**

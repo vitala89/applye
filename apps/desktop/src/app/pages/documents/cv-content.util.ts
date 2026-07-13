@@ -2,12 +2,17 @@ import {
   CvBorderStyle,
   CvContent,
   CvEducationEntry,
+  CvEducationSection,
+  CvElementStyle,
   CvExperienceEntry,
+  CvExperienceSection,
   CvFontWeight,
+  CvLanguagesSection,
   CvParsedContent,
   CvPersonalDetailsSection,
   CvSection,
   CvSectionKey,
+  CvSectionStyle,
   CvSkillGroup,
   CvSkillsSection,
   CvStyle,
@@ -18,6 +23,65 @@ import {
   PageMargins,
   PageSettings,
 } from '@applye/core';
+
+/** A semantic click target in the live CV preview: which section, which
+ * styling scope (body text vs. section title), and — for a body click that
+ * landed on a specific leaf — which element the user selected. Consumed by
+ * the contextual `CvLiveStylePanelComponent`.
+ *
+ * `elementPath` is additive on top of section-level gating: it is the SAME
+ * transient draft-id string already passed to `CvPreviewComponent.leafDraft`
+ * for that leaf (e.g. `'summary'`, `'exp.1.role'`, `'exp.1.bullet.0'`,
+ * `'skills.0.values'`, `'lang.0.language'`) — one string, reused as both the
+ * inline-edit draft key and the `elementStyles` override key, so there is a
+ * single source of truth for "which leaf is this" with no separate mapping
+ * table to keep in sync. It is only ever set alongside `part: 'body'`; a
+ * section-title selection never carries one. Absence means the whole
+ * section body is the target (no single leaf singled out), matching the
+ * pre-existing (Phase D) behaviour. */
+export interface CvPreviewSelection {
+  sectionKey: CvSectionKey;
+  part: 'body' | 'title';
+  elementPath?: string;
+}
+
+/** The three body styling scopes offered by the live panel, narrowing from
+ * most specific to least. For a title selection only two are used:
+ * `section` = "this title" (per-section title override), `document` = "all
+ * titles" (the document-wide `titleStyle`). */
+export type CvStyleScope = 'element' | 'section' | 'document';
+
+/** A scope-tagged change emitted by `CvLiveStylePanelComponent`. The parent
+ * maps `(selection.part, scope)` to the correct write target/reducer (see the
+ * plan's mapping table). `patch` carries the cleaned body/title font fields
+ * (`colorHex` only when the user actually picked a colour — the no-accent-leak
+ * rule); `titleBorder` (title selections only) carries the section-title
+ * underline, with `null` meaning inherit/clear; `reset` requests a per-scope
+ * reset. Exactly one of `patch` / `titleBorder` / `reset` is meaningful per
+ * emission. */
+export interface CvStylePanelChange {
+  scope: CvStyleScope;
+  patch?: Partial<CvElementStyle>;
+  titleBorder?: CvBorderStyle | null;
+  reset?: boolean;
+}
+
+/** Builds the canonical leaf-path string — the single source of truth for a
+ * leaf's identity, consumed at every place that currently spells the same
+ * path out as a raw template literal: `leafDraft`/`onLeafInput`/
+ * `onLeafEscape` (the transient draft key) and `selectLeaf`/`selectPart`/
+ * `onSelectKey` (the emitted `CvPreviewSelection.elementPath`, i.e. the
+ * persisted `elementStyles` override key). Segments are joined with `.`,
+ * reproducing every leaf id already in use, byte-for-byte:
+ * `leafPath('summary')` → `'summary'`; `leafPath('pd', 'fullName')` →
+ * `'pd.fullName'`; `leafPath('exp', 1, 'role')` → `'exp.1.role'`;
+ * `leafPath('exp', 1, 'bullet', 0)` → `'exp.1.bullet.0'`;
+ * `leafPath('edu', 0, 'degree')` → `'edu.0.degree'`;
+ * `leafPath('skills', 0, 'values')` → `'skills.0.values'`;
+ * `leafPath('lang', 0, 'language')` → `'lang.0.language'`. */
+export function leafPath(kind: string, ...parts: (string | number)[]): string {
+  return [kind, ...parts].join('.');
+}
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
  * for the seeded built-ins, but keeps the builder total). */
@@ -179,27 +243,6 @@ export const REGENERATABLE_SECTION_KEYS: CvSectionKey[] = [
   'languages',
 ];
 
-function emptyParsedContent(): CvParsedContent {
-  return {
-    personalDetails: {
-      fullName: null,
-      title: null,
-      email: null,
-      phone: null,
-      address: null,
-      website: null,
-      linkedin: null,
-    },
-    summary: null,
-    experience: [],
-    education: [],
-    skills: [],
-    skillGroups: undefined,
-    languages: [],
-    lowConfidenceNotes: [],
-  };
-}
-
 /** Parses a `cv-import`/`cv-generate-baseline` skill response (JSON, possibly
  * fenced) into `CvParsedContent`. Throws with the raw text on invalid JSON
  * so the caller can surface a real error instead of a silent empty draft. */
@@ -294,11 +337,24 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
   if (!parsed) {
     throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
   }
-  const base = emptyParsedContent();
+  const p: Partial<CvParsedContent['personalDetails']> = parsed.personalDetails ?? {};
   return {
-    ...base,
-    ...parsed,
-    personalDetails: { ...base.personalDetails, ...(parsed.personalDetails ?? {}) },
+    personalDetails: {
+      fullName: p.fullName ?? null,
+      title: p.title ?? null,
+      email: p.email ?? null,
+      phone: p.phone ?? null,
+      address: p.address ?? null,
+      website: p.website ?? null,
+      linkedin: p.linkedin ?? null,
+    },
+    summary: parsed.summary ?? null,
+    experience: parsed.experience ?? [],
+    education: parsed.education ?? [],
+    skills: parsed.skills ?? [],
+    skillGroups: parsed.skillGroups,
+    languages: parsed.languages ?? [],
+    lowConfidenceNotes: parsed.lowConfidenceNotes ?? [],
   };
 }
 
@@ -508,16 +564,206 @@ export function buildContactLine(
     .join(' | ');
 }
 
+/** Contact fields addressable as individual inline-edit leaves — the same
+ * fields, same order, as `buildContactLine`. */
+export type CvContactFieldKey =
+  | 'address'
+  | 'phone'
+  | 'email'
+  | 'website'
+  | 'linkedin'
+  | 'birthDate'
+  | 'maritalStatus';
+
+export interface CvContactFieldLeaf {
+  field: CvContactFieldKey;
+  value: string;
+}
+
+/** The contact fields that currently render in `buildContactLine`'s output,
+ * as individually addressable leaves (same order). The five base fields
+ * (address/phone/email/website/linkedin) only become a leaf once they already
+ * carry a value — matching what's actually visible in the resting contact
+ * line, since this task doesn't add an "add a new contact field" affordance.
+ * `birthDate`/`maritalStatus` become a leaf whenever their toggle is on, value
+ * or not — mirroring the sidebar editor, which shows the input as soon as the
+ * toggle is enabled so the user can fill it in for the first time. */
+export function visiblePersonalContactFields(
+  p: CvPersonalDetailsSection,
+  opts: { includeBirthdate: boolean; includeMaritalStatus: boolean },
+): CvContactFieldLeaf[] {
+  const hasText = (v: string | undefined): v is string => !!v && v.trim().length > 0;
+  const out: CvContactFieldLeaf[] = [];
+  if (hasText(p.address)) out.push({ field: 'address', value: p.address });
+  if (hasText(p.phone)) out.push({ field: 'phone', value: p.phone });
+  if (hasText(p.email)) out.push({ field: 'email', value: p.email });
+  if (hasText(p.website)) out.push({ field: 'website', value: p.website });
+  if (hasText(p.linkedin)) out.push({ field: 'linkedin', value: p.linkedin });
+  if (opts.includeBirthdate) out.push({ field: 'birthDate', value: p.birthDate ?? '' });
+  if (opts.includeMaritalStatus) {
+    out.push({ field: 'maritalStatus', value: p.maritalStatus ?? '' });
+  }
+  return out;
+}
+
+/** Applies an immutable per-section style patch while keeping the persisted
+ * override tree minimal. Nested title fields are deep-merged; inherited
+ * (`undefined`/`null`) values, empty title objects, empty section overrides,
+ * and an empty `sectionStyles` map are removed. */
+export function patchCvSectionStyle(
+  style: CvStyle,
+  key: CvSectionKey,
+  patch: Partial<CvSectionStyle>,
+): CvStyle {
+  const current = style.sectionStyles?.[key] ?? {};
+  const normalizedPatch = { ...patch };
+  if ('lineHeight' in patch && !isValidCvLineHeight(patch.lineHeight)) {
+    normalizedPatch.lineHeight = undefined;
+  }
+  const title =
+    normalizedPatch.title === undefined
+      ? current.title
+      : Object.fromEntries(
+          Object.entries({ ...(current.title ?? {}), ...normalizedPatch.title }).filter(
+            ([, value]) => value != null,
+          ),
+        );
+  const merged = Object.fromEntries(
+    Object.entries({ ...current, ...normalizedPatch, title }).filter(
+      ([, value]) => value != null && !(typeof value === 'object' && !Object.keys(value).length),
+    ),
+  ) as CvSectionStyle;
+  const sectionStyles = { ...(style.sectionStyles ?? {}) };
+  if (Object.keys(merged).length) sectionStyles[key] = merged;
+  else delete sectionStyles[key];
+  return {
+    ...style,
+    sectionStyles: Object.keys(sectionStyles).length ? sectionStyles : undefined,
+  };
+}
+
+/** Removes one complete per-section override and omits the map when it becomes
+ * empty. Document defaults and sibling section overrides are preserved. */
+export function resetCvSectionStyle(style: CvStyle, key: CvSectionKey): CvStyle {
+  const sectionStyles = { ...(style.sectionStyles ?? {}) };
+  delete sectionStyles[key];
+  return {
+    ...style,
+    sectionStyles: Object.keys(sectionStyles).length ? sectionStyles : undefined,
+  };
+}
+
 export function effectiveSectionStyle(
   style: CvStyle,
   key: CvSectionKey,
-): { fontFamily: string; fontSizePt: number; fontWeight: CvFontWeight; colorHex: string } {
+): {
+  fontFamily: string;
+  fontSizePt: number;
+  fontWeight: CvFontWeight;
+  colorHex: string;
+  lineHeight?: number;
+} {
   const o = style.sectionStyles?.[key] ?? {};
   return {
     fontFamily: o.fontFamily ?? style.fontFamily,
     fontSizePt: o.fontSizePt ?? style.fontSizePt,
     fontWeight: o.fontWeight ?? style.fontWeight,
     colorHex: o.colorHex ?? style.accentColorHex,
+    lineHeight: isValidCvLineHeight(o.lineHeight) ? o.lineHeight : undefined,
+  };
+}
+
+function isValidCvLineHeight(value: number | undefined): value is number {
+  return value !== undefined && Number.isFinite(value) && value >= 1 && value <= 2;
+}
+
+/** Applies an immutable per-element style patch while keeping the persisted
+ * override tree minimal. Mirrors `patchCvSectionStyle` at the leaf level:
+ * inherited (`undefined`/`null`) values, an emptied element override, and an
+ * emptied `elementStyles` map are all removed; sibling paths are untouched. */
+export function patchCvElementStyle(
+  style: CvStyle,
+  path: string,
+  patch: Partial<CvElementStyle>,
+): CvStyle {
+  const current = style.elementStyles?.[path] ?? {};
+  const normalizedPatch = { ...patch };
+  if ('lineHeight' in patch && !isValidCvLineHeight(patch.lineHeight)) {
+    normalizedPatch.lineHeight = undefined;
+  }
+  const merged = Object.fromEntries(
+    Object.entries({ ...current, ...normalizedPatch }).filter(([, value]) => value != null),
+  ) as CvElementStyle;
+  const elementStyles = { ...(style.elementStyles ?? {}) };
+  if (Object.keys(merged).length) elementStyles[path] = merged;
+  else delete elementStyles[path];
+  return {
+    ...style,
+    elementStyles: Object.keys(elementStyles).length ? elementStyles : undefined,
+  };
+}
+
+/** Removes one complete per-element override and omits the map when it
+ * becomes empty. Document defaults, section overrides, and sibling element
+ * overrides are preserved. */
+export function resetCvElementStyle(style: CvStyle, path: string): CvStyle {
+  const elementStyles = { ...(style.elementStyles ?? {}) };
+  delete elementStyles[path];
+  return {
+    ...style,
+    elementStyles: Object.keys(elementStyles).length ? elementStyles : undefined,
+  };
+}
+
+/** Applies an element-style patch onto the `CvStyle` root/document-wide body
+ * fields (`fontFamily`/`fontSizePt`/`fontWeight`/`bodyColorHex`) — the
+ * least-specific layer of the cascade. Only the provided keys are written;
+ * `sectionStyles`/`elementStyles`/`titleStyle` are left untouched.
+ * `colorHex` maps to `bodyColorHex` — the document-wide BODY text colour —
+ * NOT `accentColorHex` (the accent/title/rule colour body text never reads;
+ * writing `accentColorHex` here was the Phase D.2 bug this fixes, since it
+ * recoloured titles instead of the body it was meant to target).
+ * `lineHeight` has no document-body root field, so it is intentionally
+ * ignored here. */
+export function patchCvDocumentBody(style: CvStyle, patch: Partial<CvElementStyle>): CvStyle {
+  const next: CvStyle = { ...style };
+  if (patch.fontFamily !== undefined) next.fontFamily = patch.fontFamily;
+  if (patch.fontSizePt !== undefined) next.fontSizePt = patch.fontSizePt;
+  if (patch.fontWeight !== undefined) next.fontWeight = patch.fontWeight;
+  if (patch.colorHex !== undefined) next.bodyColorHex = patch.colorHex;
+  return next;
+}
+
+/** Resolved style for a single body leaf: `elementStyles[elementPath]`
+ * layered over `effectiveSectionStyle(style, key)` — element → section →
+ * document → none, most-specific first. An absent `elementPath` (or one with
+ * no override) resolves to the section/document colour cascade unchanged.
+ * `colorHex` stays `undefined` unless explicitly overridden at the element,
+ * section, OR document (`bodyColorHex`) scope — it must NOT fall back to
+ * `accentColorHex` (the no-accent-leak rule from `015c2e3`); un-overridden
+ * body text keeps its inherited/theme colour. `lineHeight` is validated
+ * 1.0–2.0, falling back to the section's (already-validated) value when the
+ * element override is out of range. */
+export function effectiveLeafStyle(
+  style: CvStyle,
+  key: CvSectionKey,
+  elementPath: string | undefined,
+): {
+  fontFamily: string;
+  fontSizePt: number;
+  fontWeight: CvFontWeight;
+  colorHex?: string;
+  lineHeight?: number;
+} {
+  const section = effectiveSectionStyle(style, key);
+  const sectionOverride = style.sectionStyles?.[key] ?? {};
+  const element: CvElementStyle = (elementPath && style.elementStyles?.[elementPath]) || {};
+  return {
+    fontFamily: element.fontFamily ?? section.fontFamily,
+    fontSizePt: element.fontSizePt ?? section.fontSizePt,
+    fontWeight: element.fontWeight ?? section.fontWeight,
+    colorHex: element.colorHex ?? sectionOverride.colorHex ?? style.bodyColorHex ?? undefined,
+    lineHeight: isValidCvLineHeight(element.lineHeight) ? element.lineHeight : section.lineHeight,
   };
 }
 
@@ -638,4 +884,109 @@ export function blankExperienceEntry(): CvExperienceEntry {
 
 export function blankEducationEntry(): CvEducationEntry {
   return { institution: '', degree: '', startDate: '', endDate: '' };
+}
+
+// --- Immutable nested-leaf replacement (CV preview inline editing) --------
+//
+// Each helper replaces exactly one field/index inside a section's nested
+// array, producing fresh objects at every mutated level (the array itself,
+// the mutated entry/group/item) while every *other* entry/group/item keeps
+// its original object identity — the array `.map` only allocates a new
+// object for the matched index.
+
+/** Immutably replaces one field of one experience entry by index. Every
+ * other entry (and the section/array wrapping it) is a fresh reference only
+ * at the mutated level — sibling entries keep their original identity. */
+export function replaceExperienceEntryField<K extends keyof CvExperienceEntry>(
+  section: CvExperienceSection,
+  index: number,
+  field: K,
+  value: CvExperienceEntry[K],
+): CvExperienceSection {
+  return {
+    ...section,
+    entries: section.entries.map((entry, i) =>
+      i === index ? { ...entry, [field]: value } : entry,
+    ),
+  };
+}
+
+/** Immutably replaces one bullet string of one experience entry by index.
+ * Only the targeted entry's `bullets` array is replaced; every other entry
+ * and every other bullet keeps its original reference. */
+export function replaceExperienceBullet(
+  section: CvExperienceSection,
+  entryIndex: number,
+  bulletIndex: number,
+  value: string,
+): CvExperienceSection {
+  return {
+    ...section,
+    entries: section.entries.map((entry, i) =>
+      i === entryIndex
+        ? { ...entry, bullets: entry.bullets.map((b, bi) => (bi === bulletIndex ? value : b)) }
+        : entry,
+    ),
+  };
+}
+
+/** Immutably replaces one field of one education entry by index. */
+export function replaceEducationEntryField<K extends keyof CvEducationEntry>(
+  section: CvEducationSection,
+  index: number,
+  field: K,
+  value: CvEducationEntry[K],
+): CvEducationSection {
+  return {
+    ...section,
+    entries: section.entries.map((entry, i) =>
+      i === index ? { ...entry, [field]: value } : entry,
+    ),
+  };
+}
+
+/** Immutably replaces one skill group's label by index. */
+export function replaceSkillGroupLabel(
+  section: CvSkillsSection,
+  groupIndex: number,
+  label: string,
+): CvSkillsSection {
+  return {
+    ...section,
+    groups: section.groups.map((g, i) => (i === groupIndex ? { ...g, label } : g)),
+  };
+}
+
+/** Parses a comma-separated values editor string back into a trimmed,
+ * non-empty string array — the inverse of `group.values.join(', ')`. */
+export function parseSkillValues(text: string): string[] {
+  return text
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+/** Immutably replaces one skill group's values array by index. */
+export function replaceSkillGroupValues(
+  section: CvSkillsSection,
+  groupIndex: number,
+  values: string[],
+): CvSkillsSection {
+  return {
+    ...section,
+    groups: section.groups.map((g, i) => (i === groupIndex ? { ...g, values } : g)),
+  };
+}
+
+/** Immutably replaces one language entry's visible `language` value by
+ * index — the (currently non-rendered) `level` field is left untouched. */
+export function replaceLanguageValue(
+  section: CvLanguagesSection,
+  index: number,
+  language: string,
+): CvLanguagesSection {
+  return {
+    ...section,
+    items: section.items.map((item, i) => (i === index ? { ...item, language } : item)),
+  };
 }

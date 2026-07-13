@@ -282,20 +282,46 @@ export interface CvSectionStyle {
   fontSizePt?: number;
   colorHex?: string;
   fontWeight?: CvFontWeight;
+  /** Optional unitless body leading. Unset preserves the renderer's existing
+   * per-element line-height instead of imposing a document-wide baseline. */
+  lineHeight?: number;
   /** Per-section title override; unset fields inherit the document title style. */
   title?: CvTextStyle;
   /** Per-section title underline; unset inherits the document title border. */
   titleBorder?: CvBorderStyle;
 }
 
+/** Per-leaf (single-element) style override — the most specific layer of the
+ * CV style cascade (element → section → document → theme). Same optional
+ * shape as `CvSectionStyle`'s body fields, minus the section-only `title` /
+ * `titleBorder` nesting: an individual leaf (e.g. one bullet, one contact
+ * field) has no title of its own. */
+export interface CvElementStyle {
+  fontFamily?: string;
+  fontSizePt?: number;
+  fontWeight?: CvFontWeight;
+  colorHex?: string;
+  lineHeight?: number;
+}
+
 /** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
- * Deliberately small: font, size, one accent colour. Layout/order lives in
- * `CvTemplate` instead. Safe default: Calibri 11pt, dark-grey (#333333). */
+ * Deliberately small: font, size, an accent colour, and an optional body-text
+ * colour. Layout/order lives in `CvTemplate` instead. Safe default: Calibri
+ * 11pt, dark-grey (#333333). */
 export interface CvStyle {
   fontFamily: string;
   fontSizePt: number;
   accentColorHex: string;
   fontWeight: CvFontWeight;
+  /** Document-wide body-text colour — distinct from `accentColorHex` (which
+   * stays the accent/title/rule colour body text never reads, by the
+   * no-accent-leak rule). Additive/optional: absent means no forced body
+   * colour at the document layer, so un-overridden body text keeps
+   * inheriting its theme/dark colour. Neither `CV_STYLE_DEFAULT` nor
+   * `themeStyleSeed` sets this — a fresh or reset document never forces a
+   * body colour until the user explicitly picks one at the "Whole document"
+   * scope. */
+  bodyColorHex?: string;
   sectionStyles?: Partial<Record<CvSectionKey, CvSectionStyle>>;
   /** Document-wide defaults for section titles; unset fields inherit the body. */
   titleStyle?: CvTextStyle;
@@ -303,6 +329,11 @@ export interface CvStyle {
   titleBorder?: CvBorderStyle;
   /** Page geometry (size + margin preset); absent → A4 / normal. */
   page?: PageSettings;
+  /** Per-element (single-leaf) style overrides, keyed by a positional path
+   * (e.g. `summary.body`, `experience.0.bullet.1`) — most specific layer of
+   * the style cascade, resolved over `sectionStyles` then the document
+   * defaults above. Additive-only storage; absent → no per-leaf overrides. */
+  elementStyles?: Record<string, CvElementStyle>;
 }
 
 export const CV_STYLE_DEFAULT: CvStyle = {

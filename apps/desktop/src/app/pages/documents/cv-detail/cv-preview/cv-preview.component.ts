@@ -278,17 +278,31 @@ export class CvPreviewComponent {
     return s ? `${s.sectionKey}:${s.part}` : null;
   });
 
-  /** Whether the currently-selected section+part is in explicit text-EDIT mode
-   * (its inline editors mounted). Selecting a leaf no longer auto-mounts
-   * editors — that turned every field in the section into an input at once
-   * (the "all fields show lines" problem). The user now opts in per selection
-   * via the live-panel "Edit text" button (`startEditing`). A `linkedSignal`
-   * off `focusKey` so moving the selection to a different section+part always
+  /** Full selection identity including `elementPath` — the reset basis for
+   * `editing` so moving to a DIFFERENT leaf (even within the same section+part)
+   * drops back to view mode. */
+  private readonly selKey = computed<string | null>(() => {
+    const s = this.selection();
+    return s ? `${s.sectionKey}:${s.part}:${s.elementPath ?? ''}` : null;
+  });
+
+  /** Whether the selected LEAF is in explicit text-EDIT mode (its own inline
+   * editor mounted). Selecting a leaf no longer auto-mounts editors — that
+   * turned every field in the section into an input at once. The user opts in
+   * per selection via the live-panel "Edit text" button (`startEditing`). A
+   * `linkedSignal` off `selKey` so moving the selection to any other element
    * drops back to view mode. */
   readonly editing = linkedSignal<boolean>(() => {
-    this.focusKey();
+    this.selKey();
     return false;
   });
+
+  /** True when THIS specific leaf is the one being text-edited — the per-field
+   * gate that replaced the old section-level editor branch, so "Edit text"
+   * mounts only the selected element's editor, not every field in its section. */
+  isEditingLeaf(path: string): boolean {
+    return this.editing() && this.isElementSelected(path);
+  }
 
   /** Enter text-edit mode for the current selection (live-panel "Edit text").
    * A no-op with nothing selected. */

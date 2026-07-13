@@ -2,7 +2,6 @@
   <div class="cvlive__head">
     <div class="cvlive__head-row">
       <span class="cvlive__eyebrow">{{ t()('documents.cv_live_style_title') }}</span>
-      <span class="cvlive__caret" aria-hidden="true"></span>
     </div>
     <p class="cvlive__intro">{{ t()('documents.cv_live_style_hint') }}</p>
   </div>
@@ -80,7 +79,7 @@
       <div class="cvlive__sample">
         <span class="cvlive__sample-glyph" [ngStyle]="sampleStyle()">Ag</span>
         <span class="cvlive__sample-text" [ngStyle]="sampleStyle()">
-          {{ t()('documents.cv_live_style_sample') }}
+          {{ sampleText() || t()('documents.cv_live_style_sample') }}
         </span>
       </div>
 

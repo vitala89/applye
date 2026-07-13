@@ -55,6 +55,10 @@ export class CvLiveStylePanelComponent {
    * styling" footer button's enabled state. Computed by the parent
    * (`hasAnyCustomStyle`); the panel has no view of the whole style tree. */
   readonly hasCustomStyle = input<boolean>(false);
+  /** The plain text of the currently-selected element — shown in the "Ag"
+   * sample swatch so it previews the real content (not lorem). Resolved by the
+   * parent from the selection + sections; empty for pathless selections. */
+  readonly sampleText = input<string>('');
 
   /** Single scope-tagged change — the parent picks the write target from the
    * current `selection` (part / sectionKey / elementPath) plus `scope`. */
@@ -115,6 +119,8 @@ export class CvLiveStylePanelComponent {
           : { key: 'documents.cv_field_values', id: 'values' };
       case 'lang':
         return { key: 'documents.cv_field_language', id: 'language' };
+      case 'edu':
+        return { key: 'documents.cv_section_education', id: 'edu' + (seg[1] ?? '') };
       default:
         return { key: 'documents.cv_style_group_body', id: sel.sectionKey };
     }

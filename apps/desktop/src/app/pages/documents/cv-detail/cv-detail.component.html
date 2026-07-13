@@ -405,6 +405,7 @@
             <app-cv-live-style-panel
               [selection]="liveSelection()"
               [style]="style()"
+              [sampleText]="selectedLeafText()"
               [hasCustomStyle]="hasAnyCustomStyle()"
               (panelChange)="onStylePanelChange($event)"
               (resetAll)="resetAllStyles()"

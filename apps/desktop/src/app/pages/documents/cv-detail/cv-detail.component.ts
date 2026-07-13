@@ -65,6 +65,7 @@ import { CvExperienceEditorComponent } from './section-editors/cv-experience-edi
 import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
 import {
   cvFieldAtsNoteKeys,
+  cvLeafText,
   type CvPreviewSelection,
   type CvStylePanelChange,
   mergeRegeneratedSection,
@@ -270,6 +271,16 @@ export class CvDetailComponent {
    * contextual `CvLiveStylePanelComponent` beside the paper. Null until the
    * first selection; cleared is fine (panel shows its empty state). */
   readonly liveSelection = signal<CvPreviewSelection | null>(null);
+
+  /** Plain text of the currently-selected leaf, fed to the live-style panel's
+   * "Ag" sample so it previews the real selected content. A title's text is its
+   * localized section label; body leaves resolve through `cvLeafText`. */
+  readonly selectedLeafText = computed<string>(() => {
+    const sel = this.liveSelection();
+    if (!sel) return '';
+    if (sel.part === 'title') return this.t()(sectionLabelKey(sel.sectionKey));
+    return cvLeafText(this.sections(), sel);
+  });
 
   /** Per-section collapse state for the content-section accordion — session
    * only (not persisted); every section starts expanded (an empty set means

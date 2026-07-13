@@ -16,6 +16,7 @@ import {
   CvSkillGroup,
   CvSkillsSection,
   CvStyle,
+  CvSummarySection,
   CvTemplate,
   CoverLetterBlockKey,
   CoverLetterStyle,
@@ -81,6 +82,49 @@ export interface CvStylePanelChange {
  * `leafPath('lang', 0, 'language')` → `'lang.0.language'`. */
 export function leafPath(kind: string, ...parts: (string | number)[]): string {
   return [kind, ...parts].join('.');
+}
+
+/** Plain text of the leaf a `CvPreviewSelection.elementPath` targets — the
+ * inverse of `leafPath`, used to preview the SELECTED content in the live-style
+ * panel's sample swatch. Returns '' for a pathless (whole-part) selection or a
+ * title (the parent resolves a title's text from its section label instead). */
+export function cvLeafText(sections: CvSection[], sel: CvPreviewSelection | null): string {
+  if (!sel || sel.part === 'title' || !sel.elementPath) return '';
+  const section = sections.find((s) => s.key === sel.sectionKey);
+  if (!section) return '';
+  const seg = sel.elementPath.split('.');
+  switch (seg[0]) {
+    case 'summary':
+      return (section as CvSummarySection).text ?? '';
+    case 'pd': {
+      const pd = section as CvPersonalDetailsSection;
+      return seg[1] === 'fullName'
+        ? (pd.fullName ?? '')
+        : seg[1] === 'title'
+          ? (pd.title ?? '')
+          : '';
+    }
+    case 'exp': {
+      const entry = (section as CvExperienceSection).entries[Number(seg[1])];
+      if (!entry) return '';
+      if (seg[2] === 'bullet') return entry.bullets?.[Number(seg[3])] ?? '';
+      return (entry[seg[2] as keyof CvExperienceEntry] as string | undefined) ?? '';
+    }
+    case 'skills': {
+      const group = (section as CvSkillsSection).groups[Number(seg[1])];
+      if (!group) return '';
+      return seg[2] === 'label' ? group.label : group.values.join(', ');
+    }
+    case 'lang':
+      return (section as CvLanguagesSection).items[Number(seg[1])]?.language ?? '';
+    case 'edu': {
+      const entry = (section as CvEducationSection).entries[Number(seg[1])];
+      if (!entry) return '';
+      return [entry.degree, entry.institution].filter(Boolean).join(', ');
+    }
+    default:
+      return '';
+  }
 }
 
 /** Fallback order when a template has no `sectionsJson` (should not happen

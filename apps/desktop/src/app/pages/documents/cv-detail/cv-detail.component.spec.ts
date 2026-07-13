@@ -420,7 +420,7 @@ describe('CvDetailComponent per-section style', () => {
     // then type + blur to commit an inline edit through the real child tree
     // (CvPreviewComponent → sectionChange → replaceSection), not a mock.
     component.previewMode.set(true);
-    component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -836,7 +836,7 @@ describe('CvDetailComponent export/print hardening', () => {
    * it, and type an uncommitted draft. Returns the live editor element. */
   function startInlineDraft(text: string): HTMLTextAreaElement {
     component.previewMode.set(true);
-    component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
     fixture.detectChanges();
     // Selection alone no longer mounts editors — enter text-edit mode via the
     // panel's "Edit text" control (routed to CvPreviewComponent.startEditing).

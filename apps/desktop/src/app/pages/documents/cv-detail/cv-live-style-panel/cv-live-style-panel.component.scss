@@ -21,6 +21,11 @@
   text-transform: uppercase;
   color: var(--text-tertiary);
 }
+.cvlive__scope-select {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
 .cvlive__fields {
   display: flex;
   flex-direction: column;

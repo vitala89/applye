@@ -67,11 +67,15 @@ import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-
 import {
   cvFieldAtsNoteKeys,
   type CvPreviewSelection,
+  type CvStylePanelChange,
   mergeRegeneratedSection,
   normalizeCvContent,
   parseCvSkillResponse,
+  patchCvDocumentBody,
+  patchCvElementStyle,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
+  resetCvElementStyle,
   resetCvSectionStyle,
   resolvePageSettings,
   sectionLabelKey,
@@ -314,6 +318,74 @@ export class CvDetailComponent {
     this.style.set(resetCvSectionStyle(this.style(), key));
     if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  /** Immutably commits a fully-built next style and debounces the ATS safety
+   * re-check — shared by the element/document-scope panel paths that don't go
+   * through an existing single-target setter. */
+  private applyStyle(next: CvStyle): void {
+    this.style.set(next);
+    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
+    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+  }
+
+  /** Routes a scope-tagged panel change to the correct write target for the
+   * current live selection (see the Phase D.2 mapping table): body →
+   * element/section/document; title → this-title (section) / all-titles
+   * (document). No-ops when there is no active selection. */
+  onStylePanelChange(change: CvStylePanelChange): void {
+    const sel = this.liveSelection();
+    if (!sel) return;
+    if (sel.part === 'title') this.applyTitleScopeChange(sel.sectionKey, change);
+    else this.applyBodyScopeChange(sel, change);
+  }
+
+  private applyTitleScopeChange(key: CvSectionKey, change: CvStylePanelChange): void {
+    const allTitles = change.scope === 'document';
+    if (change.reset) {
+      // Clear only the title override for this scope; body/border untouched.
+      if (allTitles) this.updateStyle({ titleStyle: undefined });
+      else
+        this.setSectionTitleStyle(key, {
+          fontFamily: undefined,
+          fontSizePt: undefined,
+          fontWeight: undefined,
+          colorHex: undefined,
+        });
+      return;
+    }
+    if (change.titleBorder !== undefined) {
+      const border = change.titleBorder ?? undefined;
+      if (allTitles) this.updateStyle({ titleBorder: border });
+      else this.setSectionStyle(key, { titleBorder: border });
+      return;
+    }
+    if (change.patch) {
+      if (allTitles) this.updateTitleStyle(change.patch);
+      else this.setSectionTitleStyle(key, change.patch);
+    }
+  }
+
+  private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
+    const key = sel.sectionKey;
+    if (change.scope === 'section') {
+      if (change.reset) this.resetSectionStyle(key);
+      else this.setSectionStyle(key, change.patch ?? {});
+      return;
+    }
+    if (change.scope === 'element') {
+      const path = sel.elementPath;
+      if (!path) return;
+      this.applyStyle(
+        change.reset
+          ? resetCvElementStyle(this.style(), path)
+          : patchCvElementStyle(this.style(), path, change.patch ?? {}),
+      );
+      return;
+    }
+    // document scope: reset is deferred to Task 5's global "reset all styling".
+    if (change.reset) return;
+    this.applyStyle(patchCvDocumentBody(this.style(), change.patch ?? {}));
   }
 
   /** True when the style differs from the active theme's baseline in any way —

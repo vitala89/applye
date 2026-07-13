@@ -1,25 +1,39 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type {
   CvBorderStyle,
+  CvElementStyle,
   CvFontWeight,
-  CvSectionKey,
-  CvSectionStyle,
   CvStyle,
   CvTextStyle,
 } from '@applye/core';
 import { CV_ATS_SAFE_FONTS } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import type { CvPreviewSelection } from '../../cv-content.util';
+import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../../cv-content.util';
 
 /**
  * Contextual live-style panel shown beside the paper in Preview mode. Receives
- * the selected section/part and the current document style, and emits semantic
- * body/title patches (or a whole-section reset). It never owns persistence or
- * the override-cleaning merge — the parent applies each patch through the
- * Task 1 reducers (`patchCvSectionStyle` / `resetCvSectionStyle`) and keeps its
- * own safety-check debounce. Line height is offered for the body scope only;
- * the title scope uses `CvTextStyle` plus the section title border.
+ * the selected section/part/element and the current document style, exposes a
+ * SCOPE selector, and emits a single scope-tagged `CvStylePanelChange`. It
+ * never owns persistence or the override-cleaning merge — the parent maps each
+ * `(part, scope)` to the correct reducer/target (`patchCvElementStyle` /
+ * `patchCvSectionStyle` / `patchCvDocumentBody` / `setSectionTitleStyle` /
+ * `updateTitleStyle`) and keeps its own safety-check debounce.
+ *
+ * A body selection offers three scopes (element / section / document, default
+ * element); a title selection offers two (this title = `section`, all titles =
+ * `document`, default `section`). Line height is body-only; the title scope
+ * uses `CvTextStyle` plus the section-title border. Each control reflects the
+ * current value for the ACTIVE scope so editing is predictable, and the colour
+ * control shows a set value rather than forcing the accent (no-accent-leak).
  */
 @Component({
   selector: 'app-cv-live-style-panel',
@@ -36,13 +50,9 @@ export class CvLiveStylePanelComponent {
   readonly selection = input<CvPreviewSelection | null>(null);
   readonly style = input.required<CvStyle>();
 
-  /** Body-scope (section-level) patch — also carries the title border, which
-   * lives on `CvSectionStyle`, not `CvTextStyle`. */
-  readonly styleChange = output<{ key: CvSectionKey; patch: Partial<CvSectionStyle> }>();
-  /** Title-scope patch (font/size/weight/colour) — deep-merged by the parent. */
-  readonly titleStyleChange = output<{ key: CvSectionKey; patch: Partial<CvTextStyle> }>();
-  /** Delete the whole selected-section override (body, title, and border). */
-  readonly resetSection = output<CvSectionKey>();
+  /** Single scope-tagged change — the parent picks the write target from the
+   * current `selection` (part / sectionKey / elementPath) plus `scope`. */
+  readonly panelChange = output<CvStylePanelChange>();
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
 
@@ -55,57 +65,111 @@ export class CvLiveStylePanelComponent {
     { value: 1.6, labelKey: 'documents.cv_style_line_height_relaxed' },
   ];
 
-  /** The selected section's current override, if any — feeds the control
-   * models so they reflect what's already applied. */
-  readonly override = computed<CvSectionStyle | undefined>(() => {
-    const sel = this.selection();
-    return sel ? this.style().sectionStyles?.[sel.sectionKey] : undefined;
-  });
+  /** Active scope. Resets to the default (`element` for a body leaf, `section`
+   * = this title for a title) whenever the selection changes; a manual switch
+   * survives subsequent edits (which mutate `style`, not `selection`). */
+  readonly scope = linkedSignal<CvStyleScope>(() =>
+    this.selection()?.part === 'title' ? 'section' : 'element',
+  );
 
-  private emitStyle(patch: Partial<CvSectionStyle>): void {
-    const sel = this.selection();
-    if (sel) this.styleChange.emit({ key: sel.sectionKey, patch });
+  setScope(value: CvStyleScope): void {
+    this.scope.set(value);
   }
 
-  private emitTitle(patch: Partial<CvTextStyle>): void {
+  /** Raw body override for the active scope — feeds the control models so each
+   * shows the value for the target the edit will land on (Inherit when unset;
+   * document scope shows the always-present root values). */
+  readonly activeBodyOverride = computed<Partial<CvElementStyle>>(() => {
     const sel = this.selection();
-    if (sel) this.titleStyleChange.emit({ key: sel.sectionKey, patch });
+    if (!sel) return {};
+    const s = this.style();
+    switch (this.scope()) {
+      case 'section': {
+        const o = s.sectionStyles?.[sel.sectionKey] ?? {};
+        return {
+          fontFamily: o.fontFamily,
+          fontSizePt: o.fontSizePt,
+          fontWeight: o.fontWeight,
+          colorHex: o.colorHex,
+          lineHeight: o.lineHeight,
+        };
+      }
+      case 'document':
+        return {
+          fontFamily: s.fontFamily,
+          fontSizePt: s.fontSizePt,
+          fontWeight: s.fontWeight,
+          colorHex: s.accentColorHex,
+        };
+      case 'element':
+      default:
+        return (sel.elementPath ? s.elementStyles?.[sel.elementPath] : undefined) ?? {};
+    }
+  });
+
+  /** Raw title text override for the active title scope (this title vs. all
+   * titles) — feeds the title control models. */
+  readonly activeTitleOverride = computed<CvTextStyle>(() => {
+    const sel = this.selection();
+    if (!sel) return {};
+    const s = this.style();
+    return this.scope() === 'document'
+      ? (s.titleStyle ?? {})
+      : (s.sectionStyles?.[sel.sectionKey]?.title ?? {});
+  });
+
+  /** Raw title-underline value for the active title scope ('' = Inherit). */
+  readonly activeTitleBorder = computed<string>(() => {
+    const sel = this.selection();
+    if (!sel) return '';
+    const s = this.style();
+    return this.scope() === 'document'
+      ? (s.titleBorder ?? '')
+      : (s.sectionStyles?.[sel.sectionKey]?.titleBorder ?? '');
+  });
+
+  private emit(patch: Partial<CvElementStyle>): void {
+    if (this.selection()) this.panelChange.emit({ scope: this.scope(), patch });
   }
 
   setBodyFont(value: string): void {
-    this.emitStyle({ fontFamily: value || undefined });
+    this.emit({ fontFamily: value || undefined });
   }
   setBodySize(value: string | number | null): void {
-    this.emitStyle({ fontSizePt: value ? +value : undefined });
+    this.emit({ fontSizePt: value ? +value : undefined });
   }
   setBodyWeight(value: CvFontWeight | null): void {
-    this.emitStyle({ fontWeight: value ?? undefined });
+    this.emit({ fontWeight: value ?? undefined });
   }
   setBodyColor(value: string): void {
-    this.emitStyle({ colorHex: value });
+    this.emit({ colorHex: value });
   }
   setLineHeight(value: number | null): void {
-    this.emitStyle({ lineHeight: value ?? undefined });
+    this.emit({ lineHeight: value ?? undefined });
   }
 
   setTitleFont(value: string): void {
-    this.emitTitle({ fontFamily: value || undefined });
+    this.emit({ fontFamily: value || undefined });
   }
   setTitleSize(value: string | number | null): void {
-    this.emitTitle({ fontSizePt: value ? +value : undefined });
+    this.emit({ fontSizePt: value ? +value : undefined });
   }
   setTitleWeight(value: CvFontWeight | null): void {
-    this.emitTitle({ fontWeight: value ?? undefined });
+    this.emit({ fontWeight: value ?? undefined });
   }
   setTitleColor(value: string): void {
-    this.emitTitle({ colorHex: value });
+    this.emit({ colorHex: value });
   }
   setTitleBorder(value: string): void {
-    this.emitStyle({ titleBorder: (value || undefined) as CvBorderStyle | undefined });
+    if (this.selection()) {
+      this.panelChange.emit({
+        scope: this.scope(),
+        titleBorder: (value || null) as CvBorderStyle | null,
+      });
+    }
   }
 
   reset(): void {
-    const sel = this.selection();
-    if (sel) this.resetSection.emit(sel.sectionKey);
+    if (this.selection()) this.panelChange.emit({ scope: this.scope(), reset: true });
   }
 }

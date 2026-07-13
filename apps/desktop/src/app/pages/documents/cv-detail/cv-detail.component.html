@@ -579,9 +579,7 @@
             <app-cv-live-style-panel
               [selection]="liveSelection()"
               [style]="style()"
-              (styleChange)="setSectionStyle($event.key, $event.patch)"
-              (titleStyleChange)="setSectionTitleStyle($event.key, $event.patch)"
-              (resetSection)="resetSectionStyle($event)"
+              (panelChange)="onStylePanelChange($event)"
             />
           </aside>
         </div>

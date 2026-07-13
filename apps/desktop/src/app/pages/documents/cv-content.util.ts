@@ -45,6 +45,27 @@ export interface CvPreviewSelection {
   elementPath?: string;
 }
 
+/** The three body styling scopes offered by the live panel, narrowing from
+ * most specific to least. For a title selection only two are used:
+ * `section` = "this title" (per-section title override), `document` = "all
+ * titles" (the document-wide `titleStyle`). */
+export type CvStyleScope = 'element' | 'section' | 'document';
+
+/** A scope-tagged change emitted by `CvLiveStylePanelComponent`. The parent
+ * maps `(selection.part, scope)` to the correct write target/reducer (see the
+ * plan's mapping table). `patch` carries the cleaned body/title font fields
+ * (`colorHex` only when the user actually picked a colour — the no-accent-leak
+ * rule); `titleBorder` (title selections only) carries the section-title
+ * underline, with `null` meaning inherit/clear; `reset` requests a per-scope
+ * reset. Exactly one of `patch` / `titleBorder` / `reset` is meaningful per
+ * emission. */
+export interface CvStylePanelChange {
+  scope: CvStyleScope;
+  patch?: Partial<CvElementStyle>;
+  titleBorder?: CvBorderStyle | null;
+  reset?: boolean;
+}
+
 /** Builds the canonical leaf-path string — the single source of truth for a
  * leaf's identity, consumed at every place that currently spells the same
  * path out as a raw template literal: `leafDraft`/`onLeafInput`/

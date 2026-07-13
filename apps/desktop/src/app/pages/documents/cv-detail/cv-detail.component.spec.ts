@@ -85,6 +85,95 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.style().sectionStyles?.skills).toEqual({ colorHex: '#123456' });
   });
 
+  describe('onStylePanelChange scope mapping', () => {
+    it('body element scope writes elementStyles[path]', () => {
+      component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+      component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });
+      expect(component.style().elementStyles?.['summary']).toEqual({ fontWeight: 700 });
+      expect(component.style().sectionStyles?.summary).toBeUndefined();
+    });
+
+    it('body section scope writes sectionStyles[key]', () => {
+      component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 13 } });
+      expect(component.style().sectionStyles?.summary).toEqual({ fontSizePt: 13 });
+      expect(component.style().elementStyles).toBeUndefined();
+    });
+
+    it('body document scope writes the CvStyle root body fields', () => {
+      component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+      component.onStylePanelChange({
+        scope: 'document',
+        patch: { fontFamily: 'Arial', colorHex: '#101010' },
+      });
+      expect(component.style().fontFamily).toBe('Arial');
+      expect(component.style().accentColorHex).toBe('#101010');
+      expect(component.style().sectionStyles).toBeUndefined();
+      expect(component.style().elementStyles).toBeUndefined();
+    });
+
+    it('title section scope writes sectionStyles[key].title', () => {
+      component.liveSelection.set({ sectionKey: 'skills', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', patch: { fontFamily: 'Georgia' } });
+      expect(component.style().sectionStyles?.skills?.title).toEqual({ fontFamily: 'Georgia' });
+      expect(component.style().titleStyle).toBeUndefined();
+    });
+
+    it('title document scope writes the document-wide titleStyle', () => {
+      component.liveSelection.set({ sectionKey: 'skills', part: 'title' });
+      component.onStylePanelChange({ scope: 'document', patch: { fontFamily: 'Georgia' } });
+      expect(component.style().titleStyle?.fontFamily).toBe('Georgia');
+      expect(component.style().sectionStyles?.skills).toBeUndefined();
+    });
+
+    it('title border routes to the section (this title) or document (all titles)', () => {
+      component.liveSelection.set({ sectionKey: 'skills', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+      expect(component.style().sectionStyles?.skills?.titleBorder).toBe('dotted');
+
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+      expect(component.style().titleBorder).toBe('dashed');
+    });
+
+    it('switching scope re-targets subsequent writes for the same selection', () => {
+      component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+      component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });
+      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 13 } });
+      expect(component.style().elementStyles?.['summary']).toEqual({ fontWeight: 700 });
+      expect(component.style().sectionStyles?.summary).toEqual({ fontSizePt: 13 });
+    });
+
+    it('body element reset removes only that element override', () => {
+      component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+      component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });
+      component.onStylePanelChange({ scope: 'element', reset: true });
+      expect(component.style().elementStyles).toBeUndefined();
+    });
+
+    it('body document reset is a no-op (deferred to reset-all)', () => {
+      component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+      const before = component.style();
+      component.onStylePanelChange({ scope: 'document', reset: true });
+      expect(component.style()).toBe(before);
+    });
+
+    it('title this-title reset clears the section title but keeps body overrides', () => {
+      component.liveSelection.set({ sectionKey: 'skills', part: 'title' });
+      component.setSectionStyle('skills', { fontFamily: 'Arial' });
+      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 20 } });
+      component.onStylePanelChange({ scope: 'section', reset: true });
+      expect(component.style().sectionStyles?.skills?.title).toBeUndefined();
+      expect(component.style().sectionStyles?.skills?.fontFamily).toBe('Arial');
+    });
+
+    it('title all-titles reset clears the document titleStyle', () => {
+      component.liveSelection.set({ sectionKey: 'skills', part: 'title' });
+      component.onStylePanelChange({ scope: 'document', patch: { fontFamily: 'Georgia' } });
+      component.onStylePanelChange({ scope: 'document', reset: true });
+      expect(component.style().titleStyle).toBeUndefined();
+    });
+  });
+
   it('records the live preview selection for the contextual panel', () => {
     expect(component.liveSelection()).toBeNull();
     component.liveSelection.set({ sectionKey: 'summary', part: 'title' });

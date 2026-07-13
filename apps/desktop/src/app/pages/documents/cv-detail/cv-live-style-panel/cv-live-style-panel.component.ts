@@ -49,10 +49,21 @@ export class CvLiveStylePanelComponent {
 
   readonly selection = input<CvPreviewSelection | null>(null);
   readonly style = input.required<CvStyle>();
+  /** Whether the document has ANY style override (element/section/title/
+   * document) relative to the active theme's baseline — drives the "reset all
+   * styling" footer button's enabled state. Computed by the parent
+   * (`hasAnyCustomStyle`); the panel has no view of the whole style tree. */
+  readonly hasCustomStyle = input<boolean>(false);
 
   /** Single scope-tagged change — the parent picks the write target from the
    * current `selection` (part / sectionKey / elementPath) plus `scope`. */
   readonly panelChange = output<CvStylePanelChange>();
+  /** Reset EVERY style override (element + section + title + document) back
+   * to the active theme's baseline — the "reset all styling" action, relocated
+   * here from Edit mode (Task 5). The parent wires this straight to
+   * `resetAllStyles()`; unlike `panelChange`, it doesn't depend on a live
+   * selection. */
+  readonly resetAll = output<void>();
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
 

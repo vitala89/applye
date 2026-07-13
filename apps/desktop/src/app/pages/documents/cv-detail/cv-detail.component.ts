@@ -45,7 +45,6 @@ import type {
   StyleNote,
 } from '@applye/core';
 import {
-  CV_ATS_SAFE_FONTS,
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
   getBuiltinTheme,
@@ -192,7 +191,6 @@ export class CvDetailComponent {
   readonly saveTemplateName = signal('');
   readonly savingTemplate = signal(false);
 
-  protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
@@ -390,10 +388,12 @@ export class CvDetailComponent {
 
   /** True when the style differs from the active theme's baseline in any way —
    * a document-wide field (body font/size/weight/colour, title style, title
-   * line, page geometry) OR a per-section override. Drives the "Reset styles"
-   * button's enabled state and the "Custom" badge, so both react to global
-   * changes, not only per-section ones. A pristine doc on a theme is NOT
-   * custom (badge shows the theme name instead). */
+   * line, page geometry), a per-section override, or a per-element override.
+   * Drives the live-style panel's "reset all styling" enabled state (Task 5 —
+   * the Edit-mode "Custom" badge that used to read this was removed along with
+   * the document-wide style groups), so it reacts to global, per-section, AND
+   * per-element changes alike. A pristine doc on a theme is NOT custom (a
+   * fresh Aurora doc doesn't count as "customized"). */
   readonly hasAnyCustomStyle = computed(() => {
     const s = this.style();
     const d = this.themeBaseStyle();
@@ -406,6 +406,9 @@ export class CvDetailComponent {
           v && typeof v === 'object' ? nonEmpty(v as Record<string, unknown>) : v != null,
         ),
     );
+    const elementCustom = Object.values(s.elementStyles ?? {}).some((o) =>
+      nonEmpty(o as Record<string, unknown> | undefined),
+    );
     return (
       s.fontFamily !== d.fontFamily ||
       s.fontSizePt !== d.fontSizePt ||
@@ -413,7 +416,8 @@ export class CvDetailComponent {
       s.accentColorHex !== d.accentColorHex ||
       !!s.titleBorder ||
       nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
-      sectionCustom
+      sectionCustom ||
+      elementCustom
     );
   });
 

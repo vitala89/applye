@@ -243,6 +243,20 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.hasAnyCustomStyle()).toBe(true); // per-section still works
   });
 
+  it('hasAnyCustomStyle is true when only an elementStyles override exists, and resetAllStyles clears it', () => {
+    expect(component.hasAnyCustomStyle()).toBe(false); // pristine default
+
+    component.style.set({
+      ...component.style(),
+      elementStyles: { summary: { fontFamily: 'Georgia' } },
+    });
+    expect(component.hasAnyCustomStyle()).toBe(true); // element-only override
+
+    component.resetAllStyles();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    expect(component.style().elementStyles).toBeUndefined();
+  });
+
   it('is not "custom" on a pristine non-default theme, and resets to that theme', () => {
     // Switch to Aurora: the four base tokens are reseeded, so a pristine
     // Aurora doc is NOT custom — the badge shows the theme name, not "Custom".
@@ -513,6 +527,32 @@ describe('CvDetailComponent personal-details top card visibility', () => {
     fixture.detectChanges();
   });
 
+  it('Edit mode no longer renders the body/title style groups; page group + region/photo/include remain', () => {
+    // Task 5: document-wide BODY TEXT and SECTION TITLES styling moved to the
+    // live preview panel entirely — only the theme selector and the PAGE
+    // group (size + margins) stay in the collapsible Style card.
+    const root = fixture.nativeElement as HTMLElement;
+    const groupHeaders = Array.from(root.querySelectorAll('.docedit-style-section__header')).map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(groupHeaders).toEqual([
+      component['t']()('documents.cv_theme_label'),
+      component['t']()('documents.cv_style_group_page'),
+    ]);
+    // The removed groups were the only places rendering a font/weight/colour
+    // row — `.docedit-color-row` is a reliable fingerprint for them.
+    expect(root.querySelectorAll('.docedit-color-row').length).toBe(0);
+    // The "Custom" badge and Edit-mode "reset all" button are gone too — the
+    // reset affordance relocated to the live-style panel (Preview mode).
+    expect(root.querySelector('.cvdetail__custom-badge')).toBeNull();
+    expect(root.querySelector('.docedit-reset')).toBeNull();
+    // The page group (size + margins) is still there.
+    expect(root.querySelector('.docedit-margin-grid')).toBeTruthy();
+    // Region select + photo/birthdate/marital chips (outside the Style card)
+    // are untouched.
+    expect(root.querySelectorAll('.docedit-chip-row .docedit-chip').length).toBe(3);
+  });
+
   it('keeps the birthdate/marital toggle chips and ATS notes visible when personal_details is collapsed', () => {
     // Regression test: before a refactor these lived in a fixed top card,
     // always visible regardless of section collapse state. A later change
@@ -584,6 +624,111 @@ describe('CvDetailComponent personal-details top card visibility', () => {
     const upsert = dbStub.documentLibraryUpsert as jest.Mock;
     const savedStyle = JSON.parse(upsert.mock.calls[0][0].styleJson);
     expect(savedStyle.sectionStyles.summary.lineHeight).toBe(1.6);
+  });
+});
+
+describe('CvDetailComponent style save/load round trip (element + section + document overrides)', () => {
+  // Task 5: with the document-wide BODY TEXT / SECTION TITLES groups removed
+  // from Edit mode, every remaining write path (live-panel element/section/
+  // document-body/title edits, plus resetAllStyles) still has to survive a
+  // save → reload cycle through `styleJson`. This proves the full override
+  // tree — elementStyles, sectionStyles, titleStyle, and the document body
+  // root fields — all round-trip untouched.
+  let component: CvDetailComponent;
+  let fixture: ComponentFixture<CvDetailComponent>;
+  let dbStub: Partial<DbService>;
+
+  const richStyle = {
+    ...CV_STYLE_DEFAULT,
+    fontFamily: 'Georgia',
+    elementStyles: { summary: { fontFamily: 'Arial', colorHex: '#112233' } },
+    sectionStyles: { skills: { fontWeight: 700 } },
+    titleStyle: { fontFamily: 'Verdana' },
+    titleBorder: 'dashed',
+  };
+
+  beforeEach(async () => {
+    const docItem = {
+      id: 7,
+      docType: 'cv' as const,
+      source: 'generated' as const,
+      isDefault: false,
+      regionTag: 'generic',
+      styleJson: JSON.stringify(richStyle),
+      contentJson: JSON.stringify({
+        sections: [{ key: 'personal_details', order: 0, visible: true, fullName: 'Jane Doe' }],
+      }),
+    };
+    dbStub = {
+      documentLibraryGet: jest.fn().mockResolvedValue(docItem),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+      documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [CvDetailComponent],
+      providers: [
+        { provide: DbService, useValue: dbStub },
+        { provide: AiService, useValue: {} },
+        TranslateService,
+        ToastService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '7' }, queryParamMap: { get: () => null } },
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(CvDetailComponent);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  it('restores elementStyles, sectionStyles, titleStyle, and document-body overrides on load', () => {
+    expect(component.style().elementStyles?.['summary']).toEqual({
+      fontFamily: 'Arial',
+      colorHex: '#112233',
+    });
+    expect(component.style().sectionStyles?.skills).toEqual({ fontWeight: 700 });
+    expect(component.style().titleStyle).toEqual({ fontFamily: 'Verdana' });
+    expect(component.style().titleBorder).toBe('dashed');
+    expect(component.style().fontFamily).toBe('Georgia');
+  });
+
+  it('saves the full override tree back through styleJson unchanged', async () => {
+    await component.save();
+
+    const upsert = dbStub.documentLibraryUpsert as jest.Mock;
+    const saved = JSON.parse(upsert.mock.calls[0][0].styleJson);
+    expect(saved.elementStyles).toEqual({ summary: { fontFamily: 'Arial', colorHex: '#112233' } });
+    expect(saved.sectionStyles).toEqual({ skills: { fontWeight: 700 } });
+    expect(saved.titleStyle).toEqual({ fontFamily: 'Verdana' });
+    expect(saved.titleBorder).toBe('dashed');
+    expect(saved.fontFamily).toBe('Georgia');
+  });
+
+  it('resetAllStyles (relocated to the live panel) clears every override before a subsequent save', async () => {
+    expect(component.hasAnyCustomStyle()).toBe(true);
+
+    component.resetAllStyles();
+    expect(component.hasAnyCustomStyle()).toBe(false);
+    expect(component.style().elementStyles).toBeUndefined();
+    expect(component.style().sectionStyles).toBeUndefined();
+    expect(component.style().titleStyle).toBeUndefined();
+    expect(component.style().titleBorder).toBeUndefined();
+
+    await component.save();
+    const upsert = dbStub.documentLibraryUpsert as jest.Mock;
+    const saved = JSON.parse(upsert.mock.calls[0][0].styleJson);
+    expect(saved.elementStyles).toBeUndefined();
+    expect(saved.sectionStyles).toBeUndefined();
+    expect(saved.titleStyle).toBeUndefined();
+    expect(saved.titleBorder).toBeUndefined();
   });
 });
 

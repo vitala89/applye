@@ -201,6 +201,43 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('renders a reset-all-styling control, disabled when hasCustomStyle is false', () => {
+    fixture.detectChanges();
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.cvlive__footer button');
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBe(true);
+
+    fixture.componentRef.setInput('hasCustomStyle', true);
+    fixture.detectChanges();
+    expect(btn.disabled).toBe(false);
+  });
+
+  it('reset-all-styling control is present with no active selection (empty state)', () => {
+    // Unlike the per-scope reset, resetAll must be reachable even before the
+    // user has clicked anything in the preview.
+    fixture.componentRef.setInput('selection', null);
+    fixture.componentRef.setInput('hasCustomStyle', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.cvlive__empty')).toBeTruthy();
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.cvlive__footer button');
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBe(false);
+  });
+
+  it('clicking reset-all emits resetAll (not panelChange)', () => {
+    fixture.componentRef.setInput('hasCustomStyle', true);
+    fixture.detectChanges();
+    const resetAllEvents: void[] = [];
+    const panelChangeEvents: CvStylePanelChange[] = [];
+    component.resetAll.subscribe(() => resetAllEvents.push(undefined));
+    component.panelChange.subscribe((e) => panelChangeEvents.push(e));
+
+    (fixture.nativeElement.querySelector('.cvlive__footer button') as HTMLButtonElement).click();
+
+    expect(resetAllEvents.length).toBe(1);
+    expect(panelChangeEvents.length).toBe(0);
+  });
+
   it('hides the reset control for the body document scope (deferred to reset-all)', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',

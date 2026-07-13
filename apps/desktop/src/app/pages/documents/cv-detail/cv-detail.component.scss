@@ -234,19 +234,6 @@
   background: var(--accent);
 }
 
-.cvdetail__custom-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--accent-tint, var(--surface-hover));
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 .cvdetail__pull-btn {
   align-self: flex-start;
   margin-bottom: var(--space-3);

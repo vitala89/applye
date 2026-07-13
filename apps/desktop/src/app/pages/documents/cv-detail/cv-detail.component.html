@@ -131,13 +131,6 @@
                 (click)="toggleStyleOpen()"
               >
                 <span class="docedit-card__title">{{ t()('documents.cv_section_style') }}</span>
-                <span class="cvdetail__custom-badge">
-                  @if (hasAnyCustomStyle()) {
-                    {{ t()('documents.cv_style_customized') }}
-                  } @else {
-                    {{ activeTheme().name }}
-                  }
-                </span>
                 <lucide-icon
                   [img]="icons.chevron"
                   [size]="16"
@@ -145,16 +138,6 @@
                   class="docedit-chevron"
                   [class.docedit-chevron--closed]="!styleOpen()"
                 />
-              </button>
-              <span class="cvdetail__spacer"></span>
-              <button
-                type="button"
-                class="docedit-reset"
-                [disabled]="!hasAnyCustomStyle()"
-                (click)="resetAllStyles()"
-              >
-                <lucide-icon [img]="icons.regenerate" [size]="12" aria-hidden="true" />
-                {{ t()('documents.cv_style_reset_all') }}
               </button>
             </div>
 
@@ -174,163 +157,6 @@
                         <option value="2">{{ t()('documents.cv_theme_aurora') }}</option>
                       </select>
                     </label>
-                  </div>
-                </div>
-
-                <div class="docedit-style-section">
-                  <span class="docedit-style-section__header">{{
-                    t()('documents.cv_style_group_body')
-                  }}</span>
-                  <div class="docedit-style-grid">
-                    <div class="docedit-field">
-                      <span
-                        class="docedit-field__label"
-                        [attr.title]="t()('documents.cv_style_hint_font')"
-                        >{{ t()('documents.cv_style_font') }}</span
-                      >
-                      <select
-                        [ngModel]="style().fontFamily"
-                        (ngModelChange)="updateStyle({ fontFamily: $event })"
-                      >
-                        @for (font of atsSafeFonts; track font) {
-                          <option [value]="font">{{ font }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{ t()('documents.cv_style_size') }}</span>
-                      <input
-                        type="number"
-                        min="6"
-                        max="24"
-                        step="0.5"
-                        [ngModel]="style().fontSizePt"
-                        (ngModelChange)="updateStyle({ fontSizePt: +$event })"
-                      />
-                    </div>
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{
-                        t()('documents.cv_style_weight')
-                      }}</span>
-                      <select
-                        [ngModel]="style().fontWeight"
-                        (ngModelChange)="updateStyle({ fontWeight: $any(+$event) })"
-                      >
-                        <option [ngValue]="300">
-                          {{ t()('documents.cv_style_weight_300') }}
-                        </option>
-                        <option [ngValue]="400">
-                          {{ t()('documents.cv_style_weight_400') }}
-                        </option>
-                        <option [ngValue]="600">
-                          {{ t()('documents.cv_style_weight_600') }}
-                        </option>
-                        <option [ngValue]="700">
-                          {{ t()('documents.cv_style_weight_700') }}
-                        </option>
-                      </select>
-                    </div>
-                    <div class="docedit-field">
-                      <span
-                        class="docedit-field__label"
-                        [attr.title]="t()('documents.cv_style_hint_color')"
-                        >{{ t()('documents.cv_style_color') }}</span
-                      >
-                      <div class="docedit-color-row">
-                        <input
-                          type="color"
-                          [ngModel]="style().accentColorHex"
-                          (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                        />
-                        <input
-                          type="text"
-                          [ngModel]="style().accentColorHex"
-                          (ngModelChange)="updateStyle({ accentColorHex: $event })"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="docedit-style-section">
-                  <span class="docedit-style-section__header">{{
-                    t()('documents.cv_style_group_titles')
-                  }}</span>
-                  <div class="docedit-style-grid">
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{ t()('documents.cv_style_font') }}</span>
-                      <select
-                        [ngModel]="style().titleStyle?.fontFamily ?? ''"
-                        (ngModelChange)="updateTitleStyle({ fontFamily: $event || undefined })"
-                      >
-                        <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
-                        @for (font of atsSafeFonts; track font) {
-                          <option [value]="font">{{ font }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{ t()('documents.cv_style_size') }}</span>
-                      <input
-                        type="number"
-                        min="6"
-                        max="28"
-                        step="0.5"
-                        [ngModel]="style().titleStyle?.fontSizePt ?? null"
-                        [placeholder]="style().fontSizePt"
-                        (ngModelChange)="
-                          updateTitleStyle({ fontSizePt: $event ? +$event : undefined })
-                        "
-                      />
-                    </div>
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{
-                        t()('documents.cv_style_weight')
-                      }}</span>
-                      <select
-                        [ngModel]="style().titleStyle?.fontWeight ?? null"
-                        (ngModelChange)="
-                          updateTitleStyle({ fontWeight: $event ? $any(+$event) : undefined })
-                        "
-                      >
-                        <option [ngValue]="null">
-                          {{ t()('documents.cv_section_style_inherit') }}
-                        </option>
-                        <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
-                        <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
-                        <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
-                        <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
-                      </select>
-                    </div>
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{
-                        t()('documents.cv_style_color')
-                      }}</span>
-                      <div class="docedit-color-row">
-                        <input
-                          type="color"
-                          [ngModel]="style().titleStyle?.colorHex ?? style().accentColorHex"
-                          (ngModelChange)="updateTitleStyle({ colorHex: $event })"
-                        />
-                        <input
-                          type="text"
-                          [ngModel]="style().titleStyle?.colorHex ?? style().accentColorHex"
-                          (ngModelChange)="updateTitleStyle({ colorHex: $event })"
-                        />
-                      </div>
-                    </div>
-                    <div class="docedit-field">
-                      <span class="docedit-field__label">{{ t()('documents.cv_style_line') }}</span>
-                      <select
-                        [ngModel]="style().titleBorder ?? 'solid'"
-                        (ngModelChange)="updateStyle({ titleBorder: $event })"
-                      >
-                        <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
-                        <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
-                        <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
-                        <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 
@@ -579,7 +405,9 @@
             <app-cv-live-style-panel
               [selection]="liveSelection()"
               [style]="style()"
+              [hasCustomStyle]="hasAnyCustomStyle()"
               (panelChange)="onStylePanelChange($event)"
+              (resetAll)="resetAllStyles()"
             />
           </aside>
         </div>

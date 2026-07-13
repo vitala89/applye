@@ -305,8 +305,9 @@ export interface CvElementStyle {
 }
 
 /** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
- * Deliberately small: font, size, one accent colour. Layout/order lives in
- * `CvTemplate` instead. Safe default: Calibri 11pt, dark-grey (#333333). */
+ * Deliberately small: font, size, an accent colour, and an optional body-text
+ * colour. Layout/order lives in `CvTemplate` instead. Safe default: Calibri
+ * 11pt, dark-grey (#333333). */
 export interface CvStyle {
   fontFamily: string;
   fontSizePt: number;

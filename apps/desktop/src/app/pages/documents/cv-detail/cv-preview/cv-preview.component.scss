@@ -10,11 +10,19 @@
 
 .cvpreview-viewport {
   overflow: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  // Centre the fixed-width page while keeping its LEFT edge reachable when the
+  // window is narrower than the paper. Flex centering (`align-items:center`)
+  // hides the overflowed start and can't be scrolled to; `text-align:center`
+  // on the scroll container + an inline-level sheet centres AND lets the start
+  // scroll into view.
+  text-align: center;
   padding: var(--space-4);
   background: var(--surface-2);
+}
+.cvpreview-viewport > lib-paginated-sheet {
+  display: inline-flex;
+  text-align: left;
+  vertical-align: top;
 }
 // Click-to-select affordance for the live-style panel. `outline` (never
 // `border`/`margin`/`padding`) so a selectable/selected leaf keeps the exact
@@ -22,10 +30,14 @@
 // Only attached on the visible page render (`selectable()` gates the class).
 .cvpreview__selectable {
   cursor: pointer;
+  border-radius: 4px;
+  transition: background 100ms ease;
 }
+// Soft VS Code-style hover tint (not a boxed outline) so hovering a field reads
+// as a gentle highlight. Kept faint because nested selectables (a leaf inside
+// its section wrapper) can both match :hover.
 .cvpreview__selectable:hover {
-  outline: var(--border-width) solid var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 6%, transparent);
 }
 // Keyboard focus ring: a selectable host reached by Tab must show the same
 // affordance a mouse hover does, so keyboard-only users can see what Enter or

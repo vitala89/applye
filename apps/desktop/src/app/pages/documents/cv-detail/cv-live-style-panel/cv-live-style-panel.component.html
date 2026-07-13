@@ -13,14 +13,9 @@
         <div class="cvlive__eyebrow cvlive__eyebrow--sm">
           {{ t()('documents.cv_live_style_editing') }}
         </div>
-        <div class="cvlive__editing-kind">
-          {{
-            t()(
-              sel.part === 'title'
-                ? 'documents.cv_style_group_titles'
-                : 'documents.cv_style_group_body'
-            )
-          }}
+        <div class="cvlive__editing-kind">{{ t()(selFieldKey()) }}</div>
+        <div class="cvlive__editing-id">
+          <span class="cvlive__id-chip">#{{ selFieldId() }}</span>
         </div>
         @if (canEditText()) {
           <button type="button" class="cvlive__edit-text" (click)="editText.emit()">

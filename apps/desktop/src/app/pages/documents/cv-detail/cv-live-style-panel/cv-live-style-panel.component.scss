@@ -72,6 +72,21 @@
   font-weight: 600;
   color: var(--text-primary);
 }
+.cvlive__editing-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.cvlive__id-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
 
 .cvlive__field {
   display: flex;

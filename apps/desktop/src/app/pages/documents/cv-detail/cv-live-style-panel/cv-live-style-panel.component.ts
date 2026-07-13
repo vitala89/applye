@@ -78,6 +78,51 @@ export class CvLiveStylePanelComponent {
    * fixed section labels, not user-authored text, so they get no Edit control. */
   readonly canEditText = computed<boolean>(() => this.selection()?.part === 'body');
 
+  /** The specific field label + short id for the current selection — shown in
+   * the panel's "Editing" header so it names exactly what's selected (mirrors
+   * the on-paper chip, e.g. "Name  #name"). Derived by parsing the selection's
+   * `elementPath`; falls back to the generic body/title labels. */
+  private fieldInfo(): { key: string; id: string } | null {
+    const sel = this.selection();
+    if (!sel) return null;
+    if (sel.part === 'title') return { key: 'documents.cv_style_group_titles', id: sel.sectionKey };
+    const p = sel.elementPath;
+    if (!p || p === 'summary') {
+      return { key: 'documents.cv_style_group_body', id: p || sel.sectionKey };
+    }
+    const seg = p.split('.');
+    switch (seg[0]) {
+      case 'pd':
+        return seg[1] === 'fullName'
+          ? { key: 'documents.cv_field_full_name', id: 'name' }
+          : { key: 'documents.cv_field_title', id: 'title' };
+      case 'exp': {
+        if (seg.includes('bullet')) return { key: 'documents.cv_field_bullet', id: 'bullet' };
+        const map: Record<string, string> = {
+          company: 'documents.cv_field_company',
+          industry: 'documents.cv_field_industry',
+          location: 'documents.cv_field_location',
+          role: 'documents.cv_field_role',
+        };
+        return {
+          key: map[seg[2]] ?? 'documents.cv_style_group_body',
+          id: seg[2] ?? sel.sectionKey,
+        };
+      }
+      case 'skills':
+        return seg[2] === 'label'
+          ? { key: 'documents.cv_field_label', id: 'category' }
+          : { key: 'documents.cv_field_values', id: 'values' };
+      case 'lang':
+        return { key: 'documents.cv_field_language', id: 'language' };
+      default:
+        return { key: 'documents.cv_style_group_body', id: sel.sectionKey };
+    }
+  }
+
+  readonly selFieldKey = computed<string>(() => this.fieldInfo()?.key ?? '');
+  readonly selFieldId = computed<string>(() => this.fieldInfo()?.id ?? '');
+
   /** The click-a-word-to-bold hint is shown only for the `**markdown**`-backed
    * leaves — the summary body and experience bullets. Other body leaves have
    * no inline-bold representation. */

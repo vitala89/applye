@@ -808,6 +808,8 @@ describe('patchCvElementStyle', () => {
       ...CV_STYLE_DEFAULT,
       elementStyles: { 'summary.body': { fontFamily: 'Arial', colorHex: '#111111' } },
     };
+    const originalElementStyles = original.elementStyles;
+    const originalOverride = original.elementStyles!['summary.body'];
     const changed = patchCvElementStyle(original, 'summary.body', {
       fontFamily: undefined,
       fontWeight: 700,
@@ -815,6 +817,15 @@ describe('patchCvElementStyle', () => {
     expect(changed.elementStyles).toEqual({
       'summary.body': { colorHex: '#111111', fontWeight: 700 },
     });
+    // Ref-equality immutability (T1 review minor): `original` and its nested
+    // `elementStyles`/override objects must be untouched by the merge — a
+    // mutating implementation would still pass the `toEqual` above (it reads
+    // the mutated `original` back) but fail these reference checks.
+    expect(changed).not.toBe(original);
+    expect(changed.elementStyles).not.toBe(originalElementStyles);
+    expect(original.elementStyles).toBe(originalElementStyles);
+    expect(original.elementStyles!['summary.body']).toBe(originalOverride);
+    expect(originalOverride).toEqual({ fontFamily: 'Arial', colorHex: '#111111' });
   });
 
   it('removes the element override once every field is pruned, and drops an emptied elementStyles map', () => {
@@ -839,6 +850,11 @@ describe('patchCvElementStyle', () => {
       'summary.body': { fontFamily: 'Arial', fontSizePt: 13 },
       'experience.0.bullet.0': { colorHex: '#0a5' },
     });
+    // Ref-equality (T1 review minor): the untouched sibling override object
+    // itself is carried over, not just value-equal to it.
+    expect(changed.elementStyles!['experience.0.bullet.0']).toBe(
+      original.elementStyles!['experience.0.bullet.0'],
+    );
   });
 
   it('prunes an invalid line-height patch instead of persisting it', () => {
@@ -928,6 +944,25 @@ describe('effectiveLeafStyle', () => {
       colorHex: undefined,
       lineHeight: undefined,
     });
+  });
+
+  it('an empty-string elementPath resolves the same as no elementPath at all (T1 review minor)', () => {
+    // An empty path must fall through to the section resolution exactly like
+    // `undefined` — and must NOT accidentally hit an unrelated real override
+    // keyed by some other path (e.g. if a caller ever passed '' by mistake,
+    // it must not silently pick up '' as a literal elementStyles key either).
+    const s: CvStyle = {
+      ...base,
+      sectionStyles: { summary: { fontSizePt: 13 } },
+      elementStyles: {
+        'summary.body': { fontSizePt: 99 },
+        '': { fontSizePt: 77 },
+      },
+    };
+    expect(effectiveLeafStyle(s, 'summary', '')).toEqual(
+      effectiveLeafStyle(s, 'summary', undefined),
+    );
+    expect(effectiveLeafStyle(s, 'summary', '').fontSizePt).toBe(13);
   });
 
   it('with an elementPath but no override at that path, returns the section resolution', () => {

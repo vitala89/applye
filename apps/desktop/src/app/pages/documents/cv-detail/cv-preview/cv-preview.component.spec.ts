@@ -238,6 +238,14 @@ describe('CvPreviewComponent', () => {
       expect(component.leafCss('pd.fullName')).toEqual({});
     });
 
+    it('an empty-string path returns no leaf-level style, even when an UNRELATED path has an override (T1 review minor)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { summary: { fontFamily: 'Georgia', fontSizePt: 16 } },
+      });
+      expect(component.leafCss('')).toEqual({});
+    });
+
     it('returns only the CSS properties actually set on the element override — not the full resolved cascade', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,
@@ -327,6 +335,66 @@ describe('CvPreviewComponent', () => {
       const page = root.querySelector('.page-card .cvpreview__entry-company') as HTMLElement;
       const measured = root.querySelector(
         '.paginated-sheet__measure .cvpreview__entry-company',
+      ) as HTMLElement;
+      expect(page).toBeTruthy();
+      expect(measured).toBeTruthy();
+      for (const el of [page, measured]) {
+        expect(el.style.fontFamily).toContain('Georgia');
+        expect(el.style.fontSize).toBe('16pt');
+        expect(el.style.color).not.toBe('');
+      }
+    });
+
+    it('renders the element override as inline style on a skills VALUES leaf in BOTH the page card and the hidden measurement mirror (T3 review minor — typography parity beyond summary/exp-company)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: {
+          'skills.0.values': { fontFamily: 'Georgia', fontSizePt: 16, colorHex: '#1b7464' },
+        },
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'skills',
+          order: 0,
+          visible: true,
+          groups: [{ label: 'Languages', values: ['TypeScript'] }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const page = root.querySelector('.page-card .cvpreview__skill-values-view') as HTMLElement;
+      const measured = root.querySelector(
+        '.paginated-sheet__measure .cvpreview__skill-values-view',
+      ) as HTMLElement;
+      expect(page).toBeTruthy();
+      expect(measured).toBeTruthy();
+      for (const el of [page, measured]) {
+        expect(el.style.fontFamily).toContain('Georgia');
+        expect(el.style.fontSize).toBe('16pt');
+        expect(el.style.color).not.toBe('');
+      }
+    });
+
+    it('renders the element override as inline style on a language VALUE leaf in BOTH the page card and the hidden measurement mirror (T3 review minor — typography parity beyond summary/exp-company)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: {
+          'lang.0.language': { fontFamily: 'Georgia', fontSizePt: 16, colorHex: '#1b7464' },
+        },
+      });
+      fixture.componentRef.setInput('sections', [
+        {
+          key: 'languages',
+          order: 0,
+          visible: true,
+          items: [{ language: 'English', level: 'C1' }],
+        },
+      ]);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+      const page = root.querySelector('.page-card .cvpreview__language-value') as HTMLElement;
+      const measured = root.querySelector(
+        '.paginated-sheet__measure .cvpreview__language-value',
       ) as HTMLElement;
       expect(page).toBeTruthy();
       expect(measured).toBeTruthy();

@@ -175,7 +175,11 @@
 .cvpreview__contact {
   margin: 0 0 0.8rem;
   font-size: 0.85em;
-  color: var(--text-tertiary);
+  // Fall back through the section body-colour override so a "This section"
+  // colour recolours the contact line too (it had its own tertiary colour,
+  // which is why changing personal-details colour left it unchanged). An
+  // element-scope override on the contact leaf still wins via inline `color`.
+  color: var(--cv-section-body-color, var(--text-tertiary));
 }
 .cvpreview__contact--editor {
   display: flex;

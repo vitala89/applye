@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgStyle } from '@angular/common';
+import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 import type {
   CvBorderStyle,
   CvElementStyle,
@@ -42,7 +43,7 @@ import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../..
   selector: 'app-cv-live-style-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, NgStyle],
+  imports: [FormsModule, NgStyle, LucideAngularModule],
   templateUrl: './cv-live-style-panel.component.html',
   styleUrl: './cv-live-style-panel.component.scss',
 })
@@ -97,6 +98,7 @@ export class CvLiveStylePanelComponent {
   readonly bold = output<void>();
 
   protected readonly atsSafeFonts = CV_ATS_SAFE_FONTS;
+  protected readonly icons = { chevron: ChevronDown };
 
   /** Collapsible-group state (session only): the Text group opens by default,
    * the Line group starts collapsed — this keeps the panel short enough that
@@ -242,6 +244,32 @@ export class CvLiveStylePanelComponent {
     if (o.colorHex) css['color'] = o.colorHex;
     return css;
   });
+
+  /** Hex for the COLOR control at the active scope. The override wins; with
+   * none it shows the leaf's REAL rendered colour (from the paper), so the
+   * picker matches the page even when the colour is INHERITED from a higher
+   * scope (e.g. a "This section" colour showing through on a single field) —
+   * previously it fell straight to the accent, so the picker read green while
+   * the text was blue. Falls back to the accent only when nothing is known. */
+  readonly effectiveColorHex = computed<string>(() => {
+    const o =
+      this.selection()?.part === 'title' ? this.activeTitleOverride() : this.activeBodyOverride();
+    return (
+      o.colorHex ?? this.rgbToHex(this.sampleBaseStyle()['color']) ?? this.style().accentColorHex
+    );
+  });
+
+  /** Normalise a computed `rgb()/rgba()` colour to `#rrggbb` for `<input
+   * type="color">` (which only accepts hex). Passes through an existing hex;
+   * returns null when it can't parse. */
+  private rgbToHex(value: string | undefined): string | null {
+    if (!value) return null;
+    if (value.startsWith('#')) return value;
+    const m = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!m) return null;
+    const h = (n: string) => Number(n).toString(16).padStart(2, '0');
+    return `#${h(m[1])}${h(m[2])}${h(m[3])}`;
+  }
 
   /** Curated body leading choices (unitless). `1.45` is the existing
    * `--leading-normal`; unset (Inherit) preserves each element's baseline. */

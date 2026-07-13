@@ -239,6 +239,24 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('the colour control shows the inherited/rendered colour (not the accent) when unset', () => {
+    fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, accentColorHex: '#00ff00' });
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'personal_details',
+      part: 'body',
+      elementPath: 'pd.fullName',
+    });
+    // No element override; the paper reports the name rendered as blue.
+    fixture.componentRef.setInput('sampleBaseStyle', { color: 'rgb(0, 0, 255)' });
+    fixture.detectChanges();
+    expect(component.effectiveColorHex()).toBe('#0000ff');
+
+    // Falls back to the accent only when the paper hasn't reported a colour.
+    fixture.componentRef.setInput('sampleBaseStyle', {});
+    fixture.detectChanges();
+    expect(component.effectiveColorHex()).toBe('#00ff00');
+  });
+
   it('a whole-entry selection (exp.0) behaves like a section, not a leaf', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'experience',

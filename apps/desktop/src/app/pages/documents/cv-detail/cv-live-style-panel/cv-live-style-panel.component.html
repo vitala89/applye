@@ -108,7 +108,13 @@
               (click)="textOpen.set(!textOpen())"
             >
               <span class="cvlive__label">{{ t()('documents.cv_style_group_text') }}</span>
-              <span class="cvlive__chevron" [class.cvlive__chevron--open]="textOpen()">⌄</span>
+              <lucide-icon
+                class="cvlive__chevron"
+                [class.cvlive__chevron--open]="textOpen()"
+                [img]="icons.chevron"
+                [size]="16"
+                aria-hidden="true"
+              />
             </button>
             @if (textOpen()) {
               <div class="cvlive__group-body">
@@ -158,7 +164,7 @@
                   <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
                   <input
                     type="color"
-                    [ngModel]="activeBodyOverride().colorHex ?? style().accentColorHex"
+                    [ngModel]="effectiveColorHex()"
                     (ngModelChange)="setBodyColor($event)"
                   />
                 </label>
@@ -191,7 +197,13 @@
                 (click)="lineOpen.set(!lineOpen())"
               >
                 <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-                <span class="cvlive__chevron" [class.cvlive__chevron--open]="lineOpen()">⌄</span>
+                <lucide-icon
+                  class="cvlive__chevron"
+                  [class.cvlive__chevron--open]="lineOpen()"
+                  [img]="icons.chevron"
+                  [size]="16"
+                  aria-hidden="true"
+                />
               </button>
               @if (lineOpen()) {
                 <div class="cvlive__group-body">
@@ -230,7 +242,13 @@
               (click)="textOpen.set(!textOpen())"
             >
               <span class="cvlive__label">{{ t()('documents.cv_style_group_text') }}</span>
-              <span class="cvlive__chevron" [class.cvlive__chevron--open]="textOpen()">⌄</span>
+              <lucide-icon
+                class="cvlive__chevron"
+                [class.cvlive__chevron--open]="textOpen()"
+                [img]="icons.chevron"
+                [size]="16"
+                aria-hidden="true"
+              />
             </button>
             @if (textOpen()) {
               <div class="cvlive__group-body">
@@ -280,7 +298,7 @@
                   <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
                   <input
                     type="color"
-                    [ngModel]="activeTitleOverride().colorHex ?? style().accentColorHex"
+                    [ngModel]="effectiveColorHex()"
                     (ngModelChange)="setTitleColor($event)"
                   />
                 </label>
@@ -297,7 +315,13 @@
               (click)="lineOpen.set(!lineOpen())"
             >
               <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
-              <span class="cvlive__chevron" [class.cvlive__chevron--open]="lineOpen()">⌄</span>
+              <lucide-icon
+                class="cvlive__chevron"
+                [class.cvlive__chevron--open]="lineOpen()"
+                [img]="icons.chevron"
+                [size]="16"
+                aria-hidden="true"
+              />
             </button>
             @if (lineOpen()) {
               <div class="cvlive__group-body">

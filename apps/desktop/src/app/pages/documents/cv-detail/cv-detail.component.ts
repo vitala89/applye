@@ -35,6 +35,7 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
+  CvElementStyle,
   CvSectionStyle,
   CvStyle,
   CvTemplate,
@@ -429,6 +430,21 @@ export class CvDetailComponent {
     }
     if (change.separatorSize !== undefined) {
       this.setSectionStyle(key, { separatorSizePt: change.separatorSize ?? undefined });
+      return;
+    }
+    if (change.scope === 'bullets') {
+      // "All achievements": the section-shared bullet style. Reset clears it by
+      // merging an all-undefined patch (which `patchCvSectionStyle` drops).
+      const patch: Partial<CvElementStyle> = change.reset
+        ? {
+            fontFamily: undefined,
+            fontSizePt: undefined,
+            fontWeight: undefined,
+            colorHex: undefined,
+            lineHeight: undefined,
+          }
+        : (change.patch ?? {});
+      this.setSectionStyle(key, { bulletStyle: patch });
       return;
     }
     if (change.scope === 'section') {

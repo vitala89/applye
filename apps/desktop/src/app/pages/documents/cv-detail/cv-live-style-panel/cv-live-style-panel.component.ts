@@ -195,6 +195,54 @@ export class CvLiveStylePanelComponent {
   readonly selFieldKey = computed<string>(() => this.fieldInfo()?.key ?? '');
   readonly selFieldId = computed<string>(() => this.fieldInfo()?.id ?? '');
 
+  /** The contextual "APPLY TO" buttons for the current selection — each names
+   * the actual thing it targets ("This experience" / "All experiences") rather
+   * than the abstract element/section scope, and single-target selections
+   * (personal-details block, body text, languages, a lone field) show just one
+   * button. The first entry is the default scope. */
+  readonly scopeButtons = computed<{ scope: CvStyleScope; label: string }[]>(() => {
+    const sel = this.selection();
+    if (!sel) return [];
+    const t = this.t();
+    const D = (k: string) => t('documents.' + k);
+    if (sel.part === 'title') {
+      return [
+        { scope: 'section', label: D('cv_style_scope_this_title') },
+        { scope: 'document', label: D('cv_style_scope_all_titles') },
+      ];
+    }
+    const p = sel.elementPath;
+    // Whole-section body block (personal details) — one button, named section.
+    if (!p) return [{ scope: 'section', label: t(sectionLabelKey(sel.sectionKey)) }];
+    if (p === 'summary') return [{ scope: 'element', label: D('cv_scope_body_text') }];
+    if (p === 'lang') return [{ scope: 'element', label: D('cv_scope_languages') }];
+    const seg = p.split('.');
+    if (this.isEntryPath(p)) {
+      if (seg[0] === 'exp')
+        return [
+          { scope: 'element', label: D('cv_scope_this_experience') },
+          { scope: 'section', label: D('cv_scope_all_experiences') },
+        ];
+      if (seg[0] === 'edu')
+        return [
+          { scope: 'element', label: D('cv_scope_this_education') },
+          { scope: 'section', label: D('cv_scope_all_education') },
+        ];
+      return [
+        { scope: 'element', label: D('cv_scope_this_skills') },
+        { scope: 'section', label: D('cv_scope_all_skills') },
+      ];
+    }
+    if (seg[0] === 'exp' && seg.includes('bullet')) {
+      return [
+        { scope: 'element', label: D('cv_scope_this_achievement') },
+        { scope: 'bullets', label: D('cv_scope_all_achievements') },
+      ];
+    }
+    // A single field (company, role, name, date, …): element-only.
+    return [{ scope: 'element', label: D('cv_scope_this_field') }];
+  });
+
   /** The click-a-word-to-bold hint is shown only for the `**markdown**`-backed
    * leaves — the summary body and experience bullets. Other body leaves have
    * no inline-bold representation. */
@@ -280,16 +328,7 @@ export class CvLiveStylePanelComponent {
    * latter matters because `element` scope on a pathless selection would land
    * on nothing (the parent's element-scope branch requires a path) and
    * silently drop the edit. */
-  readonly scope = linkedSignal<CvStyleScope>(() => {
-    const sel = this.selection();
-    if (!sel) return 'element';
-    if (sel.part === 'title') return 'section';
-    // Any selection that carries a path (a leaf, a group/entry, or the whole
-    // languages line) defaults to element scope so a colour change hits just
-    // that target; a pathless body selection has no leaf, so it must be
-    // section scope (element scope would land on nothing).
-    return sel.elementPath ? 'element' : 'section';
-  });
+  readonly scope = linkedSignal<CvStyleScope>(() => this.scopeButtons()[0]?.scope ?? 'element');
 
   /** The languages line is a single whole-section element (`lang`): styling it
    * is the same as styling the section, so the section scope is redundant and
@@ -297,17 +336,6 @@ export class CvLiveStylePanelComponent {
   private isWholeLanguages(p: string | undefined): boolean {
     return p === 'lang';
   }
-
-  /** Show the "This element" scope whenever the selection targets a concrete
-   * element (leaf, group/entry, or the languages line); hide it for a pathless
-   * whole-section body selection where element scope would land on nothing. */
-  readonly showElementScope = computed<boolean>(() => !!this.selection()?.elementPath);
-
-  /** Show the "This section" scope for every body selection except the
-   * languages line (where element == section). */
-  readonly showSectionScope = computed<boolean>(
-    () => !this.isWholeLanguages(this.selection()?.elementPath),
-  );
 
   setScope(value: CvStyleScope): void {
     this.scope.set(value);
@@ -323,6 +351,17 @@ export class CvLiveStylePanelComponent {
     switch (this.scope()) {
       case 'section': {
         const o = s.sectionStyles?.[sel.sectionKey] ?? {};
+        return {
+          fontFamily: o.fontFamily,
+          fontSizePt: o.fontSizePt,
+          fontWeight: o.fontWeight,
+          colorHex: o.colorHex,
+          lineHeight: o.lineHeight,
+        };
+      }
+      case 'bullets': {
+        // "All achievements" — the section's shared bullet style.
+        const o = s.sectionStyles?.[sel.sectionKey]?.bulletStyle ?? {};
         return {
           fontFamily: o.fontFamily,
           fontSizePt: o.fontSizePt,

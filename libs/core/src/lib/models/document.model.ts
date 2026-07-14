@@ -308,6 +308,9 @@ export interface CvSectionStyle {
   /** Size (pt) of those in-line separators — makes the `|` taller/heavier.
    * Unset inherits the surrounding text size. */
   separatorSizePt?: number;
+  /** Shared style for ALL of a section's bullet lines (the "all achievements"
+   * scope) — layered under each bullet's own per-leaf override. */
+  bulletStyle?: CvElementStyle;
 }
 
 /** Per-leaf (single-element) style override — the most specific layer of the

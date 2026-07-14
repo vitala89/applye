@@ -996,6 +996,20 @@ export class CvPreviewComponent {
     return css;
   }
 
+  /** CSS for a section's SHARED bullet style (the "all achievements" scope),
+   * layered on the bullet list under each bullet's own per-leaf override. */
+  bulletCss(key: CvSectionKey): Record<string, string> {
+    const o = this.style().sectionStyles?.[key]?.bulletStyle;
+    if (!o) return {};
+    const css: Record<string, string> = {};
+    if (o.fontFamily !== undefined) css['font-family'] = o.fontFamily;
+    if (o.fontSizePt !== undefined) css['font-size'] = `${o.fontSizePt}pt`;
+    if (o.fontWeight !== undefined) css['font-weight'] = String(o.fontWeight);
+    if (o.colorHex !== undefined) css['color'] = o.colorHex;
+    if (o.lineHeight !== undefined) css['line-height'] = String(o.lineHeight);
+    return css;
+  }
+
   /** Title style for a section heading. */
   titleCss(key: CvSectionKey): Record<string, string> {
     const s = effectiveTitleStyle(this.style(), key);

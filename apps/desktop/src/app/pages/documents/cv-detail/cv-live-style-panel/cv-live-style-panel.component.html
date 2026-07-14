@@ -27,46 +27,18 @@
         <span class="cvlive__label">{{ t()('documents.cv_style_scope_label') }}</span>
         <div
           class="cvlive__seg"
+          [class.cvlive__seg--single]="scopeButtons().length === 1"
           role="group"
           [attr.aria-label]="t()('documents.cv_style_scope_label')"
         >
-          @if (sel.part === 'body') {
-            @if (showElementScope()) {
-              <button
-                type="button"
-                class="cvlive__seg-btn"
-                [class.cvlive__seg-btn--active]="scope() === 'element'"
-                (click)="setScope('element')"
-              >
-                {{ t()('documents.cv_style_scope_element') }}
-              </button>
-            }
-            @if (showSectionScope()) {
-              <button
-                type="button"
-                class="cvlive__seg-btn"
-                [class.cvlive__seg-btn--active]="scope() === 'section'"
-                (click)="setScope('section')"
-              >
-                {{ t()('documents.cv_style_scope_section') }}
-              </button>
-            }
-          } @else {
+          @for (b of scopeButtons(); track b.scope) {
             <button
               type="button"
               class="cvlive__seg-btn"
-              [class.cvlive__seg-btn--active]="scope() === 'section'"
-              (click)="setScope('section')"
+              [class.cvlive__seg-btn--active]="scope() === b.scope"
+              (click)="setScope(b.scope)"
             >
-              {{ t()('documents.cv_style_scope_this_title') }}
-            </button>
-            <button
-              type="button"
-              class="cvlive__seg-btn"
-              [class.cvlive__seg-btn--active]="scope() === 'document'"
-              (click)="setScope('document')"
-            >
-              {{ t()('documents.cv_style_scope_all_titles') }}
+              {{ b.label }}
             </button>
           }
         </div>

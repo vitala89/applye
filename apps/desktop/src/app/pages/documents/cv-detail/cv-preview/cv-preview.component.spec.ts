@@ -186,6 +186,27 @@ describe('CvPreviewComponent', () => {
     expect(bullets.style.color).toBe('');
   });
 
+  it('bulletCss applies the shared bullet style ("all achievements") to the bullet list', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { experience: { bulletStyle: { colorHex: '#abcdef', fontSizePt: 11 } } },
+    });
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'experience',
+        order: 0,
+        visible: true,
+        entries: [{ company: 'Acme', role: 'Eng', startDate: '2020', bullets: ['x'] }],
+      },
+    ]);
+    fixture.detectChanges();
+    const css = component.bulletCss('experience');
+    expect(css['color']).toBe('#abcdef');
+    expect(css['font-size']).toBe('11pt');
+    // Empty for a section with no shared bullet style.
+    expect(component.bulletCss('education')).toEqual({});
+  });
+
   it('bodyCss emits separator vars for a section that overrides them', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,

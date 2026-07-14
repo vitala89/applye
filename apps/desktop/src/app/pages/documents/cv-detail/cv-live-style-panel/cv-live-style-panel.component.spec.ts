@@ -32,16 +32,17 @@ describe('CvLiveStylePanelComponent', () => {
     expect(fixture.nativeElement.querySelector('select')).toBeNull();
   });
 
-  it('offers two scopes for a body selection (element + section) and two for a title', () => {
+  it('contextual scope buttons: body text is single, a title has two', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',
       part: 'body',
       elementPath: 'summary',
     });
     fixture.detectChanges();
-    // Scope is a segmented button group (redesign): one <button> per scope.
-    // "Whole document" was removed (deferred) — body now offers element + section.
-    expect(fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn')).toHaveLength(2);
+    // Body text = one contextual button (no section scope).
+    const bodyBtns = fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn');
+    expect(bodyBtns).toHaveLength(1);
+    expect((bodyBtns[0] as HTMLElement).textContent?.trim()).toBe('Body text');
 
     fixture.componentRef.setInput('selection', { sectionKey: 'summary', part: 'title' });
     fixture.detectChanges();
@@ -257,7 +258,7 @@ describe('CvLiveStylePanelComponent', () => {
     expect(component.effectiveColorHex()).toBe('#00ff00');
   });
 
-  it('a whole-entry selection (exp.0) offers element + section, defaults element, no edit-text', () => {
+  it('an experience entry: "This experience" + "All experiences", defaults element, no edit-text', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'experience',
       part: 'body',
@@ -265,14 +266,29 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     expect(component.scope()).toBe('element'); // colour hits just this entry by default
-    expect(component.showElementScope()).toBe(true);
-    expect(component.showSectionScope()).toBe(true);
     expect(component.canEditText()).toBe(false); // no single text leaf to edit
-    const btns = fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn');
-    expect(btns).toHaveLength(2);
+    expect(component.scopeButtons().map((b) => [b.scope, b.label])).toEqual([
+      ['element', 'This experience'],
+      ['section', 'All experiences'],
+    ]);
   });
 
-  it('a skills group (skills.0) offers element + section and defaults element', () => {
+  it('a bullet: "This achievement" + "All achievements" (bullets scope)', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'experience',
+      part: 'body',
+      elementPath: 'exp.0.bullet.1',
+    });
+    fixture.detectChanges();
+    expect(component.scope()).toBe('element');
+    expect(component.canEditText()).toBe(true); // a bullet IS an editable text leaf
+    expect(component.scopeButtons().map((b) => [b.scope, b.label])).toEqual([
+      ['element', 'This achievement'],
+      ['bullets', 'All achievements'],
+    ]);
+  });
+
+  it('a skills group: "This skills" + "All skills"', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'skills',
       part: 'body',
@@ -280,12 +296,10 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     expect(component.scope()).toBe('element');
-    expect(component.showElementScope()).toBe(true);
-    expect(component.showSectionScope()).toBe(true);
-    expect(component.canEditText()).toBe(false);
+    expect(component.scopeButtons().map((b) => b.label)).toEqual(['This skills', 'All skills']);
   });
 
-  it('the languages line is a single element: element-only scope, no section, no edit-text', () => {
+  it('the languages line is a single element: one button, no edit-text', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'languages',
       part: 'body',
@@ -293,11 +307,16 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     expect(component.scope()).toBe('element');
-    expect(component.showElementScope()).toBe(true);
-    expect(component.showSectionScope()).toBe(false); // section == element here
     expect(component.canEditText()).toBe(false);
-    const btns = fixture.nativeElement.querySelectorAll('.cvlive__seg .cvlive__seg-btn');
-    expect(btns).toHaveLength(1);
+    expect(component.scopeButtons().map((b) => b.label)).toEqual(['Languages']);
+  });
+
+  it('the personal-details block is a single "Personal details" button', () => {
+    fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
+    fixture.detectChanges();
+    expect(component.scopeButtons().map((b) => [b.scope, b.label])).toEqual([
+      ['section', 'Personal Details'],
+    ]);
   });
 
   it('separator controls: shown only for languages, emit section-level colour/size', () => {

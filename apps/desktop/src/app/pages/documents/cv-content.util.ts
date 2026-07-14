@@ -50,7 +50,7 @@ export interface CvPreviewSelection {
  * most specific to least. For a title selection only two are used:
  * `section` = "this title" (per-section title override), `document` = "all
  * titles" (the document-wide `titleStyle`). */
-export type CvStyleScope = 'element' | 'section' | 'document';
+export type CvStyleScope = 'element' | 'section' | 'document' | 'bullets';
 
 /** A scope-tagged change emitted by `CvLiveStylePanelComponent`. The parent
  * maps `(selection.part, scope)` to the correct write target/reducer (see the
@@ -704,8 +704,19 @@ export function patchCvSectionStyle(
             ([, value]) => value != null,
           ),
         );
+  // Deep-merge the shared bullet style (the "all achievements" scope), same as
+  // `title`: inherited (null/undefined) keys are dropped so an emptied override
+  // disappears.
+  const bulletStyle =
+    normalizedPatch.bulletStyle === undefined
+      ? current.bulletStyle
+      : Object.fromEntries(
+          Object.entries({ ...(current.bulletStyle ?? {}), ...normalizedPatch.bulletStyle }).filter(
+            ([, value]) => value != null,
+          ),
+        );
   const merged = Object.fromEntries(
-    Object.entries({ ...current, ...normalizedPatch, title }).filter(
+    Object.entries({ ...current, ...normalizedPatch, title, bulletStyle }).filter(
       ([, value]) => value != null && !(typeof value === 'object' && !Object.keys(value).length),
     ),
   ) as CvSectionStyle;

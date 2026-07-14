@@ -618,7 +618,7 @@
     (click)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.enter)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'bullet', b))"
-    [ngStyle]="{ ...bodyCss(key), ...bulletCss(key) }"
+    [ngStyle]="bulletListCss(key)"
   >
     @if (isEditingLeaf(leafPath('exp', i, 'bullet', b)) && selectable(renderMode)) {
       <li>

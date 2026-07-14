@@ -1010,6 +1010,23 @@ export class CvPreviewComponent {
     return css;
   }
 
+  /** Full style for the bullet list. Bullets are DELIBERATELY independent of
+   * the section-body ("All experiences") scope — that scope styles the entry
+   * heads only. So the base here is the DOCUMENT typography (never the section
+   * override), with the shared bullet style ("All achievements") layered on
+   * top; each bullet's own per-leaf override still wins on its `<li>`. No
+   * colour in the base, so bullets keep their muted default unless a bullet or
+   * "All achievements" override sets one. */
+  bulletListCss(key: CvSectionKey): Record<string, string> {
+    const s = this.style();
+    return {
+      'font-family': s.fontFamily,
+      'font-size': `${s.fontSizePt}pt`,
+      'font-weight': String(s.fontWeight),
+      ...this.bulletCss(key),
+    };
+  }
+
   /** Title style for a section heading. */
   titleCss(key: CvSectionKey): Record<string, string> {
     const s = effectiveTitleStyle(this.style(), key);

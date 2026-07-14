@@ -156,11 +156,13 @@ describe('CvDetailComponent per-section style', () => {
       expect(component.style().titleBorder).toBe('dashed');
     });
 
-    it('switching scope re-targets subsequent writes for the same selection', () => {
+    it('applying a section change clears in-section element overrides so it applies uniformly', () => {
       component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
       component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });
-      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 13 } });
       expect(component.style().elementStyles?.['summary']).toEqual({ fontWeight: 700 });
+      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 13 } });
+      // The individual override is wiped; the section value now governs all.
+      expect(component.style().elementStyles?.['summary']).toBeUndefined();
       expect(component.style().sectionStyles?.summary).toEqual({ fontSizePt: 13 });
     });
 

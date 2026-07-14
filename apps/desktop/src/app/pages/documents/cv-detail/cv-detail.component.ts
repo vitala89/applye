@@ -76,6 +76,7 @@ import {
   parseCvSkillResponse,
   patchCvDocumentBody,
   patchCvElementStyle,
+  clearSectionElementOverrides,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
   resetCvElementStyle,
@@ -444,12 +445,23 @@ export class CvDetailComponent {
             lineHeight: undefined,
           }
         : (change.patch ?? {});
+      // Applying to all achievements wipes the per-bullet overrides so every
+      // bullet adopts the shared value uniformly.
+      if (!change.reset) this.style.set(clearSectionElementOverrides(this.style(), key, true));
       this.setSectionStyle(key, { bulletStyle: patch });
       return;
     }
     if (change.scope === 'section') {
-      if (change.reset) this.resetSectionStyle(key);
-      else this.setSectionStyle(key, change.patch ?? {});
+      if (change.reset) {
+        this.resetSectionStyle(key);
+        return;
+      }
+      // Applying to the whole section (e.g. "All experiences") first wipes the
+      // per-entry/field overrides in it (bullets excepted — their own scope),
+      // so EVERY entry adopts the section value uniformly instead of the
+      // individually-styled ones silently keeping their old colour.
+      this.style.set(clearSectionElementOverrides(this.style(), key));
+      this.setSectionStyle(key, change.patch ?? {});
       return;
     }
     if (change.scope === 'element') {

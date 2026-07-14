@@ -17,6 +17,7 @@ import {
   effectiveLeafStyle,
   effectiveSectionStyle,
   effectiveTitleStyle,
+  clearSectionElementOverrides,
   effectiveTitleBorder,
   effectiveTitleRuleColor,
   effectiveTitleRuleWidth,
@@ -1144,6 +1145,28 @@ describe('title/body style resolution', () => {
     const s: CvStyle = { ...base, sectionStyles: { skills: { fontFamily: 'Arial' } } };
     expect(effectiveSectionStyle(s, 'skills').fontFamily).toBe('Arial');
     expect(effectiveSectionStyle(s, 'summary').fontFamily).toBe('Calibri');
+  });
+
+  it('clearSectionElementOverrides drops in-section head/field overrides, keeps bullets + siblings', () => {
+    const style: CvStyle = {
+      ...base,
+      elementStyles: {
+        'exp.0': { colorHex: '#111' },
+        'exp.0.company': { colorHex: '#222' },
+        'exp.0.bullet.1': { colorHex: '#333' },
+        'edu.0': { colorHex: '#444' },
+      },
+    };
+    // Heads/fields cleared for experience; the bullet and the education sibling stay.
+    const heads = clearSectionElementOverrides(style, 'experience');
+    expect(heads.elementStyles).toEqual({
+      'exp.0.bullet.1': { colorHex: '#333' },
+      'edu.0': { colorHex: '#444' },
+    });
+    // bullets:true clears ONLY the bullet override.
+    const bullets = clearSectionElementOverrides(style, 'experience', true);
+    expect(bullets.elementStyles?.['exp.0.bullet.1']).toBeUndefined();
+    expect(bullets.elementStyles?.['exp.0']).toEqual({ colorHex: '#111' });
   });
 
   it('titleBorder resolves section over document over default solid', () => {

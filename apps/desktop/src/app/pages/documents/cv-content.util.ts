@@ -729,6 +729,51 @@ export function patchCvSectionStyle(
   };
 }
 
+/** Leaf-path prefix for a section (`exp`, `edu`, `skills`, `pd`, `lang`,
+ * `summary`) — the head of every `elementStyles` key inside that section. */
+function sectionPathPrefix(key: CvSectionKey): string | null {
+  switch (key) {
+    case 'personal_details':
+      return 'pd';
+    case 'experience':
+      return 'exp';
+    case 'education':
+      return 'edu';
+    case 'skills':
+      return 'skills';
+    case 'languages':
+      return 'lang';
+    case 'summary':
+      return 'summary';
+    default:
+      return null;
+  }
+}
+
+/** Drops per-element overrides inside a section so a section-wide change ("All
+ * experiences", "All achievements") applies UNIFORMLY — an individual entry's
+ * override no longer wins and silently gets skipped. `bullets: true` targets
+ * only that section's bullet overrides (the "All achievements" scope);
+ * otherwise it targets the heads/fields (everything except bullets). Sibling
+ * sections and the section/document styles are untouched. */
+export function clearSectionElementOverrides(
+  style: CvStyle,
+  key: CvSectionKey,
+  bullets = false,
+): CvStyle {
+  const prefix = sectionPathPrefix(key);
+  if (!prefix || !style.elementStyles) return style;
+  const next = Object.fromEntries(
+    Object.entries(style.elementStyles).filter(([path]) => {
+      const inSection = path === prefix || path.startsWith(prefix + '.');
+      if (!inSection) return true;
+      const isBullet = path.includes('.bullet.');
+      return !(bullets ? isBullet : !isBullet);
+    }),
+  );
+  return { ...style, elementStyles: Object.keys(next).length ? next : undefined };
+}
+
 /** Removes one complete per-section override and omits the map when it becomes
  * empty. Document defaults and sibling section overrides are preserved. */
 export function resetCvSectionStyle(style: CvStyle, key: CvSectionKey): CvStyle {

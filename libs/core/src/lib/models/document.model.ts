@@ -302,6 +302,12 @@ export interface CvSectionStyle {
   /** Per-section BODY rule colour (see `bodyRuleWidthPt`). Unset inherits the
    * active theme's rule colour. */
   bodyRuleColorHex?: string;
+  /** Colour of the in-line separators a section draws between items (e.g. the
+   * `|` between languages). Unset inherits the muted default. */
+  separatorColorHex?: string;
+  /** Size (pt) of those in-line separators — makes the `|` taller/heavier.
+   * Unset inherits the surrounding text size. */
+  separatorSizePt?: number;
 }
 
 /** Per-leaf (single-element) style override — the most specific layer of the

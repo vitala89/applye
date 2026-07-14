@@ -483,6 +483,34 @@ export class CvLiveStylePanelComponent {
     }
   }
 
+  /** Sections that draw in-line item separators the user can size/colour —
+   * the `|` between languages. */
+  readonly canSeparator = computed<boolean>(() => {
+    const sel = this.selection();
+    return !!sel && sel.part === 'body' && sel.sectionKey === 'languages';
+  });
+
+  readonly activeSeparatorColor = computed<string | null>(() => {
+    const sel = this.selection();
+    return sel ? (this.style().sectionStyles?.[sel.sectionKey]?.separatorColorHex ?? null) : null;
+  });
+
+  readonly activeSeparatorSize = computed<number | null>(() => {
+    const sel = this.selection();
+    return sel ? (this.style().sectionStyles?.[sel.sectionKey]?.separatorSizePt ?? null) : null;
+  });
+
+  setSeparatorColor(value: string): void {
+    if (this.selection()) {
+      this.panelChange.emit({ scope: this.scope(), separatorColor: value || null });
+    }
+  }
+  setSeparatorSize(value: string | number | null): void {
+    if (this.selection()) {
+      this.panelChange.emit({ scope: this.scope(), separatorSize: value ? +value : null });
+    }
+  }
+
   reset(): void {
     if (this.selection()) this.panelChange.emit({ scope: this.scope(), reset: true });
   }

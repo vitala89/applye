@@ -73,6 +73,10 @@ export interface CvStylePanelChange {
    * always written at section scope. `null` clears back to the theme. */
   bodyRuleWidth?: number | null;
   bodyRuleColor?: string | null;
+  /** In-line item separator (e.g. the `|` between languages) colour and size
+   * (pt); section-level, `null` clears back to the default. */
+  separatorColor?: string | null;
+  separatorSize?: number | null;
   reset?: boolean;
 }
 

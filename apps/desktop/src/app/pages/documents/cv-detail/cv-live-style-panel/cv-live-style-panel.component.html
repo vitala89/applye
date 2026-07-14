@@ -234,6 +234,52 @@
               }
             </div>
           }
+
+          @if (canSeparator()) {
+            <!-- SEPARATOR group (collapsible) — the `|` between items -->
+            <div class="cvlive__group">
+              <button
+                type="button"
+                class="cvlive__group-head"
+                [attr.aria-expanded]="lineOpen()"
+                (click)="lineOpen.set(!lineOpen())"
+              >
+                <span class="cvlive__label">{{ t()('documents.cv_style_group_separator') }}</span>
+                <lucide-icon
+                  class="cvlive__chevron"
+                  [class.cvlive__chevron--open]="lineOpen()"
+                  [img]="icons.chevron"
+                  [size]="16"
+                  aria-hidden="true"
+                />
+              </button>
+              @if (lineOpen()) {
+                <div class="cvlive__group-body">
+                  <label class="cvlive__field">
+                    <span class="cvlive__label">{{ t()('documents.cv_style_size') }}</span>
+                    <input
+                      type="number"
+                      min="6"
+                      max="28"
+                      step="0.5"
+                      [ngModel]="activeSeparatorSize()"
+                      [placeholder]="t()('documents.cv_section_style_inherit')"
+                      (ngModelChange)="setSeparatorSize($event)"
+                    />
+                  </label>
+
+                  <label class="cvlive__field">
+                    <span class="cvlive__label">{{ t()('documents.cv_style_color') }}</span>
+                    <input
+                      type="color"
+                      [ngModel]="activeSeparatorColor() ?? style().accentColorHex"
+                      (ngModelChange)="setSeparatorColor($event)"
+                    />
+                  </label>
+                </div>
+              }
+            </div>
+          }
         } @else {
           <!-- TEXT group (collapsible) -->
           <div class="cvlive__group">

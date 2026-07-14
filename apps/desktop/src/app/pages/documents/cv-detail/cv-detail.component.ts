@@ -423,6 +423,14 @@ export class CvDetailComponent {
       this.setSectionStyle(key, { bodyRuleColorHex: change.bodyRuleColor ?? undefined });
       return;
     }
+    if (change.separatorColor !== undefined) {
+      this.setSectionStyle(key, { separatorColorHex: change.separatorColor ?? undefined });
+      return;
+    }
+    if (change.separatorSize !== undefined) {
+      this.setSectionStyle(key, { separatorSizePt: change.separatorSize ?? undefined });
+      return;
+    }
     if (change.scope === 'section') {
       if (change.reset) this.resetSectionStyle(key);
       else this.setSectionStyle(key, change.patch ?? {});

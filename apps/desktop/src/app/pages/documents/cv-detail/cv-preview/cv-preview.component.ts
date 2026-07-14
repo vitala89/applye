@@ -923,6 +923,10 @@ export class CvPreviewComponent {
       css['--cv-header-rule-color'] = sec.bodyRuleColorHex;
       css['--cv-entry-rule-color'] = sec.bodyRuleColorHex;
     }
+    // In-line item separators (the `|` between languages, etc.). Scoped to the
+    // section wrapper, so a section only styles its own separators.
+    if (sec?.separatorColorHex) css['--cv-sep-color'] = sec.separatorColorHex;
+    if (sec?.separatorSizePt != null) css['--cv-sep-size'] = `${sec.separatorSizePt}pt`;
     return css;
   }
 

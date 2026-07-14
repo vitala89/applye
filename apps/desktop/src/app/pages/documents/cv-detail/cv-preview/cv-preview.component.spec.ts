@@ -160,6 +160,20 @@ describe('CvPreviewComponent', () => {
     expect(component.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
   });
 
+  it('bodyCss emits separator vars for a section that overrides them', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { languages: { separatorColorHex: '#abcdef', separatorSizePt: 12 } },
+    });
+    fixture.componentRef.setInput('sections', [
+      { key: 'languages', order: 0, visible: true, items: [{ language: 'English', level: '' }] },
+    ]);
+    fixture.detectChanges();
+    const css = component.bodyCss('languages');
+    expect(css['--cv-sep-color']).toBe('#abcdef');
+    expect(css['--cv-sep-size']).toBe('12pt');
+  });
+
   it('a whole-entry selection frames only the clicked entry; languages body frames its <p>', () => {
     fixture.componentRef.setInput('interactive', true);
     fixture.componentRef.setInput('sections', [

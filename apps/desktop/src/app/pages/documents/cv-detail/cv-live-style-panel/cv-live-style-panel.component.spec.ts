@@ -300,6 +300,34 @@ describe('CvLiveStylePanelComponent', () => {
     expect(btns).toHaveLength(1);
   });
 
+  it('separator controls: shown only for languages, emit section-level colour/size', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'languages',
+      part: 'body',
+      elementPath: 'lang',
+    });
+    fixture.detectChanges();
+    expect(component.canSeparator()).toBe(true);
+    const events = collect();
+    component.setSeparatorColor('#0a5');
+    component.setSeparatorSize(14);
+    component.setSeparatorSize(null);
+    expect(events).toEqual([
+      { scope: 'element', separatorColor: '#0a5' },
+      { scope: 'element', separatorSize: 14 },
+      { scope: 'element', separatorSize: null },
+    ]);
+
+    // Not offered for other sections.
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'skills',
+      part: 'body',
+      elementPath: 'skills.0',
+    });
+    fixture.detectChanges();
+    expect(component.canSeparator()).toBe(false);
+  });
+
   it('body-rule controls: shown for personal-details/experience, emit section-level width/colour', () => {
     fixture.componentRef.setInput('selection', { sectionKey: 'personal_details', part: 'body' });
     fixture.detectChanges();

@@ -272,7 +272,8 @@ textarea.cvpreview__leaf-editor {
   margin: 0;
 }
 .cvpreview__languages-sep {
-  color: var(--text-tertiary);
+  color: var(--cv-sep-color, var(--text-tertiary));
+  font-size: var(--cv-sep-size, inherit);
   white-space: pre;
 }
 .cvpreview__entry-head {

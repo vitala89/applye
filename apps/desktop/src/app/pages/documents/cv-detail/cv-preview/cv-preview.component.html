@@ -392,7 +392,7 @@
     (click)="selectLeaf(key, leafPath('exp', i), renderMode, $event)"
     (keydown.enter)="selectLeaf(key, leafPath('exp', i), renderMode, $event)"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i))"
-    [ngStyle]="{ ...bodyCss(key), ...leafCss(leafPath('exp', i)) }"
+    [ngStyle]="{ ...bodyCss(key), ...entryCss(leafPath('exp', i)) }"
   >
     <div class="cvpreview__entry-head">
       <span class="cvpreview__entry-lead">
@@ -618,7 +618,7 @@
     (click)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.enter)="selectPart(key, 'body', renderMode, $event, leafPath('exp', i, 'bullet', b))"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'bullet', b))"
-    [ngStyle]="{ ...bodyCss(key), ...leafCss(leafPath('exp', i)) }"
+    [ngStyle]="bodyCss(key)"
   >
     @if (isEditingLeaf(leafPath('exp', i, 'bullet', b)) && selectable(renderMode)) {
       <li>
@@ -682,7 +682,7 @@
     (click)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
     (keydown.enter)="selectLeaf(key, leafPath('edu', i), renderMode, $event)"
     (keydown.space)="onSelectKey($event, key, 'body', renderMode, leafPath('edu', i))"
-    [ngStyle]="{ ...bodyCss(key), ...leafCss(leafPath('edu', i)) }"
+    [ngStyle]="{ ...bodyCss(key), ...entryCss(leafPath('edu', i)) }"
   >
     <div class="cvpreview__entry-head">
       <span class="cvpreview__entry-role cvpreview__entry-role--editor">

@@ -985,6 +985,17 @@ export class CvPreviewComponent {
     };
   }
 
+  /** Style for a whole experience/education ENTRY head element: the entry's
+   * own leaf override PLUS its colour mirrored into `--cv-entry-color`, so the
+   * head sub-parts that carry their own colour by default (the company accent,
+   * the muted dates) follow the per-entry override too — i.e. an element-scope
+   * colour recolours the whole framed head line, not the bullets below it. */
+  entryCss(path: string): Record<string, string> {
+    const css = this.leafCss(path);
+    if (css['color']) css['--cv-entry-color'] = css['color'];
+    return css;
+  }
+
   /** Title style for a section heading. */
   titleCss(key: CvSectionKey): Record<string, string> {
     const s = effectiveTitleStyle(this.style(), key);

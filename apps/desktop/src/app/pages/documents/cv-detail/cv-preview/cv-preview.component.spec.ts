@@ -160,6 +160,32 @@ describe('CvPreviewComponent', () => {
     expect(component.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
   });
 
+  it('entryCss mirrors the entry colour into --cv-entry-color (head), and bullets stay bodyCss-only', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      elementStyles: { 'exp.0': { colorHex: '#ff00ff' } },
+    });
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'experience',
+        order: 0,
+        visible: true,
+        entries: [{ company: 'Acme', role: 'Eng', startDate: '2020', bullets: ['x'] }],
+      },
+    ]);
+    fixture.detectChanges();
+    // Head element carries the colour AND the --cv-entry-color var (so the
+    // company/dates follow it); the bullet <ul> does NOT (element colour must
+    // not leak to bullets below the framed head).
+    const head = fixture.nativeElement.querySelector('.page-card .cvpreview__entry') as HTMLElement;
+    expect(head.style.getPropertyValue('--cv-entry-color')).toBe('#ff00ff');
+    const bullets = fixture.nativeElement.querySelector(
+      '.page-card ul.cvpreview__bullets',
+    ) as HTMLElement;
+    expect(bullets.style.getPropertyValue('--cv-entry-color')).toBe('');
+    expect(bullets.style.color).toBe('');
+  });
+
   it('bodyCss emits separator vars for a section that overrides them', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,

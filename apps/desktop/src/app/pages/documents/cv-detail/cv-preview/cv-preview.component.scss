@@ -10,11 +10,19 @@
 
 .cvpreview-viewport {
   overflow: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  // Centre the fixed-width page while keeping its LEFT edge reachable when the
+  // window is narrower than the paper. Flex centering (`align-items:center`)
+  // hides the overflowed start and can't be scrolled to; `text-align:center`
+  // on the scroll container + an inline-level sheet centres AND lets the start
+  // scroll into view.
+  text-align: center;
   padding: var(--space-4);
   background: var(--surface-2);
+}
+.cvpreview-viewport > lib-paginated-sheet {
+  display: inline-flex;
+  text-align: left;
+  vertical-align: top;
 }
 // Click-to-select affordance for the live-style panel. `outline` (never
 // `border`/`margin`/`padding`) so a selectable/selected leaf keeps the exact
@@ -22,10 +30,14 @@
 // Only attached on the visible page render (`selectable()` gates the class).
 .cvpreview__selectable {
   cursor: pointer;
+  border-radius: 4px;
+  transition: background 100ms ease;
 }
+// Soft VS Code-style hover tint (not a boxed outline) so hovering a field reads
+// as a gentle highlight. Kept faint because nested selectables (a leaf inside
+// its section wrapper) can both match :hover.
 .cvpreview__selectable:hover {
-  outline: var(--border-width) solid var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 6%, transparent);
 }
 // Keyboard focus ring: a selectable host reached by Tab must show the same
 // affordance a mouse hover does, so keyboard-only users can see what Enter or
@@ -34,18 +46,63 @@
   outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
   outline-offset: 2px;
 }
-.cvpreview__selected {
-  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
-}
-// Element-scope highlight (Phase D.2): marks the ONE leaf a body selection's
-// `elementPath` targets — distinct from `.cvpreview__selected` (section+part
-// gating for which editors render at all). Dashed, not solid, so a selected
-// section with one pinned leaf reads as two different affordances rather
-// than a duplicate outline.
+// Single-element selection highlight (design). `box-shadow` + `background`
+// (never border/margin/padding) so the box metrics the hidden measurement
+// pass computes are untouched — pagination is unaffected. The measure pass is
+// never selectable, so these classes never reach it. A `::before` chip labels
+// the field above the element, driven by `data-cv-chip`.
+.cvpreview__selected,
 .cvpreview__element-selected {
-  outline: 2px dashed var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
+  position: relative;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--cv-accent, var(--accent, var(--border-strong)));
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 12%, transparent);
+}
+.cvpreview__selected[data-cv-chip]::before,
+.cvpreview__element-selected[data-cv-chip]::before {
+  content: attr(data-cv-chip);
+  position: absolute;
+  top: -11px;
+  left: 6px;
+  height: 18px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  background: var(--cv-accent, var(--accent));
+  color: var(--accent-fg, #fff);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 5px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 4;
+}
+// A selected CONTAINER (section+part wrapper) that holds a selected leaf shows
+// nothing itself — only the leaf's highlight + chip (design: one element at a
+// time). `:has()` keeps this in CSS, so no wrapper class binding is needed.
+.cvpreview__selected:has(.cvpreview__element-selected) {
+  box-shadow: none;
+  background: transparent;
+}
+.cvpreview__selected:has(.cvpreview__element-selected)::before {
+  content: none;
+}
+// Click-a-word-to-bold targets inside a selected summary/bullet (design). Only
+// rendered for the selected leaf, so they never reach the measurement pass.
+.cvpreview__word {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 100ms ease;
+}
+.cvpreview__word:hover {
+  background: color-mix(in srgb, var(--cv-accent, #157a5c) 16%, transparent);
+}
+.cvpreview__word--bold {
+  font-weight: 700;
 }
 // Space above each new section. Uses padding (not margin) on the section's
 // first element so the paginated sheet — which measures each atom's
@@ -59,6 +116,12 @@
   letter-spacing: var(--tracking-wide);
   padding-bottom: var(--space-2);
   margin: 0 0 var(--space-3);
+  // The title's underline rule is a `border-bottom`; the selectable/selected
+  // 4px `border-radius` would curve its ends inward (the "angled corners"
+  // artefact). Square the bottom corners so the rule runs straight edge to
+  // edge; the top corners stay rounded for the hover/selection tint.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 .cvpreview__summary {
   line-height: var(--cv-section-line-height, var(--leading-normal));
@@ -112,7 +175,11 @@
 .cvpreview__contact {
   margin: 0 0 0.8rem;
   font-size: 0.85em;
-  color: var(--text-tertiary);
+  // Fall back through the section body-colour override so a "This section"
+  // colour recolours the contact line too (it had its own tertiary colour,
+  // which is why changing personal-details colour left it unchanged). An
+  // element-scope override on the contact leaf still wins via inline `color`.
+  color: var(--cv-section-body-color, var(--text-tertiary));
 }
 .cvpreview__contact--editor {
   display: flex;
@@ -153,26 +220,6 @@ textarea.cvpreview__leaf-editor {
 // Wraps a bold-capable textarea (summary/bullet) with its visible Bold
 // button — the button only ever renders alongside an already-selected leaf
 // editor (page render only), so it never reaches the inert measurement pass.
-.cvpreview__bold-field {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-.cvpreview__bold-btn {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  font-weight: 700;
-  border: var(--border-width) solid var(--border-strong);
-  border-radius: var(--radius-input);
-  background: var(--surface-1);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.cvpreview__bold-btn:hover {
-  border-color: var(--cv-accent, var(--accent));
-  color: var(--cv-accent, var(--accent));
-}
 .cvpreview__skill-row {
   margin: 0.15rem 0;
 }
@@ -225,7 +272,8 @@ textarea.cvpreview__leaf-editor {
   margin: 0;
 }
 .cvpreview__languages-sep {
-  color: var(--text-tertiary);
+  color: var(--cv-sep-color, var(--text-tertiary));
+  font-size: var(--cv-sep-size, inherit);
   white-space: pre;
 }
 .cvpreview__entry-head {
@@ -239,18 +287,30 @@ textarea.cvpreview__leaf-editor {
   flex-wrap: wrap;
   align-items: baseline;
 }
+// These entry sub-parts carry their own theme colour by default (company =
+// accent, industry/meta/dates = muted). But a "This section" colour override
+// must recolour the WHOLE section uniformly — including the company — so each
+// reads `--cv-section-body-color` FIRST (set on the section wrapper by
+// `bodyCss` only when an override exists) and falls back to its theme colour
+// otherwise. An element-scope override still wins: `leafCss` writes an inline
+// `color` on the leaf itself, which beats these class rules.
+// Priority: a per-ENTRY element override (`--cv-entry-color`, set on the head
+// wrapper when the whole entry is styled) wins, then a "This section" colour
+// (`--cv-section-body-color`), then the part's own theme colour. This lets a
+// per-entry colour recolour the WHOLE head line — company/dates included —
+// even though those parts carry their own colour by default.
 .cvpreview__entry-company {
   font-weight: 700;
-  color: var(--cv-company-color, inherit);
+  color: var(--cv-entry-color, var(--cv-section-body-color, var(--cv-company-color, inherit)));
 }
 .cvpreview__entry-industry {
-  color: var(--cv-muted, var(--text-tertiary));
+  color: var(--cv-entry-color, var(--cv-section-body-color, var(--cv-muted, var(--text-tertiary))));
 }
 .cvpreview__entry-meta,
 .cvpreview__entry-dates {
   white-space: nowrap;
   font-size: 0.85em;
-  color: var(--text-tertiary);
+  color: var(--cv-entry-color, var(--cv-section-body-color, var(--text-tertiary)));
 }
 .cvpreview__entry-head--rule {
   // Aurora draws a thin rule under the experience role/dates line; Classic
@@ -293,4 +353,8 @@ textarea.cvpreview__leaf-editor {
     clear: both;
   }
   border-bottom: var(--cv-header-rule-width, 0pt) solid var(--cv-header-rule-color, transparent);
+  // Same square-corner fix as the section title: keep the header rule ends
+  // straight despite the selectable/selected border-radius.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }

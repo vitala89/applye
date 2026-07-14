@@ -76,16 +76,29 @@
 .cvdetail__live-panel {
   position: sticky;
   top: var(--space-4);
-  flex: 0 0 280px;
+  flex: 0 0 340px;
+  // Cap the fixed 340px basis: without this, an unshrinkable child (the
+  // nowrap sample-text) raises the panel's min-content width and the whole
+  // panel balloons past 340px, pushing content off-screen.
+  min-width: 0;
   align-self: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  // The aside IS the scroll container: capped to the viewport height and
+  // scrolling its own content when taller than the screen, so the lower
+  // controls (colour, line size…) stay reachable on a short window.
+  // It must NOT be a flex column — that let the single `.cvlive` child
+  // (which sets `overflow: hidden`) shrink to the cap and clip its content
+  // instead of scrolling, which is why the earlier scroll behaved erratically
+  // and never reached the end. Plain block flow lets `.cvlive` keep its full
+  // height so this container scrolls it.
+  // `dvh` (dynamic viewport height) excludes mobile browser chrome, so the
+  // last control (the reset button) clears the fold instead of hiding behind
+  // the address/home bar the way `vh` does. Fallback to `vh` first.
+  max-height: calc(100vh - (var(--space-4) * 2));
+  max-height: calc(100dvh - (var(--space-4) * 2));
+  overflow-y: auto;
 }
-.cvdetail__live-hint {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+.cvdetail__live-panel > app-cv-live-style-panel {
+  display: block;
 }
 
 .cvdetail__bar {

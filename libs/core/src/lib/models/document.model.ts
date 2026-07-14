@@ -289,6 +289,28 @@ export interface CvSectionStyle {
   title?: CvTextStyle;
   /** Per-section title underline; unset inherits the document title border. */
   titleBorder?: CvBorderStyle;
+  /** Per-section title-underline thickness in points; unset inherits the
+   * document value, then the active theme's rule weight. */
+  titleRuleWidthPt?: number;
+  /** Per-section title-underline colour; unset inherits the document value,
+   * then the active theme's rule colour. */
+  titleRuleColorHex?: string;
+  /** Per-section BODY rule thickness in points — the divider a section draws
+   * around its body (the personal-details header underline, an experience
+   * entry's role/dates rule). Unset inherits the active theme's rule. */
+  bodyRuleWidthPt?: number;
+  /** Per-section BODY rule colour (see `bodyRuleWidthPt`). Unset inherits the
+   * active theme's rule colour. */
+  bodyRuleColorHex?: string;
+  /** Colour of the in-line separators a section draws between items (e.g. the
+   * `|` between languages). Unset inherits the muted default. */
+  separatorColorHex?: string;
+  /** Size (pt) of those in-line separators — makes the `|` taller/heavier.
+   * Unset inherits the surrounding text size. */
+  separatorSizePt?: number;
+  /** Shared style for ALL of a section's bullet lines (the "all achievements"
+   * scope) — layered under each bullet's own per-leaf override. */
+  bulletStyle?: CvElementStyle;
 }
 
 /** Per-leaf (single-element) style override — the most specific layer of the
@@ -327,6 +349,12 @@ export interface CvStyle {
   titleStyle?: CvTextStyle;
   /** Document-wide title underline style; defaults to 'solid' when unset. */
   titleBorder?: CvBorderStyle;
+  /** Document-wide title-underline thickness in points; unset falls back to
+   * the active theme's rule weight. */
+  titleRuleWidthPt?: number;
+  /** Document-wide title-underline colour; unset falls back to the active
+   * theme's rule colour. */
+  titleRuleColorHex?: string;
   /** Page geometry (size + margin preset); absent → A4 / normal. */
   page?: PageSettings;
   /** Per-element (single-leaf) style overrides, keyed by a positional path

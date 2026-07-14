@@ -156,11 +156,13 @@ describe('CvDetailComponent per-section style', () => {
       expect(component.style().titleBorder).toBe('dashed');
     });
 
-    it('switching scope re-targets subsequent writes for the same selection', () => {
+    it('applying a section change clears in-section element overrides so it applies uniformly', () => {
       component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
       component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });
-      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 13 } });
       expect(component.style().elementStyles?.['summary']).toEqual({ fontWeight: 700 });
+      component.onStylePanelChange({ scope: 'section', patch: { fontSizePt: 13 } });
+      // The individual override is wiped; the section value now governs all.
+      expect(component.style().elementStyles?.['summary']).toBeUndefined();
       expect(component.style().sectionStyles?.summary).toEqual({ fontSizePt: 13 });
     });
 
@@ -420,10 +422,14 @@ describe('CvDetailComponent per-section style', () => {
     // then type + blur to commit an inline edit through the real child tree
     // (CvPreviewComponent → sectionChange → replaceSection), not a mock.
     component.previewMode.set(true);
-    component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
+    // Selection alone no longer mounts editors — enter text-edit mode via the
+    // panel's "Edit text" control.
+    (root.querySelector('.cvlive__edit-text') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const previewTextarea = root.querySelector(
       '.page-card textarea.cvpreview__summary',
     ) as HTMLTextAreaElement;
@@ -832,7 +838,11 @@ describe('CvDetailComponent export/print hardening', () => {
    * it, and type an uncommitted draft. Returns the live editor element. */
   function startInlineDraft(text: string): HTMLTextAreaElement {
     component.previewMode.set(true);
-    component.liveSelection.set({ sectionKey: 'summary', part: 'body' });
+    component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
+    fixture.detectChanges();
+    // Selection alone no longer mounts editors — enter text-edit mode via the
+    // panel's "Edit text" control (routed to CvPreviewComponent.startEditing).
+    (fixture.nativeElement.querySelector('.cvlive__edit-text') as HTMLButtonElement).click();
     fixture.detectChanges();
     const editor = (fixture.nativeElement as HTMLElement).querySelector(
       '.page-card textarea.cvpreview__summary',

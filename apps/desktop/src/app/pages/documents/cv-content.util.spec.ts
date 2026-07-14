@@ -17,7 +17,10 @@ import {
   effectiveLeafStyle,
   effectiveSectionStyle,
   effectiveTitleStyle,
+  clearSectionElementOverrides,
   effectiveTitleBorder,
+  effectiveTitleRuleColor,
+  effectiveTitleRuleWidth,
   leafPath,
   mergeRegeneratedSection,
   normalizeCvContent,
@@ -1144,6 +1147,28 @@ describe('title/body style resolution', () => {
     expect(effectiveSectionStyle(s, 'summary').fontFamily).toBe('Calibri');
   });
 
+  it('clearSectionElementOverrides drops in-section head/field overrides, keeps bullets + siblings', () => {
+    const style: CvStyle = {
+      ...base,
+      elementStyles: {
+        'exp.0': { colorHex: '#111' },
+        'exp.0.company': { colorHex: '#222' },
+        'exp.0.bullet.1': { colorHex: '#333' },
+        'edu.0': { colorHex: '#444' },
+      },
+    };
+    // Heads/fields cleared for experience; the bullet and the education sibling stay.
+    const heads = clearSectionElementOverrides(style, 'experience');
+    expect(heads.elementStyles).toEqual({
+      'exp.0.bullet.1': { colorHex: '#333' },
+      'edu.0': { colorHex: '#444' },
+    });
+    // bullets:true clears ONLY the bullet override.
+    const bullets = clearSectionElementOverrides(style, 'experience', true);
+    expect(bullets.elementStyles?.['exp.0.bullet.1']).toBeUndefined();
+    expect(bullets.elementStyles?.['exp.0']).toEqual({ colorHex: '#111' });
+  });
+
   it('titleBorder resolves section over document over default solid', () => {
     expect(effectiveTitleBorder(base, 'summary')).toBe('solid');
     expect(effectiveTitleBorder({ ...base, titleBorder: 'none' }, 'summary')).toBe('none');
@@ -1153,6 +1178,22 @@ describe('title/body style resolution', () => {
         'skills',
       ),
     ).toBe('dotted');
+  });
+
+  it('title rule width/colour resolve section over document, undefined when unset', () => {
+    expect(effectiveTitleRuleWidth(base, 'summary')).toBeUndefined();
+    expect(effectiveTitleRuleColor(base, 'summary')).toBeUndefined();
+    const doc: CvStyle = { ...base, titleRuleWidthPt: 3, titleRuleColorHex: '#111' };
+    expect(effectiveTitleRuleWidth(doc, 'summary')).toBe(3);
+    expect(effectiveTitleRuleColor(doc, 'summary')).toBe('#111');
+    const sectioned: CvStyle = {
+      ...doc,
+      sectionStyles: { skills: { titleRuleWidthPt: 1.5, titleRuleColorHex: '#abc' } },
+    };
+    expect(effectiveTitleRuleWidth(sectioned, 'skills')).toBe(1.5);
+    expect(effectiveTitleRuleColor(sectioned, 'skills')).toBe('#abc');
+    // Section without its own override falls back to the document value.
+    expect(effectiveTitleRuleWidth(sectioned, 'summary')).toBe(3);
   });
 });
 

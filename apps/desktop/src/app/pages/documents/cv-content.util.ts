@@ -16,6 +16,7 @@ import {
   CvSkillGroup,
   CvSkillsSection,
   CvStyle,
+  CvSummarySection,
   CvTemplate,
   CoverLetterBlockKey,
   CoverLetterStyle,
@@ -49,20 +50,33 @@ export interface CvPreviewSelection {
  * most specific to least. For a title selection only two are used:
  * `section` = "this title" (per-section title override), `document` = "all
  * titles" (the document-wide `titleStyle`). */
-export type CvStyleScope = 'element' | 'section' | 'document';
+export type CvStyleScope = 'element' | 'section' | 'document' | 'bullets';
 
 /** A scope-tagged change emitted by `CvLiveStylePanelComponent`. The parent
  * maps `(selection.part, scope)` to the correct write target/reducer (see the
  * plan's mapping table). `patch` carries the cleaned body/title font fields
  * (`colorHex` only when the user actually picked a colour — the no-accent-leak
  * rule); `titleBorder` (title selections only) carries the section-title
- * underline, with `null` meaning inherit/clear; `reset` requests a per-scope
- * reset. Exactly one of `patch` / `titleBorder` / `reset` is meaningful per
- * emission. */
+ * underline, with `null` meaning inherit/clear; `titleRuleWidth` /
+ * `titleRuleColor` (title selections only) carry the underline thickness (pt)
+ * and colour, `null` meaning inherit/clear; `reset` requests a per-scope
+ * reset. Exactly one of `patch` / `titleBorder` / `titleRuleWidth` /
+ * `titleRuleColor` / `reset` is meaningful per emission. */
 export interface CvStylePanelChange {
   scope: CvStyleScope;
   patch?: Partial<CvElementStyle>;
   titleBorder?: CvBorderStyle | null;
+  titleRuleWidth?: number | null;
+  titleRuleColor?: string | null;
+  /** Section BODY-rule (divider) thickness/colour — carried on body
+   * selections for sections that draw a rule (personal details, experience);
+   * always written at section scope. `null` clears back to the theme. */
+  bodyRuleWidth?: number | null;
+  bodyRuleColor?: string | null;
+  /** In-line item separator (e.g. the `|` between languages) colour and size
+   * (pt); section-level, `null` clears back to the default. */
+  separatorColor?: string | null;
+  separatorSize?: number | null;
   reset?: boolean;
 }
 
@@ -81,6 +95,68 @@ export interface CvStylePanelChange {
  * `leafPath('lang', 0, 'language')` → `'lang.0.language'`. */
 export function leafPath(kind: string, ...parts: (string | number)[]): string {
   return [kind, ...parts].join('.');
+}
+
+/** Plain text of the leaf a `CvPreviewSelection.elementPath` targets — the
+ * inverse of `leafPath`, used to preview the SELECTED content in the live-style
+ * panel's sample swatch. Returns '' for a pathless (whole-part) selection or a
+ * title (the parent resolves a title's text from its section label instead). */
+export function cvLeafText(sections: CvSection[], sel: CvPreviewSelection | null): string {
+  if (!sel || sel.part === 'title' || !sel.elementPath) return '';
+  const section = sections.find((s) => s.key === sel.sectionKey);
+  if (!section) return '';
+  const seg = sel.elementPath.split('.');
+  switch (seg[0]) {
+    case 'summary':
+      return (section as CvSummarySection).text ?? '';
+    case 'pd': {
+      const pd = section as CvPersonalDetailsSection;
+      return seg[1] === 'fullName'
+        ? (pd.fullName ?? '')
+        : seg[1] === 'title'
+          ? (pd.title ?? '')
+          : seg[1] === 'contact'
+            ? buildContactLine(pd, { includeBirthdate: false, includeMaritalStatus: false })
+            : '';
+    }
+    case 'exp': {
+      const entry = (section as CvExperienceSection).entries[Number(seg[1])];
+      if (!entry) return '';
+      if (seg[2] === 'bullet') return entry.bullets?.[Number(seg[3])] ?? '';
+      return (entry[seg[2] as keyof CvExperienceEntry] as string | undefined) ?? '';
+    }
+    case 'skills': {
+      const group = (section as CvSkillsSection).groups[Number(seg[1])];
+      if (!group) return '';
+      return seg[2] === 'label' ? group.label : group.values.join(', ');
+    }
+    case 'lang': {
+      const items = (section as CvLanguagesSection).items;
+      // `lang` (no index) is the whole languages line; `lang.<i>.language` is
+      // one entry.
+      return seg.length === 1
+        ? items.map((it) => it.language).join(', ')
+        : (items[Number(seg[1])]?.language ?? '');
+    }
+    case 'edu': {
+      const entry = (section as CvEducationSection).entries[Number(seg[1])];
+      if (!entry) return '';
+      switch (seg[2]) {
+        case 'degree':
+          return entry.degree ?? '';
+        case 'institution':
+          return entry.institution ?? '';
+        case 'startDate':
+          return entry.startDate ?? '';
+        case 'endDate':
+          return entry.endDate ?? '';
+        default:
+          return [entry.degree, entry.institution].filter(Boolean).join(', ');
+      }
+    }
+    default:
+      return '';
+  }
 }
 
 /** Fallback order when a template has no `sectionsJson` (should not happen
@@ -628,8 +704,19 @@ export function patchCvSectionStyle(
             ([, value]) => value != null,
           ),
         );
+  // Deep-merge the shared bullet style (the "all achievements" scope), same as
+  // `title`: inherited (null/undefined) keys are dropped so an emptied override
+  // disappears.
+  const bulletStyle =
+    normalizedPatch.bulletStyle === undefined
+      ? current.bulletStyle
+      : Object.fromEntries(
+          Object.entries({ ...(current.bulletStyle ?? {}), ...normalizedPatch.bulletStyle }).filter(
+            ([, value]) => value != null,
+          ),
+        );
   const merged = Object.fromEntries(
-    Object.entries({ ...current, ...normalizedPatch, title }).filter(
+    Object.entries({ ...current, ...normalizedPatch, title, bulletStyle }).filter(
       ([, value]) => value != null && !(typeof value === 'object' && !Object.keys(value).length),
     ),
   ) as CvSectionStyle;
@@ -640,6 +727,51 @@ export function patchCvSectionStyle(
     ...style,
     sectionStyles: Object.keys(sectionStyles).length ? sectionStyles : undefined,
   };
+}
+
+/** Leaf-path prefix for a section (`exp`, `edu`, `skills`, `pd`, `lang`,
+ * `summary`) — the head of every `elementStyles` key inside that section. */
+function sectionPathPrefix(key: CvSectionKey): string | null {
+  switch (key) {
+    case 'personal_details':
+      return 'pd';
+    case 'experience':
+      return 'exp';
+    case 'education':
+      return 'edu';
+    case 'skills':
+      return 'skills';
+    case 'languages':
+      return 'lang';
+    case 'summary':
+      return 'summary';
+    default:
+      return null;
+  }
+}
+
+/** Drops per-element overrides inside a section so a section-wide change ("All
+ * experiences", "All achievements") applies UNIFORMLY — an individual entry's
+ * override no longer wins and silently gets skipped. `bullets: true` targets
+ * only that section's bullet overrides (the "All achievements" scope);
+ * otherwise it targets the heads/fields (everything except bullets). Sibling
+ * sections and the section/document styles are untouched. */
+export function clearSectionElementOverrides(
+  style: CvStyle,
+  key: CvSectionKey,
+  bullets = false,
+): CvStyle {
+  const prefix = sectionPathPrefix(key);
+  if (!prefix || !style.elementStyles) return style;
+  const next = Object.fromEntries(
+    Object.entries(style.elementStyles).filter(([path]) => {
+      const inSection = path === prefix || path.startsWith(prefix + '.');
+      if (!inSection) return true;
+      const isBullet = path.includes('.bullet.');
+      return !(bullets ? isBullet : !isBullet);
+    }),
+  );
+  return { ...style, elementStyles: Object.keys(next).length ? next : undefined };
 }
 
 /** Removes one complete per-section override and omits the map when it becomes
@@ -787,6 +919,20 @@ export function effectiveTitleStyle(
 /** Resolved title underline: per-section, then document-wide, then 'solid'. */
 export function effectiveTitleBorder(style: CvStyle, key: CvSectionKey): CvBorderStyle {
   return style.sectionStyles?.[key]?.titleBorder ?? style.titleBorder ?? 'solid';
+}
+
+/** Effective title-underline thickness (pt) for a section: per-section, then
+ * document. `undefined` means "no user override" — the renderer falls back to
+ * the active theme's rule weight (or the neutral default). */
+export function effectiveTitleRuleWidth(style: CvStyle, key: CvSectionKey): number | undefined {
+  return style.sectionStyles?.[key]?.titleRuleWidthPt ?? style.titleRuleWidthPt;
+}
+
+/** Effective title-underline colour for a section: per-section, then document.
+ * `undefined` means "no user override" — the renderer falls back to the theme
+ * rule colour (accent/muted) or the neutral default. */
+export function effectiveTitleRuleColor(style: CvStyle, key: CvSectionKey): string | undefined {
+  return style.sectionStyles?.[key]?.titleRuleColorHex ?? style.titleRuleColorHex;
 }
 
 export interface ResolvedPage {

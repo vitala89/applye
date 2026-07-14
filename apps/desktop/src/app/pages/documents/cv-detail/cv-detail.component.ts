@@ -1,4 +1,5 @@
 import {
+  afterRenderEffect,
   ApplicationRef,
   ChangeDetectionStrategy,
   Component,
@@ -6,6 +7,7 @@ import {
   DestroyRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -33,6 +35,7 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
+  CvElementStyle,
   CvSectionStyle,
   CvStyle,
   CvTemplate,
@@ -65,6 +68,7 @@ import { CvExperienceEditorComponent } from './section-editors/cv-experience-edi
 import { CvPersonalDetailsEditorComponent } from './section-editors/cv-personal-details-editor.component';
 import {
   cvFieldAtsNoteKeys,
+  cvLeafText,
   type CvPreviewSelection,
   type CvStylePanelChange,
   mergeRegeneratedSection,
@@ -72,6 +76,7 @@ import {
   parseCvSkillResponse,
   patchCvDocumentBody,
   patchCvElementStyle,
+  clearSectionElementOverrides,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
   resetCvElementStyle,
@@ -271,6 +276,38 @@ export class CvDetailComponent {
    * first selection; cleared is fine (panel shows its empty state). */
   readonly liveSelection = signal<CvPreviewSelection | null>(null);
 
+  /** Plain text of the currently-selected leaf, fed to the live-style panel's
+   * "Ag" sample so it previews the real selected content. A title's text is its
+   * localized section label; body leaves resolve through `cvLeafText`. */
+  readonly selectedLeafText = computed<string>(() => {
+    const sel = this.liveSelection();
+    if (!sel) return '';
+    if (sel.part === 'title') return this.t()(sectionLabelKey(sel.sectionKey));
+    return cvLeafText(this.sections(), sel);
+  });
+
+  /** The live preview, so we can read the selected leaf's REAL rendered style
+   * off the paper for the live-style panel's "Ag" swatch (bug: the swatch
+   * showed a flat serif instead of the field's actual colour/weight/font). */
+  private readonly cvPreviewCmp = viewChild(CvPreviewComponent);
+
+  /** Rendered typography of the selected leaf, mirrored into the swatch. */
+  readonly sampleResolvedStyle = signal<Record<string, string>>({});
+
+  /** After each render, re-read the selected leaf's computed style from the
+   * DOM (post-layout, so it reflects the current selection AND any just-applied
+   * style edit) and push it to the swatch. Guarded by value equality so the
+   * signal write doesn't loop with the render it triggers. */
+  private readonly sampleStyleSync = afterRenderEffect(() => {
+    // Track the inputs that change what's rendered so this re-runs on them.
+    this.liveSelection();
+    this.style();
+    const next = this.cvPreviewCmp()?.readSelectedHostStyle() ?? {};
+    if (JSON.stringify(this.sampleResolvedStyle()) !== JSON.stringify(next)) {
+      this.sampleResolvedStyle.set(next);
+    }
+  });
+
   /** Per-section collapse state for the content-section accordion — session
    * only (not persisted); every section starts expanded (an empty set means
    * nothing is collapsed). */
@@ -358,6 +395,18 @@ export class CvDetailComponent {
       else this.setSectionStyle(key, { titleBorder: border });
       return;
     }
+    if (change.titleRuleWidth !== undefined) {
+      const w = change.titleRuleWidth ?? undefined;
+      if (allTitles) this.updateStyle({ titleRuleWidthPt: w });
+      else this.setSectionStyle(key, { titleRuleWidthPt: w });
+      return;
+    }
+    if (change.titleRuleColor !== undefined) {
+      const c = change.titleRuleColor ?? undefined;
+      if (allTitles) this.updateStyle({ titleRuleColorHex: c });
+      else this.setSectionStyle(key, { titleRuleColorHex: c });
+      return;
+    }
     if (change.patch) {
       if (allTitles) this.updateTitleStyle(change.patch);
       else this.setSectionTitleStyle(key, change.patch);
@@ -366,9 +415,53 @@ export class CvDetailComponent {
 
   private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
     const key = sel.sectionKey;
+    // Section body-rule (divider) is a section-level property — written at
+    // section scope regardless of the font scope selector.
+    if (change.bodyRuleWidth !== undefined) {
+      this.setSectionStyle(key, { bodyRuleWidthPt: change.bodyRuleWidth ?? undefined });
+      return;
+    }
+    if (change.bodyRuleColor !== undefined) {
+      this.setSectionStyle(key, { bodyRuleColorHex: change.bodyRuleColor ?? undefined });
+      return;
+    }
+    if (change.separatorColor !== undefined) {
+      this.setSectionStyle(key, { separatorColorHex: change.separatorColor ?? undefined });
+      return;
+    }
+    if (change.separatorSize !== undefined) {
+      this.setSectionStyle(key, { separatorSizePt: change.separatorSize ?? undefined });
+      return;
+    }
+    if (change.scope === 'bullets') {
+      // "All achievements": the section-shared bullet style. Reset clears it by
+      // merging an all-undefined patch (which `patchCvSectionStyle` drops).
+      const patch: Partial<CvElementStyle> = change.reset
+        ? {
+            fontFamily: undefined,
+            fontSizePt: undefined,
+            fontWeight: undefined,
+            colorHex: undefined,
+            lineHeight: undefined,
+          }
+        : (change.patch ?? {});
+      // Applying to all achievements wipes the per-bullet overrides so every
+      // bullet adopts the shared value uniformly.
+      if (!change.reset) this.style.set(clearSectionElementOverrides(this.style(), key, true));
+      this.setSectionStyle(key, { bulletStyle: patch });
+      return;
+    }
     if (change.scope === 'section') {
-      if (change.reset) this.resetSectionStyle(key);
-      else this.setSectionStyle(key, change.patch ?? {});
+      if (change.reset) {
+        this.resetSectionStyle(key);
+        return;
+      }
+      // Applying to the whole section (e.g. "All experiences") first wipes the
+      // per-entry/field overrides in it (bullets excepted — their own scope),
+      // so EVERY entry adopts the section value uniformly instead of the
+      // individually-styled ones silently keeping their old colour.
+      this.style.set(clearSectionElementOverrides(this.style(), key));
+      this.setSectionStyle(key, change.patch ?? {});
       return;
     }
     if (change.scope === 'element') {
@@ -419,6 +512,8 @@ export class CvDetailComponent {
       s.accentColorHex !== d.accentColorHex ||
       s.bodyColorHex !== d.bodyColorHex ||
       !!s.titleBorder ||
+      s.titleRuleWidthPt != null ||
+      !!s.titleRuleColorHex ||
       nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
       sectionCustom ||
       elementCustom

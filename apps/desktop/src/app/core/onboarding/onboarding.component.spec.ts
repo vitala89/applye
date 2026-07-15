@@ -23,10 +23,12 @@ describe('OnboardingComponent flow', () => {
   let component: OnboardingComponent;
   let fixture: ComponentFixture<OnboardingComponent>;
   let hasProviderKey: jest.Mock;
+  let setProviderKey: jest.Mock;
   let run: jest.Mock;
 
   beforeEach(async () => {
     hasProviderKey = jest.fn().mockResolvedValue(false);
+    setProviderKey = jest.fn().mockResolvedValue(undefined);
     run = jest
       .fn()
       .mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
@@ -48,7 +50,7 @@ describe('OnboardingComponent flow', () => {
             run,
           },
         },
-        { provide: KeysService, useValue: { hasProviderKey, setProviderKey: jest.fn() } },
+        { provide: KeysService, useValue: { hasProviderKey, setProviderKey } },
         { provide: Router, useValue: { navigateByUrl: jest.fn() } },
         { provide: ThemeService, useValue: { theme: () => 'light' } },
         TranslateService,
@@ -127,18 +129,50 @@ describe('OnboardingComponent flow', () => {
       expect(component.step()).toBe(4);
     });
 
-    it('keeps roles the user typed in and does not re-check unchecked ones', async () => {
-      component.archetypes.set(['Manual Role']);
-
-      await component.suggestArchetypes();
-
-      expect(component.archetypes()).toEqual(['Manual Role', 'Staff FE']);
-    });
-
-    it('seeds roles as-is when the user has chosen none', async () => {
+    it('seeds the selection on the first suggestion', async () => {
       await component.suggestArchetypes();
 
       expect(component.archetypes()).toEqual(['Staff FE']);
+    });
+
+    it('keeps roles the user typed in', async () => {
+      await component.suggestArchetypes();
+      component.addArchetype('Manual Role');
+
+      await component.suggestArchetypes();
+
+      expect(component.archetypes()).toEqual(['Staff FE', 'Manual Role']);
+    });
+
+    it('does not re-check a role the user unchecked', async () => {
+      await component.suggestArchetypes();
+      component.toggleRole('Staff FE');
+      expect(component.archetypes()).toEqual([]);
+
+      await component.suggestArchetypes();
+
+      expect(component.archetypes()).toEqual([]);
+    });
+
+    it('re-offers a role the user unchecked and then chose again', async () => {
+      await component.suggestArchetypes();
+      component.toggleRole('Staff FE');
+      component.toggleRole('Staff FE');
+
+      await component.suggestArchetypes();
+
+      expect(component.archetypes()).toEqual(['Staff FE']);
+    });
+
+    it('adds a newly suggested role without disturbing the selection', async () => {
+      await component.suggestArchetypes();
+      run.mockResolvedValueOnce({
+        text: '{"archetypes":["Staff FE","Principal FE"],"compRange":"EUR 90-120K"}',
+      });
+
+      await component.suggestArchetypes();
+
+      expect(component.archetypes()).toEqual(['Staff FE', 'Principal FE']);
     });
 
     it('seeds the comp range while untouched', async () => {
@@ -185,15 +219,15 @@ describe('OnboardingComponent flow', () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.keyStatus()).toBe('saved');
+      expect(component.keyStored()).toBe(true);
       expect(component.keyPresent()).toBe(true);
+      expect(component.keyStatus()).toBe('idle');
     });
 
-    it('leaves the status idle when the keyring has nothing', async () => {
+    it('reports nothing when the keyring is empty', async () => {
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(component.keyStatus()).toBe('idle');
       expect(component.keyPresent()).toBe(false);
     });
 
@@ -204,7 +238,91 @@ describe('OnboardingComponent flow', () => {
       await fixture.whenStable();
 
       expect(hasProviderKey).toHaveBeenLastCalledWith('openai');
-      expect(component.keyStatus()).toBe('saved');
+      expect(component.keyPresent()).toBe(true);
+    });
+
+    it('survives a paste that fails to save', async () => {
+      hasProviderKey.mockResolvedValue(true);
+      setProviderKey.mockRejectedValue(new Error('keyring locked'));
+      create();
+      await fixture.whenStable();
+
+      component.keyInput.set('sk-ant-averylongkeyvalue');
+      await component.saveKey();
+
+      expect(component.keySaveError()).toBe(true);
+      expect(component.keyPresent()).toBe(true);
+    });
+
+    it('survives a paste rejected by the format check', async () => {
+      hasProviderKey.mockResolvedValue(true);
+      create();
+      await fixture.whenStable();
+
+      component.keyInput.set('too-short');
+      await component.saveKey();
+
+      expect(component.keyStatus()).toBe('invalid');
+      expect(component.keyPresent()).toBe(true);
+    });
+  });
+
+  describe('a key saved by this run', () => {
+    it('is reported as present', async () => {
+      hasProviderKey.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+      create();
+      await fixture.whenStable();
+      expect(component.keyPresent()).toBe(false);
+
+      component.keyInput.set('sk-ant-averylongkeyvalue');
+      await component.saveKey();
+
+      expect(component.keyStatus()).toBe('valid');
+      expect(component.keyPresent()).toBe(true);
+    });
+  });
+
+  describe('a resume the user walked away from', () => {
+    it('is not written to the profile when the skip tile is chosen after a parse', () => {
+      component.parsedCv.set(parsedCv());
+
+      component.chooseResume('skip');
+
+      expect(component.parsedCv()).toBeNull();
+      expect(component.hasReview()).toBe(false);
+    });
+
+    it('is dropped when the pasted text changes', () => {
+      component.parsedCv.set(parsedCv());
+
+      component.setPastedResume('a different resume');
+
+      expect(component.parsedCv()).toBeNull();
+    });
+  });
+
+  describe('an AI call already in flight', () => {
+    it('blocks a second Continue, so no step is skipped and no call is paid for twice', async () => {
+      component.step.set(3);
+      component.resumeText.set('a resume');
+      let release!: (v: unknown) => void;
+      run.mockReturnValueOnce(new Promise((r) => (release = r)));
+
+      const first = component.goNext();
+      // Let the first call reach the (now hanging) AI request before the second.
+      await new Promise((r) => setTimeout(r, 0));
+      expect(component.busy()).toBe(true);
+      expect(run).toHaveBeenCalledTimes(1);
+
+      await component.goNext();
+
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(component.step()).toBe(3);
+
+      release({ text: '{"archetypes":["Staff FE"]}' });
+      await first;
+
+      expect(component.step()).toBe(4);
     });
   });
 });

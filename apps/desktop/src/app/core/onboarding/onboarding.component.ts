@@ -52,9 +52,10 @@ import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
-/** `valid` = saved by this run; `saved` = already in the keyring when the wizard
- * opened. Neither means the provider accepted it — nothing here calls the API. */
-type KeyStatus = 'idle' | 'checking' | 'valid' | 'saved' | 'invalid';
+/** Feedback for the key INPUT only — never a claim about the keyring. Whether a
+ * key exists is `keyStored`, which a failed paste must not disturb. Neither
+ * means the provider accepted the key: nothing here calls the API. */
+type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
@@ -150,6 +151,9 @@ export class OnboardingComponent {
   readonly guide = computed(() => guideForProvider(this.selectedProvider()));
   readonly keyInput = signal('');
   readonly keyStatus = signal<KeyStatus>('idle');
+  /** Whether the selected provider has a key in the OS keyring — from the
+   * keyring itself, so it survives a re-run and an input the user fumbles. */
+  readonly keyStored = signal(false);
   readonly keySaveError = signal(false);
   readonly v1Providers: AiProvider[] = ['claude', 'openai', 'deepseek'];
 
@@ -162,29 +166,29 @@ export class OnboardingComponent {
   }
 
   constructor() {
-    void this.refreshKeyStatus();
+    void this.refreshKeyStored();
   }
 
   selectProvider(id: AiProvider): void {
     this.selectedProvider.set(id);
     this.keyStatus.set('idle');
+    this.keyStored.set(false);
     this.keySaveError.set(false);
-    void this.refreshKeyStatus();
+    void this.refreshKeyStored();
   }
 
   /** A key saved by an earlier run lives in the keyring, not in this component,
    * so without this a re-run shows "not connected" on the Ready step for a
-   * provider that is in fact connected. `saved` is deliberately distinct from
-   * `valid`: this run never saw the key, so it can only report that one exists. */
-  private async refreshKeyStatus(): Promise<void> {
+   * provider that is in fact connected. */
+  private async refreshKeyStored(): Promise<void> {
     const provider = this.selectedProvider();
     try {
       const has = await this.keys.hasProviderKey(provider);
       // A provider switch mid-await must not land its answer on the new one.
       if (this.selectedProvider() !== provider) return;
-      if (has && this.keyStatus() === 'idle') this.keyStatus.set('saved');
+      this.keyStored.set(has);
     } catch {
-      // Keyring unreadable — leave the status idle and let the user paste a key.
+      // Keyring unreadable — leave it as "no key" and let the user paste one.
     }
   }
 
@@ -216,7 +220,11 @@ export class OnboardingComponent {
       await this.keys.setProviderKey(this.selectedProvider(), key);
       const saved = await this.keys.hasProviderKey(this.selectedProvider());
       this.keyStatus.set(saved ? 'valid' : 'invalid');
+      this.keyStored.set(saved);
     } catch {
+      // A write that fails leaves whatever was already in the keyring intact,
+      // so `keyStored` is deliberately untouched here — reporting "no key" for
+      // a provider that still has a working one is the worse lie.
       this.keyStatus.set('idle');
       this.keySaveError.set(true);
     }
@@ -247,6 +255,10 @@ export class OnboardingComponent {
   chooseResume(path: ResumePath): void {
     this.resumePath.set(path);
     this.resumeError.set(false);
+    // Choosing "skip" after a parse must actually drop the parse. Otherwise the
+    // profile still gets written from the resume the user just walked away from
+    // while the Ready step tells them it was skipped.
+    if (path === 'skip') this.discardParse();
     if (path === 'upload' && !this.resumeFileName()) {
       void this.pickResumeFile();
     }
@@ -258,6 +270,14 @@ export class OnboardingComponent {
   setPastedResume(text: string): void {
     this.resumeText.set(text);
     this.resumeInputHash.set(undefined);
+    this.discardParse();
+  }
+
+  /** Any change to the resume source invalidates what was parsed from the old
+   * one — a stale parse would otherwise reach the profile and the CV document,
+   * and keep the Review step reachable for text that is no longer there. */
+  private discardParse(): void {
+    this.parsedCv.set(null);
   }
 
   async pickResumeFile(): Promise<void> {
@@ -271,6 +291,7 @@ export class OnboardingComponent {
     this.resumeText.set(file.text);
     this.resumeInputHash.set(file.inputHash);
     this.resumeFileName.set(path.split(/[/\\]/).pop() ?? path);
+    this.discardParse();
   }
 
   async parseResume(): Promise<void> {
@@ -312,6 +333,10 @@ export class OnboardingComponent {
   readonly suggestedRoles = signal<string[]>([]);
   readonly archetypes = signal<string[]>([]);
   readonly suggesting = signal(false);
+  /** Distinguishes "never suggested" from "user unchecked everything". */
+  readonly hasSuggested = signal(false);
+  /** Roles the user unchecked by hand — a re-suggest must not bring them back. */
+  readonly rejectedRoles = signal<ReadonlySet<string>>(new Set());
   readonly currencyOptions = CURRENCY_OPTIONS;
   readonly compCurrency = signal<string>('USD');
   readonly compMin = signal(80);
@@ -346,7 +371,14 @@ export class OnboardingComponent {
   }
 
   toggleRole(role: string): void {
-    this.archetypes.update((a) => (a.includes(role) ? a.filter((r) => r !== role) : [...a, role]));
+    const removing = this.archetypes().includes(role);
+    this.archetypes.update((a) => (removing ? a.filter((r) => r !== role) : [...a, role]));
+    this.rejectedRoles.update((rejected) => {
+      const next = new Set(rejected);
+      if (removing) next.add(role);
+      else next.delete(role);
+      return next;
+    });
   }
 
   addArchetype(v: string): void {
@@ -371,9 +403,15 @@ export class OnboardingComponent {
     this.compTouched.set(true);
   }
 
+  /** True while a footer-driven AI call is in flight. The Continue button binds
+   * to it: without the guard a second click starts a second (paid) call and
+   * advances twice, skipping a step entirely. */
+  readonly busy = computed(() => this.parsing() || this.suggesting());
+
   /** Footer "Continue" handler: branches per step so parsing/suggestion runs
    * before advancing, and a skipped/empty resume never blocks progress. */
   async goNext(): Promise<void> {
+    if (this.busy()) return;
     const s = this.step();
     if (s === 2) {
       // With no resume there is nothing to review, so Review would be a dead
@@ -418,11 +456,20 @@ export class OnboardingComponent {
       });
       const parsed = parseArchetypesSkillResponse(res.text);
       this.suggestedRoles.set(parsed.archetypes);
-      // Union, not replace: on "Suggest again" a plain `set` would drop roles
-      // the user typed in and silently re-check ones they had unchecked.
-      this.archetypes.update((current) =>
-        current.length ? [...new Set([...current, ...parsed.archetypes])] : parsed.archetypes,
-      );
+      // The first suggestion seeds the selection; every later one only offers
+      // its roles as chips. Union-ing on a re-suggest would re-check roles the
+      // user had just unchecked, and an empty selection is a real choice — not
+      // the same state as "never suggested", which is why this needs its own
+      // flag rather than an `archetypes().length` test.
+      if (this.hasSuggested()) {
+        this.archetypes.update((current) => [
+          ...current,
+          ...parsed.archetypes.filter((r) => !current.includes(r) && !this.rejectedRoles().has(r)),
+        ]);
+      } else {
+        this.archetypes.set(parsed.archetypes);
+      }
+      this.hasSuggested.set(true);
       // Comp is a single range with no user-authored parts to preserve, and it
       // is only ever seeded before the user reaches the step — but once they
       // have edited it, a re-suggest must not overwrite their number.
@@ -442,10 +489,7 @@ export class OnboardingComponent {
 
   // ---- Ready summary ----
   /** True for a key this run saved AND one an earlier run left in the keyring. */
-  readonly keyPresent = computed(() => {
-    const s = this.keyStatus();
-    return s === 'valid' || s === 'saved';
-  });
+  readonly keyPresent = computed(() => this.keyStored());
   readonly providerSummary = computed(() => {
     if (!this.keyPresent()) return this.t()('onboarding.done.not_connected');
     return `${this.t()(this.guide().nameKey)} · ${this.t()('onboarding.done.connected_suffix')}`;

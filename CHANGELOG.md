@@ -13,9 +13,11 @@ is the single source of truth; this file tracks what changed at each tag.
 ### Fixed
 
 - **"Suggest again" no longer throws you off the targeting step.** Asking for fresh role suggestions jumped straight to the final screen, because the suggestion always advanced the wizard regardless of who called it.
-- **Re-suggesting keeps the roles you chose.** Roles you typed in by hand were dropped and ones you had unchecked came back; suggestions now merge with your selection instead of replacing it, and a compensation range you edited is left alone.
+- **Re-suggesting keeps the roles you chose.** Roles you typed in by hand were dropped and ones you had unchecked came back. The first suggestion seeds your selection; every later one only adds roles you have not already rejected, and a compensation range you edited is left alone.
 - **Skipping the resume no longer shows an empty review screen.** With nothing parsed, the wizard now goes from the resume step straight to targeting, and the review step stays out of reach from both the Back button and the stepper.
-- **A key from an earlier run is recognised.** Re-running onboarding with a key already in your OS keychain reported "Not connected" on the final screen; the wizard now reads the keychain per provider on open.
+- **A key from an earlier run is recognised.** Re-running onboarding with a key already in your OS keychain reported "Not connected" on the final screen; the wizard now reads the keychain per provider on open. A key already in the keychain also survives a later paste that fails or is mistyped, which previously reset the wizard's view of it.
+- **A second click on Continue no longer skips a step.** The button stayed live while the resume parse or role suggestion ran, so an impatient double-click started a second (paid) AI call and advanced twice — past Review, or past Targeting to the final screen. Continue and Back now disable while a call is in flight, and Continue says so instead of sitting silently on "Continue".
+- **Skipping the resume after it was already parsed actually skips it.** The profile was still written from the parsed resume while the summary said "Skipped"; changing or dropping the resume source now discards what was parsed from it.
 - **Skip is hidden on the final step**, where it sat next to Finish and would have discarded the profile you had just built.
 
 ### Changed

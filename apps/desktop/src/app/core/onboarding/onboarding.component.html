@@ -174,7 +174,7 @@
                         <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
                         {{ t()('onboarding.ai.valid_note') }}
                       </div>
-                    } @else if (keyStatus() === 'saved') {
+                    } @else if (keyStatus() === 'idle' && keyStored()) {
                       <div class="ob__key-status ob__key-status--valid">
                         <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
                         {{ t()('onboarding.ai.already_saved_note') }}
@@ -645,15 +645,36 @@
         }
         <span class="ob__foot-spacer"></span>
         @if (step() > 0) {
-          <button appButton variant="secondary" size="md" type="button" (click)="back()">
+          <!-- Disabled mid-call: `parseResume()` advances on completion, so a
+               Back pressed while it runs would land the user on the wrong step. -->
+          <button
+            appButton
+            variant="secondary"
+            size="md"
+            type="button"
+            [disabled]="busy()"
+            (click)="back()"
+          >
             <lucide-icon [img]="icons.arrowLeft" [size]="15" aria-hidden="true" />
             {{ t()('onboarding.back') }}
           </button>
         }
         @if (step() < totalSteps - 1) {
-          <button appButton variant="primary" size="md" type="button" (click)="goNext()">
-            {{ t()('onboarding.next') }}
-            <lucide-icon [img]="icons.arrowRight" [size]="15" aria-hidden="true" />
+          <button
+            appButton
+            variant="primary"
+            size="md"
+            type="button"
+            [disabled]="busy()"
+            (click)="goNext()"
+          >
+            @if (busy()) {
+              <span class="ob__spinner" aria-hidden="true"></span>
+              {{ t()('onboarding.working') }}
+            } @else {
+              {{ t()('onboarding.next') }}
+              <lucide-icon [img]="icons.arrowRight" [size]="15" aria-hidden="true" />
+            }
           </button>
         } @else {
           <button appButton variant="primary" size="md" type="button" (click)="finish()">

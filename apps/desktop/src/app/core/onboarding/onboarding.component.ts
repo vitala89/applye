@@ -1,6 +1,5 @@
 import { Component, HostBinding, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,7 +18,6 @@ import {
   Lock,
   LucideAngularModule,
   Plus,
-  ScanLine,
   Sparkles,
   Target,
   TriangleAlert,
@@ -80,7 +78,6 @@ export class OnboardingComponent {
   private readonly ai = inject(AiService);
   private readonly keys = inject(KeysService);
   private readonly i18n = inject(TranslateService);
-  private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
@@ -110,7 +107,6 @@ export class OnboardingComponent {
     lock: Lock,
     plus: Plus,
     playCircle: CirclePlay,
-    scanLine: ScanLine,
     sparkles: Sparkles,
     target: Target,
     triangleAlert: TriangleAlert,
@@ -650,18 +646,14 @@ export class OnboardingComponent {
     this.completed.emit();
   }
 
+  /** The only way out of the last step. Closing the overlay drops the user back
+   * on whatever route is behind it — the dashboard on a first run, the page
+   * they opened a re-run from — so the wizard does not pick a destination for
+   * them; the app's own navigation does. */
   async finish(): Promise<void> {
     await this.saveProfile();
     await this.saveCvDocument();
     await this.markSeen();
-    this.completed.emit();
-  }
-
-  async finishTo(path: string): Promise<void> {
-    await this.saveProfile();
-    await this.saveCvDocument();
-    await this.markSeen();
-    await this.router.navigateByUrl(path);
     this.completed.emit();
   }
 

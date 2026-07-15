@@ -26,6 +26,9 @@ describe('OnboardingComponent flow', () => {
   let setProviderKey: jest.Mock;
   let getProfile: jest.Mock;
   let upsertProfile: jest.Mock;
+  let documentLibraryUpsert: jest.Mock;
+  let updateSettings: jest.Mock;
+  let navigateByUrl: jest.Mock;
   let run: jest.Mock;
 
   beforeEach(async () => {
@@ -33,6 +36,9 @@ describe('OnboardingComponent flow', () => {
     setProviderKey = jest.fn().mockResolvedValue(undefined);
     getProfile = jest.fn().mockResolvedValue(null);
     upsertProfile = jest.fn().mockResolvedValue({ id: 1 });
+    documentLibraryUpsert = jest.fn().mockResolvedValue({ id: 1 });
+    updateSettings = jest.fn().mockResolvedValue({});
+    navigateByUrl = jest.fn();
     run = jest
       .fn()
       .mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
@@ -41,6 +47,8 @@ describe('OnboardingComponent flow', () => {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
       documentLibraryList: jest.fn().mockResolvedValue([]),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      documentLibraryUpsert,
+      updateSettings,
       getProfile,
       upsertProfile,
     };
@@ -57,7 +65,7 @@ describe('OnboardingComponent flow', () => {
           },
         },
         { provide: KeysService, useValue: { hasProviderKey, setProviderKey } },
-        { provide: Router, useValue: { navigateByUrl: jest.fn() } },
+        { provide: Router, useValue: { navigateByUrl } },
         { provide: ThemeService, useValue: { theme: () => 'light' } },
         TranslateService,
         ToastService,
@@ -403,6 +411,34 @@ describe('OnboardingComponent flow', () => {
       await component.saveProfile();
 
       expect(upsertProfile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('finishing the last step', () => {
+    it('saves the profile and the CV, marks onboarding seen, and closes', async () => {
+      component.parsedCv.set(parsedCv());
+      component.reviewName.set('Vitalii Kasap');
+      const closed = jest.fn();
+      component.completed.subscribe(closed);
+
+      await component.finish();
+
+      expect(upsertProfile).toHaveBeenCalled();
+      expect(documentLibraryUpsert).toHaveBeenCalled();
+      expect(updateSettings).toHaveBeenCalledWith({ onboardingSeen: true });
+      expect(closed).toHaveBeenCalled();
+    });
+
+    // Finish is the only exit now that the Ready step's two CTAs are gone. The
+    // wizard closes onto whatever route is behind it — the dashboard on a first
+    // run, the page a re-run was opened from — instead of picking a
+    // destination, which is why it must not navigate.
+    it('navigates nowhere itself', async () => {
+      component.parsedCv.set(parsedCv());
+
+      await component.finish();
+
+      expect(navigateByUrl).not.toHaveBeenCalled();
     });
   });
 

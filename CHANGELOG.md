@@ -28,6 +28,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The last onboarding step has one way out.** "Analyze a job" and "Open documents" sat next to "Finish setup", offering three ways to end the same flow and jumping you into the app from a screen that had not saved anything yet. Finish setup is now the only action; it saves, then returns you to the app, where those destinations are a click away in the normal navigation. The summary no longer claims your setup is already saved when it is not.
 - **The API key step says what it does.** The button was "Validate" and the result "Key valid", but nothing ever contacts the provider — it is a copy-paste format check plus a save to your OS keychain, and the wording now says so. An invalid or revoked key still surfaces at your first AI action.
 - **The review step explains itself**: contact details are editable there, while experience and skills are shown as parsed and refined later in Documents.
 - **Removed a duplicated paragraph** on the AI setup step, which printed the same explanation twice, and a mislabelled "Setup —" prefix on the coming-soon note.

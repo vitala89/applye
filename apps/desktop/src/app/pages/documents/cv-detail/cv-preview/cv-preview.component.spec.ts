@@ -902,12 +902,31 @@ describe('CvPreviewComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('SaaS');
   });
 
-  it('explicit user titleBorder wins over the Aurora theme accent rule', () => {
+  it("an explicit titleBorder changes the dashes only — the Aurora theme's weight and colour stay", () => {
     fixture.componentRef.setInput('themeId', 2);
     fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleBorder: 'dotted' });
     const css = component.titleBorderCss('summary');
-    expect(css).toContain('dotted');
-    expect(css).not.toContain('--cv-accent');
+    // Picking a style must not silently thin the line to the neutral 1px grey:
+    // the theme's rule is what the panel shows as the line's size/colour.
+    expect(css).toBe('0.8pt dotted #1B7464');
+  });
+
+  it('a theme that draws no rule (Classic) still falls back to the neutral CSS default', () => {
+    fixture.componentRef.setInput('themeId', 1);
+    fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleBorder: 'solid' });
+    const css = component.titleBorderCss('summary');
+    expect(css).toBe('var(--border-width) solid var(--border-subtle)');
+  });
+
+  it('a user line size/colour still wins over the theme rule', () => {
+    fixture.componentRef.setInput('themeId', 2);
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      titleBorder: 'solid',
+      titleRuleWidthPt: 3,
+      titleRuleColorHex: '#ff0000',
+    });
+    expect(component.titleBorderCss('summary')).toBe('3pt solid #ff0000');
   });
 
   it('interactive page render marks body/title leaves selectable and emits semantic selection', () => {

@@ -62,6 +62,12 @@ export class CvLiveStylePanelComponent {
    * styling" footer button's enabled state. Computed by the parent
    * (`hasAnyCustomStyle`); the panel has no view of the whole style tree. */
   readonly hasCustomStyle = input<boolean>(false);
+  /** The active theme's own section-title rule (`themeTitleRule`), or null for
+   * a theme that draws none. Lets the line size/colour controls show the exact
+   * value the title renders at when the user has set no override of their own,
+   * instead of a blank Inherit. The panel has no view of the theme itself — the
+   * parent resolves it. */
+  readonly themeRule = input<{ widthPt: number; colorHex: string } | null>(null);
   /** The plain text of the currently-selected element — shown in the "Ag"
    * sample swatch so it previews the real content (not lorem). Resolved by the
    * parent from the selection + sections; empty for pathless selections. */
@@ -464,30 +470,31 @@ export class CvLiveStylePanelComponent {
     }
   }
 
-  /** Title-underline thickness (pt) for the active title scope (`null` =
-   * Inherit → theme default; "this title" falls back to the all-titles width). */
+  /** Title-underline thickness (pt) for the active title scope. Falls through
+   * the same cascade the title renders with — this title → all titles → the
+   * theme's own rule — so the control shows the size actually on the page.
+   * `null` (Inherit) only when the theme draws no rule either: that neutral
+   * default lives in CSS tokens, which must not be forked into TS. */
   readonly activeTitleRuleWidth = computed<number | null>(() => {
     const sel = this.selection();
     if (!sel) return null;
     const s = this.style();
-    return (
-      (this.scope() === 'document'
-        ? s.titleRuleWidthPt
-        : effectiveTitleRuleWidth(s, sel.sectionKey)) ?? null
-    );
+    const user =
+      this.scope() === 'document' ? s.titleRuleWidthPt : effectiveTitleRuleWidth(s, sel.sectionKey);
+    return user ?? this.themeRule()?.widthPt ?? null;
   });
 
-  /** Title-underline colour for the active title scope (`null` = Inherit →
-   * theme rule colour; "this title" falls back to the all-titles colour). */
+  /** Title-underline colour for the active title scope — same cascade as
+   * `activeTitleRuleWidth`. */
   readonly activeTitleRuleColor = computed<string | null>(() => {
     const sel = this.selection();
     if (!sel) return null;
     const s = this.style();
-    return (
-      (this.scope() === 'document'
+    const user =
+      this.scope() === 'document'
         ? s.titleRuleColorHex
-        : effectiveTitleRuleColor(s, sel.sectionKey)) ?? null
-    );
+        : effectiveTitleRuleColor(s, sel.sectionKey);
+    return user ?? this.themeRule()?.colorHex ?? null;
   });
 
   setTitleRuleWidth(value: string | number | null): void {

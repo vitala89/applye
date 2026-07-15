@@ -121,6 +121,45 @@ describe('CvLiveStylePanelComponent', () => {
       component.setScope('document');
       expect(component.activeTitleBorder()).toBe('');
     });
+
+    it("with no override, the line size/colour show the theme's own rule", () => {
+      // The exact size the title renders at, rather than a blank Inherit the
+      // user has to guess at.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeRule', { widthPt: 0.8, colorHex: '#1B7464' });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleWidth()).toBe(0.8);
+      expect(component.activeTitleRuleColor()).toBe('#1B7464');
+      component.setScope('document');
+      expect(component.activeTitleRuleWidth()).toBe(0.8);
+      expect(component.activeTitleRuleColor()).toBe('#1B7464');
+    });
+
+    it("a user's own line size/colour wins over the theme rule", () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleRuleWidthPt: 3,
+        titleRuleColorHex: '#ff0000',
+      });
+      fixture.componentRef.setInput('themeRule', { widthPt: 0.8, colorHex: '#1B7464' });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleWidth()).toBe(3);
+      expect(component.activeTitleRuleColor()).toBe('#ff0000');
+    });
+
+    it('a theme that draws no rule leaves the controls at Inherit', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeRule', null);
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleWidth()).toBeNull();
+      expect(component.activeTitleRuleColor()).toBeNull();
+    });
   });
 
   it('shows an empty state and no controls when nothing is selected', () => {

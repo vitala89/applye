@@ -33,6 +33,7 @@ import {
   getBuiltinTheme,
   parseInlineEmphasis,
   themeCssVars,
+  themeTitleRule,
   toggleBoldWrap,
   toggleWordBold,
   wordTokens,
@@ -1081,29 +1082,22 @@ export class CvPreviewComponent {
   titleBorderCss(key: CvSectionKey): string {
     const b = effectiveTitleBorder(this.style(), key);
     if (b === 'none') return 'none';
-    // User overrides (live-style "line size"/"line colour") win over the
-    // theme; each falls back independently — theme rule (accent/muted +
-    // weight) when the theme defines one and the user hasn't set the border
-    // style, otherwise the neutral default.
+    // User overrides (live-style "line size"/"line colour") win over the theme;
+    // each falls back independently to the theme's own rule, then to the
+    // neutral CSS default for a theme that draws none (Classic).
+    //
+    // Picking a line STYLE does not drop the theme's weight/colour: choosing
+    // "dashed" must change the dashes only, or the line silently thins to 1pt
+    // and fades to the neutral grey — and the panel could then never show the
+    // size it renders at.
     const userW = effectiveTitleRuleWidth(this.style(), key);
     const userC = effectiveTitleRuleColor(this.style(), key);
-    const sh = this.activeTheme().sectionHeader;
-    const themed = sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key);
-    const width =
-      userW != null ? `${userW}pt` : themed ? `${sh.ruleWeightPt}pt` : 'var(--border-width)';
-    const color =
-      userC ??
-      (themed
-        ? sh.ruleColor === 'accent'
-          ? 'var(--cv-accent)'
-          : 'var(--cv-muted)'
-        : 'var(--border-subtle)');
-    return `${width} ${b} ${color}`;
-  }
-
-  private hasExplicitTitleBorder(key: CvSectionKey): boolean {
-    const s = this.style();
-    return s.sectionStyles?.[key]?.titleBorder != null || s.titleBorder != null;
+    const rule = themeTitleRule(this.activeTheme());
+    const width = userW ?? rule?.widthPt;
+    const color = userC ?? rule?.colorHex;
+    return `${width != null ? `${width}pt` : 'var(--border-width)'} ${b} ${
+      color ?? 'var(--border-subtle)'
+    }`;
   }
 
   headerPlacementClass(placement: PhotoPlacement): string {

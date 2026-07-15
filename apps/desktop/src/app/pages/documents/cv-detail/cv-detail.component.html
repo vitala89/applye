@@ -408,6 +408,7 @@
               [sampleText]="selectedLeafText()"
               [sampleBaseStyle]="sampleResolvedStyle()"
               [hasCustomStyle]="hasAnyCustomStyle()"
+              [themeRule]="activeThemeTitleRule()"
               [editing]="cvPreview.editing()"
               (panelChange)="onStylePanelChange($event)"
               (resetAll)="resetAllStyles()"

@@ -52,6 +52,7 @@ import {
   PAGE_SETTINGS_DEFAULT,
   getBuiltinTheme,
   themeStyleSeed,
+  themeTitleRule,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -200,6 +201,9 @@ export class CvDetailComponent {
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
+  /** The active theme's own section-title rule — fed to the live-style panel so
+   * its line size/colour controls can show the value the title renders at. */
+  readonly activeThemeTitleRule = computed(() => themeTitleRule(this.activeTheme()));
   /** The clean baseline for the active theme: document defaults with the
    * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
    * "Reset styles" are measured against THIS, not the hard-coded Classic

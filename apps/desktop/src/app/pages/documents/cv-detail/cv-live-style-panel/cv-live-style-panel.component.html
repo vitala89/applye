@@ -182,26 +182,39 @@
               @if (lineOpen()) {
                 <div class="cvlive__group-body">
                   <label class="cvlive__field">
-                    <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
-                    <input
-                      type="number"
-                      min="0.5"
-                      max="6"
-                      step="0.5"
-                      [ngModel]="activeBodyRuleWidth()"
-                      [placeholder]="t()('documents.cv_section_style_inherit')"
-                      (ngModelChange)="setBodyRuleWidth($event)"
-                    />
+                    <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
+                    <select [ngModel]="activeBodyBorder()" (ngModelChange)="setBodyBorder($event)">
+                      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                      <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
+                      <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
+                      <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
+                      <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
+                    </select>
                   </label>
 
-                  <label class="cvlive__field">
-                    <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
-                    <input
-                      type="color"
-                      [ngModel]="activeBodyRuleColor() ?? style().accentColorHex"
-                      (ngModelChange)="setBodyRuleColor($event)"
-                    />
-                  </label>
+                  @if (activeBodyBorder() !== 'none') {
+                    <label class="cvlive__field">
+                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
+                      <input
+                        type="number"
+                        min="0.5"
+                        max="6"
+                        step="0.5"
+                        [ngModel]="activeBodyRuleWidth()"
+                        [placeholder]="t()('documents.cv_section_style_inherit')"
+                        (ngModelChange)="setBodyRuleWidth($event)"
+                      />
+                    </label>
+
+                    <label class="cvlive__field">
+                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
+                      <input
+                        type="color"
+                        [ngModel]="activeBodyRuleColor() ?? style().accentColorHex"
+                        (ngModelChange)="setBodyRuleColor($event)"
+                      />
+                    </label>
+                  }
                 </div>
               }
             </div>

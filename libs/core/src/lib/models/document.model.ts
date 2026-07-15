@@ -295,6 +295,10 @@ export interface CvSectionStyle {
   /** Per-section title-underline colour; unset inherits the document value,
    * then the active theme's rule colour. */
   titleRuleColorHex?: string;
+  /** Per-section BODY rule style — lets the user turn the section's divider
+   * off (`'none'`) or switch it to dotted/dashed. Unset inherits the theme's
+   * rule (which is solid when it draws one). */
+  bodyBorder?: CvBorderStyle;
   /** Per-section BODY rule thickness in points — the divider a section draws
    * around its body (the personal-details header underline, an experience
    * entry's role/dates rule). Unset inherits the active theme's rule. */

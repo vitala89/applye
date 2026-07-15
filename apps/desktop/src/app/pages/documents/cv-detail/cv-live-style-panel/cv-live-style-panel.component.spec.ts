@@ -151,6 +151,32 @@ describe('CvLiveStylePanelComponent', () => {
       expect(component.activeTitleRuleColor()).toBe('#ff0000');
     });
 
+    it("the line swatch shows the rule's rendered colour when neither the user nor the theme set one", () => {
+      // Classic draws no rule, so the line falls back to a neutral CSS token.
+      // That value only exists in the DOM — reading it back is the only way the
+      // swatch can avoid showing a colour the line does not have.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, accentColorHex: '#333333' });
+      fixture.componentRef.setInput('themeRule', null);
+      fixture.componentRef.setInput('sampleBaseStyle', {
+        'border-bottom-color': 'rgb(236, 236, 238)',
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.titleRuleColorSwatch()).toBe('#ececee');
+    });
+
+    it("the line swatch prefers the user's own colour over the rendered one", () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleRuleColorHex: '#ff0000' });
+      fixture.componentRef.setInput('sampleBaseStyle', {
+        'border-bottom-color': 'rgb(236, 236, 238)',
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.titleRuleColorSwatch()).toBe('#ff0000');
+    });
+
     it('a theme that draws no rule leaves the controls at Inherit', () => {
       fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
       fixture.componentRef.setInput('themeRule', null);
@@ -159,6 +185,147 @@ describe('CvLiveStylePanelComponent', () => {
       component.setScope('section');
       expect(component.activeTitleRuleWidth()).toBeNull();
       expect(component.activeTitleRuleColor()).toBeNull();
+    });
+  });
+
+  // Same rule as the title controls, one layer down: a body control shows what
+  // the element actually renders with, not a blank. Each scope walks the cascade
+  // the RENDERER uses — which is not the same for a bullet as for a field.
+  describe('body controls reflect the value actually applied to the selection', () => {
+    const DOC = {
+      ...CV_STYLE_DEFAULT,
+      fontFamily: 'Calibri',
+      fontSizePt: 11,
+      fontWeight: 400 as const,
+    };
+
+    it('an element with no override of its own shows the section value it inherits', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        bodyColorHex: '#111111',
+        sectionStyles: { experience: { fontSizePt: 13, colorHex: '#ff0000' } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontFamily: 'Calibri',
+        fontSizePt: 13,
+        colorHex: '#ff0000',
+      });
+    });
+
+    it("an element's own override still wins over the inherited value", () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        sectionStyles: { experience: { fontSizePt: 13 } },
+        elementStyles: { 'exp.0.role': { fontSizePt: 20 } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride().fontSizePt).toBe(20);
+    });
+
+    it('a BULLET inherits the shared bullet style, never the section (the renderer skips it)', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        // The section value styles the entry heads only — a bullet must not
+        // report a size it does not render at.
+        sectionStyles: {
+          experience: { fontSizePt: 13, bulletStyle: { fontSizePt: 9, colorHex: '#00ff00' } },
+        },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.1',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontSizePt: 9,
+        colorHex: '#00ff00',
+      });
+    });
+
+    it('a bullet with no shared style falls back to the document, not the section', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        sectionStyles: { experience: { fontSizePt: 13 } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride().fontSizePt).toBe(11);
+    });
+
+    it('the section scope shows the document value it inherits', () => {
+      fixture.componentRef.setInput('style', { ...DOC, bodyColorHex: '#111111' });
+      fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'body' });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontFamily: 'Calibri',
+        fontSizePt: 11,
+        colorHex: '#111111',
+      });
+    });
+
+    it('no body scope ever reports the accent as a colour (no-accent-leak)', () => {
+      // `bodyColorHex` unset = no forced body colour anywhere in the cascade.
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        accentColorHex: '#00ff00',
+        sectionStyles: { experience: { bulletStyle: { fontSizePt: 9 } } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+
+      for (const scope of ['element', 'bullets', 'section', 'document'] as const) {
+        component.setScope(scope);
+        expect(component.activeBodyOverride().colorHex).toBeUndefined();
+      }
+    });
+
+    it('the bullets scope shows the shared bullet style over the document', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        sectionStyles: { experience: { fontSizePt: 13, bulletStyle: { fontWeight: 700 } } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+
+      component.setScope('bullets');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontWeight: 700,
+        fontSizePt: 11,
+      });
     });
   });
 

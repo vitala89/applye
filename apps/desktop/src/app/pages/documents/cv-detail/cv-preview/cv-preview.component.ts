@@ -1009,6 +1009,10 @@ export class CvPreviewComponent {
       'font-style': cs.fontStyle,
       'text-transform': cs.textTransform,
       'letter-spacing': cs.letterSpacing,
+      // The host IS the element carrying the underline (a title, a leaf), so
+      // this is the rule's real colour — including the neutral CSS default,
+      // which the panel cannot resolve from the style model alone.
+      'border-bottom-color': cs.borderBottomColor,
     };
   }
 

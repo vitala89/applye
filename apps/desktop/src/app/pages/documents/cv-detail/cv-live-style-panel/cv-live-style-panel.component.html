@@ -272,7 +272,7 @@
                       <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
                       <input
                         type="color"
-                        [ngModel]="activeElementRuleColor() ?? style().accentColorHex"
+                        [ngModel]="elementRuleColorSwatch()"
                         (ngModelChange)="setElementRuleColor($event)"
                       />
                     </label>
@@ -449,7 +449,7 @@
                     <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
                     <input
                       type="color"
-                      [ngModel]="activeTitleRuleColor() ?? style().accentColorHex"
+                      [ngModel]="titleRuleColorSwatch()"
                       (ngModelChange)="setTitleRuleColor($event)"
                     />
                   </label>

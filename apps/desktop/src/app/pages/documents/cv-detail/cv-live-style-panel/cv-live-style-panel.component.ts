@@ -309,6 +309,31 @@ export class CvLiveStylePanelComponent {
     );
   });
 
+  /** Swatch colour for an underline control. `<input type="color">` cannot show
+   * "unset", so an unset rule must still resolve to the colour on the page:
+   * after the style model (the user's own value, then the theme's rule) comes
+   * the rule colour read from the rendered host, which is the only way to see a
+   * neutral default that lives in CSS tokens. The accent is the last resort,
+   * for a selection whose host was not read.
+   *
+   * Only for rules the SELECTED host itself draws (a title's, a leaf's). The
+   * section body rule and the languages separator are drawn by other elements,
+   * so their swatches must not read this. */
+  private ruleColorSwatch(value: string | null): string {
+    return (
+      value ??
+      this.rgbToHex(this.sampleBaseStyle()['border-bottom-color']) ??
+      this.style().accentColorHex
+    );
+  }
+
+  readonly titleRuleColorSwatch = computed<string>(() =>
+    this.ruleColorSwatch(this.activeTitleRuleColor()),
+  );
+  readonly elementRuleColorSwatch = computed<string>(() =>
+    this.ruleColorSwatch(this.activeElementRuleColor()),
+  );
+
   /** Normalise a computed `rgb()/rgba()` colour to `#rrggbb` for `<input
    * type="color">` (which only accepts hex). Passes through an existing hex;
    * returns null when it can't parse. */
@@ -351,51 +376,79 @@ export class CvLiveStylePanelComponent {
     this.scope.set(value);
   }
 
-  /** Raw body override for the active scope — feeds the control models so each
-   * shows the value for the target the edit will land on (Inherit when unset;
-   * document scope shows the always-present root values). */
+  /** Body values for the active scope — feeds the control models so each shows
+   * the value the selection actually RENDERS with, not a blank: an unset
+   * property falls through the same cascade the preview draws with, so the
+   * control never contradicts the page (see `activeTitleOverride`).
+   *
+   * Each scope walks its own chain, because the renderer does:
+   * - `element` — the leaf's own override, then what it inherits: the shared
+   *   bullet style for a bullet (`<ul>` `bulletListCss`), the section override
+   *   for anything else (`bodyCss`/`entryCss`), then the document.
+   * - `bullets` — the shared bullet style over the DOCUMENT: bullets skip the
+   *   section scope by design (that scope styles the entry heads only).
+   * - `section` — the section override, then the document.
+   * - `document` — the always-present root values.
+   *
+   * Colour never falls back to `accentColorHex` at any scope (no-accent-leak):
+   * body text reads `bodyColorHex`, which is unset unless the user picks one,
+   * and bullets have no colour base at all — both correctly read as Inherit. */
   readonly activeBodyOverride = computed<Partial<CvElementStyle>>(() => {
     const sel = this.selection();
     if (!sel) return {};
     const s = this.style();
+    const section = s.sectionStyles?.[sel.sectionKey] ?? {};
+    const bullet = section.bulletStyle ?? {};
+    const doc = {
+      fontFamily: s.fontFamily,
+      fontSizePt: s.fontSizePt,
+      fontWeight: s.fontWeight,
+      colorHex: s.bodyColorHex,
+      lineHeight: undefined,
+    };
+    const sectionOver: Partial<CvElementStyle> = {
+      fontFamily: section.fontFamily ?? doc.fontFamily,
+      fontSizePt: section.fontSizePt ?? doc.fontSizePt,
+      fontWeight: section.fontWeight ?? doc.fontWeight,
+      colorHex: section.colorHex ?? doc.colorHex,
+      lineHeight: section.lineHeight,
+    };
+    const bulletOver: Partial<CvElementStyle> = {
+      fontFamily: bullet.fontFamily ?? doc.fontFamily,
+      fontSizePt: bullet.fontSizePt ?? doc.fontSizePt,
+      fontWeight: bullet.fontWeight ?? doc.fontWeight,
+      // No colour in the bullet base — an unset colour keeps the muted default,
+      // so it reads as Inherit rather than the body colour.
+      colorHex: bullet.colorHex,
+      lineHeight: bullet.lineHeight,
+    };
     switch (this.scope()) {
-      case 'section': {
-        const o = s.sectionStyles?.[sel.sectionKey] ?? {};
-        return {
-          fontFamily: o.fontFamily,
-          fontSizePt: o.fontSizePt,
-          fontWeight: o.fontWeight,
-          colorHex: o.colorHex,
-          lineHeight: o.lineHeight,
-        };
-      }
-      case 'bullets': {
-        // "All achievements" — the section's shared bullet style.
-        const o = s.sectionStyles?.[sel.sectionKey]?.bulletStyle ?? {};
-        return {
-          fontFamily: o.fontFamily,
-          fontSizePt: o.fontSizePt,
-          fontWeight: o.fontWeight,
-          colorHex: o.colorHex,
-          lineHeight: o.lineHeight,
-        };
-      }
+      case 'section':
+        return sectionOver;
+      case 'bullets':
+        return bulletOver;
       case 'document':
-        return {
-          fontFamily: s.fontFamily,
-          fontSizePt: s.fontSizePt,
-          fontWeight: s.fontWeight,
-          // Document-scope BODY colour reads `bodyColorHex` — distinct from
-          // `accentColorHex` (the title scope's document colour, read
-          // separately by `activeTitleOverride`/`setTitleColor`). Unset →
-          // Inherit (no forced body colour), per the no-accent-leak rule.
-          colorHex: s.bodyColorHex,
-        };
+        return doc;
       case 'element':
-      default:
-        return (sel.elementPath ? s.elementStyles?.[sel.elementPath] : undefined) ?? {};
+      default: {
+        const own = (sel.elementPath ? s.elementStyles?.[sel.elementPath] : undefined) ?? {};
+        const base = this.isBulletPath(sel.elementPath) ? bulletOver : sectionOver;
+        return {
+          fontFamily: own.fontFamily ?? base.fontFamily,
+          fontSizePt: own.fontSizePt ?? base.fontSizePt,
+          fontWeight: own.fontWeight ?? base.fontWeight,
+          colorHex: own.colorHex ?? base.colorHex,
+          lineHeight: own.lineHeight ?? base.lineHeight,
+        };
+      }
     }
   });
+
+  /** A bullet leaf (`exp.0.bullet.1`) — the one body path whose inherited base
+   * is the shared bullet style rather than the section override. */
+  private isBulletPath(p: string | undefined): boolean {
+    return !!p && p.includes('.bullet.');
+  }
 
   /** Title text values for the active title scope (this title vs. all titles) —
    * feeds the title control models. At "this title" a property with no override

@@ -571,12 +571,12 @@ export class CvLiveStylePanelComponent {
 
   readonly activeElementRuleWidth = computed<number | null>(() => {
     const p = this.selection()?.elementPath;
-    return (p && this.style().elementStyles?.[p]?.ruleWidthPt) ?? null;
+    return (p ? this.style().elementStyles?.[p]?.ruleWidthPt : undefined) ?? null;
   });
 
   readonly activeElementRuleColor = computed<string | null>(() => {
     const p = this.selection()?.elementPath;
-    return (p && this.style().elementStyles?.[p]?.ruleColorHex) ?? null;
+    return (p ? this.style().elementStyles?.[p]?.ruleColorHex : undefined) ?? null;
   });
 
   /** Whether the selected leaf currently draws a line (controls whether the

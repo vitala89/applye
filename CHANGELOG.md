@@ -590,6 +590,13 @@ desktop` (the CI test target for this project) always failed regardless
 
 ## [0.3.1] - 2026-06-29
 
+> Note: this release was tagged (`v0.3.1` → `6bc1f73`) but the version in
+> `package.json` / `Cargo.toml` / `tauri.conf.json` was never bumped — it stayed
+> at `0.3.0` until the `0.4.0` bump. So `v0.3.1` is the one tag whose manifest
+> does not match its name. The tag is correct about what shipped; the manifest
+> is simply missing a bump that cannot be added retroactively without inventing
+> a commit. Left as-is deliberately.
+
 ### Added
 
 - Multi-OS release pipeline (tauri-action) with Tauri auto-updater wiring.

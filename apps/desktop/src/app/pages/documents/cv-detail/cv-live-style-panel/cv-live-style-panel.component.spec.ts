@@ -118,6 +118,38 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('an entry selection still reaches a line control — the section rule, at its default scope', () => {
+    // Regression: gating the section rule to section scope AND excluding entry
+    // containers from the per-leaf line left an entry with NO line control at
+    // its default (element) scope — the line became unreachable.
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'experience',
+      part: 'body',
+      elementPath: 'exp.0',
+    });
+    fixture.detectChanges();
+    expect(component.scope()).toBe('element');
+    expect(component.canElementLine()).toBe(false);
+    expect(component.canBodyRule()).toBe(true);
+
+    // It writes the SECTION rule, not an element override — there is no
+    // per-entry rule in the model.
+    const events = collect();
+    component.setBodyBorder('none');
+    expect(events).toEqual([{ scope: 'element', bodyBorder: 'none' }]);
+  });
+
+  it('a single field never shows the section rule — only its own per-leaf line', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'experience',
+      part: 'body',
+      elementPath: 'exp.0.role',
+    });
+    fixture.detectChanges();
+    expect(component.canBodyRule()).toBe(false);
+    expect(component.canElementLine()).toBe(true);
+  });
+
   it('offers no per-leaf line for an entry container — its divider is the section rule', () => {
     // An entry wraps the head AND its bullets, so a border there lands under
     // the bullets and reads as a stray second line.

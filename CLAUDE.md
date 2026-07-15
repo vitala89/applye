@@ -2,7 +2,12 @@
 
 Read `AGENTS.md`, `PROJECT_CONTEXT.md`, and `docs/product/CURRENT_STATE.md` before non-trivial work.
 
-Use the `aif-orchestrator` skill before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. Non-trivial feature/product work should check `docs/product/CURRENT_STATE.md` first. The main Claude Code session remains the conductor; subagents are specialists.
+Run the **Plan Check** from `AGENTS.md` before any non-trivial task and before proposing what to
+work on next: read `docs/product/CURRENT_STATE.md`, say where the task sits in the plan, say what is
+already shipped, and flag the state doc if it disagrees with `main`. Sync that doc back on the way
+out (`AGENTS.md` → After Coding).
+
+Use the `aif-orchestrator` skill before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. The main Claude Code session remains the conductor; subagents are specialists.
 
 Applye is an Nx monorepo for a privacy-first Tauri 2 + Angular job-search app. Keep project-specific facts in `PROJECT_CONTEXT.md`; do not duplicate large context here.
 

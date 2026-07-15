@@ -130,11 +130,27 @@ export function themeStyleSeed(
 export function themeTitleRule(
   theme: CvThemeDescriptor,
 ): { widthPt: number; colorHex: string } | null {
-  const sh = theme.sectionHeader;
-  if (sh.ruleColor === 'none') return null;
+  return resolveThemeRule(theme, theme.sectionHeader);
+}
+
+/** The rule a theme draws under an experience entry's role/dates head, as
+ * concrete values, or `null` when it draws none. The entry counterpart of
+ * `themeTitleRule` — the live-style panel shows it as the entry's line when
+ * neither the entry nor its section sets one. */
+export function themeEntryRule(
+  theme: CvThemeDescriptor,
+): { widthPt: number; colorHex: string } | null {
+  return resolveThemeRule(theme, theme.entry);
+}
+
+function resolveThemeRule(
+  theme: CvThemeDescriptor,
+  part: { ruleWeightPt: number; ruleColor: 'accent' | 'muted' | 'none' },
+): { widthPt: number; colorHex: string } | null {
+  if (part.ruleColor === 'none') return null;
   return {
-    widthPt: sh.ruleWeightPt,
-    colorHex: sh.ruleColor === 'accent' ? theme.tokens.accentHex : theme.tokens.mutedHex,
+    widthPt: part.ruleWeightPt,
+    colorHex: part.ruleColor === 'accent' ? theme.tokens.accentHex : theme.tokens.mutedHex,
   };
 }
 

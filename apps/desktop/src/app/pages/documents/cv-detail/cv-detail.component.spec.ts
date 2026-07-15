@@ -218,6 +218,58 @@ describe('CvDetailComponent per-section style', () => {
       expect(effectiveTitleStyle(component.style(), 'education').fontFamily).toBe('Arial');
     });
 
+    it('an All-experiences line clears the per-entry lines so EVERY entry adopts it', () => {
+      // The user styles one entry's line, then changes the section's: the entry
+      // they had touched must not silently keep its own colour.
+      component.liveSelection.set({
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0',
+      });
+      component.onStylePanelChange({ scope: 'element', patch: { ruleColorHex: '#0000ff' } });
+      expect(component.style().elementStyles?.['exp.0']?.ruleColorHex).toBe('#0000ff');
+
+      component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
+
+      expect(component.style().elementStyles?.['exp.0']?.ruleColorHex).toBeUndefined();
+      expect(component.style().sectionStyles?.experience?.bodyRuleColorHex).toBe('#000000');
+    });
+
+    it('an All-experiences line change clears only the property it writes', () => {
+      component.liveSelection.set({
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0',
+      });
+      component.onStylePanelChange({
+        scope: 'element',
+        patch: { borderStyle: 'dashed', ruleColorHex: '#0000ff' },
+      });
+
+      component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
+
+      // The entry's own dashes survive an edit to the colour.
+      expect(component.style().elementStyles?.['exp.0']?.borderStyle).toBe('dashed');
+      expect(component.style().elementStyles?.['exp.0']?.ruleColorHex).toBeUndefined();
+    });
+
+    it('an All-experiences line never touches another section or a field', () => {
+      component.liveSelection.set({
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      component.onStylePanelChange({ scope: 'element', patch: { ruleColorHex: '#0000ff' } });
+
+      component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
+
+      // A FIELD's underline is its own line, not the entry rule — untouched.
+      expect(component.style().elementStyles?.['exp.0.role']?.ruleColorHex).toBe('#0000ff');
+    });
+
     it('applying a section change clears in-section element overrides so it applies uniformly', () => {
       component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
       component.onStylePanelChange({ scope: 'element', patch: { fontWeight: 700 } });

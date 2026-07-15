@@ -794,6 +794,27 @@ export function clearSectionTitleOverrides(
   return keys.reduce((acc, key) => patchCvSectionStyle(acc, key, patch), style);
 }
 
+/** Drops RULE properties from every per-ENTRY override in a section so an "All
+ * experiences" line change applies UNIFORMLY — the entry-line counterpart of
+ * `clearSectionTitleOverrides`. Without it, an entry whose line the user styled
+ * on its own keeps winning and ignores the section's new rule.
+ *
+ * Only the properties present in `patch` are cleared (pass each as `undefined`),
+ * and only on ENTRY paths (`exp.0`): a FIELD's underline (`exp.0.role`) is its
+ * own line, not the entry rule, so a section-rule edit must leave it alone. */
+export function clearSectionEntryRuleOverrides(
+  style: CvStyle,
+  key: CvSectionKey,
+  patch: Partial<CvElementStyle>,
+): CvStyle {
+  const prefix = sectionPathPrefix(key);
+  if (!prefix || !style.elementStyles) return style;
+  const isEntry = new RegExp(`^${prefix}\\.\\d+$`);
+  return Object.keys(style.elementStyles)
+    .filter((path) => isEntry.test(path))
+    .reduce((acc, path) => patchCvElementStyle(acc, path, patch), style);
+}
+
 /** Removes one complete per-section override and omits the map when it becomes
  * empty. Document defaults and sibling section overrides are preserved. */
 export function resetCvSectionStyle(style: CvStyle, key: CvSectionKey): CvStyle {

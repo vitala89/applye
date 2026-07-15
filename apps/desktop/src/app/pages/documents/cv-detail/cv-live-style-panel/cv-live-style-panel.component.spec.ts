@@ -439,6 +439,53 @@ describe('CvLiveStylePanelComponent', () => {
       ]);
     });
 
+    it("reads the theme's entry rule as the line it inherits, not 'None'", () => {
+      // The head draws the theme's rule with nothing set at all. Reporting
+      // "None" while a line is on the page is the lie this closes.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('solid');
+      expect(component.activeElementRuleWidth()).toBe(0.4);
+      expect(component.activeElementRuleColor()).toBe('#666666');
+      expect(component.hasElementLine()).toBe(true);
+    });
+
+    it('the section rule outranks the theme rule in what the entry reports', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementRuleWidth()).toBe(1.5);
+      expect(component.activeElementRuleColor()).toBe('#ff0000');
+    });
+
+    it('an entry reads Inherit only when no line is drawn at all', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeEntryRule', null);
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('');
+      expect(component.elementBorderModel()).toBe('');
+      expect(component.hasElementLine()).toBe(false);
+    });
+
+    it("a plain leaf with no line still reads 'None', never Inherit", () => {
+      // A leaf has nothing to inherit — absent IS off, so the select must not
+      // offer Inherit there.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
+      selectEntry('exp.0.role');
+
+      component.setScope('element');
+      expect(component.elementBorderModel()).toBe('none');
+      expect(component.isEntrySelection()).toBe(false);
+    });
+
     it('an education entry still gets no line control (its head draws no rule)', () => {
       fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
       fixture.componentRef.setInput('selection', {

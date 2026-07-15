@@ -68,6 +68,11 @@ export class CvLiveStylePanelComponent {
    * instead of a blank Inherit. The panel has no view of the theme itself — the
    * parent resolves it. */
   readonly themeRule = input<{ widthPt: number; colorHex: string } | null>(null);
+  /** The active theme's own rule under an experience entry's head
+   * (`themeEntryRule`), or null for a theme that draws none. An entry with no
+   * line of its own and no section rule still draws THIS, so its controls must
+   * report it rather than "None". */
+  readonly themeEntryRule = input<{ widthPt: number; colorHex: string } | null>(null);
   /** The plain text of the currently-selected element — shown in the "Ag"
    * sample swatch so it previews the real content (not lorem). Resolved by the
    * parent from the selection + sections; empty for pathless selections. */
@@ -668,27 +673,49 @@ export class CvLiveStylePanelComponent {
     return !!p && /^exp\.\d+$/.test(p);
   }
 
+  /** Whether the selection is an experience entry — the one element whose line
+   * is INHERITED when unset (from its section, then the theme) rather than
+   * simply absent. Drives the Inherit option, which a plain leaf must not get. */
+  readonly isEntrySelection = computed<boolean>(() =>
+    this.isExperienceEntryPath(this.selection()?.elementPath),
+  );
+
   /** The selected element's line, as it RENDERS. An experience entry with no
-   * override of its own inherits the section's divider, so its controls show
-   * that (see `activeTitleOverride` for the same rule on titles). A plain leaf
-   * has no such fallback by design: its underline is its own or absent. */
+   * override of its own inherits its section's divider, then the theme's own
+   * entry rule — reporting "None" while the head draws one is the whole point
+   * of walking this (see `activeTitleOverride` for the same rule on titles).
+   * A plain leaf has no such fallback by design: its underline is its own or
+   * absent. */
   readonly activeElementBorder = computed<string>(() => {
     const p = this.selection()?.elementPath;
     const own = p && this.style().elementStyles?.[p]?.borderStyle;
     if (own) return own;
-    return this.isExperienceEntryPath(p) ? this.activeBodyBorder() : '';
+    if (!this.isExperienceEntryPath(p)) return '';
+    // The head's rule renders solid unless the section says otherwise — that is
+    // the `--cv-entry-rule-style` default the theme's rule is drawn with.
+    return this.activeBodyBorder() || (this.themeEntryRule() ? 'solid' : '');
   });
 
   readonly activeElementRuleWidth = computed<number | null>(() => {
     const p = this.selection()?.elementPath;
     const own = p ? this.style().elementStyles?.[p]?.ruleWidthPt : undefined;
-    return own ?? (this.isExperienceEntryPath(p) ? this.activeBodyRuleWidth() : null);
+    if (!this.isExperienceEntryPath(p)) return own ?? null;
+    return own ?? this.activeBodyRuleWidth() ?? this.themeEntryRule()?.widthPt ?? null;
   });
 
   readonly activeElementRuleColor = computed<string | null>(() => {
     const p = this.selection()?.elementPath;
     const own = p ? this.style().elementStyles?.[p]?.ruleColorHex : undefined;
-    return own ?? (this.isExperienceEntryPath(p) ? this.activeBodyRuleColor() : null);
+    if (!this.isExperienceEntryPath(p)) return own ?? null;
+    return own ?? this.activeBodyRuleColor() ?? this.themeEntryRule()?.colorHex ?? null;
+  });
+
+  /** Select model for the line style. An entry distinguishes Inherit ('') from
+   * an explicit None; a plain leaf has no Inherit, so an absent line reads as
+   * None there. */
+  readonly elementBorderModel = computed<string>(() => {
+    const b = this.activeElementBorder();
+    return this.isEntrySelection() ? b : b || 'none';
   });
 
   /** Whether the selected leaf currently draws a line (controls whether the

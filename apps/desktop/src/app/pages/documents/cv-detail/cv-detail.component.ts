@@ -51,6 +51,7 @@ import {
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
   getBuiltinTheme,
+  themeEntryRule,
   themeStyleSeed,
   themeTitleRule,
 } from '@applye/core';
@@ -78,6 +79,7 @@ import {
   patchCvDocumentBody,
   patchCvElementStyle,
   clearSectionElementOverrides,
+  clearSectionEntryRuleOverrides,
   clearSectionTitleOverrides,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
@@ -204,6 +206,9 @@ export class CvDetailComponent {
   /** The active theme's own section-title rule — fed to the live-style panel so
    * its line size/colour controls can show the value the title renders at. */
   readonly activeThemeTitleRule = computed(() => themeTitleRule(this.activeTheme()));
+  /** The theme's own rule under an experience entry head — fed to the panel for
+   * the same reason as `activeThemeTitleRule`. */
+  readonly activeThemeEntryRule = computed(() => themeEntryRule(this.activeTheme()));
   /** The clean baseline for the active theme: document defaults with the
    * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
    * "Reset styles" are measured against THIS, not the hard-coded Classic
@@ -439,19 +444,30 @@ export class CvDetailComponent {
     this.updateStyle(patch);
   }
 
+  /** Clears one rule property from every entry in a section before its
+   * section-wide ("All experiences") value is written, so an entry the user
+   * styled on its own adopts the new line instead of silently keeping the old.
+   * The title layer's `applyToAllTitles` does the same one level up. */
+  private applyToAllEntries(key: CvSectionKey, inherit: Partial<CvElementStyle>): void {
+    this.style.set(clearSectionEntryRuleOverrides(this.style(), key, inherit));
+  }
+
   private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
     const key = sel.sectionKey;
     // Section body-rule (divider) is a section-level property — written at
     // section scope regardless of the font scope selector.
     if (change.bodyBorder !== undefined) {
+      this.applyToAllEntries(key, { borderStyle: undefined });
       this.setSectionStyle(key, { bodyBorder: change.bodyBorder ?? undefined });
       return;
     }
     if (change.bodyRuleWidth !== undefined) {
+      this.applyToAllEntries(key, { ruleWidthPt: undefined });
       this.setSectionStyle(key, { bodyRuleWidthPt: change.bodyRuleWidth ?? undefined });
       return;
     }
     if (change.bodyRuleColor !== undefined) {
+      this.applyToAllEntries(key, { ruleColorHex: undefined });
       this.setSectionStyle(key, { bodyRuleColorHex: change.bodyRuleColor ?? undefined });
       return;
     }

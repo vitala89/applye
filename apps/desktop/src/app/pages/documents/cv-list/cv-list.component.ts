@@ -122,12 +122,22 @@ export class CvListComponent {
   async exportDoc(item: DocumentLibraryItem, format: 'pdf' | 'docx', event: Event): Promise<void> {
     event.stopPropagation();
     if (!format || this.exportBusyId() != null) return;
+    // Silent export: pick a path, file is written directly — no print dialog,
+    // no visible windows. PDF goes through the WYSIWYG engine (a hidden window
+    // renders the editor's own preview and the OS prints it to the file), so
+    // the export is pixel-identical to the editor for every theme.
     this.exportBusyId.set(item.id);
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const path = await save({ defaultPath: suggestCvFilename(item, format) });
       if (!path) return;
-      await this.db.cvDocumentExport(item.id, format, path);
+      if (format === 'pdf') {
+        await this.db.cvDocumentExportPdfWysiwyg(item.id, path);
+      } else {
+        await this.db.cvDocumentExport(item.id, format, path);
+      }
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.exportBusyId.set(null);
     }

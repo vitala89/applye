@@ -13,6 +13,7 @@ pub mod job_url;
 pub mod jobs;
 pub mod legitimacy;
 pub mod portal_answers;
+pub mod print;
 pub mod profile;
 pub mod scoring;
 pub mod settings;

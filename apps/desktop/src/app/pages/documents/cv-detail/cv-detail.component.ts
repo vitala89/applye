@@ -565,12 +565,16 @@ export class CvDetailComponent {
     this.commitAndCloseEditors();
     await this.nextStableFrame();
     const r = resolvePageSettings(this.style().page);
-    // margin: 0 — each `.page-card` keeps its own per-side padding (the
-    // simulated margins) and is forced to exactly one physical page in the
-    // print stylesheet, so the printed page count matches the preview's
-    // page-cards 1:1. A non-zero @page margin here would double the margin
-    // and let the browser re-paginate, drifting from the preview.
-    const rule = `@page { size: ${r.widthMm}mm ${r.heightMm}mm; margin: 0; }`;
+    // The @page rule supplies the REAL margins; the print stylesheet then zeroes
+    // each `.page-card`'s simulated padding and lets its height be content-driven
+    // (see `body.printing-cv .page-card`). This yields exact physical margins (no
+    // full-bleed scaling shrinking them) and stops a card that exactly filled a
+    // page from rounding over into a trailing blank page. Mirrors
+    // `exportPdfWysiwyg` on `CoverLetterDetailComponent`.
+    const m = r.margin;
+    const rule =
+      `@page { size: ${r.widthMm}mm ${r.heightMm}mm;` +
+      ` margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm; }`;
     let el = document.getElementById('wysiwyg-page-rule') as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement('style');

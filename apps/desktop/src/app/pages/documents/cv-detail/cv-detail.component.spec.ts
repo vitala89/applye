@@ -379,6 +379,18 @@ describe('CvDetailComponent per-section style', () => {
     printSpy.mockRestore();
   });
 
+  it('exportPdfWysiwyg injects an @page rule carrying the real per-side margins', async () => {
+    const printSpy = jest.spyOn(window, 'print').mockImplementation(() => undefined);
+    await component.exportPdfWysiwyg();
+    const rule = document.getElementById('wysiwyg-page-rule')?.textContent ?? '';
+    // Real four-side mm margins (the print stylesheet zeroes the card padding),
+    // never `margin: 0` — the full-bleed value that scaled the margins and spilled
+    // a blank trailing page.
+    expect(rule).toMatch(/margin: \d+mm \d+mm \d+mm \d+mm/);
+    expect(rule).not.toContain('margin: 0;');
+    printSpy.mockRestore();
+  });
+
   it('replaceSection swaps the matching section by key, leaving others untouched', () => {
     component.sections.set([
       { key: 'photo', order: 0, visible: true, dataUri: 'data:image/jpeg;base64,AAAA' },

@@ -12,6 +12,40 @@
 // blew the per-component style budget.
 @use './app/pages/documents/editor-shell' as *;
 
+// CV theme fonts. The preview/editor sets `font-family` to the theme font by
+// name (e.g. "Lato"); without these @font-face rules the browser can't find it
+// and falls back to its default serif, so the editor looked nothing like the
+// exported PDF/DOCX (which embed these exact faces). We load the SAME bundled
+// TTFs the Rust PDF embeds — mapping each family name to its metric-clone —
+// so the editor, PDF, and DOCX render byte-identical type. Served from /fonts
+// via the project.json asset glob over `src-tauri/assets/fonts`.
+@each $family,
+  $file
+    in (
+      'Lato': 'Lato',
+      'Open Sans': 'OpenSans',
+      'Calibri': 'Carlito',
+      'Arial': 'Arimo',
+      'Times New Roman': 'Tinos',
+      'Georgia': 'Gelasio'
+    )
+{
+  @font-face {
+    font-family: '#{$family}';
+    src: url('/fonts/#{$file}-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: '#{$family}';
+    src: url('/fonts/#{$file}-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+}
+
 // App-level overrides (if any) go here
 
 // A CV section carries top padding (`.cvpreview__section-start`) to space it
@@ -69,25 +103,33 @@
     gap: 0;
   }
 
-  // Each on-screen page-card IS one physical page: keep its inline geometry
-  // (fixed page size + per-side padding = the simulated margins) and force a
-  // page break after every card. With `@page { margin: 0 }` this reproduces
-  // the preview exactly, so the printed page count equals the preview's.
+  // One on-screen page-card = one physical page. The `@page` rule (injected by
+  // `exportPdfWysiwyg`) owns the real margins, so the card sheds its simulated
+  // padding and fixed full-page height here and prints as its content box inside
+  // the page's margin area — exact margins, no full-bleed scaling.
   body.printing-cv .page-card-wrap {
     @include paper.paper-light;
     display: block;
     margin: 0;
     break-inside: avoid;
-    break-after: page;
   }
-  body.printing-cv .page-card-wrap:last-child {
-    break-after: auto;
+  // Break BEFORE each card after the first — never `break-after` on a card that
+  // already fills its page, which emits a trailing blank page. This starts cards
+  // 2..n on a fresh page and forces no break after the last one.
+  body.printing-cv .page-card-wrap + .page-card-wrap {
+    break-before: page;
   }
   body.printing-cv .page-card {
     @include paper.paper-light;
     box-shadow: none;
     border: 0;
     overflow: hidden; // guard against a sub-pixel spill adding a blank page
+    // Drop the inline simulated margins + fixed page height: the @page rule now
+    // provides the margins, and a content-sized card can't round-overflow onto a
+    // blank page. Width fills the page's content area (= the measured column).
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
   }
 
   // Keep an atom from splitting across the card's internal content box.

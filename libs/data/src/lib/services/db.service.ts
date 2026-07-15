@@ -283,6 +283,20 @@ export class DbService {
     return tauriInvoke<string>('cv_document_export', { id, format, savePath });
   }
 
+  /** Silent WYSIWYG PDF export: a hidden window renders the same preview as
+   * the editor and the OS prints it straight to `savePath` — pixel-identical
+   * to the editor, no dialogs. Falls back to the structured renderer on
+   * platforms without a native print-to-file call. */
+  async cvDocumentExportPdfWysiwyg(id: number, savePath: string): Promise<string> {
+    return tauriInvoke<string>('cv_document_export_pdf_wysiwyg', { id, savePath });
+  }
+
+  /** Called by the print route once its preview has settled — releases the
+   * export command waiting on this window. */
+  printWindowReady(): Promise<void> {
+    return tauriInvoke<void>('print_window_ready');
+  }
+
   async coverLetterDocumentExport(
     id: number,
     format: 'docx' | 'pdf',

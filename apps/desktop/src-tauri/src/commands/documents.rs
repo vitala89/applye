@@ -280,8 +280,31 @@ fn read_pdf_text(path: &str) -> Result<String, String> {
 /// `StyledBlock` carrying its `CvSectionKey` so the renderer can apply that
 /// section's effective style. Section titles stay in English (export
 /// convention), matching the markdown path.
+/// Localized section heading, mirroring the preview's
+/// `t(sectionLabelKey(key))`. Only `en` and `de` define `cv_section_*` in the
+/// i18n table (`translations.ts`); every other locale renders the English
+/// label, so this table does the same: `de` → German, otherwise English.
+fn section_heading(key: &str, lang: Option<&str>) -> String {
+    let de = lang == Some("de");
+    match (key, de) {
+        ("summary", true) => "Zusammenfassung",
+        ("summary", _) => "Summary",
+        ("experience", true) => "Berufserfahrung",
+        ("experience", _) => "Experience",
+        ("education", true) => "Ausbildung",
+        ("education", _) => "Education",
+        ("skills", true) => "Fähigkeiten",
+        ("skills", _) => "Skills",
+        ("languages", true) => "Sprachen",
+        ("languages", _) => "Languages",
+        (other, _) => other,
+    }
+    .to_string()
+}
+
 fn cv_content_to_blocks(
     content_json: &str,
+    lang: Option<&str>,
 ) -> Result<Vec<crate::commands::tailoring::StyledBlock>, String> {
     use crate::commands::tailoring::{BlockLevel, StyledBlock};
 
@@ -318,15 +341,30 @@ fn cv_content_to_blocks(
                 if let Some(name) = str_field("fullName") {
                     out.push(block(BlockLevel::H1, "personal_details", name, false));
                 }
-                let contact: Vec<String> = ["email", "phone", "address"]
-                    .into_iter()
-                    .filter_map(str_field)
-                    .collect();
+                // Position/title line (bold, dark) — mirrors the editor's
+                // `.cvpreview__title` under the name.
+                if let Some(title) = str_field("title") {
+                    out.push(block(BlockLevel::Body, "personal_details", title, true));
+                }
+                // Contact line — same fields, order, and " | " separator as the
+                // editor's `buildContactLine`.
+                let contact: Vec<String> = [
+                    "address",
+                    "phone",
+                    "email",
+                    "website",
+                    "linkedin",
+                    "birthDate",
+                    "maritalStatus",
+                ]
+                .into_iter()
+                .filter_map(str_field)
+                .collect();
                 if !contact.is_empty() {
                     out.push(block(
                         BlockLevel::Body,
                         "personal_details",
-                        contact.join(" · "),
+                        contact.join(" | "),
                         false,
                     ));
                 }
@@ -336,7 +374,7 @@ fn cv_content_to_blocks(
                     out.push(block(
                         BlockLevel::H2,
                         "summary",
-                        "Summary".to_string(),
+                        section_heading("summary", lang),
                         false,
                     ));
                     out.push(block(BlockLevel::Body, "summary", text, false));
@@ -346,27 +384,45 @@ fn cv_content_to_blocks(
                 out.push(block(
                     BlockLevel::H2,
                     "experience",
-                    "Experience".to_string(),
+                    section_heading("experience", lang),
                     false,
                 ));
                 if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
                     for entry in entries {
-                        let company = entry.get("company").and_then(|v| v.as_str()).unwrap_or("");
-                        let role = entry.get("role").and_then(|v| v.as_str()).unwrap_or("");
-                        let start = entry
-                            .get("startDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let end = entry
-                            .get("endDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Present");
-                        out.push(block(
-                            BlockLevel::Body,
-                            "experience",
-                            format!("{role}, {company} ({start} – {end})"),
-                            true,
-                        ));
+                        let s = |f: &str| entry.get(f).and_then(|v| v.as_str()).unwrap_or("");
+                        let company = s("company");
+                        let industry = s("industry");
+                        let role = s("role");
+                        let location = s("location");
+                        let start = s("startDate");
+                        let end = if s("endDate").is_empty() {
+                            "Present"
+                        } else {
+                            s("endDate")
+                        };
+                        // Entry head/role as two-column lines, mirroring the
+                        // editor: company (+industry) left / location right,
+                        // then role left / dates right. `\t` separates the
+                        // columns; the renderers right-align the tail (PDF:
+                        // measured right-aligned draw, DOCX: right tab stop).
+                        let head = if industry.is_empty() {
+                            company.to_string()
+                        } else {
+                            format!("{company} - {industry}")
+                        };
+                        let head_line = if location.is_empty() {
+                            head
+                        } else {
+                            format!("{head}\t{location}")
+                        };
+                        out.push(block(BlockLevel::EntryHead, "experience", head_line, false));
+                        let dates = format!("{start} – {end}");
+                        let role_line = if role.is_empty() {
+                            dates.clone()
+                        } else {
+                            format!("{role}\t{dates}")
+                        };
+                        out.push(block(BlockLevel::EntryRole, "experience", role_line, false));
                         if let Some(bullets) = entry.get("bullets").and_then(|b| b.as_array()) {
                             for bullet in bullets {
                                 if let Some(text) = bullet.as_str() {
@@ -386,30 +442,35 @@ fn cv_content_to_blocks(
                 out.push(block(
                     BlockLevel::H2,
                     "education",
-                    "Education".to_string(),
+                    section_heading("education", lang),
                     false,
                 ));
                 if let Some(entries) = section.get("entries").and_then(|e| e.as_array()) {
                     for entry in entries {
-                        let institution = entry
-                            .get("institution")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let degree = entry.get("degree").and_then(|v| v.as_str()).unwrap_or("");
-                        let start = entry
-                            .get("startDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let end = entry
-                            .get("endDate")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("Present");
-                        out.push(block(
-                            BlockLevel::Body,
-                            "education",
-                            format!("{degree}, {institution} ({start} – {end})"),
-                            true,
-                        ));
+                        let s = |f: &str| entry.get(f).and_then(|v| v.as_str()).unwrap_or("");
+                        let institution = s("institution");
+                        let degree = s("degree");
+                        let start = s("startDate");
+                        let end = if s("endDate").is_empty() {
+                            "Present"
+                        } else {
+                            s("endDate")
+                        };
+                        let head = [degree, institution]
+                            .into_iter()
+                            .filter(|p| !p.is_empty())
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        let dates = format!("{start} – {end}");
+                        let dates = dates.trim();
+                        // Two-column: degree/institution left, dates right —
+                        // mirrors the editor's education rows.
+                        let line = if head.is_empty() {
+                            dates.to_string()
+                        } else {
+                            format!("{head}\t{dates}")
+                        };
+                        out.push(block(BlockLevel::EntryRole, "education", line, false));
                     }
                 }
             }
@@ -417,7 +478,12 @@ fn cv_content_to_blocks(
                 if let Some(items) = section.get("items").and_then(|i| i.as_array()) {
                     let list: Vec<&str> = items.iter().filter_map(|v| v.as_str()).collect();
                     if !list.is_empty() {
-                        out.push(block(BlockLevel::H2, "skills", "Skills".to_string(), false));
+                        out.push(block(
+                            BlockLevel::H2,
+                            "skills",
+                            section_heading("skills", lang),
+                            false,
+                        ));
                         out.push(block(BlockLevel::Body, "skills", list.join(", "), false));
                     }
                 } else if let Some(groups) = section.get("groups").and_then(|g| g.as_array()) {
@@ -434,7 +500,12 @@ fn cv_content_to_blocks(
                         }
                     }
                     if !lines.is_empty() {
-                        out.push(block(BlockLevel::H2, "skills", "Skills".to_string(), false));
+                        out.push(block(
+                            BlockLevel::H2,
+                            "skills",
+                            section_heading("skills", lang),
+                            false,
+                        ));
                         for line in lines {
                             out.push(block(BlockLevel::Body, "skills", line, false));
                         }
@@ -447,7 +518,7 @@ fn cv_content_to_blocks(
                         out.push(block(
                             BlockLevel::H2,
                             "languages",
-                            "Languages".to_string(),
+                            section_heading("languages", lang),
                             false,
                         ));
                         for item in items {
@@ -540,6 +611,11 @@ pub struct CvStyle {
     pub accent_color_hex: String,
     #[serde(default = "CvStyle::default_font_weight")]
     pub font_weight: i64,
+    /// Document-wide body-text colour (mirrors the TS `CvStyle.bodyColorHex`).
+    /// Distinct from `accent_color_hex`: body text reads this (or dark), never
+    /// the accent — the no-accent-leak rule the export previously ignored.
+    #[serde(default)]
+    pub body_color_hex: Option<String>,
     #[serde(default)]
     pub section_styles: std::collections::HashMap<String, CvSectionStyle>,
     #[serde(default)]
@@ -568,6 +644,7 @@ impl Default for CvStyle {
             font_size_pt: Self::default_font_size_pt(),
             accent_color_hex: Self::default_accent_color_hex(),
             font_weight: Self::default_font_weight(),
+            body_color_hex: None,
             section_styles: Default::default(),
             page: Default::default(),
         }
@@ -908,7 +985,47 @@ pub async fn cv_document_export(
     Ok(save_path)
 }
 
-async fn cv_document_export_bytes_core(
+/// Effective export style — mirrors the TS load-time merge
+/// `{ ...CV_STYLE_DEFAULT, ...themeStyleSeed(theme), ...styleJson }`: the theme
+/// seed (font/size/weight/accent) is the base, and only the fields the user
+/// actually persisted in `style_json` override it. Serde's field defaults can't
+/// express "absent → theme seed" (they force Calibri/#333, which is exactly the
+/// wrong-font bug), so this reads the raw JSON and overlays only present keys.
+fn resolve_export_style(
+    style_json: Option<&str>,
+    theme: &crate::commands::tailoring::CvTheme,
+) -> CvStyle {
+    let v: Option<serde_json::Value> = style_json.and_then(|s| serde_json::from_str(s).ok());
+    let field = |k: &str| v.as_ref().and_then(|o| o.get(k));
+    let (ar, ag, ab) = theme.accent_rgb;
+    CvStyle {
+        font_family: field("fontFamily")
+            .and_then(|x| x.as_str())
+            .map(str::to_string)
+            .unwrap_or_else(|| theme.font_family.clone()),
+        font_size_pt: field("fontSizePt")
+            .and_then(|x| x.as_f64())
+            .unwrap_or(theme.base_size_pt),
+        accent_color_hex: field("accentColorHex")
+            .and_then(|x| x.as_str())
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("#{ar:02X}{ag:02X}{ab:02X}")),
+        font_weight: field("fontWeight")
+            .and_then(|x| x.as_i64())
+            .unwrap_or(theme.font_weight),
+        body_color_hex: field("bodyColorHex")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        section_styles: field("sectionStyles")
+            .and_then(|x| serde_json::from_value(x.clone()).ok())
+            .unwrap_or_default(),
+        page: field("page")
+            .and_then(|x| serde_json::from_value(x.clone()).ok())
+            .unwrap_or_default(),
+    }
+}
+
+pub(crate) async fn cv_document_export_bytes_core(
     id: i64,
     format: &str,
     pool: &sqlx::SqlitePool,
@@ -916,14 +1033,13 @@ async fn cv_document_export_bytes_core(
     let doc = document_library_get_core(id, pool)
         .await?
         .ok_or_else(|| "cv_document_export: document not found".to_string())?;
-    // The user's style choices live in `style_json`; a missing/legacy value
-    // resolves to the safe default rather than erroring. Read it before moving
-    // `content_json` out of `doc`.
-    let style: CvStyle = doc
-        .style_json
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok())
-        .unwrap_or_default();
+    // The user's style choices live in `style_json`, over the selected theme's
+    // seed — resolved together so the export matches the live preview's
+    // effective style. Read before moving `content_json` out of `doc`.
+    let theme = crate::commands::tailoring::builtin_theme(doc.theme_id);
+    let style = resolve_export_style(doc.style_json.as_deref(), &theme);
+    // Section headings follow the document's language, like the preview.
+    let lang = doc.language.clone();
     let content_json = doc
         .content_json
         .ok_or_else(|| "cv_document_export: document has no content".to_string())?;
@@ -978,8 +1094,8 @@ async fn cv_document_export_bytes_core(
 
     match format {
         "docx" | "pdf" => {
-            let blocks = cv_content_to_blocks(&content_json)?;
-            let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, false);
+            let blocks = cv_content_to_blocks(&content_json, lang.as_deref())?;
+            let resolved = crate::commands::tailoring::resolve_cv_blocks(&style, &theme, &blocks);
             let page = crate::commands::tailoring::resolve_page(&style.page);
             if format == "docx" {
                 crate::commands::tailoring::render_blocks_docx(
@@ -1094,7 +1210,7 @@ pub async fn document_library_get(
     document_library_get_core(id, &db.pool).await
 }
 
-async fn document_library_get_core(
+pub(crate) async fn document_library_get_core(
     id: i64,
     pool: &sqlx::SqlitePool,
 ) -> Result<Option<DocumentLibraryItem>, String> {
@@ -1489,7 +1605,7 @@ mod tests {
             {"key":"experience","order":2,"visible":true,"entries":[{"company":"Acme","role":"Engineer","startDate":"2020","endDate":"2023","bullets":["Built things"]}]},
             {"key":"skills","order":3,"visible":false,"items":["Rust"]}
         ]}"#;
-        let blocks = cv_content_to_blocks(content_json).expect("render");
+        let blocks = cv_content_to_blocks(content_json, None).expect("render");
         let pos = |needle: &str| {
             blocks
                 .iter()
@@ -1515,6 +1631,78 @@ mod tests {
     }
 
     #[test]
+    fn resolve_export_style_seeds_from_theme_then_overrides() {
+        use crate::commands::tailoring::builtin_theme;
+        let aurora = builtin_theme(Some(2));
+        // No style_json → pure theme seed (Lato 10pt, accent green) — the
+        // wrong-font regression guard.
+        let seeded = resolve_export_style(None, &aurora);
+        assert_eq!(seeded.font_family, "Lato");
+        assert_eq!(seeded.font_size_pt, 10.0);
+        assert_eq!(seeded.accent_color_hex, "#1B7464");
+        assert_eq!(seeded.body_color_hex, None);
+        // Explicit style_json fields override the seed; unspecified keep it.
+        let json = r##"{"fontFamily":"Georgia","bodyColorHex":"#222222"}"##;
+        let merged = resolve_export_style(Some(json), &aurora);
+        assert_eq!(
+            merged.font_family, "Georgia",
+            "explicit font overrides seed"
+        );
+        assert_eq!(merged.font_size_pt, 10.0, "unspecified size keeps the seed");
+        assert_eq!(merged.body_color_hex.as_deref(), Some("#222222"));
+    }
+
+    #[test]
+    fn cv_content_to_blocks_splits_experience_into_accent_head_and_role() {
+        use crate::commands::tailoring::BlockLevel;
+        let content_json = r#"{"sections":[
+            {"key":"experience","order":0,"visible":true,"entries":[
+                {"company":"Acme","industry":"SaaS","role":"Engineer","location":"Berlin","startDate":"2020","endDate":"2023","bullets":["Shipped"]}
+            ]}
+        ]}"#;
+        let blocks = cv_content_to_blocks(content_json, None).expect("render");
+        let head = blocks
+            .iter()
+            .find(|b| b.level == BlockLevel::EntryHead)
+            .expect("entry head");
+        // Two-column: company+industry left, location right (tab-separated).
+        assert_eq!(
+            head.text, "Acme - SaaS\tBerlin",
+            "company + industry, accent lead"
+        );
+        let role = blocks
+            .iter()
+            .find(|b| b.level == BlockLevel::EntryRole)
+            .expect("entry role");
+        // Two-column: role left, dates right.
+        assert_eq!(role.text, "Engineer\t2020 – 2023");
+    }
+
+    #[test]
+    fn cv_content_to_blocks_localizes_section_headings_for_german() {
+        use crate::commands::tailoring::BlockLevel;
+        let content_json = r#"{"sections":[
+            {"key":"summary","order":0,"visible":true,"text":"Backend."},
+            {"key":"experience","order":1,"visible":true,"entries":[{"company":"Acme","role":"Dev","startDate":"2020","endDate":"2023","bullets":["x"]}]}
+        ]}"#;
+        let heads = |lang| {
+            cv_content_to_blocks(content_json, lang)
+                .expect("render")
+                .into_iter()
+                .filter(|b| b.level == BlockLevel::H2)
+                .map(|b| b.text)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            heads(Some("de")),
+            vec!["Zusammenfassung", "Berufserfahrung"]
+        );
+        // English for the default and any locale without cv_section_* keys.
+        assert_eq!(heads(Some("uk")), vec!["Summary", "Experience"]);
+        assert_eq!(heads(None), vec!["Summary", "Experience"]);
+    }
+
+    #[test]
     fn cv_content_to_blocks_renders_grouped_skills_when_items_absent() {
         use crate::commands::tailoring::BlockLevel;
         let content_json = r#"{"sections":[
@@ -1522,7 +1710,7 @@ mod tests {
                 {"label":"Languages","values":["TypeScript","Angular"]}
             ]}
         ]}"#;
-        let blocks = cv_content_to_blocks(content_json).expect("render");
+        let blocks = cv_content_to_blocks(content_json, None).expect("render");
         assert!(blocks
             .iter()
             .any(|b| b.level == BlockLevel::H2 && b.text == "Skills"));

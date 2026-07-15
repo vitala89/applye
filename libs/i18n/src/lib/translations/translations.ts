@@ -852,6 +852,8 @@ const en: TranslationMap = {
   onboarding: {
     title: 'Set up Applye',
     step: 'Setup',
+    cv_save_failed:
+      'Your profile was saved, but the CV could not be created. Import it in Documents.',
     skip: 'Skip',
     back: 'Back',
     next: 'Continue',
@@ -1880,6 +1882,8 @@ const de: TranslationMap = {
   onboarding: {
     title: 'Applye einrichten',
     step: 'Einrichtung',
+    cv_save_failed:
+      'Dein Profil wurde gespeichert, aber der Lebenslauf konnte nicht erstellt werden. Importiere ihn unter Dokumente.',
     skip: 'Überspringen',
     back: 'Zurück',
     next: 'Weiter',

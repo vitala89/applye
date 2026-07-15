@@ -319,7 +319,7 @@
                     id="ob-resume-paste"
                     class="ob__textarea"
                     [ngModel]="resumeText()"
-                    (ngModelChange)="resumeText.set($event)"
+                    (ngModelChange)="setPastedResume($event)"
                     [placeholder]="t()('onboarding.resume.paste_placeholder')"
                   ></textarea>
                 </div>

@@ -47,5 +47,16 @@ This file serves as the raw inbox for ideas, feature requests, and product sugge
 ## Later / Parking Lot
 
 - _Good ideas that are outside the immediate roadmap horizon._
+- **Managed AI tier (BYOK / Bridge / Managed proxy)** — monetization: app stays
+  free/MIT; paid tier proxies AI through Applye accounts under a subscription,
+  for users with no key / no AI account. **Important — deferred, revisit later.**
+  Already analyzed (not raw): decision + options in
+  [ADR-0001](decisions/ADR-0001-ai-key-monetization.md); provider ToS checked
+  (Anthropic/OpenAI/DeepSeek all permit, conditions noted); privacy-reviewed
+  (shippable IF zero-log in code + explicit opt-in). Full plan +
+  Gate 0 + Workstreams A–D + D4 privacy findings in
+  [managed-tier-implementation-plan.md](managed-tier-implementation-plan.md).
+  Next when resumed: detail Workstream B (proxy) into tasks/estimates; resolve
+  open blockers Q1 (proxy jurisdiction) + Q4 (content-free abuse handling).
 - **`training` / `project` evaluators** (from career-ops) — course/cert and portfolio-project coaching modes. Low priority.
 - **Apply-AI agent mode** — chat-driven agent that runs the whole flow live and narrates it. A later feature series; foundation (agent inbox, skills, cached scoring) laid first.

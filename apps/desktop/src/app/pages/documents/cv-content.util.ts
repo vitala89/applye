@@ -886,16 +886,26 @@ export function effectiveLeafStyle(
   fontWeight: CvFontWeight;
   colorHex?: string;
   lineHeight?: number;
+  /** Per-leaf bottom rule (underline). Element-only — no section fallback: the
+   * section's structural body divider is a separate concept. `undefined`/'none'
+   * → no line. */
+  borderStyle?: CvBorderStyle;
+  ruleWidthPt?: number;
+  ruleColorHex?: string;
 } {
   const section = effectiveSectionStyle(style, key);
   const sectionOverride = style.sectionStyles?.[key] ?? {};
   const element: CvElementStyle = (elementPath && style.elementStyles?.[elementPath]) || {};
+  const hasLine = !!element.borderStyle && element.borderStyle !== 'none';
   return {
     fontFamily: element.fontFamily ?? section.fontFamily,
     fontSizePt: element.fontSizePt ?? section.fontSizePt,
     fontWeight: element.fontWeight ?? section.fontWeight,
     colorHex: element.colorHex ?? sectionOverride.colorHex ?? style.bodyColorHex ?? undefined,
     lineHeight: isValidCvLineHeight(element.lineHeight) ? element.lineHeight : section.lineHeight,
+    borderStyle: hasLine ? element.borderStyle : undefined,
+    ruleWidthPt: hasLine ? (element.ruleWidthPt ?? 1) : undefined,
+    ruleColorHex: hasLine ? (element.ruleColorHex ?? style.accentColorHex) : undefined,
   };
 }
 

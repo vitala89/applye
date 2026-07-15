@@ -324,6 +324,15 @@ export interface CvElementStyle {
   fontWeight?: CvFontWeight;
   colorHex?: string;
   lineHeight?: number;
+  /** Per-leaf bottom rule (underline) drawn under THIS element only. `'none'`
+   * or unset = no line (the default/off state); `'solid' | 'dotted' | 'dashed'`
+   * turns it on. Independent of the section's structural body divider. */
+  borderStyle?: CvBorderStyle;
+  /** Thickness (pt) of the per-leaf bottom rule; unset falls back to a 1pt
+   * default when `borderStyle` is set. */
+  ruleWidthPt?: number;
+  /** Colour of the per-leaf bottom rule; unset falls back to the accent. */
+  ruleColorHex?: string;
 }
 
 /** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.

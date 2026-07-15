@@ -956,6 +956,15 @@ export class CvPreviewComponent {
     if (o.fontWeight !== undefined) css['font-weight'] = String(o.fontWeight);
     if (o.colorHex !== undefined) css['color'] = o.colorHex;
     if (o.lineHeight !== undefined) css['line-height'] = String(o.lineHeight);
+    // Per-leaf bottom rule (underline). 'none'/unset draws nothing; a set
+    // style turns it on with a 1pt/accent default so a leaf with only a style
+    // picked still shows a line.
+    if (o.borderStyle && o.borderStyle !== 'none') {
+      const w = o.ruleWidthPt ?? 1;
+      const c = o.ruleColorHex ?? this.style().accentColorHex;
+      css['border-bottom'] = `${w}pt ${o.borderStyle} ${c}`;
+      css['padding-bottom'] = '2px';
+    }
     return css;
   }
 

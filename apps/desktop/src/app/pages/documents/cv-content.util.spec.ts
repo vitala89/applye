@@ -984,6 +984,27 @@ describe('effectiveLeafStyle', () => {
     });
   });
 
+  it('surfaces a per-leaf bottom rule with width/colour defaults when only the style is set', () => {
+    const s: CvStyle = { ...base, elementStyles: { 'pd.name': { borderStyle: 'dashed' } } };
+    const r = effectiveLeafStyle(s, 'personal_details', 'pd.name');
+    expect(r.borderStyle).toBe('dashed');
+    expect(r.ruleWidthPt).toBe(1);
+    expect(r.ruleColorHex).toBe(base.accentColorHex);
+  });
+
+  it("draws no line when borderStyle is 'none' or unset — even with a stray width/colour", () => {
+    const off: CvStyle = {
+      ...base,
+      elementStyles: {
+        'pd.name': { borderStyle: 'none', ruleWidthPt: 3, ruleColorHex: '#ff0000' },
+      },
+    };
+    const r = effectiveLeafStyle(off, 'personal_details', 'pd.name');
+    expect(r.borderStyle).toBeUndefined();
+    expect(r.ruleWidthPt).toBeUndefined();
+    expect(r.ruleColorHex).toBeUndefined();
+  });
+
   it('layers the element override over the section resolution', () => {
     const s: CvStyle = {
       ...base,

@@ -493,6 +493,10 @@ export class CvLiveStylePanelComponent {
     return (
       !!sel &&
       sel.part === 'body' &&
+      // Section-level structural divider — only at section scope. A single leaf
+      // (element scope) uses its own per-leaf line group instead, so the two
+      // never overlap and a field edit never rewrites the section rule.
+      this.scope() === 'section' &&
       (sel.sectionKey === 'personal_details' || sel.sectionKey === 'experience')
     );
   });
@@ -548,6 +552,54 @@ export class CvLiveStylePanelComponent {
     if (this.selection()) {
       this.panelChange.emit({ scope: this.scope(), separatorSize: value ? +value : null });
     }
+  }
+
+  /** A single leaf, styled at element scope, can carry its own bottom rule
+   * (underline). Offered for every text leaf except the composed contact line
+   * (`pd.contact`), which is a multi-field wrapper with no single baseline. */
+  readonly canElementLine = computed<boolean>(() => {
+    const sel = this.selection();
+    const p = sel?.elementPath;
+    return this.scope() === 'element' && !!p && p !== 'pd.contact';
+  });
+
+  /** Raw per-leaf border style for the selected element ('' = none/off). */
+  readonly activeElementBorder = computed<string>(() => {
+    const p = this.selection()?.elementPath;
+    return (p && this.style().elementStyles?.[p]?.borderStyle) || '';
+  });
+
+  readonly activeElementRuleWidth = computed<number | null>(() => {
+    const p = this.selection()?.elementPath;
+    return (p && this.style().elementStyles?.[p]?.ruleWidthPt) ?? null;
+  });
+
+  readonly activeElementRuleColor = computed<string | null>(() => {
+    const p = this.selection()?.elementPath;
+    return (p && this.style().elementStyles?.[p]?.ruleColorHex) ?? null;
+  });
+
+  /** Whether the selected leaf currently draws a line (controls whether the
+   * width/colour rows are shown). */
+  readonly hasElementLine = computed<boolean>(() => {
+    const b = this.activeElementBorder();
+    return b !== '' && b !== 'none';
+  });
+
+  /** Pick a line style. 'none'/'' clears the whole rule (style + width +
+   * colour) so an off leaf keeps no stray override. */
+  setElementBorder(value: string): void {
+    if (!value || value === 'none') {
+      this.emit({ borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined });
+    } else {
+      this.emit({ borderStyle: value as CvBorderStyle });
+    }
+  }
+  setElementRuleWidth(value: string | number | null): void {
+    this.emit({ ruleWidthPt: value ? +value : undefined });
+  }
+  setElementRuleColor(value: string): void {
+    this.emit({ ruleColorHex: value || undefined });
   }
 
   reset(): void {

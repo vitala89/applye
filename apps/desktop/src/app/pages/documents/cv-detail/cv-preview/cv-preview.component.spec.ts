@@ -521,6 +521,23 @@ describe('CvPreviewComponent', () => {
       });
     });
 
+    it('renders a per-leaf bottom rule from borderStyle, defaulting width/colour', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        accentColorHex: '#1B7464',
+        elementStyles: { 'pd.name': { borderStyle: 'dotted' } },
+      });
+      expect(component.leafCss('pd.name')['border-bottom']).toBe('1pt dotted #1B7464');
+    });
+
+    it("draws no border-bottom when borderStyle is 'none'", () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { 'pd.name': { borderStyle: 'none', ruleWidthPt: 2 } },
+      });
+      expect(component.leafCss('pd.name')['border-bottom']).toBeUndefined();
+    });
+
     it('never falls back to the section or document accent colour — only an explicit element colorHex appears', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,

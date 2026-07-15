@@ -490,15 +490,19 @@ export class CvLiveStylePanelComponent {
    * personal-details header underline and the experience entry rule. */
   readonly canBodyRule = computed<boolean>(() => {
     const sel = this.selection();
-    return (
-      !!sel &&
-      sel.part === 'body' &&
-      // Section-level structural divider — only at section scope. A single leaf
-      // (element scope) uses its own per-leaf line group instead, so the two
-      // never overlap and a field edit never rewrites the section rule.
-      this.scope() === 'section' &&
-      (sel.sectionKey === 'personal_details' || sel.sectionKey === 'experience')
-    );
+    if (!sel || sel.part !== 'body') return false;
+    if (sel.sectionKey !== 'personal_details' && sel.sectionKey !== 'experience') return false;
+    // The section's structural divider. Shown at section scope, and for an
+    // ENTRY container — an entry has no per-leaf line of its own (a border
+    // there would land under its bullets), so this rule is the only line that
+    // means anything for it, and hiding it left an entry selection with no
+    // line control at all. Writes always target the section, which is where
+    // the rule lives: there is no per-entry rule in the model.
+    //
+    // Deliberately hidden for a single FIELD (`exp.0.role`, `pd.name`): that
+    // uses its own per-leaf line group, so the two never overlap and editing a
+    // field can't silently rewrite the whole section's divider.
+    return this.scope() === 'section' || this.isEntryPath(sel.elementPath);
   });
 
   /** Raw section body-rule style ('' = Inherit → the theme's rule). */

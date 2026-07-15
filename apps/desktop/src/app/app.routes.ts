@@ -83,6 +83,16 @@ export const appRoutes: Route[] = [
       import('./pages/documents/cv-print/cv-print.component').then((m) => m.CvPrintComponent),
   },
   {
+    // Loaded only by the hidden silent-PDF-export window (see
+    // `cover_letter_document_export_pdf_wysiwyg` in Rust) — never linked from
+    // the UI.
+    path: 'print/cover-letter/:id',
+    loadComponent: () =>
+      import('./pages/documents/cover-letter-print/cover-letter-print.component').then(
+        (m) => m.CoverLetterPrintComponent,
+      ),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./pages/settings/settings.component').then((m) => m.SettingsComponent),

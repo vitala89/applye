@@ -1,0 +1,48 @@
+/* ---- Preview sheet ---- */
+.letter-sheet-viewport {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--surface-2);
+}
+.cvpreview__warning {
+  margin: var(--space-2) auto 0;
+  max-width: 720px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--warning-tint, #fff4e5);
+  color: var(--warning-strong, #8a5a00);
+  font-size: var(--text-sm);
+}
+.letter-recipient {
+  margin-bottom: 32px;
+}
+.letter-recipient div {
+  min-height: 1.2em;
+}
+.letter-date {
+  text-align: right;
+  margin-bottom: 28px;
+}
+.letter-subject {
+  margin-bottom: 24px;
+}
+.letter-greeting {
+  margin-bottom: 18px;
+}
+.letter-body p {
+  margin: 0 0 16px;
+}
+.letter-closing {
+  margin-top: 24px;
+}
+.letter-signature-space {
+  height: 40px;
+}
+
+// NOTE: the WYSIWYG print rules live in the GLOBAL stylesheet
+// (apps/desktop/src/styles.scss), not here. Component styles are view-
+// encapsulated, so a `body.printing-cv *` rule in this file would only match
+// this component's own elements and could not hide the app shell/sidebar.

@@ -3,11 +3,12 @@
 // The editor is HTML/CSS rendered by the system WebView; any hand-written PDF
 // renderer inevitably drifts from it (fonts, wrapping, spacing — two layout
 // engines never agree). This module removes the second engine for PDF: a
-// HIDDEN window loads the dedicated `print/cv/:id` route (which renders the
-// same `<app-cv-preview>` as the editor), and once the frontend signals
-// readiness we drive the OS print machinery straight to a file — no print
-// panel, no visible window. The output is the editor's own render, so every
-// current and future theme exports correctly with zero per-theme export code.
+// HIDDEN window loads the document's dedicated print route (`print/cv/:id` or
+// `print/cover-letter/:id`, each rendering the same preview component as its
+// editor), and once the frontend signals readiness we drive the OS print
+// machinery straight to a file — no print panel, no visible window. The output
+// is the editor's own render, so every current and future theme exports
+// correctly with zero per-theme export code.
 //
 // Platform notes:
 // - macOS: WKWebView `printOperationWithPrintInfo:` with `NSPrintSaveJob`
@@ -59,13 +60,60 @@ pub async fn cv_document_export_pdf_wysiwyg(
 
     #[cfg(target_os = "macos")]
     {
-        use tauri::{WebviewUrl, WebviewWindowBuilder};
+        export_pdf_wysiwyg_core(id, "cv", save_path, app, db, ready).await
+    }
+}
 
+/// Exports a library cover letter to `save_path` as PDF via the same hidden-
+/// window print path as the CV — the letter's own `print/cover-letter/:id`
+/// route renders `<app-cover-letter-preview>`, the editor's own render.
+#[tauri::command]
+pub async fn cover_letter_document_export_pdf_wysiwyg(
+    id: i64,
+    save_path: String,
+    app: AppHandle,
+    db: State<'_, Db>,
+    ready: State<'_, PrintReady>,
+) -> Result<String, String> {
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (&app, &ready); // silence unused warnings on the fallback path
+        let bytes = crate::commands::documents::cover_letter_document_export_bytes_core(
+            id, "pdf", &db.pool,
+        )
+        .await?;
+        std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
+        Ok(save_path)
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        export_pdf_wysiwyg_core(id, "cover-letter", save_path, app, db, ready).await
+    }
+}
+
+/// The shared silent-export machinery behind both document types: spin up an
+/// off-screen window on the given print route, wait for it to signal ready,
+/// then drive the native print straight to a PDF file. `route_kind` is the
+/// `print/<kind>/:id` segment — the ONLY thing that differs per document type,
+/// because both routes render their editor's preview component.
+#[cfg(target_os = "macos")]
+async fn export_pdf_wysiwyg_core(
+    id: i64,
+    route_kind: &str,
+    save_path: String,
+    app: AppHandle,
+    db: State<'_, Db>,
+    ready: State<'_, PrintReady>,
+) -> Result<String, String> {
+    use tauri::{WebviewUrl, WebviewWindowBuilder};
+
+    {
         // Page geometry from the document's style — the print box the preview
         // laid itself out for.
         let doc = crate::commands::documents::document_library_get_core(id, &db.pool)
             .await?
-            .ok_or_else(|| "cv_document_export: document not found".to_string())?;
+            .ok_or_else(|| "document_export: document not found".to_string())?;
         let page_settings: crate::commands::documents::PageSettings = doc
             .style_json
             .as_deref()
@@ -77,7 +125,7 @@ pub async fn cv_document_export_pdf_wysiwyg(
 
         // Unique label per export so parallel/repeated exports never collide.
         let label = format!(
-            "cv-print-{id}-{}",
+            "{route_kind}-print-{id}-{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.subsec_nanos())
@@ -93,7 +141,7 @@ pub async fn cv_document_export_pdf_wysiwyg(
         let win = WebviewWindowBuilder::new(
             &app,
             &label,
-            WebviewUrl::App(format!("print/cv/{id}").into()),
+            WebviewUrl::App(format!("print/{route_kind}/{id}").into()),
         )
         .title("Export PDF")
         .inner_size(1000.0, 1400.0)

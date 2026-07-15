@@ -3615,16 +3615,20 @@ export class JobsComponent implements OnInit, OnDestroy {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const filePath = await save({ defaultPath: this.documentExportFilename(item, format) });
       if (!filePath) return;
+      // PDF: silent WYSIWYG engine (hidden window prints the editor's own
+      // preview) — pixel-identical to the editor for every theme.
       if (kind === 'cv') {
-        // PDF: silent WYSIWYG engine (hidden window prints the editor's own
-        // preview) — pixel-identical to the editor for every theme.
         if (format === 'pdf') {
           await this.db.cvDocumentExportPdfWysiwyg(item.id, filePath);
         } else {
           await this.db.cvDocumentExport(item.id, format, filePath);
         }
       } else {
-        await this.db.coverLetterDocumentExport(item.id, format, filePath);
+        if (format === 'pdf') {
+          await this.db.coverLetterDocumentExportPdfWysiwyg(item.id, filePath);
+        } else {
+          await this.db.coverLetterDocumentExport(item.id, format, filePath);
+        }
       }
       this.exportStatus.set(`${this.t()('jobs.wizard.export_saved')}: ${filePath}`);
       this.lastExport.set({ filePath, format });

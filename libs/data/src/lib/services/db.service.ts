@@ -305,6 +305,12 @@ export class DbService {
     return tauriInvoke<string>('cover_letter_document_export', { id, format, savePath });
   }
 
+  /** The cover letter's counterpart to `cvDocumentExportPdfWysiwyg` — same
+   * hidden-window print path, via the `print/cover-letter/:id` route. */
+  async coverLetterDocumentExportPdfWysiwyg(id: number, savePath: string): Promise<string> {
+    return tauriInvoke<string>('cover_letter_document_export_pdf_wysiwyg', { id, savePath });
+  }
+
   /** Deterministic, 0-token ATS/readability check (ROADMAP §16.5) — empty
    * array when `styleJson` is unset or already at the safe default. */
   async checkStyleSafety(styleJson?: string): Promise<StyleNote[]> {

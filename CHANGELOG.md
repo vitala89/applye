@@ -10,8 +10,22 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-07-15
+
+The CV and cover-letter editors become WYSIWYG: you edit on the rendered page,
+style any element from a contextual panel, and export a PDF that matches what
+you saw. Onboarding now hands you a finished CV instead of an empty library.
+
 ### Added
 
+- **Onboarding leaves you with a real CV.** The wizard already parsed your resume; it now writes it into Documents as an editable CV instead of only saving a profile, so you no longer import the same file a second time. The starting region template follows your UI language (German → German templates, otherwise generic) and can be changed in Documents. Contact fields you clear in the review step stay cleared in both the profile and the CV.
+- **Edit the CV directly on the page preview.** Every region of the rendered page — summary, personal details, each experience field, skills, languages — is selectable by click or keyboard and edits in place. Changes commit on blur or Enter; Escape discards. Structure changes (add / remove / reorder sections, photo, toggles) stay in Edit mode.
+- **Contextual live-style panel with three scopes.** Selecting any region opens a style panel (font, size, weight, colour, line-height) that applies to **this element**, **this section**, or the **whole document** — most specific wins, cascading down to the active theme. Section titles get their own **this title** / **all titles** scopes. "Reset all styling" lives in the panel footer.
+- **CV visual themes.** Two built-in themes: Classic (the existing look) and Aurora (teal accent, uppercase ruled section headers, two-line experience entries, Lato). Switching reseeds the base font and accent without wiping per-section overrides. Themes are declarative and sandboxed, separate from layout templates and your own style overrides; an "Import theme…" seam is present but disabled.
+- **Per-element underlines.** Any element or section can carry a line in solid, dotted, or dashed style with its own colour and thickness, inheriting element → section → theme.
+- **Inline bold.** Mark important words in the CV summary and experience bullets with `**word**`, via a Bold button or Cmd/Ctrl+B. Carries through to preview, DOCX, and PDF.
+- **Discrete page cards.** The CV and cover-letter previews render as real separate page cards captioned "Page i of N", split at entry level so a section title never separates from its first entry, and the paper stays white in both app themes.
+- **Photo header placement.** Three slots — left, centre, right — with the photo sitting beside the name and contact block for left and right. Honoured in the preview, the WYSIWYG PDF, and DOCX.
 - **CV photo upload.** Pick a local image (jpg/jpeg/png/webp via native file dialog), crop to a fixed 3:4 frame (German Bewerbungsfoto proportions) with zoom and reposition, preview it on the CV when "Include photo" is on, and embed it in DOCX and PDF exports (LaTeX export intentionally omits the photo). Photo stored locally in the CV document as a base64 data URI. Rust `cv_photo_read_file` command; printpdf `embedded_images` feature. i18n EN+DE.
 - **CV default template, rebuilt.** All built-in region templates (DE-ATS-modern, DE-traditional, US, UK, generic) now guarantee a Personal Details section, matching a reference ATS layout: bold-emphasis parsing, grouped skills, contact-line formatting, and title/website/LinkedIn fields (with a "pull from profile" action). Experience and Education entries and bullets can now be added/removed directly in the editor. Fixed AI-import truncation handling (configurable token cap + JSON repair) so long resumes import cleanly.
 - **CV editor per-section style constructor.** Font, size, colour, and weight can now be set per section (Personal Details, Summary, Experience, Education, Skills, Languages) via an inline "Style" popover, inheriting from the global default with a one-click "reset to common". The global style row gained a font-weight control (Light/Normal/Semibold/Bold) and was restyled to match the design system.
@@ -21,12 +35,25 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Cover letters export as a PDF, silently.** Export no longer opens the system print dialog: a hidden window renders the letter and writes the PDF straight to disk, so what you see in the preview is what lands in the file. DOCX was removed from every cover-letter surface (the library list and the jobs wizard), matching the CV library's PDF-only policy. The Rust DOCX renderer remains only as the non-macOS fallback.
+- **Real fonts embedded in PDF export.** PDFs previously approximated a custom font (Calibri, Lato) with the nearest of the 14 base PDF families. Metric-clone TTFs are now embedded, so the PDF matches the editor and the DOCX.
+- **Edit mode is smaller.** The document-wide "body text" and "section titles" style groups are gone, superseded by the live-style panel. Edit mode now shows only the page group (size, margins) and the region and photo toggles.
+- **Cover-letter editor redesigned** to match the CV editor: AI draft with tone and length controls, per-block styling, and block-level regeneration with caching.
 - **PDF export for CV and cover letter moved from the library list to the document preview.** Because WYSIWYG PDF prints the rendered preview, the "PDF" option was removed from the list export menu (DOCX, and LaTeX for CVs, remain there); a note points users to the preview's Export PDF. The Rust `printpdf` renderer is retired from the CV / cover-letter library path (the AI-tailored job-application export still uses it, unchanged).
 - **CV & cover-letter export now honors editor styles, and DOCX/PDF match.** Library exports render from one shared, section-tagged block model, so DOCX and PDF are structurally identical, and both now apply the font, size, colour, and weight chosen in the editor — including per-section and per-paragraph overrides — instead of dropping them at export. The PDF photo moved from a top-right overlay (which could overlap long headings) to the same inline top box as DOCX. Note: PDF uses the 14 built-in PDF fonts, so a custom font (Calibri, Lato) is mapped to the nearest base family in PDF while DOCX keeps the exact font name; embedding fonts for exact PDF rendering is a follow-up. The AI-tailored job-application CV export path is unchanged (still document-wide default style, no photo).
 
 ### Fixed
 
+- **Live-style controls now show what is actually on the page.** A style control could report "None" while a visible line was rendered, because it read only its own layer instead of tracing the element → section → theme cascade. Titles, body text, and experience entry lines all report the rendered value.
+- **"All experiences" now reaches an entry you had styled individually.** A colour change at section scope silently skipped entries carrying their own override; a wider scope now clears the narrower ones it covers.
+- Changing the line size or colour for a single experience entry no longer restyles every experience entry.
+- Section line toggle, square rule corners, and entry/photo line defects.
 - CV editor preview mode now fills the whole detail pane and shows only the rendered CV — the region selector, include-photo/birthdate/marital-status toggles, and style controls no longer leak into the preview. Edit mode no longer reserves empty space for a preview column that isn't shown (the two modes never actually render side by side). Added missing spacing between the "Pull from profile" action and the Personal Details fields below it.
+
+### Known limitations
+
+- Line-height and the per-element styling from the live panel apply to the preview and the WYSIWYG PDF only. The CV library list's PDF export ignores them; use the preview's Export PDF for a full-fidelity file.
+- Onboarding cannot detect a duplicate when the resume was pasted rather than uploaded, so deliberately re-running the wizard and pasting the same resume writes a second CV. Delete the extra in Documents.
 
 ## [0.23.0] - 2026-07-07
 

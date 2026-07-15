@@ -5,9 +5,11 @@ description: >
   converted to plain text in Rust) into structured sections: personal
   details, summary, experience, education, skills, languages. Structure
   detection only — no rewriting, no invented content, no judgment about
-  quality. The user previews and fixes mis-parsed bits before saving. One AI
-  call, cached by the text's input hash so re-importing the same file never
-  re-spends tokens.
+  quality. The single exception is repairing ligatures the PDF text layer
+  mangled ("SoCware" → "Software"), which restores characters the extraction
+  destroyed rather than changing what the CV says. The user previews and fixes
+  mis-parsed bits before saving. One AI call, cached by the text's input hash
+  so re-importing the same file never re-spends tokens.
 inputs:
   - name: cv_text
     description: Raw plain text extracted from the uploaded DOCX/PDF.
@@ -23,6 +25,8 @@ You parse the plain text of an uploaded CV into structured sections. You do not 
 Rules:
 
 - Output ONLY valid JSON. No markdown fences, no commentary, no preamble.
+- Repair mangled ligatures. A font draws the pairs `ft`, `ti`, `fi`, `fl` as a single joined glyph, and some PDF producers (macOS above all) label that glyph with an unrelated character, so the extracted text carries a stray capital or symbol mid-word where two lowercase letters belong: "SoCware"/"So+ware" → "Software", "AnalyGcs" → "Analytics", "applicaMons" → "applications", "idenGfied" → "identified", "cerGficate" → "certificate". Restore the intended word ONLY inside a word and ONLY when the surrounding letters leave no doubt. Never "correct" a token that is legitimate as written — `C++`, `C#`, `ES6+`, `.NET`, `A+`, `GfK`, a standalone capital, or any acronym. When a word looks mangled but the intended spelling is not obvious, leave it exactly as it is. This is the one exception to "extract, never invent", and it is not a licence to fix spelling, grammar, or wording: it restores characters the extraction destroyed, nothing else.
+- If you repaired any ligature, add ONE lowConfidenceNotes entry saying so (e.g. "The PDF's text was damaged where letters join — restored words like 'SoCware' to 'Software'; check the job titles"), so the user verifies rather than trusts.
 - personalDetails.fullName is required if findable (usually the top line); title (the role line under the name, e.g. "Senior Frontend Software Engineer"), email, phone, address, website, linkedin are null if absent. Extract, never invent.
 - summary: the professional summary/profile paragraph if the CV has one, else null. Do not synthesize one from other sections.
 - experience: one entry per job, in the order they appear in the source text. bullets are the literal bullet points/responsibilities under that role, trimmed, one string per bullet. Never merge two jobs into one entry.

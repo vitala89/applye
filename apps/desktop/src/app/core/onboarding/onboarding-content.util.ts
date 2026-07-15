@@ -22,22 +22,29 @@ export interface ParsedCv {
   skills?: string[] | null;
 }
 
+/** Writes the exact shape `parseProfileMd` reads. These two used to disagree:
+ * the title was italicised and every contact was crushed into one middot-joined
+ * line, which the profile form read back as `Title · Location` — so the phone
+ * showed up as the user's current role and the website and LinkedIn were gone
+ * the first time they pressed Save. Keep the two in lockstep; the round-trip
+ * test in `profile-markdown.spec.ts` is what holds them there. */
 export function cvToProfileMarkdown(cv: ParsedCv): string {
   const out: string[] = [];
   const name = cv.personalDetails?.fullName?.trim();
-  if (name) out.push(`# ${name}`);
   const title = cv.personalDetails?.title?.trim();
-  if (title) out.push(`_${title}_`);
-  const contact = [
-    cv.personalDetails?.email,
-    cv.personalDetails?.phone,
-    cv.personalDetails?.address,
-    cv.personalDetails?.website,
-    cv.personalDetails?.linkedin,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  if (contact) out.push(contact);
+  if (title) out.push(title);
+  const contact = (
+    [
+      ['Location', cv.personalDetails?.address],
+      ['Email', cv.personalDetails?.email],
+      ['Phone', cv.personalDetails?.phone],
+      ['Website', cv.personalDetails?.website],
+      ['LinkedIn', cv.personalDetails?.linkedin],
+    ] as const
+  )
+    .filter(([, v]) => v?.trim())
+    .map(([label, v]) => `- ${label}: ${v?.trim()}`);
+  if (contact.length) out.push('', '## Contact', ...contact);
   if (cv.summary?.trim()) out.push('', '## Summary', cv.summary.trim());
   if (cv.experience?.length) {
     out.push('', '## Experience');
@@ -47,7 +54,13 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
     }
   }
   if (cv.skills?.length) out.push('', '## Skills', cv.skills.join(', '));
-  return out.join('\n').trim();
+  // A parse that yielded nothing stays nothing: callers read an empty string as
+  // "there is no profile to save", so a lone `#` here would write an empty
+  // profile over a real one.
+  if (!name && !out.length) return '';
+  // Otherwise the `#` line is always written, even nameless — it holds the name
+  // slot, and without it `parseProfileMd` reads the title as the user's name.
+  return [`# ${name ?? ''}`.trimEnd(), ...out].join('\n').trim();
 }
 
 /** Folds the user-edited compensation range into the profile markdown so it

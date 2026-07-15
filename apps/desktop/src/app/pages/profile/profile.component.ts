@@ -220,6 +220,62 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 </div>
               </div>
 
+              <div class="field-row">
+                <div class="field">
+                  <label class="field__label" for="field-email">{{
+                    t()('profile.field_email')
+                  }}</label>
+                  <input
+                    id="field-email"
+                    class="field__input"
+                    type="email"
+                    [ngModel]="form().email"
+                    (ngModelChange)="updateField('email', $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="field-phone">{{
+                    t()('profile.field_phone')
+                  }}</label>
+                  <input
+                    id="field-phone"
+                    class="field__input"
+                    type="tel"
+                    [ngModel]="form().phone"
+                    (ngModelChange)="updateField('phone', $event)"
+                  />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label class="field__label" for="field-website">{{
+                    t()('profile.field_website')
+                  }}</label>
+                  <input
+                    id="field-website"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().website"
+                    (ngModelChange)="updateField('website', $event)"
+                    [placeholder]="t()('profile.website_hint')"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="field-linkedin">{{
+                    t()('profile.field_linkedin')
+                  }}</label>
+                  <input
+                    id="field-linkedin"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().linkedin"
+                    (ngModelChange)="updateField('linkedin', $event)"
+                    [placeholder]="t()('profile.linkedin_hint')"
+                  />
+                </div>
+              </div>
+
               <div class="field">
                 <label class="field__label" for="field-experience">{{
                   t()('profile.field_experience')
@@ -279,7 +335,9 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               <div class="scaffold">
                 <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
                 <span class="scaffold__line"># Name · Title · Location</span>
-                <span class="scaffold__line">## Experience · Skills · Education · Languages</span>
+                <span class="scaffold__line"
+                  >## Contact · Experience · Skills · Education · Languages</span
+                >
               </div>
               <textarea
                 class="editor"

@@ -80,3 +80,8 @@ tauri-project-bootstrap.md
 
 # superpowers scratch state
 .superpowers/
+
+# Agent local planning and artifact files
+implementation_plan.md
+task.md
+walkthrough.md

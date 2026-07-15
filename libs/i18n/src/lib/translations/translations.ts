@@ -990,9 +990,7 @@ const en: TranslationMap = {
     },
     done: {
       title: "You're all set",
-      body: "Your workspace is configured and ready. Here's what we saved locally.",
-      cta_job: 'Analyze a job',
-      cta_docs: 'Open documents',
+      body: "Here's what finishing will save on this device.",
       summary_provider: 'AI provider',
       summary_resume: 'Resume',
       summary_roles: 'Target roles',
@@ -2020,9 +2018,7 @@ const de: TranslationMap = {
     },
     done: {
       title: 'Alles bereit',
-      body: 'Dein Arbeitsbereich ist eingerichtet. Hier ist, was wir lokal gespeichert haben.',
-      cta_job: 'Stelle analysieren',
-      cta_docs: 'Dokumente öffnen',
+      body: 'Das speichern wir auf diesem Gerät, wenn du die Einrichtung abschließt.',
       summary_provider: 'KI-Anbieter',
       summary_resume: 'Lebenslauf',
       summary_roles: 'Zielrollen',

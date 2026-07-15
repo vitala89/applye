@@ -608,28 +608,6 @@
                   <span class="ob__summary-value">{{ compSummary() }}</span>
                 </div>
               </div>
-              <div class="ob__cta-row">
-                <button
-                  appButton
-                  variant="primary"
-                  size="md"
-                  type="button"
-                  (click)="finishTo('/jobs/new')"
-                >
-                  <lucide-icon [img]="icons.scanLine" [size]="15" aria-hidden="true" />
-                  {{ t()('onboarding.done.cta_job') }}
-                </button>
-                <button
-                  appButton
-                  variant="secondary"
-                  size="md"
-                  type="button"
-                  (click)="finishTo('/documents')"
-                >
-                  <lucide-icon [img]="icons.fileText" [size]="15" aria-hidden="true" />
-                  {{ t()('onboarding.done.cta_docs') }}
-                </button>
-              </div>
             }
           }
         </div>

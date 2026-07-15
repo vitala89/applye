@@ -68,7 +68,8 @@
               >
                 <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
                 <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
-                <option value="docx">{{ t()('documents.cv_export_docx_action') }}</option>
+                <!-- DOCX removed: the single-engine WYSIWYG PDF is the supported
+                     export; the Rust DOCX renderer stays dormant behind it. -->
               </select>
             </label>
             <button

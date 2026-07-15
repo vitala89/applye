@@ -51,7 +51,9 @@ import {
   CV_STYLE_DEFAULT,
   PAGE_SETTINGS_DEFAULT,
   getBuiltinTheme,
+  themeEntryRule,
   themeStyleSeed,
+  themeTitleRule,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -77,6 +79,8 @@ import {
   patchCvDocumentBody,
   patchCvElementStyle,
   clearSectionElementOverrides,
+  clearSectionEntryRuleOverrides,
+  clearSectionTitleOverrides,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
   resetCvElementStyle,
@@ -199,6 +203,12 @@ export class CvDetailComponent {
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
+  /** The active theme's own section-title rule — fed to the live-style panel so
+   * its line size/colour controls can show the value the title renders at. */
+  readonly activeThemeTitleRule = computed(() => themeTitleRule(this.activeTheme()));
+  /** The theme's own rule under an experience entry head — fed to the panel for
+   * the same reason as `activeThemeTitleRule`. */
+  readonly activeThemeEntryRule = computed(() => themeEntryRule(this.activeTheme()));
   /** The clean baseline for the active theme: document defaults with the
    * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
    * "Reset styles" are measured against THIS, not the hard-coded Classic
@@ -391,26 +401,55 @@ export class CvDetailComponent {
     }
     if (change.titleBorder !== undefined) {
       const border = change.titleBorder ?? undefined;
-      if (allTitles) this.updateStyle({ titleBorder: border });
+      if (allTitles) this.applyToAllTitles({ titleBorder: undefined }, { titleBorder: border });
       else this.setSectionStyle(key, { titleBorder: border });
       return;
     }
     if (change.titleRuleWidth !== undefined) {
       const w = change.titleRuleWidth ?? undefined;
-      if (allTitles) this.updateStyle({ titleRuleWidthPt: w });
+      if (allTitles)
+        this.applyToAllTitles({ titleRuleWidthPt: undefined }, { titleRuleWidthPt: w });
       else this.setSectionStyle(key, { titleRuleWidthPt: w });
       return;
     }
     if (change.titleRuleColor !== undefined) {
       const c = change.titleRuleColor ?? undefined;
-      if (allTitles) this.updateStyle({ titleRuleColorHex: c });
+      if (allTitles)
+        this.applyToAllTitles({ titleRuleColorHex: undefined }, { titleRuleColorHex: c });
       else this.setSectionStyle(key, { titleRuleColorHex: c });
       return;
     }
     if (change.patch) {
-      if (allTitles) this.updateTitleStyle(change.patch);
-      else this.setSectionTitleStyle(key, change.patch);
+      if (allTitles) {
+        // Clear the SAME text properties this patch writes (font, size, weight,
+        // or colour) from every section's title override, then write the new
+        // document-wide value.
+        const inherit = Object.fromEntries(
+          Object.keys(change.patch).map((k) => [k, undefined]),
+        ) as CvTextStyle;
+        this.style.set(clearSectionTitleOverrides(this.style(), { title: inherit }));
+        this.updateTitleStyle(change.patch);
+      } else this.setSectionTitleStyle(key, change.patch);
     }
+  }
+
+  /** Writes an "all titles" (document-scope) title property. The per-section
+   * overrides of that SAME property are cleared first, so a title the user
+   * styled on its own adopts the new value instead of silently keeping its old
+   * one — the title-layer counterpart of the `clearSectionElementOverrides`
+   * step in `applyBodyScopeChange`. Sibling properties survive: only what this
+   * control writes is made uniform. */
+  private applyToAllTitles(inherit: Partial<CvSectionStyle>, patch: Partial<CvStyle>): void {
+    this.style.set(clearSectionTitleOverrides(this.style(), inherit));
+    this.updateStyle(patch);
+  }
+
+  /** Clears one rule property from every entry in a section before its
+   * section-wide ("All experiences") value is written, so an entry the user
+   * styled on its own adopts the new line instead of silently keeping the old.
+   * The title layer's `applyToAllTitles` does the same one level up. */
+  private applyToAllEntries(key: CvSectionKey, inherit: Partial<CvElementStyle>): void {
+    this.style.set(clearSectionEntryRuleOverrides(this.style(), key, inherit));
   }
 
   private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
@@ -418,14 +457,17 @@ export class CvDetailComponent {
     // Section body-rule (divider) is a section-level property — written at
     // section scope regardless of the font scope selector.
     if (change.bodyBorder !== undefined) {
+      this.applyToAllEntries(key, { borderStyle: undefined });
       this.setSectionStyle(key, { bodyBorder: change.bodyBorder ?? undefined });
       return;
     }
     if (change.bodyRuleWidth !== undefined) {
+      this.applyToAllEntries(key, { ruleWidthPt: undefined });
       this.setSectionStyle(key, { bodyRuleWidthPt: change.bodyRuleWidth ?? undefined });
       return;
     }
     if (change.bodyRuleColor !== undefined) {
+      this.applyToAllEntries(key, { ruleColorHex: undefined });
       this.setSectionStyle(key, { bodyRuleColorHex: change.bodyRuleColor ?? undefined });
       return;
     }

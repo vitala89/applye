@@ -26,6 +26,481 @@ describe('CvLiveStylePanelComponent', () => {
     return events;
   }
 
+  // Switching "this title" / "all titles" must never leave a control showing a
+  // value the title does not actually have: at "this title" a control with no
+  // override of its own shows what it INHERITS from all-titles, because that is
+  // what the reader sees on the page.
+  describe('title controls reflect the value actually applied to the selection', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'title' });
+    });
+
+    it('this title shows the all-titles line colour it inherits, not the accent', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        accentColorHex: '#00ff00',
+        titleRuleColorHex: '#ff0000',
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleColor()).toBe('#ff0000');
+    });
+
+    it('this title shows the all-titles line style and width it inherits', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleBorder: 'dashed',
+        titleRuleWidthPt: 2,
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleBorder()).toBe('dashed');
+      expect(component.activeTitleRuleWidth()).toBe(2);
+    });
+
+    it('this title shows the all-titles font/colour it inherits', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleStyle: { fontFamily: 'Georgia', fontSizePt: 15, fontWeight: 700, colorHex: '#ff00ff' },
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleOverride()).toEqual({
+        fontFamily: 'Georgia',
+        fontSizePt: 15,
+        fontWeight: 700,
+        colorHex: '#ff00ff',
+      });
+    });
+
+    it("this title's OWN value still wins over the inherited one", () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleBorder: 'dashed',
+        titleRuleColorHex: '#ff0000',
+        titleStyle: { colorHex: '#ff00ff' },
+        sectionStyles: {
+          experience: {
+            titleBorder: 'dotted',
+            titleRuleColorHex: '#0000ff',
+            title: { colorHex: '#00ffff' },
+          },
+        },
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleBorder()).toBe('dotted');
+      expect(component.activeTitleRuleColor()).toBe('#0000ff');
+      expect(component.activeTitleOverride().colorHex).toBe('#00ffff');
+    });
+
+    it('all titles never shows a sibling section override', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleBorder: 'dashed',
+        sectionStyles: { experience: { titleBorder: 'dotted', titleRuleColorHex: '#0000ff' } },
+      });
+      fixture.detectChanges();
+
+      component.setScope('document');
+      expect(component.activeTitleBorder()).toBe('dashed');
+      expect(component.activeTitleRuleColor()).toBeNull();
+    });
+
+    it('an unset control still reads as Inherit at both scopes', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleBorder()).toBe('');
+      expect(component.activeTitleRuleWidth()).toBeNull();
+      component.setScope('document');
+      expect(component.activeTitleBorder()).toBe('');
+    });
+
+    it("with no override, the line size/colour show the theme's own rule", () => {
+      // The exact size the title renders at, rather than a blank Inherit the
+      // user has to guess at.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeRule', { widthPt: 0.8, colorHex: '#1B7464' });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleWidth()).toBe(0.8);
+      expect(component.activeTitleRuleColor()).toBe('#1B7464');
+      component.setScope('document');
+      expect(component.activeTitleRuleWidth()).toBe(0.8);
+      expect(component.activeTitleRuleColor()).toBe('#1B7464');
+    });
+
+    it("a user's own line size/colour wins over the theme rule", () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleRuleWidthPt: 3,
+        titleRuleColorHex: '#ff0000',
+      });
+      fixture.componentRef.setInput('themeRule', { widthPt: 0.8, colorHex: '#1B7464' });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleWidth()).toBe(3);
+      expect(component.activeTitleRuleColor()).toBe('#ff0000');
+    });
+
+    it("the line swatch shows the rule's rendered colour when neither the user nor the theme set one", () => {
+      // Classic draws no rule, so the line falls back to a neutral CSS token.
+      // That value only exists in the DOM — reading it back is the only way the
+      // swatch can avoid showing a colour the line does not have.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, accentColorHex: '#333333' });
+      fixture.componentRef.setInput('themeRule', null);
+      fixture.componentRef.setInput('sampleBaseStyle', {
+        'border-bottom-color': 'rgb(236, 236, 238)',
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.titleRuleColorSwatch()).toBe('#ececee');
+    });
+
+    it("the line swatch prefers the user's own colour over the rendered one", () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleRuleColorHex: '#ff0000' });
+      fixture.componentRef.setInput('sampleBaseStyle', {
+        'border-bottom-color': 'rgb(236, 236, 238)',
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.titleRuleColorSwatch()).toBe('#ff0000');
+    });
+
+    it('a theme that draws no rule leaves the controls at Inherit', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeRule', null);
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleWidth()).toBeNull();
+      expect(component.activeTitleRuleColor()).toBeNull();
+    });
+  });
+
+  // Same rule as the title controls, one layer down: a body control shows what
+  // the element actually renders with, not a blank. Each scope walks the cascade
+  // the RENDERER uses — which is not the same for a bullet as for a field.
+  describe('body controls reflect the value actually applied to the selection', () => {
+    const DOC = {
+      ...CV_STYLE_DEFAULT,
+      fontFamily: 'Calibri',
+      fontSizePt: 11,
+      fontWeight: 400 as const,
+    };
+
+    it('an element with no override of its own shows the section value it inherits', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        bodyColorHex: '#111111',
+        sectionStyles: { experience: { fontSizePt: 13, colorHex: '#ff0000' } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontFamily: 'Calibri',
+        fontSizePt: 13,
+        colorHex: '#ff0000',
+      });
+    });
+
+    it("an element's own override still wins over the inherited value", () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        sectionStyles: { experience: { fontSizePt: 13 } },
+        elementStyles: { 'exp.0.role': { fontSizePt: 20 } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride().fontSizePt).toBe(20);
+    });
+
+    it('a BULLET inherits the shared bullet style, never the section (the renderer skips it)', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        // The section value styles the entry heads only — a bullet must not
+        // report a size it does not render at.
+        sectionStyles: {
+          experience: { fontSizePt: 13, bulletStyle: { fontSizePt: 9, colorHex: '#00ff00' } },
+        },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.1',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontSizePt: 9,
+        colorHex: '#00ff00',
+      });
+    });
+
+    it('a bullet with no shared style falls back to the document, not the section', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        sectionStyles: { experience: { fontSizePt: 13 } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.activeBodyOverride().fontSizePt).toBe(11);
+    });
+
+    it('the section scope shows the document value it inherits', () => {
+      fixture.componentRef.setInput('style', { ...DOC, bodyColorHex: '#111111' });
+      fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'body' });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontFamily: 'Calibri',
+        fontSizePt: 11,
+        colorHex: '#111111',
+      });
+    });
+
+    it('no body scope ever reports the accent as a colour (no-accent-leak)', () => {
+      // `bodyColorHex` unset = no forced body colour anywhere in the cascade.
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        accentColorHex: '#00ff00',
+        sectionStyles: { experience: { bulletStyle: { fontSizePt: 9 } } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+
+      for (const scope of ['element', 'bullets', 'section', 'document'] as const) {
+        component.setScope(scope);
+        expect(component.activeBodyOverride().colorHex).toBeUndefined();
+      }
+    });
+
+    it('the bullets scope shows the shared bullet style over the document', () => {
+      fixture.componentRef.setInput('style', {
+        ...DOC,
+        sectionStyles: { experience: { fontSizePt: 13, bulletStyle: { fontWeight: 700 } } },
+      });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.bullet.0',
+      });
+      fixture.detectChanges();
+
+      component.setScope('bullets');
+      expect(component.activeBodyOverride()).toMatchObject({
+        fontWeight: 700,
+        fontSizePt: 11,
+      });
+    });
+  });
+
+  // "This experience" must style THIS entry's line; the section divider is what
+  // "All experiences" means. Before the entry had a rule of its own, the panel
+  // showed it the section's — so a line edit under "This experience" silently
+  // restyled every entry.
+  describe('an experience entry has a line of its own', () => {
+    const SECTION_RULE = {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: {
+        experience: {
+          bodyBorder: 'solid' as const,
+          bodyRuleWidthPt: 1.5,
+          bodyRuleColorHex: '#ff0000',
+        },
+      },
+    };
+
+    function selectEntry(path = 'exp.0'): void {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: path,
+      });
+      fixture.detectChanges();
+    }
+
+    it('offers the entry its own line, not the section divider, at element scope', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.canElementLine()).toBe(true);
+      expect(component.canBodyRule()).toBe(false);
+    });
+
+    it('the section divider is what "All experiences" edits', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+
+      component.setScope('section');
+      expect(component.canBodyRule()).toBe(true);
+    });
+
+    it("the entry's line controls show the section rule they inherit", () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('solid');
+      expect(component.activeElementRuleWidth()).toBe(1.5);
+      expect(component.activeElementRuleColor()).toBe('#ff0000');
+    });
+
+    it("the entry's own line wins over the inherited one", () => {
+      fixture.componentRef.setInput('style', {
+        ...SECTION_RULE,
+        elementStyles: { 'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3 } },
+      });
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('dashed');
+      expect(component.activeElementRuleWidth()).toBe(3);
+    });
+
+    it('"none" on an entry stores an explicit off, so it cannot fall back to the section rule', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+      component.setScope('element');
+      const events = collect();
+
+      component.setElementBorder('none');
+
+      expect(events).toEqual([{ scope: 'element', patch: { borderStyle: 'none' } }]);
+    });
+
+    it('Inherit on an entry clears its override so the section rule returns', () => {
+      fixture.componentRef.setInput('style', {
+        ...SECTION_RULE,
+        elementStyles: { 'exp.0': { borderStyle: 'dashed' } },
+      });
+      selectEntry();
+      component.setScope('element');
+      const events = collect();
+
+      component.setElementBorder('');
+
+      expect(events).toEqual([
+        {
+          scope: 'element',
+          patch: { borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined },
+        },
+      ]);
+    });
+
+    it('a plain leaf keeps the old off-clears-everything behaviour', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      selectEntry('exp.0.role');
+      component.setScope('element');
+      const events = collect();
+
+      component.setElementBorder('none');
+
+      expect(events).toEqual([
+        {
+          scope: 'element',
+          patch: { borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined },
+        },
+      ]);
+    });
+
+    it("reads the theme's entry rule as the line it inherits, not 'None'", () => {
+      // The head draws the theme's rule with nothing set at all. Reporting
+      // "None" while a line is on the page is the lie this closes.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('solid');
+      expect(component.activeElementRuleWidth()).toBe(0.4);
+      expect(component.activeElementRuleColor()).toBe('#666666');
+      expect(component.hasElementLine()).toBe(true);
+    });
+
+    it('the section rule outranks the theme rule in what the entry reports', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementRuleWidth()).toBe(1.5);
+      expect(component.activeElementRuleColor()).toBe('#ff0000');
+    });
+
+    it('an entry reads Inherit only when no line is drawn at all', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeEntryRule', null);
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('');
+      expect(component.elementBorderModel()).toBe('');
+      expect(component.hasElementLine()).toBe(false);
+    });
+
+    it("a plain leaf with no line still reads 'None', never Inherit", () => {
+      // A leaf has nothing to inherit — absent IS off, so the select must not
+      // offer Inherit there.
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
+      selectEntry('exp.0.role');
+
+      component.setScope('element');
+      expect(component.elementBorderModel()).toBe('none');
+      expect(component.isEntrySelection()).toBe(false);
+    });
+
+    it('an education entry still gets no line control (its head draws no rule)', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'education',
+        part: 'body',
+        elementPath: 'edu.0',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.canElementLine()).toBe(false);
+      expect(component.canBodyRule()).toBe(false);
+    });
+  });
+
   it('shows an empty state and no controls when nothing is selected', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.cvlive__empty')).toBeTruthy();
@@ -118,10 +593,12 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
-  it('an entry selection still reaches a line control — the section rule, at its default scope', () => {
+  it('an entry selection reaches a line control at its default scope — its OWN', () => {
     // Regression: gating the section rule to section scope AND excluding entry
     // containers from the per-leaf line left an entry with NO line control at
-    // its default (element) scope — the line became unreachable.
+    // its default (element) scope — the line became unreachable. The entry now
+    // has a rule of its own, so that is the control it reaches, and the edit
+    // lands on this entry alone rather than on every entry in the section.
     fixture.componentRef.setInput('selection', {
       sectionKey: 'experience',
       part: 'body',
@@ -129,14 +606,12 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     expect(component.scope()).toBe('element');
-    expect(component.canElementLine()).toBe(false);
-    expect(component.canBodyRule()).toBe(true);
+    expect(component.canElementLine()).toBe(true);
+    expect(component.canBodyRule()).toBe(false);
 
-    // It writes the SECTION rule, not an element override — there is no
-    // per-entry rule in the model.
     const events = collect();
-    component.setBodyBorder('none');
-    expect(events).toEqual([{ scope: 'element', bodyBorder: 'none' }]);
+    component.setElementBorder('dashed');
+    expect(events).toEqual([{ scope: 'element', patch: { borderStyle: 'dashed' } }]);
   });
 
   it('a single field never shows the section rule — only its own per-leaf line', () => {
@@ -150,26 +625,30 @@ describe('CvLiveStylePanelComponent', () => {
     expect(component.canElementLine()).toBe(true);
   });
 
-  it('offers no per-leaf line for an entry container — its divider is the section rule', () => {
-    // An entry wraps the head AND its bullets, so a border there lands under
-    // the bullets and reads as a stray second line.
-    for (const p of ['exp.0', 'edu.1', 'skills.0']) {
+  it('offers no line for an entry container whose head draws none', () => {
+    // Education and skills heads draw no rule, so a line control there would do
+    // nothing. Only the experience head draws one — and it is fed the entry's
+    // own override by `entryCss`, never a border on the container itself (that
+    // would land under the bullets).
+    for (const p of ['edu.1', 'skills.0']) {
       fixture.componentRef.setInput('selection', {
-        sectionKey: 'experience',
+        sectionKey: 'education',
         part: 'body',
         elementPath: p,
       });
       fixture.detectChanges();
       expect(component.canElementLine()).toBe(false);
     }
-    // A real leaf inside the entry still gets one.
-    fixture.componentRef.setInput('selection', {
-      sectionKey: 'experience',
-      part: 'body',
-      elementPath: 'exp.0.role',
-    });
-    fixture.detectChanges();
-    expect(component.canElementLine()).toBe(true);
+    // A real leaf inside the entry still gets one, as does an experience entry.
+    for (const p of ['exp.0.role', 'exp.0']) {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: p,
+      });
+      fixture.detectChanges();
+      expect(component.canElementLine()).toBe(true);
+    }
   });
 
   it('offers a per-leaf line control at element scope and clears the whole rule on none', () => {

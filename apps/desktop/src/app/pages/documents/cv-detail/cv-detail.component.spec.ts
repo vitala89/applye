@@ -4,7 +4,13 @@ import { CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
-import { effectiveSectionStyle } from '../cv-content.util';
+import {
+  effectiveSectionStyle,
+  effectiveTitleBorder,
+  effectiveTitleRuleColor,
+  effectiveTitleRuleWidth,
+  effectiveTitleStyle,
+} from '../cv-content.util';
 import { CvDetailComponent, mergePersonalField } from './cv-detail.component';
 
 describe('mergePersonalField', () => {
@@ -154,6 +160,114 @@ describe('CvDetailComponent per-section style', () => {
 
       component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
       expect(component.style().titleBorder).toBe('dashed');
+    });
+
+    it('an all-titles line clears the per-section line so EVERY title adopts it', () => {
+      // The user styles one title, then changes all titles: the section that was
+      // individually styled must not silently keep its old line.
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+
+      expect(component.style().sectionStyles?.experience?.titleBorder).toBeUndefined();
+      expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dashed');
+      expect(effectiveTitleBorder(component.style(), 'education')).toBe('dashed');
+    });
+
+    it('this title still wins after an all-titles line, and siblings keep the all-titles line', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+
+      expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dotted');
+      expect(effectiveTitleBorder(component.style(), 'education')).toBe('dashed');
+    });
+
+    it('an all-titles change clears only the property it writes', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', patch: { colorHex: '#ff0000' } });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+
+      // The line is now uniform, but the section's own colour is untouched — an
+      // edit to one control never silently drops an unrelated override.
+      expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dashed');
+      expect(component.style().sectionStyles?.experience?.title?.colorHex).toBe('#ff0000');
+    });
+
+    it('an all-titles rule width/colour clears the per-section ones', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', titleRuleWidth: 3 });
+      component.onStylePanelChange({ scope: 'section', titleRuleColor: '#ff0000' });
+
+      component.onStylePanelChange({ scope: 'document', titleRuleWidth: 1 });
+      component.onStylePanelChange({ scope: 'document', titleRuleColor: '#0000ff' });
+
+      expect(effectiveTitleRuleWidth(component.style(), 'experience')).toBe(1);
+      expect(effectiveTitleRuleColor(component.style(), 'experience')).toBe('#0000ff');
+    });
+
+    it('an all-titles font clears the per-section title font so every title adopts it', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', patch: { fontFamily: 'Georgia' } });
+
+      component.onStylePanelChange({ scope: 'document', patch: { fontFamily: 'Arial' } });
+
+      expect(effectiveTitleStyle(component.style(), 'experience').fontFamily).toBe('Arial');
+      expect(effectiveTitleStyle(component.style(), 'education').fontFamily).toBe('Arial');
+    });
+
+    it('an All-experiences line clears the per-entry lines so EVERY entry adopts it', () => {
+      // The user styles one entry's line, then changes the section's: the entry
+      // they had touched must not silently keep its own colour.
+      component.liveSelection.set({
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0',
+      });
+      component.onStylePanelChange({ scope: 'element', patch: { ruleColorHex: '#0000ff' } });
+      expect(component.style().elementStyles?.['exp.0']?.ruleColorHex).toBe('#0000ff');
+
+      component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
+
+      expect(component.style().elementStyles?.['exp.0']?.ruleColorHex).toBeUndefined();
+      expect(component.style().sectionStyles?.experience?.bodyRuleColorHex).toBe('#000000');
+    });
+
+    it('an All-experiences line change clears only the property it writes', () => {
+      component.liveSelection.set({
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0',
+      });
+      component.onStylePanelChange({
+        scope: 'element',
+        patch: { borderStyle: 'dashed', ruleColorHex: '#0000ff' },
+      });
+
+      component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
+
+      // The entry's own dashes survive an edit to the colour.
+      expect(component.style().elementStyles?.['exp.0']?.borderStyle).toBe('dashed');
+      expect(component.style().elementStyles?.['exp.0']?.ruleColorHex).toBeUndefined();
+    });
+
+    it('an All-experiences line never touches another section or a field', () => {
+      component.liveSelection.set({
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: 'exp.0.role',
+      });
+      component.onStylePanelChange({ scope: 'element', patch: { ruleColorHex: '#0000ff' } });
+
+      component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
+      component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
+
+      // A FIELD's underline is its own line, not the entry rule — untouched.
+      expect(component.style().elementStyles?.['exp.0.role']?.ruleColorHex).toBe('#0000ff');
     });
 
     it('applying a section change clears in-section element overrides so it applies uniformly', () => {

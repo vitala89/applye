@@ -33,6 +33,7 @@ import {
   getBuiltinTheme,
   parseInlineEmphasis,
   themeCssVars,
+  themeTitleRule,
   toggleBoldWrap,
   toggleWordBold,
   wordTokens,
@@ -1008,6 +1009,10 @@ export class CvPreviewComponent {
       'font-style': cs.fontStyle,
       'text-transform': cs.textTransform,
       'letter-spacing': cs.letterSpacing,
+      // The host IS the element carrying the underline (a title, a leaf), so
+      // this is the rule's real colour — including the neutral CSS default,
+      // which the panel cannot resolve from the style model alone.
+      'border-bottom-color': cs.borderBottomColor,
     };
   }
 
@@ -1019,15 +1024,27 @@ export class CvPreviewComponent {
   entryCss(path: string): Record<string, string> {
     const css = this.leafCss(path);
     if (css['color']) css['--cv-entry-color'] = css['color'];
-    // An entry wraps its head AND its bullets, so a bottom rule here would
-    // draw under the bullets rather than under the head — reading as a stray
-    // second line. The panel no longer offers a line for an entry path; strip
-    // it here too so a previously-stored override can't resurrect it. The
-    // entry's real divider is the section's `bodyBorder` rule.
+    // An entry wraps its head AND its bullets, so a bottom rule HERE would draw
+    // under the bullets rather than under the head — reading as a stray second
+    // line. Strip it, and re-express the entry's stored rule as the head's own
+    // vars below: `bodyCss` sets those on the section, so setting them again on
+    // this entry overrides the section's rule for this entry ALONE. That is
+    // what "This experience" means, as against "All experiences".
     delete css['border-bottom'];
     delete css['padding-bottom'];
     delete css['border-bottom-left-radius'];
     delete css['border-bottom-right-radius'];
+
+    const o = this.style().elementStyles?.[path];
+    if (o?.borderStyle === 'none') {
+      // Zeroing the WIDTH is what turns a rule off: the theme/section sets the
+      // width from its own vars, so `border-style: none` alone would leave it.
+      css['--cv-entry-rule-width'] = '0pt';
+    } else {
+      if (o?.borderStyle) css['--cv-entry-rule-style'] = o.borderStyle;
+      if (o?.ruleWidthPt != null) css['--cv-entry-rule-width'] = `${o.ruleWidthPt}pt`;
+      if (o?.ruleColorHex) css['--cv-entry-rule-color'] = o.ruleColorHex;
+    }
     return css;
   }
 
@@ -1081,29 +1098,22 @@ export class CvPreviewComponent {
   titleBorderCss(key: CvSectionKey): string {
     const b = effectiveTitleBorder(this.style(), key);
     if (b === 'none') return 'none';
-    // User overrides (live-style "line size"/"line colour") win over the
-    // theme; each falls back independently — theme rule (accent/muted +
-    // weight) when the theme defines one and the user hasn't set the border
-    // style, otherwise the neutral default.
+    // User overrides (live-style "line size"/"line colour") win over the theme;
+    // each falls back independently to the theme's own rule, then to the
+    // neutral CSS default for a theme that draws none (Classic).
+    //
+    // Picking a line STYLE does not drop the theme's weight/colour: choosing
+    // "dashed" must change the dashes only, or the line silently thins to 1pt
+    // and fades to the neutral grey — and the panel could then never show the
+    // size it renders at.
     const userW = effectiveTitleRuleWidth(this.style(), key);
     const userC = effectiveTitleRuleColor(this.style(), key);
-    const sh = this.activeTheme().sectionHeader;
-    const themed = sh.ruleColor !== 'none' && !this.hasExplicitTitleBorder(key);
-    const width =
-      userW != null ? `${userW}pt` : themed ? `${sh.ruleWeightPt}pt` : 'var(--border-width)';
-    const color =
-      userC ??
-      (themed
-        ? sh.ruleColor === 'accent'
-          ? 'var(--cv-accent)'
-          : 'var(--cv-muted)'
-        : 'var(--border-subtle)');
-    return `${width} ${b} ${color}`;
-  }
-
-  private hasExplicitTitleBorder(key: CvSectionKey): boolean {
-    const s = this.style();
-    return s.sectionStyles?.[key]?.titleBorder != null || s.titleBorder != null;
+    const rule = themeTitleRule(this.activeTheme());
+    const width = userW ?? rule?.widthPt;
+    const color = userC ?? rule?.colorHex;
+    return `${width != null ? `${width}pt` : 'var(--border-width)'} ${b} ${
+      color ?? 'var(--border-subtle)'
+    }`;
   }
 
   headerPlacementClass(placement: PhotoPlacement): string {

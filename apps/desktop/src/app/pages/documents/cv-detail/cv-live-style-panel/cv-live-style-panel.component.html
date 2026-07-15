@@ -244,9 +244,12 @@
                   <label class="cvlive__field">
                     <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
                     <select
-                      [ngModel]="activeElementBorder() || 'none'"
+                      [ngModel]="elementBorderModel()"
                       (ngModelChange)="setElementBorder($event)"
                     >
+                      @if (isEntrySelection()) {
+                        <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+                      }
                       <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
                       <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
                       <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
@@ -272,7 +275,7 @@
                       <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
                       <input
                         type="color"
-                        [ngModel]="activeElementRuleColor() ?? style().accentColorHex"
+                        [ngModel]="elementRuleColorSwatch()"
                         (ngModelChange)="setElementRuleColor($event)"
                       />
                     </label>
@@ -449,7 +452,7 @@
                     <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
                     <input
                       type="color"
-                      [ngModel]="activeTitleRuleColor() ?? style().accentColorHex"
+                      [ngModel]="titleRuleColorSwatch()"
                       (ngModelChange)="setTitleRuleColor($event)"
                     />
                   </label>

@@ -118,6 +118,42 @@ export function themeStyleSeed(
   };
 }
 
+/** The section-title rule a theme draws by itself, as concrete values, or
+ * `null` when the theme draws none (Classic) and the neutral CSS default
+ * applies instead.
+ *
+ * Concrete numbers — not the `--cv-*` vars `themeCssVars` emits — because the
+ * live-style panel has to SHOW this as the line's size/colour when the user
+ * hasn't set their own. It stays theme data only: the neutral fallback lives in
+ * CSS tokens (`_paper.scss`, which forbids forking its values), so a title with
+ * no theme rule and no override reads as Inherit rather than a copied hex. */
+export function themeTitleRule(
+  theme: CvThemeDescriptor,
+): { widthPt: number; colorHex: string } | null {
+  return resolveThemeRule(theme, theme.sectionHeader);
+}
+
+/** The rule a theme draws under an experience entry's role/dates head, as
+ * concrete values, or `null` when it draws none. The entry counterpart of
+ * `themeTitleRule` — the live-style panel shows it as the entry's line when
+ * neither the entry nor its section sets one. */
+export function themeEntryRule(
+  theme: CvThemeDescriptor,
+): { widthPt: number; colorHex: string } | null {
+  return resolveThemeRule(theme, theme.entry);
+}
+
+function resolveThemeRule(
+  theme: CvThemeDescriptor,
+  part: { ruleWeightPt: number; ruleColor: 'accent' | 'muted' | 'none' },
+): { widthPt: number; colorHex: string } | null {
+  if (part.ruleColor === 'none') return null;
+  return {
+    widthPt: part.ruleWeightPt,
+    colorHex: part.ruleColor === 'accent' ? theme.tokens.accentHex : theme.tokens.mutedHex,
+  };
+}
+
 function colorVar(c: 'accent' | 'muted' | 'text' | 'none'): string {
   switch (c) {
     case 'accent':

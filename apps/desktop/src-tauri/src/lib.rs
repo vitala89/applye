@@ -36,6 +36,8 @@ pub fn run() {
             let db = tauri::async_runtime::block_on(Db::init(&app_data_dir))
                 .expect("initialize database");
             app.manage(db);
+            // Handshake channels for the silent WYSIWYG print windows.
+            app.manage(commands::print::PrintReady::default());
 
             Ok(())
         })
@@ -85,6 +87,8 @@ pub fn run() {
             commands::documents::cv_photo_read_file,
             commands::documents::cv_document_export,
             commands::documents::cover_letter_document_export,
+            commands::print::cv_document_export_pdf_wysiwyg,
+            commands::print::print_window_ready,
             commands::documents::check_style_safety,
             commands::documents::validate_theme,
             commands::health::health_check,

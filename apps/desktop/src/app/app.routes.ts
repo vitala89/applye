@@ -76,6 +76,13 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    // Loaded only by the hidden silent-PDF-export window (see
+    // `cv_document_export_pdf_wysiwyg` in Rust) — never linked from the UI.
+    path: 'print/cv/:id',
+    loadComponent: () =>
+      import('./pages/documents/cv-print/cv-print.component').then((m) => m.CvPrintComponent),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./pages/settings/settings.component').then((m) => m.SettingsComponent),

@@ -24,6 +24,11 @@
             "glob": "**/*",
             "input": "libs/ui/assets",
             "output": "brand"
+          },
+          {
+            "glob": "*.ttf",
+            "input": "apps/desktop/src-tauri/assets/fonts",
+            "output": "fonts"
           }
         ],
         "styles": ["libs/ui/tokens.css", "apps/desktop/src/styles.scss"]

@@ -31,6 +31,9 @@ tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "migrate"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 docx-rs = "0.4"
+# Post-process the docx-rs output zip to embed fonts (docx-rs has no font-embed
+# API). Pinned to 0.6 to reuse the copy docx-rs already compiles.
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
 # `embedded_images` pulls printpdf's bundled `image` crate (0.24) and the
 # `image_crate` re-export used to decode the CV photo for PDF embedding.
 printpdf = { version = "0.7", features = ["embedded_images"] }
@@ -53,6 +56,12 @@ base64 = "0.22"
 # OS keychain — one backend per platform (no unused dbus on macOS/Windows).
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3", features = ["apple-native"] }
+# Silent WYSIWYG print-to-PDF (commands/print.rs): drives WKWebView's print
+# operation to a file. Same objc2 generation wry already compiles.
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString", "NSURL", "NSGeometry", "NSDictionary", "NSEnumerator"] }
+objc2-app-kit = { version = "0.3", features = ["NSPrintInfo", "NSPrintOperation", "NSWindow", "NSResponder", "NSView"] }
+objc2-web-kit = { version = "0.3", features = ["WKWebView", "objc2-app-kit"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }

@@ -958,24 +958,10 @@ interface FinalChecks {
                       class="export-option export-option--primary"
                       type="button"
                       [disabled]="!!exporting() || !linkedCv()"
-                      (click)="doExport('cv', 'docx')"
+                      (click)="doExport('cv', 'pdf')"
                     >
                       <span class="export-option__badge">{{ t()('jobs.export_recommended') }}</span>
                       <span class="export-option__icon export-option__icon--accent">
-                        <lucide-icon [img]="icons.fileText" [size]="20" aria-hidden="true" />
-                      </span>
-                      <span class="export-option__title">{{
-                        exporting() === 'cv-docx' ? t()('jobs.exporting') : t()('jobs.export_docx')
-                      }}</span>
-                      <span class="export-option__desc">{{ t()('jobs.export_docx_desc') }}</span>
-                    </button>
-                    <button
-                      class="export-option"
-                      type="button"
-                      [disabled]="!!exporting() || !linkedCv()"
-                      (click)="doExport('cv', 'pdf')"
-                    >
-                      <span class="export-option__icon">
                         <lucide-icon [img]="icons.fileDown" [size]="20" aria-hidden="true" />
                       </span>
                       <span class="export-option__title">{{
@@ -3630,7 +3616,13 @@ export class JobsComponent implements OnInit, OnDestroy {
       const filePath = await save({ defaultPath: this.documentExportFilename(item, format) });
       if (!filePath) return;
       if (kind === 'cv') {
-        await this.db.cvDocumentExport(item.id, format, filePath);
+        // PDF: silent WYSIWYG engine (hidden window prints the editor's own
+        // preview) — pixel-identical to the editor for every theme.
+        if (format === 'pdf') {
+          await this.db.cvDocumentExportPdfWysiwyg(item.id, filePath);
+        } else {
+          await this.db.cvDocumentExport(item.id, format, filePath);
+        }
       } else {
         await this.db.coverLetterDocumentExport(item.id, format, filePath);
       }

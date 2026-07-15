@@ -336,6 +336,21 @@ textarea.cvpreview__leaf-editor {
 }
 
 .cvpreview__header {
+  // The photo floats, so a sibling block's BORDER box still spans the full
+  // header width and runs behind it — only its line boxes shorten. That made
+  // the name/title/contact selection tint and any per-element rule paint over
+  // the photo. `flow-root` gives each a block formatting context, which by
+  // definition cannot overlap a float, so the box starts at the photo's edge.
+  // Not `overflow: hidden` (the other BFC trigger): that would clip the
+  // selection chip, which is a `::before` painted outside the box.
+  &--left,
+  &--right {
+    .cvpreview__name,
+    .cvpreview__title,
+    .cvpreview__contact {
+      display: flow-root;
+    }
+  }
   &--left .cvpreview__photo {
     float: left;
     margin: 0 12px 8px 0;

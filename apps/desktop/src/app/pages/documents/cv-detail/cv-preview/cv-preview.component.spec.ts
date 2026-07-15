@@ -543,6 +543,19 @@ describe('CvPreviewComponent', () => {
       });
     });
 
+    it('entryCss strips a stored bottom rule — an entry wraps its bullets, so it would draw under them', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { 'exp.0': { borderStyle: 'solid', colorHex: '#123456' } },
+      });
+      const css = component.entryCss('exp.0');
+      expect(css['border-bottom']).toBeUndefined();
+      expect(css['padding-bottom']).toBeUndefined();
+      // Non-line element styling on the entry still applies.
+      expect(css['color']).toBe('#123456');
+      expect(css['--cv-entry-color']).toBe('#123456');
+    });
+
     it('squares the rule ends so the selected border-radius cannot curve them', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,

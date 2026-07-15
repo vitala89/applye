@@ -329,6 +329,131 @@ describe('CvLiveStylePanelComponent', () => {
     });
   });
 
+  // "This experience" must style THIS entry's line; the section divider is what
+  // "All experiences" means. Before the entry had a rule of its own, the panel
+  // showed it the section's — so a line edit under "This experience" silently
+  // restyled every entry.
+  describe('an experience entry has a line of its own', () => {
+    const SECTION_RULE = {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: {
+        experience: {
+          bodyBorder: 'solid' as const,
+          bodyRuleWidthPt: 1.5,
+          bodyRuleColorHex: '#ff0000',
+        },
+      },
+    };
+
+    function selectEntry(path = 'exp.0'): void {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: path,
+      });
+      fixture.detectChanges();
+    }
+
+    it('offers the entry its own line, not the section divider, at element scope', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.canElementLine()).toBe(true);
+      expect(component.canBodyRule()).toBe(false);
+    });
+
+    it('the section divider is what "All experiences" edits', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+
+      component.setScope('section');
+      expect(component.canBodyRule()).toBe(true);
+    });
+
+    it("the entry's line controls show the section rule they inherit", () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('solid');
+      expect(component.activeElementRuleWidth()).toBe(1.5);
+      expect(component.activeElementRuleColor()).toBe('#ff0000');
+    });
+
+    it("the entry's own line wins over the inherited one", () => {
+      fixture.componentRef.setInput('style', {
+        ...SECTION_RULE,
+        elementStyles: { 'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3 } },
+      });
+      selectEntry();
+
+      component.setScope('element');
+      expect(component.activeElementBorder()).toBe('dashed');
+      expect(component.activeElementRuleWidth()).toBe(3);
+    });
+
+    it('"none" on an entry stores an explicit off, so it cannot fall back to the section rule', () => {
+      fixture.componentRef.setInput('style', SECTION_RULE);
+      selectEntry();
+      component.setScope('element');
+      const events = collect();
+
+      component.setElementBorder('none');
+
+      expect(events).toEqual([{ scope: 'element', patch: { borderStyle: 'none' } }]);
+    });
+
+    it('Inherit on an entry clears its override so the section rule returns', () => {
+      fixture.componentRef.setInput('style', {
+        ...SECTION_RULE,
+        elementStyles: { 'exp.0': { borderStyle: 'dashed' } },
+      });
+      selectEntry();
+      component.setScope('element');
+      const events = collect();
+
+      component.setElementBorder('');
+
+      expect(events).toEqual([
+        {
+          scope: 'element',
+          patch: { borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined },
+        },
+      ]);
+    });
+
+    it('a plain leaf keeps the old off-clears-everything behaviour', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      selectEntry('exp.0.role');
+      component.setScope('element');
+      const events = collect();
+
+      component.setElementBorder('none');
+
+      expect(events).toEqual([
+        {
+          scope: 'element',
+          patch: { borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined },
+        },
+      ]);
+    });
+
+    it('an education entry still gets no line control (its head draws no rule)', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'education',
+        part: 'body',
+        elementPath: 'edu.0',
+      });
+      fixture.detectChanges();
+
+      component.setScope('element');
+      expect(component.canElementLine()).toBe(false);
+      expect(component.canBodyRule()).toBe(false);
+    });
+  });
+
   it('shows an empty state and no controls when nothing is selected', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.cvlive__empty')).toBeTruthy();
@@ -421,10 +546,12 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
-  it('an entry selection still reaches a line control — the section rule, at its default scope', () => {
+  it('an entry selection reaches a line control at its default scope — its OWN', () => {
     // Regression: gating the section rule to section scope AND excluding entry
     // containers from the per-leaf line left an entry with NO line control at
-    // its default (element) scope — the line became unreachable.
+    // its default (element) scope — the line became unreachable. The entry now
+    // has a rule of its own, so that is the control it reaches, and the edit
+    // lands on this entry alone rather than on every entry in the section.
     fixture.componentRef.setInput('selection', {
       sectionKey: 'experience',
       part: 'body',
@@ -432,14 +559,12 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     expect(component.scope()).toBe('element');
-    expect(component.canElementLine()).toBe(false);
-    expect(component.canBodyRule()).toBe(true);
+    expect(component.canElementLine()).toBe(true);
+    expect(component.canBodyRule()).toBe(false);
 
-    // It writes the SECTION rule, not an element override — there is no
-    // per-entry rule in the model.
     const events = collect();
-    component.setBodyBorder('none');
-    expect(events).toEqual([{ scope: 'element', bodyBorder: 'none' }]);
+    component.setElementBorder('dashed');
+    expect(events).toEqual([{ scope: 'element', patch: { borderStyle: 'dashed' } }]);
   });
 
   it('a single field never shows the section rule — only its own per-leaf line', () => {
@@ -453,26 +578,30 @@ describe('CvLiveStylePanelComponent', () => {
     expect(component.canElementLine()).toBe(true);
   });
 
-  it('offers no per-leaf line for an entry container — its divider is the section rule', () => {
-    // An entry wraps the head AND its bullets, so a border there lands under
-    // the bullets and reads as a stray second line.
-    for (const p of ['exp.0', 'edu.1', 'skills.0']) {
+  it('offers no line for an entry container whose head draws none', () => {
+    // Education and skills heads draw no rule, so a line control there would do
+    // nothing. Only the experience head draws one — and it is fed the entry's
+    // own override by `entryCss`, never a border on the container itself (that
+    // would land under the bullets).
+    for (const p of ['edu.1', 'skills.0']) {
       fixture.componentRef.setInput('selection', {
-        sectionKey: 'experience',
+        sectionKey: 'education',
         part: 'body',
         elementPath: p,
       });
       fixture.detectChanges();
       expect(component.canElementLine()).toBe(false);
     }
-    // A real leaf inside the entry still gets one.
-    fixture.componentRef.setInput('selection', {
-      sectionKey: 'experience',
-      part: 'body',
-      elementPath: 'exp.0.role',
-    });
-    fixture.detectChanges();
-    expect(component.canElementLine()).toBe(true);
+    // A real leaf inside the entry still gets one, as does an experience entry.
+    for (const p of ['exp.0.role', 'exp.0']) {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: p,
+      });
+      fixture.detectChanges();
+      expect(component.canElementLine()).toBe(true);
+    }
   });
 
   it('offers a per-leaf line control at element scope and clears the whole rule on none', () => {

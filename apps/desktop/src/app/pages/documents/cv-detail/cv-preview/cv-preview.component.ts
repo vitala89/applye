@@ -1024,15 +1024,27 @@ export class CvPreviewComponent {
   entryCss(path: string): Record<string, string> {
     const css = this.leafCss(path);
     if (css['color']) css['--cv-entry-color'] = css['color'];
-    // An entry wraps its head AND its bullets, so a bottom rule here would
-    // draw under the bullets rather than under the head — reading as a stray
-    // second line. The panel no longer offers a line for an entry path; strip
-    // it here too so a previously-stored override can't resurrect it. The
-    // entry's real divider is the section's `bodyBorder` rule.
+    // An entry wraps its head AND its bullets, so a bottom rule HERE would draw
+    // under the bullets rather than under the head — reading as a stray second
+    // line. Strip it, and re-express the entry's stored rule as the head's own
+    // vars below: `bodyCss` sets those on the section, so setting them again on
+    // this entry overrides the section's rule for this entry ALONE. That is
+    // what "This experience" means, as against "All experiences".
     delete css['border-bottom'];
     delete css['padding-bottom'];
     delete css['border-bottom-left-radius'];
     delete css['border-bottom-right-radius'];
+
+    const o = this.style().elementStyles?.[path];
+    if (o?.borderStyle === 'none') {
+      // Zeroing the WIDTH is what turns a rule off: the theme/section sets the
+      // width from its own vars, so `border-style: none` alone would leave it.
+      css['--cv-entry-rule-width'] = '0pt';
+    } else {
+      if (o?.borderStyle) css['--cv-entry-rule-style'] = o.borderStyle;
+      if (o?.ruleWidthPt != null) css['--cv-entry-rule-width'] = `${o.ruleWidthPt}pt`;
+      if (o?.ruleColorHex) css['--cv-entry-rule-color'] = o.ruleColorHex;
+    }
     return css;
   }
 

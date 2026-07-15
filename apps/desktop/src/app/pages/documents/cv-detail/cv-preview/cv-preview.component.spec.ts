@@ -918,6 +918,63 @@ describe('CvPreviewComponent', () => {
     expect(css).toBe('var(--border-width) solid var(--border-subtle)');
   });
 
+  describe('an experience entry draws its OWN head rule', () => {
+    it("maps the entry's stored rule onto the head's vars, overriding the section's", () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { experience: { bodyRuleWidthPt: 1.5, bodyRuleColorHex: '#ff0000' } },
+        elementStyles: {
+          'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3, ruleColorHex: '#0000ff' },
+        },
+      });
+      const css = component.entryCss('exp.0');
+      expect(css['--cv-entry-rule-style']).toBe('dashed');
+      expect(css['--cv-entry-rule-width']).toBe('3pt');
+      expect(css['--cv-entry-rule-color']).toBe('#0000ff');
+    });
+
+    it('leaves a sibling entry on the section rule', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { experience: { bodyRuleWidthPt: 1.5 } },
+        elementStyles: { 'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3 } },
+      });
+      expect(component.entryCss('exp.1')['--cv-entry-rule-width']).toBeUndefined();
+    });
+
+    it('turns just this entry\'s rule off with an explicit "none"', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { experience: { bodyRuleWidthPt: 1.5 } },
+        elementStyles: { 'exp.0': { borderStyle: 'none' } },
+      });
+      // Zeroing the WIDTH is what turns a themed rule off — `border-style: none`
+      // alone would leave the inherited width drawing.
+      expect(component.entryCss('exp.0')['--cv-entry-rule-width']).toBe('0pt');
+    });
+
+    it('still never puts a border on the entry container itself (it would land under the bullets)', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { 'exp.0': { borderStyle: 'dashed', ruleWidthPt: 3 } },
+      });
+      const css = component.entryCss('exp.0');
+      expect(css['border-bottom']).toBeUndefined();
+      expect(css['padding-bottom']).toBeUndefined();
+    });
+
+    it('an entry with only a width set keeps the inherited style', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        sectionStyles: { experience: { bodyBorder: 'dotted', bodyRuleWidthPt: 1 } },
+        elementStyles: { 'exp.0': { ruleWidthPt: 4 } },
+      });
+      const css = component.entryCss('exp.0');
+      expect(css['--cv-entry-rule-width']).toBe('4pt');
+      expect(css['--cv-entry-rule-style']).toBeUndefined();
+    });
+  });
+
   it('a user line size/colour still wins over the theme rule', () => {
     fixture.componentRef.setInput('themeId', 2);
     fixture.componentRef.setInput('style', {

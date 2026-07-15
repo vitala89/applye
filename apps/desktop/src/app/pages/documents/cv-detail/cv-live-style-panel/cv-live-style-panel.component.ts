@@ -567,17 +567,16 @@ export class CvLiveStylePanelComponent {
     const sel = this.selection();
     if (!sel || sel.part !== 'body') return false;
     if (sel.sectionKey !== 'personal_details' && sel.sectionKey !== 'experience') return false;
-    // The section's structural divider. Shown at section scope, and for an
-    // ENTRY container — an entry has no per-leaf line of its own (a border
-    // there would land under its bullets), so this rule is the only line that
-    // means anything for it, and hiding it left an entry selection with no
-    // line control at all. Writes always target the section, which is where
-    // the rule lives: there is no per-entry rule in the model.
+    // The section's structural divider — every entry's line at once, i.e.
+    // exactly the "All experiences" scope. Section scope ONLY: an entry now has
+    // a rule of its own (`entryCss` re-points the head's vars at it), so at
+    // element scope the entry's own line group is the honest control. Showing
+    // this one there is what made a "This experience" line edit restyle every
+    // entry — the write lands on the section, which is where this rule lives.
     //
-    // Deliberately hidden for a single FIELD (`exp.0.role`, `pd.name`): that
-    // uses its own per-leaf line group, so the two never overlap and editing a
-    // field can't silently rewrite the whole section's divider.
-    return this.scope() === 'section' || this.isEntryPath(sel.elementPath);
+    // Also hidden for a single FIELD (`exp.0.role`, `pd.name`), which likewise
+    // has its own per-leaf line group.
+    return this.scope() === 'section';
   });
 
   /** Raw section body-rule style ('' = Inherit → the theme's rule). */
@@ -650,30 +649,46 @@ export class CvLiveStylePanelComponent {
 
   /** A single leaf, styled at element scope, can carry its own bottom rule
    * (underline). Excluded: the composed contact line (`pd.contact`), a
-   * multi-field wrapper with no single baseline; and an experience/education/
-   * skills ENTRY (`exp.0`), which is a container wrapping the head AND its
-   * bullets — a border there lands under the bullets, not under the head. An
-   * entry's divider is the section's `bodyBorder` rule instead. */
+   * multi-field wrapper with no single baseline; and an education/skills ENTRY,
+   * whose head draws no rule at all, so the control would do nothing.
+   *
+   * An EXPERIENCE entry (`exp.0`) is included: its head is the one entry head
+   * that draws a rule, and `entryCss` re-points that rule's vars at the entry's
+   * own override. The border still never lands on the container itself (it
+   * would draw under the bullets) — see `entryCss`. */
   readonly canElementLine = computed<boolean>(() => {
     const sel = this.selection();
     const p = sel?.elementPath;
-    return this.scope() === 'element' && !!p && p !== 'pd.contact' && !this.isEntryPath(p);
+    if (this.scope() !== 'element' || !p || p === 'pd.contact') return false;
+    return !this.isEntryPath(p) || this.isExperienceEntryPath(p);
   });
 
-  /** Raw per-leaf border style for the selected element ('' = none/off). */
+  /** An experience entry (`exp.0`) — the only entry with a rule of its own. */
+  private isExperienceEntryPath(p: string | undefined): boolean {
+    return !!p && /^exp\.\d+$/.test(p);
+  }
+
+  /** The selected element's line, as it RENDERS. An experience entry with no
+   * override of its own inherits the section's divider, so its controls show
+   * that (see `activeTitleOverride` for the same rule on titles). A plain leaf
+   * has no such fallback by design: its underline is its own or absent. */
   readonly activeElementBorder = computed<string>(() => {
     const p = this.selection()?.elementPath;
-    return (p && this.style().elementStyles?.[p]?.borderStyle) || '';
+    const own = p && this.style().elementStyles?.[p]?.borderStyle;
+    if (own) return own;
+    return this.isExperienceEntryPath(p) ? this.activeBodyBorder() : '';
   });
 
   readonly activeElementRuleWidth = computed<number | null>(() => {
     const p = this.selection()?.elementPath;
-    return (p ? this.style().elementStyles?.[p]?.ruleWidthPt : undefined) ?? null;
+    const own = p ? this.style().elementStyles?.[p]?.ruleWidthPt : undefined;
+    return own ?? (this.isExperienceEntryPath(p) ? this.activeBodyRuleWidth() : null);
   });
 
   readonly activeElementRuleColor = computed<string | null>(() => {
     const p = this.selection()?.elementPath;
-    return (p ? this.style().elementStyles?.[p]?.ruleColorHex : undefined) ?? null;
+    const own = p ? this.style().elementStyles?.[p]?.ruleColorHex : undefined;
+    return own ?? (this.isExperienceEntryPath(p) ? this.activeBodyRuleColor() : null);
   });
 
   /** Whether the selected leaf currently draws a line (controls whether the
@@ -683,11 +698,23 @@ export class CvLiveStylePanelComponent {
     return b !== '' && b !== 'none';
   });
 
-  /** Pick a line style. 'none'/'' clears the whole rule (style + width +
-   * colour) so an off leaf keeps no stray override. */
+  /** Pick a line style. '' (Inherit) clears the whole rule (style + width +
+   * colour) so nothing stray is kept.
+   *
+   * 'none' clears it too for a plain leaf, where absent IS off. For an
+   * experience entry the two differ: absent means it inherits the section's
+   * divider, so an explicit 'none' has to be stored, or turning this entry's
+   * line off would just hand it back the section's. */
   setElementBorder(value: string): void {
-    if (!value || value === 'none') {
-      this.emit({ borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined });
+    const off = { borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined };
+    if (!value) {
+      this.emit(off);
+    } else if (value === 'none') {
+      this.emit(
+        this.isExperienceEntryPath(this.selection()?.elementPath)
+          ? { borderStyle: 'none' }
+          : { ...off },
+      );
     } else {
       this.emit({ borderStyle: value as CvBorderStyle });
     }

@@ -10,6 +10,25 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Re-running onboarding no longer destroys your profile scoring and pitch.** Finishing the wizard a second time wrote the profile row with only the two fields the wizard authors, blanking the scoring analysis and elevator pitch you had generated — both paid AI calls. They now carry through. Changing your resume still marks the scoring stale, which is what prompts Profile to offer a re-score.
+- **Re-running onboarding no longer drops your target roles.** The wizard opened blank, so the final screen reported "0 roles selected" and Finish wrote an empty list over the roles you had. Your existing roles are now loaded in, and a fresh suggestion adds to them instead of replacing them.
+- **A re-run that only changes targeting is saved.** With no new resume the wizard saved nothing at all, so re-running purely to adjust your roles was a silent no-op. It now keeps your existing profile text and saves the new roles.
+- **"Suggest again" no longer throws you off the targeting step.** Asking for fresh role suggestions jumped straight to the final screen, because the suggestion always advanced the wizard regardless of who called it.
+- **Re-suggesting keeps the roles you chose.** Roles you typed in by hand were dropped and ones you had unchecked came back. The first suggestion seeds your selection; every later one only adds roles you have not already rejected, and a compensation range you edited is left alone.
+- **Skipping the resume no longer shows an empty review screen.** With nothing parsed, the wizard now goes from the resume step straight to targeting, and the review step stays out of reach from both the Back button and the stepper.
+- **A key from an earlier run is recognised.** Re-running onboarding with a key already in your OS keychain reported "Not connected" on the final screen; the wizard now reads the keychain per provider on open. A key already in the keychain also survives a later paste that fails or is mistyped, which previously reset the wizard's view of it.
+- **A second click on Continue no longer skips a step.** The button stayed live while the resume parse or role suggestion ran, so an impatient double-click started a second (paid) AI call and advanced twice — past Review, or past Targeting to the final screen. Continue and Back now disable while a call is in flight, and Continue says so instead of sitting silently on "Continue".
+- **Skipping the resume after it was already parsed actually skips it.** The profile was still written from the parsed resume while the summary said "Skipped"; changing or dropping the resume source now discards what was parsed from it.
+- **Skip is hidden on the final step**, where it sat next to Finish and would have discarded the profile you had just built.
+
+### Changed
+
+- **The API key step says what it does.** The button was "Validate" and the result "Key valid", but nothing ever contacts the provider — it is a copy-paste format check plus a save to your OS keychain, and the wording now says so. An invalid or revoked key still surfaces at your first AI action.
+- **The review step explains itself**: contact details are editable there, while experience and skills are shown as parsed and refined later in Documents.
+- **Removed a duplicated paragraph** on the AI setup step, which printed the same explanation twice, and a mislabelled "Setup —" prefix on the coming-soon note.
+
 ## [0.24.0] - 2026-07-15
 
 The CV and cover-letter editors become WYSIWYG: you edit on the rendered page,

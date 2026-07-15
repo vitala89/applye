@@ -114,7 +114,7 @@
               <div class="ob__card">
                 <div class="ob__panel-intro">
                   <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
-                  <p class="ob__panel-intro-text">{{ t()('onboarding.ai.intro') }}</p>
+                  <p class="ob__panel-intro-text">{{ t()('onboarding.ai.panel_intro') }}</p>
                 </div>
                 <div class="ob__panel-body">
                   <button
@@ -174,6 +174,11 @@
                         <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
                         {{ t()('onboarding.ai.valid_note') }}
                       </div>
+                    } @else if (keyStatus() === 'idle' && keyStored()) {
+                      <div class="ob__key-status ob__key-status--valid">
+                        <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
+                        {{ t()('onboarding.ai.already_saved_note') }}
+                      </div>
                     } @else if (keyStatus() === 'invalid') {
                       <div class="ob__key-status ob__key-status--invalid">
                         <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
@@ -204,7 +209,7 @@
               <div class="ob__note">
                 <lucide-icon [img]="icons.clock" [size]="15" aria-hidden="true" />
                 <span class="ob__note-text"
-                  ><b>{{ t()('onboarding.step') }} —</b>
+                  ><b>{{ t()('onboarding.ai.coming_soon') }} —</b>
                   {{ t()('onboarding.ai.cli_bridge_note') }}</span
                 >
               </div>
@@ -343,6 +348,7 @@
               <div>
                 <span class="ob__eyebrow">{{ t()('onboarding.preview.eyebrow') }}</span>
                 <h1 class="ob__h1">{{ t()('onboarding.preview.title') }}</h1>
+                <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.preview.help') }}</p>
               </div>
               @if (lowConfidenceCount() > 0) {
                 <div class="ob__warning-card">
@@ -499,7 +505,7 @@
                   <select
                     class="ob__comp-currency-select"
                     [ngModel]="compCurrency()"
-                    (ngModelChange)="compCurrency.set($event)"
+                    (ngModelChange)="setCompCurrency($event)"
                     [attr.aria-label]="t()('onboarding.archetypes.comp_currency_label')"
                   >
                     @for (c of currencyOptions; track c) {
@@ -556,8 +562,8 @@
                 <div class="ob__summary-row">
                   <span
                     class="ob__summary-icon"
-                    [class.ob__summary-icon--ok]="keyStatus() === 'valid'"
-                    [class.ob__summary-icon--muted]="keyStatus() !== 'valid'"
+                    [class.ob__summary-icon--ok]="keyPresent()"
+                    [class.ob__summary-icon--muted]="!keyPresent()"
                   >
                     <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
                   </span>
@@ -566,8 +572,8 @@
                   }}</span>
                   <span
                     class="ob__summary-value"
-                    [class.ob__summary-value--ok]="keyStatus() === 'valid'"
-                    [class.ob__summary-value--muted]="keyStatus() !== 'valid'"
+                    [class.ob__summary-value--ok]="keyPresent()"
+                    [class.ob__summary-value--muted]="!keyPresent()"
                     >{{ providerSummary() }}</span
                   >
                 </div>
@@ -630,20 +636,45 @@
       </div>
 
       <footer class="ob__foot">
-        <button appButton variant="ghost" size="md" type="button" (click)="skip()">
-          {{ t()('onboarding.skip') }}
-        </button>
+        <!-- Hidden on the last step: there, Skip sits beside Finish and would
+             throw away the profile the user just spent five steps building. -->
+        @if (step() < totalSteps - 1) {
+          <button appButton variant="ghost" size="md" type="button" (click)="skip()">
+            {{ t()('onboarding.skip') }}
+          </button>
+        }
         <span class="ob__foot-spacer"></span>
         @if (step() > 0) {
-          <button appButton variant="secondary" size="md" type="button" (click)="back()">
+          <!-- Disabled mid-call: `parseResume()` advances on completion, so a
+               Back pressed while it runs would land the user on the wrong step. -->
+          <button
+            appButton
+            variant="secondary"
+            size="md"
+            type="button"
+            [disabled]="busy()"
+            (click)="back()"
+          >
             <lucide-icon [img]="icons.arrowLeft" [size]="15" aria-hidden="true" />
             {{ t()('onboarding.back') }}
           </button>
         }
         @if (step() < totalSteps - 1) {
-          <button appButton variant="primary" size="md" type="button" (click)="goNext()">
-            {{ t()('onboarding.next') }}
-            <lucide-icon [img]="icons.arrowRight" [size]="15" aria-hidden="true" />
+          <button
+            appButton
+            variant="primary"
+            size="md"
+            type="button"
+            [disabled]="busy()"
+            (click)="goNext()"
+          >
+            @if (busy()) {
+              <span class="ob__spinner" aria-hidden="true"></span>
+              {{ t()('onboarding.working') }}
+            } @else {
+              {{ t()('onboarding.next') }}
+              <lucide-icon [img]="icons.arrowRight" [size]="15" aria-hidden="true" />
+            }
           </button>
         } @else {
           <button appButton variant="primary" size="md" type="button" (click)="finish()">

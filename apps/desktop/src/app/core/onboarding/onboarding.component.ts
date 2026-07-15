@@ -26,7 +26,14 @@ import {
   Upload,
   Wallet,
 } from 'lucide-angular';
-import { AiProvider, CvParsedContent, serializeArchetypes, parseArchetypes } from '@applye/core';
+import {
+  AiProvider,
+  CvParsedContent,
+  Profile,
+  archetypeNames,
+  serializeArchetypes,
+  parseArchetypes,
+} from '@applye/core';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -52,6 +59,9 @@ import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
+/** Feedback for the key INPUT only — never a claim about the keyring. Whether a
+ * key exists is `keyStored`, which a failed paste must not disturb. Neither
+ * means the provider accepted the key: nothing here calls the API. */
 type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
@@ -120,15 +130,20 @@ export class OnboardingComponent {
     'onboarding.step_names.ready',
   ];
 
+  /** The Review step only exists to check a parsed resume. Without one it is an
+   * empty form, so it is skipped forward AND unreachable backwards. */
+  readonly hasReview = computed(() => this.parsedCv() !== null);
+
   readonly railSteps = computed(() => {
     const current = this.step();
+    const hasReview = this.hasReview();
     return this.stepNameKeys.map((key, index) => ({
       index,
       n: String(index + 1).padStart(2, '0'),
       label: this.t()(key),
       active: index === current,
       done: index < current,
-      clickable: index <= current,
+      clickable: index <= current && (index !== 3 || hasReview),
     }));
   });
 
@@ -143,6 +158,9 @@ export class OnboardingComponent {
   readonly guide = computed(() => guideForProvider(this.selectedProvider()));
   readonly keyInput = signal('');
   readonly keyStatus = signal<KeyStatus>('idle');
+  /** Whether the selected provider has a key in the OS keyring — from the
+   * keyring itself, so it survives a re-run and an input the user fumbles. */
+  readonly keyStored = signal(false);
   readonly keySaveError = signal(false);
   readonly v1Providers: AiProvider[] = ['claude', 'openai', 'deepseek'];
 
@@ -154,10 +172,48 @@ export class OnboardingComponent {
     return guideForProvider(p);
   }
 
+  constructor() {
+    void this.refreshKeyStored();
+    void this.seedFromExistingProfile();
+  }
+
+  /** On a re-run the wizard opens blank, so the roles the user already has must
+   * be loaded in — otherwise Ready reports "0 roles selected" and Finish writes
+   * an empty list over them. Only seeds; the user stays free to unpick. */
+  private async seedFromExistingProfile(): Promise<void> {
+    const existing = await this.readExistingProfile();
+    // The profile stores full `Archetype` objects; this wizard only ever deals
+    // in names and re-wraps them on save, so seed the names.
+    const roles = archetypeNames(parseArchetypes(existing?.targetArchetypes));
+    if (!roles.length || this.archetypes().length) return;
+    this.archetypes.set(roles);
+    this.suggestedRoles.set(roles);
+    // Marks the selection as authored, so the resume-driven suggestion that
+    // follows adds to these roles rather than replacing them.
+    this.selectionSeeded.set(true);
+  }
+
   selectProvider(id: AiProvider): void {
     this.selectedProvider.set(id);
     this.keyStatus.set('idle');
+    this.keyStored.set(false);
     this.keySaveError.set(false);
+    void this.refreshKeyStored();
+  }
+
+  /** A key saved by an earlier run lives in the keyring, not in this component,
+   * so without this a re-run shows "not connected" on the Ready step for a
+   * provider that is in fact connected. */
+  private async refreshKeyStored(): Promise<void> {
+    const provider = this.selectedProvider();
+    try {
+      const has = await this.keys.hasProviderKey(provider);
+      // A provider switch mid-await must not land its answer on the new one.
+      if (this.selectedProvider() !== provider) return;
+      this.keyStored.set(has);
+    } catch {
+      // Keyring unreadable — leave it as "no key" and let the user paste one.
+    }
   }
 
   async openConsole(): Promise<void> {
@@ -171,7 +227,8 @@ export class OnboardingComponent {
 
   /** Lightweight format sanity-check (length + provider prefix hint) before
    * touching the keyring — this is NOT a live validation against the
-   * provider's API (no such check exists), just a copy-paste sanity guard. */
+   * provider's API (no such check exists), just a copy-paste sanity guard.
+   * The button and status copy say "save", never "valid", for that reason. */
   async saveKey(): Promise<void> {
     const key = this.keyInput().trim();
     if (!key) return;
@@ -187,7 +244,11 @@ export class OnboardingComponent {
       await this.keys.setProviderKey(this.selectedProvider(), key);
       const saved = await this.keys.hasProviderKey(this.selectedProvider());
       this.keyStatus.set(saved ? 'valid' : 'invalid');
+      this.keyStored.set(saved);
     } catch {
+      // A write that fails leaves whatever was already in the keyring intact,
+      // so `keyStored` is deliberately untouched here — reporting "no key" for
+      // a provider that still has a working one is the worse lie.
       this.keyStatus.set('idle');
       this.keySaveError.set(true);
     }
@@ -218,6 +279,10 @@ export class OnboardingComponent {
   chooseResume(path: ResumePath): void {
     this.resumePath.set(path);
     this.resumeError.set(false);
+    // Choosing "skip" after a parse must actually drop the parse. Otherwise the
+    // profile still gets written from the resume the user just walked away from
+    // while the Ready step tells them it was skipped.
+    if (path === 'skip') this.discardParse();
     if (path === 'upload' && !this.resumeFileName()) {
       void this.pickResumeFile();
     }
@@ -229,6 +294,14 @@ export class OnboardingComponent {
   setPastedResume(text: string): void {
     this.resumeText.set(text);
     this.resumeInputHash.set(undefined);
+    this.discardParse();
+  }
+
+  /** Any change to the resume source invalidates what was parsed from the old
+   * one — a stale parse would otherwise reach the profile and the CV document,
+   * and keep the Review step reachable for text that is no longer there. */
+  private discardParse(): void {
+    this.parsedCv.set(null);
   }
 
   async pickResumeFile(): Promise<void> {
@@ -242,6 +315,7 @@ export class OnboardingComponent {
     this.resumeText.set(file.text);
     this.resumeInputHash.set(file.inputHash);
     this.resumeFileName.set(path.split(/[/\\]/).pop() ?? path);
+    this.discardParse();
   }
 
   async parseResume(): Promise<void> {
@@ -283,10 +357,19 @@ export class OnboardingComponent {
   readonly suggestedRoles = signal<string[]>([]);
   readonly archetypes = signal<string[]>([]);
   readonly suggesting = signal(false);
+  /** True once the selection has a deliberate author — the first AI suggestion,
+   * or the roles seeded from an existing profile on a re-run. Distinguishes an
+   * unauthored blank from "the user unchecked everything", and stops a
+   * suggestion from replacing roles the user already had. */
+  readonly selectionSeeded = signal(false);
+  /** Roles the user unchecked by hand — a re-suggest must not bring them back. */
+  readonly rejectedRoles = signal<ReadonlySet<string>>(new Set());
   readonly currencyOptions = CURRENCY_OPTIONS;
   readonly compCurrency = signal<string>('USD');
   readonly compMin = signal(80);
   readonly compMax = signal(120);
+  /** Set once the user edits the range by hand, so a re-suggest leaves it alone. */
+  readonly compTouched = signal(false);
 
   readonly displayRoles = computed(() => {
     const seen = new Set<string>();
@@ -315,7 +398,14 @@ export class OnboardingComponent {
   }
 
   toggleRole(role: string): void {
-    this.archetypes.update((a) => (a.includes(role) ? a.filter((r) => r !== role) : [...a, role]));
+    const removing = this.archetypes().includes(role);
+    this.archetypes.update((a) => (removing ? a.filter((r) => r !== role) : [...a, role]));
+    this.rejectedRoles.update((rejected) => {
+      const next = new Set(rejected);
+      if (removing) next.add(role);
+      else next.delete(role);
+      return next;
+    });
   }
 
   addArchetype(v: string): void {
@@ -326,20 +416,36 @@ export class OnboardingComponent {
   setCompMin(v: string): void {
     const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
     this.compMin.set(isNaN(n) ? 0 : n);
+    this.compTouched.set(true);
   }
 
   setCompMax(v: string): void {
     const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
     this.compMax.set(isNaN(n) ? 0 : n);
+    this.compTouched.set(true);
   }
+
+  setCompCurrency(v: string): void {
+    this.compCurrency.set(v);
+    this.compTouched.set(true);
+  }
+
+  /** True while a footer-driven AI call is in flight. The Continue button binds
+   * to it: without the guard a second click starts a second (paid) call and
+   * advances twice, skipping a step entirely. */
+  readonly busy = computed(() => this.parsing() || this.suggesting());
 
   /** Footer "Continue" handler: branches per step so parsing/suggestion runs
    * before advancing, and a skipped/empty resume never blocks progress. */
   async goNext(): Promise<void> {
+    if (this.busy()) return;
     const s = this.step();
     if (s === 2) {
+      // With no resume there is nothing to review, so Review would be a dead
+      // screen of empty fields — jump straight to Targeting, which the user can
+      // still fill in by hand.
       if (this.resumePath() === 'skip' || !this.resumeText().trim()) {
-        this.next();
+        this.step.set(4);
         return;
       }
       await this.parseResume();
@@ -347,17 +453,18 @@ export class OnboardingComponent {
     }
     if (s === 3) {
       await this.suggestArchetypes();
+      this.next();
       return;
     }
     this.next();
   }
 
+  /** Suggestion only — it never advances the wizard, because the Targeting step
+   * offers this same action as a "Suggest again" button and advancing there
+   * would throw the user off the step they are working on. */
   async suggestArchetypes(): Promise<void> {
     const text = this.resumeText().trim();
-    if (!text) {
-      this.next();
-      return;
-    }
+    if (!text) return;
     this.suggesting.set(true);
     try {
       const settings = await this.db.getSettings();
@@ -376,23 +483,42 @@ export class OnboardingComponent {
       });
       const parsed = parseArchetypesSkillResponse(res.text);
       this.suggestedRoles.set(parsed.archetypes);
-      this.archetypes.set(parsed.archetypes);
-      const range = parseCompRange(parsed.compRange);
-      this.compCurrency.set(normalizeCurrency(range.currency));
-      this.compMin.set(range.min);
-      this.compMax.set(range.max);
+      // The first suggestion seeds the selection; every later one only offers
+      // its roles as chips. Union-ing on a re-suggest would re-check roles the
+      // user had just unchecked, and an empty selection is a real choice — not
+      // the same state as "never suggested", which is why this needs its own
+      // flag rather than an `archetypes().length` test.
+      if (this.selectionSeeded()) {
+        this.archetypes.update((current) => [
+          ...current,
+          ...parsed.archetypes.filter((r) => !current.includes(r) && !this.rejectedRoles().has(r)),
+        ]);
+      } else {
+        this.archetypes.set(parsed.archetypes);
+      }
+      this.selectionSeeded.set(true);
+      // Comp is a single range with no user-authored parts to preserve, and it
+      // is only ever seeded before the user reaches the step — but once they
+      // have edited it, a re-suggest must not overwrite their number.
+      if (!this.compTouched()) {
+        const range = parseCompRange(parsed.compRange);
+        this.compCurrency.set(normalizeCurrency(range.currency));
+        this.compMin.set(range.min);
+        this.compMax.set(range.max);
+      }
     } catch {
       // Suggestion is an enhancement, not a requirement — fail soft and let
       // the user confirm/add roles manually on the targeting step.
     } finally {
       this.suggesting.set(false);
-      this.next();
     }
   }
 
   // ---- Ready summary ----
+  /** True for a key this run saved AND one an earlier run left in the keyring. */
+  readonly keyPresent = computed(() => this.keyStored());
   readonly providerSummary = computed(() => {
-    if (this.keyStatus() !== 'valid') return this.t()('onboarding.done.not_connected');
+    if (!this.keyPresent()) return this.t()('onboarding.done.not_connected');
     return `${this.t()(this.guide().nameKey)} · ${this.t()('onboarding.done.connected_suffix')}`;
   });
   readonly resumeSummary = computed(() => {
@@ -413,10 +539,12 @@ export class OnboardingComponent {
   }
 
   back(): void {
-    this.step.update((s) => Math.max(s - 1, 0));
+    // Step 4 → 2 when Review was skipped, mirroring the forward jump.
+    this.step.update((s) => (s === 4 && !this.hasReview() ? 2 : Math.max(s - 1, 0)));
   }
 
   goTo(i: number): void {
+    if (i === 3 && !this.hasReview()) return;
     if (i <= this.step()) this.step.set(i);
   }
 
@@ -439,19 +567,47 @@ export class OnboardingComponent {
     };
   }
 
+  /** `db_upsert_profile` replaces the whole row — a field left out is written as
+   * NULL, not preserved. The wizard only authors `fullMd` and the archetypes,
+   * so on a re-run it must carry the rest forward or it silently destroys the
+   * scoring and pitch the user paid an AI call for. The stale scoring that
+   * survives a resume change is harmless: `scoringHash` no longer matches the
+   * new `fullMd`, which is exactly how Profile knows to offer a re-score. */
   async saveProfile(): Promise<void> {
+    const existing = await this.readExistingProfile();
     const base = cvToProfileMarkdown(this.buildProfileCv()).trim();
-    if (!base) return;
-    const compRange = formatCompRange({
-      currency: this.compCurrency(),
-      min: this.compMin(),
-      max: this.compMax(),
-    });
-    const fullMd = appendCompensation(base, compRange);
+    // No resume this run — a re-run that only re-targets keeps the markdown the
+    // user already has instead of blanking it.
+    const fullMd = base
+      ? appendCompensation(
+          base,
+          formatCompRange({
+            currency: this.compCurrency(),
+            min: this.compMin(),
+            max: this.compMax(),
+          }),
+        )
+      : (existing?.fullMd ?? '');
+    // Nothing parsed, nothing saved before, no roles picked: a first run the
+    // user skipped through. Writing an empty row would only make the dashboard
+    // banner disagree with itself.
+    if (!fullMd.trim() && !this.archetypes().length) return;
     await this.db.upsertProfile({
       fullMd,
+      scoringJson: existing?.scoringJson,
+      scoringHash: existing?.scoringHash,
+      pitchMd: existing?.pitchMd,
       targetArchetypes: serializeArchetypes(parseArchetypes(JSON.stringify(this.archetypes()))),
     });
+  }
+
+  private async readExistingProfile(): Promise<Profile | null> {
+    try {
+      return await this.db.getProfile();
+    } catch {
+      // Unreadable profile — better to write the new one than to lose the run.
+      return null;
+    }
   }
 
   /** The wizard already parsed the resume into exactly the shape Documents

@@ -4,7 +4,13 @@ import { CV_STYLE_DEFAULT } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
-import { effectiveSectionStyle } from '../cv-content.util';
+import {
+  effectiveSectionStyle,
+  effectiveTitleBorder,
+  effectiveTitleRuleColor,
+  effectiveTitleRuleWidth,
+  effectiveTitleStyle,
+} from '../cv-content.util';
 import { CvDetailComponent, mergePersonalField } from './cv-detail.component';
 
 describe('mergePersonalField', () => {
@@ -154,6 +160,62 @@ describe('CvDetailComponent per-section style', () => {
 
       component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
       expect(component.style().titleBorder).toBe('dashed');
+    });
+
+    it('an all-titles line clears the per-section line so EVERY title adopts it', () => {
+      // The user styles one title, then changes all titles: the section that was
+      // individually styled must not silently keep its old line.
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+
+      expect(component.style().sectionStyles?.experience?.titleBorder).toBeUndefined();
+      expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dashed');
+      expect(effectiveTitleBorder(component.style(), 'education')).toBe('dashed');
+    });
+
+    it('this title still wins after an all-titles line, and siblings keep the all-titles line', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+
+      expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dotted');
+      expect(effectiveTitleBorder(component.style(), 'education')).toBe('dashed');
+    });
+
+    it('an all-titles change clears only the property it writes', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', patch: { colorHex: '#ff0000' } });
+      component.onStylePanelChange({ scope: 'section', titleBorder: 'dotted' });
+
+      component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
+
+      // The line is now uniform, but the section's own colour is untouched — an
+      // edit to one control never silently drops an unrelated override.
+      expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dashed');
+      expect(component.style().sectionStyles?.experience?.title?.colorHex).toBe('#ff0000');
+    });
+
+    it('an all-titles rule width/colour clears the per-section ones', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', titleRuleWidth: 3 });
+      component.onStylePanelChange({ scope: 'section', titleRuleColor: '#ff0000' });
+
+      component.onStylePanelChange({ scope: 'document', titleRuleWidth: 1 });
+      component.onStylePanelChange({ scope: 'document', titleRuleColor: '#0000ff' });
+
+      expect(effectiveTitleRuleWidth(component.style(), 'experience')).toBe(1);
+      expect(effectiveTitleRuleColor(component.style(), 'experience')).toBe('#0000ff');
+    });
+
+    it('an all-titles font clears the per-section title font so every title adopts it', () => {
+      component.liveSelection.set({ sectionKey: 'experience', part: 'title' });
+      component.onStylePanelChange({ scope: 'section', patch: { fontFamily: 'Georgia' } });
+
+      component.onStylePanelChange({ scope: 'document', patch: { fontFamily: 'Arial' } });
+
+      expect(effectiveTitleStyle(component.style(), 'experience').fontFamily).toBe('Arial');
+      expect(effectiveTitleStyle(component.style(), 'education').fontFamily).toBe('Arial');
     });
 
     it('applying a section change clears in-section element overrides so it applies uniformly', () => {

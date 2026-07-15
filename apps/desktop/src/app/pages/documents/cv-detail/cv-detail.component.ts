@@ -77,6 +77,7 @@ import {
   patchCvDocumentBody,
   patchCvElementStyle,
   clearSectionElementOverrides,
+  clearSectionTitleOverrides,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
   resetCvElementStyle,
@@ -391,26 +392,47 @@ export class CvDetailComponent {
     }
     if (change.titleBorder !== undefined) {
       const border = change.titleBorder ?? undefined;
-      if (allTitles) this.updateStyle({ titleBorder: border });
+      if (allTitles) this.applyToAllTitles({ titleBorder: undefined }, { titleBorder: border });
       else this.setSectionStyle(key, { titleBorder: border });
       return;
     }
     if (change.titleRuleWidth !== undefined) {
       const w = change.titleRuleWidth ?? undefined;
-      if (allTitles) this.updateStyle({ titleRuleWidthPt: w });
+      if (allTitles)
+        this.applyToAllTitles({ titleRuleWidthPt: undefined }, { titleRuleWidthPt: w });
       else this.setSectionStyle(key, { titleRuleWidthPt: w });
       return;
     }
     if (change.titleRuleColor !== undefined) {
       const c = change.titleRuleColor ?? undefined;
-      if (allTitles) this.updateStyle({ titleRuleColorHex: c });
+      if (allTitles)
+        this.applyToAllTitles({ titleRuleColorHex: undefined }, { titleRuleColorHex: c });
       else this.setSectionStyle(key, { titleRuleColorHex: c });
       return;
     }
     if (change.patch) {
-      if (allTitles) this.updateTitleStyle(change.patch);
-      else this.setSectionTitleStyle(key, change.patch);
+      if (allTitles) {
+        // Clear the SAME text properties this patch writes (font, size, weight,
+        // or colour) from every section's title override, then write the new
+        // document-wide value.
+        const inherit = Object.fromEntries(
+          Object.keys(change.patch).map((k) => [k, undefined]),
+        ) as CvTextStyle;
+        this.style.set(clearSectionTitleOverrides(this.style(), { title: inherit }));
+        this.updateTitleStyle(change.patch);
+      } else this.setSectionTitleStyle(key, change.patch);
     }
+  }
+
+  /** Writes an "all titles" (document-scope) title property. The per-section
+   * overrides of that SAME property are cleared first, so a title the user
+   * styled on its own adopts the new value instead of silently keeping its old
+   * one — the title-layer counterpart of the `clearSectionElementOverrides`
+   * step in `applyBodyScopeChange`. Sibling properties survive: only what this
+   * control writes is made uniform. */
+  private applyToAllTitles(inherit: Partial<CvSectionStyle>, patch: Partial<CvStyle>): void {
+    this.style.set(clearSectionTitleOverrides(this.style(), inherit));
+    this.updateStyle(patch);
   }
 
   private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {

@@ -777,6 +777,23 @@ export function clearSectionElementOverrides(
   return { ...style, elementStyles: Object.keys(next).length ? next : undefined };
 }
 
+/** Drops TITLE properties from EVERY per-section override so an "all titles"
+ * change applies UNIFORMLY — the counterpart of `clearSectionElementOverrides`
+ * one layer up. Without this, a title styled on its own ("this title") keeps
+ * winning the cascade and silently ignores the new all-titles value while its
+ * siblings adopt it.
+ *
+ * Only the properties present in `patch` are cleared (pass each as `undefined`,
+ * the same "inherit" convention `patchCvSectionStyle` already uses): changing
+ * the all-titles line must not also drop a section's own title colour. */
+export function clearSectionTitleOverrides(
+  style: CvStyle,
+  patch: Partial<CvSectionStyle>,
+): CvStyle {
+  const keys = Object.keys(style.sectionStyles ?? {}) as CvSectionKey[];
+  return keys.reduce((acc, key) => patchCvSectionStyle(acc, key, patch), style);
+}
+
 /** Removes one complete per-section override and omits the map when it becomes
  * empty. Document defaults and sibling section overrides are preserved. */
 export function resetCvSectionStyle(style: CvStyle, key: CvSectionKey): CvStyle {

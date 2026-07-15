@@ -417,6 +417,10 @@ export class CvDetailComponent {
     const key = sel.sectionKey;
     // Section body-rule (divider) is a section-level property — written at
     // section scope regardless of the font scope selector.
+    if (change.bodyBorder !== undefined) {
+      this.setSectionStyle(key, { bodyBorder: change.bodyBorder ?? undefined });
+      return;
+    }
     if (change.bodyRuleWidth !== undefined) {
       this.setSectionStyle(key, { bodyRuleWidthPt: change.bodyRuleWidth ?? undefined });
       return;

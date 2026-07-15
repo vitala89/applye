@@ -160,6 +160,28 @@ describe('CvPreviewComponent', () => {
     expect(component.bodyCss('summary')['--cv-header-rule-width']).toBeUndefined();
   });
 
+  it("bodyBorder 'none' zeroes the rule width so a themed divider cannot draw", () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { personal_details: { bodyBorder: 'none', bodyRuleWidthPt: 2 } },
+    });
+    fixture.detectChanges();
+    const css = component.bodyCss('personal_details');
+    expect(css['--cv-header-rule-width']).toBe('0');
+    expect(css['--cv-entry-rule-width']).toBe('0');
+  });
+
+  it('bodyBorder emits the rule style vars for a visible divider', () => {
+    fixture.componentRef.setInput('style', {
+      ...CV_STYLE_DEFAULT,
+      sectionStyles: { experience: { bodyBorder: 'dashed' } },
+    });
+    fixture.detectChanges();
+    const css = component.bodyCss('experience');
+    expect(css['--cv-entry-rule-style']).toBe('dashed');
+    expect(css['--cv-header-rule-style']).toBe('dashed');
+  });
+
   it('entryCss mirrors the entry colour into --cv-entry-color (head), and bullets stay bodyCss-only', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,
@@ -519,6 +541,29 @@ describe('CvPreviewComponent', () => {
         color: '#123456',
         'line-height': '1.5',
       });
+    });
+
+    it('entryCss strips a stored bottom rule — an entry wraps its bullets, so it would draw under them', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { 'exp.0': { borderStyle: 'solid', colorHex: '#123456' } },
+      });
+      const css = component.entryCss('exp.0');
+      expect(css['border-bottom']).toBeUndefined();
+      expect(css['padding-bottom']).toBeUndefined();
+      // Non-line element styling on the entry still applies.
+      expect(css['color']).toBe('#123456');
+      expect(css['--cv-entry-color']).toBe('#123456');
+    });
+
+    it('squares the rule ends so the selected border-radius cannot curve them', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        elementStyles: { 'pd.name': { borderStyle: 'solid' } },
+      });
+      const css = component.leafCss('pd.name');
+      expect(css['border-bottom-left-radius']).toBe('0');
+      expect(css['border-bottom-right-radius']).toBe('0');
     });
 
     it('renders a per-leaf bottom rule from borderStyle, defaulting width/colour', () => {

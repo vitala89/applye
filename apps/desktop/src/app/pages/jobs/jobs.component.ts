@@ -974,15 +974,15 @@ interface FinalChecks {
                         class="export-option"
                         type="button"
                         [disabled]="!!exporting()"
-                        (click)="doExport('cover_letter', 'docx')"
+                        (click)="doExport('cover_letter', 'pdf')"
                       >
                         <span class="export-option__icon">
                           <lucide-icon [img]="icons.pencilLine" [size]="20" aria-hidden="true" />
                         </span>
                         <span class="export-option__title">{{
-                          exporting() === 'cover_letter-docx'
+                          exporting() === 'cover_letter-pdf'
                             ? t()('jobs.exporting')
-                            : t()('jobs.wizard.export_cover_letter_docx')
+                            : t()('jobs.wizard.export_cover_letter_pdf')
                         }}</span>
                         <span class="export-option__desc">{{
                           t()('jobs.wizard.export_cover_letter_desc')

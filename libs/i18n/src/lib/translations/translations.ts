@@ -469,7 +469,7 @@ const en: TranslationMap = {
         'No linked CV yet. You can still mark the application, but export needs a linked CV.',
       export_missing_cover_letter_warning:
         'No linked Cover Letter yet. This is optional, but review before applying.',
-      export_cover_letter_docx: 'Cover Letter DOCX',
+      export_cover_letter_pdf: 'Cover Letter PDF',
       export_cover_letter_desc: 'Export the linked Cover Letter document.',
       export_saved: 'Saved',
       export_failed: 'Export failed',
@@ -1488,7 +1488,7 @@ const de: TranslationMap = {
         'Noch kein Lebenslauf verknüpft. Du kannst die Bewerbung trotzdem markieren, aber der Export braucht einen verknüpften Lebenslauf.',
       export_missing_cover_letter_warning:
         'Noch kein Anschreiben verknüpft. Das ist optional, aber prüfe es vor der Bewerbung.',
-      export_cover_letter_docx: 'Anschreiben DOCX',
+      export_cover_letter_pdf: 'Anschreiben PDF',
       export_cover_letter_desc: 'Exportiert das verknüpfte Anschreiben-Dokument.',
       export_saved: 'Gespeichert',
       export_failed: 'Export fehlgeschlagen',

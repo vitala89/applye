@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CvContent, CvParsedContent, CvTemplate } from '@applye/core';
+import { parseProfileMd, serializeProfileForm } from '@applye/core';
 import {
   appendCompensation,
   applyContactOverrides,
@@ -278,11 +279,59 @@ describe('appendCompensation', () => {
 });
 
 describe('cvToProfileMarkdown — address', () => {
-  it('includes address in the contact line when present', () => {
+  it('lands the address in the location field even with no title to anchor it', () => {
     const md = cvToProfileMarkdown({
       personalDetails: { fullName: 'Jane Smith', email: 'jane@x.io', address: 'Lisboa, Portugal' },
     });
-    expect(md).toContain('jane@x.io · Lisboa, Portugal');
+    expect(parseProfileMd(md).location).toBe('Lisboa, Portugal');
+  });
+});
+
+/** The bug this pins: the wizard wrote a profile the profile form could not
+ * read back. Assert against the reader, not against a string — a string test is
+ * what let the two drift apart in the first place. */
+describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
+  const parsed = {
+    personalDetails: {
+      fullName: 'Vitalii Kasap',
+      title: 'Senior Frontend Software Engineer',
+      email: 'vitalii@example.com',
+      phone: '+49 171 206 4899',
+      address: 'Nuremberg, Germany',
+      website: 'vitaliikasap.com',
+      linkedin: 'linkedin.com/in/vitaliikasap',
+    },
+    summary: 'Engineer.',
+    experience: [{ company: 'Celonis', role: 'Senior Frontend Engineer', bullets: ['Shipped X'] }],
+    skills: ['TypeScript', 'Angular'],
+  };
+
+  it('lands every identity field in the field the user expects', () => {
+    const form = parseProfileMd(cvToProfileMarkdown(parsed));
+    expect(form.name).toBe('Vitalii Kasap');
+    expect(form.title).toBe('Senior Frontend Software Engineer');
+    expect(form.location).toBe('Nuremberg, Germany');
+    expect(form.email).toBe('vitalii@example.com');
+    expect(form.phone).toBe('+49 171 206 4899');
+    expect(form.website).toBe('vitaliikasap.com');
+    expect(form.linkedin).toBe('linkedin.com/in/vitaliikasap');
+  });
+
+  it('loses nothing when the profile form saves it straight back', () => {
+    const form = parseProfileMd(cvToProfileMarkdown(parsed));
+    expect(parseProfileMd(serializeProfileForm(form))).toEqual(form);
+  });
+
+  it('does not turn the title into the name when the resume yielded no name', () => {
+    const md = cvToProfileMarkdown({ personalDetails: { title: 'Senior Engineer' } });
+    const form = parseProfileMd(md);
+    expect(form.name).toBe('');
+    expect(form.title).toBe('Senior Engineer');
+  });
+
+  it('stays empty when the parse yielded nothing, so it cannot overwrite a real profile', () => {
+    expect(cvToProfileMarkdown({})).toBe('');
+    expect(cvToProfileMarkdown({ personalDetails: {} })).toBe('');
   });
 });
 

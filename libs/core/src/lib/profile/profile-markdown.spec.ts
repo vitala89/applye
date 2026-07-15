@@ -12,12 +12,19 @@ const fullForm: ProfileForm = {
   name: 'Vitalii Kasap',
   title: 'Senior Frontend Engineer',
   location: 'Germany',
+  email: 'vitalii@example.com',
+  phone: '+49 171 206 4899',
+  website: 'vitaliikasap.com',
+  linkedin: 'linkedin.com/in/vitaliikasap',
   experienceText: 'Led frontend for a 2M DAU platform.\nCut bundle size 40%.',
   skills: ['React', 'TypeScript', 'Angular'],
   education: 'BSc Computer Science',
   languages: ['English', 'German'],
+  notes: '',
   other: '',
 };
+
+const blankContact = { location: '', email: '', phone: '', website: '', linkedin: '' };
 
 describe('profile-markdown', () => {
   it('round-trips a full form through serialize→parse', () => {
@@ -84,5 +91,171 @@ describe('profile-markdown', () => {
     const form = parseProfileMd('# Jane\nFull·Stack Engineer · Berlin');
     expect(form.title).toBe('Full·Stack Engineer');
     expect(form.location).toBe('Berlin');
+  });
+
+  describe('contact block', () => {
+    it('round-trips every contact field through the ## Contact section', () => {
+      const md = serializeProfileForm(fullForm);
+      expect(md).toContain('## Contact');
+      expect(md).toContain('- Phone: +49 171 206 4899');
+      expect(parseProfileMd(md)).toEqual(fullForm);
+    });
+
+    it('omits the Contact section entirely when no contact is set', () => {
+      const md = serializeProfileForm({ ...fullForm, ...blankContact });
+      expect(md).not.toContain('## Contact');
+    });
+
+    it('recovers a legacy middot contact line instead of reading it as the title', () => {
+      // The exact shape onboarding used to write, and the exact bug: the phone
+      // showed up in "Current role" and website/LinkedIn were lost on save.
+      const form = parseProfileMd(
+        '# Vitalii Kasap\n' +
+          'vitalii@example.com · +49 171 206 4899 · Nuremberg, Germany · ' +
+          'vitaliikasap.com · linkedin.com/in/vitaliikasap',
+      );
+      expect(form.title).toBe('');
+      expect(form.email).toBe('vitalii@example.com');
+      expect(form.phone).toBe('+49 171 206 4899');
+      expect(form.location).toBe('Nuremberg, Germany');
+      expect(form.website).toBe('vitaliikasap.com');
+      expect(form.linkedin).toBe('linkedin.com/in/vitaliikasap');
+    });
+
+    it('reads a legacy italicised title line as the title', () => {
+      const form = parseProfileMd('# Vitalii Kasap\n_Senior Frontend Engineer_\n+49 171 206 4899');
+      expect(form.title).toBe('Senior Frontend Engineer');
+      expect(form.phone).toBe('+49 171 206 4899');
+    });
+
+    it('does not mistake a plain "Title · Location" line for a contact line', () => {
+      const form = parseProfileMd('# Jane\nSenior Engineer · St. Gallen, Switzerland');
+      expect(form.title).toBe('Senior Engineer');
+      expect(form.location).toBe('St. Gallen, Switzerland');
+      expect(form.phone).toBe('');
+      expect(form.website).toBe('');
+    });
+
+    it('survives a save round-trip without dropping contacts (the reported data loss)', () => {
+      const legacy = '# Vitalii Kasap\nvitalii@example.com · vitaliikasap.com';
+      const saved = serializeProfileForm(parseProfileMd(legacy));
+      expect(saved).toContain('vitalii@example.com');
+      expect(saved).toContain('vitaliikasap.com');
+    });
+  });
+
+  describe('the name slot', () => {
+    it('holds the name line open when the name is empty, so the title stays the title', () => {
+      const md = serializeProfileForm({ ...EMPTY_FORM, title: 'Dev', location: 'EU' });
+      const form = parseProfileMd(md);
+      expect(form.name).toBe('');
+      expect(form.title).toBe('Dev');
+    });
+
+    it('does not read a legacy contact-first line as the name', () => {
+      const form = parseProfileMd('vitalii@example.com · +49 171 206 4899');
+      expect(form.name).toBe('');
+      expect(form.email).toBe('vitalii@example.com');
+      expect(form.phone).toBe('+49 171 206 4899');
+    });
+  });
+
+  describe('nothing lands on the floor', () => {
+    it('splits a mixed "Title · Location · Phone" line across all three fields', () => {
+      const form = parseProfileMd('# Vitalii Kasap\nSenior Engineer · Berlin · +49 171 2064899');
+      expect(form.title).toBe('Senior Engineer');
+      expect(form.location).toBe('Berlin');
+      expect(form.phone).toBe('+49 171 2064899');
+    });
+
+    it('keeps a second website instead of discarding it', () => {
+      const form = parseProfileMd('# Jane\ngithub.com/jane · myportfolio.dev');
+      expect(form.website).toBe('github.com/jane');
+      expect(form.notes).toContain('myportfolio.dev');
+      expect(serializeProfileForm(form)).toContain('myportfolio.dev');
+    });
+
+    it('keeps contact lines it has no slot for', () => {
+      const md =
+        '# Jane\n\n## Contact\n- Email: j@x.io\n- GitHub: github.com/jane\n- Xing: xing.com/x';
+      const form = parseProfileMd(md);
+      expect(form.email).toBe('j@x.io');
+      expect(form.notes).toContain('- GitHub: github.com/jane');
+      const saved = serializeProfileForm(form);
+      expect(saved).toContain('github.com/jane');
+      expect(saved).toContain('xing.com/x');
+    });
+
+    it('keeps an unclassified header line under ## Notes', () => {
+      const form = parseProfileMd('# Jane\nSenior Engineer · Berlin\n> Open to relocation');
+      expect(form.notes).toBe('> Open to relocation');
+      expect(serializeProfileForm(form)).toContain('## Notes\n> Open to relocation');
+    });
+
+    it('lets the title be cleared even when notes exist', () => {
+      const form = { ...EMPTY_FORM, name: 'Jane', notes: '> Open to relocation' };
+      expect(parseProfileMd(serializeProfileForm(form)).title).toBe('');
+    });
+  });
+
+  describe('titles that look like URLs', () => {
+    it.each([
+      ['Growth Lead @ acme.io', 'Growth Lead @ acme.io'],
+      ['Senior Data Scientist, M.Sc', 'Senior Data Scientist, M.Sc'],
+    ])('reads %s as a title, not a website', (line, title) => {
+      const form = parseProfileMd(`# Jane\n${line} · Berlin`);
+      expect(form.title).toBe(title);
+      expect(form.website).toBe('');
+    });
+  });
+
+  /** Every data-loss bug in this file has been one instance of this invariant.
+   * Assert the invariant, not just the instances. */
+  describe('invariant: a save never deletes text', () => {
+    const words = (md: string) =>
+      md
+        .split(/\s+/)
+        .map((w) => w.replace(/^[_*#]+/, '').replace(/[_*]+$/, ''))
+        .filter((w) => w && w !== '·' && w !== '-');
+
+    it.each([
+      [
+        'legacy onboarding shape',
+        '# Vitalii Kasap\n_Senior Engineer_\nv@x.io · +49 171 2064899 · Nuremberg, Germany · vitaliikasap.com · linkedin.com/in/vk',
+      ],
+      ['mixed header line', '# Jane\nSenior Engineer · Berlin · +49 171 2064899 · jane@x.io'],
+      [
+        'tagline and unknown section',
+        '# Jane\nDev · Berlin\n> Open to relocation\n\n## Awards\nBest dev 2025',
+      ],
+      [
+        'hand-written contact block',
+        '# Jane\nDev\n\n## Contact\n- Email: j@x.io\n- GitHub: github.com/jane\nring me after 6pm',
+      ],
+      ['nameless profile', '#\nDev · Berlin'],
+      ['duplicate slots', '# Jane\ngithub.com/jane · myportfolio.dev · a@x.io · b@x.io'],
+    ])('%s survives parse → serialize intact', (_label, md) => {
+      const saved = serializeProfileForm(parseProfileMd(md));
+      for (const w of words(md)) expect(saved).toContain(w);
+    });
+
+    it.each([
+      [
+        'legacy onboarding shape',
+        '# Vitalii Kasap\n_Senior Engineer_\nv@x.io · Nuremberg, Germany · vitaliikasap.com',
+      ],
+      ['mixed header line', '# Jane\nSenior Engineer · Berlin · +49 171 2064899'],
+      [
+        'tagline and unknown section',
+        '# Jane\nDev · Berlin\n> Open to relocation\n\n## Awards\nBest dev 2025',
+      ],
+      [
+        'hand-written contact block',
+        '# Jane\nDev\n\n## Contact\n- Email: j@x.io\n- GitHub: github.com/jane',
+      ],
+    ])('%s reaches a fixed point after one save', (_label, md) => {
+      const once = parseProfileMd(md);
+      expect(parseProfileMd(serializeProfileForm(once))).toEqual(once);
+    });
   });
 });

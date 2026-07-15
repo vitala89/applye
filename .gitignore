@@ -71,6 +71,8 @@ apps/desktop/src-tauri/gen/
 !.claude/agents/
 !.claude/agents/aif-*.md
 !.claude/settings.example.json
+!.claude/hooks/
+!.claude/hooks/*.sh
 .codex/
 .codegraph/
 .serena/

@@ -850,16 +850,12 @@ const en: TranslationMap = {
     continue: 'Continue',
   },
   onboarding: {
-    title: 'Set up Applye',
-    step: 'Setup',
     cv_save_failed:
       'Your profile was saved, but the CV could not be created. Import it in Documents.',
     skip: 'Skip',
     back: 'Back',
     next: 'Continue',
     done_cta: 'Finish setup',
-    welcome_title: 'Welcome',
-    welcome_privacy: 'Everything stays on your computer. Applye never uploads your data.',
     rerun: 'Re-run onboarding',
     eyebrow_welcome: 'Welcome to applye',
     welcome_heading_line1: "Let's set up your",
@@ -888,20 +884,20 @@ const en: TranslationMap = {
       title: 'Connect an AI provider',
       intro:
         'Applye uses AI to score jobs and tailor documents. You need one API key. Think of it as a password for the AI — it is stored only on your computer.',
-      provider: 'Provider',
+      panel_intro: 'Create a key in the provider console, then paste it below.',
       open_console: 'Open console & create a key',
       api_key_label: 'Api key',
-      key_label: 'Paste your API key',
-      save_check: 'Validate',
-      checking: 'Checking',
-      saved: 'Key saved and detected.',
-      valid_note: 'Key valid — stored in your OS keychain.',
+      save_check: 'Save key',
+      checking: 'Saving',
+      valid_note: 'Key saved to your OS keychain.',
+      already_saved_note: 'A key for this provider is already saved in your OS keychain.',
       invalid_note: "That key doesn't look right. Check you copied all of it.",
       error: "Couldn't save the key. Try again.",
       watch_video: 'Watch the video walkthrough',
       keyring_note: 'Stored in your OS keychain — never in the database or logs.',
+      coming_soon: 'Coming soon',
       cli_bridge_note:
-        'Coming soon — sign in with your Claude or OpenAI subscription instead of pasting a key. You can switch later in Settings.',
+        'sign in with your Claude or OpenAI subscription instead of pasting a key. You can switch later in Settings.',
       skip_warning:
         'You can skip this — but analysis, tailoring and interview prep stay disabled until a key is added.',
       generic: {
@@ -920,7 +916,7 @@ const en: TranslationMap = {
         step1: 'Sign in at console.anthropic.com.',
         step2: 'Go to API Keys and click Create Key.',
         step3: 'Copy the key (it starts with sk-ant-).',
-        step4: 'Paste it below and click Validate.',
+        step4: 'Paste it below and click Save.',
       },
       openai: {
         name: 'OpenAI',
@@ -929,7 +925,7 @@ const en: TranslationMap = {
         step1: 'Sign in at platform.openai.com.',
         step2: 'Open API keys and Create new secret key.',
         step3: 'Copy the key.',
-        step4: 'Paste it below and click Validate.',
+        step4: 'Paste it below and click Save.',
       },
       deepseek: {
         name: 'DeepSeek',
@@ -938,7 +934,7 @@ const en: TranslationMap = {
         step1: 'Sign in at platform.deepseek.com.',
         step2: 'Open API keys and create one.',
         step3: 'Copy the key.',
-        step4: 'Paste it below and click Validate.',
+        step4: 'Paste it below and click Save.',
       },
     },
     resume: {
@@ -959,14 +955,12 @@ const en: TranslationMap = {
       skip_note: 'No problem — you can import a resume any time from your Profile.',
       privacy_note:
         'Your resume stays on this computer. It is only sent to the AI model you configured.',
-      parse: 'Parse resume',
-      parsing: 'Parsing…',
       error: "Couldn't parse that resume. Try pasting the text instead.",
     },
     preview: {
       eyebrow: 'Parsed resume',
       title: 'Check what we pulled',
-      help: 'This is what we extracted from your resume. Edit anything before continuing.',
+      help: 'Your contact details are editable here. Experience and skills are shown as parsed — you can refine them later in Documents.',
       warning_suffix: 'field(s) need a look',
       warning_help:
         "We weren't fully sure about some items — fix any mis-parses before continuing.",
@@ -1880,16 +1874,12 @@ const de: TranslationMap = {
     continue: 'Weiter',
   },
   onboarding: {
-    title: 'Applye einrichten',
-    step: 'Einrichtung',
     cv_save_failed:
       'Dein Profil wurde gespeichert, aber der Lebenslauf konnte nicht erstellt werden. Importiere ihn unter Dokumente.',
     skip: 'Überspringen',
     back: 'Zurück',
     next: 'Weiter',
     done_cta: 'Einrichtung abschließen',
-    welcome_title: 'Willkommen',
-    welcome_privacy: 'Alles bleibt auf deinem Rechner. Applye lädt deine Daten nie hoch.',
     rerun: 'Einrichtung erneut starten',
     eyebrow_welcome: 'Willkommen bei applye',
     welcome_heading_line1: 'Richten wir deinen',
@@ -1918,22 +1908,23 @@ const de: TranslationMap = {
       title: 'KI-Anbieter verbinden',
       intro:
         'Applye nutzt KI, um Stellen zu bewerten und Dokumente anzupassen. Du brauchst dafür einen API-Schlüssel. Stell ihn dir wie ein Passwort für die KI vor — er wird nur auf deinem Rechner gespeichert.',
-      provider: 'Anbieter',
+      panel_intro: 'Erstelle einen Schlüssel in der Anbieter-Konsole und füge ihn unten ein.',
       open_console: 'Konsole öffnen & Schlüssel erstellen',
       api_key_label: 'API-Schlüssel',
-      key_label: 'API-Schlüssel einfügen',
-      save_check: 'Prüfen',
-      checking: 'Wird geprüft',
-      saved: 'Schlüssel gespeichert und erkannt.',
-      valid_note: 'Schlüssel gültig — im Schlüsselbund gespeichert.',
+      save_check: 'Schlüssel speichern',
+      checking: 'Wird gespeichert',
+      valid_note: 'Schlüssel im Schlüsselbund deines Betriebssystems gespeichert.',
+      already_saved_note:
+        'Für diesen Anbieter ist bereits ein Schlüssel im Schlüsselbund gespeichert.',
       invalid_note:
         'Der Schlüssel sieht nicht richtig aus. Prüfe, ob du ihn vollständig kopiert hast.',
       error: 'Schlüssel konnte nicht gespeichert werden. Versuche es erneut.',
       watch_video: 'Video-Anleitung ansehen',
       keyring_note:
         'Im Schlüsselbund deines Betriebssystems gespeichert — niemals in der Datenbank oder Logs.',
+      coming_soon: 'Demnächst',
       cli_bridge_note:
-        'Demnächst — melde dich mit deinem Claude- oder OpenAI-Abo an, statt einen Schlüssel einzufügen. Später in den Einstellungen umschaltbar.',
+        'melde dich mit deinem Claude- oder OpenAI-Abo an, statt einen Schlüssel einzufügen. Später in den Einstellungen umschaltbar.',
       skip_warning:
         'Du kannst dies überspringen — aber Analyse, Anpassung und Interview-Vorbereitung bleiben deaktiviert, bis ein Schlüssel hinzugefügt wurde.',
       generic: {
@@ -1952,7 +1943,7 @@ const de: TranslationMap = {
         step1: 'Melde dich bei console.anthropic.com an.',
         step2: 'Gehe zu API Keys und klicke auf Create Key.',
         step3: 'Kopiere den Schlüssel (er beginnt mit sk-ant-).',
-        step4: 'Füge ihn unten ein und klicke auf Prüfen.',
+        step4: 'Füge ihn unten ein und klicke auf Speichern.',
       },
       openai: {
         name: 'OpenAI',
@@ -1961,7 +1952,7 @@ const de: TranslationMap = {
         step1: 'Melde dich bei platform.openai.com an.',
         step2: 'Öffne API keys und erstelle einen neuen geheimen Schlüssel.',
         step3: 'Kopiere den Schlüssel.',
-        step4: 'Füge ihn unten ein und klicke auf Prüfen.',
+        step4: 'Füge ihn unten ein und klicke auf Speichern.',
       },
       deepseek: {
         name: 'DeepSeek',
@@ -1970,7 +1961,7 @@ const de: TranslationMap = {
         step1: 'Melde dich bei platform.deepseek.com an.',
         step2: 'Öffne API keys und erstelle einen Schlüssel.',
         step3: 'Kopiere den Schlüssel.',
-        step4: 'Füge ihn unten ein und klicke auf Prüfen.',
+        step4: 'Füge ihn unten ein und klicke auf Speichern.',
       },
     },
     resume: {
@@ -1992,15 +1983,13 @@ const de: TranslationMap = {
         'Kein Problem — du kannst jederzeit über dein Profil einen Lebenslauf importieren.',
       privacy_note:
         'Dein Lebenslauf bleibt auf diesem Rechner. Er wird nur an das von dir konfigurierte KI-Modell gesendet.',
-      parse: 'Lebenslauf analysieren',
-      parsing: 'Analysiere…',
       error:
         'Lebenslauf konnte nicht analysiert werden. Versuche stattdessen, den Text einzufügen.',
     },
     preview: {
       eyebrow: 'Analysierter Lebenslauf',
       title: 'Prüfe, was wir übernommen haben',
-      help: 'Das haben wir aus deinem Lebenslauf extrahiert. Bearbeite alles, bevor du fortfährst.',
+      help: 'Deine Kontaktdaten kannst du hier bearbeiten. Berufserfahrung und Fähigkeiten zeigen wir so, wie wir sie gelesen haben — verfeinern kannst du sie später unter Dokumente.',
       warning_suffix: 'Feld(er) benötigen einen Blick',
       warning_help:
         'Bei einigen Angaben waren wir uns nicht ganz sicher — prüfe sie, bevor du fortfährst.',

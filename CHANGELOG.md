@@ -10,6 +10,20 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **"Suggest again" no longer throws you off the targeting step.** Asking for fresh role suggestions jumped straight to the final screen, because the suggestion always advanced the wizard regardless of who called it.
+- **Re-suggesting keeps the roles you chose.** Roles you typed in by hand were dropped and ones you had unchecked came back; suggestions now merge with your selection instead of replacing it, and a compensation range you edited is left alone.
+- **Skipping the resume no longer shows an empty review screen.** With nothing parsed, the wizard now goes from the resume step straight to targeting, and the review step stays out of reach from both the Back button and the stepper.
+- **A key from an earlier run is recognised.** Re-running onboarding with a key already in your OS keychain reported "Not connected" on the final screen; the wizard now reads the keychain per provider on open.
+- **Skip is hidden on the final step**, where it sat next to Finish and would have discarded the profile you had just built.
+
+### Changed
+
+- **The API key step says what it does.** The button was "Validate" and the result "Key valid", but nothing ever contacts the provider — it is a copy-paste format check plus a save to your OS keychain, and the wording now says so. An invalid or revoked key still surfaces at your first AI action.
+- **The review step explains itself**: contact details are editable there, while experience and skills are shown as parsed and refined later in Documents.
+- **Removed a duplicated paragraph** on the AI setup step, which printed the same explanation twice, and a mislabelled "Setup —" prefix on the coming-soon note.
+
 ## [0.24.0] - 2026-07-15
 
 The CV and cover-letter editors become WYSIWYG: you edit on the rendered page,

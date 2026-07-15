@@ -52,7 +52,9 @@ import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
-type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
+/** `valid` = saved by this run; `saved` = already in the keyring when the wizard
+ * opened. Neither means the provider accepted it — nothing here calls the API. */
+type KeyStatus = 'idle' | 'checking' | 'valid' | 'saved' | 'invalid';
 
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
@@ -120,15 +122,20 @@ export class OnboardingComponent {
     'onboarding.step_names.ready',
   ];
 
+  /** The Review step only exists to check a parsed resume. Without one it is an
+   * empty form, so it is skipped forward AND unreachable backwards. */
+  readonly hasReview = computed(() => this.parsedCv() !== null);
+
   readonly railSteps = computed(() => {
     const current = this.step();
+    const hasReview = this.hasReview();
     return this.stepNameKeys.map((key, index) => ({
       index,
       n: String(index + 1).padStart(2, '0'),
       label: this.t()(key),
       active: index === current,
       done: index < current,
-      clickable: index <= current,
+      clickable: index <= current && (index !== 3 || hasReview),
     }));
   });
 
@@ -154,10 +161,31 @@ export class OnboardingComponent {
     return guideForProvider(p);
   }
 
+  constructor() {
+    void this.refreshKeyStatus();
+  }
+
   selectProvider(id: AiProvider): void {
     this.selectedProvider.set(id);
     this.keyStatus.set('idle');
     this.keySaveError.set(false);
+    void this.refreshKeyStatus();
+  }
+
+  /** A key saved by an earlier run lives in the keyring, not in this component,
+   * so without this a re-run shows "not connected" on the Ready step for a
+   * provider that is in fact connected. `saved` is deliberately distinct from
+   * `valid`: this run never saw the key, so it can only report that one exists. */
+  private async refreshKeyStatus(): Promise<void> {
+    const provider = this.selectedProvider();
+    try {
+      const has = await this.keys.hasProviderKey(provider);
+      // A provider switch mid-await must not land its answer on the new one.
+      if (this.selectedProvider() !== provider) return;
+      if (has && this.keyStatus() === 'idle') this.keyStatus.set('saved');
+    } catch {
+      // Keyring unreadable — leave the status idle and let the user paste a key.
+    }
   }
 
   async openConsole(): Promise<void> {
@@ -171,7 +199,8 @@ export class OnboardingComponent {
 
   /** Lightweight format sanity-check (length + provider prefix hint) before
    * touching the keyring — this is NOT a live validation against the
-   * provider's API (no such check exists), just a copy-paste sanity guard. */
+   * provider's API (no such check exists), just a copy-paste sanity guard.
+   * The button and status copy say "save", never "valid", for that reason. */
   async saveKey(): Promise<void> {
     const key = this.keyInput().trim();
     if (!key) return;
@@ -287,6 +316,8 @@ export class OnboardingComponent {
   readonly compCurrency = signal<string>('USD');
   readonly compMin = signal(80);
   readonly compMax = signal(120);
+  /** Set once the user edits the range by hand, so a re-suggest leaves it alone. */
+  readonly compTouched = signal(false);
 
   readonly displayRoles = computed(() => {
     const seen = new Set<string>();
@@ -326,11 +357,18 @@ export class OnboardingComponent {
   setCompMin(v: string): void {
     const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
     this.compMin.set(isNaN(n) ? 0 : n);
+    this.compTouched.set(true);
   }
 
   setCompMax(v: string): void {
     const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
     this.compMax.set(isNaN(n) ? 0 : n);
+    this.compTouched.set(true);
+  }
+
+  setCompCurrency(v: string): void {
+    this.compCurrency.set(v);
+    this.compTouched.set(true);
   }
 
   /** Footer "Continue" handler: branches per step so parsing/suggestion runs
@@ -338,8 +376,11 @@ export class OnboardingComponent {
   async goNext(): Promise<void> {
     const s = this.step();
     if (s === 2) {
+      // With no resume there is nothing to review, so Review would be a dead
+      // screen of empty fields — jump straight to Targeting, which the user can
+      // still fill in by hand.
       if (this.resumePath() === 'skip' || !this.resumeText().trim()) {
-        this.next();
+        this.step.set(4);
         return;
       }
       await this.parseResume();
@@ -347,17 +388,18 @@ export class OnboardingComponent {
     }
     if (s === 3) {
       await this.suggestArchetypes();
+      this.next();
       return;
     }
     this.next();
   }
 
+  /** Suggestion only — it never advances the wizard, because the Targeting step
+   * offers this same action as a "Suggest again" button and advancing there
+   * would throw the user off the step they are working on. */
   async suggestArchetypes(): Promise<void> {
     const text = this.resumeText().trim();
-    if (!text) {
-      this.next();
-      return;
-    }
+    if (!text) return;
     this.suggesting.set(true);
     try {
       const settings = await this.db.getSettings();
@@ -376,23 +418,36 @@ export class OnboardingComponent {
       });
       const parsed = parseArchetypesSkillResponse(res.text);
       this.suggestedRoles.set(parsed.archetypes);
-      this.archetypes.set(parsed.archetypes);
-      const range = parseCompRange(parsed.compRange);
-      this.compCurrency.set(normalizeCurrency(range.currency));
-      this.compMin.set(range.min);
-      this.compMax.set(range.max);
+      // Union, not replace: on "Suggest again" a plain `set` would drop roles
+      // the user typed in and silently re-check ones they had unchecked.
+      this.archetypes.update((current) =>
+        current.length ? [...new Set([...current, ...parsed.archetypes])] : parsed.archetypes,
+      );
+      // Comp is a single range with no user-authored parts to preserve, and it
+      // is only ever seeded before the user reaches the step — but once they
+      // have edited it, a re-suggest must not overwrite their number.
+      if (!this.compTouched()) {
+        const range = parseCompRange(parsed.compRange);
+        this.compCurrency.set(normalizeCurrency(range.currency));
+        this.compMin.set(range.min);
+        this.compMax.set(range.max);
+      }
     } catch {
       // Suggestion is an enhancement, not a requirement — fail soft and let
       // the user confirm/add roles manually on the targeting step.
     } finally {
       this.suggesting.set(false);
-      this.next();
     }
   }
 
   // ---- Ready summary ----
+  /** True for a key this run saved AND one an earlier run left in the keyring. */
+  readonly keyPresent = computed(() => {
+    const s = this.keyStatus();
+    return s === 'valid' || s === 'saved';
+  });
   readonly providerSummary = computed(() => {
-    if (this.keyStatus() !== 'valid') return this.t()('onboarding.done.not_connected');
+    if (!this.keyPresent()) return this.t()('onboarding.done.not_connected');
     return `${this.t()(this.guide().nameKey)} · ${this.t()('onboarding.done.connected_suffix')}`;
   });
   readonly resumeSummary = computed(() => {
@@ -413,10 +468,12 @@ export class OnboardingComponent {
   }
 
   back(): void {
-    this.step.update((s) => Math.max(s - 1, 0));
+    // Step 4 → 2 when Review was skipped, mirroring the forward jump.
+    this.step.update((s) => (s === 4 && !this.hasReview() ? 2 : Math.max(s - 1, 0)));
   }
 
   goTo(i: number): void {
+    if (i === 3 && !this.hasReview()) return;
     if (i <= this.step()) this.step.set(i);
   }
 

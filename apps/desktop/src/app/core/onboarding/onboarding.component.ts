@@ -34,16 +34,22 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
 import {
   appendCompensation,
+  applyContactOverrides,
+  buildOnboardingCvInput,
   CURRENCY_OPTIONS,
   cvToProfileMarkdown,
   formatCompRange,
+  hasCvForInputHash,
   normalizeCurrency,
   parseArchetypesSkillResponse,
   parseCompRange,
+  regionTagForUiLanguage,
+  type OnboardingCvOverrides,
   type ParsedCv,
 } from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
 import { ThemeService } from '../theme.service';
+import { ToastService } from '../toast/toast.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
 type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
@@ -66,6 +72,7 @@ export class OnboardingComponent {
   private readonly i18n = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   // Bound on the host element (not the inner template) so the whole overlay
@@ -190,6 +197,10 @@ export class OnboardingComponent {
   readonly resumePath = signal<ResumePath>('upload');
   readonly resumeFileName = signal<string | null>(null);
   readonly resumeText = signal('');
+  /** Set only by the upload path — the paste path has no file to hash. Carried
+   * so the CV document written on finish can reuse the Documents import's
+   * duplicate guard. */
+  readonly resumeInputHash = signal<string | undefined>(undefined);
   readonly parsing = signal(false);
   readonly resumeError = signal(false);
   readonly parsedCv = signal<CvParsedContent | null>(null);
@@ -212,6 +223,14 @@ export class OnboardingComponent {
     }
   }
 
+  /** Pasted text has no source file, so it drops any hash a previous upload
+   * left behind rather than tagging the CV document with a hash of content
+   * that is no longer there. */
+  setPastedResume(text: string): void {
+    this.resumeText.set(text);
+    this.resumeInputHash.set(undefined);
+  }
+
   async pickResumeFile(): Promise<void> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({
@@ -221,6 +240,7 @@ export class OnboardingComponent {
     if (typeof path !== 'string') return;
     const file = await this.db.cvImportReadFile(path);
     this.resumeText.set(file.text);
+    this.resumeInputHash.set(file.inputHash);
     this.resumeFileName.set(path.split(/[/\\]/).pop() ?? path);
   }
 
@@ -400,15 +420,19 @@ export class OnboardingComponent {
     if (i <= this.step()) this.step.set(i);
   }
 
+  private reviewOverrides(): OnboardingCvOverrides {
+    return {
+      fullName: this.reviewName(),
+      email: this.reviewEmail(),
+      phone: this.reviewPhone(),
+      address: this.reviewAddress(),
+    };
+  }
+
   private buildProfileCv(): ParsedCv {
     const cv = this.parsedCv();
     return {
-      personalDetails: {
-        fullName: this.reviewName().trim() || null,
-        email: this.reviewEmail().trim() || null,
-        phone: this.reviewPhone().trim() || null,
-        address: this.reviewAddress().trim() || null,
-      },
+      personalDetails: applyContactOverrides(this.reviewOverrides()),
       summary: cv?.summary ?? null,
       experience: cv?.experience ?? [],
       skills: cv?.skills ?? [],
@@ -430,6 +454,41 @@ export class OnboardingComponent {
     });
   }
 
+  /** The wizard already parsed the resume into exactly the shape Documents
+   * stores, so it writes the CV document itself instead of leaving the user to
+   * import the same file a second time. Fail-open: a CV that cannot be written
+   * must never trap the user in onboarding or lose the profile — the Documents
+   * import stays available either way. */
+  async saveCvDocument(): Promise<void> {
+    const parsed = this.parsedCv();
+    if (!parsed || this.resumePath() === 'skip') return;
+    try {
+      const settings = await this.db.getSettings();
+      const inputHash = this.resumeInputHash();
+      // Re-running the wizard on the same file must not stack up copies. The
+      // existing document wins: it may already carry edits made in Documents,
+      // and silently overwriting those would cost more than a skipped rewrite.
+      if (hasCvForInputHash(await this.db.documentLibraryList('cv'), inputHash)) return;
+      await this.db.documentLibraryUpsert(
+        buildOnboardingCvInput({
+          parsed,
+          overrides: this.reviewOverrides(),
+          templates: await this.db.cvTemplatesList(),
+          regionTag: regionTagForUiLanguage(settings.uiLanguage),
+          language: settings.defaultDocLanguage ?? 'en',
+          fallbackLabel: this.t()('documents.cv_untitled'),
+          inputHash,
+        }),
+      );
+    } catch (e) {
+      // Fail open — the CV is a bonus on top of the profile, never a blocker.
+      // Still say so: the alternative is a user who finds no CV in Documents
+      // and has nothing to report.
+      console.error('onboarding: could not write the CV document', e);
+      this.toast.error(this.t()('onboarding.cv_save_failed'));
+    }
+  }
+
   async skip(): Promise<void> {
     await this.markSeen();
     this.completed.emit();
@@ -437,12 +496,14 @@ export class OnboardingComponent {
 
   async finish(): Promise<void> {
     await this.saveProfile();
+    await this.saveCvDocument();
     await this.markSeen();
     this.completed.emit();
   }
 
   async finishTo(path: string): Promise<void> {
     await this.saveProfile();
+    await this.saveCvDocument();
     await this.markSeen();
     await this.router.navigateByUrl(path);
     this.completed.emit();

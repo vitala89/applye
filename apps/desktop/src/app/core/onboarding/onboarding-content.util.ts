@@ -1,3 +1,11 @@
+import type {
+  CvParsedContent,
+  CvTemplate,
+  SupportedLanguage,
+  UpsertDocumentLibraryItemInput,
+} from '@applye/core';
+import { buildCvContent } from '../../pages/documents/cv-content.util';
+
 // structurally compatible subset of CvParsedContent
 export interface ParsedCv {
   personalDetails?: {
@@ -49,6 +57,99 @@ export function appendCompensation(md: string, compRange: string): string {
   const range = compRange.trim();
   if (!range) return md;
   return `${md}\n\n## Compensation Target\n${range}`.trim();
+}
+
+/** The wizard has no region selector — a first-run flow pays for every extra
+ * choice in drop-off — so the starting region template follows the UI
+ * language. Documents stays the place to switch template afterwards. */
+export function regionTagForUiLanguage(uiLanguage: string | null | undefined): string {
+  return uiLanguage?.toLowerCase().startsWith('de') ? 'de' : 'generic';
+}
+
+/** Same fallback chain the Documents import uses: exact region match, else
+ * whatever the seeded list offers first, else no template at all (in which
+ * case `buildCvContent` falls back to the default section order). */
+export function pickCvTemplate(templates: CvTemplate[], regionTag: string): CvTemplate | null {
+  return templates.find((tpl) => tpl.regionTag === regionTag) ?? templates[0] ?? null;
+}
+
+export interface OnboardingCvOverrides {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+/** The review step seeds its inputs from the parse, so a blank field means the
+ * user *deleted* what we parsed — not "supplied nothing". Both artifacts the
+ * wizard writes (profile markdown and CV document) resolve the review fields
+ * through here, so a phone cleared for privacy cannot survive in one of them. */
+export function applyContactOverrides(overrides: OnboardingCvOverrides): {
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+} {
+  return {
+    fullName: overrides.fullName.trim() || null,
+    email: overrides.email.trim() || null,
+    phone: overrides.phone.trim() || null,
+    address: overrides.address.trim() || null,
+  };
+}
+
+export interface OnboardingCvInputArgs {
+  parsed: CvParsedContent;
+  /** The review step's edited contact fields. They replace the parsed values
+   * outright — including when blank, see `applyContactOverrides`. */
+  overrides: OnboardingCvOverrides;
+  templates: CvTemplate[];
+  regionTag: string;
+  language: SupportedLanguage;
+  fallbackLabel: string;
+  /** Present only for the upload path; the paste path has no source file to
+   * hash. Drives the Documents import's duplicate guard. */
+  inputHash?: string;
+}
+
+/** Turns the resume the wizard already parsed into a real CV document, so the
+ * user leaves onboarding with an editable CV instead of re-importing the same
+ * file in Documents. Mirrors the shape `cv-list`'s `confirmImport` writes. */
+export function buildOnboardingCvInput(
+  args: OnboardingCvInputArgs,
+): UpsertDocumentLibraryItemInput {
+  const { parsed, overrides, templates, regionTag, language, fallbackLabel, inputHash } = args;
+  const template = pickCvTemplate(templates, regionTag);
+  const merged: CvParsedContent = {
+    ...parsed,
+    personalDetails: { ...parsed.personalDetails, ...applyContactOverrides(overrides) },
+  };
+  return {
+    docType: 'cv',
+    source: 'uploaded',
+    label: merged.personalDetails.fullName?.trim() || fallbackLabel,
+    contentJson: JSON.stringify(buildCvContent(merged, template)),
+    templateId: template?.id,
+    // Follow the template actually chosen, not the one requested: when the
+    // exact-region lookup misses, the row must not claim a region its template
+    // does not have.
+    regionTag: template?.regionTag ?? regionTag,
+    language,
+    inputHash,
+  };
+}
+
+/** Mirrors the Documents import's duplicate guard: the same source file, once.
+ * Only the upload path can be guarded — pasted text carries no hash, so
+ * deliberately re-running the wizard and pasting the same resume writes a
+ * second CV. Accepted: re-entry is an explicit action from Settings, and
+ * Documents can delete the extra. */
+export function hasCvForInputHash(
+  existing: { source: string; inputHash?: string }[],
+  inputHash: string | undefined,
+): boolean {
+  if (!inputHash) return false;
+  return existing.some((item) => item.source === 'uploaded' && item.inputHash === inputHash);
 }
 
 export function parseArchetypesSkillResponse(text: string): {

@@ -1,11 +1,205 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { CvContent, CvParsedContent, CvTemplate } from '@applye/core';
 import {
   appendCompensation,
+  applyContactOverrides,
+  buildOnboardingCvInput,
+  hasCvForInputHash,
   cvToProfileMarkdown,
   formatCompRange,
   normalizeCurrency,
   parseArchetypesSkillResponse,
   parseCompRange,
+  pickCvTemplate,
+  regionTagForUiLanguage,
 } from './onboarding-content.util';
+
+function template(id: number, regionTag: string): CvTemplate {
+  return {
+    id,
+    name: `tpl-${regionTag}`,
+    regionTag,
+    includePhoto: false,
+    includeBirthdate: false,
+    includeMaritalStatus: false,
+    isBuiltin: true,
+  };
+}
+
+function parsedCv(overrides: Partial<CvParsedContent> = {}): CvParsedContent {
+  return {
+    personalDetails: {
+      fullName: 'Jane Smith',
+      title: 'Engineer',
+      email: 'jane@x.io',
+      phone: '+49 30 000',
+      address: 'Berlin',
+      website: null,
+      linkedin: null,
+    },
+    summary: 'Senior engineer.',
+    experience: [{ company: 'Acme', role: 'Lead', bullets: ['Shipped X'] }],
+    education: [],
+    skills: ['TypeScript'],
+    languages: [],
+    lowConfidenceNotes: [],
+    ...overrides,
+  };
+}
+
+describe('regionTagForUiLanguage', () => {
+  it('starts a German UI on the German region templates', () => {
+    expect(regionTagForUiLanguage('de')).toBe('de');
+  });
+  it('falls back to generic for every other UI language, including none', () => {
+    expect(regionTagForUiLanguage('en')).toBe('generic');
+    expect(regionTagForUiLanguage(null)).toBe('generic');
+  });
+});
+
+describe('pickCvTemplate', () => {
+  it('prefers an exact region match over list order', () => {
+    const templates = [template(1, 'us'), template(2, 'de')];
+    expect(pickCvTemplate(templates, 'de')?.id).toBe(2);
+  });
+  it('falls back to the first template when the region has none', () => {
+    expect(pickCvTemplate([template(1, 'us')], 'de')?.id).toBe(1);
+  });
+  it('returns null rather than throwing when no templates are seeded', () => {
+    expect(pickCvTemplate([], 'de')).toBeNull();
+  });
+});
+
+describe('buildOnboardingCvInput', () => {
+  const overrides = { fullName: '', email: '', phone: '', address: '' };
+  const base = {
+    parsed: parsedCv(),
+    overrides,
+    templates: [template(7, 'de')],
+    regionTag: 'de',
+    language: 'de' as const,
+    fallbackLabel: 'Untitled CV',
+  };
+
+  it('writes an uploaded CV document carrying the region template and hash', () => {
+    const input = buildOnboardingCvInput({ ...base, inputHash: 'abc123' });
+    expect(input.docType).toBe('cv');
+    expect(input.source).toBe('uploaded');
+    expect(input.templateId).toBe(7);
+    expect(input.regionTag).toBe('de');
+    expect(input.language).toBe('de');
+    expect(input.inputHash).toBe('abc123');
+  });
+
+  it('carries the parsed resume into the stored sections', () => {
+    const input = buildOnboardingCvInput(base);
+    const content = JSON.parse(input.contentJson ?? '{}') as CvContent;
+    expect(content.sections.length).toBeGreaterThan(0);
+    expect(input.contentJson).toContain('Shipped X');
+  });
+
+  it('lets the review step edits win over the raw parse', () => {
+    const input = buildOnboardingCvInput({
+      ...base,
+      overrides: { fullName: 'Jane S. Smith', email: 'new@x.io', phone: '+49 30 000', address: '' },
+    });
+    expect(input.label).toBe('Jane S. Smith');
+    expect(input.contentJson).toContain('new@x.io');
+  });
+
+  it('honours a contact field the user cleared instead of restoring the parse', () => {
+    const input = buildOnboardingCvInput({
+      ...base,
+      overrides: { fullName: 'Jane Smith', email: 'jane@x.io', phone: '', address: '' },
+    });
+    // The review inputs are seeded from the parse, so blank means deleted.
+    // A phone cleared for privacy must not reappear on the exported CV.
+    expect(input.contentJson).not.toContain('+49 30 000');
+    expect(input.contentJson).not.toContain('Berlin');
+  });
+
+  it('keeps parsed fields the review step never exposes', () => {
+    const input = buildOnboardingCvInput(base);
+    expect(input.contentJson).toContain('Engineer');
+  });
+
+  it('reports the region of the template it actually chose, not the one asked for', () => {
+    const input = buildOnboardingCvInput({ ...base, templates: [template(3, 'us')] });
+    expect(input.templateId).toBe(3);
+    expect(input.regionTag).toBe('us');
+  });
+
+  it('names an unnamed CV with the fallback label instead of leaving it blank', () => {
+    const input = buildOnboardingCvInput({
+      ...base,
+      parsed: parsedCv({
+        personalDetails: {
+          fullName: null,
+          title: null,
+          email: null,
+          phone: null,
+          address: null,
+          website: null,
+          linkedin: null,
+        },
+      }),
+    });
+    expect(input.label).toBe('Untitled CV');
+  });
+
+  it('omits the hash for a pasted resume so it never claims a file it lacks', () => {
+    expect(buildOnboardingCvInput(base).inputHash).toBeUndefined();
+  });
+});
+
+describe('hasCvForInputHash', () => {
+  const existing = [
+    { source: 'uploaded', inputHash: 'abc123' },
+    { source: 'generated', inputHash: 'gen999' },
+  ];
+  it('skips a re-run over the same source file', () => {
+    expect(hasCvForInputHash(existing, 'abc123')).toBe(true);
+  });
+  it('writes a CV for a file never imported before', () => {
+    expect(hasCvForInputHash(existing, 'other')).toBe(false);
+  });
+  it('never blocks the pasted path, which carries no hash', () => {
+    expect(hasCvForInputHash(existing, undefined)).toBe(false);
+  });
+  it('ignores generated CVs — only an uploaded twin is a duplicate', () => {
+    expect(hasCvForInputHash(existing, 'gen999')).toBe(false);
+  });
+});
+
+describe('region tags match the seeded templates', () => {
+  // The tag lives in TS and the templates live in SQL. Without this, renaming a
+  // seed would silently drop every English onboarding CV onto DE-traditional
+  // (photo + birthdate + marital status) via the templates[0] fallback.
+  const seeds = readFileSync(
+    join(__dirname, '../../../../src-tauri/migrations/0011_documents_library.sql'),
+    'utf8',
+  );
+  it.each([regionTagForUiLanguage('de'), regionTagForUiLanguage('en')])(
+    'seeds a template for region %s',
+    (regionTag) => {
+      expect(seeds).toContain(`'${regionTag}'`);
+    },
+  );
+});
+
+describe('applyContactOverrides', () => {
+  it('nulls a cleared field so both wizard artifacts drop it together', () => {
+    expect(
+      applyContactOverrides({ fullName: 'Jane', email: '', phone: '  ', address: 'Berlin' }),
+    ).toEqual({
+      fullName: 'Jane',
+      email: null,
+      phone: null,
+      address: 'Berlin',
+    });
+  });
+});
 
 describe('cvToProfileMarkdown', () => {
   it('renders name, summary, experience and skills as markdown', () => {

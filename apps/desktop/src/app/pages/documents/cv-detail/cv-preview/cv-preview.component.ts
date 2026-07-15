@@ -923,6 +923,19 @@ export class CvPreviewComponent {
       css['--cv-header-rule-color'] = sec.bodyRuleColorHex;
       css['--cv-entry-rule-color'] = sec.bodyRuleColorHex;
     }
+    // Divider style. 'none' must win over any theme width, so zero the width
+    // too — a themed rule sets its width from the root and would otherwise
+    // keep drawing a solid line through `border-style: none`'s zero-height box
+    // in some engines. Unset → the theme's (solid) rule stands.
+    if (sec?.bodyBorder) {
+      if (sec.bodyBorder === 'none') {
+        css['--cv-header-rule-width'] = '0';
+        css['--cv-entry-rule-width'] = '0';
+      } else {
+        css['--cv-header-rule-style'] = sec.bodyBorder;
+        css['--cv-entry-rule-style'] = sec.bodyBorder;
+      }
+    }
     // In-line item separators (the `|` between languages, etc.). Scoped to the
     // section wrapper, so a section only styles its own separators.
     if (sec?.separatorColorHex) css['--cv-sep-color'] = sec.separatorColorHex;
@@ -964,6 +977,10 @@ export class CvPreviewComponent {
       const c = o.ruleColorHex ?? this.style().accentColorHex;
       css['border-bottom'] = `${w}pt ${o.borderStyle} ${c}`;
       css['padding-bottom'] = '2px';
+      // The selectable/selected 4px `border-radius` would curve the rule's
+      // ends inward — square them, matching the section-title/header fix.
+      css['border-bottom-left-radius'] = '0';
+      css['border-bottom-right-radius'] = '0';
     }
     return css;
   }

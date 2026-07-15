@@ -73,6 +73,9 @@ export interface CvStylePanelChange {
    * always written at section scope. `null` clears back to the theme. */
   bodyRuleWidth?: number | null;
   bodyRuleColor?: string | null;
+  /** Section BODY-rule style — `'none'` turns the divider off, `null` clears
+   * back to the theme's rule. Section scope, same as the width/colour above. */
+  bodyBorder?: CvBorderStyle | null;
   /** In-line item separator (e.g. the `|` between languages) colour and size
    * (pt); section-level, `null` clears back to the default. */
   separatorColor?: string | null;

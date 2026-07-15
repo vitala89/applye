@@ -317,7 +317,12 @@ textarea.cvpreview__leaf-editor {
   // width 0. Scoped to the experience head only (not education) via the
   // explicit --rule modifier class — see #expHeadTpl.
   padding-bottom: var(--space-1);
-  border-bottom: var(--cv-entry-rule-width, 0pt) solid var(--cv-entry-rule-color, transparent);
+  border-bottom: var(--cv-entry-rule-width, 0pt) var(--cv-entry-rule-style, solid)
+    var(--cv-entry-rule-color, transparent);
+  // Same square-corner fix as the section title and header: the selectable/
+  // selected 4px `border-radius` would curve this rule's ends inward.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 .cvpreview__photo {
   width: 90px;
@@ -352,7 +357,8 @@ textarea.cvpreview__leaf-editor {
     display: block;
     clear: both;
   }
-  border-bottom: var(--cv-header-rule-width, 0pt) solid var(--cv-header-rule-color, transparent);
+  border-bottom: var(--cv-header-rule-width, 0pt) var(--cv-header-rule-style, solid)
+    var(--cv-header-rule-color, transparent);
   // Same square-corner fix as the section title: keep the header rule ends
   // straight despite the selectable/selected border-radius.
   border-bottom-left-radius: 0;

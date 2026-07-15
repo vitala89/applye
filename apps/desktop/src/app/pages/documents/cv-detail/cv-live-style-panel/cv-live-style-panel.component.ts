@@ -501,6 +501,21 @@ export class CvLiveStylePanelComponent {
     );
   });
 
+  /** Raw section body-rule style ('' = Inherit → the theme's rule). */
+  readonly activeBodyBorder = computed<string>(() => {
+    const sel = this.selection();
+    return sel ? (this.style().sectionStyles?.[sel.sectionKey]?.bodyBorder ?? '') : '';
+  });
+
+  setBodyBorder(value: string): void {
+    if (this.selection()) {
+      this.panelChange.emit({
+        scope: this.scope(),
+        bodyBorder: (value as CvBorderStyle) || null,
+      });
+    }
+  }
+
   /** Raw section body-rule width (pt) for the selected section
    * (`null` = Inherit → theme rule). */
   readonly activeBodyRuleWidth = computed<number | null>(() => {

@@ -570,12 +570,15 @@ export class CvLiveStylePanelComponent {
   }
 
   /** A single leaf, styled at element scope, can carry its own bottom rule
-   * (underline). Offered for every text leaf except the composed contact line
-   * (`pd.contact`), which is a multi-field wrapper with no single baseline. */
+   * (underline). Excluded: the composed contact line (`pd.contact`), a
+   * multi-field wrapper with no single baseline; and an experience/education/
+   * skills ENTRY (`exp.0`), which is a container wrapping the head AND its
+   * bullets — a border there lands under the bullets, not under the head. An
+   * entry's divider is the section's `bodyBorder` rule instead. */
   readonly canElementLine = computed<boolean>(() => {
     const sel = this.selection();
     const p = sel?.elementPath;
-    return this.scope() === 'element' && !!p && p !== 'pd.contact';
+    return this.scope() === 'element' && !!p && p !== 'pd.contact' && !this.isEntryPath(p);
   });
 
   /** Raw per-leaf border style for the selected element ('' = none/off). */

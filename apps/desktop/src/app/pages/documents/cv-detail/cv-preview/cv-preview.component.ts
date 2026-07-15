@@ -1019,6 +1019,15 @@ export class CvPreviewComponent {
   entryCss(path: string): Record<string, string> {
     const css = this.leafCss(path);
     if (css['color']) css['--cv-entry-color'] = css['color'];
+    // An entry wraps its head AND its bullets, so a bottom rule here would
+    // draw under the bullets rather than under the head — reading as a stray
+    // second line. The panel no longer offers a line for an entry path; strip
+    // it here too so a previously-stored override can't resurrect it. The
+    // entry's real divider is the section's `bodyBorder` rule.
+    delete css['border-bottom'];
+    delete css['padding-bottom'];
+    delete css['border-bottom-left-radius'];
+    delete css['border-bottom-right-radius'];
     return css;
   }
 

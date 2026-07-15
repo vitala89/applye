@@ -118,6 +118,28 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('offers no per-leaf line for an entry container — its divider is the section rule', () => {
+    // An entry wraps the head AND its bullets, so a border there lands under
+    // the bullets and reads as a stray second line.
+    for (const p of ['exp.0', 'edu.1', 'skills.0']) {
+      fixture.componentRef.setInput('selection', {
+        sectionKey: 'experience',
+        part: 'body',
+        elementPath: p,
+      });
+      fixture.detectChanges();
+      expect(component.canElementLine()).toBe(false);
+    }
+    // A real leaf inside the entry still gets one.
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'experience',
+      part: 'body',
+      elementPath: 'exp.0.role',
+    });
+    fixture.detectChanges();
+    expect(component.canElementLine()).toBe(true);
+  });
+
   it('offers a per-leaf line control at element scope and clears the whole rule on none', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'personal_details',

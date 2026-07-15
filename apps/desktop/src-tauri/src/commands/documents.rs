@@ -1130,7 +1130,7 @@ pub async fn cover_letter_document_export(
     Ok(save_path)
 }
 
-async fn cover_letter_document_export_bytes_core(
+pub(crate) async fn cover_letter_document_export_bytes_core(
     id: i64,
     format: &str,
     pool: &sqlx::SqlitePool,

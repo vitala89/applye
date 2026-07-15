@@ -88,6 +88,7 @@ pub fn run() {
             commands::documents::cv_document_export,
             commands::documents::cover_letter_document_export,
             commands::print::cv_document_export_pdf_wysiwyg,
+            commands::print::cover_letter_document_export_pdf_wysiwyg,
             commands::print::print_window_ready,
             commands::documents::check_style_safety,
             commands::documents::validate_theme,

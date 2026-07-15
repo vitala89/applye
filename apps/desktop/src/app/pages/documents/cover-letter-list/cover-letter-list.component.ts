@@ -105,12 +105,20 @@ export class CoverLetterListComponent {
   async exportDoc(item: DocumentLibraryItem, format: 'pdf' | 'docx', event: Event): Promise<void> {
     event.stopPropagation();
     if (!format || this.exportBusyId() != null) return;
+    // Silent export: pick a path, file is written directly — no print dialog,
+    // no visible windows. PDF goes through the WYSIWYG engine (a hidden window
+    // renders the editor's own preview and the OS prints it to the file), so
+    // the export is pixel-identical to the editor.
     this.exportBusyId.set(item.id);
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const path = await save({ defaultPath: this.suggestCoverLetterFilename(item, format) });
       if (!path) return;
-      await this.db.coverLetterDocumentExport(item.id, format, path);
+      if (format === 'pdf') {
+        await this.db.coverLetterDocumentExportPdfWysiwyg(item.id, path);
+      } else {
+        await this.db.coverLetterDocumentExport(item.id, format, path);
+      }
     } finally {
       this.exportBusyId.set(null);
     }

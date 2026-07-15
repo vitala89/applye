@@ -26,6 +26,103 @@ describe('CvLiveStylePanelComponent', () => {
     return events;
   }
 
+  // Switching "this title" / "all titles" must never leave a control showing a
+  // value the title does not actually have: at "this title" a control with no
+  // override of its own shows what it INHERITS from all-titles, because that is
+  // what the reader sees on the page.
+  describe('title controls reflect the value actually applied to the selection', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'title' });
+    });
+
+    it('this title shows the all-titles line colour it inherits, not the accent', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        accentColorHex: '#00ff00',
+        titleRuleColorHex: '#ff0000',
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleRuleColor()).toBe('#ff0000');
+    });
+
+    it('this title shows the all-titles line style and width it inherits', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleBorder: 'dashed',
+        titleRuleWidthPt: 2,
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleBorder()).toBe('dashed');
+      expect(component.activeTitleRuleWidth()).toBe(2);
+    });
+
+    it('this title shows the all-titles font/colour it inherits', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleStyle: { fontFamily: 'Georgia', fontSizePt: 15, fontWeight: 700, colorHex: '#ff00ff' },
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleOverride()).toEqual({
+        fontFamily: 'Georgia',
+        fontSizePt: 15,
+        fontWeight: 700,
+        colorHex: '#ff00ff',
+      });
+    });
+
+    it("this title's OWN value still wins over the inherited one", () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleBorder: 'dashed',
+        titleRuleColorHex: '#ff0000',
+        titleStyle: { colorHex: '#ff00ff' },
+        sectionStyles: {
+          experience: {
+            titleBorder: 'dotted',
+            titleRuleColorHex: '#0000ff',
+            title: { colorHex: '#00ffff' },
+          },
+        },
+      });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleBorder()).toBe('dotted');
+      expect(component.activeTitleRuleColor()).toBe('#0000ff');
+      expect(component.activeTitleOverride().colorHex).toBe('#00ffff');
+    });
+
+    it('all titles never shows a sibling section override', () => {
+      fixture.componentRef.setInput('style', {
+        ...CV_STYLE_DEFAULT,
+        titleBorder: 'dashed',
+        sectionStyles: { experience: { titleBorder: 'dotted', titleRuleColorHex: '#0000ff' } },
+      });
+      fixture.detectChanges();
+
+      component.setScope('document');
+      expect(component.activeTitleBorder()).toBe('dashed');
+      expect(component.activeTitleRuleColor()).toBeNull();
+    });
+
+    it('an unset control still reads as Inherit at both scopes', () => {
+      fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
+      fixture.detectChanges();
+
+      component.setScope('section');
+      expect(component.activeTitleBorder()).toBe('');
+      expect(component.activeTitleRuleWidth()).toBeNull();
+      component.setScope('document');
+      expect(component.activeTitleBorder()).toBe('');
+    });
+  });
+
   it('shows an empty state and no controls when nothing is selected', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.cvlive__empty')).toBeTruthy();

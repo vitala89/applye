@@ -20,7 +20,11 @@ import type {
 } from '@applye/core';
 import { CV_ATS_SAFE_FONTS } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { sectionLabelKey } from '../../cv-content.util';
+import {
+  effectiveTitleRuleColor,
+  effectiveTitleRuleWidth,
+  sectionLabelKey,
+} from '../../cv-content.util';
 import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../../cv-content.util';
 
 /**
@@ -387,25 +391,36 @@ export class CvLiveStylePanelComponent {
     }
   });
 
-  /** Raw title text override for the active title scope (this title vs. all
-   * titles) — feeds the title control models. */
+  /** Title text values for the active title scope (this title vs. all titles) —
+   * feeds the title control models. At "this title" a property with no override
+   * of its own shows the all-titles value it INHERITS, not a blank: the control
+   * must read as what the title actually renders, so switching scope after an
+   * all-titles edit never leaves a stale value on screen. A property set here
+   * still wins, and one set nowhere still reads as Inherit. */
   readonly activeTitleOverride = computed<CvTextStyle>(() => {
     const sel = this.selection();
     if (!sel) return {};
     const s = this.style();
-    return this.scope() === 'document'
-      ? (s.titleStyle ?? {})
-      : (s.sectionStyles?.[sel.sectionKey]?.title ?? {});
+    const doc = s.titleStyle ?? {};
+    if (this.scope() === 'document') return doc;
+    const own = s.sectionStyles?.[sel.sectionKey]?.title ?? {};
+    return {
+      fontFamily: own.fontFamily ?? doc.fontFamily,
+      fontSizePt: own.fontSizePt ?? doc.fontSizePt,
+      fontWeight: own.fontWeight ?? doc.fontWeight,
+      colorHex: own.colorHex ?? doc.colorHex,
+    };
   });
 
-  /** Raw title-underline value for the active title scope ('' = Inherit). */
+  /** Title-underline value for the active title scope ('' = Inherit; "this
+   * title" falls back to the all-titles line — see `activeTitleOverride`). */
   readonly activeTitleBorder = computed<string>(() => {
     const sel = this.selection();
     if (!sel) return '';
     const s = this.style();
     return this.scope() === 'document'
       ? (s.titleBorder ?? '')
-      : (s.sectionStyles?.[sel.sectionKey]?.titleBorder ?? '');
+      : (s.sectionStyles?.[sel.sectionKey]?.titleBorder ?? s.titleBorder ?? '');
   });
 
   private emit(patch: Partial<CvElementStyle>): void {
@@ -449,8 +464,8 @@ export class CvLiveStylePanelComponent {
     }
   }
 
-  /** Raw title-underline thickness (pt) for the active title scope
-   * (`null` = Inherit → theme default). */
+  /** Title-underline thickness (pt) for the active title scope (`null` =
+   * Inherit → theme default; "this title" falls back to the all-titles width). */
   readonly activeTitleRuleWidth = computed<number | null>(() => {
     const sel = this.selection();
     if (!sel) return null;
@@ -458,12 +473,12 @@ export class CvLiveStylePanelComponent {
     return (
       (this.scope() === 'document'
         ? s.titleRuleWidthPt
-        : s.sectionStyles?.[sel.sectionKey]?.titleRuleWidthPt) ?? null
+        : effectiveTitleRuleWidth(s, sel.sectionKey)) ?? null
     );
   });
 
-  /** Raw title-underline colour for the active title scope
-   * (`null` = Inherit → theme rule colour). */
+  /** Title-underline colour for the active title scope (`null` = Inherit →
+   * theme rule colour; "this title" falls back to the all-titles colour). */
   readonly activeTitleRuleColor = computed<string | null>(() => {
     const sel = this.selection();
     if (!sel) return null;
@@ -471,7 +486,7 @@ export class CvLiveStylePanelComponent {
     return (
       (this.scope() === 'document'
         ? s.titleRuleColorHex
-        : s.sectionStyles?.[sel.sectionKey]?.titleRuleColorHex) ?? null
+        : effectiveTitleRuleColor(s, sel.sectionKey)) ?? null
     );
   });
 

@@ -12,6 +12,9 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **Re-running onboarding no longer destroys your profile scoring and pitch.** Finishing the wizard a second time wrote the profile row with only the two fields the wizard authors, blanking the scoring analysis and elevator pitch you had generated — both paid AI calls. They now carry through. Changing your resume still marks the scoring stale, which is what prompts Profile to offer a re-score.
+- **Re-running onboarding no longer drops your target roles.** The wizard opened blank, so the final screen reported "0 roles selected" and Finish wrote an empty list over the roles you had. Your existing roles are now loaded in, and a fresh suggestion adds to them instead of replacing them.
+- **A re-run that only changes targeting is saved.** With no new resume the wizard saved nothing at all, so re-running purely to adjust your roles was a silent no-op. It now keeps your existing profile text and saves the new roles.
 - **"Suggest again" no longer throws you off the targeting step.** Asking for fresh role suggestions jumped straight to the final screen, because the suggestion always advanced the wizard regardless of who called it.
 - **Re-suggesting keeps the roles you chose.** Roles you typed in by hand were dropped and ones you had unchecked came back. The first suggestion seeds your selection; every later one only adds roles you have not already rejected, and a compensation range you edited is left alone.
 - **Skipping the resume no longer shows an empty review screen.** With nothing parsed, the wizard now goes from the resume step straight to targeting, and the review step stays out of reach from both the Back button and the stepper.

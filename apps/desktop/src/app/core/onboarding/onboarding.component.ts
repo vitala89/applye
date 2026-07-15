@@ -26,7 +26,14 @@ import {
   Upload,
   Wallet,
 } from 'lucide-angular';
-import { AiProvider, CvParsedContent, serializeArchetypes, parseArchetypes } from '@applye/core';
+import {
+  AiProvider,
+  CvParsedContent,
+  Profile,
+  archetypeNames,
+  serializeArchetypes,
+  parseArchetypes,
+} from '@applye/core';
 import { AiService, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -167,6 +174,23 @@ export class OnboardingComponent {
 
   constructor() {
     void this.refreshKeyStored();
+    void this.seedFromExistingProfile();
+  }
+
+  /** On a re-run the wizard opens blank, so the roles the user already has must
+   * be loaded in — otherwise Ready reports "0 roles selected" and Finish writes
+   * an empty list over them. Only seeds; the user stays free to unpick. */
+  private async seedFromExistingProfile(): Promise<void> {
+    const existing = await this.readExistingProfile();
+    // The profile stores full `Archetype` objects; this wizard only ever deals
+    // in names and re-wraps them on save, so seed the names.
+    const roles = archetypeNames(parseArchetypes(existing?.targetArchetypes));
+    if (!roles.length || this.archetypes().length) return;
+    this.archetypes.set(roles);
+    this.suggestedRoles.set(roles);
+    // Marks the selection as authored, so the resume-driven suggestion that
+    // follows adds to these roles rather than replacing them.
+    this.selectionSeeded.set(true);
   }
 
   selectProvider(id: AiProvider): void {
@@ -333,8 +357,11 @@ export class OnboardingComponent {
   readonly suggestedRoles = signal<string[]>([]);
   readonly archetypes = signal<string[]>([]);
   readonly suggesting = signal(false);
-  /** Distinguishes "never suggested" from "user unchecked everything". */
-  readonly hasSuggested = signal(false);
+  /** True once the selection has a deliberate author — the first AI suggestion,
+   * or the roles seeded from an existing profile on a re-run. Distinguishes an
+   * unauthored blank from "the user unchecked everything", and stops a
+   * suggestion from replacing roles the user already had. */
+  readonly selectionSeeded = signal(false);
   /** Roles the user unchecked by hand — a re-suggest must not bring them back. */
   readonly rejectedRoles = signal<ReadonlySet<string>>(new Set());
   readonly currencyOptions = CURRENCY_OPTIONS;
@@ -461,7 +488,7 @@ export class OnboardingComponent {
       // user had just unchecked, and an empty selection is a real choice — not
       // the same state as "never suggested", which is why this needs its own
       // flag rather than an `archetypes().length` test.
-      if (this.hasSuggested()) {
+      if (this.selectionSeeded()) {
         this.archetypes.update((current) => [
           ...current,
           ...parsed.archetypes.filter((r) => !current.includes(r) && !this.rejectedRoles().has(r)),
@@ -469,7 +496,7 @@ export class OnboardingComponent {
       } else {
         this.archetypes.set(parsed.archetypes);
       }
-      this.hasSuggested.set(true);
+      this.selectionSeeded.set(true);
       // Comp is a single range with no user-authored parts to preserve, and it
       // is only ever seeded before the user reaches the step — but once they
       // have edited it, a re-suggest must not overwrite their number.
@@ -540,19 +567,47 @@ export class OnboardingComponent {
     };
   }
 
+  /** `db_upsert_profile` replaces the whole row — a field left out is written as
+   * NULL, not preserved. The wizard only authors `fullMd` and the archetypes,
+   * so on a re-run it must carry the rest forward or it silently destroys the
+   * scoring and pitch the user paid an AI call for. The stale scoring that
+   * survives a resume change is harmless: `scoringHash` no longer matches the
+   * new `fullMd`, which is exactly how Profile knows to offer a re-score. */
   async saveProfile(): Promise<void> {
+    const existing = await this.readExistingProfile();
     const base = cvToProfileMarkdown(this.buildProfileCv()).trim();
-    if (!base) return;
-    const compRange = formatCompRange({
-      currency: this.compCurrency(),
-      min: this.compMin(),
-      max: this.compMax(),
-    });
-    const fullMd = appendCompensation(base, compRange);
+    // No resume this run — a re-run that only re-targets keeps the markdown the
+    // user already has instead of blanking it.
+    const fullMd = base
+      ? appendCompensation(
+          base,
+          formatCompRange({
+            currency: this.compCurrency(),
+            min: this.compMin(),
+            max: this.compMax(),
+          }),
+        )
+      : (existing?.fullMd ?? '');
+    // Nothing parsed, nothing saved before, no roles picked: a first run the
+    // user skipped through. Writing an empty row would only make the dashboard
+    // banner disagree with itself.
+    if (!fullMd.trim() && !this.archetypes().length) return;
     await this.db.upsertProfile({
       fullMd,
+      scoringJson: existing?.scoringJson,
+      scoringHash: existing?.scoringHash,
+      pitchMd: existing?.pitchMd,
       targetArchetypes: serializeArchetypes(parseArchetypes(JSON.stringify(this.archetypes()))),
     });
+  }
+
+  private async readExistingProfile(): Promise<Profile | null> {
+    try {
+      return await this.db.getProfile();
+    } catch {
+      // Unreadable profile — better to write the new one than to lose the run.
+      return null;
+    }
   }
 
   /** The wizard already parsed the resume into exactly the shape Documents

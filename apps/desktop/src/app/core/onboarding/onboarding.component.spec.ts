@@ -24,11 +24,15 @@ describe('OnboardingComponent flow', () => {
   let fixture: ComponentFixture<OnboardingComponent>;
   let hasProviderKey: jest.Mock;
   let setProviderKey: jest.Mock;
+  let getProfile: jest.Mock;
+  let upsertProfile: jest.Mock;
   let run: jest.Mock;
 
   beforeEach(async () => {
     hasProviderKey = jest.fn().mockResolvedValue(false);
     setProviderKey = jest.fn().mockResolvedValue(undefined);
+    getProfile = jest.fn().mockResolvedValue(null);
+    upsertProfile = jest.fn().mockResolvedValue({ id: 1 });
     run = jest
       .fn()
       .mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
@@ -37,6 +41,8 @@ describe('OnboardingComponent flow', () => {
       getSettings: jest.fn().mockResolvedValue({ uiLanguage: 'en', aiMode: 'api' }),
       documentLibraryList: jest.fn().mockResolvedValue([]),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile,
+      upsertProfile,
     };
 
     await TestBed.configureTestingModule({
@@ -298,6 +304,105 @@ describe('OnboardingComponent flow', () => {
       component.setPastedResume('a different resume');
 
       expect(component.parsedCv()).toBeNull();
+    });
+  });
+
+  describe('re-running over an existing profile', () => {
+    const existing = {
+      id: 1,
+      fullMd: '# Old profile',
+      scoringJson: '{"score":8}',
+      scoringHash: 'hash-of-old-md',
+      pitchMd: 'My elevator pitch',
+      targetArchetypes: '["Staff FE"]',
+      updatedAt: '2026-07-01',
+    };
+
+    beforeEach(async () => {
+      getProfile.mockResolvedValue(existing);
+      create();
+      await fixture.whenStable();
+    });
+
+    it('keeps the scoring and pitch the user already paid for', async () => {
+      component.parsedCv.set(parsedCv());
+
+      await component.saveProfile();
+
+      expect(upsertProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scoringJson: '{"score":8}',
+          scoringHash: 'hash-of-old-md',
+          pitchMd: 'My elevator pitch',
+        }),
+      );
+    });
+
+    it('writes the new resume over the old profile markdown', async () => {
+      component.parsedCv.set(parsedCv());
+      component.reviewName.set('Vitalii Kasap');
+
+      await component.saveProfile();
+
+      const written = upsertProfile.mock.calls[0][0].fullMd as string;
+      expect(written).toContain('Vitalii Kasap');
+      expect(written).not.toContain('# Old profile');
+    });
+
+    it('seeds the target roles so finishing does not silently drop them', () => {
+      expect(component.archetypes()).toEqual(['Staff FE']);
+    });
+
+    it('does not let the resume suggestion replace the seeded roles', async () => {
+      component.resumeText.set('a resume');
+      run.mockResolvedValueOnce({ text: '{"archetypes":["Principal FE"]}' });
+
+      await component.suggestArchetypes();
+
+      expect(component.archetypes()).toEqual(['Staff FE', 'Principal FE']);
+    });
+
+    it('still honours a seeded role the user unchecks', async () => {
+      component.resumeText.set('a resume');
+      component.toggleRole('Staff FE');
+
+      await component.suggestArchetypes();
+
+      expect(component.archetypes()).toEqual([]);
+    });
+
+    it('keeps the existing markdown when the resume step is skipped', async () => {
+      component.resumePath.set('skip');
+      component.addArchetype('Engineering Manager');
+
+      await component.saveProfile();
+
+      expect(upsertProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ fullMd: '# Old profile' }),
+      );
+      expect(upsertProfile.mock.calls[0][0].targetArchetypes).toContain('Engineering Manager');
+    });
+
+    it('persists a targeting-only re-run instead of returning early', async () => {
+      component.resumePath.set('skip');
+      component.toggleRole('Staff FE');
+      component.addArchetype('Principal FE');
+
+      await component.saveProfile();
+
+      const roles = upsertProfile.mock.calls[0][0].targetArchetypes as string;
+      expect(roles).toContain('Principal FE');
+      expect(roles).not.toContain('Staff FE');
+    });
+  });
+
+  describe('a first run with nothing to save', () => {
+    it('writes no profile at all', async () => {
+      component.resumePath.set('skip');
+
+      await component.saveProfile();
+
+      expect(upsertProfile).not.toHaveBeenCalled();
     });
   });
 

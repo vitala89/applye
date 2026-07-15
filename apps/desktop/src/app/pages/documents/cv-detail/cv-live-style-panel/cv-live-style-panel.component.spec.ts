@@ -118,6 +118,35 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
+  it('offers a per-leaf line control at element scope and clears the whole rule on none', () => {
+    fixture.componentRef.setInput('selection', {
+      sectionKey: 'personal_details',
+      part: 'body',
+      elementPath: 'pd.name',
+    });
+    fixture.detectChanges();
+    expect(component.canElementLine()).toBe(true);
+    // The section structural divider must NOT show for a single leaf — that
+    // was the bug where editing a field rewrote personal_details.
+    expect(component.canBodyRule()).toBe(false);
+
+    const events = collect();
+    component.setElementBorder('dashed');
+    component.setElementRuleWidth('2');
+    component.setElementRuleColor('#123456');
+    component.setElementBorder('none');
+
+    expect(events).toEqual([
+      { scope: 'element', patch: { borderStyle: 'dashed' } },
+      { scope: 'element', patch: { ruleWidthPt: 2 } },
+      { scope: 'element', patch: { ruleColorHex: '#123456' } },
+      {
+        scope: 'element',
+        patch: { borderStyle: undefined, ruleWidthPt: undefined, ruleColorHex: undefined },
+      },
+    ]);
+  });
+
   it('inherit clears font (undefined) and line height (undefined)', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'summary',

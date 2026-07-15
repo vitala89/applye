@@ -207,6 +207,68 @@
             </div>
           }
 
+          @if (canElementLine()) {
+            <!-- PER-ELEMENT LINE group — a bottom rule (underline) under just
+                 this leaf; `none` = off (the default). -->
+            <div class="cvlive__group">
+              <button
+                type="button"
+                class="cvlive__group-head"
+                [attr.aria-expanded]="lineOpen()"
+                (click)="lineOpen.set(!lineOpen())"
+              >
+                <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
+                <lucide-icon
+                  class="cvlive__chevron"
+                  [class.cvlive__chevron--open]="lineOpen()"
+                  [img]="icons.chevron"
+                  [size]="16"
+                  aria-hidden="true"
+                />
+              </button>
+              @if (lineOpen()) {
+                <div class="cvlive__group-body">
+                  <label class="cvlive__field">
+                    <span class="cvlive__label">{{ t()('documents.cv_style_line') }}</span>
+                    <select
+                      [ngModel]="activeElementBorder() || 'none'"
+                      (ngModelChange)="setElementBorder($event)"
+                    >
+                      <option value="none">{{ t()('documents.cv_style_line_none') }}</option>
+                      <option value="solid">{{ t()('documents.cv_style_line_solid') }}</option>
+                      <option value="dotted">{{ t()('documents.cv_style_line_dotted') }}</option>
+                      <option value="dashed">{{ t()('documents.cv_style_line_dashed') }}</option>
+                    </select>
+                  </label>
+
+                  @if (hasElementLine()) {
+                    <label class="cvlive__field">
+                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_width') }}</span>
+                      <input
+                        type="number"
+                        min="0.5"
+                        max="6"
+                        step="0.5"
+                        [ngModel]="activeElementRuleWidth()"
+                        [placeholder]="t()('documents.cv_section_style_inherit')"
+                        (ngModelChange)="setElementRuleWidth($event)"
+                      />
+                    </label>
+
+                    <label class="cvlive__field">
+                      <span class="cvlive__label">{{ t()('documents.cv_style_rule_color') }}</span>
+                      <input
+                        type="color"
+                        [ngModel]="activeElementRuleColor() ?? style().accentColorHex"
+                        (ngModelChange)="setElementRuleColor($event)"
+                      />
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+          }
+
           @if (canSeparator()) {
             <!-- SEPARATOR group (collapsible) — the `|` between items -->
             <div class="cvlive__group">

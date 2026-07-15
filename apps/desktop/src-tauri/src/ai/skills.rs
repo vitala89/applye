@@ -129,3 +129,79 @@ pub fn skill_render(
 ) -> Result<RenderedSkill, String> {
     render(&name, &context)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ctx(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    /// Pins the metadata contract on a real skill rather than a fixture: the
+    /// frontmatter parser reads every line, including the folded
+    /// `description:` block's continuation lines, and only the keys it knows
+    /// are picked out. A continuation line that grew a `version:`-shaped
+    /// prefix would quietly win.
+    #[test]
+    fn cv_import_frontmatter_survives_its_folded_description() {
+        let r = render("cv-import", &ctx(&[("cv_text", "x"), ("language", "en")])).unwrap();
+        assert_eq!(r.version, "1");
+        assert_eq!(r.recommended_model.as_deref(), Some("claude-haiku-4-5"));
+    }
+
+    /// PDF text layers produced by macOS label a ligature glyph with an
+    /// unrelated character, so "Software" arrives as "SoCware". The repair is a
+    /// prompt rule; if it silently leaves the file, imports quietly regress.
+    #[test]
+    fn cv_import_carries_the_ligature_repair_rule_and_its_limits() {
+        let r = render("cv-import", &ctx(&[("cv_text", "x"), ("language", "en")])).unwrap();
+        assert!(r.system_prompt.contains("SoCware"));
+        // The exceptions matter more than the rule: without them the model is
+        // free to "repair" a token that was never damaged.
+        for legit in ["C++", "ES6+", ".NET"] {
+            assert!(
+                r.system_prompt.contains(legit),
+                "the never-repair list lost {legit}"
+            );
+        }
+    }
+
+    #[test]
+    fn render_interpolates_every_placeholder() {
+        let r = render(
+            "cv-import",
+            &ctx(&[("cv_text", "ACME CV"), ("language", "de")]),
+        )
+        .unwrap();
+        assert!(r.user_prompt.contains("ACME CV"));
+        assert!(r.user_prompt.contains("de"));
+        assert!(
+            !r.user_prompt.contains("{{"),
+            "unreplaced placeholder left in the user prompt: {}",
+            r.user_prompt
+        );
+    }
+
+    #[test]
+    fn every_registered_skill_renders() {
+        for name in [
+            "cv-import",
+            "onboarding-archetypes",
+            "cv-generate-baseline",
+            "cover-letter-generate",
+            "cover-letter-tailor",
+        ] {
+            let r = render(name, &HashMap::new());
+            assert!(r.is_ok(), "{name} failed to render: {:?}", r.err());
+        }
+    }
+
+    #[test]
+    fn unknown_skill_is_an_error_not_a_panic() {
+        assert!(render("nope", &HashMap::new()).is_err());
+    }
+}

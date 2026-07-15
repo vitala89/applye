@@ -28,4 +28,25 @@
   color: #16161a;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
+
+  // No ligatures on paper. macOS writes the export PDF's ToUnicode map one
+  // entry per glyph, and a ligature is a single glyph standing for several
+  // characters — it has no single codepoint to map to, so macOS writes an
+  // arbitrary wrong one. "Software" renders correctly and extracts as
+  // "So+ware" or "SoCware"; "Analytics" extracts as "AnalyGcs". The page looks
+  // perfect and every machine that reads it — an ATS, a recruiter's parser,
+  // our own re-import — gets nonsense in the job titles. A CV no parser can
+  // read defeats the point of the document, so the f-t and t-i pairs render as
+  // separate glyphs. This belongs here, next to the paper colours, because it
+  // is the same screen == print contract: only text the preview can produce is
+  // text the PDF can carry.
+  font-variant-ligatures: none;
+  // `font-feature-settings` overrides `font-variant-*` per feature, and the app
+  // shell sets it (`'cv11', 'ss01'`) on `body`, from where it inherits. Restate
+  // it here so the inherited value cannot leave `liga`/`clig` at their default.
+  font-feature-settings:
+    'liga' 0,
+    'clig' 0,
+    'dlig' 0,
+    'hlig' 0;
 }

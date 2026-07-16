@@ -2505,7 +2505,13 @@ export class JobsComponent implements OnInit, OnDestroy {
           if (result) {
             additionalInfo = buildAdditionalInfoBlock(result.answers);
             if (result.saveToProfile && additionalInfo) {
-              await this.appendToProfile(additionalInfo);
+              try {
+                await this.appendToProfile(additionalInfo);
+              } catch {
+                // Saving to the profile is a best-effort extra: the answers are
+                // already folded into cvSourceText below, so a failed profile
+                // write must not abort the CV generation that follows.
+              }
             }
           }
         }

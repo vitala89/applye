@@ -262,6 +262,41 @@ interface FinalChecks {
               <p class="detail-actions__msg">{{ actionMsg() }}</p>
             }
           </div>
+          @if (crossJobConfirmOpen()) {
+            <div class="alert alert--warn" role="alert">
+              <lucide-icon
+                [img]="icons.alertTriangle"
+                [size]="16"
+                class="alert__icon"
+                aria-hidden="true"
+              />
+              <div class="alert__body">
+                <p class="alert__title">{{ t()('jobs.cross_job_confirm_title') }}</p>
+                <p class="alert__text">
+                  {{ t()('jobs.cross_job_confirm_msg') }}
+                  @if (crossJobLabel()) {
+                    <strong>{{ crossJobLabel() }}</strong>
+                  }
+                </p>
+                <div class="alert__actions">
+                  <button
+                    class="btn btn--primary btn--md"
+                    type="button"
+                    (click)="confirmCrossJob()"
+                  >
+                    {{ t()('jobs.cross_job_confirm_btn') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    (click)="cancelCrossJob()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
           @if (editConfirmOpen()) {
             <div class="alert alert--warn" role="alert">
               <lucide-icon
@@ -1066,7 +1101,7 @@ interface FinalChecks {
                       </button>
                     </div>
                   }
-                  <button class="btn btn--ghost btn--sm export-startover" (click)="resetWizard()">
+                  <button class="btn btn--ghost btn--sm export-startover" (click)="startOver()">
                     {{ t()('jobs.start_over') }}
                   </button>
                 }
@@ -2118,6 +2153,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** Confirm dialog for reopening editing on an application past Applied. */
   readonly editConfirmOpen = signal(false);
 
+  /** Confirm dialog when opening the wizard here would abandon an unfinished
+   * tailoring session for a different job. */
+  readonly crossJobConfirmOpen = signal(false);
+
   /** True with no application yet, one still in 'saved', or the user
    * overrode the lock via "Edit". Anything else (applied/interview/
    * offer/rejected/cancelled) shows the status dropdown + Edit instead of an
@@ -2342,6 +2381,14 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
   }
 
+  /** Library-document label for a generated artifact, naming the company and
+   * role it was tailored for so the Documents list is unambiguous, e.g.
+   * "Acme - Senior Frontend Engineer - Tailored CV". */
+  private jobDocLabel(job: Job, suffix: string): string {
+    const base = [job.company, job.title].filter(Boolean).join(' - ') || 'Job';
+    return `${base} - ${suffix}`;
+  }
+
   async createCvDraft(): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
@@ -2389,7 +2436,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         id: app.cvDocumentId ?? undefined,
         docType: 'cv',
         source: 'generated',
-        label: `${job.company || 'Job'} - Tailored CV`,
+        label: this.jobDocLabel(job, 'Tailored CV'),
         language,
         regionTag: this.documentReviewRegion(),
         contentJson: JSON.stringify(content),
@@ -2465,7 +2512,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         id: app.coverLetterDocumentId ?? undefined,
         docType: 'cover_letter',
         source: 'generated',
-        label: `${job.company || 'Job'} - Cover Letter`,
+        label: this.jobDocLabel(job, 'Cover Letter'),
         language,
         regionTag: this.documentReviewRegion(),
         contentJson: JSON.stringify(content),
@@ -2780,7 +2827,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         length,
       };
 
-      const label = `${job.company || 'Job'} - Tailored Cover Letter`;
+      const label = this.jobDocLabel(job, 'Tailored Cover Letter');
       const created = await this.db.documentLibraryUpsert({
         docType: 'cover_letter',
         source: 'generated',
@@ -2915,12 +2962,20 @@ export class JobsComponent implements OnInit, OnDestroy {
       const s = this.settings();
       const lang = job.language ?? s?.defaultDocLanguage ?? 'en';
       const matches = cvs.filter((c) => c.language === lang || c.isDefault);
-      this.matchingCvs.set(matches);
-      if (matches.length > 0) {
-        this.selectedBaseCvId.set(matches[0].id);
-      } else {
-        this.selectedBaseCvId.set(null);
+      // Default the base CV to the profile ("from scratch", null). The one
+      // exception: if this job already has its own tailored CV, default to
+      // that so a retailor builds on the job's own document rather than a
+      // generic one. Make sure that CV is selectable even if the language
+      // filter would have excluded it.
+      const linkedCvId = this.application()?.cvDocumentId ?? null;
+      if (linkedCvId != null && !matches.some((c) => c.id === linkedCvId)) {
+        const linked = cvs.find((c) => c.id === linkedCvId);
+        if (linked) matches.unshift(linked);
       }
+      this.matchingCvs.set(matches);
+      this.selectedBaseCvId.set(
+        linkedCvId != null && matches.some((c) => c.id === linkedCvId) ? linkedCvId : null,
+      );
       await this.loadLinkedDocuments();
 
       this.portalQuestions.set([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
@@ -3303,11 +3358,44 @@ export class JobsComponent implements OnInit, OnDestroy {
    * user at the top of the page - the scoring view runs long, so the wizard
    * (or the restored summary) would otherwise open mid-scroll. */
   openWizard(): void {
+    // Starting an application here silently overwrote an unfinished session
+    // for another job. Warn first so the user can decide whether to abandon
+    // that one (or go back and finish it via the floating resume button).
+    const jobId = this.job()?.id;
+    const prog = this.wizardProgress.progress();
+    if (prog && jobId && prog.jobId !== jobId) {
+      this.crossJobConfirmOpen.set(true);
+      return;
+    }
+    this.doOpenWizard();
+  }
+
+  private doOpenWizard(): void {
     this.wizardInitialStep.set(0);
     this.wizardOpen.set(true);
     const jobId = this.job()?.id;
     if (jobId) this.wizardProgress.set(jobId, 0);
     this.scrollContentToTop();
+  }
+
+  /** Company/role of the other job whose tailoring is unfinished, for the
+   * cross-job confirm copy. Empty when none or not in the loaded overview. */
+  readonly crossJobLabel = computed(() => {
+    const prog = this.wizardProgress.progress();
+    if (!prog) return '';
+    const row = this.jobsStore.overview().find((r) => r.id === prog.jobId);
+    return [row?.company, row?.title].filter(Boolean).join(' - ');
+  });
+
+  /** Abandon the other job's unfinished session and open the wizard here. */
+  confirmCrossJob(): void {
+    this.crossJobConfirmOpen.set(false);
+    this.wizardProgress.clear();
+    this.doOpenWizard();
+  }
+
+  cancelCrossJob(): void {
+    this.crossJobConfirmOpen.set(false);
   }
 
   closeWizard(): void {
@@ -3748,6 +3836,20 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.postTailorSaved.set(false);
     this.updateScoreStatus.set('');
     this.updateScoreError.set(false);
+  }
+
+  /**
+   * "Start over" on the Export step: discard the tailoring/score/export state
+   * and return to step 1 (Tailor) so the user can tailor again from scratch.
+   * Previously this only cleared off-screen signals and left the user on the
+   * export step, so nothing visible happened.
+   */
+  startOver(): void {
+    this.resetWizard();
+    this.wizardInitialStep.set(1);
+    const jobId = this.job()?.id;
+    if (jobId) this.wizardProgress.set(jobId, 1);
+    this.scrollContentToTop();
   }
 
   async doExport(kind: ReviewDocumentKind, format: 'docx' | 'pdf'): Promise<void> {

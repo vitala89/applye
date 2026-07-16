@@ -313,6 +313,10 @@ const en: TranslationMap = {
     edit_confirm_msg:
       'This application has moved past Applied, so its resume has already been sent. Editing reopens the description and lets you retailor. Continue?',
     edit_confirm_btn: 'Edit anyway',
+    cross_job_confirm_title: 'Abandon your unfinished application?',
+    cross_job_confirm_msg:
+      'You have a tailoring session in progress for another job. Starting one here cancels it. You can also go back and finish it from the "Finish tailoring" button. Unfinished:',
+    cross_job_confirm_btn: 'Start here anyway',
     description_locked: 'Applied - description is locked.',
     archive: 'Archive',
     applied_ok: 'Marked as applied. Added to Pipeline.',
@@ -1344,6 +1348,10 @@ const de: TranslationMap = {
     edit_confirm_msg:
       'Diese Bewerbung ist über den Status „Beworben" hinaus, der Lebenslauf wurde also bereits gesendet. Beim Bearbeiten wird die Beschreibung wieder freigegeben und ein erneutes Anpassen möglich. Fortfahren?',
     edit_confirm_btn: 'Trotzdem bearbeiten',
+    cross_job_confirm_title: 'Unfertige Bewerbung verwerfen?',
+    cross_job_confirm_msg:
+      'Für eine andere Stelle läuft bereits eine Anpassung. Wenn Sie hier eine starten, wird jene abgebrochen. Sie können sie auch über „Anpassung abschließen" zu Ende bringen. Unfertig:',
+    cross_job_confirm_btn: 'Trotzdem hier starten',
     description_locked: 'Beworben - Beschreibung ist gesperrt.',
     archive: 'Archivieren',
     applied_ok: 'Als beworben markiert. Zur Pipeline hinzugefügt.',

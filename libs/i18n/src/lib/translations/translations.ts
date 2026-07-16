@@ -196,7 +196,7 @@ const en: TranslationMap = {
     unsaved: 'Unsaved changes',
     section_archetypes: 'Target roles',
     archetypes_hint:
-      '1–5 one-sentence descriptions of roles you\'d accept (e.g. "Senior Backend Engineer, Germany, fintech"). Used to flag off-target jobs before scoring — 0 tokens.',
+      'Up to 5 role archetypes - a name, how well it fits (primary / secondary / adjacent), and when to pitch yourself as it. Used to flag off-target jobs before any scoring call - 0 tokens.',
     archetypes_empty_warning:
       "No target roles defined — jobs won't be checked against your preferences.",
     archetype_placeholder: 'e.g. Staff Frontend Engineer, remote EU, Series B-D product company',
@@ -230,6 +230,10 @@ const en: TranslationMap = {
     cached_chip: 'cached · 0 tokens',
     stale_chip: 'out of date · regenerate',
     unsaved_chip: 'unsaved changes',
+    stale_hint: 'Saved profile changed since the last run.',
+    unsaved_scoring_hint: 'Save to refresh the scoring profile.',
+    scoring_loading: 'Compressing profile…',
+    pitch_loading: 'Writing pitch…',
     last_saved: 'Last saved {date}',
     saved_at: 'Saved {date}',
     load_failed: 'Failed to load: {error}',
@@ -277,7 +281,7 @@ const en: TranslationMap = {
     fit_secondary: 'Secondary',
     fit_adjacent: 'Adjacent',
     archetype_sell_when: 'When it fits',
-    archetype_sell_when_hint: 'When does this role match a job? — gives the AI context',
+    archetype_sell_when_hint: 'When would you pitch yourself as this role?',
     hero_improve: 'Complete to sharpen matching',
     hero_left: '{n} left',
     hero_complete: 'Profile complete — AI matching is at full strength.',
@@ -1210,7 +1214,7 @@ const de: TranslationMap = {
     unsaved: 'Nicht gespeicherte Änderungen',
     section_archetypes: 'Zielrollen',
     archetypes_hint:
-      '1–5 Ein-Satz-Beschreibungen akzeptabler Rollen (z. B. "Senior Backend Engineer, Deutschland, Fintech"). Wird genutzt, um nicht passende Stellen vor der Bewertung zu markieren — 0 Token.',
+      'Bis zu 5 Rollen-Archetypen - ein Name, wie gut er passt (primär / sekundär / angrenzend) und wann Sie sich als diese Rolle präsentieren. Wird genutzt, um nicht passende Stellen vor jeder Bewertung zu markieren - 0 Token.',
     archetypes_empty_warning:
       'Keine Zielrollen definiert — Stellen werden nicht mit Ihren Präferenzen abgeglichen.',
     archetype_placeholder:
@@ -1245,6 +1249,10 @@ const de: TranslationMap = {
     cached_chip: 'zwischengespeichert · 0 Token',
     stale_chip: 'veraltet · neu generieren',
     unsaved_chip: 'ungespeicherte Änderungen',
+    stale_hint: 'Gespeichertes Profil hat sich seit dem letzten Lauf geändert.',
+    unsaved_scoring_hint: 'Speichern, um das Bewerbungsprofil zu aktualisieren.',
+    scoring_loading: 'Profil wird komprimiert…',
+    pitch_loading: 'Pitch wird geschrieben…',
     last_saved: 'Zuletzt gespeichert {date}',
     saved_at: 'Gespeichert {date}',
     load_failed: 'Laden fehlgeschlagen: {error}',
@@ -1293,7 +1301,7 @@ const de: TranslationMap = {
     fit_secondary: 'Sekundär',
     fit_adjacent: 'Angrenzend',
     archetype_sell_when: 'Wann es passt',
-    archetype_sell_when_hint: 'Wann passt diese Rolle zu einem Job? — gibt der KI Kontext',
+    archetype_sell_when_hint: 'Wann würden Sie sich als diese Rolle präsentieren?',
     hero_improve: 'Vervollständigen für besseres Matching',
     hero_left: 'noch {n}',
     hero_complete: 'Profil vollständig — KI-Matching läuft mit voller Stärke.',

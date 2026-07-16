@@ -19,7 +19,22 @@ import {
   scoringState as computeScoringState,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { LucideAngularModule, Info } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Info,
+  Save,
+  Check,
+  RotateCcw,
+  Target,
+  X,
+  Plus,
+  Sparkles,
+  Mic,
+  RefreshCw,
+  ChevronDown,
+  CircleDot,
+  TriangleAlert,
+} from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
@@ -56,7 +71,21 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
             </span>
           </p>
           <div class="profile__head-actions">
+            @if (saveError() && saveStatus()) {
+              <span class="head-status status--error">{{ saveStatus() }}</span>
+            } @else if (dirty()) {
+              <span class="head-status head-status--warn">
+                <lucide-icon [img]="unsavedIcon" [size]="13" aria-hidden="true" />
+                {{ t()('profile.unsaved') }}
+              </span>
+            } @else if (saveStatus()) {
+              <span class="head-status head-status--ok">
+                <lucide-icon [img]="checkIcon" [size]="13" aria-hidden="true" />
+                {{ t()('profile.saved_status') }}
+              </span>
+            }
             <button appButton variant="secondary" size="md" (click)="onboarding.requestOpen()">
+              <lucide-icon [img]="rerunIcon" [size]="15" aria-hidden="true" />
               {{ t()('onboarding.rerun') }}
             </button>
             <button
@@ -66,6 +95,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               [disabled]="saving() || !dirty() || scoring() || pitching()"
               (click)="save()"
             >
+              <lucide-icon [img]="dirty() ? saveIcon : checkIcon" [size]="15" aria-hidden="true" />
               {{
                 saving()
                   ? t()('profile.saving')
@@ -74,9 +104,6 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     : t()('profile.saved_status')
               }}
             </button>
-            @if (saveStatus()) {
-              <span class="status" [class.status--error]="saveError()">{{ saveStatus() }}</span>
-            }
           </div>
         </header>
 
@@ -110,6 +137,12 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               @for (a of archetypes(); track $index) {
                 <div class="archetype-card">
                   <div class="archetype-card__top">
+                    <lucide-icon
+                      [img]="targetIcon"
+                      [size]="16"
+                      class="archetype-card__icon"
+                      aria-hidden="true"
+                    />
                     <input
                       class="archetype-input"
                       type="text"
@@ -129,30 +162,33 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                       <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
                     </select>
                     <button
-                      class="btn-icon"
+                      class="btn-ghost"
                       type="button"
                       (click)="removeArchetype($index)"
                       [attr.aria-label]="t()('profile.remove_archetype')"
                     >
-                      ×
+                      <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
                     </button>
                   </div>
-                  <label class="archetype-card__label" [attr.for]="'archetype-sell-' + $index">{{
-                    t()('profile.archetype_sell_when')
-                  }}</label>
-                  <textarea
-                    [id]="'archetype-sell-' + $index"
-                    class="archetype-sell"
-                    [ngModel]="a.sellWhen"
-                    (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
-                    [placeholder]="t()('profile.archetype_sell_when_hint')"
-                  ></textarea>
+                  <div class="archetype-card__sell">
+                    <label class="archetype-card__label" [attr.for]="'archetype-sell-' + $index">{{
+                      t()('profile.archetype_sell_when')
+                    }}</label>
+                    <textarea
+                      [id]="'archetype-sell-' + $index"
+                      class="archetype-sell"
+                      [ngModel]="a.sellWhen"
+                      (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
+                      [placeholder]="t()('profile.archetype_sell_when_hint')"
+                    ></textarea>
+                  </div>
                 </div>
               }
             </div>
           }
           @if (archetypes().length < 5) {
-            <button appButton variant="secondary" size="sm" type="button" (click)="addArchetype()">
+            <button class="btn-dashed" type="button" (click)="addArchetype()">
+              <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
               {{ t()('profile.add_archetype') }}
             </button>
           }
@@ -278,15 +314,20 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               </div>
 
               <div class="field">
-                <label class="field__label" for="field-experience">{{
-                  t()('profile.field_experience')
-                }}</label>
-                <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
+                <div class="field__label-row">
+                  <label class="field__label" for="field-experience">{{
+                    t()('profile.field_experience')
+                  }}</label>
+                  <span class="field__hint field__hint--inline">{{
+                    t()('profile.experience_hint')
+                  }}</span>
+                </div>
                 <textarea
                   id="field-experience"
                   class="field__input field__input--area field__input--mono"
                   [ngModel]="form().experienceText"
                   (ngModelChange)="updateField('experienceText', $event)"
+                  spellcheck="false"
                 ></textarea>
               </div>
 
@@ -334,23 +375,26 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
             </div>
           } @else {
             <div class="editor-panel">
-              <div class="scaffold">
-                <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
-                <span class="scaffold__line"># Name · Title · Location</span>
-                <span class="scaffold__line"
-                  >## Contact · Experience · Skills · Education · Languages</span
-                >
-              </div>
               <textarea
                 class="editor"
                 [ngModel]="fullMd()"
                 (ngModelChange)="fullMd.set($event)"
                 spellcheck="false"
               ></textarea>
+              <div class="scaffold">
+                <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
+                <span class="scaffold__line"># Name · Title · Location</span>
+                <span class="scaffold__line">## Contact</span>
+                <span class="scaffold__line">## Experience &nbsp;&nbsp;### Role, Company</span>
+                <span class="scaffold__line">## Skills · Education · Languages</span>
+              </div>
             </div>
           }
           @if (dirty()) {
-            <p class="unsaved-hint">{{ t()('profile.unsaved') }}</p>
+            <p class="unsaved-hint">
+              <lucide-icon [img]="unsavedIcon" [size]="13" aria-hidden="true" />
+              {{ t()('profile.unsaved') }}
+            </p>
           }
         </section>
 
@@ -362,7 +406,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
           <div class="ai-tools">
             <div class="tool-card">
               <div
-                class="tool-card__head"
+                class="tool-card__head tool-card__head--toggle"
                 role="button"
                 tabindex="0"
                 [attr.aria-expanded]="scoringOpen()"
@@ -370,6 +414,9 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 (keydown.enter)="toggleScoring()"
                 (keydown.space)="toggleScoring(); $event.preventDefault()"
               >
+                <span class="tool-card__icon" aria-hidden="true">
+                  <lucide-icon [img]="scoringIcon" [size]="16" />
+                </span>
                 <div class="tool-card__body">
                   <p class="tool-card__title">
                     {{ t()('profile.scoring_card_title') }}
@@ -393,11 +440,23 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   </p>
                   <p class="tool-card__desc">{{ t()('profile.scoring_desc') }}</p>
                 </div>
-                <span class="chevron" [class.chevron--open]="scoringOpen()" aria-hidden="true"
-                  >›</span
-                >
+                <lucide-icon
+                  [img]="chevronIcon"
+                  [size]="17"
+                  class="chevron"
+                  [class.chevron--open]="scoringOpen()"
+                  aria-hidden="true"
+                />
               </div>
               @if (scoringOpen()) {
+                @if (scoring()) {
+                  <div class="ai-loading">
+                    <span class="ai-loading__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span class="ai-loading__label">{{ t()('profile.scoring_loading') }}</span>
+                  </div>
+                } @else if (profile()?.scoringJson) {
+                  <app-scoring-summary [scoringJson]="profile()?.scoringJson ?? null" />
+                }
                 <div class="tool-card__foot">
                   <button
                     appButton
@@ -406,6 +465,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     [disabled]="scoring() || saving() || !fullMd().trim()"
                     (click)="generateScoringProfile()"
                   >
+                    <lucide-icon [img]="regenIcon" [size]="13" aria-hidden="true" />
                     {{
                       scoring()
                         ? t()('profile.generating')
@@ -415,11 +475,22 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     }}
                   </button>
                   @if (scoringState() === 'fresh') {
-                    <span class="chip">{{ t()('profile.cached_chip') }}</span>
+                    <span class="chip">
+                      <lucide-icon [img]="checkIcon" [size]="12" aria-hidden="true" />
+                      {{ t()('profile.cached_chip') }}
+                    </span>
                   } @else if (scoringState() === 'stale') {
-                    <span class="chip chip--stale">{{ t()('profile.stale_chip') }}</span>
+                    <span class="chip chip--stale">
+                      <lucide-icon [img]="staleIcon" [size]="12" aria-hidden="true" />
+                      {{ t()('profile.stale_chip') }}
+                    </span>
+                    <span class="chip-hint">{{ t()('profile.stale_hint') }}</span>
                   } @else if (scoringState() === 'unsaved') {
-                    <span class="chip chip--stale">{{ t()('profile.unsaved_chip') }}</span>
+                    <span class="chip chip--stale">
+                      <lucide-icon [img]="unsavedIcon" [size]="12" aria-hidden="true" />
+                      {{ t()('profile.unsaved_chip') }}
+                    </span>
+                    <span class="chip-hint">{{ t()('profile.unsaved_scoring_hint') }}</span>
                   }
                   @if (scoreStatus()) {
                     <span class="status" [class.status--error]="scoreError()">{{
@@ -427,18 +498,18 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     }}</span>
                   }
                 </div>
-                @if (profile()?.scoringJson) {
-                  <app-scoring-summary [scoringJson]="profile()?.scoringJson ?? null" />
-                }
               }
             </div>
 
             <div class="tool-card">
-              <div class="tool-card__body">
-                <p class="tool-card__title">{{ t()('profile.pitch_title') }}</p>
-                <p class="tool-card__desc">{{ t()('profile.pitch_desc') }}</p>
-              </div>
-              <div class="tool-card__foot">
+              <div class="tool-card__head">
+                <span class="tool-card__icon" aria-hidden="true">
+                  <lucide-icon [img]="pitchIcon" [size]="16" />
+                </span>
+                <div class="tool-card__body">
+                  <p class="tool-card__title">{{ t()('profile.pitch_title') }}</p>
+                  <p class="tool-card__desc">{{ t()('profile.pitch_desc') }}</p>
+                </div>
                 <button
                   appButton
                   variant="secondary"
@@ -446,6 +517,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   [disabled]="pitching() || saving() || !fullMd().trim()"
                   (click)="generatePitch()"
                 >
+                  <lucide-icon [img]="regenIcon" [size]="13" aria-hidden="true" />
                   {{
                     pitching()
                       ? t()('profile.generating')
@@ -454,14 +526,17 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                         : t()('profile.generate')
                   }}
                 </button>
-                @if (pitchStatus()) {
-                  <span class="status" [class.status--error]="pitchError()">{{
-                    pitchStatus()
-                  }}</span>
-                }
               </div>
-              @if (profile()?.pitchMd) {
+              @if (pitching()) {
+                <div class="ai-loading">
+                  <span class="ai-loading__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span class="ai-loading__label">{{ t()('profile.pitch_loading') }}</span>
+                </div>
+              } @else if (profile()?.pitchMd) {
                 <div class="output-block output-block--prose">{{ profile()?.pitchMd }}</div>
+              }
+              @if (pitchStatus()) {
+                <span class="status" [class.status--error]="pitchError()">{{ pitchStatus() }}</span>
               }
             </div>
           </div>
@@ -489,6 +564,26 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         align-items: center;
         gap: var(--space-3);
         flex-shrink: 0;
+      }
+      .head-status {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        white-space: nowrap;
+      }
+      .head-status--warn {
+        color: var(--text-tertiary);
+      }
+      .head-status--ok {
+        color: var(--success);
+      }
+      button[appButton] {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
       }
 
       .section {
@@ -588,10 +683,11 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         padding: var(--space-3) var(--space-4);
         font-family: var(--font-mono);
         font-size: var(--text-2xs);
-        color: var(--text-tertiary);
-        background: var(--surface-sunken);
+        line-height: 1.7;
+        color: var(--text-disabled);
+        background: transparent;
         border: 1px dashed var(--border-default);
-        border-radius: var(--radius-card);
+        border-radius: var(--radius-input);
       }
       .scaffold__label {
         font-family: var(--font-sans);
@@ -602,20 +698,25 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       }
       .editor {
         width: 100%;
-        min-height: 400px;
-        padding: var(--space-4);
+        min-height: 300px;
+        padding: var(--space-5) var(--space-5);
         font-family: var(--font-mono);
         font-size: var(--text-sm);
-        line-height: 1.65;
+        line-height: 1.7;
         color: var(--text-primary);
-        background: var(--surface-2);
+        background: var(--surface-sunken);
         border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        border-radius: var(--radius-input);
         resize: vertical;
+        outline: none;
       }
       .unsaved-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
         font-size: var(--text-xs);
-        color: var(--text-tertiary);
+        color: var(--warning);
         margin: 0;
       }
 
@@ -636,15 +737,29 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       }
       .tool-card__head {
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
+        align-items: center;
         gap: var(--space-3);
+      }
+      .tool-card__head--toggle {
         cursor: pointer;
+      }
+      .tool-card__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        color: var(--text-accent);
+        background: var(--accent-tint);
+        border-radius: var(--radius-input);
       }
       .tool-card__body {
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+        flex: 1;
+        min-width: 0;
       }
       .tool-card__title {
         display: flex;
@@ -666,19 +781,21 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         gap: var(--space-3);
       }
       .chevron {
-        font-size: var(--text-body);
         color: var(--text-tertiary);
-        transform: rotate(90deg);
-        transition: transform 0.12s ease;
+        transition: transform var(--dur-fast) var(--ease-standard);
         flex-shrink: 0;
       }
       .chevron--open {
-        transform: rotate(-90deg);
+        transform: rotate(180deg);
       }
       .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
         padding: var(--space-1) var(--space-3);
         font-family: var(--font-mono);
         font-size: var(--text-2xs);
+        font-weight: var(--weight-medium);
         color: var(--text-tertiary);
         background: var(--surface-sunken);
         border: 1px solid var(--border-default);
@@ -689,6 +806,60 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         color: var(--warning);
         background: var(--warning-tint);
         border-color: transparent;
+      }
+      .chip-hint {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+      }
+      .tool-card__foot {
+        flex-wrap: wrap;
+      }
+      .ai-loading {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4) 0;
+      }
+      .ai-loading__dots {
+        display: flex;
+        gap: 5px;
+      }
+      .ai-loading__dots i {
+        width: 6px;
+        height: 6px;
+        border-radius: var(--radius-full);
+        background: var(--accent);
+        animation: applye-ai-pulse var(--dur-ai-pulse) var(--ease-standard) infinite;
+      }
+      .ai-loading__dots i:nth-child(2) {
+        animation-delay: 0.3s;
+      }
+      .ai-loading__dots i:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+      .ai-loading__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        letter-spacing: var(--tracking-wide);
+        color: var(--text-tertiary);
+      }
+      @keyframes applye-ai-pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: scale(0.8);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ai-loading__dots i {
+          animation: none;
+          opacity: 0.7;
+        }
       }
 
       .output-block,
@@ -735,82 +906,118 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       .archetype-list {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
-      }
-      button[appButton] {
-        align-self: flex-start;
-      }
-      .archetype-input {
-        flex: 1;
-        padding: var(--space-2) var(--space-3);
-        font-family: var(--font-sans);
-        font-size: var(--text-sm);
-        color: var(--text-primary);
-        background: var(--surface-2);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        gap: var(--space-4);
       }
       .archetype-card {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
-        padding: var(--space-3);
-        background: var(--surface-1);
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background: var(--surface-sunken);
         border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        border-radius: var(--radius-input);
       }
       .archetype-card__top {
         display: flex;
         align-items: center;
-        gap: var(--space-2);
+        gap: var(--space-3);
       }
-      .archetype-card__top .archetype-input {
+      .archetype-card__icon {
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+      .archetype-input {
         flex: 1;
-      }
-      .archetype-fit {
-        padding: var(--space-2) var(--space-3);
+        min-width: 0;
+        height: 36px;
+        padding: 0 var(--space-4);
         font-family: var(--font-sans);
         font-size: var(--text-sm);
         color: var(--text-primary);
-        background: var(--surface-2);
+        background: var(--surface-1);
         border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        border-radius: var(--radius-input);
+        outline: none;
+      }
+      .archetype-fit {
+        flex-shrink: 0;
+        height: 36px;
+        padding: 0 var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-primary);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
+        cursor: pointer;
+        outline: none;
+      }
+      .archetype-card__sell {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding-left: calc(16px + var(--space-3));
       }
       .archetype-card__label {
-        font-size: var(--text-xs);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        font-weight: var(--weight-medium);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
         color: var(--text-tertiary);
       }
       .archetype-sell {
         width: 100%;
-        min-height: 60px;
-        padding: var(--space-2) var(--space-3);
+        min-height: 52px;
+        padding: var(--space-3) var(--space-4);
         font-family: var(--font-sans);
         font-size: var(--text-sm);
         line-height: 1.5;
-        color: var(--text-primary);
-        background: var(--surface-2);
+        color: var(--text-secondary);
+        background: var(--surface-1);
         border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        border-radius: var(--radius-input);
         resize: vertical;
+        outline: none;
       }
-      .btn-icon {
+      .btn-ghost {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2rem;
-        height: 2rem;
+        width: 30px;
+        height: 30px;
         flex-shrink: 0;
-        font-size: var(--text-body);
-        line-height: 1;
         color: var(--text-tertiary);
-        background: var(--surface-sunken);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        background: transparent;
+        border: none;
+        border-radius: var(--radius-input);
         cursor: pointer;
       }
-      .btn-icon:hover {
+      .btn-ghost:hover {
         color: var(--danger);
-        filter: brightness(1.1);
+        background: var(--surface-active);
+      }
+      .btn-dashed {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        height: 36px;
+        padding: 0 var(--space-4);
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+        color: var(--text-secondary);
+        background: transparent;
+        border: 1px dashed var(--border-strong);
+        border-radius: var(--radius-input);
+        cursor: pointer;
+      }
+      .btn-dashed:hover {
+        color: var(--text-accent);
+        background: var(--accent-tint);
+        border-color: var(--accent);
+        border-style: solid;
       }
 
       .editor-head {
@@ -838,7 +1045,8 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       }
       .mode-btn--on {
         color: var(--text-primary);
-        background: var(--surface-2);
+        background: var(--surface-1);
+        box-shadow: var(--shadow-xs);
       }
       .form-cards {
         display: flex;
@@ -863,27 +1071,40 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       }
       .field__input {
         width: 100%;
-        padding: var(--space-2) var(--space-3);
+        height: 38px;
+        padding: 0 var(--space-4);
         font-family: var(--font-sans);
         font-size: var(--text-sm);
         color: var(--text-primary);
-        background: var(--surface-2);
+        background: var(--surface-sunken);
         border: 1px solid var(--border-default);
-        border-radius: var(--radius-card);
+        border-radius: var(--radius-input);
+        outline: none;
       }
       .field__input--area {
-        min-height: 160px;
-        line-height: 1.6;
+        height: 150px;
+        padding: var(--space-4) var(--space-5);
+        line-height: 1.7;
         resize: vertical;
       }
       .field__input--mono {
         font-family: var(--font-mono);
-        font-size: var(--text-xs);
+        font-size: var(--text-sm);
       }
       .field__hint {
         margin: 0 0 var(--space-1);
         font-size: var(--text-2xs);
         color: var(--text-tertiary);
+      }
+      .field__label-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+      }
+      .field__hint--inline {
+        margin: 0;
+        font-family: var(--font-mono);
       }
     `,
   ],
@@ -896,6 +1117,18 @@ export class ProfileComponent implements OnInit {
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
   protected readonly infoIcon = Info;
+  protected readonly saveIcon = Save;
+  protected readonly checkIcon = Check;
+  protected readonly rerunIcon = RotateCcw;
+  protected readonly targetIcon = Target;
+  protected readonly removeIcon = X;
+  protected readonly plusIcon = Plus;
+  protected readonly scoringIcon = Sparkles;
+  protected readonly pitchIcon = Mic;
+  protected readonly regenIcon = RefreshCw;
+  protected readonly chevronIcon = ChevronDown;
+  protected readonly unsavedIcon = CircleDot;
+  protected readonly staleIcon = TriangleAlert;
 
   readonly fullMd = signal('');
   readonly rawMode = signal(false);

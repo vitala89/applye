@@ -17,6 +17,7 @@ import {
   effectiveLeafStyle,
   effectiveSectionStyle,
   effectiveTitleStyle,
+  buildAdditionalInfoBlock,
   clearSectionElementOverrides,
   effectiveTitleBorder,
   effectiveTitleRuleColor,
@@ -24,6 +25,7 @@ import {
   leafPath,
   mergeRegeneratedSection,
   normalizeCvContent,
+  parseCvGapResponse,
   parseCvSkillResponse,
   parseSkillValues,
   patchCvDocumentBody,
@@ -1363,5 +1365,73 @@ describe('leafPath', () => {
   it('also covers the pd.<field> and edu.<i>.<field> shapes', () => {
     expect(leafPath('pd', 'fullName')).toBe('pd.fullName');
     expect(leafPath('edu', 0, 'degree')).toBe('edu.0.degree');
+  });
+});
+
+describe('parseCvGapResponse', () => {
+  it('parses questions from valid JSON', () => {
+    const raw = JSON.stringify({
+      questions: [
+        {
+          id: 'q1',
+          category: 'skill',
+          question: 'Do you know Kubernetes?',
+          hint: 'The job asks for it',
+        },
+        { id: 'q2', category: 'language', question: 'German level?', hint: null },
+      ],
+    });
+    expect(parseCvGapResponse(raw)).toEqual([
+      {
+        id: 'q1',
+        category: 'skill',
+        question: 'Do you know Kubernetes?',
+        hint: 'The job asks for it',
+      },
+      { id: 'q2', category: 'language', question: 'German level?', hint: null },
+    ]);
+  });
+
+  it('returns [] on garbage (fail-open)', () => {
+    expect(parseCvGapResponse('not json at all')).toEqual([]);
+    expect(parseCvGapResponse('{"questions": "oops"}')).toEqual([]);
+  });
+
+  it('caps at 5 questions', () => {
+    const q = (n: number) => ({ id: `q${n}`, category: 'other', question: `Q${n}`, hint: null });
+    const raw = JSON.stringify({ questions: [q(1), q(2), q(3), q(4), q(5), q(6), q(7)] });
+    expect(parseCvGapResponse(raw)).toHaveLength(5);
+  });
+
+  it('defaults a missing/unknown category to "other" and a missing hint to null', () => {
+    const raw = JSON.stringify({ questions: [{ id: 'q1', question: 'X' }] });
+    expect(parseCvGapResponse(raw)).toEqual([
+      { id: 'q1', category: 'other', question: 'X', hint: null },
+    ]);
+  });
+});
+
+describe('buildAdditionalInfoBlock', () => {
+  it('builds a markdown block from answered items', () => {
+    const block = buildAdditionalInfoBlock([
+      { id: 'q1', question: 'Kubernetes?', answer: '2 years in production' },
+      { id: 'q2', question: 'German level?', answer: 'B2' },
+    ]);
+    expect(block).toBe(
+      '## Additional information\n- Kubernetes?: 2 years in production\n- German level?: B2',
+    );
+  });
+
+  it('drops empty/whitespace answers', () => {
+    const block = buildAdditionalInfoBlock([
+      { id: 'q1', question: 'Kubernetes?', answer: '  ' },
+      { id: 'q2', question: 'German level?', answer: 'B2' },
+    ]);
+    expect(block).toBe('## Additional information\n- German level?: B2');
+  });
+
+  it('returns "" when nothing is answered', () => {
+    expect(buildAdditionalInfoBlock([{ id: 'q1', question: 'X', answer: '' }])).toBe('');
+    expect(buildAdditionalInfoBlock([])).toBe('');
   });
 });

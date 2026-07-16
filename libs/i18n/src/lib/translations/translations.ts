@@ -386,6 +386,16 @@ const en: TranslationMap = {
     save_btn: 'Save',
     tailor_apply_btn: 'Tailor',
     retailor_cta: 'Retailor',
+    gap: {
+      analyzing: 'Checking your CV against this job...',
+      question_of: 'Question',
+      answer_placeholder: 'Type your answer, or Skip',
+      skip: 'Skip',
+      next: 'Next',
+      review_title: 'Add these to your CV?',
+      save_to_profile: 'Also save these answers to my profile',
+      generate: 'Generate CV',
+    },
     wizard: {
       step_review_score: 'Review score',
       step_tailor_cv: 'Tailor CV',
@@ -1423,6 +1433,16 @@ const de: TranslationMap = {
     save_btn: 'Speichern',
     tailor_apply_btn: 'Anpassen',
     retailor_cta: 'Erneut anpassen',
+    gap: {
+      analyzing: 'Wir gleichen Ihren Lebenslauf mit dieser Stelle ab...',
+      question_of: 'Frage',
+      answer_placeholder: 'Antwort eingeben oder überspringen',
+      skip: 'Überspringen',
+      next: 'Weiter',
+      review_title: 'Diese in den Lebenslauf aufnehmen?',
+      save_to_profile: 'Antworten auch in meinem Profil speichern',
+      generate: 'Lebenslauf erstellen',
+    },
     wizard: {
       step_review_score: 'Bewertung prüfen',
       step_tailor_cv: 'Lebenslauf anpassen',

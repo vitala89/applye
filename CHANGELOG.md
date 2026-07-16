@@ -27,6 +27,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Added
 
+- **The CV generator asks about what the job needs and your CV is missing.** Before it writes a tailored CV, it now checks the job against your CV and, if there are gaps (a technology, concrete experience, a language level), asks you a few quick questions. Answer the ones you can, skip the rest, and optionally save the answers to your profile so it does not ask again. If your CV already covers the role, it generates straight away.
 - **Starting to tailor one job warns you if another is unfinished.** If you leave a tailoring session and start one for a different job, the app now tells you the first one will be cancelled - and names it - so you can go back and finish it (via "Finish tailoring") instead of losing it silently.
 - **You can cancel a tailoring run.** The Tailor step now has a Cancel button while it works. It stops before the next pass and drops the partial result, so you can back out and adjust the source instead of waiting out a run you no longer want. (The pass already in flight finishes, then its result is discarded.)
 

@@ -111,7 +111,12 @@ import {
       </div>
 
       <footer class="apply-wizard__footer">
-        <button class="btn btn--secondary btn--md" type="button" (click)="goBack()">
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          [disabled]="busy()"
+          (click)="goBack()"
+        >
           <lucide-icon [img]="icons().back" [size]="15" aria-hidden="true" />
           {{ activeStep() === 0 ? t()('jobs.wizard.back_to_summary') : t()('common.back') }}
         </button>
@@ -235,6 +240,7 @@ export class ApplyWizard {
   });
 
   protected goBack(): void {
+    if (this.busy()) return;
     if (this.activeStep() === 0) {
       this.closeWizard.emit();
       return;

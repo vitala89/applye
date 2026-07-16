@@ -18,6 +18,7 @@ Use before non-trivial feature, architecture, debug, test, security, privacy, do
 8. For bounded feature tasks with clear scope, local mock data only, and no storage, sync, privacy, security, architecture, plugin, notification, Tauri/Angular boundary, large-refactor, or 8+ file signal, set `Subagents needed: no` and `Graph/context tool needed: no`.
 9. For bounded feature tasks, use this baseline skill list: `aif-model-router`, `aif-token-guard`, `aif-feature-builder`, and `aif-testing-strategy`.
 10. Add other specialist skills or subagents only when triggered by risk, unknown ownership, architecture, security, privacy, storage, sync, plugins, notifications, the Tauri/Angular boundary, or review needs.
+    10a. If the task touches UI (components, styles, screens, or a provided design reference), require the Design Consistency gate from `AGENTS.md`: read `design-system/MASTER.md` before building and run `npx impeccable detect` after. Record this in the specialist plan.
 11. Use subagents for focused scouting or review, not implementation.
 12. Keep the main session responsible for decisions, edits, verification, and final response.
 

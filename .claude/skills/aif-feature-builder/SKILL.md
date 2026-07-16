@@ -11,9 +11,13 @@ Use for user-visible behavior or workflow changes.
 1. State the intended behavior and non-goals.
 2. Use the context gate.
 3. Identify privacy, security, test, and docs triggers.
-4. Implement the smallest coherent change.
-5. Run relevant checks.
-6. Summarize diff, verification, and follow-ups.
+4. If the change touches UI, run the Design Consistency gate from `AGENTS.md`: read
+   `design-system/MASTER.md` (+ any `design-system/pages/<page>.md`) before editing,
+   state the button variant / tokens / typeface used, and use `--token` values only.
+5. Implement the smallest coherent change.
+6. Run relevant checks. For UI changes, also run `npx impeccable detect <changed-path>`
+   and reconcile findings against MASTER; verify dark and light themes.
+7. Summarize diff, verification, and follow-ups.
 
 ## Output
 

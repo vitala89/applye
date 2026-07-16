@@ -67,10 +67,15 @@ import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
 import {
   buildCvContent,
+  buildAdditionalInfoBlock,
   cleanJsonText,
   cvContentToMd,
+  parseCvGapResponse,
   parseCvSkillResponse,
+  type CvGapAnswer,
+  type CvGapQuestion,
 } from '../documents/cv-content.util';
+import { CvGapDialog } from './cv-gap-dialog.component';
 
 interface PassResult {
   pass: number;
@@ -114,6 +119,7 @@ interface FinalChecks {
     ApplyWizard,
     UpdatedScoreView,
     SkeletonCard,
+    CvGapDialog,
   ],
   template: `
     <div class="jobs">
@@ -1023,6 +1029,15 @@ interface FinalChecks {
                     </div>
                   }
                 </section>
+
+                @if (gapDialogOpen() || gapAnalyzing()) {
+                  <app-cv-gap-dialog
+                    [questions]="gapQuestions()"
+                    [analyzing]="gapAnalyzing()"
+                    (submit)="onGapSubmit($event)"
+                    (cancel)="onGapCancel()"
+                  />
+                }
               </div>
 
               <div wizardExportApplyStep class="wizard-step-content">
@@ -2228,6 +2243,12 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly linkedCv = signal<DocumentLibraryItem | null>(null);
   readonly linkedCoverLetter = signal<DocumentLibraryItem | null>(null);
   readonly documentPreparing = signal<ReviewDocumentKind | null>(null);
+  readonly gapAnalyzing = signal(false);
+  readonly gapDialogOpen = signal(false);
+  readonly gapQuestions = signal<CvGapQuestion[]>([]);
+  private gapResolver:
+    | ((result: { answers: CvGapAnswer[]; saveToProfile: boolean } | null) => void)
+    | null = null;
   readonly documentReviewStatus = signal('');
   readonly documentReviewError = signal(false);
   readonly chooseCvOpen = signal(false);
@@ -2389,6 +2410,71 @@ export class JobsComponent implements OnInit, OnDestroy {
     return `${base} - ${suffix}`;
   }
 
+  /** Runs the gap-analysis skill for the current job/CV. Fail-open: returns []
+   * on any error so a bad analysis never blocks generation. */
+  private async analyzeCvGaps(cvText: string): Promise<CvGapQuestion[]> {
+    const job = this.job();
+    const settings = this.settings();
+    if (!job?.id || !settings) return [];
+    try {
+      const language = this.documentReviewLanguage();
+      const rendered = await this.ai.renderSkill('cv-gap-analysis', {
+        cv_text: cvText,
+        job_description: job.jdText ?? '',
+        language,
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      return parseCvGapResponse(res.text);
+    } catch {
+      return [];
+    }
+  }
+
+  /** Opens the gap dialog and resolves when the user submits or cancels. */
+  private awaitGapDialog(
+    questions: CvGapQuestion[],
+  ): Promise<{ answers: CvGapAnswer[]; saveToProfile: boolean } | null> {
+    this.gapQuestions.set(questions);
+    this.gapDialogOpen.set(true);
+    return new Promise((resolve) => {
+      this.gapResolver = resolve;
+    });
+  }
+
+  onGapSubmit(result: { answers: CvGapAnswer[]; saveToProfile: boolean }): void {
+    this.gapDialogOpen.set(false);
+    this.gapResolver?.(result);
+    this.gapResolver = null;
+  }
+
+  onGapCancel(): void {
+    this.gapDialogOpen.set(false);
+    this.gapResolver?.(null);
+    this.gapResolver = null;
+  }
+
+  /** Appends the answered gap items to the profile fullMd. Whole-row-replace
+   * safe: carries every other profile field forward (the #97 lesson). */
+  private async appendToProfile(block: string): Promise<void> {
+    const p = this.profile();
+    if (!p || !block) return;
+    const updated = await this.db.upsertProfile({
+      fullMd: `${p.fullMd}\n\n${block}`,
+      scoringJson: p.scoringJson,
+      scoringHash: p.scoringHash,
+      pitchMd: p.pitchMd,
+      targetArchetypes: p.targetArchetypes,
+    });
+    this.profile.set(updated);
+  }
+
   async createCvDraft(): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
@@ -2406,6 +2492,28 @@ export class JobsComponent implements OnInit, OnDestroy {
     try {
       const app = await this.ensureApplicationDraft();
       const language = this.documentReviewLanguage();
+
+      // Agentic gap-fill: ask about info the job wants that the CV lacks, then
+      // fold the answers into the text we structure. Fail-open and skippable.
+      this.gapAnalyzing.set(true);
+      let additionalInfo = '';
+      try {
+        const questions = await this.analyzeCvGaps(tailoredMd);
+        this.gapAnalyzing.set(false);
+        if (questions.length) {
+          const result = await this.awaitGapDialog(questions);
+          if (result) {
+            additionalInfo = buildAdditionalInfoBlock(result.answers);
+            if (result.saveToProfile && additionalInfo) {
+              await this.appendToProfile(additionalInfo);
+            }
+          }
+        }
+      } finally {
+        this.gapAnalyzing.set(false);
+      }
+      const cvSourceText = additionalInfo ? `${tailoredMd}\n\n${additionalInfo}` : tailoredMd;
+
       const inputHash = await this.db.hashText(
         [job.id, tailoredMd, language, this.documentReviewRegion()].join('\x00'),
       );
@@ -2413,7 +2521,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       // same `cv-import` AI path used by Documents import and onboarding,
       // instead of dumping the whole blob into the summary section.
       const rendered = await this.ai.renderSkill('cv-import', {
-        cv_text: tailoredMd,
+        cv_text: cvSourceText,
         language,
       });
       const res = await this.ai.run({

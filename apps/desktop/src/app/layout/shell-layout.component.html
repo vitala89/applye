@@ -137,4 +137,15 @@
   </div>
 </div>
 
+<!-- Resume an apply-wizard session the user navigated away from mid-flow. -->
+@if (resumeProgress()) {
+  <button type="button" class="resume-tailor" (click)="resumeTailor()">
+    <lucide-icon [img]="icons.wand" [size]="16" aria-hidden="true" />
+    <span class="resume-tailor__text">
+      <strong>{{ t()('jobs.wizard.resume_title') }}</strong>
+      <span class="resume-tailor__hint">{{ t()('jobs.wizard.resume_hint') }}</span>
+    </span>
+  </button>
+}
+
 <app-paste-job-modal />

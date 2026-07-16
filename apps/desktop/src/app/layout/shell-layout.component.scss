@@ -227,3 +227,45 @@
   padding: var(--space-8, 32px);
   background: var(--bg-app);
 }
+
+// --- Resume-tailor floating affordance ---
+// Fixed pill offered when the user navigates away from an unfinished apply
+// wizard; a click returns them to the job at the step they left.
+.resume-tailor {
+  position: fixed;
+  right: var(--space-6, 20px);
+  bottom: var(--space-6, 20px);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3, 8px);
+  padding: var(--space-3, 8px) var(--space-5, 16px);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  border-radius: var(--radius-full, 999px);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgb(0 0 0 / 25%));
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-fast, 140ms) var(--ease-standard);
+
+  &:hover {
+    background: var(--accent-hover);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+
+    strong {
+      font-size: var(--text-body, 14px);
+      font-weight: var(--weight-semibold, 600);
+    }
+  }
+
+  &__hint {
+    font-size: var(--text-caption, 12px);
+    opacity: 0.85;
+  }
+}

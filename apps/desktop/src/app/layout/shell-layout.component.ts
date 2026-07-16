@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -16,6 +16,7 @@ import {
   Sun,
   Target,
   User,
+  Wand2,
 } from 'lucide-angular';
 import { AiMode } from '@applye/core';
 import { DbService } from '@applye/data';
@@ -23,6 +24,7 @@ import { TranslateService } from '@applye/i18n';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
+import { WizardProgressService } from '../shared/wizard-progress.service';
 import { ThemeService } from '../core/theme.service';
 
 @Component({
@@ -38,7 +40,34 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
   protected readonly pageTitle = inject(PageTitleService);
+  private readonly wizardProgress = inject(WizardProgressService);
   private readonly router = inject(Router);
+
+  // Live router URL so the resume affordance can hide itself when the user is
+  // already on the job whose wizard is unfinished.
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+      startWith(this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /**
+   * The unfinished apply-wizard session to offer resuming, or null. Hidden
+   * while the user is already on that job's page (the wizard is right there).
+   */
+  protected readonly resumeProgress = computed(() => {
+    const p = this.wizardProgress.progress();
+    if (!p) return null;
+    return this.currentUrl().startsWith(`/jobs/${p.jobId}`) ? null : p;
+  });
+
+  protected resumeTailor(): void {
+    const p = this.wizardProgress.progress();
+    if (p) void this.router.navigate(['/jobs', p.jobId]);
+  }
 
   // Maps a route's top-level path segment to its i18n nav label — reused
   // as the topbar title so it always names the page actually showing.
@@ -83,6 +112,7 @@ export class ShellLayoutComponent implements OnInit {
     settings: Settings,
     sun: Sun,
     moon: Moon,
+    wand: Wand2,
   };
 
   private readonly themeService = inject(ThemeService);

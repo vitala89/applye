@@ -1,4 +1,4 @@
-import { scoringState, ScoringStateInput } from './scoring-state';
+import { scoringState, ScoringStateInput, pitchState, PitchStateInput } from './scoring-state';
 
 const FRESH: ScoringStateInput = {
   hasScoringJson: true,
@@ -44,5 +44,39 @@ describe('scoringState', () => {
     expect(scoringState({ ...FRESH, mdDirty: true, savedMdHash: 'h2', scoringHash: 'h1' })).toBe(
       'unsaved',
     );
+  });
+});
+
+const PITCH_FRESH: PitchStateInput = {
+  hasPitch: true,
+  mdDirty: false,
+  savedMdHash: 'h1',
+  pitchHash: 'h1',
+};
+
+describe('pitchState', () => {
+  it('reports none when no pitch has been generated', () => {
+    expect(pitchState({ ...PITCH_FRESH, hasPitch: false })).toBe('none');
+  });
+
+  it('reports unsaved while the markdown is edited but not saved', () => {
+    expect(pitchState({ ...PITCH_FRESH, mdDirty: true })).toBe('unsaved');
+  });
+
+  it('reports fresh when the saved markdown still hashes to the pitch hash', () => {
+    expect(pitchState(PITCH_FRESH)).toBe('fresh');
+  });
+
+  // The bug this function exists for: the pitch used to borrow scoringHash, so regenerating the
+  // scoring profile advanced that hash and made an older pitch report as cached. Keyed on its own
+  // hash, a saved change since the last pitch reads as stale.
+  it('reports stale when the saved markdown changed since the last pitch', () => {
+    expect(pitchState({ ...PITCH_FRESH, savedMdHash: 'h2', pitchHash: 'h1' })).toBe('stale');
+  });
+
+  it('does not claim stale when a hash is unknown on either side', () => {
+    expect(pitchState({ ...PITCH_FRESH, savedMdHash: null })).toBe('fresh');
+    expect(pitchState({ ...PITCH_FRESH, pitchHash: null })).toBe('fresh');
+    expect(pitchState({ ...PITCH_FRESH, pitchHash: undefined })).toBe('fresh');
   });
 });

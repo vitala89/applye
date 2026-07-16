@@ -2470,6 +2470,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       scoringJson: p.scoringJson,
       scoringHash: p.scoringHash,
       pitchMd: p.pitchMd,
+      pitchHash: p.pitchHash,
       targetArchetypes: p.targetArchetypes,
     });
     this.profile.set(updated);

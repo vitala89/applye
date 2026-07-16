@@ -322,6 +322,7 @@ describe('OnboardingComponent flow', () => {
       scoringJson: '{"score":8}',
       scoringHash: 'hash-of-old-md',
       pitchMd: 'My elevator pitch',
+      pitchHash: 'pitch-hash-of-old-md',
       targetArchetypes: '["Staff FE"]',
       updatedAt: '2026-07-01',
     };
@@ -342,6 +343,7 @@ describe('OnboardingComponent flow', () => {
           scoringJson: '{"score":8}',
           scoringHash: 'hash-of-old-md',
           pitchMd: 'My elevator pitch',
+          pitchHash: 'pitch-hash-of-old-md',
         }),
       );
     });

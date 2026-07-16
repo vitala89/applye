@@ -16,6 +16,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 - **Your profile now holds your email, phone, website and LinkedIn.** They were already being read off your resume, but the profile had nowhere to put them, so they were never yours to edit — and were thrown away the first time you saved. Four fields now sit under Location in the profile form.
 - **The scoring profile tells you when it is out of date.** The card now reads "out of date · regenerate" once you have saved a change to your profile text, and "unsaved changes" while you are still editing. Previously it only ever said "cached · 0 tokens".
+- **The elevator pitch now tracks its own freshness, and can always be refreshed.** The pitch card gained the same "out of date · regenerate" / "unsaved changes" badge as the scoring card. It also fixes a real trap: the pitch used to share the scoring profile's cache key, so regenerating your scoring profile made the pitch report as "cached" even though it was written from an older version of your profile — and you could not refresh it. The pitch now remembers the exact profile text it was written from (a new `pitch_hash`), so it goes stale and regenerates independently of scoring.
 
 ### Changed
 

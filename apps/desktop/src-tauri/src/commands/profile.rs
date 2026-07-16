@@ -12,6 +12,7 @@ pub struct Profile {
     pub scoring_json: Option<String>,
     pub scoring_hash: Option<String>,
     pub pitch_md: Option<String>,
+    pub pitch_hash: Option<String>,
     pub target_archetypes: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -24,13 +25,14 @@ pub struct ProfileInput {
     pub scoring_json: Option<String>,
     pub scoring_hash: Option<String>,
     pub pitch_md: Option<String>,
+    pub pitch_hash: Option<String>,
     pub target_archetypes: Option<String>,
 }
 
 #[tauri::command]
 pub async fn db_get_profile(db: State<'_, Db>) -> Result<Option<Profile>, String> {
     sqlx::query_as::<_, Profile>(
-        "SELECT id, full_md, scoring_json, scoring_hash, pitch_md, target_archetypes, updated_at FROM profile WHERE id = 1",
+        "SELECT id, full_md, scoring_json, scoring_hash, pitch_md, pitch_hash, target_archetypes, updated_at FROM profile WHERE id = 1",
     )
     .fetch_optional(&db.pool)
     .await
@@ -43,13 +45,14 @@ pub async fn db_upsert_profile(
     db: State<'_, Db>,
 ) -> Result<Profile, String> {
     sqlx::query(
-        "INSERT INTO profile (id, full_md, scoring_json, scoring_hash, pitch_md, target_archetypes, updated_at)
-         VALUES (1, ?, ?, ?, ?, ?, datetime('now'))
+        "INSERT INTO profile (id, full_md, scoring_json, scoring_hash, pitch_md, pitch_hash, target_archetypes, updated_at)
+         VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(id) DO UPDATE SET
            full_md            = excluded.full_md,
            scoring_json       = excluded.scoring_json,
            scoring_hash       = excluded.scoring_hash,
            pitch_md           = excluded.pitch_md,
+           pitch_hash         = excluded.pitch_hash,
            target_archetypes  = excluded.target_archetypes,
            updated_at         = excluded.updated_at",
     )
@@ -57,6 +60,7 @@ pub async fn db_upsert_profile(
     .bind(&profile.scoring_json)
     .bind(&profile.scoring_hash)
     .bind(&profile.pitch_md)
+    .bind(&profile.pitch_hash)
     .bind(&profile.target_archetypes)
     .execute(&db.pool)
     .await

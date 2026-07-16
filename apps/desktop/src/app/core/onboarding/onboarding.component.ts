@@ -593,6 +593,7 @@ export class OnboardingComponent {
       scoringJson: existing?.scoringJson,
       scoringHash: existing?.scoringHash,
       pitchMd: existing?.pitchMd,
+      pitchHash: existing?.pitchHash,
       targetArchetypes: serializeArchetypes(parseArchetypes(JSON.stringify(this.archetypes()))),
     });
   }

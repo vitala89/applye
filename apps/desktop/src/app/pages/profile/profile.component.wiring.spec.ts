@@ -35,6 +35,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
       scoringJson: '{"seniority":"senior"}',
       scoringHash: fakeHash(OLD_MD.trim()),
       pitchMd: 'old pitch',
+      pitchHash: fakeHash(OLD_MD.trim()),
       targetArchetypes: '[]',
       updatedAt: '2026-07-16',
       ...over,
@@ -144,5 +145,58 @@ describe('ProfileComponent scoring freshness wiring', () => {
 
     await component.save();
     expect(component.scoringState()).toBe('fresh');
+  });
+
+  it('reports the pitch fresh on load, when it matches the saved markdown', () => {
+    expect(component.pitchState()).toBe('fresh');
+  });
+
+  it('reports the pitch stale after saving a change, not cached', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+
+    expect(component.pitchState()).toBe('stale');
+  });
+
+  it('returns the pitch to fresh once regenerated, persisting its own hash', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+    await component.generatePitch();
+
+    expect(component.pitchState()).toBe('fresh');
+    expect(upsertProfile).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pitchHash: fakeHash(NEW_MD.trim()) }),
+    );
+  });
+
+  // The headline bug: the pitch used to be keyed on scoringHash. Regenerating the scoring profile
+  // advanced that hash and made a pitch written from the OLD markdown short-circuit as cached, so
+  // the user could never refresh it. Keyed on pitchHash, generatePitch runs the AI here.
+  it('regenerates the pitch after a rescore, instead of reporting the old pitch cached', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+    await component.generateScoringProfile(); // advances scoringHash to hash(NEW)
+    run.mockClear();
+
+    await component.generatePitch();
+
+    expect(run).toHaveBeenCalled();
+    expect(component.pitchState()).toBe('fresh');
+    expect(upsertProfile).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pitchMd: 'generated', pitchHash: fakeHash(NEW_MD.trim()) }),
+    );
+  });
+
+  // #93 whole-row-replace guard: regenerating the scoring profile must carry pitchHash forward,
+  // not NULL it. The pitch here is genuinely stale (md changed since it was written) — the point
+  // is that the rescore preserved the pitch's own hash rather than clobbering it.
+  it('carries pitchHash forward untouched when only the scoring profile was regenerated', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+    await component.generateScoringProfile();
+
+    expect(upsertProfile).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pitchHash: fakeHash(OLD_MD.trim()) }),
+    );
   });
 });

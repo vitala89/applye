@@ -44,7 +44,10 @@ export class DbService {
 
   async upsertProfile(
     profile: Partial<
-      Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'targetArchetypes'>
+      Pick<
+        Profile,
+        'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'pitchHash' | 'targetArchetypes'
+      >
     >,
   ): Promise<Profile> {
     return tauriInvoke<Profile>('db_upsert_profile', { profile });

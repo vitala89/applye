@@ -17,6 +17,7 @@ import {
   missingFields,
   parseScoringJson,
   scoringState as computeScoringState,
+  pitchState as computePitchState,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import {
@@ -462,7 +463,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     appButton
                     variant="secondary"
                     size="sm"
-                    [disabled]="scoring() || saving() || !fullMd().trim()"
+                    [disabled]="scoring() || pitching() || saving() || !fullMd().trim()"
                     (click)="generateScoringProfile()"
                   >
                     <lucide-icon [img]="regenIcon" [size]="13" aria-hidden="true" />
@@ -514,7 +515,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   appButton
                   variant="secondary"
                   size="sm"
-                  [disabled]="pitching() || saving() || !fullMd().trim()"
+                  [disabled]="pitching() || scoring() || saving() || !fullMd().trim()"
                   (click)="generatePitch()"
                 >
                   <lucide-icon [img]="regenIcon" [size]="13" aria-hidden="true" />
@@ -535,9 +536,31 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               } @else if (profile()?.pitchMd) {
                 <div class="output-block output-block--prose">{{ profile()?.pitchMd }}</div>
               }
-              @if (pitchStatus()) {
-                <span class="status" [class.status--error]="pitchError()">{{ pitchStatus() }}</span>
-              }
+              <div class="tool-card__foot">
+                @if (pitchState() === 'fresh') {
+                  <span class="chip">
+                    <lucide-icon [img]="checkIcon" [size]="12" aria-hidden="true" />
+                    {{ t()('profile.cached_chip') }}
+                  </span>
+                } @else if (pitchState() === 'stale') {
+                  <span class="chip chip--stale">
+                    <lucide-icon [img]="staleIcon" [size]="12" aria-hidden="true" />
+                    {{ t()('profile.stale_chip') }}
+                  </span>
+                  <span class="chip-hint">{{ t()('profile.pitch_stale_hint') }}</span>
+                } @else if (pitchState() === 'unsaved') {
+                  <span class="chip chip--stale">
+                    <lucide-icon [img]="unsavedIcon" [size]="12" aria-hidden="true" />
+                    {{ t()('profile.unsaved_chip') }}
+                  </span>
+                  <span class="chip-hint">{{ t()('profile.unsaved_pitch_hint') }}</span>
+                }
+                @if (pitchStatus()) {
+                  <span class="status" [class.status--error]="pitchError()">{{
+                    pitchStatus()
+                  }}</span>
+                }
+              </div>
             </div>
           </div>
         </section>
@@ -1171,6 +1194,16 @@ export class ProfileComponent implements OnInit {
     }),
   );
 
+  /** Same freshness rule as scoring, keyed on the pitch's own hash (not scoringHash). */
+  readonly pitchState = computed(() =>
+    computePitchState({
+      hasPitch: !!this.profile()?.pitchMd,
+      mdDirty: this.mdDirty(),
+      savedMdHash: this.savedMdHash(),
+      pitchHash: this.profile()?.pitchHash,
+    }),
+  );
+
   readonly completeness = computed(() => profileCompleteness(this.form()));
   readonly gaps = computed(() => missingFields(this.form()));
   readonly heroSubtitle = computed(() => {
@@ -1231,7 +1264,10 @@ export class ProfileComponent implements OnInit {
    */
   private async persistProfile(
     input: Partial<
-      Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'targetArchetypes'>
+      Pick<
+        Profile,
+        'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'pitchHash' | 'targetArchetypes'
+      >
     >,
     mdHash?: string,
   ): Promise<Profile> {
@@ -1314,6 +1350,7 @@ export class ProfileComponent implements OnInit {
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: p?.pitchMd,
+        pitchHash: p?.pitchHash,
         targetArchetypes: serializeArchetypes(this.archetypes()),
       });
       this.archetypes.set(parseArchetypes(saved.targetArchetypes));
@@ -1366,6 +1403,7 @@ export class ProfileComponent implements OnInit {
           scoringJson: res.text,
           scoringHash: hash,
           pitchMd: p?.pitchMd,
+          pitchHash: p?.pitchHash,
           targetArchetypes: p?.targetArchetypes,
         },
         hash,
@@ -1397,7 +1435,7 @@ export class ProfileComponent implements OnInit {
     if (!s) return;
 
     const hash = await this.db.hashText(md);
-    if (hash === p?.scoringHash && p?.pitchMd) {
+    if (hash === p?.pitchHash && p?.pitchMd) {
       this.pitchStatus.set(this.t()('profile.pitch_cached'));
       return;
     }
@@ -1426,6 +1464,7 @@ export class ProfileComponent implements OnInit {
           scoringJson: p?.scoringJson,
           scoringHash: p?.scoringHash,
           pitchMd: res.text,
+          pitchHash: hash,
           targetArchetypes: p?.targetArchetypes,
         },
         hash,

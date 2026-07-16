@@ -45,6 +45,11 @@ pub struct ApplicationInput {
     pub follow_up_at: Option<String>,
     pub cv_path: Option<String>,
     pub cover_letter_path: Option<String>,
+    /// Which `document_library` doc this application uses. Persisted with
+    /// COALESCE so a caller that omits them (a minimal status/tracker upsert)
+    /// never wipes an existing link - only an explicit id changes it.
+    pub cv_document_id: Option<i64>,
+    pub cover_letter_document_id: Option<i64>,
     pub contract_type: Option<String>,
     pub eor_provider: Option<String>,
     pub doc_language: Option<String>,
@@ -71,13 +76,23 @@ pub async fn db_upsert_application(
     application: ApplicationInput,
     db: State<'_, Db>,
 ) -> Result<Application, String> {
+    db_upsert_application_core(application, &db.pool).await
+}
+
+pub(crate) async fn db_upsert_application_core(
+    application: ApplicationInput,
+    pool: &sqlx::SqlitePool,
+) -> Result<Application, String> {
     let a = &application;
     let id = match a.id {
         Some(id) => {
             sqlx::query(
                 "UPDATE applications SET
                    job_id = ?, status = ?, application_method = ?, applied_at = ?,
-                   follow_up_at = ?, cv_path = ?, cover_letter_path = ?, contract_type = ?,
+                   follow_up_at = ?, cv_path = ?, cover_letter_path = ?,
+                   cv_document_id = COALESCE(?, cv_document_id),
+                   cover_letter_document_id = COALESCE(?, cover_letter_document_id),
+                   contract_type = ?,
                    eor_provider = ?, doc_language = ?, notes = ?,
                    source_url = ?, contact_name = ?, contact_role = ?, contact_channel = ?,
                    next_action = ?, next_action_at = ?, salary_range = ?,
@@ -91,6 +106,8 @@ pub async fn db_upsert_application(
             .bind(&a.follow_up_at)
             .bind(&a.cv_path)
             .bind(&a.cover_letter_path)
+            .bind(a.cv_document_id)
+            .bind(a.cover_letter_document_id)
             .bind(&a.contract_type)
             .bind(&a.eor_provider)
             .bind(&a.doc_language)
@@ -103,7 +120,7 @@ pub async fn db_upsert_application(
             .bind(&a.next_action_at)
             .bind(&a.salary_range)
             .bind(id)
-            .execute(&db.pool)
+            .execute(pool)
             .await
             .map_err(|e| format!("db_upsert_application (update): {e}"))?;
             id
@@ -112,10 +129,11 @@ pub async fn db_upsert_application(
             let res = sqlx::query(
                 "INSERT INTO applications
                    (job_id, status, application_method, applied_at, follow_up_at, cv_path,
-                    cover_letter_path, contract_type, eor_provider, doc_language, notes,
+                    cover_letter_path, cv_document_id, cover_letter_document_id,
+                    contract_type, eor_provider, doc_language, notes,
                     source_url, contact_name, contact_role, contact_channel,
                     next_action, next_action_at, salary_range, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
             )
             .bind(a.job_id)
             .bind(&a.status)
@@ -124,6 +142,8 @@ pub async fn db_upsert_application(
             .bind(&a.follow_up_at)
             .bind(&a.cv_path)
             .bind(&a.cover_letter_path)
+            .bind(a.cv_document_id)
+            .bind(a.cover_letter_document_id)
             .bind(&a.contract_type)
             .bind(&a.eor_provider)
             .bind(&a.doc_language)
@@ -135,14 +155,14 @@ pub async fn db_upsert_application(
             .bind(&a.next_action)
             .bind(&a.next_action_at)
             .bind(&a.salary_range)
-            .execute(&db.pool)
+            .execute(pool)
             .await
             .map_err(|e| format!("db_upsert_application (insert): {e}"))?;
             res.last_insert_rowid()
         }
     };
 
-    fetch_application(&db.pool, id).await
+    fetch_application(pool, id).await
 }
 
 /// Update status AND append a `status_history` row in a single transaction.
@@ -471,6 +491,84 @@ mod followup_tests {
         .fetch_one(pool)
         .await
         .expect("insert application")
+    }
+
+    fn app_input(
+        job_id: i64,
+        cv_document_id: Option<i64>,
+        cover_letter_document_id: Option<i64>,
+    ) -> ApplicationInput {
+        ApplicationInput {
+            id: None,
+            job_id,
+            status: "saved".to_string(),
+            application_method: None,
+            applied_at: None,
+            follow_up_at: None,
+            cv_path: None,
+            cover_letter_path: None,
+            cv_document_id,
+            cover_letter_document_id,
+            contract_type: None,
+            eor_provider: None,
+            doc_language: None,
+            notes: None,
+            source_url: None,
+            contact_name: None,
+            contact_role: None,
+            contact_channel: None,
+            next_action: None,
+            next_action_at: None,
+            salary_range: None,
+        }
+    }
+
+    /// Regression: the apply wizard links a generated CV / cover letter to the
+    /// application through `db_upsert_application`. The doc-id columns must
+    /// actually persist - they were silently dropped before (missing from the
+    /// input struct + SQL), so the freshly-shown "Review" button reverted to
+    /// "Generate" a moment later and one-doc-per-job minted duplicates. A later
+    /// minimal upsert that omits the ids must not wipe the link (COALESCE).
+    #[tokio::test]
+    async fn upsert_persists_and_preserves_document_ids() {
+        let pool = test_pool().await;
+        let job_id: i64 = sqlx::query_scalar(
+            "INSERT INTO jobs (jd_text, jd_hash, created_at) VALUES ('jd', ?, datetime('now')) RETURNING id",
+        )
+        .bind(format!("hash-{}", uuid_ish()))
+        .fetch_one(&pool)
+        .await
+        .expect("insert job");
+
+        let cv_doc: i64 = sqlx::query_scalar(
+            "INSERT INTO document_library (doc_type, source, created_at, updated_at)
+             VALUES ('cv', 'generated', datetime('now'), datetime('now')) RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("insert cv doc");
+
+        let created = db_upsert_application_core(app_input(job_id, Some(cv_doc), None), &pool)
+            .await
+            .expect("insert application");
+        assert_eq!(
+            created.cv_document_id,
+            Some(cv_doc),
+            "the linked CV id must persist to the applications row"
+        );
+
+        let mut minimal = app_input(job_id, None, None);
+        minimal.id = Some(created.id);
+        minimal.status = "applied".to_string();
+        let updated = db_upsert_application_core(minimal, &pool)
+            .await
+            .expect("update application");
+        assert_eq!(
+            updated.cv_document_id,
+            Some(cv_doc),
+            "omitting the doc id on a later upsert must not clear the existing link"
+        );
+        assert_eq!(updated.status.as_deref(), Some("applied"));
     }
 
     /// Moving into `applied` sets follow_up_at = today + settings cadence

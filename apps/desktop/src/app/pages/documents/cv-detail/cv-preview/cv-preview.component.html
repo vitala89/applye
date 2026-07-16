@@ -716,7 +716,9 @@
             >{{ entry.degree }}</span
           >
         }
-        <span class="cvpreview__entry-role-sep">, </span>
+        @if (entry.degree && entry.institution) {
+          <span class="cvpreview__entry-role-sep">, </span>
+        }
         @if (isEditingLeaf(leafPath('edu', i, 'institution')) && selectable(renderMode)) {
           <input
             type="text"

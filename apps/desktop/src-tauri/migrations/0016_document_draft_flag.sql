@@ -1,0 +1,11 @@
+-- 0016_document_draft_flag.sql
+-- Defer generated apply-wizard documents to Export & Apply.
+--
+-- Generated CV / cover-letter drafts are written to `document_library` as soon
+-- as the user generates them (so Review / inline-edit / export by id keep
+-- working), but they must not appear in the Documents library list until the
+-- user commits them at step 5 (export the PDF or mark the job applied). This
+-- flag marks such uncommitted drafts; the list queries exclude it and the
+-- `document_library_commit` command clears it. Purely additive, default 0 so
+-- every existing row is treated as a committed library entry.
+ALTER TABLE document_library ADD COLUMN is_application_draft INTEGER NOT NULL DEFAULT 0;

@@ -795,11 +795,26 @@ interface FinalChecks {
                         >
                           {{ t()('jobs.wizard.document_review_cv') }}
                         </button>
+                        <button
+                          class="btn btn--secondary btn--sm"
+                          type="button"
+                          [disabled]="preparingCv() || !finalTailoredCvMd()"
+                          (click)="createCvDraft()"
+                        >
+                          @if (preparingCv()) {
+                            <span class="ai-thinking__dots" aria-hidden="true">
+                              <span></span><span></span><span></span>
+                            </span>
+                            {{ t()('jobs.wizard.document_status_generating') }}
+                          } @else {
+                            {{ t()('jobs.wizard.document_regenerate') }}
+                          }
+                        </button>
                       } @else {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
-                          [disabled]="preparingCv()"
+                          [disabled]="preparingCv() || !finalTailoredCvMd()"
                           (click)="createCvDraft()"
                         >
                           @if (preparingCv()) {
@@ -812,21 +827,6 @@ interface FinalChecks {
                           }
                         </button>
                       }
-                      <button
-                        class="btn btn--secondary btn--sm"
-                        type="button"
-                        [disabled]="preparingCv() || !finalTailoredCvMd()"
-                        (click)="createCvDraft()"
-                      >
-                        @if (preparingCv()) {
-                          <span class="ai-thinking__dots" aria-hidden="true">
-                            <span></span><span></span><span></span>
-                          </span>
-                          {{ t()('jobs.wizard.document_status_generating') }}
-                        } @else {
-                          {{ t()('jobs.wizard.document_regenerate') }}
-                        }
-                      </button>
                       <button
                         class="btn btn--secondary btn--sm"
                         type="button"
@@ -889,6 +889,21 @@ interface FinalChecks {
                         >
                           {{ t()('jobs.wizard.document_review_letter') }}
                         </button>
+                        <button
+                          class="btn btn--secondary btn--sm"
+                          type="button"
+                          [disabled]="preparingCoverLetter()"
+                          (click)="createCoverLetterDraft()"
+                        >
+                          @if (preparingCoverLetter()) {
+                            <span class="ai-thinking__dots" aria-hidden="true">
+                              <span></span><span></span><span></span>
+                            </span>
+                            {{ t()('jobs.wizard.document_status_generating') }}
+                          } @else {
+                            {{ t()('jobs.wizard.document_regenerate') }}
+                          }
+                        </button>
                       } @else {
                         <button
                           class="btn btn--primary btn--sm"
@@ -906,21 +921,6 @@ interface FinalChecks {
                           }
                         </button>
                       }
-                      <button
-                        class="btn btn--secondary btn--sm"
-                        type="button"
-                        [disabled]="preparingCoverLetter()"
-                        (click)="createCoverLetterDraft()"
-                      >
-                        @if (preparingCoverLetter()) {
-                          <span class="ai-thinking__dots" aria-hidden="true">
-                            <span></span><span></span><span></span>
-                          </span>
-                          {{ t()('jobs.wizard.document_status_generating') }}
-                        } @else {
-                          {{ t()('jobs.wizard.document_regenerate') }}
-                        }
-                      </button>
                       <button
                         class="btn btn--secondary btn--sm"
                         type="button"
@@ -2492,6 +2492,23 @@ export class JobsComponent implements OnInit, OnDestroy {
     await this.refreshFinalChecksFreshness();
   }
 
+  /** Commits the linked doc of `kind` (if it is still a draft): clears the
+   * apply-wizard draft flag so it graduates into the Documents library, and
+   * mirrors the change into the local signal. Best-effort - a failed commit
+   * never breaks export / apply; the doc stays a draft for the next attempt. */
+  private async commitLinkedDocument(kind: ReviewDocumentKind): Promise<void> {
+    const item = kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter();
+    if (!item || !item.isApplicationDraft) return;
+    try {
+      const committed = await this.db.documentLibraryCommit(item.id);
+      if (!committed) return;
+      if (kind === 'cv') this.linkedCv.set(committed);
+      else this.linkedCoverLetter.set(committed);
+    } catch {
+      // swallow: keep the draft, retry on the next export / mark-applied
+    }
+  }
+
   async prepareDocumentsStep(): Promise<void> {
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
@@ -2671,6 +2688,10 @@ export class JobsComponent implements OnInit, OnDestroy {
         regionTag: this.documentReviewRegion(),
         contentJson: JSON.stringify(content),
         inputHash,
+        // Draft until Export & Apply: hidden from the Documents library list
+        // until the user commits it (export / mark applied). Review, inline
+        // edit and export all still reach it by id.
+        isApplicationDraft: true,
       });
       const updated = await this.db.upsertApplication({
         ...app,
@@ -2750,6 +2771,8 @@ export class JobsComponent implements OnInit, OnDestroy {
         modelUsed: settings.defaultModel,
         tokensInput: res.tokensInput,
         tokensOutput: res.tokensOutput,
+        // Draft until Export & Apply (see createCvDraft).
+        isApplicationDraft: true,
       });
       const updated = await this.db.upsertApplication({
         ...app,
@@ -3588,6 +3611,10 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (!app?.id) {
         app = await this.db.upsertApplication({ jobId: j.id, status: 'saved' });
       }
+      // Applying commits the tailored documents into the library even if the
+      // user applied via a portal without exporting a PDF first.
+      await this.commitLinkedDocument('cv');
+      await this.commitLinkedDocument('cover_letter');
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
       // Mirror the status the DB actually recorded, not the literal we asked
@@ -4175,6 +4202,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       }
       this.exportStatus.set(`${this.t()('jobs.wizard.export_saved')}: ${filePath}`);
       this.lastExport.set({ filePath, format });
+      // Exporting a document commits it: clear the apply-wizard draft flag so it
+      // now appears in the Documents library (deferred-to-step-5 rule).
+      await this.commitLinkedDocument(kind);
     } catch (e) {
       this.exportStatus.set(`${this.t()('jobs.wizard.export_failed')}: ${String(e)}`);
       this.exportError.set(true);

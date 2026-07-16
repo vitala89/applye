@@ -142,22 +142,18 @@
   <button
     type="button"
     class="resume-tailor"
-    [class.resume-tailor--busy]="scoringRunning()"
+    [class.resume-tailor--busy]="runningActivity()"
     (click)="resumeTailor()"
   >
     <lucide-icon
-      [img]="scoringRunning() ? icons.loader : icons.wand"
+      [img]="runningActivity() ? icons.loader : icons.wand"
       [size]="16"
-      [class.resume-tailor__spin]="scoringRunning()"
+      [class.resume-tailor__spin]="runningActivity()"
       aria-hidden="true"
     />
     <span class="resume-tailor__text">
-      <strong>{{
-        t()(scoringRunning() ? 'jobs.wizard.resume_scoring_title' : 'jobs.wizard.resume_title')
-      }}</strong>
-      <span class="resume-tailor__hint">{{
-        t()(scoringRunning() ? 'jobs.wizard.resume_scoring_hint' : 'jobs.wizard.resume_hint')
-      }}</span>
+      <strong>{{ t()(resumeTitleKey()) }}</strong>
+      <span class="resume-tailor__hint">{{ t()(resumeHintKey()) }}</span>
     </span>
   </button>
 }

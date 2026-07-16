@@ -20,7 +20,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
-- **Leaving the app mid-rescore no longer wipes your updated score.** When the "update score" step was running and you switched to Pipeline or the job tracker, coming back showed the step as skipped and threw the result away. The rescore now keeps running in the background while you are away, the "Finish tailoring" button shows a live "Scoring your tailored CV…" spinner while it works, and your updated score is waiting for you when you return.
+- **Leaving the app mid-step no longer wipes your progress.** Whenever a long apply-wizard step was running - tailoring your CV, updating the score, or preparing your documents - switching to Pipeline or the job tracker used to abandon it and show the step as skipped or reset when you came back. Each step now keeps running in the background while you are away, the "Finish tailoring" button turns into a live spinner naming what is in flight ("Tailoring your CV…", "Scoring your tailored CV…", "Preparing your documents…"), and the finished result is waiting for you when you return. (Also fixes a hang where leaving while the CV gap-fill questions were open would leave the generation stuck forever.)
 
 ### Changed
 

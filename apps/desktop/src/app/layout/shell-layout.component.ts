@@ -26,7 +26,7 @@ import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-moda
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
 import { WizardProgressService } from '../shared/wizard-progress.service';
-import { TailorScoreService } from '../shared/tailor-score.service';
+import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
 import { ThemeService } from '../core/theme.service';
 
 @Component({
@@ -43,7 +43,7 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly pasteJobModal = inject(PasteJobModalService);
   protected readonly pageTitle = inject(PageTitleService);
   private readonly wizardProgress = inject(WizardProgressService);
-  private readonly tailorScore = inject(TailorScoreService);
+  private readonly activity = inject(WizardActivityService);
   private readonly router = inject(Router);
 
   // Live router URL so the resume affordance can hide itself when the user is
@@ -68,14 +68,34 @@ export class ShellLayoutComponent implements OnInit {
   });
 
   /**
-   * True when the offered resume session's post-tailor rescore is still
-   * running - flips the badge to a live "scoring…" state with a spinner so
-   * the user knows a step is in flight, not stalled.
+   * The wizard step running for the offered resume session, or null. Flips the
+   * badge to a live "processing…" state with a spinner so the user knows a step
+   * is in flight, not stalled.
    */
-  protected readonly scoringRunning = computed(() => {
+  protected readonly runningActivity = computed<WizardActivity | null>(() => {
     const p = this.resumeProgress();
-    return !!p && this.tailorScore.runningJobId() === p.jobId;
+    return p ? this.activity.runningActivityFor(p.jobId) : null;
   });
+
+  private static readonly ACTIVITY_TITLE_KEYS: Record<WizardActivity, string> = {
+    tailoring: 'jobs.wizard.resume_tailoring_title',
+    scoring: 'jobs.wizard.resume_scoring_title',
+    reviewing: 'jobs.wizard.resume_reviewing_title',
+  };
+  private static readonly ACTIVITY_HINT_KEYS: Record<WizardActivity, string> = {
+    tailoring: 'jobs.wizard.resume_tailoring_hint',
+    scoring: 'jobs.wizard.resume_scoring_hint',
+    reviewing: 'jobs.wizard.resume_reviewing_hint',
+  };
+
+  protected resumeTitleKey(): string {
+    const a = this.runningActivity();
+    return a ? ShellLayoutComponent.ACTIVITY_TITLE_KEYS[a] : 'jobs.wizard.resume_title';
+  }
+  protected resumeHintKey(): string {
+    const a = this.runningActivity();
+    return a ? ShellLayoutComponent.ACTIVITY_HINT_KEYS[a] : 'jobs.wizard.resume_hint';
+  }
 
   protected resumeTailor(): void {
     const p = this.wizardProgress.progress();

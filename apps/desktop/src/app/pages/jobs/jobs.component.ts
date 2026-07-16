@@ -1,9 +1,19 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { WizardProgressService } from '../../shared/wizard-progress.service';
 import { TailorScoreService } from '../../shared/tailor-score.service';
+import { WizardActivity, WizardActivityService } from '../../shared/wizard-activity.service';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle,
@@ -2084,6 +2094,28 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardProgress = inject(WizardProgressService);
   private readonly tailorScore = inject(TailorScoreService);
+  private readonly activity = inject(WizardActivityService);
+
+  // Previous running activity for this job, so the effect below can detect the
+  // moment a background step finished and pull its fresh result into a page
+  // that was reopened while the step was still running.
+  private prevActivity: WizardActivity | null = null;
+  private readonly activityCompletionEffect = effect(() => {
+    const jobId = this.job()?.id ?? -1;
+    const current = this.activity.runningActivityFor(jobId);
+    const prev = this.prevActivity;
+    this.prevActivity = current;
+    if (!prev || current) return;
+    // A background step for this job just finished while we are mounted.
+    untracked(() => {
+      if (prev === 'tailoring' && this.tailorResults().length < 3) {
+        void this.restoreTailoringFromCache();
+      }
+      if (prev === 'reviewing') {
+        void this.loadLinkedDocuments();
+      }
+    });
+  });
   private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
@@ -2493,6 +2525,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
 
     this.documentPreparing.set('cv');
+    this.activity.begin(job.id, 'reviewing');
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     try {
@@ -2576,6 +2609,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.documentReviewStatus.set(String(e));
     } finally {
       this.documentPreparing.set(null);
+      if (job.id) this.activity.end(job.id, 'reviewing');
     }
   }
 
@@ -2591,6 +2625,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
 
     this.documentPreparing.set('cover_letter');
+    this.activity.begin(job.id, 'reviewing');
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     try {
@@ -2655,6 +2690,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.documentReviewStatus.set(String(e));
     } finally {
       this.documentPreparing.set(null);
+      if (job.id) this.activity.end(job.id, 'reviewing');
     }
   }
 
@@ -3048,6 +3084,15 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.pageTitle.clear();
+    // Leaving while the gap dialog is open would otherwise hang the CV-draft
+    // promise forever (its resolver only fires from the dialog buttons), so
+    // resolve it as skipped - generation then continues in the background and
+    // its `reviewing` activity ends cleanly instead of sticking on the badge.
+    if (this.gapResolver) {
+      this.gapDialogOpen.set(false);
+      this.gapResolver(null);
+      this.gapResolver = null;
+    }
   }
 
   private async loadJob(id: number): Promise<void> {
@@ -3720,6 +3765,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
 
     this.tailorScore.begin(j.id);
+    this.activity.begin(j.id, 'scoring');
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
     try {
@@ -3784,6 +3830,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       );
     } catch (e) {
       this.tailorScore.fail(j.id, `Update failed: ${String(e)}`);
+    } finally {
+      this.activity.end(j.id, 'scoring');
     }
   }
 
@@ -3880,6 +3928,8 @@ export class JobsComponent implements OnInit, OnDestroy {
 
     this.tailorCancelled.set(false);
     this.tailoring.set(true);
+    const tailorJobId = this.job()?.id;
+    if (tailorJobId) this.activity.begin(tailorJobId, 'tailoring');
     try {
       for (const pass of [1, 2, 3] as const) {
         if (this.tailorCancelled()) break;
@@ -3896,6 +3946,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } finally {
       this.tailoring.set(false);
       this.tailorCancelled.set(false);
+      if (tailorJobId) this.activity.end(tailorJobId, 'tailoring');
     }
   }
 

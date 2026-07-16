@@ -44,6 +44,8 @@ import {
 import { AiService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
+  ApplicationStatus,
+  APPLICATION_STATUSES,
   Job,
   Profile,
   ScoreDimension,
@@ -61,7 +63,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
-import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
+import { JobDetailIcons, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
@@ -171,7 +173,21 @@ interface FinalChecks {
           <div class="detail-actions">
             <div class="detail-actions__row">
               <!-- Left: primary action + status/tailored badges -->
-              @if (!application()) {
+              @if (application(); as app) {
+                <label class="detail-actions__status">
+                  <span class="detail-actions__status-label">{{ t()('jobs.status_label') }}</span>
+                  <select
+                    class="detail-actions__status-select"
+                    [ngModel]="app.status"
+                    [disabled]="actionBusy()"
+                    (ngModelChange)="setStatus($event)"
+                  >
+                    @for (s of statusOptions; track s) {
+                      <option [value]="s">{{ t()('status.' + s) }}</option>
+                    }
+                  </select>
+                </label>
+              } @else {
                 <button
                   class="btn btn--secondary btn--md"
                   [disabled]="actionBusy()"
@@ -179,8 +195,6 @@ interface FinalChecks {
                 >
                   {{ t()('jobs.add_to_pipeline') }}
                 </button>
-              }
-              @if (canMarkApplied()) {
                 <button
                   class="btn btn--primary btn--md"
                   [disabled]="actionBusy()"
@@ -188,10 +202,6 @@ interface FinalChecks {
                 >
                   {{ t()('jobs.mark_applied') }}
                 </button>
-              } @else if (application(); as app) {
-                <span class="badge" [class]="statusBadgeClass(app.status)">{{
-                  t()('status.' + app.status)
-                }}</span>
               }
               @if (isTailored()) {
                 <span class="badge badge--accent">
@@ -232,9 +242,9 @@ interface FinalChecks {
                   class="btn btn--secondary btn--sm"
                   type="button"
                   [disabled]="actionBusy()"
-                  (click)="startEditingLocked()"
+                  (click)="requestEditLocked()"
                 >
-                  {{ t()('jobs.change_status_action') }}
+                  {{ t()('jobs.edit_locked_action') }}
                 </button>
               } @else if (editingLocked()) {
                 <button
@@ -260,6 +270,36 @@ interface FinalChecks {
               <p class="detail-actions__msg">{{ actionMsg() }}</p>
             }
           </div>
+          @if (editConfirmOpen()) {
+            <div class="alert alert--warn" role="alert">
+              <lucide-icon
+                [img]="icons.alertTriangle"
+                [size]="16"
+                class="alert__icon"
+                aria-hidden="true"
+              />
+              <div class="alert__body">
+                <p class="alert__title">{{ t()('jobs.edit_confirm_title') }}</p>
+                <p class="alert__text">{{ t()('jobs.edit_confirm_msg') }}</p>
+                <div class="alert__actions">
+                  <button
+                    class="btn btn--primary btn--md"
+                    type="button"
+                    (click)="confirmEditLocked()"
+                  >
+                    {{ t()('jobs.edit_confirm_btn') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    (click)="cancelEditConfirm()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
           @if (deleteConfirmOpen()) {
             <div class="alert alert--danger" role="alert">
               <lucide-icon
@@ -1183,6 +1223,34 @@ interface FinalChecks {
       .detail-actions__spacer {
         flex: 1 1 auto;
       }
+      .detail-actions__status {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .detail-actions__status-label {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-tertiary);
+      }
+      .detail-actions__status-select {
+        min-height: 30px;
+        padding: 0 var(--space-3);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
+        background: var(--surface-1);
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-medium);
+        cursor: pointer;
+      }
+      .detail-actions__status-select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
       .locked-hint {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
@@ -2069,9 +2137,15 @@ export class JobsComponent implements OnInit, OnDestroy {
    * "Cancel" drops this override and discards any in-progress edit. */
   readonly editingLocked = signal(false);
 
+  /** Confirm dialog for reopening editing on an application past Applied. */
+  readonly editConfirmOpen = signal(false);
+
+  /** Status options for the detail-page dropdown, in funnel order. */
+  protected readonly statusOptions = APPLICATION_STATUSES;
+
   /** True with no application yet, one still in 'saved', or the user
-   * overrode the lock via "Change". Anything else (applied/interview/
-   * offer/rejected/cancelled) shows a status badge + Change instead of an
+   * overrode the lock via "Edit". Anything else (applied/interview/
+   * offer/rejected/cancelled) shows the status dropdown + Edit instead of an
    * actionable Mark-as-Applied button. */
   readonly canMarkApplied = computed(() => {
     const status = this.application()?.status;
@@ -2080,8 +2154,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Locked exactly when Mark-as-Applied isn't available. */
   readonly jobLocked = computed(() => !this.canMarkApplied());
-
-  protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
   // Draft portal answers
   readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
@@ -3166,6 +3238,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (existing?.id) patch.id = existing.id;
       const app = await this.db.upsertApplication(patch);
       this.application.set(app);
+      this.jobsStore.patchOverviewRow(j.id, { status: app.status });
       this.actionMsg.set(this.t()('jobs.pipeline_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
@@ -3193,7 +3266,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       }
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
-      this.jobsStore.patchOverviewRow(j.id, { status: 'applied' });
+      // Mirror the status the DB actually recorded, not the literal we asked
+      // for - the DB is the single source of truth for the overview row.
+      this.jobsStore.patchOverviewRow(j.id, { status: updated.status });
       this.editingLocked.set(false);
       this.wizardProgress.clear(j.id);
       // Applied - send the user back to My Jobs; re-entering the job shows
@@ -3205,10 +3280,59 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** "Change" - lifts the lock immediately, no confirmation. Nothing is
-   * written until the user takes an explicit follow-up action. */
-  startEditingLocked(): void {
+  /**
+   * Change the application status from the job detail (the dropdown). Uses
+   * the SAME `db_set_application_status` command the pipeline kanban uses, so
+   * `status_history` + `follow_up_at` are computed once, in SQL. The overview
+   * row is mirrored from the status the DB recorded (single source of truth),
+   * and moving back to `saved` reopens editing/tailoring via `canMarkApplied`.
+   */
+  async setStatus(status: ApplicationStatus): Promise<void> {
+    const j = this.job();
+    const app = this.application();
+    if (!j?.id || !app?.id || this.actionBusy() || status === app.status) return;
+    this.actionBusy.set(true);
+    this.actionMsg.set('');
+    try {
+      const updated = await this.db.setApplicationStatus(app.id, status);
+      this.application.set(updated);
+      this.jobsStore.patchOverviewRow(j.id, { status: updated.status });
+      if (updated.status === 'saved') this.editingLocked.set(false);
+    } catch (e) {
+      this.actionMsg.set(String(e));
+    } finally {
+      this.actionBusy.set(false);
+    }
+  }
+
+  /** True once the application has moved past Applied, where re-editing the
+   * job means touching an application whose resume is already out the door. */
+  readonly editNeedsConfirm = computed(() => {
+    const s = this.application()?.status;
+    return s === 'interview' || s === 'offer' || s === 'rejected';
+  });
+
+  /**
+   * "Edit" - lifts the lock so the description is editable and the wizard can
+   * re-tailor. For an application still at Applied this is immediate; once it
+   * has reached Interview or beyond the resume has already been sent, so we
+   * ask first instead of silently reopening it.
+   */
+  requestEditLocked(): void {
+    if (this.editNeedsConfirm()) {
+      this.editConfirmOpen.set(true);
+      return;
+    }
     this.editingLocked.set(true);
+  }
+
+  confirmEditLocked(): void {
+    this.editConfirmOpen.set(false);
+    this.editingLocked.set(true);
+  }
+
+  cancelEditConfirm(): void {
+    this.editConfirmOpen.set(false);
   }
 
   /** "Cancel" - drops the override and discards the in-progress description

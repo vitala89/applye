@@ -17,6 +17,10 @@ is the single source of truth; this file tracks what changed at each tag.
 - **Your profile now holds your email, phone, website and LinkedIn.** They were already being read off your resume, but the profile had nowhere to put them, so they were never yours to edit — and were thrown away the first time you saved. Four fields now sit under Location in the profile form.
 - **The scoring profile tells you when it is out of date.** The card now reads "out of date · regenerate" once you have saved a change to your profile text, and "unsaved changes" while you are still editing. Previously it only ever said "cached · 0 tokens".
 
+### Changed
+
+- **Fit scores now read as a single percentage everywhere.** The score panel used to show three different scales side by side - a number out of 100, a star rating out of 5, and per-category scores out of 10 - which invited exactly the "so which one is it?" confusion. It is now one scale: an overall "82% match", each category shown as a percentage on the same bar, and one word verdict (Strong fit / Consider / Reject). The star rating is gone (it duplicated the overall score and, oddly, never dropped below one star). Colours now mean the same number on every bar.
+
 ### Fixed
 
 - **A tailored CV now fills in every section, not just the summary.** Generating a CV in the apply wizard put the whole document into the Summary box and left Experience, Education, Skills, Languages and your contact fields empty. The tailored resume is now read into its real sections the same way an imported or onboarding CV is, so the editor opens with everything in its place.

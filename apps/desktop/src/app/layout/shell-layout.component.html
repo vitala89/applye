@@ -139,11 +139,21 @@
 
 <!-- Resume an apply-wizard session the user navigated away from mid-flow. -->
 @if (resumeProgress()) {
-  <button type="button" class="resume-tailor" (click)="resumeTailor()">
-    <lucide-icon [img]="icons.wand" [size]="16" aria-hidden="true" />
+  <button
+    type="button"
+    class="resume-tailor"
+    [class.resume-tailor--busy]="runningActivity()"
+    (click)="resumeTailor()"
+  >
+    <lucide-icon
+      [img]="runningActivity() ? icons.loader : icons.wand"
+      [size]="16"
+      [class.resume-tailor__spin]="runningActivity()"
+      aria-hidden="true"
+    />
     <span class="resume-tailor__text">
-      <strong>{{ t()('jobs.wizard.resume_title') }}</strong>
-      <span class="resume-tailor__hint">{{ t()('jobs.wizard.resume_hint') }}</span>
+      <strong>{{ t()(resumeTitleKey()) }}</strong>
+      <span class="resume-tailor__hint">{{ t()(resumeHintKey()) }}</span>
     </span>
   </button>
 }

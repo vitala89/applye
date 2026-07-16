@@ -268,4 +268,25 @@
     font-size: var(--text-caption, 12px);
     opacity: 0.85;
   }
+
+  // While the rescore runs, the badge reads as a live-progress pill.
+  &--busy {
+    cursor: default;
+  }
+
+  &__spin {
+    animation: resume-tailor-spin 900ms linear infinite;
+  }
+}
+
+@keyframes resume-tailor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resume-tailor__spin {
+    animation: none;
+  }
 }

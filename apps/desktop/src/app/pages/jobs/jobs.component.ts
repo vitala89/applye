@@ -1,8 +1,22 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnDestroy,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { WizardProgressService } from '../../shared/wizard-progress.service';
+import { TailorScoreService } from '../../shared/tailor-score.service';
+import { WizardActivity, WizardActivityService } from '../../shared/wizard-activity.service';
+import { DocumentGenService, ReviewDocumentKind } from '../../shared/document-gen.service';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle,
@@ -89,7 +103,6 @@ interface PassResult {
 }
 
 type DocumentRegionTag = 'de' | 'us' | 'uk' | 'generic';
-type ReviewDocumentKind = 'cv' | 'cover_letter';
 type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
 type FinalCheckStatus =
   | 'not_run'
@@ -269,35 +282,42 @@ interface FinalChecks {
             }
           </div>
           @if (crossJobConfirmOpen()) {
-            <div class="alert alert--warn" role="alert">
-              <lucide-icon
-                [img]="icons.alertTriangle"
-                [size]="16"
-                class="alert__icon"
-                aria-hidden="true"
-              />
-              <div class="alert__body">
-                <p class="alert__title">{{ t()('jobs.cross_job_confirm_title') }}</p>
-                <p class="alert__text">
+            <div
+              class="modal-backdrop"
+              (click)="cancelCrossJob()"
+              (keydown.escape)="cancelCrossJob()"
+              tabindex="-1"
+              role="presentation"
+            >
+              <div
+                class="modal modal--sm"
+                role="alertdialog"
+                aria-modal="true"
+                tabindex="-1"
+                (click)="$event.stopPropagation()"
+                (keydown)="$event.stopPropagation()"
+              >
+                <h3>{{ t()('jobs.cross_job_confirm_title') }}</h3>
+                <p class="modal__hint">
                   {{ t()('jobs.cross_job_confirm_msg') }}
                   @if (crossJobLabel()) {
                     <strong>{{ crossJobLabel() }}</strong>
                   }
                 </p>
-                <div class="alert__actions">
-                  <button
-                    class="btn btn--primary btn--md"
-                    type="button"
-                    (click)="confirmCrossJob()"
-                  >
-                    {{ t()('jobs.cross_job_confirm_btn') }}
-                  </button>
+                <div class="modal__actions">
                   <button
                     class="btn btn--secondary btn--md"
                     type="button"
                     (click)="cancelCrossJob()"
                   >
                     {{ t()('actions.cancel') }}
+                  </button>
+                  <button
+                    class="btn btn--primary btn--md"
+                    type="button"
+                    (click)="confirmCrossJob()"
+                  >
+                    {{ t()('jobs.cross_job_confirm_btn') }}
                   </button>
                 </div>
               </div>
@@ -487,7 +507,7 @@ interface FinalChecks {
               [applicationStatus]="application()?.status ?? null"
               [overrideEditing]="editingLocked()"
               [initialStep]="wizardInitialStep()"
-              [busy]="tailoring() || updatingScore() || documentPreparing() !== null"
+              [busy]="tailoring() || updatingScore() || anyDocPreparing()"
               (closeWizard)="closeWizard()"
               (markApplied)="markApplied()"
               (updateApplication)="updateApplication()"
@@ -779,10 +799,10 @@ interface FinalChecks {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
-                          [disabled]="documentPreparing() === 'cv'"
+                          [disabled]="preparingCv()"
                           (click)="createCvDraft()"
                         >
-                          @if (documentPreparing() === 'cv') {
+                          @if (preparingCv()) {
                             <span class="ai-thinking__dots" aria-hidden="true">
                               <span></span><span></span><span></span>
                             </span>
@@ -795,10 +815,10 @@ interface FinalChecks {
                       <button
                         class="btn btn--secondary btn--sm"
                         type="button"
-                        [disabled]="documentPreparing() === 'cv' || !finalTailoredCvMd()"
+                        [disabled]="preparingCv() || !finalTailoredCvMd()"
                         (click)="createCvDraft()"
                       >
-                        @if (documentPreparing() === 'cv') {
+                        @if (preparingCv()) {
                           <span class="ai-thinking__dots" aria-hidden="true">
                             <span></span><span></span><span></span>
                           </span>
@@ -873,10 +893,10 @@ interface FinalChecks {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
-                          [disabled]="documentPreparing() === 'cover_letter'"
+                          [disabled]="preparingCoverLetter()"
                           (click)="createCoverLetterDraft()"
                         >
-                          @if (documentPreparing() === 'cover_letter') {
+                          @if (preparingCoverLetter()) {
                             <span class="ai-thinking__dots" aria-hidden="true">
                               <span></span><span></span><span></span>
                             </span>
@@ -889,10 +909,10 @@ interface FinalChecks {
                       <button
                         class="btn btn--secondary btn--sm"
                         type="button"
-                        [disabled]="documentPreparing() === 'cover_letter'"
+                        [disabled]="preparingCoverLetter()"
                         (click)="createCoverLetterDraft()"
                       >
-                        @if (documentPreparing() === 'cover_letter') {
+                        @if (preparingCoverLetter()) {
                           <span class="ai-thinking__dots" aria-hidden="true">
                             <span></span><span></span><span></span>
                           </span>
@@ -2070,6 +2090,53 @@ interface FinalChecks {
           grid-template-columns: 1fr;
         }
       }
+
+      /* Centered modal overlay - always visible regardless of page scroll. */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: color-mix(in srgb, #000 55%, transparent);
+        display: grid;
+        place-items: center;
+        z-index: 50;
+        padding: var(--space-6);
+      }
+      .modal {
+        width: min(640px, 100%);
+        max-height: calc(100vh - 2 * var(--space-6));
+        overflow-y: auto;
+        background: var(--surface-1, var(--graphite-900));
+        border: var(--border-width, 1px) solid var(--border-default);
+        border-radius: var(--radius-lg, 12px);
+        padding: var(--space-6);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+      .modal--sm {
+        width: min(420px, 100%);
+      }
+      .modal h3 {
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: var(--text-title, 16px);
+        color: var(--text-primary);
+      }
+      .modal__hint {
+        margin: 0;
+        color: var(--text-tertiary);
+        font-size: var(--text-sm, 13px);
+      }
+      .modal__error {
+        margin: 0;
+        color: var(--red-500);
+        font-size: var(--text-sm, 13px);
+      }
+      .modal__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-3);
+      }
     `,
   ],
 })
@@ -2082,6 +2149,42 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardProgress = inject(WizardProgressService);
+  private readonly tailorScore = inject(TailorScoreService);
+  private readonly activity = inject(WizardActivityService);
+  private readonly docGen = inject(DocumentGenService);
+
+  // Previous running activity for this job, so the effect below can detect the
+  // moment a background step finished and pull its fresh result into a page
+  // that was reopened while the step was still running.
+  private prevActivity: WizardActivity | null = null;
+  private readonly activityCompletionEffect = effect(() => {
+    const jobId = this.job()?.id ?? -1;
+    const current = this.activity.runningActivityFor(jobId);
+    const prev = this.prevActivity;
+    this.prevActivity = current;
+    if (!prev || current) return;
+    // A background tailor/score step for this job just finished while we are
+    // mounted - pull its fresh result into the page.
+    untracked(() => {
+      if (prev === 'tailoring' && this.tailorResults().length < 3) {
+        void this.restoreTailoringFromCache();
+      }
+    });
+  });
+
+  // When a background document generation finishes for the job on screen, pull
+  // the freshly-linked CV/cover letter in so the page shows "Review" instead of
+  // "Create", even if the run completed while the page was closed.
+  private prevDocPreparing = false;
+  private readonly docCompletionEffect = effect(() => {
+    const jobId = this.job()?.id ?? -1;
+    const preparing = this.docGen.anyPreparing(jobId);
+    const prev = this.prevDocPreparing;
+    this.prevDocPreparing = preparing;
+    if (prev && !preparing) {
+      untracked(() => void this.loadLinkedDocuments());
+    }
+  });
   private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
@@ -2199,7 +2302,9 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   // Tailoring wizard
   readonly tailorResults = signal<PassResult[]>([]);
-  readonly tailoring = signal(false);
+  // Derived from WizardActivityService so the running state survives leaving
+  // the page and a reopened page reflects an in-flight tailor run.
+  readonly tailoring = computed(() => this.activity.isRunning(this.job()?.id ?? -1, 'tailoring'));
   /** Set by the Cancel button to stop the tailoring pass loop early. */
   readonly tailorCancelled = signal(false);
   readonly tailorStatus = signal('');
@@ -2208,10 +2313,13 @@ export class JobsComponent implements OnInit, OnDestroy {
   // Post-tailor rescore (before/after). The before/after pair is transient
   // (in-memory), but the *after* score is persisted to My Jobs once the user
   // reaches the export step - see savePostTailorScore.
-  readonly postTailorScore = signal<ScoringCache | null>(null);
-  readonly updatingScore = signal(false);
-  readonly updateScoreStatus = signal('');
-  readonly updateScoreError = signal(false);
+  // Post-tailor rescore state lives in TailorScoreService (a root singleton)
+  // so an in-flight run survives leaving this page; these are read-only views
+  // of it, scoped to the job currently shown.
+  readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.job()?.id ?? -1));
+  readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
+  readonly updateScoreStatus = computed(() => this.tailorScore.statusFor(this.job()?.id ?? -1));
+  readonly updateScoreError = computed(() => this.tailorScore.isErrorFor(this.job()?.id ?? -1));
   private readonly postTailorSaved = signal(false);
   /** Non-null while the post-apply/update success card is shown before the
    * redirect fires. */
@@ -2242,7 +2350,14 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
   readonly linkedCv = signal<DocumentLibraryItem | null>(null);
   readonly linkedCoverLetter = signal<DocumentLibraryItem | null>(null);
-  readonly documentPreparing = signal<ReviewDocumentKind | null>(null);
+  // Which document drafts are generating - read from DocumentGenService (a root
+  // singleton) so an in-flight run survives leaving this page and CV + cover
+  // letter can generate independently.
+  readonly preparingCv = computed(() => this.docGen.isPreparing(this.job()?.id ?? -1, 'cv'));
+  readonly preparingCoverLetter = computed(() =>
+    this.docGen.isPreparing(this.job()?.id ?? -1, 'cover_letter'),
+  );
+  readonly anyDocPreparing = computed(() => this.docGen.anyPreparing(this.job()?.id ?? -1));
   readonly gapAnalyzing = signal(false);
   readonly gapDialogOpen = signal(false);
   readonly gapQuestions = signal<CvGapQuestion[]>([]);
@@ -2331,7 +2446,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     kind: ReviewDocumentKind,
     item: DocumentLibraryItem | null,
   ): ReviewDocumentStatus {
-    if (this.documentPreparing() === kind) return 'generating';
+    if (this.docGen.isPreparing(this.job()?.id ?? -1, kind)) return 'generating';
     if (!item) return 'missing';
     if (this.finalChecks()?.inputHash && !this.finalChecksOutdated()) return 'ready';
     if (this.finalChecksOutdated()) return 'needs_review';
@@ -2477,7 +2592,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   async createCvDraft(): Promise<void> {
-    if (this.documentPreparing()) return;
+    if (this.preparingCv()) return;
     const job = this.job();
     const settings = this.settings();
     const tailoredMd = this.finalTailoredCvMd();
@@ -2487,7 +2602,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.documentPreparing.set('cv');
+    this.docGen.begin(job.id, 'cv');
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     try {
@@ -2570,12 +2685,12 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
     } finally {
-      this.documentPreparing.set(null);
+      if (job.id) this.docGen.end(job.id, 'cv');
     }
   }
 
   async createCoverLetterDraft(): Promise<void> {
-    if (this.documentPreparing()) return;
+    if (this.preparingCoverLetter()) return;
     const job = this.job();
     const profile = this.profile();
     const settings = this.settings();
@@ -2585,7 +2700,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.documentPreparing.set('cover_letter');
+    this.docGen.begin(job.id, 'cover_letter');
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     try {
@@ -2649,7 +2764,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
     } finally {
-      this.documentPreparing.set(null);
+      if (job.id) this.docGen.end(job.id, 'cover_letter');
     }
   }
 
@@ -3022,6 +3137,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly scoreStatus = signal('');
   readonly scoreError = signal(false);
 
+  private readonly destroyRef = inject(DestroyRef);
+  /** The job id the page currently reflects, so a route param change to a
+   * different job triggers a real reload instead of leaving stale content. */
+  private loadedJobId: number | null = null;
+
   async ngOnInit(): Promise<void> {
     try {
       const [p, s] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
@@ -3031,18 +3151,70 @@ export class JobsComponent implements OnInit, OnDestroy {
       // non-fatal - user can still paste
     }
 
-    // Job Detail mode: /jobs/:id loads the job and its CACHED score only.
-    // No AI is called on open (0 tokens); the user clicks Score to spend tokens.
-    const idParam = this.route.snapshot.paramMap.get('id');
-    if (idParam) {
-      await this.loadJob(+idParam);
-      await this.handleWizardReturnFromDocumentEditor();
-      await this.restoreWizardProgress(+idParam);
+    // React to /jobs/:id param changes. Angular reuses this component when only
+    // the id changes (e.g. the floating resume button jumping between jobs), so
+    // a snapshot read in ngOnInit would leave the previous job on screen.
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((pm) => {
+      const idParam = pm.get('id');
+      if (idParam) void this.enterJob(+idParam);
+    });
+  }
+
+  /**
+   * Load a job when the route points at it. A switch to a different job resets
+   * the per-job wizard state first so nothing bleeds across; a re-entry to the
+   * same id (a query-param-only navigation, e.g. returning from the document
+   * editor) skips the reload but still runs the return/restore handlers.
+   * Job Detail mode loads the job and its CACHED score only - no AI on open.
+   */
+  private async enterJob(id: number): Promise<void> {
+    if (this.loadedJobId !== id) {
+      if (this.loadedJobId != null) this.resetJobScopedState();
+      this.loadedJobId = id;
+      await this.loadJob(id);
     }
+    await this.handleWizardReturnFromDocumentEditor();
+    await this.restoreWizardProgress(id);
+  }
+
+  /** Clear transient wizard/tailor/review state when moving to another job.
+   * Background runs are keyed by job in their services, so leave those. */
+  private resetJobScopedState(): void {
+    this.wizardOpen.set(false);
+    this.wizardInitialStep.set(0);
+    this.tailorResults.set([]);
+    this.tailorStatus.set('');
+    this.tailorError.set(false);
+    this.tailorCancelled.set(false);
+    this.postTailorSaved.set(false);
+    this.finalChecks.set(null);
+    this.finalChecksOutdated.set(false);
+    this.documentReviewStatus.set('');
+    this.documentReviewError.set(false);
+    this.exportStatus.set('');
+    this.exportError.set(false);
+    this.lastExport.set(null);
+    this.editingLocked.set(false);
+    this.editConfirmOpen.set(false);
+    this.crossJobConfirmOpen.set(false);
+    this.deleteConfirmOpen.set(false);
+    this.chooseCvOpen.set(false);
+    this.chooseCoverLetterOpen.set(false);
+    this.cache.set(null);
+    this.fromCache.set(false);
   }
 
   ngOnDestroy(): void {
     this.pageTitle.clear();
+    // Leaving while the gap dialog is open would otherwise hang the CV-draft
+    // promise forever (its resolver only fires from the dialog buttons), so
+    // resolve it as skipped - generation then continues in the background and
+    // its `reviewing` activity ends cleanly instead of sticking on the badge.
+    if (this.gapResolver) {
+      this.gapDialogOpen.set(false);
+      this.gapResolver(null);
+      this.gapResolver = null;
+    }
   }
 
   private async loadJob(id: number): Promise<void> {
@@ -3714,9 +3886,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.updatingScore.set(true);
-    this.updateScoreStatus.set('');
-    this.updateScoreError.set(false);
+    this.tailorScore.begin(j.id);
+    this.activity.begin(j.id, 'scoring');
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
     try {
@@ -3757,30 +3928,32 @@ export class JobsComponent implements OnInit, OnDestroy {
         throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
       }
 
-      this.postTailorScore.set({
-        id: -1,
-        jobId: j.id,
-        profileHash: p.scoringHash,
-        jdHash: j.jdHash ?? '',
-        language: lang,
-        score: parsed.score,
-        dimensionsJson: JSON.stringify(parsed.dimensions),
-        missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
-        redFlagsJson: JSON.stringify(parsed.red_flags),
-        atsPass: parsed.ats_pass,
-        atsNotes: parsed.ats_notes,
-        summary: parsed.summary,
-        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
-        modelUsed: s.economyModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
-      this.updateScoreStatus.set(`Updated - ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.tailorScore.succeed(
+        j.id,
+        {
+          id: -1,
+          jobId: j.id,
+          profileHash: p.scoringHash,
+          jdHash: j.jdHash ?? '',
+          language: lang,
+          score: parsed.score,
+          dimensionsJson: JSON.stringify(parsed.dimensions),
+          missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
+          redFlagsJson: JSON.stringify(parsed.red_flags),
+          atsPass: parsed.ats_pass,
+          atsNotes: parsed.ats_notes,
+          summary: parsed.summary,
+          beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
+          modelUsed: s.economyModel,
+          tokensInput: res.tokensInput,
+          tokensOutput: res.tokensOutput,
+        },
+        `Updated - ${res.tokensInput} in / ${res.tokensOutput} out`,
+      );
     } catch (e) {
-      this.updateScoreStatus.set(`Update failed: ${String(e)}`);
-      this.updateScoreError.set(true);
+      this.tailorScore.fail(j.id, `Update failed: ${String(e)}`);
     } finally {
-      this.updatingScore.set(false);
+      this.activity.end(j.id, 'scoring');
     }
   }
 
@@ -3870,15 +4043,14 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.lastExport.set(null);
-    this.postTailorScore.set(null);
+    this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
-    this.updateScoreStatus.set('');
-    this.updateScoreError.set(false);
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
 
     this.tailorCancelled.set(false);
-    this.tailoring.set(true);
+    const tailorJobId = this.job()?.id;
+    if (tailorJobId) this.activity.begin(tailorJobId, 'tailoring');
     try {
       for (const pass of [1, 2, 3] as const) {
         if (this.tailorCancelled()) break;
@@ -3893,8 +4065,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.tailorStatus.set(String(e));
       this.tailorError.set(true);
     } finally {
-      this.tailoring.set(false);
       this.tailorCancelled.set(false);
+      if (tailorJobId) this.activity.end(tailorJobId, 'tailoring');
     }
   }
 
@@ -3947,10 +4119,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.exportError.set(false);
-    this.postTailorScore.set(null);
+    this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
-    this.updateScoreStatus.set('');
-    this.updateScoreError.set(false);
   }
 
   /**

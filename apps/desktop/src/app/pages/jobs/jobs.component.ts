@@ -189,6 +189,8 @@ interface FinalChecks {
                   {{ t()('jobs.mark_applied') }}
                 </button>
               } @else if (application(); as app) {
+                <!-- Status is read-only here; it is set on the Pipeline board
+                     and only reflected on the job detail. -->
                 <span class="badge" [class]="statusBadgeClass(app.status)">{{
                   t()('status.' + app.status)
                 }}</span>
@@ -232,9 +234,9 @@ interface FinalChecks {
                   class="btn btn--secondary btn--sm"
                   type="button"
                   [disabled]="actionBusy()"
-                  (click)="startEditingLocked()"
+                  (click)="requestEditLocked()"
                 >
-                  {{ t()('jobs.change_status_action') }}
+                  {{ t()('jobs.edit_locked_action') }}
                 </button>
               } @else if (editingLocked()) {
                 <button
@@ -260,6 +262,36 @@ interface FinalChecks {
               <p class="detail-actions__msg">{{ actionMsg() }}</p>
             }
           </div>
+          @if (editConfirmOpen()) {
+            <div class="alert alert--warn" role="alert">
+              <lucide-icon
+                [img]="icons.alertTriangle"
+                [size]="16"
+                class="alert__icon"
+                aria-hidden="true"
+              />
+              <div class="alert__body">
+                <p class="alert__title">{{ t()('jobs.edit_confirm_title') }}</p>
+                <p class="alert__text">{{ t()('jobs.edit_confirm_msg') }}</p>
+                <div class="alert__actions">
+                  <button
+                    class="btn btn--primary btn--md"
+                    type="button"
+                    (click)="confirmEditLocked()"
+                  >
+                    {{ t()('jobs.edit_confirm_btn') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    (click)="cancelEditConfirm()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
           @if (deleteConfirmOpen()) {
             <div class="alert alert--danger" role="alert">
               <lucide-icon
@@ -2069,9 +2101,12 @@ export class JobsComponent implements OnInit, OnDestroy {
    * "Cancel" drops this override and discards any in-progress edit. */
   readonly editingLocked = signal(false);
 
+  /** Confirm dialog for reopening editing on an application past Applied. */
+  readonly editConfirmOpen = signal(false);
+
   /** True with no application yet, one still in 'saved', or the user
-   * overrode the lock via "Change". Anything else (applied/interview/
-   * offer/rejected/cancelled) shows a status badge + Change instead of an
+   * overrode the lock via "Edit". Anything else (applied/interview/
+   * offer/rejected/cancelled) shows the status dropdown + Edit instead of an
    * actionable Mark-as-Applied button. */
   readonly canMarkApplied = computed(() => {
     const status = this.application()?.status;
@@ -3166,6 +3201,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (existing?.id) patch.id = existing.id;
       const app = await this.db.upsertApplication(patch);
       this.application.set(app);
+      this.jobsStore.patchOverviewRow(j.id, { status: app.status });
       this.actionMsg.set(this.t()('jobs.pipeline_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
@@ -3193,7 +3229,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       }
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
-      this.jobsStore.patchOverviewRow(j.id, { status: 'applied' });
+      // Mirror the status the DB actually recorded, not the literal we asked
+      // for - the DB is the single source of truth for the overview row.
+      this.jobsStore.patchOverviewRow(j.id, { status: updated.status });
       this.editingLocked.set(false);
       this.wizardProgress.clear(j.id);
       // Applied - send the user back to My Jobs; re-entering the job shows
@@ -3205,10 +3243,34 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** "Change" - lifts the lock immediately, no confirmation. Nothing is
-   * written until the user takes an explicit follow-up action. */
-  startEditingLocked(): void {
+  /** True once the application has moved past Applied, where re-editing the
+   * job means touching an application whose resume is already out the door. */
+  readonly editNeedsConfirm = computed(() => {
+    const s = this.application()?.status;
+    return s === 'interview' || s === 'offer' || s === 'rejected';
+  });
+
+  /**
+   * "Edit" - lifts the lock so the description is editable and the wizard can
+   * re-tailor. For an application still at Applied this is immediate; once it
+   * has reached Interview or beyond the resume has already been sent, so we
+   * ask first instead of silently reopening it.
+   */
+  requestEditLocked(): void {
+    if (this.editNeedsConfirm()) {
+      this.editConfirmOpen.set(true);
+      return;
+    }
     this.editingLocked.set(true);
+  }
+
+  confirmEditLocked(): void {
+    this.editConfirmOpen.set(false);
+    this.editingLocked.set(true);
+  }
+
+  cancelEditConfirm(): void {
+    this.editConfirmOpen.set(false);
   }
 
   /** "Cancel" - drops the override and discards the in-progress description

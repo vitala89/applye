@@ -19,6 +19,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **"Change status" is now "Edit", because that is what it did.** The button never changed your status; it unlocked the job description for editing and retailoring. It is renamed, and if the application has already reached Interview or beyond, it asks for confirmation first - the resume is already sent, so reopening it should be deliberate. (Status itself is set on the Pipeline board and shown, read-only, on the job page - which now stays in sync with the board.)
 - **Fit scores now read as a single percentage everywhere.** The score panel used to show three different scales side by side - a number out of 100, a star rating out of 5, and per-category scores out of 10 - which invited exactly the "so which one is it?" confusion. It is now one scale: an overall "82% match", each category shown as a percentage on the same bar, and one word verdict (Strong fit / Consider / Reject). The star rating is gone (it duplicated the overall score and, oddly, never dropped below one star). Colours now mean the same number on every bar.
 
 ### Fixed

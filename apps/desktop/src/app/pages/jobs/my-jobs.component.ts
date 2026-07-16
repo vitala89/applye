@@ -10,6 +10,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-angular';
+import { APPLICATION_STATUSES } from '@applye/core';
 import type { ImportPreviewRow, ImportRawRow, ImportSkipped, JobOverview } from '@applye/core';
 import { AiService, DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -78,7 +79,7 @@ export class MyJobsComponent {
   readonly sortKey = signal<SortKey>('createdAt');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
 
-  readonly statuses = ['saved', 'applied', 'interview', 'offer', 'rejected', 'cancelled'];
+  readonly statuses = APPLICATION_STATUSES;
   readonly legitimacies = ['green', 'yellow', 'red'];
 
   // Import tracklist flow (Phase 6.4) — pick file -> detect (1 AI call) ->

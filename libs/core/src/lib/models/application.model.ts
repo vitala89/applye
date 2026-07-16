@@ -9,6 +9,20 @@ export type ApplicationStatus =
   | 'rejected'
   | 'cancelled';
 
+/**
+ * All application statuses in funnel order. Single source for the status
+ * option lists that were previously hardcoded per-view (job detail dropdown,
+ * My Jobs filter, pipeline columns).
+ */
+export const APPLICATION_STATUSES: readonly ApplicationStatus[] = [
+  'saved',
+  'applied',
+  'interview',
+  'offer',
+  'rejected',
+  'cancelled',
+] as const;
+
 export type ApplicationMethod = 'online_form' | 'email' | 'portal';
 
 export type Priority = 'low' | 'medium' | 'high' | null;

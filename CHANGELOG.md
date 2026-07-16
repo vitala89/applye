@@ -19,11 +19,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The Tailor step starts from your profile by default.** The base to tailor from was the first CV in your library; it now defaults to your profile ("from scratch"), unless the job already has its own tailored CV, in which case that one is the default so you build on it.
+- **Generated CVs and cover letters are labelled with the role, not just the company.** A file is now named like "Acme - Senior Frontend Engineer - Tailored CV", so the Documents list tells you which job each one belongs to.
+- **"Start over" on the last step now actually starts over.** It used to clear some hidden state and leave you on the same screen, so nothing appeared to happen; it now discards the tailoring and takes you back to the Tailor step.
 - **"Change status" is now "Edit", because that is what it did.** The button never changed your status; it unlocked the job description for editing and retailoring. It is renamed, and if the application has already reached Interview or beyond, it asks for confirmation first - the resume is already sent, so reopening it should be deliberate. (Status itself is set on the Pipeline board and shown, read-only, on the job page - which now stays in sync with the board.)
 - **Fit scores now read as a single percentage everywhere.** The score panel used to show three different scales side by side - a number out of 100, a star rating out of 5, and per-category scores out of 10 - which invited exactly the "so which one is it?" confusion. It is now one scale: an overall "82% match", each category shown as a percentage on the same bar, and one word verdict (Strong fit / Consider / Reject). The star rating is gone (it duplicated the overall score and, oddly, never dropped below one star). Colours now mean the same number on every bar.
 
 ### Added
 
+- **Starting to tailor one job warns you if another is unfinished.** If you leave a tailoring session and start one for a different job, the app now tells you the first one will be cancelled - and names it - so you can go back and finish it (via "Finish tailoring") instead of losing it silently.
 - **You can cancel a tailoring run.** The Tailor step now has a Cancel button while it works. It stops before the next pass and drops the partial result, so you can back out and adjust the source instead of waiting out a run you no longer want. (The pass already in flight finishes, then its result is discarded.)
 
 ### Fixed

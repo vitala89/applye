@@ -16,6 +16,7 @@ import {
   profileCompleteness,
   missingFields,
   parseScoringJson,
+  scoringState as computeScoringState,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { LucideAngularModule, Info } from 'lucide-angular';
@@ -280,9 +281,10 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 <label class="field__label" for="field-experience">{{
                   t()('profile.field_experience')
                 }}</label>
+                <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
                 <textarea
                   id="field-experience"
-                  class="field__input field__input--area"
+                  class="field__input field__input--area field__input--mono"
                   [ngModel]="form().experienceText"
                   (ngModelChange)="updateField('experienceText', $event)"
                 ></textarea>
@@ -412,8 +414,12 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                           : t()('profile.generate')
                     }}
                   </button>
-                  @if (scoringCached()) {
+                  @if (scoringState() === 'fresh') {
                     <span class="chip">{{ t()('profile.cached_chip') }}</span>
+                  } @else if (scoringState() === 'stale') {
+                    <span class="chip chip--stale">{{ t()('profile.stale_chip') }}</span>
+                  } @else if (scoringState() === 'unsaved') {
+                    <span class="chip chip--stale">{{ t()('profile.unsaved_chip') }}</span>
                   }
                   @if (scoreStatus()) {
                     <span class="status" [class.status--error]="scoreError()">{{
@@ -679,6 +685,11 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         border-radius: var(--radius-badge);
         white-space: nowrap;
       }
+      .chip--stale {
+        color: var(--warning);
+        background: var(--warning-tint);
+        border-color: transparent;
+      }
 
       .output-block,
       .json-block {
@@ -865,6 +876,15 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         line-height: 1.6;
         resize: vertical;
       }
+      .field__input--mono {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+      }
+      .field__hint {
+        margin: 0 0 var(--space-1);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+      }
     `,
   ],
 })
@@ -902,10 +922,21 @@ export class ProfileComponent implements OnInit {
       serializeArchetypes(this.archetypes()) !==
       serializeArchetypes(parseArchetypes(this.profile()?.targetArchetypes)),
   );
-  readonly dirty = computed(
-    () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
+  readonly mdDirty = computed(() => this.fullMd() !== (this.profile()?.fullMd ?? ''));
+  readonly dirty = computed(() => this.mdDirty() || this.archetypesDirty());
+
+  /** Hash of the saved fullMd. hashText is an IPC call, so it cannot be derived inside a computed. */
+  readonly savedMdHash = signal<string | null>(null);
+
+  /** Archetype edits are excluded via mdDirty: they never enter fullMd, so they cannot stale it. */
+  readonly scoringState = computed(() =>
+    computeScoringState({
+      hasScoringJson: !!this.profile()?.scoringJson,
+      mdDirty: this.mdDirty(),
+      savedMdHash: this.savedMdHash(),
+      scoringHash: this.profile()?.scoringHash,
+    }),
   );
-  readonly scoringCached = computed(() => !!this.profile()?.scoringJson && !this.dirty());
 
   readonly completeness = computed(() => profileCompleteness(this.form()));
   readonly gaps = computed(() => missingFields(this.form()));
@@ -925,6 +956,7 @@ export class ProfileComponent implements OnInit {
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
+      await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
       }
@@ -939,6 +971,20 @@ export class ProfileComponent implements OnInit {
 
   toggleScoring(): void {
     this.scoringOpen.update((v) => !v);
+  }
+
+  /** Trims to match the input generateScoringProfile hashes, or the two hashes never compare equal. */
+  private async refreshSavedMdHash(md: string): Promise<void> {
+    const text = md.trim();
+    if (!text) {
+      this.savedMdHash.set(null);
+      return;
+    }
+    try {
+      this.savedMdHash.set(await this.db.hashText(text));
+    } catch {
+      this.savedMdHash.set(null);
+    }
   }
 
   private syncMdFromForm(): void {
@@ -1014,6 +1060,7 @@ export class ProfileComponent implements OnInit {
       });
       this.profile.set(saved);
       this.archetypes.set(parseArchetypes(saved.targetArchetypes));
+      await this.refreshSavedMdHash(saved.fullMd);
       this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
     } catch (e) {
       this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));
@@ -1061,6 +1108,7 @@ export class ProfileComponent implements OnInit {
         targetArchetypes: p?.targetArchetypes,
       });
       this.profile.set(saved);
+      this.savedMdHash.set(hash);
       this.scoreStatus.set(
         this.t()('profile.generated_tokens')
           .replace('{in}', String(res.tokensInput))

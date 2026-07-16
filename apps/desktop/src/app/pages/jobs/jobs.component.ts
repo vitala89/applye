@@ -692,7 +692,7 @@ interface FinalChecks {
                           class="btn btn--primary btn--sm"
                           type="button"
                           [disabled]="documentPreparing() === 'cv'"
-                          (click)="createCvDraft(false)"
+                          (click)="createCvDraft()"
                         >
                           @if (documentPreparing() === 'cv') {
                             <span class="ai-thinking__dots" aria-hidden="true">
@@ -708,7 +708,7 @@ interface FinalChecks {
                         class="btn btn--secondary btn--sm"
                         type="button"
                         [disabled]="documentPreparing() === 'cv' || !finalTailoredCvMd()"
-                        (click)="createCvDraft(true)"
+                        (click)="createCvDraft()"
                       >
                         @if (documentPreparing() === 'cv') {
                           <span class="ai-thinking__dots" aria-hidden="true">
@@ -786,7 +786,7 @@ interface FinalChecks {
                           class="btn btn--primary btn--sm"
                           type="button"
                           [disabled]="documentPreparing() === 'cover_letter'"
-                          (click)="createCoverLetterDraft(false)"
+                          (click)="createCoverLetterDraft()"
                         >
                           @if (documentPreparing() === 'cover_letter') {
                             <span class="ai-thinking__dots" aria-hidden="true">
@@ -802,7 +802,7 @@ interface FinalChecks {
                         class="btn btn--secondary btn--sm"
                         type="button"
                         [disabled]="documentPreparing() === 'cover_letter'"
-                        (click)="createCoverLetterDraft(true)"
+                        (click)="createCoverLetterDraft()"
                       >
                         @if (documentPreparing() === 'cover_letter') {
                           <span class="ai-thinking__dots" aria-hidden="true">
@@ -2273,9 +2273,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.coverLetters.set(letters);
       await this.ensureApplicationDraft();
       await this.loadLinkedDocuments();
-      if (!this.linkedCv() && this.tailorResults().find((r) => r.pass === 3)) {
-        await this.createCvDraft(false);
-      }
+      // Do not auto-create the CV on entering this step. The document is
+      // written only when the user explicitly clicks Create/Regenerate,
+      // so nothing is generated (or spends tokens) behind their back.
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
@@ -2286,7 +2286,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
   }
 
-  async createCvDraft(regenerate: boolean): Promise<void> {
+  async createCvDraft(): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
     const settings = this.settings();
@@ -2325,7 +2325,12 @@ export class JobsComponent implements OnInit, OnDestroy {
       const parsed = parseCvSkillResponse(res.text);
       const content = buildCvContent(parsed, null);
       const doc = await this.db.documentLibraryUpsert({
-        id: regenerate ? app.cvDocumentId : undefined,
+        // One CV per application (ADR-0003): reuse the already-linked
+        // document whenever there is one, so a first tailor and every
+        // later retailor/regenerate update the same row instead of
+        // creating duplicate "<Company> - Tailored CV" entries. Only a
+        // job with no linked CV yet mints a new row.
+        id: app.cvDocumentId ?? undefined,
         docType: 'cv',
         source: 'generated',
         label: `${job.company || 'Job'} - Tailored CV`,
@@ -2351,7 +2356,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async createCoverLetterDraft(regenerate: boolean): Promise<void> {
+  async createCoverLetterDraft(): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
     const profile = this.profile();
@@ -2398,7 +2403,10 @@ export class JobsComponent implements OnInit, OnDestroy {
         ),
       );
       const doc = await this.db.documentLibraryUpsert({
-        id: regenerate ? app.coverLetterDocumentId : undefined,
+        // One cover letter per application (ADR-0003): reuse the linked
+        // row so retailor/regenerate update in place instead of stacking
+        // duplicate "<Company> - Cover Letter" entries.
+        id: app.coverLetterDocumentId ?? undefined,
         docType: 'cover_letter',
         source: 'generated',
         label: `${job.company || 'Job'} - Cover Letter`,
@@ -2508,7 +2516,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.updateScoreAfterTailor();
     }
     if (this.linkedCv()) {
-      await this.createCvDraft(true);
+      await this.createCvDraft();
     }
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(true);

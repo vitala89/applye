@@ -16,6 +16,7 @@ import {
   profileCompleteness,
   missingFields,
   parseScoringJson,
+  scoringState as computeScoringState,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { LucideAngularModule, Info } from 'lucide-angular';
@@ -62,7 +63,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               appButton
               variant="primary"
               size="md"
-              [disabled]="saving() || !dirty()"
+              [disabled]="saving() || !dirty() || scoring() || pitching()"
               (click)="save()"
             >
               {{
@@ -280,9 +281,10 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 <label class="field__label" for="field-experience">{{
                   t()('profile.field_experience')
                 }}</label>
+                <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
                 <textarea
                   id="field-experience"
-                  class="field__input field__input--area"
+                  class="field__input field__input--area field__input--mono"
                   [ngModel]="form().experienceText"
                   (ngModelChange)="updateField('experienceText', $event)"
                 ></textarea>
@@ -401,7 +403,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     appButton
                     variant="secondary"
                     size="sm"
-                    [disabled]="scoring() || !fullMd().trim()"
+                    [disabled]="scoring() || saving() || !fullMd().trim()"
                     (click)="generateScoringProfile()"
                   >
                     {{
@@ -412,8 +414,12 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                           : t()('profile.generate')
                     }}
                   </button>
-                  @if (scoringCached()) {
+                  @if (scoringState() === 'fresh') {
                     <span class="chip">{{ t()('profile.cached_chip') }}</span>
+                  } @else if (scoringState() === 'stale') {
+                    <span class="chip chip--stale">{{ t()('profile.stale_chip') }}</span>
+                  } @else if (scoringState() === 'unsaved') {
+                    <span class="chip chip--stale">{{ t()('profile.unsaved_chip') }}</span>
                   }
                   @if (scoreStatus()) {
                     <span class="status" [class.status--error]="scoreError()">{{
@@ -437,7 +443,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   appButton
                   variant="secondary"
                   size="sm"
-                  [disabled]="pitching() || !fullMd().trim()"
+                  [disabled]="pitching() || saving() || !fullMd().trim()"
                   (click)="generatePitch()"
                 >
                   {{
@@ -679,6 +685,11 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         border-radius: var(--radius-badge);
         white-space: nowrap;
       }
+      .chip--stale {
+        color: var(--warning);
+        background: var(--warning-tint);
+        border-color: transparent;
+      }
 
       .output-block,
       .json-block {
@@ -865,6 +876,15 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         line-height: 1.6;
         resize: vertical;
       }
+      .field__input--mono {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+      }
+      .field__hint {
+        margin: 0 0 var(--space-1);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+      }
     `,
   ],
 })
@@ -902,10 +922,21 @@ export class ProfileComponent implements OnInit {
       serializeArchetypes(this.archetypes()) !==
       serializeArchetypes(parseArchetypes(this.profile()?.targetArchetypes)),
   );
-  readonly dirty = computed(
-    () => this.fullMd() !== (this.profile()?.fullMd ?? '') || this.archetypesDirty(),
+  readonly mdDirty = computed(() => this.fullMd() !== (this.profile()?.fullMd ?? ''));
+  readonly dirty = computed(() => this.mdDirty() || this.archetypesDirty());
+
+  /** Hash of the saved fullMd. hashText is an IPC call, so it cannot be derived inside a computed. */
+  readonly savedMdHash = signal<string | null>(null);
+
+  /** Archetype edits are excluded via mdDirty: they never enter fullMd, so they cannot stale it. */
+  readonly scoringState = computed(() =>
+    computeScoringState({
+      hasScoringJson: !!this.profile()?.scoringJson,
+      mdDirty: this.mdDirty(),
+      savedMdHash: this.savedMdHash(),
+      scoringHash: this.profile()?.scoringHash,
+    }),
   );
-  readonly scoringCached = computed(() => !!this.profile()?.scoringJson && !this.dirty());
 
   readonly completeness = computed(() => profileCompleteness(this.form()));
   readonly gaps = computed(() => missingFields(this.form()));
@@ -925,6 +956,7 @@ export class ProfileComponent implements OnInit {
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
+      await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
       }
@@ -939,6 +971,45 @@ export class ProfileComponent implements OnInit {
 
   toggleScoring(): void {
     this.scoringOpen.update((v) => !v);
+  }
+
+  /** Trims to match the input generateScoringProfile hashes, or the two hashes never compare equal. */
+  private async refreshSavedMdHash(md: string): Promise<void> {
+    const text = md.trim();
+    if (!text) {
+      this.savedMdHash.set(null);
+      return;
+    }
+    try {
+      this.savedMdHash.set(await this.db.hashText(text));
+    } catch {
+      this.savedMdHash.set(null);
+    }
+  }
+
+  /**
+   * The only writer of the profile row, so that persisting fullMd and refreshing savedMdHash
+   * cannot come apart. A hash that lags the row it describes is precisely what makes the scoring
+   * chip report a stale artefact as cached, and every writer that maintained the hash by hand
+   * eventually forgot to.
+   *
+   * Pass mdHash only when it is known to be the hash of input.fullMd trimmed; otherwise the hash
+   * is recomputed from what the row actually came back with.
+   */
+  private async persistProfile(
+    input: Partial<
+      Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'targetArchetypes'>
+    >,
+    mdHash?: string,
+  ): Promise<Profile> {
+    const saved = await this.db.upsertProfile(input);
+    this.profile.set(saved);
+    if (mdHash) {
+      this.savedMdHash.set(mdHash);
+    } else {
+      await this.refreshSavedMdHash(saved.fullMd);
+    }
+    return saved;
   }
 
   private syncMdFromForm(): void {
@@ -1005,14 +1076,13 @@ export class ProfileComponent implements OnInit {
     this.saveError.set(false);
     try {
       const p = this.profile();
-      const saved = await this.db.upsertProfile({
+      const saved = await this.persistProfile({
         fullMd: this.fullMd(),
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: p?.pitchMd,
         targetArchetypes: serializeArchetypes(this.archetypes()),
       });
-      this.profile.set(saved);
       this.archetypes.set(parseArchetypes(saved.targetArchetypes));
       this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
     } catch (e) {
@@ -1025,7 +1095,11 @@ export class ProfileComponent implements OnInit {
   }
 
   async generateScoringProfile(): Promise<void> {
-    const md = this.fullMd().trim();
+    // Captured before any await: this is the text the artefact is generated from, so it is also
+    // the text the row and scoringHash must describe. Reading fullMd() again after the AI call
+    // would persist markdown nothing analysed.
+    const mdAtStart = this.fullMd();
+    const md = mdAtStart.trim();
     if (!md) {
       this.scoreStatus.set(this.t()('profile.empty_hint'));
       return;
@@ -1053,14 +1127,16 @@ export class ProfileComponent implements OnInit {
         userPrompt: rendered.userPrompt,
         language: 'en',
       });
-      const saved = await this.db.upsertProfile({
-        fullMd: this.fullMd(),
-        scoringJson: res.text,
-        scoringHash: hash,
-        pitchMd: p?.pitchMd,
-        targetArchetypes: p?.targetArchetypes,
-      });
-      this.profile.set(saved);
+      await this.persistProfile(
+        {
+          fullMd: mdAtStart,
+          scoringJson: res.text,
+          scoringHash: hash,
+          pitchMd: p?.pitchMd,
+          targetArchetypes: p?.targetArchetypes,
+        },
+        hash,
+      );
       this.scoreStatus.set(
         this.t()('profile.generated_tokens')
           .replace('{in}', String(res.tokensInput))
@@ -1076,7 +1152,9 @@ export class ProfileComponent implements OnInit {
   }
 
   async generatePitch(): Promise<void> {
-    const md = this.fullMd().trim();
+    // See generateScoringProfile: the row must describe the text that was actually pitched.
+    const mdAtStart = this.fullMd();
+    const md = mdAtStart.trim();
     if (!md) {
       this.pitchStatus.set(this.t()('profile.empty_hint'));
       return;
@@ -1109,14 +1187,16 @@ export class ProfileComponent implements OnInit {
         userPrompt: rendered.userPrompt,
         language: lang,
       });
-      const saved = await this.db.upsertProfile({
-        fullMd: this.fullMd(),
-        scoringJson: p?.scoringJson,
-        scoringHash: p?.scoringHash,
-        pitchMd: res.text,
-        targetArchetypes: p?.targetArchetypes,
-      });
-      this.profile.set(saved);
+      await this.persistProfile(
+        {
+          fullMd: mdAtStart,
+          scoringJson: p?.scoringJson,
+          scoringHash: p?.scoringHash,
+          pitchMd: res.text,
+          targetArchetypes: p?.targetArchetypes,
+        },
+        hash,
+      );
       this.pitchStatus.set(
         this.t()('profile.generated_tokens')
           .replace('{in}', String(res.tokensInput))

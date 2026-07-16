@@ -529,9 +529,23 @@ interface FinalChecks {
                   </div>
                   <p class="muted">{{ t()('jobs.wizard.tailor_skip_hint') }}</p>
                 } @else if (tailoring()) {
-                  <div class="ai-thinking">
-                    <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-                    {{ t()(currentPhaseKey()) }}
+                  <div class="row">
+                    <div class="ai-thinking">
+                      <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
+                      {{ t()(currentPhaseKey()) }}
+                    </div>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      type="button"
+                      [disabled]="tailorCancelled()"
+                      (click)="cancelTailoring()"
+                    >
+                      {{
+                        tailorCancelled()
+                          ? t()('jobs.wizard.tailor_cancelling')
+                          : t()('jobs.wizard.tailor_cancel')
+                      }}
+                    </button>
                   </div>
                 } @else if (tailorResults().length === 3) {
                   <div class="row">
@@ -2132,6 +2146,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   // Tailoring wizard
   readonly tailorResults = signal<PassResult[]>([]);
   readonly tailoring = signal(false);
+  /** Set by the Cancel button to stop the tailoring pass loop early. */
+  readonly tailorCancelled = signal(false);
   readonly tailorStatus = signal('');
   readonly tailorError = signal(false);
 
@@ -2216,6 +2232,9 @@ export class JobsComponent implements OnInit, OnDestroy {
         documentType: kind,
         documentId: id,
         reviewHash,
+        // Open the editor showing the rendered result first (Review = look at
+        // it), not the raw section editor.
+        preview: '1',
       },
     });
   }
@@ -3655,17 +3674,35 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
 
+    this.tailorCancelled.set(false);
     this.tailoring.set(true);
     try {
       for (const pass of [1, 2, 3] as const) {
+        if (this.tailorCancelled()) break;
         await this.runTailorPass(pass);
+      }
+      if (this.tailorCancelled()) {
+        // Discard the partial passes and return to the pre-tailor state.
+        this.tailorResults.set([]);
+        this.tailorStatus.set(this.t()('jobs.wizard.tailor_cancelled'));
       }
     } catch (e) {
       this.tailorStatus.set(String(e));
       this.tailorError.set(true);
     } finally {
       this.tailoring.set(false);
+      this.tailorCancelled.set(false);
     }
+  }
+
+  /**
+   * Cancel an in-flight tailoring run. The AI pass already in flight cannot be
+   * aborted mid-request, so it finishes, but the loop stops before the next
+   * pass and every partial result is discarded - the wizard returns to the
+   * pre-tailor state so the user can adjust the source and try again.
+   */
+  cancelTailoring(): void {
+    if (this.tailoring()) this.tailorCancelled.set(true);
   }
 
   /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 documents · 4 export.

@@ -175,6 +175,11 @@ export class CoverLetterDetailComponent {
       this.label.set(item.label ?? '');
       this.regionTag.set(item.regionTag ?? 'generic');
       this.isDefault.set(item.isDefault);
+      // Opened from the apply wizard's "Review letter": show the rendered
+      // result first, not the raw editor. The user can toggle to Edit.
+      if (this.route.snapshot.queryParamMap.get('preview') === '1') {
+        this.previewMode.set(true);
+      }
 
       const parsed: CoverLetterContent = item.contentJson
         ? JSON.parse(item.contentJson)

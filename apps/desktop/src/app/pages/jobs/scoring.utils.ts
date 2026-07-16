@@ -67,10 +67,6 @@ export function parseBeforeYouSubmit(c: ScoringCache): string[] {
   }
 }
 
-export function starRating(score: number): string {
-  return ((score / 100) * 4 + 1).toFixed(1);
-}
-
 export type ScoreVerdictKey = 'reject' | 'consider' | 'strong';
 
 export function scoreVerdictKey(score: number): ScoreVerdictKey {
@@ -89,9 +85,15 @@ export function scoreVerdictLabelKey(score: number): string {
   return VERDICT_LABEL_KEYS[scoreVerdictKey(score)];
 }
 
+/**
+ * Colour band for a per-dimension score (0-10). Thresholds mirror the
+ * overall gauge's 75/50 bands (`ScoreGauge`), so once a dimension is shown
+ * as a percentage (`score * 10`) the same number wears the same colour on
+ * both scales: >=75% high, >=50% mid, else low.
+ */
 export function dimensionBand(score: number): 'low' | 'mid' | 'high' {
-  if (score >= 7) return 'high';
-  if (score >= 4) return 'mid';
+  if (score >= 7.5) return 'high';
+  if (score >= 5) return 'mid';
   return 'low';
 }
 

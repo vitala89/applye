@@ -5,13 +5,13 @@ import { TranslateService } from '@applye/i18n';
 import { ScoreGauge } from '@applye/ui';
 import {
   JobDetailIcons,
+  dimensionBand,
   parseBeforeYouSubmit,
   parseDimensions,
   parseMissingKeywords,
   parseRedFlags,
   scoreVerdictKey,
   scoreVerdictLabelKey,
-  starRating,
 } from './scoring.utils';
 
 @Component({
@@ -40,16 +40,7 @@ import {
         <div class="scoring-view__summary card">
           <div class="scoring-view__summary-gauge">
             <lib-score-gauge [score]="c.score" size="lg" />
-            <div class="scoring-view__stars">
-              <lucide-icon
-                [img]="icons().star"
-                [size]="15"
-                class="scoring-view__star-icon"
-                aria-hidden="true"
-              />
-              <span class="scoring-view__stars-num">{{ stars(c.score) }}</span>
-              <span class="scoring-view__stars-max">/ 5</span>
-            </div>
+            <span class="scoring-view__match-caption">{{ t()('jobs.score_match_caption') }}</span>
             <span class="cache-chip">
               <lucide-icon [img]="icons().db" [size]="11" aria-hidden="true" />
               {{ t()('jobs.cached_badge') }}
@@ -72,7 +63,7 @@ import {
                   <div class="scoring-view__dim-head">
                     <span class="scoring-view__dim-name">{{ d.name }}</span>
                     <span class="scoring-view__dim-score" [class]="'score-' + dimBand(d.score)"
-                      >{{ d.score }}/10</span
+                      >{{ d.score * 10 }}%</span
                     >
                   </div>
                   <div class="scoring-view__dim-bar-track">
@@ -230,13 +221,7 @@ export class ScoringView {
   protected readonly parseBeforeYouSubmit = parseBeforeYouSubmit;
   protected readonly verdictKey = scoreVerdictKey;
   protected readonly verdictLabelKey = scoreVerdictLabelKey;
-  protected readonly stars = starRating;
-
-  protected dimBand(score: number): 'low' | 'mid' | 'high' {
-    if (score >= 7) return 'high';
-    if (score >= 4) return 'mid';
-    return 'low';
-  }
+  protected readonly dimBand = dimensionBand;
 
   protected readonly jobMetaLine = computed(() => {
     const j = this.job();

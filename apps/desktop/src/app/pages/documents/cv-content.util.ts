@@ -437,6 +437,68 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
   };
 }
 
+export interface CvGapQuestion {
+  id: string;
+  category: 'skill' | 'experience' | 'language' | 'other';
+  question: string;
+  hint: string | null;
+}
+
+export interface CvGapAnswer {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+const GAP_CATEGORIES = ['skill', 'experience', 'language', 'other'] as const;
+
+/** Parses the `cv-gap-analysis` skill response into at most 5 questions.
+ * Fail-open: any malformed output yields `[]` so a bad analysis never blocks
+ * CV generation. */
+export function parseCvGapResponse(text: string): CvGapQuestion[] {
+  let raw: unknown = null;
+  try {
+    raw = JSON.parse(cleanJsonText(text));
+  } catch {
+    const repaired = repairTruncatedJson(cleanJsonText(text));
+    if (repaired) {
+      try {
+        raw = JSON.parse(repaired);
+      } catch {
+        return [];
+      }
+    }
+  }
+  const list = (raw as { questions?: unknown })?.questions;
+  if (!Array.isArray(list)) return [];
+  const out: CvGapQuestion[] = [];
+  for (const item of list) {
+    const q = item as Partial<CvGapQuestion>;
+    if (typeof q?.id !== 'string' || typeof q?.question !== 'string') continue;
+    const category = GAP_CATEGORIES.includes(q.category as never)
+      ? (q.category as CvGapQuestion['category'])
+      : 'other';
+    out.push({
+      id: q.id,
+      category,
+      question: q.question,
+      hint: typeof q.hint === 'string' ? q.hint : null,
+    });
+    if (out.length === 5) break;
+  }
+  return out;
+}
+
+/** Assembles the answered gap items into a markdown block appended to the CV
+ * text before parsing. Empty answers are dropped; returns '' when nothing was
+ * answered so callers can skip the append entirely. */
+export function buildAdditionalInfoBlock(answers: CvGapAnswer[]): string {
+  const lines = answers
+    .filter((a) => a.answer.trim().length > 0)
+    .map((a) => `- ${a.question}: ${a.answer.trim()}`);
+  return lines.length ? `## Additional information\n${lines.join('\n')}` : '';
+}
+
 /** Merges a targeted single-section regenerate result into an existing
  * `CvContent`, updating only that section's content fields (and
  * `sourceHash`) — every other section is untouched. */

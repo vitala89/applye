@@ -27,6 +27,7 @@ import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.
 import { PageTitleService } from '../shared/page-title/page-title.service';
 import { WizardProgressService } from '../shared/wizard-progress.service';
 import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
+import { DocumentGenService } from '../shared/document-gen.service';
 import { ThemeService } from '../core/theme.service';
 
 @Component({
@@ -44,6 +45,7 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly pageTitle = inject(PageTitleService);
   private readonly wizardProgress = inject(WizardProgressService);
   private readonly activity = inject(WizardActivityService);
+  private readonly docGen = inject(DocumentGenService);
   private readonly router = inject(Router);
 
   // Live router URL so the resume affordance can hide itself when the user is
@@ -74,7 +76,11 @@ export class ShellLayoutComponent implements OnInit {
    */
   protected readonly runningActivity = computed<WizardActivity | null>(() => {
     const p = this.resumeProgress();
-    return p ? this.activity.runningActivityFor(p.jobId) : null;
+    if (!p) return null;
+    const a = this.activity.runningActivityFor(p.jobId);
+    if (a) return a;
+    // Document generation runs independently of the single-slot activity.
+    return this.docGen.anyPreparing(p.jobId) ? 'reviewing' : null;
   });
 
   private static readonly ACTIVITY_TITLE_KEYS: Record<WizardActivity, string> = {

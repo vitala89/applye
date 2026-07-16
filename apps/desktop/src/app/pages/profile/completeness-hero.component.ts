@@ -130,18 +130,22 @@ const CIRC = 2 * Math.PI * RADIUS;
       .hero__gap {
         display: inline-flex;
         align-items: center;
-        gap: var(--space-1);
-        padding: var(--space-1) var(--space-3);
+        gap: var(--space-2);
+        height: 30px;
+        padding: 0 var(--space-4);
+        font-family: var(--font-mono);
         font-size: var(--text-xs);
         color: var(--text-secondary);
-        background: var(--surface-2);
-        border: 1px solid var(--border-default);
+        background: transparent;
+        border: 1px dashed var(--border-strong);
         border-radius: var(--radius-badge);
         cursor: pointer;
       }
       .hero__gap:hover {
         color: var(--text-accent);
+        background: var(--accent-tint);
         border-color: var(--accent);
+        border-style: solid;
       }
       .hero__done {
         display: inline-flex;

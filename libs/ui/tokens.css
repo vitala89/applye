@@ -326,6 +326,7 @@
   --dur-fast: 140ms; /* most transitions */
   --dur-base: 220ms; /* panels, popovers */
   --dur-slow: 360ms; /* dialogs, theme switch */
+  --dur-ai-pulse: 1400ms; /* transient AI-generation loading dots */
 }
 
 @keyframes applye-shimmer {

@@ -63,7 +63,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               appButton
               variant="primary"
               size="md"
-              [disabled]="saving() || !dirty()"
+              [disabled]="saving() || !dirty() || scoring() || pitching()"
               (click)="save()"
             >
               {{
@@ -403,7 +403,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     appButton
                     variant="secondary"
                     size="sm"
-                    [disabled]="scoring() || !fullMd().trim()"
+                    [disabled]="scoring() || saving() || !fullMd().trim()"
                     (click)="generateScoringProfile()"
                   >
                     {{
@@ -443,7 +443,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   appButton
                   variant="secondary"
                   size="sm"
-                  [disabled]="pitching() || !fullMd().trim()"
+                  [disabled]="pitching() || saving() || !fullMd().trim()"
                   (click)="generatePitch()"
                 >
                   {{
@@ -987,6 +987,31 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  /**
+   * The only writer of the profile row, so that persisting fullMd and refreshing savedMdHash
+   * cannot come apart. A hash that lags the row it describes is precisely what makes the scoring
+   * chip report a stale artefact as cached, and every writer that maintained the hash by hand
+   * eventually forgot to.
+   *
+   * Pass mdHash only when it is known to be the hash of input.fullMd trimmed; otherwise the hash
+   * is recomputed from what the row actually came back with.
+   */
+  private async persistProfile(
+    input: Partial<
+      Pick<Profile, 'fullMd' | 'scoringJson' | 'scoringHash' | 'pitchMd' | 'targetArchetypes'>
+    >,
+    mdHash?: string,
+  ): Promise<Profile> {
+    const saved = await this.db.upsertProfile(input);
+    this.profile.set(saved);
+    if (mdHash) {
+      this.savedMdHash.set(mdHash);
+    } else {
+      await this.refreshSavedMdHash(saved.fullMd);
+    }
+    return saved;
+  }
+
   private syncMdFromForm(): void {
     this.fullMd.set(serializeProfileForm(this.form()));
   }
@@ -1051,16 +1076,14 @@ export class ProfileComponent implements OnInit {
     this.saveError.set(false);
     try {
       const p = this.profile();
-      const saved = await this.db.upsertProfile({
+      const saved = await this.persistProfile({
         fullMd: this.fullMd(),
         scoringJson: p?.scoringJson,
         scoringHash: p?.scoringHash,
         pitchMd: p?.pitchMd,
         targetArchetypes: serializeArchetypes(this.archetypes()),
       });
-      this.profile.set(saved);
       this.archetypes.set(parseArchetypes(saved.targetArchetypes));
-      await this.refreshSavedMdHash(saved.fullMd);
       this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
     } catch (e) {
       this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));
@@ -1072,7 +1095,11 @@ export class ProfileComponent implements OnInit {
   }
 
   async generateScoringProfile(): Promise<void> {
-    const md = this.fullMd().trim();
+    // Captured before any await: this is the text the artefact is generated from, so it is also
+    // the text the row and scoringHash must describe. Reading fullMd() again after the AI call
+    // would persist markdown nothing analysed.
+    const mdAtStart = this.fullMd();
+    const md = mdAtStart.trim();
     if (!md) {
       this.scoreStatus.set(this.t()('profile.empty_hint'));
       return;
@@ -1100,15 +1127,16 @@ export class ProfileComponent implements OnInit {
         userPrompt: rendered.userPrompt,
         language: 'en',
       });
-      const saved = await this.db.upsertProfile({
-        fullMd: this.fullMd(),
-        scoringJson: res.text,
-        scoringHash: hash,
-        pitchMd: p?.pitchMd,
-        targetArchetypes: p?.targetArchetypes,
-      });
-      this.profile.set(saved);
-      this.savedMdHash.set(hash);
+      await this.persistProfile(
+        {
+          fullMd: mdAtStart,
+          scoringJson: res.text,
+          scoringHash: hash,
+          pitchMd: p?.pitchMd,
+          targetArchetypes: p?.targetArchetypes,
+        },
+        hash,
+      );
       this.scoreStatus.set(
         this.t()('profile.generated_tokens')
           .replace('{in}', String(res.tokensInput))
@@ -1124,7 +1152,9 @@ export class ProfileComponent implements OnInit {
   }
 
   async generatePitch(): Promise<void> {
-    const md = this.fullMd().trim();
+    // See generateScoringProfile: the row must describe the text that was actually pitched.
+    const mdAtStart = this.fullMd();
+    const md = mdAtStart.trim();
     if (!md) {
       this.pitchStatus.set(this.t()('profile.empty_hint'));
       return;
@@ -1157,14 +1187,16 @@ export class ProfileComponent implements OnInit {
         userPrompt: rendered.userPrompt,
         language: lang,
       });
-      const saved = await this.db.upsertProfile({
-        fullMd: this.fullMd(),
-        scoringJson: p?.scoringJson,
-        scoringHash: p?.scoringHash,
-        pitchMd: res.text,
-        targetArchetypes: p?.targetArchetypes,
-      });
-      this.profile.set(saved);
+      await this.persistProfile(
+        {
+          fullMd: mdAtStart,
+          scoringJson: p?.scoringJson,
+          scoringHash: p?.scoringHash,
+          pitchMd: res.text,
+          targetArchetypes: p?.targetArchetypes,
+        },
+        hash,
+      );
       this.pitchStatus.set(
         this.t()('profile.generated_tokens')
           .replace('{in}', String(res.tokensInput))

@@ -437,6 +437,7 @@ const en: TranslationMap = {
         'Saved. This document changed; run Final checks again before exporting.',
       final_checks_title: 'Final checks',
       final_checks_run: 'Run final checks',
+      final_checks_needs_cv: 'Link or create a CV first to run the final checks.',
       final_checks_ats: 'ATS',
       final_checks_hr: 'HR critique',
       final_checks_fit: 'Fit',
@@ -1461,6 +1462,8 @@ const de: TranslationMap = {
         'Gespeichert. Dieses Dokument wurde geändert; führe vor dem Export die Abschlussprüfung erneut aus.',
       final_checks_title: 'Abschlussprüfung',
       final_checks_run: 'Abschlussprüfung ausführen',
+      final_checks_needs_cv:
+        'Zuerst einen Lebenslauf verknüpfen oder erstellen, um die Abschlussprüfung auszuführen.',
       final_checks_ats: 'ATS',
       final_checks_hr: 'HR-Kritik',
       final_checks_fit: 'Passung',

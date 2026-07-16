@@ -65,9 +65,10 @@ import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
 import {
+  buildCvContent,
   cleanJsonText,
   cvContentToMd,
-  markdownToCvContentFallback,
+  parseCvSkillResponse,
 } from '../documents/cv-content.util';
 
 interface PassResult {
@@ -365,7 +366,7 @@ interface FinalChecks {
       @if (cache(); as c) {
         <section class="section">
           @if (!wizardOpen()) {
-            <!-- Legitimacy warning — informs, never blocks. User can still tailor below. -->
+            <!-- Legitimacy warning - informs, never blocks. User can still tailor below. -->
             @if (job()?.legitimacyTier === 'red') {
               <div class="card card--danger">
                 <p class="card__title">{{ t()('jobs.legitimacy_red_banner_title') }}</p>
@@ -412,6 +413,7 @@ interface FinalChecks {
               [applicationStatus]="application()?.status ?? null"
               [overrideEditing]="editingLocked()"
               [initialStep]="wizardInitialStep()"
+              [busy]="tailoring() || updatingScore() || documentPreparing() !== null"
               (closeWizard)="closeWizard()"
               (markApplied)="markApplied()"
               (updateApplication)="updateApplication()"
@@ -580,7 +582,7 @@ interface FinalChecks {
                 }
               </div>
 
-              <!-- Step 3: Updated score — auto-rescores the tailored resume -->
+              <!-- Step 3: Updated score - auto-rescores the tailored resume -->
               <div wizardUpdateScoreStep class="wizard-step-content">
                 <div class="apply-fields-header">
                   <span class="eyebrow">{{ t()('jobs.wizard.updated_score_eyebrow') }}</span>
@@ -692,11 +694,14 @@ interface FinalChecks {
                           [disabled]="documentPreparing() === 'cv'"
                           (click)="createCvDraft(false)"
                         >
-                          {{
-                            documentPreparing() === 'cv'
-                              ? t()('jobs.wizard.document_status_generating')
-                              : t()('jobs.wizard.document_create_cv')
-                          }}
+                          @if (documentPreparing() === 'cv') {
+                            <span class="ai-thinking__dots" aria-hidden="true">
+                              <span></span><span></span><span></span>
+                            </span>
+                            {{ t()('jobs.wizard.document_status_generating') }}
+                          } @else {
+                            {{ t()('jobs.wizard.document_create_cv') }}
+                          }
                         </button>
                       }
                       <button
@@ -705,7 +710,14 @@ interface FinalChecks {
                         [disabled]="documentPreparing() === 'cv' || !finalTailoredCvMd()"
                         (click)="createCvDraft(true)"
                       >
-                        {{ t()('jobs.wizard.document_regenerate') }}
+                        @if (documentPreparing() === 'cv') {
+                          <span class="ai-thinking__dots" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                          </span>
+                          {{ t()('jobs.wizard.document_status_generating') }}
+                        } @else {
+                          {{ t()('jobs.wizard.document_regenerate') }}
+                        }
                       </button>
                       <button
                         class="btn btn--secondary btn--sm"
@@ -714,15 +726,6 @@ interface FinalChecks {
                       >
                         {{ t()('jobs.wizard.document_choose_existing') }}
                       </button>
-                      @if (linkedCv(); as cv) {
-                        <button
-                          class="btn btn--secondary btn--sm"
-                          type="button"
-                          (click)="openCv(cv.id, true)"
-                        >
-                          {{ t()('jobs.wizard.document_open_editor') }}
-                        </button>
-                      }
                     </div>
                     @if (chooseCvOpen()) {
                       <select
@@ -785,11 +788,14 @@ interface FinalChecks {
                           [disabled]="documentPreparing() === 'cover_letter'"
                           (click)="createCoverLetterDraft(false)"
                         >
-                          {{
-                            documentPreparing() === 'cover_letter'
-                              ? t()('jobs.wizard.document_status_generating')
-                              : t()('jobs.wizard.document_create_cover_letter')
-                          }}
+                          @if (documentPreparing() === 'cover_letter') {
+                            <span class="ai-thinking__dots" aria-hidden="true">
+                              <span></span><span></span><span></span>
+                            </span>
+                            {{ t()('jobs.wizard.document_status_generating') }}
+                          } @else {
+                            {{ t()('jobs.wizard.document_create_cover_letter') }}
+                          }
                         </button>
                       }
                       <button
@@ -798,7 +804,14 @@ interface FinalChecks {
                         [disabled]="documentPreparing() === 'cover_letter'"
                         (click)="createCoverLetterDraft(true)"
                       >
-                        {{ t()('jobs.wizard.document_regenerate') }}
+                        @if (documentPreparing() === 'cover_letter') {
+                          <span class="ai-thinking__dots" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                          </span>
+                          {{ t()('jobs.wizard.document_status_generating') }}
+                        } @else {
+                          {{ t()('jobs.wizard.document_regenerate') }}
+                        }
                       </button>
                       <button
                         class="btn btn--secondary btn--sm"
@@ -807,15 +820,6 @@ interface FinalChecks {
                       >
                         {{ t()('jobs.wizard.document_choose_existing') }}
                       </button>
-                      @if (linkedCoverLetter(); as letter) {
-                        <button
-                          class="btn btn--secondary btn--sm"
-                          type="button"
-                          (click)="openCoverLetter(letter.id, true)"
-                        >
-                          {{ t()('jobs.wizard.document_open_editor') }}
-                        </button>
-                      }
                     </div>
                     @if (chooseCoverLetterOpen()) {
                       <select
@@ -860,12 +864,16 @@ interface FinalChecks {
                     <button
                       class="btn btn--secondary btn--sm"
                       type="button"
+                      [disabled]="!linkedCv()"
                       (click)="runFinalChecks()"
                     >
                       <lucide-icon [img]="icons.checklist" [size]="14" aria-hidden="true" />
                       {{ t()('jobs.wizard.final_checks_run') }}
                     </button>
                   </div>
+                  @if (!linkedCv()) {
+                    <p class="muted">{{ t()('jobs.wizard.final_checks_needs_cv') }}</p>
+                  }
                   <div class="final-checks__rows">
                     <div>
                       <span>{{ t()('jobs.wizard.final_checks_ats') }}</span>
@@ -1180,7 +1188,7 @@ interface FinalChecks {
         color: var(--text-tertiary);
         margin: 0;
       }
-      /* Alert (danger) — matches the Applye Design System Alert component:
+      /* Alert (danger) - matches the Applye Design System Alert component:
          tinted surface, hairline tone border, mono title + sans body. */
       .alert {
         display: flex;
@@ -1227,7 +1235,7 @@ interface FinalChecks {
         gap: var(--space-3);
         margin-top: var(--space-4);
       }
-      /* Rescore loading — AI-thinking line + design-system skeleton cards. */
+      /* Rescore loading - AI-thinking line + design-system skeleton cards. */
       .rescore-loading {
         display: flex;
         flex-direction: column;
@@ -1405,7 +1413,7 @@ interface FinalChecks {
       }
 
       /* CTA / wizard entry */
-      /* Tailor CV — phase cards */
+      /* Tailor CV - phase cards */
       .tailor-phases {
         display: flex;
         gap: var(--space-4);
@@ -1556,7 +1564,7 @@ interface FinalChecks {
         pointer-events: none;
       }
 
-      /* Tailor CV — changes diff */
+      /* Tailor CV - changes diff */
       .tailor-changes {
         padding: 0;
         gap: 0;
@@ -1613,7 +1621,7 @@ interface FinalChecks {
         color: var(--text-accent);
       }
 
-      /* Tailor CV — gaps */
+      /* Tailor CV - gaps */
       .tailor-gaps {
         display: flex;
         flex-direction: column;
@@ -2052,7 +2060,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly deleteConfirmOpen = signal(false);
   readonly deleting = signal(false);
 
-  /** "Change" doesn't write anything — it just lifts the lock so the
+  /** "Change" doesn't write anything - it just lifts the lock so the
    * description is editable and Mark-as-Applied reappears, letting the user
    * redo the status/description from scratch. Nothing is saved unless the
    * user then takes an explicit action (Parse & filter, Mark as Applied).
@@ -2092,7 +2100,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   // Post-tailor rescore (before/after). The before/after pair is transient
   // (in-memory), but the *after* score is persisted to My Jobs once the user
-  // reaches the export step — see savePostTailorScore.
+  // reaches the export step - see savePostTailorScore.
   readonly postTailorScore = signal<ScoringCache | null>(null);
   readonly updatingScore = signal(false);
   readonly updateScoreStatus = signal('');
@@ -2103,7 +2111,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly applyResult = signal<'updated' | null>(null);
 
   /** True once all 3 tailoring passes are done (in this session or restored
-   * from cache) — drives the immutable Tailored badge and the Retailor CTA. */
+   * from cache) - drives the immutable Tailored badge and the Retailor CTA. */
   readonly isTailored = computed(() => this.tailorResults().length === 3);
 
   /** Flattened change / gap notes across all completed tailoring passes. */
@@ -2278,20 +2286,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
   }
 
-  private profileDisplayName(): string {
-    const md = this.profile()?.fullMd ?? '';
-    const heading = md
-      .split('\n')
-      .map((line) => line.trim())
-      .find((line) => line.startsWith('# '));
-    return heading?.replace(/^#\s+/, '').trim() ?? '';
-  }
-
   async createCvDraft(regenerate: boolean): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
+    const settings = this.settings();
     const tailoredMd = this.finalTailoredCvMd();
-    if (!job?.id || !tailoredMd) {
+    if (!job?.id || !tailoredMd || !settings) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(this.t()('jobs.wizard.document_cv_requires_tailoring'));
       return;
@@ -2302,18 +2302,34 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.documentReviewError.set(false);
     try {
       const app = await this.ensureApplicationDraft();
+      const language = this.documentReviewLanguage();
       const inputHash = await this.db.hashText(
-        [job.id, tailoredMd, this.documentReviewLanguage(), this.documentReviewRegion()].join(
-          '\x00',
-        ),
+        [job.id, tailoredMd, language, this.documentReviewRegion()].join('\x00'),
       );
-      const content = markdownToCvContentFallback(tailoredMd, this.profileDisplayName());
+      // Structure the tailored markdown into real CV sections through the
+      // same `cv-import` AI path used by Documents import and onboarding,
+      // instead of dumping the whole blob into the summary section.
+      const rendered = await this.ai.renderSkill('cv-import', {
+        cv_text: tailoredMd,
+        language,
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+        maxTokens: 8192,
+      });
+      const parsed = parseCvSkillResponse(res.text);
+      const content = buildCvContent(parsed, null);
       const doc = await this.db.documentLibraryUpsert({
         id: regenerate ? app.cvDocumentId : undefined,
         docType: 'cv',
         source: 'generated',
-        label: `${job.company || 'Job'} — Tailored CV`,
-        language: this.documentReviewLanguage(),
+        label: `${job.company || 'Job'} - Tailored CV`,
+        language,
         regionTag: this.documentReviewRegion(),
         contentJson: JSON.stringify(content),
         inputHash,
@@ -2385,7 +2401,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         id: regenerate ? app.coverLetterDocumentId : undefined,
         docType: 'cover_letter',
         source: 'generated',
-        label: `${job.company || 'Job'} — Cover Letter`,
+        label: `${job.company || 'Job'} - Cover Letter`,
         language,
         regionTag: this.documentReviewRegion(),
         contentJson: JSON.stringify(content),
@@ -2700,7 +2716,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         length,
       };
 
-      const label = `${job.company || 'Job'} — Tailored Cover Letter`;
+      const label = `${job.company || 'Job'} - Tailored Cover Letter`;
       const created = await this.db.documentLibraryUpsert({
         docType: 'cover_letter',
         source: 'generated',
@@ -2760,7 +2776,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     });
   });
 
-  /** i18n key of the phase currently being generated — drives the animated
+  /** i18n key of the phase currently being generated - drives the animated
    * "AI thinking" line while tailoring auto-runs through all three passes. */
   readonly currentPhaseKey = computed(() => {
     const keys = ['jobs.wizard.phase_xyz', 'jobs.wizard.phase_critique', 'jobs.wizard.phase_build'];
@@ -2786,7 +2802,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.profile.set(p);
       this.settings.set(s);
     } catch {
-      // non-fatal — user can still paste
+      // non-fatal - user can still paste
     }
 
     // Job Detail mode: /jobs/:id loads the job and its CACHED score only.
@@ -2808,7 +2824,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (!job) return;
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
-      const headerTitle = [job.company, job.title].filter(Boolean).join(' — ');
+      const headerTitle = [job.company, job.title].filter(Boolean).join(' - ');
       this.pageTitle.set(headerTitle || this.t()('nav.jobs'));
       const p = this.profile();
       if (p?.scoringHash) {
@@ -2853,7 +2869,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.loadPortalAnswersFromCache();
       await this.restoreTailoringFromCache();
     } catch {
-      // non-fatal — detail still renders, user can re-score
+      // non-fatal - detail still renders, user can re-score
     }
   }
 
@@ -2939,7 +2955,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.portalFromCache.set(true);
       }
     } catch {
-      // non-fatal — user can still click "Draft answers"
+      // non-fatal - user can still click "Draft answers"
     }
   }
 
@@ -3130,7 +3146,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Mark as Applied — reuses the SAME status-transition command the pipeline
+   * Mark as Applied - reuses the SAME status-transition command the pipeline
    * kanban's drag-and-drop uses (`db_set_application_status`): it writes
    * `status_history` and computes `follow_up_at` deterministically from
    * `settings.followup_days_after_apply` in SQL, 0 AI tokens. No date math
@@ -3150,7 +3166,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.application.set(updated);
       this.jobsStore.patchOverviewRow(j.id, { status: 'applied' });
       this.editingLocked.set(false);
-      // Applied — send the user back to My Jobs; re-entering the job shows
+      // Applied - send the user back to My Jobs; re-entering the job shows
       // its Applied + Tailored state.
       await this.router.navigate(['/jobs']);
     } catch (e) {
@@ -3159,13 +3175,13 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** "Change" — lifts the lock immediately, no confirmation. Nothing is
+  /** "Change" - lifts the lock immediately, no confirmation. Nothing is
    * written until the user takes an explicit follow-up action. */
   startEditingLocked(): void {
     this.editingLocked.set(true);
   }
 
-  /** "Cancel" — drops the override and discards the in-progress description
+  /** "Cancel" - drops the override and discards the in-progress description
    * edit (reverts jdText to the persisted value). Nothing was ever saved. */
   cancelEditingLocked(): void {
     this.editingLocked.set(false);
@@ -3173,7 +3189,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /** Opening the wizard / returning to the summary should always land the
-   * user at the top of the page — the scoring view runs long, so the wizard
+   * user at the top of the page - the scoring view runs long, so the wizard
    * (or the restored summary) would otherwise open mid-scroll. */
   openWizard(): void {
     this.wizardInitialStep.set(0);
@@ -3188,7 +3204,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   private scrollContentToTop(): void {
     // Defer to the next frame so the step's new (shorter/taller) content has
-    // rendered before we scroll — otherwise the container clamps against the
+    // rendered before we scroll - otherwise the container clamps against the
     // old scrollHeight and can land mid-page.
     const view = this.document.defaultView;
     const doScroll = (): void => {
@@ -3234,7 +3250,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.job.set(null);
     this.cache.set(null);
     this.archetypeMatch.set(null);
-    // Re-parsing means the JD (and therefore the score) changed — any earlier
+    // Re-parsing means the JD (and therefore the score) changed - any earlier
     // tailoring for this job is now stale. Drop it so the Tailored badge and
     // Retailor state clear and the user re-tailors against the updated JD.
     this.editingLocked.set(false);
@@ -3243,7 +3259,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       const j = await this.db.jobPaste(this.jdText());
       this.job.set(j);
       if (!j.hardFilterPassed) {
-        this.parseStatus.set('Hard filter failed — job blocked.');
+        this.parseStatus.set('Hard filter failed - job blocked.');
       } else {
         this.parseStatus.set('');
         // Check cache immediately if profile available
@@ -3253,10 +3269,10 @@ export class JobsComponent implements OnInit, OnDestroy {
           if (cached) {
             this.cache.set(cached);
             this.fromCache.set(true);
-            this.scoreStatus.set('Loaded from cache — 0 tokens used.');
+            this.scoreStatus.set('Loaded from cache - 0 tokens used.');
           }
         }
-        // Layer-1 archetype overlap check (0 tokens, deterministic) — warn only, never blocks.
+        // Layer-1 archetype overlap check (0 tokens, deterministic) - warn only, never blocks.
         const match = await this.db.checkArchetypeMatch(
           j.title ?? undefined,
           j.jdText ?? '',
@@ -3286,7 +3302,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (cached) {
         this.cache.set(cached);
         this.fromCache.set(true);
-        this.scoreStatus.set('Loaded from cache — 0 tokens used.');
+        this.scoreStatus.set('Loaded from cache - 0 tokens used.');
         return;
       }
     }
@@ -3352,7 +3368,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       });
       this.cache.set(saved);
       this.jobsStore.patchOverviewRow(j.id!, { score: saved.score });
-      this.scoreStatus.set(`Scored — ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.scoreStatus.set(`Scored - ${res.tokensInput} in / ${res.tokensOutput} out`);
     } catch (e) {
       this.scoreStatus.set(`Scoring failed: ${String(e)}`);
       this.scoreError.set(true);
@@ -3362,12 +3378,12 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Post-tailor rescore — user-initiated (opt-in, spends tokens), scores the
+   * Post-tailor rescore - user-initiated (opt-in, spends tokens), scores the
    * PASS-3 tailored resume instead of the generic profile, so the user sees
    * before (original posting fit) vs after (fit of what they'd actually
    * submit). Intentionally NOT persisted to `scoring_cache`: that table is
-   * keyed unique on (job_id, profile_hash, jd_hash) — the same key the
-   * original score used — so saving here would overwrite the "before"
+   * keyed unique on (job_id, profile_hash, jd_hash) - the same key the
+   * original score used - so saving here would overwrite the "before"
    * baseline instead of keeping both. Kept as in-memory state only.
    */
   async updateScoreAfterTailor(): Promise<void> {
@@ -3440,7 +3456,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         tokensInput: res.tokensInput,
         tokensOutput: res.tokensOutput,
       });
-      this.updateScoreStatus.set(`Updated — ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.updateScoreStatus.set(`Updated - ${res.tokensInput} in / ${res.tokensOutput} out`);
     } catch (e) {
       this.updateScoreStatus.set(`Update failed: ${String(e)}`);
       this.updateScoreError.set(true);
@@ -3452,7 +3468,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   /**
    * Persists the post-tailor score to `scoring_cache` so the My Jobs list
    * reflects the tailored fit. The unique key (job_id, profile_hash, jd_hash)
-   * matches the baseline row, so this overwrites it — the "before" is only
+   * matches the baseline row, so this overwrites it - the "before" is only
    * needed for the in-session comparison (held in `cache()`), not on disk.
    * Idempotent per rescore via `postTailorSaved`.
    */
@@ -3485,7 +3501,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * "Update application" — final-step action when the job already has a
+   * "Update application" - final-step action when the job already has a
    * status (applied/interview/…). Commits the re-tailored score, shows the
    * success card, then returns the user to this job's detail where the
    * updated score and Tailored badge are now in place.
@@ -3525,7 +3541,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   // ── Tailoring wizard ────────────────────────────────────────────────────────
 
-  /** Runs the full 3-pass tailoring pipeline back-to-back on one click — the
+  /** Runs the full 3-pass tailoring pipeline back-to-back on one click - the
    * phase cards animate through running/done as each pass lands, no manual
    * Continue between passes. Stops on the first failing pass. */
   async startTailoring(): Promise<void> {
@@ -3556,7 +3572,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 documents · 4 export.
    * Entering the Updated score step auto-runs the rescore once (only if the
-   * user actually tailored — pass 3 exists — and it hasn't run yet). */
+   * user actually tailored - pass 3 exists - and it hasn't run yet). */
   onWizardStep(step: number): void {
     this.wizardInitialStep.set(step);
     // Every step transition lands the user at the top of the page.
@@ -3616,7 +3632,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       const filePath = await save({ defaultPath: this.documentExportFilename(item, format) });
       if (!filePath) return;
       // PDF: silent WYSIWYG engine (hidden window prints the editor's own
-      // preview) — pixel-identical to the editor for every theme.
+      // preview) - pixel-identical to the editor for every theme.
       if (kind === 'cv') {
         if (format === 'pdf') {
           await this.db.cvDocumentExportPdfWysiwyg(item.id, filePath);
@@ -3700,7 +3716,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         0,
         0,
       );
-      this.tailorStatus.set(`Pass ${passNum} loaded from cache — 0 tokens.`);
+      this.tailorStatus.set(`Pass ${passNum} loaded from cache - 0 tokens.`);
       return;
     }
 
@@ -3748,7 +3764,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       res.tokensInput,
       res.tokensOutput,
     );
-    this.tailorStatus.set(`Pass ${passNum} done — ${res.tokensInput} in / ${res.tokensOutput} out`);
+    this.tailorStatus.set(`Pass ${passNum} done - ${res.tokensInput} in / ${res.tokensOutput} out`);
   }
 
   private appendPassResult(

@@ -34,7 +34,7 @@ import {
       <div class="apply-wizard__content">
         @switch (activeStep()) {
           @case (0) {
-            <!-- Compact review — NOT the full Job Detail scoring page. -->
+            <!-- Compact review - NOT the full Job Detail scoring page. -->
             @if (reviewScore(); as c) {
               <div class="wizard-review">
                 <div class="wizard-review__top">
@@ -145,7 +145,12 @@ import {
             </button>
           }
         } @else {
-          <button class="btn btn--primary btn--md" type="button" (click)="goNext()">
+          <button
+            class="btn btn--primary btn--md"
+            type="button"
+            [disabled]="busy()"
+            (click)="goNext()"
+          >
             {{
               activeStep() === lastStep - 1
                 ? t()('jobs.wizard.continue_label')
@@ -169,7 +174,7 @@ export class ApplyWizard {
 
   readonly cache = input<ScoringCache | null>(null);
   readonly fromCache = input<boolean>(false);
-  /** Post-tailor rescore, if the user ran one — takes over as the review
+  /** Post-tailor rescore, if the user ran one - takes over as the review
    * number once present, so Review Score always shows the current best
    * known fit instead of a stale pre-tailor figure. */
   readonly postTailorScore = input<ScoringCache | null>(null);
@@ -178,20 +183,24 @@ export class ApplyWizard {
   readonly jobTitle = input<string>('');
   readonly company = input<string>('');
   readonly applicationStatus = input<ApplicationStatus | null>(null);
-  /** Parent's "Change" override — same live-edit-mode signal as
+  /** Parent's "Change" override - same live-edit-mode signal as
    * JobsComponent.editingLocked, so this footer stays in sync with the
    * top-level lock state. */
   readonly overrideEditing = input<boolean>(false);
   readonly initialStep = input<number>(0);
+  /** True while a step's async work is in flight (tailoring, rescoring,
+   * document generation). Blocks Next/Continue so the user cannot advance
+   * to a step whose input is not ready yet. */
+  readonly busy = input<boolean>(false);
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
   readonly markApplied = output<void>();
   /** Commit the re-tailored resume for a job that already has a status
-   * (applied/interview/…) — persists the updated score and confirms. */
+   * (applied/interview/…) - persists the updated score and confirms. */
   readonly updateApplication = output<void>();
   readonly cancelEdit = output<void>();
-  /** Emitted whenever the active step changes — lets the parent kick off
+  /** Emitted whenever the active step changes - lets the parent kick off
    * work tied to a step (e.g. auto-rescore on entering the Updated score
    * step) without the wizard knowing what that work is. */
   readonly stepChange = output<number>();
@@ -219,7 +228,7 @@ export class ApplyWizard {
   protected readonly verdictLabelKey = scoreVerdictLabelKey;
   protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
-  /** Mirrors JobsComponent.canMarkApplied — same gate, same reasoning. */
+  /** Mirrors JobsComponent.canMarkApplied - same gate, same reasoning. */
   protected readonly canMarkApplied = computed(() => {
     const status = this.applicationStatus();
     return !status || status === 'saved' || this.overrideEditing();
@@ -236,6 +245,7 @@ export class ApplyWizard {
   }
 
   protected goNext(): void {
+    if (this.busy()) return;
     const next = Math.min(this.lastStep, this.activeStep() + 1);
     this.activeStep.set(next);
     this.stepChange.emit(next);

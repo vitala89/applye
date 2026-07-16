@@ -40,7 +40,7 @@ import {
                 <div class="wizard-review__top">
                   <div class="card wizard-review__score">
                     <span class="wizard-review__score-num">{{ c.score }}</span>
-                    <span class="wizard-review__score-max">/100</span>
+                    <span class="wizard-review__score-max">% match</span>
                     <span class="verdict-badge" [class]="'verdict-badge--' + verdictKey(c.score)">
                       <span class="verdict-badge__dot"></span>
                       {{ t()(verdictLabelKey(c.score)) }}
@@ -75,7 +75,7 @@ import {
                         <div class="wizard-review__dim-head">
                           <span class="wizard-review__dim-name">{{ d.name }}</span>
                           <span class="wizard-review__dim-score" [class]="'score-' + band(d.score)"
-                            >{{ d.score }}/10</span
+                            >{{ d.score * 10 }}%</span
                           >
                         </div>
                         <div class="wizard-review__dim-bar-track">

@@ -47,9 +47,9 @@
             <div class="updated__dim-head">
               <span class="updated__dim-name">{{ d.name }}</span>
               <span class="updated__dim-score">
-                <span class="updated__dim-was">{{ d.before }}</span>
+                <span class="updated__dim-was">{{ d.before * 10 }}%</span>
                 <lucide-icon [img]="icons().next" [size]="11" aria-hidden="true" />
-                <span [class]="'updated__dim-now score-' + band(d.after)">{{ d.after }}/10</span>
+                <span [class]="'updated__dim-now score-' + band(d.after)">{{ d.after * 10 }}%</span>
               </span>
             </div>
             <div class="updated__dim-track">

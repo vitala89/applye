@@ -105,27 +105,11 @@
   flex: 0 0 auto;
 }
 
-.scoring-view__stars {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.scoring-view__star-icon {
-  color: var(--amber-500);
-  fill: var(--amber-500);
-}
-
-.scoring-view__stars-num {
-  font-family: var(--font-mono);
-  font-size: var(--text-body);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-}
-
-.scoring-view__stars-max {
+.scoring-view__match-caption {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--text-tertiary);
 }
 

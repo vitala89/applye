@@ -1,10 +1,10 @@
 import { ScoringCache } from '@applye/core';
 import {
+  dimensionBand,
   parseBeforeYouSubmit,
   parseDimensions,
   parseMissingKeywords,
   parseRedFlags,
-  starRating,
 } from './scoring.utils';
 
 function makeCache(overrides: Partial<ScoringCache> = {}): ScoringCache {
@@ -44,8 +44,12 @@ describe('scoring.utils', () => {
     expect(parseBeforeYouSubmit(c)).toEqual(['Deadline in 3 days']);
   });
 
-  it('computes star rating from score', () => {
-    expect(starRating(100)).toBe('5.0');
-    expect(starRating(0)).toBe('1.0');
+  it('bands a dimension score on the same 75/50 thresholds as the gauge', () => {
+    // Displayed as `score * 10`%, so these boundaries mirror 75% / 50%.
+    expect(dimensionBand(8)).toBe('high'); // 80%
+    expect(dimensionBand(7.5)).toBe('high'); // 75%
+    expect(dimensionBand(7)).toBe('mid'); // 70%
+    expect(dimensionBand(5)).toBe('mid'); // 50%
+    expect(dimensionBand(4)).toBe('low'); // 40%
   });
 });

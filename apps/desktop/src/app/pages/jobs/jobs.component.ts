@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
+import { WizardProgressService } from '../../shared/wizard-progress.service';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle,
@@ -692,7 +693,7 @@ interface FinalChecks {
                           class="btn btn--primary btn--sm"
                           type="button"
                           [disabled]="documentPreparing() === 'cv'"
-                          (click)="createCvDraft(false)"
+                          (click)="createCvDraft()"
                         >
                           @if (documentPreparing() === 'cv') {
                             <span class="ai-thinking__dots" aria-hidden="true">
@@ -708,7 +709,7 @@ interface FinalChecks {
                         class="btn btn--secondary btn--sm"
                         type="button"
                         [disabled]="documentPreparing() === 'cv' || !finalTailoredCvMd()"
-                        (click)="createCvDraft(true)"
+                        (click)="createCvDraft()"
                       >
                         @if (documentPreparing() === 'cv') {
                           <span class="ai-thinking__dots" aria-hidden="true">
@@ -786,7 +787,7 @@ interface FinalChecks {
                           class="btn btn--primary btn--sm"
                           type="button"
                           [disabled]="documentPreparing() === 'cover_letter'"
-                          (click)="createCoverLetterDraft(false)"
+                          (click)="createCoverLetterDraft()"
                         >
                           @if (documentPreparing() === 'cover_letter') {
                             <span class="ai-thinking__dots" aria-hidden="true">
@@ -802,7 +803,7 @@ interface FinalChecks {
                         class="btn btn--secondary btn--sm"
                         type="button"
                         [disabled]="documentPreparing() === 'cover_letter'"
-                        (click)="createCoverLetterDraft(true)"
+                        (click)="createCoverLetterDraft()"
                       >
                         @if (documentPreparing() === 'cover_letter') {
                           <span class="ai-thinking__dots" aria-hidden="true">
@@ -1984,6 +1985,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
+  private readonly wizardProgress = inject(WizardProgressService);
   private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
@@ -2273,9 +2275,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.coverLetters.set(letters);
       await this.ensureApplicationDraft();
       await this.loadLinkedDocuments();
-      if (!this.linkedCv() && this.tailorResults().find((r) => r.pass === 3)) {
-        await this.createCvDraft(false);
-      }
+      // Do not auto-create the CV on entering this step. The document is
+      // written only when the user explicitly clicks Create/Regenerate,
+      // so nothing is generated (or spends tokens) behind their back.
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
@@ -2286,7 +2288,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
   }
 
-  async createCvDraft(regenerate: boolean): Promise<void> {
+  async createCvDraft(): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
     const settings = this.settings();
@@ -2325,7 +2327,12 @@ export class JobsComponent implements OnInit, OnDestroy {
       const parsed = parseCvSkillResponse(res.text);
       const content = buildCvContent(parsed, null);
       const doc = await this.db.documentLibraryUpsert({
-        id: regenerate ? app.cvDocumentId : undefined,
+        // One CV per application (ADR-0003): reuse the already-linked
+        // document whenever there is one, so a first tailor and every
+        // later retailor/regenerate update the same row instead of
+        // creating duplicate "<Company> - Tailored CV" entries. Only a
+        // job with no linked CV yet mints a new row.
+        id: app.cvDocumentId ?? undefined,
         docType: 'cv',
         source: 'generated',
         label: `${job.company || 'Job'} - Tailored CV`,
@@ -2351,7 +2358,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async createCoverLetterDraft(regenerate: boolean): Promise<void> {
+  async createCoverLetterDraft(): Promise<void> {
     if (this.documentPreparing()) return;
     const job = this.job();
     const profile = this.profile();
@@ -2398,7 +2405,10 @@ export class JobsComponent implements OnInit, OnDestroy {
         ),
       );
       const doc = await this.db.documentLibraryUpsert({
-        id: regenerate ? app.coverLetterDocumentId : undefined,
+        // One cover letter per application (ADR-0003): reuse the linked
+        // row so retailor/regenerate update in place instead of stacking
+        // duplicate "<Company> - Cover Letter" entries.
+        id: app.coverLetterDocumentId ?? undefined,
         docType: 'cover_letter',
         source: 'generated',
         label: `${job.company || 'Job'} - Cover Letter`,
@@ -2508,7 +2518,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.updateScoreAfterTailor();
     }
     if (this.linkedCv()) {
-      await this.createCvDraft(true);
+      await this.createCvDraft();
     }
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(true);
@@ -2811,6 +2821,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (idParam) {
       await this.loadJob(+idParam);
       await this.handleWizardReturnFromDocumentEditor();
+      await this.restoreWizardProgress(+idParam);
     }
   }
 
@@ -2871,6 +2882,24 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch {
       // non-fatal - detail still renders, user can re-score
     }
+  }
+
+  /**
+   * Re-open the apply wizard at the step the user left it on, when they
+   * navigate back to this job (sidebar nav, browser back) mid-flow. The
+   * document-editor round-trip already restores step 3 via query params, so
+   * only act when that path did not already open the wizard. Restoring is
+   * token-free: `prepareDocumentsStep` no longer generates anything, and the
+   * Updated-score rescore is deliberately NOT auto-run here (it would spend
+   * tokens without a click) - the user can trigger it from the step.
+   */
+  private async restoreWizardProgress(jobId: number): Promise<void> {
+    if (this.wizardOpen()) return;
+    const prog = this.wizardProgress.progress();
+    if (!prog || prog.jobId !== jobId) return;
+    this.wizardInitialStep.set(prog.step);
+    this.wizardOpen.set(true);
+    if (prog.step === 3) await this.prepareDocumentsStep();
   }
 
   private async handleWizardReturnFromDocumentEditor(): Promise<void> {
@@ -3166,6 +3195,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.application.set(updated);
       this.jobsStore.patchOverviewRow(j.id, { status: 'applied' });
       this.editingLocked.set(false);
+      this.wizardProgress.clear(j.id);
       // Applied - send the user back to My Jobs; re-entering the job shows
       // its Applied + Tailored state.
       await this.router.navigate(['/jobs']);
@@ -3194,11 +3224,16 @@ export class JobsComponent implements OnInit, OnDestroy {
   openWizard(): void {
     this.wizardInitialStep.set(0);
     this.wizardOpen.set(true);
+    const jobId = this.job()?.id;
+    if (jobId) this.wizardProgress.set(jobId, 0);
     this.scrollContentToTop();
   }
 
   closeWizard(): void {
     this.wizardOpen.set(false);
+    // Leaving the wizard for this job's summary ends the in-flight session,
+    // so the floating resume affordance should stop offering it.
+    this.wizardProgress.clear(this.job()?.id);
     this.scrollContentToTop();
   }
 
@@ -3511,6 +3546,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (!j?.id || this.actionBusy()) return;
     this.actionBusy.set(true);
     await this.savePostTailorScore();
+    this.wizardProgress.clear(j.id);
     this.applyResult.set('updated');
     // Success card holds briefly, then drop back to this job's detail with the
     // updated score + Tailored badge freshly loaded from cache.
@@ -3575,6 +3611,11 @@ export class JobsComponent implements OnInit, OnDestroy {
    * user actually tailored - pass 3 exists - and it hasn't run yet). */
   onWizardStep(step: number): void {
     this.wizardInitialStep.set(step);
+    // Remember where the user is so leaving the page (sidebar nav, the
+    // document editor) can bring them back to this exact step instead of
+    // the job list.
+    const jobId = this.job()?.id;
+    if (jobId) this.wizardProgress.set(jobId, step);
     // Every step transition lands the user at the top of the page.
     this.scrollContentToTop();
 

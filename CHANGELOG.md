@@ -12,12 +12,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Added
 
+- **Leaving a half-finished application no longer loses your place.** If you start tailoring a CV for a job and then click away - to Documents, to another job, anywhere - a "Finish tailoring" button now follows you and brings you back to the exact step you left, instead of dropping you at the job list to start over.
+
 - **Your profile now holds your email, phone, website and LinkedIn.** They were already being read off your resume, but the profile had nowhere to put them, so they were never yours to edit — and were thrown away the first time you saved. Four fields now sit under Location in the profile form.
 - **The scoring profile tells you when it is out of date.** The card now reads "out of date · regenerate" once you have saved a change to your profile text, and "unsaved changes" while you are still editing. Previously it only ever said "cached · 0 tokens".
 
 ### Fixed
 
 - **A tailored CV now fills in every section, not just the summary.** Generating a CV in the apply wizard put the whole document into the Summary box and left Experience, Education, Skills, Languages and your contact fields empty. The tailored resume is now read into its real sections the same way an imported or onboarding CV is, so the editor opens with everything in its place.
+- **One job now keeps one CV and one cover letter, not a pile of duplicates.** Tailoring, then retailoring, kept creating fresh "<Company> - Tailored CV" documents, so a single application left several near-identical copies in your library. Retailoring now updates the document already attached to the job, and the CV is only written when you actually click Create or Regenerate - never silently on opening the review step.
 - **You can no longer skip ahead of the apply wizard while it is still working.** Next and Continue are disabled while the wizard is tailoring, rescoring or generating a document, so you cannot land on a step whose content has not been produced yet.
 - **"Run final checks" waits until you have a CV.** The button is disabled, with a short note, until a CV is linked to the application, instead of running the checks against nothing.
 - **The Create and Regenerate buttons show they are working.** Generating a CV or cover letter now shows a loading animation on the button rather than only greying it out.

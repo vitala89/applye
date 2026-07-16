@@ -80,7 +80,7 @@ Escalate model depth only for task risk, ambiguity, or blast radius.
 - Read targeted files by path or symbol.
 - Do not read more than 8 files without explaining why.
 - Prefer diff-first and symbol-first context.
-- If `.codegraph/` exists, use CodeGraph before grep, find, or manual file walks.
+- For structural code lookups (find a symbol, trace callers, map a module), prefer the `codebase-memory-mcp` graph tools before grep, find, or manual file walks. In this repo `codebase-memory-mcp` is the single graph tool of record; do not also reach for CodeGraph, so the two do not duplicate work.
 - Do not read `node_modules`, `dist`, `.angular`, `coverage`, `target`, `src-tauri/target`, `.git`, logs, or generated files.
 - Do not configure or install Graphify, CodeGraph, Headroom, Context Mode, Token Optimizer, Superpowers, Browser Harness, Agent Reach, MCP, or other external tools in this PR.
 
@@ -109,3 +109,21 @@ Escalate model depth only for task risk, ambiguity, or blast radius.
 - Shared components and design tokens belong in `libs/ui`.
 - User-facing strings must go through `libs/i18n`.
 - AI assists; the user decides. Never auto-apply AI output.
+
+## Design Consistency (any UI change)
+
+Applye has a fixed design system; keep it fixed. For any task that adds or changes UI:
+
+1. **Before building**, read `design-system/MASTER.md` (the design contract) and the
+   matching `design-system/pages/<page>.md` if one exists. The canonical token values
+   live in `libs/ui/tokens.css`. State which button variant, tokens, and typeface the
+   change uses before editing.
+2. **While building**, use `--token` values only - never raw hex, px, or rgba. Match the
+   component contracts in MASTER (buttons, inputs, cards, badges) exactly; do not skip
+   button states (hover, pressed, focus-visible ring, disabled). Route copy through i18n.
+3. **After building**, run `npx impeccable detect <changed-path>` (on-demand drift check,
+   no install) and reconcile findings against MASTER. Verify both `data-theme="dark"` and
+   `light`.
+4. If the user provides a design reference (link or mock), it overrides MASTER for that
+   screen - implement all of it (including button and control styling) and record the
+   deltas in `design-system/pages/<page>.md`.

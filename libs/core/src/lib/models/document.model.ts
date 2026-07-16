@@ -458,6 +458,9 @@ export interface DocumentLibraryItem {
   language?: SupportedLanguage;
   archetypeTag?: string;
   isDefault: boolean;
+  /** True while this row is an uncommitted apply-wizard draft: it is hidden
+   * from every Documents library list until committed at Export & Apply. */
+  isApplicationDraft: boolean;
   inputHash?: string;
   modelUsed?: string;
   tokensInput?: number;
@@ -481,6 +484,10 @@ export interface UpsertDocumentLibraryItemInput {
   language?: SupportedLanguage;
   archetypeTag?: string;
   isDefault?: boolean;
+  /** `true` marks a new/regenerated apply-wizard draft. Omit to leave an
+   * existing row's draft flag untouched (the document editor saves without it,
+   * so a Review edit never un-drafts the row). */
+  isApplicationDraft?: boolean;
   inputHash?: string;
   modelUsed?: string;
   tokensInput?: number;

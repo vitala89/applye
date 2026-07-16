@@ -449,8 +449,8 @@ const en: TranslationMap = {
       document_cv_missing_hint: 'Create a tailored CV draft from the final tailoring pass.',
       document_cover_letter_missing_hint:
         'Create a cover letter when you are ready to spend AI tokens.',
-      document_create_cv: 'Create CV draft',
-      document_create_cover_letter: 'Create cover letter',
+      document_create_cv: 'Generate CV',
+      document_create_cover_letter: 'Generate cover letter',
       document_review_cv: 'Review CV',
       document_review_letter: 'Review letter',
       document_regenerate: 'Regenerate',
@@ -1506,8 +1506,8 @@ const de: TranslationMap = {
         'Erstelle einen angepassten Lebenslauf-Entwurf aus dem finalen Anpassungsschritt.',
       document_cover_letter_missing_hint:
         'Erstelle ein Anschreiben, wenn du bewusst KI-Tokens einsetzen möchtest.',
-      document_create_cv: 'Lebenslauf-Entwurf erstellen',
-      document_create_cover_letter: 'Anschreiben erstellen',
+      document_create_cv: 'Lebenslauf generieren',
+      document_create_cover_letter: 'Anschreiben generieren',
       document_review_cv: 'Lebenslauf prüfen',
       document_review_letter: 'Anschreiben prüfen',
       document_regenerate: 'Neu erstellen',

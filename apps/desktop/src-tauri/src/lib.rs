@@ -81,6 +81,7 @@ pub fn run() {
             commands::documents::document_library_list,
             commands::documents::document_library_get,
             commands::documents::document_library_upsert,
+            commands::documents::document_library_commit,
             commands::documents::document_library_delete,
             commands::documents::cv_template_upsert,
             commands::documents::cv_import_read_file,

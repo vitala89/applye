@@ -105,6 +105,43 @@ describe('CvPreviewComponent', () => {
     titles.forEach((h3: HTMLElement) => expect(h3.style.fontFamily).toContain('Georgia'));
   });
 
+  it('omits the degree/institution separator when the degree is empty', () => {
+    // Regression: a CV whose Education entry has only the institution (no
+    // degree) rendered a stray leading "," before the name. The separator now
+    // renders only when both sides are present.
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'education',
+        order: 0,
+        visible: true,
+        entries: [
+          { institution: 'Odessa National University', degree: '', startDate: '', endDate: '' },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.cvpreview__entry-role-sep')).toBeNull();
+    expect(root.textContent).toContain('Odessa National University');
+  });
+
+  it('keeps the separator when both degree and institution are present', () => {
+    fixture.componentRef.setInput('sections', [
+      {
+        key: 'education',
+        order: 0,
+        visible: true,
+        entries: [{ institution: 'MIT', degree: 'BSc', startDate: '', endDate: '' }],
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.cvpreview__entry-role-sep'),
+    ).not.toBeNull();
+  });
+
   it('renders section title in the title font and body in the body font', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,

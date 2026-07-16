@@ -45,6 +45,9 @@ pub struct DocumentLibraryItem {
     pub language: Option<String>,
     pub archetype_tag: Option<String>,
     pub is_default: bool,
+    /// True while this row is an uncommitted apply-wizard draft. Drafts are
+    /// hidden from every library list until committed at Export & Apply.
+    pub is_application_draft: bool,
     pub input_hash: Option<String>,
     pub model_used: Option<String>,
     pub tokens_input: Option<i64>,
@@ -69,6 +72,10 @@ pub struct UpsertDocumentLibraryItemInput {
     pub language: Option<String>,
     pub archetype_tag: Option<String>,
     pub is_default: Option<bool>,
+    /// `Some(true)` marks a new/regenerated apply-wizard draft; `None` leaves an
+    /// existing row's draft flag untouched (the document editor saves without
+    /// this field, so a Review edit must never un-draft the row).
+    pub is_application_draft: Option<bool>,
     pub input_hash: Option<String>,
     pub model_used: Option<String>,
     pub tokens_input: Option<i64>,
@@ -1186,15 +1193,22 @@ async fn document_library_list_core(
     pool: &sqlx::SqlitePool,
 ) -> Result<Vec<DocumentLibraryItem>, String> {
     match doc_type {
+        // Uncommitted apply-wizard drafts (is_application_draft = 1) are hidden
+        // from every library list until committed at Export & Apply; Review /
+        // editor / export fetch them by id via document_library_get, unfiltered.
         Some(doc_type) => sqlx::query_as::<_, DocumentLibraryItem>(
-            "SELECT * FROM document_library WHERE doc_type = ? ORDER BY updated_at DESC",
+            "SELECT * FROM document_library
+             WHERE doc_type = ? AND is_application_draft = 0
+             ORDER BY updated_at DESC",
         )
         .bind(doc_type)
         .fetch_all(pool)
         .await
         .map_err(|e| format!("document_library_list: {e}")),
         None => sqlx::query_as::<_, DocumentLibraryItem>(
-            "SELECT * FROM document_library ORDER BY updated_at DESC",
+            "SELECT * FROM document_library
+             WHERE is_application_draft = 0
+             ORDER BY updated_at DESC",
         )
         .fetch_all(pool)
         .await
@@ -1250,6 +1264,7 @@ async fn document_library_upsert_core(
                language       = ?,
                archetype_tag  = ?,
                is_default     = ?,
+               is_application_draft = COALESCE(?, is_application_draft),
                input_hash     = ?,
                model_used     = ?,
                tokens_input   = ?,
@@ -1270,6 +1285,7 @@ async fn document_library_upsert_core(
         .bind(input.language)
         .bind(input.archetype_tag)
         .bind(is_default)
+        .bind(input.is_application_draft)
         .bind(input.input_hash)
         .bind(input.model_used)
         .bind(input.tokens_input)
@@ -1282,9 +1298,9 @@ async fn document_library_upsert_core(
             "INSERT INTO document_library
                (doc_type, source, label, content_json, file_path, template_id,
                 theme_id, style_json, region_tag, language, archetype_tag, is_default,
-                input_hash, model_used, tokens_input, tokens_output,
+                is_application_draft, input_hash, model_used, tokens_input, tokens_output,
                 created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
              RETURNING *",
         )
         .bind(input.doc_type)
@@ -1299,6 +1315,7 @@ async fn document_library_upsert_core(
         .bind(input.language)
         .bind(input.archetype_tag)
         .bind(is_default)
+        .bind(input.is_application_draft.unwrap_or(false))
         .bind(input.input_hash)
         .bind(input.model_used)
         .bind(input.tokens_input)
@@ -1307,6 +1324,33 @@ async fn document_library_upsert_core(
         .await
         .map_err(|e| format!("document_library_upsert (insert): {e}")),
     }
+}
+
+/// Clears the apply-wizard draft flag on a document, turning it into a normal
+/// library entry that shows up in the Documents list. Called at Export & Apply
+/// (export success / mark applied) - the moment the user commits to the doc.
+#[tauri::command]
+pub async fn document_library_commit(
+    id: i64,
+    db: State<'_, Db>,
+) -> Result<Option<DocumentLibraryItem>, String> {
+    document_library_commit_core(id, &db.pool).await
+}
+
+pub(crate) async fn document_library_commit_core(
+    id: i64,
+    pool: &sqlx::SqlitePool,
+) -> Result<Option<DocumentLibraryItem>, String> {
+    sqlx::query_as::<_, DocumentLibraryItem>(
+        "UPDATE document_library
+         SET is_application_draft = 0, updated_at = datetime('now')
+         WHERE id = ?
+         RETURNING *",
+    )
+    .bind(id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| format!("document_library_commit: {e}"))
 }
 
 #[tauri::command]
@@ -1398,6 +1442,7 @@ mod tests {
             language: Some("de".to_string()),
             archetype_tag: None,
             is_default: Some(true),
+            is_application_draft: None,
             input_hash: Some("hash-1".to_string()),
             model_used: Some("claude-sonnet-5".to_string()),
             tokens_input: Some(500),
@@ -1474,6 +1519,75 @@ mod tests {
             .await
             .expect("get");
         assert!(gone.is_none());
+    }
+
+    /// An uncommitted apply-wizard draft is hidden from the library list but
+    /// still fetchable by id (Review / editor / export path), and committing it
+    /// makes it appear in the list.
+    #[tokio::test]
+    async fn document_library_draft_is_hidden_until_committed() {
+        let pool = test_pool().await;
+        let templates = cv_templates_list_core(&pool).await.expect("list templates");
+        let mut input = cv_input(templates[0].id);
+        input.is_application_draft = Some(true);
+
+        let draft = document_library_upsert_core(input, &pool)
+            .await
+            .expect("insert draft");
+        assert!(draft.is_application_draft);
+
+        // Hidden from the list...
+        let listed = document_library_list_core(Some("cv".to_string()), &pool)
+            .await
+            .expect("list");
+        assert!(listed.is_empty(), "draft must not appear in library list");
+
+        // ...but still fetchable by id (Review / export use this path).
+        let fetched = document_library_get_core(draft.id, &pool)
+            .await
+            .expect("get")
+            .expect("row exists");
+        assert!(fetched.is_application_draft);
+
+        // Committing clears the flag and surfaces it in the list.
+        let committed = document_library_commit_core(draft.id, &pool)
+            .await
+            .expect("commit")
+            .expect("row exists");
+        assert!(!committed.is_application_draft);
+
+        let listed = document_library_list_core(Some("cv".to_string()), &pool)
+            .await
+            .expect("list");
+        assert_eq!(listed.len(), 1, "committed draft appears in library list");
+    }
+
+    /// Updating a draft without passing the flag (the document editor saving a
+    /// Review edit) must not un-draft it - COALESCE preserves the flag.
+    #[tokio::test]
+    async fn document_library_update_preserves_draft_flag_when_omitted() {
+        let pool = test_pool().await;
+        let templates = cv_templates_list_core(&pool).await.expect("list templates");
+        let mut input = cv_input(templates[0].id);
+        input.is_application_draft = Some(true);
+        let draft = document_library_upsert_core(input, &pool)
+            .await
+            .expect("insert draft");
+
+        // Editor-style save: same row, no draft flag supplied.
+        let mut edit = cv_input(templates[0].id);
+        edit.id = Some(draft.id);
+        edit.is_application_draft = None;
+        edit.label = Some("Edited in review".to_string());
+        let updated = document_library_upsert_core(edit, &pool)
+            .await
+            .expect("update");
+
+        assert!(
+            updated.is_application_draft,
+            "omitting the flag must not un-draft the row"
+        );
+        assert_eq!(updated.label.as_deref(), Some("Edited in review"));
     }
 
     /// Existing `applications` rows survive the additive migration, and the

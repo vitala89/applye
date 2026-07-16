@@ -260,6 +260,13 @@ export class DbService {
     return tauriInvoke<DocumentLibraryItem>('document_library_upsert', { input });
   }
 
+  /** Clears the apply-wizard draft flag, promoting a draft into a normal
+   * library entry that shows up in the Documents list. Called at Export &
+   * Apply. Resolves to the updated row, or null if the id no longer exists. */
+  async documentLibraryCommit(id: number): Promise<DocumentLibraryItem | null> {
+    return tauriInvoke<DocumentLibraryItem | null>('document_library_commit', { id });
+  }
+
   async documentLibraryDelete(id: number): Promise<void> {
     return tauriInvoke<void>('document_library_delete', { id });
   }

@@ -308,7 +308,6 @@ const en: TranslationMap = {
     open_cover_letter_document: 'Open linked cover letter',
     mark_applied: 'Mark as Applied',
     change_status_action: 'Change',
-    status_label: 'Status',
     edit_locked_action: 'Edit',
     edit_confirm_title: 'Edit an application already in progress?',
     edit_confirm_msg:
@@ -1337,7 +1336,6 @@ const de: TranslationMap = {
     open_cover_letter_document: 'Verknüpftes Anschreiben öffnen',
     mark_applied: 'Als beworben markieren',
     change_status_action: 'Ändern',
-    status_label: 'Status',
     edit_locked_action: 'Bearbeiten',
     edit_confirm_title: 'Eine laufende Bewerbung bearbeiten?',
     edit_confirm_msg:

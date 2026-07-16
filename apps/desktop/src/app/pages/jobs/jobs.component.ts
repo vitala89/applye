@@ -44,8 +44,6 @@ import {
 import { AiService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
-  ApplicationStatus,
-  APPLICATION_STATUSES,
   Job,
   Profile,
   ScoreDimension,
@@ -63,7 +61,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
-import { JobDetailIcons, classifyChangeType } from './scoring.utils';
+import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
@@ -173,21 +171,7 @@ interface FinalChecks {
           <div class="detail-actions">
             <div class="detail-actions__row">
               <!-- Left: primary action + status/tailored badges -->
-              @if (application(); as app) {
-                <label class="detail-actions__status">
-                  <span class="detail-actions__status-label">{{ t()('jobs.status_label') }}</span>
-                  <select
-                    class="detail-actions__status-select"
-                    [ngModel]="app.status"
-                    [disabled]="actionBusy()"
-                    (ngModelChange)="setStatus($event)"
-                  >
-                    @for (s of statusOptions; track s) {
-                      <option [value]="s">{{ t()('status.' + s) }}</option>
-                    }
-                  </select>
-                </label>
-              } @else {
+              @if (!application()) {
                 <button
                   class="btn btn--secondary btn--md"
                   [disabled]="actionBusy()"
@@ -195,6 +179,8 @@ interface FinalChecks {
                 >
                   {{ t()('jobs.add_to_pipeline') }}
                 </button>
+              }
+              @if (canMarkApplied()) {
                 <button
                   class="btn btn--primary btn--md"
                   [disabled]="actionBusy()"
@@ -202,6 +188,12 @@ interface FinalChecks {
                 >
                   {{ t()('jobs.mark_applied') }}
                 </button>
+              } @else if (application(); as app) {
+                <!-- Status is read-only here; it is set on the Pipeline board
+                     and only reflected on the job detail. -->
+                <span class="badge" [class]="statusBadgeClass(app.status)">{{
+                  t()('status.' + app.status)
+                }}</span>
               }
               @if (isTailored()) {
                 <span class="badge badge--accent">
@@ -1223,34 +1215,6 @@ interface FinalChecks {
       .detail-actions__spacer {
         flex: 1 1 auto;
       }
-      .detail-actions__status {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-      }
-      .detail-actions__status-label {
-        font-family: var(--font-mono);
-        font-size: var(--text-2xs);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-tertiary);
-      }
-      .detail-actions__status-select {
-        min-height: 30px;
-        padding: 0 var(--space-3);
-        border: 1px solid var(--border-default);
-        border-radius: var(--radius-input);
-        background: var(--surface-1);
-        color: var(--text-primary);
-        font-family: var(--font-mono);
-        font-size: var(--text-xs);
-        font-weight: var(--weight-medium);
-        cursor: pointer;
-      }
-      .detail-actions__status-select:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
       .locked-hint {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
@@ -2140,9 +2104,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** Confirm dialog for reopening editing on an application past Applied. */
   readonly editConfirmOpen = signal(false);
 
-  /** Status options for the detail-page dropdown, in funnel order. */
-  protected readonly statusOptions = APPLICATION_STATUSES;
-
   /** True with no application yet, one still in 'saved', or the user
    * overrode the lock via "Edit". Anything else (applied/interview/
    * offer/rejected/cancelled) shows the status dropdown + Edit instead of an
@@ -2154,6 +2115,8 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Locked exactly when Mark-as-Applied isn't available. */
   readonly jobLocked = computed(() => !this.canMarkApplied());
+
+  protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
   // Draft portal answers
   readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
@@ -3276,31 +3239,6 @@ export class JobsComponent implements OnInit, OnDestroy {
       await this.router.navigate(['/jobs']);
     } catch (e) {
       this.actionMsg.set(String(e));
-      this.actionBusy.set(false);
-    }
-  }
-
-  /**
-   * Change the application status from the job detail (the dropdown). Uses
-   * the SAME `db_set_application_status` command the pipeline kanban uses, so
-   * `status_history` + `follow_up_at` are computed once, in SQL. The overview
-   * row is mirrored from the status the DB recorded (single source of truth),
-   * and moving back to `saved` reopens editing/tailoring via `canMarkApplied`.
-   */
-  async setStatus(status: ApplicationStatus): Promise<void> {
-    const j = this.job();
-    const app = this.application();
-    if (!j?.id || !app?.id || this.actionBusy() || status === app.status) return;
-    this.actionBusy.set(true);
-    this.actionMsg.set('');
-    try {
-      const updated = await this.db.setApplicationStatus(app.id, status);
-      this.application.set(updated);
-      this.jobsStore.patchOverviewRow(j.id, { status: updated.status });
-      if (updated.status === 'saved') this.editingLocked.set(false);
-    } catch (e) {
-      this.actionMsg.set(String(e));
-    } finally {
       this.actionBusy.set(false);
     }
   }

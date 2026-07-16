@@ -18,6 +18,10 @@ is the single source of truth; this file tracks what changed at each tag.
 - **The scoring profile tells you when it is out of date.** The card now reads "out of date · regenerate" once you have saved a change to your profile text, and "unsaved changes" while you are still editing. Previously it only ever said "cached · 0 tokens".
 - **The elevator pitch now tracks its own freshness, and can always be refreshed.** The pitch card gained the same "out of date · regenerate" / "unsaved changes" badge as the scoring card. It also fixes a real trap: the pitch used to share the scoring profile's cache key, so regenerating your scoring profile made the pitch report as "cached" even though it was written from an older version of your profile — and you could not refresh it. The pitch now remembers the exact profile text it was written from (a new `pitch_hash`), so it goes stale and regenerates independently of scoring.
 
+### Fixed
+
+- **Leaving the app mid-rescore no longer wipes your updated score.** When the "update score" step was running and you switched to Pipeline or the job tracker, coming back showed the step as skipped and threw the result away. The rescore now keeps running in the background while you are away, the "Finish tailoring" button shows a live "Scoring your tailored CV…" spinner while it works, and your updated score is waiting for you when you return.
+
 ### Changed
 
 - **The Tailor step starts from your profile by default.** The base to tailor from was the first CV in your library; it now defaults to your profile ("from scratch"), unless the job already has its own tailored CV, in which case that one is the default so you build on it.

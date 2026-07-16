@@ -9,6 +9,7 @@ import {
   FileText,
   KanbanSquare,
   LayoutDashboard,
+  LoaderCircle,
   LucideAngularModule,
   Moon,
   Search,
@@ -25,6 +26,7 @@ import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-moda
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
 import { WizardProgressService } from '../shared/wizard-progress.service';
+import { TailorScoreService } from '../shared/tailor-score.service';
 import { ThemeService } from '../core/theme.service';
 
 @Component({
@@ -41,6 +43,7 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly pasteJobModal = inject(PasteJobModalService);
   protected readonly pageTitle = inject(PageTitleService);
   private readonly wizardProgress = inject(WizardProgressService);
+  private readonly tailorScore = inject(TailorScoreService);
   private readonly router = inject(Router);
 
   // Live router URL so the resume affordance can hide itself when the user is
@@ -62,6 +65,16 @@ export class ShellLayoutComponent implements OnInit {
     const p = this.wizardProgress.progress();
     if (!p) return null;
     return this.currentUrl().startsWith(`/jobs/${p.jobId}`) ? null : p;
+  });
+
+  /**
+   * True when the offered resume session's post-tailor rescore is still
+   * running - flips the badge to a live "scoring…" state with a spinner so
+   * the user knows a step is in flight, not stalled.
+   */
+  protected readonly scoringRunning = computed(() => {
+    const p = this.resumeProgress();
+    return !!p && this.tailorScore.runningJobId() === p.jobId;
   });
 
   protected resumeTailor(): void {
@@ -113,6 +126,7 @@ export class ShellLayoutComponent implements OnInit {
     sun: Sun,
     moon: Moon,
     wand: Wand2,
+    loader: LoaderCircle,
   };
 
   private readonly themeService = inject(ThemeService);

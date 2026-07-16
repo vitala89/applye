@@ -3,6 +3,7 @@ import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
 import { WizardProgressService } from '../../shared/wizard-progress.service';
+import { TailorScoreService } from '../../shared/tailor-score.service';
 import { FormsModule } from '@angular/forms';
 import {
   AlertTriangle,
@@ -2082,6 +2083,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardProgress = inject(WizardProgressService);
+  private readonly tailorScore = inject(TailorScoreService);
   private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
@@ -2208,10 +2210,13 @@ export class JobsComponent implements OnInit, OnDestroy {
   // Post-tailor rescore (before/after). The before/after pair is transient
   // (in-memory), but the *after* score is persisted to My Jobs once the user
   // reaches the export step - see savePostTailorScore.
-  readonly postTailorScore = signal<ScoringCache | null>(null);
-  readonly updatingScore = signal(false);
-  readonly updateScoreStatus = signal('');
-  readonly updateScoreError = signal(false);
+  // Post-tailor rescore state lives in TailorScoreService (a root singleton)
+  // so an in-flight run survives leaving this page; these are read-only views
+  // of it, scoped to the job currently shown.
+  readonly postTailorScore = computed(() => this.tailorScore.resultFor(this.job()?.id ?? -1));
+  readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
+  readonly updateScoreStatus = computed(() => this.tailorScore.statusFor(this.job()?.id ?? -1));
+  readonly updateScoreError = computed(() => this.tailorScore.isErrorFor(this.job()?.id ?? -1));
   private readonly postTailorSaved = signal(false);
   /** Non-null while the post-apply/update success card is shown before the
    * redirect fires. */
@@ -3714,9 +3719,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.updatingScore.set(true);
-    this.updateScoreStatus.set('');
-    this.updateScoreError.set(false);
+    this.tailorScore.begin(j.id);
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
     try {
@@ -3757,30 +3760,30 @@ export class JobsComponent implements OnInit, OnDestroy {
         throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
       }
 
-      this.postTailorScore.set({
-        id: -1,
-        jobId: j.id,
-        profileHash: p.scoringHash,
-        jdHash: j.jdHash ?? '',
-        language: lang,
-        score: parsed.score,
-        dimensionsJson: JSON.stringify(parsed.dimensions),
-        missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
-        redFlagsJson: JSON.stringify(parsed.red_flags),
-        atsPass: parsed.ats_pass,
-        atsNotes: parsed.ats_notes,
-        summary: parsed.summary,
-        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
-        modelUsed: s.economyModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
-      this.updateScoreStatus.set(`Updated - ${res.tokensInput} in / ${res.tokensOutput} out`);
+      this.tailorScore.succeed(
+        j.id,
+        {
+          id: -1,
+          jobId: j.id,
+          profileHash: p.scoringHash,
+          jdHash: j.jdHash ?? '',
+          language: lang,
+          score: parsed.score,
+          dimensionsJson: JSON.stringify(parsed.dimensions),
+          missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
+          redFlagsJson: JSON.stringify(parsed.red_flags),
+          atsPass: parsed.ats_pass,
+          atsNotes: parsed.ats_notes,
+          summary: parsed.summary,
+          beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
+          modelUsed: s.economyModel,
+          tokensInput: res.tokensInput,
+          tokensOutput: res.tokensOutput,
+        },
+        `Updated - ${res.tokensInput} in / ${res.tokensOutput} out`,
+      );
     } catch (e) {
-      this.updateScoreStatus.set(`Update failed: ${String(e)}`);
-      this.updateScoreError.set(true);
-    } finally {
-      this.updatingScore.set(false);
+      this.tailorScore.fail(j.id, `Update failed: ${String(e)}`);
     }
   }
 
@@ -3870,10 +3873,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.lastExport.set(null);
-    this.postTailorScore.set(null);
+    this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
-    this.updateScoreStatus.set('');
-    this.updateScoreError.set(false);
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
 
@@ -3947,10 +3948,8 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.tailorError.set(false);
     this.exportStatus.set('');
     this.exportError.set(false);
-    this.postTailorScore.set(null);
+    this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
-    this.updateScoreStatus.set('');
-    this.updateScoreError.set(false);
   }
 
   /**

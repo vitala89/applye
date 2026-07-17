@@ -348,6 +348,9 @@ pub struct ApplicationTrackerFieldsInput {
     pub next_action_at: Option<String>,
     pub salary_range: Option<String>,
     pub notes: Option<String>,
+    /// JSON blob of custom-column values ({ "<colId>": "<value>" }). When None,
+    /// the existing value is kept (COALESCE), so a normal edit never wipes it.
+    pub custom_fields: Option<String>,
 }
 
 #[tauri::command]
@@ -366,6 +369,7 @@ async fn db_update_application_tracker_fields_core(
         "UPDATE applications SET
            contact_name = ?, contact_role = ?, contact_channel = ?,
            next_action = ?, next_action_at = ?, salary_range = ?, notes = ?,
+           custom_fields = COALESCE(?, custom_fields),
            updated_at = datetime('now')
          WHERE id = ?",
     )
@@ -376,6 +380,7 @@ async fn db_update_application_tracker_fields_core(
     .bind(&input.next_action_at)
     .bind(&input.salary_range)
     .bind(&input.notes)
+    .bind(&input.custom_fields)
     .bind(input.id)
     .execute(pool)
     .await
@@ -732,6 +737,7 @@ mod followup_tests {
                 next_action_at: Some("2026-07-10".to_string()),
                 salary_range: Some("70-80k EUR".to_string()),
                 notes: Some("Great call".to_string()),
+                custom_fields: None,
             },
             &pool,
         )

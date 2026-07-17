@@ -1,158 +1,558 @@
-<div class="tracker">
-  <header class="tracker__head">
-    <p class="tracker__sub">{{ t()('tracker.subtitle') }}</p>
-    <div class="tracker__export">
-      <input
-        class="tracker__applicant"
-        [ngModel]="applicantName()"
-        (ngModelChange)="applicantName.set($event)"
-        [placeholder]="t()('tracker.applicant_placeholder')"
-      />
-      @if (isGerman()) {
-        <button
-          appButton
-          variant="primary"
-          size="sm"
-          [disabled]="exporting()"
-          (click)="exportPdf()"
+<div class="jt" (click)="closeMenus()">
+  <div class="jt__wrap">
+    <!-- ===================== toolbar ===================== -->
+    <header class="jt__toolbar">
+      <div class="jt__title-block">
+        <h1 class="jt__title">{{ t()('tracker.title') }}</h1>
+        <p class="jt__sub">{{ t()('tracker.subtitle') }}</p>
+      </div>
+
+      <div class="jt__tools">
+        <div class="jt__segment" role="tablist">
+          <button
+            type="button"
+            class="jt__seg"
+            [class.is-active]="segment() === 'active'"
+            (click)="segment.set('active')"
+          >
+            {{ t()('tracker.seg_active') }} · {{ activeCount() }}
+          </button>
+          <button
+            type="button"
+            class="jt__seg"
+            [class.is-active]="segment() === 'archived'"
+            (click)="segment.set('archived')"
+          >
+            {{ t()('tracker.seg_archived') }} · {{ archivedCount() }}
+          </button>
+        </div>
+
+        <span class="jt__divider"></span>
+
+        <select class="jt__select" [ngModel]="range()" (ngModelChange)="range.set($event)">
+          <option value="month">{{ t()('tracker.range_month') }}</option>
+          <option value="3months">{{ t()('tracker.range_3months') }}</option>
+          <option value="all">{{ t()('tracker.range_all') }}</option>
+        </select>
+        <select
+          class="jt__select"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)"
         >
-          {{ t()('tracker.export_de') }}
+          <option value="">{{ t()('tracker.all_statuses') }}</option>
+          @for (s of statuses; track s) {
+            <option [value]="s">{{ t()('status.' + s) }}</option>
+          }
+        </select>
+
+        <button
+          type="button"
+          class="jt__tbtn"
+          [class.is-active]="showCols()"
+          (click)="showCols.set(!showCols())"
+        >
+          <lucide-icon [img]="icons.columns" [size]="15" />
+          {{ t()('tracker.columns_toggle') }}
         </button>
-      }
-      <button
-        appButton
-        [variant]="isGerman() ? 'secondary' : 'primary'"
-        size="sm"
-        [disabled]="exporting()"
-        (click)="exportPdf()"
-      >
-        {{ t()('tracker.export_pdf') }}
-      </button>
-      <button
-        appButton
-        variant="secondary"
-        size="sm"
-        [disabled]="exporting()"
-        (click)="exportCsv()"
-      >
-        {{ t()('tracker.export_excel') }}
-      </button>
-    </div>
-  </header>
+        <button type="button" class="jt__tbtn jt__tbtn--primary" (click)="showExport.set(true)">
+          <lucide-icon [img]="icons.fileDown" [size]="15" />
+          {{ t()('tracker.export_report') }}
+        </button>
+      </div>
+    </header>
 
-  <div class="tracker__filters">
-    <select [ngModel]="range()" (ngModelChange)="range.set($event)">
-      <option value="all">{{ t()('tracker.range_all') }}</option>
-      <option value="month">{{ t()('tracker.range_month') }}</option>
-      <option value="3months">{{ t()('tracker.range_3months') }}</option>
-    </select>
-    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
-      <option value="">{{ t()('tracker.all_statuses') }}</option>
-      @for (s of statuses; track s) {
-        <option [value]="s">{{ t()('status.' + s) }}</option>
-      }
-    </select>
+    @if (segment() === 'archived') {
+      <div class="jt__banner">
+        <lucide-icon [img]="icons.info" [size]="14" />
+        {{ t()('tracker.archived_note') }}
+      </div>
+    }
 
-    <div class="tracker__colmenu">
-      <button appButton variant="secondary" size="sm" (click)="toggleColumnMenu()">
-        {{ t()('tracker.columns_toggle') }}
-      </button>
-      @if (columnMenuOpen()) {
-        <div class="tracker__colpanel">
-          @for (col of columns; track col.key) {
-            <label class="tracker__colitem">
-              <input
-                type="checkbox"
-                [checked]="isColumnVisible(col.key)"
-                (change)="toggleColumn(col.key)"
-              />
-              {{ t()(col.labelKey) }}
-            </label>
+    <!-- ===================== body ===================== -->
+    @if (loading()) {
+      <div class="jt__skeleton">
+        <div class="jt__skrow jt__skrow--head">
+          @for (w of [140, 160, 90, 110, 150, 120]; track $index) {
+            <span class="jt__skbar" [style.width.px]="w"></span>
           }
         </div>
-      }
-    </div>
-  </div>
-
-  @if (loading()) {
-    <p class="tracker__state">{{ t()('common.loading') }}</p>
-  } @else if (!view().length) {
-    <p class="tracker__state">{{ t()('tracker.empty') }}</p>
-  } @else {
-    <div class="tracker__table-wrap">
-      <table class="tracker__table">
-        <thead>
-          <tr>
-            <th>{{ t()('tracker.col_n') }}</th>
-            @for (col of columns; track col.key) {
-              @if (isColumnVisible(col.key)) {
-                <th>{{ t()(col.labelKey) }}</th>
-              }
+        @for (r of [0, 1, 2, 3, 4, 5]; track r) {
+          <div class="jt__skrow" [style.opacity]="1 - r * 0.12">
+            @for (w of [140, 180, 80, 100, 160, 110]; track $index) {
+              <span class="jt__skbar" [style.width.px]="w"></span>
             }
-          </tr>
-        </thead>
-        <tbody>
-          @for (r of view(); track r.id; let i = $index) {
-            <tr>
-              <td class="muted">{{ i + 1 }}</td>
-              @for (col of columns; track col.key) {
-                @if (isColumnVisible(col.key)) {
-                  <td
-                    [class.cell-strong]="col.key === 'company'"
-                    [class.notes]="col.key === 'notes'"
-                  >
-                    @if (col.editable) {
-                      <input
-                        class="cell-edit"
-                        [type]="col.type === 'date' ? 'date' : 'text'"
-                        [value]="cellValue(r, col.key)"
-                        (change)="patchField(r, $any(col.key), inputValue($event))"
-                      />
-                    } @else if (col.type === 'link') {
-                      @if (cellValue(r, col.key)) {
-                        <a
-                          [href]="cellValue(r, col.key)"
-                          target="_blank"
-                          rel="noopener"
-                          class="tracker-link"
-                        >
-                          {{ t()('tracker.open_link') }}
-                        </a>
-                      } @else {
-                        <span class="muted">·</span>
+          </div>
+        }
+      </div>
+    } @else if (!view().length) {
+      <div class="jt__empty">
+        <div class="jt__empty-icon">
+          <lucide-icon [img]="segment() === 'archived' ? icons.archive : icons.empty" [size]="24" />
+        </div>
+        <p class="jt__empty-title">
+          {{ t()(segment() === 'archived' ? 'tracker.empty_archived' : 'tracker.empty') }}
+        </p>
+        <p class="jt__empty-sub">
+          {{ t()(segment() === 'archived' ? 'tracker.empty_archived_sub' : 'tracker.empty_sub') }}
+        </p>
+      </div>
+    } @else {
+      <div class="jt__table-wrap">
+        <div class="jt__scroll" (scroll)="closeMenus()">
+          <table class="jt__table">
+            <thead>
+              <tr>
+                <th class="jt-th jt-th--idx">{{ t()('tracker.col_n') }}</th>
+                @for (col of visibleColumns(); track col.key) {
+                  <th class="jt-th" [class.jt-th--pin]="col.pin">
+                    <span class="jt-th__inner">
+                      @if (col.custom) {
+                        <lucide-icon class="jt-th__mark" [img]="icons.sparkles" [size]="11" />
                       }
-                    } @else if (col.type === 'bool') {
-                      <span class="muted">{{
-                        r.blueCardEligible === undefined || r.blueCardEligible === null
-                          ? '·'
-                          : r.blueCardEligible
-                            ? t()('common.yes')
-                            : t()('common.no')
-                      }}</span>
-                    } @else if (col.key === 'status') {
-                      <span class="badge">{{ r.status ? t()('status.' + r.status) : '·' }}</span>
+                      {{ colLabel(col) }}
+                      @if (col.editable) {
+                        <lucide-icon class="jt-th__pencil" [img]="icons.pencil" [size]="10" />
+                      }
+                    </span>
+                  </th>
+                }
+                <th class="jt-th jt-th--act"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of view(); track r.id; let i = $index) {
+                <tr
+                  class="jt-row"
+                  [class.is-archived]="r.archived"
+                  [class.is-editing]="isEditing(r)"
+                >
+                  <td class="jt-td jt-td--idx">{{ (i + 1).toString().padStart(2, '0') }}</td>
+                  @for (col of visibleColumns(); track col.key) {
+                    <td
+                      class="jt-td"
+                      [class.jt-td--pin]="col.pin"
+                      [class.jt-td--locked]="col.src === 'job' && !col.custom"
+                      [class.jt-td--notes]="col.key === 'notes'"
+                      [attr.title]="
+                        col.src === 'job' && !col.custom ? t()('tracker.locked_hint') : null
+                      "
+                    >
+                      <!-- edit mode -->
+                      @if (isEditing(r) && col.editable) {
+                        @if (col.type === 'status') {
+                          <select
+                            class="jt-input"
+                            [value]="draftValue(col)"
+                            (change)="setDraft(col, $event)"
+                          >
+                            @for (s of statuses; track s) {
+                              <option [value]="s">{{ t()('status.' + s) }}</option>
+                            }
+                          </select>
+                        } @else if (col.type === 'yesno') {
+                          <select
+                            class="jt-input"
+                            [value]="draftValue(col)"
+                            (change)="setDraft(col, $event)"
+                          >
+                            <option value="yes">{{ t()('common.yes') }}</option>
+                            <option value="no">{{ t()('common.no') }}</option>
+                          </select>
+                        } @else {
+                          <input
+                            class="jt-input"
+                            [type]="
+                              col.type === 'date'
+                                ? 'date'
+                                : col.type === 'number'
+                                  ? 'number'
+                                  : 'text'
+                            "
+                            [value]="draftValue(col)"
+                            (change)="setDraft(col, $event)"
+                          />
+                        }
+                      } @else {
+                        <!-- read mode -->
+                        @if (col.key === 'company') {
+                          @if (r.jobId != null) {
+                            <button type="button" class="jt-joblink" (click)="openJob(r)">
+                              {{ cellValue(r, col) || '·' }}
+                              <lucide-icon [img]="icons.link" [size]="13" />
+                            </button>
+                          } @else {
+                            <span class="jt-strong">{{ cellValue(r, col) || '·' }}</span>
+                          }
+                        } @else if (col.type === 'status') {
+                          <span class="jt-status" [attr.data-status]="r.status">
+                            <span class="jt-status__dot"></span>{{ statusLabel(r.status) }}
+                          </span>
+                        } @else if (col.type === 'link') {
+                          @if (cellValue(r, col)) {
+                            <a
+                              class="jt-link"
+                              [href]="cellValue(r, col)"
+                              target="_blank"
+                              rel="noopener"
+                              >{{ t()('tracker.open_link') }}</a
+                            >
+                          } @else {
+                            <span class="jt-dim">—</span>
+                          }
+                        } @else if (col.type === 'date') {
+                          <span class="jt-mono" [class.jt-dim]="!cellValue(r, col)">{{
+                            cellValue(r, col) ? fmtDate(cellValue(r, col)) : '—'
+                          }}</span>
+                        } @else if (col.type === 'stage') {
+                          @if (r.nextStageLabel) {
+                            <span class="jt-stage">
+                              <span class="jt-stage__label">{{ r.nextStageLabel }}</span>
+                              @if (r.nextStageAt) {
+                                <span class="jt-stage__date">{{ fmtDate(r.nextStageAt) }}</span>
+                              }
+                            </span>
+                          } @else {
+                            <span class="jt-dim">—</span>
+                          }
+                        } @else if (col.type === 'yesno') {
+                          <span
+                            class="jt-mono"
+                            [class.jt-yes]="cellValue(r, col) === 'yes'"
+                            [class.jt-dim]="cellValue(r, col) !== 'yes'"
+                            >{{
+                              t()(cellValue(r, col) === 'yes' ? 'common.yes' : 'common.no')
+                            }}</span
+                          >
+                        } @else {
+                          <span class="jt-cell" [class.jt-dim]="!cellValue(r, col)">{{
+                            cellValue(r, col) || '—'
+                          }}</span>
+                        }
+                      }
+                    </td>
+                  }
+                  <!-- actions -->
+                  <td class="jt-td jt-td--act">
+                    @if (isEditing(r)) {
+                      <div class="jt-actbtns">
+                        <button
+                          type="button"
+                          class="jt-icon jt-icon--primary"
+                          [title]="t()('actions.save')"
+                          [disabled]="saving()"
+                          (click)="saveEdit()"
+                        >
+                          <lucide-icon [img]="icons.check" [size]="15" />
+                        </button>
+                        <button
+                          type="button"
+                          class="jt-icon"
+                          [title]="t()('actions.cancel')"
+                          (click)="cancelEdit()"
+                        >
+                          <lucide-icon [img]="icons.close" [size]="15" />
+                        </button>
+                      </div>
                     } @else {
-                      <span class="muted">{{ cellValue(r, col.key) || '·' }}</span>
+                      <div class="jt-menu" (click)="$event.stopPropagation()">
+                        <button
+                          type="button"
+                          class="jt-icon"
+                          [class.is-open]="menuId() === r.id"
+                          [title]="t()('tracker.row_actions')"
+                          aria-haspopup="menu"
+                          [attr.aria-expanded]="menuId() === r.id"
+                          (click)="toggleMenu(r, $event)"
+                        >
+                          <lucide-icon [img]="icons.menu" [size]="16" />
+                        </button>
+                      </div>
                     }
                   </td>
-                }
+                </tr>
               }
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-    <footer class="tracker__summary">
-      <span
-        ><strong>{{ summary().total }}</strong> {{ t()('tracker.total') }}</span
+      <!-- summary strip -->
+      <div class="jt__summary">
+        <div class="jt__stat">
+          <span class="jt__stat-label"
+            ><lucide-icon [img]="icons.layers" [size]="13" />{{ t()('tracker.total') }}</span
+          >
+          <span class="jt__stat-val">{{ summary().total }}</span>
+        </div>
+        <div class="jt__stat">
+          <span class="jt__stat-label"
+            ><lucide-icon [img]="icons.activity" [size]="13" />{{
+              t()('tracker.response_rate')
+            }}</span
+          >
+          <span class="jt__stat-val">{{ summary().rate }}<span class="jt__stat-unit">%</span></span>
+        </div>
+        <div class="jt__stat">
+          <span class="jt__stat-label"
+            ><lucide-icon [img]="icons.clock" [size]="13" />{{ t()('tracker.avg_days') }}</span
+          >
+          <span class="jt__stat-val"
+            >{{ summary().avg }}<span class="jt__stat-unit">{{ t()('tracker.days') }}</span></span
+          >
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ===================== column manager drawer ===================== -->
+  @if (showCols()) {
+    <div class="jt-drawer" (click)="$event.stopPropagation()">
+      <div class="jt-drawer__head">
+        <span class="jt-drawer__title">{{ t()('tracker.columns_toggle') }}</span>
+        <button type="button" class="jt-icon" (click)="showCols.set(false)">
+          <lucide-icon [img]="icons.close" [size]="18" />
+        </button>
+      </div>
+      <div class="jt-drawer__body">
+        <p class="jt-drawer__heading">{{ t()('tracker.cols_essential') }}</p>
+        @for (col of essentialColumns(); track col.key) {
+          <label class="jt-colrow" [class.is-forced]="col.pin">
+            <span
+              class="jt-switch"
+              [class.is-on]="isColumnVisible(col.key)"
+              (click)="!col.pin && toggleColumn(col.key)"
+            ></span>
+            <span class="jt-colrow__label">{{ colLabel(col) }}</span>
+            @if (col.src === 'job') {
+              <span class="jt-tag">{{ t()('tracker.locked') }}</span>
+            }
+            @if (col.pin) {
+              <lucide-icon [img]="icons.pin" [size]="12" />
+            }
+          </label>
+        }
+
+        <p class="jt-drawer__heading">{{ t()('tracker.cols_optional') }}</p>
+        @for (col of optionalColumns(); track col.key) {
+          <label class="jt-colrow">
+            <span
+              class="jt-switch"
+              [class.is-on]="isColumnVisible(col.key)"
+              (click)="toggleColumn(col.key)"
+            ></span>
+            <span class="jt-colrow__label">{{ colLabel(col) }}</span>
+            @if (col.src === 'job') {
+              <span class="jt-tag">{{ t()('tracker.locked') }}</span>
+            }
+          </label>
+        }
+
+        @if (customCols().length) {
+          <p class="jt-drawer__heading">{{ t()('tracker.cols_custom') }}</p>
+          @for (col of customCols(); track col.id) {
+            <div class="jt-colrow jt-colrow--custom">
+              <lucide-icon [img]="icons.sparkles" [size]="14" />
+              <span class="jt-colrow__label">{{ col.label }}</span>
+              <span class="jt-tag">{{ col.type }}</span>
+              <button
+                type="button"
+                class="jt-icon jt-icon--sm"
+                (click)="removeCustomColumn(col.id)"
+              >
+                <lucide-icon [img]="icons.trash" [size]="14" />
+              </button>
+            </div>
+          }
+        }
+
+        <p class="jt-drawer__heading">{{ t()('tracker.add_custom') }}</p>
+        <div class="jt-addcol">
+          <input
+            class="jt-drawer__input"
+            [ngModel]="newColName()"
+            (ngModelChange)="newColName.set($event)"
+            [placeholder]="t()('tracker.custom_name_ph')"
+            (keydown.enter)="addCustomColumn()"
+          />
+          <select
+            class="jt-drawer__input"
+            [ngModel]="newColType()"
+            (ngModelChange)="newColType.set($event)"
+          >
+            <option value="text">{{ t()('tracker.ctype_text') }}</option>
+            <option value="date">{{ t()('tracker.ctype_date') }}</option>
+            <option value="number">{{ t()('tracker.ctype_number') }}</option>
+            <option value="yesno">{{ t()('tracker.ctype_yesno') }}</option>
+            <option value="select">{{ t()('tracker.ctype_select') }}</option>
+          </select>
+          <button type="button" class="jt-addcol__btn" (click)="addCustomColumn()">
+            <lucide-icon [img]="icons.plus" [size]="15" />{{ t()('tracker.add_column') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===================== export preview modal ===================== -->
+  @if (showExport()) {
+    <div class="jt-modal" (click)="showExport.set(false)">
+      <div class="jt-modal__panel" (click)="$event.stopPropagation()">
+        <div class="jt-modal__head">
+          <span class="jt-modal__title">
+            <lucide-icon [img]="icons.reportOk" [size]="18" />
+            {{ t()('tracker.preview_title') }}
+            <span class="jt-modal__hint">{{ t()('tracker.preview_hint') }}</span>
+          </span>
+          <button type="button" class="jt-icon" (click)="showExport.set(false)">
+            <lucide-icon [img]="icons.close" [size]="18" />
+          </button>
+        </div>
+
+        <div class="jt-modal__config">
+          <label class="jt-field">
+            <span class="jt-field__label">{{ t()('tracker.applicant_label') }}</span>
+            <input
+              class="jt-field__input"
+              [ngModel]="applicantName()"
+              (ngModelChange)="applicantName.set($event)"
+              [placeholder]="t()('tracker.applicant_placeholder')"
+            />
+          </label>
+          <label class="jt-field">
+            <span class="jt-field__label">{{ t()('tracker.report_market') }}</span>
+            <select
+              class="jt-field__input jt-field__input--sm"
+              [ngModel]="reportMarket()"
+              (ngModelChange)="reportMarket.set($event)"
+            >
+              <option value="de">{{ t()('tracker.market_de') }}</option>
+              <option value="intl">{{ t()('tracker.market_intl') }}</option>
+            </select>
+          </label>
+          <label class="jt-field">
+            <span class="jt-field__label">{{ t()('tracker.orientation') }}</span>
+            <select
+              class="jt-field__input jt-field__input--sm"
+              [ngModel]="landscape()"
+              (ngModelChange)="landscape.set($event)"
+            >
+              <option [ngValue]="false">{{ t()('tracker.portrait') }}</option>
+              <option [ngValue]="true">{{ t()('tracker.landscape') }}</option>
+            </select>
+          </label>
+          <label class="jt-field">
+            <span class="jt-field__label">{{ t()('tracker.columns_toggle') }}</span>
+            <select
+              class="jt-field__input jt-field__input--sm"
+              [ngModel]="reportMode()"
+              (ngModelChange)="reportMode.set($event)"
+            >
+              <option value="fit">{{ t()('tracker.mode_fit') }}</option>
+              <option value="all">{{ t()('tracker.mode_all') }}</option>
+            </select>
+          </label>
+          <span class="jt-modal__spacer"></span>
+          <button
+            type="button"
+            class="jt-tbtn jt-tbtn--primary"
+            [disabled]="exporting()"
+            (click)="exportPdf()"
+          >
+            <lucide-icon [img]="icons.fileDown" [size]="15" />{{ t()('tracker.save_pdf') }}
+          </button>
+          <button type="button" class="jt-tbtn" [disabled]="exporting()" (click)="exportCsv()">
+            <lucide-icon [img]="icons.table" [size]="15" />{{ t()('tracker.save_csv') }}
+          </button>
+        </div>
+
+        @if (reportFitInfo().overflow.length) {
+          <div class="jt-modal__note">
+            <lucide-icon [img]="icons.info" [size]="13" />
+            {{ fitNoteText() }}
+          </div>
+        }
+
+        <div class="jt-modal__scroll" [class.is-landscape]="landscape()">
+          <app-tracker-report
+            [rows]="reportRows()"
+            [columns]="reportColumns()"
+            [applicant]="applicantName()"
+            [periodLabel]="periodLabelPublic()"
+            [market]="reportMarket()"
+            [mode]="reportMode()"
+            [landscape]="landscape()"
+            [generatedOn]="today()"
+            [total]="summary().total"
+            [rate]="summary().rate"
+            [avg]="summary().avg"
+          />
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===== row-actions popup: rendered at ROOT so no sticky cell's stacking
+       context can clip or paint over it ===== -->
+  @if (menuRow(); as mr) {
+    @if (menuPos(); as pos) {
+      <div class="jt-pop-backdrop" (click)="closeMenus()"></div>
+      <div
+        class="jt-pop"
+        role="menu"
+        [style.top.px]="pos.top"
+        [style.left.px]="pos.left"
+        (click)="$event.stopPropagation()"
       >
-      <span
-        ><strong>{{ summary().rate }}%</strong> {{ t()('tracker.response_rate') }}</span
-      >
-      <span
-        ><strong>{{ summary().avg }}</strong> {{ t()('tracker.avg_days') }}</span
-      >
-    </footer>
+        @if (confirmId() === mr.id) {
+          <div class="jt-pop__confirm">
+            <div class="jt-pop__confirm-head">
+              <lucide-icon [img]="icons.trash" [size]="15" />
+              {{ t()('tracker.confirm_remove_title') }}
+            </div>
+            <p class="jt-pop__confirm-body">{{ t()('tracker.confirm_remove_body') }}</p>
+            <div class="jt-pop__confirm-row">
+              <button type="button" class="jt-mini" (click)="confirmId.set(null)">
+                {{ t()('actions.cancel') }}
+              </button>
+              <button type="button" class="jt-mini jt-mini--danger" (click)="confirmRemove(mr)">
+                {{ t()('tracker.remove') }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button type="button" role="menuitem" class="jt-pop__item" (click)="startEdit(mr)">
+            <lucide-icon [img]="icons.pencil" [size]="16" />{{ t()('tracker.edit') }}
+          </button>
+          @if (mr.archived) {
+            <button
+              type="button"
+              role="menuitem"
+              class="jt-pop__item"
+              (click)="setArchived(mr, false)"
+            >
+              <lucide-icon [img]="icons.restore" [size]="16" />{{ t()('tracker.restore') }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              role="menuitem"
+              class="jt-pop__item"
+              (click)="setArchived(mr, true)"
+            >
+              <lucide-icon [img]="icons.archive" [size]="16" />{{ t()('tracker.archive') }}
+            </button>
+          }
+          <span class="jt-pop__sep"></span>
+          <button
+            type="button"
+            role="menuitem"
+            class="jt-pop__item jt-pop__item--danger"
+            (click)="askRemove(mr)"
+          >
+            <lucide-icon [img]="icons.trash" [size]="16" />{{ t()('tracker.remove') }}
+          </button>
+        }
+      </div>
+    }
   }
 </div>

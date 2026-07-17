@@ -1,11 +1,23 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Check, KeyRound, RefreshCw, Send, Trash2, LucideAngularModule } from 'lucide-angular';
+import {
+  Check,
+  KeyRound,
+  LoaderCircle,
+  Moon,
+  RefreshCw,
+  Send,
+  Sun,
+  Trash2,
+  LucideAngularModule,
+} from 'lucide-angular';
+import { getVersion } from '@tauri-apps/api/app';
 import { AiService, DbService, KeysService } from '@applye/data';
-import { Settings, SupportedLanguage } from '@applye/core';
+import { AiProvider, LANGUAGE_NATIVE_NAMES, Settings, SupportedLanguage } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
+import { ThemeService, Theme } from '../../core/theme.service';
 import { ToastService } from '../../core/toast/toast.service';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
@@ -26,6 +38,17 @@ const DEEPSEEK_MODELS = ['deepseek-v4-pro', 'deepseek-v4-flash'];
 const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = {
   claude: { default: 'claude-opus-4-8', economy: 'claude-haiku-4-5' },
   deepseek: { default: 'deepseek-v4-pro', economy: 'deepseek-v4-flash' },
+};
+
+// Vendor (company) the API key talks to, per provider. Used in the privacy
+// note: every cloud provider sends job + profile text off-device, so the note
+// is shown for all of them, not just DeepSeek. DeepSeek additionally carries a
+// jurisdiction warning (China-based) on top of this shared disclosure.
+const PROVIDER_VENDORS: Record<string, string> = {
+  claude: 'Anthropic',
+  deepseek: 'DeepSeek',
+  openai: 'OpenAI',
+  gemini: 'Google',
 };
 
 /**
@@ -82,14 +105,17 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
             </select>
           </label>
 
-          @if (s.provider === 'deepseek') {
+          @if (s.provider) {
             <p class="disclosure" role="note">
-              <strong>Privacy note:</strong> DeepSeek is a China-based cloud provider. In API mode
-              the job description and your profile text are sent to DeepSeek's servers to be
-              processed, the same as any cloud API. Your API key is stored in the OS keychain and
-              never written to the local database or logs. If you would rather keep everything on
-              device, use a different provider. AI is always opt-in: nothing is sent until you
-              trigger an action.
+              <strong>Privacy note:</strong>
+              @if (s.provider === 'deepseek') {
+                DeepSeek is a China-based cloud provider, so your data is processed under Chinese
+                jurisdiction; if you would rather avoid that, choose a different provider.
+              }
+              In API mode the job description and your profile text are sent to {{ vendorName() }}'s
+              servers to be processed, the same as any cloud API. Your API key is stored in the OS
+              keychain and never written to the local database or logs. AI is always opt-in: nothing
+              is sent until you trigger an action.
             </p>
           }
 
@@ -199,7 +225,36 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
           </div>
         </section>
 
-        <!-- Languages + export -->
+        <!-- Appearance -->
+        <section class="section">
+          <h3 class="eyebrow">Appearance</h3>
+          <div class="field">
+            <span class="cap">Theme</span>
+            <div class="toggle" role="group" aria-label="Theme">
+              <button
+                type="button"
+                class="seg"
+                [class.seg--on]="theme() === 'light'"
+                [attr.aria-pressed]="theme() === 'light'"
+                (click)="setTheme('light')"
+              >
+                <lucide-icon [img]="icons.sun" [size]="14" aria-hidden="true" /> Light
+              </button>
+              <button
+                type="button"
+                class="seg"
+                [class.seg--on]="theme() === 'dark'"
+                [attr.aria-pressed]="theme() === 'dark'"
+                (click)="setTheme('dark')"
+              >
+                <lucide-icon [img]="icons.moon" [size]="14" aria-hidden="true" /> Dark
+              </button>
+            </div>
+            <p class="hint">Applies instantly across the app.</p>
+          </div>
+        </section>
+
+        <!-- Languages -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.section_lang') }}</h3>
           <div class="row">
@@ -211,7 +266,7 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
                 [ngModelOptions]="{ standalone: true }"
               >
                 @for (l of languages; track l) {
-                  <option [value]="l">{{ l }}</option>
+                  <option [value]="l">{{ nativeLang(l) }}</option>
                 }
               </select>
             </label>
@@ -223,20 +278,11 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
                 [ngModelOptions]="{ standalone: true }"
               >
                 @for (l of languages; track l) {
-                  <option [value]="l">{{ l }}</option>
+                  <option [value]="l">{{ nativeLang(l) }}</option>
                 }
               </select>
             </label>
           </div>
-          <label class="field">
-            <span class="cap">Export directory</span>
-            <input
-              [ngModel]="s.exportDir"
-              (ngModelChange)="patch('exportDir', $event)"
-              [ngModelOptions]="{ standalone: true }"
-              placeholder="~/Documents/Applye"
-            />
-          </label>
         </section>
 
         <!-- Follow-up reminders -->
@@ -311,6 +357,66 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
             </div>
           }
         </section>
+
+        <!-- Danger zone: delete all data -->
+        <section class="section section--danger">
+          <h3 class="eyebrow eyebrow--danger">Data</h3>
+          <p class="muted">
+            Everything Applye stores lives on this device. Deleting your data removes every job,
+            application, document, note and cache, clears your saved API keys, and starts you over
+            at onboarding. This cannot be undone.
+          </p>
+          @if (!confirmingReset()) {
+            <button
+              class="btn btn--danger btn--md danger-btn"
+              type="button"
+              (click)="confirmingReset.set(true)"
+            >
+              <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+              Delete all data
+            </button>
+          } @else {
+            <div class="confirm" role="alertdialog" aria-label="Confirm delete all data">
+              <p class="confirm__q">Delete everything and start over? This cannot be undone.</p>
+              <div class="confirm__actions">
+                <button
+                  class="btn btn--danger-solid btn--md"
+                  type="button"
+                  [disabled]="resetting()"
+                  (click)="resetAllData()"
+                >
+                  @if (resetting()) {
+                    <lucide-icon [img]="icons.loader" [size]="16" class="spin" aria-hidden="true" />
+                    Deleting…
+                  } @else {
+                    <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+                    Yes, delete everything
+                  }
+                </button>
+                <button
+                  class="btn btn--secondary btn--md"
+                  type="button"
+                  [disabled]="resetting()"
+                  (click)="confirmingReset.set(false)"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          }
+        </section>
+
+        <!-- About -->
+        <section class="section section--about">
+          <h3 class="eyebrow">About</h3>
+          <div class="about">
+            <span class="about__name">Applye</span>
+            @if (appVersion()) {
+              <span class="about__version">v{{ appVersion() }}</span>
+            }
+          </div>
+          <p class="muted">Private, local-first job search. Your data never leaves this device.</p>
+        </section>
       </div>
     }
   `,
@@ -322,6 +428,9 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
         flex-direction: column;
         gap: var(--space-7);
         color: var(--text-primary);
+        /* The shell's scroll container clips flush at the last section; give the
+           page its own breathing room so the final card never kisses the edge. */
+        padding-bottom: var(--space-8);
       }
       .head {
         display: flex;
@@ -473,6 +582,87 @@ const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = 
         color: var(--text-secondary);
         font-size: var(--text-sm);
         margin: 0;
+        line-height: var(--leading-relaxed);
+        max-width: 64ch;
+      }
+      .seg lucide-icon {
+        display: inline-flex;
+        vertical-align: -2px;
+        margin-right: var(--space-1);
+      }
+
+      /* Danger zone */
+      .section--danger {
+        border-color: color-mix(in srgb, var(--danger) 32%, transparent);
+        background: color-mix(in srgb, var(--danger-tint) 45%, var(--surface-1));
+      }
+      .eyebrow--danger {
+        color: var(--danger);
+      }
+      .danger-btn {
+        align-self: flex-start;
+      }
+      .confirm {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: var(--space-5);
+        background: var(--danger-tint);
+        border: var(--border-width) solid color-mix(in srgb, var(--danger) 40%, transparent);
+        border-radius: var(--radius-input);
+      }
+      .confirm__q {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: var(--text-body);
+        font-weight: var(--weight-medium);
+      }
+      .confirm__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+      }
+      /* Solid, high-commitment destructive button — the confirm step earns the
+         weight the resting "Delete all data" trigger deliberately withholds. */
+      .btn--danger-solid {
+        background: var(--danger);
+        color: var(--white, #fff);
+        border: none;
+      }
+      .btn--danger-solid:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--danger) 84%, black);
+      }
+      .spin {
+        animation: settings-spin 0.7s linear infinite;
+      }
+      @keyframes settings-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spin {
+          animation: none;
+        }
+      }
+
+      /* About */
+      .about {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-3);
+      }
+      .about__name {
+        font-weight: var(--weight-semibold);
+        color: var(--text-primary);
+      }
+      .about__version {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+        padding: 2px var(--space-2);
+        border: var(--border-width) solid var(--border-subtle);
+        border-radius: var(--radius-input);
       }
     `,
   ],
@@ -483,6 +673,7 @@ export class SettingsComponent implements OnInit {
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   protected readonly onboarding = inject(OnboardingService);
+  private readonly theme_ = inject(ThemeService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
@@ -493,13 +684,41 @@ export class SettingsComponent implements OnInit {
     replace: RefreshCw,
     remove: Trash2,
     send: Send,
+    sun: Sun,
+    moon: Moon,
+    loader: LoaderCircle,
   };
 
   readonly languages = LANGUAGES;
 
+  /** Endonym for a language code, shown in the UI/document language pickers. */
+  nativeLang(l: SupportedLanguage): string {
+    return LANGUAGE_NATIVE_NAMES[l];
+  }
+
+  // --- Appearance ---
+  readonly theme = this.theme_.theme;
+  setTheme(next: Theme): void {
+    if (this.theme() !== next) this.theme_.toggle();
+  }
+
+  // --- About ---
+  readonly appVersion = signal<string | null>(null);
+
+  // --- Danger zone ---
+  readonly confirmingReset = signal(false);
+  readonly resetting = signal(false);
+
   /** Model list for the currently selected provider. */
   get models(): string[] {
     return this.settings()?.provider === 'deepseek' ? DEEPSEEK_MODELS : CLAUDE_MODELS;
+  }
+
+  /** Vendor name shown in the privacy note (e.g. "Anthropic"). Falls back to
+   * the raw provider id for any provider not in the map. */
+  vendorName(): string {
+    const p = this.settings()?.provider ?? '';
+    return PROVIDER_VENDORS[p] ?? p;
   }
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -525,6 +744,13 @@ export class SettingsComponent implements OnInit {
       this.toast.error(String(e));
     } finally {
       this.loading.set(false);
+    }
+    // Best-effort: outside a Tauri runtime (web preview) getVersion throws;
+    // the About row simply hides its version chip.
+    try {
+      this.appVersion.set(await getVersion());
+    } catch {
+      this.appVersion.set(null);
     }
   }
 
@@ -622,6 +848,33 @@ export class SettingsComponent implements OnInit {
       this.toast.error(String(e));
     } finally {
       this.testing.set(false);
+    }
+  }
+
+  /**
+   * Factory reset: wipe the database, clear every provider key from the OS
+   * keychain, then hard-reload so the app boots into a clean state. On reload
+   * the shell gate sees `onboardingSeen = false` and re-opens onboarding.
+   */
+  async resetAllData(): Promise<void> {
+    if (this.resetting()) return;
+    this.resetting.set(true);
+    try {
+      await this.db.resetAllData();
+      // Keychain keys live outside the DB — clear each provider we support.
+      // A provider with no stored key throws; swallow per-key so one miss
+      // doesn't abort the rest.
+      const providers: AiProvider[] = ['claude', 'deepseek', 'openai', 'gemini', 'codex'];
+      await Promise.all(
+        providers.map((p) => this.keys.deleteProviderKey(p).catch(() => undefined)),
+      );
+      // Full reload is the cleanest way to drop every component's in-memory
+      // state; the onboarding gate takes over from the reset DB.
+      window.location.reload();
+    } catch (e) {
+      this.toast.error(String(e));
+      this.resetting.set(false);
+      this.confirmingReset.set(false);
     }
   }
 }

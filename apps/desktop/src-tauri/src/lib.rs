@@ -51,6 +51,7 @@ pub fn run() {
             commands::scoring::score_cache_save,
             commands::settings::db_get_settings,
             commands::settings::db_update_settings,
+            commands::settings::db_reset_all_data,
             commands::jobs::db_list_jobs,
             commands::jobs::db_list_jobs_overview,
             commands::jobs::db_get_job,

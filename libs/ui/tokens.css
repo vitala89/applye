@@ -21,15 +21,16 @@
    ============================================================ */
 :root {
   /* ---- Raw palette: neutrals (theme-independent) ---- */
-  --ink: #0a0a0b; /* deepest black */
-  --graphite-950: #0e0f13; /* brand graphite (app canvas, dark) */
-  --graphite-900: #161618; /* raised surface, dark */
-  --graphite-850: #1c1c20; /* hover surface, dark */
-  --graphite-800: #222226; /* sunken / track, dark */
-  --graphite-700: #2a2a2e; /* hairline borders, dark */
-  --graphite-600: #3a3a40; /* strong border, dark */
-  --graphite-500: #6b6b73; /* muted text / disabled */
-  --graphite-400: #8a8a92; /* secondary text, dark */
+  --ink: #0f0e0c; /* deepest black (warm) */
+  --graphite-975: #161513; /* recessed rail (sidebar), dark */
+  --graphite-950: #1c1b19; /* brand graphite (app canvas, dark) */
+  --graphite-900: #222220; /* raised surface, dark */
+  --graphite-850: #2a2927; /* hover surface, dark */
+  --graphite-800: #2e2c26; /* sunken / track, dark */
+  --graphite-700: #35332c; /* hairline borders, dark */
+  --graphite-600: #3c392f; /* strong border, dark */
+  --graphite-500: #726e64; /* muted text / disabled */
+  --graphite-400: #9a968c; /* secondary text, dark */
   --graphite-300: #b8b8bf; /* tertiary / light border */
   --graphite-200: #d6d6da; /* light hairline */
   --graphite-100: #ececee; /* light surface line */
@@ -66,7 +67,7 @@
 
   /* Backgrounds & surfaces */
   --bg-app: var(--graphite-950); /* window canvas */
-  --bg-sidebar: var(--ink); /* left nav rail */
+  --bg-sidebar: var(--graphite-975); /* left nav rail */
   --surface-1: var(--graphite-900); /* cards, panels */
   --surface-2: var(--graphite-850); /* nested / raised */
   --surface-sunken: var(--graphite-800); /* inputs, tracks */
@@ -74,10 +75,10 @@
   --surface-active: var(--graphite-800);
 
   /* Text */
-  --text-primary: #f2f2f4;
+  --text-primary: #f4f2ed;
   --text-secondary: var(--graphite-400);
   --text-tertiary: var(--graphite-500);
-  --text-disabled: #55555c;
+  --text-disabled: #57544c;
   --text-inverse: var(--graphite-950);
   --text-on-accent: var(--white);
   --text-accent: var(--indigo-400);
@@ -113,17 +114,17 @@
 /* Explicit dark (same as default) */
 [data-theme='dark'] {
   --bg-app: var(--graphite-950);
-  --bg-sidebar: var(--ink);
+  --bg-sidebar: var(--graphite-975);
   --surface-1: var(--graphite-900);
   --surface-2: var(--graphite-850);
   --surface-sunken: var(--graphite-800);
   --surface-hover: var(--graphite-850);
   --surface-active: var(--graphite-800);
 
-  --text-primary: #f2f2f4;
+  --text-primary: #f4f2ed;
   --text-secondary: var(--graphite-400);
   --text-tertiary: var(--graphite-500);
-  --text-disabled: #55555c;
+  --text-disabled: #57544c;
   --text-inverse: var(--graphite-950);
   --text-on-accent: var(--white);
   --text-accent: var(--indigo-400);

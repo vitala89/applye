@@ -30,7 +30,7 @@
       flex: none;
       width: 20px;
       height: 20px;
-      color: var(--text-accent);
+      color: var(--text-primary);
     }
 
     // macOS titleBarStyle: "Overlay" floats the native traffic lights above
@@ -47,7 +47,7 @@
       font-family: var(--font-brand, monospace);
       font-size: var(--text-h3, 18px);
       font-weight: var(--weight-medium, 500);
-      color: var(--text-accent);
+      color: var(--text-primary);
       letter-spacing: var(--tracking-tight, -0.01em);
     }
   }
@@ -62,8 +62,26 @@
   }
 
   &__footer {
-    padding: var(--space-4, 12px) 0;
+    padding: var(--space-4, 12px);
     border-top: var(--border-width, 1px) solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 8px);
+  }
+}
+
+// --- Nav section label ---
+.nav-section {
+  margin: var(--space-5, 16px) var(--space-5, 16px) var(--space-2, 4px);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-2xs, 11px);
+  font-weight: var(--weight-semibold, 600);
+  letter-spacing: var(--tracking-wide, 0.06em);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+
+  &:first-of-type {
+    margin-top: var(--space-3, 8px);
   }
 }
 
@@ -107,37 +125,58 @@
   }
 }
 
-// --- AI indicator ---
-.ai-indicator {
+// --- Footer profile card ---
+.profile-card {
   display: flex;
   align-items: center;
   gap: var(--space-3, 8px);
-  margin: var(--space-3, 8px) var(--space-3, 8px) 0;
-  padding: 0 var(--space-5, 16px);
-  font-size: var(--text-xs, 12px);
-  font-family: var(--font-mono, monospace);
-  color: var(--text-tertiary);
+  padding: var(--space-3, 8px);
+  border-radius: var(--radius-input, 6px);
+  text-decoration: none;
+  transition: background var(--dur-fast, 140ms) var(--ease-standard);
+  cursor: pointer;
 
-  &__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: var(--radius-full, 50%);
-    background: var(--accent);
-    flex-shrink: 0;
+  &:hover {
+    background: var(--surface-hover);
   }
 
-  &__label {
+  &--active {
+    background: var(--accent-tint);
+  }
+
+  &__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: var(--radius-input, 6px);
+    background: var(--surface-2);
+    border: var(--border-width, 1px) solid var(--border-subtle);
     color: var(--text-secondary);
   }
 
-  &__mode {
-    margin-left: auto;
-    background: var(--surface-2);
-    border: var(--border-width, 1px) solid var(--border-subtle);
-    border-radius: var(--radius-badge, 4px);
-    padding: 1px var(--space-3, 8px);
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  &__name {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-body, 14px);
+    font-weight: var(--weight-medium, 500);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__sub {
     font-size: var(--text-2xs, 11px);
-    color: var(--text-accent);
+    color: var(--text-tertiary);
   }
 }
 

@@ -88,21 +88,6 @@ const ACTIVE_STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer'];
       } @else {
         <!-- summary strip -->
         <div class="strip">
-          <span class="strip__stat">
-            <b>{{ activeCount() }}</b> {{ t()('pipeline.active') }}
-          </span>
-          @if (overdueCount() > 0) {
-            <span class="strip__div"></span>
-            <span class="strip__overdue">
-              <lucide-icon [img]="icons.alert" [size]="13" />
-              {{ overdueCount() }} {{ t()('pipeline.overdue') }}
-            </span>
-          }
-          @if (search().trim()) {
-            <span class="strip__div"></span>
-            <span class="strip__match">{{ matchCount() }} {{ t()('pipeline.match') }}</span>
-          }
-          <span class="strip__spacer"></span>
           <div class="strip__search">
             <lucide-icon [img]="icons.search" [size]="14" class="strip__search-icon" />
             <input
@@ -121,6 +106,22 @@ const ACTIVE_STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer'];
               </button>
             }
           </div>
+          <span class="strip__div"></span>
+          <span class="strip__stat">
+            <b>{{ activeCount() }}</b> {{ t()('pipeline.active') }}
+          </span>
+          @if (overdueCount() > 0) {
+            <span class="strip__div"></span>
+            <span class="strip__overdue">
+              <lucide-icon [img]="icons.alert" [size]="13" />
+              {{ overdueCount() }} {{ t()('pipeline.overdue') }}
+            </span>
+          }
+          @if (search().trim()) {
+            <span class="strip__div"></span>
+            <span class="strip__match">{{ matchCount() }} {{ t()('pipeline.match') }}</span>
+          }
+          <span class="strip__spacer"></span>
         </div>
 
         <!-- board -->

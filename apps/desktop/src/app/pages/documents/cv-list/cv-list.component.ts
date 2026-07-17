@@ -97,7 +97,7 @@ export class CvListComponent {
     const app = this.applications().find((a) => a.cvDocumentId === item.id);
     if (!app) return '';
     const job = this.trackedJobs().find((j) => j.id === app.jobId);
-    return [job?.company, job?.title].filter(Boolean).join(' — ');
+    return [job?.company, job?.title].filter(Boolean).join(' · ');
   }
 
   async duplicate(item: DocumentLibraryItem, event: Event): Promise<void> {

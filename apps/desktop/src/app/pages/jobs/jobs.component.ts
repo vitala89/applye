@@ -194,9 +194,9 @@ interface FinalChecks {
                 <button
                   class="btn btn--secondary btn--md"
                   [disabled]="actionBusy()"
-                  (click)="addToPipeline()"
+                  (click)="saveJob()"
                 >
-                  {{ t()('jobs.add_to_pipeline') }}
+                  {{ t()('jobs.save_job') }}
                 </button>
               }
               @if (canMarkApplied()) {
@@ -2509,6 +2509,65 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** True when the linked CV was generated from a different tailoring than the
+   * one now in hand, so committing the application should refresh it first.
+   * Uses the exact input-hash formula createCvDraft persists. */
+  private async cvDocStale(tailoredMd: string): Promise<boolean> {
+    const doc = this.linkedCv();
+    const job = this.job();
+    if (!doc || !job?.id) return false;
+    const hash = await this.db.hashText(
+      [job.id, tailoredMd, this.documentReviewLanguage(), this.documentReviewRegion()].join('\x00'),
+    );
+    return hash !== doc.inputHash;
+  }
+
+  /** True when the linked cover letter was built from a different profile / JD
+   * than the current one. Mirrors createCoverLetterDraft's input hash. */
+  private async coverLetterDocStale(): Promise<boolean> {
+    const doc = this.linkedCoverLetter();
+    const job = this.job();
+    const profile = this.profile();
+    if (!doc || !job?.id || !profile?.fullMd) return false;
+    const hash = await this.db.hashText(
+      [
+        job.id,
+        profile.fullMd,
+        job.jdText ?? '',
+        this.documentReviewLanguage(),
+        this.documentReviewRegion(),
+      ].join('\x00'),
+    );
+    return hash !== doc.inputHash;
+  }
+
+  /**
+   * Ensures the application's CV + cover letter exist and (when
+   * `regenerateStale`) match the latest tailoring, then commits both into the
+   * library. Generation reuses the Review-documents path (createCvDraft /
+   * createCoverLetterDraft), so it is fail-soft - those set an error status
+   * instead of throwing, and the CV path is skipped when there is no tailored
+   * source to build from. This is the "Create / Update application" action:
+   * nothing is written to the Documents library until it runs.
+   */
+  private async commitApplicationDocuments(regenerateStale: boolean): Promise<void> {
+    const tailoredMd = this.finalTailoredCvMd();
+
+    if (!this.linkedCv()) {
+      if (tailoredMd) await this.createCvDraft();
+    } else if (regenerateStale && tailoredMd && (await this.cvDocStale(tailoredMd))) {
+      await this.createCvDraft();
+    }
+    await this.commitLinkedDocument('cv');
+
+    if (!this.linkedCoverLetter()) {
+      await this.createCoverLetterDraft();
+    } else if (regenerateStale && (await this.coverLetterDocStale())) {
+      await this.createCoverLetterDraft();
+    }
+    await this.commitLinkedDocument('cover_letter');
+  }
+
   async prepareDocumentsStep(): Promise<void> {
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
@@ -3570,23 +3629,25 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Add to Pipeline: create an 'applied' application so it shows on the board. */
-  async addToPipeline(): Promise<void> {
+  /** Save this job: track it as a 'saved' lead (My Jobs / Job Tracker) without
+   * claiming it was applied to. Distinct from Mark as Applied, which records an
+   * actual application ('applied', shown on the Pipeline board). */
+  async saveJob(): Promise<void> {
     const j = this.job();
     if (!j?.id || this.actionBusy()) return;
     this.actionBusy.set(true);
     this.actionMsg.set('');
     try {
       const existing = this.application();
-      const patch: Partial<Application> & { jobId: number; status: 'applied' } = {
+      const patch: Partial<Application> & { jobId: number; status: 'saved' } = {
         jobId: j.id,
-        status: 'applied',
+        status: 'saved',
       };
       if (existing?.id) patch.id = existing.id;
       const app = await this.db.upsertApplication(patch);
       this.application.set(app);
       this.jobsStore.patchOverviewRow(j.id, { status: app.status });
-      this.actionMsg.set(this.t()('jobs.pipeline_ok'));
+      this.actionMsg.set(this.t()('jobs.saved_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
     } finally {
@@ -3611,10 +3672,10 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (!app?.id) {
         app = await this.db.upsertApplication({ jobId: j.id, status: 'saved' });
       }
-      // Applying commits the tailored documents into the library even if the
-      // user applied via a portal without exporting a PDF first.
-      await this.commitLinkedDocument('cv');
-      await this.commitLinkedDocument('cover_letter');
+      // Create application: generate any missing CV / cover letter, refresh a
+      // stale one, and commit both into the library (deferred-to-step-5) even
+      // if the user applied via a portal without exporting a PDF first.
+      await this.commitApplicationDocuments(true);
       const updated = await this.db.setApplicationStatus(app.id, 'applied');
       this.application.set(updated);
       // Mirror the status the DB actually recorded, not the literal we asked
@@ -4029,6 +4090,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     const j = this.job();
     if (!j?.id || this.actionBusy()) return;
     this.actionBusy.set(true);
+    // Update application: push the latest tailoring into the linked CV / cover
+    // letter (regenerate a stale one, generate a missing one) and commit them,
+    // so re-tailoring an already-applied job refreshes its saved documents.
+    await this.commitApplicationDocuments(true);
     await this.savePostTailorScore();
     this.wizardProgress.clear(j.id);
     this.applyResult.set('updated');

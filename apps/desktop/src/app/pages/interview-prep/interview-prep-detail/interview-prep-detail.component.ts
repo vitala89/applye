@@ -1,18 +1,35 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ArrowDown, ArrowLeft, ArrowUp, LucideAngularModule, Pencil, Trash2 } from 'lucide-angular';
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Check,
+  ChevronDown,
+  LucideAngularModule,
+  Pencil,
+  Plus,
+  Trash2,
+  User,
+  X,
+} from 'lucide-angular';
 import {
   InterviewStage,
   InterviewStageStatus,
   PipelineCard,
   StageType,
   SupportedLanguage,
-  UpdateInterviewStageInput,
 } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 
 const STAGE_TYPES: StageType[] = [
@@ -59,14 +76,14 @@ function emptyForm(): StageFormValue {
   };
 }
 
-// Interview Prep detail: the full CRUD surface for one application's
-// stages. Explicitly NOT a fixed template — the user adds as many stages
-// as their real process has, in any order, with any wording.
+// Interview Prep detail: the full CRUD surface for one application's stages,
+// as a vertical timeline. Add/Edit happen in a modal (not an always-on form);
+// delete is a styled confirm dialog. Stages are user-defined and unlimited.
 @Component({
   selector: 'app-interview-prep-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, ButtonDirective],
+  imports: [FormsModule, LucideAngularModule],
   templateUrl: './interview-prep-detail.component.html',
   styleUrl: './interview-prep-detail.component.scss',
 })
@@ -80,10 +97,15 @@ export class InterviewPrepDetailComponent implements OnInit {
 
   protected readonly icons = {
     back: ArrowLeft,
-    edit: Pencil,
-    delete: Trash2,
+    add: Plus,
+    chevron: ChevronDown,
+    check: Check,
     up: ArrowUp,
     down: ArrowDown,
+    edit: Pencil,
+    delete: Trash2,
+    user: User,
+    close: X,
   };
   protected readonly STAGE_TYPES = STAGE_TYPES;
   protected readonly STAGE_STATUSES = STAGE_STATUSES;
@@ -94,11 +116,25 @@ export class InterviewPrepDetailComponent implements OnInit {
   protected readonly stages = signal<InterviewStage[]>([]);
   protected readonly loading = signal(true);
 
-  protected readonly addForm = signal<StageFormValue>(emptyForm());
-  protected readonly addBusy = signal(false);
+  // modal (add / edit)
+  protected readonly modalOpen = signal(false);
+  protected readonly modalMode = signal<'add' | 'edit'>('add');
   protected readonly editingId = signal<number | null>(null);
-  protected readonly editForm = signal<StageFormValue>(emptyForm());
-  protected readonly editBusy = signal(false);
+  protected readonly form = signal<StageFormValue>(emptyForm());
+  protected readonly labelError = signal(false);
+  protected readonly saving = signal(false);
+
+  // per-stage status dropdown + delete confirm
+  protected readonly statusMenuId = signal<number | null>(null);
+  protected readonly confirmStage = signal<InterviewStage | null>(null);
+
+  protected readonly detailSummary = computed(() => {
+    const total = this.stages().length;
+    const upcoming = this.stages().filter((s) => s.status === 'scheduled').length;
+    return this.t()('interview.detail_summary')
+      .replace('{total}', String(total))
+      .replace('{upcoming}', String(upcoming));
+  });
 
   async ngOnInit(): Promise<void> {
     const id = Number(this.route.snapshot.paramMap.get('applicationId'));
@@ -126,45 +162,32 @@ export class InterviewPrepDetailComponent implements OnInit {
     void this.router.navigate(['/interview-prep']);
   }
 
-  protected updateAddForm<K extends keyof StageFormValue>(key: K, value: StageFormValue[K]): void {
-    this.addForm.set({ ...this.addForm(), [key]: value });
+  fmtDate(iso?: string): string {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
-  protected updateEditForm<K extends keyof StageFormValue>(key: K, value: StageFormValue[K]): void {
-    this.editForm.set({ ...this.editForm(), [key]: value });
+  interviewerSummary(s: InterviewStage): string {
+    return [s.interviewerName, s.interviewerRole].filter(Boolean).join(' · ');
   }
 
-  protected async addStage(): Promise<void> {
-    const form = this.addForm();
-    const label = form.stageLabel.trim();
-    if (!label || this.addBusy()) return;
-    this.addBusy.set(true);
-    try {
-      const nextOrder = this.stages().reduce((max, s) => Math.max(max, s.stageOrder), 0) + 1;
-      const stage = await this.db.createInterviewStage({
-        applicationId: this.applicationId(),
-        stageOrder: nextOrder,
-        stageType: form.stageType,
-        stageLabel: label,
-        scheduledAt: form.scheduledAt || undefined,
-        stageLanguage: form.stageLanguage || undefined,
-        interviewerName: form.interviewerName || undefined,
-        interviewerRole: form.interviewerRole || undefined,
-        interviewerEmail: form.interviewerEmail || undefined,
-        notes: form.notes || undefined,
-      });
-      this.stages.set([...this.stages(), stage]);
-      this.addForm.set(emptyForm());
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.addBusy.set(false);
-    }
+  // ---------- modal ----------
+  protected openAdd(): void {
+    this.modalMode.set('add');
+    this.editingId.set(null);
+    this.form.set(emptyForm());
+    this.labelError.set(false);
+    this.modalOpen.set(true);
   }
-
-  protected startEdit(stage: InterviewStage): void {
+  protected openEdit(stage: InterviewStage): void {
+    this.statusMenuId.set(null);
+    this.modalMode.set('edit');
     this.editingId.set(stage.id);
-    this.editForm.set({
+    this.form.set({
       stageType: stage.stageType,
       stageLabel: stage.stageLabel,
       scheduledAt: stage.scheduledAt ?? '',
@@ -174,80 +197,133 @@ export class InterviewPrepDetailComponent implements OnInit {
       interviewerEmail: stage.interviewerEmail ?? '',
       notes: stage.notes ?? '',
     });
+    this.labelError.set(false);
+    this.modalOpen.set(true);
+  }
+  protected closeModal(): void {
+    this.modalOpen.set(false);
+  }
+  protected updateForm<K extends keyof StageFormValue>(key: K, value: StageFormValue[K]): void {
+    this.form.set({ ...this.form(), [key]: value });
+    if (key === 'stageLabel' && value) this.labelError.set(false);
   }
 
-  protected cancelEdit(): void {
-    this.editingId.set(null);
-  }
-
-  protected async saveEdit(): Promise<void> {
-    const id = this.editingId();
-    if (id == null || this.editBusy()) return;
-    const form = this.editForm();
+  protected async saveModal(): Promise<void> {
+    if (this.saving()) return;
+    const form = this.form();
     const label = form.stageLabel.trim();
-    if (!label) return;
-    this.editBusy.set(true);
+    if (!label) {
+      this.labelError.set(true);
+      return;
+    }
+    this.saving.set(true);
     try {
-      const updated = await this.db.updateInterviewStage({
-        stageId: id,
-        stageType: form.stageType,
-        stageLabel: label,
-        scheduledAt: form.scheduledAt || undefined,
-        stageLanguage: form.stageLanguage || undefined,
-        interviewerName: form.interviewerName || undefined,
-        interviewerRole: form.interviewerRole || undefined,
-        interviewerEmail: form.interviewerEmail || undefined,
-        notes: form.notes || undefined,
-      });
-      this.stages.set(this.stages().map((s) => (s.id === id ? updated : s)));
-      this.editingId.set(null);
+      if (this.modalMode() === 'add') {
+        const nextOrder = this.stages().reduce((max, s) => Math.max(max, s.stageOrder), 0) + 1;
+        const stage = await this.db.createInterviewStage({
+          applicationId: this.applicationId(),
+          stageOrder: nextOrder,
+          stageType: form.stageType,
+          stageLabel: label,
+          scheduledAt: form.scheduledAt || undefined,
+          stageLanguage: form.stageLanguage || undefined,
+          interviewerName: form.interviewerName || undefined,
+          interviewerRole: form.interviewerRole || undefined,
+          interviewerEmail: form.interviewerEmail || undefined,
+          notes: form.notes || undefined,
+        });
+        this.stages.set([...this.stages(), stage]);
+      } else {
+        const id = this.editingId();
+        if (id == null) return;
+        const updated = await this.db.updateInterviewStage({
+          stageId: id,
+          stageType: form.stageType,
+          stageLabel: label,
+          scheduledAt: form.scheduledAt || undefined,
+          stageLanguage: form.stageLanguage || undefined,
+          interviewerName: form.interviewerName || undefined,
+          interviewerRole: form.interviewerRole || undefined,
+          interviewerEmail: form.interviewerEmail || undefined,
+          notes: form.notes || undefined,
+        });
+        this.stages.set(this.stages().map((s) => (s.id === id ? updated : s)));
+      }
+      this.modalOpen.set(false);
+      this.toast.success(this.t()('interview.saved'));
     } catch (e) {
       this.toast.error(String(e));
     } finally {
-      this.editBusy.set(false);
+      this.saving.set(false);
     }
   }
 
+  // ---------- status menu ----------
+  protected toggleStatusMenu(stage: InterviewStage, event: Event): void {
+    event.stopPropagation();
+    this.statusMenuId.update((m) => (m === stage.id ? null : stage.id));
+  }
+  protected closeMenus(): void {
+    this.statusMenuId.set(null);
+  }
   protected async setStatus(stage: InterviewStage, status: InterviewStageStatus): Promise<void> {
+    this.statusMenuId.set(null);
     if (status === stage.status) return;
-    const updated = await this.db.updateInterviewStage({ stageId: stage.id, status });
-    this.stages.set(this.stages().map((s) => (s.id === stage.id ? updated : s)));
+    try {
+      const updated = await this.db.updateInterviewStage({ stageId: stage.id, status });
+      this.stages.set(this.stages().map((s) => (s.id === stage.id ? updated : s)));
+    } catch (e) {
+      this.toast.error(String(e));
+    }
   }
 
-  protected async deleteStage(stage: InterviewStage): Promise<void> {
-    if (!confirm(this.t()('interview.confirm_delete'))) return;
-    await this.db.deleteInterviewStage(stage.id);
-    this.stages.set(this.stages().filter((s) => s.id !== stage.id));
+  // ---------- delete ----------
+  protected askDelete(stage: InterviewStage): void {
+    this.statusMenuId.set(null);
+    this.confirmStage.set(stage);
+  }
+  protected cancelDelete(): void {
+    this.confirmStage.set(null);
+  }
+  protected async confirmDelete(): Promise<void> {
+    const stage = this.confirmStage();
+    if (!stage) return;
+    try {
+      await this.db.deleteInterviewStage(stage.id);
+      this.stages.set(this.stages().filter((s) => s.id !== stage.id));
+      this.toast.success(this.t()('interview.stage_deleted'));
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.confirmStage.set(null);
+    }
   }
 
+  // ---------- reorder ----------
   protected async moveUp(index: number): Promise<void> {
     if (index <= 0) return;
     await this.swapOrder(index, index - 1);
   }
-
   protected async moveDown(index: number): Promise<void> {
     if (index >= this.stages().length - 1) return;
     await this.swapOrder(index, index + 1);
   }
-
   private async swapOrder(a: number, b: number): Promise<void> {
     const list = this.stages();
     const stageA = list[a];
     const stageB = list[b];
-    const [updatedA, updatedB] = await Promise.all([
-      this.db.updateInterviewStage({
-        stageId: stageA.id,
-        stageOrder: stageB.stageOrder,
-      } as UpdateInterviewStageInput),
-      this.db.updateInterviewStage({
-        stageId: stageB.id,
-        stageOrder: stageA.stageOrder,
-      } as UpdateInterviewStageInput),
-    ]);
-    const next = [...list];
-    next[a] = updatedB;
-    next[b] = updatedA;
-    next.sort((x, y) => x.stageOrder - y.stageOrder);
-    this.stages.set(next);
+    try {
+      const [updatedA, updatedB] = await Promise.all([
+        this.db.updateInterviewStage({ stageId: stageA.id, stageOrder: stageB.stageOrder }),
+        this.db.updateInterviewStage({ stageId: stageB.id, stageOrder: stageA.stageOrder }),
+      ]);
+      const next = [...list];
+      next[a] = updatedB;
+      next[b] = updatedA;
+      next.sort((x, y) => x.stageOrder - y.stageOrder);
+      this.stages.set(next);
+    } catch (e) {
+      this.toast.error(String(e));
+    }
   }
 }

@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Added
 
+- **The Pipeline board has a new design.** A summary strip shows how many applications are active, how many are overdue, and lets you search across company, role and location. Rejected and cancelled columns collapse into slim side rails (an "archive") that you reveal with one click, so the board stays focused on live applications. Cards now carry a company monogram, the location, a colour-coded ATS score, and - for interviews - a segmented stage-progress track. The quick-view now leads with status and ATS fit, shows the interview as a step-by-step tracker, and groups every section clearly.
 - **Leaving a half-finished application no longer loses your place.** If you start tailoring a CV for a job and then click away - to Documents, to another job, anywhere - a "Finish tailoring" button now follows you and brings you back to the exact step you left, instead of dropping you at the job list to start over.
 
 - **Your profile now holds your email, phone, website and LinkedIn.** They were already being read off your resume, but the profile had nowhere to put them, so they were never yours to edit — and were thrown away the first time you saved. Four fields now sit under Location in the profile form.
@@ -20,6 +21,9 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **Pipeline cards stay accurate right after you move them.** Dragging a card into Applied or Interview (or changing its status from the quick-view) now refreshes the card's dates and its "overdue" badge from what the database actually recorded, instead of showing stale values until the next reload. The follow-up drafter in the modal appears or hides based on the correct, up-to-date state.
+- **A failed status change on the board now tells you.** If moving a card to another column fails, the card snaps back and an error toast explains why, instead of silently reverting.
+- **The pipeline quick-view modal is keyboard-friendly.** It now closes on Escape, traps focus inside the dialog while open, and returns focus to the card you opened it from.
 - **Returning to a job mid-generation shows it still working, not "Create" again.** When a CV or cover letter was generating and you left the page, coming back used to offer "Create" again as if nothing was happening (and a second click started a duplicate run). The button now stays a disabled spinner while the draft is still being generated in the background, and swaps to "Review" the moment it lands.
 - **CV and cover letter can generate at the same time.** Starting one no longer silently ignores a click on the other - they run as two independent streams, each button reflecting only its own progress.
 - **The floating "Finish tailoring" button now actually takes you there from another job.** Tapping it while viewing a different job used to just make the button vanish and leave you where you were; it now loads the in-progress job.

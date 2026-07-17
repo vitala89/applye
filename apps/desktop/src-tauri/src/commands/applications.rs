@@ -268,6 +268,7 @@ pub struct PipelineCard {
     pub updated_at: Option<String>,
     pub company: Option<String>,
     pub title: Option<String>,
+    pub location: Option<String>,
     pub doc_language: Option<String>,
     pub score: Option<f64>,
     pub priority: Option<String>,
@@ -275,6 +276,9 @@ pub struct PipelineCard {
     pub current_stage_label: Option<String>,
     pub current_stage_status: Option<String>,
     pub current_stage_scheduled_at: Option<String>,
+    /// Total interview stages logged for this application — powers the card's
+    /// "stage N of M" progress track. `current_stage_order` is the position.
+    pub current_stage_total: Option<i64>,
 }
 
 /// `overdue` is computed in SQL (0 tokens): a follow-up is due once its date
@@ -291,12 +295,14 @@ async fn db_pipeline_cards_core(pool: &sqlx::SqlitePool) -> Result<Vec<PipelineC
            a.id, a.job_id, a.status, a.applied_at, a.follow_up_at,
            (a.follow_up_at IS NOT NULL AND a.follow_up_at < date('now')) AS overdue,
            a.updated_at, a.priority, a.doc_language,
-           j.company, j.title,
+           j.company, j.title, j.location,
            sc.score,
            cs.stage_order AS current_stage_order,
            cs.stage_label AS current_stage_label,
            cs.status AS current_stage_status,
-           cs.scheduled_at AS current_stage_scheduled_at
+           cs.scheduled_at AS current_stage_scheduled_at,
+           (SELECT COUNT(*) FROM interview_stages s2 WHERE s2.application_id = a.id)
+             AS current_stage_total
          FROM applications a
          LEFT JOIN jobs j ON a.job_id = j.id
          LEFT JOIN (

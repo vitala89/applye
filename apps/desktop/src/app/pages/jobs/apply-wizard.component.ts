@@ -127,9 +127,14 @@ import {
         <span class="apply-wizard__spacer"></span>
         @if (activeStep() === lastStep) {
           @if (canMarkApplied()) {
-            <button class="btn btn--primary btn--md" type="button" (click)="markApplied.emit()">
+            <button
+              class="btn btn--primary btn--md"
+              type="button"
+              [disabled]="busy()"
+              (click)="markApplied.emit()"
+            >
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
-              {{ t()('jobs.wizard.mark_as_applied') }}
+              {{ busy() ? t()('jobs.wizard.applying') : t()('jobs.wizard.create_application') }}
             </button>
             @if (overrideEditing()) {
               <button class="btn btn--secondary btn--sm" type="button" (click)="cancelEdit.emit()">
@@ -143,10 +148,11 @@ import {
             <button
               class="btn btn--primary btn--md"
               type="button"
+              [disabled]="busy()"
               (click)="updateApplication.emit()"
             >
               <lucide-icon [img]="icons().checkCircle" [size]="15" aria-hidden="true" />
-              {{ t()('jobs.wizard.update_application') }}
+              {{ busy() ? t()('jobs.wizard.applying') : t()('jobs.wizard.update_application') }}
             </button>
           }
         } @else {

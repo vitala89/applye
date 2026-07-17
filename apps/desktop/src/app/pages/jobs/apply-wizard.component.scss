@@ -37,7 +37,9 @@
 .apply-wizard__step-of {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
-  color: var(--text-tertiary);
+  /* secondary, not tertiary: at 11px tertiary is ~3.4:1 on the surface, below
+     the 4.5:1 AA floor for small text. */
+  color: var(--text-secondary);
 }
 
 /* Step 1 — compact review */
@@ -54,7 +56,9 @@
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  /* secondary keeps the kicker quiet but AA-legible at 11px (tertiary is
+     ~3.4:1 here, under the 4.5:1 small-text floor). */
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -66,6 +70,7 @@
 
 .wizard-review__top {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-5);
   align-items: stretch;
 }
@@ -92,7 +97,7 @@
 .wizard-review__score-max {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   margin-top: calc(-1 * var(--space-2));
 }
 
@@ -134,8 +139,10 @@
 }
 
 .wizard-review__verdict {
-  flex: 1;
-  min-width: 0;
+  /* min-width forces the verdict to wrap below the score once the row is
+     narrow, instead of shrinking to an unreadable sliver beside it. */
+  flex: 1 1 15rem;
+  min-width: 15rem;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -161,14 +168,16 @@
   padding: 0 var(--space-4);
   border-radius: var(--radius-badge);
   background: var(--surface-sunken);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
 }
 
 .wizard-review__dims {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* Two columns when there's room, one when the window is narrow - no
+     breakpoint needed. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-4);
   align-items: stretch;
 }
@@ -219,8 +228,17 @@
 
 .wizard-review__dim-bar-fill {
   height: 100%;
+  width: 100%;
   border-radius: var(--radius-full);
-  transition: width var(--dur-slow) var(--ease-standard);
+  transform-origin: left center;
+  /* Scale from the left instead of animating width: transform stays off the
+     layout path, so the score reveal is cheaper and smoother. */
+  transition: transform var(--dur-slow) var(--ease-standard);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wizard-review__dim-bar-fill {
+    transition: none;
+  }
 }
 
 .wizard-review__dim-bar-fill.score-low {

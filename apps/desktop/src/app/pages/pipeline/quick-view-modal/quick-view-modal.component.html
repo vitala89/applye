@@ -1,190 +1,249 @@
 <div class="modal-backdrop" (click)="onBackdropClick($event)" tabindex="-1" role="presentation">
-  <div class="modal" role="dialog" aria-modal="true">
+  <div class="modal" role="dialog" aria-modal="true" cdkTrapFocus cdkTrapFocusAutoCapture>
     <header class="qv__header">
-      <div>
-        <div class="qv__company">{{ card().company || '–' }}</div>
-        <div class="qv__title">{{ card().title || '–' }}</div>
+      <span class="qv__mono">{{ initials() }}</span>
+      <div class="qv__heading">
+        <div class="qv__company">{{ card().company || '-' }}</div>
+        <div class="qv__title">{{ card().title || '-' }}</div>
       </div>
       <button class="qv__close" [attr.aria-label]="t()('actions.close')" (click)="close()">
         <lucide-icon [img]="icons.close" [size]="18" />
       </button>
     </header>
 
-    <section class="qv__section">
-      <label class="qv__label" for="qv-status">{{ t()('pipeline.quickview_status') }}</label>
-      <select
-        id="qv-status"
-        class="qv__select"
-        [ngModel]="card().status"
-        [disabled]="statusBusy()"
-        (ngModelChange)="onStatusSelect($event)"
-      >
-        @for (s of STATUSES; track s) {
-          <option [value]="s">{{ t()('status.' + s) }}</option>
-        }
-      </select>
-    </section>
-
-    <section class="qv__section">
-      <span class="qv__label">{{ t()('pipeline.quickview_priority') }}</span>
-      <div class="qv__priority-options">
-        @for (p of PRIORITIES; track p) {
-          <button
-            type="button"
-            class="qv__priority-btn"
-            [class.is-active]="card().priority === p"
-            [attr.data-priority]="p"
-            [disabled]="priorityBusy()"
-            (click)="onPrioritySelect(p)"
+    <div class="qv__body">
+      <!-- status + ATS fit -->
+      <section class="qv__section qv__status-row">
+        <div class="qv__status-field">
+          <label class="qv__label" for="qv-status">{{ t()('pipeline.quickview_status') }}</label>
+          <select
+            id="qv-status"
+            class="qv__select"
+            [ngModel]="card().status"
+            [disabled]="statusBusy()"
+            (ngModelChange)="onStatusSelect($event)"
           >
-            <lucide-icon [img]="icons.flag" [size]="14" />
-            {{ t()('pipeline.priority_' + p) }}
-          </button>
-        }
-        <button
-          type="button"
-          class="qv__priority-btn qv__priority-btn--none"
-          [class.is-active]="!card().priority"
-          [disabled]="priorityBusy()"
-          (click)="onPrioritySelect(null)"
-        >
-          {{ t()('pipeline.priority_none') }}
-        </button>
-      </div>
-    </section>
-
-    @if (card().status === 'interview') {
-      <section class="qv__section">
-        <span class="qv__label">{{ t()('interview.quickview_stage_label') }}</span>
-        @if (showQuickAdd()) {
-          <app-stage-quick-add
-            [applicationId]="card().id"
-            (added)="onStageAdded($event)"
-            (skipped)="skipStagePrompt()"
-          />
-        } @else {
-          @if (stagesLoading()) {
-            <p class="qv__hint">{{ t()('common.loading') }}</p>
-          } @else if (stageSummary(); as stage) {
-            <p class="qv__stage-summary">
-              {{ t()('interview.stage_prefix') }} {{ stage.stageOrder }} · {{ stage.stageLabel }}
-            </p>
-          } @else {
-            <p class="qv__hint">{{ t()('interview.quickview_stage_none') }}</p>
-          }
-          <button type="button" class="qv__link" (click)="viewAllStages()">
-            {{ t()('interview.quickview_view_all') }} →
-          </button>
+            @for (s of STATUSES; track s) {
+              <option [value]="s">{{ t()('status.' + s) }}</option>
+            }
+          </select>
+        </div>
+        @if (card().score !== null && card().score !== undefined) {
+          <div class="qv__ats">
+            <span class="qv__label">{{ t()('pipeline.quickview_ats') }}</span>
+            <div class="qv__ats-value" [class]="scoreClass()">
+              <b>{{ card().score }}</b
+              ><span class="qv__ats-max">/100</span>
+            </div>
+          </div>
         }
       </section>
-    }
 
-    @if (card().overdue) {
-      <section class="qv__section">
-        <span class="qv__label">{{ t()('followup.section_label') }}</span>
-        <div class="qv__followup-row">
-          <div class="qv__lang-options">
-            @for (l of FOLLOWUP_LANGUAGES; track l) {
-              <button
-                type="button"
-                class="qv__lang-btn"
-                [class.is-active]="followupLanguage() === l"
-                (click)="onFollowupLanguageChange(l)"
-              >
-                {{ l }}
-              </button>
-            }
-          </div>
+      <!-- priority -->
+      <section class="qv__section qv__section--divided">
+        <span class="qv__label">{{ t()('pipeline.quickview_priority') }}</span>
+        <div class="qv__priority-options">
+          @for (p of PRIORITIES; track p) {
+            <button
+              type="button"
+              class="qv__priority-btn"
+              [class.is-active]="card().priority === p"
+              [attr.data-priority]="p"
+              [disabled]="priorityBusy()"
+              (click)="onPrioritySelect(p)"
+            >
+              <lucide-icon [img]="icons.flag" [size]="13" />
+              {{ t()('pipeline.priority_' + p) }}
+            </button>
+          }
           <button
             type="button"
-            class="btn-ghost"
-            [disabled]="followupDrafting()"
-            (click)="draftFollowup()"
+            class="qv__priority-btn qv__priority-btn--none"
+            [class.is-active]="!card().priority"
+            [disabled]="priorityBusy()"
+            (click)="onPrioritySelect(null)"
           >
-            <lucide-icon [img]="icons.mail" [size]="14" />
-            {{ t()('followup.draft_action') }}
+            {{ t()('pipeline.priority_none') }}
           </button>
         </div>
-
-        @if (followupDrafting()) {
-          <p class="qv__hint">{{ t()('common.loading') }}</p>
-        } @else if (followupError()) {
-          <p class="qv__error">{{ followupError() }}</p>
-        } @else if (followupHasDraft()) {
-          @if (followupFromCache()) {
-            <p class="qv__hint">{{ t()('followup.cached_hint') }}</p>
-          }
-          <div class="qv__followup-row">
-            <input
-              class="qv__followup-recipient"
-              [ngModel]="followupTo()"
-              (ngModelChange)="followupTo.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              [placeholder]="t()('followup.to_placeholder')"
-            />
-            <input
-              class="qv__followup-recipient"
-              [ngModel]="followupCc()"
-              (ngModelChange)="followupCc.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              [placeholder]="t()('followup.cc_placeholder')"
-            />
-          </div>
-          <input
-            class="qv__followup-subject"
-            [ngModel]="followupSubject()"
-            (ngModelChange)="followupSubject.set($event)"
-            [ngModelOptions]="{ standalone: true }"
-            [placeholder]="t()('followup.subject_placeholder')"
-          />
-          <textarea
-            class="qv__followup-body"
-            rows="6"
-            [ngModel]="followupBody()"
-            (ngModelChange)="followupBody.set($event)"
-            [ngModelOptions]="{ standalone: true }"
-          ></textarea>
-          <div class="qv__followup-row">
-            <button type="button" class="btn-ghost" (click)="copyFollowup()">
-              <lucide-icon [img]="icons.copy" [size]="14" />
-              {{ followupCopied() ? t()('followup.copied') : t()('followup.copy') }}
-            </button>
-            <button type="button" class="btn-primary" (click)="openFollowupInMail()">
-              {{ t()('followup.open_in_mail') }}
-            </button>
-          </div>
-        }
       </section>
-    }
 
-    <section class="qv__section qv__section--grow">
-      <span class="qv__label">{{ t()('pipeline.quickview_comments') }}</span>
-      <div class="qv__comments">
-        @if (commentsLoading()) {
-          <p class="qv__hint">{{ t()('common.loading') }}</p>
-        } @else if (commentsError()) {
-          <p class="qv__error">{{ commentsError() }}</p>
-        } @else if (comments().length === 0) {
-          <p class="qv__hint">{{ t()('pipeline.quickview_comments_empty') }}</p>
-        } @else {
-          @for (c of comments(); track c.id) {
-            <div class="qv__comment">
-              <p class="qv__comment-text">{{ c.commentText }}</p>
-              <span class="qv__comment-time">{{ formatTimestamp(c.createdAt) }}</span>
+      <!-- interview stage -->
+      @if (card().status === 'interview') {
+        <section class="qv__section qv__section--divided">
+          <div class="qv__section-head">
+            <span class="qv__label">{{ t()('interview.quickview_stage_label') }}</span>
+            @if (!showQuickAdd() && stageSummary(); as cur) {
+              <span class="qv__stage-counter">{{ cur.stageOrder }}/{{ stages().length }}</span>
+            }
+          </div>
+          @if (showQuickAdd()) {
+            <app-stage-quick-add
+              [applicationId]="card().id"
+              (added)="onStageAdded($event)"
+              (skipped)="skipStagePrompt()"
+            />
+          } @else if (stagesLoading()) {
+            <p class="qv__hint">{{ t()('common.loading') }}</p>
+          } @else if (stages().length > 0) {
+            <div class="qv__stepper-box">
+              <div class="qv__stepper">
+                @for (st of stages(); track st.id) {
+                  <div class="qv__step" [class.is-reached]="stageReached(st)">
+                    <span
+                      class="qv__step-dot"
+                      [class.is-done]="stageDone(st)"
+                      [class.is-current]="stageCurrent(st)"
+                    >
+                      @if (stageDone(st)) {
+                        <lucide-icon [img]="icons.check" [size]="11" />
+                      } @else if (stageCurrent(st)) {
+                        <span class="qv__step-pip"></span>
+                      }
+                    </span>
+                    <span class="qv__step-label" [class.is-current]="stageCurrent(st)">
+                      {{ st.stageLabel }}
+                    </span>
+                  </div>
+                }
+              </div>
+              <div class="qv__stepper-foot">
+                @if (stageSummary(); as cur) {
+                  <div class="qv__stage-meta">
+                    @if (cur.scheduledAt) {
+                      <span class="qv__stage-chip">
+                        <lucide-icon [img]="icons.calendar" [size]="12" />
+                        {{ formatStageDate(cur.scheduledAt) }}
+                      </span>
+                    }
+                    <span class="qv__stage-current-label">{{ cur.stageLabel }}</span>
+                  </div>
+                }
+                <button type="button" class="qv__link" (click)="viewAllStages()">
+                  {{ t()('interview.quickview_view_all') }} →
+                </button>
+              </div>
             </div>
+          } @else {
+            <p class="qv__hint">{{ t()('interview.quickview_stage_none') }}</p>
+            <button type="button" class="qv__link" (click)="viewAllStages()">
+              {{ t()('interview.quickview_view_all') }} →
+            </button>
           }
-        }
-      </div>
-      <div class="qv__comment-input">
+        </section>
+      }
+
+      <!-- follow-up email (only when overdue) -->
+      @if (card().overdue) {
+        <section class="qv__section qv__section--divided">
+          <div class="qv__section-head">
+            <span class="qv__label">{{ t()('followup.section_label') }}</span>
+            <span class="qv__due-badge">{{ t()('pipeline.overdue') }}</span>
+          </div>
+          <div class="qv__followup-row">
+            <select
+              class="qv__lang-select"
+              [ngModel]="followupLanguage()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="onFollowupLanguageChange($event)"
+            >
+              @for (l of FOLLOWUP_LANGUAGES; track l) {
+                <option [value]="l">{{ langName(l) }}</option>
+              }
+            </select>
+            <button
+              type="button"
+              class="btn-ghost"
+              [disabled]="followupDrafting()"
+              (click)="draftFollowup()"
+            >
+              <lucide-icon [img]="icons.mail" [size]="14" />
+              {{ t()('followup.draft_action') }}
+            </button>
+          </div>
+
+          @if (followupDrafting()) {
+            <p class="qv__hint">{{ t()('common.loading') }}</p>
+          } @else if (followupError()) {
+            <p class="qv__error">{{ followupError() }}</p>
+          } @else if (followupHasDraft()) {
+            @if (followupFromCache()) {
+              <p class="qv__hint">{{ t()('followup.cached_hint') }}</p>
+            }
+            <div class="qv__followup-row">
+              <input
+                class="qv__followup-recipient"
+                [ngModel]="followupTo()"
+                (ngModelChange)="followupTo.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [placeholder]="t()('followup.to_placeholder')"
+              />
+              <input
+                class="qv__followup-recipient"
+                [ngModel]="followupCc()"
+                (ngModelChange)="followupCc.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [placeholder]="t()('followup.cc_placeholder')"
+              />
+            </div>
+            <input
+              class="qv__followup-subject"
+              [ngModel]="followupSubject()"
+              (ngModelChange)="followupSubject.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="t()('followup.subject_placeholder')"
+            />
+            <textarea
+              class="qv__followup-body"
+              rows="6"
+              [ngModel]="followupBody()"
+              (ngModelChange)="followupBody.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+            ></textarea>
+            <div class="qv__followup-row">
+              <button type="button" class="btn-ghost" (click)="copyFollowup()">
+                <lucide-icon [img]="icons.copy" [size]="14" />
+                {{ followupCopied() ? t()('followup.copied') : t()('followup.copy') }}
+              </button>
+              <button type="button" class="btn-primary" (click)="openFollowupInMail()">
+                {{ t()('followup.open_in_mail') }}
+              </button>
+            </div>
+          } @else {
+            <p class="qv__followup-note">{{ t()('followup.privacy_note') }}</p>
+          }
+        </section>
+      }
+
+      <!-- comments -->
+      <section class="qv__section qv__section--divided">
+        <span class="qv__label">{{ t()('pipeline.quickview_comments') }}</span>
+        <div class="qv__comments">
+          @if (commentsLoading()) {
+            <p class="qv__hint">{{ t()('common.loading') }}</p>
+          } @else if (commentsError()) {
+            <p class="qv__error">{{ commentsError() }}</p>
+          } @else if (comments().length === 0) {
+            <p class="qv__hint">{{ t()('pipeline.quickview_comments_empty') }}</p>
+          } @else {
+            @for (c of comments(); track c.id) {
+              <div class="qv__comment">
+                <p class="qv__comment-text">{{ c.commentText }}</p>
+                <span class="qv__comment-time">{{ formatTimestamp(c.createdAt) }}</span>
+              </div>
+            }
+          }
+        </div>
         <textarea
+          class="qv__comment-input"
           rows="2"
           [ngModel]="commentText()"
           (ngModelChange)="commentText.set($event)"
           [placeholder]="t()('pipeline.quickview_comment_placeholder')"
           [disabled]="commentBusy()"
         ></textarea>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <footer class="qv__footer">
       <button type="button" class="btn-ghost" (click)="openFullDetails()">

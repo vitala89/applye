@@ -9,13 +9,24 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Copy, ExternalLink, Flag, LucideAngularModule, Mail, X } from 'lucide-angular';
+import {
+  Calendar,
+  Check,
+  Copy,
+  ExternalLink,
+  Flag,
+  LucideAngularModule,
+  Mail,
+  X,
+} from 'lucide-angular';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { AiService, DbService } from '@applye/data';
 import { ToastService } from '../../../core/toast/toast.service';
 import {
+  Application,
   ApplicationStatus,
   Comment,
   InterviewStage,
@@ -62,9 +73,10 @@ function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
   selector: 'app-quick-view-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, StageQuickAddComponent],
+  imports: [A11yModule, FormsModule, LucideAngularModule, StageQuickAddComponent],
   templateUrl: './quick-view-modal.component.html',
   styleUrl: './quick-view-modal.component.scss',
+  host: { '(document:keydown.escape)': 'close()' },
 })
 export class QuickViewModalComponent {
   private readonly db = inject(DbService);
@@ -77,7 +89,7 @@ export class QuickViewModalComponent {
   readonly card = input.required<PipelineCard>();
 
   @Output() closed = new EventEmitter<void>();
-  @Output() statusChanged = new EventEmitter<{ id: number; status: ApplicationStatus }>();
+  @Output() statusChanged = new EventEmitter<Application>();
   @Output() priorityChanged = new EventEmitter<{ id: number; priority: Priority }>();
   @Output() stageAdded = new EventEmitter<{ id: number; stage: InterviewStage }>();
 
@@ -87,6 +99,8 @@ export class QuickViewModalComponent {
     flag: Flag,
     mail: Mail,
     copy: Copy,
+    check: Check,
+    calendar: Calendar,
   };
   protected readonly STATUSES = STATUSES;
   protected readonly PRIORITIES = PRIORITIES;
@@ -105,6 +119,9 @@ export class QuickViewModalComponent {
   // Prep" exception: the mini form only ever shows right after a
   // transition INTO interview when the application has 0 stages yet.
   protected readonly stageSummary = signal<InterviewStage | null>(null);
+  // Full ordered stage list powers the modal's segmented stepper; the summary
+  // above is the single "current" stage for the headline + card footer.
+  protected readonly stages = signal<InterviewStage[]>([]);
   protected readonly stagesLoading = signal(true);
   protected readonly promptDismissed = signal(false);
   protected readonly showQuickAdd = computed(
@@ -234,6 +251,10 @@ export class QuickViewModalComponent {
     return { subject: clean(parsed.subject), body: clean(parsed.body) };
   }
 
+  protected langName(language: SupportedLanguage): string {
+    return FOLLOWUP_LANGUAGE_NAMES[language];
+  }
+
   protected onFollowupLanguageChange(language: SupportedLanguage): void {
     this.followupLanguage.set(language);
     this.followupSubject.set('');
@@ -283,16 +304,56 @@ export class QuickViewModalComponent {
   private async refreshStageState(applicationId: number, status: ApplicationStatus): Promise<void> {
     if (status !== 'interview') {
       this.stageSummary.set(null);
+      this.stages.set([]);
       this.stagesLoading.set(false);
       return;
     }
     this.stagesLoading.set(true);
     try {
       const stages = await this.db.listInterviewStages(applicationId);
+      this.stages.set([...stages].sort((a, b) => a.stageOrder - b.stageOrder));
       this.stageSummary.set(pickCurrentStage(stages));
     } finally {
       this.stagesLoading.set(false);
     }
+  }
+
+  /** 1-2 letter monogram from the company name, matching the board card. */
+  protected initials(): string {
+    const company = this.card().company?.trim();
+    if (!company) return '–';
+    const words = company.split(/\s+/).filter(Boolean);
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  protected scoreClass(): string {
+    const score = this.card().score;
+    if (score == null) return '';
+    if (score >= 75) return 'score--high';
+    if (score >= 50) return 'score--mid';
+    return 'score--low';
+  }
+
+  /** A stage counts as done once it has passed; the current (summary) stage is
+   * highlighted as active in the stepper. */
+  protected stageDone(stage: InterviewStage): boolean {
+    return stage.status === 'passed';
+  }
+
+  protected stageCurrent(stage: InterviewStage): boolean {
+    return this.stageSummary()?.id === stage.id;
+  }
+
+  /** A step (and the connector into it) is "reached" once the funnel has
+   * advanced to at least its position — fills the progress track up to the
+   * current stage. */
+  protected stageReached(stage: InterviewStage): boolean {
+    return stage.stageOrder <= (this.stageSummary()?.stageOrder ?? 0);
+  }
+
+  protected formatStageDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   }
 
   protected onStageAdded(stage: InterviewStage): void {
@@ -319,10 +380,15 @@ export class QuickViewModalComponent {
     if (status === card.status || this.statusBusy()) return;
     this.statusBusy.set(true);
     try {
-      await this.db.setApplicationStatus(card.id, status);
-      this.statusChanged.emit({ id: card.id, status });
+      const updated = await this.db.setApplicationStatus(card.id, status);
+      // Emit the whole row so the board can refresh applied_at / follow_up_at
+      // / overdue too — not just the status literal (those are recomputed in
+      // SQL on the applied/interview transitions).
+      this.statusChanged.emit(updated);
       this.promptDismissed.set(false);
-      await this.refreshStageState(card.id, status);
+      await this.refreshStageState(card.id, updated.status);
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.statusBusy.set(false);
     }

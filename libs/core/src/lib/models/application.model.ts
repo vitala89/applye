@@ -87,6 +87,7 @@ export interface PipelineCard {
   updatedAt?: string;
   company?: string;
   title?: string;
+  location?: string;
   docLanguage?: SupportedLanguage;
   score?: number;
   priority?: Priority;
@@ -94,6 +95,9 @@ export interface PipelineCard {
   currentStageLabel?: string;
   currentStageStatus?: InterviewStageStatus;
   currentStageScheduledAt?: string;
+  /** Total interview stages logged — the "M" in the card's "stage N of M"
+   * progress track. */
+  currentStageTotal?: number;
 }
 
 export interface Comment {

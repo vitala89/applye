@@ -92,6 +92,162 @@ pub async fn cover_letter_document_export_pdf_wysiwyg(
     }
 }
 
+/// Percent-encode a query-param value (RFC 3986 unreserved kept verbatim).
+#[cfg(target_os = "macos")]
+fn qenc(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char)
+            }
+            _ => out.push_str(&format!("%{b:02X}")),
+        }
+    }
+    out
+}
+
+/// Exports the Job Tracker report to `save_path` as PDF by printing the hidden
+/// `print/tracker-report` window — the same `<app-tracker-report>` render as the
+/// export preview, so the file matches the preview exactly (no printpdf drift).
+/// `landscape` swaps A4 to landscape; `fallback_content` is the plain-text
+/// report used on non-macOS platforms (printpdf), where the WYSIWYG print path
+/// is not yet wired up.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn tracker_report_export_pdf_wysiwyg(
+    save_path: String,
+    applicant: String,
+    period: String,
+    period_label: String,
+    market: String,
+    landscape: bool,
+    mode: String,
+    columns: String,
+    fallback_content: String,
+    app: AppHandle,
+    ready: State<'_, PrintReady>,
+) -> Result<String, String> {
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (
+            &app,
+            &ready,
+            applicant,
+            period,
+            period_label,
+            market,
+            landscape,
+            mode,
+            columns,
+        );
+        let bytes = crate::commands::tracker::text_to_pdf_bytes(&fallback_content)?;
+        std::fs::write(&save_path, bytes).map_err(|e| format!("export report pdf: write: {e}"))?;
+        Ok(save_path)
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let _ = fallback_content;
+        use tauri::{WebviewUrl, WebviewWindowBuilder};
+
+        let route = format!(
+            "print/tracker-report?applicant={}&period={}&periodLabel={}&market={}&mode={}&landscape={}&columns={}",
+            qenc(&applicant),
+            qenc(&period),
+            qenc(&period_label),
+            qenc(&market),
+            qenc(&mode),
+            landscape,
+            qenc(&columns),
+        );
+
+        let label = format!(
+            "tracker-report-print-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.subsec_nanos())
+                .unwrap_or(0)
+        );
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        ready.0.lock().unwrap().insert(label.clone(), tx);
+
+        let win = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App(route.into()))
+            .title("Export report")
+            .inner_size(1100.0, 1400.0)
+            .position(-10000.0, -10000.0)
+            .decorations(false)
+            .skip_taskbar(true)
+            .focused(false)
+            .build()
+            .map_err(|e| format!("print window: {e}"))?;
+
+        let waited = tokio::time::timeout(std::time::Duration::from_secs(20), rx).await;
+        if waited.is_err() {
+            ready.0.lock().unwrap().remove(&label);
+            let _ = win.close();
+            return Err("report print window timed out while rendering".to_string());
+        }
+
+        let _ = std::fs::remove_file(&save_path);
+
+        // A4 with 16mm margins; swap dimensions for landscape.
+        let mm_to_pt = 72.0 / 25.4;
+        let (w_mm, h_mm) = if landscape {
+            (297.0, 210.0)
+        } else {
+            (210.0, 297.0)
+        };
+        let margin = 16.0 * mm_to_pt;
+        let paper_w = w_mm * mm_to_pt;
+        let paper_h = h_mm * mm_to_pt;
+
+        let ns_window = win.ns_window().map_err(|e| format!("ns_window: {e}"))? as usize;
+        let path_for_print = save_path.clone();
+        let (dtx, drx) = tokio::sync::oneshot::channel::<Result<(), String>>();
+        win.with_webview(move |wv| {
+            let res = unsafe {
+                macos_print_to_pdf(
+                    wv.inner(),
+                    ns_window as *mut std::ffi::c_void,
+                    &path_for_print,
+                    paper_w,
+                    paper_h,
+                    margin,
+                    margin,
+                    margin,
+                    margin,
+                )
+            };
+            let _ = dtx.send(res);
+        })
+        .map_err(|e| format!("with_webview: {e}"))?;
+        drx.await
+            .map_err(|_| "print dispatch dropped".to_string())??;
+
+        let mut ok = false;
+        let mut last_len = 0u64;
+        for _ in 0..100 {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            match std::fs::metadata(&save_path) {
+                Ok(m) if m.len() > 0 => {
+                    if m.len() == last_len {
+                        ok = true;
+                        break;
+                    }
+                    last_len = m.len();
+                }
+                _ => {}
+            }
+        }
+        let _ = win.close();
+        if !ok {
+            return Err("report print did not produce a PDF file".to_string());
+        }
+        Ok(save_path)
+    }
+}
+
 /// The shared silent-export machinery behind both document types: spin up an
 /// off-screen window on the given print route, wait for it to signal ready,
 /// then drive the native print straight to a PDF file. `route_kind` is the

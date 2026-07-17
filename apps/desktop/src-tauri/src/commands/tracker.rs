@@ -38,6 +38,27 @@ pub struct TrackerRow {
     pub eor_provider: Option<String>,
     pub notes: Option<String>,
     pub last_update: Option<String>,
+    /// The soonest still-upcoming interview stage (from the Pipeline), so a
+    /// scheduled "technical" round etc. surfaces in the tracker even past
+    /// stages #1/#2. Label + scheduled date; null when nothing is upcoming.
+    pub next_stage_label: Option<String>,
+    pub next_stage_at: Option<String>,
+    pub archived: bool,
+    /// JSON blob of user-defined custom-column values: { "<colId>": "<value>" }.
+    pub custom_fields: Option<String>,
+}
+
+/// A user-defined tracker column (definition only; values live per-application
+/// in applications.custom_fields). `type` is one of text/date/number/yesno/select.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomColumn {
+    pub id: String,
+    pub label: String,
+    #[sqlx(rename = "type")]
+    #[serde(rename = "type")]
+    pub col_type: String,
+    pub sort: i64,
 }
 
 #[tauri::command]
@@ -71,7 +92,17 @@ pub async fn db_tracker_rows(db: State<'_, Db>) -> Result<Vec<TrackerRow>, Strin
            a.eor_provider,
            a.notes,
            (SELECT MAX(sh.changed_at) FROM status_history sh
-              WHERE sh.application_id = a.id) AS last_update
+              WHERE sh.application_id = a.id) AS last_update,
+           (SELECT COALESCE(NULLIF(stage_label, ''), stage_type) FROM interview_stages
+              WHERE application_id = a.id AND status = 'upcoming'
+                AND scheduled_at IS NOT NULL AND scheduled_at != ''
+              ORDER BY scheduled_at ASC LIMIT 1) AS next_stage_label,
+           (SELECT scheduled_at FROM interview_stages
+              WHERE application_id = a.id AND status = 'upcoming'
+                AND scheduled_at IS NOT NULL AND scheduled_at != ''
+              ORDER BY scheduled_at ASC LIMIT 1) AS next_stage_at,
+           a.archived,
+           a.custom_fields
          FROM applications a
          JOIN jobs j ON j.id = a.job_id
          ORDER BY a.applied_at DESC, a.id DESC",
@@ -81,8 +112,77 @@ pub async fn db_tracker_rows(db: State<'_, Db>) -> Result<Vec<TrackerRow>, Strin
     .map_err(|e| format!("db_tracker_rows: {e}"))
 }
 
+/// Soft-archive (or restore) a tracker row. Archived rows drop out of the
+/// active grid but stay in the DB and the exported report.
+#[tauri::command]
+pub async fn db_set_application_archived(
+    id: i64,
+    archived: bool,
+    db: State<'_, Db>,
+) -> Result<(), String> {
+    sqlx::query("UPDATE applications SET archived = ?, updated_at = datetime('now') WHERE id = ?")
+        .bind(archived)
+        .bind(id)
+        .execute(&db.pool)
+        .await
+        .map(|_| ())
+        .map_err(|e| format!("db_set_application_archived: {e}"))
+}
+
+#[tauri::command]
+pub async fn tracker_custom_columns_list(db: State<'_, Db>) -> Result<Vec<CustomColumn>, String> {
+    sqlx::query_as::<_, CustomColumn>(
+        "SELECT id, label, type, sort FROM tracker_custom_columns ORDER BY sort, rowid",
+    )
+    .fetch_all(&db.pool)
+    .await
+    .map_err(|e| format!("tracker_custom_columns_list: {e}"))
+}
+
+/// Add a user-defined column. The frontend supplies a stable client id (e.g.
+/// `cf_<ts>`); `col_type` is one of text/date/number/yesno/select.
+#[tauri::command]
+pub async fn tracker_custom_column_add(
+    id: String,
+    label: String,
+    col_type: String,
+    db: State<'_, Db>,
+) -> Result<CustomColumn, String> {
+    let next_sort: i64 =
+        sqlx::query_scalar("SELECT COALESCE(MAX(sort) + 1, 0) FROM tracker_custom_columns")
+            .fetch_one(&db.pool)
+            .await
+            .map_err(|e| format!("tracker_custom_column_add (sort): {e}"))?;
+    sqlx::query("INSERT INTO tracker_custom_columns (id, label, type, sort) VALUES (?, ?, ?, ?)")
+        .bind(&id)
+        .bind(&label)
+        .bind(&col_type)
+        .bind(next_sort)
+        .execute(&db.pool)
+        .await
+        .map_err(|e| format!("tracker_custom_column_add: {e}"))?;
+    Ok(CustomColumn {
+        id,
+        label,
+        col_type,
+        sort: next_sort,
+    })
+}
+
+#[tauri::command]
+pub async fn tracker_custom_column_remove(id: String, db: State<'_, Db>) -> Result<(), String> {
+    sqlx::query("DELETE FROM tracker_custom_columns WHERE id = ?")
+        .bind(&id)
+        .execute(&db.pool)
+        .await
+        .map(|_| ())
+        .map_err(|e| format!("tracker_custom_column_remove: {e}"))
+}
+
 /// Write a report the frontend has already laid out (the Agentur PDF as plain
-/// lines, or a CSV) to a Documents/Applye/reports file and return its path.
+/// lines, or a CSV) to a user-chosen location and return its path. A native
+/// Save dialog is shown, pre-filled with `{file_base}.{format}` and defaulting
+/// to Documents/Applye/reports. Returns an empty string if the user cancels.
 /// PDF uses printpdf; CSV is written verbatim. The frontend reveals the file.
 #[tauri::command]
 pub async fn export_report(
@@ -91,6 +191,8 @@ pub async fn export_report(
     file_base: String,
     app: tauri::AppHandle,
 ) -> Result<String, String> {
+    use tauri_plugin_dialog::DialogExt;
+
     let dir = reports_dir(&app)?;
     let safe = file_base
         .chars()
@@ -102,13 +204,30 @@ pub async fn export_report(
             }
         })
         .collect::<String>();
-    let path = dir.join(format!("{safe}.{format}"));
 
     let bytes = match format.as_str() {
         "csv" => content.into_bytes(),
         "pdf" => text_to_pdf_bytes(&content)?,
         other => return Err(format!("unsupported report format: {other}")),
     };
+
+    let filter_name = if format == "pdf" { "PDF" } else { "CSV" };
+    let picked = app
+        .dialog()
+        .file()
+        .set_directory(&dir)
+        .set_file_name(format!("{safe}.{format}"))
+        .add_filter(filter_name, &[format.as_str()])
+        .blocking_save_file();
+
+    let Some(target) = picked else {
+        // User cancelled the Save dialog — not an error.
+        return Ok(String::new());
+    };
+    let path = target
+        .into_path()
+        .map_err(|e| format!("resolve save path: {e}"))?;
+
     std::fs::write(&path, &bytes).map_err(|e| format!("write report: {e}"))?;
     Ok(path.to_string_lossy().to_string())
 }
@@ -127,7 +246,7 @@ fn reports_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 /// Render plain report text to PDF. Lines beginning with "# " / "## " are
 /// headings; everything else is monospace-width body (so padded table columns
 /// line up). Mirrors the CV PDF renderer; pure Rust, no fonts to bundle.
-fn text_to_pdf_bytes(content: &str) -> Result<Vec<u8>, String> {
+pub(crate) fn text_to_pdf_bytes(content: &str) -> Result<Vec<u8>, String> {
     use printpdf::*;
 
     let (doc, page1, layer1) = PdfDocument::new("Applye report", Mm(210.0), Mm(297.0), "Layer 1");

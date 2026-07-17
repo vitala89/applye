@@ -157,4 +157,26 @@
     outline: none !important;
     cursor: default !important;
   }
+
+  // Job Tracker report export (hidden `print/tracker-report` window). Same
+  // approach as the CV: hide the whole app, reveal only `<app-tracker-report>`,
+  // and pin it to the page origin on white so no shell/sidebar or dark app
+  // background leaks into the PDF.
+  body.printing-report {
+    background: #fff !important;
+  }
+  body.printing-report * {
+    visibility: hidden;
+  }
+  body.printing-report app-tracker-report,
+  body.printing-report app-tracker-report * {
+    visibility: visible;
+  }
+  body.printing-report app-tracker-report {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+  }
 }

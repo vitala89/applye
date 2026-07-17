@@ -93,6 +93,15 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    // Loaded only by the hidden silent-PDF-export window (see
+    // `tracker_report_export_pdf_wysiwyg` in Rust) — never linked from the UI.
+    path: 'print/tracker-report',
+    loadComponent: () =>
+      import('./pages/tracker/tracker-report-print.component').then(
+        (m) => m.TrackerReportPrintComponent,
+      ),
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./pages/settings/settings.component').then((m) => m.SettingsComponent),

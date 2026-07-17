@@ -68,6 +68,8 @@ export interface ApplicationTrackerFieldsInput {
   nextActionAt?: string;
   salaryRange?: string;
   notes?: string;
+  /** JSON blob of custom-column values; omit to leave existing values intact. */
+  customFields?: string;
 }
 
 export interface StatusHistory {

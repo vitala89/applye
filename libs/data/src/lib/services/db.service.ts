@@ -4,6 +4,7 @@ import {
   Job,
   JobOverview,
   ScoringCache,
+  TrackerCustomColumn,
   TrackerRow,
   UrlClassification,
 } from '@applye/core';
@@ -122,9 +123,48 @@ export class DbService {
     return tauriInvoke<TrackerRow[]>('db_tracker_rows');
   }
 
-  /** Write a laid-out report (pdf/csv) to Documents/Applye/reports; returns path. */
+  /** Write a laid-out report (pdf/csv) via a native Save dialog; returns the
+   * chosen path, or '' if the user cancels. */
   async exportReport(content: string, format: 'pdf' | 'csv', fileBase: string): Promise<string> {
     return tauriInvoke<string>('export_report', { content, format, fileBase });
+  }
+
+  /** Export the tracker report to a PDF at `savePath`, rendered by the hidden
+   * `print/tracker-report` window so it matches the preview exactly. */
+  async trackerReportExportPdfWysiwyg(params: {
+    savePath: string;
+    applicant: string;
+    period: string;
+    periodLabel: string;
+    market: string;
+    landscape: boolean;
+    mode: string;
+    columns: string;
+    fallbackContent: string;
+  }): Promise<string> {
+    return tauriInvoke<string>('tracker_report_export_pdf_wysiwyg', params);
+  }
+
+  /** Soft-archive / restore a tracker row (kept in the report either way). */
+  async setApplicationArchived(id: number, archived: boolean): Promise<void> {
+    return tauriInvoke<void>('db_set_application_archived', { id, archived });
+  }
+
+  /** User-defined Job Tracker columns (definitions only). */
+  async trackerCustomColumns(): Promise<TrackerCustomColumn[]> {
+    return tauriInvoke<TrackerCustomColumn[]>('tracker_custom_columns_list');
+  }
+
+  async addTrackerCustomColumn(
+    id: string,
+    label: string,
+    colType: string,
+  ): Promise<TrackerCustomColumn> {
+    return tauriInvoke<TrackerCustomColumn>('tracker_custom_column_add', { id, label, colType });
+  }
+
+  async removeTrackerCustomColumn(id: string): Promise<void> {
+    return tauriInvoke<void>('tracker_custom_column_remove', { id });
   }
 
   async scoreCacheGet(jobId: number, profileHash: string): Promise<ScoringCache | null> {

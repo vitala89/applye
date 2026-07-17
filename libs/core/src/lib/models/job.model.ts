@@ -80,6 +80,21 @@ export interface TrackerRow {
   eorProvider?: string;
   notes?: string;
   lastUpdate?: string;
+  /** Soonest still-upcoming interview stage (from the Pipeline). */
+  nextStageLabel?: string;
+  nextStageAt?: string;
+  archived?: boolean;
+  /** JSON blob of custom-column values ({ "<colId>": "<value>" }). */
+  customFields?: string;
+}
+
+/** A user-defined Job Tracker column (definition only; values are stored per
+ * application in TrackerRow.customFields). `type` drives the input widget. */
+export interface TrackerCustomColumn {
+  id: string;
+  label: string;
+  type: 'text' | 'date' | 'number' | 'yesno' | 'select';
+  sort: number;
 }
 
 /** AI-drafted answers to a portal's open-ended questions (cached per job). */

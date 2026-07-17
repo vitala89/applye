@@ -10,7 +10,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Changed
+
+- **The AI privacy note now shows for every cloud provider, not just DeepSeek.** In Settings, choosing any provider (Anthropic, DeepSeek, OpenAI, Google) now displays a note explaining that in API mode your job description and profile text are sent to that vendor's servers, that your API key stays in the OS keychain and never touches the local database or logs, and that AI is always opt-in. DeepSeek additionally keeps its China-jurisdiction warning on top of the shared note.
+- **Language pickers now read in each language's own name.** The UI-language and document-language selectors in Settings show "English, Deutsch, Русский, Español, Français, Українська" instead of raw codes (en, de, ru...), so you can always find your own language even if the app is currently in another.
+
 ### Added
+
+- **Delete all data (factory reset).** A new Data section in Settings wipes everything Applye stores on this device - every job, application, document, note and cache - clears your saved API keys from the OS keychain, and returns you to onboarding with a clean slate. It is gated behind an explicit "Yes, delete everything" confirmation and cannot be undone.
+- **Settings gained an Appearance section and an About section.** Appearance carries the light/dark theme toggle (previously only in the top bar); About shows the app version. (Controls for geographic scope, score-notify thresholds, and export format were intentionally left out: those data-model fields have no behaviour behind them yet, and export currently ships PDF only, so surfacing them would have shown settings that do nothing.)
 
 - **The Pipeline board has a new design.** A summary strip shows how many applications are active, how many are overdue, and lets you search across company, role and location. Rejected and cancelled columns collapse into slim side rails (an "archive") that you reveal with one click, so the board stays focused on live applications. Cards now carry a company monogram, the location, a colour-coded ATS score, and - for interviews - a segmented stage-progress track. The quick-view now leads with status and ATS fit, shows the interview as a step-by-step tracker, and groups every section clearly.
 - **Leaving a half-finished application no longer loses your place.** If you start tailoring a CV for a job and then click away - to Documents, to another job, anywhere - a "Finish tailoring" button now follows you and brings you back to the exact step you left, instead of dropping you at the job list to start over.

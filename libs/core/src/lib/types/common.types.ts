@@ -6,6 +6,22 @@ export type DocType = 'cv' | 'cover_letter' | 'pitch' | 'interview_prep' | 'arbe
 export type SupportedLanguage = 'en' | 'de' | 'ru' | 'es' | 'fr' | 'uk';
 export type GeoScope = 'worldwide' | 'europe' | 'eu' | 'usa' | 'custom';
 
+/**
+ * Endonyms (each language's own name) for language pickers. A user who lands in
+ * the wrong UI language must still recognise their own language in the list, so
+ * the label is written in the language it selects — not translated into the
+ * current locale. Distinct from the AI-prompt names (spelled-out English) used
+ * when instructing a model which language to write in.
+ */
+export const LANGUAGE_NATIVE_NAMES: Record<SupportedLanguage, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  ru: 'Русский',
+  es: 'Español',
+  fr: 'Français',
+  uk: 'Українська',
+};
+
 export interface GeneratedDoc {
   id: number;
   jobId: number;

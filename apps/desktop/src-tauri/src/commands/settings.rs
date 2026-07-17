@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sqlx::Acquire;
 use tauri::State;
 
 use crate::db::Db;
@@ -95,4 +96,89 @@ pub async fn db_update_settings(
     .map_err(|e| format!("db_update_settings: {e}"))?;
 
     db_get_settings(db).await
+}
+
+/// Factory reset — wipe every user-data table and reset settings to defaults.
+///
+/// Destructive and irreversible: the UI gates this behind an explicit confirm.
+/// Table names are read from `sqlite_master` (not hard-coded) so any table a
+/// future migration adds is cleared automatically. `_sqlx_migrations` is kept
+/// so the schema stays intact — we clear data, never the schema. Foreign keys
+/// are disabled for the wipe so delete order doesn't matter, then re-enabled.
+///
+/// The `settings` row is re-seeded to the same defaults as migration 0002,
+/// with `onboarding_seen = 0` so the app re-opens onboarding on next launch.
+/// API keys live in the OS keychain, not the DB; the caller clears those.
+#[tauri::command]
+pub async fn db_reset_all_data(db: State<'_, Db>) -> Result<(), String> {
+    let mut conn = db
+        .pool
+        .acquire()
+        .await
+        .map_err(|e| format!("db_reset_all_data (acquire): {e}"))?;
+
+    // PRAGMA foreign_keys is a no-op inside a transaction, so toggle it on the
+    // bare connection before opening one.
+    sqlx::query("PRAGMA foreign_keys = OFF")
+        .execute(&mut *conn)
+        .await
+        .map_err(|e| format!("db_reset_all_data (fk off): {e}"))?;
+
+    let tables: Vec<(String,)> = sqlx::query_as(
+        "SELECT name FROM sqlite_master
+         WHERE type = 'table'
+           AND name NOT LIKE 'sqlite_%'
+           AND name != '_sqlx_migrations'",
+    )
+    .fetch_all(&mut *conn)
+    .await
+    .map_err(|e| format!("db_reset_all_data (list tables): {e}"))?;
+
+    let mut tx = conn
+        .begin()
+        .await
+        .map_err(|e| format!("db_reset_all_data (begin): {e}"))?;
+
+    for (name,) in &tables {
+        // `name` comes from sqlite_master (trusted); quote it defensively.
+        sqlx::query(&format!("DELETE FROM \"{name}\""))
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| format!("db_reset_all_data (clear {name}): {e}"))?;
+    }
+
+    // Reset AUTOINCREMENT counters so ids start fresh (cosmetic but expected of
+    // a factory reset). No-op if the table has no AUTOINCREMENT columns.
+    let _ = sqlx::query("DELETE FROM sqlite_sequence")
+        .execute(&mut *tx)
+        .await;
+
+    // Re-seed the single settings row (mirrors migration 0002 defaults).
+    sqlx::query(
+        "INSERT INTO settings (
+           id, ai_mode, provider, default_model, economy_model,
+           auto_export_on_apply, auto_export_format, export_dir,
+           ui_language, default_doc_language, geo_scope,
+           onboarding_seen, health_check_seen
+         ) VALUES (
+           1, 'api', 'claude', 'claude-opus-4-8', 'claude-haiku-4-5',
+           0, 'pdf', '',
+           'en', 'en', 'eu',
+           0, 0
+         )",
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| format!("db_reset_all_data (reseed settings): {e}"))?;
+
+    tx.commit()
+        .await
+        .map_err(|e| format!("db_reset_all_data (commit): {e}"))?;
+
+    sqlx::query("PRAGMA foreign_keys = ON")
+        .execute(&mut *conn)
+        .await
+        .map_err(|e| format!("db_reset_all_data (fk on): {e}"))?;
+
+    Ok(())
 }

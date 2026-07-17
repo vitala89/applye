@@ -75,6 +75,16 @@ export class DbService {
     return tauriInvoke<Settings>('db_update_settings', { settings });
   }
 
+  /**
+   * Factory reset — wipe every user-data table and reset settings to defaults
+   * (including `onboardingSeen = false`). Destructive and irreversible; the UI
+   * gates it behind an explicit confirm. Does NOT touch OS-keychain API keys —
+   * the caller clears those separately via KeysService.
+   */
+  async resetAllData(): Promise<void> {
+    return tauriInvoke<void>('db_reset_all_data');
+  }
+
   // --- Jobs ---
   async listJobs(): Promise<Job[]> {
     return tauriInvoke<Job[]>('db_list_jobs');

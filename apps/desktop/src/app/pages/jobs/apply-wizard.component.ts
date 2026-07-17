@@ -82,7 +82,7 @@ import {
                           <div
                             class="wizard-review__dim-bar-fill"
                             [class]="'score-' + band(d.score)"
-                            [style.width.%]="d.score * 10"
+                            [style.transform]="'scaleX(' + d.score / 10 + ')'"
                           ></div>
                         </div>
                         @if (d.comment) {

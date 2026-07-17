@@ -18,7 +18,7 @@
         <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
         <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)" />
       </svg>
-      <span class="logo-text" data-tauri-drag-region>Applye</span>
+      <span class="logo-text" data-tauri-drag-region>applye</span>
     </div>
 
     <nav class="sidebar__nav">
@@ -35,6 +35,8 @@
         <lucide-icon [img]="icons.discover" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.discover') }}</span>
       </a>
+
+      <p class="nav-section">{{ t()('nav.section_workspace') }}</p>
       <a class="nav-item" routerLink="/jobs" routerLinkActive="nav-item--active">
         <lucide-icon [img]="icons.jobs" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.jobs') }}</span>
@@ -56,15 +58,6 @@
         <lucide-icon [img]="icons.tracker" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.tracker') }}</span>
       </a>
-      <a class="nav-item" routerLink="/analytics" routerLinkActive="nav-item--active">
-        <lucide-icon
-          [img]="icons.analytics"
-          class="nav-item__icon"
-          [size]="18"
-          aria-hidden="true"
-        />
-        <span class="nav-item__label">{{ t()('nav.analytics') }}</span>
-      </a>
       <a class="nav-item" routerLink="/documents" routerLinkActive="nav-item--active">
         <lucide-icon
           [img]="icons.documents"
@@ -74,6 +67,17 @@
         />
         <span class="nav-item__label">{{ t()('nav.documents') }}</span>
       </a>
+      <a class="nav-item" routerLink="/analytics" routerLinkActive="nav-item--active">
+        <lucide-icon
+          [img]="icons.analytics"
+          class="nav-item__icon"
+          [size]="18"
+          aria-hidden="true"
+        />
+        <span class="nav-item__label">{{ t()('nav.analytics') }}</span>
+      </a>
+
+      <p class="nav-section">{{ t()('nav.section_system') }}</p>
       <a class="nav-item" routerLink="/settings" routerLinkActive="nav-item--active">
         <lucide-icon [img]="icons.settings" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.settings') }}</span>
@@ -81,24 +85,15 @@
     </nav>
 
     <div class="sidebar__footer">
-      <a
-        class="nav-item nav-item--secondary"
-        routerLink="/profile"
-        routerLinkActive="nav-item--active"
-      >
-        <lucide-icon [img]="icons.profile" class="nav-item__icon" [size]="18" aria-hidden="true" />
-        <span class="nav-item__label">{{ t()('nav.profile') }}</span>
+      <a class="profile-card" routerLink="/profile" routerLinkActive="profile-card--active">
+        <span class="profile-card__avatar">
+          <lucide-icon [img]="icons.profile" [size]="16" aria-hidden="true" />
+        </span>
+        <span class="profile-card__meta">
+          <span class="profile-card__name">{{ t()('nav.profile') }}</span>
+          <span class="profile-card__sub">{{ t()('nav.local_profile') }}</span>
+        </span>
       </a>
-      <div
-        class="ai-indicator"
-        [title]="t()(aiMode() === 'cli' ? 'ai.tooltip_cli' : 'ai.tooltip_api')"
-      >
-        <span class="ai-indicator__dot"></span>
-        <span class="ai-indicator__label">{{ t()('ai.indicator') }}</span>
-        <span class="ai-indicator__mode">{{
-          t()(aiMode() === 'cli' ? 'ai.mode_cli' : 'ai.mode_api')
-        }}</span>
-      </div>
     </div>
   </aside>
 

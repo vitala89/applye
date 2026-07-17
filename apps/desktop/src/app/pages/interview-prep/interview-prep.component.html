@@ -1,46 +1,138 @@
-<div class="interview-prep">
+<div class="ip" (click)="closeMenus()">
   @if (loading()) {
-    <p class="interview-prep__state">{{ t()('common.loading') }}</p>
-  } @else if (!rows().length) {
-    <p class="interview-prep__state">{{ t()('interview.list_empty') }}</p>
-  } @else {
-    <table class="interview-prep__table">
-      <thead>
-        <tr>
-          <th>{{ t()('interview.col_company') }}</th>
-          <th>{{ t()('interview.col_role') }}</th>
-          <th>{{ t()('interview.col_stage') }}</th>
-          <th>{{ t()('interview.col_status') }}</th>
-          <th>{{ t()('interview.col_next') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of rows(); track r.id) {
-          <tr
-            class="interview-prep__row"
-            role="button"
-            tabindex="0"
-            (click)="open(r.id)"
-            (keydown.enter)="open(r.id)"
-          >
-            <td class="cell-strong">{{ r.company || '·' }}</td>
-            <td>{{ r.title || '·' }}</td>
-            <td>
-              {{ t()('interview.stage_prefix') }} {{ r.currentStageOrder }} ·
-              {{ r.currentStageLabel }}
-            </td>
-            <td>
-              @if (r.currentStageStatus) {
-                <span class="badge badge--stage" [attr.data-status]="r.currentStageStatus">
-                  <span class="badge--stage__dot"></span>
-                  {{ t()('interview.status_' + r.currentStageStatus) }}
-                </span>
-              }
-            </td>
-            <td class="muted">{{ formatDate(r.currentStageScheduledAt) }}</td>
-          </tr>
+    <div class="ip__skeleton">
+      <div class="ip__sk-strip">
+        <span class="ip__sk-tile"></span><span class="ip__sk-tile"></span
+        ><span class="ip__sk-tile"></span>
+      </div>
+      <div class="ip__sk-table">
+        @for (r of [0, 1, 2, 3, 4]; track r) {
+          <div class="ip__sk-row">
+            <span class="ip__sk-bar" style="width: 120px"></span>
+            <span class="ip__sk-bar" style="width: 200px"></span>
+            <span class="ip__sk-bar" style="width: 140px"></span>
+            <span class="ip__sk-pill"></span>
+            <span class="ip__sk-bar" style="width: 80px"></span>
+          </div>
         }
-      </tbody>
-    </table>
+      </div>
+    </div>
+  } @else if (!rows().length) {
+    <div class="ip__empty">
+      <div class="ip__empty-icon"><lucide-icon [img]="icons.empty" [size]="26" /></div>
+      <p class="ip__empty-title">{{ t()('interview.list_empty') }}</p>
+      <p class="ip__empty-sub">{{ t()('interview.list_empty_sub') }}</p>
+    </div>
+  } @else {
+    <!-- summary strip -->
+    <div class="ip__summary">
+      <div class="ip__stat">
+        <span class="ip__stat-label">{{ t()('interview.stat_tracking') }}</span>
+        <span class="ip__stat-val">{{ stats().tracking }}</span>
+      </div>
+      <div class="ip__stat">
+        <span class="ip__stat-label">{{ t()('interview.stat_upcoming') }}</span>
+        <span class="ip__stat-val">{{ stats().upcoming }}</span>
+      </div>
+      <div class="ip__stat ip__stat--wide">
+        <span class="ip__stat-label">{{ t()('interview.stat_next') }}</span>
+        <span class="ip__stat-next">
+          <span class="ip__stat-next-date">{{ stats().nextDate }}</span>
+          @if (stats().nextCompany) {
+            <span class="ip__stat-next-co">{{ stats().nextCompany }}</span>
+          }
+        </span>
+      </div>
+    </div>
+
+    <!-- table -->
+    <div class="ip__table">
+      <div class="ip__thead">
+        <div>{{ t()('interview.col_company') }}</div>
+        <div>{{ t()('interview.col_role') }}</div>
+        <div>{{ t()('interview.col_stage') }}</div>
+        <div>{{ t()('interview.col_status') }}</div>
+        <div>{{ t()('interview.col_next') }}</div>
+        <div></div>
+      </div>
+      @for (r of rows(); track r.id) {
+        <div
+          class="ip__row"
+          role="button"
+          tabindex="0"
+          (click)="open(r.id)"
+          (keydown.enter)="open(r.id)"
+        >
+          <div class="ip__co">{{ r.company || '·' }}</div>
+          <div class="ip__role">{{ r.title || '·' }}</div>
+          <div class="ip__stage">
+            <span class="ip__order">{{ r.currentStageOrder }}</span>
+            <span class="ip__stage-label">{{ r.currentStageLabel }}</span>
+          </div>
+          <div>
+            @if (r.currentStageStatus) {
+              <span class="badge badge--stage" [attr.data-status]="r.currentStageStatus">
+                <span class="badge--stage__dot"></span>
+                {{ t()('interview.status_' + r.currentStageStatus) }}
+              </span>
+            }
+          </div>
+          <div class="ip__next">{{ formatDate(r.currentStageScheduledAt) }}</div>
+          <div class="ip__rowact" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="ip__icon"
+              [class.is-open]="menuId() === r.id"
+              [attr.aria-label]="t()('interview.row_actions')"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="menuId() === r.id"
+              (click)="toggleMenu(r.id, $event)"
+            >
+              <lucide-icon [img]="icons.menu" [size]="16" />
+            </button>
+            @if (menuId() === r.id) {
+              <div class="ip__pop" role="menu">
+                <button
+                  type="button"
+                  class="ip__pop-item ip__pop-item--danger"
+                  (click)="askRemove(r.id, $event)"
+                >
+                  <lucide-icon [img]="icons.trash" [size]="15" />
+                  {{ t()('interview.remove_from_prep') }}
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- delete-confirm modal -->
+  @if (confirmRow(); as row) {
+    <div class="ip-modal" (click)="cancelRemove()">
+      <div class="ip-modal__confirm" (click)="$event.stopPropagation()">
+        <div class="ip-modal__confirm-row">
+          <div class="ip-modal__confirm-icon"><lucide-icon [img]="icons.trash" [size]="20" /></div>
+          <div>
+            <div class="ip-modal__confirm-title">{{ t()('interview.confirm_remove_title') }}</div>
+            <p class="ip-modal__confirm-body">{{ t()('interview.confirm_remove_body') }}</p>
+          </div>
+        </div>
+        <div class="ip-modal__confirm-actions">
+          <button type="button" class="ip-btn" (click)="cancelRemove()">
+            {{ t()('actions.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="ip-btn ip-btn--danger"
+            [disabled]="removing()"
+            (click)="confirmRemove()"
+          >
+            {{ t()('interview.remove') }}
+          </button>
+        </div>
+      </div>
+    </div>
   }
 </div>

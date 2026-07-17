@@ -1,6 +1,6 @@
-<div class="ipd">
+<div class="ipd" (click)="closeMenus()">
   <button type="button" class="ipd__back" (click)="back()">
-    <lucide-icon [img]="icons.back" [size]="14" />
+    <lucide-icon [img]="icons.back" [size]="15" />
     {{ t()('interview.back_to_list') }}
   </button>
 
@@ -8,131 +8,90 @@
     <p class="ipd__state">{{ t()('common.loading') }}</p>
   } @else {
     <header class="ipd__header">
-      <div class="ipd__company">{{ application()?.company || '–' }}</div>
-      <div class="ipd__title">{{ application()?.title || '–' }}</div>
+      <div class="ipd__head-text">
+        <div class="ipd__company">{{ application()?.company || '·' }}</div>
+        <div class="ipd__title">{{ application()?.title || '·' }}</div>
+      </div>
+      <button type="button" class="ip-btn ip-btn--primary ipd__add-btn" (click)="openAdd()">
+        <lucide-icon [img]="icons.add" [size]="16" />
+        {{ t()('interview.add_stage') }}
+      </button>
     </header>
 
+    <div class="ipd__summary">{{ detailSummary() }}</div>
+
     @if (!stages().length) {
-      <p class="ipd__state">{{ t()('interview.detail_empty') }}</p>
+      <div class="ipd__empty">{{ t()('interview.detail_empty') }}</div>
     }
 
-    <ul class="ipd__stages">
+    <!-- timeline -->
+    <div class="ipd__timeline">
       @for (stage of stages(); track stage.id; let i = $index) {
-        <li class="ipd__stage">
-          @if (editingId() === stage.id) {
-            <div class="ipd__form">
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_type_label') }}</span>
-                <select
-                  [ngModel]="editForm().stageType"
-                  (ngModelChange)="updateEditForm('stageType', $event)"
-                >
-                  @for (type of STAGE_TYPES; track type) {
-                    <option [value]="type">{{ t()('interview.type_' + type) }}</option>
+        <div class="ipd__row">
+          <!-- rail -->
+          <div class="ipd__rail">
+            @if (i > 0) {
+              <span class="ipd__rail-line ipd__rail-line--top"></span>
+            }
+            @if (i < stages().length - 1) {
+              <span class="ipd__rail-line ipd__rail-line--bottom"></span>
+            }
+            <span class="ipd__node" [attr.data-status]="stage.status">{{ stage.stageOrder }}</span>
+          </div>
+
+          <!-- card -->
+          <div class="ipd__card">
+            <div class="ipd__card-top">
+              <div class="ipd__card-main">
+                <div class="ipd__stage-label">{{ stage.stageLabel }}</div>
+                <div class="ipd__stage-meta">
+                  {{ t()('interview.type_' + stage.stageType) }}
+                  @if (stage.scheduledAt) {
+                    · {{ fmtDate(stage.scheduledAt) }}
                   }
-                </select>
-              </label>
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_label_label') }}</span>
-                <input
-                  type="text"
-                  [ngModel]="editForm().stageLabel"
-                  (ngModelChange)="updateEditForm('stageLabel', $event)"
-                  [placeholder]="t()('interview.stage_label_placeholder')"
-                />
-              </label>
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_date_label') }}</span>
-                <input
-                  type="date"
-                  [ngModel]="editForm().scheduledAt"
-                  (ngModelChange)="updateEditForm('scheduledAt', $event)"
-                />
-              </label>
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_language_label') }}</span>
-                <select
-                  [ngModel]="editForm().stageLanguage"
-                  (ngModelChange)="updateEditForm('stageLanguage', $event)"
-                >
-                  <option value="">·</option>
-                  @for (lang of LANGUAGES; track lang) {
-                    <option [value]="lang">{{ lang.toUpperCase() }}</option>
-                  }
-                </select>
-              </label>
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_interviewer_name') }}</span>
-                <input
-                  type="text"
-                  [ngModel]="editForm().interviewerName"
-                  (ngModelChange)="updateEditForm('interviewerName', $event)"
-                />
-              </label>
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_interviewer_role') }}</span>
-                <input
-                  type="text"
-                  [ngModel]="editForm().interviewerRole"
-                  (ngModelChange)="updateEditForm('interviewerRole', $event)"
-                />
-              </label>
-              <label class="ipd__field">
-                <span class="ipd__label">{{ t()('interview.stage_interviewer_email') }}</span>
-                <input
-                  type="email"
-                  [ngModel]="editForm().interviewerEmail"
-                  (ngModelChange)="updateEditForm('interviewerEmail', $event)"
-                />
-              </label>
-              <label class="ipd__field ipd__field--wide">
-                <span class="ipd__label">{{ t()('interview.stage_notes') }}</span>
-                <textarea
-                  rows="2"
-                  [ngModel]="editForm().notes"
-                  (ngModelChange)="updateEditForm('notes', $event)"
-                ></textarea>
-              </label>
-              <div class="ipd__form-actions">
-                <button type="button" appButton variant="ghost" size="sm" (click)="cancelEdit()">
-                  {{ t()('actions.cancel') }}
-                </button>
-                <button
-                  type="button"
-                  appButton
-                  variant="primary"
-                  size="sm"
-                  [disabled]="editBusy() || !editForm().stageLabel.trim()"
-                  (click)="saveEdit()"
-                >
-                  {{ t()('interview.save') }}
-                </button>
-              </div>
-            </div>
-          } @else {
-            <div class="ipd__stage-row">
-              <div class="ipd__stage-main">
-                <span class="ipd__stage-order">{{ stage.stageOrder }}</span>
-                <div>
-                  <div class="ipd__stage-label">{{ stage.stageLabel }}</div>
-                  <div class="ipd__stage-meta">
-                    {{ t()('interview.type_' + stage.stageType) }}
-                    @if (stage.scheduledAt) {
-                      · {{ stage.scheduledAt }}
-                    }
-                  </div>
                 </div>
+                @if (interviewerSummary(stage)) {
+                  <div class="ipd__interviewer">
+                    <lucide-icon [img]="icons.user" [size]="13" />
+                    {{ interviewerSummary(stage) }}
+                  </div>
+                }
               </div>
-              <div class="ipd__stage-actions">
-                <select
-                  class="ipd__status-select"
-                  [ngModel]="stage.status"
-                  (ngModelChange)="setStatus(stage, $event)"
-                >
-                  @for (s of STAGE_STATUSES; track s) {
-                    <option [value]="s">{{ t()('interview.status_' + s) }}</option>
+
+              <!-- right cluster -->
+              <div class="ipd__actions" (click)="$event.stopPropagation()">
+                <div class="ipd__status-wrap">
+                  <button
+                    type="button"
+                    class="ipd__status"
+                    [attr.data-status]="stage.status"
+                    (click)="toggleStatusMenu(stage, $event)"
+                  >
+                    <span class="ipd__status-dot"></span>
+                    {{ t()('interview.status_' + stage.status) }}
+                    <lucide-icon class="ipd__status-chev" [img]="icons.chevron" [size]="13" />
+                  </button>
+                  @if (statusMenuId() === stage.id) {
+                    <div class="ip__pop ipd__status-menu" role="menu">
+                      @for (s of STAGE_STATUSES; track s) {
+                        <button
+                          type="button"
+                          class="ipd__status-opt"
+                          [attr.data-status]="s"
+                          (click)="setStatus(stage, s)"
+                        >
+                          <span class="ipd__status-dot"></span>
+                          <span class="ipd__status-opt-label">{{
+                            t()('interview.status_' + s)
+                          }}</span>
+                          @if (s === stage.status) {
+                            <lucide-icon [img]="icons.check" [size]="14" />
+                          }
+                        </button>
+                      }
+                    </div>
                   }
-                </select>
+                </div>
                 <button
                   type="button"
                   class="ipd__icon-btn"
@@ -155,7 +114,7 @@
                   type="button"
                   class="ipd__icon-btn"
                   [attr.aria-label]="t()('interview.edit')"
-                  (click)="startEdit(stage)"
+                  (click)="openEdit(stage)"
                 >
                   <lucide-icon [img]="icons.edit" [size]="14" />
                 </button>
@@ -163,101 +122,163 @@
                   type="button"
                   class="ipd__icon-btn ipd__icon-btn--danger"
                   [attr.aria-label]="t()('interview.delete')"
-                  (click)="deleteStage(stage)"
+                  (click)="askDelete(stage)"
                 >
                   <lucide-icon [img]="icons.delete" [size]="14" />
                 </button>
               </div>
             </div>
-          }
-        </li>
-      }
-    </ul>
 
-    <div class="ipd__add">
-      <div class="ipd__form">
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_type_label') }}</span>
-          <select
-            [ngModel]="addForm().stageType"
-            (ngModelChange)="updateAddForm('stageType', $event)"
-          >
-            @for (type of STAGE_TYPES; track type) {
-              <option [value]="type">{{ t()('interview.type_' + type) }}</option>
+            @if (stage.notes) {
+              <p class="ipd__notes">{{ stage.notes }}</p>
             }
-          </select>
-        </label>
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_label_label') }}</span>
-          <input
-            type="text"
-            [ngModel]="addForm().stageLabel"
-            (ngModelChange)="updateAddForm('stageLabel', $event)"
-            [placeholder]="t()('interview.stage_label_placeholder')"
-          />
-        </label>
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_date_label') }}</span>
-          <input
-            type="date"
-            [ngModel]="addForm().scheduledAt"
-            (ngModelChange)="updateAddForm('scheduledAt', $event)"
-          />
-        </label>
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_language_label') }}</span>
-          <select
-            [ngModel]="addForm().stageLanguage"
-            (ngModelChange)="updateAddForm('stageLanguage', $event)"
-          >
-            <option value="">·</option>
-            @for (lang of LANGUAGES; track lang) {
-              <option [value]="lang">{{ lang.toUpperCase() }}</option>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- add / edit modal -->
+  @if (modalOpen()) {
+    <div class="ip-modal" (click)="closeModal()">
+      <div class="ip-modal__panel" (click)="$event.stopPropagation()">
+        <header class="ip-modal__head">
+          <span class="ip-modal__title">{{
+            t()(modalMode() === 'add' ? 'interview.modal_add_title' : 'interview.modal_edit_title')
+          }}</span>
+          <button type="button" class="ip__icon" (click)="closeModal()">
+            <lucide-icon [img]="icons.close" [size]="18" />
+          </button>
+        </header>
+        <div class="ip-modal__body">
+          <div class="ipd-field">
+            <label class="ipd-flabel"
+              >{{ t()('interview.stage_label_label') }} <span class="ipd-req">*</span></label
+            >
+            <input
+              type="text"
+              class="ipd-input"
+              [class.is-error]="labelError()"
+              [ngModel]="form().stageLabel"
+              (ngModelChange)="updateForm('stageLabel', $event)"
+              [placeholder]="t()('interview.stage_label_placeholder')"
+            />
+            @if (labelError()) {
+              <span class="ipd-error">{{ t()('interview.label_required') }}</span>
             }
-          </select>
-        </label>
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_interviewer_name') }}</span>
-          <input
-            type="text"
-            [ngModel]="addForm().interviewerName"
-            (ngModelChange)="updateAddForm('interviewerName', $event)"
-          />
-        </label>
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_interviewer_role') }}</span>
-          <input
-            type="text"
-            [ngModel]="addForm().interviewerRole"
-            (ngModelChange)="updateAddForm('interviewerRole', $event)"
-          />
-        </label>
-        <label class="ipd__field">
-          <span class="ipd__label">{{ t()('interview.stage_interviewer_email') }}</span>
-          <input
-            type="email"
-            [ngModel]="addForm().interviewerEmail"
-            (ngModelChange)="updateAddForm('interviewerEmail', $event)"
-          />
-        </label>
-        <label class="ipd__field ipd__field--wide">
-          <span class="ipd__label">{{ t()('interview.stage_notes') }}</span>
-          <textarea
-            rows="2"
-            [ngModel]="addForm().notes"
-            (ngModelChange)="updateAddForm('notes', $event)"
-          ></textarea>
-        </label>
-        <div class="ipd__form-actions">
+          </div>
+          <div class="ipd-grid2">
+            <div class="ipd-field">
+              <label class="ipd-flabel">{{ t()('interview.stage_type_label') }}</label>
+              <select
+                class="ipd-input"
+                [ngModel]="form().stageType"
+                (ngModelChange)="updateForm('stageType', $event)"
+              >
+                @for (type of STAGE_TYPES; track type) {
+                  <option [value]="type">{{ t()('interview.type_' + type) }}</option>
+                }
+              </select>
+            </div>
+            <div class="ipd-field">
+              <label class="ipd-flabel">{{ t()('interview.stage_date_label') }}</label>
+              <input
+                type="date"
+                class="ipd-input"
+                [ngModel]="form().scheduledAt"
+                (ngModelChange)="updateForm('scheduledAt', $event)"
+              />
+            </div>
+          </div>
+          <div class="ipd-grid2">
+            <div class="ipd-field">
+              <label class="ipd-flabel">{{ t()('interview.stage_language_label') }}</label>
+              <select
+                class="ipd-input"
+                [ngModel]="form().stageLanguage"
+                (ngModelChange)="updateForm('stageLanguage', $event)"
+              >
+                <option value="">·</option>
+                @for (lang of LANGUAGES; track lang) {
+                  <option [value]="lang">{{ lang.toUpperCase() }}</option>
+                }
+              </select>
+            </div>
+            <div></div>
+          </div>
+
+          <div class="ipd-group">
+            <div class="ipd-group-label">{{ t()('interview.interviewer') }}</div>
+            <div class="ipd-grid2">
+              <input
+                type="text"
+                class="ipd-input"
+                [ngModel]="form().interviewerName"
+                (ngModelChange)="updateForm('interviewerName', $event)"
+                [placeholder]="t()('interview.stage_interviewer_name')"
+              />
+              <input
+                type="text"
+                class="ipd-input"
+                [ngModel]="form().interviewerRole"
+                (ngModelChange)="updateForm('interviewerRole', $event)"
+                [placeholder]="t()('interview.stage_interviewer_role')"
+              />
+            </div>
+            <input
+              type="email"
+              class="ipd-input"
+              [ngModel]="form().interviewerEmail"
+              (ngModelChange)="updateForm('interviewerEmail', $event)"
+              [placeholder]="t()('interview.stage_interviewer_email')"
+            />
+          </div>
+
+          <div class="ipd-group">
+            <label class="ipd-flabel">{{ t()('interview.stage_notes') }}</label>
+            <textarea
+              rows="3"
+              class="ipd-input"
+              [ngModel]="form().notes"
+              (ngModelChange)="updateForm('notes', $event)"
+              [placeholder]="t()('interview.notes_placeholder')"
+            ></textarea>
+          </div>
+        </div>
+        <footer class="ip-modal__foot">
+          <button type="button" class="ip-btn" (click)="closeModal()">
+            {{ t()('actions.cancel') }}
+          </button>
           <button
             type="button"
-            appButton
-            variant="primary"
-            size="sm"
-            [disabled]="addBusy() || !addForm().stageLabel.trim()"
-            (click)="addStage()"
+            class="ip-btn ip-btn--primary"
+            [disabled]="saving()"
+            (click)="saveModal()"
           >
-            {{ t()('interview.add_stage') }}
+            {{ t()(modalMode() === 'add' ? 'interview.add_stage' : 'interview.save') }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- delete confirm -->
+  @if (confirmStage(); as stage) {
+    <div class="ip-modal ip-modal--center" (click)="cancelDelete()">
+      <div class="ip-modal__confirm" (click)="$event.stopPropagation()">
+        <div class="ip-modal__confirm-row">
+          <div class="ip-modal__confirm-icon"><lucide-icon [img]="icons.delete" [size]="20" /></div>
+          <div>
+            <div class="ip-modal__confirm-title">{{ t()('interview.confirm_delete_title') }}</div>
+            <p class="ip-modal__confirm-body">{{ t()('interview.confirm_delete_body') }}</p>
+          </div>
+        </div>
+        <div class="ip-modal__confirm-actions">
+          <button type="button" class="ip-btn" (click)="cancelDelete()">
+            {{ t()('actions.cancel') }}
+          </button>
+          <button type="button" class="ip-btn ip-btn--danger" (click)="confirmDelete()">
+            {{ t()('interview.delete') }}
           </button>
         </div>
       </div>

@@ -33,7 +33,7 @@ pub struct FetchedJob {
     pub jd_text: String,
 }
 
-fn extract_host(raw: &str) -> Option<String> {
+pub(crate) fn extract_host(raw: &str) -> Option<String> {
     let trimmed = raw.trim();
     let without_scheme = trimmed.split("://").nth(1).unwrap_or(trimmed);
     let host_and_rest = without_scheme
@@ -108,7 +108,7 @@ fn classify_job_url_core(url: &str) -> UrlClassification {
 
 /// Strip HTML tags to plain text (no external crate — the ATS payloads are
 /// small, well-formed job descriptions, not arbitrary web pages).
-fn strip_html(input: &str) -> String {
+pub(crate) fn strip_html(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     let mut in_tag = false;
     let mut tag_buf = String::new();
@@ -168,7 +168,7 @@ fn strip_html(input: &str) -> String {
     cleaned.join("\n").trim().to_string()
 }
 
-fn path_segments(url: &str) -> Vec<String> {
+pub(crate) fn path_segments(url: &str) -> Vec<String> {
     let without_scheme = url.split("://").nth(1).unwrap_or(url);
     let without_query = without_scheme
         .split(['?', '#'])
@@ -184,7 +184,7 @@ fn path_segments(url: &str) -> Vec<String> {
         .collect()
 }
 
-fn titleize_slug(slug: &str) -> String {
+pub(crate) fn titleize_slug(slug: &str) -> String {
     slug.split(['-', '_'])
         .filter(|s| !s.is_empty())
         .map(|w| {
@@ -431,7 +431,7 @@ async fn fetch_personio(url: &str) -> Result<FetchedJob, String> {
     })
 }
 
-fn xml_tag(block: &str, tag: &str) -> Option<String> {
+pub(crate) fn xml_tag(block: &str, tag: &str) -> Option<String> {
     let open = format!("<{tag}>");
     let close = format!("</{tag}>");
     let start = block.find(&open)? + open.len();

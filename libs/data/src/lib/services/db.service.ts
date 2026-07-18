@@ -34,6 +34,7 @@ import {
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
 import { HealthReport } from '@applye/core';
+import { DiscoverFeedItem, DiscoverSource, ScanSummary } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /** Typed wrappers over the Rust db_* commands. The frontend stays SQL-free. */
@@ -204,6 +205,30 @@ export class DbService {
    *  screen; all aggregation happens client-side via `computeAnalytics`. */
   async getAnalyticsFacts(): Promise<AnalyticsFacts> {
     return tauriInvoke<AnalyticsFacts>('db_analytics_facts');
+  }
+
+  // --- Discover (scan engine, ROADMAP §11) ---
+
+  /** Scan every enabled source: fetch, title/geo filter, dedupe. 0 tokens. */
+  async discoverScan(): Promise<ScanSummary> {
+    return tauriInvoke<ScanSummary>('discover_scan');
+  }
+
+  /** Non-dismissed scanned jobs, newest first. Marks unseen items as shown. */
+  async discoverFeed(): Promise<DiscoverFeedItem[]> {
+    return tauriInvoke<DiscoverFeedItem[]>('db_discover_feed');
+  }
+
+  async discoverDismiss(jobId: number): Promise<void> {
+    return tauriInvoke<void>('db_discover_dismiss', { jobId });
+  }
+
+  async listSources(): Promise<DiscoverSource[]> {
+    return tauriInvoke<DiscoverSource[]>('db_list_sources');
+  }
+
+  async setSourceEnabled(sourceId: number, enabled: boolean): Promise<void> {
+    return tauriInvoke<void>('db_set_source_enabled', { sourceId, enabled });
   }
 
   async upsertApplication(

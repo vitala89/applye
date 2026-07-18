@@ -15,6 +15,8 @@ export interface AnalyticsApplication {
   reachedInterview: boolean;
   reachedOffer: boolean;
   archived: boolean;
+  /** Latest ATS-fit score 0..100, or null when the job was never scored. */
+  score: number | null;
 }
 
 export interface AnalyticsFollowup {
@@ -72,6 +74,43 @@ export interface AnalyticsTrend {
   tickDates: string[];
 }
 
+export interface AnalyticsScoreBucket {
+  /** Inclusive score range this bar covers. */
+  lo: number;
+  hi: number;
+  count: number;
+  /** Bar width 0..100 relative to the tallest bucket. */
+  widthPct: number;
+}
+
+export interface AnalyticsScoreDist {
+  /** Applied-in-window applications that carry a score. */
+  scored: number;
+  /** Applied-in-window applications with no score (scoring is opt-in). */
+  unscored: number;
+  buckets: AnalyticsScoreBucket[];
+  /** Median score across the scored applications, or null when none. */
+  median: number | null;
+  /** Too few scored applications for the shape to mean anything. */
+  lowData: boolean;
+}
+
+export interface AnalyticsOutcomeStat {
+  key: 'offer' | 'interview' | 'noInterview';
+  /** Scored applications that landed in this outcome. */
+  count: number;
+  /** Mean score of those applications, rounded, or null when none. */
+  avgScore: number | null;
+  /** Bar width 0..100 (= avgScore), 0 when null. */
+  widthPct: number;
+}
+
+export interface AnalyticsScoreOutcome {
+  groups: AnalyticsOutcomeStat[];
+  /** True when too few scored applications to read the comparison. */
+  lowData: boolean;
+}
+
 export interface AnalyticsView {
   state: AnalyticsState;
   /** Applications sent in the active window — drives the caption count. */
@@ -90,10 +129,86 @@ export interface AnalyticsView {
     cancelled: number;
   };
   trend: AnalyticsTrend;
+  scoreDist: AnalyticsScoreDist;
+  scoreOutcome: AnalyticsScoreOutcome;
 }
 
 /** A window has too few applications for rates to be honest below this. */
 export const LOW_DATA_APPLIED_MIN = 5;
+
+/** Below this many scored applications, the score histogram is just noise. */
+export const LOW_DATA_SCORED_MIN = 5;
+
+/** Fixed 0..100 score bands (width 20) for the distribution histogram. */
+const SCORE_BANDS: Array<[number, number]> = [
+  [0, 19],
+  [20, 39],
+  [40, 59],
+  [60, 79],
+  [80, 100],
+];
+
+function median(vals: number[]): number | null {
+  if (vals.length === 0) return null;
+  const sorted = [...vals].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid];
+}
+
+/** Bucket the scores of applications applied in the window into fixed bands. */
+function scoreDistribution(apps: AnalyticsApplication[], from: string | null): AnalyticsScoreDist {
+  let unscored = 0;
+  const scores: number[] = [];
+  for (const a of apps) {
+    if (!inRange(toDay(a.appliedAt), from, null)) continue;
+    if (a.score === null || a.score === undefined) unscored += 1;
+    else scores.push(a.score);
+  }
+  const counts = SCORE_BANDS.map(([lo, hi]) => scores.filter((s) => s >= lo && s <= hi).length);
+  const maxCount = Math.max(1, ...counts);
+  const buckets: AnalyticsScoreBucket[] = SCORE_BANDS.map(([lo, hi], i) => ({
+    lo,
+    hi,
+    count: counts[i],
+    widthPct: counts[i] > 0 ? Math.max(Math.round((counts[i] / maxCount) * 100), 4) : 0,
+  }));
+  return {
+    scored: scores.length,
+    unscored,
+    buckets,
+    median: median(scores),
+    lowData: scores.length < LOW_DATA_SCORED_MIN,
+  };
+}
+
+/** Average score per outcome — the "does fit predict success?" comparison.
+ *  Groups are mutually exclusive over scored, applied-in-window applications:
+ *  reached an offer, reached an interview (no offer yet), or never advanced. */
+function scoreOutcome(apps: AnalyticsApplication[], from: string | null): AnalyticsScoreOutcome {
+  const groups: Record<'offer' | 'interview' | 'noInterview', number[]> = {
+    offer: [],
+    interview: [],
+    noInterview: [],
+  };
+  for (const a of apps) {
+    if (!inRange(toDay(a.appliedAt), from, null)) continue;
+    if (a.score === null || a.score === undefined) continue;
+    if (a.reachedOffer) groups.offer.push(a.score);
+    else if (a.reachedInterview) groups.interview.push(a.score);
+    else groups.noInterview.push(a.score);
+  }
+  const total = groups.offer.length + groups.interview.length + groups.noInterview.length;
+  const mean = (vals: number[]): number | null =>
+    vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+  const order: Array<'offer' | 'interview' | 'noInterview'> = ['offer', 'interview', 'noInterview'];
+  return {
+    groups: order.map((key) => {
+      const avg = mean(groups[key]);
+      return { key, count: groups[key].length, avgScore: avg, widthPct: avg ?? 0 };
+    }),
+    lowData: total < LOW_DATA_SCORED_MIN,
+  };
+}
 
 const DAY_MS = 86_400_000;
 
@@ -407,5 +522,7 @@ export function computeAnalytics(
       hasFollowups,
       tickDates: pickTicks(starts),
     },
+    scoreDist: scoreDistribution(apps, from),
+    scoreOutcome: scoreOutcome(apps, from),
   };
 }

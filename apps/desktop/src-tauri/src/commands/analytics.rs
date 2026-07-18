@@ -35,6 +35,9 @@ pub struct AnalyticsApplication {
     /// Archived applications are hidden from the active Tracker but still
     /// happened — analytics counts them.
     pub archived: bool,
+    /// Latest ATS-fit score (0..100) for this application's job, or NULL when
+    /// the job was never scored (scoring is opt-in AI).
+    pub score: Option<f64>,
 }
 
 /// A follow-up draft timestamp. NOTE: Applye never sends mail (it hands off to
@@ -83,8 +86,13 @@ async fn db_analytics_facts_core(pool: &sqlx::SqlitePool) -> Result<AnalyticsFac
              OR EXISTS (SELECT 1 FROM status_history sh
                           WHERE sh.application_id = a.id AND sh.status = 'offer')
            ) AS reached_offer,
-           a.archived
+           a.archived,
+           sc.score AS score
          FROM applications a
+         LEFT JOIN (
+           SELECT job_id, MAX(id) AS max_id FROM scoring_cache GROUP BY job_id
+         ) latest ON latest.job_id = a.job_id
+         LEFT JOIN scoring_cache sc ON sc.id = latest.max_id
          ORDER BY a.applied_at ASC",
     )
     .fetch_all(pool)
@@ -226,6 +234,32 @@ mod tests {
         );
         assert!(!a.reached_interview);
         assert!(!a.reached_offer);
+    }
+
+    #[tokio::test]
+    async fn score_is_the_latest_for_the_job_or_null() {
+        let pool = test_pool().await;
+        // App with no scoring row -> NULL score.
+        insert_app(&pool, "applied", Some("2026-06-01")).await;
+        // App whose job has two scores -> the latest (highest id) wins.
+        let job_id = insert_job(&pool, "scored").await;
+        sqlx::query("INSERT INTO applications (job_id, status, applied_at) VALUES (?, 'applied', '2026-06-02')")
+            .bind(job_id)
+            .execute(&pool)
+            .await
+            .expect("insert app");
+        for s in [61.0_f64, 82.0_f64] {
+            sqlx::query("INSERT INTO scoring_cache (job_id, profile_hash, score) VALUES (?, ?, ?)")
+                .bind(job_id)
+                .bind(format!("ph-{s}"))
+                .bind(s)
+                .execute(&pool)
+                .await
+                .expect("insert score");
+        }
+        let facts = db_analytics_facts_core(&pool).await.expect("facts");
+        let scored: Vec<_> = facts.applications.iter().filter_map(|a| a.score).collect();
+        assert_eq!(scored, vec![82.0], "only the scored job, latest score");
     }
 
     #[tokio::test]

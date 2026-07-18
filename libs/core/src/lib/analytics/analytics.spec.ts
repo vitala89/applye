@@ -15,6 +15,7 @@ function app(partial: Partial<AnalyticsApplication>): AnalyticsApplication {
     reachedInterview: false,
     reachedOffer: false,
     archived: false,
+    score: null,
     ...partial,
   };
 }
@@ -142,6 +143,65 @@ describe('computeAnalytics', () => {
     const v = computeAnalytics(facts(apps, ['2026-07-02', '2026-07-02', '2026-07-10']), '30d', NOW);
     expect(v.trend.hasFollowups).toBe(true);
     expect(v.trend.followups.reduce((a, b) => a + b, 0)).toBe(3);
+  });
+
+  it('buckets scores into fixed bands and counts unscored separately', () => {
+    const apps = [
+      ...applied(3, { score: 85 }), // band 80-100
+      ...applied(2, { score: 72 }), // band 60-79
+      ...applied(2), // unscored (score null)
+    ];
+    const v = computeAnalytics(facts(apps), '30d', NOW);
+    const d = v.scoreDist;
+    expect(d.scored).toBe(5);
+    expect(d.unscored).toBe(2);
+    expect(d.buckets[4].count).toBe(3); // 80-100
+    expect(d.buckets[3].count).toBe(2); // 60-79
+    expect(d.buckets[0].count).toBe(0); // 0-19
+    expect(d.median).toBe(85); // [72,72,85,85,85] -> middle is 85
+  });
+
+  it('flags the score histogram as low-data below the scored minimum', () => {
+    const v = computeAnalytics(facts(applied(6, { score: 80 })), '30d', NOW);
+    // 6 applied but... only mark few scored:
+    const few = computeAnalytics(facts([...applied(6), ...applied(3, { score: 80 })]), '30d', NOW);
+    expect(v.scoreDist.lowData).toBe(false);
+    expect(few.scoreDist.scored).toBe(3);
+    expect(few.scoreDist.lowData).toBe(true);
+  });
+
+  it('averages score by outcome (offer / interview / no-interview)', () => {
+    const apps = [
+      app({
+        appliedAt: '2026-07-02',
+        score: 90,
+        reachedInterview: true,
+        reachedOffer: true,
+        status: 'offer',
+      }),
+      app({ appliedAt: '2026-07-03', score: 80, reachedInterview: true }),
+      app({ appliedAt: '2026-07-04', score: 70, reachedInterview: true }),
+      app({ appliedAt: '2026-07-05', score: 50 }),
+      app({ appliedAt: '2026-07-06', score: 40 }),
+    ];
+    const o = computeAnalytics(facts(apps), '30d', NOW).scoreOutcome;
+    const g = Object.fromEntries(o.groups.map((x) => [x.key, x]));
+    expect(g['offer'].avgScore).toBe(90);
+    expect(g['interview'].count).toBe(2);
+    expect(g['interview'].avgScore).toBe(75); // (80+70)/2
+    expect(g['noInterview'].avgScore).toBe(45); // (50+40)/2
+    expect(g['offer'].widthPct).toBe(90);
+  });
+
+  it('gives a null avg and zero width to an empty outcome group', () => {
+    const apps = applied(5, { score: 60 }); // all no-interview
+    const o = computeAnalytics(facts(apps), '30d', NOW).scoreOutcome;
+    const g = Object.fromEntries(o.groups.map((x) => [x.key, x]));
+    expect(g['offer'].count).toBe(0);
+    expect(g['offer'].avgScore).toBeNull();
+    expect(g['offer'].widthPct).toBe(0);
+    expect(g['noInterview'].avgScore).toBe(60);
+    expect(o.lowData).toBe(false); // 5 scored total
   });
 
   it('never lets the trend yMax fall below 1', () => {

@@ -247,5 +247,72 @@
         </div>
       </section>
     }
+
+    <!-- ============ MATCH-SCORE DISTRIBUTION ============ -->
+    @if (scoreDist(); as sd) {
+      <section class="ana-card">
+        <header class="ana-card__head">
+          <div class="ana-card__titles">
+            <span class="ana-card__eyebrow">{{ t()('analytics.score_title') }}</span>
+            <span class="ana-card__sub">{{ sd.coverage }}</span>
+          </div>
+          @if (sd.median !== null) {
+            <span class="ana-card__flow">{{ t()('analytics.score_median') }} {{ sd.median }}%</span>
+          }
+        </header>
+        <div class="ana-funnel">
+          @for (b of sd.buckets; track b.label) {
+            <div class="ana-stage">
+              <div class="ana-stage__name">{{ b.label }}</div>
+              <div class="ana-stage__bar">
+                <div
+                  class="ana-stage__fill"
+                  [style.width]="b.widthPct"
+                  style="background: var(--graphite-500)"
+                ></div>
+                <span class="ana-stage__count">{{ b.count }}</span>
+              </div>
+              <div class="ana-stage__conv"></div>
+            </div>
+          }
+          @if (sd.lowData) {
+            <p class="ana-note">{{ t()('analytics.score_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ============ SCORE VS OUTCOME ============ -->
+    @if (scoreOutcome(); as so) {
+      <section class="ana-card">
+        <header class="ana-card__head">
+          <div class="ana-card__titles">
+            <span class="ana-card__eyebrow">{{ t()('analytics.outcome_title') }}</span>
+            <span class="ana-card__sub">{{ t()('analytics.outcome_sub') }}</span>
+          </div>
+        </header>
+        <div class="ana-funnel">
+          @for (g of so.groups; track g.label) {
+            <div class="ana-stage">
+              <div class="ana-stage__name">{{ g.label }}</div>
+              <div class="ana-stage__bar">
+                <div
+                  class="ana-stage__fill"
+                  [style.width]="g.widthPct"
+                  [style.background]="g.accent ? 'var(--accent)' : 'var(--graphite-500)'"
+                ></div>
+                <span class="ana-stage__count">{{ g.avgText }}</span>
+              </div>
+              <div class="ana-stage__conv">
+                <div class="ana-stage__of">{{ g.count }} {{ t()('analytics.outcome_apps') }}</div>
+              </div>
+            </div>
+          }
+          @if (so.lowData) {
+            <p class="ana-note">{{ t()('analytics.outcome_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
   }
 </div>

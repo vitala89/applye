@@ -301,9 +301,20 @@ mod tests {
         // An application with no response transition at all.
         insert_app(&pool, "applied", Some("2026-06-05")).await;
         let facts = db_analytics_facts_core(&pool).await.expect("facts");
-        let with = facts.applications.iter().find(|a| a.first_response_at.is_some()).unwrap();
-        assert_eq!(with.first_response_at.as_deref(), Some("2026-06-12"), "earliest response wins");
-        assert!(facts.applications.iter().any(|a| a.first_response_at.is_none()));
+        let with = facts
+            .applications
+            .iter()
+            .find(|a| a.first_response_at.is_some())
+            .unwrap();
+        assert_eq!(
+            with.first_response_at.as_deref(),
+            Some("2026-06-12"),
+            "earliest response wins"
+        );
+        assert!(facts
+            .applications
+            .iter()
+            .any(|a| a.first_response_at.is_none()));
     }
 
     #[tokio::test]
@@ -331,7 +342,11 @@ mod tests {
         let facts = db_analytics_facts_core(&pool).await.expect("facts");
         let a = &facts.applications[0];
         assert_eq!(a.location.as_deref(), Some("Berlin"));
-        assert_eq!(a.status_changed_at.as_deref(), Some("2026-06-15"), "latest transition");
+        assert_eq!(
+            a.status_changed_at.as_deref(),
+            Some("2026-06-15"),
+            "latest transition"
+        );
     }
 
     #[tokio::test]

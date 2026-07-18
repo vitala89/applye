@@ -17,6 +17,8 @@ export interface AnalyticsApplication {
   archived: boolean;
   /** Latest ATS-fit score 0..100, or null when the job was never scored. */
   score: number | null;
+  /** Earliest employer response (interview/offer transition), or null. */
+  firstResponseAt: string | null;
 }
 
 export interface AnalyticsFollowup {
@@ -111,6 +113,27 @@ export interface AnalyticsScoreOutcome {
   lowData: boolean;
 }
 
+export interface AnalyticsResponseBucket {
+  /** Day range this bar covers (`hi` null = open-ended, e.g. 30+). */
+  lo: number;
+  hi: number | null;
+  count: number;
+  widthPct: number;
+}
+
+export interface AnalyticsTimeToResponse {
+  /** Applications with a measurable applied -> first-response gap. */
+  count: number;
+  /** Median days to first response, or null when none. */
+  medianDays: number | null;
+  /** Fastest / slowest response in days, or null. */
+  fastestDays: number | null;
+  slowestDays: number | null;
+  buckets: AnalyticsResponseBucket[];
+  /** Too few responses to read a distribution. */
+  lowData: boolean;
+}
+
 export interface AnalyticsView {
   state: AnalyticsState;
   /** Applications sent in the active window — drives the caption count. */
@@ -131,6 +154,7 @@ export interface AnalyticsView {
   trend: AnalyticsTrend;
   scoreDist: AnalyticsScoreDist;
   scoreOutcome: AnalyticsScoreOutcome;
+  timeToResponse: AnalyticsTimeToResponse;
 }
 
 /** A window has too few applications for rates to be honest below this. */
@@ -138,6 +162,17 @@ export const LOW_DATA_APPLIED_MIN = 5;
 
 /** Below this many scored applications, the score histogram is just noise. */
 export const LOW_DATA_SCORED_MIN = 5;
+
+/** Below this many measured responses, the time-to-response shape is noise. */
+export const LOW_DATA_RESPONSE_MIN = 3;
+
+/** Day bands for the time-to-response histogram (hi=null is open-ended). */
+const RESPONSE_BANDS: Array<[number, number | null]> = [
+  [0, 7],
+  [8, 14],
+  [15, 30],
+  [31, null],
+];
 
 /** Fixed 0..100 score bands (width 20) for the distribution histogram. */
 const SCORE_BANDS: Array<[number, number]> = [
@@ -207,6 +242,43 @@ function scoreOutcome(apps: AnalyticsApplication[], from: string | null): Analyt
       return { key, count: groups[key].length, avgScore: avg, widthPct: avg ?? 0 };
     }),
     lowData: total < LOW_DATA_SCORED_MIN,
+  };
+}
+
+/** Whole-day gap between two timestamps, compared by their date prefix. */
+function daysBetween(from: string, to: string): number {
+  const a = Date.parse(`${from.slice(0, 10)}T00:00:00Z`);
+  const b = Date.parse(`${to.slice(0, 10)}T00:00:00Z`);
+  return Math.round((b - a) / DAY_MS);
+}
+
+/** Days from applied to first employer response, as a median + histogram. */
+function timeToResponse(apps: AnalyticsApplication[], from: string | null): AnalyticsTimeToResponse {
+  const days: number[] = [];
+  for (const a of apps) {
+    const applied = toDay(a.appliedAt);
+    if (!applied || !inRange(applied, from, null)) continue;
+    if (!a.firstResponseAt) continue;
+    const d = daysBetween(applied, a.firstResponseAt);
+    if (d >= 0) days.push(d);
+  }
+  const counts = RESPONSE_BANDS.map(
+    ([lo, hi]) => days.filter((d) => d >= lo && (hi === null || d <= hi)).length,
+  );
+  const maxCount = Math.max(1, ...counts);
+  const buckets: AnalyticsResponseBucket[] = RESPONSE_BANDS.map(([lo, hi], i) => ({
+    lo,
+    hi,
+    count: counts[i],
+    widthPct: counts[i] > 0 ? Math.max(Math.round((counts[i] / maxCount) * 100), 4) : 0,
+  }));
+  return {
+    count: days.length,
+    medianDays: median(days),
+    fastestDays: days.length ? Math.min(...days) : null,
+    slowestDays: days.length ? Math.max(...days) : null,
+    buckets,
+    lowData: days.length < LOW_DATA_RESPONSE_MIN,
   };
 }
 
@@ -524,5 +596,6 @@ export function computeAnalytics(
     },
     scoreDist: scoreDistribution(apps, from),
     scoreOutcome: scoreOutcome(apps, from),
+    timeToResponse: timeToResponse(apps, from),
   };
 }

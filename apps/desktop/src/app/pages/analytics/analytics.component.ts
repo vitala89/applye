@@ -204,6 +204,25 @@ export class AnalyticsComponent implements OnInit {
     };
   });
 
+  protected readonly timeToResponse = computed(() => {
+    const v = this.view();
+    if (!v) return null;
+    const r = v.timeToResponse;
+    if (r.count === 0) return null; // no measured responses — hide the card
+    const days = this.t()('analytics.ttr_days');
+    const d = this.t()('analytics.ttr_d');
+    return {
+      lowData: r.lowData,
+      medianDays: r.medianDays,
+      summary: `${this.t()('analytics.ttr_fastest')} ${r.fastestDays}${d} · ${this.t()('analytics.ttr_slowest')} ${r.slowestDays}${d}`,
+      buckets: r.buckets.map((b) => ({
+        label: b.hi === null ? `${b.lo}+ ${days}` : `${b.lo}-${b.hi} ${days}`,
+        count: b.count,
+        widthPct: `${b.widthPct}%`,
+      })),
+    };
+  });
+
   async ngOnInit(): Promise<void> {
     await this.load();
   }

@@ -116,6 +116,13 @@ const en: TranslationMap = {
     score_median: 'Median',
     score_lowdata:
       'Not enough scored applications yet for a clear shape. Score more jobs to see your fit distribution.',
+    outcome_title: 'Score vs outcome',
+    outcome_sub: 'Average match score at each outcome - does fit predict progress?',
+    outcome_offer: 'OFFER',
+    outcome_interview: 'INTERVIEW',
+    outcome_none: 'NO INTERVIEW',
+    outcome_apps: 'apps',
+    outcome_lowdata: 'Too few scored applications to compare outcomes yet.',
   },
   tracker: {
     title: 'Job Tracker',
@@ -1355,6 +1362,14 @@ const de: TranslationMap = {
     score_median: 'Median',
     score_lowdata:
       'Noch nicht genug bewertete Bewerbungen für ein klares Bild. Bewerte mehr Jobs, um deine Passungsverteilung zu sehen.',
+    outcome_title: 'Score vs. Ergebnis',
+    outcome_sub:
+      'Durchschnittlicher Match-Score je Ergebnis - sagt die Passung den Fortschritt voraus?',
+    outcome_offer: 'ANGEBOT',
+    outcome_interview: 'INTERVIEW',
+    outcome_none: 'KEIN INTERVIEW',
+    outcome_apps: 'Bew.',
+    outcome_lowdata: 'Noch zu wenige bewertete Bewerbungen für einen Ergebnisvergleich.',
   },
   tracker: {
     title: 'Bewerbungs-Tracker',

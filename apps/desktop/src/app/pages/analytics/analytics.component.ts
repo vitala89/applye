@@ -181,6 +181,29 @@ export class AnalyticsComponent implements OnInit {
     };
   });
 
+  protected readonly scoreOutcome = computed(() => {
+    const v = this.view();
+    if (!v) return null;
+    const o = v.scoreOutcome;
+    const total = o.groups.reduce((s, g) => s + g.count, 0);
+    if (total === 0) return null; // no scored jobs — hide (same as the distribution card)
+    const label: Record<string, string> = {
+      offer: this.t()('analytics.outcome_offer'),
+      interview: this.t()('analytics.outcome_interview'),
+      noInterview: this.t()('analytics.outcome_none'),
+    };
+    return {
+      lowData: o.lowData,
+      groups: o.groups.map((g) => ({
+        label: label[g.key],
+        count: g.count,
+        avgText: g.avgScore === null ? '—' : `${g.avgScore}%`,
+        widthPct: `${g.widthPct}%`,
+        accent: g.key === 'offer',
+      })),
+    };
+  });
+
   async ngOnInit(): Promise<void> {
     await this.load();
   }

@@ -170,6 +170,40 @@ describe('computeAnalytics', () => {
     expect(few.scoreDist.lowData).toBe(true);
   });
 
+  it('averages score by outcome (offer / interview / no-interview)', () => {
+    const apps = [
+      app({
+        appliedAt: '2026-07-02',
+        score: 90,
+        reachedInterview: true,
+        reachedOffer: true,
+        status: 'offer',
+      }),
+      app({ appliedAt: '2026-07-03', score: 80, reachedInterview: true }),
+      app({ appliedAt: '2026-07-04', score: 70, reachedInterview: true }),
+      app({ appliedAt: '2026-07-05', score: 50 }),
+      app({ appliedAt: '2026-07-06', score: 40 }),
+    ];
+    const o = computeAnalytics(facts(apps), '30d', NOW).scoreOutcome;
+    const g = Object.fromEntries(o.groups.map((x) => [x.key, x]));
+    expect(g['offer'].avgScore).toBe(90);
+    expect(g['interview'].count).toBe(2);
+    expect(g['interview'].avgScore).toBe(75); // (80+70)/2
+    expect(g['noInterview'].avgScore).toBe(45); // (50+40)/2
+    expect(g['offer'].widthPct).toBe(90);
+  });
+
+  it('gives a null avg and zero width to an empty outcome group', () => {
+    const apps = applied(5, { score: 60 }); // all no-interview
+    const o = computeAnalytics(facts(apps), '30d', NOW).scoreOutcome;
+    const g = Object.fromEntries(o.groups.map((x) => [x.key, x]));
+    expect(g['offer'].count).toBe(0);
+    expect(g['offer'].avgScore).toBeNull();
+    expect(g['offer'].widthPct).toBe(0);
+    expect(g['noInterview'].avgScore).toBe(60);
+    expect(o.lowData).toBe(false); // 5 scored total
+  });
+
   it('never lets the trend yMax fall below 1', () => {
     const v = computeAnalytics(
       facts([app({ appliedAt: null, savedAt: '2026-07-01', status: 'saved' })]),

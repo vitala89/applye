@@ -95,6 +95,22 @@ export interface AnalyticsScoreDist {
   lowData: boolean;
 }
 
+export interface AnalyticsOutcomeStat {
+  key: 'offer' | 'interview' | 'noInterview';
+  /** Scored applications that landed in this outcome. */
+  count: number;
+  /** Mean score of those applications, rounded, or null when none. */
+  avgScore: number | null;
+  /** Bar width 0..100 (= avgScore), 0 when null. */
+  widthPct: number;
+}
+
+export interface AnalyticsScoreOutcome {
+  groups: AnalyticsOutcomeStat[];
+  /** True when too few scored applications to read the comparison. */
+  lowData: boolean;
+}
+
 export interface AnalyticsView {
   state: AnalyticsState;
   /** Applications sent in the active window — drives the caption count. */
@@ -114,6 +130,7 @@ export interface AnalyticsView {
   };
   trend: AnalyticsTrend;
   scoreDist: AnalyticsScoreDist;
+  scoreOutcome: AnalyticsScoreOutcome;
 }
 
 /** A window has too few applications for rates to be honest below this. */
@@ -161,6 +178,35 @@ function scoreDistribution(apps: AnalyticsApplication[], from: string | null): A
     buckets,
     median: median(scores),
     lowData: scores.length < LOW_DATA_SCORED_MIN,
+  };
+}
+
+/** Average score per outcome — the "does fit predict success?" comparison.
+ *  Groups are mutually exclusive over scored, applied-in-window applications:
+ *  reached an offer, reached an interview (no offer yet), or never advanced. */
+function scoreOutcome(apps: AnalyticsApplication[], from: string | null): AnalyticsScoreOutcome {
+  const groups: Record<'offer' | 'interview' | 'noInterview', number[]> = {
+    offer: [],
+    interview: [],
+    noInterview: [],
+  };
+  for (const a of apps) {
+    if (!inRange(toDay(a.appliedAt), from, null)) continue;
+    if (a.score === null || a.score === undefined) continue;
+    if (a.reachedOffer) groups.offer.push(a.score);
+    else if (a.reachedInterview) groups.interview.push(a.score);
+    else groups.noInterview.push(a.score);
+  }
+  const total = groups.offer.length + groups.interview.length + groups.noInterview.length;
+  const mean = (vals: number[]): number | null =>
+    vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+  const order: Array<'offer' | 'interview' | 'noInterview'> = ['offer', 'interview', 'noInterview'];
+  return {
+    groups: order.map((key) => {
+      const avg = mean(groups[key]);
+      return { key, count: groups[key].length, avgScore: avg, widthPct: avg ?? 0 };
+    }),
+    lowData: total < LOW_DATA_SCORED_MIN,
   };
 }
 
@@ -477,5 +523,6 @@ export function computeAnalytics(
       tickDates: pickTicks(starts),
     },
     scoreDist: scoreDistribution(apps, from),
+    scoreOutcome: scoreOutcome(apps, from),
   };
 }

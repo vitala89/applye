@@ -281,5 +281,38 @@
         </div>
       </section>
     }
+
+    <!-- ============ SCORE VS OUTCOME ============ -->
+    @if (scoreOutcome(); as so) {
+      <section class="ana-card">
+        <header class="ana-card__head">
+          <div class="ana-card__titles">
+            <span class="ana-card__eyebrow">{{ t()('analytics.outcome_title') }}</span>
+            <span class="ana-card__sub">{{ t()('analytics.outcome_sub') }}</span>
+          </div>
+        </header>
+        <div class="ana-funnel">
+          @for (g of so.groups; track g.label) {
+            <div class="ana-stage">
+              <div class="ana-stage__name">{{ g.label }}</div>
+              <div class="ana-stage__bar">
+                <div
+                  class="ana-stage__fill"
+                  [style.width]="g.widthPct"
+                  [style.background]="g.accent ? 'var(--accent)' : 'var(--graphite-500)'"
+                ></div>
+                <span class="ana-stage__count">{{ g.avgText }}</span>
+              </div>
+              <div class="ana-stage__conv">
+                <div class="ana-stage__of">{{ g.count }} {{ t()('analytics.outcome_apps') }}</div>
+              </div>
+            </div>
+          }
+          @if (so.lowData) {
+            <p class="ana-note">{{ t()('analytics.outcome_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
   }
 </div>

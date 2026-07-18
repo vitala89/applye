@@ -268,7 +268,7 @@
                 <div
                   class="ana-stage__fill"
                   [style.width]="b.widthPct"
-                  style="background: var(--graphite-500)"
+                  style="background: var(--ana-neutral-fill)"
                 ></div>
                 <span class="ana-stage__count">{{ b.count }}</span>
               </div>
@@ -299,7 +299,7 @@
                 <div
                   class="ana-stage__fill"
                   [style.width]="g.widthPct"
-                  [style.background]="g.accent ? 'var(--accent)' : 'var(--graphite-500)'"
+                  [style.background]="g.accent ? 'var(--accent)' : 'var(--ana-neutral-fill)'"
                 ></div>
                 <span class="ana-stage__count">{{ g.avgText }}</span>
               </div>
@@ -324,7 +324,10 @@
             <span class="ana-card__sub">{{ ttr.summary }}</span>
           </div>
           @if (ttr.medianDays !== null) {
-            <span class="ana-card__flow">{{ t()('analytics.ttr_median') }} {{ ttr.medianDays }} {{ t()('analytics.ttr_days') }}</span>
+            <span class="ana-card__flow"
+              >{{ t()('analytics.ttr_median') }} {{ ttr.medianDays }}
+              {{ t()('analytics.ttr_days') }}</span
+            >
           }
         </header>
         <div class="ana-funnel">
@@ -335,7 +338,7 @@
                 <div
                   class="ana-stage__fill"
                   [style.width]="b.widthPct"
-                  style="background: var(--graphite-500)"
+                  style="background: var(--ana-neutral-fill)"
                 ></div>
                 <span class="ana-stage__count">{{ b.count }}</span>
               </div>
@@ -358,12 +361,17 @@
             <span class="ana-card__sub">
               {{ ag.activeCount }} {{ t()('analytics.aging_active') }}
               @if (ag.staleCount > 0) {
-                <span class="ana-warn"> · {{ ag.staleCount }} {{ t()('analytics.aging_stale') }}</span>
+                <span class="ana-warn">
+                  · {{ ag.staleCount }} {{ t()('analytics.aging_stale') }}</span
+                >
               }
             </span>
           </div>
           @if (ag.medianDays !== null) {
-            <span class="ana-card__flow">{{ t()('analytics.ttr_median') }} {{ ag.medianDays }} {{ t()('analytics.ttr_days') }}</span>
+            <span class="ana-card__flow"
+              >{{ t()('analytics.ttr_median') }} {{ ag.medianDays }}
+              {{ t()('analytics.ttr_days') }}</span
+            >
           }
         </header>
         <div class="ana-funnel">
@@ -371,7 +379,11 @@
             <div class="ana-stage">
               <div class="ana-stage__name">{{ b.label }}</div>
               <div class="ana-stage__bar">
-                <div class="ana-stage__fill" [style.width]="b.widthPct" style="background: var(--graphite-500)"></div>
+                <div
+                  class="ana-stage__fill"
+                  [style.width]="b.widthPct"
+                  style="background: var(--ana-neutral-fill)"
+                ></div>
                 <span class="ana-stage__count">{{ b.count }}</span>
               </div>
               <div class="ana-stage__conv"></div>
@@ -401,7 +413,11 @@
             <div class="ana-stage">
               <div class="ana-stage__name ana-stage__name--wide" [title]="r.name">{{ r.name }}</div>
               <div class="ana-stage__bar">
-                <div class="ana-stage__fill" [style.width]="r.widthPct" style="background: var(--graphite-500)"></div>
+                <div
+                  class="ana-stage__fill"
+                  [style.width]="r.widthPct"
+                  style="background: var(--ana-neutral-fill)"
+                ></div>
                 <span class="ana-stage__count">{{ r.count }}</span>
               </div>
               <div class="ana-stage__conv"></div>

@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   CdkDrag,
   CdkDragDrop,
@@ -828,6 +829,8 @@ export class PipelineComponent implements OnInit {
   private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly t = this.i18n.t;
 
   readonly COLS = COLS;
@@ -880,6 +883,19 @@ export class PipelineComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.load();
+    this.openFromQueryParam();
+  }
+
+  /** Deep link from dashboard's "need attention" queue: `?openCard=<id>`
+   * opens that card's quick-view modal straight to the follow-up section
+   * (shown automatically there when the card is overdue). Param is stripped
+   * right after so back/refresh don't re-trigger it. */
+  private openFromQueryParam(): void {
+    const id = Number(this.route.snapshot.queryParamMap.get('openCard'));
+    if (!id) return;
+    const card = this.allCards().find((c) => c.id === id);
+    if (card) this.openQuickView(card);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
   async reload(): Promise<void> {

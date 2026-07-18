@@ -260,7 +260,7 @@ export class DashboardComponent {
         actionLabel: this.t()('dashboard.card_followup_action'),
         actionVariant: 'primary',
         actionIcon: this.icons.aFollowup,
-        run: () => this.go('/pipeline'),
+        run: () => this.go(`/pipeline?openCard=${c.id}`),
       });
     }
 

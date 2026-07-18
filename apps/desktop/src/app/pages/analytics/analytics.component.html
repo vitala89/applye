@@ -348,5 +348,73 @@
         </div>
       </section>
     }
+
+    <!-- ============ PIPELINE AGING ============ -->
+    @if (aging(); as ag) {
+      <section class="ana-card">
+        <header class="ana-card__head">
+          <div class="ana-card__titles">
+            <span class="ana-card__eyebrow">{{ t()('analytics.aging_title') }}</span>
+            <span class="ana-card__sub">
+              {{ ag.activeCount }} {{ t()('analytics.aging_active') }}
+              @if (ag.staleCount > 0) {
+                <span class="ana-warn"> · {{ ag.staleCount }} {{ t()('analytics.aging_stale') }}</span>
+              }
+            </span>
+          </div>
+          @if (ag.medianDays !== null) {
+            <span class="ana-card__flow">{{ t()('analytics.ttr_median') }} {{ ag.medianDays }} {{ t()('analytics.ttr_days') }}</span>
+          }
+        </header>
+        <div class="ana-funnel">
+          @for (b of ag.buckets; track b.label) {
+            <div class="ana-stage">
+              <div class="ana-stage__name">{{ b.label }}</div>
+              <div class="ana-stage__bar">
+                <div class="ana-stage__fill" [style.width]="b.widthPct" style="background: var(--graphite-500)"></div>
+                <span class="ana-stage__count">{{ b.count }}</span>
+              </div>
+              <div class="ana-stage__conv"></div>
+            </div>
+          }
+          @if (ag.staleCount > 0) {
+            <p class="ana-note">{{ ag.staleCount }} {{ t()('analytics.aging_stale_note') }}</p>
+          }
+          @if (ag.lowData) {
+            <p class="ana-note">{{ t()('analytics.aging_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ============ WHERE YOU'RE APPLYING ============ -->
+    @if (locations(); as loc) {
+      <section class="ana-card">
+        <header class="ana-card__head">
+          <div class="ana-card__titles">
+            <span class="ana-card__eyebrow">{{ t()('analytics.loc_title') }}</span>
+            <span class="ana-card__sub">{{ t()('analytics.loc_sub') }}</span>
+          </div>
+        </header>
+        <div class="ana-funnel">
+          @for (r of loc.rows; track r.name) {
+            <div class="ana-stage">
+              <div class="ana-stage__name ana-stage__name--wide" [title]="r.name">{{ r.name }}</div>
+              <div class="ana-stage__bar">
+                <div class="ana-stage__fill" [style.width]="r.widthPct" style="background: var(--graphite-500)"></div>
+                <span class="ana-stage__count">{{ r.count }}</span>
+              </div>
+              <div class="ana-stage__conv"></div>
+            </div>
+          }
+          @if (loc.unknown > 0) {
+            <p class="ana-note">{{ loc.unknown }} {{ t()('analytics.loc_unknown') }}</p>
+          }
+          @if (loc.lowData) {
+            <p class="ana-note">{{ t()('analytics.loc_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
   }
 </div>

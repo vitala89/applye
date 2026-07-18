@@ -223,6 +223,37 @@ export class AnalyticsComponent implements OnInit {
     };
   });
 
+  protected readonly aging = computed(() => {
+    const v = this.view();
+    if (!v) return null;
+    const a = v.aging;
+    if (a.activeCount === 0) return null; // no in-flight pipeline — hide
+    const days = this.t()('analytics.ttr_days');
+    return {
+      lowData: a.lowData,
+      medianDays: a.medianDays,
+      activeCount: a.activeCount,
+      staleCount: a.staleCount,
+      buckets: a.buckets.map((b) => ({
+        label: b.hi === null ? `${b.lo}+ ${days}` : `${b.lo}-${b.hi} ${days}`,
+        count: b.count,
+        widthPct: `${b.widthPct}%`,
+      })),
+    };
+  });
+
+  protected readonly locations = computed(() => {
+    const v = this.view();
+    if (!v) return null;
+    const l = v.locations;
+    if (l.total === 0) return null; // nothing located — hide
+    return {
+      lowData: l.lowData,
+      unknown: l.unknown,
+      rows: l.rows.map((r) => ({ name: r.name, count: r.count, widthPct: `${r.widthPct}%` })),
+    };
+  });
+
   async ngOnInit(): Promise<void> {
     await this.load();
   }

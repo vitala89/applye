@@ -19,6 +19,10 @@ export interface AnalyticsApplication {
   score: number | null;
   /** Earliest employer response (interview/offer transition), or null. */
   firstResponseAt: string | null;
+  /** Latest status transition timestamp (for pipeline aging), or null. */
+  statusChangedAt: string | null;
+  /** The job's location, or null. */
+  location: string | null;
 }
 
 export interface AnalyticsFollowup {
@@ -134,6 +138,42 @@ export interface AnalyticsTimeToResponse {
   lowData: boolean;
 }
 
+export interface AnalyticsBand {
+  lo: number;
+  hi: number | null;
+  count: number;
+  widthPct: number;
+}
+
+export interface AnalyticsAging {
+  /** Active (applied/interview, non-archived) applications in the window. */
+  activeCount: number;
+  /** Median days those applications have sat in their current status. */
+  medianDays: number | null;
+  /** Active applications older than `staleThreshold` days in status. */
+  staleCount: number;
+  staleThreshold: number;
+  /** Days-in-status histogram (0-7 / 8-14 / 15-30 / 31+). */
+  buckets: AnalyticsBand[];
+  lowData: boolean;
+}
+
+export interface AnalyticsLocationRow {
+  name: string;
+  count: number;
+  widthPct: number;
+}
+
+export interface AnalyticsLocations {
+  /** Top locations by application count, most first. */
+  rows: AnalyticsLocationRow[];
+  /** Applications in the window with no location recorded. */
+  unknown: number;
+  /** Applications in the window that do carry a location. */
+  total: number;
+  lowData: boolean;
+}
+
 export interface AnalyticsView {
   state: AnalyticsState;
   /** Applications sent in the active window — drives the caption count. */
@@ -155,6 +195,8 @@ export interface AnalyticsView {
   scoreDist: AnalyticsScoreDist;
   scoreOutcome: AnalyticsScoreOutcome;
   timeToResponse: AnalyticsTimeToResponse;
+  aging: AnalyticsAging;
+  locations: AnalyticsLocations;
 }
 
 /** A window has too few applications for rates to be honest below this. */
@@ -173,6 +215,23 @@ const RESPONSE_BANDS: Array<[number, number | null]> = [
   [15, 30],
   [31, null],
 ];
+
+/** Day bands for the pipeline-aging histogram. */
+const AGING_BANDS: Array<[number, number | null]> = [
+  [0, 7],
+  [8, 14],
+  [15, 30],
+  [31, null],
+];
+
+/** An active application is "stale" past this many days in its current status. */
+export const AGING_STALE_DAYS = 14;
+
+/** Statuses that count as an in-flight pipeline application. */
+const ACTIVE_STATUSES = new Set(['applied', 'interview']);
+
+/** How many locations to list in the "where you're applying" breakdown. */
+const TOP_LOCATIONS = 6;
 
 /** Fixed 0..100 score bands (width 20) for the distribution histogram. */
 const SCORE_BANDS: Array<[number, number]> = [
@@ -280,6 +339,69 @@ function timeToResponse(apps: AnalyticsApplication[], from: string | null): Anal
     buckets,
     lowData: days.length < LOW_DATA_RESPONSE_MIN,
   };
+}
+
+/** How long active (in-flight) applications have sat in their current status. */
+function pipelineAging(
+  apps: AnalyticsApplication[],
+  from: string | null,
+  now: Date,
+): AnalyticsAging {
+  const today = dayStr(startOfDayUTC(now));
+  const days: number[] = [];
+  let stale = 0;
+  for (const a of apps) {
+    if (a.archived || !a.status || !ACTIVE_STATUSES.has(a.status)) continue;
+    if (!inRange(toDay(a.appliedAt), from, null)) continue;
+    const since = toDay(a.statusChangedAt);
+    if (!since) continue;
+    const age = Math.max(0, daysBetween(since, today));
+    days.push(age);
+    if (age > AGING_STALE_DAYS) stale += 1;
+  }
+  const counts = AGING_BANDS.map(
+    ([lo, hi]) => days.filter((d) => d >= lo && (hi === null || d <= hi)).length,
+  );
+  const maxCount = Math.max(1, ...counts);
+  const buckets: AnalyticsBand[] = AGING_BANDS.map(([lo, hi], i) => ({
+    lo,
+    hi,
+    count: counts[i],
+    widthPct: counts[i] > 0 ? Math.max(Math.round((counts[i] / maxCount) * 100), 4) : 0,
+  }));
+  return {
+    activeCount: days.length,
+    medianDays: median(days),
+    staleCount: stale,
+    staleThreshold: AGING_STALE_DAYS,
+    buckets,
+    lowData: days.length < LOW_DATA_RESPONSE_MIN,
+  };
+}
+
+/** Where the user is applying — top locations by application count. */
+function topLocations(apps: AnalyticsApplication[], from: string | null): AnalyticsLocations {
+  const counts = new Map<string, number>();
+  let unknown = 0;
+  let total = 0;
+  for (const a of apps) {
+    if (!inRange(toDay(a.appliedAt), from, null)) continue;
+    const loc = (a.location ?? '').trim();
+    if (!loc) {
+      unknown += 1;
+      continue;
+    }
+    total += 1;
+    counts.set(loc, (counts.get(loc) ?? 0) + 1);
+  }
+  const sorted = [...counts.entries()].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]));
+  const max = sorted.length ? sorted[0][1] : 1;
+  const rows: AnalyticsLocationRow[] = sorted.slice(0, TOP_LOCATIONS).map(([name, count]) => ({
+    name,
+    count,
+    widthPct: Math.max(Math.round((count / max) * 100), 4),
+  }));
+  return { rows, unknown, total, lowData: total < LOW_DATA_RESPONSE_MIN };
 }
 
 const DAY_MS = 86_400_000;
@@ -597,5 +719,7 @@ export function computeAnalytics(
     scoreDist: scoreDistribution(apps, from),
     scoreOutcome: scoreOutcome(apps, from),
     timeToResponse: timeToResponse(apps, from),
+    aging: pipelineAging(apps, from, now),
+    locations: topLocations(apps, from),
   };
 }

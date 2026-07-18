@@ -314,5 +314,39 @@
         </div>
       </section>
     }
+
+    <!-- ============ TIME TO RESPONSE ============ -->
+    @if (timeToResponse(); as ttr) {
+      <section class="ana-card">
+        <header class="ana-card__head">
+          <div class="ana-card__titles">
+            <span class="ana-card__eyebrow">{{ t()('analytics.ttr_title') }}</span>
+            <span class="ana-card__sub">{{ ttr.summary }}</span>
+          </div>
+          @if (ttr.medianDays !== null) {
+            <span class="ana-card__flow">{{ t()('analytics.ttr_median') }} {{ ttr.medianDays }} {{ t()('analytics.ttr_days') }}</span>
+          }
+        </header>
+        <div class="ana-funnel">
+          @for (b of ttr.buckets; track b.label) {
+            <div class="ana-stage">
+              <div class="ana-stage__name">{{ b.label }}</div>
+              <div class="ana-stage__bar">
+                <div
+                  class="ana-stage__fill"
+                  [style.width]="b.widthPct"
+                  style="background: var(--graphite-500)"
+                ></div>
+                <span class="ana-stage__count">{{ b.count }}</span>
+              </div>
+              <div class="ana-stage__conv"></div>
+            </div>
+          }
+          @if (ttr.lowData) {
+            <p class="ana-note">{{ t()('analytics.ttr_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
   }
 </div>

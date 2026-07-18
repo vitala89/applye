@@ -16,6 +16,7 @@ function app(partial: Partial<AnalyticsApplication>): AnalyticsApplication {
     reachedOffer: false,
     archived: false,
     score: null,
+    firstResponseAt: null,
     ...partial,
   };
 }
@@ -202,6 +203,34 @@ describe('computeAnalytics', () => {
     expect(g['offer'].widthPct).toBe(0);
     expect(g['noInterview'].avgScore).toBe(60);
     expect(o.lowData).toBe(false); // 5 scored total
+  });
+
+  it('measures time to response as median days and a day histogram', () => {
+    const apps = [
+      app({ appliedAt: '2026-07-01', firstResponseAt: '2026-07-04' }), // 3 days -> band 0-7
+      app({ appliedAt: '2026-07-01', firstResponseAt: '2026-07-11' }), // 10 days -> band 8-14
+      app({ appliedAt: '2026-07-01', firstResponseAt: '2026-08-05' }), // 35 days -> band 31+
+      app({ appliedAt: '2026-07-02' }), // no response
+    ];
+    const ttr = computeAnalytics(facts(apps), '30d', NOW).timeToResponse;
+    expect(ttr.count).toBe(3);
+    expect(ttr.medianDays).toBe(10);
+    expect(ttr.fastestDays).toBe(3);
+    expect(ttr.slowestDays).toBe(35);
+    expect(ttr.buckets[0].count).toBe(1); // 0-7
+    expect(ttr.buckets[1].count).toBe(1); // 8-14
+    expect(ttr.buckets[3].count).toBe(1); // 31+
+    expect(ttr.lowData).toBe(false); // exactly 3 responses
+  });
+
+  it('flags time-to-response as low-data with fewer than the minimum responses', () => {
+    const apps = [
+      app({ appliedAt: '2026-07-01', firstResponseAt: '2026-07-03' }),
+      app({ appliedAt: '2026-07-02', firstResponseAt: '2026-07-05' }),
+    ];
+    const ttr = computeAnalytics(facts(apps), '30d', NOW).timeToResponse;
+    expect(ttr.count).toBe(2);
+    expect(ttr.lowData).toBe(true);
   });
 
   it('never lets the trend yMax fall below 1', () => {

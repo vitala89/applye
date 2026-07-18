@@ -38,6 +38,10 @@ pub struct AnalyticsApplication {
     /// Latest ATS-fit score (0..100) for this application's job, or NULL when
     /// the job was never scored (scoring is opt-in AI).
     pub score: Option<f64>,
+    /// When the employer first responded — the earliest `interview`/`offer`
+    /// status transition. NULL when no response was ever recorded. Paired with
+    /// `applied_at` this gives time-to-response.
+    pub first_response_at: Option<String>,
 }
 
 /// A follow-up draft timestamp. NOTE: Applye never sends mail (it hands off to
@@ -87,7 +91,10 @@ async fn db_analytics_facts_core(pool: &sqlx::SqlitePool) -> Result<AnalyticsFac
                           WHERE sh.application_id = a.id AND sh.status = 'offer')
            ) AS reached_offer,
            a.archived,
-           sc.score AS score
+           sc.score AS score,
+           (SELECT MIN(sh.changed_at) FROM status_history sh
+              WHERE sh.application_id = a.id
+                AND sh.status IN ('interview', 'offer')) AS first_response_at
          FROM applications a
          LEFT JOIN (
            SELECT job_id, MAX(id) AS max_id FROM scoring_cache GROUP BY job_id
@@ -260,6 +267,29 @@ mod tests {
         let facts = db_analytics_facts_core(&pool).await.expect("facts");
         let scored: Vec<_> = facts.applications.iter().filter_map(|a| a.score).collect();
         assert_eq!(scored, vec![82.0], "only the scored job, latest score");
+    }
+
+    #[tokio::test]
+    async fn first_response_at_is_the_earliest_interview_or_offer_transition() {
+        let pool = test_pool().await;
+        let app_id = insert_app(&pool, "offer", Some("2026-06-01")).await;
+        for (status, at) in [("interview", "2026-06-12"), ("offer", "2026-06-20")] {
+            sqlx::query(
+                "INSERT INTO status_history (application_id, status, changed_at) VALUES (?, ?, ?)",
+            )
+            .bind(app_id)
+            .bind(status)
+            .bind(at)
+            .execute(&pool)
+            .await
+            .expect("insert history");
+        }
+        // An application with no response transition at all.
+        insert_app(&pool, "applied", Some("2026-06-05")).await;
+        let facts = db_analytics_facts_core(&pool).await.expect("facts");
+        let with = facts.applications.iter().find(|a| a.first_response_at.is_some()).unwrap();
+        assert_eq!(with.first_response_at.as_deref(), Some("2026-06-12"), "earliest response wins");
+        assert!(facts.applications.iter().any(|a| a.first_response_at.is_none()));
     }
 
     #[tokio::test]

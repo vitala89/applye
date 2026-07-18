@@ -219,8 +219,9 @@ export class DbService {
     return tauriInvoke<DiscoverFeedItem[]>('db_discover_feed');
   }
 
-  async discoverDismiss(jobId: number): Promise<void> {
-    return tauriInvoke<void>('db_discover_dismiss', { jobId });
+  /** Dismiss a scanned job, or restore it (inline Undo) with dismissed=false. */
+  async discoverDismiss(jobId: number, dismissed = true): Promise<void> {
+    return tauriInvoke<void>('db_discover_dismiss', { jobId, dismissed });
   }
 
   async listSources(): Promise<DiscoverSource[]> {
@@ -229,6 +230,21 @@ export class DbService {
 
   async setSourceEnabled(sourceId: number, enabled: boolean): Promise<void> {
     return tauriInvoke<void>('db_set_source_enabled', { sourceId, enabled });
+  }
+
+  /** Add a user source: RSS feed (https url) or ATS board (type + slug). */
+  async addSource(input: {
+    name: string;
+    sourceType: 'rss' | 'ats_greenhouse' | 'ats_lever' | 'ats_ashby';
+    url?: string;
+    slug?: string;
+  }): Promise<number> {
+    return tauriInvoke<number>('db_add_source', input);
+  }
+
+  /** Remove a user-added source (builtin sources can only be disabled). */
+  async removeSource(sourceId: number): Promise<void> {
+    return tauriInvoke<void>('db_remove_source', { sourceId });
   }
 
   async upsertApplication(

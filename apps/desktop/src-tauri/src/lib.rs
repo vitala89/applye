@@ -110,6 +110,8 @@ pub fn run() {
             commands::discover::db_discover_dismiss,
             commands::discover::db_list_sources,
             commands::discover::db_set_source_enabled,
+            commands::discover::db_add_source,
+            commands::discover::db_remove_source,
             commands::tailoring::open_file,
             commands::tailoring::reveal_in_folder,
             commands::db_export,

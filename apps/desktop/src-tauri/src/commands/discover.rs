@@ -51,6 +51,12 @@ pub struct DiscoverFeedItem {
     /// NULL until the feed has been opened once with this job in it - the UI
     /// uses "was NULL when listed" as the NEW marker.
     pub discover_shown_at: Option<String>,
+    /// First lines of the JD for the inline row preview.
+    pub jd_preview: Option<String>,
+    /// Original posting URL ("View original posting").
+    pub source_url: Option<String>,
+    /// True when an application row exists for this job (Save already done).
+    pub saved: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -633,9 +639,9 @@ async fn insert_scanned_job(
 
     let result = sqlx::query(
         "INSERT OR IGNORE INTO jobs
-           (company, title, jd_text, jd_hash, source, location,
+           (company, title, jd_text, jd_hash, source, location, source_url,
             imported_from, discover_dismissed, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'discover_scan', 0, datetime('now'))",
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'discover_scan', 0, datetime('now'))",
     )
     .bind(&job.company)
     .bind(&job.title)
@@ -643,6 +649,7 @@ async fn insert_scanned_job(
     .bind(&jd_hash)
     .bind(source_name)
     .bind(&job.location)
+    .bind(&job.url)
     .execute(pool)
     .await
     .map_err(|e| format!("insert job: {e}"))?;
@@ -775,10 +782,13 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
 #[tauri::command]
 pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>, String> {
     let rows = sqlx::query(
-        "SELECT id, company, title, location, source, created_at, discover_shown_at
-         FROM jobs
-         WHERE imported_from = 'discover_scan' AND discover_dismissed = 0
-         ORDER BY created_at DESC, id DESC",
+        "SELECT j.id, j.company, j.title, j.location, j.source, j.created_at,
+                j.discover_shown_at, substr(j.jd_text, 1, 400) AS jd_preview,
+                j.source_url,
+                EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id) AS saved
+         FROM jobs j
+         WHERE j.imported_from = 'discover_scan' AND j.discover_dismissed = 0
+         ORDER BY j.created_at DESC, j.id DESC",
     )
     .fetch_all(&db.pool)
     .await
@@ -794,6 +804,9 @@ pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>
             source: r.get("source"),
             created_at: r.get("created_at"),
             discover_shown_at: r.get("discover_shown_at"),
+            jd_preview: r.get("jd_preview"),
+            source_url: r.get("source_url"),
+            saved: r.get::<i64, _>("saved") == 1,
         })
         .collect();
 
@@ -811,9 +824,15 @@ pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>
     Ok(items)
 }
 
+/// Dismiss (or un-dismiss, for the inline Undo) a scanned job.
 #[tauri::command]
-pub async fn db_discover_dismiss(job_id: i64, db: State<'_, Db>) -> Result<(), String> {
-    sqlx::query("UPDATE jobs SET discover_dismissed = 1 WHERE id = ?")
+pub async fn db_discover_dismiss(
+    job_id: i64,
+    dismissed: bool,
+    db: State<'_, Db>,
+) -> Result<(), String> {
+    sqlx::query("UPDATE jobs SET discover_dismissed = ? WHERE id = ?")
+        .bind(if dismissed { 1 } else { 0 })
         .bind(job_id)
         .execute(&db.pool)
         .await
@@ -864,6 +883,76 @@ pub async fn db_set_source_enabled(
         .execute(&db.pool)
         .await
         .map_err(|e| format!("db_set_source_enabled: {e}"))?;
+    Ok(())
+}
+
+/// Add a user source: an RSS feed (url, https-only) or an ATS company board
+/// (slug + ats_* type). Created enabled; never builtin.
+#[tauri::command]
+pub async fn db_add_source(
+    name: String,
+    source_type: String,
+    url: Option<String>,
+    slug: Option<String>,
+    db: State<'_, Db>,
+) -> Result<i64, String> {
+    let name = name.trim().to_string();
+    if name.is_empty() {
+        return Err("db_add_source: name is required".to_string());
+    }
+    let (url, slug, note) = match source_type.as_str() {
+        "rss" => {
+            let url = url.unwrap_or_default().trim().to_string();
+            require_https(&url)
+                .map_err(|_| "db_add_source: RSS source needs an https:// feed URL".to_string())?;
+            (
+                url,
+                None::<String>,
+                "User-added RSS feed - public, machine-readable.",
+            )
+        }
+        "ats_greenhouse" | "ats_lever" | "ats_ashby" => {
+            let slug = slug.unwrap_or_default().trim().to_lowercase();
+            if slug.is_empty() {
+                return Err("db_add_source: ATS source needs a company slug".to_string());
+            }
+            (
+                String::new(),
+                Some(slug),
+                "Tier 3 - public ATS JSON API, built for machine reading.",
+            )
+        }
+        other => return Err(format!("db_add_source: unsupported source type: {other}")),
+    };
+
+    let id: i64 = sqlx::query_scalar(
+        "INSERT INTO sources
+           (name, type, url, slug, is_builtin, is_enabled, geo_tags_json, legality_note, created_at)
+         VALUES (?, ?, ?, ?, 0, 1, '[\"worldwide\"]', ?, datetime('now'))
+         RETURNING id",
+    )
+    .bind(&name)
+    .bind(&source_type)
+    .bind(&url)
+    .bind(&slug)
+    .bind(note)
+    .fetch_one(&db.pool)
+    .await
+    .map_err(|e| format!("db_add_source: {e}"))?;
+    Ok(id)
+}
+
+/// Remove a user-added source. Builtin sources can only be disabled.
+#[tauri::command]
+pub async fn db_remove_source(source_id: i64, db: State<'_, Db>) -> Result<(), String> {
+    let result = sqlx::query("DELETE FROM sources WHERE id = ? AND is_builtin = 0")
+        .bind(source_id)
+        .execute(&db.pool)
+        .await
+        .map_err(|e| format!("db_remove_source: {e}"))?;
+    if result.rows_affected() == 0 {
+        return Err("db_remove_source: source not found or builtin".to_string());
+    }
     Ok(())
 }
 

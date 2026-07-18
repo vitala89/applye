@@ -30,6 +30,12 @@ export interface DiscoverFeedItem {
   createdAt: string | null;
   /** NULL when the item is listed for the first time - the UI's NEW marker. */
   discoverShownAt: string | null;
+  /** First lines of the JD for the inline row preview. */
+  jdPreview: string | null;
+  /** Original posting URL ("View original posting"). */
+  sourceUrl: string | null;
+  /** True when an application row already exists for this job. */
+  saved: boolean;
 }
 
 /** A scannable source row as listed for the Sources drawer. */

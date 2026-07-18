@@ -162,6 +162,25 @@ export class AnalyticsComponent implements OnInit {
     };
   });
 
+  protected readonly scoreDist = computed(() => {
+    const v = this.view();
+    if (!v) return null;
+    const d = v.scoreDist;
+    if (d.scored === 0) return null; // no scored jobs at all — hide the card
+    return {
+      scored: d.scored,
+      unscored: d.unscored,
+      median: d.median,
+      lowData: d.lowData,
+      coverage: `${d.scored} ${this.t()('analytics.score_scored')} · ${d.unscored} ${this.t()('analytics.score_unscored')}`,
+      buckets: d.buckets.map((b) => ({
+        label: `${b.lo}-${b.hi}`,
+        count: b.count,
+        widthPct: `${b.widthPct}%`,
+      })),
+    };
+  });
+
   async ngOnInit(): Promise<void> {
     await this.load();
   }

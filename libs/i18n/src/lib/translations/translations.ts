@@ -110,6 +110,12 @@ const en: TranslationMap = {
       'Add and apply to jobs and your funnel, response rate, and momentum will appear here. Nothing to show until you have applications of your own.',
     empty_cta: '+ Add a job',
     load_error: 'Could not load analytics',
+    score_title: 'Match-score distribution',
+    score_scored: 'scored',
+    score_unscored: 'unscored',
+    score_median: 'Median',
+    score_lowdata:
+      'Not enough scored applications yet for a clear shape. Score more jobs to see your fit distribution.',
   },
   tracker: {
     title: 'Job Tracker',
@@ -1343,6 +1349,12 @@ const de: TranslationMap = {
       'Füge Jobs hinzu und bewirb dich, dann erscheinen hier Funnel, Rücklaufquote und Momentum. Bis du eigene Bewerbungen hast, gibt es nichts zu zeigen.',
     empty_cta: '+ Job hinzufügen',
     load_error: 'Analytik konnte nicht geladen werden',
+    score_title: 'Verteilung der Match-Scores',
+    score_scored: 'bewertet',
+    score_unscored: 'unbewertet',
+    score_median: 'Median',
+    score_lowdata:
+      'Noch nicht genug bewertete Bewerbungen für ein klares Bild. Bewerte mehr Jobs, um deine Passungsverteilung zu sehen.',
   },
   tracker: {
     title: 'Bewerbungs-Tracker',

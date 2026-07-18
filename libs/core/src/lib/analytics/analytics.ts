@@ -15,6 +15,8 @@ export interface AnalyticsApplication {
   reachedInterview: boolean;
   reachedOffer: boolean;
   archived: boolean;
+  /** Latest ATS-fit score 0..100, or null when the job was never scored. */
+  score: number | null;
 }
 
 export interface AnalyticsFollowup {
@@ -72,6 +74,27 @@ export interface AnalyticsTrend {
   tickDates: string[];
 }
 
+export interface AnalyticsScoreBucket {
+  /** Inclusive score range this bar covers. */
+  lo: number;
+  hi: number;
+  count: number;
+  /** Bar width 0..100 relative to the tallest bucket. */
+  widthPct: number;
+}
+
+export interface AnalyticsScoreDist {
+  /** Applied-in-window applications that carry a score. */
+  scored: number;
+  /** Applied-in-window applications with no score (scoring is opt-in). */
+  unscored: number;
+  buckets: AnalyticsScoreBucket[];
+  /** Median score across the scored applications, or null when none. */
+  median: number | null;
+  /** Too few scored applications for the shape to mean anything. */
+  lowData: boolean;
+}
+
 export interface AnalyticsView {
   state: AnalyticsState;
   /** Applications sent in the active window — drives the caption count. */
@@ -90,10 +113,56 @@ export interface AnalyticsView {
     cancelled: number;
   };
   trend: AnalyticsTrend;
+  scoreDist: AnalyticsScoreDist;
 }
 
 /** A window has too few applications for rates to be honest below this. */
 export const LOW_DATA_APPLIED_MIN = 5;
+
+/** Below this many scored applications, the score histogram is just noise. */
+export const LOW_DATA_SCORED_MIN = 5;
+
+/** Fixed 0..100 score bands (width 20) for the distribution histogram. */
+const SCORE_BANDS: Array<[number, number]> = [
+  [0, 19],
+  [20, 39],
+  [40, 59],
+  [60, 79],
+  [80, 100],
+];
+
+function median(vals: number[]): number | null {
+  if (vals.length === 0) return null;
+  const sorted = [...vals].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid];
+}
+
+/** Bucket the scores of applications applied in the window into fixed bands. */
+function scoreDistribution(apps: AnalyticsApplication[], from: string | null): AnalyticsScoreDist {
+  let unscored = 0;
+  const scores: number[] = [];
+  for (const a of apps) {
+    if (!inRange(toDay(a.appliedAt), from, null)) continue;
+    if (a.score === null || a.score === undefined) unscored += 1;
+    else scores.push(a.score);
+  }
+  const counts = SCORE_BANDS.map(([lo, hi]) => scores.filter((s) => s >= lo && s <= hi).length);
+  const maxCount = Math.max(1, ...counts);
+  const buckets: AnalyticsScoreBucket[] = SCORE_BANDS.map(([lo, hi], i) => ({
+    lo,
+    hi,
+    count: counts[i],
+    widthPct: counts[i] > 0 ? Math.max(Math.round((counts[i] / maxCount) * 100), 4) : 0,
+  }));
+  return {
+    scored: scores.length,
+    unscored,
+    buckets,
+    median: median(scores),
+    lowData: scores.length < LOW_DATA_SCORED_MIN,
+  };
+}
 
 const DAY_MS = 86_400_000;
 
@@ -407,5 +476,6 @@ export function computeAnalytics(
       hasFollowups,
       tickDates: pickTicks(starts),
     },
+    scoreDist: scoreDistribution(apps, from),
   };
 }

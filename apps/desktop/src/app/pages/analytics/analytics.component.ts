@@ -113,7 +113,7 @@ export class AnalyticsComponent implements OnInit {
       name: this.t()(`analytics.stage_${s.key}`),
       count: s.count,
       widthPct: `${s.widthPct}%`,
-      fill: s.primary ? 'var(--accent)' : 'var(--graphite-500)',
+      fill: s.primary ? 'var(--accent)' : 'var(--ana-neutral-fill)',
       nameColor: s.primary ? 'var(--text-accent)' : 'var(--text-secondary)',
       showConv: s.conv !== null,
       convText: s.conv !== null ? `${s.conv}%` : '',

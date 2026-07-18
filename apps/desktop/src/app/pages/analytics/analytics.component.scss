@@ -272,6 +272,17 @@
   margin-top: 4px;
 }
 
+/* Neutral bar-fill color: raw --graphite-500 is a warm, muddy gray that
+   doesn't get a light-theme override in tokens.css, so it reads as flat and
+   heavy on the near-white light background. Lighten it just for light theme. */
+:host {
+  --ana-neutral-fill: var(--graphite-500);
+}
+
+:host-context([data-theme='light']) {
+  --ana-neutral-fill: var(--graphite-300);
+}
+
 /* ---------- funnel ---------- */
 .ana-funnel {
   padding: 22px 24px 20px;

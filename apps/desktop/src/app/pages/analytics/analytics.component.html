@@ -1,0 +1,251 @@
+<div class="analytics">
+  @if (loading()) {
+    <!-- ============ SKELETON ============ -->
+    <div class="ana-head">
+      <div class="ana-skel ana-skel--caption"></div>
+      <div class="ana-period" aria-hidden="true">
+        @for (seg of segments(); track seg.value) {
+          <button type="button" class="ana-seg" [class.is-active]="seg.selected" disabled>
+            {{ seg.label }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="ana-kpis">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="ana-tile ana-tile--skel">
+          <div class="ana-skel ana-skel--icon"></div>
+          <div class="ana-skel ana-skel--num"></div>
+          <div class="ana-skel ana-skel--label"></div>
+        </div>
+      }
+    </div>
+    <section class="ana-card">
+      <div class="ana-skel ana-skel--title"></div>
+      @for (w of ['100%', '68%', '32%', '14%']; track $index) {
+        <div class="ana-skel ana-skel--bar" [style.width]="w"></div>
+      }
+    </section>
+    <section class="ana-card">
+      <div class="ana-skel ana-skel--title"></div>
+      <div class="ana-skel ana-skel--plot"></div>
+    </section>
+  } @else if (state() === 'empty') {
+    <!-- ============ EMPTY ============ -->
+    <div class="ana-empty">
+      <span class="ana-empty__icon"
+        ><lucide-icon [img]="icons.empty" [size]="26" aria-hidden="true"
+      /></span>
+      <div class="ana-empty__title">{{ t()('analytics.empty_title') }}</div>
+      <p class="ana-empty__body">{{ t()('analytics.empty_body') }}</p>
+      <a class="ana-ghost-btn" routerLink="/jobs/new">{{ t()('analytics.empty_cta') }}</a>
+    </div>
+  } @else {
+    <!-- ============ HEADER ROW ============ -->
+    <div class="ana-head">
+      <div class="ana-caption">
+        <span class="ana-caption__dot" aria-hidden="true"></span>
+        <span class="ana-caption__text">{{ caption() }}</span>
+      </div>
+      <div class="ana-period" role="group" [attr.aria-label]="t()('analytics.period_group')">
+        @for (seg of segments(); track seg.value) {
+          <button
+            type="button"
+            class="ana-seg"
+            [class.is-active]="seg.selected"
+            [attr.aria-pressed]="seg.selected"
+            (click)="setPeriod(seg.value)"
+          >
+            {{ seg.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ============ KPI ROW ============ -->
+    <div class="ana-kpis">
+      @for (tile of tiles(); track tile.key) {
+        <div class="ana-tile">
+          <div class="ana-tile__top">
+            <span class="ana-tile__icon"
+              ><lucide-icon [img]="tile.icon" [size]="16" aria-hidden="true"
+            /></span>
+            @if (tile.deltaShow) {
+              <span class="ana-delta" [class.is-down]="!tile.deltaUp">
+                <lucide-icon [img]="tile.deltaIcon" [size]="12" aria-hidden="true" />{{
+                  tile.deltaText
+                }}
+              </span>
+            }
+          </div>
+          <div class="ana-tile__body">
+            <div class="ana-tile__value">
+              <span class="ana-tile__num" [class.is-accent]="tile.accent">{{
+                tile.valueText
+              }}</span>
+              @if (tile.isPercent) {
+                <span class="ana-tile__suffix">%</span>
+              }
+            </div>
+            <span class="ana-tile__label">{{ tile.label }}</span>
+          </div>
+          @if (tile.spark.length) {
+            <div class="ana-spark" aria-hidden="true">
+              @for (h of tile.spark; track $index) {
+                <span [style.height.%]="h * 100"></span>
+              }
+            </div>
+          }
+          @if (tile.note) {
+            <span class="ana-tile__note">{{ tile.note }}</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ============ FUNNEL ============ -->
+    <section class="ana-card">
+      <header class="ana-card__head">
+        <div class="ana-card__titles">
+          <span class="ana-card__eyebrow">{{ t()('analytics.funnel_title') }}</span>
+          <span class="ana-card__sub">{{ t()('analytics.funnel_sub') }}</span>
+        </div>
+        <span class="ana-card__flow">{{ t()('analytics.funnel_flow') }}</span>
+      </header>
+      <div class="ana-funnel">
+        @for (s of stages(); track s.name) {
+          <div class="ana-stage">
+            <div class="ana-stage__name" [style.color]="s.nameColor">{{ s.name }}</div>
+            <div class="ana-stage__bar">
+              <div
+                class="ana-stage__fill"
+                [style.width]="s.widthPct"
+                [style.background]="s.fill"
+              ></div>
+              <span class="ana-stage__count">{{ s.count }}</span>
+            </div>
+            <div class="ana-stage__conv">
+              @if (s.showConv) {
+                <div class="ana-stage__pct">{{ s.convText }}</div>
+                <div class="ana-stage__of">{{ s.convOf }}</div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (isLowData()) {
+          <p class="ana-note">{{ t()('analytics.funnel_lowdata') }}</p>
+        }
+
+        @if (leakage(); as lk) {
+          <div class="ana-leak">
+            <span class="ana-leak__label">{{ t()('analytics.leakage') }}</span>
+            <div class="ana-leak__track">
+              <div class="ana-leak__fill" [style.width]="lk.widthPct"></div>
+            </div>
+            <span class="ana-leak__text">{{ lk.text }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ============ APPLICATIONS OVER TIME ============ -->
+    @if (trend(); as tr) {
+      <section class="ana-card">
+        <header class="ana-card__head ana-card__head--row">
+          <span class="ana-card__eyebrow">{{ t()('analytics.trend_title') }}</span>
+          <div class="ana-legend">
+            <span class="ana-legend__item">
+              <span class="ana-legend__swatch ana-legend__swatch--apps"></span>{{ tr.unit }}
+            </span>
+            @if (tr.hasFollowups) {
+              <span class="ana-legend__item ana-legend__item--muted">
+                <span class="ana-legend__swatch ana-legend__swatch--follow"></span
+                >{{ t()('analytics.trend_followups') }}
+              </span>
+            }
+          </div>
+        </header>
+        <div class="ana-trend">
+          <div class="ana-trend__plot">
+            <span class="ana-trend__ymax">{{ tr.yMax }}</span>
+            <svg
+              viewBox="0 0 100 42"
+              preserveAspectRatio="none"
+              class="ana-trend__svg"
+              aria-hidden="true"
+            >
+              <line
+                x1="0"
+                y1="3"
+                x2="100"
+                y2="3"
+                stroke="var(--border-subtle)"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+              <line
+                x1="0"
+                y1="15"
+                x2="100"
+                y2="15"
+                stroke="var(--border-subtle)"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+                opacity="0.6"
+              />
+              <line
+                x1="0"
+                y1="27"
+                x2="100"
+                y2="27"
+                stroke="var(--border-subtle)"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+                opacity="0.6"
+              />
+              <line
+                x1="0"
+                y1="39"
+                x2="100"
+                y2="39"
+                stroke="var(--border-subtle)"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+              <polygon [attr.points]="tr.area" fill="var(--accent)" opacity="0.07" />
+              @if (tr.hasFollowups) {
+                <polyline
+                  [attr.points]="tr.lineFollow"
+                  fill="none"
+                  stroke="var(--graphite-400)"
+                  stroke-width="1.3"
+                  vector-effect="non-scaling-stroke"
+                  opacity="0.55"
+                  stroke-linejoin="round"
+                />
+              }
+              <polyline
+                [attr.points]="tr.lineApps"
+                fill="none"
+                stroke="var(--accent)"
+                stroke-width="1.7"
+                vector-effect="non-scaling-stroke"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+          <div class="ana-trend__ticks">
+            @for (tk of tr.ticks; track $index) {
+              <span>{{ tk }}</span>
+            }
+          </div>
+          @if (isLowData()) {
+            <p class="ana-note">{{ t()('analytics.trend_lowdata') }}</p>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>

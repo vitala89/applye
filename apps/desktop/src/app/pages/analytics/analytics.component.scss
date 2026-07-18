@@ -1,0 +1,614 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.analytics {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- header row ---------- */
+.ana-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 34px;
+}
+
+.ana-caption {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+
+  &__dot {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: ana-pulse 2.4s ease-in-out infinite;
+  }
+
+  &__text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.ana-period {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  flex: 0 0 auto;
+}
+
+.ana-seg {
+  height: 26px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+
+  &:hover:not(.is-active):not(:disabled) {
+    color: var(--text-primary);
+  }
+
+  &.is-active {
+    background: var(--accent-tint);
+    color: var(--text-accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+/* ---------- KPI tiles ---------- */
+.ana-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 860px) {
+  .ana-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ana-tile {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 130px;
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: auto;
+  }
+
+  &__value {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+  }
+
+  &__num {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text-primary);
+
+    &.is-accent {
+      color: var(--accent);
+    }
+  }
+
+  &__suffix {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--text-tertiary);
+    padding-bottom: 2px;
+  }
+
+  &__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+
+  &__note {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-tertiary);
+  }
+}
+
+.ana-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--success);
+
+  &.is-down {
+    color: var(--text-tertiary);
+  }
+}
+
+.ana-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 20px;
+
+  span {
+    flex: 1;
+    min-height: 1px;
+    background: var(--graphite-500);
+    opacity: 0.45;
+    border-radius: 1px;
+  }
+}
+
+/* ---------- cards ---------- */
+.ana-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+
+    &--row {
+      align-items: center;
+    }
+  }
+
+  &__titles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  &__sub {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  &__flow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+}
+
+/* Skeleton cards use their own padding (no head/body split). */
+.ana-card > .ana-skel {
+  margin: 20px;
+}
+.ana-card > .ana-skel--bar {
+  margin: 0 20px 16px;
+}
+.ana-card > .ana-skel--bar:first-of-type {
+  margin-top: 4px;
+}
+
+/* ---------- funnel ---------- */
+.ana-funnel {
+  padding: 22px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ana-stage {
+  display: grid;
+  grid-template-columns: 132px 1fr 132px;
+  align-items: center;
+  gap: 18px;
+
+  &__name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
+  &__bar {
+    position: relative;
+    height: 36px;
+    background: var(--surface-sunken);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: 6px;
+  }
+
+  &__count {
+    position: absolute;
+    right: 12px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  &__conv {
+    text-align: right;
+  }
+
+  &__pct {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  &__of {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+}
+
+@media (max-width: 620px) {
+  .ana-stage {
+    grid-template-columns: 96px 1fr 84px;
+    gap: 12px;
+  }
+}
+
+.ana-leak {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+
+  &__label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    min-width: 64px;
+  }
+
+  &__track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface-sunken);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: var(--graphite-500);
+    opacity: 0.55;
+    border-radius: 999px;
+  }
+
+  &__text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+}
+
+.ana-note {
+  margin: 2px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+/* ---------- trend ---------- */
+.ana-legend {
+  display: flex;
+  gap: 16px;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+
+    &--muted {
+      color: var(--text-tertiary);
+    }
+  }
+
+  &__swatch {
+    width: 14px;
+    height: 2px;
+    border-radius: 2px;
+
+    &--apps {
+      background: var(--accent);
+    }
+    &--follow {
+      background: var(--graphite-400);
+      opacity: 0.6;
+    }
+  }
+}
+
+.ana-trend {
+  padding: 18px 22px 20px;
+
+  &__plot {
+    position: relative;
+    height: 172px;
+  }
+
+  &__ymax {
+    position: absolute;
+    top: -2px;
+    left: 0;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  &__svg {
+    width: 100%;
+    height: 148px;
+    display: block;
+    overflow: visible;
+  }
+
+  &__ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+
+    span {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+/* ---------- empty ---------- */
+.ana-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: 16px;
+  min-height: 60vh;
+
+  &__icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+  }
+
+  &__title {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  &__body {
+    max-width: 360px;
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-tertiary);
+  }
+}
+
+.ana-ghost-btn {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-input);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+/* ---------- skeleton shimmer ---------- */
+.ana-skel {
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--surface-2) 50%,
+    var(--surface-sunken) 75%
+  );
+  background-size: 300% 100%;
+  animation: ana-shimmer 1.4s ease infinite;
+  border-radius: 5px;
+
+  &--caption {
+    width: 220px;
+    height: 14px;
+  }
+  &--icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+  }
+  &--num {
+    width: 52%;
+    height: 26px;
+    margin-top: auto;
+  }
+  &--label {
+    width: 72%;
+    height: 10px;
+    border-radius: 4px;
+  }
+  &--title {
+    width: 200px;
+    height: 14px;
+  }
+  &--bar {
+    height: 34px;
+    border-radius: 6px;
+  }
+  &--plot {
+    height: 150px;
+    border-radius: 6px;
+  }
+}
+
+.ana-tile--skel {
+  gap: 14px;
+  justify-content: flex-start;
+}
+
+@keyframes ana-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes ana-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ana-skel,
+  .ana-caption__dot {
+    animation: none;
+  }
+}

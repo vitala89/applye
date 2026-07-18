@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
+  AnalyticsFacts,
   FetchedJob,
   Job,
   JobOverview,
@@ -197,6 +198,12 @@ export class DbService {
 
   async listPipelineCards(): Promise<PipelineCard[]> {
     return tauriInvoke<PipelineCard[]>('db_pipeline_cards');
+  }
+
+  /** Raw per-application signals + follow-up timestamps for the Analytics
+   *  screen; all aggregation happens client-side via `computeAnalytics`. */
+  async getAnalyticsFacts(): Promise<AnalyticsFacts> {
+    return tauriInvoke<AnalyticsFacts>('db_analytics_facts');
   }
 
   async upsertApplication(

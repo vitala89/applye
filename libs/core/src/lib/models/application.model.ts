@@ -92,6 +92,12 @@ export interface PipelineCard {
   location?: string;
   docLanguage?: SupportedLanguage;
   score?: number;
+  /** The scoring_cache.profile_hash the `score` was computed against (equals the
+   * profile.scoringHash at scoring time). A score is stale once this no longer
+   * matches the current profile's scoringHash. */
+  scoreProfileHash?: string;
+  /** ISO timestamp the cached score was created — powers the "N days old" badge. */
+  scoreAt?: string;
   priority?: Priority;
   currentStageOrder?: number;
   currentStageLabel?: string;

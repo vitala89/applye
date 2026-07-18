@@ -29,7 +29,6 @@ import {
   parseProfileMd,
   pitchState,
   profileCompleteness,
-  scoringState,
   type JobOverview,
   type PipelineCard,
   type Profile,
@@ -299,23 +298,56 @@ export class DashboardComponent {
       });
     }
 
-    // 4. Stale AI artefacts (scoring profile / elevator pitch).
+    // 4a. Per-job score staleness: a cached ATS score computed against an older
+    // scoring profile than the current one. Capped + highest-fit first so a
+    // profile regeneration (which stales every score at once) can't flood the
+    // queue.
     const p = this.profile();
+    const currentHash = p?.scoringHash;
+    if (currentHash) {
+      const stale = this.activeCards()
+        .filter(
+          (c) =>
+            c.jobId != null &&
+            c.score != null &&
+            !!c.scoreProfileHash &&
+            c.scoreProfileHash !== currentHash,
+        )
+        .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+        .slice(0, 3);
+      for (const c of stale) {
+        const days = daysSince(c.scoreAt, this.now());
+        items.push({
+          id: `score-stale-${c.id}`,
+          icon: this.icons.cStale,
+          iconTone: 'neutral',
+          title: `${this.t()('dashboard.card_score_stale')} ${c.company ?? ''}`.trim(),
+          badge:
+            days > 0
+              ? `${days} ${this.t()(`dashboard.${days === 1 ? 'day_old' : 'days_old'}`)}`
+              : undefined,
+          badgeTone: 'neutral',
+          context: this.t()('dashboard.card_stale_ctx'),
+          actionLabel: this.t()('dashboard.card_stale_action'),
+          actionVariant: 'ghost',
+          run: () => this.go(`/jobs/${c.jobId}`),
+        });
+      }
+    }
+
+    // 4b. Stale elevator pitch (profile-level; the pitch is not per-job).
     if (p) {
       const md = (p.fullMd ?? '').trim();
-      const base = { mdDirty: false, savedMdHash: this.savedMdHash() };
       if (
         md &&
-        scoringState({ ...base, hasScoringJson: !!p.scoringJson, scoringHash: p.scoringHash }) ===
-          'stale'
+        pitchState({
+          mdDirty: false,
+          savedMdHash: this.savedMdHash(),
+          hasPitch: !!p.pitchMd,
+          pitchHash: p.pitchHash,
+        }) === 'stale'
       ) {
-        items.push(this.staleItem('scoring'));
-      }
-      if (
-        md &&
-        pitchState({ ...base, hasPitch: !!p.pitchMd, pitchHash: p.pitchHash }) === 'stale'
-      ) {
-        items.push(this.staleItem('pitch'));
+        items.push(this.pitchStaleItem());
       }
     }
 
@@ -347,14 +379,12 @@ export class DashboardComponent {
     () => !this.loading() && !this.isNewUser() && this.queue().length === 0,
   );
 
-  private staleItem(which: 'scoring' | 'pitch'): QueueItem {
+  private pitchStaleItem(): QueueItem {
     return {
-      id: `stale-${which}`,
+      id: 'stale-pitch',
       icon: this.icons.cStale,
       iconTone: 'neutral',
-      title: this.t()(
-        which === 'scoring' ? 'dashboard.card_stale_scoring' : 'dashboard.card_stale_pitch',
-      ),
+      title: this.t()('dashboard.card_stale_pitch'),
       context: this.t()('dashboard.card_stale_ctx'),
       actionLabel: this.t()('dashboard.card_stale_action'),
       actionVariant: 'ghost',
@@ -414,6 +444,14 @@ function daysOverdue(followUpAt: string | undefined, now: number): number {
   const due = new Date(followUpAt).getTime();
   if (Number.isNaN(due) || due >= now) return 0;
   return Math.floor((now - due) / MS_DAY);
+}
+
+/** Whole days since an ISO timestamp, clamped at 0. */
+function daysSince(iso: string | undefined, now: number): number {
+  if (!iso) return 0;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then) || then >= now) return 0;
+  return Math.floor((now - then) / MS_DAY);
 }
 
 /** Compact relative label for an interview: "3h" / "41h" / "Thu 3:00pm". */

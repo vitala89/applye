@@ -1,0 +1,545 @@
+// Dashboard (Home) — the app landing surface. Implements Dashboard.dc.html.
+// The shell `.content` supplies the 32px gutter + scroll; this page only
+// centers its column and stacks the blocks.
+
+.dash {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 22px);
+  padding-bottom: var(--space-10, 80px);
+}
+
+// --- Greeting ---------------------------------------------------------
+.dash__greet {
+  h1 {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: var(--weight-medium);
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  p {
+    margin: 6px 0 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+  }
+}
+
+// --- KPI tiles --------------------------------------------------------
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  padding: 18px;
+  text-align: left;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-ring);
+  }
+
+  &__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-input);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+  }
+  &__num {
+    font-family: var(--font-mono);
+    font-size: 32px;
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text-primary);
+  }
+  &__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  &--warn {
+    background: var(--warning-tint);
+    border-color: rgba(224, 162, 59, 0.34);
+    &:hover {
+      border-color: rgba(224, 162, 59, 0.5);
+      background: var(--warning-tint);
+    }
+    .tile__icon {
+      background: rgba(224, 162, 59, 0.18);
+      color: var(--warning);
+    }
+    .tile__num,
+    .tile__label {
+      color: var(--warning);
+    }
+  }
+}
+
+// --- Section eyebrow --------------------------------------------------
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+// --- Needs attention queue -------------------------------------------
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &__count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+.qcard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+
+  &--warn {
+    border-left: 2px solid var(--warning);
+  }
+  &--accent {
+    border-left: 2px solid var(--accent);
+  }
+
+  &__icon {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-input);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+
+    &--warn {
+      background: var(--warning-tint);
+      color: var(--warning);
+    }
+    &--accent {
+      background: var(--accent-tint);
+      color: var(--text-accent);
+    }
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+  &__titlerow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    flex-wrap: wrap;
+  }
+  &__title {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--text-primary);
+  }
+  &__ctx {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  &--warn {
+    background: var(--warning-tint);
+    color: var(--warning);
+  }
+  &--accent {
+    background: var(--accent-tint);
+    color: var(--text-accent);
+  }
+}
+
+// --- Action buttons (mono, per design) --------------------------------
+.qbtn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-card);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    background var(--dur-instant) var(--ease-standard),
+    border-color var(--dur-instant) var(--ease-standard),
+    color var(--dur-instant) var(--ease-standard);
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-ring);
+  }
+
+  &--primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border: var(--border-width) solid var(--accent);
+    &:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+  }
+  &--secondary {
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border: var(--border-width) solid var(--border-strong);
+    &:hover {
+      background: var(--surface-hover);
+    }
+  }
+  &--ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: var(--border-width) solid transparent;
+    &:hover {
+      color: var(--text-primary);
+      background: var(--surface-hover);
+    }
+  }
+}
+
+// --- Caught-up reward state ------------------------------------------
+.caught {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3, 12px);
+  padding: 44px 20px;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+
+  &__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-input);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--success-tint);
+    color: var(--success);
+  }
+  &__title {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: var(--weight-medium);
+    color: var(--text-primary);
+  }
+  &__body {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 340px;
+  }
+}
+
+// --- Two-column panels -----------------------------------------------
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5, 20px);
+  align-items: start;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: var(--border-width) solid var(--border-subtle);
+  }
+  &__title {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--text-primary);
+  }
+  &__link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    &:hover {
+      color: var(--text-secondary);
+    }
+  }
+  &__body {
+    padding: 6px;
+  }
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-2, 8px);
+    padding: 34px 20px;
+
+    .panel__empty-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-input);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-sunken);
+      color: var(--text-tertiary);
+    }
+    .panel__empty-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .panel__empty-body {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+.prow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: 11px 12px;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  text-align: left;
+  background: none;
+  border: none;
+  width: 100%;
+  transition: background var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-ring);
+  }
+
+  &__mono {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-input);
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: var(--weight-medium);
+  }
+  &__meta {
+    flex: 1;
+    min-width: 0;
+  }
+  &__role {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &__company {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  &__time {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    width: 84px;
+    text-align: right;
+  }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  &--applied {
+    background: var(--accent-tint);
+    color: var(--text-accent);
+  }
+  &__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+}
+
+// --- Quick actions bar -----------------------------------------------
+.quick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+
+  &__label {
+    margin-right: 4px;
+  }
+}
+
+// --- Skeletons --------------------------------------------------------
+.sk {
+  display: block;
+  border-radius: var(--radius-badge);
+  background: var(--surface-sunken);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, var(--surface-hover), transparent);
+    animation: dash-shimmer 1.4s var(--ease-standard) infinite;
+  }
+}
+
+@keyframes dash-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk::after {
+    animation: none;
+  }
+}
+
+.sk-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 16px;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+  }
+}
+
+.sk-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+}

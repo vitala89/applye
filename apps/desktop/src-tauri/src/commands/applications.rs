@@ -271,6 +271,13 @@ pub struct PipelineCard {
     pub location: Option<String>,
     pub doc_language: Option<String>,
     pub score: Option<f64>,
+    /// The `scoring_cache.profile_hash` the stored `score` was computed against
+    /// (equals the `profile.scoring_hash` at scoring time). The dashboard marks
+    /// a score stale when this no longer equals the current profile's hash.
+    pub score_profile_hash: Option<String>,
+    /// When that cached score was created — powers the dashboard "N days old"
+    /// staleness badge.
+    pub score_at: Option<String>,
     pub priority: Option<String>,
     pub current_stage_order: Option<i64>,
     pub current_stage_label: Option<String>,
@@ -297,6 +304,8 @@ async fn db_pipeline_cards_core(pool: &sqlx::SqlitePool) -> Result<Vec<PipelineC
            a.updated_at, a.priority, a.doc_language,
            j.company, j.title, j.location,
            sc.score,
+           sc.profile_hash AS score_profile_hash,
+           sc.created_at AS score_at,
            cs.stage_order AS current_stage_order,
            cs.stage_label AS current_stage_label,
            cs.status AS current_stage_status,
@@ -768,5 +777,33 @@ mod followup_tests {
         let cards = db_pipeline_cards_core(&pool).await.expect("list cards");
         let card = cards.into_iter().find(|c| c.id == id).expect("card exists");
         assert_eq!(card.doc_language.as_deref(), Some("de"));
+    }
+
+    /// The latest cached score's `profile_hash` and `created_at` must surface on
+    /// the card so the Dashboard can mark a score stale (its hash no longer
+    /// matches the current profile) and show how old it is.
+    #[tokio::test]
+    async fn pipeline_cards_include_score_profile_hash_and_age() {
+        let pool = test_pool().await;
+        let id = insert_job_and_application(&pool).await;
+        let job_id: i64 = sqlx::query_scalar("SELECT job_id FROM applications WHERE id = ?")
+            .bind(id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO scoring_cache (job_id, profile_hash, jd_hash, score, created_at)
+             VALUES (?, 'phash-1', 'jd-1', 82.0, '2026-07-01T00:00:00Z')",
+        )
+        .bind(job_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let cards = db_pipeline_cards_core(&pool).await.expect("list cards");
+        let card = cards.into_iter().find(|c| c.id == id).expect("card exists");
+        assert_eq!(card.score, Some(82.0));
+        assert_eq!(card.score_profile_hash.as_deref(), Some("phash-1"));
+        assert_eq!(card.score_at.as_deref(), Some("2026-07-01T00:00:00Z"));
     }
 }

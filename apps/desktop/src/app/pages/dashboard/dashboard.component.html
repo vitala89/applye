@@ -1,0 +1,269 @@
+<app-onboarding-banner />
+
+<div class="dash">
+  <!-- Greeting -->
+  <div class="dash__greet">
+    <h1>{{ greetingTitle() }}</h1>
+    <p>{{ t()('dashboard.greeting_sub') }}</p>
+  </div>
+
+  <!-- KPI row -->
+  @if (loading()) {
+    <div class="kpis">
+      @for (i of [0, 1, 2, 3]; track i) {
+        <div class="sk-tile">
+          <span
+            class="sk"
+            style="width: 30px; height: 30px; border-radius: var(--radius-input)"
+          ></span>
+          <span class="sk" style="width: 56px; height: 30px"></span>
+          <span class="sk" style="width: 96px; height: 11px"></span>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="kpis">
+      <button type="button" class="tile" (click)="go('/tracker')">
+        <span class="tile__icon"
+          ><lucide-icon [img]="icons.active" [size]="16" aria-hidden="true"
+        /></span>
+        <span class="tile__num">{{ kActive() }}</span>
+        <span class="tile__label">{{ t()('dashboard.kpi_active') }}</span>
+      </button>
+      <button type="button" class="tile" (click)="go('/interview-prep')">
+        <span class="tile__icon"
+          ><lucide-icon [img]="icons.interviews" [size]="16" aria-hidden="true"
+        /></span>
+        <span class="tile__num">{{ kInterviews() }}</span>
+        <span class="tile__label">{{ t()('dashboard.kpi_interviews') }}</span>
+      </button>
+      <button
+        type="button"
+        class="tile"
+        [class.tile--warn]="kOverdue() > 0"
+        (click)="go('/pipeline')"
+      >
+        <span class="tile__icon"
+          ><lucide-icon [img]="icons.overdue" [size]="16" aria-hidden="true"
+        /></span>
+        <span class="tile__num">{{ kOverdue() }}</span>
+        <span class="tile__label">{{ t()('dashboard.kpi_overdue') }}</span>
+      </button>
+      <button type="button" class="tile" (click)="go('/tracker')">
+        <span class="tile__icon"
+          ><lucide-icon [img]="icons.offers" [size]="16" aria-hidden="true"
+        /></span>
+        <span class="tile__num">{{ kOffers() }}</span>
+        <span class="tile__label">{{ t()('dashboard.kpi_offers') }}</span>
+      </button>
+    </div>
+  }
+
+  <!-- Needs attention — action queue -->
+  <div class="queue">
+    <div class="queue__head">
+      <span class="eyebrow">{{ t()('dashboard.needs_attention') }}</span>
+      @if (!loading() && queue().length) {
+        <span class="queue__count">{{ queue().length }} {{ t()('dashboard.items') }}</span>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="queue__list">
+        @for (i of [0, 1, 2]; track i) {
+          <div class="sk-card">
+            <span
+              class="sk"
+              style="width: 36px; height: 36px; border-radius: var(--radius-input)"
+            ></span>
+            <div class="sk-card__body">
+              <span class="sk" style="width: 40%; height: 12px"></span>
+              <span class="sk" style="width: 60%; height: 10px"></span>
+            </div>
+            <span
+              class="sk"
+              style="width: 110px; height: 34px; border-radius: var(--radius-card)"
+            ></span>
+          </div>
+        }
+      </div>
+    } @else if (isCaughtUp()) {
+      <div class="caught">
+        <span class="caught__icon"
+          ><lucide-icon [img]="icons.caughtUp" [size]="26" aria-hidden="true"
+        /></span>
+        <div class="caught__title">{{ t()('dashboard.caught_up_title') }}</div>
+        <div class="caught__body">{{ t()('dashboard.caught_up_body') }}</div>
+      </div>
+    } @else {
+      <div class="queue__list">
+        @for (item of queue(); track item.id) {
+          <div
+            class="qcard"
+            [class.qcard--warn]="item.accent === 'warning'"
+            [class.qcard--accent]="item.accent === 'accent'"
+          >
+            <span
+              class="qcard__icon"
+              [class.qcard__icon--warn]="item.iconTone === 'warning'"
+              [class.qcard__icon--accent]="item.iconTone === 'accent'"
+            >
+              <lucide-icon [img]="item.icon" [size]="18" aria-hidden="true" />
+            </span>
+            <div class="qcard__body">
+              <div class="qcard__titlerow">
+                <span class="qcard__title">{{ item.title }}</span>
+                @if (item.badge) {
+                  <span
+                    class="badge"
+                    [class.badge--warn]="item.badgeTone === 'warning'"
+                    [class.badge--accent]="item.badgeTone === 'accent'"
+                    >{{ item.badge }}</span
+                  >
+                }
+              </div>
+              <div class="qcard__ctx">{{ item.context }}</div>
+            </div>
+            <button
+              type="button"
+              class="qbtn"
+              [class.qbtn--primary]="item.actionVariant === 'primary'"
+              [class.qbtn--secondary]="item.actionVariant === 'secondary'"
+              [class.qbtn--ghost]="item.actionVariant === 'ghost'"
+              (click)="item.run()"
+            >
+              @if (item.actionIcon) {
+                <lucide-icon [img]="item.actionIcon" [size]="14" aria-hidden="true" />
+              }
+              {{ item.actionLabel }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Two-column: interviews + recent jobs -->
+  <div class="cols">
+    <!-- Upcoming interviews -->
+    <div class="panel">
+      <div class="panel__head">
+        <span class="panel__title">{{ t()('dashboard.upcoming_interviews') }}</span>
+        <button type="button" class="panel__link" (click)="go('/interview-prep')">
+          {{ t()('dashboard.view_all') }}
+        </button>
+      </div>
+      @if (loading()) {
+        <div class="panel__body">
+          @for (i of [0, 1]; track i) {
+            <div class="prow">
+              <span class="sk prow__mono"></span>
+              <div class="prow__meta" style="display: flex; flex-direction: column; gap: 7px">
+                <span class="sk" style="width: 50%; height: 11px"></span>
+                <span class="sk" style="width: 30%; height: 10px"></span>
+              </div>
+              <span class="sk" style="width: 64px; height: 10px"></span>
+            </div>
+          }
+        </div>
+      } @else if (upcomingTop().length) {
+        <div class="panel__body">
+          @for (iv of upcomingTop(); track iv.applicationId) {
+            <button type="button" class="prow" (click)="go('/interview-prep/' + iv.applicationId)">
+              <span class="prow__mono">{{ iv.monogram }}</span>
+              <div class="prow__meta">
+                <div class="prow__role">{{ iv.role }}</div>
+                <div class="prow__company">{{ iv.company }}</div>
+              </div>
+              @if (iv.stage) {
+                <span class="badge" [class.badge--accent]="iv.soon">{{ iv.stage }}</span>
+              }
+              <span class="prow__time">{{ iv.when }}</span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="panel__empty">
+          <span class="panel__empty-icon"
+            ><lucide-icon [img]="icons.noInterviews" [size]="20" aria-hidden="true"
+          /></span>
+          <div class="panel__empty-title">{{ t()('dashboard.no_interviews_title') }}</div>
+          <div class="panel__empty-body">{{ t()('dashboard.no_interviews_body') }}</div>
+        </div>
+      }
+    </div>
+
+    <!-- Recent jobs -->
+    <div class="panel">
+      <div class="panel__head">
+        <span class="panel__title">{{ t()('dashboard.recent_jobs') }}</span>
+        <button type="button" class="panel__link" (click)="go('/pipeline')">
+          {{ t()('dashboard.open_pipeline') }}
+        </button>
+      </div>
+      @if (loading()) {
+        <div class="panel__body">
+          @for (i of [0, 1]; track i) {
+            <div class="prow">
+              <span class="sk prow__mono"></span>
+              <div class="prow__meta" style="display: flex; flex-direction: column; gap: 7px">
+                <span class="sk" style="width: 52%; height: 11px"></span>
+                <span class="sk" style="width: 28%; height: 10px"></span>
+              </div>
+              <span
+                class="sk"
+                style="width: 60px; height: 20px; border-radius: var(--radius-badge)"
+              ></span>
+            </div>
+          }
+        </div>
+      } @else if (recentJobs().length) {
+        <div class="panel__body">
+          @for (job of recentJobs(); track job.jobId) {
+            <button type="button" class="prow" (click)="go('/jobs/' + job.jobId)">
+              <span class="prow__mono">{{ job.monogram }}</span>
+              <div class="prow__meta">
+                <div class="prow__role">{{ job.role }}</div>
+                <div class="prow__company">{{ job.company }}</div>
+              </div>
+              <span class="pill" [class.pill--applied]="job.applied">
+                @if (job.applied) {
+                  <span class="pill__dot"></span>
+                }
+                {{ job.statusLabel }}
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="panel__empty">
+          <span class="panel__empty-icon"
+            ><lucide-icon [img]="icons.noJobs" [size]="20" aria-hidden="true"
+          /></span>
+          <div class="panel__empty-title">{{ t()('dashboard.no_jobs_title') }}</div>
+          <div class="panel__empty-body">{{ t()('dashboard.no_jobs_body') }}</div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="quick">
+    <span class="eyebrow quick__label">{{ t()('dashboard.quick_actions') }}</span>
+    <button type="button" class="qbtn qbtn--secondary" (click)="pasteJob()">
+      <lucide-icon [img]="icons.paste" [size]="15" aria-hidden="true" />{{
+        t()('dashboard.qa_paste')
+      }}
+    </button>
+    <button type="button" class="qbtn qbtn--secondary" (click)="go('/jobs')">
+      <lucide-icon [img]="icons.tailor" [size]="15" aria-hidden="true" />{{
+        t()('dashboard.qa_tailor')
+      }}
+    </button>
+    <button type="button" class="qbtn qbtn--secondary" (click)="go('/documents')">
+      <lucide-icon [img]="icons.import" [size]="15" aria-hidden="true" />{{
+        t()('dashboard.qa_import')
+      }}
+    </button>
+  </div>
+</div>

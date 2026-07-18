@@ -104,6 +104,7 @@ pub fn run() {
             commands::tailoring::export_docx,
             commands::tailoring::export_pdf,
             commands::applications::db_pipeline_cards,
+            commands::analytics::db_analytics_facts,
             commands::tailoring::open_file,
             commands::tailoring::reveal_in_folder,
             commands::db_export,

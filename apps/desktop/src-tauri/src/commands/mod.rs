@@ -2,6 +2,7 @@
 // All DB commands are async and receive the shared Db pool via Tauri State.
 // All SQL lives here in Rust; the Angular frontend only calls typed invoke()s.
 
+pub mod analytics;
 pub mod applications;
 pub mod archetypes;
 pub mod documents;

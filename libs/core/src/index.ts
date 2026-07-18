@@ -15,3 +15,4 @@ export * from './lib/profile/profile-markdown';
 export * from './lib/profile/archetype';
 export * from './lib/profile/scoring-state';
 export * from './lib/text/inline-emphasis';
+export * from './lib/analytics/analytics';

@@ -392,6 +392,17 @@
   color: var(--text-tertiary);
 }
 
+.ana-warn {
+  color: var(--warning);
+}
+
+/* Location names are free text, wider than the mono band labels. */
+.ana-stage__name--wide {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---------- trend ---------- */
 .ana-legend {
   display: flex;

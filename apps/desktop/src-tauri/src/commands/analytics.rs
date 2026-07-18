@@ -42,6 +42,12 @@ pub struct AnalyticsApplication {
     /// status transition. NULL when no response was ever recorded. Paired with
     /// `applied_at` this gives time-to-response.
     pub first_response_at: Option<String>,
+    /// When the application last changed status (latest `status_history`
+    /// transition), falling back to applied/updated. Paired with the current
+    /// status this gives "days in current stage" for pipeline aging.
+    pub status_changed_at: Option<String>,
+    /// The job's location, or NULL. Powers the "where you're applying" breakdown.
+    pub location: Option<String>,
 }
 
 /// A follow-up draft timestamp. NOTE: Applye never sends mail (it hands off to
@@ -94,8 +100,16 @@ async fn db_analytics_facts_core(pool: &sqlx::SqlitePool) -> Result<AnalyticsFac
            sc.score AS score,
            (SELECT MIN(sh.changed_at) FROM status_history sh
               WHERE sh.application_id = a.id
-                AND sh.status IN ('interview', 'offer')) AS first_response_at
+                AND sh.status IN ('interview', 'offer')) AS first_response_at,
+           COALESCE(
+             (SELECT MAX(sh.changed_at) FROM status_history sh
+                WHERE sh.application_id = a.id),
+             a.applied_at,
+             a.updated_at
+           ) AS status_changed_at,
+           j.location AS location
          FROM applications a
+         LEFT JOIN jobs j ON a.job_id = j.id
          LEFT JOIN (
            SELECT job_id, MAX(id) AS max_id FROM scoring_cache GROUP BY job_id
          ) latest ON latest.job_id = a.job_id
@@ -290,6 +304,34 @@ mod tests {
         let with = facts.applications.iter().find(|a| a.first_response_at.is_some()).unwrap();
         assert_eq!(with.first_response_at.as_deref(), Some("2026-06-12"), "earliest response wins");
         assert!(facts.applications.iter().any(|a| a.first_response_at.is_none()));
+    }
+
+    #[tokio::test]
+    async fn location_and_status_changed_at_are_populated() {
+        let pool = test_pool().await;
+        let job_id: i64 = sqlx::query_scalar(
+            "INSERT INTO jobs (jd_text, jd_hash, location, created_at)
+             VALUES ('jd', 'h-loc', 'Berlin', datetime('now')) RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("insert job");
+        let app_id: i64 = sqlx::query_scalar(
+            "INSERT INTO applications (job_id, status, applied_at) VALUES (?, 'interview', '2026-06-01') RETURNING id",
+        )
+        .bind(job_id)
+        .fetch_one(&pool)
+        .await
+        .expect("insert app");
+        sqlx::query("INSERT INTO status_history (application_id, status, changed_at) VALUES (?, 'interview', '2026-06-15')")
+            .bind(app_id)
+            .execute(&pool)
+            .await
+            .expect("insert history");
+        let facts = db_analytics_facts_core(&pool).await.expect("facts");
+        let a = &facts.applications[0];
+        assert_eq!(a.location.as_deref(), Some("Berlin"));
+        assert_eq!(a.status_changed_at.as_deref(), Some("2026-06-15"), "latest transition");
     }
 
     #[tokio::test]

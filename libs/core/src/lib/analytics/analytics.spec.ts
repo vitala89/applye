@@ -17,6 +17,8 @@ function app(partial: Partial<AnalyticsApplication>): AnalyticsApplication {
     archived: false,
     score: null,
     firstResponseAt: null,
+    statusChangedAt: null,
+    location: null,
     ...partial,
   };
 }
@@ -231,6 +233,35 @@ describe('computeAnalytics', () => {
     const ttr = computeAnalytics(facts(apps), '30d', NOW).timeToResponse;
     expect(ttr.count).toBe(2);
     expect(ttr.lowData).toBe(true);
+  });
+
+  it('ages active applications by days in current status', () => {
+    const apps = [
+      app({ status: 'applied', appliedAt: '2026-07-10', statusChangedAt: '2026-07-11' }), // 7 days
+      app({ status: 'interview', appliedAt: '2026-07-01', statusChangedAt: '2026-07-01' }), // 17 days -> stale
+      app({ status: 'offer', appliedAt: '2026-07-05', statusChangedAt: '2026-07-06' }), // terminal, excluded
+      app({ status: 'applied', appliedAt: '2026-07-15', statusChangedAt: '2026-07-15', archived: true }), // excluded
+    ];
+    const ag = computeAnalytics(facts(apps), '30d', NOW).aging;
+    expect(ag.activeCount).toBe(2);
+    expect(ag.staleCount).toBe(1); // the 17-day one is past the 14-day threshold
+    expect(ag.buckets[0].count).toBe(1); // 0-7
+    expect(ag.buckets[2].count).toBe(1); // 15-30
+    expect(ag.medianDays).toBe(12); // median of [7, 17]
+  });
+
+  it('ranks top locations and counts applications with no location', () => {
+    const apps = [
+      ...applied(3, { location: 'Berlin' }),
+      ...applied(2, { location: 'Remote' }),
+      app({ appliedAt: '2026-07-05', location: null }),
+      app({ appliedAt: '2026-07-06', location: '  ' }), // blank trims to unknown
+    ];
+    const loc = computeAnalytics(facts(apps), '30d', NOW).locations;
+    expect(loc.total).toBe(5);
+    expect(loc.unknown).toBe(2);
+    expect(loc.rows[0]).toEqual({ name: 'Berlin', count: 3, widthPct: 100 });
+    expect(loc.rows[1].name).toBe('Remote');
   });
 
   it('never lets the trend yMax fall below 1', () => {

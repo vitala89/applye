@@ -8,7 +8,7 @@
 
 <div align="center">
 
-[English](README.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Polski](README.pl.md)
+[English](README.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Українська](README.uk.md) | [Polski](README.pl.md)
 
 </div>
 
@@ -269,6 +269,8 @@ applications on your behalf and never fabricates experience; honesty over inflat
 rule, not a suggestion. This software is provided under the [MIT License](LICENSE) "as is", without
 warranty of any kind. Applye is not affiliated with any job board, ATS vendor, or AI provider
 mentioned in this document.
+
+See [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md) for the full disclaimer and acceptable-use terms.
 
 ## License
 

@@ -120,6 +120,9 @@ const en: TranslationMap = {
     show_more: 'Show more ({n})',
     clear_list: 'Clear list',
     clear_confirm: 'Clear all unsaved jobs?',
+    clear_title: 'Clear the Discover list?',
+    clear_body:
+      'This removes every scanned job you have not saved. Saved jobs stay in My Jobs. A new scan will refill the list.',
     clear_yes: 'Yes, clear',
     clear_cancel: 'Cancel',
     clear_done: 'Cleared {n} unsaved jobs.',
@@ -1524,6 +1527,9 @@ const de: TranslationMap = {
     show_more: 'Mehr anzeigen ({n})',
     clear_list: 'Liste leeren',
     clear_confirm: 'Alle nicht gespeicherten Jobs löschen?',
+    clear_title: 'Discover-Liste leeren?',
+    clear_body:
+      'Entfernt alle gescannten Jobs, die du nicht gespeichert hast. Gespeicherte Jobs bleiben in Meine Jobs. Ein neuer Scan füllt die Liste wieder.',
     clear_yes: 'Ja, leeren',
     clear_cancel: 'Abbrechen',
     clear_done: '{n} nicht gespeicherte Jobs gelöscht.',

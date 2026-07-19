@@ -34,6 +34,7 @@ import {
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { DbService } from '@applye/data';
+import { parseGeoScopes } from '@applye/core';
 import type { DiscoverFeedItem, DiscoverSource, ScanSourceResult } from '@applye/core';
 import {
   classifyLoc,
@@ -1130,8 +1131,13 @@ export class DiscoverComponent {
     return this.t()('discover.ago_d').replace('{n}', String(Math.floor(hours / 24)));
   }
 
+  /** Joins every selected scope region ("Europe, Asia"); Worldwide when none are. */
   protected scopeLabel(): string {
-    return this.t()('discover.scope_label').replace('{scope}', this.geoScope().toUpperCase());
+    const keys = parseGeoScopes(this.geoScope());
+    const label = keys.length
+      ? keys.map((k) => this.t()('discover.region_' + k)).join(', ')
+      : this.t()('settings.geo_worldwide');
+    return this.t()('discover.scope_label').replace('{scope}', label);
   }
 
   protected isRemote(location: string | null): boolean {

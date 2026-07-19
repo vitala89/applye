@@ -106,7 +106,8 @@ struct TitleFilter {
 }
 
 struct GeoCfg {
-    scope: String,
+    /// True when no scope is selected ("worldwide") - every job passes.
+    unrestricted: bool,
     tokens: Vec<String>,
 }
 
@@ -172,6 +173,9 @@ const REMOTE_MARKERS: &[&str] = &["remote", "anywhere", "worldwide", "global", "
 /// European country names for the europe/eu scopes. One shared list for both
 /// scopes in v1 (includes non-EU Europe: UK, Switzerland, Norway).
 const EUROPE_COUNTRIES: &[&str] = &[
+    "europe",
+    "eu",
+    "emea",
     "germany",
     "deutschland",
     "austria",
@@ -222,7 +226,118 @@ const ASIA_COUNTRIES: &[&str] = &[
     "indonesia",
     "malaysia",
     "thailand",
+    "pakistan",
+    "bangladesh",
 ];
+
+/// North American country names for the namerica scope.
+const NAMERICA_COUNTRIES: &[&str] = &[
+    "north america",
+    "united states",
+    "usa",
+    "u.s.",
+    "america",
+    "canada",
+    "ontario",
+    "quebec",
+    "alberta",
+    "british columbia",
+    "mexico",
+];
+
+/// South American country names for the samerica scope.
+const SAMERICA_COUNTRIES: &[&str] = &[
+    "south america",
+    "latin america",
+    "latam",
+    "brazil",
+    "brasil",
+    "argentina",
+    "chile",
+    "uruguay",
+    "colombia",
+    "peru",
+    "ecuador",
+    "bolivia",
+    "paraguay",
+    "venezuela",
+];
+
+/// Australia/NZ and Pacific names for the oceania scope.
+const OCEANIA_COUNTRIES: &[&str] = &["oceania", "anz", "australia", "new zealand"];
+
+/// Middle East / North Africa names for the mena scope.
+const MENA_COUNTRIES: &[&str] = &[
+    "middle east",
+    "mena",
+    "gcc",
+    "united arab emirates",
+    "uae",
+    "israel",
+    "saudi arabia",
+    "saudi",
+    "turkey",
+    "qatar",
+    "egypt",
+];
+
+/// Sub-Saharan African country names for the africa scope.
+const AFRICA_COUNTRIES: &[&str] = &[
+    "africa",
+    "south africa",
+    "nigeria",
+    "kenya",
+    "morocco",
+    "ghana",
+];
+
+/// Freetext names for one scope key. Empty for an unrecognized key.
+fn region_countries(scope: &str) -> &'static [&'static str] {
+    match scope {
+        "europe" => EUROPE_COUNTRIES,
+        "namerica" => NAMERICA_COUNTRIES,
+        "samerica" => SAMERICA_COUNTRIES,
+        "asia" => ASIA_COUNTRIES,
+        "oceania" => OCEANIA_COUNTRIES,
+        "mena" => MENA_COUNTRIES,
+        "africa" => AFRICA_COUNTRIES,
+        _ => &[],
+    }
+}
+
+/// The GeoScopeKey vocabulary, kept in lockstep with libs/core's
+/// `GEO_SCOPE_KEYS` (TypeScript) so Settings and the scan engine agree on
+/// what a scope key means.
+const KNOWN_GEO_SCOPES: &[&str] = &[
+    "europe", "namerica", "samerica", "asia", "oceania", "mena", "africa",
+];
+
+/// Parses the `geo_scope` settings column: a JSON array of scope keys
+/// (`["europe","asia"]`) going forward, written by the Settings screen. An
+/// install saved before multi-select shipped holds a single legacy scalar
+/// instead (`worldwide`|`europe`|`eu`|`usa`|`asia`|`custom`) - map that onto
+/// the closest key so an existing choice keeps working after the upgrade.
+/// Mirrors `parseGeoScopes` in libs/core/src/lib/geo/geo-scope.ts. An empty
+/// result means "worldwide": no restriction.
+fn parse_geo_scopes(raw: &str) -> Vec<String> {
+    let text = raw.trim();
+    if text.is_empty() {
+        return Vec::new();
+    }
+    if let Ok(parsed) = serde_json::from_str::<Vec<String>>(text) {
+        return parsed
+            .into_iter()
+            .filter(|k| KNOWN_GEO_SCOPES.contains(&k.as_str()))
+            .collect();
+    }
+    match text {
+        "europe" | "eu" => vec!["europe".to_string()],
+        "usa" => vec!["namerica".to_string()],
+        "asia" => vec!["asia".to_string()],
+        // "worldwide" | "custom" | anything unrecognized -> no restriction.
+        _ => Vec::new(),
+    }
+}
 
 /// Names a 2-letter country code also answers to in freetext locations.
 fn country_tokens(code: &str) -> Vec<&'static str> {
@@ -250,23 +365,15 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
     }
 }
 
-fn build_geo_cfg(scope: &str, active_codes: &[String]) -> GeoCfg {
-    let scope = scope.trim().to_lowercase();
+/// Builds the geo filter from the selected scope keys (union of every
+/// selected region's tokens - any one matching lets a job pass) plus any
+/// individually active country codes on top. An empty `scopes` list means
+/// "worldwide": every job passes, unconditionally.
+fn build_geo_cfg(scopes: &[String], active_codes: &[String]) -> GeoCfg {
     let mut tokens: Vec<String> = Vec::new();
-    match scope.as_str() {
-        "europe" | "eu" => {
-            tokens.push("europe".to_string());
-            tokens.push("eu".to_string());
-            tokens.push("emea".to_string());
-            tokens.extend(EUROPE_COUNTRIES.iter().map(|s| s.to_string()));
-        }
-        "usa" => {
-            tokens.extend(country_tokens("us").into_iter().map(str::to_string));
-        }
-        "asia" => {
-            tokens.extend(ASIA_COUNTRIES.iter().map(|s| s.to_string()));
-        }
-        _ => {}
+    for scope in scopes {
+        let scope = scope.trim().to_lowercase();
+        tokens.extend(region_countries(&scope).iter().map(|s| s.to_string()));
     }
     for code in active_codes {
         let code = code.trim().to_lowercase();
@@ -282,7 +389,12 @@ fn build_geo_cfg(scope: &str, active_codes: &[String]) -> GeoCfg {
     }
     tokens.sort();
     tokens.dedup();
-    GeoCfg { scope, tokens }
+    GeoCfg {
+        // Unrestricted ("worldwide") only when nothing at all narrows the
+        // search - no region scope AND no individual country code active.
+        unrestricted: scopes.is_empty() && active_codes.is_empty(),
+        tokens,
+    }
 }
 
 /// Short tokens (<= 3 chars, e.g. "de", "eu", "us") only match as whole words -
@@ -300,7 +412,7 @@ fn loc_matches(loc: &str, token: &str) -> bool {
 /// Conservative inclusion: an empty/unknown location never drops a job -
 /// only a location that names somewhere outside the scope does.
 fn geo_passes(location: &str, cfg: &GeoCfg) -> bool {
-    if cfg.scope == "worldwide" || cfg.scope.is_empty() {
+    if cfg.unrestricted {
         return true;
     }
     let loc = location.trim().to_lowercase();
@@ -825,17 +937,18 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
         })
         .collect();
 
-    let geo_scope: String = sqlx::query_scalar("SELECT geo_scope FROM settings WHERE id = 1")
+    let geo_scope_raw: String = sqlx::query_scalar("SELECT geo_scope FROM settings WHERE id = 1")
         .fetch_optional(&db.pool)
         .await
         .map_err(|e| format!("discover_scan: load settings: {e}"))?
-        .unwrap_or_else(|| "worldwide".to_string());
+        .unwrap_or_default();
+    let geo_scopes = parse_geo_scopes(&geo_scope_raw);
     let active_codes: Vec<String> =
         sqlx::query_scalar("SELECT country_code FROM geo_filters WHERE is_active = 1")
             .fetch_all(&db.pool)
             .await
             .map_err(|e| format!("discover_scan: load geo filters: {e}"))?;
-    let geo_cfg = build_geo_cfg(&geo_scope, &active_codes);
+    let geo_cfg = build_geo_cfg(&geo_scopes, &active_codes);
 
     let archetypes: Option<String> =
         sqlx::query_scalar("SELECT target_archetypes FROM profile WHERE id = 1")
@@ -1191,14 +1304,14 @@ mod tests {
 
     #[test]
     fn geo_worldwide_passes_everything() {
-        let cfg = build_geo_cfg("worldwide", &[]);
+        let cfg = build_geo_cfg(&[], &[]);
         assert!(geo_passes("Tokyo, Japan", &cfg));
         assert!(geo_passes("", &cfg));
     }
 
     #[test]
     fn geo_europe_scope() {
-        let cfg = build_geo_cfg("europe", &[]);
+        let cfg = build_geo_cfg(&["europe".to_string()], &[]);
         assert!(geo_passes("Berlin, Germany", &cfg));
         assert!(geo_passes("Remote - EMEA", &cfg));
         assert!(geo_passes("Remote", &cfg)); // remote marker always passes
@@ -1208,11 +1321,70 @@ mod tests {
 
     #[test]
     fn geo_country_codes_match_names_not_substrings() {
-        let cfg = build_geo_cfg("custom", &["de".to_string()]);
+        let cfg = build_geo_cfg(&[], &["de".to_string()]);
         assert!(geo_passes("Munich, Germany", &cfg));
         assert!(geo_passes("DE", &cfg));
         // "de" must not light up inside unrelated words
         assert!(!geo_passes("Designer Hub, Tokyo", &cfg));
+    }
+
+    #[test]
+    fn geo_multi_scope_unions_every_selected_region() {
+        // Europe + Asia selected together -> a job from either passes, one
+        // from neither (e.g. Brazil) does not.
+        let cfg = build_geo_cfg(&["europe".to_string(), "asia".to_string()], &[]);
+        assert!(geo_passes("Berlin, Germany", &cfg));
+        assert!(geo_passes("Tokyo, Japan", &cfg));
+        assert!(!geo_passes("Sao Paulo, Brazil", &cfg));
+    }
+
+    #[test]
+    fn geo_namerica_scope_covers_us_canada_and_mexico() {
+        let cfg = build_geo_cfg(&["namerica".to_string()], &[]);
+        assert!(geo_passes("Austin, USA", &cfg));
+        assert!(geo_passes("Toronto, Canada", &cfg));
+        assert!(geo_passes("Mexico City, Mexico", &cfg));
+        assert!(!geo_passes("Berlin, Germany", &cfg));
+    }
+
+    #[test]
+    fn geo_samerica_oceania_mena_africa_scopes() {
+        let samerica = build_geo_cfg(&["samerica".to_string()], &[]);
+        assert!(geo_passes("Montevideo, Uruguay", &samerica));
+        assert!(!geo_passes("Berlin, Germany", &samerica));
+
+        let oceania = build_geo_cfg(&["oceania".to_string()], &[]);
+        assert!(geo_passes("Sydney, Australia", &oceania));
+
+        let mena = build_geo_cfg(&["mena".to_string()], &[]);
+        assert!(geo_passes("Dubai, UAE", &mena));
+
+        let africa = build_geo_cfg(&["africa".to_string()], &[]);
+        assert!(geo_passes("Cape Town, South Africa", &africa));
+    }
+
+    #[test]
+    fn parse_geo_scopes_reads_json_array_and_drops_unknown_keys() {
+        assert_eq!(
+            parse_geo_scopes(r#"["europe","asia"]"#),
+            vec!["europe".to_string(), "asia".to_string()]
+        );
+        assert_eq!(
+            parse_geo_scopes(r#"["europe","bogus"]"#),
+            vec!["europe".to_string()]
+        );
+        assert!(parse_geo_scopes("").is_empty());
+        assert!(parse_geo_scopes("[]").is_empty());
+    }
+
+    #[test]
+    fn parse_geo_scopes_maps_legacy_scalars() {
+        assert_eq!(parse_geo_scopes("europe"), vec!["europe".to_string()]);
+        assert_eq!(parse_geo_scopes("eu"), vec!["europe".to_string()]);
+        assert_eq!(parse_geo_scopes("usa"), vec!["namerica".to_string()]);
+        assert_eq!(parse_geo_scopes("asia"), vec!["asia".to_string()]);
+        assert!(parse_geo_scopes("worldwide").is_empty());
+        assert!(parse_geo_scopes("custom").is_empty());
     }
 
     // -- parsers -------------------------------------------------------------

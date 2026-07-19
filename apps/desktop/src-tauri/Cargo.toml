@@ -4,7 +4,7 @@ version = "0.24.0"
 description = "Applye — local-first AI-powered job search desktop app"
 authors = ["Vitalii Kasap"]
 license = "MIT"
-repository = "https://github.com/vkasap/applye"
+repository = "https://github.com/vitala89/applye"
 edition = "2021"
 rust-version = "1.77.2"
 

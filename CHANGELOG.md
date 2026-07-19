@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **The desktop webview now runs with a real Content Security Policy.** `tauri.conf.json` shipped with `security.csp: null` (no restriction at all); it now sets an explicit policy scoped to what the app actually loads (self-hosted fonts, data/blob URIs for the CV photo, Tauri's own IPC/asset origins), so the packaged app can't load arbitrary scripts or connect to arbitrary origins.
+- **Cargo package metadata pointed at the wrong GitHub owner.** `apps/desktop/src-tauri/Cargo.toml`'s `repository` field said `vkasap/applye`; it now matches the real remote, `vitala89/applye`.
 - **Discover now recognizes locations properly.** Job locations are classified with a rewritten, unit-tested engine: US cities and states (`Austin, TX`, `Denver, CO`) land in North America instead of Other, South American countries (Brazil, Argentina, Uruguay, Chile, Colombia, Peru…) get their own region instead of falling into Other, and European/Asian/Oceania/Middle-East/Africa places are recognized too. Ambiguous two-letter codes no longer cross-classify (`SF, CA` is California, not Canada), and ordinary words never trigger a false country. Feed cards that previously showed no location now derive one from the feed's category or a "Location:" line, and clearly-remote jobs are labelled Remote - so the location actually shows and the Locations filter works.
 
 ### Changed

@@ -213,11 +213,30 @@ export class CoverLetterDetailComponent {
       void this.returnToApplyWizard(false);
       return;
     }
+    const jobId = this.returnJobId();
+    if (jobId) {
+      void this.router.navigate(['/jobs', jobId]);
+      return;
+    }
     void this.router.navigate(['/documents'], { queryParams: { tab: 'cover-letter' } });
+  }
+
+  /** Label for the back button: the job it returns to, or plain "Documents". */
+  backLabel(): string {
+    const jobLabel = this.route.snapshot.queryParamMap.get('jobLabel');
+    return this.returnJobId() && jobLabel
+      ? this.t()('documents.cover_letter_back_to_job').replace('{job}', jobLabel)
+      : this.t()('documents.cover_letter_back_to_documents');
   }
 
   private shouldReturnToApplyWizard(): boolean {
     return this.route.snapshot.queryParamMap.get('returnTo') === 'applyWizard';
+  }
+
+  /** Job id to return to when opened from My Jobs (returnTo=myJobs), else null. */
+  private returnJobId(): string | null {
+    const params = this.route.snapshot.queryParamMap;
+    return params.get('returnTo') === 'myJobs' ? params.get('jobId') : null;
   }
 
   private returnToApplyWizard(documentSaved: boolean): Promise<boolean> {

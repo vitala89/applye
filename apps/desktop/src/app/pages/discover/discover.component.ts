@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -55,8 +64,14 @@ interface RegionGroup {
 interface FeedSection {
   key: 'foryou' | 'more';
   label: string;
+  /** Rows to render now (windowed by the incremental pager). */
   rows: FeedRow[];
+  /** Full row count in this section, independent of the render window. */
+  total: number;
 }
+
+/** Feed rows rendered per page; the list grows in these steps as the user scrolls. */
+const FEED_PAGE = 30;
 type ConsoleTone = 'header' | 'ok' | 'err' | 'done' | 'active';
 
 interface ConsoleLine {
@@ -201,6 +216,9 @@ export class DiscoverComponent {
   protected readonly geoMenuOpen = signal(false);
   protected readonly sourceMenuOpen = signal(false);
   protected readonly tab = signal<Tab>('new');
+  /** Two-step inline confirm for "Clear list" (no modal, per product register). */
+  protected readonly clearConfirm = signal(false);
+  protected readonly clearing = signal(false);
 
   protected readonly allWorkTypes: readonly WorkType[] = ['remote', 'hybrid', 'onsite'];
 
@@ -215,6 +233,23 @@ export class DiscoverComponent {
 
   constructor() {
     void this.load();
+    // Infinite scroll: when the end-of-feed sentinel enters the viewport, render
+    // the next page. The effect re-attaches whenever the sentinel appears (it
+    // only exists in the feed view) and cleans up its observer.
+    effect((onCleanup) => {
+      const el = this.loadMoreSentinel()?.nativeElement;
+      if (!el || typeof IntersectionObserver === 'undefined') return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting) && this.hasMoreFeed()) {
+            this.loadMoreFeed();
+          }
+        },
+        { rootMargin: '400px' },
+      );
+      io.observe(el);
+      onCleanup(() => io.disconnect());
+    });
   }
 
   // --------------------------------------------------------------- derived
@@ -234,6 +269,25 @@ export class DiscoverComponent {
   protected readonly enabledCount = computed(
     () => this.sources().filter((s) => s.isEnabled).length,
   );
+
+  // ---- Sources drawer: summary + collapsible groups ----
+  protected readonly sourcesTotal = computed(() => this.sources().length);
+  protected readonly sourcesFailing = computed(
+    () => this.sources().filter((s) => this.resultLine(s).error).length,
+  );
+
+  /** Collapsed source groups in the drawer ('builtin' | 'boards' | 'yours'). */
+  protected readonly collapsedGroups = signal<ReadonlySet<string>>(new Set());
+  protected groupCollapsed(key: string): boolean {
+    return this.collapsedGroups().has(key);
+  }
+  protected toggleSourceGroup(key: string): void {
+    this.collapsedGroups.update((set) => this.toggled(set, key));
+  }
+  /** Enabled count within one source group, for its header badge. */
+  protected activeCount(list: DiscoverSource[]): number {
+    return list.filter((s) => s.isEnabled).length;
+  }
 
   /** Per-source results of the last scan, parsed from sources.lastScanJson. */
   private readonly lastResults = computed<ScanSourceResult[]>(() =>
@@ -319,16 +373,26 @@ export class DiscoverComponent {
   protected readonly feedSections = computed<FeedSection[]>(() => {
     const rows = this.visibleRows();
     if (!this.profileKeywords().length) {
-      return [{ key: 'more', label: '', rows }];
+      return [{ key: 'more', label: '', rows, total: rows.length }];
     }
     const forYou = rows.filter((r) => this.matchesProfile(r));
     const more = rows.filter((r) => !this.matchesProfile(r));
     const out: FeedSection[] = [];
     if (forYou.length) {
-      out.push({ key: 'foryou', label: this.t()('discover.for_you'), rows: forYou });
+      out.push({
+        key: 'foryou',
+        label: this.t()('discover.for_you'),
+        rows: forYou,
+        total: forYou.length,
+      });
     }
     if (more.length) {
-      out.push({ key: 'more', label: this.t()('discover.more_openings'), rows: more });
+      out.push({
+        key: 'more',
+        label: this.t()('discover.more_openings'),
+        rows: more,
+        total: more.length,
+      });
     }
     // Nothing matched the profile -> drop the "More" header so it reads as a
     // plain list rather than a lonely second-tier section.
@@ -337,6 +401,42 @@ export class DiscoverComponent {
     }
     return out;
   });
+
+  /** How many feed rows to render right now; grows by FEED_PAGE as the user scrolls. */
+  protected readonly displayCount = signal(FEED_PAGE);
+
+  /** Sentinel element at the end of the feed; when it scrolls into view, load more. */
+  private readonly loadMoreSentinel = viewChild<ElementRef<HTMLElement>>('loadMore');
+
+  /** Total rows across all sections (the full, unwindowed feed the filters allow). */
+  protected readonly totalFeedRows = computed(() =>
+    this.feedSections().reduce((sum, s) => sum + s.total, 0),
+  );
+
+  /** More rows exist than are currently rendered. */
+  protected readonly hasMoreFeed = computed(() => this.totalFeedRows() > this.displayCount());
+
+  /**
+   * The feed windowed to `displayCount`: rows are handed out across sections in
+   * order (For you first), so only the visible slice ever hits the DOM. Section
+   * headers still report their full `total`.
+   */
+  protected readonly renderedSections = computed<FeedSection[]>(() => {
+    let budget = this.displayCount();
+    const out: FeedSection[] = [];
+    for (const s of this.feedSections()) {
+      if (budget <= 0) break;
+      const rows = s.rows.slice(0, budget);
+      budget -= rows.length;
+      out.push({ ...s, rows });
+    }
+    return out;
+  });
+
+  /** Render one more page. Called by the scroll sentinel and the manual button. */
+  protected loadMoreFeed(): void {
+    this.displayCount.update((n) => n + FEED_PAGE);
+  }
 
   /** Distinct source names present in the feed (for the Sources checkboxes). */
   protected readonly availableSources = computed(() => this.sourceOptions());
@@ -439,6 +539,7 @@ export class DiscoverComponent {
       this.feed.set(
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
+      this.displayCount.set(FEED_PAGE);
       this.profileKeywords.set(this.deriveKeywords(profile?.targetArchetypes));
       this.geoScope.set(settings.geoScope || 'worldwide');
     } catch (e) {
@@ -506,6 +607,7 @@ export class DiscoverComponent {
       this.feed.set(
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
+      this.displayCount.set(FEED_PAGE);
       await this.reloadSources();
     } catch (e) {
       console.error('discover: scan failed', e);
@@ -516,6 +618,35 @@ export class DiscoverComponent {
     } finally {
       this.scanning.set(false);
       this.consoleExpanded.set(false);
+    }
+  }
+
+  // ----------------------------------------------------------- clear inbox
+  /** First click arms the confirm; a second click (confirmClear) does the work. */
+  protected askClearFeed(): void {
+    this.clearConfirm.set(true);
+  }
+
+  protected cancelClearFeed(): void {
+    this.clearConfirm.set(false);
+  }
+
+  /** Delete every unsaved scanned job, then reload the (now empty) feed. */
+  protected async confirmClearFeed(): Promise<void> {
+    if (this.clearing()) return;
+    this.clearing.set(true);
+    try {
+      await this.db.discoverClear();
+      const feed = await this.db.discoverFeed();
+      this.feed.set(
+        feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
+      );
+      this.displayCount.set(FEED_PAGE);
+    } catch (e) {
+      console.error('discover: clear failed', e);
+    } finally {
+      this.clearing.set(false);
+      this.clearConfirm.set(false);
     }
   }
 

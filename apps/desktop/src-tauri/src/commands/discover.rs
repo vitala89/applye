@@ -924,7 +924,8 @@ pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>
                 EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id) AS saved
          FROM jobs j
          WHERE j.imported_from = 'discover_scan' AND j.discover_dismissed = 0
-         ORDER BY j.created_at DESC, j.id DESC",
+         ORDER BY j.created_at DESC, j.id DESC
+         LIMIT 300",
     )
     .fetch_all(&db.pool)
     .await
@@ -958,6 +959,29 @@ pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>
     .map_err(|e| format!("db_discover_feed: mark shown: {e}"))?;
 
     Ok(items)
+}
+
+/// Delete every scanned job the user has not saved. Pure over the pool so it is
+/// unit-testable; saved jobs own an `applications` row and are left untouched.
+async fn discover_clear_core(pool: &SqlitePool) -> Result<u64, sqlx::Error> {
+    let res = sqlx::query(
+        "DELETE FROM jobs
+         WHERE imported_from = 'discover_scan'
+           AND NOT EXISTS (SELECT 1 FROM applications a WHERE a.job_id = jobs.id)",
+    )
+    .execute(pool)
+    .await?;
+    Ok(res.rows_affected())
+}
+
+/// Clear the Discover inbox: delete every scanned job the user has not saved
+/// (saved jobs live on in My Jobs / Pipeline). Returns how many rows were
+/// removed. A fresh scan repopulates the feed.
+#[tauri::command]
+pub async fn db_discover_clear(db: State<'_, Db>) -> Result<u64, String> {
+    discover_clear_core(&db.pool)
+        .await
+        .map_err(|e| format!("db_discover_clear: {e}"))
 }
 
 /// Dismiss (or un-dismiss, for the inline Undo) a scanned job.
@@ -1364,6 +1388,44 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(dismissed, 1);
+    }
+
+    #[tokio::test]
+    async fn discover_clear_deletes_only_unsaved_scanned_jobs() {
+        let pool = test_pool().await;
+        // Two scanned jobs; save the first by giving it an application row.
+        insert_scanned_job(
+            &pool,
+            &raw("Saved Role", "jd one", "https://x/1"),
+            "Remotive",
+        )
+        .await
+        .unwrap();
+        insert_scanned_job(
+            &pool,
+            &raw("Unsaved Role", "jd two", "https://x/2"),
+            "Remotive",
+        )
+        .await
+        .unwrap();
+        let saved_id: i64 = sqlx::query_scalar("SELECT id FROM jobs WHERE title = 'Saved Role'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO applications (job_id, status, updated_at) VALUES (?, 'saved', datetime('now'))")
+            .bind(saved_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let removed = discover_clear_core(&pool).await.unwrap();
+        assert_eq!(removed, 1, "only the unsaved job should be deleted");
+
+        let remaining: Vec<String> = sqlx::query_scalar("SELECT title FROM jobs ORDER BY title")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+        assert_eq!(remaining, vec!["Saved Role".to_string()]);
     }
 
     // -- live network checks (run manually: cargo test -- --ignored) ---------

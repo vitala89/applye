@@ -224,6 +224,11 @@ export class DbService {
     return tauriInvoke<void>('db_discover_dismiss', { jobId, dismissed });
   }
 
+  /** Clear the inbox: delete unsaved scanned jobs. Returns how many were removed. */
+  async discoverClear(): Promise<number> {
+    return tauriInvoke<number>('db_discover_clear');
+  }
+
   async listSources(): Promise<DiscoverSource[]> {
     return tauriInvoke<DiscoverSource[]>('db_list_sources');
   }

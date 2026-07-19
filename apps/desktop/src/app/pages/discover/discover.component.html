@@ -576,98 +576,164 @@
       >
         {{ t()('discover.sources') }}
       </button>
+      <button
+        type="button"
+        class="dv-btn dv-btn--ghost dv-filters__clear"
+        [title]="t()('discover.clear_list')"
+        [disabled]="!hasClearableJobs()"
+        (click)="askClearFeed()"
+      >
+        <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />
+        {{ t()('discover.clear_list') }}
+      </button>
+    </div>
+  }
+
+  <!-- ============ CLEAR CONFIRM MODAL ============ -->
+  @if (clearConfirm()) {
+    <div
+      class="dv-overlay dv-overlay--center"
+      (click)="cancelClearFeed()"
+      (keydown.escape)="cancelClearFeed()"
+      tabindex="-1"
+    >
+      <div
+        class="dv-confirm"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="t()('discover.clear_title')"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+        tabindex="-1"
+      >
+        <h3 class="dv-confirm__title">{{ t()('discover.clear_title') }}</h3>
+        <p class="dv-confirm__body">{{ t()('discover.clear_body') }}</p>
+        <div class="dv-confirm__actions">
+          <button
+            type="button"
+            class="dv-btn dv-btn--secondary"
+            [disabled]="clearing()"
+            (click)="cancelClearFeed()"
+          >
+            {{ t()('discover.clear_cancel') }}
+          </button>
+          <button
+            type="button"
+            class="dv-btn dv-btn--danger"
+            [disabled]="clearing()"
+            (click)="confirmClearFeed()"
+          >
+            {{ t()('discover.clear_yes') }}
+          </button>
+        </div>
+      </div>
     </div>
   }
 
   <!-- ============ FEED LIST ============ -->
   @if (detailId() === null && (view() === 'feed' || view() === 'scanning')) {
     <div class="dv-feed" [class.dv-feed--dim]="scanning()">
-      @for (row of visibleRows(); track row.id) {
-        @if (row.dismissed) {
-          <div class="dv-dismissed">
-            <span class="dv-dismissed__label">
-              {{ t()('discover.dismissed_prefix') }} · {{ row.title }}
-            </span>
-            <button type="button" class="dv-dismissed__undo" (click)="undoDismiss(row, $event)">
-              {{ t()('discover.undo') }}
-            </button>
-          </div>
-        } @else {
-          <div class="dv-row" [class.dv-row--saved]="row.saved">
-            <div
-              class="dv-row__main"
-              role="button"
-              tabindex="0"
-              (click)="openDetail(row)"
-              (keydown.enter)="openDetail(row)"
-            >
-              <div class="dv-row__body">
-                <div class="dv-row__titleline">
-                  <span class="dv-row__title">{{ row.title }}</span>
-                  @if (row.isNew && !row.saved) {
-                    <span class="dv-row__new">{{ t()('discover.new_marker') }}</span>
-                  }
-                  @if (row.saved) {
-                    <span class="dv-row__savedbadge">
-                      <lucide-icon [img]="icons.check" [size]="10" aria-hidden="true" />
-                      {{ t()('discover.saved_badge') }}
-                    </span>
-                  }
-                </div>
-                <div class="dv-row__companyline">
-                  <lucide-icon [img]="icons.company" [size]="14" aria-hidden="true" />
-                  <span class="dv-row__company">{{ row.company }}</span>
-                </div>
-                <div class="dv-row__meta">
-                  <span class="dv-row__srcbadge">
-                    <lucide-icon [img]="icons.source" [size]="11" aria-hidden="true" />
-                    {{ srcLabel(row.source) }}
-                  </span>
-                  @if (row.location) {
-                    <span class="dv-row__metaitem">
-                      <lucide-icon [img]="icons.location" [size]="12" aria-hidden="true" />
-                      {{ row.location }}
-                    </span>
-                  }
-                  <span class="dv-row__metaitem dv-row__metaitem--dim">
-                    <lucide-icon [img]="icons.time" [size]="12" aria-hidden="true" />
-                    {{ ago(row.createdAt) }}
-                  </span>
-                </div>
-                @if (matchedKeywords(row).length) {
-                  <div class="dv-row__keywords">
-                    <span class="dv-row__matchedlbl">{{ t()('discover.matched_label') }}</span>
-                    @for (kw of matchedKeywords(row); track kw) {
-                      <span class="dv-row__kw">{{ kw }}</span>
-                    }
-                  </div>
-                }
-              </div>
-              <div class="dv-row__actions">
-                @if (!row.saved) {
-                  <button
-                    type="button"
-                    class="dv-btn dv-btn--secondary"
-                    (click)="saveRow(row, $event)"
-                  >
-                    <lucide-icon [img]="icons.save" [size]="13" aria-hidden="true" />
-                    {{ t()('discover.save') }}
-                  </button>
-                  <button
-                    type="button"
-                    class="dv-iconbtn"
-                    [title]="t()('discover.dismiss')"
-                    (click)="dismissRow(row, $event)"
-                  >
-                    <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
-                  </button>
-                } @else {
-                  <span class="dv-row__inmyjobs">{{ t()('discover.in_my_jobs') }}</span>
-                }
-              </div>
-            </div>
+      @for (section of renderedSections(); track section.key) {
+        @if (section.label) {
+          <div class="dv-feed__section">
+            <span class="dv-feed__sectionlabel">{{ section.label }}</span>
+            <span class="dv-feed__sectioncount">{{ section.total }}</span>
           </div>
         }
+        @for (row of section.rows; track row.id) {
+          @if (row.dismissed) {
+            <div class="dv-dismissed">
+              <span class="dv-dismissed__label">
+                {{ t()('discover.dismissed_prefix') }} · {{ row.title }}
+              </span>
+              <button type="button" class="dv-dismissed__undo" (click)="undoDismiss(row, $event)">
+                {{ t()('discover.undo') }}
+              </button>
+            </div>
+          } @else {
+            <div class="dv-row" [class.dv-row--saved]="row.saved">
+              <div
+                class="dv-row__main"
+                role="button"
+                tabindex="0"
+                (click)="openDetail(row)"
+                (keydown.enter)="openDetail(row)"
+              >
+                <div class="dv-row__body">
+                  <div class="dv-row__titleline">
+                    <span class="dv-row__title">{{ row.title }}</span>
+                    @if (row.isNew && !row.saved) {
+                      <span class="dv-row__new">{{ t()('discover.new_marker') }}</span>
+                    }
+                    @if (row.saved) {
+                      <span class="dv-row__savedbadge">
+                        <lucide-icon [img]="icons.check" [size]="10" aria-hidden="true" />
+                        {{ t()('discover.saved_badge') }}
+                      </span>
+                    }
+                  </div>
+                  <div class="dv-row__companyline">
+                    <lucide-icon [img]="icons.company" [size]="14" aria-hidden="true" />
+                    <span class="dv-row__company">{{ row.company }}</span>
+                  </div>
+                  <div class="dv-row__meta">
+                    <span class="dv-row__srcbadge">
+                      <lucide-icon [img]="icons.source" [size]="11" aria-hidden="true" />
+                      {{ srcLabel(row.source) }}
+                    </span>
+                    @if (row.location) {
+                      <span class="dv-row__metaitem">
+                        <lucide-icon [img]="icons.location" [size]="12" aria-hidden="true" />
+                        {{ row.location }}
+                      </span>
+                    }
+                    <span class="dv-row__metaitem dv-row__metaitem--dim">
+                      <lucide-icon [img]="icons.time" [size]="12" aria-hidden="true" />
+                      {{ ago(row.createdAt) }}
+                    </span>
+                  </div>
+                  @if (matchedKeywords(row).length) {
+                    <div class="dv-row__keywords">
+                      <span class="dv-row__matchedlbl">{{ t()('discover.matched_label') }}</span>
+                      @for (kw of matchedKeywords(row); track kw) {
+                        <span class="dv-row__kw">{{ kw }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+                <div class="dv-row__actions">
+                  @if (!row.saved) {
+                    <button
+                      type="button"
+                      class="dv-btn dv-btn--secondary"
+                      (click)="saveRow(row, $event)"
+                    >
+                      <lucide-icon [img]="icons.save" [size]="13" aria-hidden="true" />
+                      {{ t()('discover.save') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="dv-iconbtn"
+                      [title]="t()('discover.dismiss')"
+                      (click)="dismissRow(row, $event)"
+                    >
+                      <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+                    </button>
+                  } @else {
+                    <span class="dv-row__inmyjobs">{{ t()('discover.in_my_jobs') }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
+      }
+      @if (hasMoreFeed()) {
+        <div class="dv-feed__more" #loadMore>
+          <button type="button" class="dv-feed__morebtn" (click)="loadMoreFeed()">
+            {{ t()('discover.show_more').replace('{n}', '' + (totalFeedRows() - displayCount())) }}
+          </button>
+        </div>
       }
     </div>
 
@@ -680,9 +746,6 @@
               .replace('{filtered}', '' + filteredCount())
           }}
         </span>
-        <button type="button" class="dv-linkbtn dv-linkbtn--accent" (click)="drawerOpen.set(true)">
-          {{ t()('discover.adjust_filters') }}
-        </button>
       </div>
     }
   }
@@ -733,105 +796,92 @@
       </div>
 
       <div class="dv-drawer__body">
-        <!-- built-in -->
-        <div class="dv-drawer__section">{{ t()('discover.builtin_sources') }}</div>
-        <div class="dv-drawer__list">
-          @for (s of builtinSources(); track s.id) {
-            <div class="dv-src">
-              <div class="dv-src__info">
-                <div class="dv-src__nameline">
-                  <span class="dv-src__name">{{ s.name }}</span>
-                  <span class="dv-src__type">{{ typeBadge(s) }}</span>
-                </div>
-                <span class="dv-src__result" [class.dv-src__result--error]="resultLine(s).error">
-                  {{ resultLine(s).text }}
-                </span>
-              </div>
-              <button
-                type="button"
-                class="dv-switch"
-                role="switch"
-                [attr.aria-checked]="s.isEnabled"
-                [class.dv-switch--on]="s.isEnabled"
-                (click)="toggleSource(s)"
-              >
-                <span class="dv-switch__thumb" aria-hidden="true"></span>
-              </button>
-            </div>
+        <!-- summary -->
+        <div class="dv-srcsummary">
+          <span class="dv-srcsummary__count">
+            {{
+              t()('discover.sources_active')
+                .replace('{active}', '' + enabledCount())
+                .replace('{total}', '' + sourcesTotal())
+            }}
+          </span>
+          @if (sourcesFailing()) {
+            <span class="dv-srcsummary__fail">
+              {{ t()('discover.sources_failing').replace('{n}', '' + sourcesFailing()) }}
+            </span>
           }
+          <a routerLink="/settings" class="dv-srcsummary__scope">{{ scopeLabel() }}</a>
         </div>
 
-        <!-- company boards -->
-        <div class="dv-drawer__section">{{ t()('discover.company_boards') }}</div>
-        <div class="dv-drawer__list">
-          @for (s of companyBoards(); track s.id) {
-            <div class="dv-src">
-              <div class="dv-src__info">
-                <div class="dv-src__nameline">
-                  <span class="dv-src__name">{{ s.name }}</span>
-                  <span class="dv-src__type">{{ typeBadge(s) }}</span>
+        <!-- built-in -->
+        <button
+          type="button"
+          class="dv-srcgroup"
+          [attr.aria-expanded]="!groupCollapsed('builtin')"
+          (click)="toggleSourceGroup('builtin')"
+        >
+          <lucide-icon
+            class="dv-srcgroup__chev"
+            [class.dv-srcgroup__chev--open]="!groupCollapsed('builtin')"
+            [img]="icons.chevron"
+            [size]="14"
+            aria-hidden="true"
+          />
+          <span class="dv-srcgroup__label">{{ t()('discover.builtin_sources') }}</span>
+          <span class="dv-srcgroup__count"
+            >{{ activeCount(builtinSources()) }}/{{ builtinSources().length }}</span
+          >
+        </button>
+        @if (!groupCollapsed('builtin')) {
+          <div class="dv-drawer__list">
+            @for (s of builtinSources(); track s.id) {
+              <div class="dv-src">
+                <div class="dv-src__info">
+                  <div class="dv-src__nameline">
+                    <span class="dv-src__name">{{ s.name }}</span>
+                    <span class="dv-src__type">{{ typeBadge(s) }}</span>
+                  </div>
+                  <span class="dv-src__result" [class.dv-src__result--error]="resultLine(s).error">
+                    {{ resultLine(s).text }}
+                  </span>
                 </div>
-                <span class="dv-src__result" [class.dv-src__result--error]="resultLine(s).error">
-                  {{ resultLine(s).text }}
-                </span>
+                <button
+                  type="button"
+                  class="dv-switch"
+                  role="switch"
+                  [attr.aria-checked]="s.isEnabled"
+                  [class.dv-switch--on]="s.isEnabled"
+                  (click)="toggleSource(s)"
+                >
+                  <span class="dv-switch__thumb" aria-hidden="true"></span>
+                </button>
               </div>
-              <button
-                type="button"
-                class="dv-iconbtn dv-iconbtn--sm"
-                [title]="t()('discover.remove')"
-                (click)="removeSource(s, $event)"
-              >
-                <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                class="dv-switch"
-                role="switch"
-                [attr.aria-checked]="s.isEnabled"
-                [class.dv-switch--on]="s.isEnabled"
-                (click)="toggleSource(s)"
-              >
-                <span class="dv-switch__thumb" aria-hidden="true"></span>
-              </button>
-            </div>
-          }
-        </div>
-        @if (!boardFormOpen()) {
-          <button type="button" class="dv-addboard" (click)="boardFormOpen.set(true)">
-            <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
-            {{ t()('discover.add_company_board') }}
-          </button>
-        } @else {
-          <div class="dv-form">
-            <select
-              class="dv-select"
-              [ngModel]="boardType()"
-              (ngModelChange)="boardType.set($event)"
-            >
-              <option value="ats_greenhouse">Greenhouse</option>
-              <option value="ats_lever">Lever</option>
-              <option value="ats_ashby">Ashby</option>
-            </select>
-            <input
-              type="text"
-              class="dv-input"
-              [placeholder]="t()('discover.slug_ph')"
-              [ngModel]="boardSlug()"
-              (ngModelChange)="boardSlug.set($event)"
-            />
-            <div class="dv-form__actions">
-              <button type="button" class="dv-btn dv-btn--secondary" (click)="addBoard()">
-                {{ t()('discover.add_source') }}
-              </button>
-            </div>
+            }
           </div>
         }
 
-        <!-- your sources -->
-        <div class="dv-drawer__section">{{ t()('discover.your_sources') }}</div>
-        @if (userSources().length) {
+        <!-- company boards -->
+        <button
+          type="button"
+          class="dv-srcgroup"
+          [attr.aria-expanded]="!groupCollapsed('boards')"
+          (click)="toggleSourceGroup('boards')"
+        >
+          <lucide-icon
+            class="dv-srcgroup__chev"
+            [class.dv-srcgroup__chev--open]="!groupCollapsed('boards')"
+            [img]="icons.chevron"
+            [size]="14"
+            aria-hidden="true"
+          />
+          <span class="dv-srcgroup__label">{{ t()('discover.company_boards') }}</span>
+          <span class="dv-srcgroup__count"
+            >{{ activeCount(companyBoards()) }}/{{ companyBoards().length }}</span
+          >
+        </button>
+        @if (!groupCollapsed('boards')) {
           <div class="dv-drawer__list">
-            @for (s of userSources(); track s.id) {
+            @for (s of companyBoards(); track s.id) {
               <div class="dv-src">
                 <div class="dv-src__info">
                   <div class="dv-src__nameline">
@@ -863,39 +913,122 @@
               </div>
             }
           </div>
-        }
-        <div class="dv-form">
-          <input
-            type="text"
-            class="dv-input"
-            [placeholder]="t()('discover.rss_url_ph')"
-            [ngModel]="rssUrl()"
-            (ngModelChange)="rssUrl.set($event)"
-          />
-          <input
-            type="text"
-            class="dv-input"
-            [placeholder]="t()('discover.source_name_ph')"
-            [ngModel]="rssName()"
-            (ngModelChange)="rssName.set($event)"
-          />
-          <div class="dv-form__note">
-            <lucide-icon [img]="icons.info" [size]="13" aria-hidden="true" />
-            <span>{{ t()('discover.legality_hint') }}</span>
-          </div>
-          <div class="dv-form__actions">
-            <button type="button" class="dv-btn dv-btn--secondary" (click)="addRss()">
-              {{ t()('discover.add_source') }}
+          @if (!boardFormOpen()) {
+            <button type="button" class="dv-addboard" (click)="boardFormOpen.set(true)">
+              <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+              {{ t()('discover.add_company_board') }}
             </button>
-          </div>
-        </div>
-      </div>
+          } @else {
+            <div class="dv-form">
+              <select
+                class="dv-select"
+                [ngModel]="boardType()"
+                (ngModelChange)="boardType.set($event)"
+              >
+                <option value="ats_greenhouse">Greenhouse</option>
+                <option value="ats_lever">Lever</option>
+                <option value="ats_ashby">Ashby</option>
+              </select>
+              <input
+                type="text"
+                class="dv-input"
+                [placeholder]="t()('discover.slug_ph')"
+                [ngModel]="boardSlug()"
+                (ngModelChange)="boardSlug.set($event)"
+              />
+              <div class="dv-form__actions">
+                <button type="button" class="dv-btn dv-btn--secondary" (click)="addBoard()">
+                  {{ t()('discover.add_source') }}
+                </button>
+              </div>
+            </div>
+          }
+        }
 
-      <div class="dv-drawer__foot">
-        <span class="dv-drawer__scope">{{ scopeLabel() }}</span>
-        <a routerLink="/settings" class="dv-drawer__settings">
-          {{ t()('discover.edit_in_settings') }}
-        </a>
+        <!-- your sources -->
+        <button
+          type="button"
+          class="dv-srcgroup"
+          [attr.aria-expanded]="!groupCollapsed('yours')"
+          (click)="toggleSourceGroup('yours')"
+        >
+          <lucide-icon
+            class="dv-srcgroup__chev"
+            [class.dv-srcgroup__chev--open]="!groupCollapsed('yours')"
+            [img]="icons.chevron"
+            [size]="14"
+            aria-hidden="true"
+          />
+          <span class="dv-srcgroup__label">{{ t()('discover.your_sources') }}</span>
+          <span class="dv-srcgroup__count"
+            >{{ activeCount(userSources()) }}/{{ userSources().length }}</span
+          >
+        </button>
+        @if (!groupCollapsed('yours')) {
+          @if (userSources().length) {
+            <div class="dv-drawer__list">
+              @for (s of userSources(); track s.id) {
+                <div class="dv-src">
+                  <div class="dv-src__info">
+                    <div class="dv-src__nameline">
+                      <span class="dv-src__name">{{ s.name }}</span>
+                      <span class="dv-src__type">{{ typeBadge(s) }}</span>
+                    </div>
+                    <span
+                      class="dv-src__result"
+                      [class.dv-src__result--error]="resultLine(s).error"
+                    >
+                      {{ resultLine(s).text }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="dv-iconbtn dv-iconbtn--sm"
+                    [title]="t()('discover.remove')"
+                    (click)="removeSource(s, $event)"
+                  >
+                    <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    class="dv-switch"
+                    role="switch"
+                    [attr.aria-checked]="s.isEnabled"
+                    [class.dv-switch--on]="s.isEnabled"
+                    (click)="toggleSource(s)"
+                  >
+                    <span class="dv-switch__thumb" aria-hidden="true"></span>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+          <div class="dv-form">
+            <input
+              type="text"
+              class="dv-input"
+              [placeholder]="t()('discover.rss_url_ph')"
+              [ngModel]="rssUrl()"
+              (ngModelChange)="rssUrl.set($event)"
+            />
+            <input
+              type="text"
+              class="dv-input"
+              [placeholder]="t()('discover.source_name_ph')"
+              [ngModel]="rssName()"
+              (ngModelChange)="rssName.set($event)"
+            />
+            <div class="dv-form__note">
+              <lucide-icon [img]="icons.info" [size]="13" aria-hidden="true" />
+              <span>{{ t()('discover.legality_hint') }}</span>
+            </div>
+            <div class="dv-form__actions">
+              <button type="button" class="dv-btn dv-btn--secondary" (click)="addRss()">
+                {{ t()('discover.add_source') }}
+              </button>
+            </div>
+          </div>
+        }
       </div>
     </div>
   </div>

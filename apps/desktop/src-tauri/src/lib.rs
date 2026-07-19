@@ -108,6 +108,7 @@ pub fn run() {
             commands::discover::discover_scan,
             commands::discover::db_discover_feed,
             commands::discover::db_discover_dismiss,
+            commands::discover::db_discover_clear,
             commands::discover::db_list_sources,
             commands::discover::db_set_source_enabled,
             commands::discover::db_add_source,

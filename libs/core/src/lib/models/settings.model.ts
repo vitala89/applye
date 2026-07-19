@@ -1,10 +1,4 @@
-import {
-  AiMode,
-  AiProvider,
-  ExportFormat,
-  SupportedLanguage,
-  GeoScope,
-} from '../types/common.types';
+import { AiMode, AiProvider, ExportFormat, SupportedLanguage } from '../types/common.types';
 
 export interface Settings {
   id: 1;
@@ -17,7 +11,8 @@ export interface Settings {
   exportDir: string;
   uiLanguage: SupportedLanguage;
   defaultDocLanguage: SupportedLanguage;
-  geoScope: GeoScope;
+  /** Opaque - a JSON-encoded GeoScopeKey[]. Use parseGeoScopes/encodeGeoScopes. */
+  geoScope: string;
   followupDaysAfterApply?: number;
   followupDaysAfterInterview?: number;
   minScoreNotify?: number;

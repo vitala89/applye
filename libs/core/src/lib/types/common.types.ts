@@ -4,7 +4,6 @@ export type ExportFormat = 'pdf' | 'docx' | 'md' | 'xlsx';
 export type DocType = 'cv' | 'cover_letter' | 'pitch' | 'interview_prep' | 'arbeitsagentur_report';
 
 export type SupportedLanguage = 'en' | 'de' | 'ru' | 'es' | 'fr' | 'uk';
-export type GeoScope = 'worldwide' | 'europe' | 'eu' | 'usa' | 'asia' | 'custom';
 
 /**
  * Endonyms (each language's own name) for language pickers. A user who lands in

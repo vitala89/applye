@@ -5,7 +5,13 @@
 } @else {
   <div class="cvdetail">
     <header class="cvdetail__bar">
-      <button class="icon-btn" type="button" (click)="back()">
+      <button
+        class="icon-btn"
+        type="button"
+        [title]="backLabel()"
+        [attr.aria-label]="backLabel()"
+        (click)="back()"
+      >
         <lucide-icon [img]="icons.back" [size]="16" aria-hidden="true" />
       </button>
       <input

@@ -1018,3 +1018,59 @@ describe('CvDetailComponent export/print hardening', () => {
     });
   });
 });
+
+describe('CvDetailComponent back navigation', () => {
+  async function setup(params: Record<string, string | null>) {
+    const dbStub: Partial<DbService> = {
+      documentLibraryGet: jest.fn().mockResolvedValue(null),
+      cvTemplatesList: jest.fn().mockResolvedValue([]),
+      checkStyleSafety: jest.fn().mockResolvedValue([]),
+    };
+    const navigate = jest.fn();
+
+    await TestBed.configureTestingModule({
+      imports: [CvDetailComponent],
+      providers: [
+        { provide: DbService, useValue: dbStub },
+        { provide: AiService, useValue: {} },
+        TranslateService,
+        ToastService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: { get: () => '1' },
+              queryParamMap: { get: (key: string) => params[key] ?? null },
+            },
+          },
+        },
+        { provide: Router, useValue: { navigate } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(CvDetailComponent);
+    fixture.detectChanges();
+    return { component: fixture.componentInstance, navigate };
+  }
+
+  it('returns to the job it was opened from (returnTo=myJobs)', async () => {
+    const { component, navigate } = await setup({
+      returnTo: 'myJobs',
+      jobId: '42',
+      jobLabel: 'Acme Corp',
+    });
+    component.back();
+    expect(navigate).toHaveBeenCalledWith(['/jobs', '42']);
+  });
+
+  it('back label names the job it returns to', async () => {
+    const { component } = await setup({ returnTo: 'myJobs', jobId: '42', jobLabel: 'Acme Corp' });
+    expect(component.backLabel()).toContain('Acme Corp');
+  });
+
+  it('falls back to the Documents list with no returnTo context', async () => {
+    const { component, navigate } = await setup({});
+    component.back();
+    expect(navigate).toHaveBeenCalledWith(['/documents']);
+  });
+});

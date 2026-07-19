@@ -2380,7 +2380,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   async openCv(id: number, returnToWizard = false): Promise<void> {
     if (!returnToWizard) {
-      await this.router.navigate(['/documents/cv', id]);
+      await this.openDocumentEditorWithReturnToJob('cv', id);
       return;
     }
     await this.openDocumentEditorWithReturn('cv', id);
@@ -2388,10 +2388,24 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   async openCoverLetter(id: number, returnToWizard = false): Promise<void> {
     if (!returnToWizard) {
-      await this.router.navigate(['/documents/cover-letter', id]);
+      await this.openDocumentEditorWithReturnToJob('cover_letter', id);
       return;
     }
     await this.openDocumentEditorWithReturn('cover_letter', id);
+  }
+
+  /** Opens a linked doc from the My Jobs detail's badges - its back arrow
+   * returns here (this job), not the Documents list. */
+  private async openDocumentEditorWithReturnToJob(
+    kind: ReviewDocumentKind,
+    id: number,
+  ): Promise<void> {
+    const job = this.job();
+    if (!job?.id) return;
+    const path = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
+    await this.router.navigate(path, {
+      queryParams: { returnTo: 'myJobs', jobId: job.id, jobLabel: job.company || job.title || '' },
+    });
   }
 
   private async openDocumentEditorWithReturn(kind: ReviewDocumentKind, id: number): Promise<void> {

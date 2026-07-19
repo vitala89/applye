@@ -132,6 +132,24 @@ is the single source of truth; this file tracks what changed at each tag.
 - **The review step explains itself**: contact details are editable there, while experience and skills are shown as parsed and refined later in Documents.
 - **Removed a duplicated paragraph** on the AI setup step, which printed the same explanation twice, and a mislabelled "Setup —" prefix on the coming-soon note.
 
+### Fixed
+
+- **Discover's location recognition was rewritten - US cities, South American countries and more no longer land in Other.** The classifier now lives in one pure, unit-tested module (42 tests). Whole-word country/city names match anywhere; short codes (`CA`, `DE`, `IN`, `NL`...) match only as a standalone segment or an uppercase token, so `SF, CA` resolves to California, not Canada, and "priorities" no longer matches the city "Rio". Adds South America (Brazil, Argentina, Uruguay, Chile, Colombia, Peru...), every US state plus DC, the Canadian provinces, and Oceania / Middle East / Africa regions with many more cities.
+- **Discover cards from RSS feeds that omit a location tag no longer show a blank location.** The scan now falls back to a place-like category tag, a "Location:"/"Standort:" label in the posting body, or "Remote" when the posting is clearly remote-only.
+- **Choosing a job-search scope in Settings now actually takes effect.** The scope picker only updated a local field until the page's shared Save button was pressed separately - easy to miss, so a scan could run against Worldwide right after picking Europe. Toggling a region now saves immediately, the same way Discover's own Sources toggles already do.
+
+### Added
+
+- **The Discover feed now leads with roles that match your target roles.** Openings whose title matches one of your profile's Target Archetypes are grouped under "For you", with everything else below under "More openings" - a soft ranking, never a hard filter, so nothing is hidden.
+- **You can clear the Discover inbox.** A "Clear list" action (with a confirm dialog and a toast reporting how many were removed) deletes every scanned-but-unsaved job so you can start a clean scan; jobs you already saved stay untouched in My Jobs.
+- **The job-search scope can now be several regions at once, including South America, Oceania and the Middle East.** The old single-choice picker (Worldwide / Europe / USA / Asia) is a checkbox grid: pick Europe and Asia together, or any combination of Europe, North America, South America, Asia, Oceania, Middle East and Africa. North America now correctly covers Canada and Mexico too, not only the US.
+
+### Changed
+
+- **The Discover feed no longer loads every scanned job into memory and the DOM at once.** The feed is capped server-side and renders incrementally - about 30 rows at a time, growing as you scroll - instead of mounting the entire list up front.
+- **Discover's filter bar and Clear list now stay reachable while you scroll a long feed.** The filter row is pinned to the top of the list instead of living only in the footer, where it required scrolling to the very bottom to reach.
+- **The Sources drawer scales better with many sources.** It now opens with a summary bar (how many sources are active, how many are failing, and the current geo scope), and the Built-in / Company boards / Your sources groups are collapsible.
+
 ## [0.24.0] - 2026-07-15
 
 The CV and cover-letter editors become WYSIWYG: you edit on the rendered page,

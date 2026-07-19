@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   Check,
@@ -13,7 +13,16 @@ import {
 } from 'lucide-angular';
 import { getVersion } from '@tauri-apps/api/app';
 import { AiService, DbService, KeysService } from '@applye/data';
-import { AiProvider, LANGUAGE_NATIVE_NAMES, Settings, SupportedLanguage } from '@applye/core';
+import {
+  AiProvider,
+  encodeGeoScopes,
+  GEO_SCOPE_KEYS,
+  GeoScopeKey,
+  LANGUAGE_NATIVE_NAMES,
+  parseGeoScopes,
+  Settings,
+  SupportedLanguage,
+} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
@@ -288,20 +297,30 @@ const PROVIDER_VENDORS: Record<string, string> = {
         <!-- Job search scope (drives the Discover scan's geo filter) -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.jobsearch_section') }}</h3>
-          <label class="field">
+          <div class="field grow">
             <span class="cap">{{ t()('settings.geo_scope_label') }}</span>
-            <select
-              [ngModel]="s.geoScope"
-              (ngModelChange)="patch('geoScope', $event)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              <option value="worldwide">{{ t()('settings.geo_worldwide') }}</option>
-              <option value="europe">{{ t()('settings.geo_europe') }}</option>
-              <option value="usa">{{ t()('settings.geo_usa') }}</option>
-              <option value="asia">{{ t()('settings.geo_asia') }}</option>
-            </select>
+            <div class="geo-chips">
+              <label class="geo-chip" [class.geo-chip--on]="geoWorldwideChecked()">
+                <input
+                  type="checkbox"
+                  [checked]="geoWorldwideChecked()"
+                  (change)="setGeoWorldwide()"
+                />
+                {{ t()('settings.geo_worldwide') }}
+              </label>
+              @for (key of geoScopeKeys; track key) {
+                <label class="geo-chip" [class.geo-chip--on]="geoScopeChecked(key)">
+                  <input
+                    type="checkbox"
+                    [checked]="geoScopeChecked(key)"
+                    (change)="toggleGeoScope(key)"
+                  />
+                  {{ t()('discover.region_' + key) }}
+                </label>
+              }
+            </div>
             <p class="hint">{{ t()('settings.geo_scope_hint') }}</p>
-          </label>
+          </div>
         </section>
 
         <!-- Follow-up reminders -->
@@ -580,6 +599,41 @@ const PROVIDER_VENDORS: Record<string, string> = {
         font-size: var(--text-xs);
         color: var(--text-tertiary);
       }
+      .geo-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .geo-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-secondary);
+        background: var(--surface-sunken);
+        border: var(--border-width) solid var(--border-default);
+        border-radius: var(--radius-badge);
+        padding: var(--space-2) var(--space-3);
+        cursor: pointer;
+        transition:
+          background var(--dur-fast) var(--ease-standard),
+          border-color var(--dur-fast) var(--ease-standard),
+          color var(--dur-fast) var(--ease-standard);
+      }
+      .geo-chip:hover {
+        border-color: var(--border-strong, var(--text-tertiary));
+      }
+      .geo-chip input {
+        margin: 0;
+        padding: 0;
+        accent-color: var(--accent);
+      }
+      .geo-chip--on {
+        background: var(--accent-tint);
+        border-color: var(--accent);
+        color: var(--text-accent);
+      }
       .reply {
         margin-top: var(--space-4);
         background: var(--surface-sunken);
@@ -777,6 +831,51 @@ export class SettingsComponent implements OnInit {
     const s = this.settings();
     if (s) this.settings.set({ ...s, [key]: value });
     if (key === 'uiLanguage') this.i18n.setLocale(value as SupportedLanguage);
+  }
+
+  // --- Job search geo scope ---
+  // Auto-saves immediately on every toggle (like Discover's own source
+  // toggles) instead of waiting for the page's explicit Save button - this
+  // setting drives live Discover scan behavior, so a choice here must take
+  // effect right away even if the user never touches Save.
+  readonly geoScopeKeys = GEO_SCOPE_KEYS;
+
+  readonly geoScopeSelected = computed<ReadonlySet<GeoScopeKey>>(
+    () => new Set(parseGeoScopes(this.settings()?.geoScope)),
+  );
+
+  geoScopeChecked(key: GeoScopeKey): boolean {
+    return this.geoScopeSelected().has(key);
+  }
+
+  geoWorldwideChecked(): boolean {
+    return this.geoScopeSelected().size === 0;
+  }
+
+  async toggleGeoScope(key: GeoScopeKey): Promise<void> {
+    const next = new Set(this.geoScopeSelected());
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    await this.persistGeoScopes([...next]);
+  }
+
+  async setGeoWorldwide(): Promise<void> {
+    if (this.geoWorldwideChecked()) return;
+    await this.persistGeoScopes([]);
+  }
+
+  private async persistGeoScopes(next: GeoScopeKey[]): Promise<void> {
+    const prev = this.settings();
+    if (!prev) return;
+    const geoScope = encodeGeoScopes(next);
+    this.settings.set({ ...prev, geoScope }); // optimistic
+    try {
+      await this.db.updateSettings({ geoScope });
+    } catch (e) {
+      console.error('settings: geo scope save failed', e);
+      this.settings.set(prev); // rollback
+      this.toast.error(String(e));
+    }
   }
 
   async onProviderChange(provider: Settings['provider']): Promise<void> {

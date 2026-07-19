@@ -9,7 +9,8 @@
         class="icon-btn"
         type="button"
         (click)="back()"
-        [attr.aria-label]="t()('common.back')"
+        [attr.aria-label]="backLabel()"
+        [title]="backLabel()"
       >
         <lucide-icon [img]="icons.back" [size]="16" aria-hidden="true" />
       </button>

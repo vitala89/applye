@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -25,37 +34,21 @@ import {
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { DbService } from '@applye/data';
+import { parseGeoScopes } from '@applye/core';
 import type { DiscoverFeedItem, DiscoverSource, ScanSourceResult } from '@applye/core';
+import {
+  classifyLoc,
+  cityKey,
+  OTHER_COUNTRY,
+  REGION_ORDER,
+  type LocClass,
+  type RegionKey,
+} from './discover-location';
+import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
 type WorkType = 'remote' | 'hybrid' | 'onsite';
-type RegionKey = 'europe' | 'namerica' | 'asia' | 'other';
 type Tab = 'new' | 'all';
-
-/** A city inside a country, recognized by its own free-text tokens. */
-interface CityDef {
-  name: string;
-  tokens: string[];
-}
-
-/** A recognized country, the region it rolls up into, and its known cities. */
-interface CountryDef {
-  name: string;
-  region: RegionKey;
-  tokens: string[];
-  cities?: CityDef[];
-}
-
-/**
- * Location classification for one job. `country` is '' for anything not
- * recognized (remote-only, unknown text) -> it falls into the Other bucket,
- * which is a normal selectable option, never an always-pass.
- */
-interface LocClass {
-  country: string;
-  city: string;
-  region: RegionKey;
-}
 
 /** One country row in the Locations popover, with the cities actually seen. */
 interface CountryNode {
@@ -68,6 +61,19 @@ interface RegionGroup {
   key: RegionKey;
   countries: CountryNode[];
 }
+
+/** A titled block of feed rows ("For you" / "More openings"). */
+interface FeedSection {
+  key: 'foryou' | 'more';
+  label: string;
+  /** Rows to render now (windowed by the incremental pager). */
+  rows: FeedRow[];
+  /** Full row count in this section, independent of the render window. */
+  total: number;
+}
+
+/** Feed rows rendered per page; the list grows in these steps as the user scrolls. */
+const FEED_PAGE = 30;
 type ConsoleTone = 'header' | 'ok' | 'err' | 'done' | 'active';
 
 interface ConsoleLine {
@@ -96,304 +102,6 @@ const ATS_LABEL: Record<string, string> = {
   ats_lever: 'LEVER',
   ats_ashby: 'ASHBY',
 };
-
-/**
- * Country dictionary for the Locations filter. Deterministic, 0 tokens.
- * Tokens length <= 3 (country codes like "de", "eu", "us") match as whole
- * words; longer tokens match as substrings. Specific countries are listed
- * before the generic region entries ("Europe", "Asia") so a concrete match
- * (e.g. "Munich, DE" -> Germany) always wins over the generic fallback.
- * Which of these actually appear in the filter is derived from the live feed.
- */
-const COUNTRY_DEFS: CountryDef[] = [
-  // ---- Europe (specific) ----
-  {
-    name: 'Germany',
-    region: 'europe',
-    tokens: ['germany', 'deutschland', 'de'],
-    cities: [
-      { name: 'Berlin', tokens: ['berlin'] },
-      { name: 'Munich', tokens: ['munich', 'münchen'] },
-      { name: 'Hamburg', tokens: ['hamburg'] },
-      { name: 'Frankfurt', tokens: ['frankfurt'] },
-      { name: 'Cologne', tokens: ['cologne', 'köln'] },
-      { name: 'Stuttgart', tokens: ['stuttgart'] },
-    ],
-  },
-  {
-    name: 'United Kingdom',
-    region: 'europe',
-    tokens: ['united kingdom', 'england', 'scotland', 'wales', 'britain', 'uk', 'gb'],
-    cities: [
-      { name: 'London', tokens: ['london'] },
-      { name: 'Manchester', tokens: ['manchester'] },
-      { name: 'Edinburgh', tokens: ['edinburgh'] },
-    ],
-  },
-  {
-    name: 'France',
-    region: 'europe',
-    tokens: ['france'],
-    cities: [{ name: 'Paris', tokens: ['paris'] }],
-  },
-  {
-    name: 'Netherlands',
-    region: 'europe',
-    tokens: ['netherlands', 'holland'],
-    cities: [{ name: 'Amsterdam', tokens: ['amsterdam'] }],
-  },
-  {
-    name: 'Spain',
-    region: 'europe',
-    tokens: ['spain'],
-    cities: [
-      { name: 'Madrid', tokens: ['madrid'] },
-      { name: 'Barcelona', tokens: ['barcelona'] },
-    ],
-  },
-  {
-    name: 'Portugal',
-    region: 'europe',
-    tokens: ['portugal'],
-    cities: [{ name: 'Lisbon', tokens: ['lisbon', 'lisboa'] }],
-  },
-  {
-    name: 'Italy',
-    region: 'europe',
-    tokens: ['italy'],
-    cities: [
-      { name: 'Rome', tokens: ['rome'] },
-      { name: 'Milan', tokens: ['milan'] },
-    ],
-  },
-  {
-    name: 'Poland',
-    region: 'europe',
-    tokens: ['poland'],
-    cities: [{ name: 'Warsaw', tokens: ['warsaw'] }],
-  },
-  {
-    name: 'Ireland',
-    region: 'europe',
-    tokens: ['ireland'],
-    cities: [{ name: 'Dublin', tokens: ['dublin'] }],
-  },
-  {
-    name: 'Switzerland',
-    region: 'europe',
-    tokens: ['switzerland'],
-    cities: [
-      { name: 'Zurich', tokens: ['zurich', 'zürich'] },
-      { name: 'Geneva', tokens: ['geneva'] },
-    ],
-  },
-  {
-    name: 'Austria',
-    region: 'europe',
-    tokens: ['austria'],
-    cities: [{ name: 'Vienna', tokens: ['vienna', 'wien'] }],
-  },
-  {
-    name: 'Sweden',
-    region: 'europe',
-    tokens: ['sweden'],
-    cities: [{ name: 'Stockholm', tokens: ['stockholm'] }],
-  },
-  {
-    name: 'Denmark',
-    region: 'europe',
-    tokens: ['denmark'],
-    cities: [{ name: 'Copenhagen', tokens: ['copenhagen'] }],
-  },
-  {
-    name: 'Norway',
-    region: 'europe',
-    tokens: ['norway'],
-    cities: [{ name: 'Oslo', tokens: ['oslo'] }],
-  },
-  {
-    name: 'Finland',
-    region: 'europe',
-    tokens: ['finland'],
-    cities: [{ name: 'Helsinki', tokens: ['helsinki'] }],
-  },
-  {
-    name: 'Belgium',
-    region: 'europe',
-    tokens: ['belgium'],
-    cities: [{ name: 'Brussels', tokens: ['brussels'] }],
-  },
-  {
-    name: 'Czechia',
-    region: 'europe',
-    tokens: ['czech', 'czechia'],
-    cities: [{ name: 'Prague', tokens: ['prague'] }],
-  },
-  {
-    name: 'Romania',
-    region: 'europe',
-    tokens: ['romania'],
-    cities: [{ name: 'Bucharest', tokens: ['bucharest'] }],
-  },
-  {
-    name: 'Ukraine',
-    region: 'europe',
-    tokens: ['ukraine'],
-    cities: [
-      { name: 'Kyiv', tokens: ['kyiv', 'kiev'] },
-      { name: 'Lviv', tokens: ['lviv'] },
-    ],
-  },
-  {
-    name: 'Estonia',
-    region: 'europe',
-    tokens: ['estonia'],
-    cities: [{ name: 'Tallinn', tokens: ['tallinn'] }],
-  },
-  {
-    name: 'Latvia',
-    region: 'europe',
-    tokens: ['latvia'],
-    cities: [{ name: 'Riga', tokens: ['riga'] }],
-  },
-  {
-    name: 'Lithuania',
-    region: 'europe',
-    tokens: ['lithuania'],
-    cities: [{ name: 'Vilnius', tokens: ['vilnius'] }],
-  },
-  {
-    name: 'Greece',
-    region: 'europe',
-    tokens: ['greece'],
-    cities: [{ name: 'Athens', tokens: ['athens'] }],
-  },
-  {
-    name: 'Hungary',
-    region: 'europe',
-    tokens: ['hungary'],
-    cities: [{ name: 'Budapest', tokens: ['budapest'] }],
-  },
-  { name: 'Slovakia', region: 'europe', tokens: ['slovakia'] },
-  { name: 'Slovenia', region: 'europe', tokens: ['slovenia'] },
-  {
-    name: 'Croatia',
-    region: 'europe',
-    tokens: ['croatia'],
-    cities: [{ name: 'Zagreb', tokens: ['zagreb'] }],
-  },
-  {
-    name: 'Bulgaria',
-    region: 'europe',
-    tokens: ['bulgaria'],
-    cities: [{ name: 'Sofia', tokens: ['sofia'] }],
-  },
-  { name: 'Luxembourg', region: 'europe', tokens: ['luxembourg'] },
-  { name: 'Malta', region: 'europe', tokens: ['malta'] },
-  { name: 'Cyprus', region: 'europe', tokens: ['cyprus'] },
-  // ---- North America ----
-  {
-    name: 'United States',
-    region: 'namerica',
-    tokens: ['united states', 'u.s.', 'america', 'usa', 'us'],
-    cities: [
-      { name: 'New York', tokens: ['new york', 'nyc'] },
-      { name: 'San Francisco', tokens: ['san francisco', 'sf'] },
-      { name: 'Seattle', tokens: ['seattle'] },
-      { name: 'Austin', tokens: ['austin'] },
-      { name: 'Boston', tokens: ['boston'] },
-    ],
-  },
-  {
-    name: 'Canada',
-    region: 'namerica',
-    tokens: ['canada', 'ontario', 'quebec', 'québec', 'alberta', 'british columbia', 'ca'],
-    cities: [
-      { name: 'Toronto', tokens: ['toronto'] },
-      { name: 'Vancouver', tokens: ['vancouver'] },
-      { name: 'Montreal', tokens: ['montreal', 'montréal'] },
-      { name: 'Ottawa', tokens: ['ottawa'] },
-    ],
-  },
-  { name: 'Mexico', region: 'namerica', tokens: ['mexico', 'méxico'] },
-  // ---- Asia (specific) ----
-  {
-    name: 'India',
-    region: 'asia',
-    tokens: ['india'],
-    cities: [
-      { name: 'Bangalore', tokens: ['bangalore', 'bengaluru'] },
-      { name: 'Mumbai', tokens: ['mumbai'] },
-      { name: 'Delhi', tokens: ['delhi'] },
-    ],
-  },
-  { name: 'Singapore', region: 'asia', tokens: ['singapore'] },
-  {
-    name: 'Japan',
-    region: 'asia',
-    tokens: ['japan'],
-    cities: [{ name: 'Tokyo', tokens: ['tokyo'] }],
-  },
-  {
-    name: 'China',
-    region: 'asia',
-    tokens: ['china'],
-    cities: [
-      { name: 'Beijing', tokens: ['beijing'] },
-      { name: 'Shanghai', tokens: ['shanghai'] },
-    ],
-  },
-  { name: 'Hong Kong', region: 'asia', tokens: ['hong kong'] },
-  {
-    name: 'Taiwan',
-    region: 'asia',
-    tokens: ['taiwan'],
-    cities: [{ name: 'Taipei', tokens: ['taipei'] }],
-  },
-  {
-    name: 'South Korea',
-    region: 'asia',
-    tokens: ['korea'],
-    cities: [{ name: 'Seoul', tokens: ['seoul'] }],
-  },
-  {
-    name: 'Vietnam',
-    region: 'asia',
-    tokens: ['vietnam'],
-    cities: [{ name: 'Hanoi', tokens: ['hanoi'] }],
-  },
-  {
-    name: 'Philippines',
-    region: 'asia',
-    tokens: ['philippines'],
-    cities: [{ name: 'Manila', tokens: ['manila'] }],
-  },
-  {
-    name: 'Indonesia',
-    region: 'asia',
-    tokens: ['indonesia'],
-    cities: [{ name: 'Jakarta', tokens: ['jakarta'] }],
-  },
-  {
-    name: 'Malaysia',
-    region: 'asia',
-    tokens: ['malaysia'],
-    cities: [{ name: 'Kuala Lumpur', tokens: ['kuala lumpur'] }],
-  },
-  {
-    name: 'Thailand',
-    region: 'asia',
-    tokens: ['thailand'],
-    cities: [{ name: 'Bangkok', tokens: ['bangkok'] }],
-  },
-  // ---- Generic region fallbacks (must stay last) ----
-  { name: 'Europe', region: 'europe', tokens: ['europe', 'emea', 'european', 'cet', 'eu'] },
-  { name: 'Asia', region: 'asia', tokens: ['asia', 'apac'] },
-];
-
-/** Region display order in the Locations popover. */
-const REGION_ORDER: RegionKey[] = ['europe', 'namerica', 'asia', 'other'];
-const OTHER_COUNTRY = 'Other';
 
 /** Static tech dictionary for the deterministic "skills found in posting" chips. */
 const SKILL_DICT = [
@@ -456,6 +164,7 @@ export class DiscoverComponent {
   private readonly i18n = inject(TranslateService);
   private readonly db = inject(DbService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -510,6 +219,9 @@ export class DiscoverComponent {
   protected readonly geoMenuOpen = signal(false);
   protected readonly sourceMenuOpen = signal(false);
   protected readonly tab = signal<Tab>('new');
+  /** Two-step inline confirm for "Clear list" (no modal, per product register). */
+  protected readonly clearConfirm = signal(false);
+  protected readonly clearing = signal(false);
 
   protected readonly allWorkTypes: readonly WorkType[] = ['remote', 'hybrid', 'onsite'];
 
@@ -524,6 +236,23 @@ export class DiscoverComponent {
 
   constructor() {
     void this.load();
+    // Infinite scroll: when the end-of-feed sentinel enters the viewport, render
+    // the next page. The effect re-attaches whenever the sentinel appears (it
+    // only exists in the feed view) and cleans up its observer.
+    effect((onCleanup) => {
+      const el = this.loadMoreSentinel()?.nativeElement;
+      if (!el || typeof IntersectionObserver === 'undefined') return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting) && this.hasMoreFeed()) {
+            this.loadMoreFeed();
+          }
+        },
+        { rootMargin: '400px' },
+      );
+      io.observe(el);
+      onCleanup(() => io.disconnect());
+    });
   }
 
   // --------------------------------------------------------------- derived
@@ -543,6 +272,25 @@ export class DiscoverComponent {
   protected readonly enabledCount = computed(
     () => this.sources().filter((s) => s.isEnabled).length,
   );
+
+  // ---- Sources drawer: summary + collapsible groups ----
+  protected readonly sourcesTotal = computed(() => this.sources().length);
+  protected readonly sourcesFailing = computed(
+    () => this.sources().filter((s) => this.resultLine(s).error).length,
+  );
+
+  /** Collapsed source groups in the drawer ('builtin' | 'boards' | 'yours'). */
+  protected readonly collapsedGroups = signal<ReadonlySet<string>>(new Set());
+  protected groupCollapsed(key: string): boolean {
+    return this.collapsedGroups().has(key);
+  }
+  protected toggleSourceGroup(key: string): void {
+    this.collapsedGroups.update((set) => this.toggled(set, key));
+  }
+  /** Enabled count within one source group, for its header badge. */
+  protected activeCount(list: DiscoverSource[]): number {
+    return list.filter((s) => s.isEnabled).length;
+  }
 
   /** Per-source results of the last scan, parsed from sources.lastScanJson. */
   private readonly lastResults = computed<ScanSourceResult[]>(() =>
@@ -607,6 +355,99 @@ export class DiscoverComponent {
       return true;
     });
   });
+
+  /**
+   * True when the job's title matches one of the profile's target-role keywords.
+   * Drives the "For you" bucket - a soft ranking, never a hard filter, so the
+   * rest of the feed still shows under "More openings".
+   */
+  protected matchesProfile(row: FeedRow): boolean {
+    const kws = this.profileKeywords();
+    if (!kws.length) return false;
+    const title = (row.title ?? '').toLowerCase();
+    return kws.some((kw) => title.includes(kw));
+  }
+
+  /**
+   * The feed split into "For you" (matches target roles) and "More openings".
+   * With no target roles set, a single unlabelled section holds everything, so
+   * the two-tier UI never shows an empty or confusing header.
+   */
+  protected readonly feedSections = computed<FeedSection[]>(() => {
+    const rows = this.visibleRows();
+    if (!this.profileKeywords().length) {
+      return [{ key: 'more', label: '', rows, total: rows.length }];
+    }
+    const forYou = rows.filter((r) => this.matchesProfile(r));
+    const more = rows.filter((r) => !this.matchesProfile(r));
+    const out: FeedSection[] = [];
+    if (forYou.length) {
+      out.push({
+        key: 'foryou',
+        label: this.t()('discover.for_you'),
+        rows: forYou,
+        total: forYou.length,
+      });
+    }
+    if (more.length) {
+      out.push({
+        key: 'more',
+        label: this.t()('discover.more_openings'),
+        rows: more,
+        total: more.length,
+      });
+    }
+    // Nothing matched the profile -> drop the "More" header so it reads as a
+    // plain list rather than a lonely second-tier section.
+    if (out.length === 1 && out[0].key === 'more') {
+      out[0] = { ...out[0], label: '' };
+    }
+    return out;
+  });
+
+  /** How many feed rows to render right now; grows by FEED_PAGE as the user scrolls. */
+  protected readonly displayCount = signal(FEED_PAGE);
+
+  /** Sentinel element at the end of the feed; when it scrolls into view, load more. */
+  private readonly loadMoreSentinel = viewChild<ElementRef<HTMLElement>>('loadMore');
+
+  /** Total rows across all sections (the full, unwindowed feed the filters allow). */
+  protected readonly totalFeedRows = computed(() =>
+    this.feedSections().reduce((sum, s) => sum + s.total, 0),
+  );
+
+  /** More rows exist than are currently rendered. */
+  protected readonly hasMoreFeed = computed(() => this.totalFeedRows() > this.displayCount());
+
+  /**
+   * Any unsaved scanned job exists at all - independent of the current filters
+   * and search query, because Clear list removes the whole inbox, not just the
+   * visible slice. Drives disabling the Clear list button when there is
+   * nothing for it to do.
+   */
+  protected readonly hasClearableJobs = computed(() => this.feed().some((r) => !r.saved));
+
+  /**
+   * The feed windowed to `displayCount`: rows are handed out across sections in
+   * order (For you first), so only the visible slice ever hits the DOM. Section
+   * headers still report their full `total`.
+   */
+  protected readonly renderedSections = computed<FeedSection[]>(() => {
+    let budget = this.displayCount();
+    const out: FeedSection[] = [];
+    for (const s of this.feedSections()) {
+      if (budget <= 0) break;
+      const rows = s.rows.slice(0, budget);
+      budget -= rows.length;
+      out.push({ ...s, rows });
+    }
+    return out;
+  });
+
+  /** Render one more page. Called by the scroll sentinel and the manual button. */
+  protected loadMoreFeed(): void {
+    this.displayCount.update((n) => n + FEED_PAGE);
+  }
 
   /** Distinct source names present in the feed (for the Sources checkboxes). */
   protected readonly availableSources = computed(() => this.sourceOptions());
@@ -709,6 +550,7 @@ export class DiscoverComponent {
       this.feed.set(
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
+      this.displayCount.set(FEED_PAGE);
       this.profileKeywords.set(this.deriveKeywords(profile?.targetArchetypes));
       this.geoScope.set(settings.geoScope || 'worldwide');
     } catch (e) {
@@ -776,6 +618,7 @@ export class DiscoverComponent {
       this.feed.set(
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
+      this.displayCount.set(FEED_PAGE);
       await this.reloadSources();
     } catch (e) {
       console.error('discover: scan failed', e);
@@ -786,6 +629,42 @@ export class DiscoverComponent {
     } finally {
       this.scanning.set(false);
       this.consoleExpanded.set(false);
+    }
+  }
+
+  // ----------------------------------------------------------- clear inbox
+  /** Open the confirm modal. No-op when there is nothing unsaved to clear. */
+  protected askClearFeed(): void {
+    if (!this.hasClearableJobs()) return;
+    this.clearConfirm.set(true);
+  }
+
+  protected cancelClearFeed(): void {
+    if (this.clearing()) return;
+    this.clearConfirm.set(false);
+  }
+
+  /**
+   * Delete every unsaved scanned job, reload the (now empty) feed, and toast the
+   * count removed so the destructive action is acknowledged.
+   */
+  protected async confirmClearFeed(): Promise<void> {
+    if (this.clearing()) return;
+    this.clearing.set(true);
+    try {
+      const removed = await this.db.discoverClear();
+      const feed = await this.db.discoverFeed();
+      this.feed.set(
+        feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
+      );
+      this.displayCount.set(FEED_PAGE);
+      this.clearConfirm.set(false);
+      this.toast.success(this.t()('discover.clear_done').replace('{n}', String(removed)));
+    } catch (e) {
+      console.error('discover: clear failed', e);
+      this.toast.error(String(e));
+    } finally {
+      this.clearing.set(false);
     }
   }
 
@@ -870,41 +749,17 @@ export class DiscoverComponent {
   }
 
   /**
-   * Deterministic country + city + region for a free-text location.
-   * City tokens are checked before country tokens so "Berlin" resolves to
-   * Germany/Berlin. Anything unrecognized (remote-only, unknown) returns an
-   * empty country and rolls into the Other bucket - a normal, selectable
-   * option, never an always-pass.
+   * Deterministic country + city + region for a free-text location. Delegates
+   * to the pure, unit-tested `classifyLoc` in ./discover-location so the
+   * recognition rules live in one testable place.
    */
   protected classifyLoc(location: string | null): LocClass {
-    const loc = (location ?? '').toLowerCase().trim();
-    if (loc) {
-      for (const def of COUNTRY_DEFS) {
-        for (const city of def.cities ?? []) {
-          if (city.tokens.some((tok) => this.tokenHit(loc, tok))) {
-            return { country: def.name, city: city.name, region: def.region };
-          }
-        }
-        if (def.tokens.some((tok) => this.tokenHit(loc, tok))) {
-          return { country: def.name, city: '', region: def.region };
-        }
-      }
-    }
-    return { country: '', city: '', region: 'other' };
+    return classifyLoc(location);
   }
 
-  /** Stable selection key for a city ("Germany Berlin"). */
+  /** Stable selection key for a city ("Germany Berlin"). */
   private cityKey(country: string, city: string): string {
-    return `${country} ${city}`;
-  }
-
-  /** Short tokens (<=3 chars) match whole-word; longer tokens as substrings. */
-  private tokenHit(haystack: string, token: string): boolean {
-    if (token.length <= 3) {
-      const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      return new RegExp(`(^|[^a-z])${escaped}([^a-z]|$)`).test(haystack);
-    }
-    return haystack.includes(token);
+    return cityKey(country, city);
   }
 
   // ---- work-type checkbox helpers ----
@@ -1276,8 +1131,13 @@ export class DiscoverComponent {
     return this.t()('discover.ago_d').replace('{n}', String(Math.floor(hours / 24)));
   }
 
+  /** Joins every selected scope region ("Europe, Asia"); Worldwide when none are. */
   protected scopeLabel(): string {
-    return this.t()('discover.scope_label').replace('{scope}', this.geoScope().toUpperCase());
+    const keys = parseGeoScopes(this.geoScope());
+    const label = keys.length
+      ? keys.map((k) => this.t()('discover.region_' + k)).join(', ')
+      : this.t()('settings.geo_worldwide');
+    return this.t()('discover.scope_label').replace('{scope}', label);
   }
 
   protected isRemote(location: string | null): boolean {

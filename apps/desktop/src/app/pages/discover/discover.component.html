@@ -576,6 +576,30 @@
       >
         {{ t()('discover.sources') }}
       </button>
+      @if (clearConfirm()) {
+        <span class="dv-filters__confirm">{{ t()('discover.clear_confirm') }}</span>
+        <button
+          type="button"
+          class="dv-linkbtn dv-linkbtn--danger"
+          [disabled]="clearing()"
+          (click)="confirmClearFeed()"
+        >
+          {{ t()('discover.clear_yes') }}
+        </button>
+        <button type="button" class="dv-linkbtn" (click)="cancelClearFeed()">
+          {{ t()('discover.clear_cancel') }}
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="dv-btn dv-btn--ghost dv-filters__clear"
+          [title]="t()('discover.clear_list')"
+          (click)="askClearFeed()"
+        >
+          <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />
+          {{ t()('discover.clear_list') }}
+        </button>
+      }
     </div>
   }
 
@@ -695,33 +719,6 @@
               .replace('{filtered}', '' + filteredCount())
           }}
         </span>
-        <div class="dv-footer__actions">
-          @if (clearConfirm()) {
-            <span class="dv-footer__confirm">{{ t()('discover.clear_confirm') }}</span>
-            <button
-              type="button"
-              class="dv-linkbtn dv-linkbtn--danger"
-              [disabled]="clearing()"
-              (click)="confirmClearFeed()"
-            >
-              {{ t()('discover.clear_yes') }}
-            </button>
-            <button type="button" class="dv-linkbtn" (click)="cancelClearFeed()">
-              {{ t()('discover.clear_cancel') }}
-            </button>
-          } @else {
-            <button type="button" class="dv-linkbtn" (click)="askClearFeed()">
-              {{ t()('discover.clear_list') }}
-            </button>
-          }
-          <button
-            type="button"
-            class="dv-linkbtn dv-linkbtn--accent"
-            (click)="drawerOpen.set(true)"
-          >
-            {{ t()('discover.adjust_filters') }}
-          </button>
-        </div>
       </div>
     }
   }

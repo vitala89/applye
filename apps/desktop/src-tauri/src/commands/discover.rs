@@ -205,6 +205,25 @@ const EUROPE_COUNTRIES: &[&str] = &[
     "united kingdom",
 ];
 
+/// Asian country/region names for the asia scope. Mirrors the client-side
+/// COUNTRY_DEFS asia bucket so Settings scope and the Discover filter agree.
+const ASIA_COUNTRIES: &[&str] = &[
+    "asia",
+    "apac",
+    "india",
+    "singapore",
+    "japan",
+    "china",
+    "hong kong",
+    "taiwan",
+    "korea",
+    "vietnam",
+    "philippines",
+    "indonesia",
+    "malaysia",
+    "thailand",
+];
+
 /// Names a 2-letter country code also answers to in freetext locations.
 fn country_tokens(code: &str) -> Vec<&'static str> {
     match code {
@@ -243,6 +262,9 @@ fn build_geo_cfg(scope: &str, active_codes: &[String]) -> GeoCfg {
         }
         "usa" => {
             tokens.extend(country_tokens("us").into_iter().map(str::to_string));
+        }
+        "asia" => {
+            tokens.extend(ASIA_COUNTRIES.iter().map(|s| s.to_string()));
         }
         _ => {}
     }

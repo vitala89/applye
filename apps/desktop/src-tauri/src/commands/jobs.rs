@@ -45,10 +45,17 @@ pub struct JobInput {
 
 #[tauri::command]
 pub async fn db_list_jobs(db: State<'_, Db>) -> Result<Vec<Job>, String> {
-    sqlx::query_as::<_, Job>("SELECT * FROM jobs ORDER BY created_at DESC, id DESC")
-        .fetch_all(&db.pool)
-        .await
-        .map_err(|e| format!("db_list_jobs: {e}"))
+    // Discover-scanned jobs stay out of My Jobs until the user saves them
+    // (saving creates an application row). Everything else is always listed.
+    sqlx::query_as::<_, Job>(
+        "SELECT * FROM jobs j
+         WHERE COALESCE(j.imported_from, '') != 'discover_scan'
+            OR EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id)
+         ORDER BY j.created_at DESC, j.id DESC",
+    )
+    .fetch_all(&db.pool)
+    .await
+    .map_err(|e| format!("db_list_jobs: {e}"))
 }
 
 /// One row per job for the My Jobs table: the job's columns plus its latest
@@ -79,6 +86,8 @@ pub async fn db_list_jobs_overview(db: State<'_, Db>) -> Result<Vec<JobOverview>
            (SELECT a.status FROM applications a
               WHERE a.job_id = j.id ORDER BY a.id DESC LIMIT 1) AS status
          FROM jobs j
+         WHERE COALESCE(j.imported_from, '') != 'discover_scan'
+            OR EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id)
          ORDER BY j.created_at DESC, j.id DESC",
     )
     .fetch_all(&db.pool)

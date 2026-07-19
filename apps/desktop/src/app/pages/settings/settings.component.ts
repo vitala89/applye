@@ -285,6 +285,25 @@ const PROVIDER_VENDORS: Record<string, string> = {
           </div>
         </section>
 
+        <!-- Job search scope (drives the Discover scan's geo filter) -->
+        <section class="section">
+          <h3 class="eyebrow">{{ t()('settings.jobsearch_section') }}</h3>
+          <label class="field">
+            <span class="cap">{{ t()('settings.geo_scope_label') }}</span>
+            <select
+              [ngModel]="s.geoScope"
+              (ngModelChange)="patch('geoScope', $event)"
+              [ngModelOptions]="{ standalone: true }"
+            >
+              <option value="worldwide">{{ t()('settings.geo_worldwide') }}</option>
+              <option value="europe">{{ t()('settings.geo_europe') }}</option>
+              <option value="usa">{{ t()('settings.geo_usa') }}</option>
+              <option value="asia">{{ t()('settings.geo_asia') }}</option>
+            </select>
+            <p class="hint">{{ t()('settings.geo_scope_hint') }}</p>
+          </label>
+        </section>
+
         <!-- Follow-up reminders -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.followup_section') }}</h3>

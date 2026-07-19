@@ -3826,6 +3826,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.parsing.set(true);
     this.parseStatus.set('');
     this.parseError.set(false);
+    // Preserve a company/title already known for this job (e.g. from Discover
+    // or a prior parse) so re-parsing a header-less JD does not lose it and
+    // wrongly report "No company name found".
+    const knownCompany = this.job()?.company ?? undefined;
+    const knownTitle = this.job()?.title ?? undefined;
     this.job.set(null);
     this.cache.set(null);
     this.archetypeMatch.set(null);
@@ -3835,7 +3840,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.editingLocked.set(false);
     this.resetWizard();
     try {
-      const j = await this.db.jobPaste(this.jdText());
+      const j = await this.db.jobPaste(this.jdText(), knownTitle, knownCompany);
       this.job.set(j);
       if (!j.hardFilterPassed) {
         this.parseStatus.set('Hard filter failed - job blocked.');

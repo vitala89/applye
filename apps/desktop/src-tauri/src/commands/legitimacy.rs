@@ -24,6 +24,15 @@ const SALARY_KEYWORDS: &[&str] = &[
     "pay range",
     "comp range",
     "remuneration",
+    "base pay",
+    "base salary",
+    "wage",
+    "ote",
+    "per annum",
+    "per year",
+    "annual salary",
+    "salary range",
+    "compensation package",
 ];
 
 const VAGUE_SCOPE_PHRASES: &[&str] = &["various duties as assigned", "other duties as required"];
@@ -96,7 +105,9 @@ pub fn legitimacy_check(
 
     // --- yellow triggers ---
 
-    let has_salary = !money.is_empty() || SALARY_KEYWORDS.iter().any(|k| lower.contains(k));
+    let has_salary = !money.is_empty()
+        || SALARY_KEYWORDS.iter().any(|k| lower.contains(k))
+        || mentions_salary_amount(&lower);
     if !has_salary {
         notes.push("Salary is not mentioned anywhere in the posting.".to_string());
         tier = tier.max(LegitimacyTier::Yellow);
@@ -273,6 +284,56 @@ fn mentions_team_size(lower: &str) -> bool {
 
 /// Currency-prefixed amounts (`€30K`, `$50,000`, `£40000`). Heuristic, not a
 /// full money parser — enough to compare a salary range's low/high spread.
+/// Detects a salary amount written without a leading currency symbol -
+/// "80k" / "120K" shorthand, or a number sitting next to a currency code
+/// (EUR / USD / GBP). Complements `extract_money_values` (symbol-prefixed) so
+/// the "no salary" note does not fire on plainly-stated pay. Char-based so it
+/// is safe on non-ASCII text.
+fn mentions_salary_amount(lower: &str) -> bool {
+    let chars: Vec<char> = lower.chars().collect();
+    let n = chars.len();
+
+    // "<2-3 digits>k" shorthand not glued to another word (e.g. 80k, 120k).
+    let mut i = 0;
+    while i < n {
+        if chars[i].is_ascii_digit() {
+            let start = i;
+            while i < n && chars[i].is_ascii_digit() {
+                i += 1;
+            }
+            let len = i - start;
+            if i < n
+                && chars[i] == 'k'
+                && (2..=3).contains(&len)
+                && (start == 0 || !chars[start - 1].is_alphanumeric())
+            {
+                return true;
+            }
+        } else {
+            i += 1;
+        }
+    }
+
+    // A currency code (eur/usd/gbp) with a digit within ~8 chars either side.
+    const CODES: &[[char; 3]] = &[['e', 'u', 'r'], ['u', 's', 'd'], ['g', 'b', 'p']];
+    for w in 0..n {
+        for code in CODES {
+            if w + 3 <= n
+                && chars[w] == code[0]
+                && chars[w + 1] == code[1]
+                && chars[w + 2] == code[2]
+            {
+                let lo = w.saturating_sub(8);
+                let hi = (w + 3 + 8).min(n);
+                if chars[lo..hi].iter().any(|c| c.is_ascii_digit()) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 fn extract_money_values(text: &str) -> Vec<f64> {
     let chars: Vec<char> = text.chars().collect();
     let mut values = Vec::new();
@@ -371,6 +432,27 @@ fn posting_age_days(text: &str) -> Option<i64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn salary_shorthand_and_codes_count_as_mentioned() {
+        assert!(mentions_salary_amount("80k - 120k depending on experience"));
+        assert!(mentions_salary_amount("base range 90,000 eur per year"));
+        assert!(mentions_salary_amount("we pay 120000 usd annually"));
+        // no amount, no code -> not a salary signal
+        assert!(!mentions_salary_amount("we offer a competitive package"));
+        // bare "usd"/"k" with no nearby number must not false-positive
+        assert!(!mentions_salary_amount(
+            "talks about usd markets in general"
+        ));
+        assert!(!mentions_salary_amount("work in a task-heavy role"));
+    }
+
+    #[test]
+    fn no_salary_note_suppressed_when_shorthand_present() {
+        let jd = "Company: Acme\nBackend Engineer. Pay is 90k-120k. Great team.";
+        let (_, notes) = legitimacy_check(jd, Some("Acme"), None);
+        assert!(!notes.iter().any(|n| n.contains("Salary is not mentioned")));
+    }
 
     #[test]
     fn green_when_clean() {

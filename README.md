@@ -8,7 +8,7 @@
 
 <div align="center">
 
-[English](README.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Polski](README.pl.md)
+[English](README.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [Українська](README.uk.md) | [Polski](README.pl.md)
 
 </div>
 
@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.24.0-4F5BFF?style=flat" alt="Version 0.24.0">
+  <img src="https://img.shields.io/badge/version-0.25.0-4F5BFF?style=flat" alt="Version 0.25.0">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License">
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?style=flat&logo=tauri&logoColor=white" alt="Tauri 2">
   <img src="https://img.shields.io/badge/Angular-21-DD0031?style=flat&logo=angular&logoColor=white" alt="Angular">
@@ -269,6 +269,8 @@ applications on your behalf and never fabricates experience; honesty over inflat
 rule, not a suggestion. This software is provided under the [MIT License](LICENSE) "as is", without
 warranty of any kind. Applye is not affiliated with any job board, ATS vendor, or AI provider
 mentioned in this document.
+
+See [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md) for the full disclaimer and acceptable-use terms.
 
 ## License
 

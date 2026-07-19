@@ -10,6 +10,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-07-19
+
 ### Fixed
 
 - **The competitor feature-adoption analysis no longer ships in the repo.** `AGENT_PROMPT_CAREER_OPS_ADOPTION.md` and `docs/product/CAREER_OPS_ADOPTION.md` mapped career-ops features to Applye as an internal adoption checklist - fine as a working doc, wrong to publish. They're untracked and gitignored; the public credit and comparison to career-ops in the README and website stays as is.
@@ -29,10 +31,11 @@ is the single source of truth; this file tracks what changed at each tag.
 - **Language pickers now read in each language's own name.** The UI-language and document-language selectors in Settings show "English, Deutsch, Русский, Español, Français, Українська" instead of raw codes (en, de, ru...), so you can always find your own language even if the app is currently in another.
 - **The Job Tracker has a new design.** It opens focused on six essential columns (company, role, status, date applied, next action and its date) instead of a wall of 19; the rest live in a Columns side panel. Company is a link back to the job, status shows as a colour-coded pill, and the index + company columns stay pinned while you scroll sideways. A row is read-only until you open its Edit action, which turns the row's own fields into inputs with Save / Cancel; job-derived fields (company, tech stack, blue-card) are always read-only and marked as such. A summary strip carries the totals, and there are proper loading and empty states.
 - **Exporting the tracker report now shows a preview and asks where to save it.** "Export report" opens a preview of the report document (letterhead, applicant, period, table and totals) so you can review it first, then Save as PDF or Save as CSV via a native Save dialog where you choose the folder and name - instead of the file landing silently in Documents/Applye/reports. You choose the **report format** - Germany (the official Eigenbemühungen document, in German) or International (English) - and the page **orientation** (A4 portrait or landscape). The report now shows **your own visible columns** (including custom ones and Next Interview), not a fixed set. It works out how many columns fit an A4 page for the chosen orientation and tells you: **Fit to page** keeps only what fits, **All columns** keeps everything by wrapping the extras onto a second line under each row - and a note lists exactly which columns are affected. The saved PDF is the exact same render as the preview (it prints the preview's own page), instead of a plain monospace text layout. CSV always includes every visible column (a spreadsheet has no width limit).
+- **The website drops "forever" from the "free" claims.** The hero, FAQ, `/compare`, `/press`, the `/sustain` page, and the site meta tags now describe Applye as free and MIT-licensed rather than "free forever".
 
 ### Added
 
-- **The repository is dressed for open source.** The README was rebuilt in a launch-ready shape - centered wordmark and hero placeholders, a five-language switcher (English, Español, Deutsch, Русский, Polski) with full translations at `README.<lang>.md`, badges, a features table with the 0-token contract, quick start, the core loop, project structure, tech stack, screenshots section, author note, and disclaimer. New community files: `CONTRIBUTING.md` (setup, conventions, what will not be merged), `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (private reporting policy), plus GitHub issue forms and a PR template. Media placeholders are inventoried in `docs/assets/README.md`.
+- **The repository is dressed for open source.** The README was rebuilt in a launch-ready shape - centered wordmark and hero placeholders, a six-language switcher (English, Español, Deutsch, Русский, Українська, Polski) with full translations at `README.<lang>.md`, badges, a features table with the 0-token contract, quick start, the core loop, project structure, tech stack, screenshots section, author note, and disclaimer. New community files: `CONTRIBUTING.md` (setup, conventions, what will not be merged), `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (private reporting policy), plus GitHub issue forms and a PR template. A `LEGAL_DISCLAIMER.md` (acceptable-use terms) is linked from the README, media placeholders are inventoried in `docs/assets/README.md` with production prompts in `docs/assets/ASSETS_BRIEF.md`, and `docs/design/WEBSITE_PLAN.md` briefs the site design work. The GitHub repository metadata (description, homepage, topics) is filled in.
 - **The docs grew a step-by-step User guide.** Nine new pages under `/docs/guide/*` (first run & tour, profile, add a job, score, tailor & export PDF, Discover, Pipeline & Tracker, Interviews & Analytics, Settings & AI) walk through the app screen by screen, honest to what ships today - PDF-only export, no AI interview questions, real provider list (Claude, OpenAI, Gemini, DeepSeek + CLI bridge). Every screenshot/GIF/video slot is a styled placeholder box stating exactly what to capture; the same claims were corrected on the landing page and in all five READMEs.
 - **The website grew five pages: Manifesto, Compare, Press, Privacy, Sustain.** `/manifesto` states the six principles (augmentation not automation, fewer better applications, your data is yours, honesty over inflation, pay for judgement, open source forever) with a signature block; `/compare` is an honest table against cloud SaaS trackers, career-ops, and a spreadsheet; `/press` is a self-serve press kit (boilerplate, fact sheet, asset placeholders); `/privacy` is the plain-language privacy page for the app and the site; `/sustain` explains the free-forever model and how to support it. The footer now carries the full page list (Docs, Manifesto, Methodology, Compare, Blog, Changelog, Press, Privacy, Sustain) plus social icons - GitHub and LinkedIn live, Discord and X appear once those channels exist.
 
@@ -782,7 +785,17 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.3...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/vitala89/applye/compare/v0.24.0...v0.25.0
+[0.24.0]: https://github.com/vitala89/applye/compare/v0.23.0...v0.24.0
+[0.23.0]: https://github.com/vitala89/applye/compare/v0.22.0...v0.23.0
+[0.22.0]: https://github.com/vitala89/applye/compare/v0.21.0...v0.22.0
+[0.21.0]: https://github.com/vitala89/applye/compare/v0.20.0...v0.21.0
+[0.20.0]: https://github.com/vitala89/applye/compare/v0.19.0...v0.20.0
+[0.19.0]: https://github.com/vitala89/applye/compare/v0.18.1...v0.19.0
+[0.18.1]: https://github.com/vitala89/applye/compare/v0.18.0...v0.18.1
+[0.18.0]: https://github.com/vitala89/applye/compare/v0.17.0...v0.18.0
+[0.17.0]: https://github.com/vitala89/applye/compare/v0.16.3...v0.17.0
 [0.16.3]: https://github.com/vitala89/applye/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/vitala89/applye/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/vitala89/applye/compare/v0.16.0...v0.16.1

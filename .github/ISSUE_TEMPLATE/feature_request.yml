@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: '[feature]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before proposing: Applye never auto-applies or auto-submits, never scrapes job boards, and
+        never adds telemetry or accounts. Features that require these will be declined.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What part of a real job search is painful today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: tokens
+    attributes:
+      label: Does this need AI?
+      description: Applye prefers deterministic, 0-token features; AI is opt-in and frugal.
+      options:
+        - 'No - can be done with local code (0 tokens)'
+        - 'Yes - needs an opt-in AI call'
+        - 'Not sure'
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

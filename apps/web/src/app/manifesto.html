@@ -1,0 +1,82 @@
+<div class="clog shell shell--narrow manifesto">
+  <header class="clog__head">
+    <p class="applye-eyebrow">The augmentation manifesto</p>
+    <h1 class="clog__h1">AI assists. You decide.</h1>
+    <p class="clog__lede">
+      Companies use AI to filter candidates. We give candidates AI to answer back - without turning
+      them into spam bots. This is the contract Applye is built on. Every feature is checked against
+      it, and any feature that breaks it does not ship.
+    </p>
+  </header>
+
+  <div class="prose manifesto__body">
+    <section>
+      <h2>1. Augmentation, not automation</h2>
+      <p>
+        Applye will never auto-apply, auto-send, or auto-submit anything on your behalf. It scores,
+        drafts, and suggests - then hands control back to you. No background agent quietly
+        represents you to a recruiter. A hiring manager is a person; the relationship is yours, not
+        a bot's.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Fewer, better applications</h2>
+      <p>
+        Mass-automated applications are noise - for you and for everyone else in the pile. The point
+        of tooling is not two hundred submissions a week; it is knowing which twenty are worth your
+        evenings, and making those twenty excellent.
+      </p>
+    </section>
+
+    <section>
+      <h2>3. Your data is yours</h2>
+      <p>
+        The job search is intimate data: where you applied, what you earn, what you were rejected
+        from. It lives in a local database on your machine - not on our servers, because we do not
+        have servers. No account, no telemetry, no sync. Nothing leaves the device unless you
+        trigger it.
+      </p>
+    </section>
+
+    <section>
+      <h2>4. Honesty over inflation</h2>
+      <p>
+        Applye tailors your real experience to the role's language. It does not invent titles,
+        skills, or years. A CV that gets you an interview you cannot survive is not a win; it is a
+        wasted afternoon for two people.
+      </p>
+    </section>
+
+    <section>
+      <h2>5. Pay for judgement, not busywork</h2>
+      <p>
+        AI is a scarce, paid resource. Everything that can be deterministic code is deterministic
+        code, runs offline, and costs zero tokens. Models are called only where judgement is
+        genuinely needed, only when you click, and always with your own keys. A real job search
+        should cost cents, not a subscription.
+      </p>
+    </section>
+
+    <section>
+      <h2>6. Open source, forever</h2>
+      <p>
+        MIT-licensed, developed in the open, free with no paid tier. Trust in a tool that reads your
+        CV should not be a promise; it should be verifiable in the code.
+      </p>
+    </section>
+  </div>
+
+  <!-- PLACEHOLDER: signed manifesto image. A handwritten-style signature scan, saved as
+       apps/web/public/manifesto-signature.png, displayed above the name below. -->
+  <footer class="manifesto__sign">
+    <p class="manifesto__signname">Vitalii Kasap</p>
+    <p class="manifesto__signrole">Author of Applye, signed during his own job search</p>
+    <p>
+      <a class="btn btn--ghost" [href]="repo" target="_blank" rel="noopener"
+        >Co-sign it: star the repository</a
+      >
+      <a class="btn btn--ghost" routerLink="/methodology">Read the methodology</a>
+    </p>
+  </footer>
+</div>

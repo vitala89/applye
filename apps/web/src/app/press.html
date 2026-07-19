@@ -1,0 +1,64 @@
+<div class="clog shell shell--narrow press">
+  <header class="clog__head">
+    <p class="applye-eyebrow">Press</p>
+    <h1 class="clog__h1">Writing about Applye?</h1>
+    <p class="clog__lede">
+      Everything you need is on this page: a boilerplate description you may quote, a fact sheet,
+      and brand assets. For interviews or questions, reach the author directly - there is no PR
+      agency in between.
+    </p>
+  </header>
+
+  <div class="prose">
+    <h2 class="docs__h2">Boilerplate</h2>
+    <blockquote class="docs__quote">
+      Applye is an open-source, local-first desktop app for an AI-powered job search. It scores job
+      descriptions against a candidate's profile, tailors the CV per role, drafts cover letters and
+      follow-ups, and tracks the pipeline - entirely on the user's machine, with no account and no
+      telemetry. Users bring the AI they already pay for; every submission remains a human decision.
+      Built by Vitalii Kasap during his own job search in Germany, Applye treats the German market
+      as first-class. It is MIT-licensed and free forever.
+    </blockquote>
+
+    <h2 class="docs__h2">Fact sheet</h2>
+  </div>
+
+  <div class="docs__section">
+    <table class="docs__table">
+      <tbody>
+        @for (f of facts; track f.label) {
+        <tr class="docs__trow">
+          <th>{{ f.label }}</th>
+          <td>{{ f.value }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose">
+    <h2 class="docs__h2">Brand assets</h2>
+    <p>
+      <!-- PLACEHOLDER: press kit archive. Zip the wordmark SVGs (light/dark), the app icon, and
+           2-3 approved product screenshots into apps/web/public/press/applye-press-kit.zip and
+           link it here. Until then the repo assets folder is the source. -->
+      Wordmarks, the app icon, and approved screenshots will be downloadable here as a single
+      archive. Until then, assets live in the repository under <code>docs/assets/</code>. Please do
+      not stretch, recolor, or add effects to the wordmark.
+    </p>
+
+    <h2 class="docs__h2">Coverage</h2>
+    <p>
+      <!-- PLACEHOLDER: press logos. When coverage exists, add a logo strip here (grayscale SVGs,
+           linked to the articles), matching the landing page style. -->
+      Nothing yet - Applye launches publicly soon. If you cover it, tell us and we will link you
+      here.
+    </p>
+
+    <h2 class="docs__h2">Contact</h2>
+    <p>
+      Author: <a [href]="author" target="_blank" rel="noopener">Vitalii Kasap</a> · Source:
+      <a [href]="repo" target="_blank" rel="noopener">GitHub</a>
+    </p>
+  </div>
+</div>

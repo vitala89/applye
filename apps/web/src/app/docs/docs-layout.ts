@@ -43,6 +43,21 @@ export class DocsLayout {
       ],
     },
     {
+      id: 'guide',
+      title: 'User guide',
+      links: [
+        { text: 'First run & tour', to: '/docs/guide/tour' },
+        { text: 'Set up your profile', to: '/docs/guide/profile' },
+        { text: 'Add your first job', to: '/docs/guide/add-job' },
+        { text: 'Score a role', to: '/docs/guide/score' },
+        { text: 'Tailor & export PDF', to: '/docs/guide/tailor' },
+        { text: 'Discover', to: '/docs/guide/discover' },
+        { text: 'Pipeline & Tracker', to: '/docs/guide/track' },
+        { text: 'Interviews & Analytics', to: '/docs/guide/insights' },
+        { text: 'Settings & AI', to: '/docs/guide/settings' },
+      ],
+    },
+    {
       id: 'concepts',
       title: 'Concepts',
       links: [

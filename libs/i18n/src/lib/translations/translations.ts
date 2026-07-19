@@ -122,6 +122,7 @@ const en: TranslationMap = {
     clear_confirm: 'Clear all unsaved jobs?',
     clear_yes: 'Yes, clear',
     clear_cancel: 'Cancel',
+    clear_done: 'Cleared {n} unsaved jobs.',
     first_title: 'No sources yet',
     first_hint:
       'Enable a job source and Applye will collect new openings for you - locally, for free.',
@@ -1525,6 +1526,7 @@ const de: TranslationMap = {
     clear_confirm: 'Alle nicht gespeicherten Jobs löschen?',
     clear_yes: 'Ja, leeren',
     clear_cancel: 'Abbrechen',
+    clear_done: '{n} nicht gespeicherte Jobs gelöscht.',
     first_title: 'Noch keine Quellen',
     first_hint:
       'Aktiviere eine Stellenquelle und Applye sammelt neue Stellen für dich - lokal, kostenlos.',

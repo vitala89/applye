@@ -43,6 +43,7 @@ import {
   type LocClass,
   type RegionKey,
 } from './discover-location';
+import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
 type WorkType = 'remote' | 'hybrid' | 'onsite';
@@ -162,6 +163,7 @@ export class DiscoverComponent {
   private readonly i18n = inject(TranslateService);
   private readonly db = inject(DbService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -622,31 +624,37 @@ export class DiscoverComponent {
   }
 
   // ----------------------------------------------------------- clear inbox
-  /** First click arms the confirm; a second click (confirmClear) does the work. */
+  /** Open the confirm modal. */
   protected askClearFeed(): void {
     this.clearConfirm.set(true);
   }
 
   protected cancelClearFeed(): void {
+    if (this.clearing()) return;
     this.clearConfirm.set(false);
   }
 
-  /** Delete every unsaved scanned job, then reload the (now empty) feed. */
+  /**
+   * Delete every unsaved scanned job, reload the (now empty) feed, and toast the
+   * count removed so the destructive action is acknowledged.
+   */
   protected async confirmClearFeed(): Promise<void> {
     if (this.clearing()) return;
     this.clearing.set(true);
     try {
-      await this.db.discoverClear();
+      const removed = await this.db.discoverClear();
       const feed = await this.db.discoverFeed();
       this.feed.set(
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
       this.displayCount.set(FEED_PAGE);
+      this.clearConfirm.set(false);
+      this.toast.success(this.t()('discover.clear_done').replace('{n}', String(removed)));
     } catch (e) {
       console.error('discover: clear failed', e);
+      this.toast.error(String(e));
     } finally {
       this.clearing.set(false);
-      this.clearConfirm.set(false);
     }
   }
 

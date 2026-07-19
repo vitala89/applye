@@ -580,6 +580,7 @@
         type="button"
         class="dv-btn dv-btn--ghost dv-filters__clear"
         [title]="t()('discover.clear_list')"
+        [disabled]="!hasClearableJobs()"
         (click)="askClearFeed()"
       >
         <lucide-icon [img]="icons.remove" [size]="13" aria-hidden="true" />

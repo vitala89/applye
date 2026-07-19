@@ -419,6 +419,14 @@ export class DiscoverComponent {
   protected readonly hasMoreFeed = computed(() => this.totalFeedRows() > this.displayCount());
 
   /**
+   * Any unsaved scanned job exists at all - independent of the current filters
+   * and search query, because Clear list removes the whole inbox, not just the
+   * visible slice. Drives disabling the Clear list button when there is
+   * nothing for it to do.
+   */
+  protected readonly hasClearableJobs = computed(() => this.feed().some((r) => !r.saved));
+
+  /**
    * The feed windowed to `displayCount`: rows are handed out across sections in
    * order (For you first), so only the visible slice ever hits the DOM. Section
    * headers still report their full `total`.
@@ -624,8 +632,9 @@ export class DiscoverComponent {
   }
 
   // ----------------------------------------------------------- clear inbox
-  /** Open the confirm modal. */
+  /** Open the confirm modal. No-op when there is nothing unsaved to clear. */
   protected askClearFeed(): void {
+    if (!this.hasClearableJobs()) return;
     this.clearConfirm.set(true);
   }
 

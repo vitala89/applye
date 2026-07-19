@@ -88,6 +88,12 @@
     box-shadow: var(--shadow-ring);
   }
 
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+  }
+
   &--primary {
     background: var(--accent);
     border-color: var(--accent);

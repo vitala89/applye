@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AUTHOR, DATA_CONTRACT, REPO, YEAR } from './site';
+import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, REPO, X_TWITTER, YEAR } from './site';
 
 type Theme = 'dark' | 'light';
 
@@ -20,6 +20,9 @@ export class App {
   readonly dataContract = DATA_CONTRACT;
   readonly author = AUTHOR;
   readonly year = YEAR;
+  readonly discord = DISCORD;
+  readonly linkedin = LINKEDIN;
+  readonly xTwitter = X_TWITTER;
 
   readonly theme = signal<Theme>('dark');
 

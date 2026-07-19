@@ -1,0 +1,60 @@
+<div class="clog shell shell--narrow privacy">
+  <header class="clog__head">
+    <p class="applye-eyebrow">Privacy</p>
+    <h1 class="clog__h1">The shortest privacy policy we could honestly write.</h1>
+    <p class="clog__lede">
+      Privacy is not a settings page in Applye; it is the architecture. There is no server, so most
+      of a normal policy simply does not apply.
+    </p>
+  </header>
+
+  <div class="prose">
+    <h2 class="docs__h2">The desktop app</h2>
+    <ul class="docs__list">
+      <li>
+        <strong>Your data stays on your machine.</strong> Profile, job list, scores, documents,
+        notes, and history live in a local SQLite database. There is no account, no cloud sync, and
+        no server of ours that could hold a copy.
+      </li>
+      <li>
+        <strong>No telemetry.</strong> The app sends no analytics, crash reports, or usage pings. We
+        literally cannot see how you use it.
+      </li>
+      <li>
+        <strong>AI calls are opt-in and minimal.</strong> Nothing reaches an AI provider until you
+        click an AI action. When you do, only the minimum needed for that one request (for example,
+        the job description and the relevant profile fields) goes to the provider
+        <em>you</em> configured, under <em>your</em> API key and their privacy terms. Results are
+        cached locally so identical requests are never sent twice.
+      </li>
+      <li>
+        <strong>Discover fetches public feeds only.</strong> The scan engine requests public job
+        APIs and RSS feeds over HTTPS. It sends no personal data with those requests.
+      </li>
+      <li>
+        <strong>Your keys stay local.</strong> Provider keys are stored on your device and used only
+        to call the provider you chose.
+      </li>
+      <li>
+        <strong>Deleting your data is deleting a file.</strong> Remove the app's local database and
+        everything is gone. GDPR-friendly because there is nothing to request from us - we never had
+        it.
+      </li>
+    </ul>
+
+    <h2 class="docs__h2">This website</h2>
+    <ul class="docs__list">
+      <li>Static pages. No cookies, no trackers, no analytics scripts, no forms.</li>
+      <li>Your theme preference is kept in your browser's local storage, and nowhere else.</li>
+    </ul>
+
+    <h2 class="docs__h2">Verify, don't trust</h2>
+    <p>
+      Every claim above is checkable: the code is open. Read the
+      <a [href]="dataContract" target="_blank" rel="noopener">data sovereignty guarantee</a> in the
+      README, or audit the source on <a [href]="repo" target="_blank" rel="noopener">GitHub</a>.
+      Questions about privacy behavior are welcome as issues; the deeper technical notes live in
+      <a routerLink="/docs/privacy">the privacy docs</a>.
+    </p>
+  </div>
+</div>

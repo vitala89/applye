@@ -39,7 +39,7 @@ export class Landing {
     {
       title: 'Tailored CV in three passes',
       example:
-        'An XYZ rewrite, then a dual critique that argues with itself, then a clean build, DOCX-first so it survives ATS parsing. You read every line before it exists as a file. Tailored applications get more replies, so the work goes into fit, not volume.',
+        'An XYZ rewrite, then a dual critique that argues with itself, then a clean build exported as a PDF that survives ATS parsing. You read every line before it exists as a file. Tailored applications get more replies, so the work goes into fit, not volume.',
       note: 'Applye drafts. You review, export, and submit.',
     },
     {

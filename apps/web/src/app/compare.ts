@@ -22,7 +22,7 @@ export class Compare {
   readonly rows: CompareRow[] = [
     {
       label: 'Price',
-      applye: 'Free forever, MIT',
+      applye: 'Free, MIT',
       saas: '$9-40 / month',
       cli: 'Free, MIT',
       sheet: 'Free',

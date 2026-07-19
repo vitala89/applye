@@ -65,7 +65,7 @@ export class Landing {
   readonly principles = [
     { label: 'Local-first', line: 'One SQLite file on your machine.' },
     { label: 'Privacy by design', line: 'Nothing is collected. No telemetry.' },
-    { label: 'Free / MIT', line: 'Open source, free forever.' },
+    { label: 'Free / MIT', line: 'Open source, free.' },
     { label: 'Bring your own AI', line: 'Your key or your CLI subscription.' },
     { label: 'Augment, not automate', line: 'AI drafts. You decide and submit.' },
   ];
@@ -77,7 +77,7 @@ export class Landing {
     },
     {
       q: 'Is it really free?',
-      a: 'Yes. Applye is MIT-licensed and free forever: there is no paid tier and no subscription. The only thing you might pay for is your own AI usage, and that is billed by your provider, not by us.',
+      a: 'Yes. Applye is MIT-licensed and free: there is no paid tier and no subscription. The only thing you might pay for is your own AI usage, and that is billed by your provider, not by us.',
     },
     {
       q: 'What AI do I need?',

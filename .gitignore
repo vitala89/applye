@@ -80,6 +80,10 @@ graphify-out/
 .planning/
 tauri-project-bootstrap.md
 
+# Internal competitor-adoption analysis — not for the public repo
+AGENT_PROMPT_CAREER_OPS_ADOPTION.md
+docs/product/CAREER_OPS_ADOPTION.md
+
 # superpowers scratch state
 .superpowers/
 

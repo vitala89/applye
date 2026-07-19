@@ -409,6 +409,120 @@ fn parse_himalayas(val: &serde_json::Value) -> Vec<RawJob> {
         .collect()
 }
 
+/// Coarse "does this string name a place?" gate for pulling a location out of
+/// messy RSS (categories, description labels). Deliberately broad and cheap; the
+/// real region/country classification happens client-side. Its job is only to
+/// reject noise like "(m/w/d)" or "Full-Time" while accepting anything that
+/// carries a geographic signal.
+fn location_signal(s: &str) -> bool {
+    let low = s.to_lowercase();
+    if REMOTE_MARKERS.iter().any(|m| low.contains(m)) {
+        return true;
+    }
+    let word_hit = |needle: &str| {
+        low.split(|c: char| !c.is_alphanumeric())
+            .any(|w| w == needle)
+    };
+    // Region words + every country name we already track for scope filtering.
+    const REGION_WORDS: &[&str] = &[
+        "europe",
+        "european",
+        "emea",
+        "america",
+        "americas",
+        "latam",
+        "apac",
+        "asia",
+        "africa",
+        "oceania",
+        "usa",
+        "uk",
+        "canada",
+        "brazil",
+        "brasil",
+        "argentina",
+        "mexico",
+        "australia",
+    ];
+    if REGION_WORDS.iter().any(|w| low.contains(w)) {
+        return true;
+    }
+    if EUROPE_COUNTRIES
+        .iter()
+        .chain(ASIA_COUNTRIES.iter())
+        .any(|c| low.contains(c))
+    {
+        return true;
+    }
+    // Bare US state code ("Austin, TX") or a 2-letter country code as a segment.
+    const CODES: &[&str] = &[
+        "tx", "ca", "ny", "wa", "il", "co", "fl", "ga", "ma", "or", "oh", "nc", "va", "de", "nl",
+        "fr", "es", "it", "pl", "se", "no", "fi", "dk", "ie", "at", "ch", "pt",
+    ];
+    CODES.iter().any(|c| word_hit(c))
+}
+
+/// Reads a "Location: X" / "Standort: X" / "Ort: X" label out of plain-text JD.
+fn labelled_location(jd: &str) -> Option<String> {
+    const LABELS: &[&str] = &["location:", "standort:", "ort:", "based in:", "office:"];
+    for line in jd.lines() {
+        let low = line.to_lowercase();
+        for label in LABELS {
+            if let Some(idx) = low.find(label) {
+                let value = line[idx + label.len()..].trim();
+                // Stop at the next label-like separator on the same line.
+                let value = value.split(['|', '·', '•']).next().unwrap_or(value).trim();
+                if !value.is_empty() && value.len() <= 60 {
+                    return Some(value.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// All values of a repeated XML tag (RSS feeds emit several <category> tags).
+fn xml_tags(block: &str, tag: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut rest = block;
+    while let Some(v) = xml_tag(rest, tag) {
+        out.push(v);
+        // Advance past this tag's close so the next iteration finds the following one.
+        let close = format!("</{tag}>");
+        match rest.find(&close) {
+            Some(i) => rest = &rest[i + close.len()..],
+            None => break,
+        }
+    }
+    out
+}
+
+/// Best-effort location for a generic RSS item. Order: explicit region/location
+/// tags -> a <category> that looks like a place -> a "Location:" label in the
+/// body -> "Remote" when the item is clearly remote -> empty (rolls into Other).
+fn extract_rss_location(item: &str, title: &str, jd_text: &str) -> String {
+    if let Some(loc) = xml_tag(item, "region").or_else(|| xml_tag(item, "location")) {
+        let loc = loc.trim();
+        if !loc.is_empty() {
+            return loc.to_string();
+        }
+    }
+    for cat in xml_tags(item, "category") {
+        let c = cat.trim();
+        if !c.is_empty() && location_signal(c) {
+            return c.to_string();
+        }
+    }
+    if let Some(l) = labelled_location(jd_text) {
+        return l;
+    }
+    let hay = format!("{title} {jd_text}").to_lowercase();
+    if REMOTE_MARKERS.iter().any(|m| hay.contains(m)) {
+        return "Remote".to_string();
+    }
+    String::new()
+}
+
 /// Generic RSS <item> reader (We Work Remotely and user-added feeds).
 /// WWR titles are "Company: Role" - `split_company_from_title` splits on the
 /// first colon; other feeds keep the full title and an empty company.
@@ -425,13 +539,13 @@ fn parse_rss_items(xml: &str, split_company_from_title: bool) -> Vec<RawJob> {
         } else {
             (String::new(), raw_title)
         };
+        let jd_text = html_to_text(&xml_tag(item, "description").unwrap_or_default());
+        let location = extract_rss_location(item, &title, &jd_text);
         out.push(RawJob {
             title,
             company,
-            jd_text: html_to_text(&xml_tag(item, "description").unwrap_or_default()),
-            location: xml_tag(item, "region")
-                .or_else(|| xml_tag(item, "location"))
-                .unwrap_or_default(),
+            jd_text,
+            location,
             url: xml_tag(item, "link").unwrap_or_default(),
         });
     }
@@ -1129,6 +1243,56 @@ mod tests {
         let generic = parse_rss_items(xml, false);
         assert_eq!(generic[0].title, "Acme: Senior Dev");
         assert_eq!(generic[0].company, "");
+    }
+
+    #[test]
+    fn rss_location_falls_back_to_place_like_category() {
+        // No <region>/<location>; a <category> naming a place is used, while the
+        // job-type category is ignored.
+        let xml = r#"<rss><channel>
+            <item><title>Backend Engineer</title>
+              <category>Full-Time</category>
+              <category>Berlin, Germany</category>
+              <link>https://example.com/jobs/1</link>
+              <description><![CDATA[<p>Build things</p>]]></description></item>
+        </channel></rss>"#;
+        let jobs = parse_rss_items(xml, false);
+        assert_eq!(jobs[0].location, "Berlin, Germany");
+    }
+
+    #[test]
+    fn rss_location_reads_body_label() {
+        let xml = r#"<rss><channel>
+            <item><title>Data Engineer (m/w/d)</title>
+              <link>https://example.com/jobs/2</link>
+              <description><![CDATA[<p>About us</p><p>Standort: Munich</p>]]></description></item>
+        </channel></rss>"#;
+        let jobs = parse_rss_items(xml, false);
+        assert_eq!(jobs[0].location, "Munich");
+    }
+
+    #[test]
+    fn rss_location_marks_remote_when_only_signal() {
+        let xml = r#"<rss><channel>
+            <item><title>Frontend Engineer</title>
+              <link>https://example.com/jobs/3</link>
+              <description><![CDATA[<p>Fully remote, work from anywhere.</p>]]></description></item>
+        </channel></rss>"#;
+        let jobs = parse_rss_items(xml, false);
+        assert_eq!(jobs[0].location, "Remote");
+    }
+
+    #[test]
+    fn rss_location_stays_empty_without_any_signal() {
+        // "(m/w/d)" and a plain JD must not be mistaken for a location.
+        let xml = r#"<rss><channel>
+            <item><title>Software Engineer (m/w/d)</title>
+              <category>Engineering</category>
+              <link>https://example.com/jobs/4</link>
+              <description><![CDATA[<p>Join our team building products.</p>]]></description></item>
+        </channel></rss>"#;
+        let jobs = parse_rss_items(xml, false);
+        assert_eq!(jobs[0].location, "");
     }
 
     #[test]

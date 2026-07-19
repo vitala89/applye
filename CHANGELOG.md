@@ -782,7 +782,16 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
 - Phase 1 data spine: SQLite schema, Tauri commands, and the profile vertical
   slice.
 
-[Unreleased]: https://github.com/vitala89/applye/compare/v0.16.3...HEAD
+[Unreleased]: https://github.com/vitala89/applye/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/vitala89/applye/compare/v0.23.0...v0.24.0
+[0.23.0]: https://github.com/vitala89/applye/compare/v0.22.0...v0.23.0
+[0.22.0]: https://github.com/vitala89/applye/compare/v0.21.0...v0.22.0
+[0.21.0]: https://github.com/vitala89/applye/compare/v0.20.0...v0.21.0
+[0.20.0]: https://github.com/vitala89/applye/compare/v0.19.0...v0.20.0
+[0.19.0]: https://github.com/vitala89/applye/compare/v0.18.1...v0.19.0
+[0.18.1]: https://github.com/vitala89/applye/compare/v0.18.0...v0.18.1
+[0.18.0]: https://github.com/vitala89/applye/compare/v0.17.0...v0.18.0
+[0.17.0]: https://github.com/vitala89/applye/compare/v0.16.3...v0.17.0
 [0.16.3]: https://github.com/vitala89/applye/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/vitala89/applye/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/vitala89/applye/compare/v0.16.0...v0.16.1

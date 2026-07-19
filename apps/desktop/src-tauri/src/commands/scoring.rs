@@ -47,6 +47,164 @@ fn extract_title(text: &str) -> Option<String> {
         .map(|l| l.to_string())
 }
 
+/// Words that can never be a company name on their own - used to reject
+/// sentence fragments like "We are ..." or "The role is ...".
+const COMPANY_STOPWORDS: &[&str] = &[
+    "we",
+    "our",
+    "the",
+    "this",
+    "that",
+    "you",
+    "your",
+    "they",
+    "it",
+    "as",
+    "at",
+    "in",
+    "for",
+    "with",
+    "position",
+    "role",
+    "job",
+    "about",
+    "who",
+    "what",
+    "here",
+    "join",
+    "description",
+    "responsibilities",
+    "requirements",
+    "overview",
+    "summary",
+    "a",
+    "an",
+];
+
+/// Connector words allowed inside a multi-word company name ("Ben & Jerry's",
+/// "Bank of America") without breaking the proper-noun run.
+fn is_company_connector(word: &str) -> bool {
+    matches!(
+        word.to_ascii_lowercase().as_str(),
+        "and" | "of" | "the" | "&" | "for"
+    )
+}
+
+fn clean_company(raw: &str) -> String {
+    raw.trim()
+        .trim_matches(|c: char| {
+            c == '"'
+                || c == '\''
+                || c == ','
+                || c == '.'
+                || c == ':'
+                || c == '-'
+                || c == '('
+                || c == ')'
+                || c == '|'
+        })
+        .trim()
+        .to_string()
+}
+
+fn is_plausible_company(candidate: &str) -> bool {
+    let c = candidate.trim();
+    if c.len() < 2 || c.len() > 60 {
+        return false;
+    }
+    let words: Vec<&str> = c.split_whitespace().collect();
+    if words.is_empty() || words.len() > 6 {
+        return false;
+    }
+    let first = words[0];
+    let Some(fc) = first.chars().next() else {
+        return false;
+    };
+    if !fc.is_alphabetic() || !fc.is_uppercase() {
+        return false;
+    }
+    if COMPANY_STOPWORDS.contains(&first.to_lowercase().as_str()) {
+        return false;
+    }
+    true
+}
+
+/// Leading run of Capitalized words (with connectors), e.g. from "About Bjak"
+/// or "Join Acme Corp today" -> "Bjak" / "Acme Corp".
+fn leading_proper_noun(s: &str) -> String {
+    let mut out: Vec<&str> = Vec::new();
+    for word in s.split_whitespace() {
+        let fc = word.chars().next().unwrap_or(' ');
+        if fc.is_uppercase() || (is_company_connector(word) && !out.is_empty()) {
+            out.push(word);
+            if out.len() >= 6 {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    clean_company(&out.join(" "))
+}
+
+/// "<Company> is a/an/the/one of ..." - the most common self-description.
+fn company_before_is(sentence: &str) -> Option<String> {
+    let words: Vec<&str> = sentence.split_whitespace().collect();
+    for i in 1..words.len() {
+        if !words[i].eq_ignore_ascii_case("is") {
+            continue;
+        }
+        let next = words.get(i + 1).map(|w| w.to_ascii_lowercase());
+        let marker = matches!(next.as_deref(), Some("a") | Some("an") | Some("the"))
+            || (next.as_deref() == Some("one")
+                && words
+                    .get(i + 2)
+                    .map(|w| w.eq_ignore_ascii_case("of"))
+                    .unwrap_or(false));
+        if marker && i <= 6 {
+            let cand = leading_proper_noun(&words[..i].join(" "));
+            if is_plausible_company(&cand) {
+                return Some(cand);
+            }
+        }
+    }
+    None
+}
+
+/// Deterministic company extraction from the JD body (0 tokens, no AI).
+/// Tries, in order: an "About X" / "Join X" heading, then the classic
+/// "<Company> is a ..." opening sentence. Conservative: a fragment that does
+/// not look like a proper company name is rejected rather than guessed.
+fn extract_company_from_body(text: &str) -> Option<String> {
+    let head: String = text.chars().take(1500).collect();
+
+    for line in head.lines().take(40) {
+        let t = line.trim();
+        if t.len() < 2 {
+            continue;
+        }
+        for prefix in ["about ", "join ", "welcome to "] {
+            if t.len() > prefix.len()
+                && t.get(..prefix.len())
+                    .map(|p| p.eq_ignore_ascii_case(prefix))
+                    .unwrap_or(false)
+            {
+                let cand = leading_proper_noun(&t[prefix.len()..]);
+                if is_plausible_company(&cand) {
+                    return Some(cand);
+                }
+            }
+        }
+    }
+
+    for sentence in head.split(|c| c == '.' || c == '\n' || c == '!') {
+        if let Some(company) = company_before_is(sentence.trim()) {
+            return Some(company);
+        }
+    }
+    None
+}
+
 fn extract_company(text: &str) -> Option<String> {
     for line in text.lines().take(30) {
         let lower = line.to_lowercase();
@@ -62,7 +220,7 @@ fn extract_company(text: &str) -> Option<String> {
             }
         }
     }
-    None
+    extract_company_from_body(text)
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -179,6 +337,9 @@ async fn job_paste_core(
            (company, title, jd_text, jd_hash, hard_filter_passed, legitimacy_tier, legitimacy_notes, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(jd_hash) DO UPDATE SET
+           -- backfill a missing company/title without clobbering an existing one
+           company            = COALESCE(NULLIF(jobs.company, ''), excluded.company),
+           title              = COALESCE(NULLIF(jobs.title, ''), excluded.title),
            hard_filter_passed = excluded.hard_filter_passed,
            legitimacy_tier    = excluded.legitimacy_tier,
            legitimacy_notes   = excluded.legitimacy_notes",
@@ -294,6 +455,45 @@ async fn score_cache_save_core(
     .fetch_one(pool)
     .await
     .map_err(|e| format!("score_cache_save reload: {e}"))
+}
+
+#[cfg(test)]
+mod extract_tests {
+    use super::extract_company;
+
+    #[test]
+    fn company_from_is_a_sentence() {
+        let jd = "Newfire Global Partners is a leading technology firm that builds software.";
+        assert_eq!(
+            extract_company(jd).as_deref(),
+            Some("Newfire Global Partners")
+        );
+    }
+
+    #[test]
+    fn company_from_about_heading() {
+        let jd = "Senior Engineer\n\nAbout Bjak\n\nWe build insurance tech.";
+        assert_eq!(extract_company(jd).as_deref(), Some("Bjak"));
+    }
+
+    #[test]
+    fn company_from_join_heading() {
+        let jd = "Join Acme Corp today and help us grow.";
+        assert_eq!(extract_company(jd).as_deref(), Some("Acme Corp"));
+    }
+
+    #[test]
+    fn explicit_company_header_still_wins() {
+        let jd = "Company: Contoso GmbH\nRole: Backend Engineer";
+        assert_eq!(extract_company(jd).as_deref(), Some("Contoso GmbH"));
+    }
+
+    #[test]
+    fn sentence_fragment_is_rejected() {
+        // "We are a ..." must not be mistaken for a company name.
+        let jd = "We are a fully funded company founded by serial entrepreneurs.";
+        assert_eq!(extract_company(jd), None);
+    }
 }
 
 #[cfg(test)]

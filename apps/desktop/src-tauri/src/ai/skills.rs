@@ -51,6 +51,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "cv-gap-analysis" => Some(include_str!(
             "../../../../../libs/skills/src/cv-gap-analysis/cv-gap-analysis.md"
         )),
+        "profile-import" => Some(include_str!(
+            "../../../../../libs/skills/src/profile-import/profile-import.md"
+        )),
         _ => None,
     }
 }
@@ -198,6 +201,7 @@ mod tests {
             "cover-letter-generate",
             "cover-letter-tailor",
             "cv-gap-analysis",
+            "profile-import",
         ] {
             let r = render(name, &HashMap::new());
             assert!(r.is_ok(), "{name} failed to render: {:?}", r.err());

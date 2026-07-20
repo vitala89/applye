@@ -8,6 +8,12 @@ import {
   parseScoringJson,
   parseEducationEntries,
   serializeEducationEntries,
+  parseExperienceEntries,
+  serializeExperienceEntries,
+  EMPTY_EXPERIENCE_ENTRY,
+  parseLanguageEntries,
+  serializeLanguageEntries,
+  EMPTY_LANGUAGE_ENTRY,
 } from './profile-markdown';
 
 const fullForm: ProfileForm = {
@@ -69,6 +75,99 @@ describe('education entries', () => {
     expect(parseEducationEntries('- MSc AI, TUM (2020 - Present)')).toEqual([
       { title: 'MSc AI', institution: 'TUM', startDate: '2020', endDate: '' },
     ]);
+  });
+});
+
+describe('experience entries', () => {
+  it('round-trips a full entry', () => {
+    const md = [
+      '### Senior Engineer - Acme',
+      'Berlin · 2020 - 2023',
+      '- Shipped the thing',
+      '- Led the team',
+    ].join('\n');
+    const entries = parseExperienceEntries(md);
+    expect(entries).toEqual([
+      {
+        role: 'Senior Engineer',
+        company: 'Acme',
+        location: 'Berlin',
+        startDate: '2020',
+        endDate: '2023',
+        bullets: ['Shipped the thing', 'Led the team'],
+      },
+    ]);
+    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
+  });
+
+  it('treats an empty end date as ongoing', () => {
+    const entry = { ...EMPTY_EXPERIENCE_ENTRY, role: 'Dev', company: 'Now', startDate: '2024' };
+    const md = serializeExperienceEntries([entry]);
+    expect(md).toContain('2024 - Present');
+    // "Present" round-trips back to an empty endDate.
+    expect(parseExperienceEntries(md)[0].endDate).toBe('');
+  });
+
+  it('keeps a legacy free-text block as a single bullet entry', () => {
+    const entries = parseExperienceEntries('Did lots of things at various places.');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].role).toBe('');
+    expect(entries[0].bullets).toEqual(['Did lots of things at various places.']);
+  });
+
+  it('parses a header with no company separator', () => {
+    const entries = parseExperienceEntries('### Freelance Consultant\n- Client work');
+    expect(entries[0]).toMatchObject({ role: 'Freelance Consultant', company: '' });
+  });
+
+  it('drops fully blank entries on serialize', () => {
+    expect(serializeExperienceEntries([{ ...EMPTY_EXPERIENCE_ENTRY }])).toBe('');
+  });
+
+  it('returns [] for empty input', () => {
+    expect(parseExperienceEntries('')).toEqual([]);
+  });
+
+  it('round-trips ISO year-month dates', () => {
+    const entries = [
+      {
+        role: 'Dev',
+        company: 'Acme',
+        location: 'Berlin',
+        startDate: '2020-01',
+        endDate: '2023-05',
+        bullets: ['x'],
+      },
+    ];
+    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
+  });
+
+  it('keeps a digit-bearing location as location, not a date', () => {
+    const entries = parseExperienceEntries('### Dev - Acme\nBerlin 10115 · 2020 - 2023\n- x');
+    expect(entries[0].location).toBe('Berlin 10115');
+    expect(entries[0].startDate).toBe('2020');
+    expect(entries[0].endDate).toBe('2023');
+  });
+
+  it('preserves multiple location tokens on the meta line (lossless round-trip)', () => {
+    const entries = [
+      {
+        role: 'Dev',
+        company: 'Acme',
+        location: 'Berlin · Germany',
+        startDate: '2020',
+        endDate: '2023',
+        bullets: ['x'],
+      },
+    ];
+    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
+  });
+
+  it('keeps a postal code containing a year substring as location', () => {
+    const entries = parseExperienceEntries('### Dev - Acme\nHamburg 20095 · 2020 - 2023\n- x');
+    expect(entries[0].location).toBe('Hamburg 20095');
+    expect(entries[0].startDate).toBe('2020');
+    expect(entries[0].endDate).toBe('2023');
   });
 });
 
@@ -302,6 +401,41 @@ describe('profile-markdown', () => {
     ])('%s reaches a fixed point after one save', (_label, md) => {
       const once = parseProfileMd(md);
       expect(parseProfileMd(serializeProfileForm(once))).toEqual(once);
+    });
+  });
+
+  describe('language entries', () => {
+    it('has an empty entry constant', () => {
+      expect(EMPTY_LANGUAGE_ENTRY).toEqual({ language: '', level: '' });
+    });
+
+    it('parses "Language (Level)" items', () => {
+      expect(parseLanguageEntries(['English (C1)', 'German (B2)'])).toEqual([
+        { language: 'English', level: 'C1' },
+        { language: 'German', level: 'B2' },
+      ]);
+    });
+
+    it('parses a bare language with no level', () => {
+      expect(parseLanguageEntries(['English'])).toEqual([{ language: 'English', level: '' }]);
+    });
+
+    it('round-trips', () => {
+      const entries = [
+        { language: 'English', level: 'Native' },
+        { language: 'Spanish', level: '' },
+      ];
+      expect(parseLanguageEntries(serializeLanguageEntries(entries))).toEqual(entries);
+    });
+
+    it('serializes level only when present and drops blank rows', () => {
+      expect(
+        serializeLanguageEntries([
+          { language: 'French', level: 'A2' },
+          { language: 'Polish', level: '' },
+          { language: '', level: 'C1' },
+        ]),
+      ).toEqual(['French (A2)', 'Polish']);
     });
   });
 });

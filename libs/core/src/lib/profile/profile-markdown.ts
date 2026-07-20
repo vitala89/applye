@@ -535,15 +535,18 @@ export function parseCompensation(body: string): CompensationTarget {
   const text = (body || '').replace(/\r\n/g, '\n').trim();
   if (!text) return { ...EMPTY_COMPENSATION };
   const currency = /(?:\bEUR\b|€)/i.test(text) ? 'EUR' : /(?:\bUSD\b|\$)/i.test(text) ? 'USD' : '';
-  const period = /(?:per\s+month|\/\s*month|p\.?m\.?)/i.test(text)
+  const period = /(?:per\s+month|\/\s*month|(?<![a-z])p\.?m\.?(?![a-z]))/i.test(text)
     ? 'month'
-    : /(?:per\s+year|\/\s*year|per\s+annum|p\.?a\.?|annually)/i.test(text)
+    : /(?:per\s+year|\/\s*year|per\s+annum|(?<![a-z])p\.?a\.?(?![a-z])|annually)/i.test(text)
       ? 'year'
       : '';
   // Strip currency/period words so only the numeric range remains.
   const numsPart = text
     .replace(/\bEUR\b|\bUSD\b|€|\$/gi, ' ')
-    .replace(/per\s+(year|month|annum)|annually|p\.?a\.?|p\.?m\.?|\/\s*(year|month)/gi, ' ');
+    .replace(
+      /per\s+(year|month|annum)|annually|(?<![a-z])p\.?a\.?(?![a-z])|(?<![a-z])p\.?m\.?(?![a-z])|\/\s*(year|month)/gi,
+      ' ',
+    );
   const nums = numsPart.match(/\d[\d.,]*\d|\d/g) ?? [];
   const norm = (n: string) => n.replace(/[.,](?=\d{3}\b)/g, '');
   const min = nums[0] ? norm(nums[0]) : '';

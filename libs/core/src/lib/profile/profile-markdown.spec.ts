@@ -492,6 +492,16 @@ describe('profile-markdown', () => {
     it('serializes fully-empty compensation to an empty string', () => {
       expect(serializeCompensation({ ...EMPTY_COMPENSATION })).toBe('');
     });
+
+    it('does not treat "pa" inside an ordinary word as a period', () => {
+      expect(parseCompensation('85000 EUR, negotiable for the right company').period).toBe('');
+      expect(parseCompensation('90000 USD compare offers').period).toBe('');
+    });
+
+    it('still detects a standalone p.a. / p.m. abbreviation', () => {
+      expect(parseCompensation('85000 EUR p.a.').period).toBe('year');
+      expect(parseCompensation('5000 EUR pm').period).toBe('month');
+    });
   });
 
   describe('compensation in profile markdown', () => {

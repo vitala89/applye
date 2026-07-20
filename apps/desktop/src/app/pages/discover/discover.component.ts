@@ -407,8 +407,23 @@ export class DiscoverComponent {
     return this.archetypeBadge(row) !== null;
   }
 
+  /**
+   * Per-row best-fit archetype, computed once per feed/archetype change. The badge
+   * is read from the template, the For-you filter, and the tier sort, so caching by
+   * row id avoids re-tokenizing every archetype on each change-detection pass.
+   */
+  private readonly badgeByRow = computed<Map<number, ArchetypeMatch | null>>(() => {
+    const list = this.archetypes();
+    const cache = new Map<number, ArchetypeMatch | null>();
+    for (const row of this.feed()) cache.set(row.id, matchArchetype(row.title ?? '', list));
+    return cache;
+  });
+
   /** Best-fit archetype for a feed row (title only; JD not loaded in the feed). */
   protected archetypeBadge(row: FeedRow): ArchetypeMatch | null {
+    const cache = this.badgeByRow();
+    if (cache.has(row.id)) return cache.get(row.id) ?? null;
+    // Row not in the current feed snapshot (defensive): match directly.
     return matchArchetype(row.title ?? '', this.archetypes());
   }
 
@@ -796,8 +811,10 @@ export class DiscoverComponent {
 
   /**
    * Raw keyword-fit score, deterministic and explainable (no AI, 0 tokens):
-   * coverage of the profile's derived keywords over title+JD, plus a small
-   * bonus per detected skill. Null when the profile has no keywords yet.
+   * coverage of the profile's derived keywords over title+JD, a small bonus per
+   * detected skill, plus a tier boost from the open job's best-fit archetype
+   * (primary +12, secondary +6, adjacent +0). Null when the profile has no
+   * keywords yet.
    */
   private computeRawScore(hayRaw: string): number | null {
     const keywords = this.profileKeywords();

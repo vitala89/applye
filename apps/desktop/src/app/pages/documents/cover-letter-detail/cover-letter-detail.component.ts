@@ -38,6 +38,7 @@ import {
   COVER_LETTER_TONES,
   CV_ATS_SAFE_FONTS,
   PAGE_SETTINGS_DEFAULT,
+  sanitizeSignature,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -574,7 +575,7 @@ export class CoverLetterDetailComponent {
         freshContent.closing = parsed.closing || '';
         freshContent.hashes.closing = sourceHash;
       } else if (blockKey === 'signature') {
-        freshContent.signature = parsed.signature || '';
+        freshContent.signature = sanitizeSignature(parsed.signature);
         freshContent.hashes.signature = sourceHash;
       } else if (blockKey === 'body' && index !== undefined) {
         const freshParagraphs = [...(freshContent.bodyParagraphs || [])];

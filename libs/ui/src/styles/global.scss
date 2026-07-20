@@ -287,26 +287,35 @@ a:hover {
   background: var(--indigo-a08, rgba(99, 102, 241, 0.08));
   border: 1px solid var(--indigo-a16, rgba(99, 102, 241, 0.16));
   border-radius: var(--radius-full, 999px);
+}
 
-  .ai-thinking__dots {
-    display: flex;
-    gap: 3px;
+/* Bouncing three-dot loading indicator. Standalone (not nested under
+   `.ai-thinking`) so it also renders inside buttons — e.g. the Generate /
+   Regenerate document buttons show it while a draft is being generated.
+   `currentColor` lets it inherit the host button's text colour. */
+.ai-thinking__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 
-    span {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: var(--indigo-400, #818cf8);
-      animation: applye-bounce 1.2s ease-in-out infinite;
+  span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: applye-bounce 1.2s ease-in-out infinite;
 
-      &:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-      &:nth-child(3) {
-        animation-delay: 0.4s;
-      }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
     }
   }
+}
+
+.ai-thinking .ai-thinking__dots span {
+  background: var(--indigo-400, #818cf8);
 }
 
 /* ============================================================

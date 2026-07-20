@@ -60,4 +60,21 @@ describe('compareCompensation', () => {
       'below',
     );
   });
+
+  it('is unknown when a target bound is non-numeric text', () => {
+    expect(compareCompensation({ min: 'N/A', max: '100000', currency: 'EUR' }, '50000 EUR')).toBe(
+      'unknown',
+    );
+    expect(compareCompensation({ min: 'TBD', max: '', currency: 'EUR' }, '90k EUR')).toBe(
+      'unknown',
+    );
+  });
+
+  it('normalizes an inverted job range to min <= max', () => {
+    expect(parseSalaryRange('100000 - 80000 EUR')).toEqual({
+      min: 80000,
+      max: 100000,
+      currency: 'EUR',
+    });
+  });
 });

@@ -37,6 +37,9 @@ export function parseSalaryRange(text: string | null | undefined): ParsedSalary 
   if (!nums.length) return null;
   const min = nums[0];
   const max = nums.length > 1 ? nums[1] : nums[0];
+  if (min !== null && max !== null && min > max) {
+    return { min: max, max: min, currency };
+  }
   return { min, max, currency };
 }
 
@@ -48,10 +51,16 @@ export function compareCompensation(
   target: { min: string; max: string; currency: string },
   jobSalary: string | null | undefined,
 ): CompensationVerdict {
-  const tMinRaw = Number(target.min.replace(/[^\d]/g, ''));
-  const tMaxRaw = Number(target.max.replace(/[^\d]/g, ''));
-  const tMin = Number.isFinite(tMinRaw) && target.min.trim() ? tMinRaw : null;
-  const tMax = Number.isFinite(tMaxRaw) && target.max.trim() ? tMaxRaw : null;
+  const tMinDigits = target.min.replace(/[^\d]/g, '');
+  const tMaxDigits = target.max.replace(/[^\d]/g, '');
+  // A non-empty bound with no digits (e.g. "N/A") is malformed input, not an
+  // absent bound - treating it as absent would silently fall back to the
+  // other bound and produce a misleading verdict, so bail out to 'unknown'.
+  if ((target.min.trim() !== '' && !tMinDigits) || (target.max.trim() !== '' && !tMaxDigits)) {
+    return 'unknown';
+  }
+  const tMin = tMinDigits ? Number(tMinDigits) : null;
+  const tMax = tMaxDigits ? Number(tMaxDigits) : null;
   if (tMin === null && tMax === null) return 'unknown';
   const lo = tMin ?? tMax!;
   const hi = tMax ?? tMin!;

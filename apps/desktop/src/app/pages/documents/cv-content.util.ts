@@ -499,6 +499,28 @@ export function buildAdditionalInfoBlock(answers: CvGapAnswer[]): string {
   return lines.length ? `## Additional information\n${lines.join('\n')}` : '';
 }
 
+/** Parses a free-text employment-date answer into a `{ startDate, endDate }`
+ * pair. Accepts the ranges the date-gap dialog hints at: "Jan 2021 - Present",
+ * "2019 to 2021", en/em-dash ranges ("2019" glyph "2021"), plus a lone start
+ * ("March 2020"). A "present"/"current" (and common DE synonyms) or a missing
+ * second half leaves `endDate` empty, which the CV renders as "Present". Pure
+ * and fail-soft: an unparseable answer returns the whole string as `startDate`,
+ * never throws. A plain hyphen only splits when spaced (so an internal
+ * "01-2021" is preserved), while a dash glyph splits with or without spaces. */
+export function parseDateAnswer(answer: string): { startDate: string; endDate: string } {
+  const text = (answer ?? '').trim();
+  if (!text) return { startDate: '', endDate: '' };
+  // en dash (U+2013) / em dash (U+2014) built from char codes so no dash glyph
+  // ever appears in source (house rule: hyphen-only in the repo).
+  const dashes = String.fromCharCode(0x2013, 0x2014);
+  const sep = new RegExp(`(?:\\s+-\\s+|\\s*[${dashes}]\\s*|\\s+(?:to|bis|until)\\s+)`, 'i');
+  const parts = text.split(sep);
+  const startDate = (parts[0] ?? '').trim();
+  const endRaw = (parts[1] ?? '').trim();
+  const isPresent = /^(present|current|now|ongoing|heute|jetzt|aktuell)$/i.test(endRaw);
+  return { startDate, endDate: isPresent ? '' : endRaw };
+}
+
 /** Merges a targeted single-section regenerate result into an existing
  * `CvContent`, updating only that section's content fields (and
  * `sourceHash`) — every other section is untouched. */

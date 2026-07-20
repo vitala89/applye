@@ -254,6 +254,88 @@ export function serializeProfileForm(f: ProfileForm): string {
   return parts.join('\n\n') + '\n';
 }
 
+/** One education / certificate entry as edited in the structured profile UI.
+ * Persisted inside the `## Education` markdown body (one line each), so
+ * `ProfileForm.education` stays a plain string and nothing downstream needs a
+ * new field. Degrees and certificates share this shape — the distinction is
+ * just what the user types as `title`. */
+export interface EducationEntry {
+  /** Degree, programme, or certificate name (e.g. "BSc Computer Science",
+   * "AWS Solutions Architect"). */
+  title: string;
+  /** Institution or provider (e.g. "MIT", "Coursera"). Optional. */
+  institution: string;
+  /** Free-text start, e.g. "2015" or "Sep 2015". Optional. */
+  startDate: string;
+  /** Free-text end, e.g. "2019"; empty means ongoing (renders "Present"). */
+  endDate: string;
+}
+
+// en dash (U+2013) / em dash (U+2014) via char codes so no dash glyph appears
+// in source (house rule: hyphen-only in the repo).
+const EDU_RANGE_SEP = new RegExp(
+  `\\s*(?:-|[${String.fromCharCode(0x2013, 0x2014)}]|to|bis)\\s*`,
+  'i',
+);
+
+export const EMPTY_EDUCATION_ENTRY: EducationEntry = {
+  title: '',
+  institution: '',
+  startDate: '',
+  endDate: '',
+};
+
+/** Parses the `## Education` body into structured entries, one per non-empty
+ * line. Lenient and lossless: a line that does not match the canonical
+ * "Title, Institution (start - end)" shape keeps whatever it has (a legacy
+ * free-text line becomes an entry with just a `title`), so nothing is dropped
+ * when an older profile is opened in the structured editor. */
+export function parseEducationEntries(education: string): EducationEntry[] {
+  return (education || '')
+    .split('\n')
+    .map((l) => l.replace(/^[-*]\s*/, '').trim())
+    .filter(Boolean)
+    .map((line) => {
+      let startDate = '';
+      let endDate = '';
+      let head = line;
+      const paren = /\(([^)]*)\)\s*$/.exec(line);
+      if (paren) {
+        head = line.slice(0, paren.index).trim();
+        const range = paren[1].split(EDU_RANGE_SEP).map((s) => s.trim());
+        startDate = range[0] ?? '';
+        const rawEnd = range[1] ?? '';
+        endDate = /^(present|current|now|heute|jetzt|aktuell)$/i.test(rawEnd) ? '' : rawEnd;
+      }
+      head = head.replace(/,\s*$/, '');
+      const comma = head.lastIndexOf(', ');
+      const title = comma >= 0 ? head.slice(0, comma).trim() : head;
+      const institution = comma >= 0 ? head.slice(comma + 2).trim() : '';
+      return { title, institution, startDate, endDate };
+    });
+}
+
+/** Serializes structured entries back into the `## Education` body: one
+ * "- Title, Institution (start - end)" line each. Inverse of
+ * `parseEducationEntries` for well-formed entries; fully blank entries are
+ * dropped. */
+export function serializeEducationEntries(entries: EducationEntry[]): string {
+  return entries
+    .map((e) => {
+      const head = [e.title.trim(), e.institution.trim()].filter(Boolean).join(', ');
+      const start = e.startDate.trim();
+      const end = e.endDate.trim();
+      let range = '';
+      if (start && end) range = ` (${start} - ${end})`;
+      else if (start) range = ` (${start} - Present)`;
+      else if (end) range = ` (${end})`;
+      return `${head}${range}`.trim();
+    })
+    .filter(Boolean)
+    .map((l) => `- ${l}`)
+    .join('\n');
+}
+
 const CHECKS: { key: ProfileFieldKey; filled: (f: ProfileForm) => boolean }[] = [
   { key: 'title', filled: (f) => !!f.title.trim() },
   { key: 'location', filled: (f) => !!f.location.trim() },

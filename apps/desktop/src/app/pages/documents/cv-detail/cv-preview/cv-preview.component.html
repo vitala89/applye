@@ -557,7 +557,9 @@
             >{{ entry.startDate }}</span
           >
         }
-        <span class="cvpreview__date-sep"> – </span>
+        @if (entry.startDate || selectable(renderMode)) {
+          <span class="cvpreview__date-sep"> – </span>
+        }
         @if (isEditingLeaf(leafPath('exp', i, 'endDate')) && selectable(renderMode)) {
           <input
             type="text"
@@ -782,7 +784,9 @@
             >{{ entry.startDate }}</span
           >
         }
-        <span class="cvpreview__date-sep"> – </span>
+        @if (entry.startDate || selectable(renderMode)) {
+          <span class="cvpreview__date-sep"> – </span>
+        }
         @if (isEditingLeaf(leafPath('edu', i, 'endDate')) && selectable(renderMode)) {
           <input
             type="text"

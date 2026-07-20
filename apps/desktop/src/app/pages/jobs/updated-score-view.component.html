@@ -40,7 +40,7 @@
 
     <!-- Dimensions before → after -->
     @if (dimPairs().length) {
-      <div class="updated__section reveal" [class.reveal--in]="revealStep() >= STEP.DIMS">
+      <div class="card updated__section reveal" [class.reveal--in]="revealStep() >= STEP.DIMS">
         <span class="eyebrow">{{ t()('jobs.score_breakdown_eyebrow') }}</span>
         @for (d of dimPairs(); track d.name) {
           <div class="updated__dim">
@@ -166,7 +166,7 @@
 
     <!-- Before you submit -->
     @if (beforeYouSubmit().length) {
-      <div class="updated__section reveal" [class.reveal--in]="revealStep() >= STEP.NOTES">
+      <div class="card updated__section reveal" [class.reveal--in]="revealStep() >= STEP.NOTES">
         <div class="updated__meta-head">
           <lucide-icon [img]="icons().checklist" [size]="14" aria-hidden="true" />
           <span class="eyebrow">{{ t()('jobs.before_you_submit') }}</span>

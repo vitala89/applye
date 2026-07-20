@@ -10,6 +10,10 @@ import {
   EMPTY_FORM,
   parseProfileMd,
   serializeProfileForm,
+  EducationEntry,
+  EMPTY_EDUCATION_ENTRY,
+  parseEducationEntries,
+  serializeEducationEntries,
   Archetype,
   parseArchetypes,
   serializeArchetypes,
@@ -361,17 +365,67 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 </div>
               </div>
 
-              <div class="field">
-                <label class="field__label" for="field-education">{{
-                  t()('profile.field_education')
-                }}</label>
-                <input
-                  id="field-education"
-                  class="field__input"
-                  type="text"
-                  [ngModel]="form().education"
-                  (ngModelChange)="updateField('education', $event)"
-                />
+              <div class="field field--full" id="field-education">
+                <span class="field__label">{{ t()('profile.field_education') }}</span>
+                <p class="muted">{{ t()('profile.education_hint') }}</p>
+                @if (educationEntries().length > 0) {
+                  <div class="archetype-list">
+                    @for (e of educationEntries(); track $index) {
+                      <div class="archetype-card">
+                        <div class="archetype-card__top">
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.title"
+                            (ngModelChange)="updateEducation($index, 'title', $event)"
+                            [placeholder]="t()('profile.education_title_hint')"
+                            [attr.aria-label]="t()('profile.education_title')"
+                          />
+                          <button
+                            class="btn-ghost"
+                            type="button"
+                            (click)="removeEducation($index)"
+                            [attr.aria-label]="t()('profile.remove_education')"
+                          >
+                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                          </button>
+                        </div>
+                        <div class="archetype-card__top">
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.institution"
+                            (ngModelChange)="updateEducation($index, 'institution', $event)"
+                            [placeholder]="t()('profile.education_institution_hint')"
+                            [attr.aria-label]="t()('profile.education_institution')"
+                          />
+                        </div>
+                        <div class="archetype-card__top">
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.startDate"
+                            (ngModelChange)="updateEducation($index, 'startDate', $event)"
+                            [placeholder]="t()('profile.education_start_hint')"
+                            [attr.aria-label]="t()('profile.education_start')"
+                          />
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.endDate"
+                            (ngModelChange)="updateEducation($index, 'endDate', $event)"
+                            [placeholder]="t()('profile.education_end_hint')"
+                            [attr.aria-label]="t()('profile.education_end')"
+                          />
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+                <button class="btn-dashed" type="button" (click)="addEducation()">
+                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                  {{ t()('profile.add_education') }}
+                </button>
               </div>
             </div>
           } @else {
@@ -1156,6 +1210,12 @@ export class ProfileComponent implements OnInit {
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
   readonly form = signal<ProfileForm>({ ...EMPTY_FORM });
+  /** Structured mirror of `form().education` for the multi-entry editor. Its
+   * own signal (not a computed) so a freshly-added blank row survives until the
+   * user fills it — `serializeEducationEntries` drops blank lines from the
+   * string, but the row must stay editable. Re-seeded whenever the form is
+   * reparsed (load, leaving raw mode). */
+  readonly educationEntries = signal<EducationEntry[]>([]);
   readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
@@ -1221,6 +1281,7 @@ export class ProfileComponent implements OnInit {
       this.settings.set(s);
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
+      this.educationEntries.set(parseEducationEntries(this.form().education));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
       await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
@@ -1314,6 +1375,7 @@ export class ProfileComponent implements OnInit {
     if (this.rawMode()) {
       // leaving raw → re-parse edited markdown back into fields
       this.form.set(parseProfileMd(this.fullMd()));
+      this.educationEntries.set(parseEducationEntries(this.form().education));
     } else {
       this.syncMdFromForm();
     }
@@ -1337,6 +1399,29 @@ export class ProfileComponent implements OnInit {
 
   updateArchetype(index: number, patch: Partial<Archetype>): void {
     this.archetypes.update((a) => a.map((v, i) => (i === index ? { ...v, ...patch } : v)));
+  }
+
+  addEducation(): void {
+    this.educationEntries.update((list) => [...list, { ...EMPTY_EDUCATION_ENTRY }]);
+    this.syncEducation();
+  }
+
+  removeEducation(index: number): void {
+    this.educationEntries.update((list) => list.filter((_, i) => i !== index));
+    this.syncEducation();
+  }
+
+  updateEducation(index: number, field: keyof EducationEntry, value: string): void {
+    this.educationEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
+    );
+    this.syncEducation();
+  }
+
+  /** Folds the structured entries back into the `education` string (and thus
+   * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
+  private syncEducation(): void {
+    this.updateField('education', serializeEducationEntries(this.educationEntries()));
   }
 
   async save(): Promise<void> {

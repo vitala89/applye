@@ -125,6 +125,17 @@ describe('period-aware comparison', () => {
     expect(compareCompensation(target, '400 EUR per day')).toBe('unknown');
     expect(compareCompensation(target, '50 EUR per hour')).toBe('unknown');
   });
+
+  it('does not read a clock time as a pay period', () => {
+    expect(parseSalaryRange('85000 EUR, on-call until 5pm')!.period).toBe('');
+    // period '' defaults to year (factor 1), so 85000 compares normally, not x12
+    const target = { min: '85000', max: '110000', currency: 'EUR', period: 'year' };
+    expect(compareCompensation(target, '85000 EUR, on-call until 5pm')).toBe('within');
+  });
+
+  it('still detects a dotted p.a. abbreviation as year', () => {
+    expect(parseSalaryRange('90000 EUR p.a.')!.period).toBe('year');
+  });
 });
 
 describe('extractSalaryFromJd', () => {

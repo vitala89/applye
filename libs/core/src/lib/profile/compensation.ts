@@ -20,12 +20,14 @@ function detectCurrency(text: string): string {
 /** Detects the pay period a salary text names. '' when none is stated. */
 function detectPeriod(text: string): SalaryPeriod {
   const t = text.toLowerCase();
-  if (/(?<![a-z])(?:per\s+hour|\/\s*hr|hourly|p\.?h\.?)(?![a-z])/.test(t)) return 'hour';
-  if (/(?<![a-z])(?:per\s+day|\/\s*day|daily|p\.?d\.?)(?![a-z])/.test(t)) return 'day';
-  if (/(?<![a-z])(?:per\s+week|\/\s*wk|weekly)(?![a-z])/.test(t)) return 'week';
-  if (/(?<![a-z])(?:per\s+month|\/\s*mo(?:nth)?|monthly|p\.?m\.?)(?![a-z])/.test(t)) return 'month';
+  if (/(?<![a-z\d])(?:per\s+hour|\/\s*hr|hourly)(?![a-z\d])/.test(t)) return 'hour';
+  if (/(?<![a-z\d])(?:per\s+day|\/\s*day|daily)(?![a-z\d])/.test(t)) return 'day';
+  if (/(?<![a-z\d])(?:per\s+week|\/\s*wk|weekly)(?![a-z\d])/.test(t)) return 'week';
+  if (/(?<![a-z\d])(?:per\s+month|\/\s*mo(?:nth)?|monthly)(?![a-z\d])/.test(t)) return 'month';
   if (
-    /(?<![a-z])(?:per\s+year|per\s+annum|\/\s*yr|yearly|annually|p\.?a\.?|annum)(?![a-z])/.test(t)
+    /(?<![a-z\d])(?:per\s+year|per\s+annum|\/\s*yr|yearly|annually|p\.a\.?|annum)(?![a-z\d])/.test(
+      t,
+    )
   )
     return 'year';
   return '';

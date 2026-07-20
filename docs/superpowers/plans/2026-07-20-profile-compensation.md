@@ -814,3 +814,35 @@ PR body: the two outcomes, the pure core helpers + test coverage, markdown-sourc
 - `updateField(key, value)` is the single funnel that rewrites `fullMd` from `form()`. The compensation fields are plain scalars, so they need no signal and no explicit seeding (unlike experience/languages).
 - `compareCompensation` must NEVER show a wrong badge: any ambiguity returns `unknown`. When in doubt in the UI, guard on `!== 'unknown'`.
 - Verify the actual field name the Discovery feed item / My Jobs row uses for the advertised salary (`salaryRange`) before wiring the badge; if a view lacks it, report it rather than inventing a field.
+
+---
+
+## Revision (2026-07-20): Discovery salary via JD extraction; periods; "not stated"
+
+During execution, Task 5 hit a reality check: discovered jobs carry NO structured
+salary (`DiscoverFeedItem` has no salary field; the `jobs` table only has an
+almost-always-null `salary_min`; the scan pipeline does not extract salary).
+`salary_range` (free text) exists only on `applications` (My Jobs).
+
+User decision: recognize salary where present (including in the JD/description,
+per year/month/day), and where Discovery has none, show a neutral "Salary not
+stated" (unknown) chip rather than hiding it. Never a wrong badge.
+
+Revised remaining tasks (supersede the original Tasks 5-7):
+
+- **Task 5 (core extension)**: extend `compensation.ts` -
+  - `parseSalaryRange` also returns a `period` (`'' | 'year' | 'month' | 'week' | 'day' | 'hour'`).
+  - `compareCompensation` takes a target `period` too; normalizes year/month to annual
+    (month x12); if either side's period is week/day/hour it returns `'unknown'`
+    (not reliably annualizable). Period `''` defaults to year.
+  - new `extractSalaryFromJd(jd)`: deterministic, returns a salary snippet ONLY when a
+    currency marker (EUR/USD/GBP/EUR/$/£) is present (so "401k plan" is never mistaken
+    for a salary), else `null`.
+  - Add i18n `comp.not_stated` (EN "Salary not stated", DE "Gehalt nicht angegeben").
+- **Task 6 (Discovery detail)**: run `extractSalaryFromJd` over the open detail JD;
+  when the user has a compensation target, render the verdict badge, or the
+  "not stated" chip when no salary is found / not comparable.
+- **Task 7 (My Jobs)**: same badge/chip using the row's `salaryRange`.
+- **Task 8**: verify + docs + PR.
+
+`compareCompensation`'s target param becomes `{ min, max, currency, period }`.

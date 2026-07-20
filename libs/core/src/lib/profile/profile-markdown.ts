@@ -362,14 +362,19 @@ export const EMPTY_EXPERIENCE_ENTRY: ExperienceEntry = {
 // A meta line's date token: "2020 - 2023", "Jan 2020 - Present", or a lone "2020".
 // The dash is a plain hyphen (house rule) but we also accept en/em dashes read
 // from legacy content via char codes so no dash glyph appears in source.
+// The start/end separator as the serializer writes it: a SPACED hyphen (or
+// en/em dash), or the words "to"/"bis". Spaces are REQUIRED so a bare hyphen
+// inside an ISO date ("2020-01") is never mistaken for the range separator.
 const EXP_RANGE_SEP = new RegExp(
-  `\\s*(?:-|[${String.fromCharCode(0x2013, 0x2014)}]|to|bis)\\s*`,
+  `\\s+(?:-|[${String.fromCharCode(0x2013, 0x2014)}]|to|bis)\\s+`,
   'i',
 );
-const DATE_TOKEN_RE = /\d/; // a date token contains at least one digit
+// A meta token is a date (range) when it carries a 4-digit year or an
+// ongoing-marker word. "District 5" / "Berlin 10115" stay locations.
+const DATE_LIKE_RE = /(?:19|20)\d{2}|present|current|now|heute|jetzt|aktuell/i;
 
 function looksLikeDateRange(token: string): boolean {
-  return DATE_TOKEN_RE.test(token);
+  return DATE_LIKE_RE.test(token);
 }
 
 /** Parses the `## Experience` body into structured positions. Lenient and
@@ -427,13 +432,13 @@ export function parseExperienceEntries(experienceText: string): ExperienceEntry[
         const tok = rawTok.trim();
         if (!tok) continue;
         if (looksLikeDateRange(tok)) {
-          const [s, e] = tok.split(EXP_RANGE_SEP).map((x) => x.trim());
-          current.startDate = s ?? '';
-          current.endDate = /^(present|current|now|heute|jetzt|aktuell)$/i.test(e ?? '')
-            ? ''
-            : (e ?? '');
-        } else if (!current.location) {
-          current.location = tok;
+          const m = EXP_RANGE_SEP.exec(tok);
+          const s = m ? tok.slice(0, m.index).trim() : tok.trim();
+          const e = m ? tok.slice(m.index + m[0].length).trim() : '';
+          current.startDate = s;
+          current.endDate = /^(present|current|now|heute|jetzt|aktuell)$/i.test(e) ? '' : e;
+        } else {
+          current.location = current.location ? `${current.location} · ${tok}` : tok;
         }
       }
       continue;

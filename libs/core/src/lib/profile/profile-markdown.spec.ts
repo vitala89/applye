@@ -124,6 +124,41 @@ describe('experience entries', () => {
   it('returns [] for empty input', () => {
     expect(parseExperienceEntries('')).toEqual([]);
   });
+
+  it('round-trips ISO year-month dates', () => {
+    const entries = [
+      {
+        role: 'Dev',
+        company: 'Acme',
+        location: 'Berlin',
+        startDate: '2020-01',
+        endDate: '2023-05',
+        bullets: ['x'],
+      },
+    ];
+    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
+  });
+
+  it('keeps a digit-bearing location as location, not a date', () => {
+    const entries = parseExperienceEntries('### Dev - Acme\nBerlin 10115 · 2020 - 2023\n- x');
+    expect(entries[0].location).toBe('Berlin 10115');
+    expect(entries[0].startDate).toBe('2020');
+    expect(entries[0].endDate).toBe('2023');
+  });
+
+  it('preserves multiple location tokens on the meta line (lossless round-trip)', () => {
+    const entries = [
+      {
+        role: 'Dev',
+        company: 'Acme',
+        location: 'Berlin · Germany',
+        startDate: '2020',
+        endDate: '2023',
+        bullets: ['x'],
+      },
+    ];
+    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
+  });
 });
 
 describe('profile-markdown', () => {

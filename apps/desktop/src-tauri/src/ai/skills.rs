@@ -201,6 +201,7 @@ mod tests {
             "cover-letter-generate",
             "cover-letter-tailor",
             "cv-gap-analysis",
+            "profile-import",
         ] {
             let r = render(name, &HashMap::new());
             assert!(r.is_ok(), "{name} failed to render: {:?}", r.err());

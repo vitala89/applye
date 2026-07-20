@@ -138,6 +138,50 @@ describe('period-aware comparison', () => {
   });
 });
 
+describe('parseSalaryRange ignores non-salary figures', () => {
+  it('ignores a 401k retirement plan mentioned alongside salary', () => {
+    expect(parseSalaryRange('Competitive salary of $130,000 plus 401k matching')).toEqual({
+      min: 130000,
+      max: 130000,
+      currency: 'USD',
+      period: '',
+    });
+  });
+  it('ignores a bonus percentage', () => {
+    expect(parseSalaryRange('$120,000 base plus 15% annual bonus')).toEqual({
+      min: 120000,
+      max: 120000,
+      currency: 'USD',
+      period: '',
+    });
+  });
+  it('still parses a real comma-separated 401,000 salary', () => {
+    expect(parseSalaryRange('$401,000 total comp')).toEqual({
+      min: 401000,
+      max: 401000,
+      currency: 'USD',
+      period: '',
+    });
+  });
+  it('still parses a clean range', () => {
+    expect(parseSalaryRange('€80k - 100k')).toEqual({
+      min: 80000,
+      max: 100000,
+      currency: 'EUR',
+      period: '',
+    });
+  });
+});
+
+describe('compareCompensation is not fooled by 401k/percent noise', () => {
+  it('reads a $130k salary + 401k as below a $200k target', () => {
+    const target = { min: '200000', max: '200000', currency: 'USD', period: 'year' };
+    expect(compareCompensation(target, 'Competitive salary of $130,000 plus 401k matching')).toBe(
+      'below',
+    );
+  });
+});
+
 describe('extractSalaryFromJd', () => {
   it('extracts a currency-bearing salary line', () => {
     const jd = 'About us...\nSalary: 80,000 - 100,000 EUR per year\nBenefits: 401k plan';

@@ -60,13 +60,18 @@ export function parseSalaryRange(text: string | null | undefined): ParsedSalary 
   if (!text) return null;
   const currency = detectCurrency(text);
   const period = detectPeriod(text);
+  // Strip figures that are not pay: bonus percentages ("15%") and retirement-plan
+  // names ("401k", "403(b)", "457b") that would otherwise be misread as salary.
+  const forNumbers = text
+    .replace(/\d+(?:[.,]\d+)?\s*%/g, ' ')
+    .replace(/\b(?:401|403|457)\s*\(?\s*[kb]\)?/gi, ' ');
   // Grab number-with-optional-k tokens in order.
-  const tokens = text.match(/\d[\d.,]*\d\s*[kK]?|\d\s*[kK]?/g) ?? [];
+  const tokens = forNumbers.match(/\d[\d.,]*\d\s*[kK]?|\d\s*[kK]?/g) ?? [];
   const nums = tokens.map(toNumber).filter((n): n is number => n !== null);
   if (!nums.length) return null;
   const min = nums[0];
   const max = nums.length > 1 ? nums[1] : nums[0];
-  if (min !== null && max !== null && min > max) {
+  if (min > max) {
     return { min: max, max: min, currency, period };
   }
   return { min, max, currency, period };

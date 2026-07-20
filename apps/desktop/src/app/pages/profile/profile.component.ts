@@ -430,14 +430,28 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   <label class="field__label" for="field-skills">{{
                     t()('profile.field_skills')
                   }}</label>
-                  <input
-                    id="field-skills"
-                    class="field__input"
-                    type="text"
-                    [ngModel]="form().skills.join(', ')"
-                    (ngModelChange)="updateSkills($event)"
-                    [placeholder]="t()('profile.skills_hint')"
-                  />
+                  <div class="chip-input">
+                    @for (s of form().skills; track $index) {
+                      <span class="skill-chip">
+                        {{ s }}
+                        <button
+                          type="button"
+                          class="skill-chip__x"
+                          (click)="removeSkillChip($index)"
+                          [attr.aria-label]="t()('profile.remove_skill')"
+                        >
+                          <lucide-icon [img]="removeIcon" [size]="12" aria-hidden="true" />
+                        </button>
+                      </span>
+                    }
+                    <input
+                      id="field-skills"
+                      class="chip-input__field"
+                      type="text"
+                      (keydown.enter)="addSkillChip($event)"
+                      [placeholder]="t()('profile.skills_add_hint')"
+                    />
+                  </div>
                 </div>
                 <div class="field">
                   <label class="field__label" for="field-languages">{{
@@ -1257,6 +1271,50 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         font-family: var(--font-mono);
         font-size: var(--text-sm);
       }
+      .chip-input {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
+        padding: var(--space-2);
+        min-height: 38px;
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
+      }
+      .chip-input__field {
+        flex: 1;
+        min-width: 120px;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+      }
+      .skill-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 2px var(--space-2);
+        font-size: var(--text-xs);
+        color: var(--text-primary);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-badge);
+      }
+      .skill-chip__x {
+        display: inline-flex;
+        align-items: center;
+        border: none;
+        background: none;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        padding: 0;
+      }
+      .skill-chip__x:hover {
+        color: var(--danger);
+      }
       .field__hint {
         margin: 0 0 var(--space-1);
         font-size: var(--text-2xs);
@@ -1454,13 +1512,20 @@ export class ProfileComponent implements OnInit {
     this.syncMdFromForm();
   }
 
-  updateSkills(value: string): void {
+  addSkillChip(event: Event): void {
+    event.preventDefault();
+    const input = event.target as HTMLInputElement;
+    const value = input.value.trim();
+    if (!value) return;
+    input.value = '';
+    if (this.form().skills.includes(value)) return;
+    this.updateField('skills', [...this.form().skills, value]);
+  }
+
+  removeSkillChip(index: number): void {
     this.updateField(
       'skills',
-      value
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      this.form().skills.filter((_, i) => i !== index),
     );
   }
 

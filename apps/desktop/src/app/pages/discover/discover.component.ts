@@ -50,6 +50,7 @@ import type {
   DiscoverSource,
   ScanSourceResult,
   ArchetypeMatch,
+  ArchetypeFit,
   Archetype,
 } from '@applye/core';
 import {
@@ -772,6 +773,11 @@ export class DiscoverComponent {
     if (v === 'within') return this.t()('comp.badge_within');
     if (v === 'below') return this.t()('comp.badge_below');
     return this.t()('comp.not_stated');
+  }
+
+  /** i18n label for an archetype tier badge. */
+  protected archBadgeLabel(fit: ArchetypeFit): string {
+    return this.t()('discover.arch_' + fit);
   }
 
   /** Deterministic dictionary match over the full JD text (0 tokens). */

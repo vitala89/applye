@@ -635,6 +635,56 @@ interface ParsedProfile {
                 </div>
               </div>
 
+              <div class="field field--full" id="field-compensation">
+                <div class="field__label-row">
+                  <span class="field__label">{{ t()('profile.section_compensation') }}</span>
+                  <span class="field__hint field__hint--inline">{{
+                    t()('profile.comp_hint')
+                  }}</span>
+                </div>
+                <div class="comp-row">
+                  <input
+                    class="field__input"
+                    type="number"
+                    inputmode="numeric"
+                    [ngModel]="form().compMin"
+                    (ngModelChange)="updateField('compMin', $event)"
+                    [placeholder]="t()('profile.comp_min')"
+                    [attr.aria-label]="t()('profile.comp_min')"
+                  />
+                  <span class="comp-sep">-</span>
+                  <input
+                    class="field__input"
+                    type="number"
+                    inputmode="numeric"
+                    [ngModel]="form().compMax"
+                    (ngModelChange)="updateField('compMax', $event)"
+                    [placeholder]="t()('profile.comp_max')"
+                    [attr.aria-label]="t()('profile.comp_max')"
+                  />
+                  <select
+                    class="field__input comp-select"
+                    [ngModel]="form().compCurrency"
+                    (ngModelChange)="updateField('compCurrency', $event)"
+                    [attr.aria-label]="t()('profile.comp_currency')"
+                  >
+                    <option value="">-</option>
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                  </select>
+                  <select
+                    class="field__input comp-select"
+                    [ngModel]="form().compPeriod"
+                    (ngModelChange)="updateField('compPeriod', $event)"
+                    [attr.aria-label]="t()('profile.comp_period')"
+                  >
+                    <option value="">-</option>
+                    <option value="year">{{ t()('profile.comp_period_year') }}</option>
+                    <option value="month">{{ t()('profile.comp_period_month') }}</option>
+                  </select>
+                </div>
+              </div>
+
               <div class="field field--full" id="field-education">
                 <div class="collapse-card">
                   <div
@@ -1582,6 +1632,24 @@ interface ParsedProfile {
       }
       .field-row .field {
         flex: 1;
+      }
+      .comp-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .comp-row .field__input {
+        width: auto;
+        flex: 1;
+        min-width: 90px;
+      }
+      .comp-select {
+        flex: 0 0 auto;
+        min-width: 110px;
+      }
+      .comp-sep {
+        color: var(--text-tertiary);
       }
       .field__label {
         font-size: var(--text-xs);

@@ -34,8 +34,18 @@ import {
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { DbService } from '@applye/data';
-import { parseGeoScopes } from '@applye/core';
-import type { DiscoverFeedItem, DiscoverSource, ScanSourceResult } from '@applye/core';
+import {
+  parseGeoScopes,
+  parseProfileMd,
+  compareCompensation,
+  extractSalaryFromJd,
+} from '@applye/core';
+import type {
+  CompensationVerdict,
+  DiscoverFeedItem,
+  DiscoverSource,
+  ScanSourceResult,
+} from '@applye/core';
 import {
   classifyLoc,
   cityKey,
@@ -206,6 +216,31 @@ export class DiscoverComponent {
   protected readonly detailScore = signal<number | null>(null);
   private readonly profileKeywords = signal<string[]>([]);
   protected readonly geoScope = signal('worldwide');
+  /** Profile compensation target (min/max/currency/period), parsed from the saved
+   * profile markdown; empty strings when the user set no target. */
+  private readonly compTarget = signal<{
+    min: string;
+    max: string;
+    currency: string;
+    period: string;
+  }>({
+    min: '',
+    max: '',
+    currency: '',
+    period: '',
+  });
+  /** Salary text extracted from the open detail job's JD, or null. */
+  protected readonly detailSalary = signal<string | null>(null);
+
+  /** True when the user has a compensation target to compare against. */
+  protected readonly hasCompTarget = computed(
+    () => !!(this.compTarget().min || this.compTarget().max),
+  );
+
+  /** Salary-fit verdict for the open detail job vs the profile target. */
+  protected readonly compVerdict = computed<CompensationVerdict>(() =>
+    compareCompensation(this.compTarget(), this.detailSalary()),
+  );
 
   // filters (empty selection set = "all")
   protected readonly query = signal('');
@@ -552,6 +587,13 @@ export class DiscoverComponent {
       );
       this.displayCount.set(FEED_PAGE);
       this.profileKeywords.set(this.deriveKeywords(profile?.targetArchetypes));
+      const cf = parseProfileMd(profile?.fullMd ?? '');
+      this.compTarget.set({
+        min: cf.compMin,
+        max: cf.compMax,
+        currency: cf.compCurrency,
+        period: cf.compPeriod,
+      });
       this.geoScope.set(settings.geoScope || 'worldwide');
     } catch (e) {
       console.error('discover: load failed', e);
@@ -676,6 +718,7 @@ export class DiscoverComponent {
     this.detailBlocks.set(null);
     this.detailSkills.set([]);
     this.detailScore.set(null);
+    this.detailSalary.set(null);
     void this.loadDetail(row.id);
   }
 
@@ -690,6 +733,7 @@ export class DiscoverComponent {
       const job = await this.db.getJob(jobId);
       if (this.detailId() !== jobId) return; // user moved on meanwhile
       const jd = job?.jdText ?? '';
+      this.detailSalary.set(extractSalaryFromJd(jd));
       this.detailBlocks.set(this.parseJdBlocks(jd));
       this.detailSkills.set(this.detectSkills(jd));
       const row = this.detailRow();
@@ -698,6 +742,15 @@ export class DiscoverComponent {
       console.error('discover: load detail failed', e);
       if (this.detailId() === jobId) this.detailBlocks.set([]);
     }
+  }
+
+  /** i18n label for the current comp verdict; 'unknown' -> "not stated". */
+  protected compBadgeLabel(): string {
+    const v = this.compVerdict();
+    if (v === 'above') return this.t()('comp.badge_above');
+    if (v === 'within') return this.t()('comp.badge_within');
+    if (v === 'below') return this.t()('comp.badge_below');
+    return this.t()('comp.not_stated');
   }
 
   /** Deterministic dictionary match over the full JD text (0 tokens). */

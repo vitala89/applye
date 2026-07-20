@@ -54,3 +54,71 @@ export function serializeArchetypes(list: Archetype[]): string {
 export function archetypeNames(list: Archetype[]): string[] {
   return list.map((a) => a.name.trim()).filter((n) => n.length > 0);
 }
+
+const KEYWORD_STOPWORDS = ['and', 'or', 'the', 'with', 'for', 'of', 'in'];
+const TIER_RANK: Record<ArchetypeFit, number> = { primary: 3, secondary: 2, adjacent: 1 };
+const COV_CAP = 6;
+const SELL_W = 0.05;
+const SELL_CAP = 3;
+
+export interface ArchetypeMatch {
+  name: string;
+  fit: ArchetypeFit;
+  coverage: number;
+}
+
+/** Tokenize a phrase into meaningful lowercase words (>=3 chars, no stopwords, deduped). */
+export function archetypeWords(phrase: string): string[] {
+  const words: string[] = [];
+  for (const raw of phrase.split(/[^\p{L}\p{N}+#]+/u)) {
+    const w = raw.trim().toLowerCase();
+    if (w.length >= 3 && !KEYWORD_STOPWORDS.includes(w) && !words.includes(w)) {
+      words.push(w);
+    }
+  }
+  return words;
+}
+
+/** Flattened, deduped name-word bag across all archetypes. */
+export function archetypeKeywordBag(list: Archetype[]): string[] {
+  const bag: string[] = [];
+  for (const a of list) {
+    for (const w of archetypeWords(a.name)) {
+      if (!bag.includes(w)) bag.push(w);
+    }
+  }
+  return bag;
+}
+
+/** Numeric tier weight: primary 3, secondary 2, adjacent 1. */
+export function tierRank(fit: ArchetypeFit): number {
+  return TIER_RANK[fit];
+}
+
+/**
+ * Best-fit archetype for `text`. A candidate REQUIRES at least one archetype-name
+ * word to appear in the text (sellWhen alone never matches). Winner - strongest
+ * tier, then highest rank (name coverage + a light sellWhen bonus). Null - no match.
+ */
+export function matchArchetype(text: string, list: Archetype[]): ArchetypeMatch | null {
+  const hay = text.toLowerCase();
+  let best: ArchetypeMatch | null = null;
+  let bestTier = -1;
+  let bestRank = -1;
+  for (const a of list) {
+    const nameWords = archetypeWords(a.name);
+    if (!nameWords.length) continue;
+    const nameHits = nameWords.filter((w) => hay.includes(w)).length;
+    if (nameHits === 0) continue;
+    const coverage = Math.min(1, nameHits / Math.min(nameWords.length, COV_CAP));
+    const sellHits = archetypeWords(a.sellWhen).filter((w) => hay.includes(w)).length;
+    const rank = coverage + Math.min(sellHits, SELL_CAP) * SELL_W;
+    const tier = TIER_RANK[a.fit];
+    if (tier > bestTier || (tier === bestTier && rank > bestRank)) {
+      bestTier = tier;
+      bestRank = rank;
+      best = { name: a.name, fit: a.fit, coverage };
+    }
+  }
+  return best;
+}

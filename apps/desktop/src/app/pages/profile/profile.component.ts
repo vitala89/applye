@@ -18,6 +18,10 @@ import {
   EMPTY_EXPERIENCE_ENTRY,
   parseExperienceEntries,
   serializeExperienceEntries,
+  LanguageEntry,
+  EMPTY_LANGUAGE_ENTRY,
+  parseLanguageEntries,
+  serializeLanguageEntries,
   Archetype,
   parseArchetypes,
   serializeArchetypes,
@@ -454,17 +458,47 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                   </div>
                 </div>
                 <div class="field">
-                  <label class="field__label" for="field-languages">{{
-                    t()('profile.field_languages')
-                  }}</label>
-                  <input
-                    id="field-languages"
-                    class="field__input"
-                    type="text"
-                    [ngModel]="form().languages.join(', ')"
-                    (ngModelChange)="updateLanguages($event)"
-                    [placeholder]="t()('profile.languages_hint')"
-                  />
+                  <span class="field__label">{{ t()('profile.section_languages') }}</span>
+                  @if (languageEntries().length > 0) {
+                    <div class="lang-list">
+                      @for (l of languageEntries(); track $index) {
+                        <div class="lang-row">
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="l.language"
+                            (ngModelChange)="updateLanguageField($index, 'language', $event)"
+                            [placeholder]="t()('profile.lang_name')"
+                            [attr.aria-label]="t()('profile.lang_name')"
+                          />
+                          <select
+                            class="archetype-fit"
+                            [ngModel]="l.level"
+                            (ngModelChange)="updateLanguageField($index, 'level', $event)"
+                            [attr.aria-label]="t()('profile.lang_level')"
+                          >
+                            @for (lvl of languageLevels; track lvl) {
+                              <option [value]="lvl">
+                                {{ lvl || t()('profile.lang_level_none') }}
+                              </option>
+                            }
+                          </select>
+                          <button
+                            class="btn-ghost"
+                            type="button"
+                            (click)="removeLanguage($index)"
+                            [attr.aria-label]="t()('profile.remove_language')"
+                          >
+                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  <button class="btn-dashed" type="button" (click)="addLanguage()">
+                    <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                    {{ t()('profile.add_language') }}
+                  </button>
                 </div>
               </div>
 
@@ -1341,6 +1375,16 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         align-items: center;
         gap: var(--space-2);
       }
+      .lang-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .lang-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
     `,
   ],
 })
@@ -1376,6 +1420,9 @@ export class ProfileComponent implements OnInit {
   readonly educationEntries = signal<EducationEntry[]>([]);
   /** Structured mirror of `form().experienceText`, same rationale as `educationEntries`. */
   readonly experienceEntries = signal<ExperienceEntry[]>([]);
+  /** Structured mirror of `form().languages`, same rationale as `educationEntries`. */
+  readonly languageEntries = signal<LanguageEntry[]>([]);
+  protected readonly languageLevels = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'];
   readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
@@ -1443,6 +1490,7 @@ export class ProfileComponent implements OnInit {
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
       this.educationEntries.set(parseEducationEntries(this.form().education));
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
+      this.languageEntries.set(parseLanguageEntries(this.form().languages));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
       await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
@@ -1529,14 +1577,25 @@ export class ProfileComponent implements OnInit {
     );
   }
 
-  updateLanguages(value: string): void {
-    this.updateField(
-      'languages',
-      value
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+  addLanguage(): void {
+    this.languageEntries.update((list) => [...list, { ...EMPTY_LANGUAGE_ENTRY }]);
+    this.syncLanguages();
+  }
+
+  removeLanguage(index: number): void {
+    this.languageEntries.update((list) => list.filter((_, i) => i !== index));
+    this.syncLanguages();
+  }
+
+  updateLanguageField(index: number, field: keyof LanguageEntry, value: string): void {
+    this.languageEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
     );
+    this.syncLanguages();
+  }
+
+  private syncLanguages(): void {
+    this.updateField('languages', serializeLanguageEntries(this.languageEntries()));
   }
 
   toggleRawMode(): void {
@@ -1545,6 +1604,7 @@ export class ProfileComponent implements OnInit {
       this.form.set(parseProfileMd(this.fullMd()));
       this.educationEntries.set(parseEducationEntries(this.form().education));
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
+      this.languageEntries.set(parseLanguageEntries(this.form().languages));
     } else {
       this.syncMdFromForm();
     }

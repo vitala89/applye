@@ -457,7 +457,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                     />
                   </div>
                 </div>
-                <div class="field">
+                <div class="field" id="field-languages">
                   <span class="field__label">{{ t()('profile.section_languages') }}</span>
                   @if (languageEntries().length > 0) {
                     <div class="lang-list">

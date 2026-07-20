@@ -506,6 +506,42 @@ export function missingFields(f: ProfileForm): ProfileFieldKey[] {
   return CHECKS.filter((c) => !c.filled(f)).map((c) => c.key);
 }
 
+/** A language + proficiency level, as edited in the structured profile UI. A
+ * view over the plain `## Languages` string list, so `ProfileForm.languages`
+ * stays `string[]` and the serializer / profile-compress are untouched. */
+export interface LanguageEntry {
+  language: string;
+  /** CEFR level or free text ("C1", "Native"); empty means unspecified. */
+  level: string;
+}
+
+export const EMPTY_LANGUAGE_ENTRY: LanguageEntry = { language: '', level: '' };
+
+/** "English (C1)" -> { language: 'English', level: 'C1' }; "English" -> level ''. */
+export function parseLanguageEntries(languages: readonly string[]): LanguageEntry[] {
+  return (languages || [])
+    .map((raw) => (raw || '').trim())
+    .filter(Boolean)
+    .map((item) => {
+      const m = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(item);
+      if (m) return { language: m[1].trim(), level: m[2].trim() };
+      return { language: item, level: '' };
+    });
+}
+
+/** Inverse of parseLanguageEntries. Blank rows (no language) are dropped;
+ * a row with a language but no level serializes bare. */
+export function serializeLanguageEntries(entries: LanguageEntry[]): string[] {
+  return entries
+    .map((e) => {
+      const lang = e.language.trim();
+      if (!lang) return '';
+      const level = e.level.trim();
+      return level ? `${lang} (${level})` : lang;
+    })
+    .filter(Boolean);
+}
+
 export function parseScoringJson(raw: string | null | undefined): ScoringProfile | null {
   if (!raw) return null;
   const cleaned = raw

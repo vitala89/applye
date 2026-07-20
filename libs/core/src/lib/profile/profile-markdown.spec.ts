@@ -11,6 +11,9 @@ import {
   parseExperienceEntries,
   serializeExperienceEntries,
   EMPTY_EXPERIENCE_ENTRY,
+  parseLanguageEntries,
+  serializeLanguageEntries,
+  EMPTY_LANGUAGE_ENTRY,
 } from './profile-markdown';
 
 const fullForm: ProfileForm = {
@@ -398,6 +401,41 @@ describe('profile-markdown', () => {
     ])('%s reaches a fixed point after one save', (_label, md) => {
       const once = parseProfileMd(md);
       expect(parseProfileMd(serializeProfileForm(once))).toEqual(once);
+    });
+  });
+
+  describe('language entries', () => {
+    it('has an empty entry constant', () => {
+      expect(EMPTY_LANGUAGE_ENTRY).toEqual({ language: '', level: '' });
+    });
+
+    it('parses "Language (Level)" items', () => {
+      expect(parseLanguageEntries(['English (C1)', 'German (B2)'])).toEqual([
+        { language: 'English', level: 'C1' },
+        { language: 'German', level: 'B2' },
+      ]);
+    });
+
+    it('parses a bare language with no level', () => {
+      expect(parseLanguageEntries(['English'])).toEqual([{ language: 'English', level: '' }]);
+    });
+
+    it('round-trips', () => {
+      const entries = [
+        { language: 'English', level: 'Native' },
+        { language: 'Spanish', level: '' },
+      ];
+      expect(parseLanguageEntries(serializeLanguageEntries(entries))).toEqual(entries);
+    });
+
+    it('serializes level only when present and drops blank rows', () => {
+      expect(
+        serializeLanguageEntries([
+          { language: 'French', level: 'A2' },
+          { language: 'Polish', level: '' },
+          { language: '', level: 'C1' },
+        ]),
+      ).toEqual(['French (A2)', 'Polish']);
     });
   });
 });

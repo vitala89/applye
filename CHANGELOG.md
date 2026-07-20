@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- Discover: profile archetypes were serialized as objects but read as `[object Object]`, collapsing all target-role matching to a single junk keyword. Matching now parses the real archetype list.
 - **CV experience dates no longer render as a bare "Present" with a leading dash.** When a role had no start date the preview showed " - Present"; the date separator is now hidden in read/print modes when the start date is empty (it stays in the editor so the empty field is still clickable to fill).
 - **Cover-letter signatures no longer append the phone number to the name.** The `cover-letter-generate` skill states the signature is the sender's name only, but the model did not obey reliably and kept leaking a phone number into the sign-off. Every generated/regenerated signature is now run through a deterministic sanitiser that strips any phone, email, or URL the model appended, leaving just the name - the prompt rule is best-effort, this is the guarantee.
 - **Document Generate / Regenerate buttons now show a visible loading indicator.** The bouncing three-dot spinner was styled only when nested inside an `.ai-thinking` badge, so inside the buttons its dots collapsed to zero size and only the disabled state showed. The indicator is now self-contained and inherits the button's text colour, so a regenerate in progress is clearly animated.
@@ -22,6 +23,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Added
 
+- Discover: target-role (archetype) fit badges. Each job in the feed and detail now shows the strongest matching archetype tier (Primary / Secondary / Adjacent); the For-you section is ordered by tier, and tier feeds the deterministic 0-token score. sellWhen acts as a light tie-break signal.
 - **Missing-date prompt before generating a tailored CV.** When the AI cannot date an experience **or education** entry, a blocking dialog asks the user to fill it in (per entry, skippable) instead of shipping a CV with an open-ended "Present". Answers can optionally be saved back to the profile.
 - **Structured, multi-entry education in the profile.** The profile's single education text field is now a repeatable list: add any number of degrees, courses, or certificates, each with its own institution and start/end year (end left blank = ongoing). Stored back into the profile markdown, backward compatible with existing free-text education.
 - **Gap-fill before generating a cover letter.** Cover-letter generation now runs the same JD-vs-profile gap analysis the CV flow uses, asking the user for anything the posting wants that the profile lacks before the letter is written. Skipped when a CV was already generated for the job (that step just asked), so the user is never prompted twice.

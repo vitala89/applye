@@ -327,242 +327,376 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
               </div>
 
               <div class="field field--full" id="field-experience">
-                <div class="field__label-row">
-                  <span class="field__label">{{ t()('profile.section_experience') }}</span>
-                  <span class="field__hint field__hint--inline">{{
-                    t()('profile.experience_hint')
-                  }}</span>
-                </div>
-                @if (experienceEntries().length > 0) {
-                  <div class="archetype-list">
-                    @for (e of experienceEntries(); track ei; let ei = $index) {
-                      <div class="archetype-card">
-                        <div class="archetype-card__top">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.role"
-                            (ngModelChange)="updateExperienceField(ei, 'role', $event)"
-                            [placeholder]="t()('profile.exp_role')"
-                            [attr.aria-label]="t()('profile.exp_role')"
-                          />
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.company"
-                            (ngModelChange)="updateExperienceField(ei, 'company', $event)"
-                            [placeholder]="t()('profile.exp_company')"
-                            [attr.aria-label]="t()('profile.exp_company')"
-                          />
-                          <button
-                            class="btn-ghost"
-                            type="button"
-                            (click)="removeExperience(ei)"
-                            [attr.aria-label]="t()('profile.remove_experience')"
-                          >
-                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                          </button>
-                        </div>
-                        <div class="archetype-card__top">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.location"
-                            (ngModelChange)="updateExperienceField(ei, 'location', $event)"
-                            [placeholder]="t()('profile.exp_location')"
-                            [attr.aria-label]="t()('profile.exp_location')"
-                          />
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.startDate"
-                            (ngModelChange)="updateExperienceField(ei, 'startDate', $event)"
-                            [placeholder]="t()('profile.exp_start')"
-                            [attr.aria-label]="t()('profile.exp_start')"
-                          />
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.endDate"
-                            (ngModelChange)="updateExperienceField(ei, 'endDate', $event)"
-                            [placeholder]="t()('profile.exp_end')"
-                            [attr.aria-label]="t()('profile.exp_end')"
-                          />
-                        </div>
-                        <div class="exp-bullets">
-                          @for (b of e.bullets; track bi; let bi = $index) {
-                            <div class="exp-bullet-row">
-                              <input
-                                class="archetype-input"
-                                type="text"
-                                [ngModel]="b"
-                                (ngModelChange)="updateExperienceBullet(ei, bi, $event)"
-                                [placeholder]="t()('profile.exp_bullet_hint')"
-                                [attr.aria-label]="t()('profile.exp_bullet_hint')"
-                              />
-                              <button
-                                class="btn-ghost"
-                                type="button"
-                                (click)="removeExperienceBullet(ei, bi)"
-                                [attr.aria-label]="t()('profile.exp_remove_bullet')"
-                              >
-                                <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                              </button>
+                <div class="collapse-card">
+                  <div
+                    class="collapse-card__head"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-expanded]="sectionOpen().experience"
+                    (click)="toggleSection('experience')"
+                    (keydown.enter)="toggleSection('experience')"
+                    (keydown.space)="toggleSection('experience'); $event.preventDefault()"
+                  >
+                    <span class="collapse-card__title">{{
+                      t()('profile.section_experience')
+                    }}</span>
+                    <span class="collapse-card__summary">
+                      {{
+                        experienceEntries().length
+                          ? t()('profile.summary_positions').replace(
+                              '{count}',
+                              experienceEntries().length + ''
+                            )
+                          : t()('profile.summary_empty')
+                      }}
+                    </span>
+                    <lucide-icon
+                      [img]="chevronIcon"
+                      [size]="17"
+                      class="chevron"
+                      [class.chevron--open]="sectionOpen().experience"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  @if (sectionOpen().experience) {
+                    <div class="collapse-card__body">
+                      <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
+                      @if (experienceEntries().length > 0) {
+                        <div class="archetype-list">
+                          @for (e of experienceEntries(); track ei; let ei = $index) {
+                            <div class="archetype-card">
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.role"
+                                  (ngModelChange)="updateExperienceField(ei, 'role', $event)"
+                                  [placeholder]="t()('profile.exp_role')"
+                                  [attr.aria-label]="t()('profile.exp_role')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.company"
+                                  (ngModelChange)="updateExperienceField(ei, 'company', $event)"
+                                  [placeholder]="t()('profile.exp_company')"
+                                  [attr.aria-label]="t()('profile.exp_company')"
+                                />
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeExperience(ei)"
+                                  [attr.aria-label]="t()('profile.remove_experience')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.location"
+                                  (ngModelChange)="updateExperienceField(ei, 'location', $event)"
+                                  [placeholder]="t()('profile.exp_location')"
+                                  [attr.aria-label]="t()('profile.exp_location')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.startDate"
+                                  (ngModelChange)="updateExperienceField(ei, 'startDate', $event)"
+                                  [placeholder]="t()('profile.exp_start')"
+                                  [attr.aria-label]="t()('profile.exp_start')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.endDate"
+                                  (ngModelChange)="updateExperienceField(ei, 'endDate', $event)"
+                                  [placeholder]="t()('profile.exp_end')"
+                                  [attr.aria-label]="t()('profile.exp_end')"
+                                />
+                              </div>
+                              <div class="exp-bullets">
+                                @for (b of e.bullets; track bi; let bi = $index) {
+                                  <div class="exp-bullet-row">
+                                    <input
+                                      class="archetype-input"
+                                      type="text"
+                                      [ngModel]="b"
+                                      (ngModelChange)="updateExperienceBullet(ei, bi, $event)"
+                                      [placeholder]="t()('profile.exp_bullet_hint')"
+                                      [attr.aria-label]="t()('profile.exp_bullet_hint')"
+                                    />
+                                    <button
+                                      class="btn-ghost"
+                                      type="button"
+                                      (click)="removeExperienceBullet(ei, bi)"
+                                      [attr.aria-label]="t()('profile.exp_remove_bullet')"
+                                    >
+                                      <lucide-icon
+                                        [img]="removeIcon"
+                                        [size]="15"
+                                        aria-hidden="true"
+                                      />
+                                    </button>
+                                  </div>
+                                }
+                                <button
+                                  class="btn-dashed"
+                                  type="button"
+                                  (click)="addExperienceBullet(ei)"
+                                >
+                                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                                  {{ t()('profile.exp_add_bullet') }}
+                                </button>
+                              </div>
                             </div>
                           }
-                          <button
-                            class="btn-dashed"
-                            type="button"
-                            (click)="addExperienceBullet(ei)"
-                          >
-                            <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                            {{ t()('profile.exp_add_bullet') }}
-                          </button>
                         </div>
-                      </div>
-                    }
-                  </div>
-                }
-                <button class="btn-dashed" type="button" (click)="addExperience()">
-                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                  {{ t()('profile.add_experience') }}
-                </button>
+                      }
+                      <button class="btn-dashed" type="button" (click)="addExperience()">
+                        <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                        {{ t()('profile.add_experience') }}
+                      </button>
+                    </div>
+                  }
+                </div>
               </div>
 
               <div class="field-row">
                 <div class="field">
-                  <label class="field__label" for="field-skills">{{
-                    t()('profile.field_skills')
-                  }}</label>
-                  <div class="chip-input">
-                    @for (s of form().skills; track $index) {
-                      <span class="skill-chip">
-                        {{ s }}
-                        <button
-                          type="button"
-                          class="skill-chip__x"
-                          (click)="removeSkillChip($index)"
-                          [attr.aria-label]="t()('profile.remove_skill')"
-                        >
-                          <lucide-icon [img]="removeIcon" [size]="12" aria-hidden="true" />
-                        </button>
+                  <div class="collapse-card">
+                    <div
+                      class="collapse-card__head"
+                      role="button"
+                      tabindex="0"
+                      [attr.aria-expanded]="sectionOpen().skills"
+                      (click)="toggleSection('skills')"
+                      (keydown.enter)="toggleSection('skills')"
+                      (keydown.space)="toggleSection('skills'); $event.preventDefault()"
+                    >
+                      <span class="collapse-card__title">{{ t()('profile.section_skills') }}</span>
+                      <span class="collapse-card__summary">
+                        {{
+                          form().skills.length
+                            ? t()('profile.summary_skills').replace(
+                                '{count}',
+                                form().skills.length + ''
+                              )
+                            : t()('profile.summary_empty')
+                        }}
                       </span>
-                    }
-                    <input
-                      id="field-skills"
-                      class="chip-input__field"
-                      type="text"
-                      (keydown.enter)="addSkillChip($event)"
-                      [placeholder]="t()('profile.skills_add_hint')"
-                    />
-                  </div>
-                </div>
-                <div class="field" id="field-languages">
-                  <span class="field__label">{{ t()('profile.section_languages') }}</span>
-                  @if (languageEntries().length > 0) {
-                    <div class="lang-list">
-                      @for (l of languageEntries(); track $index) {
-                        <div class="lang-row">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="l.language"
-                            (ngModelChange)="updateLanguageField($index, 'language', $event)"
-                            [placeholder]="t()('profile.lang_name')"
-                            [attr.aria-label]="t()('profile.lang_name')"
-                          />
-                          <select
-                            class="archetype-fit"
-                            [ngModel]="l.level"
-                            (ngModelChange)="updateLanguageField($index, 'level', $event)"
-                            [attr.aria-label]="t()('profile.lang_level')"
-                          >
-                            @for (lvl of languageLevels; track lvl) {
-                              <option [value]="lvl">
-                                {{ lvl || t()('profile.lang_level_none') }}
-                              </option>
-                            }
-                          </select>
-                          <button
-                            class="btn-ghost"
-                            type="button"
-                            (click)="removeLanguage($index)"
-                            [attr.aria-label]="t()('profile.remove_language')"
-                          >
-                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                          </button>
-                        </div>
-                      }
+                      <lucide-icon
+                        [img]="chevronIcon"
+                        [size]="17"
+                        class="chevron"
+                        [class.chevron--open]="sectionOpen().skills"
+                        aria-hidden="true"
+                      />
                     </div>
-                  }
-                  <button class="btn-dashed" type="button" (click)="addLanguage()">
-                    <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                    {{ t()('profile.add_language') }}
-                  </button>
-                </div>
-              </div>
-
-              <div class="field field--full" id="field-education">
-                <span class="field__label">{{ t()('profile.field_education') }}</span>
-                <p class="muted">{{ t()('profile.education_hint') }}</p>
-                @if (educationEntries().length > 0) {
-                  <div class="archetype-list">
-                    @for (e of educationEntries(); track $index) {
-                      <div class="archetype-card">
-                        <div class="archetype-card__top">
+                    @if (sectionOpen().skills) {
+                      <div class="collapse-card__body">
+                        <div class="chip-input">
+                          @for (s of form().skills; track $index) {
+                            <span class="skill-chip">
+                              {{ s }}
+                              <button
+                                type="button"
+                                class="skill-chip__x"
+                                (click)="removeSkillChip($index)"
+                                [attr.aria-label]="t()('profile.remove_skill')"
+                              >
+                                <lucide-icon [img]="removeIcon" [size]="12" aria-hidden="true" />
+                              </button>
+                            </span>
+                          }
                           <input
-                            class="archetype-input"
+                            id="field-skills"
+                            class="chip-input__field"
                             type="text"
-                            [ngModel]="e.title"
-                            (ngModelChange)="updateEducation($index, 'title', $event)"
-                            [placeholder]="t()('profile.education_title_hint')"
-                            [attr.aria-label]="t()('profile.education_title')"
-                          />
-                          <button
-                            class="btn-ghost"
-                            type="button"
-                            (click)="removeEducation($index)"
-                            [attr.aria-label]="t()('profile.remove_education')"
-                          >
-                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                          </button>
-                        </div>
-                        <div class="archetype-card__top">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.institution"
-                            (ngModelChange)="updateEducation($index, 'institution', $event)"
-                            [placeholder]="t()('profile.education_institution_hint')"
-                            [attr.aria-label]="t()('profile.education_institution')"
-                          />
-                        </div>
-                        <div class="archetype-card__top">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.startDate"
-                            (ngModelChange)="updateEducation($index, 'startDate', $event)"
-                            [placeholder]="t()('profile.education_start_hint')"
-                            [attr.aria-label]="t()('profile.education_start')"
-                          />
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.endDate"
-                            (ngModelChange)="updateEducation($index, 'endDate', $event)"
-                            [placeholder]="t()('profile.education_end_hint')"
-                            [attr.aria-label]="t()('profile.education_end')"
+                            (keydown.enter)="addSkillChip($event)"
+                            [placeholder]="t()('profile.skills_add_hint')"
                           />
                         </div>
                       </div>
                     }
                   </div>
-                }
-                <button class="btn-dashed" type="button" (click)="addEducation()">
-                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                  {{ t()('profile.add_education') }}
-                </button>
+                </div>
+                <div class="field" id="field-languages">
+                  <div class="collapse-card">
+                    <div
+                      class="collapse-card__head"
+                      role="button"
+                      tabindex="0"
+                      [attr.aria-expanded]="sectionOpen().languages"
+                      (click)="toggleSection('languages')"
+                      (keydown.enter)="toggleSection('languages')"
+                      (keydown.space)="toggleSection('languages'); $event.preventDefault()"
+                    >
+                      <span class="collapse-card__title">{{
+                        t()('profile.section_languages')
+                      }}</span>
+                      <span class="collapse-card__summary">
+                        {{
+                          languageEntries().length
+                            ? t()('profile.summary_languages').replace(
+                                '{count}',
+                                languageEntries().length + ''
+                              )
+                            : t()('profile.summary_empty')
+                        }}
+                      </span>
+                      <lucide-icon
+                        [img]="chevronIcon"
+                        [size]="17"
+                        class="chevron"
+                        [class.chevron--open]="sectionOpen().languages"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    @if (sectionOpen().languages) {
+                      <div class="collapse-card__body">
+                        @if (languageEntries().length > 0) {
+                          <div class="lang-list">
+                            @for (l of languageEntries(); track $index) {
+                              <div class="lang-row">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="l.language"
+                                  (ngModelChange)="updateLanguageField($index, 'language', $event)"
+                                  [placeholder]="t()('profile.lang_name')"
+                                  [attr.aria-label]="t()('profile.lang_name')"
+                                />
+                                <select
+                                  class="archetype-fit"
+                                  [ngModel]="l.level"
+                                  (ngModelChange)="updateLanguageField($index, 'level', $event)"
+                                  [attr.aria-label]="t()('profile.lang_level')"
+                                >
+                                  @for (lvl of languageLevels; track lvl) {
+                                    <option [value]="lvl">
+                                      {{ lvl || t()('profile.lang_level_none') }}
+                                    </option>
+                                  }
+                                </select>
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeLanguage($index)"
+                                  [attr.aria-label]="t()('profile.remove_language')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <button class="btn-dashed" type="button" (click)="addLanguage()">
+                          <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                          {{ t()('profile.add_language') }}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="field field--full" id="field-education">
+                <div class="collapse-card">
+                  <div
+                    class="collapse-card__head"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-expanded]="sectionOpen().education"
+                    (click)="toggleSection('education')"
+                    (keydown.enter)="toggleSection('education')"
+                    (keydown.space)="toggleSection('education'); $event.preventDefault()"
+                  >
+                    <span class="collapse-card__title">{{ t()('profile.field_education') }}</span>
+                    <span class="collapse-card__summary">
+                      {{
+                        educationEntries().length
+                          ? t()('profile.summary_education').replace(
+                              '{count}',
+                              educationEntries().length + ''
+                            )
+                          : t()('profile.summary_empty')
+                      }}
+                    </span>
+                    <lucide-icon
+                      [img]="chevronIcon"
+                      [size]="17"
+                      class="chevron"
+                      [class.chevron--open]="sectionOpen().education"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  @if (sectionOpen().education) {
+                    <div class="collapse-card__body">
+                      <p class="muted">{{ t()('profile.education_hint') }}</p>
+                      @if (educationEntries().length > 0) {
+                        <div class="archetype-list">
+                          @for (e of educationEntries(); track $index) {
+                            <div class="archetype-card">
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.title"
+                                  (ngModelChange)="updateEducation($index, 'title', $event)"
+                                  [placeholder]="t()('profile.education_title_hint')"
+                                  [attr.aria-label]="t()('profile.education_title')"
+                                />
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeEducation($index)"
+                                  [attr.aria-label]="t()('profile.remove_education')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.institution"
+                                  (ngModelChange)="updateEducation($index, 'institution', $event)"
+                                  [placeholder]="t()('profile.education_institution_hint')"
+                                  [attr.aria-label]="t()('profile.education_institution')"
+                                />
+                              </div>
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.startDate"
+                                  (ngModelChange)="updateEducation($index, 'startDate', $event)"
+                                  [placeholder]="t()('profile.education_start_hint')"
+                                  [attr.aria-label]="t()('profile.education_start')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.endDate"
+                                  (ngModelChange)="updateEducation($index, 'endDate', $event)"
+                                  [placeholder]="t()('profile.education_end_hint')"
+                                  [attr.aria-label]="t()('profile.education_end')"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                      <button class="btn-dashed" type="button" (click)="addEducation()">
+                        <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                        {{ t()('profile.add_education') }}
+                      </button>
+                    </div>
+                  }
+                </div>
               </div>
             </div>
           } @else {
@@ -932,6 +1066,34 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         font-size: var(--text-xs);
         color: var(--warning);
         margin: 0;
+      }
+
+      .collapse-card {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        background: var(--surface-1);
+        overflow: hidden;
+      }
+      .collapse-card__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        cursor: pointer;
+      }
+      .collapse-card__title {
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        font-size: var(--text-sm);
+      }
+      .collapse-card__summary {
+        flex: 1;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+      }
+      .collapse-card__body {
+        padding: 0 var(--space-4) var(--space-4);
       }
 
       .ai-tools {
@@ -1439,6 +1601,14 @@ export class ProfileComponent implements OnInit {
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
   readonly scoringOpen = signal(true);
+  readonly sectionOpen = signal<
+    Record<'experience' | 'skills' | 'languages' | 'education', boolean>
+  >({
+    experience: true,
+    skills: true,
+    languages: true,
+    education: true,
+  });
 
   readonly archetypesDirty = computed(
     () =>
@@ -1502,11 +1672,27 @@ export class ProfileComponent implements OnInit {
       this.toast.error(this.t()('profile.load_failed').replace('{error}', String(e)));
     } finally {
       this.loading.set(false);
+      this.seedSectionOpen();
     }
   }
 
   toggleScoring(): void {
     this.scoringOpen.update((v) => !v);
+  }
+
+  toggleSection(key: 'experience' | 'skills' | 'languages' | 'education'): void {
+    this.sectionOpen.update((s) => ({ ...s, [key]: !s[key] }));
+  }
+
+  /** Collapse a section on load/seed when it already has content; leave empty
+   * sections expanded so they invite filling. */
+  private seedSectionOpen(): void {
+    this.sectionOpen.set({
+      experience: this.experienceEntries().length === 0,
+      skills: this.form().skills.length === 0,
+      languages: this.languageEntries().length === 0,
+      education: this.educationEntries().length === 0,
+    });
   }
 
   /** Trims to match the input generateScoringProfile hashes, or the two hashes never compare equal. */
@@ -1605,6 +1791,7 @@ export class ProfileComponent implements OnInit {
       this.educationEntries.set(parseEducationEntries(this.form().education));
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
       this.languageEntries.set(parseLanguageEntries(this.form().languages));
+      this.seedSectionOpen();
     } else {
       this.syncMdFromForm();
     }

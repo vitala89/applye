@@ -31,6 +31,11 @@
             }
           </div>
           <h2 class="dv-detail__title">{{ drow.title }}</h2>
+          @if (archetypeBadge(drow); as m) {
+            <span class="dv-arch-badge dv-arch-badge--{{ m.fit }}">
+              {{ archBadgeLabel(m.fit) }}
+            </span>
+          }
           <div class="dv-detail__corow">
             <span class="dv-detail__co">
               <lucide-icon [img]="icons.company" [size]="15" aria-hidden="true" />
@@ -685,6 +690,11 @@
                       <span class="dv-row__savedbadge">
                         <lucide-icon [img]="icons.check" [size]="10" aria-hidden="true" />
                         {{ t()('discover.saved_badge') }}
+                      </span>
+                    }
+                    @if (archetypeBadge(row); as m) {
+                      <span class="dv-arch-badge dv-arch-badge--{{ m.fit }}">
+                        {{ archBadgeLabel(m.fit) }}
                       </span>
                     }
                   </div>

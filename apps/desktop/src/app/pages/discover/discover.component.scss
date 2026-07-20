@@ -2126,3 +2126,24 @@
   color: var(--text-tertiary);
   background: var(--surface-sunken);
 }
+.dv-arch-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+}
+.dv-arch-badge--primary {
+  color: var(--accent);
+  background: var(--surface-sunken);
+}
+.dv-arch-badge--secondary {
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+}
+.dv-arch-badge--adjacent {
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+}

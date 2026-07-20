@@ -10,6 +10,12 @@ export interface ProfileForm {
   skills: string[];
   education: string;
   languages: string[];
+  /** Structured compensation target, folded into a `## Compensation` markdown
+   * section. All strings mirror the form inputs; empty means unset. */
+  compMin: string;
+  compMax: string;
+  compCurrency: string;
+  compPeriod: string;
   /** Everything the parser recognised as content but could not place in a
    * field: a stray tagline under the name, a third website, a `- Xing: …` line
    * the contact block has no slot for. Re-emitted verbatim under `## Notes`.
@@ -58,6 +64,10 @@ export const EMPTY_FORM: ProfileForm = {
   skills: [],
   education: '',
   languages: [],
+  compMin: '',
+  compMax: '',
+  compCurrency: '',
+  compPeriod: '',
   notes: '',
   other: '',
 };
@@ -225,7 +235,13 @@ export function parseProfileMd(md: string): ProfileForm {
     else if (s.heading === 'skills') form.skills = splitList(body);
     else if (s.heading === 'education') form.education = body;
     else if (s.heading === 'languages') form.languages = splitList(body);
-    else other.push([s.raw, ...s.body].join('\n').trim());
+    else if (s.heading === 'compensation') {
+      const c = parseCompensation(body);
+      form.compMin = c.min;
+      form.compMax = c.max;
+      form.compCurrency = c.currency;
+      form.compPeriod = c.period;
+    } else other.push([s.raw, ...s.body].join('\n').trim());
   }
   form.notes = notes.filter(Boolean).join('\n').trim();
   form.other = other.join('\n\n').trim();
@@ -247,6 +263,13 @@ export function serializeProfileForm(f: ProfileForm): string {
   if (f.skills.length) parts.push(`## Skills\n${f.skills.join(', ')}`);
   if (f.education.trim()) parts.push(`## Education\n${f.education.trim()}`);
   if (f.languages.length) parts.push(`## Languages\n${f.languages.join(', ')}`);
+  const comp = serializeCompensation({
+    min: f.compMin,
+    max: f.compMax,
+    currency: f.compCurrency,
+    period: f.compPeriod,
+  });
+  if (comp) parts.push(`## Compensation\n${comp}`);
   // Under a heading, never as a bare block: a loose line here would be read
   // back as the body of whichever section happened to be serialized last.
   if (f.notes.trim()) parts.push(`## Notes\n${f.notes.trim()}`);
@@ -486,6 +509,65 @@ export function serializeExperienceEntries(entries: ExperienceEntry[]): string {
     })
     .filter(Boolean)
     .join('\n\n');
+}
+
+/** Structured compensation target as edited in the profile UI. Persisted in the
+ * `## Compensation` markdown body so `ProfileForm` stays markdown-backed. */
+export interface CompensationTarget {
+  min: string;
+  max: string;
+  currency: string;
+  period: string;
+}
+
+export const EMPTY_COMPENSATION: CompensationTarget = {
+  min: '',
+  max: '',
+  currency: '',
+  period: '',
+};
+
+/** Parses the `## Compensation` body (e.g. "85000 - 110000 EUR per year") into a
+ * structured target. Lenient: numbers, currency, and period are each optional.
+ * Numbers are extracted positionally (first = min, second = max), so no explicit
+ * range-separator regex is needed. */
+export function parseCompensation(body: string): CompensationTarget {
+  const text = (body || '').replace(/\r\n/g, '\n').trim();
+  if (!text) return { ...EMPTY_COMPENSATION };
+  const currency = /(?:\bEUR\b|€)/i.test(text) ? 'EUR' : /(?:\bUSD\b|\$)/i.test(text) ? 'USD' : '';
+  const period = /(?:per\s+month|\/\s*month|(?<![a-z])p\.?m\.?(?![a-z]))/i.test(text)
+    ? 'month'
+    : /(?:per\s+year|\/\s*year|per\s+annum|(?<![a-z])p\.?a\.?(?![a-z])|annually)/i.test(text)
+      ? 'year'
+      : '';
+  // Strip currency/period words so only the numeric range remains.
+  const numsPart = text
+    .replace(/\bEUR\b|\bUSD\b|€|\$/gi, ' ')
+    .replace(
+      /per\s+(year|month|annum)|annually|(?<![a-z])p\.?a\.?(?![a-z])|(?<![a-z])p\.?m\.?(?![a-z])|\/\s*(year|month)/gi,
+      ' ',
+    );
+  const nums = numsPart.match(/\d[\d.,]*\d|\d/g) ?? [];
+  const norm = (n: string) => n.replace(/[.,](?=\d{3}\b)/g, '');
+  const min = nums[0] ? norm(nums[0]) : '';
+  const max = nums[1] ? norm(nums[1]) : '';
+  return { min, max, currency, period };
+}
+
+/** Inverse of parseCompensation. Emits only the parts that are set; a fully
+ * empty target serializes to ''. */
+export function serializeCompensation(c: CompensationTarget): string {
+  const min = c.min.trim();
+  const max = c.max.trim();
+  const currency = c.currency.trim();
+  const period = c.period.trim();
+  const parts: string[] = [];
+  if (min && max) parts.push(`${min} - ${max}`);
+  else if (min) parts.push(min);
+  else if (max) parts.push(max);
+  if (currency) parts.push(currency);
+  if (period) parts.push(`per ${period}`);
+  return parts.join(' ').trim();
 }
 
 const CHECKS: { key: ProfileFieldKey; filled: (f: ProfileForm) => boolean }[] = [

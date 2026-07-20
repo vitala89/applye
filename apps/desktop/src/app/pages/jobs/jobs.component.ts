@@ -73,6 +73,10 @@ import {
   parseArchetypes,
   archetypeNames,
   sanitizeSignature,
+  parseProfileMd,
+  compareCompensation,
+  extractSalaryFromJd,
+  CompensationVerdict,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
@@ -418,6 +422,21 @@ interface FinalChecks {
                     }
                   </div>
                 </div>
+                @if (hasCompTarget()) {
+                  <span class="comp-chip__wrap">
+                    <span class="comp-chip__label">{{ t()('profile.section_compensation') }}</span>
+                    @if (compVerdict() === 'unknown') {
+                      <span class="comp-chip comp-chip--muted">{{ t()('comp.not_stated') }}</span>
+                    } @else {
+                      <span
+                        class="comp-chip"
+                        [class.comp-chip--good]="compVerdict() !== 'below'"
+                        [class.comp-chip--warn]="compVerdict() === 'below'"
+                        >{{ compBadgeLabel() }}</span
+                      >
+                    }
+                  </span>
+                }
                 @if (!hasArchetypes()) {
                   <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
                 }
@@ -1499,6 +1518,41 @@ interface FinalChecks {
         align-items: center;
         gap: var(--space-2);
         flex-shrink: 0;
+      }
+
+      /* Salary-fit chip */
+      .comp-chip__wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .comp-chip__label {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wide);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+      .comp-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px var(--space-2);
+        font-size: var(--text-2xs);
+        font-weight: var(--weight-medium);
+        border-radius: var(--radius-badge);
+        white-space: nowrap;
+      }
+      .comp-chip--good {
+        color: var(--success);
+        background: var(--surface-sunken);
+      }
+      .comp-chip--warn {
+        color: var(--warning);
+        background: var(--surface-sunken);
+      }
+      .comp-chip--muted {
+        color: var(--text-tertiary);
+        background: var(--surface-sunken);
       }
 
       /* Red flags */
@@ -4263,6 +4317,30 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   hasArchetypes(): boolean {
     return parseArchetypes(this.profile()?.targetArchetypes).length > 0;
+  }
+
+  /** Profile compensation target parsed from the loaded profile markdown. */
+  protected readonly compTarget = computed(() => {
+    const cf = parseProfileMd(this.profile()?.fullMd ?? '');
+    return { min: cf.compMin, max: cf.compMax, currency: cf.compCurrency, period: cf.compPeriod };
+  });
+
+  /** True when the user has a compensation target to compare against. */
+  protected readonly hasCompTarget = computed(
+    () => !!(this.compTarget().min || this.compTarget().max),
+  );
+
+  /** Salary-fit verdict for this job's JD text vs the profile target. */
+  protected readonly compVerdict = computed<CompensationVerdict>(() =>
+    compareCompensation(this.compTarget(), extractSalaryFromJd(this.jdText())),
+  );
+
+  protected compBadgeLabel(): string {
+    const v = this.compVerdict();
+    if (v === 'above') return this.t()('comp.badge_above');
+    if (v === 'within') return this.t()('comp.badge_within');
+    if (v === 'below') return this.t()('comp.badge_below');
+    return this.t()('comp.not_stated');
   }
 
   // ── Tailoring wizard ────────────────────────────────────────────────────────

@@ -27,6 +27,8 @@ is the single source of truth; this file tracks what changed at each tag.
 - **Gap-fill before generating a cover letter.** Cover-letter generation now runs the same JD-vs-profile gap analysis the CV flow uses, asking the user for anything the posting wants that the profile lacks before the letter is written. Skipped when a CV was already generated for the job (that step just asked), so the user is never prompted twice.
 - Profile editor: structured Experience (role, company, dates, bullets), chip-style Skills, and Language + level editors in Form mode, each in a collapsible section.
 - Profile editor: AI "Parse text" in Raw Markdown mode - turns free text into structured fields via a preview-then-apply flow (new `profile-import` skill).
+- Profile editor: compensation target (min / max / currency / period) in Form mode.
+- Discovery and job detail: a salary-fit badge (Above / In range / Below target, or "Salary not stated") comparing a job's advertised salary - detected from the job description - to your compensation target. Recognizes yearly and monthly pay; never shows a misleading badge.
 
 ## [0.25.0] - 2026-07-19
 

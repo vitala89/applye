@@ -39,12 +39,18 @@ import {
   parseProfileMd,
   compareCompensation,
   extractSalaryFromJd,
+  parseArchetypes,
+  archetypeKeywordBag,
+  matchArchetype,
+  tierRank,
 } from '@applye/core';
 import type {
   CompensationVerdict,
   DiscoverFeedItem,
   DiscoverSource,
   ScanSourceResult,
+  ArchetypeMatch,
+  Archetype,
 } from '@applye/core';
 import {
   classifyLoc,
@@ -106,7 +112,6 @@ interface JdBlock {
 }
 
 const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
-const KEYWORD_STOPWORDS = ['and', 'or', 'the', 'with', 'for', 'of', 'in'];
 const ATS_LABEL: Record<string, string> = {
   ats_greenhouse: 'GH',
   ats_lever: 'LEVER',
@@ -215,6 +220,7 @@ export class DiscoverComponent {
   /** Raw keyword-fit score 0-100; null when the profile has no keywords. */
   protected readonly detailScore = signal<number | null>(null);
   private readonly profileKeywords = signal<string[]>([]);
+  private readonly archetypes = signal<Archetype[]>([]);
   protected readonly geoScope = signal('worldwide');
   /** Profile compensation target (min/max/currency/period), parsed from the saved
    * profile markdown; empty strings when the user set no target. */
@@ -397,10 +403,17 @@ export class DiscoverComponent {
    * rest of the feed still shows under "More openings".
    */
   protected matchesProfile(row: FeedRow): boolean {
-    const kws = this.profileKeywords();
-    if (!kws.length) return false;
-    const title = (row.title ?? '').toLowerCase();
-    return kws.some((kw) => title.includes(kw));
+    return this.archetypeBadge(row) !== null;
+  }
+
+  /** Best-fit archetype for a feed row (title only; JD not loaded in the feed). */
+  protected archetypeBadge(row: FeedRow): ArchetypeMatch | null {
+    return matchArchetype(row.title ?? '', this.archetypes());
+  }
+
+  private rowTierRank(row: FeedRow): number {
+    const m = this.archetypeBadge(row);
+    return m ? tierRank(m.fit) : 0;
   }
 
   /**
@@ -413,7 +426,13 @@ export class DiscoverComponent {
     if (!this.profileKeywords().length) {
       return [{ key: 'more', label: '', rows, total: rows.length }];
     }
-    const forYou = rows.filter((r) => this.matchesProfile(r));
+    const forYou = rows
+      .filter((r) => this.matchesProfile(r))
+      .sort((a, b) => {
+        const d = this.rowTierRank(b) - this.rowTierRank(a);
+        if (d !== 0) return d;
+        return (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
+      });
     const more = rows.filter((r) => !this.matchesProfile(r));
     const out: FeedSection[] = [];
     if (forYou.length) {
@@ -586,7 +605,9 @@ export class DiscoverComponent {
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
       this.displayCount.set(FEED_PAGE);
-      this.profileKeywords.set(this.deriveKeywords(profile?.targetArchetypes));
+      const arch = parseArchetypes(profile?.targetArchetypes);
+      this.archetypes.set(arch);
+      this.profileKeywords.set(archetypeKeywordBag(arch));
       const cf = parseProfileMd(profile?.fullMd ?? '');
       this.compTarget.set({
         min: cf.compMin,
@@ -779,7 +800,10 @@ export class DiscoverComponent {
     const matched = keywords.filter((kw) => hay.includes(kw)).length;
     const coverage = matched / Math.min(keywords.length, 10);
     const skillBonus = Math.min(this.detailSkills().length, 6) * 3;
-    const score = Math.round(30 + coverage * 55 + skillBonus);
+    const detail = this.detailRow();
+    const badge = detail ? this.archetypeBadge(detail) : null;
+    const tierBoost = badge ? { primary: 12, secondary: 6, adjacent: 0 }[badge.fit] : 0;
+    const score = Math.round(30 + coverage * 55 + skillBonus + tierBoost);
     return Math.max(20, Math.min(97, score));
   }
 
@@ -1212,28 +1236,6 @@ export class DiscoverComponent {
   private hostOf(url: string): string {
     const withoutScheme = url.split('://')[1] ?? url;
     return withoutScheme.split('/')[0] ?? '';
-  }
-
-  /** Mirror of the Rust derive_title_keywords: archetype phrases -> words. */
-  private deriveKeywords(archetypes: string | undefined): string[] {
-    if (!archetypes) return [];
-    let phrases: string[];
-    try {
-      const parsed = JSON.parse(archetypes) as unknown;
-      phrases = Array.isArray(parsed) ? parsed.map(String) : [archetypes];
-    } catch {
-      phrases = archetypes.split(/[,\n]/);
-    }
-    const words: string[] = [];
-    for (const phrase of phrases) {
-      for (const word of phrase.split(/[^\p{L}\p{N}+#]+/u)) {
-        const w = word.trim().toLowerCase();
-        if (w.length >= 3 && !KEYWORD_STOPWORDS.includes(w) && !words.includes(w)) {
-          words.push(w);
-        }
-      }
-    }
-    return words;
   }
 
   protected readonly skeletonRows = [

@@ -149,3 +149,19 @@ describe('matchArchetype word-boundary matching', () => {
     expect(matchArchetype('Senior C++ Engineer', list)?.fit).toBe('primary');
   });
 });
+
+describe('matchArchetype sellWhen tie-break', () => {
+  // Same tier, identical name coverage (both names fully hit) -> the archetype
+  // whose sellWhen words also appear wins. Ordered so that WITHOUT the sellWhen
+  // bonus the first entry would win the tie; the bonus must flip it to the second.
+  const list: Archetype[] = [
+    { name: 'Platform Engineer', fit: 'primary', sellWhen: '' },
+    { name: 'Backend Engineer', fit: 'primary', sellWhen: 'platform' },
+  ];
+
+  it('breaks an equal-coverage tie toward the archetype whose sellWhen matches', () => {
+    const m = matchArchetype('Senior Backend Platform Engineer', list);
+    expect(m?.name).toBe('Backend Engineer');
+    expect(m?.fit).toBe('primary');
+  });
+});

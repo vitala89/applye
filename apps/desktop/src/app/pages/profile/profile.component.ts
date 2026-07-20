@@ -14,6 +14,10 @@ import {
   EMPTY_EDUCATION_ENTRY,
   parseEducationEntries,
   serializeEducationEntries,
+  ExperienceEntry,
+  EMPTY_EXPERIENCE_ENTRY,
+  parseExperienceEntries,
+  serializeExperienceEntries,
   Archetype,
   parseArchetypes,
   serializeArchetypes,
@@ -318,22 +322,107 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 </div>
               </div>
 
-              <div class="field">
+              <div class="field field--full" id="field-experience">
                 <div class="field__label-row">
-                  <label class="field__label" for="field-experience">{{
-                    t()('profile.field_experience')
-                  }}</label>
+                  <span class="field__label">{{ t()('profile.section_experience') }}</span>
                   <span class="field__hint field__hint--inline">{{
                     t()('profile.experience_hint')
                   }}</span>
                 </div>
-                <textarea
-                  id="field-experience"
-                  class="field__input field__input--area field__input--mono"
-                  [ngModel]="form().experienceText"
-                  (ngModelChange)="updateField('experienceText', $event)"
-                  spellcheck="false"
-                ></textarea>
+                @if (experienceEntries().length > 0) {
+                  <div class="archetype-list">
+                    @for (e of experienceEntries(); track ei; let ei = $index) {
+                      <div class="archetype-card">
+                        <div class="archetype-card__top">
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.role"
+                            (ngModelChange)="updateExperienceField(ei, 'role', $event)"
+                            [placeholder]="t()('profile.exp_role')"
+                            [attr.aria-label]="t()('profile.exp_role')"
+                          />
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.company"
+                            (ngModelChange)="updateExperienceField(ei, 'company', $event)"
+                            [placeholder]="t()('profile.exp_company')"
+                            [attr.aria-label]="t()('profile.exp_company')"
+                          />
+                          <button
+                            class="btn-ghost"
+                            type="button"
+                            (click)="removeExperience(ei)"
+                            [attr.aria-label]="t()('profile.remove_experience')"
+                          >
+                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                          </button>
+                        </div>
+                        <div class="archetype-card__top">
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.location"
+                            (ngModelChange)="updateExperienceField(ei, 'location', $event)"
+                            [placeholder]="t()('profile.exp_location')"
+                            [attr.aria-label]="t()('profile.exp_location')"
+                          />
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.startDate"
+                            (ngModelChange)="updateExperienceField(ei, 'startDate', $event)"
+                            [placeholder]="t()('profile.exp_start')"
+                            [attr.aria-label]="t()('profile.exp_start')"
+                          />
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="e.endDate"
+                            (ngModelChange)="updateExperienceField(ei, 'endDate', $event)"
+                            [placeholder]="t()('profile.exp_end')"
+                            [attr.aria-label]="t()('profile.exp_end')"
+                          />
+                        </div>
+                        <div class="exp-bullets">
+                          @for (b of e.bullets; track bi; let bi = $index) {
+                            <div class="exp-bullet-row">
+                              <input
+                                class="archetype-input"
+                                type="text"
+                                [ngModel]="b"
+                                (ngModelChange)="updateExperienceBullet(ei, bi, $event)"
+                                [placeholder]="t()('profile.exp_bullet_hint')"
+                                [attr.aria-label]="t()('profile.exp_bullet_hint')"
+                              />
+                              <button
+                                class="btn-ghost"
+                                type="button"
+                                (click)="removeExperienceBullet(ei, bi)"
+                                [attr.aria-label]="t()('profile.exp_remove_bullet')"
+                              >
+                                <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                              </button>
+                            </div>
+                          }
+                          <button
+                            class="btn-dashed"
+                            type="button"
+                            (click)="addExperienceBullet(ei)"
+                          >
+                            <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                            {{ t()('profile.exp_add_bullet') }}
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+                <button class="btn-dashed" type="button" (click)="addExperience()">
+                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                  {{ t()('profile.add_experience') }}
+                </button>
               </div>
 
               <div class="field-row">
@@ -1183,6 +1272,17 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         margin: 0;
         font-family: var(--font-mono);
       }
+      .exp-bullets {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding-left: var(--space-4);
+      }
+      .exp-bullet-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
     `,
   ],
 })
@@ -1216,6 +1316,8 @@ export class ProfileComponent implements OnInit {
    * string, but the row must stay editable. Re-seeded whenever the form is
    * reparsed (load, leaving raw mode). */
   readonly educationEntries = signal<EducationEntry[]>([]);
+  /** Structured mirror of `form().experienceText`, same rationale as `educationEntries`. */
+  readonly experienceEntries = signal<ExperienceEntry[]>([]);
   readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
@@ -1282,6 +1384,7 @@ export class ProfileComponent implements OnInit {
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
       this.educationEntries.set(parseEducationEntries(this.form().education));
+      this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
       await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
@@ -1376,6 +1479,7 @@ export class ProfileComponent implements OnInit {
       // leaving raw → re-parse edited markdown back into fields
       this.form.set(parseProfileMd(this.fullMd()));
       this.educationEntries.set(parseEducationEntries(this.form().education));
+      this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
     } else {
       this.syncMdFromForm();
     }
@@ -1422,6 +1526,60 @@ export class ProfileComponent implements OnInit {
    * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
   private syncEducation(): void {
     this.updateField('education', serializeEducationEntries(this.educationEntries()));
+  }
+
+  addExperience(): void {
+    this.experienceEntries.update((list) => [...list, { ...EMPTY_EXPERIENCE_ENTRY, bullets: [] }]);
+    this.syncExperience();
+  }
+
+  removeExperience(index: number): void {
+    this.experienceEntries.update((list) => list.filter((_, i) => i !== index));
+    this.syncExperience();
+  }
+
+  updateExperienceField(
+    index: number,
+    field: Exclude<keyof ExperienceEntry, 'bullets'>,
+    value: string,
+  ): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
+    );
+    this.syncExperience();
+  }
+
+  addExperienceBullet(index: number): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, bullets: [...e.bullets, ''] } : e)),
+    );
+    this.syncExperience();
+  }
+
+  removeExperienceBullet(index: number, bulletIndex: number): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) =>
+        i === index ? { ...e, bullets: e.bullets.filter((_, bi) => bi !== bulletIndex) } : e,
+      ),
+    );
+    this.syncExperience();
+  }
+
+  updateExperienceBullet(index: number, bulletIndex: number, value: string): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) =>
+        i === index
+          ? { ...e, bullets: e.bullets.map((b, bi) => (bi === bulletIndex ? value : b)) }
+          : e,
+      ),
+    );
+    this.syncExperience();
+  }
+
+  /** Folds the structured entries back into the `experienceText` string (and thus
+   * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
+  private syncExperience(): void {
+    this.updateField('experienceText', serializeExperienceEntries(this.experienceEntries()));
   }
 
   async save(): Promise<void> {

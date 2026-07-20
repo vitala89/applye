@@ -25,6 +25,8 @@ is the single source of truth; this file tracks what changed at each tag.
 - **Missing-date prompt before generating a tailored CV.** When the AI cannot date an experience **or education** entry, a blocking dialog asks the user to fill it in (per entry, skippable) instead of shipping a CV with an open-ended "Present". Answers can optionally be saved back to the profile.
 - **Structured, multi-entry education in the profile.** The profile's single education text field is now a repeatable list: add any number of degrees, courses, or certificates, each with its own institution and start/end year (end left blank = ongoing). Stored back into the profile markdown, backward compatible with existing free-text education.
 - **Gap-fill before generating a cover letter.** Cover-letter generation now runs the same JD-vs-profile gap analysis the CV flow uses, asking the user for anything the posting wants that the profile lacks before the letter is written. Skipped when a CV was already generated for the job (that step just asked), so the user is never prompted twice.
+- Profile editor: structured Experience (role, company, dates, bullets), chip-style Skills, and Language + level editors in Form mode, each in a collapsible section.
+- Profile editor: AI "Parse text" in Raw Markdown mode - turns free text into structured fields via a preview-then-apply flow (new `profile-import` skill).
 
 ## [0.25.0] - 2026-07-19
 

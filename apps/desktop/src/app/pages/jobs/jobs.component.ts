@@ -72,6 +72,7 @@ import {
   DocumentLibraryItem,
   parseArchetypes,
   archetypeNames,
+  sanitizeSignature,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
@@ -792,6 +793,7 @@ interface FinalChecks {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
+                          [disabled]="preparingCv()"
                           (click)="openCv(cv.id, true)"
                         >
                           {{ t()('jobs.wizard.document_review_cv') }}
@@ -886,6 +888,7 @@ interface FinalChecks {
                         <button
                           class="btn btn--primary btn--sm"
                           type="button"
+                          [disabled]="preparingCoverLetter()"
                           (click)="openCoverLetter(letter.id, true)"
                         >
                           {{ t()('jobs.wizard.document_review_letter') }}
@@ -3241,7 +3244,10 @@ export class JobsComponent implements OnInit, OnDestroy {
         greeting: baseGreeting,
         bodyParagraphs: tailoredParagraphs,
         closing: baseClosing,
-        signature: baseSignature,
+        // The signature is the sender's name only. The AI is prompted never to
+        // append contact detail, but does not obey reliably, so strip any
+        // phone / email / URL deterministically before persisting.
+        signature: sanitizeSignature(baseSignature),
         jobDescription: jd,
         tone,
         length,
@@ -3358,13 +3364,53 @@ export class JobsComponent implements OnInit, OnDestroy {
    * Job Detail mode loads the job and its CACHED score only - no AI on open.
    */
   private async enterJob(id: number): Promise<void> {
-    if (this.loadedJobId !== id) {
-      if (this.loadedJobId != null) this.resetJobScopedState();
+    const switching = this.loadedJobId !== id;
+    if (switching && this.loadedJobId != null) this.resetJobScopedState();
+
+    // Decide which view to show SYNCHRONOUSLY, before any await, so the
+    // job-detail view never paints for a frame before the wizard/tailor view
+    // replaces it (the route-transition "blink"). Both wizard triggers are
+    // synchronous reads (the editor-return query params and the persisted
+    // wizard progress); only their follow-up work is async and is owed once
+    // the job has loaded.
+    const pendingPrep = this.decideWizardView(id);
+
+    if (switching) {
       this.loadedJobId = id;
       await this.loadJob(id);
     }
-    await this.handleWizardReturnFromDocumentEditor();
-    await this.restoreWizardProgress(id);
+
+    if (pendingPrep === 'return') {
+      await this.completeWizardReturnFromDocumentEditor();
+    } else if (pendingPrep === 'restore-docs') {
+      await this.prepareDocumentsStep();
+    }
+  }
+
+  /**
+   * Open the apply wizard at the correct step when the route implies it, doing
+   * so synchronously (no await) so the detail view is never rendered first.
+   * The editor-return path wins over a plain progress restore. Returns the
+   * async follow-up owed once the job has loaded, if any.
+   */
+  private decideWizardView(id: number): 'return' | 'restore-docs' | null {
+    const params = this.route.snapshot.queryParamMap;
+    const returningFromEditor =
+      params.get('returnTo') === 'applyWizard' || params.get('wizardStep') === 'documents';
+    if (returningFromEditor) {
+      this.wizardOpen.set(true);
+      this.wizardInitialStep.set(3);
+      return 'return';
+    }
+    // Re-open the wizard at the step the user left it on when they navigate
+    // back to this job mid-flow (floating resume button, sidebar nav, browser
+    // back). Restoring is token-free.
+    if (this.wizardOpen()) return null;
+    const prog = this.wizardProgress.progress();
+    if (!prog || prog.jobId !== id) return null;
+    this.wizardInitialStep.set(prog.step);
+    this.wizardOpen.set(true);
+    return prog.step === 3 ? 'restore-docs' : null;
   }
 
   /** Clear transient wizard/tailor/review state when moving to another job.
@@ -3471,33 +3517,15 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Re-open the apply wizard at the step the user left it on, when they
-   * navigate back to this job (sidebar nav, browser back) mid-flow. The
-   * document-editor round-trip already restores step 3 via query params, so
-   * only act when that path did not already open the wizard. Restoring is
-   * token-free: `prepareDocumentsStep` no longer generates anything, and the
-   * Updated-score rescore is deliberately NOT auto-run here (it would spend
-   * tokens without a click) - the user can trigger it from the step.
+   * Async follow-up after the editor-return view has already been opened
+   * synchronously by `decideWizardView`: token-free document prep, then the
+   * saved-document score-freshness reconciliation. The Updated-score rescore is
+   * deliberately NOT auto-run (it would spend tokens without a click).
    */
-  private async restoreWizardProgress(jobId: number): Promise<void> {
-    if (this.wizardOpen()) return;
-    const prog = this.wizardProgress.progress();
-    if (!prog || prog.jobId !== jobId) return;
-    this.wizardInitialStep.set(prog.step);
-    this.wizardOpen.set(true);
-    if (prog.step === 3) await this.prepareDocumentsStep();
-  }
-
-  private async handleWizardReturnFromDocumentEditor(): Promise<void> {
-    const params = this.route.snapshot.queryParamMap;
-    if (params.get('returnTo') !== 'applyWizard' && params.get('wizardStep') !== 'documents') {
-      return;
-    }
-
-    this.wizardOpen.set(true);
-    this.wizardInitialStep.set(3);
+  private async completeWizardReturnFromDocumentEditor(): Promise<void> {
     await this.prepareDocumentsStep();
 
+    const params = this.route.snapshot.queryParamMap;
     if (params.get('documentSaved') !== '1') return;
 
     const previousHash = params.get('reviewHash');

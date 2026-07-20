@@ -53,6 +53,37 @@ import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
 import { CompletenessHeroComponent } from './completeness-hero.component';
 
+/** Tolerant shape of the `profile-import` skill's JSON output. Every field is
+ * optional/nullable since the AI omits or nulls anything it did not find in
+ * the raw text - `applyParsedProfile` is responsible for turning that into
+ * the non-nullable strings `ProfileForm` and the section entries expect. */
+interface ParsedProfile {
+  name?: string | null;
+  title?: string | null;
+  location?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  linkedin?: string | null;
+  experience?: {
+    role?: string;
+    company?: string;
+    location?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    bullets?: string[];
+  }[];
+  skills?: string[];
+  languages?: { language?: string; level?: string | null }[];
+  education?: {
+    title?: string;
+    institution?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+  }[];
+  lowConfidenceNotes?: string[];
+}
+
 @Component({
   selector: 'app-profile',
   standalone: true,
@@ -715,6 +746,71 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 <span class="scaffold__line">## Experience &nbsp;&nbsp;### Role, Company</span>
                 <span class="scaffold__line">## Skills · Education · Languages</span>
               </div>
+              <div class="raw-parse">
+                <button
+                  appButton
+                  variant="secondary"
+                  size="md"
+                  [disabled]="parsing() || !fullMd().trim()"
+                  (click)="parseRawText()"
+                >
+                  <lucide-icon [img]="sparklesIcon" [size]="15" aria-hidden="true" />
+                  {{ parsing() ? t()('profile.raw_parsing') : t()('profile.raw_parse_btn') }}
+                </button>
+                <span class="field__hint">{{ t()('profile.raw_parse_desc') }}</span>
+                @if (parseStatus()) {
+                  <span class="status" [class.status--error]="parseError()">{{
+                    parseStatus()
+                  }}</span>
+                }
+              </div>
+              @if (parsePreview(); as pv) {
+                <div class="parse-preview">
+                  <p class="parse-preview__title">{{ t()('profile.parse_preview_title') }}</p>
+                  <div class="parse-preview__grid">
+                    @if (pv.name) {
+                      <span>{{ pv.name }}</span>
+                    }
+                    @if (pv.title) {
+                      <span>{{ pv.title }}</span>
+                    }
+                    @if (pv.location) {
+                      <span>{{ pv.location }}</span>
+                    }
+                    @if (pv.email) {
+                      <span>{{ pv.email }}</span>
+                    }
+                    @if (pv.phone) {
+                      <span>{{ pv.phone }}</span>
+                    }
+                    @if (pv.linkedin) {
+                      <span>{{ pv.linkedin }}</span>
+                    }
+                  </div>
+                  <p class="muted">
+                    {{ pv.experience?.length || 0 }} · {{ pv.skills?.length || 0 }} ·
+                    {{ pv.languages?.length || 0 }} · {{ pv.education?.length || 0 }}
+                  </p>
+                  @if (pv.lowConfidenceNotes?.length) {
+                    <div class="parse-preview__notes">
+                      <span class="parse-preview__notes-title">{{
+                        t()('profile.parse_notes_title')
+                      }}</span>
+                      @for (n of pv.lowConfidenceNotes; track $index) {
+                        <span>{{ n }}</span>
+                      }
+                    </div>
+                  }
+                  <div class="parse-preview__actions">
+                    <button appButton variant="primary" size="sm" (click)="applyParsedProfile()">
+                      {{ t()('profile.parse_apply_btn') }}
+                    </button>
+                    <button appButton variant="secondary" size="sm" (click)="discardParse()">
+                      {{ t()('profile.parse_discard_btn') }}
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           }
           @if (dirty()) {
@@ -1067,6 +1163,51 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         font-size: var(--text-xs);
         color: var(--warning);
         margin: 0;
+      }
+
+      .raw-parse {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+      .parse-preview {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .parse-preview__title {
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        margin: 0;
+      }
+      .parse-preview__grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .parse-preview__notes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: var(--space-3);
+        font-size: var(--text-xs);
+        color: var(--warning);
+        background: var(--warning-tint);
+        border-radius: var(--radius-input);
+      }
+      .parse-preview__notes-title {
+        font-weight: var(--weight-medium);
+      }
+      .parse-preview__actions {
+        display: flex;
+        gap: var(--space-3);
       }
 
       .collapse-card {
@@ -1571,6 +1712,7 @@ export class ProfileComponent implements OnInit {
   protected readonly chevronIcon = ChevronDown;
   protected readonly unsavedIcon = CircleDot;
   protected readonly staleIcon = TriangleAlert;
+  protected readonly sparklesIcon = Sparkles;
 
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
@@ -1594,6 +1736,7 @@ export class ProfileComponent implements OnInit {
   readonly saving = signal(false);
   readonly scoring = signal(false);
   readonly pitching = signal(false);
+  readonly parsing = signal(false);
 
   readonly saveStatus = signal('');
   readonly saveError = signal(false);
@@ -1601,6 +1744,9 @@ export class ProfileComponent implements OnInit {
   readonly scoreError = signal(false);
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
+  readonly parsePreview = signal<ParsedProfile | null>(null);
+  readonly parseStatus = signal('');
+  readonly parseError = signal(false);
   readonly scoringOpen = signal(true);
   readonly sectionOpen = signal<
     Record<'experience' | 'skills' | 'languages' | 'education', boolean>
@@ -2037,5 +2183,126 @@ export class ProfileComponent implements OnInit {
     } finally {
       this.pitching.set(false);
     }
+  }
+
+  /** Runs the `profile-import` skill against the raw markdown and stashes the
+   * tolerant result in `parsePreview` for the user to review - never applies
+   * automatically. */
+  async parseRawText(): Promise<void> {
+    const text = this.fullMd().trim();
+    if (!text) {
+      this.parseStatus.set(this.t()('profile.parse_empty_hint'));
+      return;
+    }
+    const s = this.settings();
+    if (!s) return;
+    this.parsing.set(true);
+    this.parseStatus.set('');
+    this.parseError.set(false);
+    try {
+      const lang = s.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('profile-import', {
+        profile_text: text,
+        language: lang,
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: lang,
+      });
+      const parsed = this.extractParsed(res.text);
+      if (!parsed) {
+        this.parseStatus.set(this.t()('profile.parse_failed'));
+        this.parseError.set(true);
+        return;
+      }
+      this.parsePreview.set(parsed);
+    } catch (e) {
+      this.parseStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
+      this.parseError.set(true);
+      this.toast.error(this.t()('profile.parse_failed'));
+    } finally {
+      this.parsing.set(false);
+    }
+  }
+
+  /** Same tolerant fence-stripping as `parseScoringJson`: strips ```json fences,
+   * parses, and returns null on anything that is not a JSON object - never
+   * throws, so a bad AI response just fails the parse instead of clearing the form. */
+  private extractParsed(raw: string): ParsedProfile | null {
+    const cleaned = raw
+      .replace(/^\s*```(?:json)?\s*/i, '')
+      .replace(/\s*```\s*$/, '')
+      .trim();
+    try {
+      const obj = JSON.parse(cleaned);
+      return obj && typeof obj === 'object' && !Array.isArray(obj) ? (obj as ParsedProfile) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Folds the previewed parse into `ProfileForm` + the section signals, then
+   * resyncs `fullMd` and switches to the Form tab. Nulls from the AI (e.g.
+   * `endDate: null` for an ongoing role) become '' via `str`, matching what
+   * every section entry type already expects. */
+  applyParsedProfile(): void {
+    const p = this.parsePreview();
+    if (!p) return;
+    const str = (v: string | null | undefined) => (v ?? '').trim();
+
+    this.form.update((f) => ({
+      ...f,
+      name: str(p.name) || f.name,
+      title: str(p.title) || f.title,
+      location: str(p.location) || f.location,
+      email: str(p.email) || f.email,
+      phone: str(p.phone) || f.phone,
+      website: str(p.website) || f.website,
+      linkedin: str(p.linkedin) || f.linkedin,
+    }));
+
+    this.experienceEntries.set(
+      (p.experience ?? []).map((e) => ({
+        role: str(e.role),
+        company: str(e.company),
+        location: str(e.location),
+        startDate: str(e.startDate),
+        endDate: str(e.endDate),
+        bullets: (e.bullets ?? []).map((b) => b.trim()).filter(Boolean),
+      })),
+    );
+    this.languageEntries.set(
+      (p.languages ?? [])
+        .map((l) => ({ language: str(l.language), level: str(l.level) }))
+        .filter((l) => l.language),
+    );
+    this.educationEntries.set(
+      (p.education ?? []).map((e) => ({
+        title: str(e.title),
+        institution: str(e.institution),
+        startDate: str(e.startDate),
+        endDate: str(e.endDate),
+      })),
+    );
+
+    // Fold section signals + scalar fields back into fullMd via updateField.
+    this.updateField('skills', (p.skills ?? []).map((sk) => sk.trim()).filter(Boolean));
+    this.syncExperience();
+    this.syncLanguages();
+    this.syncEducation();
+    this.syncMdFromForm();
+
+    this.parsePreview.set(null);
+    this.seedSectionOpen();
+    this.rawMode.set(false); // switch to Form tab
+  }
+
+  discardParse(): void {
+    this.parsePreview.set(null);
+    this.parseStatus.set('');
   }
 }

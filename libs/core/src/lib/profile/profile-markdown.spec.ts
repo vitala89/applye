@@ -8,6 +8,9 @@ import {
   parseScoringJson,
   parseEducationEntries,
   serializeEducationEntries,
+  parseExperienceEntries,
+  serializeExperienceEntries,
+  EMPTY_EXPERIENCE_ENTRY,
 } from './profile-markdown';
 
 const fullForm: ProfileForm = {
@@ -69,6 +72,57 @@ describe('education entries', () => {
     expect(parseEducationEntries('- MSc AI, TUM (2020 - Present)')).toEqual([
       { title: 'MSc AI', institution: 'TUM', startDate: '2020', endDate: '' },
     ]);
+  });
+});
+
+describe('experience entries', () => {
+  it('round-trips a full entry', () => {
+    const md = [
+      '### Senior Engineer - Acme',
+      'Berlin · 2020 - 2023',
+      '- Shipped the thing',
+      '- Led the team',
+    ].join('\n');
+    const entries = parseExperienceEntries(md);
+    expect(entries).toEqual([
+      {
+        role: 'Senior Engineer',
+        company: 'Acme',
+        location: 'Berlin',
+        startDate: '2020',
+        endDate: '2023',
+        bullets: ['Shipped the thing', 'Led the team'],
+      },
+    ]);
+    expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
+  });
+
+  it('treats an empty end date as ongoing', () => {
+    const entry = { ...EMPTY_EXPERIENCE_ENTRY, role: 'Dev', company: 'Now', startDate: '2024' };
+    const md = serializeExperienceEntries([entry]);
+    expect(md).toContain('2024 - Present');
+    // "Present" round-trips back to an empty endDate.
+    expect(parseExperienceEntries(md)[0].endDate).toBe('');
+  });
+
+  it('keeps a legacy free-text block as a single bullet entry', () => {
+    const entries = parseExperienceEntries('Did lots of things at various places.');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].role).toBe('');
+    expect(entries[0].bullets).toEqual(['Did lots of things at various places.']);
+  });
+
+  it('parses a header with no company separator', () => {
+    const entries = parseExperienceEntries('### Freelance Consultant\n- Client work');
+    expect(entries[0]).toMatchObject({ role: 'Freelance Consultant', company: '' });
+  });
+
+  it('drops fully blank entries on serialize', () => {
+    expect(serializeExperienceEntries([{ ...EMPTY_EXPERIENCE_ENTRY }])).toBe('');
+  });
+
+  it('returns [] for empty input', () => {
+    expect(parseExperienceEntries('')).toEqual([]);
   });
 });
 

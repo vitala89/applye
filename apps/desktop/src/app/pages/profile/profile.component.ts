@@ -517,6 +517,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                             type="text"
                             (keydown.enter)="addSkillChip($event)"
                             [placeholder]="t()('profile.skills_add_hint')"
+                            [attr.aria-label]="t()('profile.field_skills')"
                           />
                         </div>
                       </div>

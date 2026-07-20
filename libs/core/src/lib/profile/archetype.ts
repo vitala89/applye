@@ -95,6 +95,14 @@ export function tierRank(fit: ArchetypeFit): number {
   return TIER_RANK[fit];
 }
 
+/** Whole-word (boundary-aware) test for a lowercase keyword in lowercase text.
+ * Mirrors the discover skill-detector so short/symbol tokens (c++, c#) match
+ * as whole words, not substrings (so "data" does not hit "database"). */
+export function wordHit(haystackLower: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(haystackLower);
+}
+
 /**
  * Best-fit archetype for `text`. A candidate REQUIRES at least one archetype-name
  * word to appear in the text (sellWhen alone never matches). Winner - strongest
@@ -108,10 +116,10 @@ export function matchArchetype(text: string, list: Archetype[]): ArchetypeMatch 
   for (const a of list) {
     const nameWords = archetypeWords(a.name);
     if (!nameWords.length) continue;
-    const nameHits = nameWords.filter((w) => hay.includes(w)).length;
+    const nameHits = nameWords.filter((w) => wordHit(hay, w)).length;
     if (nameHits === 0) continue;
     const coverage = Math.min(1, nameHits / Math.min(nameWords.length, COV_CAP));
-    const sellHits = archetypeWords(a.sellWhen).filter((w) => hay.includes(w)).length;
+    const sellHits = archetypeWords(a.sellWhen).filter((w) => wordHit(hay, w)).length;
     const rank = coverage + Math.min(sellHits, SELL_CAP) * SELL_W;
     const tier = TIER_RANK[a.fit];
     if (tier > bestTier || (tier === bestTier && rank > bestRank)) {

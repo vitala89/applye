@@ -131,3 +131,21 @@ describe('matchArchetype', () => {
     expect(m?.coverage).toBeLessThanOrEqual(1);
   });
 });
+
+describe('matchArchetype word-boundary matching', () => {
+  const dataEng: Archetype[] = [{ name: 'Data Engineer', fit: 'primary', sellWhen: '' }];
+
+  it('does not substring-match a name word inside a longer word', () => {
+    // "data" must not hit "database"; "engineer" absent -> no match at all
+    expect(matchArchetype('Database Administrator', dataEng)).toBeNull();
+  });
+
+  it('matches a name word on a whole-word boundary', () => {
+    expect(matchArchetype('Senior Data Engineer', dataEng)?.fit).toBe('primary');
+  });
+
+  it('matches symbol-carrying tokens like c++ as whole words', () => {
+    const list: Archetype[] = [{ name: 'C++ Engineer', fit: 'primary', sellWhen: '' }];
+    expect(matchArchetype('Senior C++ Engineer', list)?.fit).toBe('primary');
+  });
+});

@@ -27,6 +27,7 @@ import {
   normalizeCvContent,
   parseCvGapResponse,
   parseCvSkillResponse,
+  parseDateAnswer,
   parseSkillValues,
   patchCvDocumentBody,
   patchCvElementStyle,
@@ -44,6 +45,42 @@ import {
   visiblePersonalContactFields,
 } from './cv-content.util';
 import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
+
+describe('parseDateAnswer', () => {
+  const dash = String.fromCharCode(0x2013); // en dash, kept out of source per house rule
+
+  it('splits a spaced hyphen range into start and end', () => {
+    expect(parseDateAnswer('2019 - 2021')).toEqual({ startDate: '2019', endDate: '2021' });
+  });
+
+  it('treats a trailing "Present" as an open (empty) end date', () => {
+    expect(parseDateAnswer('Jan 2021 - Present')).toEqual({ startDate: 'Jan 2021', endDate: '' });
+    expect(parseDateAnswer('Jan 2021 - heute')).toEqual({ startDate: 'Jan 2021', endDate: '' });
+  });
+
+  it('handles "to"/"bis" separators', () => {
+    expect(parseDateAnswer('March 2020 to July 2022')).toEqual({
+      startDate: 'March 2020',
+      endDate: 'July 2022',
+    });
+  });
+
+  it('splits an en-dash range even without surrounding spaces', () => {
+    expect(parseDateAnswer(`2019${dash}2021`)).toEqual({ startDate: '2019', endDate: '2021' });
+  });
+
+  it('keeps an internal hyphen (01-2021) intact when unspaced', () => {
+    expect(parseDateAnswer('01-2021')).toEqual({ startDate: '01-2021', endDate: '' });
+  });
+
+  it('returns a lone start with an empty end', () => {
+    expect(parseDateAnswer('2018')).toEqual({ startDate: '2018', endDate: '' });
+  });
+
+  it('returns two empty strings for a blank answer', () => {
+    expect(parseDateAnswer('   ')).toEqual({ startDate: '', endDate: '' });
+  });
+});
 
 describe('normalizeCvContent', () => {
   it('migrates a legacy items[] skills section into a single group', () => {

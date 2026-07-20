@@ -86,6 +86,7 @@ import {
   cvContentToMd,
   parseCvGapResponse,
   parseCvSkillResponse,
+  parseDateAnswer,
   type CvGapAnswer,
   type CvGapQuestion,
 } from '../documents/cv-content.util';
@@ -2746,6 +2747,64 @@ export class JobsComponent implements OnInit, OnDestroy {
         maxTokens: 8192,
       });
       const parsed = parseCvSkillResponse(res.text);
+
+      // Block-before-generate: when the structured CV has experience or
+      // education entries the AI could not date, ask the user rather than
+      // shipping a CV that renders "Present" with no start date. Reuses the gap
+      // dialog. Skippable (Skip per entry / Cancel), and never fabricates a
+      // date. Question ids are `expdate:<i>` / `edudate:<i>` so answers route
+      // back to the right list.
+      const undatedExp = parsed.experience
+        .map((e, i) => ({ e, i }))
+        .filter(({ e }) => !e.startDate?.trim());
+      const undatedEdu = parsed.education
+        .map((e, i) => ({ e, i }))
+        .filter(({ e }) => !e.startDate?.trim());
+      if (undatedExp.length || undatedEdu.length) {
+        const questions: CvGapQuestion[] = [
+          ...undatedExp.map(({ e, i }) => ({
+            id: `expdate:${i}`,
+            category: 'experience' as const,
+            question: this.t()('jobs.gap.date_question')
+              .replace('{company}', e.company || '')
+              .replace('{role}', e.role || ''),
+            hint: this.t()('jobs.gap.date_hint'),
+          })),
+          ...undatedEdu.map(({ e, i }) => ({
+            id: `edudate:${i}`,
+            category: 'other' as const,
+            question: this.t()('jobs.gap.edu_date_question')
+              .replace('{degree}', e.degree || '')
+              .replace('{institution}', e.institution || ''),
+            hint: this.t()('jobs.gap.edu_date_hint'),
+          })),
+        ];
+        const result = await this.awaitGapDialog(questions);
+        if (result) {
+          for (const ans of result.answers) {
+            const [kind, idxStr] = ans.id.split(':');
+            const idx = Number(idxStr);
+            if (!ans.answer.trim()) continue;
+            const entry = kind === 'edudate' ? parsed.education[idx] : parsed.experience[idx];
+            if (!entry) continue;
+            const { startDate, endDate } = parseDateAnswer(ans.answer);
+            if (startDate) entry.startDate = startDate;
+            if (endDate) entry.endDate = endDate;
+          }
+          if (result.saveToProfile) {
+            const block = buildAdditionalInfoBlock(result.answers);
+            if (block) {
+              try {
+                await this.appendToProfile(block);
+              } catch {
+                // Best-effort: the dates are already folded into `parsed`
+                // above, so a failed profile write must not abort generation.
+              }
+            }
+          }
+        }
+      }
+
       const content = buildCvContent(parsed, null);
       const doc = await this.db.documentLibraryUpsert({
         // One CV per application (ADR-0003): reuse the already-linked
@@ -2800,8 +2859,43 @@ export class JobsComponent implements OnInit, OnDestroy {
     try {
       const app = await this.ensureApplicationDraft();
       const language = this.documentReviewLanguage();
+
+      // Agentic gap-fill (mirrors createCvDraft): ask about info the JD wants
+      // that the profile lacks, then fold the answers into the profile text the
+      // letter is built from. Skipped when a CV is already linked for this job,
+      // because that flow just ran the same analysis (and may have saved the
+      // answers to the profile) — no point asking the user twice. Fail-open and
+      // skippable; never blocks generation.
+      let additionalInfo = '';
+      if (!this.linkedCv()) {
+        this.gapAnalyzing.set(true);
+        try {
+          const questions = await this.analyzeCvGaps(profile.fullMd);
+          this.gapAnalyzing.set(false);
+          if (questions.length) {
+            const result = await this.awaitGapDialog(questions);
+            if (result) {
+              additionalInfo = buildAdditionalInfoBlock(result.answers);
+              if (result.saveToProfile && additionalInfo) {
+                try {
+                  await this.appendToProfile(additionalInfo);
+                } catch {
+                  // Best-effort: answers are already folded into profileText
+                  // below, so a failed profile write must not abort generation.
+                }
+              }
+            }
+          }
+        } finally {
+          this.gapAnalyzing.set(false);
+        }
+      }
+      const profileText = additionalInfo
+        ? `${profile.fullMd}\n\n${additionalInfo}`
+        : profile.fullMd;
+
       const rendered = await this.ai.renderSkill('cover-letter-generate', {
-        profile_md: profile.fullMd,
+        profile_md: profileText,
         job_description: job.jdText ?? '',
         language,
         section: 'all',

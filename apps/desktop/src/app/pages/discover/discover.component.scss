@@ -2092,3 +2092,37 @@
     transition: none;
   }
 }
+
+.dv-comp-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.dv-comp-card__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.dv-comp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+}
+.dv-comp-badge--good {
+  color: var(--success);
+  background: var(--surface-sunken);
+}
+.dv-comp-badge--warn {
+  color: var(--warning);
+  background: var(--surface-sunken);
+}
+.dv-comp-badge--muted {
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+}

@@ -188,6 +188,22 @@
             </div>
           }
 
+          @if (hasCompTarget()) {
+            <div class="dv-detail__card dv-comp-card">
+              <span class="dv-comp-card__label">{{ t()('profile.section_compensation') }}</span>
+              @if (compVerdict() === 'unknown') {
+                <span class="dv-comp-badge dv-comp-badge--muted">{{ t()('comp.not_stated') }}</span>
+              } @else {
+                <span
+                  class="dv-comp-badge"
+                  [class.dv-comp-badge--good]="compVerdict() !== 'below'"
+                  [class.dv-comp-badge--warn]="compVerdict() === 'below'"
+                  >{{ compBadgeLabel() }}</span
+                >
+              }
+            </div>
+          }
+
           <div class="dv-detail__card">
             <div class="dv-detail__eyebrow">{{ t()('discover.about_job') }}</div>
             <div class="dv-detail__facts">

@@ -371,7 +371,7 @@ const EXP_RANGE_SEP = new RegExp(
 );
 // A meta token is a date (range) when it carries a 4-digit year or an
 // ongoing-marker word. "District 5" / "Berlin 10115" stay locations.
-const DATE_LIKE_RE = /(?:19|20)\d{2}|present|current|now|heute|jetzt|aktuell/i;
+const DATE_LIKE_RE = /\b(?:19|20)\d{2}\b|present|current|now|heute|jetzt|aktuell/i;
 
 function looksLikeDateRange(token: string): boolean {
   return DATE_LIKE_RE.test(token);

@@ -159,6 +159,13 @@ describe('experience entries', () => {
     ];
     expect(parseExperienceEntries(serializeExperienceEntries(entries))).toEqual(entries);
   });
+
+  it('keeps a postal code containing a year substring as location', () => {
+    const entries = parseExperienceEntries('### Dev - Acme\nHamburg 20095 · 2020 - 2023\n- x');
+    expect(entries[0].location).toBe('Hamburg 20095');
+    expect(entries[0].startDate).toBe('2020');
+    expect(entries[0].endDate).toBe('2023');
+  });
 });
 
 describe('profile-markdown', () => {

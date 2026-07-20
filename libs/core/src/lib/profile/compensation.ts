@@ -4,7 +4,10 @@ export interface ParsedSalary {
   min: number | null;
   max: number | null;
   currency: string;
+  period: SalaryPeriod;
 }
+
+export type SalaryPeriod = '' | 'year' | 'month' | 'week' | 'day' | 'hour';
 
 export type CompensationVerdict = 'above' | 'within' | 'below' | 'unknown';
 
@@ -12,6 +15,29 @@ function detectCurrency(text: string): string {
   if (/\bEUR\b|€/i.test(text)) return 'EUR';
   if (/\bUSD\b|\$/i.test(text)) return 'USD';
   return '';
+}
+
+/** Detects the pay period a salary text names. '' when none is stated. */
+function detectPeriod(text: string): SalaryPeriod {
+  const t = text.toLowerCase();
+  if (/(?<![a-z])(?:per\s+hour|\/\s*hr|hourly|p\.?h\.?)(?![a-z])/.test(t)) return 'hour';
+  if (/(?<![a-z])(?:per\s+day|\/\s*day|daily|p\.?d\.?)(?![a-z])/.test(t)) return 'day';
+  if (/(?<![a-z])(?:per\s+week|\/\s*wk|weekly)(?![a-z])/.test(t)) return 'week';
+  if (/(?<![a-z])(?:per\s+month|\/\s*mo(?:nth)?|monthly|p\.?m\.?)(?![a-z])/.test(t)) return 'month';
+  if (
+    /(?<![a-z])(?:per\s+year|per\s+annum|\/\s*yr|yearly|annually|p\.?a\.?|annum)(?![a-z])/.test(t)
+  )
+    return 'year';
+  return '';
+}
+
+/** Factor to multiply a per-`period` amount by to get an annual figure, or null
+ * when the period cannot be reliably annualized (week/day/hour) - the caller then
+ * returns 'unknown' rather than risk a wrong verdict. '' defaults to year. */
+function annualFactor(period: string): number | null {
+  if (period === '' || period === 'year') return 1;
+  if (period === 'month') return 12;
+  return null;
 }
 
 /** Expands one numeric token to a number, honouring a trailing k/K (thousands)
@@ -31,6 +57,7 @@ function toNumber(token: string): number | null {
 export function parseSalaryRange(text: string | null | undefined): ParsedSalary | null {
   if (!text) return null;
   const currency = detectCurrency(text);
+  const period = detectPeriod(text);
   // Grab number-with-optional-k tokens in order.
   const tokens = text.match(/\d[\d.,]*\d\s*[kK]?|\d\s*[kK]?/g) ?? [];
   const nums = tokens.map(toNumber).filter((n): n is number => n !== null);
@@ -38,9 +65,9 @@ export function parseSalaryRange(text: string | null | undefined): ParsedSalary 
   const min = nums[0];
   const max = nums.length > 1 ? nums[1] : nums[0];
   if (min !== null && max !== null && min > max) {
-    return { min: max, max: min, currency };
+    return { min: max, max: min, currency, period };
   }
-  return { min, max, currency };
+  return { min, max, currency, period };
 }
 
 /** Compares a profile compensation target against a job's advertised salary.
@@ -48,7 +75,7 @@ export function parseSalaryRange(text: string | null | undefined): ParsedSalary 
  * has no number, the job salary does not parse, or the currencies are both known
  * and differ. Otherwise 'below'/'above'/'within' by numeric range overlap. */
 export function compareCompensation(
-  target: { min: string; max: string; currency: string },
+  target: { min: string; max: string; currency: string; period: string },
   jobSalary: string | null | undefined,
 ): CompensationVerdict {
   const tMinDigits = target.min.replace(/[^\d]/g, '');
@@ -72,7 +99,36 @@ export function compareCompensation(
   const jMin = job.min ?? job.max!;
   const jMax = job.max ?? job.min!;
 
-  if (jMax < lo) return 'below';
-  if (jMin > hi) return 'above';
+  const tf = annualFactor(target.period);
+  const jf = annualFactor(job.period);
+  if (tf === null || jf === null) return 'unknown';
+  const loA = lo * tf;
+  const hiA = hi * tf;
+  const jMinA = jMin * jf;
+  const jMaxA = jMax * jf;
+  if (jMaxA < loA) return 'below';
+  if (jMinA > hiA) return 'above';
   return 'within';
+}
+
+// A salary snippet must carry a real currency marker; a bare number or "401k"
+// (a retirement plan) is NOT treated as a salary, to avoid a wrong badge.
+const CURRENCY_MARKER = /€|£|\$|\bEUR\b|\bUSD\b|\bGBP\b/i;
+const SALARY_KEYWORD = /salary|compensation|\bpay\b|gehalt|verg(?:u|ue|ü)tung|remuneration|wage/i;
+
+/** Pulls the most salary-looking snippet out of a job description, or null.
+ * Conservative: only returns a snippet that contains a currency marker, so
+ * numbers unrelated to pay (e.g. "401k plan", team sizes) are never mistaken for
+ * a salary. Prefers a line that also names salary/compensation. */
+export function extractSalaryFromJd(jd: string | null | undefined): string | null {
+  if (!jd) return null;
+  const lines = jd
+    .replace(/\r\n/g, '\n')
+    .split(/\n|(?<=[.!?])\s+/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const withCurrency = lines.filter((l) => CURRENCY_MARKER.test(l));
+  if (!withCurrency.length) return null;
+  const best = withCurrency.find((l) => SALARY_KEYWORD.test(l)) ?? withCurrency[0];
+  return best.slice(0, 140);
 }

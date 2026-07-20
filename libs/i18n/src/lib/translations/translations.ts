@@ -618,6 +618,7 @@ const en: TranslationMap = {
     badge_above: 'Above your target',
     badge_within: 'In your range',
     badge_below: 'Below your target',
+    not_stated: 'Salary not stated',
   },
   jobs: {
     paste_title: 'Paste job description',
@@ -2100,6 +2101,7 @@ const de: TranslationMap = {
     badge_above: 'Über deinem Ziel',
     badge_within: 'In deiner Spanne',
     badge_below: 'Unter deinem Ziel',
+    not_stated: 'Gehalt nicht angegeben',
   },
   jobs: {
     paste_title: 'Stellenbeschreibung einfügen',

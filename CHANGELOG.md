@@ -10,6 +10,19 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **CV experience dates no longer render as a bare "Present" with a leading dash.** When a role had no start date the preview showed " - Present"; the date separator is now hidden in read/print modes when the start date is empty (it stays in the editor so the empty field is still clickable to fill).
+- **Cover-letter signatures no longer append the phone number to the name.** The `cover-letter-generate` skill now states the signature is the sender's name only; contact details never belong in the sign-off line.
+- **CV import recovers more mangled ligatures.** The `ft` ligature that some PDFs export as a bare `+` glued to a word (e.g. "AmcomSo+" -> "AmcomSoft", "Microso+" -> "Microsoft") is now repaired, with the existing `C++`/`ES6+` never-repair guards kept. Date-capture guidance was also tightened so dates present in the source are not dropped.
+- **My Jobs "Updated score" sections now have consistent padding.** The Dimensions and "Before you submit" blocks were unpadded while the surrounding cards were boxed; every section is now a uniformly padded card.
+
+### Added
+
+- **Missing-date prompt before generating a tailored CV.** When the AI cannot date an experience **or education** entry, a blocking dialog asks the user to fill it in (per entry, skippable) instead of shipping a CV with an open-ended "Present". Answers can optionally be saved back to the profile.
+- **Structured, multi-entry education in the profile.** The profile's single education text field is now a repeatable list: add any number of degrees, courses, or certificates, each with its own institution and start/end year (end left blank = ongoing). Stored back into the profile markdown, backward compatible with existing free-text education.
+- **Gap-fill before generating a cover letter.** Cover-letter generation now runs the same JD-vs-profile gap analysis the CV flow uses, asking the user for anything the posting wants that the profile lacks before the letter is written. Skipped when a CV was already generated for the job (that step just asked), so the user is never prompted twice.
+
 ## [0.25.0] - 2026-07-19
 
 ### Fixed

@@ -37,6 +37,7 @@ Rules:
 - If {{section}} is "all": generate the full cover letter structure.
 - If {{section}} is not "all" (e.g., greeting, subject, body_0, body_1, body_2, closing, signature): only regenerate the text for that specific field/paragraph. Every other field/paragraph must be empty (null for address, empty string for date/subject/greeting/closing/signature, or empty array/empty elements in bodyParagraphs) — the caller will merge the newly generated block into the existing letter.
 - For body paragraph indices (body_0, body_1, body_2): return the bodyParagraphs array with ONLY the requested index populated, others empty.
+- signature: the sender's full name ONLY, exactly as it appears in profile_md — this is the sign-off line under the closing. NEVER append a phone number, email, address, title, or any other contact detail to the signature; contact information is not part of the signature. If profile_md gives the name as "Jane Doe" and a phone "+1 555 0100", the signature is "Jane Doe", never "Jane Doe +1 555 0100".
 
 JSON Output Schema when section is "all":
 {
@@ -57,7 +58,7 @@ JSON Output Schema when section is "all":
 "Paragraph 3"
 ],
 "closing": "string",
-"signature": "string"
+"signature": "string (sender's full name ONLY — never a phone, email, or other contact detail)"
 }
 
 Example JSON Output when section is "body_1":

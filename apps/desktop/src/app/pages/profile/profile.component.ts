@@ -14,6 +14,14 @@ import {
   EMPTY_EDUCATION_ENTRY,
   parseEducationEntries,
   serializeEducationEntries,
+  ExperienceEntry,
+  EMPTY_EXPERIENCE_ENTRY,
+  parseExperienceEntries,
+  serializeExperienceEntries,
+  LanguageEntry,
+  EMPTY_LANGUAGE_ENTRY,
+  parseLanguageEntries,
+  serializeLanguageEntries,
   Archetype,
   parseArchetypes,
   serializeArchetypes,
@@ -44,6 +52,37 @@ import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
 import { CompletenessHeroComponent } from './completeness-hero.component';
+
+/** Tolerant shape of the `profile-import` skill's JSON output. Every field is
+ * optional/nullable since the AI omits or nulls anything it did not find in
+ * the raw text - `applyParsedProfile` is responsible for turning that into
+ * the non-nullable strings `ProfileForm` and the section entries expect. */
+interface ParsedProfile {
+  name?: string | null;
+  title?: string | null;
+  location?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  linkedin?: string | null;
+  experience?: {
+    role?: string;
+    company?: string;
+    location?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    bullets?: string[];
+  }[];
+  skills?: string[];
+  languages?: { language?: string; level?: string | null }[];
+  education?: {
+    title?: string;
+    institution?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+  }[];
+  lowConfidenceNotes?: string[];
+}
 
 @Component({
   selector: 'app-profile',
@@ -318,114 +357,378 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 </div>
               </div>
 
-              <div class="field">
-                <div class="field__label-row">
-                  <label class="field__label" for="field-experience">{{
-                    t()('profile.field_experience')
-                  }}</label>
-                  <span class="field__hint field__hint--inline">{{
-                    t()('profile.experience_hint')
-                  }}</span>
+              <div class="field field--full" id="field-experience">
+                <div class="collapse-card">
+                  <div
+                    class="collapse-card__head"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-expanded]="sectionOpen().experience"
+                    (click)="toggleSection('experience')"
+                    (keydown.enter)="toggleSection('experience')"
+                    (keydown.space)="toggleSection('experience'); $event.preventDefault()"
+                  >
+                    <span class="collapse-card__title">{{
+                      t()('profile.section_experience')
+                    }}</span>
+                    <span class="collapse-card__summary">
+                      {{
+                        experienceEntries().length
+                          ? t()('profile.summary_positions').replace(
+                              '{count}',
+                              experienceEntries().length + ''
+                            )
+                          : t()('profile.summary_empty')
+                      }}
+                    </span>
+                    <lucide-icon
+                      [img]="chevronIcon"
+                      [size]="17"
+                      class="chevron"
+                      [class.chevron--open]="sectionOpen().experience"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  @if (sectionOpen().experience) {
+                    <div class="collapse-card__body">
+                      <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
+                      @if (experienceEntries().length > 0) {
+                        <div class="archetype-list">
+                          @for (e of experienceEntries(); track ei; let ei = $index) {
+                            <div class="archetype-card">
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.role"
+                                  (ngModelChange)="updateExperienceField(ei, 'role', $event)"
+                                  [placeholder]="t()('profile.exp_role')"
+                                  [attr.aria-label]="t()('profile.exp_role')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.company"
+                                  (ngModelChange)="updateExperienceField(ei, 'company', $event)"
+                                  [placeholder]="t()('profile.exp_company')"
+                                  [attr.aria-label]="t()('profile.exp_company')"
+                                />
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeExperience(ei)"
+                                  [attr.aria-label]="t()('profile.remove_experience')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.location"
+                                  (ngModelChange)="updateExperienceField(ei, 'location', $event)"
+                                  [placeholder]="t()('profile.exp_location')"
+                                  [attr.aria-label]="t()('profile.exp_location')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.startDate"
+                                  (ngModelChange)="updateExperienceField(ei, 'startDate', $event)"
+                                  [placeholder]="t()('profile.exp_start')"
+                                  [attr.aria-label]="t()('profile.exp_start')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.endDate"
+                                  (ngModelChange)="updateExperienceField(ei, 'endDate', $event)"
+                                  [placeholder]="t()('profile.exp_end')"
+                                  [attr.aria-label]="t()('profile.exp_end')"
+                                />
+                              </div>
+                              <div class="exp-bullets">
+                                @for (b of e.bullets; track bi; let bi = $index) {
+                                  <div class="exp-bullet-row">
+                                    <input
+                                      class="archetype-input"
+                                      type="text"
+                                      [ngModel]="b"
+                                      (ngModelChange)="updateExperienceBullet(ei, bi, $event)"
+                                      [placeholder]="t()('profile.exp_bullet_hint')"
+                                      [attr.aria-label]="t()('profile.exp_bullet_hint')"
+                                    />
+                                    <button
+                                      class="btn-ghost"
+                                      type="button"
+                                      (click)="removeExperienceBullet(ei, bi)"
+                                      [attr.aria-label]="t()('profile.exp_remove_bullet')"
+                                    >
+                                      <lucide-icon
+                                        [img]="removeIcon"
+                                        [size]="15"
+                                        aria-hidden="true"
+                                      />
+                                    </button>
+                                  </div>
+                                }
+                                <button
+                                  class="btn-dashed"
+                                  type="button"
+                                  (click)="addExperienceBullet(ei)"
+                                >
+                                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                                  {{ t()('profile.exp_add_bullet') }}
+                                </button>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                      <button class="btn-dashed" type="button" (click)="addExperience()">
+                        <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                        {{ t()('profile.add_experience') }}
+                      </button>
+                    </div>
+                  }
                 </div>
-                <textarea
-                  id="field-experience"
-                  class="field__input field__input--area field__input--mono"
-                  [ngModel]="form().experienceText"
-                  (ngModelChange)="updateField('experienceText', $event)"
-                  spellcheck="false"
-                ></textarea>
               </div>
 
               <div class="field-row">
                 <div class="field">
-                  <label class="field__label" for="field-skills">{{
-                    t()('profile.field_skills')
-                  }}</label>
-                  <input
-                    id="field-skills"
-                    class="field__input"
-                    type="text"
-                    [ngModel]="form().skills.join(', ')"
-                    (ngModelChange)="updateSkills($event)"
-                    [placeholder]="t()('profile.skills_hint')"
-                  />
-                </div>
-                <div class="field">
-                  <label class="field__label" for="field-languages">{{
-                    t()('profile.field_languages')
-                  }}</label>
-                  <input
-                    id="field-languages"
-                    class="field__input"
-                    type="text"
-                    [ngModel]="form().languages.join(', ')"
-                    (ngModelChange)="updateLanguages($event)"
-                    [placeholder]="t()('profile.languages_hint')"
-                  />
-                </div>
-              </div>
-
-              <div class="field field--full" id="field-education">
-                <span class="field__label">{{ t()('profile.field_education') }}</span>
-                <p class="muted">{{ t()('profile.education_hint') }}</p>
-                @if (educationEntries().length > 0) {
-                  <div class="archetype-list">
-                    @for (e of educationEntries(); track $index) {
-                      <div class="archetype-card">
-                        <div class="archetype-card__top">
+                  <div class="collapse-card">
+                    <div
+                      class="collapse-card__head"
+                      role="button"
+                      tabindex="0"
+                      [attr.aria-expanded]="sectionOpen().skills"
+                      (click)="toggleSection('skills')"
+                      (keydown.enter)="toggleSection('skills')"
+                      (keydown.space)="toggleSection('skills'); $event.preventDefault()"
+                    >
+                      <span class="collapse-card__title">{{ t()('profile.section_skills') }}</span>
+                      <span class="collapse-card__summary">
+                        {{
+                          form().skills.length
+                            ? t()('profile.summary_skills').replace(
+                                '{count}',
+                                form().skills.length + ''
+                              )
+                            : t()('profile.summary_empty')
+                        }}
+                      </span>
+                      <lucide-icon
+                        [img]="chevronIcon"
+                        [size]="17"
+                        class="chevron"
+                        [class.chevron--open]="sectionOpen().skills"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    @if (sectionOpen().skills) {
+                      <div class="collapse-card__body">
+                        <div class="chip-input">
+                          @for (s of form().skills; track $index) {
+                            <span class="skill-chip">
+                              {{ s }}
+                              <button
+                                type="button"
+                                class="skill-chip__x"
+                                (click)="removeSkillChip($index)"
+                                [attr.aria-label]="t()('profile.remove_skill')"
+                              >
+                                <lucide-icon [img]="removeIcon" [size]="12" aria-hidden="true" />
+                              </button>
+                            </span>
+                          }
                           <input
-                            class="archetype-input"
+                            id="field-skills"
+                            class="chip-input__field"
                             type="text"
-                            [ngModel]="e.title"
-                            (ngModelChange)="updateEducation($index, 'title', $event)"
-                            [placeholder]="t()('profile.education_title_hint')"
-                            [attr.aria-label]="t()('profile.education_title')"
-                          />
-                          <button
-                            class="btn-ghost"
-                            type="button"
-                            (click)="removeEducation($index)"
-                            [attr.aria-label]="t()('profile.remove_education')"
-                          >
-                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                          </button>
-                        </div>
-                        <div class="archetype-card__top">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.institution"
-                            (ngModelChange)="updateEducation($index, 'institution', $event)"
-                            [placeholder]="t()('profile.education_institution_hint')"
-                            [attr.aria-label]="t()('profile.education_institution')"
-                          />
-                        </div>
-                        <div class="archetype-card__top">
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.startDate"
-                            (ngModelChange)="updateEducation($index, 'startDate', $event)"
-                            [placeholder]="t()('profile.education_start_hint')"
-                            [attr.aria-label]="t()('profile.education_start')"
-                          />
-                          <input
-                            class="archetype-input"
-                            type="text"
-                            [ngModel]="e.endDate"
-                            (ngModelChange)="updateEducation($index, 'endDate', $event)"
-                            [placeholder]="t()('profile.education_end_hint')"
-                            [attr.aria-label]="t()('profile.education_end')"
+                            (keydown.enter)="addSkillChip($event)"
+                            [placeholder]="t()('profile.skills_add_hint')"
+                            [attr.aria-label]="t()('profile.field_skills')"
                           />
                         </div>
                       </div>
                     }
                   </div>
-                }
-                <button class="btn-dashed" type="button" (click)="addEducation()">
-                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                  {{ t()('profile.add_education') }}
-                </button>
+                </div>
+                <div class="field" id="field-languages">
+                  <div class="collapse-card">
+                    <div
+                      class="collapse-card__head"
+                      role="button"
+                      tabindex="0"
+                      [attr.aria-expanded]="sectionOpen().languages"
+                      (click)="toggleSection('languages')"
+                      (keydown.enter)="toggleSection('languages')"
+                      (keydown.space)="toggleSection('languages'); $event.preventDefault()"
+                    >
+                      <span class="collapse-card__title">{{
+                        t()('profile.section_languages')
+                      }}</span>
+                      <span class="collapse-card__summary">
+                        {{
+                          languageEntries().length
+                            ? t()('profile.summary_languages').replace(
+                                '{count}',
+                                languageEntries().length + ''
+                              )
+                            : t()('profile.summary_empty')
+                        }}
+                      </span>
+                      <lucide-icon
+                        [img]="chevronIcon"
+                        [size]="17"
+                        class="chevron"
+                        [class.chevron--open]="sectionOpen().languages"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    @if (sectionOpen().languages) {
+                      <div class="collapse-card__body">
+                        @if (languageEntries().length > 0) {
+                          <div class="lang-list">
+                            @for (l of languageEntries(); track $index) {
+                              <div class="lang-row">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="l.language"
+                                  (ngModelChange)="updateLanguageField($index, 'language', $event)"
+                                  [placeholder]="t()('profile.lang_name')"
+                                  [attr.aria-label]="t()('profile.lang_name')"
+                                />
+                                <select
+                                  class="archetype-fit"
+                                  [ngModel]="l.level"
+                                  (ngModelChange)="updateLanguageField($index, 'level', $event)"
+                                  [attr.aria-label]="t()('profile.lang_level')"
+                                >
+                                  @for (lvl of languageLevels; track lvl) {
+                                    <option [value]="lvl">
+                                      {{ lvl || t()('profile.lang_level_none') }}
+                                    </option>
+                                  }
+                                </select>
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeLanguage($index)"
+                                  [attr.aria-label]="t()('profile.remove_language')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <button class="btn-dashed" type="button" (click)="addLanguage()">
+                          <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                          {{ t()('profile.add_language') }}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="field field--full" id="field-education">
+                <div class="collapse-card">
+                  <div
+                    class="collapse-card__head"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-expanded]="sectionOpen().education"
+                    (click)="toggleSection('education')"
+                    (keydown.enter)="toggleSection('education')"
+                    (keydown.space)="toggleSection('education'); $event.preventDefault()"
+                  >
+                    <span class="collapse-card__title">{{ t()('profile.section_education') }}</span>
+                    <span class="collapse-card__summary">
+                      {{
+                        educationEntries().length
+                          ? t()('profile.summary_education').replace(
+                              '{count}',
+                              educationEntries().length + ''
+                            )
+                          : t()('profile.summary_empty')
+                      }}
+                    </span>
+                    <lucide-icon
+                      [img]="chevronIcon"
+                      [size]="17"
+                      class="chevron"
+                      [class.chevron--open]="sectionOpen().education"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  @if (sectionOpen().education) {
+                    <div class="collapse-card__body">
+                      <p class="muted">{{ t()('profile.education_hint') }}</p>
+                      @if (educationEntries().length > 0) {
+                        <div class="archetype-list">
+                          @for (e of educationEntries(); track $index) {
+                            <div class="archetype-card">
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.title"
+                                  (ngModelChange)="updateEducation($index, 'title', $event)"
+                                  [placeholder]="t()('profile.education_title_hint')"
+                                  [attr.aria-label]="t()('profile.education_title')"
+                                />
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeEducation($index)"
+                                  [attr.aria-label]="t()('profile.remove_education')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.institution"
+                                  (ngModelChange)="updateEducation($index, 'institution', $event)"
+                                  [placeholder]="t()('profile.education_institution_hint')"
+                                  [attr.aria-label]="t()('profile.education_institution')"
+                                />
+                              </div>
+                              <div class="archetype-card__top">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.startDate"
+                                  (ngModelChange)="updateEducation($index, 'startDate', $event)"
+                                  [placeholder]="t()('profile.education_start_hint')"
+                                  [attr.aria-label]="t()('profile.education_start')"
+                                />
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="e.endDate"
+                                  (ngModelChange)="updateEducation($index, 'endDate', $event)"
+                                  [placeholder]="t()('profile.education_end_hint')"
+                                  [attr.aria-label]="t()('profile.education_end')"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                      <button class="btn-dashed" type="button" (click)="addEducation()">
+                        <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                        {{ t()('profile.add_education') }}
+                      </button>
+                    </div>
+                  }
+                </div>
               </div>
             </div>
           } @else {
@@ -443,6 +746,71 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
                 <span class="scaffold__line">## Experience &nbsp;&nbsp;### Role, Company</span>
                 <span class="scaffold__line">## Skills · Education · Languages</span>
               </div>
+              <div class="raw-parse">
+                <button
+                  appButton
+                  variant="secondary"
+                  size="md"
+                  [disabled]="parsing() || !fullMd().trim()"
+                  (click)="parseRawText()"
+                >
+                  <lucide-icon [img]="sparklesIcon" [size]="15" aria-hidden="true" />
+                  {{ parsing() ? t()('profile.raw_parsing') : t()('profile.raw_parse_btn') }}
+                </button>
+                <span class="field__hint">{{ t()('profile.raw_parse_desc') }}</span>
+                @if (parseStatus()) {
+                  <span class="status" [class.status--error]="parseError()">{{
+                    parseStatus()
+                  }}</span>
+                }
+              </div>
+              @if (parsePreview(); as pv) {
+                <div class="parse-preview">
+                  <p class="parse-preview__title">{{ t()('profile.parse_preview_title') }}</p>
+                  <div class="parse-preview__grid">
+                    @if (pv.name) {
+                      <span>{{ pv.name }}</span>
+                    }
+                    @if (pv.title) {
+                      <span>{{ pv.title }}</span>
+                    }
+                    @if (pv.location) {
+                      <span>{{ pv.location }}</span>
+                    }
+                    @if (pv.email) {
+                      <span>{{ pv.email }}</span>
+                    }
+                    @if (pv.phone) {
+                      <span>{{ pv.phone }}</span>
+                    }
+                    @if (pv.linkedin) {
+                      <span>{{ pv.linkedin }}</span>
+                    }
+                  </div>
+                  <p class="muted">
+                    {{ pv.experience?.length || 0 }} · {{ pv.skills?.length || 0 }} ·
+                    {{ pv.languages?.length || 0 }} · {{ pv.education?.length || 0 }}
+                  </p>
+                  @if (pv.lowConfidenceNotes?.length) {
+                    <div class="parse-preview__notes">
+                      <span class="parse-preview__notes-title">{{
+                        t()('profile.parse_notes_title')
+                      }}</span>
+                      @for (n of pv.lowConfidenceNotes; track $index) {
+                        <span>{{ n }}</span>
+                      }
+                    </div>
+                  }
+                  <div class="parse-preview__actions">
+                    <button appButton variant="primary" size="sm" (click)="applyParsedProfile()">
+                      {{ t()('profile.parse_apply_btn') }}
+                    </button>
+                    <button appButton variant="secondary" size="sm" (click)="discardParse()">
+                      {{ t()('profile.parse_discard_btn') }}
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           }
           @if (dirty()) {
@@ -795,6 +1163,79 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         font-size: var(--text-xs);
         color: var(--warning);
         margin: 0;
+      }
+
+      .raw-parse {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+      .parse-preview {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--surface-2);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+      }
+      .parse-preview__title {
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        margin: 0;
+      }
+      .parse-preview__grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .parse-preview__notes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: var(--space-3);
+        font-size: var(--text-xs);
+        color: var(--warning);
+        background: var(--warning-tint);
+        border-radius: var(--radius-input);
+      }
+      .parse-preview__notes-title {
+        font-weight: var(--weight-medium);
+      }
+      .parse-preview__actions {
+        display: flex;
+        gap: var(--space-3);
+      }
+
+      .collapse-card {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        background: var(--surface-1);
+        overflow: hidden;
+      }
+      .collapse-card__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        cursor: pointer;
+      }
+      .collapse-card__title {
+        font-weight: var(--weight-medium);
+        color: var(--text-primary);
+        font-size: var(--text-sm);
+      }
+      .collapse-card__summary {
+        flex: 1;
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-tertiary);
+      }
+      .collapse-card__body {
+        padding: 0 var(--space-4) var(--space-4);
       }
 
       .ai-tools {
@@ -1168,6 +1609,50 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
         font-family: var(--font-mono);
         font-size: var(--text-sm);
       }
+      .chip-input {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
+        padding: var(--space-2);
+        min-height: 38px;
+        background: var(--surface-sunken);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-input);
+      }
+      .chip-input__field {
+        flex: 1;
+        min-width: 120px;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-primary);
+      }
+      .skill-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 2px var(--space-2);
+        font-size: var(--text-xs);
+        color: var(--text-primary);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-badge);
+      }
+      .skill-chip__x {
+        display: inline-flex;
+        align-items: center;
+        border: none;
+        background: none;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        padding: 0;
+      }
+      .skill-chip__x:hover {
+        color: var(--danger);
+      }
       .field__hint {
         margin: 0 0 var(--space-1);
         font-size: var(--text-2xs);
@@ -1182,6 +1667,27 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
       .field__hint--inline {
         margin: 0;
         font-family: var(--font-mono);
+      }
+      .exp-bullets {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding-left: var(--space-4);
+      }
+      .exp-bullet-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+      .lang-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+      .lang-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
       }
     `,
   ],
@@ -1206,6 +1712,7 @@ export class ProfileComponent implements OnInit {
   protected readonly chevronIcon = ChevronDown;
   protected readonly unsavedIcon = CircleDot;
   protected readonly staleIcon = TriangleAlert;
+  protected readonly sparklesIcon = Sparkles;
 
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
@@ -1216,6 +1723,11 @@ export class ProfileComponent implements OnInit {
    * string, but the row must stay editable. Re-seeded whenever the form is
    * reparsed (load, leaving raw mode). */
   readonly educationEntries = signal<EducationEntry[]>([]);
+  /** Structured mirror of `form().experienceText`, same rationale as `educationEntries`. */
+  readonly experienceEntries = signal<ExperienceEntry[]>([]);
+  /** Structured mirror of `form().languages`, same rationale as `educationEntries`. */
+  readonly languageEntries = signal<LanguageEntry[]>([]);
+  protected readonly languageLevels = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'];
   readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
@@ -1224,6 +1736,7 @@ export class ProfileComponent implements OnInit {
   readonly saving = signal(false);
   readonly scoring = signal(false);
   readonly pitching = signal(false);
+  readonly parsing = signal(false);
 
   readonly saveStatus = signal('');
   readonly saveError = signal(false);
@@ -1231,7 +1744,18 @@ export class ProfileComponent implements OnInit {
   readonly scoreError = signal(false);
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
+  readonly parsePreview = signal<ParsedProfile | null>(null);
+  readonly parseStatus = signal('');
+  readonly parseError = signal(false);
   readonly scoringOpen = signal(true);
+  readonly sectionOpen = signal<
+    Record<'experience' | 'skills' | 'languages' | 'education', boolean>
+  >({
+    experience: true,
+    skills: true,
+    languages: true,
+    education: true,
+  });
 
   readonly archetypesDirty = computed(
     () =>
@@ -1282,6 +1806,8 @@ export class ProfileComponent implements OnInit {
       this.fullMd.set(p?.fullMd ?? '');
       this.form.set(parseProfileMd(p?.fullMd ?? ''));
       this.educationEntries.set(parseEducationEntries(this.form().education));
+      this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
+      this.languageEntries.set(parseLanguageEntries(this.form().languages));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
       await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
@@ -1293,11 +1819,27 @@ export class ProfileComponent implements OnInit {
       this.toast.error(this.t()('profile.load_failed').replace('{error}', String(e)));
     } finally {
       this.loading.set(false);
+      this.seedSectionOpen();
     }
   }
 
   toggleScoring(): void {
     this.scoringOpen.update((v) => !v);
+  }
+
+  toggleSection(key: 'experience' | 'skills' | 'languages' | 'education'): void {
+    this.sectionOpen.update((s) => ({ ...s, [key]: !s[key] }));
+  }
+
+  /** Collapse a section on load/seed when it already has content; leave empty
+   * sections expanded so they invite filling. */
+  private seedSectionOpen(): void {
+    this.sectionOpen.set({
+      experience: this.experienceEntries().length === 0,
+      skills: this.form().skills.length === 0,
+      languages: this.languageEntries().length === 0,
+      education: this.educationEntries().length === 0,
+    });
   }
 
   /** Trims to match the input generateScoringProfile hashes, or the two hashes never compare equal. */
@@ -1351,24 +1893,42 @@ export class ProfileComponent implements OnInit {
     this.syncMdFromForm();
   }
 
-  updateSkills(value: string): void {
+  addSkillChip(event: Event): void {
+    event.preventDefault();
+    const input = event.target as HTMLInputElement;
+    const value = input.value.trim();
+    if (!value) return;
+    input.value = '';
+    if (this.form().skills.includes(value)) return;
+    this.updateField('skills', [...this.form().skills, value]);
+  }
+
+  removeSkillChip(index: number): void {
     this.updateField(
       'skills',
-      value
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      this.form().skills.filter((_, i) => i !== index),
     );
   }
 
-  updateLanguages(value: string): void {
-    this.updateField(
-      'languages',
-      value
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+  addLanguage(): void {
+    this.languageEntries.update((list) => [...list, { ...EMPTY_LANGUAGE_ENTRY }]);
+    this.syncLanguages();
+  }
+
+  removeLanguage(index: number): void {
+    this.languageEntries.update((list) => list.filter((_, i) => i !== index));
+    this.syncLanguages();
+  }
+
+  updateLanguageField(index: number, field: keyof LanguageEntry, value: string): void {
+    this.languageEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
     );
+    this.syncLanguages();
+  }
+
+  private syncLanguages(): void {
+    this.updateField('languages', serializeLanguageEntries(this.languageEntries()));
   }
 
   toggleRawMode(): void {
@@ -1376,6 +1936,9 @@ export class ProfileComponent implements OnInit {
       // leaving raw → re-parse edited markdown back into fields
       this.form.set(parseProfileMd(this.fullMd()));
       this.educationEntries.set(parseEducationEntries(this.form().education));
+      this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
+      this.languageEntries.set(parseLanguageEntries(this.form().languages));
+      this.seedSectionOpen();
     } else {
       this.syncMdFromForm();
     }
@@ -1422,6 +1985,60 @@ export class ProfileComponent implements OnInit {
    * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
   private syncEducation(): void {
     this.updateField('education', serializeEducationEntries(this.educationEntries()));
+  }
+
+  addExperience(): void {
+    this.experienceEntries.update((list) => [...list, { ...EMPTY_EXPERIENCE_ENTRY, bullets: [] }]);
+    this.syncExperience();
+  }
+
+  removeExperience(index: number): void {
+    this.experienceEntries.update((list) => list.filter((_, i) => i !== index));
+    this.syncExperience();
+  }
+
+  updateExperienceField(
+    index: number,
+    field: Exclude<keyof ExperienceEntry, 'bullets'>,
+    value: string,
+  ): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
+    );
+    this.syncExperience();
+  }
+
+  addExperienceBullet(index: number): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) => (i === index ? { ...e, bullets: [...e.bullets, ''] } : e)),
+    );
+    this.syncExperience();
+  }
+
+  removeExperienceBullet(index: number, bulletIndex: number): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) =>
+        i === index ? { ...e, bullets: e.bullets.filter((_, bi) => bi !== bulletIndex) } : e,
+      ),
+    );
+    this.syncExperience();
+  }
+
+  updateExperienceBullet(index: number, bulletIndex: number, value: string): void {
+    this.experienceEntries.update((list) =>
+      list.map((e, i) =>
+        i === index
+          ? { ...e, bullets: e.bullets.map((b, bi) => (bi === bulletIndex ? value : b)) }
+          : e,
+      ),
+    );
+    this.syncExperience();
+  }
+
+  /** Folds the structured entries back into the `experienceText` string (and thus
+   * `fullMd`). Blank entries serialize to nothing, so the string stays clean. */
+  private syncExperience(): void {
+    this.updateField('experienceText', serializeExperienceEntries(this.experienceEntries()));
   }
 
   async save(): Promise<void> {
@@ -1566,5 +2183,130 @@ export class ProfileComponent implements OnInit {
     } finally {
       this.pitching.set(false);
     }
+  }
+
+  /** Runs the `profile-import` skill against the raw markdown and stashes the
+   * tolerant result in `parsePreview` for the user to review - never applies
+   * automatically. */
+  async parseRawText(): Promise<void> {
+    const text = this.fullMd().trim();
+    if (!text) {
+      this.parseStatus.set(this.t()('profile.parse_empty_hint'));
+      return;
+    }
+    const s = this.settings();
+    if (!s) return;
+    this.parsing.set(true);
+    this.parseStatus.set('');
+    this.parseError.set(false);
+    try {
+      const lang = s.defaultDocLanguage ?? 'en';
+      const rendered = await this.ai.renderSkill('profile-import', {
+        profile_text: text,
+        language: lang,
+      });
+      const res = await this.ai.run({
+        mode: s.aiMode,
+        provider: s.provider,
+        model: s.economyModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language: lang,
+      });
+      const parsed = this.extractParsed(res.text);
+      if (!parsed) {
+        this.parseStatus.set(this.t()('profile.parse_failed'));
+        this.parseError.set(true);
+        return;
+      }
+      this.parsePreview.set(parsed);
+    } catch (e) {
+      this.parseStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
+      this.parseError.set(true);
+      this.toast.error(this.t()('profile.parse_failed'));
+    } finally {
+      this.parsing.set(false);
+    }
+  }
+
+  /** Same tolerant fence-stripping as `parseScoringJson`: strips ```json fences,
+   * parses, and returns null on anything that is not a JSON object - never
+   * throws, so a bad AI response just fails the parse instead of clearing the form. */
+  private extractParsed(raw: string): ParsedProfile | null {
+    const cleaned = raw
+      .replace(/^\s*```(?:json)?\s*/i, '')
+      .replace(/\s*```\s*$/, '')
+      .trim();
+    try {
+      const obj = JSON.parse(cleaned);
+      return obj && typeof obj === 'object' && !Array.isArray(obj) ? (obj as ParsedProfile) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Folds the previewed parse into `ProfileForm` + the section signals, then
+   * resyncs `fullMd` and switches to the Form tab. Nulls from the AI (e.g.
+   * `endDate: null` for an ongoing role) become '' via `str`, matching what
+   * every section entry type already expects. */
+  applyParsedProfile(): void {
+    const p = this.parsePreview();
+    if (!p) return;
+    const str = (v: string | null | undefined) => (v ?? '').trim();
+
+    this.form.update((f) => ({
+      ...f,
+      name: str(p.name) || f.name,
+      title: str(p.title) || f.title,
+      location: str(p.location) || f.location,
+      email: str(p.email) || f.email,
+      phone: str(p.phone) || f.phone,
+      website: str(p.website) || f.website,
+      linkedin: str(p.linkedin) || f.linkedin,
+    }));
+
+    /* Scalars keep the existing value when the parse is blank; the structured
+     * sections (experience/skills/languages/education) are replaced wholesale -
+     * this is an explicit "apply what the preview shows" action, and the user
+     * reviewed the preview before clicking Apply. */
+    this.experienceEntries.set(
+      (p.experience ?? []).map((e) => ({
+        role: str(e.role),
+        company: str(e.company),
+        location: str(e.location),
+        startDate: str(e.startDate),
+        endDate: str(e.endDate),
+        bullets: (e.bullets ?? []).map((b) => b.trim()).filter(Boolean),
+      })),
+    );
+    this.languageEntries.set(
+      (p.languages ?? [])
+        .map((l) => ({ language: str(l.language), level: str(l.level) }))
+        .filter((l) => l.language),
+    );
+    this.educationEntries.set(
+      (p.education ?? []).map((e) => ({
+        title: str(e.title),
+        institution: str(e.institution),
+        startDate: str(e.startDate),
+        endDate: str(e.endDate),
+      })),
+    );
+
+    // Fold section signals + scalar fields back into fullMd via updateField.
+    this.updateField('skills', (p.skills ?? []).map((sk) => sk.trim()).filter(Boolean));
+    this.syncExperience();
+    this.syncLanguages();
+    this.syncEducation();
+    this.syncMdFromForm();
+
+    this.parsePreview.set(null);
+    this.seedSectionOpen();
+    this.rawMode.set(false); // switch to Form tab
+  }
+
+  discardParse(): void {
+    this.parsePreview.set(null);
+    this.parseStatus.set('');
   }
 }

@@ -14,6 +14,9 @@ import {
   parseLanguageEntries,
   serializeLanguageEntries,
   EMPTY_LANGUAGE_ENTRY,
+  parseCompensation,
+  serializeCompensation,
+  EMPTY_COMPENSATION,
 } from './profile-markdown';
 
 const fullForm: ProfileForm = {
@@ -28,6 +31,10 @@ const fullForm: ProfileForm = {
   skills: ['React', 'TypeScript', 'Angular'],
   education: 'BSc Computer Science',
   languages: ['English', 'German'],
+  compMin: '',
+  compMax: '',
+  compCurrency: '',
+  compPeriod: '',
   notes: '',
   other: '',
 };
@@ -436,6 +443,71 @@ describe('profile-markdown', () => {
           { language: '', level: 'C1' },
         ]),
       ).toEqual(['French (A2)', 'Polish']);
+    });
+  });
+
+  describe('compensation', () => {
+    it('round-trips a full compensation line', () => {
+      const c = { min: '85000', max: '110000', currency: 'EUR', period: 'year' };
+      expect(serializeCompensation(c)).toBe('85000 - 110000 EUR per year');
+      expect(parseCompensation(serializeCompensation(c))).toEqual(c);
+    });
+
+    it('parses a min-only value', () => {
+      expect(parseCompensation('90000 USD per year')).toEqual({
+        min: '90000',
+        max: '',
+        currency: 'USD',
+        period: 'year',
+      });
+    });
+
+    it('parses numbers without a currency or period', () => {
+      expect(parseCompensation('85000 - 110000')).toEqual({
+        min: '85000',
+        max: '110000',
+        currency: '',
+        period: '',
+      });
+    });
+
+    it('parses currency symbols and month period', () => {
+      expect(parseCompensation('5000 EUR per month')).toEqual({
+        min: '5000',
+        max: '',
+        currency: 'EUR',
+        period: 'month',
+      });
+    });
+
+    it('serializes partial values without stray separators', () => {
+      expect(serializeCompensation({ min: '80000', max: '', currency: 'EUR', period: '' })).toBe(
+        '80000 EUR',
+      );
+      expect(serializeCompensation({ min: '', max: '', currency: 'USD', period: 'year' })).toBe(
+        'USD per year',
+      );
+    });
+
+    it('serializes fully-empty compensation to an empty string', () => {
+      expect(serializeCompensation({ ...EMPTY_COMPENSATION })).toBe('');
+    });
+  });
+
+  describe('compensation in profile markdown', () => {
+    it('round-trips a Compensation section through parse/serialize', () => {
+      const md = '# Jane\n\n## Compensation\n85000 - 110000 EUR per year\n';
+      const form = parseProfileMd(md);
+      expect(form.compMin).toBe('85000');
+      expect(form.compMax).toBe('110000');
+      expect(form.compCurrency).toBe('EUR');
+      expect(form.compPeriod).toBe('year');
+      expect(serializeProfileForm(form)).toContain('## Compensation\n85000 - 110000 EUR per year');
+    });
+
+    it('omits the Compensation section when unset', () => {
+      const form = parseProfileMd('# Jane\n');
+      expect(serializeProfileForm(form)).not.toContain('## Compensation');
     });
   });
 });

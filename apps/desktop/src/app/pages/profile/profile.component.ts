@@ -646,7 +646,7 @@ interface ParsedProfile {
                     (keydown.enter)="toggleSection('education')"
                     (keydown.space)="toggleSection('education'); $event.preventDefault()"
                   >
-                    <span class="collapse-card__title">{{ t()('profile.field_education') }}</span>
+                    <span class="collapse-card__title">{{ t()('profile.section_education') }}</span>
                     <span class="collapse-card__summary">
                       {{
                         educationEntries().length
@@ -2265,6 +2265,10 @@ export class ProfileComponent implements OnInit {
       linkedin: str(p.linkedin) || f.linkedin,
     }));
 
+    /* Scalars keep the existing value when the parse is blank; the structured
+     * sections (experience/skills/languages/education) are replaced wholesale -
+     * this is an explicit "apply what the preview shows" action, and the user
+     * reviewed the preview before clicking Apply. */
     this.experienceEntries.set(
       (p.experience ?? []).map((e) => ({
         role: str(e.role),

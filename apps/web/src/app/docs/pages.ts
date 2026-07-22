@@ -311,6 +311,204 @@ export class Privacy {}
 })
 export class Legality {}
 
+/* --------------------------------------------------------- Data and backup */
+@Component({
+  standalone: true,
+  imports: [RouterLink],
+  template: `
+    <h1 class="docs__h1" id="data">Your data: where it lives and how to move it</h1>
+    <p class="docs__lede">
+      Local-first is only a real promise if you can find, copy, and destroy your data yourself. Here
+      is exactly where it is.
+    </p>
+
+    <section class="docs__section">
+      <h2 id="files" class="docs__h2">What is on disk</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>applye.db</strong> - one SQLite file holding your profile, jobs, applications,
+          documents, and every cached AI result. It runs in WAL mode, so you may also see
+          <code>applye.db-wal</code> and <code>applye.db-shm</code> next to it.
+        </li>
+        <li>
+          <strong>API keys</strong> - never in the database. They live in your operating system's
+          keychain / credential manager, under the app identifier <code>dev.applye.app</code>.
+        </li>
+        <li>
+          <strong>Exported documents</strong> - wherever you chose to save them in the native
+          dialog. Applye does not keep a second copy.
+        </li>
+      </ul>
+      <p>The database sits in the standard per-user app-data directory for your OS:</p>
+      <ul class="docs__list">
+        <li><strong>macOS</strong> - <code>~/Library/Application Support/dev.applye.app/</code></li>
+        <li><strong>Windows</strong> - <code>%APPDATA%\\dev.applye.app\\</code></li>
+        <li>
+          <strong>Linux</strong> - <code>~/.local/share/dev.applye.app/</code> (or your
+          <code>$XDG_DATA_HOME</code> equivalent)
+        </li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="backup" class="docs__h2">Backing up and moving machines</h2>
+      <ol class="docs__list docs__list--ol">
+        <li>Quit Applye, so the write-ahead log is checkpointed cleanly.</li>
+        <li>Copy the whole app-data folder, not just the <code>.db</code> file.</li>
+        <li>
+          On the new machine, install Applye, launch it once so the folder exists, quit, and put the
+          copy in place.
+        </li>
+        <li>
+          Re-enter your API key: keychain entries deliberately do not travel with a file copy.
+        </li>
+      </ol>
+      <p>
+        That folder is also the whole answer to "what does a backup tool need to include". Any
+        ordinary encrypted-backup setup covers Applye by covering that directory.
+      </p>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="delete" class="docs__h2">Deleting everything</h2>
+      <p>
+        Settings has a two-step <strong>Delete all data</strong> action: it wipes the local database
+        and removes your keys from the keychain. Deleting your data here is deleting a file - there
+        is no server copy to request, chase, or wait 30 days for. If you prefer, delete the app-data
+        folder by hand; the result is identical.
+      </p>
+      <p>
+        What Applye cannot delete is data your AI provider retained on their side. That is governed
+        by their terms, which is one reason
+        <a routerLink="/docs/ai">bringing your own AI</a> is a deliberate choice rather than a
+        hidden default.
+      </p>
+    </section>
+  `,
+})
+export class DataAndBackup {}
+
+/* --------------------------------------------------------- Troubleshooting */
+@Component({
+  standalone: true,
+  imports: [RouterLink],
+  template: `
+    <h1 class="docs__h1" id="troubleshooting">Troubleshooting &amp; FAQ</h1>
+    <p class="docs__lede">
+      The questions that come up most, answered without marketing. If your problem is not here, it
+      belongs in an issue once the repository is public.
+    </p>
+
+    <section class="docs__section">
+      <h2 id="ai-issues" class="docs__h2">AI actions</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>Every AI button is disabled.</strong> No AI source is connected yet. Open
+          <a routerLink="/docs/guide/settings">Settings</a> and add an API key or bridge a CLI. All
+          0-token features keep working without one.
+        </li>
+        <li>
+          <strong>The provider rejects my key.</strong> Keys are provider-specific: an OpenAI key
+          will not authenticate against Anthropic. Check that the key is active and has credit, then
+          use the test-prompt button to confirm the connection rather than guessing from a failed
+          scoring run.
+        </li>
+        <li>
+          <strong>CLI mode does nothing.</strong> The bridged CLI must be installed, on your PATH,
+          and already logged in. Applye shells out to the tool you already use; it does not manage
+          that tool's session for you.
+        </li>
+        <li>
+          <strong>Scoring returns nothing useful.</strong> Usually the job text was truncated at
+          paste time, or the profile is too thin to compare against. Both are visible: re-open the
+          job to check the parsed description, and check the profile-completeness card on the
+          Dashboard.
+        </li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="cost" class="docs__h2">Cost and repeated calls</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>Why did re-opening a job cost nothing?</strong> Results are cached against a hash
+          of the job text and your scoring profile. Identical inputs never pay twice, and cached
+          results are labelled as such.
+        </li>
+        <li>
+          <strong>Why is a job suddenly marked stale?</strong> You edited your profile after that
+          job was scored. Nothing re-runs automatically; you decide whether the change is worth a
+          fresh call.
+        </li>
+        <li>
+          <strong>How much does a real search cost?</strong> Cents, not a subscription - because
+          parsing, filtering, legitimacy tiers, badges, and analytics are all plain code. See
+          <a routerLink="/docs/judgement">code vs LLM judgement</a>.
+        </li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="discover-issues" class="docs__h2">Discover</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>A scan returned nothing.</strong> Your keyword filters (derived from target roles)
+          and geographic scope are applied locally, and the summary strip reports how many results
+          were filtered out. Widen the scope in Settings, or edit the per-source keywords.
+        </li>
+        <li>
+          <strong>No fit badges appear.</strong> You have no target roles defined. Applye shows no
+          badge rather than a guessed one - add them in
+          <a routerLink="/docs/guide/profile">your profile</a>.
+        </li>
+        <li>
+          <strong>Why is LinkedIn / Indeed / StepStone missing?</strong> Deliberate. Applye reads
+          public APIs and feeds only, and does not scrape closed boards or bypass logins. See
+          <a routerLink="/docs/legality">source legality</a>.
+        </li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="docs-issues" class="docs__h2">Documents and export</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>DOCX or PDF?</strong> DOCX when a portal will parse the file, PDF when a human
+          reads it directly. The editor warns about fonts and photos that ATS parsers handle badly.
+        </li>
+        <li>
+          <strong>My tailored CV is not in the library.</strong> Drafts stay hidden until you export
+          them or mark the application as applied. Finish the wizard and it appears, labelled by
+          company and role.
+        </li>
+        <li>
+          <strong>I lost an unfinished tailoring session.</strong> You did not - the Dashboard's
+          "Resume tailoring" card reopens it at the exact step.
+        </li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="general" class="docs__h2">General</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>Will it apply for me?</strong> No, and it never will. That is the line the whole
+          product is built around - see <a routerLink="/manifesto">the manifesto</a>.
+        </li>
+        <li>
+          <strong>Where is my data?</strong> One local file, documented in
+          <a routerLink="/docs/data">your data</a>.
+        </li>
+        <li>
+          <strong>Is there an account or a paid tier?</strong> Neither. The only thing you might pay
+          for is your own AI usage, billed by your provider.
+        </li>
+      </ul>
+    </section>
+  `,
+})
+export class Troubleshooting {}
+
 /* ------------------------------------------------------------------ Status */
 @Component({
   standalone: true,

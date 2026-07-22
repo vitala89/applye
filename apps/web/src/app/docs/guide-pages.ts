@@ -105,6 +105,102 @@ import { RouterLink } from '@angular/router';
 })
 export class GuideTour {}
 
+/* --------------------------------------------------------------- Dashboard */
+@Component({
+  standalone: true,
+  imports: [RouterLink],
+  template: `
+    <h1 class="docs__h1" id="dashboard">The Dashboard</h1>
+    <p class="docs__lede">
+      The screen you land on. It answers one question - what needs you today - and nothing else. All
+      of it is computed from your local database at 0 tokens.
+    </p>
+
+    <figure class="docs__media">
+      <div class="docs__mediabox">
+        <span class="docs__mediatag">SCREENSHOT</span>
+        <p>
+          PLACEHOLDER: guide/dashboard-full.png - the Dashboard with all four KPI tiles populated,
+          three or four "needs attention" cards of different kinds, and an upcoming interview in the
+          right column. Dark theme, 1440px wide window.
+        </p>
+      </div>
+      <figcaption>The Dashboard on a working day.</figcaption>
+    </figure>
+
+    <section class="docs__section">
+      <h2 id="kpis" class="docs__h2">The four counters</h2>
+      <ul class="docs__list">
+        <li><strong>Active applications</strong> - everything still alive in the pipeline.</li>
+        <li><strong>Upcoming interviews</strong> - scheduled rounds ahead of today.</li>
+        <li>
+          <strong>Overdue follow-ups</strong> - applications past their follow-up date with no reply
+          recorded.
+        </li>
+        <li><strong>Offers</strong> - the ones that made it all the way.</li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="attention" class="docs__h2">Needs attention</h2>
+      <p>
+        The queue below the counters is generated, not curated. Each card states the fact and offers
+        exactly one action:
+      </p>
+      <ul class="docs__list">
+        <li>
+          <strong>Follow up with {{ '{' }}company{{ '}' }}</strong> - shows how many days overdue,
+          and drafts a short follow-up you copy and send yourself.
+        </li>
+        <li>
+          <strong>Resume tailoring</strong> - an apply-wizard session you left unfinished, reopened
+          at the exact step you stopped on.
+        </li>
+        <li>
+          <strong>Interview in N days</strong> - jumps into
+          <a routerLink="/docs/guide/insights">interview prep</a> for that application.
+        </li>
+        <li>
+          <strong>Score is stale</strong> - you edited your profile after this job was scored, so
+          the old verdict no longer reflects your profile. Re-score deliberately, or ignore it.
+        </li>
+        <li>
+          <strong>Elevator pitch is out of date</strong> - same idea, for the pitch on your profile.
+        </li>
+        <li>
+          <strong>Profile N% complete</strong> - the missing fields, with a link to fill them in.
+        </li>
+      </ul>
+      <p>
+        When there is genuinely nothing to do, the queue says so instead of inventing busywork. On a
+        fresh install it shows two onboarding cards instead: complete your profile, and add your
+        first job.
+      </p>
+      <figure class="docs__media">
+        <div class="docs__mediabox">
+          <span class="docs__mediatag">SCREENSHOT</span>
+          <p>
+            PLACEHOLDER: guide/dashboard-empty.png - the "You're all caught up" empty state, so the
+            docs show both the busy and the quiet day.
+          </p>
+        </div>
+        <figcaption>A quiet day says so.</figcaption>
+      </figure>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="quick" class="docs__h2">Quick actions</h2>
+      <p>
+        <strong>Paste job</strong> starts <a routerLink="/docs/guide/add-job">adding a job</a> from
+        anywhere, and <strong>Import CV</strong> seeds your
+        <a routerLink="/docs/guide/profile">profile</a> from an existing PDF or DOCX rather than
+        making you type it out.
+      </p>
+    </section>
+  `,
+})
+export class GuideDashboard {}
+
 /* ----------------------------------------------------------------- Profile */
 @Component({
   standalone: true,
@@ -118,30 +214,81 @@ export class GuideTour {}
 
     <section class="docs__section">
       <h2 id="fill" class="docs__h2">What to fill in</h2>
-      <ol class="docs__list docs__list--ol">
-        <li>
-          <strong>Contact details</strong> - name, email, phone, location; these flow into generated
-          documents.
-        </li>
-        <li>
-          <strong>Experience</strong> - free text, Markdown supported (the label says so in the
-          app). This is the raw material tailoring works from, so specifics beat adjectives.
-        </li>
-        <li>
-          <strong>Target roles</strong> - each card is a role name, a fit note, and when to pitch
-          it. Discover also derives its default keyword filters from these.
-        </li>
-      </ol>
+      <p>
+        The profile is a structured form: <strong>Experience</strong>, <strong>Skills</strong>,
+        <strong>Languages</strong> and <strong>Education</strong> are separate sections with real
+        fields, not one free-text box. Contact details (name, email, phone, location) flow straight
+        into generated documents, so fill them once and correctly.
+      </p>
+      <p>
+        Specifics beat adjectives everywhere in this form. "Cut p95 checkout latency from 900ms to
+        260ms" is material a tailoring pass can reuse; "results-driven professional" is not.
+      </p>
       <figure class="docs__media">
         <div class="docs__mediabox">
           <span class="docs__mediatag">SCREENSHOT</span>
           <p>
-            PLACEHOLDER: guide/profile-filled.png - the Profile page with contact block, experience
-            field, and two target-role cards visible.
+            PLACEHOLDER: guide/profile-filled.png - the Profile page in Form mode: contact block,
+            two experience entries expanded, the skills and languages sections visible.
           </p>
         </div>
-        <figcaption>A filled profile with target-role cards.</figcaption>
+        <figcaption>The structured profile form.</figcaption>
       </figure>
+      <p>
+        If you would rather not type it all: paste your existing CV text and hit
+        <strong>Parse text</strong>. One AI call turns free text into structured fields and shows
+        you a <em>Recognized profile</em> preview, with a "please double-check" list of anything it
+        was unsure about. Nothing is written until you press <strong>Apply to form</strong>; you can
+        discard the whole thing instead. Importing a PDF or DOCX CV outright is also possible from
+        the Dashboard's Import CV action.
+      </p>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="target-roles" class="docs__h2">Target roles (archetypes)</h2>
+      <p>
+        Up to five short descriptions of positions you would actually accept. Each one has three
+        parts:
+      </p>
+      <ul class="docs__list">
+        <li><strong>Role</strong> - the name, as concrete as you can make it.</li>
+        <li>
+          <strong>Fit</strong> - <em>primary</em>, <em>secondary</em>, or <em>adjacent</em>. This is
+          the tier that shows up as a badge on every Discover row.
+        </li>
+        <li>
+          <strong>When it fits</strong> - the situation in which you would pitch yourself as this.
+        </li>
+      </ul>
+      <p>
+        Target roles do real work at zero token cost: they flag off-target jobs before any AI is
+        called, they feed the archetype-fit badges and the For-you ordering in
+        <a routerLink="/docs/guide/discover">Discover</a>, and they seed Discover's default keyword
+        filters. Matching is anchored on distinctive words, so a generic word like "engineer" alone
+        never produces a match. With no target roles defined, no badge is shown at all rather than a
+        guessed one.
+      </p>
+      <figure class="docs__media">
+        <div class="docs__mediabox">
+          <span class="docs__mediatag">SCREENSHOT</span>
+          <p>
+            PLACEHOLDER: guide/profile-archetypes.png - the Target roles section with three cards:
+            one primary, one secondary, one adjacent, each with its "when it fits" line filled in.
+          </p>
+        </div>
+        <figcaption>Three target roles, three fit tiers.</figcaption>
+      </figure>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="compensation" class="docs__h2">Compensation target</h2>
+      <p>
+        Set your target salary range (gross) and Applye compares every posting that states pay
+        against it, showing one of three badges: <strong>Above your target</strong>,
+        <strong>In your range</strong>, or <strong>Below your target</strong>. Postings with no
+        stated salary say exactly that instead of guessing. The comparison is plain arithmetic - no
+        AI, no tokens.
+      </p>
     </section>
 
     <section class="docs__section">
@@ -439,16 +586,196 @@ export class GuideTailor {}
         <div class="docs__mediabox">
           <span class="docs__mediatag">SCREENSHOT</span>
           <p>
-            PLACEHOLDER: guide/discover-detail.png - the full-screen job detail: hero with match
-            chip, parsed JD blocks, keyword-fit ring sidebar.
+            PLACEHOLDER: guide/discover-detail.png - the full-screen job detail: hero with the
+            archetype-fit badge and salary badge, parsed JD blocks, keyword-fit ring sidebar.
           </p>
         </div>
         <figcaption>Discover's job detail with the fit ring.</figcaption>
       </figure>
     </section>
+
+    <section class="docs__section">
+      <h2 id="badges" class="docs__h2">3. Reading the badges</h2>
+      <p>
+        Every row and every detail hero carries badges that are computed by plain code from your
+        profile - no model is asked, and nothing is invented:
+      </p>
+      <ul class="docs__list">
+        <li>
+          <strong>Archetype fit</strong> - <em>Primary role</em>, <em>Secondary role</em>, or
+          <em>Adjacent role</em>, matched from the
+          <a routerLink="/docs/guide/profile">target roles</a> in your profile. Feed rows match on
+          the job title alone, so the badge appears before the full description is even loaded.
+        </li>
+        <li>
+          <strong>Salary fit</strong> - above, within, or below the compensation range on your
+          profile, and "salary not stated" when the posting says nothing.
+        </li>
+        <li><strong>NEW</strong> for first-seen postings, <strong>SAVED</strong> once saved.</li>
+      </ul>
+      <p>
+        The <strong>For you</strong> section is ordered by that fit tier, and the tier feeds the
+        deterministic 0-token score behind the ordering. If you have not defined any target roles,
+        no badge is shown at all - an honest blank rather than a guess.
+      </p>
+      <figure class="docs__media">
+        <div class="docs__mediabox">
+          <span class="docs__mediatag">SCREENSHOT</span>
+          <p>
+            PLACEHOLDER: guide/discover-badges.png - a close crop of three feed rows showing all
+            three archetype tiers side by side, plus one salary badge and one NEW pill.
+          </p>
+        </div>
+        <figcaption>Three tiers, at a glance.</figcaption>
+      </figure>
+    </section>
   `,
 })
 export class GuideDiscover {}
+
+/* --------------------------------------------------------------- Documents */
+@Component({
+  standalone: true,
+  imports: [RouterLink],
+  template: `
+    <h1 class="docs__h1" id="documents">Documents: your CV and cover-letter library</h1>
+    <p class="docs__lede">
+      Every CV and cover letter Applye touches lives here, in two tabs. This is a real editor, not
+      an export folder: you can build a CV from scratch, import your existing one, restyle it
+      section by section, and export DOCX or PDF.
+    </p>
+
+    <figure class="docs__media">
+      <div class="docs__mediabox">
+        <span class="docs__mediatag">SCREENSHOT</span>
+        <p>
+          PLACEHOLDER: guide/documents-library.png - the Documents page on the CV tab with three or
+          four CVs, one carrying the "Default" badge and one the "Tailored" badge.
+        </p>
+      </div>
+      <figcaption>The library: CV tab and Cover Letter tab.</figcaption>
+    </figure>
+
+    <section class="docs__section">
+      <h2 id="cvs" class="docs__h2">Getting a CV into the library</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>Import CV</strong> - pick a DOCX or PDF. It is read locally, then a single AI call
+          detects the sections. You get a summary of what was found (experience entries, education,
+          skills) plus a "double-check these" list of anything it was unsure about, before it is
+          saved.
+        </li>
+        <li>
+          <strong>Generate baseline</strong> - build a CV from your
+          <a routerLink="/docs/guide/profile">profile</a> for a given market and role archetype. No
+          job description needed.
+        </li>
+        <li>
+          <strong>Tailored CVs</strong> - produced by the
+          <a routerLink="/docs/guide/tailor">apply wizard</a> and filed here automatically, labelled
+          by company and role.
+        </li>
+        <li><strong>Duplicate</strong> - fork any CV before an experiment you might regret.</li>
+      </ul>
+      <p>
+        One CV carries the <strong>Default</strong> badge: that is the one used as the base when
+        nothing else is specified. Drafts stay invisible until you export or mark the application as
+        applied, so the library never fills up with half-finished attempts.
+      </p>
+      <figure class="docs__media">
+        <div class="docs__mediabox">
+          <span class="docs__mediatag">GIF</span>
+          <p>
+            PLACEHOLDER: guide/cv-import.gif - choosing a PDF, the "Reading and parsing…" state, the
+            found-sections summary with the low-confidence list, then "Save to library".
+          </p>
+        </div>
+        <figcaption>Import shows its work before saving.</figcaption>
+      </figure>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="editor" class="docs__h2">The CV editor</h2>
+      <p>A CV is a stack of sections you control individually:</p>
+      <ul class="docs__list">
+        <li>
+          <strong>Sections</strong> - photo, personal details, summary, experience, education,
+          skills, languages. Drag to reorder, or move a section up and down from its menu.
+        </li>
+        <li>
+          <strong>Per-section style</strong> - each section can inherit the common style or override
+          it, with a one-click reset back to common. This is how you get a dense skills block under
+          an airy summary without fighting a template.
+        </li>
+        <li>
+          <strong>Templates</strong> - start from a template, or save your current arrangement as
+          your own named template for the next role.
+        </li>
+        <li>
+          <strong>Photo</strong> - optional, with upload, crop, zoom, and left / centre / right
+          placement. The editor warns you plainly: a photo is standard on German CVs, but ATS
+          parsers in other markets can reject or misread it.
+        </li>
+        <li>
+          <strong>Font warnings</strong> - pick a font an ATS may not read reliably and the editor
+          says so, and names the safe alternatives.
+        </li>
+      </ul>
+      <figure class="docs__media">
+        <div class="docs__mediabox">
+          <span class="docs__mediatag">SCREENSHOT</span>
+          <p>
+            PLACEHOLDER: guide/cv-editor.png - the CV detail view: section list on one side with a
+            drag handle visible, live document preview on the other, one section showing its style
+            override controls.
+          </p>
+        </div>
+        <figcaption>Section-level control, with the preview alongside.</figcaption>
+      </figure>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="cover-letters" class="docs__h2">Cover letters</h2>
+      <p>
+        The Cover Letter tab holds letters as structured fields rather than a blob of text:
+        recipient, company, street, postal code, city, country, date, subject, greeting, numbered
+        body paragraphs, closing, and signature. That is what makes a German
+        <em>Anschreiben</em> come out with the right shape.
+      </p>
+      <ul class="docs__list">
+        <li>
+          <strong>Draft with AI</strong> writes the body from the job and your profile; regenerate
+          any time, or edit a single paragraph by hand.
+        </li>
+        <li>A live word count keeps you honest about length.</li>
+        <li>
+          Letters generated by the apply wizard are linked to their application, so the job page can
+          open the exact letter you sent.
+        </li>
+      </ul>
+    </section>
+
+    <section class="docs__section">
+      <h2 id="export" class="docs__h2">Exporting</h2>
+      <ul class="docs__list">
+        <li>
+          <strong>DOCX</strong> - editable, ATS-safe formatting. Use it when a portal will parse the
+          file.
+        </li>
+        <li>
+          <strong>PDF</strong> - pixel-perfect layout for a human reader, exported exactly as the
+          preview shows.
+        </li>
+      </ul>
+      <p>
+        Both go through the native save dialog, so the file lands where you chose and nowhere else.
+        Deleting a document removes it from the library and cannot be undone - there is no server
+        copy to recover.
+      </p>
+    </section>
+  `,
+})
+export class GuideDocuments {}
 
 /* ------------------------------------------------------- Pipeline & Tracker */
 @Component({

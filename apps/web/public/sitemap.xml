@@ -73,6 +73,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://applye.dev/docs/guide/dashboard</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://applye.dev/docs/guide/profile</loc>
     <lastmod>2026-07-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -98,6 +104,12 @@
   </url>
   <url>
     <loc>https://applye.dev/docs/guide/discover</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://applye.dev/docs/guide/documents</loc>
     <lastmod>2026-07-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -164,6 +176,18 @@
   </url>
   <url>
     <loc>https://applye.dev/docs/privacy</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://applye.dev/docs/data</loc>
+    <lastmod>2026-07-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://applye.dev/docs/troubleshooting</loc>
     <lastmod>2026-07-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

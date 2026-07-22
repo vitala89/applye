@@ -47,11 +47,13 @@ export class DocsLayout {
       title: 'User guide',
       links: [
         { text: 'First run & tour', to: '/docs/guide/tour' },
+        { text: 'The Dashboard', to: '/docs/guide/dashboard' },
         { text: 'Set up your profile', to: '/docs/guide/profile' },
         { text: 'Add your first job', to: '/docs/guide/add-job' },
         { text: 'Score a role', to: '/docs/guide/score' },
         { text: 'Tailor & export PDF', to: '/docs/guide/tailor' },
         { text: 'Discover', to: '/docs/guide/discover' },
+        { text: 'Documents library', to: '/docs/guide/documents' },
         { text: 'Pipeline & Tracker', to: '/docs/guide/track' },
         { text: 'Interviews & Analytics', to: '/docs/guide/insights' },
         { text: 'Settings & AI', to: '/docs/guide/settings' },
@@ -79,6 +81,8 @@ export class DocsLayout {
       title: 'Reference',
       links: [
         { text: 'Privacy & transparency', to: '/docs/privacy' },
+        { text: 'Your data & backup', to: '/docs/data' },
+        { text: 'Troubleshooting & FAQ', to: '/docs/troubleshooting' },
         { text: 'Source legality', to: '/docs/legality' },
         { text: 'Status & roadmap', to: '/docs/status' },
         { text: 'Changelog', to: '/changelog' },

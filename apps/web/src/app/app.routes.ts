@@ -107,6 +107,15 @@ export const appRoutes: Route[] = [
         },
       },
       {
+        path: 'guide/dashboard',
+        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideDashboard),
+        title: 'The Dashboard · Applye Docs',
+        data: {
+          description:
+            'Read the Dashboard: four counters, a generated "needs attention" queue for follow-ups, stale scores and unfinished tailoring, and quick actions.',
+        },
+      },
+      {
         path: 'guide/profile',
         loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideProfile),
         title: 'Set up your profile · Applye Docs',
@@ -149,6 +158,15 @@ export const appRoutes: Route[] = [
         data: {
           description:
             'Read the Discover feed: archetype-fit tier badges, the zero-token score behind the For-you order, and the filters that shape it.',
+        },
+      },
+      {
+        path: 'guide/documents',
+        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideDocuments),
+        title: 'Documents library · Applye Docs',
+        data: {
+          description:
+            'Import, generate, edit and export CVs and cover letters: section-level styling, templates, photo and font ATS warnings, DOCX and PDF output.',
         },
       },
       {
@@ -248,6 +266,24 @@ export const appRoutes: Route[] = [
         data: {
           description:
             'The technical privacy notes: where the database lives, what leaves the machine when you call an AI provider, and how to delete everything.',
+        },
+      },
+      {
+        path: 'data',
+        loadComponent: () => import('./docs/pages').then((m) => m.DataAndBackup),
+        title: 'Your data & backup · Applye Docs',
+        data: {
+          description:
+            'Where Applye stores your database and keys on macOS, Windows and Linux, how to back it up or move machines, and how to delete everything.',
+        },
+      },
+      {
+        path: 'troubleshooting',
+        loadComponent: () => import('./docs/pages').then((m) => m.Troubleshooting),
+        title: 'Troubleshooting & FAQ · Applye Docs',
+        data: {
+          description:
+            'Fixes for the common problems: AI keys and CLI bridging, empty Discover scans, missing fit badges, cached or stale scores, and document export.',
         },
       },
       {

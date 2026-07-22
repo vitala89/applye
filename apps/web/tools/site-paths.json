@@ -13,11 +13,13 @@
     "/blog",
     "/docs",
     "/docs/guide/tour",
+    "/docs/guide/dashboard",
     "/docs/guide/profile",
     "/docs/guide/add-job",
     "/docs/guide/score",
     "/docs/guide/tailor",
     "/docs/guide/discover",
+    "/docs/guide/documents",
     "/docs/guide/track",
     "/docs/guide/insights",
     "/docs/guide/settings",
@@ -29,6 +31,8 @@
     "/docs/scoring",
     "/docs/german",
     "/docs/privacy",
+    "/docs/data",
+    "/docs/troubleshooting",
     "/docs/legality",
     "/docs/status"
   ]

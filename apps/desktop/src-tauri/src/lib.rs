@@ -43,6 +43,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::profile::db_get_profile,
             commands::profile::db_upsert_profile,
+            commands::profile::db_set_profile_photo,
             commands::profile::hash_text,
             commands::archetypes::check_archetype_match,
             commands::scoring::job_paste,

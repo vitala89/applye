@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, PLATFORM_ID } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { ConsentService } from '../analytics/consent.service';
@@ -16,7 +17,9 @@ import { ConsentService } from '../analytics/consent.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    @if (consent.needsDecision()) {
+    <!-- Browser-only: the prerendered HTML must not show a bar to someone who
+         already decided, which would flash away on hydration. -->
+    @if (isBrowser && consent.needsDecision()) {
       <aside class="consent" role="region" aria-label="Analytics consent">
         <div class="consent__inner shell">
           <p class="consent__copy">
@@ -38,6 +41,7 @@ import { ConsentService } from '../analytics/consent.service';
 })
 export class ConsentBanner {
   readonly consent = inject(ConsentService);
+  readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly analytics = inject(AnalyticsService);
 
   allow(): void {

@@ -183,6 +183,32 @@ export function orderedVisibleSections(sections: CvSection[]): CvSection[] {
     .sort((a, b) => a.order - b.order);
 }
 
+/**
+ * Returns the content with the profile photo applied to its photo section:
+ * visible, carrying `dataUri`, keeping whatever placement was already chosen.
+ * Most templates seed no photo section at all, so one is created and pinned
+ * ahead of everything else (a photo belongs at the top of the identity block).
+ * Pure — the caller decides whether to persist the result.
+ */
+export function withCvPhoto(content: CvContent, dataUri: string): CvContent {
+  const existing = content.sections.find((s) => s.key === 'photo');
+  if (existing) {
+    return {
+      sections: content.sections.map((s) =>
+        s.key === 'photo' ? { ...s, visible: true, dataUri } : s,
+      ),
+    };
+  }
+  const minOrder = content.sections.reduce((min, s) => Math.min(min, s.order), 0);
+  const photo: Extract<CvSection, { key: 'photo' }> = {
+    key: 'photo',
+    order: minOrder - 1,
+    visible: true,
+    dataUri,
+  };
+  return { sections: [photo, ...content.sections] };
+}
+
 export function templateSectionOrder(template: CvTemplate | null): CvSectionKey[] {
   if (!template?.sectionsJson) return DEFAULT_SECTION_ORDER;
   try {

@@ -93,6 +93,7 @@ import {
   parseCvGapResponse,
   parseCvSkillResponse,
   parseDateAnswer,
+  withCvPhoto,
   type CvGapAnswer,
   type CvGapQuestion,
 } from '../documents/cv-content.util';
@@ -733,9 +734,7 @@ interface FinalChecks {
                     {{ t()('documents.cv_field_region') }}
                     <select
                       [ngModel]="documentReviewRegion()"
-                      (ngModelChange)="
-                        documentReviewRegion.set($event); finalChecksOutdated.set(!!finalChecks())
-                      "
+                      (ngModelChange)="onRegionChange($event)"
                     >
                       @for (region of documentRegionTags; track region) {
                         <option [value]="region">{{ regionLabel(region) }}</option>
@@ -1251,6 +1250,42 @@ interface FinalChecks {
         </div>
       }
     </div>
+    <!-- German-market photo prompt. A photo is conventional on a German CV and
+         unusual elsewhere, so this is raised only when the CV's market is set
+         to Germany, and only once per visit to a job. -->
+    @if (photoPromptOpen()) {
+      <div class="photo-prompt" role="dialog" aria-modal="true">
+        <div class="photo-prompt__panel">
+          <h4 class="photo-prompt__title">{{ t()('jobs.wizard.photo_prompt_title') }}</h4>
+          <p class="photo-prompt__text">{{ t()('jobs.wizard.photo_prompt_body') }}</p>
+          @if (!profilePhoto()) {
+            <p class="photo-prompt__text muted">{{ t()('jobs.wizard.photo_prompt_none') }}</p>
+          }
+          <div class="photo-prompt__actions">
+            <button
+              class="btn btn--secondary btn--md"
+              type="button"
+              [disabled]="photoPromptBusy()"
+              (click)="dismissPhotoPrompt()"
+            >
+              {{ t()('jobs.wizard.photo_prompt_no') }}
+            </button>
+            <button
+              class="btn btn--primary btn--md"
+              type="button"
+              [disabled]="photoPromptBusy()"
+              (click)="acceptPhotoPrompt()"
+            >
+              {{
+                profilePhoto()
+                  ? t()('jobs.wizard.photo_prompt_yes')
+                  : t()('jobs.wizard.photo_prompt_add_first')
+              }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [
     `
@@ -1364,6 +1399,42 @@ interface FinalChecks {
         font-family: var(--font-sans);
         font-size: var(--text-sm);
         color: var(--text-secondary);
+      }
+      /* Photo prompt - same overlay contract as the CV gap dialog. */
+      .photo-prompt {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--bg-app) 70%, transparent);
+      }
+      .photo-prompt__panel {
+        width: min(520px, 92vw);
+        padding: var(--space-6);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-lg);
+      }
+      .photo-prompt__title {
+        margin: 0 0 var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-base);
+        color: var(--text-primary);
+      }
+      .photo-prompt__text {
+        margin: 0 0 var(--space-3);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .photo-prompt__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-3);
+        margin-top: var(--space-4);
       }
       /* Rescore loading - AI-thinking line + design-system skeleton cards. */
       .rescore-loading {
@@ -2405,6 +2476,72 @@ export class JobsComponent implements OnInit, OnDestroy {
     return LANGUAGE_NATIVE_NAMES[language];
   }
 
+  // ---- German-market photo prompt ----
+  // A photo is conventional on a German CV and unusual (sometimes actively
+  // discouraged) elsewhere, so switching the CV's market to Germany is the one
+  // moment where asking is useful rather than nagging. Asked once per visit to
+  // a job, and never for the other markets.
+  readonly photoPromptOpen = signal(false);
+  readonly photoPromptBusy = signal(false);
+  private photoPrompted = false;
+  readonly profilePhoto = computed(() => this.profile()?.photoDataUri ?? null);
+
+  /** Region picker handler: keep the final checks honest, then decide whether
+   * the German photo convention is worth raising. */
+  onRegionChange(region: DocumentRegionTag): void {
+    this.documentReviewRegion.set(region);
+    this.finalChecksOutdated.set(!!this.finalChecks());
+    if (region === 'de' && !this.photoPrompted) {
+      this.photoPrompted = true;
+      this.photoPromptOpen.set(true);
+    }
+  }
+
+  dismissPhotoPrompt(): void {
+    this.photoPromptOpen.set(false);
+  }
+
+  /**
+   * "Yes, add my photo". With a photo already on the profile this writes it
+   * into the linked CV; without one it sends the user to the profile's Photo
+   * section, so the photo is cropped once and reused rather than re-uploaded
+   * per application.
+   */
+  async acceptPhotoPrompt(): Promise<void> {
+    const photo = this.profilePhoto();
+    if (!photo) {
+      this.photoPromptOpen.set(false);
+      void this.router.navigate(['/profile']);
+      return;
+    }
+    const cv = this.linkedCv();
+    if (!cv?.id) {
+      // No CV generated yet - the photo is on the profile and the region is
+      // set, so the CV picks it up when it is created. Nothing to patch.
+      this.photoPromptOpen.set(false);
+      return;
+    }
+    this.photoPromptBusy.set(true);
+    try {
+      const content = withCvPhoto(
+        JSON.parse(cv.contentJson ?? '{"sections":[]}') as CvContent,
+        photo,
+      );
+      const doc = await this.db.documentLibraryUpsert({
+        ...cv,
+        id: cv.id,
+        contentJson: JSON.stringify(content),
+      });
+      this.linkedCv.set(doc);
+      this.finalChecksOutdated.set(!!this.finalChecks());
+      this.documentReviewStatus.set(this.t()('jobs.wizard.photo_added'));
+      this.photoPromptOpen.set(false);
+    } catch (e) {
+      this.documentReviewStatus.set(String(e));
+    } finally {
+      this.photoPromptBusy.set(false);
+    }
+  }
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
   readonly linkedCv = signal<DocumentLibraryItem | null>(null);
   readonly linkedCoverLetter = signal<DocumentLibraryItem | null>(null);

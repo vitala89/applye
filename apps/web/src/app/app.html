@@ -6,9 +6,11 @@
      ============================================================ -->
 <a class="skip-link" href="#main">Skip to content</a>
 
-<header class="nav">
+<!-- The shell is in the reader's chosen language even on English-only pages,
+     so it carries its own lang attribute rather than inheriting the page's. -->
+<header class="nav" [attr.lang]="uiLocale()">
   <div class="nav__inner shell">
-    <a class="brand" routerLink="/" aria-label="applye home">
+    <a class="brand" [routerLink]="homePath()" aria-label="applye home">
       <svg class="brand__mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
         <polygon points="37,10 45,10 15,54 7,54" fill="currentColor" />
         <rect x="50" y="10" width="8" height="44" fill="var(--indigo-600, #4F5BFF)" />
@@ -53,7 +55,7 @@
   <router-outlet></router-outlet>
 </main>
 
-<footer class="footer">
+<footer class="footer" [attr.lang]="uiLocale()">
   <div class="shell footer__inner">
     <div class="footer__brand">
       <span class="brand">

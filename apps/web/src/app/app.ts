@@ -36,8 +36,17 @@ export class App {
   readonly seo = inject(SeoService);
   readonly analytics = inject(AnalyticsService);
 
-  /** Shell copy follows the locale of the page being viewed. */
-  readonly m = inject(I18nService).m;
+  private readonly i18n = inject(I18nService);
+
+  /**
+   * Shell copy follows the language the reader chose, not the language of the
+   * current page: the docs are English-only, and dropping someone back to an
+   * English header the moment they open them loses their choice silently.
+   */
+  readonly m = this.i18n.ui;
+  readonly uiLocale = this.i18n.uiLocale;
+  /** The logo returns to the reader's own landing page, not always `/`. */
+  readonly homePath = this.i18n.homePath;
 
   readonly dataContract = DATA_CONTRACT;
   readonly author = AUTHOR;

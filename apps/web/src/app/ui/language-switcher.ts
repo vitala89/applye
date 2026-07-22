@@ -18,15 +18,15 @@ import { localePath } from '../i18n/locales';
   imports: [RouterLink],
   template: `
     <div class="langs">
-      <span class="langs__label">{{ i18n.m().nav.language }}</span>
+      <span class="langs__label">{{ i18n.ui().nav.language }}</span>
       <ul class="langs__list">
         @for (l of i18n.locales; track l.code) {
           <li>
             <a
               [routerLink]="path(l.code)"
-              [class.is-active]="i18n.locale() === l.code"
+              [class.is-active]="i18n.uiLocale() === l.code"
               [attr.hreflang]="l.code"
-              [attr.aria-current]="i18n.locale() === l.code ? 'true' : null"
+              [attr.aria-current]="i18n.uiLocale() === l.code ? 'true' : null"
               >{{ l.label }}</a
             >
           </li>

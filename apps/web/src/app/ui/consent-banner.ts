@@ -42,7 +42,7 @@ import { I18nService } from '../i18n/i18n.service';
 })
 export class ConsentBanner {
   readonly consent = inject(ConsentService);
-  readonly m = inject(I18nService).m;
+  readonly m = inject(I18nService).ui;
   readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly analytics = inject(AnalyticsService);
 

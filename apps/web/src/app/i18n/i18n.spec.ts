@@ -1,4 +1,7 @@
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { appRoutes } from '../app.routes';
+import { I18nService } from './i18n.service';
 import { LOCALES } from './locales';
 import { Messages } from './messages';
 import { de } from './messages/de';
@@ -59,6 +62,42 @@ describe('locale bundles', () => {
       });
     });
   }
+
+  it('remembers a chosen language across English-only pages', () => {
+    localStorage.setItem('applye-locale', 'ru');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+
+    const i18n = TestBed.inject(I18nService);
+
+    // The route carries no locale (it stands in for the docs), so the page
+    // content stays English while the shell and the logo keep the choice.
+    expect(i18n.locale()).toBe('en');
+    expect(i18n.uiLocale()).toBe('ru');
+    expect(i18n.ui().nav.docs).toBe(ru.nav.docs);
+    expect(i18n.homePath()).toBe('/ru');
+
+    localStorage.clear();
+  });
+
+  it('falls back to English when nothing was chosen', () => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+
+    const i18n = TestBed.inject(I18nService);
+    expect(i18n.uiLocale()).toBe('en');
+    expect(i18n.homePath()).toBe('/');
+  });
+
+  it('ignores a junk value in storage', () => {
+    localStorage.setItem('applye-locale', 'klingon');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+
+    expect(TestBed.inject(I18nService).uiLocale()).toBe('en');
+    localStorage.clear();
+  });
 
   it('pairs one icon with every principle', () => {
     // The landing pairs icons to principles by index, so a locale that adds or

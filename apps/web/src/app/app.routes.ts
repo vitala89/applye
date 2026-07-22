@@ -1,4 +1,10 @@
 import { Route } from '@angular/router';
+import { LOCALES } from './i18n/locales';
+import { de } from './i18n/messages/de';
+import { es } from './i18n/messages/es';
+import { pl } from './i18n/messages/pl';
+import { ru } from './i18n/messages/ru';
+import { uk } from './i18n/messages/uk';
 import { Landing } from './landing';
 import { Blog } from './blog';
 import { Methodology } from './methodology';
@@ -11,16 +17,37 @@ import { DocsLayout } from './docs/docs-layout';
  * without one falls back to the site default, so add one when adding a page.
  * `tools/generate-sitemap.mjs` reads this same file to build sitemap.xml.
  */
+/**
+ * Localised landing pages. Only the landing page and the shell are translated;
+ * the rest of the site is English, and the translated page says so instead of
+ * linking into documentation the reader cannot follow.
+ */
+const TRANSLATED = { de, es, pl, ru, uk };
+
+const localeLandingRoutes: Route[] = LOCALES.filter(
+  (l): l is typeof l & { code: keyof typeof TRANSLATED } => l.code !== 'en',
+).map((locale) => {
+  const bundle = TRANSLATED[locale.code];
+  return {
+    path: locale.code,
+    component: Landing,
+    title: bundle.meta.title,
+    data: { locale: locale.code, description: bundle.meta.description },
+  };
+});
+
 export const appRoutes: Route[] = [
   {
     path: '',
     component: Landing,
     title: 'Applye: Drafting is automated. Submitting is not.',
     data: {
+      locale: 'en',
       description:
         'A free, open-source, local-first desktop app for an AI-powered job search. Blunt recruiter checks, tailored CVs, a pipeline kanban. Your data, your machine, your AI.',
     },
   },
+  ...localeLandingRoutes,
   {
     path: 'methodology',
     component: Methodology,

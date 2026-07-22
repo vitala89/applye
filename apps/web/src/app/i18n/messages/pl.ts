@@ -1,0 +1,192 @@
+import { Messages } from '../messages';
+
+export const pl: Messages = {
+  meta: {
+    title: 'Applye: pisanie jest zautomatyzowane. Wysyłka nie.',
+    description:
+      'Bezpłatna aplikacja desktopowa o otwartym kodzie do szukania pracy z pomocą AI, działająca lokalnie. Szczera ocena oferty, dopasowane CV, kanban aplikacji. Twoje dane, twój komputer, twoje AI.',
+  },
+
+  nav: {
+    methodology: 'Metodologia',
+    docs: 'Dokumentacja',
+    changelog: 'Zmiany',
+    blog: 'Blog',
+    viewSource: 'Zobacz kod',
+    sourceSoon: 'Kod: wkrótce',
+    language: 'Język',
+    themeToLight: 'Przełącz na jasny motyw',
+    themeToDark: 'Przełącz na ciemny motyw',
+  },
+
+  footer: {
+    tagline: 'Pisanie jest zautomatyzowane. Wysyłka nie.',
+    docs: 'Dokumentacja',
+    manifesto: 'Manifest',
+    methodology: 'Metodologia',
+    compare: 'Porównanie',
+    blog: 'Blog',
+    changelog: 'Zmiany',
+    press: 'Prasa',
+    privacy: 'Prywatność',
+    cookies: 'Cookies',
+    sustain: 'Wesprzyj',
+    licence: 'Licencja MIT',
+    builtBy: 'Autor',
+  },
+
+  consent: {
+    body: 'Chcielibyśmy liczyć anonimowe odsłony, żeby wiedzieć, którą dokumentację warto pisać dalej. Bez twojej zgody nie zapisujemy ciasteczek ani nie wysyłamy żadnych żądań do Google, a sama aplikacja i tak nigdy niczego nie wysyła.',
+    learnMore: 'Co jest zbierane',
+    decline: 'Odrzuć',
+    allow: 'Zezwól na analitykę',
+  },
+
+  docsInEnglishNote:
+    'Aplikacja jest dostępna w sześciu językach. Dokumentacja na razie tylko po angielsku: porządne tłumaczenie wymaga czasu, a maszynowo przetłumaczony podręcznik byłby gorszy niż uczciwy link do oryginału.',
+
+  hero: {
+    eyebrow: 'Zasada wspierania, nie zastępowania',
+    titleTop: 'Pisanie jest zautomatyzowane.',
+    titleAccent: 'Wysyłka nie.',
+    sub: 'Desktopowa aplikacja o otwartym kodzie do szukania pracy z pomocą AI, działająca lokalnie. Twoje dane, twój komputer, twoje AI. Ocenia oferty, dopasowuje CV i prowadzi lejek aplikacji, a każdą decyzję zostawia tobie.',
+    download: 'Pobierz',
+    downloadSoon: 'Pobierz (wkrótce)',
+    viewSource: 'Zobacz kod na GitHubie',
+    sourceSoon: 'Kod: wkrótce',
+    meta: 'Za darmo · Licencja MIT · Bez konta · Bez telemetrii',
+  },
+
+  gap: {
+    eyebrow: 'Luka, którą wypełniamy',
+    title: 'Trzy narzędzia, jednego brakuje.',
+    saasTitle: 'Chmurowy SaaS',
+    saasBody:
+      'Mocny, ale płatny co miesiąc, a całe twoje poszukiwanie żyje na cudzych serwerach. Bez znajomości niemieckiego rynku.',
+    cliTitle: 'Potoki w terminalu',
+    cliBody:
+      'Pełny cykl, lokalnie, za darmo i świetnie zrobione. Ale tylko w terminalu, więc mówi do programistów i do nikogo więcej.',
+    usTitle: 'Desktop, lokalnie, za darmo',
+    usBody:
+      'Ten sam pełny cykl w zwykłym interfejsie: lokalnie, za darmo, na licencji MIT i ze świadomością niemieckiego rynku. Konfiguracja w 3 minuty, nie w 15. Bez terminala.',
+    line: 'career-ops daje programistom CLI. Applye daje wszystkim aplikację desktopową.',
+  },
+
+  what: {
+    eyebrow: 'Czym jest Applye?',
+    body: 'Applye to aplikacja desktopowa, która przeprowadza cały cykl szukania pracy na twoim komputerze. Wklejasz ogłoszenie; dostajesz szczerą ocenę okiem rekrutera i systemu ATS; aplikacja przygotowuje dopasowane CV, które sprawdzasz i eksportujesz; przesuwasz ofertę po tablicy kanban; i pomaga ci przygotować się do rozmowy. Wszystko lokalnie, z twoim własnym AI (własny klucz API albo subskrypcja CLI, za którą i tak płacisz), na licencji MIT i za darmo.',
+  },
+
+  features: {
+    eyebrow: 'Co potrafi',
+    title: 'Zbudowane, by dawać sygnał, a nie pocieszenie.',
+    items: [
+      {
+        title: 'Szczera ocena okiem rekrutera',
+        example:
+          'Wklej ofertę i otrzymaj uczciwą ocenę dopasowania, brakujące słowa kluczowe, czerwone flagi, które wychwyci wstępna selekcja, oraz jasny wynik testu ATS - dokładnie tak, jak czyta się przez pierwsze dziesięć sekund.',
+        note: 'Żadnego pocieszania. Sam sygnał.',
+        linkText: 'Jak działa ocena',
+      },
+      {
+        title: 'Dopasowane CV w trzech przebiegach',
+        example:
+          'Przepisanie w schemacie XYZ, potem podwójna krytyka spierająca się sama ze sobą, na końcu czysta wersja w PDF, która przechodzi przez parser ATS. Czytasz każdy wiersz, zanim stanie się plikiem.',
+        note: 'Applye pisze szkic. Ty sprawdzasz, eksportujesz i wysyłasz.',
+      },
+      {
+        title: 'Lejek jako kanban',
+        example:
+          'Przeciągaj ofertę z zapisanych do wysłanych, na rozmowę i do oferty. Etapy datują się same, a zaległe aplikacje dostają znacznik, więc nic nie stygnie po cichu.',
+        note: 'Twoja tablica, na twoim komputerze, a nie panel dostawcy.',
+      },
+      {
+        title: 'Własne AI',
+        example:
+          'Podłącz własny klucz API albo już opłaconą subskrypcję CLI: Claude Code, Codex lub Gemini. Tanią, deterministyczną robotę wykonuje kod; model pytany jest wyłącznie o ocenę.',
+        note: 'Oszczędne na tokenach z założenia. Realne poszukiwania kosztują grosze.',
+      },
+      {
+        title: 'Lokalnie i prywatnie',
+        example:
+          'Wszystko mieści się w jednym pliku SQLite na twoim dysku. Żadnego konta, żadnej synchronizacji z chmurą, żadnej telemetrii. Usuwasz plik i po danych.',
+        note: 'Bez chmury, bez konta, bez śledzenia. Nigdy.',
+      },
+    ],
+  },
+
+  german: {
+    eyebrow: 'Zbudowane pod niemiecki rynek',
+    title: 'Pod poszukiwania, które naprawdę prowadzisz.',
+    intro:
+      'Szukanie pracy w Niemczech, Austrii i Szwajcarii rządzi się zasadami, które inne narzędzia pomijają. W Applye są podstawą, a nie doklejoną na końcu lokalizacją.',
+    points: [
+      'Agentur für Arbeit: wygenerujesz raport Eigenbemühungen z udokumentowanymi staraniami.',
+      'Dokumenty po niemiecku: CV, listy motywacyjne i przygotowanie w DE, gdy oferta tego wymaga.',
+      'Wiza i Niebieska Karta: wskazówki, które biorą twoją sytuację na poważnie.',
+      'Zgodność z RODO z założenia: twoje dane w ogóle nie opuszczają komputera.',
+    ],
+  },
+
+  principles: [
+    { label: 'Najpierw lokalnie', line: 'Jeden plik SQLite na twoim komputerze.' },
+    { label: 'Prywatność u podstaw', line: 'Nic nie jest zbierane. Bez telemetrii.' },
+    { label: 'Za darmo / MIT', line: 'Otwarty kod, bezpłatnie.' },
+    { label: 'Własne AI', line: 'Twój klucz albo twoja subskrypcja CLI.' },
+    { label: 'Wspierać, nie automatyzować', line: 'AI pisze szkic. Ty decydujesz.' },
+  ],
+
+  trust: {
+    eyebrow: 'Otwarcie i uczciwie',
+    title: 'Twoje dane nie opuszczają twojego komputera.',
+    body: 'Applye jest na licencji MIT i rozwijane otwarcie. Przeczytaj kod, przeczytaj gwarancję dotyczącą danych, uruchom je sam.',
+    repo: 'Repozytorium na GitHubie',
+    repoSoon: 'Repozytorium: wkrótce',
+    guarantee: 'Gwarancja suwerenności danych',
+    useTitle: 'Kiedy Applye ma sens',
+    usePoints: [
+      'Chcesz mniej aplikacji, ale lepiej dopasowanych.',
+      'Zależy ci na tym, gdzie leżą dane twoich poszukiwań.',
+      'Masz już subskrypcję AI albo klucz API.',
+      'Szukasz pracy w Niemczech lub szerzej w UE.',
+    ],
+    notTitle: 'Czym Applye nie jest',
+    notPoints: [
+      'To nie bot do automatycznego aplikowania. Nigdy nie wysyła za ciebie.',
+      'To nie scraper portali z ofertami. Oferty wklejasz sam.',
+      'To nie usługa w chmurze: bez konta, bez serwera, bez synchronizacji.',
+      'To nie sposób na zmyślenie doświadczenia. Uczciwość zamiast podkoloryzowania.',
+    ],
+  },
+
+  faq: {
+    eyebrow: 'Częste pytania',
+    title: 'Konkretne odpowiedzi.',
+    items: [
+      {
+        q: 'Jak działa ocena?',
+        a: 'Wklejasz ogłoszenie; kod wyciąga wymagania, a Applye prosi twoje AI, żeby przeczytało je tak, jak zrobiłby to rekruter albo system ATS: ocena dopasowania, brakujące słowa kluczowe, czerwone flagi. Ta sama oferta nie jest oceniana dwa razy - wynik trafia do pamięci podręcznej według skrótu tekstu, więc ponowne czytanie nic nie kosztuje.',
+      },
+      {
+        q: 'Czy to naprawdę za darmo?',
+        a: 'Tak. Applye jest na licencji MIT i bezpłatne: nie ma planu płatnego ani subskrypcji. Zapłacić możesz najwyżej za własne użycie AI, a rozlicza je twój dostawca, nie my.',
+      },
+      {
+        q: 'Jakiego AI potrzebuję?',
+        a: 'Albo własnego klucza API, albo subskrypcji CLI, którą już masz (Claude Code, Codex lub Gemini CLI), podłączonej tak, że nie zużywasz dodatkowych tokenów API. AI jest opcjonalne: żaden model nie zostanie wywołany, dopóki sam o to nie poprosisz.',
+      },
+      {
+        q: 'Czy moje dane są prywatne?',
+        a: 'Całkowicie. Profil, oferty i dokumenty leżą w lokalnej bazie SQLite na twoim komputerze. Nie ma chmury, konta ani analityki. Aplikacja nie przeszukuje też portali - wklejasz oferty, które i tak oglądasz.',
+      },
+      {
+        q: 'Czy aplikuje za mnie?',
+        a: 'Nigdy. Wokół tej granicy zbudowana jest cała aplikacja. Applye ocenia, pisze szkice i podpowiada, a potem oddaje ci sterowanie. Czytasz każde słowo i sam klikasz wyślij. Po drugiej stronie jest człowiek, a ta relacja należy do ciebie, nie do bota.',
+      },
+      {
+        q: 'Dlaczego pod niemiecki rynek?',
+        a: 'Bo szukanie pracy w regionie DACH ma reguły, które inni pomijają: raport Eigenbemühungen dla Agentur für Arbeit, dokumenty po niemiecku, kwestie wizy i Niebieskiej Karty oraz zgodne z RODO podejście do danych od początku. W Applye to fundament, a nie dodatek.',
+      },
+    ],
+  },
+};

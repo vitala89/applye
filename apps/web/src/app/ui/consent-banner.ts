@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, PLATFORM_ID } from '@angula
 import { RouterLink } from '@angular/router';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { ConsentService } from '../analytics/consent.service';
+import { I18nService } from '../i18n/i18n.service';
 
 /**
  * Analytics opt-in bar. Shown once, until the visitor decides.
@@ -23,15 +24,15 @@ import { ConsentService } from '../analytics/consent.service';
       <aside class="consent" role="region" aria-label="Analytics consent">
         <div class="consent__inner shell">
           <p class="consent__copy">
-            We would like to count anonymous page views to see which docs are worth writing. No
-            cookies and no requests to Google happen unless you allow it, and the app itself never
-            sends anything either way.
-            <a routerLink="/cookies">What is collected</a>
+            {{ m().consent.body }}
+            <a routerLink="/cookies">{{ m().consent.learnMore }}</a>
           </p>
           <div class="consent__actions">
-            <button type="button" class="btn btn--ghost" (click)="decline()">Decline</button>
+            <button type="button" class="btn btn--ghost" (click)="decline()">
+              {{ m().consent.decline }}
+            </button>
             <button type="button" class="btn btn--primary" (click)="allow()">
-              Allow analytics
+              {{ m().consent.allow }}
             </button>
           </div>
         </div>
@@ -41,6 +42,7 @@ import { ConsentService } from '../analytics/consent.service';
 })
 export class ConsentBanner {
   readonly consent = inject(ConsentService);
+  readonly m = inject(I18nService).m;
   readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly analytics = inject(AnalyticsService);
 

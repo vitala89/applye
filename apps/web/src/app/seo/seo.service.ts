@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { DEFAULT_LOCALE, LOCALES, LocaleCode, localePath } from '../i18n/locales';
 import { SITE_ORIGIN } from '../site';
 
 /** Route `data` fields this service understands. Set them in app.routes.ts. */
@@ -11,6 +12,8 @@ export interface SeoRouteData {
   description?: string;
   /** Overrides the Open Graph image path (relative to the site origin). */
   image?: string;
+  /** Set on the landing pages, which are the only localised routes. */
+  locale?: LocaleCode;
 }
 
 const DEFAULT_DESCRIPTION =
@@ -63,7 +66,34 @@ export class SeoService {
     this.meta.updateTag({ name: 'twitter:description', content: description });
     this.meta.updateTag({ name: 'twitter:image', content: image });
 
+    this.meta.updateTag({ property: 'og:locale', content: data.locale ?? DEFAULT_LOCALE });
+
     this.setCanonical(canonical);
+    this.setAlternates(data.locale);
+  }
+
+  /**
+   * Emits `hreflang` alternates, but only between the landing pages - the only
+   * routes that exist in more than one language. Claiming an alternate for a
+   * page that is English everywhere would be a lie to the crawler.
+   */
+  private setAlternates(locale: LocaleCode | undefined): void {
+    this.doc.head
+      .querySelectorAll('link[rel="alternate"][hreflang]')
+      .forEach((node) => node.remove());
+
+    if (!locale) return;
+
+    const add = (hreflang: string, path: string) => {
+      const link = this.doc.createElement('link');
+      link.setAttribute('rel', 'alternate');
+      link.setAttribute('hreflang', hreflang);
+      link.setAttribute('href', `${SITE_ORIGIN}${path}`);
+      this.doc.head.appendChild(link);
+    };
+
+    for (const l of LOCALES) add(l.code, localePath(l.code));
+    add('x-default', localePath(DEFAULT_LOCALE));
   }
 
   private setCanonical(href: string): void {

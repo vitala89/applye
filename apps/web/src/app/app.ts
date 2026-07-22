@@ -2,7 +2,9 @@ import { DOCUMENT } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AnalyticsService } from './analytics/analytics.service';
+import { I18nService } from './i18n/i18n.service';
 import { SeoService } from './seo/seo.service';
+import { LanguageSwitcher } from './ui/language-switcher';
 import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, X_TWITTER, YEAR } from './site';
 import { ConsentBanner } from './ui/consent-banner';
 import { Icon } from './ui/icon';
@@ -15,7 +17,15 @@ const STORAGE_KEY = 'applye-theme';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, SourceLink, ConsentBanner, Icon],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    SourceLink,
+    ConsentBanner,
+    Icon,
+    LanguageSwitcher,
+  ],
   templateUrl: './app.html',
 })
 export class App {
@@ -25,6 +35,9 @@ export class App {
   // that stay dormant until the visitor opts in.
   readonly seo = inject(SeoService);
   readonly analytics = inject(AnalyticsService);
+
+  /** Shell copy follows the locale of the page being viewed. */
+  readonly m = inject(I18nService).m;
 
   readonly dataContract = DATA_CONTRACT;
   readonly author = AUTHOR;

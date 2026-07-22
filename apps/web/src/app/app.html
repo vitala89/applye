@@ -17,10 +17,12 @@
     </a>
 
     <nav class="nav__links" aria-label="Primary">
-      <a routerLink="/methodology" routerLinkActive="is-active">Methodology</a>
-      <a routerLink="/docs" routerLinkActive="is-active">Docs</a>
-      <a routerLink="/changelog" routerLinkActive="is-active">Changelog</a>
-      <a class="nav__soon" routerLink="/blog" routerLinkActive="is-active" data-soon="Soon">Blog</a>
+      <a routerLink="/methodology" routerLinkActive="is-active">{{ m().nav.methodology }}</a>
+      <a routerLink="/docs" routerLinkActive="is-active">{{ m().nav.docs }}</a>
+      <a routerLink="/changelog" routerLinkActive="is-active">{{ m().nav.changelog }}</a>
+      <a class="nav__soon" routerLink="/blog" routerLinkActive="is-active" data-soon="Soon"
+        >{{ m().nav.blog }}</a
+      >
     </nav>
 
     <div class="nav__actions">
@@ -28,7 +30,7 @@
         type="button"
         class="icon-btn"
         (click)="toggleTheme()"
-        [attr.aria-label]="theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+        [attr.aria-label]="theme() === 'dark' ? m().nav.themeToLight : m().nav.themeToDark"
       >
         @if (theme() === 'dark') {
         <app-icon name="sun" [size]="18" />
@@ -40,8 +42,8 @@
         class="nav__source"
         variant="ghost"
         [icon]="true"
-        label="View source"
-        soonLabel="Source: soon"
+        [label]="m().nav.viewSource"
+        [soonLabel]="m().nav.sourceSoon"
       />
     </div>
   </div>
@@ -61,19 +63,19 @@
         </svg>
         applye<span class="brand__cursor" aria-hidden="true"></span>
       </span>
-      <p>Drafting is automated. Submitting is not.</p>
+      <p>{{ m().footer.tagline }}</p>
     </div>
     <nav class="footer__links" aria-label="Footer">
-      <a routerLink="/docs">Docs</a>
-      <a routerLink="/manifesto">Manifesto</a>
-      <a routerLink="/methodology">Methodology</a>
-      <a routerLink="/compare">Compare</a>
-      <a routerLink="/blog">Blog</a>
-      <a routerLink="/changelog">Changelog</a>
-      <a routerLink="/press">Press</a>
-      <a routerLink="/privacy">Privacy</a>
-      <a routerLink="/cookies">Cookies</a>
-      <a routerLink="/sustain">Sustain</a>
+      <a routerLink="/docs">{{ m().footer.docs }}</a>
+      <a routerLink="/manifesto">{{ m().footer.manifesto }}</a>
+      <a routerLink="/methodology">{{ m().footer.methodology }}</a>
+      <a routerLink="/compare">{{ m().footer.compare }}</a>
+      <a routerLink="/blog">{{ m().footer.blog }}</a>
+      <a routerLink="/changelog">{{ m().footer.changelog }}</a>
+      <a routerLink="/press">{{ m().footer.press }}</a>
+      <a routerLink="/privacy">{{ m().footer.privacy }}</a>
+      <a routerLink="/cookies">{{ m().footer.cookies }}</a>
+      <a routerLink="/sustain">{{ m().footer.sustain }}</a>
     </nav>
     <div class="footer__social" aria-label="Social links">
       <app-source-link [icon]="true" label="GitHub" soonLabel="Source: soon" />
@@ -116,9 +118,15 @@
       }
     </div>
   </div>
+  <div class="shell footer__langs">
+    <app-language-switcher />
+  </div>
   <div class="shell footer__legal">
-    <span>MIT licensed · © {{ year }} Applye</span>
-    <span>Built by <a [href]="author" target="_blank" rel="noopener">Vitalii Kasap</a></span>
+    <span>{{ m().footer.licence }} · © {{ year }} Applye</span>
+    <span
+      >{{ m().footer.builtBy }}
+      <a [href]="author" target="_blank" rel="noopener">Vitalii Kasap</a></span
+    >
   </div>
 </footer>
 

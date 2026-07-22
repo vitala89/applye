@@ -2,6 +2,11 @@
   "comment": "Single source of truth for crawlable URLs. Feeds sitemap.xml and the prerender route list. A jest test (seo.spec.ts) fails if this drifts from app.routes.ts.",
   "paths": [
     "/",
+    "/de",
+    "/es",
+    "/pl",
+    "/ru",
+    "/uk",
     "/methodology",
     "/manifesto",
     "/compare",

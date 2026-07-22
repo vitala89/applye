@@ -47,6 +47,7 @@ pub fn run() {
             commands::archetypes::check_archetype_match,
             commands::scoring::job_paste,
             commands::scoring::score_cache_get,
+            commands::scoring::score_cache_latest,
             commands::scoring::score_cache_save,
             commands::settings::db_get_settings,
             commands::settings::db_update_settings,

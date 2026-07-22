@@ -639,6 +639,8 @@ const en: TranslationMap = {
     score_btn: 'Score this job',
     scoring: 'Scoring…',
     rescore: 'Rescore',
+    score_stale:
+      'Your profile changed after this score - the numbers below reflect the earlier profile.',
     save_job: 'Save this job',
     open_cv_document: 'Open linked CV',
     open_cover_letter_document: 'Open linked cover letter',
@@ -2148,6 +2150,8 @@ const de: TranslationMap = {
     delete_confirm_btn: 'Endgültig löschen',
     delete_ok: 'Stelle gelöscht.',
     rescore: 'Neu bewerten',
+    score_stale:
+      'Dein Profil hat sich nach dieser Bewertung geändert - die Werte unten beziehen sich auf das frühere Profil.',
     score_section: 'Recruiter-Bewertung',
     before_you_submit: 'Vor dem Absenden',
     tailor_section: 'Lebenslauf anpassen',

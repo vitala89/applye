@@ -84,6 +84,9 @@ pub struct UpsertDocumentLibraryItemInput {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, PartialEq, Eq, Debug)]
 #[serde(rename_all = "snake_case")]
+// Variant names are the serialized wire format shared with the Angular side;
+// renaming them to satisfy the lint would break stored CV templates.
+#[allow(clippy::enum_variant_names)]
 pub enum PhotoPlacement {
     #[default]
     AboveLeft,

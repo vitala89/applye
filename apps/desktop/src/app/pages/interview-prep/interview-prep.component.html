@@ -1,3 +1,6 @@
+<!-- Page shell: the click handler only dismisses open menus when the user clicks
+     away. It is not a control, so it stays unfocusable and keyboard-inert. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <div class="ip" (click)="closeMenus()">
   @if (loading()) {
     <div class="ip__skeleton">
@@ -78,6 +81,8 @@
             }
           </div>
           <div class="ip__next">{{ formatDate(r.currentStageScheduledAt) }}</div>
+          <!-- Wrapper only stops the shell's click-away handler; not a control. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <div class="ip__rowact" (click)="$event.stopPropagation()">
             <button
               type="button"
@@ -110,7 +115,11 @@
 
   <!-- delete-confirm modal -->
   @if (confirmRow(); as row) {
+    <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
+         is the keyboard path, so the backdrop stays unfocusable. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="ip-modal" (click)="cancelRemove()">
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="ip-modal__confirm" (click)="$event.stopPropagation()">
         <div class="ip-modal__confirm-row">
           <div class="ip-modal__confirm-icon"><lucide-icon [img]="icons.trash" [size]="20" /></div>

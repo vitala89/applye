@@ -453,7 +453,8 @@ mod tests {
                 .unwrap();
             assert_eq!(tech_stack.as_deref(), Some("Rust, Postgres"));
 
-            let app: (
+            // The seven nullable application columns asserted below.
+            type AppRow = (
                 Option<String>,
                 Option<String>,
                 Option<String>,
@@ -461,7 +462,8 @@ mod tests {
                 Option<String>,
                 Option<String>,
                 Option<String>,
-            ) = sqlx::query_as(
+            );
+            let app: AppRow = sqlx::query_as(
                 "SELECT source_url, contact_name, contact_role, contact_channel,
                         next_action, next_action_at, salary_range
                  FROM applications",

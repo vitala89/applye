@@ -666,7 +666,8 @@ $pin: 190px;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-1);
   border-radius: var(--radius-input);
-  cursor: pointer;
+  // The row itself is not clickable; only the switch button inside it is.
+  cursor: default;
   &:hover {
     background: var(--surface-hover);
   }
@@ -690,6 +691,9 @@ $pin: 190px;
   flex: 1;
 }
 .jt-switch {
+  appearance: none;
+  padding: 0;
+  cursor: pointer;
   width: 34px;
   height: 19px;
   border-radius: 20px;
@@ -698,6 +702,9 @@ $pin: 190px;
   position: relative;
   flex-shrink: 0;
   transition: all var(--motion-fast, 0.14s);
+  &:disabled {
+    cursor: default;
+  }
   &::after {
     content: '';
     position: absolute;

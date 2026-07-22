@@ -384,6 +384,9 @@ async fn export_pdf_wysiwyg_core(
 /// Safety: must run on the main thread with valid WKWebView/NSWindow pointers —
 /// guaranteed by `with_webview` (main-thread closure) and `ns_window()`.
 #[cfg(target_os = "macos")]
+// Mirrors the Cocoa print API surface: paper size and four margins are separate
+// f64 values, so grouping them into a struct would only hide the FFI shape.
+#[allow(clippy::too_many_arguments)]
 unsafe fn macos_print_to_pdf(
     webview: *mut std::ffi::c_void,
     ns_window: *mut std::ffi::c_void,

@@ -1849,7 +1849,7 @@ mod tests {
         assert_eq!(r.iter().filter(|s| s.bold).count(), 2);
         // unmatched trailing ** stays literal, not a panic
         let u = parse_inline_runs("a **b");
-        assert_eq!(u.iter().any(|s| s.bold), false);
+        assert!(!u.iter().any(|s| s.bold));
     }
 
     #[test]

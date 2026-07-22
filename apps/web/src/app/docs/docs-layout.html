@@ -43,7 +43,11 @@
     <p class="dx__toctitle">On this page</p>
     <nav>
       @for (t of toc(); track t.id) {
-      <a [href]="'#' + t.id" [class.is-active]="activeId() === t.id" [class.is-sub]="t.level === 3"
+      <a
+        [href]="'#' + t.id"
+        (click)="jumpTo(t.id, $event)"
+        [class.is-active]="activeId() === t.id"
+        [class.is-sub]="t.level === 3"
         >{{ t.text }}</a
       >
       }

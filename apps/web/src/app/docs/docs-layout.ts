@@ -122,6 +122,43 @@ export class DocsLayout {
     queueMicrotask(() => this.rescan());
   }
 
+  /**
+   * Jumps to a heading on the current page.
+   *
+   * Smooth scrolling lives here rather than in a global `scroll-behavior`,
+   * because a global rule also animates the router's jump to the top of a new
+   * page - which reads as the page sliding away under you. Within one page an
+   * animation is the point: it shows the reader they moved rather than that
+   * the content was replaced.
+   */
+  jumpTo(id: string, event: Event): void {
+    const target = this.doc.getElementById(id);
+    if (!target) return;
+
+    event.preventDefault();
+    const win = this.doc.defaultView;
+    const reduced = win?.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const before = win?.scrollY ?? 0;
+
+    target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+
+    // Some engines accept `smooth` and then animate nothing, leaving the reader
+    // where they were. Landing on the heading matters more than the animation,
+    // so check shortly after and jump outright if nothing moved.
+    if (!reduced) {
+      win?.setTimeout(() => {
+        if (Math.abs((win.scrollY ?? 0) - before) < 2) {
+          target.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 250);
+    }
+
+    this.activeId.set(id);
+    // Keep the address bar in step so the heading stays linkable, without
+    // pushing a history entry for every glance at the table of contents.
+    this.doc.defaultView?.history.replaceState(null, '', `#${id}`);
+  }
+
   private rescan(): void {
     if (!this.isBrowser) return;
     const center = this.doc.querySelector('.dx__center');

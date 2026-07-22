@@ -20,13 +20,14 @@ body {
   height: auto;
   min-height: 100%;
 }
+/* Page changes must land at the top instantly. A global `scroll-behavior:
+   smooth` also animates the router's jump to the top, so for a fraction of a
+   second the reader is looking at the middle of a page they did not scroll to
+   and then it slides away. Smooth scrolling belongs to in-page anchor jumps
+   only, and the docs table of contents does that in code (see docs-layout.ts),
+   where it can honour prefers-reduced-motion itself. */
 html {
-  scroll-behavior: smooth;
-}
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  scroll-behavior: auto;
 }
 
 /* ---- Layout primitives ---- */

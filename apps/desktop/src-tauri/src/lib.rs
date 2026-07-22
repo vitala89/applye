@@ -1,7 +1,6 @@
 mod ai;
 mod commands;
 mod db;
-mod files;
 mod keys;
 
 use tauri::Manager;

@@ -3,32 +3,33 @@
 <!-- ===================== HERO ===================== -->
 <section class="hero shell">
   <div class="hero__copy">
-    <p class="applye-eyebrow hero__eyebrow">The augmentation principle</p>
+    <p class="applye-eyebrow hero__eyebrow">{{ m().hero.eyebrow }}</p>
     <h1 class="hero__title">
-      Drafting is automated.<br /><span class="accent">Submitting is not.</span>
+      {{ m().hero.titleTop }}<br /><span class="accent">{{ m().hero.titleAccent }}</span>
     </h1>
-    <p class="hero__sub">
-      An open-source, local-first desktop app for an AI-powered job search. Your data, your machine,
-      your AI. It scores roles, tailors your CV, and tracks the pipeline, then hands every decision
-      back to you.
-    </p>
+    <p class="hero__sub">{{ m().hero.sub }}</p>
 
     <div class="hero__cta">
       @if (comingSoon) {
       <button type="button" class="btn btn--primary" disabled aria-disabled="true">
-        Download (coming soon)
+        {{ m().hero.downloadSoon }}
       </button>
       } @else {
-      <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener">Download</a>
-      }
-      <a class="btn btn--ghost" [href]="repo" target="_blank" rel="noopener"
-        >View source on GitHub</a
+      <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener"
+        >{{ m().hero.download }}</a
       >
+      }
+      <app-source-link
+        variant="ghost"
+        [label]="m().hero.viewSource"
+        [soonLabel]="m().hero.sourceSoon"
+      />
     </div>
-    <p class="hero__meta">Free · MIT licensed · No account · No telemetry</p>
+    <p class="hero__meta">{{ m().hero.meta }}</p>
   </div>
 
-  <!-- App mock: CSS-rendered scoring screen, themeable, no heavy PNG. -->
+  <!-- App mock: CSS-rendered scoring screen, themeable, no heavy PNG.
+       Deliberately left in English: it is a picture of the app's own UI. -->
   <div class="mock" aria-hidden="true">
     <div class="mock__bar">
       <span class="mock__dot"></span><span class="mock__dot"></span><span class="mock__dot"></span>
@@ -39,13 +40,13 @@
         <div class="mock__ring"><span>72</span></div>
         <div class="mock__scoremeta">
           <p class="mock__label">Recruiter fit</p>
-          <p class="mock__verdict">Strong on stack. Light on DE-language requirement.</p>
+          <p class="mock__verdict">Strong on stack. Light on the platform-scale requirement.</p>
         </div>
       </div>
       <p class="mock__section">Missing keywords</p>
       <div class="mock__chips">
         <span class="chip chip--warn">TypeScript strict</span>
-        <span class="chip chip--warn">Deutsch C1</span>
+        <span class="chip chip--warn">Kubernetes</span>
         <span class="chip chip--warn">CI/CD</span>
       </div>
       <div class="mock__rows">
@@ -62,39 +63,28 @@
 <!-- ===================== MARKET POSITION ===================== -->
 <section class="band">
   <div class="shell">
-    <p class="applye-eyebrow">The gap we fill</p>
-    <h2 class="section-title">Three tools, one missing one.</h2>
+    <p class="applye-eyebrow">{{ m().gap.eyebrow }}</p>
+    <h2 class="section-title">{{ m().gap.title }}</h2>
     <div class="compare">
       <article class="compare__card">
-        <h3>Cloud SaaS</h3>
+        <h3>{{ m().gap.saasTitle }}</h3>
         <p class="compare__who">Teal · Huntr · Jobscan</p>
-        <p>
-          Powerful, but paid by the month and your whole search lives on someone else’s servers. No
-          German-market awareness.
-        </p>
+        <p>{{ m().gap.saasBody }}</p>
       </article>
       <article class="compare__card">
-        <h3>CLI pipelines</h3>
+        <h3>{{ m().gap.cliTitle }}</h3>
         <p class="compare__who">career-ops</p>
-        <p>
-          Full pipeline, local-first, free, and excellent. But it is terminal-only, so it speaks to
-          developers and no one else.
-        </p>
+        <p>{{ m().gap.cliBody }}</p>
       </article>
       <article class="compare__card compare__card--us">
         <span class="compare__tag">Applye</span>
-        <h3>Desktop, local, free</h3>
+        <h3>{{ m().gap.usTitle }}</h3>
         <p class="compare__who">applye.dev</p>
-        <p>
-          The full pipeline as a desktop GUI: local-first, free, MIT, and aware of the German
-          market. Setup in 3 minutes, not 15. No terminal required.
-        </p>
+        <p>{{ m().gap.usBody }}</p>
       </article>
     </div>
     <p class="compare__line">
-      <span class="accent"
-        >career-ops gives developers a CLI. Applye gives everyone a desktop.</span
-      >
+      <span class="accent">{{ m().gap.line }}</span>
     </p>
   </div>
 </section>
@@ -102,32 +92,24 @@
 <!-- ===================== WHAT IS APPLYE ===================== -->
 <section class="band band--alt">
   <div class="shell shell--narrow">
-    <p class="applye-eyebrow">What is Applye?</p>
-    <p class="prose">
-      Applye is a desktop app that runs the whole job-search loop end to end, on your machine. You
-      <strong>paste a job description</strong>; it gives you a
-      <strong>blunt HR / ATS check</strong>; it drafts a <strong>tailored CV</strong> you review and
-      export; you move the role across a <strong>pipeline kanban</strong> as it progresses; and it
-      helps you <strong>prepare for the interview</strong>. It is local-first, you
-      <strong>bring your own AI</strong> (a direct API key or the CLI subscription you already pay
-      for) and it is <strong>MIT-licensed and free</strong>.
-    </p>
+    <p class="applye-eyebrow">{{ m().what.eyebrow }}</p>
+    <p class="prose">{{ m().what.body }}</p>
   </div>
 </section>
 
 <!-- ===================== FEATURES ===================== -->
 <section id="features" class="band">
   <div class="shell">
-    <p class="applye-eyebrow">What it does</p>
-    <h2 class="section-title">Built to give you signal, not encouragement.</h2>
+    <p class="applye-eyebrow">{{ m().features.eyebrow }}</p>
+    <h2 class="section-title">{{ m().features.title }}</h2>
     <div class="features">
-      @for (f of features; track f.title) {
+      @for (f of m().features.items; track f.title) {
       <article class="feature">
         <h3 class="feature__title">{{ f.title }}</h3>
         <p class="feature__example">{{ f.example }}</p>
         <p class="feature__note"><span class="accent">→</span> {{ f.note }}</p>
-        @if (f.link) {
-        <a class="feature__link" [routerLink]="f.link.to">{{ f.link.text }} →</a>
+        @if (f.linkText) {
+        <a class="feature__link" routerLink="/methodology">{{ f.linkText }} →</a>
         }
       </article>
       }
@@ -135,31 +117,16 @@
   </div>
 </section>
 
-<!-- ===================== GERMAN MARKET ===================== -->
-<section id="german" class="band band--alt">
+<!-- ===================== LOCAL HIRING RULES ===================== -->
+<section id="markets" class="band band--alt">
   <div class="shell shell--narrow german">
-    <p class="applye-eyebrow">Built for the German market</p>
-    <h2 class="section-title">Made for the search you are actually running.</h2>
-    <p class="prose">
-      The DACH job search has rules other tools ignore. Applye treats them as first-class, not a
-      localisation afterthought.
-    </p>
+    <p class="applye-eyebrow">{{ m().local.eyebrow }}</p>
+    <h2 class="section-title">{{ m().local.title }}</h2>
+    <p class="prose">{{ m().local.intro }}</p>
     <ul class="german__list">
-      <li>
-        <strong>Agentur für Arbeit</strong>: generate an <em>Eigenbemühungen</em> report of your
-        documented efforts.
-      </li>
-      <li>
-        <strong>German-language output</strong>: CVs, cover letters, and prep in DE when the role
-        demands it.
-      </li>
-      <li>
-        <strong>Visa &amp; Blue-Card awareness</strong>: guidance that knows your situation matters.
-      </li>
-      <li>
-        <strong>GDPR-aligned by design</strong>: because your data never leaves your machine in the
-        first place.
-      </li>
+      @for (point of m().local.points; track point) {
+      <li>{{ point }}</li>
+      }
     </ul>
   </div>
 </section>
@@ -168,21 +135,10 @@
 <section class="band">
   <div class="shell">
     <div class="principles">
-      @for (p of principles; track p.label) {
+      @for (p of principles(); track p.label) {
       <div class="principle">
         <span class="principle__icon" aria-hidden="true">
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.7"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
+          <app-icon [name]="p.icon" />
         </span>
         <p class="principle__label">{{ p.label }}</p>
         <p class="principle__line">{{ p.line }}</p>
@@ -195,49 +151,46 @@
 <!-- ===================== TRUST / OPEN SOURCE ===================== -->
 <section id="trust" class="band band--alt">
   <div class="shell">
-    <p class="applye-eyebrow">Open source &amp; honest</p>
-    <h2 class="section-title">Your data never leaves your machine.</h2>
-    <p class="prose prose--center">
-      Applye is MIT-licensed and developed in the open. Read the code, read the data guarantee, run
-      it yourself.
-    </p>
+    <p class="applye-eyebrow">{{ m().trust.eyebrow }}</p>
+    <h2 class="section-title">{{ m().trust.title }}</h2>
+    <p class="prose prose--center">{{ m().trust.body }}</p>
     <div class="trust__links">
-      <a class="btn btn--ghost" [href]="repo" target="_blank" rel="noopener">GitHub repository</a>
-      <a class="btn btn--ghost" [href]="dataContract" target="_blank" rel="noopener"
-        >Data sovereignty guarantee</a
-      >
+      <app-source-link variant="ghost" [label]="m().trust.repo" [soonLabel]="m().trust.repoSoon" />
+      <a class="btn btn--ghost" routerLink="/privacy">{{ m().trust.guarantee }}</a>
     </div>
 
     <div class="honest">
       <div class="honest__col honest__col--use">
-        <h3>When to use Applye</h3>
+        <h3>{{ m().trust.useTitle }}</h3>
         <ul>
-          <li>You want fewer, better-targeted applications.</li>
-          <li>You care where your job-search data lives.</li>
-          <li>You already pay for an AI subscription or have an API key.</li>
-          <li>You are job-hunting in Germany or the wider EU.</li>
+          @for (point of m().trust.usePoints; track point) {
+          <li>{{ point }}</li>
+          }
         </ul>
       </div>
       <div class="honest__col honest__col--not">
-        <h3>What Applye is not</h3>
+        <h3>{{ m().trust.notTitle }}</h3>
         <ul>
-          <li>Not an auto-apply bot. It never submits for you.</li>
-          <li>Not a job-board scraper. You paste roles you found.</li>
-          <li>Not a cloud service: no account, no server, no sync.</li>
-          <li>Not a way to fake experience. Honesty over inflation.</li>
+          @for (point of m().trust.notPoints; track point) {
+          <li>{{ point }}</li>
+          }
         </ul>
       </div>
     </div>
+
+    @if (locale() !== 'en') {
+    <p class="prose prose--center landing__docsnote">{{ m().docsInEnglishNote }}</p>
+    }
   </div>
 </section>
 
 <!-- ===================== FAQ ===================== -->
 <section id="faq" class="band">
   <div class="shell shell--narrow">
-    <p class="applye-eyebrow">FAQ</p>
-    <h2 class="section-title">Straight answers.</h2>
+    <p class="applye-eyebrow">{{ m().faq.eyebrow }}</p>
+    <h2 class="section-title">{{ m().faq.title }}</h2>
     <div class="faq">
-      @for (item of faqs; track item.q; let i = $index) {
+      @for (item of m().faq.items; track item.q; let i = $index) {
       <div class="faq__item" [class.faq__item--open]="openFaq() === i">
         <button
           type="button"
@@ -246,20 +199,7 @@
           [attr.aria-expanded]="openFaq() === i"
         >
           <span>{{ item.q }}</span>
-          <svg
-            class="faq__chev"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <app-icon class="faq__chev" name="chevron-down" [size]="18" [strokeWidth]="2" />
         </button>
         @if (openFaq() === i) {
         <p class="faq__a">{{ item.a }}</p>

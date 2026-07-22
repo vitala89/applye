@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { REPO } from './site';
 
 interface CompareRow {
   label: string;
@@ -17,8 +16,6 @@ interface CompareRow {
   templateUrl: './compare.html',
 })
 export class Compare {
-  readonly repo = REPO;
-
   readonly rows: CompareRow[] = [
     {
       label: 'Price',
@@ -77,7 +74,7 @@ export class Compare {
       sheet: 'No',
     },
     {
-      label: 'German market (Eigenbemühungen, DE documents)',
+      label: 'Local paperwork (visa, DE Eigenbemühungen, per-market CV norms)',
       applye: 'First-class',
       saas: 'No',
       cli: 'No',

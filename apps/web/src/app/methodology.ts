@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { afterNextRender, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { REPO } from './site';
+import { SourceLink } from './ui/source-link';
 
 interface MethSection {
   id: string;
@@ -11,14 +11,12 @@ interface MethSection {
 @Component({
   selector: 'app-methodology',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, SourceLink],
   templateUrl: './methodology.html',
 })
 export class Methodology {
   private readonly doc = inject(DOCUMENT);
 
-  readonly repo = REPO;
-  readonly roadmap = `${REPO}/blob/main/ROADMAP.md`;
   readonly careerOps = 'https://career-ops.org';
 
   readonly active = signal<string>('score');

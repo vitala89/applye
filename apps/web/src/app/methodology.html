@@ -114,7 +114,7 @@
         the score is a sharp opinion you can argue with, never a verdict. The deductions are shown,
         you can expand the full breakdown on demand, and you always override it. We do not publish
         fixed rubric weights as if they were physical constants; the rubric lives in auditable skill
-        files in the open-source repo.
+        files that ship with the app and open to the public with the source.
       </p>
     </section>
 
@@ -129,9 +129,12 @@
       </p>
       <p>
         <a class="btn btn--ghost" routerLink="/docs">See the full pipeline in the docs</a>
-        <a class="btn btn--ghost" [href]="roadmap" target="_blank" rel="noopener"
-          >Read the roadmap</a
-        >
+        <app-source-link
+          variant="ghost"
+          path="/blob/main/ROADMAP.md"
+          label="Read the roadmap"
+          soonLabel="Roadmap: coming soon"
+        />
       </p>
     </section>
 

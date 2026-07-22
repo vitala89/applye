@@ -13,6 +13,8 @@
       "options": {
         "outputPath": "dist/apps/web",
         "browser": "apps/web/src/main.ts",
+        "server": "apps/web/src/main.server.ts",
+        "outputMode": "static",
         "tsConfig": "apps/web/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
@@ -81,7 +83,7 @@
       "options": {
         "buildTarget": "web:build",
         "staticFilePath": "dist/apps/web/browser",
-        "spa": true
+        "spa": false
       }
     }
   }

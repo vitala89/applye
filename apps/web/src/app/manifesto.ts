@@ -1,13 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { REPO } from './site';
+import { SourceLink } from './ui/source-link';
 
 @Component({
   selector: 'app-manifesto',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, SourceLink],
   templateUrl: './manifesto.html',
 })
-export class Manifesto {
-  readonly repo = REPO;
-}
+export class Manifesto {}

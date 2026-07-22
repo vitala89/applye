@@ -73,9 +73,11 @@
     <p class="manifesto__signname">Vitalii Kasap</p>
     <p class="manifesto__signrole">Author of Applye, signed during his own job search</p>
     <p>
-      <a class="btn btn--ghost" [href]="repo" target="_blank" rel="noopener"
-        >Co-sign it: star the repository</a
-      >
+      <app-source-link
+        variant="ghost"
+        label="Co-sign it: star the repository"
+        soonLabel="Repository: coming soon"
+      />
       <a class="btn btn--ghost" routerLink="/methodology">Read the methodology</a>
     </p>
   </footer>

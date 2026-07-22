@@ -20,13 +20,14 @@ body {
   height: auto;
   min-height: 100%;
 }
+/* Page changes must land at the top instantly. A global `scroll-behavior:
+   smooth` also animates the router's jump to the top, so for a fraction of a
+   second the reader is looking at the middle of a page they did not scroll to
+   and then it slides away. Smooth scrolling belongs to in-page anchor jumps
+   only, and the docs table of contents does that in code (see docs-layout.ts),
+   where it can honour prefers-reduced-motion itself. */
 html {
-  scroll-behavior: smooth;
-}
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  scroll-behavior: auto;
 }
 
 /* ---- Layout primitives ---- */
@@ -778,6 +779,118 @@ html {
 .nav__soon:hover::after {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ---- Language switcher (see app/ui/language-switcher.ts) ---- */
+.footer__langs {
+  padding-block: var(--space-4);
+}
+.langs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3) var(--space-4);
+}
+.langs__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.langs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.langs__list a {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.langs__list a:hover {
+  color: var(--text-primary);
+}
+.langs__list a.is-active {
+  color: var(--text-accent);
+}
+
+/* A translated landing page links into English docs; say so, quietly. */
+.landing__docsnote {
+  margin-top: var(--space-7);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.cookies__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ---- Analytics consent bar (see app/ui/consent-banner.ts) ---- */
+.consent {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--surface-1);
+  border-top: var(--border-width) solid var(--border-strong);
+  box-shadow: var(--shadow-overlay, 0 -8px 24px rgb(0 0 0 / 25%));
+}
+.consent__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+}
+.consent__copy {
+  flex: 1 1 24rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.consent__copy a {
+  color: var(--text-accent);
+}
+.consent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ---- "Source: coming soon" pill (see app/ui/source-link.ts) ---- */
+.soon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+  border: var(--border-width) dashed var(--border-default);
+  border-radius: var(--radius-badge);
+  padding: 1px var(--space-3);
+  cursor: help;
+  white-space: nowrap;
+}
+.soon-pill--btn {
+  font-size: var(--text-body);
+  letter-spacing: normal;
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-sunken);
+}
+.soon-pill--btn:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-default);
 }
 
 /* ============================================================

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { COMING_SOON, RELEASES } from './site';
+import { Icon, IconName } from './ui/icon';
 import { SourceLink } from './ui/source-link';
 
 interface Feature {
@@ -18,7 +19,7 @@ interface Faq {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, SourceLink],
+  imports: [RouterLink, SourceLink, Icon],
   templateUrl: './landing.html',
 })
 export class Landing {
@@ -61,12 +62,16 @@ export class Landing {
     },
   ];
 
-  readonly principles = [
-    { label: 'Local-first', line: 'One SQLite file on your machine.' },
-    { label: 'Privacy by design', line: 'Nothing is collected. No telemetry.' },
-    { label: 'Free / MIT', line: 'Open source, free.' },
-    { label: 'Bring your own AI', line: 'Your key or your CLI subscription.' },
-    { label: 'Augment, not automate', line: 'AI drafts. You decide and submit.' },
+  readonly principles: { label: string; line: string; icon: IconName }[] = [
+    { label: 'Local-first', line: 'One SQLite file on your machine.', icon: 'hard-drive' },
+    {
+      label: 'Privacy by design',
+      line: 'Nothing is collected. No telemetry.',
+      icon: 'shield-check',
+    },
+    { label: 'Free / MIT', line: 'Open source, free.', icon: 'file-text' },
+    { label: 'Bring your own AI', line: 'Your key or your CLI subscription.', icon: 'key' },
+    { label: 'Augment, not automate', line: 'AI drafts. You decide and submit.', icon: 'sparkles' },
   ];
 
   readonly faqs: Faq[] = [

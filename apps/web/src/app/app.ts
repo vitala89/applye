@@ -5,6 +5,7 @@ import { AnalyticsService } from './analytics/analytics.service';
 import { SeoService } from './seo/seo.service';
 import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, X_TWITTER, YEAR } from './site';
 import { ConsentBanner } from './ui/consent-banner';
+import { Icon } from './ui/icon';
 import { SourceLink } from './ui/source-link';
 
 type Theme = 'dark' | 'light';
@@ -14,7 +15,7 @@ const STORAGE_KEY = 'applye-theme';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, SourceLink, ConsentBanner],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SourceLink, ConsentBanner, Icon],
   templateUrl: './app.html',
 })
 export class App {

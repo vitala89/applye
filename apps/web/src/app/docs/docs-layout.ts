@@ -2,6 +2,7 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { afterNextRender, Component, inject, PLATFORM_ID, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { Icon } from '../ui/icon';
 
 interface NavLeaf {
   text: string;
@@ -23,7 +24,7 @@ const NAV_STORAGE_KEY = 'applye-docs-nav';
 @Component({
   selector: 'app-docs-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
   templateUrl: './docs-layout.html',
 })
 export class DocsLayout {

@@ -56,6 +56,35 @@ export function archetypeNames(list: Archetype[]): string[] {
 }
 
 const KEYWORD_STOPWORDS = ['and', 'or', 'the', 'with', 'for', 'of', 'in'];
+
+/**
+ * Seniority levels and bare role-family suffixes that are too common to
+ * fingerprint a target role on their own. "Senior Angular Engineer" must be
+ * matched on "angular", never on "engineer" - otherwise every engineering job
+ * in the feed ("Value Engineer", "Staff System Engineer", ...) lights up as a
+ * primary-role match. These still count toward coverage once a distinctive word
+ * has hit; they just cannot be the sole basis for a match.
+ */
+const GENERIC_ROLE_WORDS = new Set<string>([
+  'senior',
+  'junior',
+  'mid',
+  'middle',
+  'lead',
+  'principal',
+  'staff',
+  'entry',
+  'graduate',
+  'engineer',
+  'engineering',
+  'developer',
+  'dev',
+]);
+
+/** A name word specific enough to anchor a match (not a seniority/role-family term). */
+function isDistinctiveWord(word: string): boolean {
+  return !GENERIC_ROLE_WORDS.has(word);
+}
 const TIER_RANK: Record<ArchetypeFit, number> = { primary: 3, secondary: 2, adjacent: 1 };
 const COV_CAP = 6;
 const SELL_W = 0.05;
@@ -116,8 +145,13 @@ export function matchArchetype(text: string, list: Archetype[]): ArchetypeMatch 
   for (const a of list) {
     const nameWords = archetypeWords(a.name);
     if (!nameWords.length) continue;
+    // A match must be anchored by at least one distinctive word. A job that only
+    // shares a generic seniority/role-family word ("engineer", "senior") with the
+    // archetype is not a target-role match - that was flagging every engineering
+    // opening as primary-fit.
+    const distinctiveHit = nameWords.some((w) => isDistinctiveWord(w) && wordHit(hay, w));
+    if (!distinctiveHit) continue;
     const nameHits = nameWords.filter((w) => wordHit(hay, w)).length;
-    if (nameHits === 0) continue;
     const coverage = Math.min(1, nameHits / Math.min(nameWords.length, COV_CAP));
     const sellHits = archetypeWords(a.sellWhen).filter((w) => wordHit(hay, w)).length;
     const rank = coverage + Math.min(sellHits, SELL_CAP) * SELL_W;

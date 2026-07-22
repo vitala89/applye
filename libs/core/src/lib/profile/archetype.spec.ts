@@ -107,21 +107,42 @@ describe('matchArchetype', () => {
     expect(matchArchetype('Frontend Engineer', [])).toBeNull();
   });
 
-  it('picks the strongest tier when several names match', () => {
-    // both "Frontend Engineer" (secondary) and "Staff Engineer" (primary) share "engineer"
-    const m = matchArchetype('Staff Frontend Engineer', list);
+  it('picks the strongest tier when several distinctive names match', () => {
+    const tiered: Archetype[] = [
+      { name: 'Frontend Engineer', fit: 'secondary', sellWhen: '' },
+      { name: 'Platform Engineer', fit: 'primary', sellWhen: '' },
+    ];
+    // "Frontend Platform Engineer" hits "frontend" (secondary) and "platform"
+    // (primary); the stronger tier wins.
+    const m = matchArchetype('Senior Frontend Platform Engineer', tiered);
     expect(m?.fit).toBe('primary');
-    expect(m?.name).toBe('Staff Engineer');
+    expect(m?.name).toBe('Platform Engineer');
   });
 
   it('within the same tier, higher coverage wins', () => {
     const same: Archetype[] = [
-      { name: 'Frontend Engineer', fit: 'primary', sellWhen: '' }, // partial: only "engineer" hits -> 1/2
-      { name: 'Senior Engineer', fit: 'primary', sellWhen: '' }, // full: both hit -> 2/2
+      { name: 'Backend Engineer', fit: 'primary', sellWhen: '' }, // partial: only "backend" hits -> 1/2
+      { name: 'Backend Platform', fit: 'primary', sellWhen: '' }, // full: backend + platform -> 2/2
     ];
-    const m = matchArchetype('Senior Engineer role', same);
-    expect(m?.name).toBe('Senior Engineer');
+    const m = matchArchetype('Backend Platform role', same);
+    expect(m?.name).toBe('Backend Platform');
     expect(m?.coverage).toBe(1);
+  });
+
+  it('does not match on a generic role word alone (engineer/senior)', () => {
+    // The reported bug: "Senior Angular Engineer" (primary) etc. flagged every
+    // engineering opening as a primary-role match via the shared word "engineer".
+    const roles: Archetype[] = [
+      { name: 'Senior Angular Engineer', fit: 'primary', sellWhen: '' },
+      { name: 'Senior Frontend Engineer', fit: 'primary', sellWhen: '' },
+      { name: 'Senior React Engineer', fit: 'secondary', sellWhen: '' },
+    ];
+    expect(matchArchetype('Value Engineer (Supply Chain) - Iberia & Latam', roles)).toBeNull();
+    expect(matchArchetype('Staff System Engineer', roles)).toBeNull();
+    expect(matchArchetype('Software Engineer - SAP ABAP', roles)).toBeNull();
+    // A genuinely on-target title still matches on its distinctive word.
+    expect(matchArchetype('Senior Angular Engineer', roles)?.fit).toBe('primary');
+    expect(matchArchetype('React Native Engineer', roles)?.fit).toBe('secondary');
   });
 
   it('reports coverage in 0..1', () => {

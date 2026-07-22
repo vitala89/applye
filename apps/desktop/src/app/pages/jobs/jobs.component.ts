@@ -253,26 +253,11 @@ interface FinalChecks {
 
               <span class="detail-actions__spacer"></span>
 
-              <!-- Right: edit/cancel + delete -->
-              @if (!canMarkApplied()) {
-                <button
-                  class="btn btn--secondary btn--sm"
-                  type="button"
-                  [disabled]="actionBusy()"
-                  (click)="requestEditLocked()"
-                >
-                  {{ t()('jobs.edit_locked_action') }}
-                </button>
-              } @else if (editingLocked()) {
-                <button
-                  class="btn btn--secondary btn--sm"
-                  type="button"
-                  [disabled]="actionBusy()"
-                  (click)="cancelEditingLocked()"
-                >
-                  {{ t()('actions.cancel') }}
-                </button>
-              }
+              <!-- Right: delete only. Once a job leaves Saved the pasted
+                   description is frozen: the application is already out the
+                   door, so there is no re-edit affordance, only Delete. A
+                   Saved job needs no Edit either - its textarea is editable
+                   inline. -->
               <button
                 class="btn btn--secondary btn--sm"
                 type="button"
@@ -324,36 +309,6 @@ interface FinalChecks {
                     (click)="confirmCrossJob()"
                   >
                     {{ t()('jobs.cross_job_confirm_btn') }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
-          @if (editConfirmOpen()) {
-            <div class="alert alert--warn" role="alert">
-              <lucide-icon
-                [img]="icons.alertTriangle"
-                [size]="16"
-                class="alert__icon"
-                aria-hidden="true"
-              />
-              <div class="alert__body">
-                <p class="alert__title">{{ t()('jobs.edit_confirm_title') }}</p>
-                <p class="alert__text">{{ t()('jobs.edit_confirm_msg') }}</p>
-                <div class="alert__actions">
-                  <button
-                    class="btn btn--primary btn--md"
-                    type="button"
-                    (click)="confirmEditLocked()"
-                  >
-                    {{ t()('jobs.edit_confirm_btn') }}
-                  </button>
-                  <button
-                    class="btn btn--secondary btn--md"
-                    type="button"
-                    (click)="cancelEditConfirm()"
-                  >
-                    {{ t()('actions.cancel') }}
                   </button>
                 </div>
               </div>
@@ -2319,15 +2274,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly deleteConfirmOpen = signal(false);
   readonly deleting = signal(false);
 
-  /** "Change" doesn't write anything - it just lifts the lock so the
-   * description is editable and Mark-as-Applied reappears, letting the user
-   * redo the status/description from scratch. Nothing is saved unless the
-   * user then takes an explicit action (Parse & filter, Mark as Applied).
-   * "Cancel" drops this override and discards any in-progress edit. */
+  /** Editing override for the scoring view only. The job-detail UI no longer
+   * exposes a re-edit affordance once a job leaves Saved (the application is
+   * out the door, so the pasted description is frozen); this stays because the
+   * scoring view still drives it via `overrideEditing` / `cancelEdit`. */
   readonly editingLocked = signal(false);
-
-  /** Confirm dialog for reopening editing on an application past Applied. */
-  readonly editConfirmOpen = signal(false);
 
   /** Confirm dialog when opening the wizard here would abandon an unfinished
    * tailoring session for a different job. */
@@ -3485,7 +3436,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.exportError.set(false);
     this.lastExport.set(null);
     this.editingLocked.set(false);
-    this.editConfirmOpen.set(false);
     this.crossJobConfirmOpen.set(false);
     this.deleteConfirmOpen.set(false);
     this.chooseCvOpen.set(false);
@@ -3880,36 +3830,6 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.actionMsg.set(String(e));
       this.actionBusy.set(false);
     }
-  }
-
-  /** True once the application has moved past Applied, where re-editing the
-   * job means touching an application whose resume is already out the door. */
-  readonly editNeedsConfirm = computed(() => {
-    const s = this.application()?.status;
-    return s === 'interview' || s === 'offer' || s === 'rejected';
-  });
-
-  /**
-   * "Edit" - lifts the lock so the description is editable and the wizard can
-   * re-tailor. For an application still at Applied this is immediate; once it
-   * has reached Interview or beyond the resume has already been sent, so we
-   * ask first instead of silently reopening it.
-   */
-  requestEditLocked(): void {
-    if (this.editNeedsConfirm()) {
-      this.editConfirmOpen.set(true);
-      return;
-    }
-    this.editingLocked.set(true);
-  }
-
-  confirmEditLocked(): void {
-    this.editConfirmOpen.set(false);
-    this.editingLocked.set(true);
-  }
-
-  cancelEditConfirm(): void {
-    this.editConfirmOpen.set(false);
   }
 
   /** "Cancel" - drops the override and discards the in-progress description

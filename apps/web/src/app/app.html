@@ -78,7 +78,7 @@
       <a routerLink="/sustain">{{ m().footer.sustain }}</a>
     </nav>
     <div class="footer__social" aria-label="Social links">
-      <app-source-link [icon]="true" label="GitHub" soonLabel="Source: soon" />
+      <app-source-link [icon]="true" label="GitHub" [soonLabel]="m().nav.sourceSoon" />
       @if (discord) {
       <a
         class="icon-btn"

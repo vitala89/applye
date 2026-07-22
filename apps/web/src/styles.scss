@@ -780,6 +780,46 @@ html {
   transform: translateX(-50%) translateY(0);
 }
 
+.cookies__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ---- Analytics consent bar (see app/ui/consent-banner.ts) ---- */
+.consent {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--surface-1);
+  border-top: var(--border-width) solid var(--border-strong);
+  box-shadow: var(--shadow-overlay, 0 -8px 24px rgb(0 0 0 / 25%));
+}
+.consent__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+}
+.consent__copy {
+  flex: 1 1 24rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.consent__copy a {
+  color: var(--text-accent);
+}
+.consent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 /* ---- "Source: coming soon" pill (see app/ui/source-link.ts) ---- */
 .soon-pill {
   display: inline-flex;

@@ -1,7 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AnalyticsService } from './analytics/analytics.service';
+import { SeoService } from './seo/seo.service';
 import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, X_TWITTER, YEAR } from './site';
+import { ConsentBanner } from './ui/consent-banner';
 import { SourceLink } from './ui/source-link';
 
 type Theme = 'dark' | 'light';
@@ -11,11 +14,16 @@ const STORAGE_KEY = 'applye-theme';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, SourceLink],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SourceLink, ConsentBanner],
   templateUrl: './app.html',
 })
 export class App {
   private readonly doc = inject(DOCUMENT);
+
+  // Instantiated for their side effects: per-route meta tags, and analytics
+  // that stay dormant until the visitor opts in.
+  readonly seo = inject(SeoService);
+  readonly analytics = inject(AnalyticsService);
 
   readonly dataContract = DATA_CONTRACT;
   readonly author = AUTHOR;

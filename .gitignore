@@ -76,6 +76,8 @@ apps/desktop/src-tauri/gen/
 .codex/
 .codegraph/
 .serena/
+.agents/
+.aif/
 graphify-out/
 .planning/
 tauri-project-bootstrap.md
@@ -86,6 +88,8 @@ docs/product/CAREER_OPS_ADOPTION.md
 
 # superpowers scratch state
 .superpowers/
+# Session hand-off notes are local scratch, not project docs
+docs/superpowers/NEXT-SESSION-*.md
 
 # Agent local planning and artifact files
 implementation_plan.md

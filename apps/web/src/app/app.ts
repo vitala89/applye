@@ -1,7 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, REPO, X_TWITTER, YEAR } from './site';
+import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, X_TWITTER, YEAR } from './site';
+import { SourceLink } from './ui/source-link';
 
 type Theme = 'dark' | 'light';
 
@@ -10,13 +11,12 @@ const STORAGE_KEY = 'applye-theme';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SourceLink],
   templateUrl: './app.html',
 })
 export class App {
   private readonly doc = inject(DOCUMENT);
 
-  readonly repo = REPO;
   readonly dataContract = DATA_CONTRACT;
   readonly author = AUTHOR;
   readonly year = YEAR;

@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
-import { AUTHOR, REPO } from './site';
+import { AUTHOR } from './site';
+import { SourceLink } from './ui/source-link';
 
 @Component({
   selector: 'app-press',
   standalone: true,
+  imports: [SourceLink],
   templateUrl: './press.html',
 })
 export class Press {
-  readonly repo = REPO;
   readonly author = AUTHOR;
 
   readonly facts = [

@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { COMING_SOON, DATA_CONTRACT, RELEASES, REPO } from './site';
+import { COMING_SOON, RELEASES } from './site';
+import { SourceLink } from './ui/source-link';
 
 interface Feature {
   title: string;
@@ -17,13 +18,11 @@ interface Faq {
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, SourceLink],
   templateUrl: './landing.html',
 })
 export class Landing {
-  readonly repo = REPO;
   readonly releases = RELEASES;
-  readonly dataContract = DATA_CONTRACT;
   readonly comingSoon = COMING_SOON;
 
   readonly openFaq = signal<number | null>(0);

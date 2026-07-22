@@ -780,6 +780,34 @@ html {
   transform: translateX(-50%) translateY(0);
 }
 
+/* ---- "Source: coming soon" pill (see app/ui/source-link.ts) ---- */
+.soon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+  border: var(--border-width) dashed var(--border-default);
+  border-radius: var(--radius-badge);
+  padding: 1px var(--space-3);
+  cursor: help;
+  white-space: nowrap;
+}
+.soon-pill--btn {
+  font-size: var(--text-body);
+  letter-spacing: normal;
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-sunken);
+}
+.soon-pill--btn:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-default);
+}
+
 /* ============================================================
    DOCS
    ============================================================ */

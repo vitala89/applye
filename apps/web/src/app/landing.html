@@ -21,9 +21,11 @@
       } @else {
       <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener">Download</a>
       }
-      <a class="btn btn--ghost" [href]="repo" target="_blank" rel="noopener"
-        >View source on GitHub</a
-      >
+      <app-source-link
+        variant="ghost"
+        label="View source on GitHub"
+        soonLabel="Source: coming soon"
+      />
     </div>
     <p class="hero__meta">Free · MIT licensed · No account · No telemetry</p>
   </div>
@@ -202,10 +204,12 @@
       it yourself.
     </p>
     <div class="trust__links">
-      <a class="btn btn--ghost" [href]="repo" target="_blank" rel="noopener">GitHub repository</a>
-      <a class="btn btn--ghost" [href]="dataContract" target="_blank" rel="noopener"
-        >Data sovereignty guarantee</a
-      >
+      <app-source-link
+        variant="ghost"
+        label="GitHub repository"
+        soonLabel="Repository: coming soon"
+      />
+      <a class="btn btn--ghost" routerLink="/privacy">Data sovereignty guarantee</a>
     </div>
 
     <div class="honest">

@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { SourceLink } from '../ui/source-link';
 
-const REPO = 'https://github.com/vitala89/applye';
-const ROADMAP = `${REPO}/blob/main/ROADMAP.md`;
 const CAREER_OPS = 'https://career-ops.org';
 
 /* ---------------------------------------------------------------- Overview */
@@ -72,7 +71,7 @@ export class Requirements {}
     <section class="docs__section">
       <h2 id="steps" class="docs__h2">Steps</h2>
       <ol class="docs__list docs__list--ol">
-        <li>Download the build for your OS from GitHub Releases.</li>
+        <li>Download the build for your OS from the release page (public at launch).</li>
         <li>Open the app. Your local database is created on first run.</li>
         <li>Fill in your profile once (this is what scoring compares against).</li>
         <li>Optionally connect an AI source in Settings when you want AI actions.</li>
@@ -315,6 +314,7 @@ export class Legality {}
 /* ------------------------------------------------------------------ Status */
 @Component({
   standalone: true,
+  imports: [SourceLink],
   template: `
     <h1 class="docs__h1" id="status">Status &amp; roadmap</h1>
     <p class="docs__lede">Applye is pre-launch. This page tracks shipped behaviour only.</p>
@@ -325,9 +325,12 @@ export class Legality {}
         Agentur report. The full plan lives in the roadmap.
       </p>
       <p>
-        <a class="btn btn--ghost" href="${ROADMAP}" target="_blank" rel="noopener"
-          >Read the roadmap</a
-        >
+        <app-source-link
+          variant="ghost"
+          path="/blob/main/ROADMAP.md"
+          label="Read the roadmap"
+          soonLabel="Roadmap: coming soon"
+        />
       </p>
       <p class="docs__todo">
         <span class="docs__todobadge">TODO</span> Deep-dive guides are written as features ship.

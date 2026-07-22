@@ -33,7 +33,7 @@ fn extract_title(text: &str) -> Option<String> {
             || lower.starts_with("role:")
             || lower.starts_with("title:")
         {
-            if let Some(v) = line.splitn(2, ':').nth(1) {
+            if let Some(v) = line.split_once(':').map(|x| x.1) {
                 let v = v.trim().to_string();
                 if !v.is_empty() {
                     return Some(v);
@@ -197,7 +197,7 @@ fn extract_company_from_body(text: &str) -> Option<String> {
         }
     }
 
-    for sentence in head.split(|c| c == '.' || c == '\n' || c == '!') {
+    for sentence in head.split(['.', '\n', '!']) {
         if let Some(company) = company_before_is(sentence.trim()) {
             return Some(company);
         }
@@ -212,7 +212,7 @@ fn extract_company(text: &str) -> Option<String> {
             || lower.starts_with("employer:")
             || lower.starts_with("organization:")
         {
-            if let Some(v) = line.splitn(2, ':').nth(1) {
+            if let Some(v) = line.split_once(':').map(|x| x.1) {
                 let v = v.trim().to_string();
                 if !v.is_empty() {
                     return Some(v);

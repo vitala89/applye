@@ -1,3 +1,7 @@
+<!-- Page shell: the click handler only dismisses open menus when the user clicks
+     away. It is not a control, so it must stay unfocusable and keyboard-inert;
+     every menu it closes is itself reachable and dismissable from the keyboard. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <div class="jt" (click)="closeMenus()">
   <div class="jt__wrap">
     <!-- ===================== toolbar ===================== -->
@@ -253,6 +257,8 @@
                         </button>
                       </div>
                     } @else {
+                      <!-- Wrapper only stops the shell's click-away handler; not a control. -->
+                      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
                       <div class="jt-menu" (click)="$event.stopPropagation()">
                         <button
                           type="button"
@@ -305,6 +311,8 @@
 
   <!-- ===================== column manager drawer ===================== -->
   @if (showCols()) {
+    <!-- Wrapper only stops the shell's click-away handler; not a control. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="jt-drawer" (click)="$event.stopPropagation()">
       <div class="jt-drawer__head">
         <span class="jt-drawer__title">{{ t()('tracker.columns_toggle') }}</span>
@@ -315,12 +323,17 @@
       <div class="jt-drawer__body">
         <p class="jt-drawer__heading">{{ t()('tracker.cols_essential') }}</p>
         @for (col of essentialColumns(); track col.key) {
-          <label class="jt-colrow" [class.is-forced]="col.pin">
-            <span
+          <div class="jt-colrow" [class.is-forced]="col.pin">
+            <button
+              type="button"
+              role="switch"
               class="jt-switch"
               [class.is-on]="isColumnVisible(col.key)"
+              [attr.aria-checked]="isColumnVisible(col.key)"
+              [attr.aria-label]="colLabel(col)"
+              [disabled]="col.pin"
               (click)="!col.pin && toggleColumn(col.key)"
-            ></span>
+            ></button>
             <span class="jt-colrow__label">{{ colLabel(col) }}</span>
             @if (col.src === 'job') {
               <span class="jt-tag">{{ t()('tracker.locked') }}</span>
@@ -328,22 +341,26 @@
             @if (col.pin) {
               <lucide-icon [img]="icons.pin" [size]="12" />
             }
-          </label>
+          </div>
         }
 
         <p class="jt-drawer__heading">{{ t()('tracker.cols_optional') }}</p>
         @for (col of optionalColumns(); track col.key) {
-          <label class="jt-colrow">
-            <span
+          <div class="jt-colrow">
+            <button
+              type="button"
+              role="switch"
               class="jt-switch"
               [class.is-on]="isColumnVisible(col.key)"
+              [attr.aria-checked]="isColumnVisible(col.key)"
+              [attr.aria-label]="colLabel(col)"
               (click)="toggleColumn(col.key)"
-            ></span>
+            ></button>
             <span class="jt-colrow__label">{{ colLabel(col) }}</span>
             @if (col.src === 'job') {
               <span class="jt-tag">{{ t()('tracker.locked') }}</span>
             }
-          </label>
+          </div>
         }
 
         @if (customCols().length) {
@@ -394,7 +411,11 @@
 
   <!-- ===================== export preview modal ===================== -->
   @if (showExport()) {
+    <!-- Backdrop click-to-dismiss is a mouse shortcut; the panel's Close button
+         is the keyboard path, so the backdrop stays unfocusable. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="jt-modal" (click)="showExport.set(false)">
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="jt-modal__panel" (click)="$event.stopPropagation()">
         <div class="jt-modal__head">
           <span class="jt-modal__title">
@@ -494,7 +515,11 @@
        context can clip or paint over it ===== -->
   @if (menuRow(); as mr) {
     @if (menuPos(); as pos) {
+      <!-- Backdrop click-to-dismiss is a mouse shortcut; the menu below is the
+           keyboard path, so the backdrop stays unfocusable. -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="jt-pop-backdrop" (click)="closeMenus()"></div>
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div
         class="jt-pop"
         role="menu"

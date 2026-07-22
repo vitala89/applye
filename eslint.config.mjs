@@ -27,6 +27,10 @@ export default tseslint.config(
   {
     files: ['**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
-    rules: {},
+    rules: {
+      // `x != null` is the idiomatic "neither null nor undefined" guard and is
+      // used deliberately in templates; strict comparisons stay required.
+      '@angular-eslint/template/eqeqeq': ['error', { allowNullOrUndefined: true }],
+    },
   },
 );

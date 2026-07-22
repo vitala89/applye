@@ -165,7 +165,11 @@
 }
 
 @if (importOpen()) {
+  <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
+       is the keyboard path, so the backdrop stays unfocusable. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
   <div class="modal-backdrop" (click)="cancelImport()">
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="modal modal--wide" (click)="$event.stopPropagation()">
       <h3>{{ t()('myjobs.import_title') }}</h3>
 

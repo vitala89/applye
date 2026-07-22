@@ -1,3 +1,6 @@
+<!-- Page shell: the click handler only dismisses open menus when the user clicks
+     away. It is not a control, so it stays unfocusable and keyboard-inert. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <div class="ipd" (click)="closeMenus()">
   <button type="button" class="ipd__back" (click)="back()">
     <lucide-icon [img]="icons.back" [size]="15" />
@@ -59,6 +62,8 @@
               </div>
 
               <!-- right cluster -->
+              <!-- Wrapper only stops the shell's click-away handler; not a control. -->
+              <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
               <div class="ipd__actions" (click)="$event.stopPropagation()">
                 <div class="ipd__status-wrap">
                   <button
@@ -140,7 +145,11 @@
 
   <!-- add / edit modal -->
   @if (modalOpen()) {
+    <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
+         is the keyboard path, so the backdrop stays unfocusable. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="ip-modal" (click)="closeModal()">
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="ip-modal__panel" (click)="$event.stopPropagation()">
         <header class="ip-modal__head">
           <span class="ip-modal__title">{{
@@ -152,10 +161,11 @@
         </header>
         <div class="ip-modal__body">
           <div class="ipd-field">
-            <label class="ipd-flabel"
+            <label class="ipd-flabel" for="stage-label"
               >{{ t()('interview.stage_label_label') }} <span class="ipd-req">*</span></label
             >
             <input
+              id="stage-label"
               type="text"
               class="ipd-input"
               [class.is-error]="labelError()"
@@ -169,8 +179,11 @@
           </div>
           <div class="ipd-grid2">
             <div class="ipd-field">
-              <label class="ipd-flabel">{{ t()('interview.stage_type_label') }}</label>
+              <label class="ipd-flabel" for="stage-type">{{
+                t()('interview.stage_type_label')
+              }}</label>
               <select
+                id="stage-type"
                 class="ipd-input"
                 [ngModel]="form().stageType"
                 (ngModelChange)="updateForm('stageType', $event)"
@@ -181,8 +194,11 @@
               </select>
             </div>
             <div class="ipd-field">
-              <label class="ipd-flabel">{{ t()('interview.stage_date_label') }}</label>
+              <label class="ipd-flabel" for="stage-date">{{
+                t()('interview.stage_date_label')
+              }}</label>
               <input
+                id="stage-date"
                 type="date"
                 class="ipd-input"
                 [ngModel]="form().scheduledAt"
@@ -192,8 +208,11 @@
           </div>
           <div class="ipd-grid2">
             <div class="ipd-field">
-              <label class="ipd-flabel">{{ t()('interview.stage_language_label') }}</label>
+              <label class="ipd-flabel" for="stage-language">{{
+                t()('interview.stage_language_label')
+              }}</label>
               <select
+                id="stage-language"
                 class="ipd-input"
                 [ngModel]="form().stageLanguage"
                 (ngModelChange)="updateForm('stageLanguage', $event)"
@@ -235,8 +254,9 @@
           </div>
 
           <div class="ipd-group">
-            <label class="ipd-flabel">{{ t()('interview.stage_notes') }}</label>
+            <label class="ipd-flabel" for="stage-notes">{{ t()('interview.stage_notes') }}</label>
             <textarea
+              id="stage-notes"
               rows="3"
               class="ipd-input"
               [ngModel]="form().notes"
@@ -264,7 +284,11 @@
 
   <!-- delete confirm -->
   @if (confirmStage(); as stage) {
+    <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
+         is the keyboard path, so the backdrop stays unfocusable. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="ip-modal ip-modal--center" (click)="cancelDelete()">
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="ip-modal__confirm" (click)="$event.stopPropagation()">
         <div class="ip-modal__confirm-row">
           <div class="ip-modal__confirm-icon"><lucide-icon [img]="icons.delete" [size]="20" /></div>

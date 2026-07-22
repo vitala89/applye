@@ -56,10 +56,10 @@ impl LegitimacyTier {
     }
 }
 
-/// Deterministic legitimacy check. Tier = worst triggered level (red > yellow
-/// > green); each trigger appends a human-readable note. `company` and
-/// `apply_email` are whatever the paste pipeline already extracted from the
-/// JD — no new fields are required.
+/// Deterministic legitimacy check. Tier = worst triggered level
+/// (red beats yellow beats green); each trigger appends a human-readable note.
+/// `company` and `apply_email` are whatever the paste pipeline already
+/// extracted from the JD - no new fields are required.
 pub fn legitimacy_check(
     jd_text: &str,
     company: Option<&str>,

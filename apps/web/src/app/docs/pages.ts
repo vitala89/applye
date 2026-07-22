@@ -323,10 +323,11 @@ export class Privacy {}
     <section class="docs__section">
       <h2 id="how" class="docs__h2">No scraping</h2>
       <p>
-        It does not scrape closed job boards, bypass logins, or harvest postings at scale. You paste
-        in roles you found. Where automated sources exist, they use public JSON APIs (for example
-        Greenhouse, Lever, Ashby), not HTML scraping, so there is no terms-of-service violation and
-        no anti-bot risk.
+        It does not scrape closed job boards, bypass logins, or harvest postings at scale. Discover
+        reads machine-readable sources that are published for exactly this purpose - public JSON
+        APIs such as Greenhouse, Lever and Ashby, plus RSS feeds and the built-in remote boards -
+        never HTML scraped out from behind a login. So there is no terms-of-service violation and no
+        anti-bot risk. Anything those sources do not cover, you paste in yourself.
       </p>
     </section>
   `,
@@ -495,8 +496,11 @@ export class DataAndBackup {}
       <h2 id="docs-issues" class="docs__h2">Documents and export</h2>
       <ul class="docs__list">
         <li>
-          <strong>DOCX or PDF?</strong> DOCX when a portal will parse the file, PDF when a human
-          reads it directly. The editor warns about fonts and photos that ATS parsers handle badly.
+          <strong>Where is the DOCX export?</strong> Gone, deliberately. A second rendering engine
+          meant two documents that disagreed with the preview and with each other; the WYSIWYG PDF
+          is now the single supported export. The editor still warns about fonts and photos that ATS
+          parsers handle badly, which is what the DOCX was really being used for. Importing a DOCX
+          CV still works.
         </li>
         <li>
           <strong>My tailored CV is not in the library.</strong> Drafts stay hidden until you export

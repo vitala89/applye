@@ -193,7 +193,7 @@ export const appRoutes: Route[] = [
         title: 'Documents library · Applye Docs',
         data: {
           description:
-            'Import, generate, edit and export CVs and cover letters: section-level styling, templates, photo and font ATS warnings, DOCX and PDF output.',
+            'Import, generate, edit and export CVs and cover letters: section-level styling, templates, photo and font ATS warnings, and a PDF that matches the preview exactly.',
         },
       },
       {

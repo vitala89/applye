@@ -154,7 +154,7 @@ export const es: Messages = {
     notTitle: 'Qué no es Applye',
     notPoints: [
       'No es un bot que se inscribe solo. Nunca envía por ti.',
-      'No rastrea portales de empleo. Las ofertas las pegas tú.',
+      'No rastrea portales cerrados. Discover lee APIs y feeds públicos; el resto lo pegas tú.',
       'No es un servicio en la nube: sin cuenta, sin servidor, sin sincronización.',
       'No sirve para inventar experiencia. Honestidad antes que inflar.',
     ],
@@ -178,7 +178,7 @@ export const es: Messages = {
       },
       {
         q: '¿Mis datos son privados?',
-        a: 'Del todo. Tu perfil, tus vacantes y tus documentos están en una base de datos SQLite local en tu equipo. No hay nube, ni cuenta, ni analítica. La aplicación tampoco rastrea portales: pegas ofertas que ya estabas mirando.',
+        a: 'Del todo. Tu perfil, tus vacantes y tus documentos están en una base de datos SQLite local en tu equipo. No hay nube, ni cuenta, ni analítica. Discover trae las ofertas directamente desde APIs y feeds públicos a tu equipo - nadie se entera de lo que buscaste - y el resto lo pegas tú.',
       },
       {
         q: '¿Se inscribe por mí?',

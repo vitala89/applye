@@ -642,7 +642,7 @@ export class GuideDiscover {}
     <p class="docs__lede">
       Every CV and cover letter Applye touches lives here, in two tabs. This is a real editor, not
       an export folder: you can build a CV from scratch, import your existing one, restyle it
-      section by section, and export DOCX or PDF.
+      section by section, and export a PDF that matches the preview exactly.
     </p>
 
     <figure class="docs__media">
@@ -757,18 +757,14 @@ export class GuideDiscover {}
 
     <section class="docs__section">
       <h2 id="export" class="docs__h2">Exporting</h2>
-      <ul class="docs__list">
-        <li>
-          <strong>DOCX</strong> - editable, ATS-safe formatting. Use it when a portal will parse the
-          file.
-        </li>
-        <li>
-          <strong>PDF</strong> - pixel-perfect layout for a human reader, exported exactly as the
-          preview shows.
-        </li>
-      </ul>
       <p>
-        Both go through the native save dialog, so the file lands where you chose and nowhere else.
+        Export is <strong>PDF</strong>, and only PDF: the page you see in the preview is the page
+        that gets written, down to the millimetre margins. One rendering engine means there is no
+        second format that quietly disagrees with the preview about where a page breaks or how a
+        photo sits.
+      </p>
+      <p>
+        It goes through the native save dialog, so the file lands where you chose and nowhere else.
         Deleting a document removes it from the library and cannot be undone - there is no server
         copy to recover.
       </p>

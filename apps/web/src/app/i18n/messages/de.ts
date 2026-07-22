@@ -154,7 +154,7 @@ export const de: Messages = {
     notTitle: 'Was Applye nicht ist',
     notPoints: [
       'Kein Auto-Bewerbungs-Bot. Es sendet nie für dich.',
-      'Kein Scraper für Jobbörsen. Du fügst gefundene Stellen selbst ein.',
+      'Kein Scraper für geschlossene Jobbörsen. Discover liest öffentliche APIs und Feeds; den Rest fügst du selbst ein.',
       'Kein Cloud-Dienst: kein Konto, kein Server, keine Synchronisierung.',
       'Kein Weg, Erfahrung vorzutäuschen. Ehrlichkeit statt Aufblähen.',
     ],
@@ -178,7 +178,7 @@ export const de: Messages = {
       },
       {
         q: 'Sind meine Daten privat?',
-        a: 'Vollständig. Profil, Stellen und Dokumente liegen in einer lokalen SQLite-Datenbank auf deinem Rechner. Keine Cloud, kein Konto, keine Analyse. Die App durchsucht auch keine Jobbörsen - du fügst Stellen ein, die du dir ohnehin ansiehst.',
+        a: 'Vollständig. Profil, Stellen und Dokumente liegen in einer lokalen SQLite-Datenbank auf deinem Rechner. Keine Cloud, kein Konto, keine Analyse. Discover holt Stellen direkt aus öffentlichen APIs und Feeds auf deinen Rechner - niemand erfährt, wonach du gesucht hast - und alles Übrige fügst du selbst ein.',
       },
       {
         q: 'Bewirbt es sich automatisch für mich?',

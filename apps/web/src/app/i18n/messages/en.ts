@@ -155,7 +155,7 @@ export const en: Messages = {
     notTitle: 'What Applye is not',
     notPoints: [
       'Not an auto-apply bot. It never submits for you.',
-      'Not a job-board scraper. You paste roles you found.',
+      'Not a scraper of closed boards. Discover reads public APIs and feeds; the rest you paste.',
       'Not a cloud service: no account, no server, no sync.',
       'Not a way to fake experience. Honesty over inflation.',
     ],
@@ -179,7 +179,7 @@ export const en: Messages = {
       },
       {
         q: 'Is my data private?',
-        a: 'Completely. Your profile, jobs, and documents live in a local SQLite database on your machine. There is no cloud, no account, and no analytics. The app does not scrape job boards either; you paste in roles you are already looking at.',
+        a: 'Completely. Your profile, jobs, and documents live in a local SQLite database on your machine. There is no cloud, no account, and no analytics. Discover fetches openings straight from public APIs and feeds to your machine - nobody is told what you searched for - and everything else you paste in yourself.',
       },
       {
         q: 'Does it auto-apply for me?',

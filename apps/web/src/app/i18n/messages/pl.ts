@@ -154,7 +154,7 @@ export const pl: Messages = {
     notTitle: 'Czym Applye nie jest',
     notPoints: [
       'To nie bot do automatycznego aplikowania. Nigdy nie wysyła za ciebie.',
-      'To nie scraper portali z ofertami. Oferty wklejasz sam.',
+      'To nie scraper zamkniętych portali. Discover czyta publiczne API i kanały, resztę wklejasz sam.',
       'To nie usługa w chmurze: bez konta, bez serwera, bez synchronizacji.',
       'To nie sposób na zmyślenie doświadczenia. Uczciwość zamiast podkoloryzowania.',
     ],
@@ -178,7 +178,7 @@ export const pl: Messages = {
       },
       {
         q: 'Czy moje dane są prywatne?',
-        a: 'Całkowicie. Profil, oferty i dokumenty leżą w lokalnej bazie SQLite na twoim komputerze. Nie ma chmury, konta ani analityki. Aplikacja nie przeszukuje też portali - wklejasz oferty, które i tak oglądasz.',
+        a: 'Całkowicie. Profil, oferty i dokumenty leżą w lokalnej bazie SQLite na twoim komputerze. Nie ma chmury, konta ani analityki. Discover pobiera oferty prosto z publicznych API i kanałów na twój komputer - nikt nie dowiaduje się, czego szukałeś - a resztę wklejasz sam.',
       },
       {
         q: 'Czy aplikuje za mnie?',

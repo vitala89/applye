@@ -16,7 +16,7 @@
       <li>
         <strong>Star the repository.</strong> Visibility is oxygen for an open-source tool - it is
         genuinely the single most helpful free action.
-        <a [href]="repo" target="_blank" rel="noopener">Star Applye on GitHub</a>.
+        <app-source-link label="Star Applye on GitHub" soonLabel="Repository: coming soon" />
       </li>
       <li>
         <strong>Tell one person.</strong> Someone in your circle is job hunting right now. Send them
@@ -25,9 +25,11 @@
       <li>
         <strong>Contribute.</strong> Issues, docs, translations (the UI ships in six languages), and
         code. Start with
-        <a [href]="repo + '/blob/main/CONTRIBUTING.md'" target="_blank" rel="noopener"
-          >CONTRIBUTING.md</a
-        >.
+        <app-source-link
+          path="/blob/main/CONTRIBUTING.md"
+          label="CONTRIBUTING.md"
+          soonLabel="Contribution guide: coming soon"
+        />.
       </li>
       <li>
         <strong>Sponsor, if you want to.</strong>

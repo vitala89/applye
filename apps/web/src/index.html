@@ -19,7 +19,40 @@
       content="Open-source, local-first desktop app for an AI-powered job search. Your data, your machine, your AI. Free, MIT licensed."
     />
     <meta property="og:url" content="https://applye.dev" />
+    <meta property="og:site_name" content="Applye" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:image" content="https://applye.dev/og/applye-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Applye - drafting is automated, submitting is not." />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://applye.dev/og/applye-og.png" />
+
+    <!-- Structured data. Kept static so it survives with or without JS. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Applye",
+        "applicationCategory": "BusinessApplication",
+        "applicationSubCategory": "Job search",
+        "operatingSystem": "macOS, Windows, Linux",
+        "url": "https://applye.dev",
+        "description": "Free, open-source, local-first desktop app for an AI-powered job search. Blunt recruiter checks, tailored CVs, and a pipeline kanban, with all data kept on your own machine.",
+        "license": "https://opensource.org/licenses/MIT",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Vitalii Kasap",
+          "url": "https://vitaliikasap.com"
+        }
+      }
+    </script>
 
     <link rel="icon" type="image/svg+xml" href="brand/applye-favicon.svg" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />

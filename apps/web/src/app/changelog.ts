@@ -1,6 +1,7 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { afterNextRender, Component, inject, PLATFORM_ID, signal } from '@angular/core';
-import { REPO } from './site';
+import { SOURCE_PUBLIC } from './site';
+import { SourceLink } from './ui/source-link';
 
 interface Section {
   name: string;
@@ -16,14 +17,15 @@ interface Release {
 @Component({
   selector: 'app-changelog',
   standalone: true,
+  imports: [SourceLink],
   templateUrl: './changelog.html',
 })
 export class Changelog {
   private readonly doc = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  readonly repo = REPO;
-  readonly releasesUrl = `${REPO}/releases`;
+  /** Release headings only link out to GitHub compare views once the repo is public. */
+  readonly sourcePublic = SOURCE_PUBLIC;
   readonly releases = signal<Release[]>([]);
   readonly status = signal<'loading' | 'ready' | 'error'>('loading');
 

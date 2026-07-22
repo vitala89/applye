@@ -1,3 +1,6 @@
-# Cloudflare Pages SPA fallback: serve the Angular app for client-side routes
-# (/docs, /blog) while still serving real static assets directly.
-/*    /index.html    200
+# The site is fully prerendered: every route ships as real static HTML, so the
+# old SPA fallback rewrite is gone - it would hide those files behind the
+# landing page and undo the per-page titles and meta tags.
+#
+# Unknown paths fall through to Cloudflare Pages' automatic /404.html, which is
+# served with a real 404 status instead of a soft 200.

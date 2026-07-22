@@ -1,14 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DATA_CONTRACT, REPO } from './site';
+import { SourceLink } from './ui/source-link';
 
 @Component({
   selector: 'app-privacy',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, SourceLink],
   templateUrl: './privacy.html',
 })
-export class Privacy {
-  readonly repo = REPO;
-  readonly dataContract = DATA_CONTRACT;
-}
+export class Privacy {}

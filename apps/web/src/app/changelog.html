@@ -4,30 +4,29 @@
     <h1 class="clog__h1">What changed, and when.</h1>
     <p class="clog__lede">
       Every tagged release, reconstructed from the git history. Applye is pre-1.0, so it follows
-      <code>0.x</code> versioning. This page reads the repository's
-      <a [href]="repo + '/blob/main/CHANGELOG.md'" target="_blank" rel="noopener">CHANGELOG.md</a>
-      directly, so it never drifts.
+      <code>0.x</code> versioning. This page reads the project's <code>CHANGELOG.md</code> directly,
+      so it never drifts.
     </p>
     <p>
-      <a class="btn btn--ghost" [href]="releasesUrl" target="_blank" rel="noopener"
-        >GitHub Releases</a
-      >
+      <app-source-link
+        variant="ghost"
+        path="/releases"
+        label="GitHub Releases"
+        soonLabel="Releases: coming soon"
+      />
     </p>
   </header>
 
   @switch (status()) { @case ('loading') {
   <p class="clog__state">Loading the changelog…</p>
   } @case ('error') {
-  <p class="clog__state">
-    Could not load the changelog. Read it on
-    <a [href]="repo + '/blob/main/CHANGELOG.md'" target="_blank" rel="noopener">GitHub</a>.
-  </p>
+  <p class="clog__state">Could not load the changelog. Reload the page, or try again later.</p>
   } @case ('ready') {
   <div class="clog__list">
     @for (r of releases(); track r.heading) {
     <section class="clog__rel">
       <div class="clog__relhead">
-        @if (r.link) {
+        @if (r.link && sourcePublic) {
         <a class="clog__ver" [href]="r.link" target="_blank" rel="noopener">{{ r.heading }}</a>
         } @else {
         <span class="clog__ver">{{ r.heading }}</span>

@@ -536,8 +536,13 @@
 .dv-filters {
   // Pinned to the top of the scroll area so filters + Clear stay reachable no
   // matter how far the feed is scrolled (the list scrolls under this bar).
+  // The scroll container (shell `.content`) has 32px of padding, and a sticky
+  // `top: 0` pins to its content box - i.e. 32px below the visible top, leaving
+  // a strip where rows scroll through above the bar. Offsetting `top` by that
+  // padding pins the bar flush against the visible top instead, closing the
+  // gap. Kept as a token so it tracks `.content`'s padding.
   position: sticky;
-  top: 0;
+  top: calc(-1 * var(--space-8));
   z-index: var(--z-sticky, 20);
   display: flex;
   align-items: center;
@@ -548,26 +553,31 @@
   background: var(--bg-app);
   border-bottom: 1px solid var(--border-subtle);
 
+  // One toolbar, one control vocabulary. The query input sets the baseline
+  // (30px tall, --border-default, --radius-input); every trigger and action in
+  // the bar matches it so the row reads as a finished toolbar instead of a mix
+  // of three heights and three border weights.
+  .dv-btn {
+    height: 30px;
+    padding: 0 var(--space-3);
+    font-size: var(--text-xs);
+    border-radius: var(--radius-input);
+  }
+
+  .dv-btn--ghost {
+    border-color: var(--border-default);
+  }
+
   &__query {
     width: 240px;
   }
 
-  &__sources {
-    height: 28px;
-    padding: 0 var(--space-3);
-    font-size: var(--text-xs);
-    border-color: transparent;
-  }
-
   &__clear {
-    height: 28px;
-    padding: 0 var(--space-3);
-    font-size: var(--text-xs);
-    border-color: transparent;
     color: var(--text-tertiary);
 
     &:hover {
       color: var(--danger, #ef4444);
+      border-color: var(--danger, #ef4444);
     }
   }
 
@@ -1539,6 +1549,12 @@
     display: flex;
     flex-direction: column;
     gap: 11px;
+
+    // This is a column flex, so its default `align-items: stretch` blows the
+    // inline badge out to the full row width. Pin it to its content.
+    .dv-arch-badge {
+      align-self: flex-start;
+    }
   }
 
   &__metarow {
@@ -2129,21 +2145,29 @@
 .dv-arch-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px var(--space-2);
+  padding: 1px var(--space-2);
   font-size: var(--text-2xs);
   font-weight: var(--weight-medium);
   border-radius: var(--radius-badge);
   white-space: nowrap;
+  // A 1px ring keeps the badge legible on any surface. The old fill used
+  // --surface-sunken, which is the exact value of the row's --surface-hover, so
+  // the badge dissolved into the row on hover. Surface-1 + a border holds the
+  // shape regardless of what's behind it.
+  border: 1px solid var(--border-default);
+  background: var(--surface-1);
 }
 .dv-arch-badge--primary {
+  // The one accent-tinted tier: the primary match is the state worth signalling.
   color: var(--accent);
-  background: var(--surface-sunken);
+  background: var(--accent-tint);
+  border-color: color-mix(in oklch, var(--accent) 28%, transparent);
 }
 .dv-arch-badge--secondary {
   color: var(--text-secondary);
-  background: var(--surface-sunken);
+  border-color: var(--border-default);
 }
 .dv-arch-badge--adjacent {
   color: var(--text-tertiary);
-  background: var(--surface-sunken);
+  border-color: var(--border-subtle);
 }

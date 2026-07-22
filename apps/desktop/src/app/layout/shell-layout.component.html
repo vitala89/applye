@@ -1,6 +1,6 @@
 <div class="shell" [attr.data-theme]="theme()">
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" [class.sidebar--rail]="sidebarCollapsed()">
     <div
       class="sidebar__logo"
       role="img"
@@ -20,6 +20,27 @@
       </svg>
       <span class="logo-text" data-tauri-drag-region>applye</span>
     </div>
+
+    <!-- Collapse to a rail: icons keep every destination reachable, so the
+         labels are the only thing traded away for horizontal room. -->
+    <button
+      type="button"
+      class="sidebar__collapse"
+      [attr.aria-label]="
+        sidebarCollapsed() ? t()('shell.sidebar_expand') : t()('shell.sidebar_collapse')
+      "
+      [attr.aria-expanded]="!sidebarCollapsed()"
+      [attr.title]="
+        sidebarCollapsed() ? t()('shell.sidebar_expand') : t()('shell.sidebar_collapse')
+      "
+      (click)="toggleSidebar()"
+    >
+      <lucide-icon
+        [img]="sidebarCollapsed() ? icons.panelExpand : icons.panelCollapse"
+        [size]="16"
+        aria-hidden="true"
+      />
+    </button>
 
     <nav class="sidebar__nav">
       <a class="nav-item" routerLink="/dashboard" routerLinkActive="nav-item--active">

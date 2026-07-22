@@ -62,13 +62,13 @@ export const es: Messages = {
     title: 'Tres herramientas, falta una.',
     saasTitle: 'SaaS en la nube',
     saasBody:
-      'Potente, pero de pago mensual, y toda tu búsqueda vive en servidores ajenos. Sin conocimiento del mercado alemán.',
+      'Potente, pero de pago mensual, y toda tu búsqueda vive en servidores ajenos. Cómo se contrata en tu país no es su problema.',
     cliTitle: 'Flujos por terminal',
     cliBody:
       'Ciclo completo, local, gratuito y excelente. Pero solo en terminal, así que habla a desarrolladores y a nadie más.',
     usTitle: 'Escritorio, local, gratis',
     usBody:
-      'El ciclo completo con interfaz de escritorio: local, gratuito, MIT y consciente del mercado alemán. Configuración en 3 minutos, no en 15. Sin terminal.',
+      'El ciclo completo con interfaz de escritorio: local, gratuito, MIT y consciente de cómo se contrata realmente donde estás. Configuración en 3 minutos, no en 15. Sin terminal.',
     line: 'career-ops da a los desarrolladores una CLI. Applye da a todo el mundo un escritorio.',
   },
 
@@ -115,16 +115,17 @@ export const es: Messages = {
     ],
   },
 
-  german: {
-    eyebrow: 'Pensado para el mercado alemán',
+  local: {
+    eyebrow: 'Las reglas locales, cubiertas',
     title: 'Hecho para la búsqueda que de verdad estás haciendo.',
     intro:
-      'La búsqueda de empleo en Alemania, Austria y Suiza tiene reglas que otras herramientas ignoran. Applye las trata como parte esencial, no como una localización añadida al final.',
+      'Buscar trabajo es siempre algo local, aunque el puesto sea remoto. Applye funciona en cualquier país y, donde un mercado tiene sus propias costumbres y papeleo, los contempla en lugar de fingir que todo el mundo se presenta igual.',
     points: [
-      'Agentur für Arbeit: genera el informe Eigenbemühungen con tus gestiones documentadas.',
-      'Documentos en alemán: CV, cartas de presentación y preparación en DE cuando la vacante lo exige.',
-      'Visado y Tarjeta Azul: orientación que tiene en cuenta tu situación.',
-      'Alineado con el RGPD por diseño: tus datos no salen de tu equipo en ningún momento.',
+      'Documentos en tu idioma: CV, cartas de presentación y preparación en cualquiera de los seis idiomas, según lo que pida la vacante.',
+      'Convenciones locales: con foto o sin foto, formatos de fecha y maquetación, y las manías de los ATS que cambian según el mercado.',
+      'Visado y permiso de trabajo, incluida la Tarjeta Azul de la UE, para quien se presenta desde otro país.',
+      'Alineado con el RGPD por arquitectura: tus datos no salen de tu equipo, lo que satisface incluso al régimen más estricto.',
+      'Alemania, en profundidad: genera el informe Eigenbemühungen para la Agentur für Arbeit directamente desde tus candidaturas registradas.',
     ],
   },
 
@@ -148,7 +149,7 @@ export const es: Messages = {
       'Quieres menos candidaturas, pero mejor dirigidas.',
       'Te importa dónde viven los datos de tu búsqueda.',
       'Ya pagas una suscripción de IA o tienes una clave de API.',
-      'Buscas trabajo en Alemania o en el resto de la UE.',
+      'Te presentas desde otro país, o en un mercado con su propio papeleo.',
     ],
     notTitle: 'Qué no es Applye',
     notPoints: [
@@ -184,8 +185,8 @@ export const es: Messages = {
         a: 'Nunca. Toda la aplicación está construida alrededor de esa línea. Applye puntúa, redacta y sugiere, y después te devuelve el control. Lees cada palabra y pulsas enviar tú. Al otro lado hay una persona, y esa relación es tuya, no de un bot.',
       },
       {
-        q: '¿Por qué está pensado para el mercado alemán?',
-        a: 'Porque la búsqueda de empleo en DACH tiene reglas que otros ignoran: el informe Eigenbemühungen para la Agentur für Arbeit, documentos en alemán, cuestiones de visado y Tarjeta Azul, y un tratamiento de datos alineado con el RGPD por defecto. En Applye eso es la base, no un añadido.',
+        q: '¿Funciona fuera de Alemania?',
+        a: 'Sí, en cualquier sitio. Nada del ciclo principal depende de un país: pegas una oferta, se puntúa contra tu perfil, la adaptas y la sigues. Lo que cambia según el mercado es el papeleo que la rodea, y Applye lo cubre donde existe: para Alemania, el informe Eigenbemühungen y documentos en alemán; para quien se presenta desde otro país, visado y Tarjeta Azul. Son extras, nunca requisitos.',
       },
     ],
   },

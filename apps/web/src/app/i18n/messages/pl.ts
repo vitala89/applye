@@ -62,13 +62,13 @@ export const pl: Messages = {
     title: 'Trzy narzędzia, jednego brakuje.',
     saasTitle: 'Chmurowy SaaS',
     saasBody:
-      'Mocny, ale płatny co miesiąc, a całe twoje poszukiwanie żyje na cudzych serwerach. Bez znajomości niemieckiego rynku.',
+      'Mocny, ale płatny co miesiąc, a całe twoje poszukiwanie żyje na cudzych serwerach. To, jak wygląda rekrutacja u ciebie, nie jest jego zmartwieniem.',
     cliTitle: 'Potoki w terminalu',
     cliBody:
       'Pełny cykl, lokalnie, za darmo i świetnie zrobione. Ale tylko w terminalu, więc mówi do programistów i do nikogo więcej.',
     usTitle: 'Desktop, lokalnie, za darmo',
     usBody:
-      'Ten sam pełny cykl w zwykłym interfejsie: lokalnie, za darmo, na licencji MIT i ze świadomością niemieckiego rynku. Konfiguracja w 3 minuty, nie w 15. Bez terminala.',
+      'Ten sam pełny cykl w zwykłym interfejsie: lokalnie, za darmo, na licencji MIT i ze świadomością tego, jak rekrutacja wygląda tam, gdzie szukasz. Konfiguracja w 3 minuty, nie w 15. Bez terminala.',
     line: 'career-ops daje programistom CLI. Applye daje wszystkim aplikację desktopową.',
   },
 
@@ -115,16 +115,17 @@ export const pl: Messages = {
     ],
   },
 
-  german: {
-    eyebrow: 'Zbudowane pod niemiecki rynek',
+  local: {
+    eyebrow: 'Lokalne zasady uwzględnione',
     title: 'Pod poszukiwania, które naprawdę prowadzisz.',
     intro:
-      'Szukanie pracy w Niemczech, Austrii i Szwajcarii rządzi się zasadami, które inne narzędzia pomijają. W Applye są podstawą, a nie doklejoną na końcu lokalizacją.',
+      'Szukanie pracy zawsze jest lokalne, nawet gdy sama praca jest zdalna. Applye działa wszędzie, a tam, gdzie rynek ma własne zwyczaje i formalności, obsługuje je zamiast udawać, że wszyscy aplikują tak samo.',
     points: [
-      'Agentur für Arbeit: wygenerujesz raport Eigenbemühungen z udokumentowanymi staraniami.',
-      'Dokumenty po niemiecku: CV, listy motywacyjne i przygotowanie w DE, gdy oferta tego wymaga.',
-      'Wiza i Niebieska Karta: wskazówki, które biorą twoją sytuację na poważnie.',
-      'Zgodność z RODO z założenia: twoje dane w ogóle nie opuszczają komputera.',
+      'Dokumenty w twoim języku: CV, listy motywacyjne i przygotowanie w jednym z sześciu języków, pod to, czego oczekuje oferta.',
+      'Lokalne zwyczaje: zdjęcie albo jego brak, formaty dat i układu oraz dziwactwa systemów ATS różne w każdym kraju.',
+      'Wiza i pozwolenie na pracę, w tym Niebieska Karta UE, dla aplikujących zza granicy.',
+      'Zgodność z RODO z samej architektury: dane nie opuszczają twojego komputera, co spełnia nawet najostrzejszy reżim.',
+      'Niemcy, dogłębnie: raport Eigenbemühungen dla Agentur für Arbeit prosto z zapisanych aplikacji.',
     ],
   },
 
@@ -148,7 +149,7 @@ export const pl: Messages = {
       'Chcesz mniej aplikacji, ale lepiej dopasowanych.',
       'Zależy ci na tym, gdzie leżą dane twoich poszukiwań.',
       'Masz już subskrypcję AI albo klucz API.',
-      'Szukasz pracy w Niemczech lub szerzej w UE.',
+      'Aplikujesz zza granicy albo na rynku z własnymi formalnościami.',
     ],
     notTitle: 'Czym Applye nie jest',
     notPoints: [
@@ -184,8 +185,8 @@ export const pl: Messages = {
         a: 'Nigdy. Wokół tej granicy zbudowana jest cała aplikacja. Applye ocenia, pisze szkice i podpowiada, a potem oddaje ci sterowanie. Czytasz każde słowo i sam klikasz wyślij. Po drugiej stronie jest człowiek, a ta relacja należy do ciebie, nie do bota.',
       },
       {
-        q: 'Dlaczego pod niemiecki rynek?',
-        a: 'Bo szukanie pracy w regionie DACH ma reguły, które inni pomijają: raport Eigenbemühungen dla Agentur für Arbeit, dokumenty po niemiecku, kwestie wizy i Niebieskiej Karty oraz zgodne z RODO podejście do danych od początku. W Applye to fundament, a nie dodatek.',
+        q: 'Czy działa poza Niemcami?',
+        a: 'Tak, wszędzie. W głównym cyklu nic nie zakłada konkretnego kraju: wklejasz ofertę, zostaje oceniona względem twojego profilu, dopasowujesz CV i prowadzisz aplikację. Między rynkami różnią się formalności wokół, a te Applye obsługuje tam, gdzie istnieją: dla Niemiec raport Eigenbemühungen i dokumenty po niemiecku, dla aplikujących zza granicy kwestie wizy i Niebieskiej Karty. To dodatki, nigdy wymogi.',
       },
     ],
   },

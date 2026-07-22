@@ -74,7 +74,7 @@ export class DocsLayout {
       title: 'Guides',
       links: [
         { text: 'Reading the recruiter check', to: '/docs/scoring' },
-        { text: 'German market', to: '/docs/german' },
+        { text: 'Local markets', to: '/docs/local-markets' },
       ],
     },
     {

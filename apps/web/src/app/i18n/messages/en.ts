@@ -63,13 +63,13 @@ export const en: Messages = {
     title: 'Three tools, one missing one.',
     saasTitle: 'Cloud SaaS',
     saasBody:
-      'Powerful, but paid by the month and your whole search lives on someone else’s servers. No German-market awareness.',
+      'Powerful, but paid by the month and your whole search lives on someone else’s servers. How hiring works where you are is not its problem.',
     cliTitle: 'CLI pipelines',
     cliBody:
       'Full pipeline, local-first, free, and excellent. But it is terminal-only, so it speaks to developers and no one else.',
     usTitle: 'Desktop, local, free',
     usBody:
-      'The full pipeline as a desktop GUI: local-first, free, MIT, and aware of the German market. Setup in 3 minutes, not 15. No terminal required.',
+      'The full pipeline as a desktop GUI: local-first, free, MIT, and aware of how hiring actually works where you are. Setup in 3 minutes, not 15. No terminal required.',
     line: 'career-ops gives developers a CLI. Applye gives everyone a desktop.',
   },
 
@@ -116,16 +116,17 @@ export const en: Messages = {
     ],
   },
 
-  german: {
-    eyebrow: 'Built for the German market',
+  local: {
+    eyebrow: 'Local rules, handled',
     title: 'Made for the search you are actually running.',
     intro:
-      'The DACH job search has rules other tools ignore. Applye treats them as first-class, not a localisation afterthought.',
+      'A job search is local even when the job is remote. Applye works anywhere, and where a market has its own conventions and paperwork it handles them instead of pretending everyone applies the same way.',
     points: [
-      'Agentur für Arbeit: generate an Eigenbemühungen report of your documented efforts.',
-      'German-language output: CVs, cover letters, and prep in DE when the role demands it.',
-      'Visa and Blue-Card awareness: guidance that knows your situation matters.',
-      'GDPR-aligned by design: because your data never leaves your machine in the first place.',
+      'Documents in your language: CVs, cover letters, and interview prep in any of six languages, matched to what the role expects.',
+      'Local conventions respected: photo or no photo, date and layout norms, and the ATS quirks that differ by market.',
+      'Visa and work-permit awareness, including the EU Blue Card, for anyone applying across a border.',
+      'GDPR-aligned by architecture: your data never leaves your machine, which satisfies the strictest regime by default.',
+      'Germany, in depth: generate the Agentur für Arbeit Eigenbemühungen report straight from your tracked applications.',
     ],
   },
 
@@ -149,7 +150,7 @@ export const en: Messages = {
       'You want fewer, better-targeted applications.',
       'You care where your job-search data lives.',
       'You already pay for an AI subscription or have an API key.',
-      'You are job-hunting in Germany or the wider EU.',
+      'You are applying across borders, or in a market with its own paperwork.',
     ],
     notTitle: 'What Applye is not',
     notPoints: [
@@ -185,8 +186,8 @@ export const en: Messages = {
         a: 'Never. This is the line the whole app is built around. Applye scores, drafts, and suggests, then hands control back to you. You read every word and you click submit yourself. A recruiter is a person, and the relationship is yours, not a bot’s.',
       },
       {
-        q: 'Why is it built for the German market?',
-        a: 'Because the DACH job search has rules other tools ignore: an Agentur für Arbeit Eigenbemühungen report, German-language output, visa and Blue-Card awareness, and GDPR-aligned data handling by default. Applye treats those as first-class, not an afterthought.',
+        q: 'Does it work outside Germany?',
+        a: 'Yes, everywhere. Nothing in the core loop assumes a country: you paste a job, it is scored against your profile, you tailor and track it. What varies by market is the paperwork around it, and Applye handles that where it exists - German applications get an Agentur für Arbeit Eigenbemühungen report and German-language documents, cross-border applicants get visa and Blue Card awareness. Those are extras, never requirements.',
       },
     ],
   },

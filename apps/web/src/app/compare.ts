@@ -74,7 +74,7 @@ export class Compare {
       sheet: 'No',
     },
     {
-      label: 'German market (Eigenbemühungen, DE documents)',
+      label: 'Local paperwork (visa, DE Eigenbemühungen, per-market CV norms)',
       applye: 'First-class',
       saas: 'No',
       cli: 'No',

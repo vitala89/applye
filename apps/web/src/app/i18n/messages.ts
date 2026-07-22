@@ -75,7 +75,12 @@ export interface Messages {
     items: { title: string; example: string; note: string; linkText?: string }[];
   };
 
-  german: { eyebrow: string; title: string; intro: string; points: string[] };
+  /**
+   * Local hiring rules. Deliberately not "the German market": the product is
+   * global, and this section shows depth where a market has its own paperwork,
+   * with Germany as the first and deepest example rather than the frame.
+   */
+  local: { eyebrow: string; title: string; intro: string; points: string[] };
 
   principles: { label: string; line: string }[];
 

@@ -72,7 +72,7 @@ export const appRoutes: Route[] = [
     title: 'Compare · Applye',
     data: {
       description:
-        'Applye next to cloud SaaS trackers, CLI pipelines and a spreadsheet: price, privacy, German-market awareness, and who each one is actually for.',
+        'Applye next to cloud SaaS trackers, CLI pipelines and a spreadsheet: price, privacy, local paperwork, and who each one is actually for.',
     },
   },
   {
@@ -278,12 +278,12 @@ export const appRoutes: Route[] = [
         },
       },
       {
-        path: 'german',
-        loadComponent: () => import('./docs/pages').then((m) => m.German),
-        title: 'German market · Applye Docs',
+        path: 'local-markets',
+        loadComponent: () => import('./docs/pages').then((m) => m.LocalMarkets),
+        title: 'Local markets · Applye Docs',
         data: {
           description:
-            'The DACH features: an Agentur für Arbeit Eigenbemühungen report, German-language documents, and visa and Blue-Card awareness.',
+            'Applye works in any country. What differs by market - documents in six languages, CV conventions, visa awareness, and the German Eigenbemühungen report.',
         },
       },
       {

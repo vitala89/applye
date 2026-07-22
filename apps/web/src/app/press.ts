@@ -26,8 +26,9 @@ export class Press {
         'Bring your own: API keys (Anthropic Claude, OpenAI, Google Gemini, DeepSeek) or a local AI CLI bridge',
     },
     {
-      label: 'Market focus',
-      value: 'German/EU job search first (Eigenbemühungen, DE documents, Blue Card awareness)',
+      label: 'Markets',
+      value:
+        'Works anywhere; handles market-specific paperwork where it exists (German Eigenbemühungen report, per-market CV conventions, visa and Blue Card awareness)',
     },
     { label: 'Author', value: 'Vitalii Kasap, frontend engineer, Germany' },
     { label: 'Started', value: '2026, during the author’s own job search' },

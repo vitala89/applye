@@ -40,13 +40,13 @@
         <div class="mock__ring"><span>72</span></div>
         <div class="mock__scoremeta">
           <p class="mock__label">Recruiter fit</p>
-          <p class="mock__verdict">Strong on stack. Light on DE-language requirement.</p>
+          <p class="mock__verdict">Strong on stack. Light on the platform-scale requirement.</p>
         </div>
       </div>
       <p class="mock__section">Missing keywords</p>
       <div class="mock__chips">
         <span class="chip chip--warn">TypeScript strict</span>
-        <span class="chip chip--warn">Deutsch C1</span>
+        <span class="chip chip--warn">Kubernetes</span>
         <span class="chip chip--warn">CI/CD</span>
       </div>
       <div class="mock__rows">
@@ -117,14 +117,14 @@
   </div>
 </section>
 
-<!-- ===================== GERMAN MARKET ===================== -->
-<section id="german" class="band band--alt">
+<!-- ===================== LOCAL HIRING RULES ===================== -->
+<section id="markets" class="band band--alt">
   <div class="shell shell--narrow german">
-    <p class="applye-eyebrow">{{ m().german.eyebrow }}</p>
-    <h2 class="section-title">{{ m().german.title }}</h2>
-    <p class="prose">{{ m().german.intro }}</p>
+    <p class="applye-eyebrow">{{ m().local.eyebrow }}</p>
+    <h2 class="section-title">{{ m().local.title }}</h2>
+    <p class="prose">{{ m().local.intro }}</p>
     <ul class="german__list">
-      @for (point of m().german.points; track point) {
+      @for (point of m().local.points; track point) {
       <li>{{ point }}</li>
       }
     </ul>

@@ -62,13 +62,13 @@ export const de: Messages = {
     title: 'Drei Werkzeuge, eines fehlt.',
     saasTitle: 'Cloud-SaaS',
     saasBody:
-      'Mächtig, aber monatlich bezahlt - und deine gesamte Suche liegt auf fremden Servern. Kein Gespür für den deutschen Markt.',
+      'Mächtig, aber monatlich bezahlt - und deine gesamte Suche liegt auf fremden Servern. Wie Bewerbungen bei dir vor Ort laufen, ist nicht ihr Problem.',
     cliTitle: 'CLI-Pipelines',
     cliBody:
       'Vollständige Pipeline, lokal, kostenlos und exzellent. Aber nur im Terminal - also gemacht für Entwickler und sonst niemanden.',
     usTitle: 'Desktop, lokal, kostenlos',
     usBody:
-      'Die komplette Pipeline als Desktop-Oberfläche: lokal, kostenlos, MIT-lizenziert und auf den deutschen Markt eingestellt. Einrichtung in 3 Minuten statt 15. Kein Terminal nötig.',
+      'Die komplette Pipeline als Desktop-Oberfläche: lokal, kostenlos, MIT-lizenziert und darauf eingestellt, wie Bewerbungen bei dir vor Ort tatsächlich laufen. Einrichtung in 3 Minuten statt 15. Kein Terminal nötig.',
     line: 'career-ops gibt Entwicklern eine CLI. Applye gibt allen einen Desktop.',
   },
 
@@ -115,16 +115,17 @@ export const de: Messages = {
     ],
   },
 
-  german: {
-    eyebrow: 'Für den deutschen Markt gebaut',
+  local: {
+    eyebrow: 'Lokale Regeln, berücksichtigt',
     title: 'Gemacht für die Suche, die du wirklich führst.',
     intro:
-      'Die Jobsuche im DACH-Raum hat Regeln, die andere Werkzeuge ignorieren. Bei Applye sind sie erstklassig behandelt, kein nachträglicher Lokalisierungs-Anbau.',
+      'Eine Jobsuche ist lokal, selbst wenn die Stelle remote ist. Applye funktioniert überall - und wo ein Markt eigene Konventionen und Formalitäten hat, bildet es sie ab, statt so zu tun, als bewerbe sich die ganze Welt gleich.',
     points: [
-      'Agentur für Arbeit: einen Eigenbemühungen-Nachweis deiner dokumentierten Bemühungen erzeugen.',
-      'Deutschsprachige Ausgabe: Lebenslauf, Anschreiben und Vorbereitung auf Deutsch, wenn die Stelle es verlangt.',
-      'Visum und Blaue Karte mitgedacht: Hinweise, die deine Situation ernst nehmen.',
-      'DSGVO-konform von Grund auf: weil deine Daten den Rechner gar nicht erst verlassen.',
+      'Unterlagen in deiner Sprache: Lebenslauf, Anschreiben und Vorbereitung in sechs Sprachen, passend zu dem, was die Stelle erwartet.',
+      'Lokale Konventionen: Foto oder kein Foto, Datums- und Layout-Normen und die ATS-Eigenheiten, die sich je Markt unterscheiden.',
+      'Visum und Arbeitserlaubnis mitgedacht, inklusive Blauer Karte EU, für alle, die sich über eine Grenze hinweg bewerben.',
+      'DSGVO-konform durch Architektur: deine Daten verlassen den Rechner gar nicht erst - damit ist auch die strengste Regelung erfüllt.',
+      'Deutschland im Detail: den Eigenbemühungen-Nachweis für die Agentur für Arbeit direkt aus deinen erfassten Bewerbungen erzeugen.',
     ],
   },
 
@@ -148,7 +149,7 @@ export const de: Messages = {
       'Du willst weniger, dafür besser passende Bewerbungen.',
       'Dir ist wichtig, wo deine Bewerbungsdaten liegen.',
       'Du zahlst bereits für ein KI-Abo oder hast einen API-Schlüssel.',
-      'Du suchst in Deutschland oder der weiteren EU.',
+      'Du bewirbst dich über Ländergrenzen hinweg oder in einem Markt mit eigenen Formalitäten.',
     ],
     notTitle: 'Was Applye nicht ist',
     notPoints: [
@@ -184,8 +185,8 @@ export const de: Messages = {
         a: 'Niemals. Um diese Grenze herum ist die ganze App gebaut. Applye bewertet, entwirft und schlägt vor - dann gibt es die Kontrolle zurück. Du liest jedes Wort und klickst selbst auf Absenden. Auf der anderen Seite sitzt ein Mensch, und die Beziehung gehört dir, nicht einem Bot.',
       },
       {
-        q: 'Warum für den deutschen Markt gebaut?',
-        a: 'Weil die Jobsuche im DACH-Raum Regeln hat, die andere ignorieren: der Eigenbemühungen-Nachweis für die Agentur für Arbeit, deutschsprachige Unterlagen, Visum- und Blaue-Karte-Fragen und DSGVO-konformer Umgang mit Daten von Haus aus.',
+        q: 'Funktioniert es auch außerhalb Deutschlands?',
+        a: 'Ja, überall. Der Kernablauf setzt kein Land voraus: Du fügst eine Stelle ein, sie wird gegen dein Profil bewertet, du passt an und verfolgst sie. Was sich je Markt unterscheidet, sind die Formalitäten drumherum - und die bildet Applye ab, wo es sie gibt: für Deutschland der Eigenbemühungen-Nachweis und deutschsprachige Unterlagen, für Bewerbungen über Grenzen hinweg Visum- und Blaue-Karte-Hinweise. Das sind Zugaben, keine Voraussetzungen.',
       },
     ],
   },

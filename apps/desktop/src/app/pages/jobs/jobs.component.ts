@@ -64,6 +64,7 @@ import {
   ScoringCache,
   Settings,
   SupportedLanguage,
+  LANGUAGE_NATIVE_NAMES,
   CoverLetterAddress,
   CoverLetterContent,
   COVER_LETTER_TONE_DEFAULT,
@@ -737,7 +738,7 @@ interface FinalChecks {
                       "
                     >
                       @for (region of documentRegionTags; track region) {
-                        <option [value]="region">{{ region.toUpperCase() }}</option>
+                        <option [value]="region">{{ regionLabel(region) }}</option>
                       }
                     </select>
                   </label>
@@ -750,7 +751,7 @@ interface FinalChecks {
                       "
                     >
                       @for (language of portalLanguages; track language) {
-                        <option [value]="language">{{ language.toUpperCase() }}</option>
+                        <option [value]="language">{{ nativeLang(language) }}</option>
                       }
                     </select>
                   </label>
@@ -2393,6 +2394,16 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   readonly documentRegionTags: DocumentRegionTag[] = ['de', 'us', 'uk', 'generic'];
   readonly documentReviewRegion = signal<DocumentRegionTag>('generic');
+
+  /** Country name for a CV region tag ("Germany", not "DE") - the picker names
+   * the market the CV is written for, and a bare code does not read as one. */
+  regionLabel(region: DocumentRegionTag): string {
+    return this.t()(`documents.cv_region_${region}`);
+  }
+  /** Endonym for a document language ("Deutsch", not "DE"), matching Settings. */
+  nativeLang(language: SupportedLanguage): string {
+    return LANGUAGE_NATIVE_NAMES[language];
+  }
 
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
   readonly linkedCv = signal<DocumentLibraryItem | null>(null);

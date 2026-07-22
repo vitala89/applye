@@ -340,21 +340,26 @@
                           @if (photoDataUri(); as uri) {
                             <img class="cvdetail__photo-thumb" [src]="uri" alt="" />
                             <div class="cvdetail__photo-actions">
-                              <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
-                                {{ t()('documents.cv_photo_replace') }}
-                              </button>
                               <button
                                 appButton
                                 variant="secondary"
                                 size="sm"
-                                (click)="removePhoto()"
+                                (click)="goToProfilePhoto()"
                               >
-                                {{ t()('documents.cv_photo_remove') }}
+                                {{ t()('documents.cv_photo_manage') }}
                               </button>
                             </div>
+                            <p class="cvdetail__hint">
+                              {{ t()('documents.cv_photo_from_profile') }}
+                            </p>
                           } @else {
-                            <button appButton variant="secondary" size="sm" (click)="pickPhoto()">
-                              {{ t()('documents.cv_photo_upload') }}
+                            <button
+                              appButton
+                              variant="secondary"
+                              size="sm"
+                              (click)="goToProfilePhoto()"
+                            >
+                              {{ t()('documents.cv_photo_add_in_profile') }}
                             </button>
                             <p class="cvdetail__hint">{{ t()('documents.cv_photo_hint') }}</p>
                           }
@@ -465,12 +470,4 @@
       </div>
     </div>
   </div>
-}
-
-@if (cropSourceUri(); as src) {
-  <app-cv-photo-crop
-    [sourceDataUri]="src"
-    (confirmed)="onCropConfirmed($event)"
-    (cancelled)="onCropCancelled()"
-  />
 }

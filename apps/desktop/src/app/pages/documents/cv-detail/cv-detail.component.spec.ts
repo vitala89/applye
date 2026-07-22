@@ -30,6 +30,7 @@ describe('CvDetailComponent per-section style', () => {
     const dbStub: Partial<DbService> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
     };
 
@@ -415,10 +416,16 @@ describe('CvDetailComponent per-section style', () => {
     expect(component.style().page).toEqual(customPage);
   });
 
-  it('removePhoto clears the stored dataUri', () => {
-    component.photoDataUri.set('data:image/jpeg;base64,AAAA');
-    component.removePhoto();
-    expect(component.photoDataUri()).toBeNull();
+  it('shows the profile photo in preference to bytes stored on the document', () => {
+    component.profilePhoto.set('data:image/jpeg;base64,PROFILE');
+    expect(component.photoDataUri()).toBe('data:image/jpeg;base64,PROFILE');
+  });
+
+  it("falls back to the document's own bytes when the profile has no photo", () => {
+    // CVs created before the photo moved to the profile keep rendering.
+    component.profilePhoto.set(null);
+    component['legacyPhotoDataUri'].set('data:image/jpeg;base64,LEGACY');
+    expect(component.photoDataUri()).toBe('data:image/jpeg;base64,LEGACY');
   });
 
   it('toggleIncludePhoto adds a photo section when turning on if none exists', () => {
@@ -652,6 +659,7 @@ describe('CvDetailComponent personal-details top card visibility', () => {
     dbStub = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
       documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
     };
@@ -818,6 +826,7 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
     dbStub = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
       documentLibraryUpsert: jest.fn().mockResolvedValue(docItem),
     };
@@ -928,6 +937,7 @@ describe('CvDetailComponent export/print hardening', () => {
     const dbStub: Partial<DbService> = {
       documentLibraryGet: jest.fn().mockResolvedValue(docItem),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
     };
 
@@ -1024,6 +1034,7 @@ describe('CvDetailComponent back navigation', () => {
     const dbStub: Partial<DbService> = {
       documentLibraryGet: jest.fn().mockResolvedValue(null),
       cvTemplatesList: jest.fn().mockResolvedValue([]),
+      getProfile: jest.fn().mockResolvedValue(null),
       checkStyleSafety: jest.fn().mockResolvedValue([]),
     };
     const navigate = jest.fn();

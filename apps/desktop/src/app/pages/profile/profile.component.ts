@@ -52,11 +52,21 @@ import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
 import { CompletenessHeroComponent } from './completeness-hero.component';
+import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
  * optional/nullable since the AI omits or nulls anything it did not find in
  * the raw text - `applyParsedProfile` is responsible for turning that into
  * the non-nullable strings `ProfileForm` and the section entries expect. */
+/** Every collapsible section on the profile page. */
+type ProfileSectionKey =
+  | 'archetypes'
+  | 'photo'
+  | 'experience'
+  | 'skills'
+  | 'languages'
+  | 'education';
+
 interface ParsedProfile {
   name?: string | null;
   title?: string | null;
@@ -93,6 +103,7 @@ interface ParsedProfile {
     ScoringSummaryComponent,
     CompletenessHeroComponent,
     LucideAngularModule,
+    CvPhotoCropComponent,
   ],
   template: `
     @if (loading()) {
@@ -172,70 +183,168 @@ interface ParsedProfile {
               <span class="info__tip" role="tooltip">{{ t()('profile.info_archetypes') }}</span>
             </span>
           </h3>
-          <p class="muted">{{ t()('profile.archetypes_hint') }}</p>
-          @if (archetypes().length === 0) {
-            <p class="status status--warn">{{ t()('profile.archetypes_empty_warning') }}</p>
-          }
-          @if (archetypes().length > 0) {
-            <div class="archetype-list">
-              @for (a of archetypes(); track $index) {
-                <div class="archetype-card">
-                  <div class="archetype-card__top">
-                    <lucide-icon
-                      [img]="targetIcon"
-                      [size]="16"
-                      class="archetype-card__icon"
-                      aria-hidden="true"
-                    />
-                    <input
-                      class="archetype-input"
-                      type="text"
-                      [ngModel]="a.name"
-                      (ngModelChange)="updateArchetype($index, { name: $event })"
-                      [placeholder]="t()('profile.archetype_placeholder')"
-                      [attr.aria-label]="t()('profile.archetype_name')"
-                    />
-                    <select
-                      class="archetype-fit"
-                      [ngModel]="a.fit"
-                      (ngModelChange)="updateArchetype($index, { fit: $event })"
-                      [attr.aria-label]="t()('profile.archetype_fit')"
-                    >
-                      <option value="primary">{{ t()('profile.fit_primary') }}</option>
-                      <option value="secondary">{{ t()('profile.fit_secondary') }}</option>
-                      <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
-                    </select>
-                    <button
-                      class="btn-ghost"
-                      type="button"
-                      (click)="removeArchetype($index)"
-                      [attr.aria-label]="t()('profile.remove_archetype')"
-                    >
-                      <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                    </button>
-                  </div>
-                  <div class="archetype-card__sell">
-                    <label class="archetype-card__label" [attr.for]="'archetype-sell-' + $index">{{
-                      t()('profile.archetype_sell_when')
-                    }}</label>
-                    <textarea
-                      [id]="'archetype-sell-' + $index"
-                      class="archetype-sell"
-                      [ngModel]="a.sellWhen"
-                      (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
-                      [placeholder]="t()('profile.archetype_sell_when_hint')"
-                    ></textarea>
-                  </div>
-                </div>
-              }
+          <div class="collapse-card">
+            <div
+              class="collapse-card__head"
+              role="button"
+              tabindex="0"
+              [attr.aria-expanded]="sectionOpen().archetypes"
+              (click)="toggleSection('archetypes')"
+              (keydown.enter)="toggleSection('archetypes')"
+              (keydown.space)="toggleSection('archetypes'); $event.preventDefault()"
+            >
+              <span class="collapse-card__title">{{ t()('profile.section_archetypes') }}</span>
+              <span class="collapse-card__summary">
+                {{
+                  archetypes().length
+                    ? t()('profile.summary_archetypes').replace('{count}', archetypes().length + '')
+                    : t()('profile.summary_empty')
+                }}
+              </span>
+              <lucide-icon
+                [img]="chevronIcon"
+                [size]="17"
+                class="chevron"
+                [class.chevron--open]="sectionOpen().archetypes"
+                aria-hidden="true"
+              />
             </div>
-          }
-          @if (archetypes().length < 5) {
-            <button class="btn-dashed" type="button" (click)="addArchetype()">
-              <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-              {{ t()('profile.add_archetype') }}
-            </button>
-          }
+            @if (sectionOpen().archetypes) {
+              <div class="collapse-card__body">
+                <p class="muted">{{ t()('profile.archetypes_hint') }}</p>
+                @if (archetypes().length === 0) {
+                  <p class="status status--warn">{{ t()('profile.archetypes_empty_warning') }}</p>
+                }
+                @if (archetypes().length > 0) {
+                  <div class="archetype-list">
+                    @for (a of archetypes(); track $index) {
+                      <div class="archetype-card">
+                        <div class="archetype-card__top">
+                          <lucide-icon
+                            [img]="targetIcon"
+                            [size]="16"
+                            class="archetype-card__icon"
+                            aria-hidden="true"
+                          />
+                          <input
+                            class="archetype-input"
+                            type="text"
+                            [ngModel]="a.name"
+                            (ngModelChange)="updateArchetype($index, { name: $event })"
+                            [placeholder]="t()('profile.archetype_placeholder')"
+                            [attr.aria-label]="t()('profile.archetype_name')"
+                          />
+                          <select
+                            class="archetype-fit"
+                            [ngModel]="a.fit"
+                            (ngModelChange)="updateArchetype($index, { fit: $event })"
+                            [attr.aria-label]="t()('profile.archetype_fit')"
+                          >
+                            <option value="primary">{{ t()('profile.fit_primary') }}</option>
+                            <option value="secondary">{{ t()('profile.fit_secondary') }}</option>
+                            <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
+                          </select>
+                          <button
+                            class="btn-ghost"
+                            type="button"
+                            (click)="removeArchetype($index)"
+                            [attr.aria-label]="t()('profile.remove_archetype')"
+                          >
+                            <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                          </button>
+                        </div>
+                        <div class="archetype-card__sell">
+                          <label
+                            class="archetype-card__label"
+                            [attr.for]="'archetype-sell-' + $index"
+                            >{{ t()('profile.archetype_sell_when') }}</label
+                          >
+                          <textarea
+                            [id]="'archetype-sell-' + $index"
+                            class="archetype-sell"
+                            [ngModel]="a.sellWhen"
+                            (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
+                            [placeholder]="t()('profile.archetype_sell_when_hint')"
+                          ></textarea>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (archetypes().length < 5) {
+                  <button class="btn-dashed" type="button" (click)="addArchetype()">
+                    <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                    {{ t()('profile.add_archetype') }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Photo: one cropped headshot, reused by any CV that wants one. -->
+        <section class="section section--card">
+          <div class="collapse-card">
+            <div
+              class="collapse-card__head"
+              role="button"
+              tabindex="0"
+              [attr.aria-expanded]="sectionOpen().photo"
+              (click)="toggleSection('photo')"
+              (keydown.enter)="toggleSection('photo')"
+              (keydown.space)="toggleSection('photo'); $event.preventDefault()"
+            >
+              <span class="collapse-card__title">{{ t()('profile.section_photo') }}</span>
+              <span class="collapse-card__summary">
+                {{ t()(photoDataUri() ? 'profile.summary_photo_set' : 'profile.summary_empty') }}
+              </span>
+              <lucide-icon
+                [img]="chevronIcon"
+                [size]="17"
+                class="chevron"
+                [class.chevron--open]="sectionOpen().photo"
+                aria-hidden="true"
+              />
+            </div>
+            @if (sectionOpen().photo) {
+              <div class="collapse-card__body">
+                <p class="field__hint">{{ t()('profile.photo_hint') }}</p>
+                <div class="photo-editor">
+                  @if (photoDataUri(); as uri) {
+                    <img class="photo-editor__thumb" [src]="uri" alt="" />
+                    <div class="photo-editor__actions">
+                      <button
+                        class="btn-dashed"
+                        type="button"
+                        [disabled]="photoSaving()"
+                        (click)="pickPhoto()"
+                      >
+                        {{ t()('documents.cv_photo_replace') }}
+                      </button>
+                      <button
+                        class="btn-dashed"
+                        type="button"
+                        [disabled]="photoSaving()"
+                        (click)="removePhoto()"
+                      >
+                        {{ t()('documents.cv_photo_remove') }}
+                      </button>
+                    </div>
+                  } @else {
+                    <button
+                      class="btn-dashed"
+                      type="button"
+                      [disabled]="photoSaving()"
+                      (click)="pickPhoto()"
+                    >
+                      <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                      {{ t()('documents.cv_photo_upload') }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
         </section>
 
         <!-- Editor -->
@@ -1038,6 +1147,16 @@ interface ParsedProfile {
         </section>
       </div>
     }
+
+    <!-- Same crop modal the CV editor uses, so a profile photo lands in the
+         exact frame a CV expects and never needs re-cropping per document. -->
+    @if (cropSourceUri(); as src) {
+      <app-cv-photo-crop
+        [sourceDataUri]="src"
+        (confirmed)="onCropConfirmed($event)"
+        (cancelled)="onCropCancelled()"
+      />
+    }
   `,
   styles: [
     `
@@ -1286,6 +1405,28 @@ interface ParsedProfile {
       }
       .collapse-card__body {
         padding: 0 var(--space-4) var(--space-4);
+      }
+
+      /* Photo: the thumb shows the exact 3:4 frame a CV will print, so what
+         the user approves in the crop modal is what they get on the page. */
+      .photo-editor {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        margin-top: var(--space-3);
+      }
+      .photo-editor__thumb {
+        width: 90px;
+        height: 120px;
+        object-fit: cover;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+      }
+      .photo-editor__actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
       }
 
       .ai-tools {
@@ -1803,6 +1944,12 @@ export class ProfileComponent implements OnInit {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly scoring = signal(false);
+  /** The reusable applicant photo, already cropped to the CV frame. Persisted
+   * on its own (not with the profile form) so it survives every other save. */
+  readonly photoDataUri = signal<string | null>(null);
+  readonly photoSaving = signal(false);
+  /** Source image awaiting a crop; non-null opens the crop modal. */
+  readonly cropSourceUri = signal<string | null>(null);
   readonly pitching = signal(false);
   readonly parsing = signal(false);
 
@@ -1816,9 +1963,9 @@ export class ProfileComponent implements OnInit {
   readonly parseStatus = signal('');
   readonly parseError = signal(false);
   readonly scoringOpen = signal(true);
-  readonly sectionOpen = signal<
-    Record<'experience' | 'skills' | 'languages' | 'education', boolean>
-  >({
+  readonly sectionOpen = signal<Record<ProfileSectionKey, boolean>>({
+    archetypes: true,
+    photo: true,
     experience: true,
     skills: true,
     languages: true,
@@ -1877,6 +2024,7 @@ export class ProfileComponent implements OnInit {
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
       this.languageEntries.set(parseLanguageEntries(this.form().languages));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
+      this.photoDataUri.set(p?.photoDataUri ?? null);
       await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
@@ -1895,7 +2043,55 @@ export class ProfileComponent implements OnInit {
     this.scoringOpen.update((v) => !v);
   }
 
-  toggleSection(key: 'experience' | 'skills' | 'languages' | 'education'): void {
+  /** Native image picker -> backend read -> crop modal. Mirrors the CV editor's
+   * flow so both places produce a photo in the identical frame. */
+  async pickPhoto(): Promise<void> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
+    });
+    if (typeof selected !== 'string') return;
+    try {
+      this.cropSourceUri.set(await this.db.cvPhotoReadFile(selected));
+    } catch (e) {
+      this.toast.error(String(e));
+    }
+  }
+
+  async onCropConfirmed(uri: string): Promise<void> {
+    this.cropSourceUri.set(null);
+    await this.savePhoto(uri);
+  }
+
+  onCropCancelled(): void {
+    this.cropSourceUri.set(null);
+  }
+
+  async removePhoto(): Promise<void> {
+    await this.savePhoto(null);
+  }
+
+  /** Persists immediately rather than waiting for the page's Save button: the
+   * photo is not part of the profile form, and a cropped photo left unsaved
+   * would be silently lost on navigation. */
+  private async savePhoto(uri: string | null): Promise<void> {
+    if (this.photoSaving()) return;
+    this.photoSaving.set(true);
+    const previous = this.photoDataUri();
+    this.photoDataUri.set(uri);
+    try {
+      await this.db.setProfilePhoto(uri);
+      this.toast.success(this.t()(uri ? 'profile.photo_saved' : 'profile.photo_removed'));
+    } catch (e) {
+      this.photoDataUri.set(previous);
+      this.toast.error(String(e));
+    } finally {
+      this.photoSaving.set(false);
+    }
+  }
+
+  toggleSection(key: ProfileSectionKey): void {
     this.sectionOpen.update((s) => ({ ...s, [key]: !s[key] }));
   }
 
@@ -1903,6 +2099,8 @@ export class ProfileComponent implements OnInit {
    * sections expanded so they invite filling. */
   private seedSectionOpen(): void {
     this.sectionOpen.set({
+      archetypes: this.archetypes().length === 0,
+      photo: false,
       experience: this.experienceEntries().length === 0,
       skills: this.form().skills.length === 0,
       languages: this.languageEntries().length === 0,

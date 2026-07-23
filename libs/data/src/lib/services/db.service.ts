@@ -56,6 +56,12 @@ export class DbService {
     return tauriInvoke<Profile>('db_upsert_profile', { profile });
   }
 
+  /** Set (or, with `null`, remove) the reusable profile photo. Separate from
+   * `upsertProfile` so an ordinary profile save cannot wipe it. */
+  async setProfilePhoto(photoDataUri: string | null): Promise<Profile> {
+    return tauriInvoke<Profile>('db_set_profile_photo', { photoDataUri });
+  }
+
   hashText(text: string): Promise<string> {
     return tauriInvoke<string>('hash_text', { text });
   }

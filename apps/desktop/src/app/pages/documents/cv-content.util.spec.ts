@@ -5,6 +5,7 @@ import type {
   CvLanguagesSection,
   CvParsedContent,
   CvPersonalDetailsSection,
+  CvSection,
   CvSkillsSection,
   CvTemplate,
 } from '@applye/core';
@@ -43,6 +44,7 @@ import {
   resetCvSectionStyle,
   resolvePageSettings,
   visiblePersonalContactFields,
+  withCvPhoto,
 } from './cv-content.util';
 import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
 
@@ -1470,5 +1472,51 @@ describe('buildAdditionalInfoBlock', () => {
   it('returns "" when nothing is answered', () => {
     expect(buildAdditionalInfoBlock([{ id: 'q1', question: 'X', answer: '' }])).toBe('');
     expect(buildAdditionalInfoBlock([])).toBe('');
+  });
+});
+
+describe('withCvPhoto', () => {
+  const PHOTO = 'data:image/jpeg;base64,AAAA';
+
+  it('fills an existing photo section and makes it visible', () => {
+    const content = {
+      sections: [
+        { key: 'photo', order: 0, visible: false } as CvSection,
+        { key: 'summary', order: 1, visible: true, text: 'x' } as CvSection,
+      ],
+    };
+    const out = withCvPhoto(content, PHOTO);
+    const photo = out.sections.find((s) => s.key === 'photo') as Extract<
+      CvSection,
+      { key: 'photo' }
+    >;
+    expect(photo.visible).toBe(true);
+    expect(photo.dataUri).toBe(PHOTO);
+    // Untouched sections survive.
+    expect(out.sections).toHaveLength(2);
+  });
+
+  it('keeps a placement the user already chose', () => {
+    const content = {
+      sections: [{ key: 'photo', order: 0, visible: true, placement: 'above_right' } as CvSection],
+    };
+    const photo = withCvPhoto(content, PHOTO).sections[0] as Extract<CvSection, { key: 'photo' }>;
+    expect(photo.placement).toBe('above_right');
+  });
+
+  it('creates a photo section ahead of everything when the template seeded none', () => {
+    const content = {
+      sections: [{ key: 'personal_details', order: 0, visible: true, fullName: 'A' } as CvSection],
+    };
+    const out = withCvPhoto(content, PHOTO);
+    expect(out.sections[0].key).toBe('photo');
+    expect(out.sections[0].order).toBeLessThan(0);
+    expect(out.sections).toHaveLength(2);
+  });
+
+  it('does not mutate the input', () => {
+    const content = { sections: [{ key: 'photo', order: 0, visible: false } as CvSection] };
+    withCvPhoto(content, PHOTO);
+    expect((content.sections[0] as Extract<CvSection, { key: 'photo' }>).visible).toBe(false);
   });
 });

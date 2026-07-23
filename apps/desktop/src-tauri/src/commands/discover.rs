@@ -345,9 +345,44 @@ fn parse_geo_scopes(raw: &str) -> Vec<String> {
 }
 
 /// Names a 2-letter country code also answers to in freetext locations.
+///
+/// German boards - the federal agency's feed, and the company boards on
+/// Personio - routinely give the city alone ("Berlin", "Muenchen"), with no
+/// country anywhere in the string, so a Germany scope would silently drop its
+/// own market. The largest German cities are therefore country tokens too, in
+/// both the German and the English spelling. The trade is deliberate: a
+/// same-named city elsewhere (Frankfort, KY) slips through, which the user can
+/// see and dismiss, where a dropped job is invisible.
 fn country_tokens(code: &str) -> Vec<&'static str> {
     match code {
-        "de" => vec!["de", "germany", "deutschland"],
+        "de" => vec![
+            "de",
+            "germany",
+            "deutschland",
+            "berlin",
+            "hamburg",
+            "muenchen",
+            "münchen",
+            "munich",
+            "köln",
+            "koeln",
+            "cologne",
+            "frankfurt",
+            "stuttgart",
+            "düsseldorf",
+            "duesseldorf",
+            "dusseldorf",
+            "leipzig",
+            "dortmund",
+            "nürnberg",
+            "nuernberg",
+            "nuremberg",
+            "hannover",
+            "bremen",
+            "dresden",
+            "karlsruhe",
+            "mannheim",
+        ],
         "at" => vec!["at", "austria"],
         "ch" => vec!["ch", "switzerland"],
         "fr" => vec!["fr", "france"],
@@ -761,6 +796,59 @@ fn parse_ashby_board(val: &serde_json::Value) -> Vec<RawJob> {
         .collect()
 }
 
+/// {slug}.jobs.personio.de/xml: `<position>` blocks with `<name>`, `<office>`,
+/// `<id>` and a `<jobDescriptions>` list of CDATA HTML sections. Personio is
+/// the dominant ATS for German small and mid-size employers, and its board
+/// feed is public XML built for machine reading.
+///
+/// Every description section is concatenated, keeping its heading ("Aufgaben",
+/// "Dein Profil"), because the split between them is where a German posting
+/// puts its actual requirements.
+fn parse_personio_xml(xml: &str, slug: &str, company_fallback: &str) -> Vec<RawJob> {
+    let mut out = Vec::new();
+    for block in xml.split("<position>").skip(1) {
+        let block = block.split("</position>").next().unwrap_or("");
+        // <name> is used both for the position title and for each description
+        // section heading, so read the title from the block before the
+        // descriptions start.
+        let head = block.split("<jobDescriptions>").next().unwrap_or(block);
+        let Some(title) = xml_tag(head, "name") else {
+            continue;
+        };
+        let company = xml_tag(head, "subcompany").unwrap_or_else(|| company_fallback.to_string());
+        let location = xml_tag(head, "office").unwrap_or_default();
+        let id = xml_tag(head, "id").unwrap_or_default();
+
+        let sections = block.split("<jobDescription>").skip(1);
+        let mut body = String::new();
+        for section in sections {
+            let section = section.split("</jobDescription>").next().unwrap_or("");
+            if let Some(heading) = xml_tag(section, "name") {
+                body.push_str(&heading);
+                body.push('\n');
+            }
+            if let Some(value) = xml_tag(section, "value") {
+                body.push_str(&html_to_text(&value));
+                body.push_str("\n\n");
+            }
+        }
+
+        out.push(RawJob {
+            title,
+            company,
+            jd_text: body.trim().to_string(),
+            location,
+            url: if id.is_empty() {
+                format!("https://{slug}.jobs.personio.de")
+            } else {
+                format!("https://{slug}.jobs.personio.de/job/{id}")
+            },
+            detail_ref: None,
+        });
+    }
+    out
+}
+
 /// Percent-encode everything outside the unreserved set, so a reference number
 /// with a slash or a space still yields one path segment.
 fn percent_encode_segment(raw: &str) -> String {
@@ -1006,6 +1094,25 @@ async fn fetch_source_jobs(
                 }
             }
             Ok(out)
+        }
+        "ats_personio" => {
+            // Personio boards key on the subdomain, not a path segment, so the
+            // stored slug is the source of truth and the host is the fallback.
+            let slug = src
+                .slug
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .or_else(|| {
+                    extract_host(&src.url)
+                        .and_then(|h| h.split('.').next().map(str::to_string))
+                        .filter(|s| !s.is_empty())
+                })
+                .ok_or_else(|| "missing company slug".to_string())?;
+            let url = format!("https://{slug}.jobs.personio.de/xml");
+            let xml = get_text(client, &url).await?;
+            Ok(parse_personio_xml(&xml, &slug, &titleize_slug(&slug)))
         }
         "ats_greenhouse" => {
             let slug = ats_slug(src, "boards")?;
@@ -1377,7 +1484,7 @@ pub async fn db_add_source(
                 "User-added RSS feed - public, machine-readable.",
             )
         }
-        "ats_greenhouse" | "ats_lever" | "ats_ashby" => {
+        "ats_greenhouse" | "ats_lever" | "ats_ashby" | "ats_personio" => {
             let slug = slug.unwrap_or_default().trim().to_lowercase();
             if slug.is_empty() {
                 return Err("db_add_source: ATS source needs a company slug".to_string());
@@ -1514,6 +1621,68 @@ mod tests {
     fn arbeitsagentur_empty_or_foreign_shape_yields_nothing() {
         assert!(parse_arbeitsagentur(&serde_json::json!({})).is_empty());
         assert!(parse_arbeitsagentur(&serde_json::json!({"stellenangebote":[]})).is_empty());
+    }
+
+    // -- Personio company boards ---------------------------------------------
+
+    #[test]
+    fn personio_reads_title_office_and_all_description_sections() {
+        let xml = r#"<workzag-jobs>
+          <position>
+            <id>1234</id>
+            <subcompany>Muster GmbH</subcompany>
+            <office>Berlin</office>
+            <name>Frontend Entwickler (m/w/d)</name>
+            <jobDescriptions>
+              <jobDescription><name>Aufgaben</name><value><![CDATA[<p>Du baust das Web-Frontend.</p>]]></value></jobDescription>
+              <jobDescription><name>Dein Profil</name><value><![CDATA[<ul><li>Angular</li></ul>]]></value></jobDescription>
+            </jobDescriptions>
+          </position>
+        </workzag-jobs>"#;
+        let jobs = parse_personio_xml(xml, "muster", "Muster");
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].title, "Frontend Entwickler (m/w/d)");
+        assert_eq!(jobs[0].company, "Muster GmbH");
+        assert_eq!(jobs[0].location, "Berlin");
+        assert_eq!(jobs[0].url, "https://muster.jobs.personio.de/job/1234");
+        // Both sections land, headings included.
+        assert!(jobs[0].jd_text.contains("Aufgaben"));
+        assert!(jobs[0].jd_text.contains("Du baust das Web-Frontend."));
+        assert!(jobs[0].jd_text.contains("Dein Profil"));
+        assert!(jobs[0].jd_text.contains("Angular"));
+    }
+
+    #[test]
+    fn personio_title_is_not_taken_from_a_description_heading() {
+        let xml = r#"<workzag-jobs><position>
+            <name>Werkstudent Data</name>
+            <jobDescriptions><jobDescription><name>Aufgaben</name><value>x</value></jobDescription></jobDescriptions>
+          </position></workzag-jobs>"#;
+        let jobs = parse_personio_xml(xml, "acme", "Acme");
+        assert_eq!(jobs[0].title, "Werkstudent Data");
+    }
+
+    #[test]
+    fn personio_falls_back_to_the_slug_company_and_board_url() {
+        let xml = r#"<workzag-jobs><position><name>QA</name></position></workzag-jobs>"#;
+        let jobs = parse_personio_xml(xml, "acme", "Acme");
+        assert_eq!(jobs[0].company, "Acme");
+        assert_eq!(jobs[0].url, "https://acme.jobs.personio.de");
+    }
+
+    #[test]
+    fn personio_empty_or_unrelated_xml_yields_nothing() {
+        assert!(parse_personio_xml("<workzag-jobs></workzag-jobs>", "a", "A").is_empty());
+        assert!(parse_personio_xml("<rss><item></item></rss>", "a", "A").is_empty());
+    }
+
+    #[test]
+    fn german_city_alone_passes_a_germany_scope() {
+        let cfg = build_geo_cfg(&[], &["de".to_string()]);
+        for city in ["Berlin", "München", "Koeln", "Frankfurt am Main"] {
+            assert!(geo_passes(city, &cfg), "{city} should pass a DE scope");
+        }
+        assert!(!geo_passes("Warsaw", &cfg));
     }
 
     #[test]

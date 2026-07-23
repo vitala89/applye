@@ -123,6 +123,7 @@ pub fn run() {
             commands::import::import_preview,
             commands::import::import_confirm,
             ai::ai_run,
+            ai::cli::cli_probe,
             ai::skills::skill_render,
             keys::keys_set_provider_key,
             keys::keys_has_provider_key,

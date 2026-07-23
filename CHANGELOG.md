@@ -10,7 +10,9 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
-## [0.26.0] - 2026-07-23
+### Added
+
+- **CLI bridge mode works.** Settings has offered a "CLI bridge (coming soon)" mode since the first AI release, but choosing it returned "not implemented yet". It is now real: if you already pay for **Claude Code**, **Codex CLI** or **Gemini CLI**, Applye runs that CLI for its AI work and stores no API key at all. Settings shows which of the three it can find on your machine, with the path it resolved, and a Re-check button - a GUI app does not inherit your shell's `PATH`, so Applye also looks in the standard install locations itself. Each run is a one-shot subprocess with a fixed argument list (never a shell), the prompt goes in over stdin rather than the command line, the working directory is a scratch folder rather than your own files, Codex additionally runs in its read-only sandbox, and a CLI that hangs is stopped after 10 minutes. Model names in CLI mode are free text passed straight through; leave them empty and the CLI picks its own default.
 
 ### Added
 

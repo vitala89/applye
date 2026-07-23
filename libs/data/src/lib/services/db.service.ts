@@ -18,7 +18,13 @@ import {
   PipelineCard,
   Priority,
 } from '@applye/core';
-import { CreateInterviewStageInput, InterviewStage, UpdateInterviewStageInput } from '@applye/core';
+import {
+  CreateInterviewStageInput,
+  InterviewPrep,
+  InterviewStage,
+  SaveInterviewPrepBatchInput,
+  UpdateInterviewStageInput,
+} from '@applye/core';
 import { Profile } from '@applye/core';
 import { Settings } from '@applye/core';
 import { GeneratedDoc, SaveTailoringInput, TailoringCache } from '@applye/core';
@@ -313,6 +319,18 @@ export class DbService {
    *  with the user first. */
   async deleteJob(id: number): Promise<void> {
     return tauriInvoke<void>('db_delete_job', { id });
+  }
+
+  /** Ordered by id ascending — insertion order across every generated batch. */
+  async listInterviewPrep(stageId: number): Promise<InterviewPrep[]> {
+    return tauriInvoke<InterviewPrep[]>('list_interview_prep', { stageId });
+  }
+
+  /** Inserts one row per card, all sharing inputHash. The caller checks
+   *  listInterviewPrep for an existing hash before calling AI at all — this
+   *  command never dedupes, so it must not be called on a cache hit. */
+  async saveInterviewPrepBatch(input: SaveInterviewPrepBatchInput): Promise<InterviewPrep[]> {
+    return tauriInvoke<InterviewPrep[]>('save_interview_prep_batch', { input });
   }
 
   /** Ordered by stageOrder ascending. */

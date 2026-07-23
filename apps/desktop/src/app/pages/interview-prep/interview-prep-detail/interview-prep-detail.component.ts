@@ -17,20 +17,49 @@ import {
   LucideAngularModule,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
   User,
   X,
 } from 'lucide-angular';
 import {
+  InterviewPrep,
   InterviewStage,
   InterviewStageStatus,
+  NewPrepCardInput,
   PipelineCard,
+  PrepFormat,
   StageType,
   SupportedLanguage,
 } from '@applye/core';
-import { DbService } from '@applye/data';
+import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
+import { cleanJsonText } from '../../documents/cv-content.util';
+
+const PREP_COUNT = 5;
+
+/** Behavioral rounds get STAR+R stories; everything technical/system-design
+ * gets code-aware Q&A; HR screen / final / other get the HR-screen skill
+ * (behavioral Q&A + comp negotiation + smart questions). */
+function skillForStageType(stageType: StageType): { skill: string; format: PrepFormat } {
+  switch (stageType) {
+    case 'behavioral':
+      return { skill: 'star-r', format: 'star' };
+    case 'technical':
+    case 'system_design':
+      return { skill: 'interview-technical', format: 'qa' };
+    default:
+      return { skill: 'interview-hr', format: 'qa' };
+  }
+}
+
+/** The text used both to display a card's prompt and to tell the skill what
+ * not to repeat on the next "N more" — the story title for STAR+R, the
+ * question for everything else. */
+function cardPrompt(card: InterviewPrep | NewPrepCardInput): string {
+  return card.question ?? '';
+}
 
 const STAGE_TYPES: StageType[] = [
   'hr_screen',
@@ -91,6 +120,7 @@ export class InterviewPrepDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly db = inject(DbService);
+  private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
@@ -106,6 +136,7 @@ export class InterviewPrepDetailComponent implements OnInit {
     delete: Trash2,
     user: User,
     close: X,
+    prep: Sparkles,
   };
   protected readonly STAGE_TYPES = STAGE_TYPES;
   protected readonly STAGE_STATUSES = STAGE_STATUSES;
@@ -128,6 +159,12 @@ export class InterviewPrepDetailComponent implements OnInit {
   protected readonly statusMenuId = signal<number | null>(null);
   protected readonly confirmStage = signal<InterviewStage | null>(null);
 
+  // per-stage AI prep panel
+  protected readonly jdText = signal('');
+  protected readonly prepOpenId = signal<number | null>(null);
+  protected readonly prepCards = signal<Map<number, InterviewPrep[]>>(new Map());
+  protected readonly generatingId = signal<number | null>(null);
+
   protected readonly detailSummary = computed(() => {
     const total = this.stages().length;
     const upcoming = this.stages().filter((s) => s.status === 'scheduled').length;
@@ -149,8 +186,13 @@ export class InterviewPrepDetailComponent implements OnInit {
         this.db.listPipelineCards(),
         this.db.listInterviewStages(id),
       ]);
-      this.application.set(cards.find((c) => c.id === id) ?? null);
+      const application = cards.find((c) => c.id === id) ?? null;
+      this.application.set(application);
       this.stages.set(stages);
+      if (application?.jobId) {
+        const job = await this.db.getJob(application.jobId);
+        this.jdText.set(job?.jdText ?? '');
+      }
     } catch (e) {
       this.toast.error(String(e));
     } finally {
@@ -324,6 +366,102 @@ export class InterviewPrepDetailComponent implements OnInit {
       this.stages.set(next);
     } catch (e) {
       this.toast.error(String(e));
+    }
+  }
+
+  // ---------- AI prep ----------
+  protected cardsFor(stageId: number): InterviewPrep[] {
+    return this.prepCards().get(stageId) ?? [];
+  }
+
+  protected formatFor(stageType: StageType): PrepFormat {
+    return skillForStageType(stageType).format;
+  }
+
+  protected async togglePrep(stage: InterviewStage): Promise<void> {
+    this.statusMenuId.set(null);
+    if (this.prepOpenId() === stage.id) {
+      this.prepOpenId.set(null);
+      return;
+    }
+    this.prepOpenId.set(stage.id);
+    if (!this.prepCards().has(stage.id)) {
+      try {
+        const cards = await this.db.listInterviewPrep(stage.id);
+        this.prepCards.set(new Map(this.prepCards()).set(stage.id, cards));
+      } catch (e) {
+        this.toast.error(String(e));
+      }
+    }
+  }
+
+  /** Same call whether it's the first generation or "N more" — the existing
+   * cards' prompts are folded into the hash, so a repeat click with no new
+   * cards since is a 0-token cache hit, and any new card since changes the
+   * hash and produces a genuinely new batch that appends to what's shown. */
+  protected async generatePrep(stage: InterviewStage): Promise<void> {
+    if (this.generatingId()) return;
+    this.generatingId.set(stage.id);
+    try {
+      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
+      if (!profile?.fullMd) {
+        throw new Error(this.t()('documents.cv_generate_no_profile'));
+      }
+      const language = stage.stageLanguage || settings.defaultDocLanguage || 'en';
+      const jd = this.jdText() || 'General interview preparation';
+      const { skill, format } = skillForStageType(stage.stageType);
+      const existing = this.cardsFor(stage.id);
+      const existingQuestions = existing.map(cardPrompt).filter(Boolean).join('\n');
+
+      const hashInput = [profile.fullMd, jd, language, skill, PREP_COUNT, existingQuestions].join(
+        '|',
+      );
+      const inputHash = await this.db.hashText(hashInput);
+      if (existing.some((c) => c.inputHash === inputHash)) {
+        return;
+      }
+
+      const rendered = await this.ai.renderSkill(skill, {
+        profile_md: profile.fullMd,
+        job_description: jd,
+        count: String(PREP_COUNT),
+        language,
+        existing_questions: existingQuestions,
+      });
+      const res = await this.ai.run({
+        mode: settings.aiMode,
+        provider: settings.provider,
+        model: settings.defaultModel,
+        systemPrompt: rendered.systemPrompt,
+        userPrompt: rendered.userPrompt,
+        language,
+      });
+      const parsed = JSON.parse(cleanJsonText(res.text)) as Array<Record<string, string>>;
+      const cards: NewPrepCardInput[] =
+        format === 'star'
+          ? parsed.map((item) => ({
+              question: item['title'],
+              starSituation: item['situation'],
+              starTask: item['task'],
+              starAction: item['action'],
+              starResult: item['result'],
+              starReflection: item['reflection'],
+            }))
+          : parsed.map((item) => ({ question: item['question'], answer: item['answer'] }));
+
+      const saved = await this.db.saveInterviewPrepBatch({
+        stageId: stage.id,
+        format,
+        language,
+        inputHash,
+        modelUsed: settings.defaultModel,
+        cards,
+      });
+      this.prepCards.set(new Map(this.prepCards()).set(stage.id, [...existing, ...saved]));
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.generatingId.set(null);
     }
   }
 }

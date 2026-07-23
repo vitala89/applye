@@ -348,17 +348,22 @@ export const REGENERATABLE_SECTION_KEYS: CvSectionKey[] = [
   'languages',
 ];
 
-/** Parses a `cv-import`/`cv-generate-baseline` skill response (JSON, possibly
- * fenced) into `CvParsedContent`. Throws with the raw text on invalid JSON
- * so the caller can surface a real error instead of a silent empty draft. */
+/** Parses a skill response (JSON, possibly fenced) that is either a single
+ * object (`cv-import`/`cv-generate-baseline`/cover-letter skills) or a JSON
+ * array (interview-prep skills, which return a list of cards). Throws with
+ * the raw text on invalid JSON so the caller can surface a real error
+ * instead of a silent empty draft. */
 export function cleanJsonText(text: string): string {
   let cleaned = text.trim();
   cleaned = cleaned
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```\s*$/i, '')
     .trim();
-  const startIdx = cleaned.indexOf('{');
-  const endIdx = cleaned.lastIndexOf('}');
+  const braceIdx = cleaned.indexOf('{');
+  const bracketIdx = cleaned.indexOf('[');
+  const isArray = bracketIdx !== -1 && (braceIdx === -1 || bracketIdx < braceIdx);
+  const startIdx = isArray ? bracketIdx : braceIdx;
+  const endIdx = isArray ? cleaned.lastIndexOf(']') : cleaned.lastIndexOf('}');
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
     cleaned = cleaned.substring(startIdx, endIdx + 1);
   }

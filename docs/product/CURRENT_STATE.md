@@ -1,8 +1,8 @@
 # Current Operational State
 
 - **Current version**: `0.26.0` (package.json / tauri.conf.json)
-- **Current branch / focus**: `main`, uncommitted work from the 2026-07-24 session (Interview Prep
-  generation UI removal + local markets). Not yet committed/pushed - see below.
+- **Current branch / focus**: `main`, 3 local commits from the 2026-07-24 session (Interview Prep
+  generation UI removal, local markets, a token-fix polish pass), not yet pushed - see below.
 - **Next action**: a `tauri dev` pass covering everything merged since the last one, plus the two
   items below. CLI-bridge Settings + onboarding UI, the ATS card, the assisted installer, and
   Interview Prep's CRUD (add/edit/delete/reorder stages) still have **no native verification**. The
@@ -46,6 +46,25 @@ live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existi
     warnings), `nx run-many -t test --all` (6 projects), `nx lint desktop` (0 errors, pre-existing
     warnings only), `nx build desktop`. Not verified natively (Settings picker, Sources drawer
     toggle, an actual scan of a new source) - covered by the `tauri dev` pass above.
+  - **Design polish: nonexistent CSS token sweep.** Cross-checked every `var(--...)` in
+    `apps/desktop/src` against `libs/ui/tokens.css`. Found the same failure mode a prior session
+    hit with `--border`/`--surface-raised`: names that read like tokens but were never defined.
+    Eight fixed across six files - `--text-base`, `--text-2xl`, `--text-lg` (x3), `--text-md`
+    (x2), `--border`, `--text-xl` - swapped for the real token with the closest size/semantic
+    match (`--text-body`, `--text-h2`, `--text-h3`, `--border-subtle`, `--text-h1`). Some had no
+    CSS fallback, so were a real (if quiet) styling bug: an invalid `var()` with no fallback makes
+    the whole declaration invalid at computed-value time, so `border` disappeared entirely on
+    `first-launch.component.ts`'s card instead of rendering `--border-subtle`. **Left alone, not
+    fixed**: `--radius-md`, `--radius-modal`, `--motion-fast`, `--ok`, `--surface`,
+    `--text-caption`, `--text-quaternary`, `--warning-strong` are the same pattern but every one
+    carries a safe CSS fallback already, so nothing renders wrong today - swapping them to a real
+    token risks an unverified visual size change with no native run available to check it
+    against. Also confirmed as **not bugs** (false positives from the token-name check): `--cv-*`,
+    `--col-accent`, `--ana-neutral-fill` are all real custom properties, just set dynamically
+    per-instance (inline `[style.--x]` bindings or a component-scoped `:host` block) rather than
+    declared globally in `tokens.css` - by design, not an oversight.
+  - Not done this session (deferred, see Task 3 in the original prompt): a second general bug pass
+    beyond the token sweep above. Next session can pick this up directly.
 - **Merged: `fix/cli-bridge-probe-and-models` → PR #153.** Two defects found in the first live
   CLI-bridge run, then five more found while checking the surface end to end. (1) `cli_probe` only
   checked that a file with the right name existed on the search path, so a partially installed

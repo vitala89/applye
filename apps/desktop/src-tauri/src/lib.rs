@@ -77,6 +77,8 @@ pub fn run() {
             commands::interview::update_interview_stage,
             commands::interview::delete_interview_stage,
             commands::interview::list_interview_stages,
+            commands::interview::list_interview_prep,
+            commands::interview::save_interview_prep_batch,
             commands::tailoring::tailoring_cache_get,
             commands::tailoring::tailoring_cache_save,
             commands::portal_answers::portal_answers_get,

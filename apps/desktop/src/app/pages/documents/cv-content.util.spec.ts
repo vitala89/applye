@@ -14,6 +14,7 @@ import {
   blankExperienceEntry,
   buildContactLine,
   buildCvContent,
+  cleanJsonText,
   cvContentToMd,
   effectiveLeafStyle,
   effectiveSectionStyle,
@@ -47,6 +48,23 @@ import {
   withCvPhoto,
 } from './cv-content.util';
 import { CV_STYLE_DEFAULT, CvStyle } from '@applye/core';
+
+describe('cleanJsonText', () => {
+  it('extracts a fenced JSON object unchanged', () => {
+    const text = '```json\n{"a": 1}\n```';
+    expect(JSON.parse(cleanJsonText(text))).toEqual({ a: 1 });
+  });
+
+  it('extracts a fenced JSON array without swallowing the outer brackets', () => {
+    const text = '```json\n[{"question": "Q1"}, {"question": "Q2"}]\n```';
+    expect(JSON.parse(cleanJsonText(text))).toEqual([{ question: 'Q1' }, { question: 'Q2' }]);
+  });
+
+  it('extracts an unfenced array with surrounding prose stripped', () => {
+    const text = 'Here you go:\n[{"a": 1}]\nEnjoy.';
+    expect(JSON.parse(cleanJsonText(text))).toEqual([{ a: 1 }]);
+  });
+});
 
 describe('parseDateAnswer', () => {
   const dash = String.fromCharCode(0x2013); // en dash, kept out of source per house rule

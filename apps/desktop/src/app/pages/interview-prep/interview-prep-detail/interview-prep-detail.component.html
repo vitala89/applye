@@ -118,6 +118,15 @@
                 <button
                   type="button"
                   class="ipd__icon-btn"
+                  [class.is-active]="prepOpenId() === stage.id"
+                  [attr.aria-label]="t()('interview.prep_toggle')"
+                  (click)="togglePrep(stage)"
+                >
+                  <lucide-icon [img]="icons.prep" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="ipd__icon-btn"
                   [attr.aria-label]="t()('interview.edit')"
                   (click)="openEdit(stage)"
                 >
@@ -136,6 +145,60 @@
 
             @if (stage.notes) {
               <p class="ipd__notes">{{ stage.notes }}</p>
+            }
+
+            @if (prepOpenId() === stage.id) {
+              <div class="ipd__prep">
+                <div class="ipd__prep-head">
+                  <span class="ipd__prep-title">{{ t()('interview.prep_title') }}</span>
+                  <button
+                    type="button"
+                    class="ip-btn ip-btn--sm"
+                    [disabled]="generatingId() === stage.id"
+                    (click)="generatePrep(stage)"
+                  >
+                    @if (generatingId() === stage.id) {
+                      {{ t()('interview.prep_generating') }}
+                    } @else if (cardsFor(stage.id).length) {
+                      {{ t()('interview.prep_generate_more').replace('{n}', '5') }}
+                    } @else {
+                      {{ t()('interview.prep_generate').replace('{n}', '5') }}
+                    }
+                  </button>
+                </div>
+
+                @if (!cardsFor(stage.id).length && generatingId() !== stage.id) {
+                  <p class="ipd__prep-empty">{{ t()('interview.prep_empty') }}</p>
+                }
+
+                @for (card of cardsFor(stage.id); track card.id) {
+                  <div class="ipd__prep-card">
+                    @if (formatFor(stage.stageType) === 'star') {
+                      <div class="ipd__prep-q">{{ card.question }}</div>
+                      <p class="ipd__prep-a">
+                        <strong>{{ t()('interview.star_situation') }}:</strong>
+                        {{ card.starSituation }}
+                      </p>
+                      <p class="ipd__prep-a">
+                        <strong>{{ t()('interview.star_task') }}:</strong> {{ card.starTask }}
+                      </p>
+                      <p class="ipd__prep-a">
+                        <strong>{{ t()('interview.star_action') }}:</strong> {{ card.starAction }}
+                      </p>
+                      <p class="ipd__prep-a">
+                        <strong>{{ t()('interview.star_result') }}:</strong> {{ card.starResult }}
+                      </p>
+                      <p class="ipd__prep-a">
+                        <strong>{{ t()('interview.star_reflection') }}:</strong>
+                        {{ card.starReflection }}
+                      </p>
+                    } @else {
+                      <div class="ipd__prep-q">{{ card.question }}</div>
+                      <p class="ipd__prep-a">{{ card.answer }}</p>
+                    }
+                  </div>
+                }
+              </div>
             }
           </div>
         </div>

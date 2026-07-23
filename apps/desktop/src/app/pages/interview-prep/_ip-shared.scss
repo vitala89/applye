@@ -242,6 +242,10 @@
     background: var(--text-accent);
   }
 }
+.ip-btn--sm {
+  padding: 5px 12px;
+  font-size: var(--text-xs, 12px);
+}
 .ip-btn--danger {
   background: var(--danger-tint);
   border-color: var(--danger);

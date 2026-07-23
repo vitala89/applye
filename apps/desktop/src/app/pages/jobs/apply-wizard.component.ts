@@ -120,6 +120,14 @@ import {
           <lucide-icon [img]="icons().back" [size]="15" aria-hidden="true" />
           {{ activeStep() === 0 ? t()('jobs.wizard.back_to_summary') : t()('common.back') }}
         </button>
+        <button
+          class="btn btn--ghost btn--md"
+          type="button"
+          [disabled]="busy()"
+          (click)="discard.emit()"
+        >
+          {{ t()('jobs.wizard.discard') }}
+        </button>
         <span class="apply-wizard__step-of">
           {{ t()('jobs.wizard.step_word') }} {{ activeStep() + 1 }}
           {{ t()('jobs.wizard.step_progress_of') }}
@@ -206,6 +214,8 @@ export class ApplyWizard {
   readonly icons = input.required<JobDetailIcons>();
 
   readonly closeWizard = output<void>();
+  /** Abandon this job's tailoring entirely (the parent confirms first). */
+  readonly discard = output<void>();
   readonly markApplied = output<void>();
   /** Commit the re-tailored resume for a job that already has a status
    * (applied/interview/…) - persists the updated score and confirms. */

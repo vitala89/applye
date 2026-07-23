@@ -415,7 +415,12 @@ const en: TranslationMap = {
     back: 'Back',
     next: 'Next',
   },
-  shell: { theme_to_light: 'Switch to light theme', theme_to_dark: 'Switch to dark theme' },
+  shell: {
+    theme_to_light: 'Switch to light theme',
+    theme_to_dark: 'Switch to dark theme',
+    sidebar_collapse: 'Collapse the sidebar',
+    sidebar_expand: 'Expand the sidebar',
+  },
   updater: {
     title: 'Update available',
     body: 'A new version of Applye is ready to install.',
@@ -767,6 +772,12 @@ const en: TranslationMap = {
       photo_prompt_add_first: 'Add a photo to my profile',
       photo_prompt_no: 'No photo',
       photo_added: 'Photo added to this CV.',
+      discard: 'Cancel',
+      discard_title: 'Discard this tailoring?',
+      discard_body:
+        'The tailored passes and any draft CV or cover letter generated for this job are deleted. Documents you already exported or filed keep their place in the library, and the job itself stays in My Jobs.',
+      discard_keep: 'Keep working',
+      discard_confirm: 'Discard',
       resume_scoring_title: 'Scoring your tailored CV…',
       resume_scoring_hint: 'A step is still running - tap to watch',
       resume_reviewing_title: 'Preparing your documents…',
@@ -1208,6 +1219,8 @@ const en: TranslationMap = {
     cv_style_line_height_tight: 'Tight',
     cv_style_line_height_normal: 'Normal',
     cv_style_line_height_relaxed: 'Relaxed',
+    cv_live_style_hide: 'Hide the style panel',
+    cv_live_style_show: 'Show the style panel',
     cv_live_style_title: 'Live style',
     cv_live_style_hint: 'Every field is its own element. Style one, or apply to its whole group.',
     cv_live_style_empty:
@@ -1918,6 +1931,8 @@ const de: TranslationMap = {
   shell: {
     theme_to_light: 'Zum hellen Design wechseln',
     theme_to_dark: 'Zum dunklen Design wechseln',
+    sidebar_collapse: 'Seitenleiste einklappen',
+    sidebar_expand: 'Seitenleiste ausklappen',
   },
   updater: {
     title: 'Update verfügbar',
@@ -2274,6 +2289,12 @@ const de: TranslationMap = {
       photo_prompt_add_first: 'Foto im Profil hinterlegen',
       photo_prompt_no: 'Ohne Foto',
       photo_added: 'Foto in den Lebenslauf übernommen.',
+      discard: 'Abbrechen',
+      discard_title: 'Anpassung verwerfen?',
+      discard_body:
+        'Die angepassten Durchläufe und alle für diese Stelle erzeugten Entwürfe von Lebenslauf und Anschreiben werden gelöscht. Bereits exportierte oder abgelegte Dokumente bleiben in der Bibliothek, und die Stelle selbst bleibt in Meine Stellen.',
+      discard_keep: 'Weiterarbeiten',
+      discard_confirm: 'Verwerfen',
       resume_scoring_title: 'Angepasster Lebenslauf wird bewertet…',
       resume_scoring_hint: 'Ein Schritt läuft noch - zum Ansehen tippen',
       resume_reviewing_title: 'Deine Dokumente werden vorbereitet…',
@@ -2730,6 +2751,8 @@ const de: TranslationMap = {
     cv_style_line_height_tight: 'Eng',
     cv_style_line_height_normal: 'Normal',
     cv_style_line_height_relaxed: 'Locker',
+    cv_live_style_hide: 'Stilbereich ausblenden',
+    cv_live_style_show: 'Stilbereich einblenden',
     cv_live_style_title: 'Live-Stil',
     cv_live_style_hint:
       'Jedes Feld ist ein eigenes Element. Gestalte eines oder wende es auf die ganze Gruppe an.',

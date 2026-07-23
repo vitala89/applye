@@ -502,6 +502,7 @@ interface FinalChecks {
               [initialStep]="wizardInitialStep()"
               [busy]="tailoring() || updatingScore() || anyDocPreparing()"
               (closeWizard)="closeWizard()"
+              (discard)="askDiscardTailoring()"
               (markApplied)="markApplied()"
               (updateApplication)="updateApplication()"
               (cancelEdit)="cancelEditingLocked()"
@@ -1286,6 +1287,35 @@ interface FinalChecks {
         </div>
       </div>
     }
+
+    <!-- Abandoning the tailoring throws away generated drafts, so it asks
+         first and says exactly what is lost. -->
+    @if (discardConfirmOpen()) {
+      <div class="discard-confirm" role="dialog" aria-modal="true">
+        <div class="discard-confirm__panel">
+          <h4 class="discard-confirm__title">{{ t()('jobs.wizard.discard_title') }}</h4>
+          <p class="discard-confirm__text">{{ t()('jobs.wizard.discard_body') }}</p>
+          <div class="discard-confirm__actions">
+            <button
+              class="btn btn--secondary btn--md"
+              type="button"
+              [disabled]="discarding()"
+              (click)="cancelDiscardTailoring()"
+            >
+              {{ t()('jobs.wizard.discard_keep') }}
+            </button>
+            <button
+              class="btn btn--danger btn--md"
+              type="button"
+              [disabled]="discarding()"
+              (click)="discardTailoring()"
+            >
+              {{ discarding() ? t()('common.loading') : t()('jobs.wizard.discard_confirm') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [
     `
@@ -1431,6 +1461,42 @@ interface FinalChecks {
         color: var(--text-secondary);
       }
       .photo-prompt__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+      }
+      /* Discard confirm - same overlay contract as the CV gap dialog. */
+      .discard-confirm {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--bg-app) 70%, transparent);
+      }
+      .discard-confirm__panel {
+        width: min(480px, 92vw);
+        padding: var(--space-6);
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-lg);
+      }
+      .discard-confirm__title {
+        margin: 0 0 var(--space-3);
+        font-family: var(--font-mono);
+        font-size: var(--text-base);
+        color: var(--text-primary);
+      }
+      .discard-confirm__text {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .discard-confirm__actions {
         display: flex;
         justify-content: flex-end;
         gap: var(--space-3);
@@ -2381,6 +2447,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly actionBusy = signal(false);
   readonly actionMsg = signal('');
   readonly deleteConfirmOpen = signal(false);
+  /** Confirm gate for abandoning this job's tailoring, and its in-flight flag. */
+  readonly discardConfirmOpen = signal(false);
+  readonly discarding = signal(false);
   readonly deleting = signal(false);
 
   /** Editing override for the scoring view only. The job-detail UI no longer
@@ -4087,6 +4156,54 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   cancelCrossJob(): void {
     this.crossJobConfirmOpen.set(false);
+  }
+
+  /** Opens the confirm for abandoning this job's tailoring. */
+  askDiscardTailoring(): void {
+    this.discardConfirmOpen.set(true);
+  }
+
+  cancelDiscardTailoring(): void {
+    this.discardConfirmOpen.set(false);
+  }
+
+  /**
+   * Abandon the tailoring for this job: throw away the tailored passes, the
+   * draft CV and cover letter, and the saved wizard progress, then return to
+   * the job summary as if the wizard had never been opened.
+   *
+   * Only DRAFT documents are deleted. Once a document has been committed (the
+   * user exported it or marked the job applied) it belongs to the Documents
+   * library, and cancelling a later re-tailor must not take it with it.
+   */
+  async discardTailoring(): Promise<void> {
+    if (this.discarding()) return;
+    this.discarding.set(true);
+    try {
+      const drafts = [this.linkedCv(), this.linkedCoverLetter()].filter(
+        (d): d is DocumentLibraryItem => !!d?.id && !!d.isApplicationDraft,
+      );
+      // `document_library_delete` clears the application's reference itself,
+      // so no unlink is owed here (the upsert COALESCEs those ids and could
+      // not clear them anyway).
+      for (const draft of drafts) await this.db.documentLibraryDelete(draft.id as number);
+      this.linkedCv.set(null);
+      this.linkedCoverLetter.set(null);
+      const jobId = this.job()?.id;
+      if (jobId != null) {
+        const apps = await this.db.listApplications();
+        this.application.set(apps.find((a) => a.jobId === jobId) ?? null);
+      }
+      this.tailorScore.clear(this.job()?.id ?? -1);
+      this.resetJobScopedState();
+      this.wizardProgress.clear(this.job()?.id);
+      this.discardConfirmOpen.set(false);
+      this.scrollContentToTop();
+    } catch (e) {
+      this.documentReviewStatus.set(String(e));
+    } finally {
+      this.discarding.set(false);
+    }
   }
 
   closeWizard(): void {

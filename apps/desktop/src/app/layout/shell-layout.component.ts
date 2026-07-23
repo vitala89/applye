@@ -18,6 +18,8 @@ import {
   Target,
   User,
   Wand2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-angular';
 import { AiMode } from '@applye/core';
 import { DbService } from '@applye/data';
@@ -29,6 +31,9 @@ import { WizardProgressService } from '../shared/wizard-progress.service';
 import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
 import { DocumentGenService } from '../shared/document-gen.service';
 import { ThemeService } from '../core/theme.service';
+
+/** localStorage key for the sidebar rail preference. */
+const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
 
 @Component({
   selector: 'app-shell-layout',
@@ -153,7 +158,24 @@ export class ShellLayoutComponent implements OnInit {
     moon: Moon,
     wand: Wand2,
     loader: LoaderCircle,
+    panelCollapse: PanelLeftClose,
+    panelExpand: PanelLeftOpen,
   };
+
+  /**
+   * Rail mode: labels hidden, icons kept. Remembered across sessions in
+   * localStorage rather than the settings table - it is a per-machine viewing
+   * preference, not user data worth syncing or exporting.
+   */
+  readonly sidebarCollapsed = signal(
+    globalThis.localStorage?.getItem(SIDEBAR_COLLAPSED_KEY) === '1',
+  );
+
+  toggleSidebar(): void {
+    const next = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(next);
+    globalThis.localStorage?.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
+  }
 
   private readonly themeService = inject(ThemeService);
   readonly theme = this.themeService.theme;

@@ -101,6 +101,46 @@
   display: block;
 }
 
+// Collapsed: the panel shrinks to its toggle tab and the paper takes the
+// reclaimed width. Only `flex-basis` animates, so the paper reflows once at
+// the end rather than on every frame.
+.cvdetail__live-panel--closed {
+  flex-basis: auto;
+  overflow: visible;
+}
+.cvdetail__live-panel {
+  transition: flex-basis var(--dur-fast, 140ms) var(--ease-standard);
+}
+.cvdetail__live-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 var(--space-3) auto;
+  padding: var(--space-2);
+  border: var(--border-width, 1px) solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--dur-instant, 80ms) var(--ease-standard),
+    color var(--dur-instant, 80ms) var(--ease-standard);
+}
+.cvdetail__live-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.cvdetail__live-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cvdetail__live-panel {
+    transition: none;
+  }
+}
+
 .cvdetail__bar {
   display: flex;
   align-items: center;

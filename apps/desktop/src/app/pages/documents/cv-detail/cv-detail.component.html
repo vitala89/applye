@@ -410,23 +410,50 @@
           />
           <aside
             class="cvdetail__live-panel"
+            [class.cvdetail__live-panel--closed]="!livePanelOpen()"
             role="region"
             [attr.aria-label]="t()('documents.cv_live_style_title')"
           >
-            <app-cv-live-style-panel
-              [selection]="liveSelection()"
-              [style]="style()"
-              [sampleText]="selectedLeafText()"
-              [sampleBaseStyle]="sampleResolvedStyle()"
-              [hasCustomStyle]="hasAnyCustomStyle()"
-              [themeRule]="activeThemeTitleRule()"
-              [themeEntryRule]="activeThemeEntryRule()"
-              [editing]="cvPreview.editing()"
-              (panelChange)="onStylePanelChange($event)"
-              (resetAll)="resetAllStyles()"
-              (editText)="cvPreview.startEditing()"
-              (bold)="cvPreview.applyBoldToActiveEditor()"
-            />
+            <!-- Collapses sideways to give the paper the full width; the tab
+                 stays so the panel is one click away and never lost. -->
+            <button
+              type="button"
+              class="cvdetail__live-toggle"
+              [attr.aria-expanded]="livePanelOpen()"
+              [attr.aria-label]="
+                livePanelOpen()
+                  ? t()('documents.cv_live_style_hide')
+                  : t()('documents.cv_live_style_show')
+              "
+              [attr.title]="
+                livePanelOpen()
+                  ? t()('documents.cv_live_style_hide')
+                  : t()('documents.cv_live_style_show')
+              "
+              (click)="livePanelOpen.set(!livePanelOpen())"
+            >
+              <lucide-icon
+                [img]="livePanelOpen() ? icons.panelClose : icons.panelOpen"
+                [size]="16"
+                aria-hidden="true"
+              />
+            </button>
+            @if (livePanelOpen()) {
+              <app-cv-live-style-panel
+                [selection]="liveSelection()"
+                [style]="style()"
+                [sampleText]="selectedLeafText()"
+                [sampleBaseStyle]="sampleResolvedStyle()"
+                [hasCustomStyle]="hasAnyCustomStyle()"
+                [themeRule]="activeThemeTitleRule()"
+                [themeEntryRule]="activeThemeEntryRule()"
+                [editing]="cvPreview.editing()"
+                (panelChange)="onStylePanelChange($event)"
+                (resetAll)="resetAllStyles()"
+                (editText)="cvPreview.startEditing()"
+                (bold)="cvPreview.applyBoldToActiveEditor()"
+              />
+            }
           </aside>
         </div>
       }

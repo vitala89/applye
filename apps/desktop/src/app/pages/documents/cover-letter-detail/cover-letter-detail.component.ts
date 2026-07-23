@@ -128,6 +128,29 @@ export class CoverLetterDetailComponent {
     () => this.content().length ?? COVER_LETTER_LENGTH_DEFAULT,
   );
 
+  /** Availability and salary, read straight off the persisted content. German
+   * postings routinely require the first two; all three are free text, because
+   * "ab sofort" and "01.10.2026" are equally valid answers. */
+  readonly earliestStart = computed(() => this.content().earliestStart ?? '');
+  readonly salaryExpectation = computed(() => this.content().salaryExpectation ?? '');
+  readonly noticePeriod = computed(() => this.content().noticePeriod ?? '');
+  /** DIN 5008 enclosure line ("Anlagen"), listing what travels with the letter. */
+  readonly attachments = computed(() => this.content().attachments ?? '');
+
+  /** The three values as the skill takes them - one place, so the draft call,
+   * the per-block call and the cache hash cannot drift apart. */
+  private applicationDetails(): {
+    earliest_start: string;
+    salary_expectation: string;
+    notice_period: string;
+  } {
+    return {
+      earliest_start: this.earliestStart(),
+      salary_expectation: this.salaryExpectation(),
+      notice_period: this.noticePeriod(),
+    };
+  }
+
   /** Live body word count (paragraphs only — the target is a body budget). */
   readonly wordCount = computed(
     () =>
@@ -472,6 +495,7 @@ export class CoverLetterDetailComponent {
         section: 'all',
         tone: this.tone(),
         length: this.length(),
+        ...this.applicationDetails(),
       });
       const res = await this.ai.run({
         mode: settings.aiMode,
@@ -496,6 +520,9 @@ export class CoverLetterDetailComponent {
         // Preserve user choices; fresh draft invalidates per-block caches.
         tone: prev.tone,
         length: prev.length,
+        earliestStart: prev.earliestStart,
+        salaryExpectation: prev.salaryExpectation,
+        noticePeriod: prev.noticePeriod,
         jobDescription: prev.jobDescription,
         hashes: {},
       });
@@ -525,9 +552,21 @@ export class CoverLetterDetailComponent {
       const tone = this.tone();
       const length = this.length();
 
-      // Tone + length are part of the input identity — changing either must
-      // bust the per-block cache, so they're folded into the hash.
-      const hashInput = [profile.fullMd, jd, language, sectionName, tone, length].join('|');
+      // Tone, length and the availability/salary answers are all part of the
+      // input identity — changing any of them must bust the per-block cache,
+      // so they're folded into the hash.
+      const details = this.applicationDetails();
+      const hashInput = [
+        profile.fullMd,
+        jd,
+        language,
+        sectionName,
+        tone,
+        length,
+        details.earliest_start,
+        details.salary_expectation,
+        details.notice_period,
+      ].join('|');
       const sourceHash = await this.db.hashText(hashInput);
 
       const currentHashes = this.content().hashes || {};
@@ -548,6 +587,7 @@ export class CoverLetterDetailComponent {
         section: sectionName,
         tone,
         length,
+        ...details,
       });
 
       const res = await this.ai.run({

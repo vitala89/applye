@@ -46,6 +46,14 @@
   cursor: pointer;
 }
 
+/** Explanatory line under a card's label - why the fields below matter. */
+.docedit-card__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
 .docedit-card__title {
   font-family: var(--font-mono);
   font-size: 11px;

@@ -144,6 +144,60 @@
             </div>
           </div>
 
+          <!-- Availability card: what a German posting asks the letter to state -->
+          <div class="docedit-card">
+            <span class="docedit-field__label">{{
+              t()('documents.cover_letter_availability')
+            }}</span>
+            @if (regionTag() === 'de') {
+              <p class="docedit-card__hint">{{ t()('documents.cover_letter_availability_de') }}</p>
+            }
+            <div class="docedit-field">
+              <span class="docedit-field__label">
+                {{ t()('documents.cover_letter_earliest_start') }}
+              </span>
+              <input
+                type="text"
+                [ngModel]="earliestStart()"
+                (ngModelChange)="updateField('earliestStart', $event)"
+                [placeholder]="t()('documents.cover_letter_earliest_start_ph')"
+              />
+            </div>
+            <div class="docedit-field">
+              <span class="docedit-field__label">
+                {{ t()('documents.cover_letter_salary_expectation') }}
+              </span>
+              <input
+                type="text"
+                [ngModel]="salaryExpectation()"
+                (ngModelChange)="updateField('salaryExpectation', $event)"
+                [placeholder]="t()('documents.cover_letter_salary_expectation_ph')"
+              />
+            </div>
+            <div class="docedit-field">
+              <span class="docedit-field__label">
+                {{ t()('documents.cover_letter_notice_period') }}
+              </span>
+              <input
+                type="text"
+                [ngModel]="noticePeriod()"
+                (ngModelChange)="updateField('noticePeriod', $event)"
+                [placeholder]="t()('documents.cover_letter_notice_period_ph')"
+              />
+            </div>
+            <div class="docedit-field">
+              <span class="docedit-field__label">
+                {{ t()('documents.cover_letter_attachments') }}
+              </span>
+              <input
+                type="text"
+                [ngModel]="attachments()"
+                (ngModelChange)="updateField('attachments', $event)"
+                [placeholder]="t()('documents.cover_letter_attachments_ph')"
+              />
+            </div>
+          </div>
+
           <!-- Style card: collapsible font/size/weight/colour/page/margins -->
           <div class="docedit-card">
             <div class="docedit-card__head">
@@ -863,7 +917,11 @@
       } @else {
         <!-- PREVIEW MODE -->
         <div class="coverdetail__preview-col">
-          <app-cover-letter-preview [content]="content()" [style]="style()" />
+          <app-cover-letter-preview
+            [content]="content()"
+            [style]="style()"
+            [language]="doc()?.language ?? 'en'"
+          />
         </div>
       }
     </div>

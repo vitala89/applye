@@ -3164,6 +3164,12 @@ export class JobsComponent implements OnInit, OnDestroy {
         section: 'all',
         tone: COVER_LETTER_TONE_DEFAULT,
         length: COVER_LETTER_LENGTH_DEFAULT,
+        // A first letter has no answers yet; the editor's Availability card is
+        // where they get filled in, and an empty value must stay silent rather
+        // than become "salary negotiable".
+        earliest_start: '',
+        salary_expectation: '',
+        notice_period: '',
       });
       const res = await this.ai.run({
         mode: settings.aiMode,
@@ -3413,6 +3419,11 @@ export class JobsComponent implements OnInit, OnDestroy {
       // Honor the base letter's chosen voice/length; fall back to defaults.
       let tone = COVER_LETTER_TONE_DEFAULT;
       let length = COVER_LETTER_LENGTH_DEFAULT;
+      // Availability and salary belong to the applicant, not to one letter, so
+      // they carry over from the base letter into every tailored copy.
+      let earliestStart = '';
+      let salaryExpectation = '';
+      let noticePeriod = '';
 
       const selectedId = this.selectedCoverLetterId();
       if (selectedId) {
@@ -3428,6 +3439,9 @@ export class JobsComponent implements OnInit, OnDestroy {
           baseRegionTag = baseDoc.regionTag || 'generic';
           tone = content.tone ?? tone;
           length = content.length ?? length;
+          earliestStart = content.earliestStart ?? '';
+          salaryExpectation = content.salaryExpectation ?? '';
+          noticePeriod = content.noticePeriod ?? '';
         }
       }
 
@@ -3471,6 +3485,9 @@ export class JobsComponent implements OnInit, OnDestroy {
           section: 'all',
           tone,
           length,
+          earliest_start: earliestStart,
+          salary_expectation: salaryExpectation,
+          notice_period: noticePeriod,
         });
         const res = await this.ai.run({
           mode: settings?.aiMode ?? 'api',
@@ -3511,6 +3528,9 @@ export class JobsComponent implements OnInit, OnDestroy {
         jobDescription: jd,
         tone,
         length,
+        earliestStart,
+        salaryExpectation,
+        noticePeriod,
       };
 
       const label = this.jobDocLabel(job, 'Tailored Cover Letter');

@@ -41,6 +41,13 @@
 .letter-signature-space {
   height: 40px;
 }
+/* DIN 5008 enclosure line: two blank lines below the signature, label first. */
+.letter-attachments {
+  margin-top: 28px;
+}
+.letter-attachments__label {
+  margin-right: 0.5em;
+}
 
 // NOTE: the WYSIWYG print rules live in the GLOBAL stylesheet
 // (apps/desktop/src/styles.scss), not here. Component styles are view-

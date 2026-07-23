@@ -1462,8 +1462,13 @@ const en: TranslationMap = {
         installing: 'Installing…',
         recheck: 'Check again',
         get_node: 'Get Node.js · nodejs.org',
-        signin_note:
-          'Installing does not sign you in. Open a terminal, run the CLI once and follow its sign-in, then check again here.',
+        setup_prefix: 'Two steps to set up',
+        step_install: 'Install it. Use the button above, or run',
+        step_repair: 'Reinstall it — it is there but will not start. Use the button above, or run',
+        step_signin: 'Sign in. Open a terminal, run this once and follow the prompts:',
+        ready_prefix: 'Ready to use:',
+        ready_auth_hint:
+          'It runs — but that does not prove you are signed in. If a task fails with an authentication or plan error, run this once in a terminal and follow what it says:',
       },
       generic: {
         name: 'Other provider',
@@ -3061,8 +3066,13 @@ const de: TranslationMap = {
         installing: 'Installiere…',
         recheck: 'Erneut prüfen',
         get_node: 'Node.js holen · nodejs.org',
-        signin_note:
-          'Die Installation meldet dich nicht an. Öffne ein Terminal, starte die CLI einmal und folge der Anmeldung, dann hier erneut prüfen.',
+        setup_prefix: 'Zwei Schritte zur Einrichtung von',
+        step_install: 'Installieren. Nutze den Button oben oder führe aus:',
+        step_repair: 'Neu installieren — vorhanden, startet aber nicht. Button oben oder:',
+        step_signin: 'Anmelden. Öffne ein Terminal, führe dies einmal aus und folge den Schritten:',
+        ready_prefix: 'Einsatzbereit:',
+        ready_auth_hint:
+          'Sie startet — das heißt aber nicht, dass du angemeldet bist. Schlägt eine Aufgabe mit einem Authentifizierungs- oder Tariffehler fehl, führe dies einmal im Terminal aus und folge der Ausgabe:',
       },
       generic: {
         name: 'Anderer Anbieter',

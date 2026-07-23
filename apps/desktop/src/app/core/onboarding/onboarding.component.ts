@@ -209,6 +209,56 @@ export class OnboardingComponent {
     () => this.cliStatusFor(this.selectedProvider())?.working ?? false,
   );
 
+  /** npm package and terminal command per CLI, for the setup instructions. */
+  private readonly cliSetupInfo: Record<string, { pkg: string; cmd: string }> = {
+    claude: { pkg: '@anthropic-ai/claude-code', cmd: 'claude' },
+    openai: { pkg: '@openai/codex', cmd: 'codex' },
+    gemini: { pkg: '@google/gemini-cli', cmd: 'gemini' },
+  };
+
+  /**
+   * What the user has to do to get the CLI they picked working.
+   *
+   * Scoped to the selected provider on purpose: showing setup steps for all
+   * three at once would bury the one decision being made. The three status
+   * rows above stay a scannable list; this is the teaching state for the one
+   * the user is committing to.
+   *
+   * A working CLI still gets a line, because "runs" is not "signed in" - the
+   * probe only proves the binary executes. An expired or ineligible account
+   * fails later, at task time, with an authentication error, and this is the
+   * only place that tells the user what that means.
+   */
+  readonly selectedCliSetup = computed(() => {
+    const provider = this.selectedProvider();
+    const info = this.cliSetupInfo[provider];
+    if (!info) return null;
+    const status = this.cliStatusFor(provider);
+    const name = this.t()(this.cardNameKey(provider));
+    if (status?.working) {
+      return { name, working: true, signInCommand: info.cmd, steps: [] };
+    }
+    return {
+      name,
+      working: false,
+      signInCommand: info.cmd,
+      steps: [
+        {
+          n: 1,
+          text: this.t()(
+            status?.installed ? 'onboarding.ai.cli.step_repair' : 'onboarding.ai.cli.step_install',
+          ),
+          command: `npm install -g ${info.pkg}`,
+        },
+        {
+          n: 2,
+          text: this.t()('onboarding.ai.cli.step_signin'),
+          command: info.cmd,
+        },
+      ],
+    };
+  });
+
   async chooseAiMode(mode: AiMode): Promise<void> {
     if (this.aiMode() === mode) return;
     this.aiMode.set(mode);

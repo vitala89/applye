@@ -239,14 +239,36 @@
                         {{ t()('onboarding.ai.cli.recheck') }}
                       </button>
 
-                      <!-- Installing is not connecting. These CLIs sign in
+                      <!-- Setup guidance for the CLI the user actually picked.
+                           Installing is not connecting: these CLIs sign in
                            interactively against the user's own account, which
-                           Applye cannot do for them; saying so here beats
-                           letting them discover it at the first real task. -->
-                      <div class="ob__key-status ob__key-status--muted">
-                        <lucide-icon [img]="icons.info" [size]="14" aria-hidden="true" />
-                        {{ t()('onboarding.ai.cli.signin_note') }}
-                      </div>
+                           Applye cannot do for them. -->
+                      @if (selectedCliSetup(); as setup) {
+                        <div class="ob__cli-setup">
+                          @if (setup.working) {
+                            <p class="ob__cli-setup-text">
+                              {{ t()('onboarding.ai.cli.ready_prefix') }} {{ setup.name }}.
+                              {{ t()('onboarding.ai.cli.ready_auth_hint') }}
+                              <code class="ob__cmd">{{ setup.signInCommand }}</code>
+                            </p>
+                          } @else {
+                            <p class="ob__cli-setup-title">
+                              {{ t()('onboarding.ai.cli.setup_prefix') }} {{ setup.name }}
+                            </p>
+                            <ol class="ob__steplist">
+                              @for (st of setup.steps; track st.n) {
+                                <li class="ob__stepitem">
+                                  <span class="ob__stepitem-num">{{ st.n }}</span>
+                                  <span class="ob__stepitem-text">
+                                    {{ st.text }}
+                                    <code class="ob__cmd">{{ st.command }}</code>
+                                  </span>
+                                </li>
+                              }
+                            </ol>
+                          }
+                        </div>
+                      }
                     }
                   </div>
                 </div>

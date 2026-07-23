@@ -403,24 +403,38 @@
   gap: var(--space-2);
 }
 
+// Severity reads from a leading dot, matching the verdict badge's own dot
+// rather than inventing a second vocabulary for the same idea. (A coloured
+// left stripe was the first attempt; it is a decorative affordance that says
+// nothing a dot does not, and `var(--border)` was not even a real token, so
+// the low-severity stripe rendered in the text colour.)
 .updated__finding {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: var(--space-3);
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--border);
 }
 
-.updated__finding--high {
-  border-left-color: var(--danger);
+.updated__finding::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  // Nudges the dot onto the first line's optical centre; `baseline` alignment
+  // would otherwise sit it on the text baseline.
+  transform: translateY(-2px);
+  background: var(--border-strong);
 }
 
-.updated__finding--medium {
-  border-left-color: var(--warning);
+.updated__finding--high::before {
+  background: var(--danger);
 }
 
-.updated__finding--low {
-  border-left-color: var(--border-strong);
+.updated__finding--medium::before {
+  background: var(--warning);
 }
 
 // The AI's own one-line ATS remark, kept below the computed result as advice

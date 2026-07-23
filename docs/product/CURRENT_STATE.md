@@ -53,8 +53,29 @@
 
   **Codex is now verified end to end.** Its npm install on this machine was missing its vendored
   binary; running the installer fixed it, and `codex exec -` returned the expected reply through
-  the adapter's exact invocation. Gemini remains unverified for a round trip (account
-  tier-ineligible), though its binary probes healthy.
+  the adapter's exact invocation.
+
+  A later live run found **Gemini broken on every task**: `FatalUntrustedWorkspaceError`, "not
+  running in a trusted directory". Applye runs each CLI in an empty scratch dir rather than the
+  user's files, which is precisely the case Gemini's folder-trust check blocks, and headless it
+  cannot show the trust dialog. Fixed by setting `GEMINI_CLI_TRUST_WORKSPACE=true` on the child
+  process - chosen over the documented `--skip-trust` flag because an older CLI ignores an
+  unknown env var but dies on an unknown flag. The adapter trait grew an `env()` hook (default
+  empty) that both `run` and the version probe apply. Verified live: without the var, stderr
+  carries both the trust error and the account error; with it, only the account error remains.
+  That remaining `IneligibleTierError` is Google retiring the free Gemini Code Assist tier for
+  this client and is **not** fixable in Applye - Gemini CLI still works on a paid key/Vertex
+  setup, so the provider stays offered and the error is now surfaced cleanly.
+
+  **Onboarding gained per-CLI setup instructions**, scoped to the selected provider so the three
+  status rows stay scannable: two ordered steps (install command, sign-in command) for a CLI
+  that is not working, and for one that is, a line saying that running is not the same as being
+  signed in, with the command to re-auth. Built with the impeccable skill's product register.
+  Three design defects were found and fixed in the process, two of them already merged: the ATS
+  findings list used a coloured `border-left` accent (a banned side-stripe) whose colour token
+  `--border` **does not exist**, so low-severity rows rendered a stripe in the text colour - now
+  a leading severity dot matching the verdict badge's existing dot; and the new onboarding mode
+  cards referenced `--surface-raised`, also not a real token, so they had no background.
 
 - **Prior branch / focus**: `feat/deterministic-ats-check`, **merged as PR #152**. The ATS check
   was a single boolean the `job-scoring` model emitted - it read as a measurement but was an

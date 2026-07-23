@@ -310,6 +310,8 @@
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-4);
 }
+// Same card vocabulary as the provider tiles below it, so the two rows read as
+// one control surface rather than two unrelated widgets.
 .ob__mode-card {
   display: flex;
   flex-direction: column;
@@ -318,12 +320,27 @@
   text-align: left;
   border-radius: var(--radius-card);
   border: var(--border-width) solid var(--border-subtle);
-  background: var(--surface-raised);
+  background: var(--surface-1);
   cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.ob__mode-card:hover {
+  background: var(--surface-hover);
+}
+.ob__mode-card:focus-visible {
+  outline: var(--border-width) solid var(--ring);
+  outline-offset: 2px;
 }
 .ob__mode-card--selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--border-accent);
+  box-shadow: var(--glow-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob__mode-card {
+    transition: none;
+  }
 }
 .ob__mode-title {
   font-weight: var(--weight-medium);
@@ -357,6 +374,44 @@
 }
 .ob__cli-icon--warn {
   color: var(--warning);
+}
+
+// Teaching state for the CLI the user picked: what to run, in order. Sits on
+// the sunken surface so it reads as a nested aside inside the panel rather
+// than a second card (nested cards are always wrong).
+.ob__cli-setup {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+}
+.ob__cli-setup-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.ob__cli-setup-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+// Commands are the one thing on this screen the user has to copy by eye, so
+// they get monospace and a surface of their own. `--text-primary` rather than
+// secondary: a mistyped command is the failure this panel exists to prevent.
+.ob__cmd {
+  display: inline-block;
+  margin-top: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-input);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  user-select: all;
+  word-break: break-all;
 }
 .ob__provider-card {
   display: flex;

@@ -27,13 +27,37 @@ export interface RenderedSkill {
   userPrompt: string;
 }
 
-/** One supported CLI-bridge binary and whether it is installed on this machine. */
+/** One supported CLI-bridge binary and whether it is usable on this machine. */
 export interface CliStatus {
   provider: AiProvider;
   command: string;
   label: string;
+  /** A file with this name exists on the search path. */
   installed: boolean;
   path: string | null;
+  /**
+   * The binary exists **and** actually ran. `installed` alone is not enough:
+   * these CLIs ship as npm wrappers that spawn a platform-specific binary, and
+   * a partial install leaves the wrapper on the path with the binary missing -
+   * which passes a file-existence check and then fails on the first real call.
+   */
+  working: boolean;
+  /** Version the CLI printed, when it ran. */
+  version: string | null;
+  /** Why it did not run, when it did not. */
+  error: string | null;
+}
+
+/** Outcome of an assisted `npm install -g` of one of the CLIs. */
+export interface CliInstallResult {
+  ok: boolean;
+  /** The exact command that ran, so the UI never describes it second-hand. */
+  command: string;
+  /** Outcome or failure reason. */
+  message: string;
+  /** npm is missing entirely, so the user needs Node.js first - the one
+   * failure that cannot be fixed from inside Applye. */
+  needsNode: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -44,11 +68,23 @@ export class AiService {
   }
 
   /**
-   * Which CLI-bridge binaries are present. A filesystem lookup only - nothing
-   * is executed, so this is safe to call whenever Settings opens.
+   * Which CLI-bridge binaries are present and runnable. Runs `--version` on
+   * each, so it is safe but not instant; call it when the CLI UI is shown.
    */
   probeClis(): Promise<CliStatus[]> {
     return tauriInvoke<CliStatus[]>('cli_probe');
+  }
+
+  /**
+   * Installs a CLI with npm. The package name is chosen in Rust from a fixed
+   * list keyed on the provider id, never passed from here, so there is no way
+   * to install anything but the three official vendor CLIs.
+   *
+   * Installing does not sign the user in - the CLIs authenticate interactively
+   * against the user's own account, which cannot happen from inside Applye.
+   */
+  installCli(provider: AiProvider): Promise<CliInstallResult> {
+    return tauriInvoke<CliInstallResult>('cli_install', { provider });
   }
 
   /** Render a bundled markdown skill into a ready system/user prompt pair. */

@@ -427,8 +427,49 @@ describe('OnboardingComponent flow', () => {
 
       expect(upsertProfile).toHaveBeenCalled();
       expect(documentLibraryUpsert).toHaveBeenCalled();
-      expect(updateSettings).toHaveBeenCalledWith({ onboardingSeen: true });
+      expect(updateSettings).toHaveBeenCalledWith({
+        onboardingSeen: true,
+        aiMode: 'api',
+        provider: 'claude',
+      });
       expect(closed).toHaveBeenCalled();
+    });
+
+    // Regression: the wizard used to persist only `onboardingSeen`, so picking
+    // any provider other than the default was silently discarded - the user
+    // saved an OpenAI key and every task still went to Claude, which had none.
+    it('persists the provider the user actually picked', async () => {
+      component.selectProvider('deepseek');
+
+      await component.finish();
+
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'deepseek', aiMode: 'api' }),
+      );
+    });
+
+    it('persists CLI mode and blanks the API model ids it would send to a CLI', async () => {
+      await component.chooseAiMode('cli');
+
+      await component.finish();
+
+      // An API model id (`claude-opus-4-8`) passed to a CLI is a guaranteed
+      // failure, so CLI mode must clear them and let the CLI choose.
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          aiMode: 'cli',
+          defaultModel: '',
+          economyModel: '',
+        }),
+      );
+    });
+
+    it('moves a CLI-less provider off DeepSeek when switching to CLI mode', async () => {
+      component.selectProvider('deepseek');
+
+      await component.chooseAiMode('cli');
+
+      expect(component.selectedProvider()).toBe('claude');
     });
 
     // Finish is the only exit now that the Ready step's two CTAs are gone. The

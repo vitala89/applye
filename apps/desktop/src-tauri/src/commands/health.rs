@@ -127,14 +127,20 @@ async fn check_migrations(pool: &sqlx::SqlitePool) -> HealthCheckItem {
 
 /// Presence only, from the OS keychain — never a network call. CLI mode
 /// needs no stored key at all.
-fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
+async fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
     if ai_mode == "cli" {
-        return item(
-            "api_key",
-            "AI provider key",
-            "ok",
-            "Using CLI mode — no stored key needed.",
-        );
+        // "No key needed" was true but useless: it reported ok even when the
+        // configured CLI was missing or broken, so health said fine and the
+        // first real task failed. Check that the CLI actually runs.
+        return match crate::ai::cli::cli_health(provider).await {
+            Ok(version) => item(
+                "api_key",
+                "AI provider CLI",
+                "ok",
+                format!("CLI mode — {version}. No stored key needed."),
+            ),
+            Err(reason) => item("api_key", "AI provider CLI", "error", reason),
+        };
     }
     match KeyStore::get_key(provider) {
         Ok(Some(_)) => item(
@@ -238,7 +244,8 @@ pub async fn health_check(
         check_api_key(
             ai_mode.as_deref().unwrap_or("api"),
             provider.as_deref().unwrap_or("claude"),
-        ),
+        )
+        .await,
         check_capabilities(),
         check_export_dir(&app),
     ];
@@ -293,10 +300,23 @@ mod tests {
         assert_eq!(result.status, "ok");
     }
 
-    #[test]
-    fn cli_mode_never_requires_a_stored_key() {
-        let result = check_api_key("cli", "claude");
-        assert_eq!(result.status, "ok");
+    #[tokio::test]
+    async fn cli_mode_checks_the_cli_instead_of_the_keychain() {
+        // Never reads the keychain in CLI mode; the verdict follows whether
+        // the CLI actually runs on this machine, which is what the user will
+        // hit on their first task.
+        let result = check_api_key("cli", "claude").await;
+        assert!(
+            matches!(result.status.as_str(), "ok" | "error"),
+            "{result:?}"
+        );
+        assert_eq!(result.label, "AI provider CLI");
+    }
+
+    #[tokio::test]
+    async fn cli_mode_with_an_unsupported_provider_is_an_error() {
+        let result = check_api_key("cli", "deepseek").await;
+        assert_eq!(result.status, "error");
     }
 
     #[test]

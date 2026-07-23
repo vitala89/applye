@@ -25,6 +25,10 @@ export interface ProviderGuide {
   stepKeys: string[];
   /** Optional external tutorial video; opened via openUrl(). */
   helpVideoUrl?: string;
+  /** i18n key for the name to show in CLI bridge mode, where the product is
+   * the CLI rather than the API - "Claude Code", not "Claude". Falls back to
+   * `nameKey` for a provider with no CLI. */
+  cliNameKey?: string;
 }
 
 const STEP_KEYS = (p: string): string[] => [
@@ -45,6 +49,7 @@ export const PROVIDER_GUIDES: Partial<Record<AiProvider, ProviderGuide>> = {
     consoleUrl: 'https://console.anthropic.com/settings/keys',
     consoleLabelKey: 'onboarding.ai.claude.console_label',
     stepKeys: STEP_KEYS('claude'),
+    cliNameKey: 'onboarding.ai.cli.claude_name',
   },
   openai: {
     provider: 'openai',
@@ -55,6 +60,20 @@ export const PROVIDER_GUIDES: Partial<Record<AiProvider, ProviderGuide>> = {
     consoleUrl: 'https://platform.openai.com/api-keys',
     consoleLabelKey: 'onboarding.ai.openai.console_label',
     stepKeys: STEP_KEYS('openai'),
+    cliNameKey: 'onboarding.ai.cli.openai_name',
+  },
+  // Gemini is CLI-only for now: there is no Gemini branch in API mode yet, so
+  // this guide exists to name the card in CLI bridge mode. The key-flow fields
+  // point at the real console so it degrades sensibly if API mode ever lands.
+  gemini: {
+    provider: 'gemini',
+    nameKey: 'onboarding.ai.gemini.name',
+    vendorKey: 'onboarding.ai.gemini.vendor',
+    glyph: '✧',
+    keyPrefix: '',
+    consoleUrl: 'https://aistudio.google.com/apikey',
+    consoleLabelKey: 'onboarding.ai.gemini.console_label',
+    stepKeys: STEP_KEYS('generic'),
   },
   deepseek: {
     provider: 'deepseek',

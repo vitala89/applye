@@ -379,3 +379,54 @@
   background: var(--danger-tint);
   color: var(--danger);
 }
+
+// The deterministic check has three outcomes, not two: a CV can be readable
+// and still short on the posting's vocabulary, which is worth saying rather
+// than rounding to "fail".
+.ats-badge--risky {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+
+.updated__chips--list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+.updated__findings {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.updated__finding {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--border);
+}
+
+.updated__finding--high {
+  border-left-color: var(--danger);
+}
+
+.updated__finding--medium {
+  border-left-color: var(--warning);
+}
+
+.updated__finding--low {
+  border-left-color: var(--border-strong);
+}
+
+// The AI's own one-line ATS remark, kept below the computed result as advice
+// rather than as the verdict it used to be.
+.updated__meta-note--advisory {
+  margin-top: var(--space-4);
+  font-style: italic;
+  color: var(--text-tertiary);
+}

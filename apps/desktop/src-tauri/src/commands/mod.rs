@@ -5,6 +5,7 @@
 pub mod analytics;
 pub mod applications;
 pub mod archetypes;
+pub mod ats;
 pub mod discover;
 pub mod documents;
 pub mod followup_drafts;

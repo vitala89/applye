@@ -387,6 +387,33 @@ async fn score_cache_get_core(
     .map_err(|e| format!("score_cache_get: {e}"))
 }
 
+/// The most recent score for a job, whatever profile it was produced against.
+///
+/// `score_cache_get` matches the CURRENT profile hash, so editing the profile
+/// (e.g. adding a target role) makes every earlier score invisible and the job
+/// looks as if it were never scored. The UI falls back to this so the previous
+/// result stays on screen, clearly marked stale, instead of silently vanishing.
+#[tauri::command]
+pub async fn score_cache_latest(
+    job_id: i64,
+    db: State<'_, Db>,
+) -> Result<Option<ScoringCache>, String> {
+    score_cache_latest_core(job_id, &db.pool).await
+}
+
+async fn score_cache_latest_core(
+    job_id: i64,
+    pool: &sqlx::SqlitePool,
+) -> Result<Option<ScoringCache>, String> {
+    sqlx::query_as::<_, ScoringCache>(
+        "SELECT * FROM scoring_cache WHERE job_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+    )
+    .bind(job_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| format!("score_cache_latest: {e}"))
+}
+
 /// Upsert a scoring result into the cache.
 #[tauri::command]
 pub async fn score_cache_save(

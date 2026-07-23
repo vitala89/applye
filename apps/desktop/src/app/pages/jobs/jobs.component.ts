@@ -64,6 +64,7 @@ import {
   ScoringCache,
   Settings,
   SupportedLanguage,
+  LANGUAGE_NATIVE_NAMES,
   CoverLetterAddress,
   CoverLetterContent,
   COVER_LETTER_TONE_DEFAULT,
@@ -450,6 +451,21 @@ interface FinalChecks {
               </div>
             }
 
+            <!-- The score survived a profile edit: shown, but labelled for what
+                 it is, with the rescore action right next to the explanation. -->
+            @if (scoreStale()) {
+              <div class="score-stale">
+                <span class="score-stale__text">{{ t()('jobs.score_stale') }}</span>
+                <button
+                  class="btn btn--secondary btn--sm"
+                  [disabled]="scoring()"
+                  (click)="scoreJob(true)"
+                >
+                  {{ scoring() ? t()('jobs.scoring') : t()('jobs.rescore') }}
+                </button>
+              </div>
+            }
+
             <app-scoring-view
               [cache]="cache()"
               [fromCache]="fromCache()"
@@ -722,7 +738,7 @@ interface FinalChecks {
                       "
                     >
                       @for (region of documentRegionTags; track region) {
-                        <option [value]="region">{{ region.toUpperCase() }}</option>
+                        <option [value]="region">{{ regionLabel(region) }}</option>
                       }
                     </select>
                   </label>
@@ -735,7 +751,7 @@ interface FinalChecks {
                       "
                     >
                       @for (language of portalLanguages; track language) {
-                        <option [value]="language">{{ language.toUpperCase() }}</option>
+                        <option [value]="language">{{ nativeLang(language) }}</option>
                       }
                     </select>
                   </label>
@@ -1329,6 +1345,25 @@ interface FinalChecks {
         display: flex;
         gap: var(--space-3);
         margin-top: var(--space-4);
+      }
+      /* Stale-score notice - warning tint, sits directly above the score it
+         qualifies so the numbers are never read as current by accident. */
+      .score-stale {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        padding: var(--space-3);
+        margin-bottom: var(--space-3);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        background: var(--warning-tint);
+      }
+      .score-stale__text {
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
       }
       /* Rescore loading - AI-thinking line + design-system skeleton cards. */
       .rescore-loading {
@@ -2263,6 +2298,9 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
+  /** The shown score was produced against an OLDER profile version — the
+   * numbers still describe this job, but not the profile the user has now. */
+  readonly scoreStale = signal(false);
   readonly wizardOpen = signal(false);
   readonly wizardInitialStep = signal(0);
   readonly archetypeMatch = signal<boolean | null>(null);
@@ -2356,6 +2394,17 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   readonly documentRegionTags: DocumentRegionTag[] = ['de', 'us', 'uk', 'generic'];
   readonly documentReviewRegion = signal<DocumentRegionTag>('generic');
+
+  /** Country name for a CV region tag ("Germany", not "DE") - the picker names
+   * the market the CV is written for, and a bare code does not read as one. */
+  regionLabel(region: DocumentRegionTag): string {
+    return this.t()(`documents.cv_region_${region}`);
+  }
+  /** Endonym for a document language ("Deutsch", not "DE"), matching Settings. */
+  nativeLang(language: SupportedLanguage): string {
+    return LANGUAGE_NATIVE_NAMES[language];
+  }
+
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
   readonly linkedCv = signal<DocumentLibraryItem | null>(null);
   readonly linkedCoverLetter = signal<DocumentLibraryItem | null>(null);
@@ -3442,6 +3491,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.chooseCoverLetterOpen.set(false);
     this.cache.set(null);
     this.fromCache.set(false);
+    this.scoreStale.set(false);
   }
 
   ngOnDestroy(): void {
@@ -3457,6 +3507,32 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Restore this job's score on open. A score is cached per profile version, so
+   * editing the profile (adding a target role, rewriting the Markdown) changes
+   * the hash and the exact lookup misses. Rather than let the result disappear
+   * — which reads as "this job was never scored" — fall back to the newest
+   * score on record and flag it stale, so the user sees the old numbers plus an
+   * explicit prompt to re-score against the profile they have now.
+   */
+  private async loadCachedScore(id: number): Promise<void> {
+    const p = this.profile();
+    if (!p?.scoringHash) return;
+    const current = await this.db.scoreCacheGet(id, p.scoringHash);
+    if (current) {
+      this.cache.set(current);
+      this.fromCache.set(true);
+      this.scoreStale.set(false);
+      return;
+    }
+    const previous = await this.db.scoreCacheLatest(id);
+    if (previous) {
+      this.cache.set(previous);
+      this.fromCache.set(true);
+      this.scoreStale.set(true);
+    }
+  }
+
   private async loadJob(id: number): Promise<void> {
     try {
       const job = await this.db.getJob(id);
@@ -3465,14 +3541,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.jdText.set(job.jdText ?? '');
       const headerTitle = [job.company, job.title].filter(Boolean).join(' - ');
       this.pageTitle.set(headerTitle || this.t()('nav.jobs'));
-      const p = this.profile();
-      if (p?.scoringHash) {
-        const cached = await this.db.scoreCacheGet(id, p.scoringHash);
-        if (cached) {
-          this.cache.set(cached);
-          this.fromCache.set(true);
-        }
-      }
+      await this.loadCachedScore(id);
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;
       this.application.set(app);
@@ -3943,6 +4012,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     const knownTitle = this.job()?.title ?? undefined;
     this.job.set(null);
     this.cache.set(null);
+    this.scoreStale.set(false);
     this.archetypeMatch.set(null);
     // Re-parsing means the JD (and therefore the score) changed - any earlier
     // tailoring for this job is now stale. Drop it so the Tailored badge and
@@ -3963,6 +4033,7 @@ export class JobsComponent implements OnInit, OnDestroy {
           if (cached) {
             this.cache.set(cached);
             this.fromCache.set(true);
+            this.scoreStale.set(false);
             this.scoreStatus.set('Loaded from cache - 0 tokens used.');
           }
         }
@@ -3996,6 +4067,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (cached) {
         this.cache.set(cached);
         this.fromCache.set(true);
+        this.scoreStale.set(false);
         this.scoreStatus.set('Loaded from cache - 0 tokens used.');
         return;
       }
@@ -4061,6 +4133,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         tokensOutput: res.tokensOutput,
       });
       this.cache.set(saved);
+      this.scoreStale.set(false);
       this.jobsStore.patchOverviewRow(j.id!, { score: saved.score });
       this.scoreStatus.set(`Scored - ${res.tokensInput} in / ${res.tokensOutput} out`);
     } catch (e) {

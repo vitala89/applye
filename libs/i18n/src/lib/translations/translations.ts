@@ -333,7 +333,6 @@ const en: TranslationMap = {
       'Archived rows stay out of the active grid but are still included in your exported report.',
     archived_ok: 'Row archived - kept for the report',
     restored_ok: 'Row restored to the active grid',
-    locked: 'Locked',
     locked_hint: 'Read-only - from the job posting',
     row_actions: 'Row actions',
     edit: 'Edit',
@@ -640,6 +639,8 @@ const en: TranslationMap = {
     score_btn: 'Score this job',
     scoring: 'Scoring…',
     rescore: 'Rescore',
+    score_stale:
+      'Your profile changed after this score - the numbers below reflect the earlier profile.',
     save_job: 'Save this job',
     open_cv_document: 'Open linked CV',
     open_cover_letter_document: 'Open linked cover letter',
@@ -1810,7 +1811,6 @@ const de: TranslationMap = {
       'Archivierte Zeilen bleiben aus dem aktiven Raster, zählen aber weiterhin für den exportierten Bericht.',
     archived_ok: 'Zeile archiviert - bleibt im Bericht',
     restored_ok: 'Zeile ins aktive Raster zurückgeholt',
-    locked: 'Gesperrt',
     locked_hint: 'Schreibgeschützt - aus der Stellenanzeige',
     row_actions: 'Zeilenaktionen',
     edit: 'Bearbeiten',
@@ -2150,6 +2150,8 @@ const de: TranslationMap = {
     delete_confirm_btn: 'Endgültig löschen',
     delete_ok: 'Stelle gelöscht.',
     rescore: 'Neu bewerten',
+    score_stale:
+      'Dein Profil hat sich nach dieser Bewertung geändert - die Werte unten beziehen sich auf das frühere Profil.',
     score_section: 'Recruiter-Bewertung',
     before_you_submit: 'Vor dem Absenden',
     tailor_section: 'Lebenslauf anpassen',

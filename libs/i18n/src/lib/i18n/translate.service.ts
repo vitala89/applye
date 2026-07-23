@@ -33,6 +33,17 @@ export class TranslateService {
     return (key: string): string => resolve(map, key);
   });
 
+  /**
+   * Translation function for an EXPLICIT locale, independent of the UI locale.
+   * For documents whose language is a property of the document itself, not of
+   * the app chrome — e.g. the German Eigenbemuehungen report must be fully
+   * German even while the app runs in English.
+   */
+  tFor(locale: SupportedLanguage): (key: string) => string {
+    const map = (TRANSLATIONS[locale] ?? TRANSLATIONS['en']) as TranslationMap;
+    return (key: string): string => resolve(map, key);
+  }
+
   setLocale(locale: SupportedLanguage): void {
     if (locale in TRANSLATIONS) {
       this._locale.set(locale);

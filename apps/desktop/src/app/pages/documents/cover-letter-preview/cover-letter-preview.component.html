@@ -97,4 +97,18 @@
       {{ signature }}
     </div>
   </ng-template>
+
+  <!-- DIN 5008 closes the letter with an enclosure line. It is body text, not a
+       styleable block of its own, so it borrows the body style rather than
+       widening the style model (and the Rust style-safety contract). -->
+  <ng-template #attachmentsTpl let-attachments>
+    <div
+      class="letter-attachments"
+      [ngStyle]="blockCss('body')"
+      [style.color]="effBlockStyle('body').colorHex"
+    >
+      <span class="letter-attachments__label">{{ t()('documents.cover_letter_anlagen') }}</span>
+      {{ attachments }}
+    </div>
+  </ng-template>
 </div>

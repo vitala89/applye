@@ -185,6 +185,17 @@
                 [placeholder]="t()('documents.cover_letter_notice_period_ph')"
               />
             </div>
+            <div class="docedit-field">
+              <span class="docedit-field__label">
+                {{ t()('documents.cover_letter_attachments') }}
+              </span>
+              <input
+                type="text"
+                [ngModel]="attachments()"
+                (ngModelChange)="updateField('attachments', $event)"
+                [placeholder]="t()('documents.cover_letter_attachments_ph')"
+              />
+            </div>
           </div>
 
           <!-- Style card: collapsible font/size/weight/colour/page/margins -->
@@ -906,7 +917,11 @@
       } @else {
         <!-- PREVIEW MODE -->
         <div class="coverdetail__preview-col">
-          <app-cover-letter-preview [content]="content()" [style]="style()" />
+          <app-cover-letter-preview
+            [content]="content()"
+            [style]="style()"
+            [language]="doc()?.language ?? 'en'"
+          />
         </div>
       }
     </div>

@@ -160,6 +160,11 @@ export interface CoverLetterContent {
   /** Notice period at the current employer ("3 Monate zum Quartalsende").
    * Only stated when it actually constrains the start date. */
   noticePeriod?: string;
+  /** Enclosure line under the signature ("Lebenslauf, Zeugnisse"). A German
+   * application is a Bewerbungsmappe, and DIN 5008 closes the letter with an
+   * `Anlagen` line naming what travels with it. Free text; empty renders
+   * nothing at all. */
+  attachments?: string;
   hashes?: {
     subject?: string;
     greeting?: string;

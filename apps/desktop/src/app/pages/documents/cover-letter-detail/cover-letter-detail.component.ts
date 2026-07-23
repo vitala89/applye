@@ -134,6 +134,8 @@ export class CoverLetterDetailComponent {
   readonly earliestStart = computed(() => this.content().earliestStart ?? '');
   readonly salaryExpectation = computed(() => this.content().salaryExpectation ?? '');
   readonly noticePeriod = computed(() => this.content().noticePeriod ?? '');
+  /** DIN 5008 enclosure line ("Anlagen"), listing what travels with the letter. */
+  readonly attachments = computed(() => this.content().attachments ?? '');
 
   /** The three values as the skill takes them - one place, so the draft call,
    * the per-block call and the cache hash cannot drift apart. */

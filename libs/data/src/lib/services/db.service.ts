@@ -259,7 +259,7 @@ export class DbService {
   /** Add a user source: RSS feed (https url) or ATS board (type + slug). */
   async addSource(input: {
     name: string;
-    sourceType: 'rss' | 'ats_greenhouse' | 'ats_lever' | 'ats_ashby';
+    sourceType: 'rss' | 'ats_greenhouse' | 'ats_lever' | 'ats_ashby' | 'ats_personio';
     url?: string;
     slug?: string;
   }): Promise<number> {

@@ -26,9 +26,14 @@
 //   codex   - developers.openai.com/codex/noninteractive
 //             `codex exec -` reads the whole prompt from stdin and prints only
 //             the final agent message to stdout (progress goes to stderr).
-//   gemini  - github.com/google-gemini/gemini-cli docs/cli/headless.md
-//             `--output-format json` -> `{ response, stats }`, `-p` prompt.
 // Re-verify these before changing them; do not edit them from memory.
+//
+// Gemini CLI was supported here and has been removed: on 2026-06-18 Google
+// stopped it serving Google AI Pro, AI Ultra and free individual accounts,
+// leaving only enterprise Code Assist licences and API-key auth - i.e. exactly
+// not the audience this mode exists for. Its replacement, Antigravity CLI
+// (`agy`), installs via `curl | bash` rather than npm and is a different
+// binary, so it is a new adapter if it is ever wanted, not a rename.
 
 use super::{AiRequest, AiResponse};
 use serde::Serialize;
@@ -187,72 +192,6 @@ impl CliAdapter for CodexCli {
 }
 
 // ---------------------------------------------------------------------------
-// Gemini CLI
-// ---------------------------------------------------------------------------
-
-struct GeminiCli;
-
-impl CliAdapter for GeminiCli {
-    fn command(&self) -> &str {
-        "gemini"
-    }
-    fn label(&self) -> &str {
-        "Gemini CLI"
-    }
-    fn build_args(&self, req: &AiRequest) -> Vec<String> {
-        // Gemini CLI has no system-prompt flag on the headless path, so the
-        // skill prompt is folded into the single prompt sent over stdin.
-        let mut args = vec!["--output-format".to_string(), "json".to_string()];
-        if !req.model.trim().is_empty() {
-            args.push("--model".to_string());
-            args.push(req.model.clone());
-        }
-        args
-    }
-    fn env(&self) -> Vec<(&'static str, &'static str)> {
-        // Gemini CLI refuses to run in a folder the user has not trusted, and
-        // in a headless run it cannot show the trust prompt - it just fails
-        // with FatalUntrustedWorkspaceError. Applye deliberately runs it in an
-        // empty scratch directory (never the user's files), which is exactly
-        // the case that trips this.
-        //
-        // The env var is used rather than the documented `--skip-trust` flag
-        // on purpose: an older CLI ignores an unknown env var, but dies on an
-        // unknown flag. Same effect, no version cliff.
-        // Ref: github.com/google-gemini/gemini-cli docs/cli/trusted-folders.md
-        vec![("GEMINI_CLI_TRUST_WORKSPACE", "true")]
-    }
-    fn build_stdin(&self, req: &AiRequest) -> String {
-        join_prompt(req)
-    }
-    fn parse_output(&self, raw: &str) -> Result<CliReply, String> {
-        let val: Value = serde_json::from_str(raw.trim())
-            .map_err(|e| format!("Gemini CLI returned output this app could not parse: {e}"))?;
-        if let Some(err) = val.get("error") {
-            let msg = err
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or("no detail");
-            return Err(format!("Gemini CLI reported an error: {msg}"));
-        }
-        let text = val
-            .get("response")
-            .and_then(Value::as_str)
-            .ok_or_else(|| "Gemini CLI returned no response text.".to_string())?
-            .to_string();
-        // `stats` groups per-model token counts; sum whatever is present rather
-        // than assuming one fixed model key.
-        let (tin, tout, cached) = gemini_tokens(val.get("stats"));
-        Ok(CliReply {
-            text,
-            tokens_input: tin,
-            tokens_output: tout,
-            cached_tokens: cached,
-        })
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
@@ -272,47 +211,24 @@ fn usage_u32(usage: Option<&Value>, key: &str) -> u32 {
         .unwrap_or(0) as u32
 }
 
-/// Walks `stats` for any nested `tokens` object and sums prompt/candidates/
-/// cached counts. The exact nesting has changed between Gemini CLI releases,
-/// so this reads defensively and reports zeros rather than failing the call.
-fn gemini_tokens(stats: Option<&Value>) -> (u32, u32, u32) {
-    let mut totals = (0u32, 0u32, 0u32);
-    fn walk(val: &Value, totals: &mut (u32, u32, u32)) {
-        match val {
-            Value::Object(map) => {
-                for (key, child) in map {
-                    match key.as_str() {
-                        "prompt" | "promptTokenCount" | "input" => {
-                            totals.0 += child.as_u64().unwrap_or(0) as u32
-                        }
-                        "candidates" | "candidatesTokenCount" | "output" => {
-                            totals.1 += child.as_u64().unwrap_or(0) as u32
-                        }
-                        "cached" | "cachedContentTokenCount" => {
-                            totals.2 += child.as_u64().unwrap_or(0) as u32
-                        }
-                        _ => walk(child, totals),
-                    }
-                }
-            }
-            Value::Array(items) => items.iter().for_each(|i| walk(i, totals)),
-            _ => {}
-        }
-    }
-    if let Some(stats) = stats {
-        walk(stats, &mut totals);
-    }
-    totals
-}
-
 fn adapter_for(provider: &str) -> Result<Box<dyn CliAdapter + Send + Sync>, String> {
     match provider {
         // Provider ids are this app's ids (see AiProvider), not vendor names.
         "claude" => Ok(Box::new(ClaudeCli)),
         "openai" | "codex" => Ok(Box::new(CodexCli)),
-        "gemini" => Ok(Box::new(GeminiCli)),
+        // Withdrawn, not forgotten: on 2026-06-18 Google stopped Gemini CLI
+        // serving Google AI Pro, AI Ultra and free individual accounts, which
+        // is exactly who CLI bridge mode is for (only enterprise Code Assist
+        // licences and API-key auth still work). The successor is Antigravity
+        // CLI (`agy`) - a different binary with a different install path, so
+        // it would be a new adapter, not a rename of this one.
+        // Ref: github.com/google-gemini/gemini-cli discussions/28017
+        "gemini" => Err(
+            "Google withdrew Gemini CLI for personal accounts on 18 June 2026, so it can no longer run Applye's tasks. Choose Claude Code or Codex CLI, or switch to API mode."
+                .to_string(),
+        ),
         other => Err(format!(
-            "Provider '{other}' has no CLI bridge. CLI mode supports Claude Code, Codex CLI and Gemini CLI."
+            "Provider '{other}' has no CLI bridge. CLI mode supports Claude Code and Codex CLI."
         )),
     }
 }
@@ -477,7 +393,7 @@ const VERSION_TIMEOUT: Duration = Duration::from_secs(15);
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CliStatus {
-    /// The app's provider id ("claude" | "openai" | "gemini").
+    /// The app's provider id ("claude" | "openai").
     pub provider: String,
     /// Executable name the app looks for.
     pub command: String,
@@ -575,7 +491,6 @@ pub async fn cli_probe() -> Vec<CliStatus> {
     for (provider, command, label) in [
         ("claude", "claude", "Claude Code"),
         ("openai", "codex", "Codex CLI"),
-        ("gemini", "gemini", "Gemini CLI"),
     ] {
         let path = resolve_binary(command);
         let (working, version, error) = match &path {
@@ -615,7 +530,6 @@ const INSTALL_TIMEOUT: Duration = Duration::from_secs(600);
 const NPM_PACKAGES: &[(&str, &str)] = &[
     ("claude", "@anthropic-ai/claude-code"),
     ("openai", "@openai/codex"),
-    ("gemini", "@google/gemini-cli"),
 ];
 
 fn npm_package_for(provider: &str) -> Option<&'static str> {
@@ -801,26 +715,6 @@ mod tests {
     }
 
     #[test]
-    fn gemini_bypasses_the_folder_trust_prompt_it_cannot_answer_headlessly() {
-        // Applye runs every CLI in an empty scratch dir, which Gemini treats as
-        // untrusted; headless it cannot show the trust dialog and just dies
-        // with FatalUntrustedWorkspaceError. Without this the Gemini provider
-        // fails on every single task.
-        let env = GeminiCli.env();
-        assert_eq!(env, vec![("GEMINI_CLI_TRUST_WORKSPACE", "true")]);
-        // The other two must not inherit it - they have no such concept.
-        assert!(ClaudeCli.env().is_empty());
-        assert!(CodexCli.env().is_empty());
-    }
-
-    #[test]
-    fn gemini_asks_for_json_and_folds_the_system_prompt_in() {
-        let args = GeminiCli.build_args(&req("gemini", "gemini-3-pro"));
-        assert!(args.contains(&"--output-format".to_string()));
-        assert_eq!(GeminiCli.build_stdin(&req("gemini", "m")), "SYSTEM\n\nUSER");
-    }
-
-    #[test]
     fn claude_output_yields_text_and_usage() {
         let raw = r#"{"type":"result","is_error":false,"result":"hello",
             "usage":{"input_tokens":10,"output_tokens":4,"cache_read_input_tokens":7}}"#;
@@ -851,30 +745,6 @@ mod tests {
     }
 
     #[test]
-    fn gemini_output_yields_response_text_and_summed_tokens() {
-        let raw = r#"{"response":"hi","stats":{"models":{"gemini-3-pro":
-            {"tokens":{"prompt":12,"candidates":5,"cached":3}}}}}"#;
-        let reply = GeminiCli.parse_output(raw).unwrap();
-        assert_eq!(reply.text, "hi");
-        assert_eq!(reply.tokens_input, 12);
-        assert_eq!(reply.tokens_output, 5);
-        assert_eq!(reply.cached_tokens, 3);
-    }
-
-    #[test]
-    fn gemini_error_object_becomes_an_error() {
-        let raw = r#"{"error":{"message":"quota exceeded"}}"#;
-        let err = GeminiCli.parse_output(raw).unwrap_err();
-        assert!(err.contains("quota exceeded"), "{err}");
-    }
-
-    #[test]
-    fn gemini_missing_stats_reports_zero_rather_than_failing() {
-        let reply = GeminiCli.parse_output(r#"{"response":"hi"}"#).unwrap();
-        assert_eq!((reply.tokens_input, reply.tokens_output), (0, 0));
-    }
-
-    #[test]
     fn stderr_is_truncated_for_error_messages() {
         let long = "x".repeat(STDERR_LIMIT + 500);
         let out = truncate_stderr(&long);
@@ -890,9 +760,9 @@ mod tests {
     #[tokio::test]
     async fn probe_reports_all_three_supported_clis() {
         let statuses = cli_probe().await;
-        assert_eq!(statuses.len(), 3);
+        assert_eq!(statuses.len(), 2);
         let providers: Vec<&str> = statuses.iter().map(|s| s.provider.as_str()).collect();
-        assert_eq!(providers, vec!["claude", "openai", "gemini"]);
+        assert_eq!(providers, vec!["claude", "openai"]);
         for s in &statuses {
             // Installed or not depends on the machine; the path must agree.
             assert_eq!(s.installed, s.path.is_some());
@@ -912,13 +782,27 @@ mod tests {
         for (provider, _, _) in [
             ("claude", "claude", "Claude Code"),
             ("openai", "codex", "Codex CLI"),
-            ("gemini", "gemini", "Gemini CLI"),
         ] {
             assert!(
                 npm_package_for(provider).is_some(),
                 "no install package for {provider}"
             );
         }
+    }
+
+    #[test]
+    fn gemini_is_refused_with_the_reason_rather_than_a_generic_message() {
+        // Google stopped Gemini CLI serving personal accounts on 2026-06-18.
+        // A user whose settings still say `cli` + `gemini` must be told what
+        // actually happened, not left with "unsupported provider".
+        let err = match adapter_for("gemini") {
+            Err(e) => e,
+            Ok(_) => panic!("gemini must no longer resolve to a CLI adapter"),
+        };
+        assert!(err.contains("18 June 2026"), "{err}");
+        assert!(err.contains("Codex CLI"), "{err}");
+        // And it must not be offered for install either.
+        assert_eq!(npm_package_for("gemini"), None);
     }
 
     #[tokio::test]
@@ -939,7 +823,6 @@ mod tests {
     fn install_packages_are_the_official_vendor_ones() {
         assert_eq!(npm_package_for("claude"), Some("@anthropic-ai/claude-code"));
         assert_eq!(npm_package_for("openai"), Some("@openai/codex"));
-        assert_eq!(npm_package_for("gemini"), Some("@google/gemini-cli"));
     }
 
     #[tokio::test]

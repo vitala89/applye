@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Removed
+
+- **Gemini CLI is no longer offered for CLI bridge mode.** Google shut it down for personal accounts on 18 June 2026 - Google AI Pro, AI Ultra and free accounts all stopped being served, leaving only enterprise Code Assist licences and API keys. That is exactly the opposite of who this mode is for, so keeping it would only have offered a provider that cannot work. Claude Code and Codex CLI are unaffected. If your settings still pointed at Gemini they move to Claude Code automatically, and Gemini remains listed for API mode where it is unaffected.
+
 ### Added
 
 - **Onboarding can now set up CLI bridge mode.** The AI step only ever offered "paste an API key", with a note promising subscription sign-in was "coming soon" - which had been shipping for a while by then. It now starts with a choice: **paste an API key**, or **use a CLI you already pay for**. Picking the CLI route lists Claude Code, Codex CLI and Gemini CLI with what is actually on your machine, and offers an **Install** button for any that are missing or broken so you never have to open a terminal to get started. The button runs npm for you and tells you plainly when it cannot - if Node.js is missing entirely it says so and links to nodejs.org rather than failing with a wall of output. Installing a CLI does not sign you in, and the wizard says so rather than letting you find out at your first real task.
@@ -18,7 +22,6 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
-- **Gemini CLI works again in CLI bridge mode.** Every Gemini task failed with `FatalUntrustedWorkspaceError` - "not running in a trusted directory". Applye deliberately runs each CLI in an empty scratch folder rather than your own files, and that is exactly the case Gemini's folder-trust check blocks; headless it cannot show the trust prompt, so it just died. It is now told the scratch folder is trusted. (An "ineligible tier" error from Gemini is a separate thing and comes from your Google account, not from Applye.)
 - **Onboarding now remembers which AI provider you picked.** It saved your API key but never the choice itself, so picking OpenAI or DeepSeek and pasting that key still left the app set to Claude - and every task failed with "no key stored for claude". The provider and the mode are now saved when you finish the wizard.
 - **Switching AI mode no longer leaves you with an unusable model setting.** Going to CLI mode clears the model boxes on purpose (so the CLI picks its own), but switching back to API mode left them empty and every request was rejected. Coming back now restores your provider's models.
 - **The health check tells the truth in CLI bridge mode.** It reported "no stored key needed - OK" without ever checking whether the CLI it would call actually works, so a missing or broken CLI still showed a clean bill of health. It now runs the CLI and reports the version, or fails with the reason.

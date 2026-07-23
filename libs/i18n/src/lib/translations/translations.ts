@@ -1451,7 +1451,6 @@ const en: TranslationMap = {
       cli: {
         claude_name: 'Claude Code',
         openai_name: 'Codex CLI',
-        gemini_name: 'Gemini CLI',
         panel_intro:
           'Applye runs the CLI you already installed and signed in to. Nothing is stored here — no API key, no second subscription.',
         checking: 'Checking which CLIs you have…',
@@ -3055,7 +3054,6 @@ const de: TranslationMap = {
       cli: {
         claude_name: 'Claude Code',
         openai_name: 'Codex CLI',
-        gemini_name: 'Gemini CLI',
         panel_intro:
           'Applye startet die CLI, die du bereits installiert hast und in der du angemeldet bist. Hier wird nichts gespeichert — kein API-Schlüssel, kein zweites Abo.',
         checking: 'Prüfe, welche CLIs vorhanden sind…',

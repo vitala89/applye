@@ -74,7 +74,6 @@ export const PROVIDER_GUIDES: Partial<Record<AiProvider, ProviderGuide>> = {
     consoleUrl: 'https://aistudio.google.com/apikey',
     consoleLabelKey: 'onboarding.ai.gemini.console_label',
     stepKeys: STEP_KEYS('generic'),
-    cliNameKey: 'onboarding.ai.cli.gemini_name',
   },
   deepseek: {
     provider: 'deepseek',

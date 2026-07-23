@@ -63,9 +63,19 @@
   unknown env var but dies on an unknown flag. The adapter trait grew an `env()` hook (default
   empty) that both `run` and the version probe apply. Verified live: without the var, stderr
   carries both the trust error and the account error; with it, only the account error remains.
-  That remaining `IneligibleTierError` is Google retiring the free Gemini Code Assist tier for
-  this client and is **not** fixable in Applye - Gemini CLI still works on a paid key/Vertex
-  setup, so the provider stays offered and the error is now surfaced cleanly.
+  The remaining `IneligibleTierError` then proved fatal to the provider itself. Google's own
+  announcement (gemini-cli discussion #28017, 2026-06-18) states Gemini CLI **stopped serving
+  Google AI Pro, AI Ultra and free individual accounts**, with only enterprise Code Assist
+  licences and API-key auth unaffected - precisely the inverse of CLI bridge's audience, a
+  consumer subscription with no API key. **Gemini has therefore been removed from CLI bridge**:
+  adapter deleted, dropped from the probe and install lists, and `adapter_for("gemini")` now
+  returns the actual reason rather than a generic "unsupported provider", so a stale setting
+  explains itself. Migration `0022` moves any `cli` + `gemini` row to `claude`, since the value
+  no longer appears in the picker and would otherwise render blank with every task failing.
+  Gemini stays a valid **API-mode** provider (still "coming soon" there). The successor,
+  Antigravity CLI (`agy`), installs via `curl | bash` rather than npm and is a different binary,
+  so it is a new adapter if ever wanted - a post-launch question, not a rename. The folder-trust
+  fix above is kept: it was a genuine bug, and it is what let the account error be seen clearly.
 
   **Onboarding gained per-CLI setup instructions**, scoped to the selected provider so the three
   status rows stay scannable: two ordered steps (install command, sign-in command) for a CLI

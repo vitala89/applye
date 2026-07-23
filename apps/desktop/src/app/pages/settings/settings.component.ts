@@ -65,10 +65,12 @@ const PROVIDER_VENDORS: Record<string, string> = {
 // CLI bridge mode: which local CLI each provider id maps to. `openai` is Codex
 // because the app's provider ids predate the CLI bridge; the Rust adapter
 // accepts both `openai` and `codex` for the same reason.
+// Gemini CLI is deliberately absent: Google stopped it serving personal
+// accounts on 2026-06-18 (see ai/cli.rs). It is still a valid API-mode
+// provider, so the id itself stays in AiProvider.
 const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
   { id: 'claude', label: 'Claude Code', command: 'claude' },
   { id: 'openai', label: 'Codex CLI', command: 'codex' },
-  { id: 'gemini', label: 'Gemini CLI', command: 'gemini' },
 ];
 
 // Model choices offered per CLI, so a user does not have to know the spelling.
@@ -90,13 +92,10 @@ const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
 //
 // Tested live 2026-07-23 by invoking each CLI: codex accepted gpt-5.5, gpt-5.4
 // and gpt-5.4-mini on a ChatGPT account and refused gpt-5.6 / gpt-5.3-codex;
-// claude accepted the `sonnet` alias. Gemini CLI publishes no model list
-// readable without signing in, so it offers the default and the custom field
-// rather than guessed IDs.
+// claude accepted the `sonnet` alias.
 const CLI_MODELS: Record<string, string[]> = {
   claude: ['sonnet', 'opus', 'haiku'],
   openai: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'],
-  gemini: [],
 };
 
 /**

@@ -189,9 +189,11 @@ export class OnboardingComponent {
   readonly aiMode = signal<AiMode>('api');
   readonly isCliMode = computed(() => this.aiMode() === 'cli');
 
-  /** Provider ids that have a CLI. `openai` is Codex - the app's provider ids
-   * predate the CLI bridge. DeepSeek has no CLI and is API-only. */
-  readonly cliProviders: AiProvider[] = ['claude', 'openai', 'gemini'];
+  /** Provider ids that have a usable CLI. `openai` is Codex - the app's
+   * provider ids predate the CLI bridge. DeepSeek has no CLI and is API-only.
+   * Gemini is absent on purpose: Google stopped Gemini CLI serving personal
+   * accounts on 2026-06-18, so it cannot serve this mode (see ai/cli.rs). */
+  readonly cliProviders: AiProvider[] = ['claude', 'openai'];
 
   readonly cliStatuses = signal<CliStatus[]>([]);
   readonly cliProbing = signal(false);
@@ -213,7 +215,6 @@ export class OnboardingComponent {
   private readonly cliSetupInfo: Record<string, { pkg: string; cmd: string }> = {
     claude: { pkg: '@anthropic-ai/claude-code', cmd: 'claude' },
     openai: { pkg: '@openai/codex', cmd: 'codex' },
-    gemini: { pkg: '@google/gemini-cli', cmd: 'gemini' },
   };
 
   /**

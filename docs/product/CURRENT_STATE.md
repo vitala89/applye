@@ -1,13 +1,18 @@
 # Current Operational State
 
 - **Current version**: `0.26.0` (package.json / tauri.conf.json)
-- **Current branch / focus**: `main`, 3 local commits from the 2026-07-24 session (Interview Prep
-  generation UI removal, local markets, a token-fix polish pass), not yet pushed - see below.
-- **Next action**: a `tauri dev` pass covering everything merged since the last one, plus the two
-  items below. CLI-bridge Settings + onboarding UI, the ATS card, the assisted installer, and
-  Interview Prep's CRUD (add/edit/delete/reorder stages) still have **no native verification**. The
-  browser preview cannot reach Tauri IPC, so none of it has been seen running. This is the only
-  thing standing between `main` and launch prep.
+- **Current branch / focus**: `main`, local commits from the 2026-07-24 session (Interview Prep
+  generation UI removal, local markets, a token-fix polish pass, a sources-migration id-collision
+  fix), not yet pushed - see below.
+- **Next action**: re-run `tauri dev`. The first native run this session panicked on a migration
+  checksum mismatch and, once investigated, surfaced a real pre-existing bug (built-in sources
+  silently failing to install - see the local-markets entry below for the full story and the fix).
+  That fix is verified against the actual affected database but **not yet through an actual
+  `tauri dev` launch** - that should be the very first thing the next session confirms before
+  anything else. Beyond that: CLI-bridge Settings + onboarding UI, the ATS card, the assisted
+  installer, and Interview Prep's CRUD (add/edit/delete/reorder stages) still have no native
+  verification. The browser preview cannot reach Tauri IPC, so none of it has been seen running.
+  This is the only thing standing between `main` and launch prep.
 - **2026-07-24 session, uncommitted on `main`:**
   - **Interview Prep AI generation UI removed** (workaround, not a fix). Native testing found the
     "Generate" button hangs on "Generating...". Interview prep is slated to become its own larger
@@ -63,6 +68,29 @@ live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existi
     `--col-accent`, `--ana-neutral-fill` are all real custom properties, just set dynamically
     per-instance (inline `[style.--x]` bindings or a component-scoped `:host` block) rather than
     declared globally in `tokens.css` - by design, not an oversight.
+  - **Live bug found and fixed after the user's native `tauri dev` run: built-in sources with a
+    hardcoded id can silently fail to install.** The run panicked first on a migration-checksum
+    mismatch (`migration 24 was previously applied but has been modified` - migration `0024`'s
+    No Fluff Jobs URL had been edited, adding the required query params, after an earlier
+    background run had already applied the pre-fix version). Investigating the real dev DB
+    surfaced a worse, pre-existing bug: `sources.id` is an ordinary autoincrementing column that
+    user-added sources consume too, and both this session's migration `0024` (ids 5-11) and the
+    already-shipped `0021` (`Bundesagentur fuer Arbeit`, id=4) hardcoded low explicit ids assuming
+    they were free. On this real database - 4 custom sources already at ids 5-8 - the inserts for
+    those ids silently no-op on the primary-key conflict instead of erroring, so **Bundesagentur
+    fuer Arbeit was never actually installed despite `0021` shipping weeks ago**, and DOU.ua /
+    Djinni.co / Habr Career / Jobicy were about to repeat the same silent failure. Fixed by
+    renumbering: `0024_sources_url_unique_index.sql` (new, safe to renumber - unpushed) adds a
+    partial unique index on `sources.url` (excluding the empty-url ATS-slug rows) and backfills
+    Bundesagentur fuer Arbeit via `INSERT OR IGNORE` keyed on that index; `0025_local_market_sources.sql`
+    (renamed from the old `0024`) now omits `id` entirely, same as a user-added source would get.
+    Verified against the actual affected database (a throwaway, never-committed
+    `#[ignore]`d test calling the real `Db::init` against the real app-data path, then deleted):
+    all 7 local-market sources plus the backfilled Bundesagentur row now present with correct
+    URLs, the 4 pre-existing custom sources and the 3 already-shipped built-ins untouched, no
+    duplicates. `cargo test --lib` (245 passed) and `cargo clippy -- -D warnings` (clean) re-run
+    after the fix. **Not yet re-verified with an actual `tauri dev` run** - the user's next one
+    should now start cleanly; if it does not, this is the first place to look.
   - Not done this session (deferred, see Task 3 in the original prompt): a second general bug pass
     beyond the token sweep above. Next session can pick this up directly.
 - **Merged: `fix/cli-bridge-probe-and-models` → PR #153.** Two defects found in the first live

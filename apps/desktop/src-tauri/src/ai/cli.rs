@@ -1,9 +1,9 @@
 // CLI bridge mode - run a coding CLI the user already has installed and
-// already pays for (Claude Code, Codex, Gemini CLI) as a one-shot subprocess,
-// instead of calling a provider HTTP API with an API key.
+// already pays for (Claude Code, Codex CLI) as a one-shot subprocess, instead
+// of calling a provider HTTP API with an API key.
 //
-// Why this exists: a user on a Claude Pro / ChatGPT Plus / Gemini subscription
-// has no reason to also buy API credit. In CLI mode Applye stores no key, and
+// Why this exists: a user on a Claude Pro or ChatGPT Plus subscription has no
+// reason to also buy API credit. In CLI mode Applye stores no key, and
 // the request never leaves the machine except through the CLI the user already
 // trusts and authenticated themselves.
 //
@@ -26,9 +26,14 @@
 //   codex   - developers.openai.com/codex/noninteractive
 //             `codex exec -` reads the whole prompt from stdin and prints only
 //             the final agent message to stdout (progress goes to stderr).
-//   gemini  - github.com/google-gemini/gemini-cli docs/cli/headless.md
-//             `--output-format json` -> `{ response, stats }`, `-p` prompt.
 // Re-verify these before changing them; do not edit them from memory.
+//
+// Gemini CLI was supported here and has been removed: on 2026-06-18 Google
+// stopped it serving Google AI Pro, AI Ultra and free individual accounts,
+// leaving only enterprise Code Assist licences and API-key auth - i.e. exactly
+// not the audience this mode exists for. Its replacement, Antigravity CLI
+// (`agy`), installs via `curl | bash` rather than npm and is a different
+// binary, so it is a new adapter if it is ever wanted, not a rename.
 
 use super::{AiRequest, AiResponse};
 use serde::Serialize;
@@ -183,59 +188,6 @@ impl CliAdapter for CodexCli {
 }
 
 // ---------------------------------------------------------------------------
-// Gemini CLI
-// ---------------------------------------------------------------------------
-
-struct GeminiCli;
-
-impl CliAdapter for GeminiCli {
-    fn command(&self) -> &str {
-        "gemini"
-    }
-    fn label(&self) -> &str {
-        "Gemini CLI"
-    }
-    fn build_args(&self, req: &AiRequest) -> Vec<String> {
-        // Gemini CLI has no system-prompt flag on the headless path, so the
-        // skill prompt is folded into the single prompt sent over stdin.
-        let mut args = vec!["--output-format".to_string(), "json".to_string()];
-        if !req.model.trim().is_empty() {
-            args.push("--model".to_string());
-            args.push(req.model.clone());
-        }
-        args
-    }
-    fn build_stdin(&self, req: &AiRequest) -> String {
-        join_prompt(req)
-    }
-    fn parse_output(&self, raw: &str) -> Result<CliReply, String> {
-        let val: Value = serde_json::from_str(raw.trim())
-            .map_err(|e| format!("Gemini CLI returned output this app could not parse: {e}"))?;
-        if let Some(err) = val.get("error") {
-            let msg = err
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or("no detail");
-            return Err(format!("Gemini CLI reported an error: {msg}"));
-        }
-        let text = val
-            .get("response")
-            .and_then(Value::as_str)
-            .ok_or_else(|| "Gemini CLI returned no response text.".to_string())?
-            .to_string();
-        // `stats` groups per-model token counts; sum whatever is present rather
-        // than assuming one fixed model key.
-        let (tin, tout, cached) = gemini_tokens(val.get("stats"));
-        Ok(CliReply {
-            text,
-            tokens_input: tin,
-            tokens_output: tout,
-            cached_tokens: cached,
-        })
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
@@ -255,47 +207,24 @@ fn usage_u32(usage: Option<&Value>, key: &str) -> u32 {
         .unwrap_or(0) as u32
 }
 
-/// Walks `stats` for any nested `tokens` object and sums prompt/candidates/
-/// cached counts. The exact nesting has changed between Gemini CLI releases,
-/// so this reads defensively and reports zeros rather than failing the call.
-fn gemini_tokens(stats: Option<&Value>) -> (u32, u32, u32) {
-    let mut totals = (0u32, 0u32, 0u32);
-    fn walk(val: &Value, totals: &mut (u32, u32, u32)) {
-        match val {
-            Value::Object(map) => {
-                for (key, child) in map {
-                    match key.as_str() {
-                        "prompt" | "promptTokenCount" | "input" => {
-                            totals.0 += child.as_u64().unwrap_or(0) as u32
-                        }
-                        "candidates" | "candidatesTokenCount" | "output" => {
-                            totals.1 += child.as_u64().unwrap_or(0) as u32
-                        }
-                        "cached" | "cachedContentTokenCount" => {
-                            totals.2 += child.as_u64().unwrap_or(0) as u32
-                        }
-                        _ => walk(child, totals),
-                    }
-                }
-            }
-            Value::Array(items) => items.iter().for_each(|i| walk(i, totals)),
-            _ => {}
-        }
-    }
-    if let Some(stats) = stats {
-        walk(stats, &mut totals);
-    }
-    totals
-}
-
 fn adapter_for(provider: &str) -> Result<Box<dyn CliAdapter + Send + Sync>, String> {
     match provider {
         // Provider ids are this app's ids (see AiProvider), not vendor names.
         "claude" => Ok(Box::new(ClaudeCli)),
         "openai" | "codex" => Ok(Box::new(CodexCli)),
-        "gemini" => Ok(Box::new(GeminiCli)),
+        // Withdrawn, not forgotten: on 2026-06-18 Google stopped Gemini CLI
+        // serving Google AI Pro, AI Ultra and free individual accounts, which
+        // is exactly who CLI bridge mode is for (only enterprise Code Assist
+        // licences and API-key auth still work). The successor is Antigravity
+        // CLI (`agy`) - a different binary with a different install path, so
+        // it would be a new adapter, not a rename of this one.
+        // Ref: github.com/google-gemini/gemini-cli discussions/28017
+        "gemini" => Err(
+            "Google withdrew Gemini CLI for personal accounts on 18 June 2026, so it can no longer run Applye's tasks. Choose Claude Code or Codex CLI, or switch to API mode."
+                .to_string(),
+        ),
         other => Err(format!(
-            "Provider '{other}' has no CLI bridge. CLI mode supports Claude Code, Codex CLI and Gemini CLI."
+            "Provider '{other}' has no CLI bridge. CLI mode supports Claude Code and Codex CLI."
         )),
     }
 }
@@ -452,42 +381,267 @@ pub async fn run(req: &AiRequest) -> Result<AiResponse, String> {
 // Detection, for Settings
 // ---------------------------------------------------------------------------
 
+/// A `--version` probe must not hang Settings; these CLIs answer in well under
+/// a second when healthy.
+const VERSION_TIMEOUT: Duration = Duration::from_secs(15);
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CliStatus {
-    /// The app's provider id ("claude" | "openai" | "gemini").
+    /// The app's provider id ("claude" | "openai").
     pub provider: String,
     /// Executable name the app looks for.
     pub command: String,
     /// Human-readable CLI name.
     pub label: String,
+    /// A file with this name exists on the search path.
     pub installed: bool,
     /// Absolute path when found - shown so a user can tell which install won.
     pub path: Option<String>,
+    /// The file exists **and** actually ran. `installed` alone is not enough:
+    /// the npm wrappers for these CLIs are small scripts that spawn a
+    /// platform-specific binary, and if that binary is missing (a partial or
+    /// interrupted `npm install`) the wrapper is still on the path and still
+    /// looks perfectly healthy to a file-existence check. That exact case -
+    /// `spawn .../codex-darwin-arm64/vendor/.../codex ENOENT` - showed a green
+    /// tick in Settings and then failed on the first real scoring run.
+    pub working: bool,
+    /// Version string the CLI printed, when it ran.
+    pub version: Option<String>,
+    /// Why it did not run, when it did not.
+    pub error: Option<String>,
 }
 
-/// Reports which of the supported CLIs are actually present, so Settings can
-/// tell the user before they switch to CLI mode and hit a failure mid-task.
-/// Detection is a filesystem lookup only: nothing is executed.
+/// Runs `<binary> --version` and reports what happened. This executes only a
+/// binary the user installed and named themselves, with a fixed argument list
+/// and no shell, in a scratch directory.
+async fn probe_version(binary: &std::path::Path) -> Result<String, String> {
+    let child = Command::new(binary)
+        .arg("--version")
+        .current_dir(std::env::temp_dir())
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(|e| format!("could not be started: {e}"))?;
+
+    let output = match tokio::time::timeout(VERSION_TIMEOUT, child.wait_with_output()).await {
+        Ok(result) => result.map_err(|e| format!("failed while running: {e}"))?,
+        Err(_) => {
+            return Err(format!(
+                "did not answer `--version` within {} seconds",
+                VERSION_TIMEOUT.as_secs()
+            ))
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stderr = truncate_stderr(&String::from_utf8_lossy(&output.stderr));
+
+    if !output.status.success() {
+        return Err(if stderr.is_empty() {
+            "exited with an error and printed nothing".to_string()
+        } else {
+            stderr
+        });
+    }
+    // Some CLIs print a banner before the version; the first non-empty line is
+    // the useful part.
+    Ok(stdout
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("unknown version")
+        .trim()
+        .to_string())
+}
+
+/// Whether the CLI for one provider is present and actually runs. Returns the
+/// version on success and the reason on failure, so the health check can say
+/// something useful rather than just "not ready".
+pub async fn cli_health(provider: &str) -> Result<String, String> {
+    let adapter = adapter_for(provider)?;
+    let binary = resolve_binary(adapter.command()).ok_or_else(|| not_installed_error(&*adapter))?;
+    probe_version(&binary)
+        .await
+        .map_err(|e| format!("{} {e}", adapter.label()))
+}
+
+/// Reports which of the supported CLIs are present **and runnable**, so Settings
+/// can tell the user before they switch to CLI mode rather than letting them
+/// discover it mid-task.
 #[tauri::command]
-pub fn cli_probe() -> Vec<CliStatus> {
-    [
+pub async fn cli_probe() -> Vec<CliStatus> {
+    let mut out = Vec::new();
+    for (provider, command, label) in [
         ("claude", "claude", "Claude Code"),
         ("openai", "codex", "Codex CLI"),
-        ("gemini", "gemini", "Gemini CLI"),
-    ]
-    .into_iter()
-    .map(|(provider, command, label)| {
+    ] {
         let path = resolve_binary(command);
-        CliStatus {
+        let (working, version, error) = match &path {
+            None => (false, None, None),
+            Some(p) => match probe_version(p).await {
+                Ok(v) => (true, Some(v), None),
+                Err(e) => (false, None, Some(e)),
+            },
+        };
+        out.push(CliStatus {
             provider: provider.to_string(),
             command: command.to_string(),
             label: label.to_string(),
             installed: path.is_some(),
             path: path.map(|p| p.display().to_string()),
+            working,
+            version,
+            error,
+        });
+    }
+    out
+}
+
+// ---------------------------------------------------------------------------
+// Assisted install
+// ---------------------------------------------------------------------------
+
+/// An install downloads and compiles packages; be generous but still bounded.
+const INSTALL_TIMEOUT: Duration = Duration::from_secs(600);
+
+/// The npm package that provides each CLI.
+///
+/// This mapping is the security boundary for the install command: the package
+/// name is chosen here from a fixed list keyed on the app's own provider id,
+/// and is **never** taken from the caller. There is no code path that can make
+/// Applye install an arbitrary package, and nothing is ever passed to a shell.
+const NPM_PACKAGES: &[(&str, &str)] = &[
+    ("claude", "@anthropic-ai/claude-code"),
+    ("openai", "@openai/codex"),
+];
+
+fn npm_package_for(provider: &str) -> Option<&'static str> {
+    NPM_PACKAGES
+        .iter()
+        .find(|(id, _)| *id == provider)
+        .map(|(_, pkg)| *pkg)
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CliInstallResult {
+    pub ok: bool,
+    /// The exact command that was run, so the UI never has to describe it
+    /// second-hand and the user can repeat it in a terminal.
+    pub command: String,
+    /// Human-readable outcome or failure reason.
+    pub message: String,
+    /// npm itself is missing, so the user needs Node.js before anything else.
+    /// Worth distinguishing: it is the one failure the user cannot fix from
+    /// inside Applye, and it is the *likeliest* failure for the non-technical
+    /// user this button exists for.
+    pub needs_node: bool,
+}
+
+/// Installs the CLI for `provider` with npm.
+///
+/// This is a real, system-modifying action, so it is only ever reached from an
+/// explicit click, it reports the exact command it runs, and it never guesses:
+/// an unknown provider is refused rather than passed through to npm.
+///
+/// Installing does **not** sign the user in. The CLIs authenticate against the
+/// user's own account interactively, which cannot be done from here; the UI
+/// says so on success rather than letting the user discover it at the first
+/// failed task.
+#[tauri::command]
+pub async fn cli_install(provider: String) -> CliInstallResult {
+    let Some(package) = npm_package_for(&provider) else {
+        return CliInstallResult {
+            ok: false,
+            command: String::new(),
+            message: format!("'{provider}' is not a CLI Applye can install."),
+            needs_node: false,
+        };
+    };
+    let command = format!("npm install -g {package}");
+
+    let Some(npm) = resolve_binary("npm") else {
+        return CliInstallResult {
+            ok: false,
+            command,
+            message: "npm was not found. These CLIs are installed with npm, which comes with Node.js - install Node.js from nodejs.org, then try again.".to_string(),
+            needs_node: true,
+        };
+    };
+
+    let child = match Command::new(&npm)
+        .args(["install", "-g", package])
+        .current_dir(std::env::temp_dir())
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .spawn()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            return CliInstallResult {
+                ok: false,
+                command,
+                message: format!("Could not start npm: {e}"),
+                needs_node: false,
+            }
         }
-    })
-    .collect()
+    };
+
+    let output = match tokio::time::timeout(INSTALL_TIMEOUT, child.wait_with_output()).await {
+        Ok(Ok(o)) => o,
+        Ok(Err(e)) => {
+            return CliInstallResult {
+                ok: false,
+                command,
+                message: format!("npm failed to run: {e}"),
+                needs_node: false,
+            }
+        }
+        Err(_) => {
+            return CliInstallResult {
+                ok: false,
+                command,
+                message: format!(
+                    "The install did not finish within {} minutes and was stopped.",
+                    INSTALL_TIMEOUT.as_secs() / 60
+                ),
+                needs_node: false,
+            }
+        }
+    };
+
+    if output.status.success() {
+        return CliInstallResult {
+            ok: true,
+            command,
+            message: String::new(),
+            needs_node: false,
+        };
+    }
+
+    let stderr = truncate_stderr(&String::from_utf8_lossy(&output.stderr));
+    // A global install into a system Node needs write access the app does not
+    // have. Naming the cause is the difference between a user fixing it and a
+    // user giving up on a wall of npm output.
+    let message = if stderr.contains("EACCES") || stderr.contains("permission denied") {
+        format!(
+            "npm does not have permission to install globally on this machine. Run `{command}` yourself in a terminal (it may need administrator rights)."
+        )
+    } else if stderr.is_empty() {
+        "npm exited with an error and printed nothing.".to_string()
+    } else {
+        stderr
+    };
+    CliInstallResult {
+        ok: false,
+        command,
+        message,
+        needs_node: false,
+    }
 }
 
 #[cfg(test)]
@@ -546,13 +700,6 @@ mod tests {
     }
 
     #[test]
-    fn gemini_asks_for_json_and_folds_the_system_prompt_in() {
-        let args = GeminiCli.build_args(&req("gemini", "gemini-3-pro"));
-        assert!(args.contains(&"--output-format".to_string()));
-        assert_eq!(GeminiCli.build_stdin(&req("gemini", "m")), "SYSTEM\n\nUSER");
-    }
-
-    #[test]
     fn claude_output_yields_text_and_usage() {
         let raw = r#"{"type":"result","is_error":false,"result":"hello",
             "usage":{"input_tokens":10,"output_tokens":4,"cache_read_input_tokens":7}}"#;
@@ -583,30 +730,6 @@ mod tests {
     }
 
     #[test]
-    fn gemini_output_yields_response_text_and_summed_tokens() {
-        let raw = r#"{"response":"hi","stats":{"models":{"gemini-3-pro":
-            {"tokens":{"prompt":12,"candidates":5,"cached":3}}}}}"#;
-        let reply = GeminiCli.parse_output(raw).unwrap();
-        assert_eq!(reply.text, "hi");
-        assert_eq!(reply.tokens_input, 12);
-        assert_eq!(reply.tokens_output, 5);
-        assert_eq!(reply.cached_tokens, 3);
-    }
-
-    #[test]
-    fn gemini_error_object_becomes_an_error() {
-        let raw = r#"{"error":{"message":"quota exceeded"}}"#;
-        let err = GeminiCli.parse_output(raw).unwrap_err();
-        assert!(err.contains("quota exceeded"), "{err}");
-    }
-
-    #[test]
-    fn gemini_missing_stats_reports_zero_rather_than_failing() {
-        let reply = GeminiCli.parse_output(r#"{"response":"hi"}"#).unwrap();
-        assert_eq!((reply.tokens_input, reply.tokens_output), (0, 0));
-    }
-
-    #[test]
     fn stderr_is_truncated_for_error_messages() {
         let long = "x".repeat(STDERR_LIMIT + 500);
         let out = truncate_stderr(&long);
@@ -619,16 +742,84 @@ mod tests {
         assert!(resolve_binary("applye-definitely-not-a-real-binary").is_none());
     }
 
-    #[test]
-    fn probe_reports_all_three_supported_clis() {
-        let statuses = cli_probe();
-        assert_eq!(statuses.len(), 3);
+    #[tokio::test]
+    async fn probe_reports_all_three_supported_clis() {
+        let statuses = cli_probe().await;
+        assert_eq!(statuses.len(), 2);
         let providers: Vec<&str> = statuses.iter().map(|s| s.provider.as_str()).collect();
-        assert_eq!(providers, vec!["claude", "openai", "gemini"]);
-        // Installed or not depends on the machine; the path must agree with it.
+        assert_eq!(providers, vec!["claude", "openai"]);
         for s in &statuses {
+            // Installed or not depends on the machine; the path must agree.
             assert_eq!(s.installed, s.path.is_some());
+            // A CLI cannot be runnable without being present at all.
+            assert!(!(s.working && !s.installed), "{s:?}");
+            // Whichever way the probe went, it must say which: a working CLI
+            // reports a version, a broken one reports why.
+            if s.installed {
+                assert_eq!(s.working, s.version.is_some(), "{s:?}");
+                assert_eq!(!s.working, s.error.is_some(), "{s:?}");
+            }
         }
+    }
+
+    #[test]
+    fn every_supported_provider_has_an_install_package() {
+        for (provider, _, _) in [
+            ("claude", "claude", "Claude Code"),
+            ("openai", "codex", "Codex CLI"),
+        ] {
+            assert!(
+                npm_package_for(provider).is_some(),
+                "no install package for {provider}"
+            );
+        }
+    }
+
+    #[test]
+    fn gemini_is_refused_with_the_reason_rather_than_a_generic_message() {
+        // Google stopped Gemini CLI serving personal accounts on 2026-06-18.
+        // A user whose settings still say `cli` + `gemini` must be told what
+        // actually happened, not left with "unsupported provider".
+        let err = match adapter_for("gemini") {
+            Err(e) => e,
+            Ok(_) => panic!("gemini must no longer resolve to a CLI adapter"),
+        };
+        assert!(err.contains("18 June 2026"), "{err}");
+        assert!(err.contains("Codex CLI"), "{err}");
+        // And it must not be offered for install either.
+        assert_eq!(npm_package_for("gemini"), None);
+    }
+
+    #[tokio::test]
+    async fn install_refuses_a_provider_that_is_not_on_the_list() {
+        // The package name must never come from the caller. Anything not in
+        // NPM_PACKAGES is refused before npm is reached at all.
+        for attempt in ["deepseek", "left-pad", "../evil", "claude; rm -rf /"] {
+            let result = cli_install(attempt.to_string()).await;
+            assert!(!result.ok, "{attempt} should be refused");
+            assert!(
+                result.command.is_empty(),
+                "{attempt} must not produce a command"
+            );
+        }
+    }
+
+    #[test]
+    fn install_packages_are_the_official_vendor_ones() {
+        assert_eq!(npm_package_for("claude"), Some("@anthropic-ai/claude-code"));
+        assert_eq!(npm_package_for("openai"), Some("@openai/codex"));
+    }
+
+    #[tokio::test]
+    async fn a_present_but_unrunnable_binary_reports_an_error_not_success() {
+        // Stands in for the real failure this replaced: an npm wrapper that is
+        // on the path but whose vendored binary is missing. A directory is
+        // present on disk and cannot be executed, which is the same shape.
+        let dir = std::env::temp_dir().join(format!("applye-probe-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("create dir");
+        let err = probe_version(&dir).await.unwrap_err();
+        assert!(!err.is_empty(), "a failure must explain itself");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -81,8 +81,30 @@
                 <h1 class="ob__h1">{{ t()('onboarding.ai.title') }}</h1>
                 <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.ai.intro') }}</p>
               </div>
+              <!-- Mode: an existing coding-CLI subscription, or an API key. -->
+              <div class="ob__mode-grid">
+                <button
+                  type="button"
+                  class="ob__mode-card"
+                  [class.ob__mode-card--selected]="!isCliMode()"
+                  (click)="chooseAiMode('api')"
+                >
+                  <span class="ob__mode-title">{{ t()('onboarding.ai.mode_api_title') }}</span>
+                  <span class="ob__mode-sub">{{ t()('onboarding.ai.mode_api_sub') }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="ob__mode-card"
+                  [class.ob__mode-card--selected]="isCliMode()"
+                  (click)="chooseAiMode('cli')"
+                >
+                  <span class="ob__mode-title">{{ t()('onboarding.ai.mode_cli_title') }}</span>
+                  <span class="ob__mode-sub">{{ t()('onboarding.ai.mode_cli_sub') }}</span>
+                </button>
+              </div>
+
               <div class="ob__provider-grid">
-                @for (p of v1Providers; track p) {
+                @for (p of isCliMode() ? cliProviders : v1Providers; track p) {
                   <button
                     type="button"
                     class="ob__provider-card"
@@ -116,7 +138,7 @@
                       }
                     </span>
                     <span class="ob__provider-text">
-                      <span class="ob__provider-name">{{ t()(guideFor(p).nameKey) }}</span>
+                      <span class="ob__provider-name">{{ t()(cardNameKey(p)) }}</span>
                       <span class="ob__provider-vendor">{{ t()(guideFor(p).vendorKey) }}</span>
                     </span>
                     @if (selectedProvider() === p) {
@@ -131,108 +153,222 @@
                 }
               </div>
 
-              <div class="ob__card">
-                <div class="ob__panel-intro">
-                  <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
-                  <p class="ob__panel-intro-text">{{ t()('onboarding.ai.panel_intro') }}</p>
-                </div>
-                <div class="ob__panel-body">
-                  <button
-                    appButton
-                    variant="secondary"
-                    size="md"
-                    type="button"
-                    (click)="openConsole()"
-                  >
-                    <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
-                    {{ t()('onboarding.ai.open_console') }} · {{ t()(guide().consoleLabelKey) }}
-                  </button>
-                  <ol class="ob__steplist">
-                    @for (st of providerSteps(); track st.n) {
-                      <li class="ob__stepitem">
-                        <span class="ob__stepitem-num">{{ st.n }}</span>
-                        <span class="ob__stepitem-text">{{ st.text }}</span>
-                      </li>
-                    }
-                  </ol>
-                  <div class="ob__field">
-                    <label class="ob__field-label" for="ob-api-key">{{
-                      t()('onboarding.ai.api_key_label')
-                    }}</label>
-                    <div class="ob__key-row">
-                      <div class="ob__key-input-wrap">
-                        <lucide-icon [img]="icons.key" [size]="15" aria-hidden="true" />
-                        <input
-                          id="ob-api-key"
-                          type="password"
-                          class="ob__input ob__key-input"
-                          [value]="keyInput()"
-                          (input)="keyInput.set($any($event.target).value)"
-                          [placeholder]="guide().keyPrefix + '…'"
-                          spellcheck="false"
-                        />
-                      </div>
-                      <button
-                        appButton
-                        variant="primary"
-                        size="md"
-                        type="button"
-                        [disabled]="keyStatus() === 'checking'"
-                        (click)="saveKey()"
-                      >
-                        @if (keyStatus() === 'checking') {
-                          <span class="ob__spinner" aria-hidden="true"></span>
-                          {{ t()('onboarding.ai.checking') }}
-                        } @else {
-                          <lucide-icon [img]="icons.checkCheck" [size]="15" aria-hidden="true" />
-                          {{ t()('onboarding.ai.save_check') }}
-                        }
-                      </button>
-                    </div>
-                    @if (keyStatus() === 'valid') {
-                      <div class="ob__key-status ob__key-status--valid">
-                        <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
-                        {{ t()('onboarding.ai.valid_note') }}
-                      </div>
-                    } @else if (keyStatus() === 'idle' && keyStored()) {
-                      <div class="ob__key-status ob__key-status--valid">
-                        <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
-                        {{ t()('onboarding.ai.already_saved_note') }}
-                      </div>
-                    } @else if (keyStatus() === 'invalid') {
-                      <div class="ob__key-status ob__key-status--invalid">
-                        <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
-                        {{ t()('onboarding.ai.invalid_note') }}
+              @if (isCliMode()) {
+                <!-- CLI BRIDGE · no key at all; the user's own signed-in CLI. -->
+                <div class="ob__card">
+                  <div class="ob__panel-intro">
+                    <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
+                    <p class="ob__panel-intro-text">{{ t()('onboarding.ai.cli.panel_intro') }}</p>
+                  </div>
+                  <div class="ob__panel-body">
+                    @if (cliProbing()) {
+                      <div class="ob__key-status ob__key-status--muted">
+                        <span class="ob__spinner" aria-hidden="true"></span>
+                        {{ t()('onboarding.ai.cli.checking') }}
                       </div>
                     } @else {
-                      <div class="ob__key-status ob__key-status--muted">
-                        <lucide-icon [img]="icons.lock" [size]="14" aria-hidden="true" />
-                        {{ t()('onboarding.ai.keyring_note') }}
-                      </div>
-                    }
-                    @if (keySaveError()) {
-                      <div class="ob__key-status ob__key-status--invalid">
-                        <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
-                        {{ t()('onboarding.ai.error') }}
-                      </div>
+                      @for (p of cliProviders; track p) {
+                        @if (cliStatusFor(p); as st) {
+                          <div class="ob__cli-row">
+                            <lucide-icon
+                              [img]="st.working ? icons.badgeCheck : icons.triangleAlert"
+                              [size]="15"
+                              [class.ob__cli-icon--ok]="st.working"
+                              [class.ob__cli-icon--warn]="!st.working"
+                              aria-hidden="true"
+                            />
+                            <span class="ob__cli-name">{{ t()(cardNameKey(p)) }}</span>
+                            @if (st.working) {
+                              <span class="ob__cli-detail">{{ st.version }}</span>
+                            } @else {
+                              <span class="ob__cli-detail">
+                                {{
+                                  st.installed
+                                    ? t()('onboarding.ai.cli.broken')
+                                    : t()('onboarding.ai.cli.missing')
+                                }}
+                              </span>
+                              <button
+                                appButton
+                                variant="secondary"
+                                size="sm"
+                                type="button"
+                                [disabled]="installingCli() !== null"
+                                (click)="installCli(p)"
+                              >
+                                @if (installingCli() === p) {
+                                  <span class="ob__spinner" aria-hidden="true"></span>
+                                  {{ t()('onboarding.ai.cli.installing') }}
+                                } @else {
+                                  <lucide-icon
+                                    [img]="icons.download"
+                                    [size]="14"
+                                    aria-hidden="true"
+                                  />
+                                  {{
+                                    st.installed
+                                      ? t()('onboarding.ai.cli.reinstall_btn')
+                                      : t()('onboarding.ai.cli.install_btn')
+                                  }}
+                                }
+                              </button>
+                            }
+                          </div>
+                        }
+                      }
+
+                      @if (installError(); as err) {
+                        <div class="ob__key-status ob__key-status--invalid">
+                          <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+                          <span>{{ err.message }}</span>
+                        </div>
+                        @if (err.needsNode) {
+                          <button type="button" class="ob__link-btn" (click)="openNodeSite()">
+                            <lucide-icon
+                              [img]="icons.externalLink"
+                              [size]="15"
+                              aria-hidden="true"
+                            />
+                            {{ t()('onboarding.ai.cli.get_node') }}
+                          </button>
+                        }
+                      }
+
+                      <button type="button" class="ob__link-btn" (click)="refreshCliProbe()">
+                        <lucide-icon [img]="icons.refresh" [size]="15" aria-hidden="true" />
+                        {{ t()('onboarding.ai.cli.recheck') }}
+                      </button>
+
+                      <!-- Setup guidance for the CLI the user actually picked.
+                           Installing is not connecting: these CLIs sign in
+                           interactively against the user's own account, which
+                           Applye cannot do for them. -->
+                      @if (selectedCliSetup(); as setup) {
+                        <div class="ob__cli-setup">
+                          @if (setup.working) {
+                            <p class="ob__cli-setup-text">
+                              {{ t()('onboarding.ai.cli.ready_prefix') }} {{ setup.name }}.
+                              {{ t()('onboarding.ai.cli.ready_auth_hint') }}
+                              <code class="ob__cmd">{{ setup.signInCommand }}</code>
+                            </p>
+                          } @else {
+                            <p class="ob__cli-setup-title">
+                              {{ t()('onboarding.ai.cli.setup_prefix') }} {{ setup.name }}
+                            </p>
+                            <ol class="ob__steplist">
+                              @for (st of setup.steps; track st.n) {
+                                <li class="ob__stepitem">
+                                  <span class="ob__stepitem-num">{{ st.n }}</span>
+                                  <span class="ob__stepitem-text">
+                                    {{ st.text }}
+                                    <code class="ob__cmd">{{ st.command }}</code>
+                                  </span>
+                                </li>
+                              }
+                            </ol>
+                          }
+                        </div>
+                      }
                     }
                   </div>
-                  @if (guide().helpVideoUrl) {
-                    <button type="button" class="ob__link-btn" (click)="openVideo()">
-                      <lucide-icon [img]="icons.playCircle" [size]="15" aria-hidden="true" />
-                      {{ t()('onboarding.ai.watch_video') }}
-                    </button>
-                  }
                 </div>
-              </div>
+              } @else {
+                <div class="ob__card">
+                  <div class="ob__panel-intro">
+                    <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
+                    <p class="ob__panel-intro-text">{{ t()('onboarding.ai.panel_intro') }}</p>
+                  </div>
+                  <div class="ob__panel-body">
+                    <button
+                      appButton
+                      variant="secondary"
+                      size="md"
+                      type="button"
+                      (click)="openConsole()"
+                    >
+                      <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
+                      {{ t()('onboarding.ai.open_console') }} · {{ t()(guide().consoleLabelKey) }}
+                    </button>
+                    <ol class="ob__steplist">
+                      @for (st of providerSteps(); track st.n) {
+                        <li class="ob__stepitem">
+                          <span class="ob__stepitem-num">{{ st.n }}</span>
+                          <span class="ob__stepitem-text">{{ st.text }}</span>
+                        </li>
+                      }
+                    </ol>
+                    <div class="ob__field">
+                      <label class="ob__field-label" for="ob-api-key">{{
+                        t()('onboarding.ai.api_key_label')
+                      }}</label>
+                      <div class="ob__key-row">
+                        <div class="ob__key-input-wrap">
+                          <lucide-icon [img]="icons.key" [size]="15" aria-hidden="true" />
+                          <input
+                            id="ob-api-key"
+                            type="password"
+                            class="ob__input ob__key-input"
+                            [value]="keyInput()"
+                            (input)="keyInput.set($any($event.target).value)"
+                            [placeholder]="guide().keyPrefix + '…'"
+                            spellcheck="false"
+                          />
+                        </div>
+                        <button
+                          appButton
+                          variant="primary"
+                          size="md"
+                          type="button"
+                          [disabled]="keyStatus() === 'checking'"
+                          (click)="saveKey()"
+                        >
+                          @if (keyStatus() === 'checking') {
+                            <span class="ob__spinner" aria-hidden="true"></span>
+                            {{ t()('onboarding.ai.checking') }}
+                          } @else {
+                            <lucide-icon [img]="icons.checkCheck" [size]="15" aria-hidden="true" />
+                            {{ t()('onboarding.ai.save_check') }}
+                          }
+                        </button>
+                      </div>
+                      @if (keyStatus() === 'valid') {
+                        <div class="ob__key-status ob__key-status--valid">
+                          <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
+                          {{ t()('onboarding.ai.valid_note') }}
+                        </div>
+                      } @else if (keyStatus() === 'idle' && keyStored()) {
+                        <div class="ob__key-status ob__key-status--valid">
+                          <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
+                          {{ t()('onboarding.ai.already_saved_note') }}
+                        </div>
+                      } @else if (keyStatus() === 'invalid') {
+                        <div class="ob__key-status ob__key-status--invalid">
+                          <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+                          {{ t()('onboarding.ai.invalid_note') }}
+                        </div>
+                      } @else {
+                        <div class="ob__key-status ob__key-status--muted">
+                          <lucide-icon [img]="icons.lock" [size]="14" aria-hidden="true" />
+                          {{ t()('onboarding.ai.keyring_note') }}
+                        </div>
+                      }
+                      @if (keySaveError()) {
+                        <div class="ob__key-status ob__key-status--invalid">
+                          <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+                          {{ t()('onboarding.ai.error') }}
+                        </div>
+                      }
+                    </div>
+                    @if (guide().helpVideoUrl) {
+                      <button type="button" class="ob__link-btn" (click)="openVideo()">
+                        <lucide-icon [img]="icons.playCircle" [size]="15" aria-hidden="true" />
+                        {{ t()('onboarding.ai.watch_video') }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
 
-              <div class="ob__note">
-                <lucide-icon [img]="icons.clock" [size]="15" aria-hidden="true" />
-                <span class="ob__note-text"
-                  ><b>{{ t()('onboarding.ai.coming_soon') }} —</b>
-                  {{ t()('onboarding.ai.cli_bridge_note') }}</span
-                >
-              </div>
               <div class="ob__warning-row">
                 <lucide-icon [img]="icons.circleAlert" [size]="14" aria-hidden="true" />
                 {{ t()('onboarding.ai.skip_warning') }}

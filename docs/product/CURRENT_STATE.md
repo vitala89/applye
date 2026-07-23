@@ -1,32 +1,134 @@
 # Current Operational State
 
 - **Current version**: `0.26.0` (package.json / tauri.conf.json)
-- **Current branch / focus**: `feat/interview-prep-ai-generation`, cut from `main` after PR #147
-  merged. Completes the AI layer of Interview Prep (ROADMAP §6) - the schema (`interview_prep`
-  table) and the stage-tracking UI shipped back in v0.16.0, but three of the four skills it needs
-  were `TODO` stubs never registered in the loader, so the page could only log dates/notes by
-  hand. `interview-hr.md`, `interview-technical.md`, and `star-r.md` are now written and
-  registered in `ai/skills.rs`; each takes `profile_md` + `job_description` + `count` +
-  `existing_questions` and returns a JSON array of study cards - Q&A with STAR+R behavioral
-  answers plus comp-negotiation and smart-question cards for `interview-hr`, code-aware Q&A for
-  `interview-technical`, full STAR+R stories for `star-r`. New Rust commands
-  `list_interview_prep` / `save_interview_prep_batch` read/write the long-unused
-  `interview_prep` table, batch-inserting one row per card under a shared `input_hash`. The
-  stage detail page gets a **Prep** panel per stage, routed by `stageType` (behavioral -> STAR+R,
-  technical/system_design -> code Q&A, everything else -> HR-screen); "Generate" becomes
-  "Generate 5 more" once cards exist, and a repeat click with nothing new since is a 0-token
-  cache hit (existing questions are folded into the hash, so "more" is just the same call after
-  the card list changed). Along the way, fixed a real bug in the shared `cleanJsonText` helper:
-  it only ever extracted `{...}`, so an array-shaped skill response like `[{"question":...}]`
-  had its outer brackets stripped down to a bare object and `.map()` threw - it now detects
-  whichever bracket opens first. Verified: `cargo test --lib` (202, 10 new), `cargo clippy -- -D
-warnings`, `nx test desktop` (632, 6 new), `nx test core`/`data`/`i18n`, `nx lint desktop`,
-  `nx build desktop`, `impeccable detect` (clean) all green; the route was checked live in the
-  browser preview (loads, no console errors) but the actual generate round-trip needs a
-  `tauri dev` pass like every other AI-invoking command - the browser preview cannot reach Tauri
-  IPC, so `db_pipeline_cards`/`ai_run` are unreachable from it. **Native-only gate pending**: a
-  `tauri dev` pass to generate a real batch, confirm the cache-hit skip, and eyeball the STAR+R
-  card layout.
+- **Current branch / focus**: `fix/cli-bridge-probe-and-models`, cut from `main` after PR #152,
+  **open as PR #153**. Two defects found in the first live CLI-bridge run. (1) `cli_probe` only
+  checked that a file with the right name existed on the search path, so a partially installed
+  CLI showed a green tick in Settings and then failed on the first scoring call - these CLIs are
+  npm wrappers that spawn a platform binary, and an interrupted install leaves the wrapper
+  present with the binary gone (`spawn .../codex-darwin-arm64/vendor/.../codex ENOENT`). The
+  probe now runs `<binary> --version` with a 15s timeout and returns `working` / `version` /
+  `error` beside `installed`; Settings renders three states (runnable with version, found-but-
+  broken with the `npm install -g` repair command and the underlying error, absent) and Test
+  connection gates on `working` rather than `installed`. (2) CLI mode had free-text model fields,
+  which assumed the user knows their CLI's model names and let a stale API-mode value leak into a
+  CLI call (`--model 5.5` reached codex). Each CLI now has a dropdown: **CLI default
+  (recommended)** - the empty value, which omits `--model` entirely so the signed-in CLI picks
+  what the subscription covers - plus known names, plus **Other (type a name)**. Aliases are
+  preferred to full IDs since vendors rotate IDs; lists verified 2026-07-23 against the Claude
+  Code CLI reference and `developers.openai.com/codex/models`. Gemini CLI publishes no list
+  readable without signing in, so it offers only the default and the custom field rather than
+  guessed IDs. A stored name outside the list opens the custom field automatically. Verified:
+  `cargo test --lib` (235), `cargo clippy -- -D warnings`, `nx run-many -t test --all` (6
+  projects), `nx lint desktop` (0 errors), `nx build desktop`; probed live here - `claude`
+  2.1.218 and `gemini` 0.49.0 report working, `codex` exits 1 and is now correctly reported
+  broken. **Native-only gate pending**: the three-state CLI list, the model dropdowns and the
+  ATS card all need a `tauri dev` pass.
+
+  Extended after a live run surfaced more: **onboarding now offers CLI bridge mode**, which it
+  never did - the AI step only ever offered an API key and carried a "coming soon" note
+  promising the very thing that had already shipped. It now opens with a mode choice, lists the
+  three CLIs with their real state, and offers an **Install** button per CLI. The installer is a
+  new `cli_install` command: the npm package is chosen in Rust from a fixed list keyed on the
+  provider id and is never taken from the caller, so no input can make Applye install anything
+  else (a test asserts refusal for `deepseek`, `left-pad`, `../evil` and `claude; rm -rf /`).
+  npm missing is reported distinctly with a nodejs.org link, EACCES gets a named explanation,
+  and the UI states that installing does not sign the user in.
+
+  Three further bugs found while checking the surface end to end: (1) **onboarding never
+  persisted the provider or mode** - it saved the key but only ever wrote `onboardingSeen`, so
+  choosing OpenAI or DeepSeek left `provider = 'claude'` and every task failed on a missing key;
+  (2) **switching CLI -> API left both model fields blank**, since CLI mode blanks them by
+  design, so API mode sent `model: ""` and was rejected - the restore logic is now the pure,
+  tested `cli-models.util.ts`; (3) **the health check reported ok in CLI mode without checking
+  any CLI**, and the first draft of that fix used status `"error"`, which `worst()` does not
+  recognise and would have rolled up to an overall ok - caught before commit and pinned by a
+  test asserting `worst()` agrees.
+
+  Also corrected: the Codex model list. `gpt-5.6` and `gpt-5.3-codex` are in OpenAI's published
+  list but are **refused on a ChatGPT account** ("not supported when using Codex with a ChatGPT
+  account"), which is exactly the user CLI bridge exists for. The list now holds only names
+  confirmed live on a subscription (`gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`), and the hint says
+  model availability depends on the plan, which only the CLI knows.
+
+  **Codex is now verified end to end.** Its npm install on this machine was missing its vendored
+  binary; running the installer fixed it, and `codex exec -` returned the expected reply through
+  the adapter's exact invocation.
+
+  A later live run found **Gemini broken on every task**: `FatalUntrustedWorkspaceError`, "not
+  running in a trusted directory". Applye runs each CLI in an empty scratch dir rather than the
+  user's files, which is precisely the case Gemini's folder-trust check blocks, and headless it
+  cannot show the trust dialog. Fixed by setting `GEMINI_CLI_TRUST_WORKSPACE=true` on the child
+  process - chosen over the documented `--skip-trust` flag because an older CLI ignores an
+  unknown env var but dies on an unknown flag. The adapter trait grew an `env()` hook (default
+  empty) that both `run` and the version probe apply. Verified live: without the var, stderr
+  carries both the trust error and the account error; with it, only the account error remains.
+  The remaining `IneligibleTierError` then proved fatal to the provider itself. Google's own
+  announcement (gemini-cli discussion #28017, 2026-06-18) states Gemini CLI **stopped serving
+  Google AI Pro, AI Ultra and free individual accounts**, with only enterprise Code Assist
+  licences and API-key auth unaffected - precisely the inverse of CLI bridge's audience, a
+  consumer subscription with no API key. **Gemini has therefore been removed from CLI bridge**:
+  adapter deleted, dropped from the probe and install lists, and `adapter_for("gemini")` now
+  returns the actual reason rather than a generic "unsupported provider", so a stale setting
+  explains itself. Migration `0022` moves any `cli` + `gemini` row to `claude`, since the value
+  no longer appears in the picker and would otherwise render blank with every task failing.
+  Gemini stays a valid **API-mode** provider (still "coming soon" there). The successor,
+  Antigravity CLI (`agy`), installs via `curl | bash` rather than npm and is a different binary,
+  so it is a new adapter if ever wanted - a post-launch question, not a rename. The folder-trust
+  fix above is kept: it was a genuine bug, and it is what let the account error be seen clearly.
+
+  **Onboarding gained per-CLI setup instructions**, scoped to the selected provider so the three
+  status rows stay scannable: two ordered steps (install command, sign-in command) for a CLI
+  that is not working, and for one that is, a line saying that running is not the same as being
+  signed in, with the command to re-auth. Built with the impeccable skill's product register.
+  Three design defects were found and fixed in the process, two of them already merged: the ATS
+  findings list used a coloured `border-left` accent (a banned side-stripe) whose colour token
+  `--border` **does not exist**, so low-severity rows rendered a stripe in the text colour - now
+  a leading severity dot matching the verdict badge's existing dot; and the new onboarding mode
+  cards referenced `--surface-raised`, also not a real token, so they had no background.
+
+- **Prior branch / focus**: `feat/deterministic-ats-check`, **merged as PR #152**. The ATS check
+  was a single boolean the `job-scoring` model emitted - it read as a measurement but was an
+  opinion, not reproducible across runs, and never looked at the CV that would be uploaded. New
+  `commands/ats.rs` computes it: a pure function, no DB, no network, 0 tokens. Score is 0-100
+  from **keyword coverage** (60 points; the posting's requirement terms, weighted double inside a
+  requirements block, matched set-wise over unigrams and bigrams so `java` cannot match inside
+  `javascript`, with `c++` / `.net` / `node.js` / `ci/cd` surviving tokenisation, EN + DE
+  requirement headings) and **parsability** (40 points; unfindable email/phone, tables, absent or
+  unrecognisable section headings, no four-digit year, a suspiciously short export, decorative
+  bullets, link-only information, and a photo flagged only where a photo is a liability - a
+  Bewerbungsfoto is normal in DE/AT/CH). The model's ATS remark is kept below the computed result
+  as advice, and a failed local check falls back to the old boolean so nothing regresses. Three
+  bugs the tests caught while building it: every markdown heading level counted as a section, so
+  job titles under `###` read as unrecognised section names; all bullets were weighted up, which
+  pulled "free coffee" out of the benefits block into the scored terms; and requirement-adjective
+  filler scored as if it were a skill. 19 new Rust tests.
+- **Prior branch / focus**: `feat/cli-bridge-mode`, **merged as PR #150**. `ai/cli.rs` had been a
+  21-line stub since the AI layer shipped and Settings offered the mode disabled. Three adapters
+  with flags verified against current vendor docs: `claude -p --output-format json
+--system-prompt` (result + usage parsed), `codex exec -` in its read-only sandbox, `gemini
+--output-format json`. No shell anywhere (fixed argv via `tokio::process`), the prompt over
+  stdin rather than argv so it cannot leak into `ps`, a scratch working directory, `kill_on_drop`
+  plus a 10 minute timeout, stderr truncated into errors. Binary resolution searches `PATH` then
+  the standard install locations, because a Tauri app launched from Finder inherits a minimal
+  `PATH`. The Claude Code path was exercised end to end against the real CLI; Codex and Gemini
+  were verified only as far as argument acceptance (this machine's codex install is broken and
+  its gemini account tier-ineligible).
+- **Also merged**: PR #151, `docs/product/local-markets-analysis.md` - analysis for a
+  country-level market layer in Discover. Key findings: `sources.geo_tags_json` is already
+  country-level so no schema change is needed, anything publishing RSS costs no parser code, and
+  every candidate endpoint was probed live (verified: DOU.ua RSS for Ukraine, No Fluff Jobs for
+  Poland, Arbeitnow for Germany; credential-blocked: USAJOBS, job-room.ch, hh.ru). The USA has no
+  free public national index, so a US preset must lead with ATS company boards. Nothing
+  implemented - this is deferred past launch.
+- **Earlier branch / focus**: `feat/interview-prep-ai-generation`, **merged as PR #148** and
+  released as v0.26.0. Completed the AI layer of Interview Prep (ROADMAP §6): `interview-hr.md`,
+  `interview-technical.md` and `star-r.md` written and registered in `ai/skills.rs`, new
+  `list_interview_prep` / `save_interview_prep_batch` commands over the long-unused
+  `interview_prep` table, and a **Prep** panel per stage routed by `stageType`. Also fixed the
+  shared `cleanJsonText` helper, which only ever extracted `{...}` and so broke array-shaped
+  skill responses. **Native-only gate still pending**: a `tauri dev` pass to generate a real
+  batch and confirm the cache-hit skip.
 - **Prior branch / focus**: `feat/anschreiben-de-fields`, cut from `main`, **merged as PR #147**.
   Second **Germany pack**
   item from `docs/product/IDEAS.md` (the first, `feat/discover-de-sources`, is a separate open

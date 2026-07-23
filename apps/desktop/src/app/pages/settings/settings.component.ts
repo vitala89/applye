@@ -29,6 +29,7 @@ import { HealthCheckPanelComponent } from '../../core/health-check-panel.compone
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
 import { ToastService } from '../../core/toast/toast.service';
+import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models.util';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -64,11 +65,38 @@ const PROVIDER_VENDORS: Record<string, string> = {
 // CLI bridge mode: which local CLI each provider id maps to. `openai` is Codex
 // because the app's provider ids predate the CLI bridge; the Rust adapter
 // accepts both `openai` and `codex` for the same reason.
+// Gemini CLI is deliberately absent: Google stopped it serving personal
+// accounts on 2026-06-18 (see ai/cli.rs). It is still a valid API-mode
+// provider, so the id itself stays in AiProvider.
 const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
   { id: 'claude', label: 'Claude Code', command: 'claude' },
   { id: 'openai', label: 'Codex CLI', command: 'codex' },
-  { id: 'gemini', label: 'Gemini CLI', command: 'gemini' },
 ];
+
+// Model choices offered per CLI, so a user does not have to know the spelling.
+// Aliases are preferred over full model IDs wherever a CLI publishes them:
+// vendors rotate the IDs, and an alias keeps working across a model refresh.
+//
+// An empty value means "omit --model entirely and let the CLI choose", which is
+// the right default rather than a cop-out - the CLI is already signed in and
+// knows which models the user's subscription actually covers, and Applye does
+// not.
+//
+// IMPORTANT: which models a CLI will accept depends on the user's *plan*, not
+// just on what the vendor publishes. Codex on a ChatGPT account rejects
+// `gpt-5.6` and `gpt-5.3-codex` outright ("not supported when using Codex with
+// a ChatGPT account") even though both are in the public model list - and a
+// ChatGPT-account user is exactly who CLI bridge mode exists for. So this list
+// holds only names confirmed to work on a subscription, and the default stays
+// "let the CLI choose", which is the only option that is right for every plan.
+//
+// Tested live 2026-07-23 by invoking each CLI: codex accepted gpt-5.5, gpt-5.4
+// and gpt-5.4-mini on a ChatGPT account and refused gpt-5.6 / gpt-5.3-codex;
+// claude accepted the `sonnet` alias.
+const CLI_MODELS: Record<string, string[]> = {
+  claude: ['sonnet', 'opus', 'haiku'],
+  openai: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'],
+};
 
 /**
  * Phase 2 Settings — the first screen that touches AI. Wires the existing
@@ -145,19 +173,59 @@ const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
                 <p class="muted">Looking for installed CLIs…</p>
               } @else {
                 @for (c of cliStatuses(); track c.provider) {
-                  <p class="cli-status__row" [class.cli-status__row--missing]="!c.installed">
+                  <p
+                    class="cli-status__row"
+                    [class.cli-status__row--missing]="!c.installed"
+                    [class.cli-status__row--broken]="c.installed && !c.working"
+                  >
                     <lucide-icon
-                      [img]="c.installed ? icons.stored : icons.missing"
+                      [img]="c.working ? icons.stored : icons.missing"
                       [size]="14"
                       aria-hidden="true"
                     />
                     <strong>{{ c.label }}</strong>
-                    @if (c.installed) {
+                    @if (c.working) {
+                      <span class="cli-status__version">{{ c.version }}</span>
                       <span class="cli-status__path">{{ c.path }}</span>
+                    } @else if (c.installed) {
+                      <!-- Found on the path but it will not run. The npm
+                           wrappers spawn a platform binary that a partial
+                           install can leave missing, so this state looks
+                           healthy to a file check and fails on first use. -->
+                      <span class="cli-status__broken">
+                        {{ t()('settings.cli_found_but_broken') }}
+                      </span>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="installingCli() !== null"
+                        (click)="installCli(c.provider)"
+                      >
+                        {{
+                          installingCli() === c.provider
+                            ? t()('settings.cli_installing')
+                            : t()('settings.cli_repair_btn')
+                        }}
+                      </button>
+                      @if (c.error) {
+                        <span class="cli-status__error">{{ c.error }}</span>
+                      }
                     } @else {
                       <span
-                        >not found — install <code>{{ c.command }}</code> and sign in to it</span
+                        >{{ t()('settings.cli_not_found') }} <code>{{ c.command }}</code></span
                       >
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="installingCli() !== null"
+                        (click)="installCli(c.provider)"
+                      >
+                        {{
+                          installingCli() === c.provider
+                            ? t()('settings.cli_installing')
+                            : t()('settings.cli_install_btn')
+                        }}
+                      </button>
                     }
                   </p>
                 }
@@ -195,23 +263,53 @@ const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
             @if (isCliMode()) {
               <label class="field">
                 <span class="cap">{{ t()('settings.quality_model_label') }}</span>
-                <input
-                  type="text"
-                  [ngModel]="s.defaultModel"
-                  (ngModelChange)="patch('defaultModel', $event)"
+                <select
+                  [ngModel]="modelSelectValue(s.defaultModel)"
+                  (ngModelChange)="onCliModelSelect('defaultModel', $event)"
                   [ngModelOptions]="{ standalone: true }"
-                  placeholder="leave empty for the CLI's own default"
-                />
+                >
+                  <option value="">{{ t()('settings.cli_model_default') }}</option>
+                  @for (m of cliModels(); track m) {
+                    <option [value]="m">{{ m }}</option>
+                  }
+                  <option [value]="CLI_MODEL_CUSTOM">
+                    {{ t()('settings.cli_model_custom') }}
+                  </option>
+                </select>
+                @if (customModel().defaultModel) {
+                  <input
+                    type="text"
+                    [ngModel]="s.defaultModel"
+                    (ngModelChange)="patch('defaultModel', $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [placeholder]="t()('settings.cli_model_custom_placeholder')"
+                  />
+                }
               </label>
               <label class="field">
                 <span class="cap">{{ t()('settings.economy_model_label') }}</span>
-                <input
-                  type="text"
-                  [ngModel]="s.economyModel"
-                  (ngModelChange)="patch('economyModel', $event)"
+                <select
+                  [ngModel]="modelSelectValue(s.economyModel)"
+                  (ngModelChange)="onCliModelSelect('economyModel', $event)"
                   [ngModelOptions]="{ standalone: true }"
-                  placeholder="leave empty for the CLI's own default"
-                />
+                >
+                  <option value="">{{ t()('settings.cli_model_default') }}</option>
+                  @for (m of cliModels(); track m) {
+                    <option [value]="m">{{ m }}</option>
+                  }
+                  <option [value]="CLI_MODEL_CUSTOM">
+                    {{ t()('settings.cli_model_custom') }}
+                  </option>
+                </select>
+                @if (customModel().economyModel) {
+                  <input
+                    type="text"
+                    [ngModel]="s.economyModel"
+                    (ngModelChange)="patch('economyModel', $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [placeholder]="t()('settings.cli_model_custom_placeholder')"
+                  />
+                }
               </label>
             } @else {
               <label class="field">
@@ -241,11 +339,7 @@ const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
             }
           </div>
           @if (isCliMode()) {
-            <p class="hint">
-              Model names are passed straight through to the CLI, so use whatever that CLI accepts
-              (for example <code>sonnet</code> or <code>opus</code> for Claude Code). Leave a field
-              empty and Applye omits the flag entirely, letting the CLI pick.
-            </p>
+            <p class="hint">{{ t()('settings.cli_model_hint') }}</p>
           }
 
           <div class="field">
@@ -648,6 +742,28 @@ const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
       .cli-status__row--missing {
         color: var(--text-tertiary);
       }
+      /* Present but unrunnable is a louder problem than absent: the user
+         believes this CLI is installed, and nothing else on screen disagrees. */
+      .cli-status__row--broken {
+        flex-wrap: wrap;
+        color: var(--warning);
+      }
+      .cli-status__broken code {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+      }
+      .cli-status__error {
+        flex-basis: 100%;
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
+        word-break: break-all;
+      }
+      .cli-status__version {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--text-secondary);
+      }
       .cli-status__path {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
@@ -928,9 +1044,84 @@ export class SettingsComponent implements OnInit {
     return this.cliStatuses().find((c) => c.provider === provider);
   }
 
-  /** Test connection needs a stored key in API mode, an installed CLI in CLI mode. */
+  /** Test connection needs a stored key in API mode, and in CLI mode a CLI that
+   * actually **runs** - being present on the path is not enough, since a broken
+   * npm wrapper is present and still fails on the first call. */
   canTest(): boolean {
-    return this.isCliMode() ? (this.currentCliStatus()?.installed ?? false) : this.keyStored();
+    return this.isCliMode() ? (this.currentCliStatus()?.working ?? false) : this.keyStored();
+  }
+
+  /** Provider currently installing, so only that row shows progress. */
+  readonly installingCli = signal<AiProvider | null>(null);
+
+  /**
+   * Installs or repairs a CLI with npm. The package name is chosen in Rust
+   * from a fixed list keyed on the provider id - it is never sent from here,
+   * so no input can make Applye install something else.
+   */
+  async installCli(provider: AiProvider): Promise<void> {
+    if (this.installingCli()) return;
+    this.installingCli.set(provider);
+    try {
+      const result = await this.ai.installCli(provider);
+      if (result.ok) {
+        await this.refreshCliProbe();
+        this.toast.success('settings.cli_installed');
+      } else {
+        this.toast.error(result.message);
+      }
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.installingCli.set(null);
+    }
+  }
+
+  // --- CLI model pickers ---
+  protected readonly CLI_MODEL_CUSTOM = CLI_MODEL_CUSTOM;
+
+  /** Known model names for the selected CLI. Empty for a CLI that publishes no
+   * readable list - the dropdown then offers the default and a custom field. */
+  cliModels(): string[] {
+    return CLI_MODELS[this.settings()?.provider ?? ''] ?? [];
+  }
+
+  /** Which of the two model fields are currently in free-text mode. */
+  readonly customModel = signal<{ defaultModel: boolean; economyModel: boolean }>({
+    defaultModel: false,
+    economyModel: false,
+  });
+
+  /**
+   * What the dropdown should show for a stored value: the value itself when it
+   * is one of the known names, "custom" when it is a name typed by hand, and
+   * the empty option when nothing is set. Deriving this rather than storing it
+   * means a settings row written before the picker existed - or by hand - still
+   * shows up correctly.
+   */
+  modelSelectValue(stored: string): string {
+    return cliModelSelectValue(stored, this.cliModels());
+  }
+
+  /** Opens the free-text field for any stored model that is not a known name,
+   * so an existing hand-typed value stays visible and editable. */
+  private syncCustomModelFlags(): void {
+    const s = this.settings();
+    const known = this.cliModels();
+    const isCustom = (v: string) => !!v && !known.includes(v);
+    this.customModel.set({
+      defaultModel: isCustom(s?.defaultModel ?? ''),
+      economyModel: isCustom(s?.economyModel ?? ''),
+    });
+  }
+
+  onCliModelSelect(field: 'defaultModel' | 'economyModel', choice: string): void {
+    if (choice === CLI_MODEL_CUSTOM) {
+      this.customModel.update((c) => ({ ...c, [field]: true }));
+      return;
+    }
+    this.customModel.update((c) => ({ ...c, [field]: false }));
+    this.patch(field, choice);
   }
 
   async refreshCliProbe(): Promise<void> {
@@ -961,9 +1152,25 @@ export class SettingsComponent implements OnInit {
         await this.onProviderChange('claude');
       }
       await this.refreshCliProbe();
-    } else if (s.provider !== 'claude' && s.provider !== 'deepseek') {
-      await this.onProviderChange('claude');
+      return;
     }
+    // Back to API mode. A CLI-less provider has to move, but the models need
+    // restoring either way: switching to CLI blanks them ("let the CLI pick"),
+    // and an empty model is not a valid API request - it would be sent to the
+    // provider verbatim and rejected.
+    if (s.provider !== 'claude' && s.provider !== 'deepseek') {
+      await this.onProviderChange('claude');
+      return;
+    }
+    this.restoreApiModels(s.provider);
+  }
+
+  /** Puts back this provider's default model pair when the stored ones are
+   * blank or belong to a different provider. */
+  private restoreApiModels(provider: string): void {
+    const patch = apiModelsToRestore(this.settings(), PROVIDER_DEFAULTS[provider], this.models);
+    if (patch.defaultModel !== undefined) this.patch('defaultModel', patch.defaultModel);
+    if (patch.economyModel !== undefined) this.patch('economyModel', patch.economyModel);
   }
 
   /** Vendor name shown in the privacy note (e.g. "Anthropic"). Falls back to
@@ -992,7 +1199,10 @@ export class SettingsComponent implements OnInit {
       this.settings.set(s);
       this.i18n.setLocale(s.uiLanguage);
       this.keyStored.set(await this.keys.hasProviderKey(s.provider));
-      if (s.aiMode === 'cli') await this.refreshCliProbe();
+      if (s.aiMode === 'cli') {
+        this.syncCustomModelFlags();
+        await this.refreshCliProbe();
+      }
     } catch (e) {
       this.toast.error(String(e));
     } finally {
@@ -1066,6 +1276,7 @@ export class SettingsComponent implements OnInit {
       // The user can still type a CLI alias such as "sonnet".
       this.patch('defaultModel', '');
       this.patch('economyModel', '');
+      this.customModel.set({ defaultModel: false, economyModel: false });
       return;
     }
     // Reset model picks to the new provider's defaults when the current ones

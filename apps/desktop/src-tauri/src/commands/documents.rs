@@ -1362,6 +1362,25 @@ pub async fn document_library_delete(id: i64, db: State<'_, Db>) -> Result<(), S
 }
 
 async fn document_library_delete_core(id: i64, pool: &sqlx::SqlitePool) -> Result<(), String> {
+    // Clear the references first. `db_upsert_application` COALESCEs the two
+    // document ids (so an ordinary save cannot drop a link), which means the
+    // frontend has no way to unlink; without this, deleting a linked document
+    // leaves the application pointing at a row that no longer exists.
+    sqlx::query(
+        "UPDATE applications
+            SET cv_document_id = CASE WHEN cv_document_id = ? THEN NULL ELSE cv_document_id END,
+                cover_letter_document_id = CASE WHEN cover_letter_document_id = ? THEN NULL
+                                                ELSE cover_letter_document_id END
+          WHERE cv_document_id = ? OR cover_letter_document_id = ?",
+    )
+    .bind(id)
+    .bind(id)
+    .bind(id)
+    .bind(id)
+    .execute(pool)
+    .await
+    .map_err(|e| format!("document_library_delete (unlink): {e}"))?;
+
     sqlx::query("DELETE FROM document_library WHERE id = ?")
         .bind(id)
         .execute(pool)
@@ -1428,6 +1447,58 @@ mod tests {
         }
         let de_trad = rows.iter().find(|(n, _)| n == "DE-traditional").unwrap();
         assert!(de_trad.1.starts_with("[\"photo\""));
+    }
+
+    /// Deleting a linked document must not leave an application pointing at a
+    /// row that no longer exists. The frontend cannot fix this itself:
+    /// `db_upsert_application` COALESCEs both document ids, so it can set a
+    /// link but never clear one.
+    #[tokio::test]
+    async fn document_library_delete_unlinks_the_application_that_referenced_it() {
+        let pool = test_pool().await;
+        sqlx::query("INSERT INTO jobs (id, jd_text, jd_hash) VALUES (1, 'jd', 'h1')")
+            .execute(&pool)
+            .await
+            .unwrap();
+        let templates = cv_templates_list_core(&pool).await.expect("list templates");
+        let cv = document_library_upsert_core(cv_input(templates[0].id), &pool)
+            .await
+            .expect("insert cv");
+        let letter = document_library_upsert_core(
+            UpsertDocumentLibraryItemInput {
+                doc_type: "cover_letter".to_string(),
+                ..cv_input(templates[0].id)
+            },
+            &pool,
+        )
+        .await
+        .expect("insert letter");
+        sqlx::query(
+            "INSERT INTO applications (id, job_id, status, cv_document_id, cover_letter_document_id)
+             VALUES (1, 1, 'saved', ?, ?)",
+        )
+        .bind(cv.id)
+        .bind(letter.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        document_library_delete_core(cv.id, &pool)
+            .await
+            .expect("delete cv");
+
+        let (cv_ref, letter_ref): (Option<i64>, Option<i64>) = sqlx::query_as(
+            "SELECT cv_document_id, cover_letter_document_id FROM applications WHERE id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(cv_ref, None, "the deleted CV link must be cleared");
+        assert_eq!(
+            letter_ref,
+            Some(letter.id),
+            "an unrelated document link must survive"
+        );
     }
 
     fn cv_input(template_id: i64) -> UpsertDocumentLibraryItemInput {

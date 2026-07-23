@@ -30,6 +30,8 @@ import {
   Save,
   Check,
   Info,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-angular';
 import type {
   CvContent,
@@ -140,6 +142,8 @@ export class CvDetailComponent {
     edit: Pencil,
     check: Check,
     info: Info,
+    panelClose: PanelRightClose,
+    panelOpen: PanelRightOpen,
     dragHandle: GripVertical,
     moveUp: ChevronUp,
     moveDown: ChevronDown,
@@ -291,6 +295,9 @@ export class CvDetailComponent {
   /** The section/part the user has clicked in the live preview, driving the
    * contextual `CvLiveStylePanelComponent` beside the paper. Null until the
    * first selection; cleared is fine (panel shows its empty state). */
+  /** Live-style panel visibility. Collapsing it hands the reclaimed width to
+   * the paper, which is the whole point of the preview. */
+  readonly livePanelOpen = signal(true);
   readonly liveSelection = signal<CvPreviewSelection | null>(null);
 
   /** Plain text of the currently-selected leaf, fed to the live-style panel's

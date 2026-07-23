@@ -164,7 +164,7 @@
   &--lg {
     height: 38px;
     padding: 0 var(--space-5);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
   }
 
   &__dot {
@@ -309,7 +309,7 @@
     margin: 0;
     max-width: 380px;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     line-height: 1.6;
     color: var(--text-secondary);
   }
@@ -340,7 +340,7 @@
 
   &__sub {
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     color: var(--text-secondary);
   }
 
@@ -489,7 +489,7 @@
     margin: 0;
     max-width: 360px;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     line-height: 1.6;
     color: var(--text-secondary);
   }
@@ -912,7 +912,7 @@
   &__dp {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     line-height: 1.65;
     color: var(--text-secondary);
   }
@@ -926,7 +926,7 @@
 
     li {
       font-family: var(--font-sans);
-      font-size: var(--text-base);
+      font-size: var(--text-body);
       line-height: 1.55;
       color: var(--text-secondary);
 
@@ -1081,7 +1081,7 @@
 
   &__title {
     margin: 0 0 var(--space-2);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     font-weight: var(--weight-semibold);
     color: var(--text-primary);
   }

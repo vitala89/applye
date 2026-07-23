@@ -1,8 +1,14 @@
 # Current Operational State
 
 - **Current version**: `0.26.0` (package.json / tauri.conf.json)
-- **Current branch / focus**: `fix/cli-bridge-probe-and-models`, cut from `main` after PR #152,
-  **open as PR #153**. Two defects found in the first live CLI-bridge run. (1) `cli_probe` only
+- **Current branch / focus**: none — `main`, clean tree, no open PRs. The four branches below all
+  merged during the 2026-07-23 session.
+- **Next action**: a `tauri dev` pass. Four features merged with **no native verification between
+  them** (CLI-bridge Settings + onboarding UI, the ATS card, the assisted installer, Interview
+  Prep batch generation). The browser preview cannot reach Tauri IPC, so none of it has been seen
+  running. This is the only thing standing between `main` and launch prep.
+- **Merged: `fix/cli-bridge-probe-and-models` → PR #153.** Two defects found in the first live
+  CLI-bridge run, then five more found while checking the surface end to end. (1) `cli_probe` only
   checked that a file with the right name existed on the search path, so a partially installed
   CLI showed a green tick in Settings and then failed on the first scoring call - these CLIs are
   npm wrappers that spawn a platform binary, and an interrupted install leaves the wrapper

@@ -150,6 +150,21 @@ export interface CoverLetterContent {
   /** AI generation length target, e.g. "Concise" | "Standard" | "Detailed".
    * Maps to a body word budget (see `COVER_LETTER_LENGTH_TARGET`). */
   length?: CoverLetterLength;
+  /** Earliest possible start date, as the user words it ("ab sofort",
+   * "01.10.2026"). German postings routinely require it
+   * (frühestmöglicher Eintrittstermin) and filter letters that omit it. */
+  earliestStart?: string;
+  /** Salary expectation, as the user words it ("75.000 EUR brutto/Jahr").
+   * The German Gehaltsvorstellung, likewise routinely required. */
+  salaryExpectation?: string;
+  /** Notice period at the current employer ("3 Monate zum Quartalsende").
+   * Only stated when it actually constrains the start date. */
+  noticePeriod?: string;
+  /** Enclosure line under the signature ("Lebenslauf, Zeugnisse"). A German
+   * application is a Bewerbungsmappe, and DIN 5008 closes the letter with an
+   * `Anlagen` line naming what travels with it. Free text; empty renders
+   * nothing at all. */
+  attachments?: string;
   hashes?: {
     subject?: string;
     greeting?: string;

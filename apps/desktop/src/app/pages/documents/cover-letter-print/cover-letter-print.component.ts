@@ -26,7 +26,7 @@ import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-lette
   imports: [CoverLetterPreviewComponent],
   template: `
     @if (loaded()) {
-      <app-cover-letter-preview [content]="content()" [style]="style()" />
+      <app-cover-letter-preview [content]="content()" [style]="style()" [language]="language()" />
     }
   `,
 })
@@ -47,6 +47,9 @@ export class CoverLetterPrintComponent {
     length: COVER_LETTER_LENGTH_DEFAULT,
   });
   readonly style = signal<CoverLetterStyle>({ ...COVER_LETTER_STYLE_DEFAULT });
+  /** Drives the German date convention in the shared render; the export must
+   * be fed the same language the editor shows or the two drift. */
+  readonly language = signal('en');
 
   constructor() {
     void this.load();
@@ -65,6 +68,7 @@ export class CoverLetterPrintComponent {
       parsed.length ??= COVER_LETTER_LENGTH_DEFAULT;
       this.content.set(parsed);
     }
+    this.language.set(item.language ?? 'en');
     this.style.set(
       item.styleJson
         ? { ...COVER_LETTER_STYLE_DEFAULT, ...JSON.parse(item.styleJson) }

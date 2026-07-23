@@ -192,6 +192,35 @@ mod tests {
         );
     }
 
+    /// The availability answers a German posting asks for reach the prompt,
+    /// and an unanswered one leaves no placeholder behind - the letter must
+    /// stay silent about it rather than print `{{salary_expectation}}`.
+    #[test]
+    fn cover_letter_carries_availability_and_salary() {
+        let r = render(
+            "cover-letter-generate",
+            &ctx(&[
+                ("profile_md", "Jane Doe"),
+                ("job_description", "Frontend"),
+                ("language", "de"),
+                ("section", "all"),
+                ("tone", "Formal"),
+                ("length", "Standard"),
+                ("earliest_start", "01.10.2026"),
+                ("salary_expectation", ""),
+                ("notice_period", "3 Monate zum Quartalsende"),
+            ]),
+        )
+        .unwrap();
+        let prompt = format!("{}{}", r.system_prompt, r.user_prompt);
+        assert!(prompt.contains("01.10.2026"));
+        assert!(prompt.contains("3 Monate zum Quartalsende"));
+        assert!(
+            !prompt.contains("{{"),
+            "unreplaced placeholder left in the prompt: {prompt}"
+        );
+    }
+
     #[test]
     fn every_registered_skill_renders() {
         for name in [

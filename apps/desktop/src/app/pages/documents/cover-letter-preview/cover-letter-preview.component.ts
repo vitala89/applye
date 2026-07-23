@@ -9,7 +9,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
-import type { CoverLetterBlockKey, CoverLetterContent, CoverLetterStyle } from '@applye/core';
+import {
+  formatLetterDate,
+  stripSubjectLabel,
+  type CoverLetterBlockKey,
+  type CoverLetterContent,
+  type CoverLetterStyle,
+} from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { PaginatedSheetComponent, type SheetAtom, type SheetGeometry } from '@applye/ui';
 import {
@@ -40,6 +46,9 @@ export class CoverLetterPreviewComponent {
 
   readonly content = input.required<CoverLetterContent>();
   readonly style = input.required<CoverLetterStyle>();
+  /** The document's language, used only for German date conventions. Optional
+   * so an embedder that has no language still renders. */
+  readonly language = input<string>('en');
 
   /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
   private static readonly PX_PER_MM = 96 / 25.4;
@@ -76,6 +85,7 @@ export class CoverLetterPreviewComponent {
   readonly bodyTpl = viewChild.required<TemplateRef<unknown>>('bodyTpl');
   readonly closingTpl = viewChild.required<TemplateRef<unknown>>('closingTpl');
   readonly signatureTpl = viewChild.required<TemplateRef<unknown>>('signatureTpl');
+  readonly attachmentsTpl = viewChild.required<TemplateRef<unknown>>('attachmentsTpl');
 
   /** Flattens the letter's fixed block order into ordered page atoms for
    * `<lib-paginated-sheet>`. The letter has no section titles, so no atom
@@ -84,9 +94,15 @@ export class CoverLetterPreviewComponent {
     const c = this.content();
     const out: SheetAtom[] = [];
     out.push({ id: 'address', tpl: this.addressTpl(), ctx: { $implicit: c.address } });
-    out.push({ id: 'date', tpl: this.dateTpl(), ctx: { $implicit: c.date } });
-    if (c.subject) {
-      out.push({ id: 'subject', tpl: this.subjectTpl(), ctx: { $implicit: c.subject } });
+    out.push({
+      id: 'date',
+      tpl: this.dateTpl(),
+      ctx: { $implicit: formatLetterDate(c.date, this.language()) },
+    });
+    // DIN 5008 abolished the "Betreff:" label; the subject stands on its own.
+    const subject = stripSubjectLabel(c.subject);
+    if (subject) {
+      out.push({ id: 'subject', tpl: this.subjectTpl(), ctx: { $implicit: subject } });
     }
     out.push({ id: 'greeting', tpl: this.greetingTpl(), ctx: { $implicit: c.greeting } });
     (c.bodyParagraphs || []).forEach((p, i) =>
@@ -94,6 +110,14 @@ export class CoverLetterPreviewComponent {
     );
     out.push({ id: 'closing', tpl: this.closingTpl(), ctx: { $implicit: c.closing } });
     out.push({ id: 'signature', tpl: this.signatureTpl(), ctx: { $implicit: c.signature } });
+    const attachments = (c.attachments ?? '').trim();
+    if (attachments) {
+      out.push({
+        id: 'attachments',
+        tpl: this.attachmentsTpl(),
+        ctx: { $implicit: attachments },
+      });
+    }
     return out;
   });
 

@@ -21,6 +21,18 @@ inputs:
     description: >
       Body length preset: Concise (~120-200 words), Standard (~200-320 words), or Detailed
       (~320-450 words) across all body paragraphs. Defaults to Standard.
+  - name: earliest_start
+    description: >
+      Earliest possible start date, in the user's own words ("ab sofort", "01.10.2026"). Empty
+      when the user did not state one.
+  - name: salary_expectation
+    description: >
+      Salary expectation, in the user's own words ("75.000 EUR brutto/Jahr"). Empty when the
+      user did not state one.
+  - name: notice_period
+    description: >
+      Notice period at the current employer ("3 Monate zum Quartalsende"). Empty when there is
+      none or the user did not state one.
 output_format: valid JSON only — no markdown, no preamble
 recommended_model: claude-sonnet-5
 ---
@@ -34,6 +46,7 @@ Rules:
 - Output in the requested language ({{language}}). If DE (German), use formal "Sie" (Sie/Ihnen), and match standard German business letter conventions.
 - Write the body in a {{tone}} tone: Formal = reserved, professional, restrained; Friendly = warm, personable, approachable; Confident = assertive, achievement-led, direct; Enthusiastic = energetic, motivated, positive. The tone shapes wording only — never fabricate facts, and keep DE letters in formal "Sie".
 - Target a {{length}} body length: Concise ≈ 120-200 words, Standard ≈ 200-320 words, Detailed ≈ 320-450 words, counted across all body paragraphs combined. Adjust depth and number of supporting points to hit the target; do not pad with filler or repeat points to reach it.
+- Availability and salary: German postings routinely ask for a frühestmöglicher Eintrittstermin and a Gehaltsvorstellung, and a letter that omits them is often filtered out. When earliest_start ("{{earliest_start}}"), salary_expectation ("{{salary_expectation}}") or notice_period ("{{notice_period}}") is non-empty, state it in the FINAL body paragraph, in one or two plain sentences before the closing - never as a bullet list, never in the subject. Use the values exactly as given; do not convert a currency, reword a date, or invent a figure. When a value is empty, say nothing about it at all: no "salary negotiable", no "available immediately", no placeholder. When only notice_period is given, phrase it as what constrains the start date, not as a standalone fact.
 - If {{section}} is "all": generate the full cover letter structure.
 - If {{section}} is not "all" (e.g., greeting, subject, body_0, body_1, body_2, closing, signature): only regenerate the text for that specific field/paragraph. Every other field/paragraph must be empty (null for address, empty string for date/subject/greeting/closing/signature, or empty array/empty elements in bodyParagraphs) — the caller will merge the newly generated block into the existing letter.
 - For body paragraph indices (body_0, body_1, body_2): return the bodyParagraphs array with ONLY the requested index populated, others empty.

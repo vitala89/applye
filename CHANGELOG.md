@@ -10,7 +10,15 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-07-23
+
 ### Added
+
+- **Interview Prep can now generate study cards.** The stage timeline shipped in v0.16.0 could only log dates and notes by hand - the skills behind it were unwritten stubs, so nothing behind the page actually used AI. Each stage now has a **Prep** panel: HR/final rounds get behavioral Q&A (STAR+R format) plus comp-negotiation talking points and smart questions to ask the interviewer; technical/system-design rounds get Q&A with working code examples where relevant; behavioral rounds get full STAR+R stories. "Generate 5" becomes "5 more" once cards exist, and re-generating with nothing new since the last batch is a 0-token cache hit.
+
+### Fixed
+
+- **AI responses shaped as a JSON array no longer lose their outer brackets.** The shared JSON-cleanup helper used by every AI-generation flow only ever looked for `{...}`, so a response like `[{"question":"..."}]` had its list brackets stripped down to a bare object and broke on `.map()`. It now detects whichever bracket type opens first. Affects the new Interview Prep skills; cover letter and CV generation were already object-shaped and are unaffected.
 
 - **Discover can now scan the German job market.** The three built-in sources are remote-first and English-speaking, so setting the geo scope to Germany scanned feeds that carry almost no German posting. Discover ships a fourth built-in source, the **Bundesagentur für Arbeit** job search - the federal employment agency's own public job index, by far the largest in Germany. Like every built-in source it arrives switched off; enable it in the Sources drawer. Full posting texts are fetched only for the jobs that pass your title and location filters, so a scan does not pull hundreds of descriptions you will never see.
 - **Company boards on Personio can be added as Discover sources.** Personio is the ATS most German small and mid-size employers run their careers page on, and its board feed is public XML. "Add company board" now offers Personio alongside Greenhouse, Lever and Ashby - enter the company's slug (the `muster` in `muster.jobs.personio.de`) and its openings join the scan, with the full German posting text including the "Aufgaben" and "Dein Profil" sections.

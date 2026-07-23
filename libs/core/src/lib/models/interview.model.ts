@@ -86,6 +86,25 @@ export interface InterviewPrep {
   createdAt: string;
 }
 
+export interface NewPrepCardInput {
+  question?: string;
+  answer?: string;
+  starSituation?: string;
+  starTask?: string;
+  starAction?: string;
+  starResult?: string;
+  starReflection?: string;
+}
+
+export interface SaveInterviewPrepBatchInput {
+  stageId: number;
+  format: PrepFormat;
+  language: SupportedLanguage;
+  inputHash: string;
+  modelUsed: string;
+  cards: NewPrepCardInput[];
+}
+
 export interface Pitch {
   id: number;
   scope: 'default' | 'application';

@@ -117,6 +117,7 @@ const ATS_LABEL: Record<string, string> = {
   ats_greenhouse: 'GH',
   ats_lever: 'LEVER',
   ats_ashby: 'ASHBY',
+  ats_personio: 'PERSONIO',
 };
 
 /** Static tech dictionary for the deterministic "skills found in posting" chips. */
@@ -269,9 +270,9 @@ export class DiscoverComponent {
 
   // sources drawer forms
   protected readonly boardFormOpen = signal(false);
-  protected readonly boardType = signal<'ats_greenhouse' | 'ats_lever' | 'ats_ashby'>(
-    'ats_greenhouse',
-  );
+  protected readonly boardType = signal<
+    'ats_greenhouse' | 'ats_lever' | 'ats_ashby' | 'ats_personio'
+  >('ats_greenhouse');
   protected readonly boardSlug = signal('');
   protected readonly rssUrl = signal('');
   protected readonly rssName = signal('');

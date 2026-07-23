@@ -88,6 +88,11 @@ struct RawJob {
     jd_text: String,
     location: String,
     url: String,
+    /// Set by sources whose list endpoint carries no job description, holding
+    /// the id the detail endpoint needs. Resolved after the local filters have
+    /// run, so one detail request is spent per job the user could actually
+    /// see - never per job in the feed.
+    detail_ref: Option<String>,
 }
 
 struct SourceRow {
@@ -340,9 +345,44 @@ fn parse_geo_scopes(raw: &str) -> Vec<String> {
 }
 
 /// Names a 2-letter country code also answers to in freetext locations.
+///
+/// German boards - the federal agency's feed, and the company boards on
+/// Personio - routinely give the city alone ("Berlin", "Muenchen"), with no
+/// country anywhere in the string, so a Germany scope would silently drop its
+/// own market. The largest German cities are therefore country tokens too, in
+/// both the German and the English spelling. The trade is deliberate: a
+/// same-named city elsewhere (Frankfort, KY) slips through, which the user can
+/// see and dismiss, where a dropped job is invisible.
 fn country_tokens(code: &str) -> Vec<&'static str> {
     match code {
-        "de" => vec!["de", "germany", "deutschland"],
+        "de" => vec![
+            "de",
+            "germany",
+            "deutschland",
+            "berlin",
+            "hamburg",
+            "muenchen",
+            "münchen",
+            "munich",
+            "köln",
+            "koeln",
+            "cologne",
+            "frankfurt",
+            "stuttgart",
+            "düsseldorf",
+            "duesseldorf",
+            "dusseldorf",
+            "leipzig",
+            "dortmund",
+            "nürnberg",
+            "nuernberg",
+            "nuremberg",
+            "hannover",
+            "bremen",
+            "dresden",
+            "karlsruhe",
+            "mannheim",
+        ],
         "at" => vec!["at", "austria"],
         "ch" => vec!["ch", "switzerland"],
         "fr" => vec!["fr", "france"],
@@ -463,6 +503,7 @@ fn parse_remotive(val: &serde_json::Value) -> Vec<RawJob> {
             jd_text: html_to_text(&json_str(j, "description")),
             location: json_str(j, "candidate_required_location"),
             url: json_str(j, "url"),
+            detail_ref: None,
         })
         .collect()
 }
@@ -516,6 +557,7 @@ fn parse_himalayas(val: &serde_json::Value) -> Vec<RawJob> {
                 jd_text: html_to_text(&body),
                 location,
                 url,
+                detail_ref: None,
             }
         })
         .collect()
@@ -659,6 +701,7 @@ fn parse_rss_items(xml: &str, split_company_from_title: bool) -> Vec<RawJob> {
             jd_text,
             location,
             url: xml_tag(item, "link").unwrap_or_default(),
+            detail_ref: None,
         });
     }
     out
@@ -688,6 +731,7 @@ fn parse_greenhouse_board(val: &serde_json::Value, company: &str) -> Vec<RawJob>
                     .map(|l| json_str(l, "name"))
                     .unwrap_or_default(),
                 url: json_str(j, "absolute_url"),
+                detail_ref: None,
             }
         })
         .collect()
@@ -714,6 +758,7 @@ fn parse_lever_postings(val: &serde_json::Value, company: &str) -> Vec<RawJob> {
                     .map(|c| json_str(c, "location"))
                     .unwrap_or_default(),
                 url: json_str(j, "hostedUrl"),
+                detail_ref: None,
             }
         })
         .collect()
@@ -745,6 +790,157 @@ fn parse_ashby_board(val: &serde_json::Value) -> Vec<RawJob> {
                 jd_text: html_to_text(&body),
                 location: json_str(j, "location"),
                 url,
+                detail_ref: None,
+            }
+        })
+        .collect()
+}
+
+/// {slug}.jobs.personio.de/xml: `<position>` blocks with `<name>`, `<office>`,
+/// `<id>` and a `<jobDescriptions>` list of CDATA HTML sections. Personio is
+/// the dominant ATS for German small and mid-size employers, and its board
+/// feed is public XML built for machine reading.
+///
+/// Every description section is concatenated, keeping its heading ("Aufgaben",
+/// "Dein Profil"), because the split between them is where a German posting
+/// puts its actual requirements.
+fn parse_personio_xml(xml: &str, slug: &str, company_fallback: &str) -> Vec<RawJob> {
+    let mut out = Vec::new();
+    for block in xml.split("<position>").skip(1) {
+        let block = block.split("</position>").next().unwrap_or("");
+        // <name> is used both for the position title and for each description
+        // section heading, so read the title from the block before the
+        // descriptions start.
+        let head = block.split("<jobDescriptions>").next().unwrap_or(block);
+        let Some(title) = xml_tag(head, "name") else {
+            continue;
+        };
+        let company = xml_tag(head, "subcompany").unwrap_or_else(|| company_fallback.to_string());
+        let location = xml_tag(head, "office").unwrap_or_default();
+        let id = xml_tag(head, "id").unwrap_or_default();
+
+        let sections = block.split("<jobDescription>").skip(1);
+        let mut body = String::new();
+        for section in sections {
+            let section = section.split("</jobDescription>").next().unwrap_or("");
+            if let Some(heading) = xml_tag(section, "name") {
+                body.push_str(&heading);
+                body.push('\n');
+            }
+            if let Some(value) = xml_tag(section, "value") {
+                body.push_str(&html_to_text(&value));
+                body.push_str("\n\n");
+            }
+        }
+
+        out.push(RawJob {
+            title,
+            company,
+            jd_text: body.trim().to_string(),
+            location,
+            url: if id.is_empty() {
+                format!("https://{slug}.jobs.personio.de")
+            } else {
+                format!("https://{slug}.jobs.personio.de/job/{id}")
+            },
+            detail_ref: None,
+        });
+    }
+    out
+}
+
+/// Percent-encode everything outside the unreserved set, so a reference number
+/// with a slash or a space still yields one path segment.
+fn percent_encode_segment(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    for b in raw.as_bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(*b as char)
+            }
+            other => out.push_str(&format!("%{other:02X}")),
+        }
+    }
+    out
+}
+
+/// Human-facing posting page for a Bundesagentur reference number.
+fn arbeitsagentur_job_url(refnr: &str) -> String {
+    format!(
+        "https://www.arbeitsagentur.de/jobsuche/jobdetail/{}",
+        percent_encode_segment(refnr)
+    )
+}
+
+/// rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs:
+/// `{ stellenangebote: [{ titel, beruf, refnr, arbeitgeber, arbeitsort: { ort,
+/// plz, region, land }, externeUrl }] }`.
+///
+/// The list endpoint carries no description, so `jd_text` is seeded from the
+/// structured fields and `detail_ref` holds the reference number the scan uses
+/// to pull the real `stellenbeschreibung` for jobs that pass the filters.
+fn parse_arbeitsagentur(val: &serde_json::Value) -> Vec<RawJob> {
+    let Some(jobs) = val.get("stellenangebote").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    jobs.iter()
+        .map(|j| {
+            let beruf = json_str(j, "beruf");
+            let title = [json_str(j, "titel"), beruf.clone()]
+                .into_iter()
+                .find(|s| !s.is_empty())
+                .unwrap_or_default();
+            let ort = j.get("arbeitsort");
+            let location = [
+                ort.map(|o| json_str(o, "ort")).unwrap_or_default(),
+                ort.map(|o| json_str(o, "region")).unwrap_or_default(),
+                ort.map(|o| json_str(o, "land")).unwrap_or_default(),
+            ]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(", ");
+            // A German posting with no country token would be dropped by a
+            // "Germany" geo scope, and the feed omits `land` for domestic ads.
+            let location = if location.is_empty() {
+                "Deutschland".to_string()
+            } else if location.to_lowercase().contains("deutschland") {
+                location
+            } else {
+                format!("{location}, Deutschland")
+            };
+            let company = json_str(j, "arbeitgeber");
+            let refnr = json_str(j, "refnr");
+            let external = json_str(j, "externeUrl");
+            let url = if external.is_empty() {
+                if refnr.is_empty() {
+                    String::new()
+                } else {
+                    arbeitsagentur_job_url(&refnr)
+                }
+            } else {
+                external
+            };
+            // Placeholder body until the detail request runs; keeps the job
+            // readable (and its hash stable) if that request fails.
+            let jd_text = [
+                title.clone(),
+                beruf,
+                company.clone(),
+                location.clone(),
+                json_str(j, "eintrittsdatum"),
+            ]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+            RawJob {
+                title,
+                company,
+                jd_text,
+                location,
+                url,
+                detail_ref: if refnr.is_empty() { None } else { Some(refnr) },
             }
         })
         .collect()
@@ -783,6 +979,53 @@ async fn get_json(client: &reqwest::Client, url: &str) -> Result<serde_json::Val
         .json::<serde_json::Value>()
         .await
         .map_err(|e| format!("invalid JSON response: {e}"))
+}
+
+/// Anonymous client key for the Bundesagentur fuer Arbeit job search API,
+/// published in its own public API documentation. Not a user secret: it
+/// identifies the client, carries no account, and is the same for everyone.
+const ARBEITSAGENTUR_API_KEY: &str = "jobboerse-jobsuche";
+
+/// Pages fetched per scan, at 100 postings each. The feed is national and
+/// unfiltered server-side, so this bounds one scan rather than trying to
+/// mirror the whole index.
+const ARBEITSAGENTUR_PAGES: u32 = 3;
+
+/// Detail requests spent per source per scan. Descriptions are pulled only for
+/// jobs that already passed the title and geo filters; past this cap the
+/// remaining jobs keep their structured-field placeholder body.
+const ARBEITSAGENTUR_DETAIL_CAP: usize = 60;
+
+async fn get_json_keyed(client: &reqwest::Client, url: &str) -> Result<serde_json::Value, String> {
+    require_https(url)?;
+    client
+        .get(url)
+        .header("accept", "application/json")
+        .header("X-API-Key", ARBEITSAGENTUR_API_KEY)
+        .send()
+        .await
+        .map_err(|e| format!("request failed: {e}"))?
+        .error_for_status()
+        .map_err(|e| format!("{e}"))?
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| format!("invalid JSON response: {e}"))
+}
+
+/// Full posting text for one reference number. The detail endpoint keys on the
+/// base64 of the reference number.
+async fn fetch_arbeitsagentur_detail(
+    client: &reqwest::Client,
+    refnr: &str,
+) -> Result<String, String> {
+    use base64::Engine as _;
+    let id = base64::engine::general_purpose::STANDARD.encode(refnr);
+    let url = format!(
+        "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v2/jobdetails/{}",
+        percent_encode_segment(&id)
+    );
+    let val = get_json_keyed(client, &url).await?;
+    Ok(html_to_text(&json_str(&val, "stellenbeschreibung")))
 }
 
 async fn get_text(client: &reqwest::Client, url: &str) -> Result<String, String> {
@@ -836,6 +1079,40 @@ async fn fetch_source_jobs(
             let host = extract_host(&src.url).unwrap_or_default();
             let xml = get_text(client, &src.url).await?;
             Ok(parse_rss_items(&xml, host.contains("weworkremotely")))
+        }
+        "api_arbeitsagentur" => {
+            let base = src.url.trim_end_matches('/');
+            let mut out: Vec<RawJob> = Vec::new();
+            for page in 1..=ARBEITSAGENTUR_PAGES {
+                let url = format!("{base}?angebotsart=1&size=100&page={page}");
+                let val = get_json_keyed(client, &url).await?;
+                let batch = parse_arbeitsagentur(&val);
+                let done = batch.len() < 100;
+                out.extend(batch);
+                if done {
+                    break;
+                }
+            }
+            Ok(out)
+        }
+        "ats_personio" => {
+            // Personio boards key on the subdomain, not a path segment, so the
+            // stored slug is the source of truth and the host is the fallback.
+            let slug = src
+                .slug
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .or_else(|| {
+                    extract_host(&src.url)
+                        .and_then(|h| h.split('.').next().map(str::to_string))
+                        .filter(|s| !s.is_empty())
+                })
+                .ok_or_else(|| "missing company slug".to_string())?;
+            let url = format!("https://{slug}.jobs.personio.de/xml");
+            let xml = get_text(client, &url).await?;
+            Ok(parse_personio_xml(&xml, &slug, &titleize_slug(&slug)))
         }
         "ats_greenhouse" => {
             let slug = ats_slug(src, "boards")?;
@@ -990,6 +1267,10 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
                     negative: parse_keyword_list(src.negative_json.as_deref()),
                 };
 
+                // Detail requests are spent only on jobs that survived the
+                // local filters, and only up to the per-scan cap.
+                let mut detail_budget = ARBEITSAGENTUR_DETAIL_CAP;
+
                 for job in &raw_jobs {
                     if job.title.trim().is_empty()
                         || !title_passes(&job.title, &filter)
@@ -998,6 +1279,25 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
                         r.filtered_out += 1;
                         continue;
                     }
+
+                    // A failed or skipped detail request is not a scan error:
+                    // the job still lands with its placeholder body.
+                    let detailed: Option<RawJob> = match job.detail_ref.as_deref() {
+                        Some(refnr) if detail_budget > 0 => {
+                            detail_budget -= 1;
+                            match fetch_arbeitsagentur_detail(&client, refnr).await {
+                                Ok(text) if !text.trim().is_empty() => {
+                                    let mut j = job.clone();
+                                    j.jd_text = text;
+                                    Some(j)
+                                }
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    };
+                    let job = detailed.as_ref().unwrap_or(job);
+
                     match insert_scanned_job(&db.pool, job, &src.name).await {
                         Ok(true) => r.new_jobs += 1,
                         Ok(false) => r.duplicates += 1,
@@ -1184,7 +1484,7 @@ pub async fn db_add_source(
                 "User-added RSS feed - public, machine-readable.",
             )
         }
-        "ats_greenhouse" | "ats_lever" | "ats_ashby" => {
+        "ats_greenhouse" | "ats_lever" | "ats_ashby" | "ats_personio" => {
             let slug = slug.unwrap_or_default().trim().to_lowercase();
             if slug.is_empty() {
                 return Err("db_add_source: ATS source needs a company slug".to_string());
@@ -1257,7 +1557,139 @@ mod tests {
             jd_text: jd.to_string(),
             location: "Remote".to_string(),
             url: url.to_string(),
+            detail_ref: None,
         }
+    }
+
+    // -- Bundesagentur fuer Arbeit -------------------------------------------
+
+    #[test]
+    fn arbeitsagentur_maps_list_fields() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"stellenangebote":[{
+                 "titel":"Frontend Entwickler (m/w/d)",
+                 "beruf":"Softwareentwickler",
+                 "refnr":"10000-1198013731-S",
+                 "arbeitgeber":"Muster GmbH",
+                 "arbeitsort":{"ort":"Berlin","plz":"10115","region":"Berlin"}
+               }]}"#,
+        )
+        .unwrap();
+        let jobs = parse_arbeitsagentur(&val);
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].title, "Frontend Entwickler (m/w/d)");
+        assert_eq!(jobs[0].company, "Muster GmbH");
+        assert_eq!(jobs[0].location, "Berlin, Berlin, Deutschland");
+        assert_eq!(
+            jobs[0].url,
+            "https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-1198013731-S"
+        );
+        assert_eq!(jobs[0].detail_ref.as_deref(), Some("10000-1198013731-S"));
+        // Placeholder body until the detail request runs.
+        assert!(jobs[0].jd_text.contains("Softwareentwickler"));
+    }
+
+    #[test]
+    fn arbeitsagentur_falls_back_to_beruf_and_external_url() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"stellenangebote":[{
+                 "beruf":"Pflegefachkraft",
+                 "refnr":"abc",
+                 "externeUrl":"https://karriere.example.de/stelle/1",
+                 "arbeitsort":{"land":"Deutschland"}
+               }]}"#,
+        )
+        .unwrap();
+        let jobs = parse_arbeitsagentur(&val);
+        assert_eq!(jobs[0].title, "Pflegefachkraft");
+        assert_eq!(jobs[0].location, "Deutschland");
+        assert_eq!(jobs[0].url, "https://karriere.example.de/stelle/1");
+    }
+
+    #[test]
+    fn arbeitsagentur_geo_passes_a_germany_scope() {
+        let cfg = build_geo_cfg(&["europe".to_string()], &["de".to_string()]);
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"stellenangebote":[{"titel":"X","refnr":"r","arbeitsort":{"ort":"Muenchen"}}]}"#,
+        )
+        .unwrap();
+        let jobs = parse_arbeitsagentur(&val);
+        assert!(geo_passes(&jobs[0].location, &cfg));
+    }
+
+    #[test]
+    fn arbeitsagentur_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_arbeitsagentur(&serde_json::json!({})).is_empty());
+        assert!(parse_arbeitsagentur(&serde_json::json!({"stellenangebote":[]})).is_empty());
+    }
+
+    // -- Personio company boards ---------------------------------------------
+
+    #[test]
+    fn personio_reads_title_office_and_all_description_sections() {
+        let xml = r#"<workzag-jobs>
+          <position>
+            <id>1234</id>
+            <subcompany>Muster GmbH</subcompany>
+            <office>Berlin</office>
+            <name>Frontend Entwickler (m/w/d)</name>
+            <jobDescriptions>
+              <jobDescription><name>Aufgaben</name><value><![CDATA[<p>Du baust das Web-Frontend.</p>]]></value></jobDescription>
+              <jobDescription><name>Dein Profil</name><value><![CDATA[<ul><li>Angular</li></ul>]]></value></jobDescription>
+            </jobDescriptions>
+          </position>
+        </workzag-jobs>"#;
+        let jobs = parse_personio_xml(xml, "muster", "Muster");
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].title, "Frontend Entwickler (m/w/d)");
+        assert_eq!(jobs[0].company, "Muster GmbH");
+        assert_eq!(jobs[0].location, "Berlin");
+        assert_eq!(jobs[0].url, "https://muster.jobs.personio.de/job/1234");
+        // Both sections land, headings included.
+        assert!(jobs[0].jd_text.contains("Aufgaben"));
+        assert!(jobs[0].jd_text.contains("Du baust das Web-Frontend."));
+        assert!(jobs[0].jd_text.contains("Dein Profil"));
+        assert!(jobs[0].jd_text.contains("Angular"));
+    }
+
+    #[test]
+    fn personio_title_is_not_taken_from_a_description_heading() {
+        let xml = r#"<workzag-jobs><position>
+            <name>Werkstudent Data</name>
+            <jobDescriptions><jobDescription><name>Aufgaben</name><value>x</value></jobDescription></jobDescriptions>
+          </position></workzag-jobs>"#;
+        let jobs = parse_personio_xml(xml, "acme", "Acme");
+        assert_eq!(jobs[0].title, "Werkstudent Data");
+    }
+
+    #[test]
+    fn personio_falls_back_to_the_slug_company_and_board_url() {
+        let xml = r#"<workzag-jobs><position><name>QA</name></position></workzag-jobs>"#;
+        let jobs = parse_personio_xml(xml, "acme", "Acme");
+        assert_eq!(jobs[0].company, "Acme");
+        assert_eq!(jobs[0].url, "https://acme.jobs.personio.de");
+    }
+
+    #[test]
+    fn personio_empty_or_unrelated_xml_yields_nothing() {
+        assert!(parse_personio_xml("<workzag-jobs></workzag-jobs>", "a", "A").is_empty());
+        assert!(parse_personio_xml("<rss><item></item></rss>", "a", "A").is_empty());
+    }
+
+    #[test]
+    fn german_city_alone_passes_a_germany_scope() {
+        let cfg = build_geo_cfg(&[], &["de".to_string()]);
+        for city in ["Berlin", "München", "Koeln", "Frankfurt am Main"] {
+            assert!(geo_passes(city, &cfg), "{city} should pass a DE scope");
+        }
+        assert!(!geo_passes("Warsaw", &cfg));
+    }
+
+    #[test]
+    fn percent_encoding_keeps_one_path_segment() {
+        assert_eq!(percent_encode_segment("10000-119-S"), "10000-119-S");
+        assert_eq!(percent_encode_segment("a/b c"), "a%2Fb%20c");
+        assert_eq!(percent_encode_segment("x+y="), "x%2By%3D");
     }
 
     // -- title filter --------------------------------------------------------

@@ -1,4 +1,5 @@
 // Domain models and types — framework-agnostic
+export * from './lib/models/ats.model';
 export * from './lib/models/job.model';
 export * from './lib/models/application.model';
 export * from './lib/models/profile.model';

@@ -104,21 +104,65 @@
         <div class="updated__meta-head">
           <lucide-icon [img]="icons().scan" [size]="14" aria-hidden="true" />
           <span class="eyebrow">{{ t()('jobs.ats_check_title') }}</span>
-          <span
-            class="ats-badge"
-            [class.ats-badge--ok]="post.atsPass"
-            [class.ats-badge--warn]="!post.atsPass"
-          >
-            <lucide-icon
-              [img]="post.atsPass ? icons().atsPass : icons().atsFail"
-              [size]="11"
-              aria-hidden="true"
-            />
-            {{ post.atsPass ? t()('jobs.ats_pass_msg') : t()('jobs.ats_fail_msg') }}
-          </span>
+          @if (ats(); as report) {
+            <span
+              class="ats-badge"
+              [class.ats-badge--ok]="report.verdict === 'pass'"
+              [class.ats-badge--risky]="report.verdict === 'risky'"
+              [class.ats-badge--warn]="report.verdict === 'fail'"
+            >
+              <lucide-icon
+                [img]="report.verdict === 'pass' ? icons().atsPass : icons().atsFail"
+                [size]="11"
+                aria-hidden="true"
+              />
+              {{ report.score }}/100
+            </span>
+          } @else {
+            <span
+              class="ats-badge"
+              [class.ats-badge--ok]="post.atsPass"
+              [class.ats-badge--warn]="!post.atsPass"
+            >
+              <lucide-icon
+                [img]="post.atsPass ? icons().atsPass : icons().atsFail"
+                [size]="11"
+                aria-hidden="true"
+              />
+              {{ post.atsPass ? t()('jobs.ats_pass_msg') : t()('jobs.ats_fail_msg') }}
+            </span>
+          }
         </div>
+
+        @if (ats(); as report) {
+          <p class="updated__meta-note">
+            {{ t()('jobs.ats_keyword_coverage') }}:
+            <strong>{{ report.keywords.percent }}%</strong> ({{ report.keywords.matched.length }}/{{
+              report.keywords.matched.length + report.keywords.missing.length
+            }})
+          </p>
+          @if (report.keywords.missing.length) {
+            <ul class="updated__chips updated__chips--list">
+              @for (kw of report.keywords.missing; track kw) {
+                <li class="updated__chip">{{ kw }}</li>
+              }
+            </ul>
+          }
+          @if (atsFindings().length) {
+            <ul class="updated__findings">
+              @for (f of atsFindings(); track f.id) {
+                <li class="updated__finding" [class]="'updated__finding--' + f.severity">
+                  {{ f.message }}
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="updated__meta-note">{{ t()('jobs.ats_no_format_issues') }}</p>
+          }
+        }
+
         @if (post.atsNotes) {
-          <p class="updated__meta-note">{{ post.atsNotes }}</p>
+          <p class="updated__meta-note updated__meta-note--advisory">{{ post.atsNotes }}</p>
         }
       </div>
 

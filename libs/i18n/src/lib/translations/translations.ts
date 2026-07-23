@@ -719,6 +719,8 @@ const en: TranslationMap = {
     missing_keywords_title: 'Missing keywords',
     red_flags_title: 'Red flags',
     ats_check_title: 'ATS check',
+    ats_keyword_coverage: 'Keyword coverage',
+    ats_no_format_issues: 'No formatting problems found - this CV should parse cleanly.',
     ats_pass_msg: 'Likely to pass ATS scan',
     ats_fail_msg: 'ATS issues detected',
     cached_badge: 'cached · 0 tokens',
@@ -2258,6 +2260,9 @@ const de: TranslationMap = {
     missing_keywords_title: 'Fehlende Schlüsselwörter',
     red_flags_title: 'Warnsignale',
     ats_check_title: 'ATS-Prüfung',
+    ats_keyword_coverage: 'Keyword-Abdeckung',
+    ats_no_format_issues:
+      'Keine Formatprobleme gefunden - dieser Lebenslauf sollte sauber eingelesen werden.',
     ats_pass_msg: 'Besteht voraussichtlich den ATS-Scan',
     ats_fail_msg: 'ATS-Probleme erkannt',
     cached_badge: 'aus Cache · 0 Tokens',

@@ -55,9 +55,10 @@ import {
   Bookmark,
   X,
 } from 'lucide-angular';
-import { AiService, DbService, JobsStore } from '@applye/data';
+import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
+  AtsReport,
   Job,
   Profile,
   ScoreDimension,
@@ -706,6 +707,7 @@ interface FinalChecks {
                     [before]="cache()"
                     [after]="post"
                     [jobTitle]="job()?.title ?? ''"
+                    [ats]="atsReport()"
                     [icons]="icons"
                   />
                 } @else if (updateScoreError()) {
@@ -2329,6 +2331,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
   private readonly jobsStore = inject(JobsStore);
   private readonly ai = inject(AiService);
+  private readonly ats = inject(AtsService);
   private readonly i18n = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -2508,6 +2511,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly updateScoreStatus = computed(() => this.tailorScore.statusFor(this.job()?.id ?? -1));
   readonly updateScoreError = computed(() => this.tailorScore.isErrorFor(this.job()?.id ?? -1));
   private readonly postTailorSaved = signal(false);
+  /** Deterministic ATS report for the tailored CV. Null until the rescore
+   * runs, or if the local check failed - the card then falls back to the
+   * AI's advisory verdict. */
+  readonly atsReport = signal<AtsReport | null>(null);
   /** Non-null while the post-apply/update success card is shown before the
    * redirect fires. */
   readonly applyResult = signal<'updated' | null>(null);
@@ -4440,6 +4447,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.activity.begin(j.id, 'scoring');
     this.finalChecks.set(null);
     this.finalChecksOutdated.set(false);
+
+    // Deterministic ATS check on the tailored CV, before the AI call and
+    // independent of whether it succeeds: it costs no tokens, cannot fail on a
+    // malformed model reply, and is the number the user is actually shown.
+    void this.runAtsCheck(pass3.resultMd);
+
     try {
       const lang = s.defaultDocLanguage ?? 'en';
       const rendered = await this.ai.renderSkill('job-scoring', {
@@ -4504,6 +4517,22 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.tailorScore.fail(j.id, `Update failed: ${String(e)}`);
     } finally {
       this.activity.end(j.id, 'scoring');
+    }
+  }
+
+  /**
+   * Runs the deterministic ATS check against the tailored CV. Failure is
+   * non-fatal and silent in the UI: the report simply stays null and the ATS
+   * card falls back to the AI's advisory verdict, exactly as before.
+   */
+  private async runAtsCheck(cvMarkdown: string): Promise<void> {
+    this.atsReport.set(null);
+    try {
+      this.atsReport.set(
+        await this.ats.check(cvMarkdown, this.jdText(), this.documentReviewRegion()),
+      );
+    } catch (e) {
+      console.warn('ats_check_run failed', e);
     }
   }
 

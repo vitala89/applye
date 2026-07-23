@@ -1,6 +1,6 @@
 import { Component, afterNextRender, computed, inject, input, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
-import { ScoringCache } from '@applye/core';
+import { AtsReport, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { ScoreGauge } from '@applye/ui';
 import {
@@ -35,7 +35,20 @@ export class UpdatedScoreView {
   readonly before = input<ScoringCache | null>(null);
   readonly after = input<ScoringCache | null>(null);
   readonly jobTitle = input<string>('');
+  /** Deterministic ATS report for the tailored CV. Null means the local check
+   * did not run or failed, and the card falls back to the AI's advisory
+   * verdict - which is what this view showed exclusively before. */
+  readonly ats = input<AtsReport | null>(null);
   readonly icons = input.required<JobDetailIcons>();
+
+  /** Colour band for the ATS score, on the same 0-100 scale as the gauge. */
+  protected readonly atsBand = computed(() => this.ats()?.verdict ?? null);
+
+  /** Findings worst-first, so the expensive problems are read first. */
+  protected readonly atsFindings = computed(() => {
+    const order = { high: 0, medium: 1, low: 2 } as const;
+    return [...(this.ats()?.findings ?? [])].sort((a, b) => order[a.severity] - order[b.severity]);
+  });
 
   /** Sections fade in one after another (score → breakdown → keywords →
    * ATS/flags → notes). `revealStep` gates each: a section shows once the

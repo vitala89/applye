@@ -10,6 +10,12 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **One reusable applicant photo lives on the profile.** A CV written for the German market conventionally carries a photo, but that photo lived inside a single document, so every new application meant uploading and re-cropping the same headshot. The profile now has a **Photo** section that reuses the CV editor's crop tool, storing the image already cropped to the CV frame; it saves the moment the crop is confirmed. The image stays in the local database, is never uploaded, and is not sent with any AI call.
+- **The tailor wizard raises the German photo convention at the moment it matters.** Setting a CV's market to Germany now shows a short explainer with a yes/no choice - a photo is expected there and unusual (sometimes discouraged) elsewhere. "Yes" writes the profile photo into the linked CV; with no photo saved yet, it leads to the profile's Photo section instead. Asked only for Germany, and only once per visit to a job.
+- **Target roles collapses like every other profile section.** It stayed permanently expanded - five role cards, each with a free-text box - pushing the rest of the page off screen.
+
 ### Fixed
 
 - **The German tracker report is now German throughout.** The Eigenbemühungen sheet is a German-office document, but only its fixed headings followed the chosen report format - the column headers ("Company", "Role", "Status") and the period ("Last 3 months") followed the app's UI language, so a German report handed to the Agentur für Arbeit arrived half in English. Every string printed on the sheet, including the CSV and plain-text exports, now follows the report format; the export dialog around it stays in the UI language.

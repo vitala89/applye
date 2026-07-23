@@ -27,11 +27,28 @@ export interface RenderedSkill {
   userPrompt: string;
 }
 
+/** One supported CLI-bridge binary and whether it is installed on this machine. */
+export interface CliStatus {
+  provider: AiProvider;
+  command: string;
+  label: string;
+  installed: boolean;
+  path: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AiService {
   /** The single AI entry point. The provider key is read from the OS keychain in Rust. */
   run(req: AiRequest): Promise<AiResponse> {
     return tauriInvoke<AiResponse>('ai_run', { req });
+  }
+
+  /**
+   * Which CLI-bridge binaries are present. A filesystem lookup only - nothing
+   * is executed, so this is safe to call whenever Settings opens.
+   */
+  probeClis(): Promise<CliStatus[]> {
+    return tauriInvoke<CliStatus[]>('cli_probe');
   }
 
   /** Render a bundled markdown skill into a ready system/user prompt pair. */

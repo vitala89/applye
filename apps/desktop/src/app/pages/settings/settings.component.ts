@@ -9,10 +9,11 @@ import {
   Send,
   Sun,
   Trash2,
+  TriangleAlert,
   LucideAngularModule,
 } from 'lucide-angular';
 import { getVersion } from '@tauri-apps/api/app';
-import { AiService, DbService, KeysService } from '@applye/data';
+import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import {
   AiProvider,
   encodeGeoScopes,
@@ -60,6 +61,15 @@ const PROVIDER_VENDORS: Record<string, string> = {
   gemini: 'Google',
 };
 
+// CLI bridge mode: which local CLI each provider id maps to. `openai` is Codex
+// because the app's provider ids predate the CLI bridge; the Rust adapter
+// accepts both `openai` and `codex` for the same reason.
+const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
+  { id: 'claude', label: 'Claude Code', command: 'claude' },
+  { id: 'openai', label: 'Codex CLI', command: 'codex' },
+  { id: 'gemini', label: 'Gemini CLI', command: 'gemini' },
+];
+
 /**
  * Phase 2 Settings — the first screen that touches AI. Wires the existing
  * db_get/update_settings + the OS-keychain commands, and proves the end-to-end
@@ -92,29 +102,82 @@ const PROVIDER_VENDORS: Record<string, string> = {
             <span class="cap">Mode</span>
             <select
               [ngModel]="s.aiMode"
-              (ngModelChange)="patch('aiMode', $event)"
+              (ngModelChange)="onModeChange($event)"
               [ngModelOptions]="{ standalone: true }"
             >
               <option value="api">API (direct)</option>
-              <option value="cli" disabled>CLI bridge (coming soon)</option>
+              <option value="cli">CLI bridge (use a CLI you already pay for)</option>
             </select>
           </label>
 
-          <label class="field">
-            <span class="cap">Provider</span>
-            <select
-              [ngModel]="s.provider"
-              (ngModelChange)="onProviderChange($event)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              <option value="claude">Claude (Anthropic)</option>
-              <option value="deepseek">DeepSeek</option>
-              <option value="openai" disabled>OpenAI (coming soon)</option>
-              <option value="gemini" disabled>Gemini (coming soon)</option>
-            </select>
-          </label>
+          @if (isCliMode()) {
+            <label class="field">
+              <span class="cap">Provider</span>
+              <select
+                [ngModel]="s.provider"
+                (ngModelChange)="onProviderChange($event)"
+                [ngModelOptions]="{ standalone: true }"
+              >
+                @for (c of cliProviders; track c.id) {
+                  <option [value]="c.id">{{ c.label }} ({{ c.command }})</option>
+                }
+              </select>
+            </label>
+          } @else {
+            <label class="field">
+              <span class="cap">Provider</span>
+              <select
+                [ngModel]="s.provider"
+                (ngModelChange)="onProviderChange($event)"
+                [ngModelOptions]="{ standalone: true }"
+              >
+                <option value="claude">Claude (Anthropic)</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="openai" disabled>OpenAI (coming soon)</option>
+                <option value="gemini" disabled>Gemini (coming soon)</option>
+              </select>
+            </label>
+          }
 
-          @if (s.provider) {
+          @if (isCliMode()) {
+            <div class="cli-status">
+              @if (cliProbing()) {
+                <p class="muted">Looking for installed CLIs…</p>
+              } @else {
+                @for (c of cliStatuses(); track c.provider) {
+                  <p class="cli-status__row" [class.cli-status__row--missing]="!c.installed">
+                    <lucide-icon
+                      [img]="c.installed ? icons.stored : icons.missing"
+                      [size]="14"
+                      aria-hidden="true"
+                    />
+                    <strong>{{ c.label }}</strong>
+                    @if (c.installed) {
+                      <span class="cli-status__path">{{ c.path }}</span>
+                    } @else {
+                      <span
+                        >not found — install <code>{{ c.command }}</code> and sign in to it</span
+                      >
+                    }
+                  </p>
+                }
+              }
+              <button class="btn btn--ghost btn--sm" type="button" (click)="refreshCliProbe()">
+                <lucide-icon [img]="icons.replace" [size]="14" aria-hidden="true" />
+                Re-check
+              </button>
+            </div>
+
+            <p class="disclosure" role="note">
+              <strong>Privacy note:</strong>
+              In CLI bridge mode Applye stores no API key. It runs the CLI you already installed and
+              signed in to yourself, as a one-shot process with a fixed argument list (never a
+              shell), in a scratch folder rather than your own files. The prompt still reaches that
+              vendor's servers through their CLI — the difference is that the account, the billing
+              and the sign-in stay entirely yours. AI is always opt-in: nothing runs until you
+              trigger an action.
+            </p>
+          } @else if (s.provider) {
             <p class="disclosure" role="note">
               <strong>Privacy note:</strong>
               @if (s.provider === 'deepseek') {
@@ -129,31 +192,61 @@ const PROVIDER_VENDORS: Record<string, string> = {
           }
 
           <div class="row">
-            <label class="field">
-              <span class="cap">{{ t()('settings.quality_model_label') }}</span>
-              <select
-                [ngModel]="s.defaultModel"
-                (ngModelChange)="patch('defaultModel', $event)"
-                [ngModelOptions]="{ standalone: true }"
-              >
-                @for (m of models; track m) {
-                  <option [value]="m">{{ m }}</option>
-                }
-              </select>
-            </label>
-            <label class="field">
-              <span class="cap">{{ t()('settings.economy_model_label') }}</span>
-              <select
-                [ngModel]="s.economyModel"
-                (ngModelChange)="patch('economyModel', $event)"
-                [ngModelOptions]="{ standalone: true }"
-              >
-                @for (m of models; track m) {
-                  <option [value]="m">{{ m }}</option>
-                }
-              </select>
-            </label>
+            @if (isCliMode()) {
+              <label class="field">
+                <span class="cap">{{ t()('settings.quality_model_label') }}</span>
+                <input
+                  type="text"
+                  [ngModel]="s.defaultModel"
+                  (ngModelChange)="patch('defaultModel', $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="leave empty for the CLI's own default"
+                />
+              </label>
+              <label class="field">
+                <span class="cap">{{ t()('settings.economy_model_label') }}</span>
+                <input
+                  type="text"
+                  [ngModel]="s.economyModel"
+                  (ngModelChange)="patch('economyModel', $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="leave empty for the CLI's own default"
+                />
+              </label>
+            } @else {
+              <label class="field">
+                <span class="cap">{{ t()('settings.quality_model_label') }}</span>
+                <select
+                  [ngModel]="s.defaultModel"
+                  (ngModelChange)="patch('defaultModel', $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                >
+                  @for (m of models; track m) {
+                    <option [value]="m">{{ m }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                <span class="cap">{{ t()('settings.economy_model_label') }}</span>
+                <select
+                  [ngModel]="s.economyModel"
+                  (ngModelChange)="patch('economyModel', $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                >
+                  @for (m of models; track m) {
+                    <option [value]="m">{{ m }}</option>
+                  }
+                </select>
+              </label>
+            }
           </div>
+          @if (isCliMode()) {
+            <p class="hint">
+              Model names are passed straight through to the CLI, so use whatever that CLI accepts
+              (for example <code>sonnet</code> or <code>opus</code> for Claude Code). Leave a field
+              empty and Applye omits the flag entirely, letting the CLI pick.
+            </p>
+          }
 
           <div class="field">
             <span class="cap">{{ t()('settings.test_tier_label') }}</span>
@@ -179,60 +272,62 @@ const PROVIDER_VENDORS: Record<string, string> = {
           </div>
         </section>
 
-        <!-- API key (keychain) -->
-        <section class="section">
-          <h3 class="eyebrow">{{ t()('settings.section_key') }}</h3>
-          <p class="muted">
-            @if (keyStored()) {
-              <strong
-                ><lucide-icon [img]="icons.stored" [size]="14" aria-hidden="true" /> Stored in your
-                OS keychain.</strong
-              >
-              You don't need to re-enter it — the field stays empty because the key is never read
-              back to the app. Type a new one only to replace it.
-            } @else {
-              Saved to your OS keychain, never written to disk or logs, and sent only to the chosen
-              provider.
-            }
-          </p>
-          <div class="row">
-            <label class="field grow">
-              <span class="cap">{{ s.provider }} {{ t()('settings.api_key_label') }}</span>
-              <input
-                type="password"
-                [ngModel]="apiKeyInput()"
-                (ngModelChange)="apiKeyInput.set($event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="keyStored() ? '•••••••••• (stored — type to replace)' : 'sk-ant-…'"
-                autocomplete="off"
-              />
-            </label>
-            <div class="field actions">
-              <button
-                class="btn btn--secondary btn--md"
-                [disabled]="keyBusy() || !apiKeyInput().trim()"
-                (click)="saveKey()"
-              >
-                <lucide-icon
-                  [img]="keyStored() ? icons.replace : icons.saveKey"
-                  [size]="16"
-                  aria-hidden="true"
-                />
-                {{ keyStored() ? t()('settings.replace_key_btn') : t()('settings.save_key_btn') }}
-              </button>
+        <!-- API key (keychain). CLI bridge mode never stores one. -->
+        @if (!isCliMode()) {
+          <section class="section">
+            <h3 class="eyebrow">{{ t()('settings.section_key') }}</h3>
+            <p class="muted">
               @if (keyStored()) {
-                <button
-                  class="btn btn--danger btn--md"
-                  [disabled]="keyBusy()"
-                  (click)="removeKey()"
+                <strong
+                  ><lucide-icon [img]="icons.stored" [size]="14" aria-hidden="true" /> Stored in
+                  your OS keychain.</strong
                 >
-                  <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
-                  {{ t()('settings.remove_key_btn') }}
-                </button>
+                You don't need to re-enter it — the field stays empty because the key is never read
+                back to the app. Type a new one only to replace it.
+              } @else {
+                Saved to your OS keychain, never written to disk or logs, and sent only to the
+                chosen provider.
               }
+            </p>
+            <div class="row">
+              <label class="field grow">
+                <span class="cap">{{ s.provider }} {{ t()('settings.api_key_label') }}</span>
+                <input
+                  type="password"
+                  [ngModel]="apiKeyInput()"
+                  (ngModelChange)="apiKeyInput.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [placeholder]="keyStored() ? '•••••••••• (stored — type to replace)' : 'sk-ant-…'"
+                  autocomplete="off"
+                />
+              </label>
+              <div class="field actions">
+                <button
+                  class="btn btn--secondary btn--md"
+                  [disabled]="keyBusy() || !apiKeyInput().trim()"
+                  (click)="saveKey()"
+                >
+                  <lucide-icon
+                    [img]="keyStored() ? icons.replace : icons.saveKey"
+                    [size]="16"
+                    aria-hidden="true"
+                  />
+                  {{ keyStored() ? t()('settings.replace_key_btn') : t()('settings.save_key_btn') }}
+                </button>
+                @if (keyStored()) {
+                  <button
+                    class="btn btn--danger btn--md"
+                    [disabled]="keyBusy()"
+                    (click)="removeKey()"
+                  >
+                    <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+                    {{ t()('settings.remove_key_btn') }}
+                  </button>
+                }
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        }
 
         <!-- Appearance -->
         <section class="section">
@@ -375,14 +470,18 @@ const PROVIDER_VENDORS: Record<string, string> = {
           <h3 class="eyebrow">{{ t()('settings.test_section') }}</h3>
           <button
             class="btn btn--primary btn--md test-btn"
-            [disabled]="testing() || !keyStored()"
+            [disabled]="testing() || !canTest()"
             (click)="testConnection()"
           >
             <lucide-icon [img]="icons.send" [size]="16" aria-hidden="true" />
             {{ testing() ? t()('settings.testing') : t()('settings.test_prompt_btn') }}
           </button>
-          @if (!keyStored()) {
-            <p class="muted">{{ t()('settings.store_key_first') }}</p>
+          @if (!canTest()) {
+            @if (isCliMode()) {
+              <p class="muted">Install the selected CLI and sign in to it, then re-check above.</p>
+            } @else {
+              <p class="muted">{{ t()('settings.store_key_first') }}</p>
+            }
           }
           @if (testReply(); as reply) {
             <div class="reply">
@@ -528,6 +627,31 @@ const PROVIDER_VENDORS: Record<string, string> = {
       }
       .disclosure strong {
         color: var(--text-primary);
+      }
+      .cli-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .cli-status__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0;
+      }
+      .cli-status__row strong {
+        color: var(--text-primary);
+      }
+      .cli-status__row--missing {
+        color: var(--text-tertiary);
+      }
+      .cli-status__path {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        word-break: break-all;
       }
       input,
       select {
@@ -757,6 +881,7 @@ export class SettingsComponent implements OnInit {
     replace: RefreshCw,
     remove: Trash2,
     send: Send,
+    missing: TriangleAlert,
     sun: Sun,
     moon: Moon,
     loader: LoaderCircle,
@@ -782,9 +907,63 @@ export class SettingsComponent implements OnInit {
   readonly confirmingReset = signal(false);
   readonly resetting = signal(false);
 
-  /** Model list for the currently selected provider. */
+  /** Model list for the currently selected provider. API mode only - in CLI
+   * mode the model string is free text passed straight to the CLI. */
   get models(): string[] {
     return this.settings()?.provider === 'deepseek' ? DEEPSEEK_MODELS : CLAUDE_MODELS;
+  }
+
+  // --- CLI bridge mode ---
+  readonly cliProviders = CLI_PROVIDERS;
+  readonly cliStatuses = signal<CliStatus[]>([]);
+  readonly cliProbing = signal(false);
+
+  isCliMode(): boolean {
+    return this.settings()?.aiMode === 'cli';
+  }
+
+  /** Status row for the provider currently selected, if it has been probed. */
+  private currentCliStatus(): CliStatus | undefined {
+    const provider = this.settings()?.provider;
+    return this.cliStatuses().find((c) => c.provider === provider);
+  }
+
+  /** Test connection needs a stored key in API mode, an installed CLI in CLI mode. */
+  canTest(): boolean {
+    return this.isCliMode() ? (this.currentCliStatus()?.installed ?? false) : this.keyStored();
+  }
+
+  async refreshCliProbe(): Promise<void> {
+    this.cliProbing.set(true);
+    try {
+      this.cliStatuses.set(await this.ai.probeClis());
+    } catch (e) {
+      // Outside a Tauri runtime (web preview) the command does not exist; an
+      // empty list simply reads as "none found" rather than breaking Settings.
+      this.cliStatuses.set([]);
+      console.warn('cli_probe failed', e);
+    } finally {
+      this.cliProbing.set(false);
+    }
+  }
+
+  /**
+   * Switching mode changes what a valid provider is: DeepSeek has no CLI, and
+   * Codex/Gemini have no API path yet, so a stale pick would leave the user on
+   * a combination that can only fail at call time.
+   */
+  async onModeChange(mode: Settings['aiMode']): Promise<void> {
+    const s = this.settings();
+    if (!s || s.aiMode === mode) return;
+    this.patch('aiMode', mode);
+    if (mode === 'cli') {
+      if (!CLI_PROVIDERS.some((c) => c.id === s.provider)) {
+        await this.onProviderChange('claude');
+      }
+      await this.refreshCliProbe();
+    } else if (s.provider !== 'claude' && s.provider !== 'deepseek') {
+      await this.onProviderChange('claude');
+    }
   }
 
   /** Vendor name shown in the privacy note (e.g. "Anthropic"). Falls back to
@@ -813,6 +992,7 @@ export class SettingsComponent implements OnInit {
       this.settings.set(s);
       this.i18n.setLocale(s.uiLanguage);
       this.keyStored.set(await this.keys.hasProviderKey(s.provider));
+      if (s.aiMode === 'cli') await this.refreshCliProbe();
     } catch (e) {
       this.toast.error(String(e));
     } finally {
@@ -880,6 +1060,14 @@ export class SettingsComponent implements OnInit {
 
   async onProviderChange(provider: Settings['provider']): Promise<void> {
     this.patch('provider', provider);
+    if (this.isCliMode()) {
+      // CLI mode has no fixed model catalogue: an API model id would be
+      // rejected by the CLI, so blank it and let the CLI choose its default.
+      // The user can still type a CLI alias such as "sonnet".
+      this.patch('defaultModel', '');
+      this.patch('economyModel', '');
+      return;
+    }
     // Reset model picks to the new provider's defaults when the current ones
     // do not belong to it (e.g. switching claude <-> deepseek).
     const d = PROVIDER_DEFAULTS[provider];

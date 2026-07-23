@@ -29,6 +29,7 @@ import { HealthCheckPanelComponent } from '../../core/health-check-panel.compone
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
 import { ToastService } from '../../core/toast/toast.service';
+import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models.util';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -79,18 +80,24 @@ const CLI_PROVIDERS: { id: AiProvider; label: string; command: string }[] = [
 // knows which models the user's subscription actually covers, and Applye does
 // not.
 //
-// Verified 2026-07-23 against docs.claude.com/en/docs/claude-code/cli-reference
-// (aliases opus / sonnet / haiku) and developers.openai.com/codex/models.
-// Gemini CLI publishes no model list that can be read without signing in, so it
-// offers the CLI default plus the custom field only, rather than guessed IDs.
+// IMPORTANT: which models a CLI will accept depends on the user's *plan*, not
+// just on what the vendor publishes. Codex on a ChatGPT account rejects
+// `gpt-5.6` and `gpt-5.3-codex` outright ("not supported when using Codex with
+// a ChatGPT account") even though both are in the public model list - and a
+// ChatGPT-account user is exactly who CLI bridge mode exists for. So this list
+// holds only names confirmed to work on a subscription, and the default stays
+// "let the CLI choose", which is the only option that is right for every plan.
+//
+// Tested live 2026-07-23 by invoking each CLI: codex accepted gpt-5.5, gpt-5.4
+// and gpt-5.4-mini on a ChatGPT account and refused gpt-5.6 / gpt-5.3-codex;
+// claude accepted the `sonnet` alias. Gemini CLI publishes no model list
+// readable without signing in, so it offers the default and the custom field
+// rather than guessed IDs.
 const CLI_MODELS: Record<string, string[]> = {
   claude: ['sonnet', 'opus', 'haiku'],
-  openai: ['gpt-5.6', 'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'],
+  openai: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'],
   gemini: [],
 };
-
-/** Sentinel for the "type a name myself" option in the model dropdowns. */
-const CLI_MODEL_CUSTOM = '__custom__';
 
 /**
  * Phase 2 Settings — the first screen that touches AI. Wires the existing
@@ -188,8 +195,19 @@ const CLI_MODEL_CUSTOM = '__custom__';
                            healthy to a file check and fails on first use. -->
                       <span class="cli-status__broken">
                         {{ t()('settings.cli_found_but_broken') }}
-                        <code>npm install -g {{ cliPackage(c.provider) }}</code>
                       </span>
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="installingCli() !== null"
+                        (click)="installCli(c.provider)"
+                      >
+                        {{
+                          installingCli() === c.provider
+                            ? t()('settings.cli_installing')
+                            : t()('settings.cli_repair_btn')
+                        }}
+                      </button>
                       @if (c.error) {
                         <span class="cli-status__error">{{ c.error }}</span>
                       }
@@ -197,6 +215,18 @@ const CLI_MODEL_CUSTOM = '__custom__';
                       <span
                         >{{ t()('settings.cli_not_found') }} <code>{{ c.command }}</code></span
                       >
+                      <button
+                        class="btn btn--secondary btn--sm"
+                        type="button"
+                        [disabled]="installingCli() !== null"
+                        (click)="installCli(c.provider)"
+                      >
+                        {{
+                          installingCli() === c.provider
+                            ? t()('settings.cli_installing')
+                            : t()('settings.cli_install_btn')
+                        }}
+                      </button>
                     }
                   </p>
                 }
@@ -1022,14 +1052,30 @@ export class SettingsComponent implements OnInit {
     return this.isCliMode() ? (this.currentCliStatus()?.working ?? false) : this.keyStored();
   }
 
-  /** npm package that installs a given CLI, for the repair hint. */
-  cliPackage(provider: string): string {
-    const packages: Record<string, string> = {
-      claude: '@anthropic-ai/claude-code',
-      openai: '@openai/codex',
-      gemini: '@google/gemini-cli',
-    };
-    return packages[provider] ?? provider;
+  /** Provider currently installing, so only that row shows progress. */
+  readonly installingCli = signal<AiProvider | null>(null);
+
+  /**
+   * Installs or repairs a CLI with npm. The package name is chosen in Rust
+   * from a fixed list keyed on the provider id - it is never sent from here,
+   * so no input can make Applye install something else.
+   */
+  async installCli(provider: AiProvider): Promise<void> {
+    if (this.installingCli()) return;
+    this.installingCli.set(provider);
+    try {
+      const result = await this.ai.installCli(provider);
+      if (result.ok) {
+        await this.refreshCliProbe();
+        this.toast.success('settings.cli_installed');
+      } else {
+        this.toast.error(result.message);
+      }
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.installingCli.set(null);
+    }
   }
 
   // --- CLI model pickers ---
@@ -1055,8 +1101,7 @@ export class SettingsComponent implements OnInit {
    * shows up correctly.
    */
   modelSelectValue(stored: string): string {
-    if (!stored) return '';
-    return this.cliModels().includes(stored) ? stored : CLI_MODEL_CUSTOM;
+    return cliModelSelectValue(stored, this.cliModels());
   }
 
   /** Opens the free-text field for any stored model that is not a known name,
@@ -1108,9 +1153,25 @@ export class SettingsComponent implements OnInit {
         await this.onProviderChange('claude');
       }
       await this.refreshCliProbe();
-    } else if (s.provider !== 'claude' && s.provider !== 'deepseek') {
-      await this.onProviderChange('claude');
+      return;
     }
+    // Back to API mode. A CLI-less provider has to move, but the models need
+    // restoring either way: switching to CLI blanks them ("let the CLI pick"),
+    // and an empty model is not a valid API request - it would be sent to the
+    // provider verbatim and rejected.
+    if (s.provider !== 'claude' && s.provider !== 'deepseek') {
+      await this.onProviderChange('claude');
+      return;
+    }
+    this.restoreApiModels(s.provider);
+  }
+
+  /** Puts back this provider's default model pair when the stored ones are
+   * blank or belong to a different provider. */
+  private restoreApiModels(provider: string): void {
+    const patch = apiModelsToRestore(this.settings(), PROVIDER_DEFAULTS[provider], this.models);
+    if (patch.defaultModel !== undefined) this.patch('defaultModel', patch.defaultModel);
+    if (patch.economyModel !== undefined) this.patch('economyModel', patch.economyModel);
   }
 
   /** Vendor name shown in the privacy note (e.g. "Anthropic"). Falls back to

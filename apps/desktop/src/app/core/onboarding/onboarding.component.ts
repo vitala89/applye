@@ -10,6 +10,7 @@ import {
   CirclePlay,
   Clock,
   ClipboardType,
+  Download,
   ExternalLink,
   FileText,
   HardDrive,
@@ -18,6 +19,7 @@ import {
   Lock,
   LucideAngularModule,
   Plus,
+  RefreshCw,
   Sparkles,
   Target,
   TriangleAlert,
@@ -25,6 +27,7 @@ import {
   Wallet,
 } from 'lucide-angular';
 import {
+  AiMode,
   AiProvider,
   CvParsedContent,
   Profile,
@@ -32,7 +35,7 @@ import {
   serializeArchetypes,
   parseArchetypes,
 } from '@applye/core';
-import { AiService, DbService, KeysService } from '@applye/data';
+import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -99,6 +102,7 @@ export class OnboardingComponent {
     circleAlert: CircleAlert,
     clock: Clock,
     clipboardType: ClipboardType,
+    download: Download,
     externalLink: ExternalLink,
     fileText: FileText,
     hardDrive: HardDrive,
@@ -107,6 +111,7 @@ export class OnboardingComponent {
     lock: Lock,
     plus: Plus,
     playCircle: CirclePlay,
+    refresh: RefreshCw,
     sparkles: Sparkles,
     target: Target,
     triangleAlert: TriangleAlert,
@@ -166,6 +171,103 @@ export class OnboardingComponent {
 
   guideFor(p: AiProvider) {
     return guideForProvider(p);
+  }
+
+  /** Card title: the CLI's name in CLI mode ("Claude Code"), the vendor's in
+   * API mode ("Claude"). */
+  cardNameKey(p: AiProvider): string {
+    const guide = guideForProvider(p);
+    return (this.isCliMode() && guide.cliNameKey) || guide.nameKey;
+  }
+
+  // ---- AI setup: mode ----
+  /**
+   * API key or CLI bridge. Onboarding offered only the key flow while CLI mode
+   * was unimplemented; now that it works, a user who already pays for Claude
+   * Code, Codex or Gemini CLI should never be asked to buy API credit on top.
+   */
+  readonly aiMode = signal<AiMode>('api');
+  readonly isCliMode = computed(() => this.aiMode() === 'cli');
+
+  /** Provider ids that have a CLI. `openai` is Codex - the app's provider ids
+   * predate the CLI bridge. DeepSeek has no CLI and is API-only. */
+  readonly cliProviders: AiProvider[] = ['claude', 'openai', 'gemini'];
+
+  readonly cliStatuses = signal<CliStatus[]>([]);
+  readonly cliProbing = signal(false);
+  /** Provider id currently being installed, so only that row shows a spinner. */
+  readonly installingCli = signal<AiProvider | null>(null);
+  readonly installError = signal<{ message: string; needsNode: boolean } | null>(null);
+
+  /** Status row for one provider, once probed. */
+  cliStatusFor(provider: AiProvider): CliStatus | undefined {
+    return this.cliStatuses().find((c) => c.provider === provider);
+  }
+
+  /** The selected CLI is present and actually runs. */
+  readonly selectedCliWorks = computed(
+    () => this.cliStatusFor(this.selectedProvider())?.working ?? false,
+  );
+
+  async chooseAiMode(mode: AiMode): Promise<void> {
+    if (this.aiMode() === mode) return;
+    this.aiMode.set(mode);
+    this.installError.set(null);
+    if (mode === 'cli') {
+      // DeepSeek has no CLI, so a user arriving from the key flow with it
+      // selected would land on a provider this mode cannot serve.
+      if (!this.cliProviders.includes(this.selectedProvider())) {
+        this.selectedProvider.set('claude');
+      }
+      await this.refreshCliProbe();
+    } else if (!this.v1Providers.includes(this.selectedProvider())) {
+      this.selectedProvider.set('claude');
+    }
+  }
+
+  async refreshCliProbe(): Promise<void> {
+    this.cliProbing.set(true);
+    try {
+      this.cliStatuses.set(await this.ai.probeClis());
+    } catch {
+      // Outside a Tauri runtime the command does not exist; an empty list
+      // reads as "none found" rather than breaking the wizard.
+      this.cliStatuses.set([]);
+    } finally {
+      this.cliProbing.set(false);
+    }
+  }
+
+  /**
+   * Installs a CLI with npm on the user's behalf. This modifies their machine,
+   * so it happens only on this explicit click, and the exact command is shown
+   * in the UI both before and after.
+   *
+   * A successful install does NOT mean the user can use it yet: these CLIs
+   * authenticate interactively against the user's own account, which cannot be
+   * done from inside Applye. The UI says so rather than letting them find out
+   * at the first real task.
+   */
+  async installCli(provider: AiProvider): Promise<void> {
+    if (this.installingCli()) return;
+    this.installingCli.set(provider);
+    this.installError.set(null);
+    try {
+      const result = await this.ai.installCli(provider);
+      if (result.ok) {
+        await this.refreshCliProbe();
+      } else {
+        this.installError.set({ message: result.message, needsNode: result.needsNode });
+      }
+    } catch (e) {
+      this.installError.set({ message: String(e), needsNode: false });
+    } finally {
+      this.installingCli.set(null);
+    }
+  }
+
+  async openNodeSite(): Promise<void> {
+    await openUrl('https://nodejs.org');
   }
 
   constructor() {
@@ -511,8 +613,12 @@ export class OnboardingComponent {
   }
 
   // ---- Ready summary ----
-  /** True for a key this run saved AND one an earlier run left in the keyring. */
-  readonly keyPresent = computed(() => this.keyStored());
+  /** Connected means a stored key in API mode, and a CLI that actually runs in
+   * CLI mode - where there is no key to store at all. True for a key this run
+   * saved AND one an earlier run left in the keyring. */
+  readonly keyPresent = computed(() =>
+    this.isCliMode() ? this.selectedCliWorks() : this.keyStored(),
+  );
   readonly providerSummary = computed(() => {
     if (!this.keyPresent()) return this.t()('onboarding.done.not_connected');
     return `${this.t()(this.guide().nameKey)} · ${this.t()('onboarding.done.connected_suffix')}`;
@@ -660,7 +766,21 @@ export class OnboardingComponent {
 
   private async markSeen(): Promise<void> {
     try {
-      await this.db.updateSettings({ onboardingSeen: true });
+      // The mode and provider chosen here must be persisted, not just held in
+      // component state: every AI call reads them back from settings. Without
+      // this the wizard was a no-op for anyone who did not pick the default -
+      // choosing OpenAI or DeepSeek and saving that key still left
+      // `provider = 'claude'`, so every task went to Claude, which had no key.
+      await this.db.updateSettings({
+        onboardingSeen: true,
+        aiMode: this.aiMode(),
+        provider: this.selectedProvider(),
+        // In CLI mode the stored model ids are API ids (`claude-opus-4-8`),
+        // which a CLI does not accept - `codex --model claude-opus-4-8` is a
+        // guaranteed failure. Blank them so the CLI picks its own default; the
+        // user can choose a CLI model name later in Settings.
+        ...(this.isCliMode() ? { defaultModel: '', economyModel: '' } : {}),
+      });
     } catch {
       // fail open — never trap the user in onboarding
     }

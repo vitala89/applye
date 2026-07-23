@@ -10,8 +10,16 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **Onboarding can now set up CLI bridge mode.** The AI step only ever offered "paste an API key", with a note promising subscription sign-in was "coming soon" - which had been shipping for a while by then. It now starts with a choice: **paste an API key**, or **use a CLI you already pay for**. Picking the CLI route lists Claude Code, Codex CLI and Gemini CLI with what is actually on your machine, and offers an **Install** button for any that are missing or broken so you never have to open a terminal to get started. The button runs npm for you and tells you plainly when it cannot - if Node.js is missing entirely it says so and links to nodejs.org rather than failing with a wall of output. Installing a CLI does not sign you in, and the wizard says so rather than letting you find out at your first real task.
+- **The same Install and Repair buttons are in Settings**, so a CLI that breaks later can be fixed without going back through onboarding.
+
 ### Fixed
 
+- **Onboarding now remembers which AI provider you picked.** It saved your API key but never the choice itself, so picking OpenAI or DeepSeek and pasting that key still left the app set to Claude - and every task failed with "no key stored for claude". The provider and the mode are now saved when you finish the wizard.
+- **Switching AI mode no longer leaves you with an unusable model setting.** Going to CLI mode clears the model boxes on purpose (so the CLI picks its own), but switching back to API mode left them empty and every request was rejected. Coming back now restores your provider's models.
+- **The health check tells the truth in CLI bridge mode.** It reported "no stored key needed - OK" without ever checking whether the CLI it would call actually works, so a missing or broken CLI still showed a clean bill of health. It now runs the CLI and reports the version, or fails with the reason.
 - **Settings no longer claims a broken CLI is ready to use.** The CLI bridge checked only that a command with the right name existed, so a half-finished install showed a green tick and then failed on the first real task. These CLIs are small wrappers around a platform binary, and an interrupted install leaves the wrapper behind with the binary missing. Applye now actually runs the CLI to check it, and shows one of three things: working (with its version), **found but broken** (with the exact reinstall command and the error it printed), or not installed. "Send a test prompt" is only enabled for a CLI that genuinely runs.
 - **You can now pick a CLI model from a list instead of typing its name.** CLI mode used free-text model fields, which assumed you knew what your CLI calls its models - and a leftover name from API mode could be sent to a CLI that does not recognise it. Each CLI now offers a dropdown: **CLI default**, which is the recommended choice and simply lets the signed-in CLI pick whatever your subscription covers; the model names that CLI accepts; and **Other**, which reveals a text field for anything not listed. Claude Code offers `sonnet` / `opus` / `haiku` and Codex its `gpt-5.x` names; Gemini CLI publishes no list that can be read without signing in, so it offers the default and a text field rather than names that might be wrong.
 

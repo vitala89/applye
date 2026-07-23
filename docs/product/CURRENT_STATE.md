@@ -24,6 +24,38 @@
   2.1.218 and `gemini` 0.49.0 report working, `codex` exits 1 and is now correctly reported
   broken. **Native-only gate pending**: the three-state CLI list, the model dropdowns and the
   ATS card all need a `tauri dev` pass.
+
+  Extended after a live run surfaced more: **onboarding now offers CLI bridge mode**, which it
+  never did - the AI step only ever offered an API key and carried a "coming soon" note
+  promising the very thing that had already shipped. It now opens with a mode choice, lists the
+  three CLIs with their real state, and offers an **Install** button per CLI. The installer is a
+  new `cli_install` command: the npm package is chosen in Rust from a fixed list keyed on the
+  provider id and is never taken from the caller, so no input can make Applye install anything
+  else (a test asserts refusal for `deepseek`, `left-pad`, `../evil` and `claude; rm -rf /`).
+  npm missing is reported distinctly with a nodejs.org link, EACCES gets a named explanation,
+  and the UI states that installing does not sign the user in.
+
+  Three further bugs found while checking the surface end to end: (1) **onboarding never
+  persisted the provider or mode** - it saved the key but only ever wrote `onboardingSeen`, so
+  choosing OpenAI or DeepSeek left `provider = 'claude'` and every task failed on a missing key;
+  (2) **switching CLI -> API left both model fields blank**, since CLI mode blanks them by
+  design, so API mode sent `model: ""` and was rejected - the restore logic is now the pure,
+  tested `cli-models.util.ts`; (3) **the health check reported ok in CLI mode without checking
+  any CLI**, and the first draft of that fix used status `"error"`, which `worst()` does not
+  recognise and would have rolled up to an overall ok - caught before commit and pinned by a
+  test asserting `worst()` agrees.
+
+  Also corrected: the Codex model list. `gpt-5.6` and `gpt-5.3-codex` are in OpenAI's published
+  list but are **refused on a ChatGPT account** ("not supported when using Codex with a ChatGPT
+  account"), which is exactly the user CLI bridge exists for. The list now holds only names
+  confirmed live on a subscription (`gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`), and the hint says
+  model availability depends on the plan, which only the CLI knows.
+
+  **Codex is now verified end to end.** Its npm install on this machine was missing its vendored
+  binary; running the installer fixed it, and `codex exec -` returned the expected reply through
+  the adapter's exact invocation. Gemini remains unverified for a round trip (account
+  tier-ineligible), though its binary probes healthy.
+
 - **Prior branch / focus**: `feat/deterministic-ats-check`, **merged as PR #152**. The ATS check
   was a single boolean the `job-scoring` model emitted - it read as a measurement but was an
   opinion, not reproducible across runs, and never looked at the CV that would be uploaded. New

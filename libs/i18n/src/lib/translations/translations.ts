@@ -923,8 +923,12 @@ const en: TranslationMap = {
     cli_model_custom: 'Other (type a name)',
     cli_model_custom_placeholder: 'Model name the CLI accepts',
     cli_model_hint:
-      'The model name is passed straight through to the CLI. Leaving it on the default is usually right: the CLI is already signed in and knows which models your subscription covers.',
-    cli_found_but_broken: 'found, but it will not run - reinstall it:',
+      'The model name is passed straight through to the CLI. Leaving it on the default is the safest choice: which models you can use depends on your plan, and only the CLI knows that. If you pick one your plan does not cover, the CLI will say so when you run a task.',
+    cli_found_but_broken: 'found, but it will not run',
+    cli_install_btn: 'Install',
+    cli_repair_btn: 'Repair',
+    cli_installing: 'Installing…',
+    cli_installed: 'Installed. Run it once in a terminal to sign in, then re-check.',
     cli_not_found: 'not found - install and sign in to',
     quality_model_label: 'Quality model',
     economy_model_label: 'Economy model',
@@ -1433,11 +1437,34 @@ const en: TranslationMap = {
       error: "Couldn't save the key. Try again.",
       watch_video: 'Watch the video walkthrough',
       keyring_note: 'Stored in your OS keychain — never in the database or logs.',
-      coming_soon: 'Coming soon',
-      cli_bridge_note:
-        'sign in with your Claude or OpenAI subscription instead of pasting a key. You can switch later in Settings.',
+      mode_api_title: 'Paste an API key',
+      mode_api_sub: 'Pay per use. Works with any of the providers below.',
+      mode_cli_title: 'Use a CLI you already pay for',
+      mode_cli_sub: 'Claude Code, Codex or Gemini CLI. No API key, no extra bill.',
       skip_warning:
         'You can skip this — but analysis, tailoring and interview prep stay disabled until a key is added.',
+      gemini: {
+        name: 'Gemini',
+        vendor: 'Google',
+        console_label: 'aistudio.google.com',
+      },
+      cli: {
+        claude_name: 'Claude Code',
+        openai_name: 'Codex CLI',
+        gemini_name: 'Gemini CLI',
+        panel_intro:
+          'Applye runs the CLI you already installed and signed in to. Nothing is stored here — no API key, no second subscription.',
+        checking: 'Checking which CLIs you have…',
+        missing: 'not installed',
+        broken: 'installed, but it will not run',
+        install_btn: 'Install',
+        reinstall_btn: 'Repair',
+        installing: 'Installing…',
+        recheck: 'Check again',
+        get_node: 'Get Node.js · nodejs.org',
+        signin_note:
+          'Installing does not sign you in. Open a terminal, run the CLI once and follow its sign-in, then check again here.',
+      },
       generic: {
         name: 'Other provider',
         vendor: 'Custom',
@@ -2480,8 +2507,12 @@ const de: TranslationMap = {
     cli_model_custom: 'Andere (Namen eingeben)',
     cli_model_custom_placeholder: 'Modellname, den die CLI akzeptiert',
     cli_model_hint:
-      'Der Modellname wird unverändert an die CLI weitergegeben. Der Standard ist meist richtig: die CLI ist bereits angemeldet und weiß, welche Modelle dein Abo abdeckt.',
-    cli_found_but_broken: 'gefunden, lässt sich aber nicht starten - neu installieren:',
+      'Der Modellname wird unverändert an die CLI weitergegeben. Der Standard ist die sicherste Wahl: welche Modelle nutzbar sind, hängt von deinem Tarif ab, und das weiß nur die CLI. Wählst du eines, das dein Tarif nicht abdeckt, meldet die CLI das beim nächsten Task.',
+    cli_found_but_broken: 'gefunden, lässt sich aber nicht starten',
+    cli_install_btn: 'Installieren',
+    cli_repair_btn: 'Reparieren',
+    cli_installing: 'Installiere…',
+    cli_installed: 'Installiert. Starte sie einmal im Terminal zum Anmelden, dann erneut prüfen.',
     cli_not_found: 'nicht gefunden - installiere und melde dich an bei',
     quality_model_label: 'Qualitätsmodell',
     economy_model_label: 'Economy-Modell',
@@ -3004,11 +3035,35 @@ const de: TranslationMap = {
       watch_video: 'Video-Anleitung ansehen',
       keyring_note:
         'Im Schlüsselbund deines Betriebssystems gespeichert — niemals in der Datenbank oder Logs.',
-      coming_soon: 'Demnächst',
-      cli_bridge_note:
-        'melde dich mit deinem Claude- oder OpenAI-Abo an, statt einen Schlüssel einzufügen. Später in den Einstellungen umschaltbar.',
+      mode_api_title: 'API-Schlüssel einfügen',
+      mode_api_sub: 'Abrechnung nach Nutzung. Funktioniert mit allen Anbietern unten.',
+      mode_cli_title: 'Eine CLI nutzen, die du schon bezahlst',
+      mode_cli_sub:
+        'Claude Code, Codex oder Gemini CLI. Kein API-Schlüssel, keine zweite Rechnung.',
       skip_warning:
         'Du kannst dies überspringen — aber Analyse, Anpassung und Interview-Vorbereitung bleiben deaktiviert, bis ein Schlüssel hinzugefügt wurde.',
+      gemini: {
+        name: 'Gemini',
+        vendor: 'Google',
+        console_label: 'aistudio.google.com',
+      },
+      cli: {
+        claude_name: 'Claude Code',
+        openai_name: 'Codex CLI',
+        gemini_name: 'Gemini CLI',
+        panel_intro:
+          'Applye startet die CLI, die du bereits installiert hast und in der du angemeldet bist. Hier wird nichts gespeichert — kein API-Schlüssel, kein zweites Abo.',
+        checking: 'Prüfe, welche CLIs vorhanden sind…',
+        missing: 'nicht installiert',
+        broken: 'installiert, startet aber nicht',
+        install_btn: 'Installieren',
+        reinstall_btn: 'Reparieren',
+        installing: 'Installiere…',
+        recheck: 'Erneut prüfen',
+        get_node: 'Node.js holen · nodejs.org',
+        signin_note:
+          'Die Installation meldet dich nicht an. Öffne ein Terminal, starte die CLI einmal und folge der Anmeldung, dann hier erneut prüfen.',
+      },
       generic: {
         name: 'Anderer Anbieter',
         vendor: 'Benutzerdefiniert',

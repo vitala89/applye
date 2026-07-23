@@ -303,6 +303,61 @@
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
 }
+
+// Mode chooser: API key vs an existing CLI subscription.
+.ob__mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+.ob__mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  border-radius: var(--radius-card);
+  border: var(--border-width) solid var(--border-subtle);
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+.ob__mode-card--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.ob__mode-title {
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.ob__mode-sub {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+// One detected CLI: name, state, and a repair/install action when needed.
+.ob__cli-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+.ob__cli-name {
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.ob__cli-detail {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.ob__cli-icon--ok {
+  color: var(--success);
+}
+.ob__cli-icon--warn {
+  color: var(--warning);
+}
 .ob__provider-card {
   display: flex;
   align-items: center;

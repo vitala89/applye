@@ -1,9 +1,9 @@
 // CLI bridge mode - run a coding CLI the user already has installed and
-// already pays for (Claude Code, Codex, Gemini CLI) as a one-shot subprocess,
-// instead of calling a provider HTTP API with an API key.
+// already pays for (Claude Code, Codex CLI) as a one-shot subprocess, instead
+// of calling a provider HTTP API with an API key.
 //
-// Why this exists: a user on a Claude Pro / ChatGPT Plus / Gemini subscription
-// has no reason to also buy API credit. In CLI mode Applye stores no key, and
+// Why this exists: a user on a Claude Pro or ChatGPT Plus subscription has no
+// reason to also buy API credit. In CLI mode Applye stores no key, and
 // the request never leaves the machine except through the CLI the user already
 // trusts and authenticated themselves.
 //
@@ -70,10 +70,6 @@ trait CliAdapter {
     fn build_stdin(&self, req: &AiRequest) -> String;
     /// Extract the reply text (and usage, when the CLI reports it) from stdout.
     fn parse_output(&self, raw: &str) -> Result<CliReply, String>;
-    /// Extra environment for the child process. Empty for most adapters.
-    fn env(&self) -> Vec<(&'static str, &'static str)> {
-        Vec::new()
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -319,7 +315,6 @@ pub async fn run(req: &AiRequest) -> Result<AiResponse, String> {
 
     let mut child = Command::new(&binary)
         .args(&args)
-        .envs(adapter.env())
         // Never the user's own files: the CLI gets a scratch dir with nothing
         // in it, so even a tool-happy agent has nothing local to read.
         .current_dir(std::env::temp_dir())
@@ -420,13 +415,9 @@ pub struct CliStatus {
 /// Runs `<binary> --version` and reports what happened. This executes only a
 /// binary the user installed and named themselves, with a fixed argument list
 /// and no shell, in a scratch directory.
-async fn probe_version(
-    binary: &std::path::Path,
-    env: &[(&'static str, &'static str)],
-) -> Result<String, String> {
+async fn probe_version(binary: &std::path::Path) -> Result<String, String> {
     let child = Command::new(binary)
         .arg("--version")
-        .envs(env.iter().copied())
         .current_dir(std::env::temp_dir())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -465,19 +456,13 @@ async fn probe_version(
         .to_string())
 }
 
-/// The child-process environment one provider's CLI needs, without having to
-/// build the whole adapter.
-fn adapter_env_for(provider: &str) -> Vec<(&'static str, &'static str)> {
-    adapter_for(provider).map(|a| a.env()).unwrap_or_default()
-}
-
 /// Whether the CLI for one provider is present and actually runs. Returns the
 /// version on success and the reason on failure, so the health check can say
 /// something useful rather than just "not ready".
 pub async fn cli_health(provider: &str) -> Result<String, String> {
     let adapter = adapter_for(provider)?;
     let binary = resolve_binary(adapter.command()).ok_or_else(|| not_installed_error(&*adapter))?;
-    probe_version(&binary, &adapter.env())
+    probe_version(&binary)
         .await
         .map_err(|e| format!("{} {e}", adapter.label()))
 }
@@ -495,7 +480,7 @@ pub async fn cli_probe() -> Vec<CliStatus> {
         let path = resolve_binary(command);
         let (working, version, error) = match &path {
             None => (false, None, None),
-            Some(p) => match probe_version(p, &adapter_env_for(provider)).await {
+            Some(p) => match probe_version(p).await {
                 Ok(v) => (true, Some(v), None),
                 Err(e) => (false, None, Some(e)),
             },
@@ -832,7 +817,7 @@ mod tests {
         // present on disk and cannot be executed, which is the same shape.
         let dir = std::env::temp_dir().join(format!("applye-probe-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("create dir");
-        let err = probe_version(&dir, &[]).await.unwrap_err();
+        let err = probe_version(&dir).await.unwrap_err();
         assert!(!err.is_empty(), "a failure must explain itself");
         let _ = std::fs::remove_dir_all(&dir);
     }

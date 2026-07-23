@@ -17,7 +17,6 @@ import {
   LucideAngularModule,
   MoreHorizontal,
   Pencil,
-  Pin,
   Plus,
   Sparkles,
   Table,
@@ -29,6 +28,7 @@ import type {
   ApplicationStatus,
   ApplicationTrackerFieldsInput,
   Settings,
+  SupportedLanguage,
   TrackerCustomColumn,
   TrackerRow,
 } from '@applye/core';
@@ -91,7 +91,6 @@ export class TrackerComponent {
     archive: Archive,
     restore: ArchiveRestore,
     link: ArrowUpRight,
-    pin: Pin,
     info: Info,
     empty: Table2,
     layers: Layers,
@@ -133,12 +132,22 @@ export class TrackerComponent {
   readonly landscape = signal(false);
   readonly reportMode = signal<ReportMode>('fit');
 
+  /** The report is a document in its own language, not app chrome: the German
+   * Eigenbemuehungen sheet must read German even when the UI runs in English.
+   * The chosen market therefore drives every string ON the sheet — headings,
+   * column labels and the period — while the surrounding export dialog stays
+   * in the UI language. */
+  readonly reportLang = computed<SupportedLanguage>(() =>
+    this.reportMarket() === 'de' ? 'de' : 'en',
+  );
+  private readonly reportT = computed(() => this.i18n.tFor(this.reportLang()));
+
   /** The report mirrors the user's visible tracker columns (built-in + custom
    * + Next Interview), each with an estimated print width for A4 fit. */
   readonly reportColumns = computed<ReportColumn[]>(() =>
     this.visibleColumns().map((c) => ({
       id: c.key,
-      label: this.colLabel(c),
+      label: this.reportColLabel(c),
       type: c.custom ? (c.type ?? 'text') : (c.type ?? 'text'),
       width: this.colWidth(c),
       custom: !!c.custom,
@@ -299,6 +308,12 @@ export class TrackerComponent {
 
   colLabel(col: ColumnDef): string {
     return col.custom ? (col.label ?? '') : this.t()(col.labelKey ?? '');
+  }
+
+  /** Same column, labelled in the REPORT's language. Custom columns keep the
+   * user's own wording — we have no translation for those. */
+  private reportColLabel(col: ColumnDef): string {
+    return col.custom ? (col.label ?? '') : this.reportT()(col.labelKey ?? '');
   }
 
   /** Rough print width (mm) per column, for the A4 fit calculation. */
@@ -533,7 +548,10 @@ export class TrackerComponent {
   fitNoteText(): string {
     const overflow = this.reportFitInfo().overflow;
     if (!overflow.length) return '';
-    const cols = overflow.map((c) => c.label).join(', ');
+    // The note is dialog chrome, not part of the sheet, so it names the columns
+    // in the UI language even when the sheet itself is German.
+    const uiLabels = new Map(this.visibleColumns().map((c) => [c.key, this.colLabel(c)]));
+    const cols = overflow.map((c) => uiLabels.get(c.id) ?? c.label).join(', ');
     const orient = this.t()(this.landscape() ? 'tracker.landscape' : 'tracker.portrait');
     const key = this.reportMode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';
     return this.t()(key)
@@ -544,12 +562,14 @@ export class TrackerComponent {
   periodLabelPublic(): string {
     return this.periodLabel();
   }
+  /** Printed ON the sheet, so it follows the report language, not the UI. */
   private periodLabel(): string {
+    const rt = this.reportT();
     return this.range() === 'all'
-      ? this.t()('tracker.range_all')
+      ? rt('tracker.range_all')
       : this.range() === 'month'
-        ? this.t()('tracker.range_month')
-        : this.t()('tracker.range_3months');
+        ? rt('tracker.range_month')
+        : rt('tracker.range_3months');
   }
 
   private reportBase(): string {
@@ -619,7 +639,7 @@ export class TrackerComponent {
     }
     switch (col.type) {
       case 'status':
-        return r.status ? this.t()('status.' + r.status) : '';
+        return r.status ? this.reportT()('status.' + r.status) : '';
       case 'stage':
         return r.nextStageLabel
           ? `${r.nextStageLabel}${r.nextStageAt ? ' ' + r.nextStageAt.slice(0, 10) : ''}`
@@ -637,10 +657,11 @@ export class TrackerComponent {
   private buildCsv(): string {
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const cols = this.reportColumns();
+    const rt = this.reportT();
     const meta = [
-      [this.t()('tracker.report_period'), this.periodLabel()],
-      [this.t()('tracker.report_name'), this.applicantName()],
-      [this.t()('tracker.report_generated'), new Date().toISOString().slice(0, 10)],
+      [rt('tracker.report_period'), this.periodLabel()],
+      [rt('tracker.report_name'), this.applicantName()],
+      [rt('tracker.report_generated'), new Date().toISOString().slice(0, 10)],
     ].map((row) => row.map((c) => esc(String(c))).join(','));
     const head = ['#', ...cols.map((c) => c.label)];
     const lines = this.reportRows().map((r, i) =>
@@ -652,14 +673,15 @@ export class TrackerComponent {
     const rows = this.reportRows();
     const s = this.summary();
     const col = (v: string, w: number) => (v.length > w ? v.slice(0, w - 1) + '…' : v).padEnd(w);
+    const rt = this.reportT();
     const header =
       col('#', 4) +
-      col(this.t()('tracker.col_date'), 12) +
-      col(this.t()('tracker.col_company'), 20) +
-      col(this.t()('tracker.col_role'), 20) +
-      col(this.t()('tracker.col_method'), 12) +
-      col(this.t()('tracker.col_status'), 11) +
-      col(this.t()('tracker.col_contact'), 24);
+      col(rt('tracker.col_date'), 12) +
+      col(rt('tracker.col_company'), 20) +
+      col(rt('tracker.col_role'), 20) +
+      col(rt('tracker.col_method'), 12) +
+      col(rt('tracker.col_status'), 11) +
+      col(rt('tracker.col_contact'), 24);
     const body = rows.map(
       (r, i) =>
         col(String(i + 1), 4) +
@@ -671,16 +693,16 @@ export class TrackerComponent {
         col(this.contactDisplay(r), 24),
     );
     return [
-      `# ${this.t()('tracker.report_title')}`,
-      `${this.t()('tracker.report_period')}: ${this.periodLabel()}`,
-      `${this.t()('tracker.report_name')}: ${this.applicantName()}`,
-      `${this.t()('tracker.report_generated')}: ${new Date().toISOString().slice(0, 10)}`,
+      `# ${rt('tracker.report_title')}`,
+      `${rt('tracker.report_period')}: ${this.periodLabel()}`,
+      `${rt('tracker.report_name')}: ${this.applicantName()}`,
+      `${rt('tracker.report_generated')}: ${new Date().toISOString().slice(0, 10)}`,
       '',
-      '## ' + this.t()('tracker.title'),
+      '## ' + rt('tracker.title'),
       header,
       ...body,
       '',
-      `${this.t()('tracker.total')}: ${s.total}   ${this.t()('tracker.response_rate')}: ${s.rate}%   ${this.t()('tracker.avg_days')}: ${s.avg}`,
+      `${rt('tracker.total')}: ${s.total}   ${rt('tracker.response_rate')}: ${s.rate}%   ${rt('tracker.avg_days')}: ${s.avg}`,
     ].join('\n');
   }
 }

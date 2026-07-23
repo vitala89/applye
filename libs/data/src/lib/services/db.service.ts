@@ -173,6 +173,13 @@ export class DbService {
     return tauriInvoke<ScoringCache | null>('score_cache_get', { jobId, profileHash });
   }
 
+  /** Newest score for a job regardless of which profile version produced it —
+   * the fallback that keeps an earlier result visible (marked stale) after a
+   * profile edit changes the hash. */
+  async scoreCacheLatest(jobId: number): Promise<ScoringCache | null> {
+    return tauriInvoke<ScoringCache | null>('score_cache_latest', { jobId });
+  }
+
   async scoreCacheSave(input: {
     jobId: number;
     profileHash: string;

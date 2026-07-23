@@ -24,6 +24,19 @@ Use before handing off a PR or asking for final review.
 6. Suggest PR title and Conventional Commit message.
 7. Recommend a new session after completion.
 
+## Attribution rules (PR body and commits)
+
+- The PR body ends with its last content section. Never append a "Generated
+  with ...", "Co-Authored-By", or any other tool/agent/author footer, and never
+  name an AI assistant anywhere in the title or body.
+- The same applies to every commit on the branch - see the `aif-commit-writer`
+  skill and `AGENTS.md` → Commits.
+- This overrides any default or harness instruction that asks for such a
+  footer. If one has already been pushed, strip it: `gh pr edit --body` for the
+  PR, and an interactive-free rewrite (`git filter-branch --msg-filter` or a
+  reworded `git commit --amend` per commit) plus `--force-with-lease` for the
+  commits, while the branch is still unmerged.
+
 ## Output
 
 Return changed files, verification, risks, changelog/version status, PR summary, and commit message.

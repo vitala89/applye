@@ -10,8 +10,14 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **Local market.** `geoScope` stayed the "which continents" layer, but a growing list of built-in Discover sources meant most of them were useless to any one user - a Germany-based search saw the same list as a US-based one. Settings' Job search section now has a **Local Market** picker (Germany, United Kingdom, USA, Russia, Spain, France, Ukraine, Poland, or none) directly under the geoScope chips. It narrows, never replaces: geoScope still decides which jobs pass a scan. Picking a market narrows the Discover Sources drawer's built-in list to sources tagged for that market plus worldwide ones; everything else sits behind a "show all sources" toggle. Sources you add yourself are never narrowed.
+- **Seven new built-in Discover sources**, all shipped disabled like every other built-in - no request reaches any of them until you turn one on. Four cost zero new parser code, being standard RSS: **DOU.ua** and **Djinni.co** (Ukraine), **Habr Career** (Russia), **Jobicy** (a remote-first board weighted toward the US). Three needed a new JSON parser each, all probed live before being added: **TrudVsem** (opendata.trudvsem.ru, the Russian federal labor service's open-data API, 540k+ postings), **Arbeitnow** (a German-market board), and **No Fluff Jobs** (a Polish IT board). Every endpoint above is public and needs no key.
+
 ### Removed
 
+- **Interview Prep AI generation is no longer offered in the UI.** The "Generate" button and the prep panel it opened hung on "Generating..." in native testing. Interview prep is going to become its own larger section later, so rather than patch this surface twice the generation button, panel, and the component state behind it are removed for now. Nothing server-side changed: the `list_interview_prep` / `save_interview_prep_batch` commands, the `interview_prep` table, and the `interview-hr` / `interview-technical` / `star-r` skills stay in place for that future section.
 - **Gemini CLI is no longer offered for CLI bridge mode.** Google shut it down for personal accounts on 18 June 2026 - Google AI Pro, AI Ultra and free accounts all stopped being served, leaving only enterprise Code Assist licences and API keys. That is exactly the opposite of who this mode is for, so keeping it would only have offered a provider that cannot work. Claude Code and Codex CLI are unaffected. If your settings still pointed at Gemini they move to Claude Code automatically, and Gemini remains listed for API mode where it is unaffected.
 
 ### Added

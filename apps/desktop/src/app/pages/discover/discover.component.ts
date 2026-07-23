@@ -224,6 +224,10 @@ export class DiscoverComponent {
   private readonly profileKeywords = signal<string[]>([]);
   private readonly archetypes = signal<Archetype[]>([]);
   protected readonly geoScope = signal('worldwide');
+  /** Settings.market, narrowing the builtin sources list below. */
+  protected readonly market = signal<string | null>(null);
+  /** "Show all sources" override for the market narrowing. */
+  protected readonly showAllSources = signal(false);
   /** Profile compensation target (min/max/currency/period), parsed from the saved
    * profile markdown; empty strings when the user set no target. */
   private readonly compTarget = signal<{
@@ -608,6 +612,28 @@ export class DiscoverComponent {
     this.sources().filter((s) => !s.isBuiltin && !(s.type ?? '').startsWith('ats_')),
   );
 
+  /** Built-in sources tagged for the chosen market, plus worldwide sources -
+   * everything else stays behind "show all sources". User-added sources
+   * (userSources/companyBoards) are never narrowed by market. */
+  protected readonly visibleBuiltinSources = computed(() => {
+    const all = this.builtinSources();
+    const market = this.market();
+    if (this.showAllSources() || !market) return all;
+    return all.filter((s) => this.sourceMatchesMarket(s, market));
+  });
+  protected readonly hiddenBuiltinCount = computed(
+    () => this.builtinSources().length - this.visibleBuiltinSources().length,
+  );
+
+  private sourceMatchesMarket(source: DiscoverSource, market: string): boolean {
+    try {
+      const tags: unknown = JSON.parse(source.geoTagsJson ?? '[]');
+      return Array.isArray(tags) && (tags.includes(market) || tags.includes('worldwide'));
+    } catch {
+      return false;
+    }
+  }
+
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {
     try {
@@ -633,6 +659,7 @@ export class DiscoverComponent {
         period: cf.compPeriod,
       });
       this.geoScope.set(settings.geoScope || 'worldwide');
+      this.market.set(settings.market);
     } catch (e) {
       console.error('discover: load failed', e);
     } finally {

@@ -860,7 +860,7 @@
         </button>
         @if (!groupCollapsed('builtin')) {
           <div class="dv-drawer__list">
-            @for (s of builtinSources(); track s.id) {
+            @for (s of visibleBuiltinSources(); track s.id) {
               <div class="dv-src">
                 <div class="dv-src__info">
                   <div class="dv-src__nameline">
@@ -882,6 +882,16 @@
                   <span class="dv-switch__thumb" aria-hidden="true"></span>
                 </button>
               </div>
+            }
+            @if (hiddenBuiltinCount() > 0) {
+              <label class="dv-srcshowall">
+                <input
+                  type="checkbox"
+                  [checked]="showAllSources()"
+                  (change)="showAllSources.set(!showAllSources())"
+                />
+                {{ t()('discover.show_all_sources').replace('{n}', '' + hiddenBuiltinCount()) }}
+              </label>
             }
           </div>
         }

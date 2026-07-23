@@ -20,6 +20,8 @@ import {
   GEO_SCOPE_KEYS,
   GeoScopeKey,
   LANGUAGE_NATIVE_NAMES,
+  LOCAL_MARKETS,
+  LocalMarket,
   parseGeoScopes,
   Settings,
   SupportedLanguage,
@@ -510,6 +512,20 @@ const CLI_MODELS: Record<string, string[]> = {
             </div>
             <p class="hint">{{ t()('settings.geo_scope_hint') }}</p>
           </div>
+          <label class="field">
+            <span class="cap">{{ t()('settings.local_market_label') }}</span>
+            <select
+              [ngModel]="settings()?.market ?? ''"
+              (ngModelChange)="setLocalMarket($event || null)"
+              [ngModelOptions]="{ standalone: true }"
+            >
+              <option value="">{{ t()('settings.local_market_none') }}</option>
+              @for (market of localMarkets; track market) {
+                <option [value]="market">{{ t()('settings.local_market_' + market) }}</option>
+              }
+            </select>
+          </label>
+          <p class="hint">{{ t()('settings.local_market_hint') }}</p>
         </section>
 
         <!-- Follow-up reminders -->
@@ -1263,6 +1279,25 @@ export class SettingsComponent implements OnInit {
       await this.db.updateSettings({ geoScope });
     } catch (e) {
       console.error('settings: geo scope save failed', e);
+      this.settings.set(prev); // rollback
+      this.toast.error(String(e));
+    }
+  }
+
+  // --- Local market ---
+  // Narrows the Discover Sources drawer's default list without touching
+  // geoScope, which stays the wide "which continents" layer. Auto-saves like
+  // geoScope, for the same reason: it drives what the drawer shows right now.
+  readonly localMarkets = LOCAL_MARKETS;
+
+  async setLocalMarket(market: LocalMarket | null): Promise<void> {
+    const prev = this.settings();
+    if (!prev || prev.market === market) return;
+    this.settings.set({ ...prev, market }); // optimistic
+    try {
+      await this.db.updateSettings({ market });
+    } catch (e) {
+      console.error('settings: local market save failed', e);
       this.settings.set(prev); // rollback
       this.toast.error(String(e));
     }

@@ -212,6 +212,8 @@ const EUROPE_COUNTRIES: &[&str] = &[
     "malta",
     "cyprus",
     "united kingdom",
+    "russia",
+    "russian federation",
 ];
 
 /// Asian country/region names for the asia scope. Mirrors the client-side
@@ -946,6 +948,175 @@ fn parse_arbeitsagentur(val: &serde_json::Value) -> Vec<RawJob> {
         .collect()
 }
 
+/// opendata.trudvsem.ru/api/v1/vacancies: `{ results: { vacancies: [{ vacancy: {
+/// job-name, company: { name }, region: { name }, vac_url, duty, requirement,
+/// employment, schedule, salary_min, salary_max, currency } }] } }`. Official
+/// Rostrud open-data portal, no key required. `region.name` comes back in
+/// Russian (e.g. "Москва"), so ", Russia" is appended the same way
+/// `parse_arbeitsagentur` appends "Deutschland" - a bare geoScope match needs
+/// an English country token somewhere in the location string.
+fn parse_trudvsem(val: &serde_json::Value) -> Vec<RawJob> {
+    let Some(vacancies) = val
+        .get("results")
+        .and_then(|r| r.get("vacancies"))
+        .and_then(|v| v.as_array())
+    else {
+        return Vec::new();
+    };
+    vacancies
+        .iter()
+        .filter_map(|entry| entry.get("vacancy"))
+        .map(|j| {
+            let title = json_str(j, "job-name");
+            let company = j
+                .get("company")
+                .map(|c| json_str(c, "name"))
+                .unwrap_or_default();
+            let region = j
+                .get("region")
+                .map(|r| json_str(r, "name"))
+                .unwrap_or_default();
+            let location = if region.is_empty() {
+                "Russia".to_string()
+            } else {
+                format!("{region}, Russia")
+            };
+            let jd_text = [
+                json_str(j, "duty"),
+                json_str(j, "requirement"),
+                json_str(j, "employment"),
+                json_str(j, "schedule"),
+            ]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+            RawJob {
+                title,
+                company,
+                jd_text,
+                location,
+                url: json_str(j, "vac_url"),
+                detail_ref: None,
+            }
+        })
+        .collect()
+}
+
+/// arbeitnow.com/api/job-board-api: `{ data: [{ title, company_name,
+/// description, location, url, remote }] }`. German-market board - Germany
+/// is appended to the location the same way `parse_arbeitsagentur` does, since
+/// the feed does not reliably carry a country token of its own.
+fn parse_arbeitnow(val: &serde_json::Value) -> Vec<RawJob> {
+    let Some(jobs) = val.get("data").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    jobs.iter()
+        .map(|j| {
+            let location = json_str(j, "location");
+            let location = if location.is_empty() {
+                "Germany".to_string()
+            } else if location.to_lowercase().contains("germany")
+                || location.to_lowercase().contains("deutschland")
+            {
+                location
+            } else {
+                format!("{location}, Germany")
+            };
+            RawJob {
+                title: json_str(j, "title"),
+                company: json_str(j, "company_name"),
+                jd_text: html_to_text(&json_str(j, "description")),
+                location,
+                url: json_str(j, "url"),
+                detail_ref: None,
+            }
+        })
+        .collect()
+}
+
+/// nofluffjobs.com/api/joboffers/main - shape read tolerantly (root array or
+/// `{ postings: [...] }`, several observed field spellings for company/city)
+/// so a feed-side rename degrades to an empty field, not a scan error, same
+/// approach as `parse_himalayas`. Poland-market board.
+///
+/// The list endpoint carries no description, only structured fields
+/// (technology, category, seniority) - `jd_text` is seeded from those, same
+/// placeholder approach as `parse_arbeitsagentur`.
+fn parse_nofluffjobs(val: &serde_json::Value) -> Vec<RawJob> {
+    let postings = val
+        .as_array()
+        .cloned()
+        .or_else(|| val.get("postings").and_then(|v| v.as_array()).cloned())
+        .unwrap_or_default();
+    postings
+        .iter()
+        .map(|j| {
+            let company = [json_str(j, "name"), json_str(j, "companyName")]
+                .into_iter()
+                .find(|s| !s.is_empty())
+                .unwrap_or_default();
+            let city = j
+                .get("location")
+                .and_then(|l| l.get("places"))
+                .and_then(|p| p.as_array())
+                .and_then(|arr| arr.first())
+                .map(|p| json_str(p, "city"))
+                .unwrap_or_default();
+            let remote = j
+                .get("location")
+                .and_then(|l| l.get("fullyRemote"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let location = if !city.is_empty() {
+                format!("{city}, Poland")
+            } else if remote {
+                "Remote, Poland".to_string()
+            } else {
+                "Poland".to_string()
+            };
+            let slug = [json_str(j, "url"), json_str(j, "id")]
+                .into_iter()
+                .find(|s| !s.is_empty())
+                .unwrap_or_default();
+            let url = if slug.starts_with("http") {
+                slug
+            } else if slug.is_empty() {
+                String::new()
+            } else {
+                format!("https://nofluffjobs.com/job/{slug}")
+            };
+            let seniority = j
+                .get("seniority")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|x| x.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            let jd_text = [
+                json_str(j, "category"),
+                json_str(j, "technology"),
+                seniority,
+            ]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+            RawJob {
+                title: json_str(j, "title"),
+                company,
+                jd_text,
+                location,
+                url,
+                detail_ref: None,
+            }
+        })
+        .collect()
+}
+
 // ---------------------------------------------------------------------------
 // Fetch (thin HTTPS layer over the pure parsers)
 // ---------------------------------------------------------------------------
@@ -1094,6 +1265,18 @@ async fn fetch_source_jobs(
                 }
             }
             Ok(out)
+        }
+        "api_trudvsem" => {
+            let val = get_json(client, &src.url).await?;
+            Ok(parse_trudvsem(&val))
+        }
+        "api_arbeitnow" => {
+            let val = get_json(client, &src.url).await?;
+            Ok(parse_arbeitnow(&val))
+        }
+        "api_nofluffjobs" => {
+            let val = get_json(client, &src.url).await?;
+            Ok(parse_nofluffjobs(&val))
         }
         "ats_personio" => {
             // Personio boards key on the subdomain, not a path segment, so the
@@ -1623,6 +1806,130 @@ mod tests {
         assert!(parse_arbeitsagentur(&serde_json::json!({"stellenangebote":[]})).is_empty());
     }
 
+    // -- TrudVsem (Russia) ----------------------------------------------------
+
+    #[test]
+    fn trudvsem_reads_vacancy_fields_and_appends_russia() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"results":{"vacancies":[{"vacancy":{
+                 "job-name":"Backend Developer",
+                 "company":{"name":"Acme LLC"},
+                 "region":{"name":"Москва"},
+                 "vac_url":"https://trudvsem.ru/vacancy/1",
+                 "duty":"Write code",
+                 "requirement":"Rust experience"
+               }}]}}"#,
+        )
+        .unwrap();
+        let jobs = parse_trudvsem(&val);
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].title, "Backend Developer");
+        assert_eq!(jobs[0].company, "Acme LLC");
+        assert_eq!(jobs[0].location, "Москва, Russia");
+        assert_eq!(jobs[0].url, "https://trudvsem.ru/vacancy/1");
+        assert!(jobs[0].jd_text.contains("Write code"));
+        assert!(jobs[0].jd_text.contains("Rust experience"));
+    }
+
+    #[test]
+    fn trudvsem_missing_region_falls_back_to_bare_russia() {
+        let val: serde_json::Value =
+            serde_json::from_str(r#"{"results":{"vacancies":[{"vacancy":{"job-name":"QA"}}]}}"#)
+                .unwrap();
+        assert_eq!(parse_trudvsem(&val)[0].location, "Russia");
+    }
+
+    #[test]
+    fn trudvsem_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_trudvsem(&serde_json::json!({})).is_empty());
+        assert!(parse_trudvsem(&serde_json::json!({"results":{"vacancies":[]}})).is_empty());
+    }
+
+    // -- Arbeitnow (Germany) ---------------------------------------------------
+
+    #[test]
+    fn arbeitnow_reads_job_fields_and_appends_germany() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"data":[{
+                 "title":"Frontend Engineer",
+                 "company_name":"Muster GmbH",
+                 "description":"<p>Build things.</p>",
+                 "location":"Berlin",
+                 "url":"https://arbeitnow.com/jobs/1"
+               }]}"#,
+        )
+        .unwrap();
+        let jobs = parse_arbeitnow(&val);
+        assert_eq!(jobs[0].title, "Frontend Engineer");
+        assert_eq!(jobs[0].company, "Muster GmbH");
+        assert_eq!(jobs[0].location, "Berlin, Germany");
+        assert!(jobs[0].jd_text.contains("Build things."));
+    }
+
+    #[test]
+    fn arbeitnow_missing_location_falls_back_to_bare_germany() {
+        let val: serde_json::Value = serde_json::from_str(r#"{"data":[{"title":"QA"}]}"#).unwrap();
+        assert_eq!(parse_arbeitnow(&val)[0].location, "Germany");
+    }
+
+    #[test]
+    fn arbeitnow_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_arbeitnow(&serde_json::json!({})).is_empty());
+        assert!(parse_arbeitnow(&serde_json::json!({"data":[]})).is_empty());
+    }
+
+    // -- No Fluff Jobs (Poland) -------------------------------------------------
+
+    #[test]
+    fn nofluffjobs_reads_root_array_shape() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"[{
+                 "title":"Java Developer",
+                 "name":"Acme Sp. z o.o.",
+                 "url":"java-developer-acme",
+                 "category":"backend",
+                 "technology":"java",
+                 "seniority":["Mid"],
+                 "location":{"places":[{"city":"Warsaw"}],"fullyRemote":false}
+               }]"#,
+        )
+        .unwrap();
+        let jobs = parse_nofluffjobs(&val);
+        assert_eq!(jobs[0].title, "Java Developer");
+        assert_eq!(jobs[0].company, "Acme Sp. z o.o.");
+        assert_eq!(jobs[0].location, "Warsaw, Poland");
+        assert_eq!(
+            jobs[0].url,
+            "https://nofluffjobs.com/job/java-developer-acme"
+        );
+        assert!(jobs[0].jd_text.contains("backend"));
+        assert!(jobs[0].jd_text.contains("java"));
+        assert!(jobs[0].jd_text.contains("Mid"));
+    }
+
+    #[test]
+    fn nofluffjobs_reads_postings_wrapper_shape_and_remote() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"postings":[{
+                 "title":"DevOps",
+                 "companyName":"Acme",
+                 "url":"https://nofluffjobs.com/job/devops-acme",
+                 "location":{"places":[],"fullyRemote":true}
+               }]}"#,
+        )
+        .unwrap();
+        let jobs = parse_nofluffjobs(&val);
+        assert_eq!(jobs[0].company, "Acme");
+        assert_eq!(jobs[0].location, "Remote, Poland");
+        assert_eq!(jobs[0].url, "https://nofluffjobs.com/job/devops-acme");
+    }
+
+    #[test]
+    fn nofluffjobs_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_nofluffjobs(&serde_json::json!({})).is_empty());
+        assert!(parse_nofluffjobs(&serde_json::json!([])).is_empty());
+    }
+
     // -- Personio company boards ---------------------------------------------
 
     #[test]
@@ -2059,6 +2366,28 @@ mod tests {
                 "https://weworkremotely.com/remote-jobs.rss",
             ),
             live_source(3, "Himalayas", "api", "https://himalayas.app/jobs/api"),
+            live_source(5, "DOU.ua", "rss", "https://jobs.dou.ua/vacancies/feeds/"),
+            live_source(6, "Djinni.co", "rss", "https://djinni.co/jobs/rss/"),
+            live_source(7, "Habr Career", "rss", "https://career.habr.com/vacancies/rss"),
+            live_source(8, "Jobicy", "rss", "https://jobicy.com/?feed=job_feed"),
+            live_source(
+                9,
+                "TrudVsem",
+                "api_trudvsem",
+                "https://opendata.trudvsem.ru/api/v1/vacancies?limit=100",
+            ),
+            live_source(
+                10,
+                "Arbeitnow",
+                "api_arbeitnow",
+                "https://www.arbeitnow.com/api/job-board-api",
+            ),
+            live_source(
+                11,
+                "No Fluff Jobs",
+                "api_nofluffjobs",
+                "https://nofluffjobs.com/api/joboffers/main?salaryCurrency=PLN&salaryPeriod=month&region=pl",
+            ),
         ];
         for src in &sources {
             let jobs = fetch_source_jobs(&client, src)

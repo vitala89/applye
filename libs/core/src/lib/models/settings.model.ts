@@ -13,6 +13,8 @@ export interface Settings {
   defaultDocLanguage: SupportedLanguage;
   /** Opaque - a JSON-encoded GeoScopeKey[]. Use parseGeoScopes/encodeGeoScopes. */
   geoScope: string;
+  /** ISO 3166-1 alpha-2, lowercase, or null for no local market (wide geoScope only). */
+  market: string | null;
   followupDaysAfterApply?: number;
   followupDaysAfterInterview?: number;
   minScoreNotify?: number;

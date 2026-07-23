@@ -18,6 +18,8 @@ pub struct Settings {
     pub ui_language: String,
     pub default_doc_language: String,
     pub geo_scope: String,
+    /// ISO 3166-1 alpha-2, lowercase, or NULL for no local market.
+    pub market: Option<String>,
     pub followup_days_after_apply: Option<i64>,
     pub followup_days_after_interview: Option<i64>,
     pub min_score_notify: Option<f64>,
@@ -40,6 +42,10 @@ pub struct SettingsPatch {
     pub ui_language: Option<String>,
     pub default_doc_language: Option<String>,
     pub geo_scope: Option<String>,
+    /// Double-Option: absent (`None`) leaves market untouched; present as
+    /// `null` (`Some(None)`) explicitly clears it back to "no local market".
+    #[serde(default)]
+    pub market: Option<Option<String>>,
     pub followup_days_after_apply: Option<i64>,
     pub followup_days_after_interview: Option<i64>,
     pub health_check_seen: Option<bool>,
@@ -94,6 +100,16 @@ pub async fn db_update_settings(
     .execute(&db.pool)
     .await
     .map_err(|e| format!("db_update_settings: {e}"))?;
+
+    // market is a double-Option: only touch the column when the caller
+    // actually sent the key (Some), which may itself carry NULL to clear it.
+    if let Some(market) = &settings.market {
+        sqlx::query("UPDATE settings SET market = ? WHERE id = 1")
+            .bind(market)
+            .execute(&db.pool)
+            .await
+            .map_err(|e| format!("db_update_settings (market): {e}"))?;
+    }
 
     db_get_settings(db).await
 }

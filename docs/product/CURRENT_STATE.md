@@ -1,12 +1,51 @@
 # Current Operational State
 
 - **Current version**: `0.26.0` (package.json / tauri.conf.json)
-- **Current branch / focus**: none — `main`, clean tree, no open PRs. The four branches below all
-  merged during the 2026-07-23 session.
-- **Next action**: a `tauri dev` pass. Four features merged with **no native verification between
-  them** (CLI-bridge Settings + onboarding UI, the ATS card, the assisted installer, Interview
-  Prep batch generation). The browser preview cannot reach Tauri IPC, so none of it has been seen
-  running. This is the only thing standing between `main` and launch prep.
+- **Current branch / focus**: `main`, uncommitted work from the 2026-07-24 session (Interview Prep
+  generation UI removal + local markets). Not yet committed/pushed - see below.
+- **Next action**: a `tauri dev` pass covering everything merged since the last one, plus the two
+  items below. CLI-bridge Settings + onboarding UI, the ATS card, the assisted installer, and
+  Interview Prep's CRUD (add/edit/delete/reorder stages) still have **no native verification**. The
+  browser preview cannot reach Tauri IPC, so none of it has been seen running. This is the only
+  thing standing between `main` and launch prep.
+- **2026-07-24 session, uncommitted on `main`:**
+  - **Interview Prep AI generation UI removed** (workaround, not a fix). Native testing found the
+    "Generate" button hangs on "Generating...". Interview prep is slated to become its own larger
+    section later, so the generate button, the AI prep panel, and the component state behind them
+    (`generatePrep`, `togglePrep`, `cardsFor`, `formatFor`, `jdText`/`prepOpenId`/`prepCards`/
+    `generatingId` signals) were removed from
+    `interview-prep-detail.component.{ts,html,scss}` rather than patched. **The hang itself is
+    still unfixed** - `list_interview_prep` / `save_interview_prep_batch`, the `interview_prep`
+    table, and the `interview-hr` / `interview-technical` / `star-r` skills are untouched. When the
+    larger Interview Prep section gets built, start with `systematic-debugging` on the hang before
+    re-adding a generate button - the most likely causes are an unhandled promise in `ai.run()`
+    for CLI-bridge mode, or a skill-render path that never resolves; neither was diagnosed this
+    session, only routed around.
+  - **Local markets shipped** (`docs/product/local-markets-analysis.md`, now marked implemented).
+    `settings.market: string | null` (migration `0023_local_market.sql`, Rust double-Option patch
+    so it can be explicitly cleared back to null); a Local Market picker in Settings' Job search
+    section, under the geoScope chips, auto-saving the same way geoScope does; the Discover Sources
+    drawer now filters built-in sources to the chosen market plus worldwide ones, behind a "show
+    all sources" toggle - user-added sources are never filtered. Seven new built-in sources, all
+    shipped **disabled** (migration `0024_local_market_sources.sql`), every endpoint probed live
+    both in the prior research session and again just now via `cargo test -- --ignored
+live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existing + 7 new):
+    DOU.ua, Djinni.co, Habr Career, Jobicy (plain RSS, zero parser code), TrudVsem, Arbeitnow, No
+    Fluff Jobs (new JSON parsers - No Fluff Jobs needed `?salaryCurrency=PLN&salaryPeriod=month&region=pl`
+    query params to avoid a 400, found live rather than assumed). `EUROPE_COUNTRIES` in
+    `discover.rs` gained `"russia"`/`"russian federation"` tokens so TrudVsem's Cyrillic
+    `region.name` (with ", Russia" appended, same pattern as Arbeitsagentur's ", Deutschland")
+    matches a Europe geoScope. **Known gap, not fixed**: Habr Career puts the city in the RSS
+    title, e.g. "Требуется DevOps (Москва)", and the shared `parse_rss_items` was deliberately left
+    untouched (the zero-parser-code promise for the four RSS sources), so Habr postings get no
+    location and fall into "Other" under a restrictive geoScope - only visible with geoScope set to
+    worldwide or with Russia's continent included. Extracting the city would mean parsing
+    parenthesised text out of titles in the _shared_ RSS parser, which risks false positives on
+    every other RSS source (WWR, user-added feeds) and needs its own design pass, not a quick
+    patch. Gates run clean: `cargo test --lib` (245 passed), `cargo clippy -- -D warnings` (0
+    warnings), `nx run-many -t test --all` (6 projects), `nx lint desktop` (0 errors, pre-existing
+    warnings only), `nx build desktop`. Not verified natively (Settings picker, Sources drawer
+    toggle, an actual scan of a new source) - covered by the `tauri dev` pass above.
 - **Merged: `fix/cli-bridge-probe-and-models` → PR #153.** Two defects found in the first live
   CLI-bridge run, then five more found while checking the surface end to end. (1) `cli_probe` only
   checked that a file with the right name existed on the search path, so a partially installed

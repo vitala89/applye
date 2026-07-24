@@ -212,6 +212,7 @@ const EUROPE_COUNTRIES: &[&str] = &[
     "malta",
     "cyprus",
     "united kingdom",
+    "ukraine",
     "russia",
     "russian federation",
 ];
@@ -384,6 +385,72 @@ fn parse_local_markets(raw: &str) -> Vec<String> {
 /// both the German and the English spelling. The trade is deliberate: a
 /// same-named city elsewhere (Frankfort, KY) slips through, which the user can
 /// see and dismiss, where a dropped job is invisible.
+/// Full names of every US state. Long and unambiguous, so all of them are safe
+/// to match as substrings.
+const US_STATE_NAMES: &[&str] = &[
+    "alabama",
+    "alaska",
+    "arizona",
+    "arkansas",
+    "california",
+    "colorado",
+    "connecticut",
+    "delaware",
+    "florida",
+    "georgia",
+    "hawaii",
+    "idaho",
+    "illinois",
+    "indiana",
+    "iowa",
+    "kansas",
+    "kentucky",
+    "louisiana",
+    "maine",
+    "maryland",
+    "massachusetts",
+    "michigan",
+    "minnesota",
+    "mississippi",
+    "missouri",
+    "montana",
+    "nebraska",
+    "nevada",
+    "new hampshire",
+    "new jersey",
+    "new mexico",
+    "new york",
+    "north carolina",
+    "north dakota",
+    "ohio",
+    "oklahoma",
+    "oregon",
+    "pennsylvania",
+    "rhode island",
+    "south carolina",
+    "south dakota",
+    "tennessee",
+    "texas",
+    "utah",
+    "vermont",
+    "virginia",
+    "washington",
+    "west virginia",
+    "wisconsin",
+    "wyoming",
+    "district of columbia",
+];
+
+/// State codes safe to match as bare words. Deliberately partial: `loc_matches`
+/// is case-insensitive, so it cannot tell "Berlin, DE" (Germany) from
+/// "Dover, DE" (Delaware). Codes that collide with a country code or with an
+/// ordinary English word are left out - `de`, `in`, `or`, `me`, `hi`, `ok`,
+/// `id`, `la`, `oh` - and are reachable through their full name above instead.
+const US_STATE_CODES: &[&str] = &[
+    "tx", "ca", "ny", "wa", "il", "co", "fl", "ga", "ma", "nc", "va", "az", "nj", "mi", "mn", "ut",
+    "nv", "tn", "mo", "wi", "sc", "ct", "md", "pa",
+];
+
 fn country_tokens(code: &str) -> Vec<&'static str> {
     match code {
         "de" => vec![
@@ -416,11 +483,37 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
         ],
         "at" => vec!["at", "austria"],
         "ch" => vec!["ch", "switzerland"],
-        "fr" => vec!["fr", "france"],
+        "fr" => vec![
+            "fr",
+            "france",
+            "paris",
+            "lyon",
+            "marseille",
+            "toulouse",
+            "lille",
+            "bordeaux",
+            "nantes",
+        ],
         "nl" => vec!["nl", "netherlands"],
-        "es" => vec!["es", "spain"],
+        "es" => vec![
+            "es",
+            "spain",
+            "españa",
+            "espana",
+            "madrid",
+            "barcelona",
+            "valencia",
+            "seville",
+            "sevilla",
+            "bilbao",
+            "malaga",
+            "málaga",
+        ],
         "it" => vec!["it", "italy"],
-        "pl" => vec!["pl", "poland"],
+        "pl" => vec![
+            "pl", "poland", "polska", "warsaw", "warszawa", "krakow", "kraków", "cracow",
+            "wroclaw", "wrocław", "gdansk", "gdańsk", "poznan", "poznań", "lodz", "łódź",
+        ],
         "pt" => vec!["pt", "portugal"],
         "se" => vec!["se", "sweden"],
         "dk" => vec!["dk", "denmark"],
@@ -429,9 +522,66 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
         "ie" => vec!["ie", "ireland"],
         "be" => vec!["be", "belgium"],
         "cz" => vec!["cz", "czech"],
-        "uk" | "gb" => vec!["uk", "gb", "united kingdom", "britain", "england"],
-        "us" => vec!["us", "usa", "united states", "america"],
-        "ca" => vec!["ca", "canada"],
+        "uk" | "gb" => vec![
+            "uk",
+            "gb",
+            "united kingdom",
+            "britain",
+            "great britain",
+            "england",
+            "scotland",
+            "wales",
+            "london",
+            "manchester",
+            "edinburgh",
+            "birmingham",
+            "glasgow",
+            "bristol",
+            "leeds",
+            "cambridge",
+            "oxford",
+        ],
+        "us" => {
+            let mut out = vec![
+                "us",
+                "usa",
+                "u.s.",
+                "united states",
+                "america",
+                "san francisco",
+                "new york city",
+                "nyc",
+                "seattle",
+                "austin",
+                "boston",
+                "chicago",
+                "denver",
+                "atlanta",
+                "los angeles",
+                "san diego",
+                "portland",
+            ];
+            out.extend_from_slice(US_STATE_NAMES);
+            out.extend_from_slice(US_STATE_CODES);
+            out
+        }
+        // No bare "ca": in a job location it means California far more often
+        // than Canada, and a US market that silently loses San Francisco is a
+        // worse failure than a Canada scope that needs the country spelled out.
+        "ca" => vec![
+            "canada",
+            "toronto",
+            "vancouver",
+            "montreal",
+            "montréal",
+            "ottawa",
+            "calgary",
+            "ontario",
+            "quebec",
+            "québec",
+            "british columbia",
+            "alberta",
+        ],
         // Russian and Ukrainian sources write the place in Cyrillic - TrudVsem
         // returns `region.name` as "Москва", Habr Career puts the city in the
         // posting title - so both scripts are listed, same reasoning as the
@@ -1838,6 +1988,47 @@ mod tests {
             location: "Remote".to_string(),
             url: url.to_string(),
             detail_ref: None,
+        }
+    }
+
+    /// Every market must recognise its own largest tech city, and must not
+    /// recognise another market's. This is the guard against a market being added
+    /// later with a country-name-only token list, which the strict filter in the
+    /// scan would turn into silently dropped jobs.
+    #[test]
+    fn every_market_recognises_its_own_city_and_no_other() {
+        let cases: &[(&str, &str)] = &[
+            ("de", "Berlin"),
+            ("gb", "London"),
+            ("us", "San Francisco, CA"),
+            ("ru", "Москва"),
+            ("es", "Madrid"),
+            ("fr", "Paris"),
+            ("ua", "Київ"),
+            ("pl", "Warsaw"),
+        ];
+
+        for market in KNOWN_LOCAL_MARKETS {
+            assert!(
+                cases.iter().any(|(code, _)| code == market),
+                "market {market} has no parity case - add one"
+            );
+        }
+
+        for (market, city) in cases {
+            let cfg = build_geo_cfg(&[], &[market.to_string()]);
+            assert!(geo_passes(city, &cfg), "{market} must accept {city}");
+
+            for (other, _) in cases {
+                if other == market {
+                    continue;
+                }
+                let other_cfg = build_geo_cfg(&[], &[other.to_string()]);
+                assert!(
+                    !geo_passes(city, &other_cfg),
+                    "{other} must not accept {city}"
+                );
+            }
         }
     }
 

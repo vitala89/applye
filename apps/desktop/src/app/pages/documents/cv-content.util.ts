@@ -452,13 +452,19 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
   // The AI is asked for the split, but a provider that ignores the new keys
   // must not leave the fields empty: a derived split is better than none, and
   // `nameSplitConfident` is what tells the review step to ask about it.
+  // `||` rather than `??` on the parts: models routinely answer "nothing here"
+  // with `""`, and an empty string that survives here reaches the write path as
+  // a name that overwrites the parsed display name with nothing.
   const derived = splitDisplayName(p.fullName ?? '');
   return {
     personalDetails: {
       fullName: p.fullName ?? null,
-      firstName: p.firstName ?? (derived.firstName || null),
-      lastName: p.lastName ?? (derived.lastName || null),
-      nameSplitConfident: p.nameSplitConfident ?? derived.confident,
+      firstName: p.firstName?.trim() || derived.firstName || null,
+      lastName: p.lastName?.trim() || derived.lastName || null,
+      // Only a real boolean is trusted, so an explicit `false` still wins over
+      // the derived guess while a stray string or null falls back to it.
+      nameSplitConfident:
+        typeof p.nameSplitConfident === 'boolean' ? p.nameSplitConfident : derived.confident,
       title: p.title ?? null,
       email: p.email ?? null,
       phone: p.phone ?? null,

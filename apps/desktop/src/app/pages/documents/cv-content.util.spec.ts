@@ -1606,6 +1606,31 @@ describe('parseCvSkillResponse name split', () => {
     expect(cv.personalDetails.nameSplitConfident).toBe(false);
   });
 
+  it('derives the split when the AI sent empty strings for the parts', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: {
+          fullName: 'Anna Kowalska',
+          firstName: '',
+          lastName: '',
+          nameSplitConfident: true,
+        },
+      }),
+    );
+    expect(cv.personalDetails.fullName).toBe('Anna Kowalska');
+    expect(cv.personalDetails.firstName).toBe('Anna');
+    expect(cv.personalDetails.lastName).toBe('Kowalska');
+  });
+
+  it('derives the confidence flag when the AI sent a non-boolean for it', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: { fullName: 'Anna Maria Kowalska', nameSplitConfident: 'true' },
+      }),
+    );
+    expect(cv.personalDetails.nameSplitConfident).toBe(false);
+  });
+
   it('leaves every name field null when there is no name at all', () => {
     const cv = parseCvSkillResponse(JSON.stringify({ personalDetails: {} }));
     expect(cv.personalDetails.fullName).toBeNull();

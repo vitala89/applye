@@ -578,6 +578,44 @@ describe('OnboardingComponent flow', () => {
 
       expect(component.needsNameConfirm()).toBe(false);
     });
+
+    it('seeds from the display name when the parse carried empty strings', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Kowalska',
+          firstName: '',
+          lastName: '',
+          nameSplitConfident: true,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Anna');
+      expect(component.reviewLastName()).toBe('Kowalska');
+    });
+
+    it('nudges when only the last name survived the parse', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Kowalska',
+          firstName: null,
+          lastName: 'Kowalska',
+          nameSplitConfident: true,
+        }),
+      );
+      component.reviewLastName.set('Kowalska');
+
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('does not nudge when there is no name at all', () => {
+      component.parsedCv.set(makeParsed({ fullName: null }));
+
+      component.seedReviewFields();
+
+      expect(component.needsNameConfirm()).toBe(false);
+    });
   });
 });
 

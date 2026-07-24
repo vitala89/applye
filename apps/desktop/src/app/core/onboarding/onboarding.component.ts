@@ -433,8 +433,12 @@ export class OnboardingComponent {
    * ask. Never gates Continue: Applye augments, it does not block. */
   readonly needsNameConfirm = computed(() => {
     if (this.nameEdited()) return false;
-    if (!this.reviewFirstName().trim()) return false;
-    if (!this.reviewLastName().trim()) return true;
+    const first = this.reviewFirstName().trim();
+    const last = this.reviewLastName().trim();
+    // Nothing parsed at all, nothing to confirm. But one part alone is exactly
+    // the case worth asking about, whichever of the two it is.
+    if (!first && !last) return false;
+    if (!first || !last) return true;
     return this.parsedCv()?.personalDetails.nameSplitConfident !== true;
   });
 
@@ -525,10 +529,12 @@ export class OnboardingComponent {
     const cv = this.parsedCv();
     if (!cv) return;
     const split = splitDisplayName(cv.personalDetails.fullName ?? '');
+    // `||` rather than `??`: a part the parse left as an empty string carries no
+    // more information than a missing one, so both fall back to the derived split.
     if (!this.reviewFirstName().trim())
-      this.reviewFirstName.set(cv.personalDetails.firstName ?? split.firstName);
+      this.reviewFirstName.set(cv.personalDetails.firstName || split.firstName);
     if (!this.reviewLastName().trim())
-      this.reviewLastName.set(cv.personalDetails.lastName ?? split.lastName);
+      this.reviewLastName.set(cv.personalDetails.lastName || split.lastName);
     if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
     if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
     if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');

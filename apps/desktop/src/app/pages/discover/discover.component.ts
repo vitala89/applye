@@ -36,6 +36,7 @@ import { TranslateService } from '@applye/i18n';
 import { DbService } from '@applye/data';
 import {
   parseGeoScopes,
+  parseLocalMarkets,
   parseProfileMd,
   compareCompensation,
   extractSalaryFromJd,
@@ -224,8 +225,8 @@ export class DiscoverComponent {
   private readonly profileKeywords = signal<string[]>([]);
   private readonly archetypes = signal<Archetype[]>([]);
   protected readonly geoScope = signal('worldwide');
-  /** Settings.market, narrowing the builtin sources list below. */
-  protected readonly market = signal<string | null>(null);
+  /** Settings.market - the country codes narrowing the builtin sources list. */
+  protected readonly markets = signal<string[]>([]);
   /** "Show all sources" override for the market narrowing. */
   protected readonly showAllSources = signal(false);
   /** Profile compensation target (min/max/currency/period), parsed from the saved
@@ -612,23 +613,24 @@ export class DiscoverComponent {
     this.sources().filter((s) => !s.isBuiltin && !(s.type ?? '').startsWith('ats_')),
   );
 
-  /** Built-in sources tagged for the chosen market, plus worldwide sources -
+  /** Built-in sources tagged for any chosen market, plus worldwide sources -
    * everything else stays behind "show all sources". User-added sources
    * (userSources/companyBoards) are never narrowed by market. */
   protected readonly visibleBuiltinSources = computed(() => {
     const all = this.builtinSources();
-    const market = this.market();
-    if (this.showAllSources() || !market) return all;
-    return all.filter((s) => this.sourceMatchesMarket(s, market));
+    const markets = this.markets();
+    if (this.showAllSources() || !markets.length) return all;
+    return all.filter((s) => this.sourceMatchesMarkets(s, markets));
   });
   protected readonly hiddenBuiltinCount = computed(
     () => this.builtinSources().length - this.visibleBuiltinSources().length,
   );
 
-  private sourceMatchesMarket(source: DiscoverSource, market: string): boolean {
+  private sourceMatchesMarkets(source: DiscoverSource, markets: string[]): boolean {
     try {
       const tags: unknown = JSON.parse(source.geoTagsJson ?? '[]');
-      return Array.isArray(tags) && (tags.includes(market) || tags.includes('worldwide'));
+      if (!Array.isArray(tags)) return false;
+      return tags.includes('worldwide') || markets.some((m) => tags.includes(m));
     } catch {
       return false;
     }
@@ -659,7 +661,7 @@ export class DiscoverComponent {
         period: cf.compPeriod,
       });
       this.geoScope.set(settings.geoScope || 'worldwide');
-      this.market.set(settings.market);
+      this.markets.set(parseLocalMarkets(settings.market));
     } catch (e) {
       console.error('discover: load failed', e);
     } finally {
@@ -1260,11 +1262,19 @@ export class DiscoverComponent {
   }
 
   /** Joins every selected scope region ("Europe, Asia"); Worldwide when none are. */
+  /** Mirrors the two geo modes: local markets win when set, exactly as the
+   * scan engine reads them, so this label always names what is really used. */
   protected scopeLabel(): string {
+    const markets = this.markets();
     const keys = parseGeoScopes(this.geoScope());
-    const label = keys.length
-      ? keys.map((k) => this.t()('discover.region_' + k)).join(', ')
-      : this.t()('settings.geo_worldwide');
+    let label: string;
+    if (markets.length) {
+      label = markets.map((m) => this.t()('settings.local_market_' + m)).join(', ');
+    } else if (keys.length) {
+      label = keys.map((k) => this.t()('discover.region_' + k)).join(', ');
+    } else {
+      label = this.t()('settings.geo_worldwide');
+    }
     return this.t()('discover.scope_label').replace('{scope}', label);
   }
 

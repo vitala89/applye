@@ -91,6 +91,49 @@ live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existi
     duplicates. `cargo test --lib` (245 passed) and `cargo clippy -- -D warnings` (clean) re-run
     after the fix. **Not yet re-verified with an actual `tauri dev` run** - the user's next one
     should now start cleanly; if it does not, this is the first place to look.
+  - **Geo targeting reworked into two mutually exclusive modes** (after the user reviewed the first
+    cut natively and found the logic wrong: a local market left the continent chips checked and
+    still scanning, so "France" really meant "France plus all of Europe"). There is now one
+    question, "where do you want to work?", answered in exactly one mode: **regions**
+    (`geoScope` = continents, or empty = Worldwide) **or local markets** (`market` = country
+    codes). Picking either side clears the other, so the pair is never both set; clearing the last
+    market lands on Worldwide, exactly as clearing the last region already did. `market` changed
+    from a single nullable code to a JSON array (same shape and legacy-scalar tolerance as
+    `geoScope`; no migration - the column is TEXT and `parseLocalMarkets` reads the old bare `"fr"`
+    as `["fr"]`). The Rust patch field dropped its double-`Option` in the process: `"[]"` is now
+    the empty state, so plain COALESCE works exactly as it does for `geo_scope`.
+    - **Markets now actually filter the scan**, which the first cut did not do - it only narrowed
+      the Sources drawer, so the setting looked live but changed nothing about which jobs arrived.
+      They feed `build_geo_cfg`'s second parameter, which already existed for country codes and
+      was being fed from the `geo_filters` table. That table is **dead**: created in migration
+      0001, never written by any frontend code, empty on this install, so `active_codes` has
+      always been `[]` in practice. Markets take that slot when set; the region path still reads
+      `geo_filters` so nothing is silently removed. `country_tokens()` gained `ru` and `ua` with
+      both Cyrillic and Latin spellings of the major cities - TrudVsem returns `region.name` as
+      "Москва" and Habr Career puts the city in the title, so a Latin-only list would have dropped
+      the entire Russian market. This also partly closes the Habr city-in-title gap noted above:
+      a Russian city in a title still is not extracted into `location`, but a market-mode search
+      no longer depends on that, because empty locations pass anyway.
+    - **Remote postings still pass in either mode** - unchanged, deliberate, and now pinned by a
+      test that says so. A remote job is not "somewhere else".
+    - UI: local markets are chips in the same vocabulary as the region chips (the full-width
+      `<select>` is gone). The inactive row is **muted, not `disabled`** - the user asked for both
+      "disabled" and "clicking a region turns the market off", and only muted-but-clickable
+      satisfies both; the hint under it changes to say what is going on. Chips also gained the
+      `:focus-visible` ring they never had. **Worth a second opinion on the next native pass**: if
+      muted-but-clickable reads as broken rather than as inactive, hard `disabled` plus an
+      explicit "switch to regions" affordance is the alternative.
+    - Verified: `cargo test --lib` (251), `cargo clippy -- -D warnings`, `nx run-many -t test`
+      (core 205 incl. a new `local-market.spec.ts`, desktop 641), `nx lint desktop`, `nx build
+desktop`. **Not verified natively** - the browser preview cannot render Settings at all
+      (it renders only under `@else if (settings(); as s)`, and `getSettings()` needs Tauri IPC),
+      so the chips, the muted state and the mode switch have not been seen running.
+  - **Fixed: a button alone in a Settings card stretched to full width.** `.section` is a
+    stretch-aligned flex column, so any `.btn` dropped directly into one filled the card;
+    "Send a test prompt" only looked right because it carried a one-off `.test-btn { align-self }`
+    override. Replaced with `.section > .btn { align-self: flex-start }` and the one-off deleted,
+    so the next button added cannot inherit the bug. Onboarding's own `<select>` was checked and
+    is fine (fixed height inside a centered flex row); the report was about this Settings button.
   - Not done this session (deferred, see Task 3 in the original prompt): a second general bug pass
     beyond the token sweep above. Next session can pick this up directly.
 - **Merged: `fix/cli-bridge-probe-and-models` → PR #153.** Two defects found in the first live

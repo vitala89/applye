@@ -19,10 +19,12 @@ import {
   encodeGeoScopes,
   GEO_SCOPE_KEYS,
   GeoScopeKey,
+  encodeLocalMarkets,
   LANGUAGE_NATIVE_NAMES,
   LOCAL_MARKETS,
   LocalMarket,
   parseGeoScopes,
+  parseLocalMarkets,
   Settings,
   SupportedLanguage,
 } from '@applye/core';
@@ -485,12 +487,15 @@ const CLI_MODELS: Record<string, string[]> = {
           </div>
         </section>
 
-        <!-- Job search scope (drives the Discover scan's geo filter) -->
+        <!-- Job search geo target: regions OR local markets, never both.
+             Whichever row the user touches becomes the active mode and clears
+             the other; the inactive row stays clickable so switching back is
+             one click, but is muted and says so. -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.jobsearch_section') }}</h3>
           <div class="field grow">
             <span class="cap">{{ t()('settings.geo_scope_label') }}</span>
-            <div class="geo-chips">
+            <div class="geo-chips" [class.geo-chips--muted]="marketModeActive()">
               <label class="geo-chip" [class.geo-chip--on]="geoWorldwideChecked()">
                 <input
                   type="checkbox"
@@ -510,22 +515,30 @@ const CLI_MODELS: Record<string, string[]> = {
                 </label>
               }
             </div>
-            <p class="hint">{{ t()('settings.geo_scope_hint') }}</p>
+            <p class="hint">
+              {{
+                marketModeActive()
+                  ? t()('settings.geo_scope_hint_muted')
+                  : t()('settings.geo_scope_hint')
+              }}
+            </p>
           </div>
-          <label class="field">
+          <div class="field grow">
             <span class="cap">{{ t()('settings.local_market_label') }}</span>
-            <select
-              [ngModel]="settings()?.market ?? ''"
-              (ngModelChange)="setLocalMarket($event || null)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              <option value="">{{ t()('settings.local_market_none') }}</option>
+            <div class="geo-chips">
               @for (market of localMarkets; track market) {
-                <option [value]="market">{{ t()('settings.local_market_' + market) }}</option>
+                <label class="geo-chip" [class.geo-chip--on]="marketChecked(market)">
+                  <input
+                    type="checkbox"
+                    [checked]="marketChecked(market)"
+                    (change)="toggleMarket(market)"
+                  />
+                  {{ t()('settings.local_market_' + market) }}
+                </label>
               }
-            </select>
-          </label>
-          <p class="hint">{{ t()('settings.local_market_hint') }}</p>
+            </div>
+            <p class="hint">{{ t()('settings.local_market_hint') }}</p>
+          </div>
         </section>
 
         <!-- Follow-up reminders -->
@@ -579,7 +592,7 @@ const CLI_MODELS: Record<string, string[]> = {
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.test_section') }}</h3>
           <button
-            class="btn btn--primary btn--md test-btn"
+            class="btn btn--primary btn--md"
             [disabled]="testing() || !canTest()"
             (click)="testConnection()"
           >
@@ -827,7 +840,12 @@ const CLI_MODELS: Record<string, string[]> = {
         border-color: var(--accent);
         background: var(--surface-1);
       }
-      .test-btn {
+      /* .section is a stretch-aligned flex column, so a .btn dropped straight
+         into one spans the full card width - which no button in this layout
+         ever wants. Fixed for the class rather than per-button: "Re-run
+         onboarding" had this bug precisely because it lacked the one-off
+         override that "Send a test prompt" carried. */
+      .section > .btn {
         align-self: flex-start;
       }
       .toggle {
@@ -878,7 +896,13 @@ const CLI_MODELS: Record<string, string[]> = {
           color var(--dur-fast) var(--ease-standard);
       }
       .geo-chip:hover {
-        border-color: var(--border-strong, var(--text-tertiary));
+        border-color: var(--border-strong);
+      }
+      /* The checkbox inside is what actually takes focus, so the ring has to
+         be drawn by the label around it. */
+      .geo-chip:has(:focus-visible) {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
       .geo-chip input {
         margin: 0;
@@ -889,6 +913,16 @@ const CLI_MODELS: Record<string, string[]> = {
         background: var(--accent-tint);
         border-color: var(--accent);
         color: var(--text-accent);
+      }
+      /* The row that is not the active geo mode. Muted rather than disabled:
+         clicking a chip here is how the user switches back, so it must stay
+         reachable by mouse and keyboard. The hint below it says as much. */
+      .geo-chips--muted .geo-chip {
+        opacity: 0.45;
+      }
+      .geo-chips--muted .geo-chip:hover,
+      .geo-chips--muted .geo-chip:has(:focus-visible) {
+        opacity: 1;
       }
       .reply {
         margin-top: var(--space-4);
@@ -1239,65 +1273,85 @@ export class SettingsComponent implements OnInit {
     if (key === 'uiLanguage') this.i18n.setLocale(value as SupportedLanguage);
   }
 
-  // --- Job search geo scope ---
+  // --- Job search geo target ---
+  //
+  // One question ("where do you want to work?") answered in exactly one of two
+  // mutually exclusive modes:
+  //
+  //   regions  - geoScope holds continent keys, or is empty, which renders as
+  //              Worldwide (no restriction at all).
+  //   markets  - market holds country codes, and geoScope is cleared so the
+  //              regions take no part in the scan.
+  //
+  // Picking either side clears the other, so the pair can never both be set
+  // and the scan engine's "market first, else geoScope" read is unambiguous.
+  // Clearing the last market falls back to Worldwide, exactly as clearing the
+  // last region already did.
+  //
   // Auto-saves immediately on every toggle (like Discover's own source
   // toggles) instead of waiting for the page's explicit Save button - this
   // setting drives live Discover scan behavior, so a choice here must take
   // effect right away even if the user never touches Save.
   readonly geoScopeKeys = GEO_SCOPE_KEYS;
+  readonly localMarkets = LOCAL_MARKETS;
 
   readonly geoScopeSelected = computed<ReadonlySet<GeoScopeKey>>(
     () => new Set(parseGeoScopes(this.settings()?.geoScope)),
   );
 
+  readonly marketsSelected = computed<ReadonlySet<LocalMarket>>(
+    () => new Set(parseLocalMarkets(this.settings()?.market)),
+  );
+
+  /** True while local markets own the search, so the region row is inert. */
+  readonly marketModeActive = computed(() => this.marketsSelected().size > 0);
+
   geoScopeChecked(key: GeoScopeKey): boolean {
-    return this.geoScopeSelected().has(key);
+    return !this.marketModeActive() && this.geoScopeSelected().has(key);
   }
 
   geoWorldwideChecked(): boolean {
-    return this.geoScopeSelected().size === 0;
+    return !this.marketModeActive() && this.geoScopeSelected().size === 0;
   }
 
+  marketChecked(market: LocalMarket): boolean {
+    return this.marketsSelected().has(market);
+  }
+
+  /** Picking a region switches back to region mode, dropping every market. */
   async toggleGeoScope(key: GeoScopeKey): Promise<void> {
-    const next = new Set(this.geoScopeSelected());
+    const next = new Set(this.marketModeActive() ? [] : this.geoScopeSelected());
     if (next.has(key)) next.delete(key);
     else next.add(key);
-    await this.persistGeoScopes([...next]);
+    await this.persistGeoTarget([...next], []);
   }
 
   async setGeoWorldwide(): Promise<void> {
     if (this.geoWorldwideChecked()) return;
-    await this.persistGeoScopes([]);
+    await this.persistGeoTarget([], []);
   }
 
-  private async persistGeoScopes(next: GeoScopeKey[]): Promise<void> {
+  /** Picking a market switches to market mode, dropping the region scope. */
+  async toggleMarket(market: LocalMarket): Promise<void> {
+    const next = new Set(this.marketsSelected());
+    if (next.has(market)) next.delete(market);
+    else next.add(market);
+    // Emptying the list lands on Worldwide rather than on a stale region set:
+    // the regions were cleared when market mode began, so [] is what is left.
+    await this.persistGeoTarget([], [...next]);
+  }
+
+  /** Writes both halves in one call - they change together or not at all. */
+  private async persistGeoTarget(scopes: GeoScopeKey[], markets: LocalMarket[]): Promise<void> {
     const prev = this.settings();
     if (!prev) return;
-    const geoScope = encodeGeoScopes(next);
-    this.settings.set({ ...prev, geoScope }); // optimistic
+    const geoScope = encodeGeoScopes(scopes);
+    const market = encodeLocalMarkets(markets);
+    this.settings.set({ ...prev, geoScope, market }); // optimistic
     try {
-      await this.db.updateSettings({ geoScope });
+      await this.db.updateSettings({ geoScope, market });
     } catch (e) {
-      console.error('settings: geo scope save failed', e);
-      this.settings.set(prev); // rollback
-      this.toast.error(String(e));
-    }
-  }
-
-  // --- Local market ---
-  // Narrows the Discover Sources drawer's default list without touching
-  // geoScope, which stays the wide "which continents" layer. Auto-saves like
-  // geoScope, for the same reason: it drives what the drawer shows right now.
-  readonly localMarkets = LOCAL_MARKETS;
-
-  async setLocalMarket(market: LocalMarket | null): Promise<void> {
-    const prev = this.settings();
-    if (!prev || prev.market === market) return;
-    this.settings.set({ ...prev, market }); // optimistic
-    try {
-      await this.db.updateSettings({ market });
-    } catch (e) {
-      console.error('settings: local market save failed', e);
+      console.error('settings: geo target save failed', e);
       this.settings.set(prev); // rollback
       this.toast.error(String(e));
     }

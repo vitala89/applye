@@ -11,9 +11,15 @@ export interface Settings {
   exportDir: string;
   uiLanguage: SupportedLanguage;
   defaultDocLanguage: SupportedLanguage;
-  /** Opaque - a JSON-encoded GeoScopeKey[]. Use parseGeoScopes/encodeGeoScopes. */
+  /**
+   * Opaque - a JSON-encoded GeoScopeKey[]. Use parseGeoScopes/encodeGeoScopes.
+   * Empty while `market` is set: the two are mutually exclusive geo modes.
+   */
   geoScope: string;
-  /** ISO 3166-1 alpha-2, lowercase, or null for no local market (wide geoScope only). */
+  /**
+   * Opaque - a JSON-encoded LocalMarket[]. Use parseLocalMarkets/encodeLocalMarkets.
+   * Empty means "no local market", so `geoScope` applies instead.
+   */
   market: string | null;
   followupDaysAfterApply?: number;
   followupDaysAfterInterview?: number;

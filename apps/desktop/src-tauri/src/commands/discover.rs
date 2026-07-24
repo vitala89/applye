@@ -346,6 +346,35 @@ fn parse_geo_scopes(raw: &str) -> Vec<String> {
     }
 }
 
+/// The LocalMarket vocabulary, kept in lockstep with libs/core's
+/// `LOCAL_MARKETS` (TypeScript). Local markets are the narrow half of geo
+/// targeting: when any is selected, `geo_scope` takes no part in the scan.
+const KNOWN_LOCAL_MARKETS: &[&str] = &["de", "gb", "us", "ru", "es", "fr", "ua", "pl"];
+
+/// Parses the `market` settings column: a JSON array of market codes
+/// (`["de","fr"]`) going forward. An install saved between the single-market
+/// picker and multi-select holds a bare scalar (`de`) - read that as a
+/// one-item list. Mirrors `parseLocalMarkets` in
+/// libs/core/src/lib/geo/local-market.ts. Empty means "no local market", so
+/// the region scope applies instead.
+fn parse_local_markets(raw: &str) -> Vec<String> {
+    let text = raw.trim();
+    if text.is_empty() {
+        return Vec::new();
+    }
+    if let Ok(parsed) = serde_json::from_str::<Vec<String>>(text) {
+        return parsed
+            .into_iter()
+            .filter(|k| KNOWN_LOCAL_MARKETS.contains(&k.as_str()))
+            .collect();
+    }
+    if KNOWN_LOCAL_MARKETS.contains(&text) {
+        vec![text.to_string()]
+    } else {
+        Vec::new()
+    }
+}
+
 /// Names a 2-letter country code also answers to in freetext locations.
 ///
 /// German boards - the federal agency's feed, and the company boards on
@@ -403,6 +432,61 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
         "uk" | "gb" => vec!["uk", "gb", "united kingdom", "britain", "england"],
         "us" => vec!["us", "usa", "united states", "america"],
         "ca" => vec!["ca", "canada"],
+        // Russian and Ukrainian sources write the place in Cyrillic - TrudVsem
+        // returns `region.name` as "Москва", Habr Career puts the city in the
+        // posting title - so both scripts are listed, same reasoning as the
+        // German city list above: a dropped job is invisible, a false positive
+        // is not.
+        "ru" => vec![
+            "ru",
+            "russia",
+            "russian federation",
+            "россия",
+            "москва",
+            "moscow",
+            "санкт-петербург",
+            "saint petersburg",
+            "st petersburg",
+            "новосибирск",
+            "novosibirsk",
+            "екатеринбург",
+            "yekaterinburg",
+            "казань",
+            "kazan",
+            "нижний новгород",
+            "челябинск",
+            "самара",
+            "омск",
+            "ростов-на-дону",
+            "уфа",
+            "красноярск",
+            "воронеж",
+            "пермь",
+            "волгоград",
+        ],
+        "ua" => vec![
+            "ua",
+            "ukraine",
+            "україна",
+            "украина",
+            "київ",
+            "киев",
+            "kyiv",
+            "kiev",
+            "львів",
+            "львов",
+            "lviv",
+            "харків",
+            "харьков",
+            "kharkiv",
+            "одеса",
+            "одесса",
+            "odesa",
+            "odessa",
+            "дніпро",
+            "днепр",
+            "dnipro",
+        ],
         _ => vec![],
     }
 }
@@ -1403,12 +1487,25 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
         .map_err(|e| format!("discover_scan: load settings: {e}"))?
         .unwrap_or_default();
     let geo_scopes = parse_geo_scopes(&geo_scope_raw);
-    let active_codes: Vec<String> =
-        sqlx::query_scalar("SELECT country_code FROM geo_filters WHERE is_active = 1")
-            .fetch_all(&db.pool)
-            .await
-            .map_err(|e| format!("discover_scan: load geo filters: {e}"))?;
-    let geo_cfg = build_geo_cfg(&geo_scopes, &active_codes);
+    let market_raw: Option<String> = sqlx::query_scalar("SELECT market FROM settings WHERE id = 1")
+        .fetch_optional(&db.pool)
+        .await
+        .map_err(|e| format!("discover_scan: load market: {e}"))?
+        .flatten();
+    let markets = parse_local_markets(market_raw.as_deref().unwrap_or_default());
+    // The two geo modes are mutually exclusive (see libs/core local-market.ts):
+    // a local market narrows to its countries and the region scope sits out
+    // entirely; with no market selected the region scope applies as before.
+    let geo_cfg = if markets.is_empty() {
+        let active_codes: Vec<String> =
+            sqlx::query_scalar("SELECT country_code FROM geo_filters WHERE is_active = 1")
+                .fetch_all(&db.pool)
+                .await
+                .map_err(|e| format!("discover_scan: load geo filters: {e}"))?;
+        build_geo_cfg(&geo_scopes, &active_codes)
+    } else {
+        build_geo_cfg(&[], &markets)
+    };
 
     let archetypes: Option<String> =
         sqlx::query_scalar("SELECT target_archetypes FROM profile WHERE id = 1")
@@ -2114,6 +2211,75 @@ mod tests {
         );
         assert!(parse_geo_scopes("").is_empty());
         assert!(parse_geo_scopes("[]").is_empty());
+    }
+
+    #[test]
+    fn parse_local_markets_reads_json_array_and_drops_unknown_codes() {
+        assert_eq!(
+            parse_local_markets(r#"["de","fr"]"#),
+            vec!["de".to_string(), "fr".to_string()]
+        );
+        assert_eq!(
+            parse_local_markets(r#"["de","atlantis"]"#),
+            vec!["de".to_string()]
+        );
+        assert!(parse_local_markets("").is_empty());
+        assert!(parse_local_markets("[]").is_empty());
+    }
+
+    #[test]
+    fn parse_local_markets_reads_the_legacy_single_scalar() {
+        // Written by the first cut of the picker, before multi-select.
+        assert_eq!(parse_local_markets("de"), vec!["de".to_string()]);
+        assert!(parse_local_markets("atlantis").is_empty());
+    }
+
+    #[test]
+    fn a_local_market_narrows_to_its_own_country() {
+        let cfg = build_geo_cfg(&[], &["pl".to_string()]);
+        assert!(geo_passes("Warsaw, Poland", &cfg));
+        assert!(!geo_passes("Berlin, Germany", &cfg));
+        // Conservative inclusion still holds: remote and unknown never drop.
+        assert!(geo_passes("Remote", &cfg));
+        assert!(geo_passes("", &cfg));
+    }
+
+    #[test]
+    fn several_local_markets_union_their_countries() {
+        let cfg = build_geo_cfg(&[], &["de".to_string(), "ua".to_string()]);
+        assert!(geo_passes("Berlin", &cfg));
+        assert!(geo_passes("Kyiv, Ukraine", &cfg));
+        assert!(!geo_passes("Warsaw, Poland", &cfg));
+    }
+
+    #[test]
+    fn russian_and_ukrainian_places_pass_in_either_script() {
+        let ru = build_geo_cfg(&[], &["ru".to_string()]);
+        // What TrudVsem actually emits once parse_trudvsem appends the country.
+        assert!(geo_passes("Москва, Russia", &ru));
+        assert!(geo_passes("Санкт-Петербург", &ru));
+        assert!(geo_passes("Moscow", &ru));
+        assert!(!geo_passes("Kyiv, Ukraine", &ru));
+
+        let ua = build_geo_cfg(&[], &["ua".to_string()]);
+        assert!(geo_passes("Київ", &ua));
+        assert!(geo_passes("Lviv, Ukraine", &ua));
+        assert!(!geo_passes("Москва, Russia", &ua));
+    }
+
+    #[test]
+    fn a_local_market_ignores_the_region_scope_entirely() {
+        // The mutual-exclusion contract: Settings clears geo_scope when a
+        // market is picked, and the scan passes an empty scope list to match.
+        // A Europe scope must not smuggle Berlin into a Poland-only search.
+        let cfg = build_geo_cfg(&[], &["pl".to_string()]);
+        assert!(!geo_passes("Berlin, Germany", &cfg));
+        assert!(!geo_passes("Munich", &cfg));
+
+        // Carve-out, unchanged from region mode and deliberate: anything
+        // carrying a remote marker still passes, because a remote posting is
+        // not "somewhere else" - it is nowhere in particular.
+        assert!(geo_passes("Remote - EMEA", &cfg));
     }
 
     #[test]

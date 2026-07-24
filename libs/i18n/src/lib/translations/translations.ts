@@ -138,7 +138,7 @@ const en: TranslationMap = {
     sources_active: '{active} of {total} active',
     sources_failing: '{n} failing',
     builtin_sources: 'Built-in sources',
-    show_all_sources: 'Show all sources ({n} hidden for your local market)',
+    show_all_sources: 'Show all sources ({n} hidden by your market selection)',
     company_boards: 'Company boards (ATS)',
     your_sources: 'Your sources',
     add_company_board: 'Add company board',
@@ -918,10 +918,11 @@ const en: TranslationMap = {
     geo_scope_hint:
       'Discover scans keep only openings in the regions checked here. Pick as many as you like; Worldwide clears them and keeps everything.',
     geo_worldwide: 'Worldwide',
+    geo_scope_hint_muted:
+      'Not in use: a local market is set below, and it searches by country instead. Pick a region here to switch back.',
     local_market_label: 'Local market',
     local_market_hint:
-      'Narrows the Discover Sources drawer to boards for this market, plus worldwide sources - it does not replace the region scope above.',
-    local_market_none: 'None (wide scope only)',
+      'Search specific countries instead of whole regions. Pick as many as you like; the regions above switch off while any is picked, and clearing them all returns to Worldwide.',
     local_market_de: 'Germany',
     local_market_gb: 'United Kingdom',
     local_market_us: 'United States',
@@ -1723,7 +1724,7 @@ const de: TranslationMap = {
     sources_active: '{active} von {total} aktiv',
     sources_failing: '{n} fehlerhaft',
     builtin_sources: 'Integrierte Quellen',
-    show_all_sources: 'Alle Quellen anzeigen ({n} für deinen lokalen Markt ausgeblendet)',
+    show_all_sources: 'Alle Quellen anzeigen ({n} durch deine Marktauswahl ausgeblendet)',
     company_boards: 'Firmen-Boards (ATS)',
     your_sources: 'Deine Quellen',
     add_company_board: 'Firmen-Board hinzufügen',
@@ -2519,10 +2520,11 @@ const de: TranslationMap = {
     geo_scope_hint:
       'Discover-Scans behalten nur Stellen in den hier angehakten Regionen. Beliebig viele wählbar; Weltweit hebt die Auswahl auf und behält alles.',
     geo_worldwide: 'Weltweit',
+    geo_scope_hint_muted:
+      'Nicht aktiv: unten ist ein lokaler Markt gesetzt, gesucht wird stattdessen nach Land. Wähle hier eine Region, um zurückzuwechseln.',
     local_market_label: 'Lokaler Markt',
     local_market_hint:
-      'Grenzt die Discover-Quellenliste auf Börsen für diesen Markt ein, plus weltweite Quellen - ersetzt nicht den Regionsbereich oben.',
-    local_market_none: 'Keiner (nur weiter Bereich)',
+      'Nach einzelnen Ländern statt ganzer Regionen suchen. Beliebig viele wählbar; die Regionen oben sind ausgeschaltet, solange einer gewählt ist, und ohne Auswahl geht es zurück auf Weltweit.',
     local_market_de: 'Deutschland',
     local_market_gb: 'Vereinigtes Königreich',
     local_market_us: 'USA',

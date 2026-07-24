@@ -1426,6 +1426,14 @@ fn parse_nofluffjobs(val: &serde_json::Value) -> Vec<RawJob> {
                 .into_iter()
                 .find(|s| !s.is_empty())
                 .unwrap_or_default();
+            // The list endpoint has no description; a bare slug lets the scan
+            // pull the full posting from /api/posting/{slug}. An absolute url or
+            // an empty slug does not key that endpoint.
+            let detail_ref = if slug.is_empty() || slug.starts_with("http") {
+                None
+            } else {
+                Some(slug.clone())
+            };
             let url = if slug.starts_with("http") {
                 slug
             } else if slug.is_empty() {
@@ -1458,10 +1466,101 @@ fn parse_nofluffjobs(val: &serde_json::Value) -> Vec<RawJob> {
                 jd_text,
                 location,
                 url,
-                detail_ref: None,
+                detail_ref,
             }
         })
         .collect()
+}
+
+/// Builds a structured `jd_text` from a No Fluff Jobs posting-detail document
+/// (`GET /api/posting/{slug}`). The list endpoint carries no description at
+/// all, so without this a posting reaches the feed as a three-word stub.
+///
+/// Headings end with `:` and use words the Discover block renderer recognises
+/// (`looksLikeHeading` in discover.component.ts) so the detail screen shows
+/// real sections. Content is left in the posting's own language on purpose;
+/// the value is the structure, not a translation.
+fn parse_nofluffjobs_detail(val: &serde_json::Value) -> String {
+    let mut out: Vec<String> = Vec::new();
+
+    let values = |key: &str| -> Vec<String> {
+        val.get("requirements")
+            .and_then(|r| r.get(key))
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|m| m.get("value").and_then(|v| v.as_str()))
+                    .map(|s| format!("- {s}"))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+
+    let musts = values("musts");
+    if !musts.is_empty() {
+        out.push("Requirements:".to_string());
+        out.extend(musts);
+        out.push(String::new());
+    }
+
+    let nices = values("nices");
+    if !nices.is_empty() {
+        out.push("Nice to have:".to_string());
+        out.extend(nices);
+        out.push(String::new());
+    }
+
+    let desc = val
+        .get("requirements")
+        .map(|r| html_to_text(&json_str(r, "description")))
+        .unwrap_or_default();
+    if !desc.trim().is_empty() {
+        out.push(desc.trim().to_string());
+        out.push(String::new());
+    }
+
+    let tasks: Vec<String> = val
+        .get("specs")
+        .and_then(|s| s.get("dailyTasks"))
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|t| t.as_str())
+                .map(|s| format!("- {s}"))
+                .collect()
+        })
+        .unwrap_or_default();
+    if !tasks.is_empty() {
+        out.push("Responsibilities:".to_string());
+        out.extend(tasks);
+        out.push(String::new());
+    }
+
+    if let Some(line) = nofluffjobs_salary_line(val) {
+        out.push(format!("Salary: {line}"));
+    }
+
+    out.join("\n").trim().to_string()
+}
+
+/// One human line from `essentials.originalSalary`, or None when the pay is
+/// not disclosed. Reads the first salary type present (b2b or permanent).
+fn nofluffjobs_salary_line(val: &serde_json::Value) -> Option<String> {
+    let salary = val.get("essentials")?.get("originalSalary")?;
+    let currency = salary.get("currency")?.as_str()?;
+    let types = salary.get("types")?.as_object()?;
+    let (kind, body) = types.iter().next()?;
+    let range = body.get("range").and_then(|r| r.as_array())?;
+    let from = range.first().and_then(|v| v.as_f64())?;
+    let to = range.get(1).and_then(|v| v.as_f64()).unwrap_or(from);
+    let period = body
+        .get("period")
+        .and_then(|p| p.as_str())
+        .unwrap_or("month");
+    Some(format!(
+        "{} - {} {currency} / {period} ({kind})",
+        from as i64, to as i64
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -1544,6 +1643,17 @@ async fn fetch_arbeitsagentur_detail(
     );
     let val = get_json_keyed(client, &url).await?;
     Ok(html_to_text(&json_str(&val, "stellenbeschreibung")))
+}
+
+/// Full posting text for one No Fluff Jobs slug. The detail endpoint keys on
+/// the same slug the list returns in its `url` field.
+async fn fetch_nofluffjobs_detail(client: &reqwest::Client, slug: &str) -> Result<String, String> {
+    let url = format!(
+        "https://nofluffjobs.com/api/posting/{}",
+        percent_encode_segment(slug)
+    );
+    let val = get_json(client, &url).await?;
+    Ok(parse_nofluffjobs_detail(&val))
 }
 
 async fn get_text(client: &reqwest::Client, url: &str) -> Result<String, String> {
@@ -1830,9 +1940,18 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
                     // A failed or skipped detail request is not a scan error:
                     // the job still lands with its placeholder body.
                     let detailed: Option<RawJob> = match job.detail_ref.as_deref() {
-                        Some(refnr) if detail_budget > 0 => {
+                        Some(reference) if detail_budget > 0 => {
                             detail_budget -= 1;
-                            match fetch_arbeitsagentur_detail(&client, refnr).await {
+                            let fetched = match src.source_type.as_str() {
+                                "api_arbeitsagentur" => {
+                                    fetch_arbeitsagentur_detail(&client, reference).await
+                                }
+                                "api_nofluffjobs" => {
+                                    fetch_nofluffjobs_detail(&client, reference).await
+                                }
+                                _ => Ok(String::new()),
+                            };
+                            match fetched {
                                 Ok(text) if !text.trim().is_empty() => {
                                     let mut j = job.clone();
                                     j.jd_text = text;
@@ -2543,6 +2662,7 @@ mod tests {
         assert!(jobs[0].jd_text.contains("backend"));
         assert!(jobs[0].jd_text.contains("java"));
         assert!(jobs[0].jd_text.contains("Mid"));
+        assert_eq!(jobs[0].detail_ref.as_deref(), Some("java-developer-acme"));
     }
 
     #[test]
@@ -2560,12 +2680,67 @@ mod tests {
         assert_eq!(jobs[0].company, "Acme");
         assert_eq!(jobs[0].location, "Remote, Poland");
         assert_eq!(jobs[0].url, "https://nofluffjobs.com/job/devops-acme");
+        assert_eq!(jobs[0].detail_ref, None);
     }
 
     #[test]
     fn nofluffjobs_empty_or_foreign_shape_yields_nothing() {
         assert!(parse_nofluffjobs(&serde_json::json!({})).is_empty());
         assert!(parse_nofluffjobs(&serde_json::json!([])).is_empty());
+    }
+
+    #[test]
+    fn nofluffjobs_detail_builds_structured_text() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{
+              "requirements": {
+                "musts": [{"value":"React"},{"value":"Next.js"},{"value":"TypeScript"}],
+                "nices": [{"value":"AWS"},{"value":"Nest.js"}],
+                "description": "<p>You have 5 years of commercial experience.</p>"
+              },
+              "specs": {
+                "dailyTasks": [
+                  "Design and build complete product features.",
+                  "Monitoring and tracing."
+                ]
+              },
+              "essentials": {
+                "originalSalary": {
+                  "currency": "PLN",
+                  "types": { "b2b": { "period": "Hour", "range": [200.0, 220.0] } }
+                }
+              }
+            }"#,
+        )
+        .unwrap();
+
+        let text = parse_nofluffjobs_detail(&val);
+        // Headings the block renderer recognises, each on its own line.
+        assert!(text.contains("Requirements:"));
+        assert!(text.contains("- React"));
+        assert!(text.contains("- TypeScript"));
+        assert!(text.contains("Nice to have:"));
+        assert!(text.contains("- AWS"));
+        assert!(text.contains("Responsibilities:"));
+        assert!(text.contains("- Design and build complete product features."));
+        assert!(text.contains("You have 5 years of commercial experience."));
+        // Salary line carries the currency and range so the extractor can read it.
+        assert!(text.contains("Salary:"));
+        assert!(text.contains("PLN"));
+        assert!(text.contains("200"));
+        assert!(text.contains("220"));
+    }
+
+    #[test]
+    fn nofluffjobs_detail_tolerates_missing_sections() {
+        // A posting with no nices, no tasks, no salary must still yield its musts,
+        // and never panic on the absent keys.
+        let val: serde_json::Value =
+            serde_json::from_str(r#"{"requirements":{"musts":[{"value":"Java"}]}}"#).unwrap();
+        let text = parse_nofluffjobs_detail(&val);
+        assert!(text.contains("- Java"));
+        assert!(!text.contains("Nice to have:"));
+        assert!(!text.contains("Salary:"));
     }
 
     // -- Personio company boards ---------------------------------------------

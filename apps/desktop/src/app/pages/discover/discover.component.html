@@ -654,6 +654,29 @@
   <!-- ============ FEED LIST ============ -->
   @if (detailId() === null && (view() === 'feed' || view() === 'scanning')) {
     <div class="dv-feed" [class.dv-feed--dim]="scanning()">
+      @if (marketChangedSinceScan()) {
+        <div class="dv-rescan" role="status">
+          <span class="dv-rescan__text">{{ t()('discover.market_changed') }}</span>
+          <div class="dv-rescan__actions">
+            <button
+              type="button"
+              class="dv-btn dv-btn--primary dv-btn--secondary"
+              [disabled]="scanning()"
+              (click)="refreshForMarket()"
+            >
+              {{ t()('discover.market_changed_refresh') }}
+            </button>
+            <button
+              type="button"
+              class="dv-iconbtn dv-iconbtn--sm"
+              [attr.aria-label]="t()('discover.dismiss')"
+              (click)="dismissRescanBanner()"
+            >
+              <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      }
       @for (section of renderedSections(); track section.key) {
         @if (section.label) {
           <div class="dv-feed__section">

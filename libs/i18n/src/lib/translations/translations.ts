@@ -158,6 +158,9 @@ const en: TranslationMap = {
     ago_h: '{n}H AGO',
     ago_d: '{n}D AGO',
     ago_now: 'JUST NOW',
+    market_changed:
+      'Your local market changed. Refresh to scan for jobs in it - your current results are from your previous market.',
+    market_changed_refresh: 'Refresh results',
   },
   myjobs: {
     title: 'My Jobs',
@@ -1750,6 +1753,9 @@ const de: TranslationMap = {
     ago_h: 'VOR {n}H',
     ago_d: 'VOR {n}T',
     ago_now: 'GERADE EBEN',
+    market_changed:
+      'Dein lokaler Markt hat sich geaendert. Aktualisiere, um Stellen darin zu finden - die aktuellen Ergebnisse stammen aus deinem vorherigen Markt.',
+    market_changed_refresh: 'Ergebnisse aktualisieren',
   },
   myjobs: {
     title: 'Meine Stellen',

@@ -228,6 +228,10 @@ export class DiscoverComponent {
   protected readonly geoScope = signal('worldwide');
   /** Settings.market - the country codes narrowing the builtin sources list. */
   protected readonly markets = signal<string[]>([]);
+  /** The market the feed on screen was last scanned under, from settings. */
+  private readonly lastScanMarket = signal<string[]>([]);
+  /** Session-only dismissal of the "market changed" banner. */
+  private readonly rescanBannerDismissed = signal(false);
   /** "Show all sources" override for the market narrowing. */
   protected readonly showAllSources = signal(false);
   /** Profile compensation target (min/max/currency/period), parsed from the saved
@@ -633,6 +637,13 @@ export class DiscoverComponent {
     () => this.builtinSources().length - this.marketNarrowedBuiltins().length,
   );
 
+  /** True when the selected market no longer matches the feed on screen, so the
+   * results shown are for a market the user has moved away from. */
+  protected readonly marketChangedSinceScan = computed(() => {
+    if (this.rescanBannerDismissed()) return false;
+    return JSON.stringify(this.markets()) !== JSON.stringify(this.lastScanMarket());
+  });
+
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {
     try {
@@ -659,6 +670,7 @@ export class DiscoverComponent {
       });
       this.geoScope.set(settings.geoScope || 'worldwide');
       this.markets.set(parseLocalMarkets(settings.market));
+      this.lastScanMarket.set(parseLocalMarkets(settings.lastScanMarket));
     } catch (e) {
       console.error('discover: load failed', e);
     } finally {
@@ -726,6 +738,8 @@ export class DiscoverComponent {
       );
       this.displayCount.set(FEED_PAGE);
       await this.reloadSources();
+      this.lastScanMarket.set(this.markets());
+      this.rescanBannerDismissed.set(false);
     } catch (e) {
       console.error('discover: scan failed', e);
       this.consoleLines.update((lines) => [
@@ -736,6 +750,24 @@ export class DiscoverComponent {
       this.scanning.set(false);
       this.consoleExpanded.set(false);
     }
+  }
+
+  // -------------------------------------------------------- market-changed
+  /** From the market-changed banner: drop the stale unsaved results and rescan
+   * for the current market. Saved and dismissed jobs are untouched (see
+   * db_discover_clear). Then scan(), which realigns lastScanMarket. */
+  protected async refreshForMarket(): Promise<void> {
+    if (this.scanning()) return;
+    try {
+      await this.db.discoverClear();
+    } catch (e) {
+      console.error('discover: clear before refresh failed', e);
+    }
+    await this.scan();
+  }
+
+  protected dismissRescanBanner(): void {
+    this.rescanBannerDismissed.set(true);
   }
 
   // ----------------------------------------------------------- clear inbox

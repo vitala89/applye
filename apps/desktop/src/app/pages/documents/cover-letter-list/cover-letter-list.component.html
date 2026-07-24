@@ -161,7 +161,7 @@
           >
             <option [ngValue]="null">{{ t()('documents.cover_letter_generate_job_none') }}</option>
             @for (j of trackedJobs(); track j.id) {
-              <option [value]="j.id">{{ j.company }} — {{ j.title }}</option>
+              <option [value]="j.id">{{ j.company }} - {{ j.title }}</option>
             }
           </select>
         </label>

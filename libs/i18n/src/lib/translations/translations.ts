@@ -164,7 +164,7 @@ const en: TranslationMap = {
     import: 'Import file',
     import_title: 'Import tracklist',
     import_hint:
-      'Pick a CSV, XLSX, JSON, or text export from another tracker. One AI call detects the columns — nothing is added until you confirm.',
+      'Pick a CSV, XLSX, JSON, or text export from another tracker. One AI call detects the columns - nothing is added until you confirm.',
     import_pick_file: 'Choose file…',
     import_detecting: 'Detecting…',
     import_confirm_btn: 'Import selected',
@@ -195,7 +195,7 @@ const en: TranslationMap = {
     link_submit: 'Fetch',
     link_fetching: 'Fetching…',
     link_hint:
-      'Only public job-board APIs and RSS feeds are fetched automatically — never closed boards.',
+      'Only public job-board APIs and RSS feeds are fetched automatically - never closed boards.',
     text_hint: 'Paste the full job description. It is parsed locally (0 tokens).',
     text_placeholder: 'Paste the job description here…',
     submit: 'Analyze',
@@ -455,7 +455,7 @@ const en: TranslationMap = {
   followup: {
     section_label: 'Follow-up email',
     draft_action: 'Draft follow-up',
-    cached_hint: 'Unchanged — using cached draft (0 tokens).',
+    cached_hint: 'Unchanged - using cached draft (0 tokens).',
     to_placeholder: 'To (optional)',
     cc_placeholder: 'Cc (optional)',
     subject_placeholder: 'Subject',
@@ -476,14 +476,14 @@ const en: TranslationMap = {
     archetypes_hint:
       'Up to 5 role archetypes - a name, how well it fits (primary / secondary / adjacent), and when to pitch yourself as it. Used to flag off-target jobs before any scoring call - 0 tokens.',
     archetypes_empty_warning:
-      "No target roles defined — jobs won't be checked against your preferences.",
+      "No target roles defined - jobs won't be checked against your preferences.",
     archetype_placeholder: 'e.g. Staff Frontend Engineer, remote EU, Series B-D product company',
     add_archetype: '+ Add target role',
     remove_archetype: 'Remove',
     section_markdown: 'Profile',
     section_ai_tools: 'AI tools',
     ai_hint:
-      'Save profile first, then generate. Results are cached — re-running on an unchanged profile costs 0 tokens.',
+      'Save profile first, then generate. Results are cached - re-running on an unchanged profile costs 0 tokens.',
     scoring_title: 'Scoring profile',
     scoring_desc:
       'Compresses your full profile into compact JSON used by all scoring & tailoring calls. Generated once; cached until you change the profile.',
@@ -498,11 +498,11 @@ const en: TranslationMap = {
     placeholder: '# Jane Doe\nSenior Frontend Engineer · Berlin\n\n## Experience\n…',
     info_aria: 'More information',
     info_profile:
-      'Your master profile is plain Markdown — the single source of truth for every AI scoring and tailoring call.',
+      'Your master profile is plain Markdown - the single source of truth for every AI scoring and tailoring call.',
     info_archetypes:
       "Target roles are short descriptions (archetypes) of positions you'd accept. They flag off-target jobs before scoring, at no token cost.",
     info_scoring:
-      'A compact JSON the AI generates once from your Markdown profile and reuses for every scoring and tailoring call, to save tokens. It auto-refreshes whenever you save your profile — you never edit it by hand. This is the cached, compressed profile, not a separate stored object.',
+      'A compact JSON the AI generates once from your Markdown profile and reuses for every scoring and tailoring call, to save tokens. It auto-refreshes whenever you save your profile - you never edit it by hand. This is the cached, compressed profile, not a separate stored object.',
     scaffold_label: 'Example structure (not saved)',
     scoring_card_title: 'Scoring profile (auto-generated)',
     cached_chip: 'cached · 0 tokens',
@@ -518,10 +518,10 @@ const en: TranslationMap = {
     saved_at: 'Saved {date}',
     load_failed: 'Failed to load: {error}',
     save_failed: 'Save failed: {error}',
-    empty_hint: 'Profile is empty — add content first.',
-    scoring_cached: 'Profile unchanged — using cached scoring profile (0 tokens).',
-    pitch_cached: 'Profile unchanged — using cached pitch (0 tokens).',
-    generated_tokens: 'Generated — {in} in / {out} out',
+    empty_hint: 'Profile is empty - add content first.',
+    scoring_cached: 'Profile unchanged - using cached scoring profile (0 tokens).',
+    pitch_cached: 'Profile unchanged - using cached pitch (0 tokens).',
+    generated_tokens: 'Generated - {in} in / {out} out',
     generate_failed: 'Failed: {error}',
     mode_form: 'Form',
     mode_raw: 'Raw Markdown',
@@ -605,7 +605,7 @@ const en: TranslationMap = {
     linkedin_hint: 'e.g. linkedin.com/in/username',
     ai_view_title: 'How AI sees you',
     strengths: 'Strengths',
-    improve: 'What to improve — sharpens job matching',
+    improve: 'What to improve - sharpens job matching',
     add_field: 'Add',
     completeness: 'Profile completeness',
     show_json: 'Show technical data (JSON)',
@@ -626,7 +626,7 @@ const en: TranslationMap = {
     archetype_sell_when_hint: 'When would you pitch yourself as this role?',
     hero_improve: 'Complete to sharpen matching',
     hero_left: '{n} left',
-    hero_complete: 'Profile complete — AI matching is at full strength.',
+    hero_complete: 'Profile complete - AI matching is at full strength.',
   },
   comp: {
     badge_above: 'Above your target',
@@ -647,7 +647,7 @@ const en: TranslationMap = {
     legitimacy_yellow: 'Proceed with caution',
     legitimacy_red: 'Scam/ghost-job signals',
     legitimacy_red_banner_title:
-      'This posting has scam/ghost-job signals. Review the notes below before applying — you can still score and tailor if you choose to proceed.',
+      'This posting has scam/ghost-job signals. Review the notes below before applying - you can still score and tailor if you choose to proceed.',
     score_btn: 'Score this job',
     scoring: 'Scoring…',
     rescore: 'Rescore',
@@ -684,7 +684,7 @@ const en: TranslationMap = {
     tailoring: 'Tailoring…',
     portal_section: 'Draft portal answers',
     portal_hint:
-      "AI drafts answers to the portal's open-ended questions from your profile and this job description. You review, edit, and copy each one — Applye never submits anything.",
+      "AI drafts answers to the portal's open-ended questions from your profile and this job description. You review, edit, and copy each one - Applye never submits anything.",
     portal_never_submits:
       'Nothing is submitted automatically. Copy an answer, then paste it into the portal yourself.',
     portal_question_label: 'Question',
@@ -693,7 +693,7 @@ const en: TranslationMap = {
     portal_language_label: 'Answer language',
     portal_draft_btn: 'Draft answers',
     portal_drafting: 'Drafting…',
-    portal_cached: 'Loaded from cache — 0 tokens',
+    portal_cached: 'Loaded from cache - 0 tokens',
     portal_copy: 'Copy',
     portal_copied: 'Copied!',
     portal_another_version: 'Another version',
@@ -705,7 +705,7 @@ const en: TranslationMap = {
     export_pdf: 'Export PDF',
     export_recommended: 'Recommended',
     export_docx_desc:
-      'Editable Word file. ATS-safe formatting — parses cleanly through applicant tracking systems.',
+      'Editable Word file. ATS-safe formatting - parses cleanly through applicant tracking systems.',
     export_pdf_desc:
       'Pixel-perfect layout for humans. Best when a recruiter reads it directly, not a parser.',
     exporting: 'Exporting…',
@@ -799,12 +799,12 @@ const en: TranslationMap = {
       phase_running: 'Running',
       phase_pending: 'Pending',
       changes_title: 'Changes',
-      gaps_title: 'Gaps — not addressable from profile',
+      gaps_title: 'Gaps - not addressable from profile',
       updated_score_eyebrow: 'Step 3 · Updated score',
       updated_score_title: 'How tailoring changed your fit',
       updating_score_hint: 'Re-scoring your tailored resume against this job…',
       updated_score_skip:
-        'You skipped tailoring — nothing to re-score yet. Continue to apply with your existing resume.',
+        'You skipped tailoring - nothing to re-score yet. Continue to apply with your existing resume.',
       review_documents_eyebrow: 'Step 4 · Review documents',
       review_documents_title: 'Review generated CV and Cover Letter',
       review_documents_hint:
@@ -862,12 +862,12 @@ const en: TranslationMap = {
       export_apply_eyebrow: 'Step 5 · Export & apply',
       export_title: 'Save linked documents',
       export_skipped:
-        'CV not tailored — go back to Tailor CV to export one, or apply with your existing resume below.',
+        'CV not tailored - go back to Tailor CV to export one, or apply with your existing resume below.',
       tailor_skip_hint:
-        'You can also skip tailoring and apply with your existing resume — Continue always works.',
+        'You can also skip tailoring and apply with your existing resume - Continue always works.',
       apply_title: 'Ready to apply',
       apply_subtitle:
-        'Nothing is submitted automatically — you paste into the employer’s form yourself.',
+        'Nothing is submitted automatically - you paste into the employer’s form yourself.',
       step_word: 'Step',
       step_progress_of: 'of 5',
       continue_label: 'Continue',
@@ -878,7 +878,7 @@ const en: TranslationMap = {
       update_success_title: 'Application updated',
       update_success_msg: 'Your tailored resume and score for this job are saved.',
       redirecting: 'Taking you back to the job…',
-      apply_no_export: 'No tailored resume exported yet — export one above, or apply anyway.',
+      apply_no_export: 'No tailored resume exported yet - export one above, or apply anyway.',
       export_missing_cv_warning:
         'No linked CV yet. You can still mark the application, but export needs a linked CV.',
       export_missing_cover_letter_warning:
@@ -1013,7 +1013,7 @@ const en: TranslationMap = {
   },
   documents: {
     title: 'Documents',
-    coming_soon: 'Cover letter editor — coming soon',
+    coming_soon: 'Cover letter editor - coming soon',
     tab_cv: 'CV',
     tab_cover_letter: 'Cover Letter',
     linked_to: 'Linked to',
@@ -1021,7 +1021,7 @@ const en: TranslationMap = {
     cover_letter_untitled: 'Untitled Cover Letter',
     cover_letter_generate_action: 'Generate Cover Letter',
     cover_letter_tailor_action: 'Tailor Cover Letter',
-    cover_letter_tailor_none: 'None — generate new from scratch',
+    cover_letter_tailor_none: 'None - generate new from scratch',
     cover_letter_field_recipient: 'Recipient Name',
     cover_letter_field_company: 'Company',
     cover_letter_field_street: 'Street',
@@ -1109,10 +1109,10 @@ const en: TranslationMap = {
     cv_import_low_confidence: 'Double-check these',
     cv_generate_title: 'Generate a baseline CV',
     cv_generate_hint:
-      'Built from your profile for a market and role archetype — no job description needed.',
+      'Built from your profile for a market and role archetype - no job description needed.',
     cv_generate_busy: 'Generating…',
     cv_generate_confirm_btn: 'Generate',
-    cv_generate_no_profile: 'Add a profile first — there is no content to build a CV from yet.',
+    cv_generate_no_profile: 'Add a profile first - there is no content to build a CV from yet.',
     cv_back_to_job: 'Back to {job}',
     cv_back_to_documents: 'Back to Documents',
     cover_letter_back_to_job: 'Back to {job}',
@@ -1176,7 +1176,7 @@ const en: TranslationMap = {
     cv_ats_note_birthdate:
       'A birth date is conventional in Germany but is usually left off CVs in markets that treat age as protected information (e.g. US/UK).',
     cv_ats_note_marital:
-      'Marital status is conventional in Germany but is unusual — and sometimes considered inappropriate — on CVs in other markets.',
+      'Marital status is conventional in Germany but is unusual - and sometimes considered inappropriate - on CVs in other markets.',
     cv_regenerate_action: 'Regenerate this section',
     cv_save_as_template_action: 'Save arrangement as template',
     cv_save_as_template_title: 'Save as a custom template',
@@ -1204,7 +1204,7 @@ const en: TranslationMap = {
     cv_photo_placement_right: 'Right',
     cv_preview_action: 'Preview',
     cv_edit_action: 'Edit',
-    cv_preview_empty: 'Nothing to preview yet — add some content or generate a baseline.',
+    cv_preview_empty: 'Nothing to preview yet - add some content or generate a baseline.',
     cv_present: 'Present',
     cv_theme_label: 'Theme',
     cv_theme_classic: 'Classic',
@@ -1213,11 +1213,11 @@ const en: TranslationMap = {
     cv_style_size: 'Size (pt)',
     cv_style_color: 'Color',
     cv_style_note_font:
-      '"{value}" may not be reliably read by every ATS parser — safe choices: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
+      '"{value}" may not be reliably read by every ATS parser - safe choices: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
     cv_style_note_size:
-      '{value}pt is outside the recommended 10–12pt body range — very small or very large text can look off in print or on screen.',
+      '{value}pt is outside the recommended 10-12pt body range - very small or very large text can look off in print or on screen.',
     cv_style_note_color:
-      '{value} may be hard to read once printed in greyscale (e.g. by an Agentur für Arbeit printer). This is a readability/print concern, not an ATS-parsing one — colour barely affects text extraction.',
+      '{value} may be hard to read once printed in greyscale (e.g. by an Agentur für Arbeit printer). This is a readability/print concern, not an ATS-parsing one - colour barely affects text extraction.',
     cv_style_weight: 'Weight',
     cv_style_weight_300: 'Light',
     cv_style_weight_400: 'Normal',
@@ -1249,14 +1249,14 @@ const en: TranslationMap = {
     cv_live_style_title: 'Live style',
     cv_live_style_hint: 'Every field is its own element. Style one, or apply to its whole group.',
     cv_live_style_empty:
-      'Click any field on the paper — a title, a company name, a single bullet. Style just it, or its whole group.',
+      'Click any field on the paper - a title, a company name, a single bullet. Style just it, or its whole group.',
     cv_live_style_reset: 'Reset this section',
     cv_live_style_editing: 'Editing',
     cv_live_style_nothing: 'Nothing selected',
     cv_live_style_sample: 'The quick brown fox',
     cv_live_style_format: 'Format',
     cv_live_style_edit_text: 'Edit text',
-    cv_live_style_bold_hint: 'Click a word on the paper to make it bold — click it again to undo.',
+    cv_live_style_bold_hint: 'Click a word on the paper to make it bold - click it again to undo.',
     cv_style_scope_label: 'Apply to',
     cv_style_scope_element: 'This element',
     cv_style_scope_section: 'This section',
@@ -1290,7 +1290,7 @@ const en: TranslationMap = {
     cv_style_margin_left: 'Left',
     cv_style_page_count: 'Page {n}',
     cv_style_overflow_warning:
-      'Content is taller than the usable page area — reduce margins or content.',
+      'Content is taller than the usable page area - reduce margins or content.',
     cv_style_export_pdf_wysiwyg: 'Export PDF (print)',
     cv_style_export_pixel_note:
       'PDF matches the preview exactly. DOCX matches size, margins, and structure but not pixels.',
@@ -1383,7 +1383,7 @@ const en: TranslationMap = {
   health: {
     section: 'Health check',
     section_hint:
-      'Deterministic diagnostics — keychain, database, permissions, export folder. 0 AI tokens.',
+      'Deterministic diagnostics - keychain, database, permissions, export folder. 0 AI tokens.',
     welcome_title: 'Welcome to Applye',
     welcome_subtitle: 'A quick, offline check that everything on your machine is set up correctly.',
     welcome_tagline: 'Your private, offline-first job search, from first listing to signed offer.',
@@ -1410,7 +1410,7 @@ const en: TranslationMap = {
       'A few quick steps: connect an AI provider, import your resume, and confirm your targets. Everything runs on your machine.',
     privacy_card_title: 'Local-first & private',
     privacy_1: 'Your resume, notes and applications are stored on this device only.',
-    privacy_2: 'API keys live in your OS keychain — not in the database or logs.',
+    privacy_2: 'API keys live in your OS keychain - not in the database or logs.',
     privacy_3: 'Nothing is sent to the cloud except the AI requests you trigger.',
     step_names: {
       welcome: 'welcome',
@@ -1429,7 +1429,7 @@ const en: TranslationMap = {
       eyebrow: 'AI provider',
       title: 'Connect an AI provider',
       intro:
-        'Applye uses AI to score jobs and tailor documents. You need one API key. Think of it as a password for the AI — it is stored only on your computer.',
+        'Applye uses AI to score jobs and tailor documents. You need one API key. Think of it as a password for the AI - it is stored only on your computer.',
       panel_intro: 'Create a key in the provider console, then paste it below.',
       open_console: 'Open console & create a key',
       api_key_label: 'Api key',
@@ -1440,13 +1440,13 @@ const en: TranslationMap = {
       invalid_note: "That key doesn't look right. Check you copied all of it.",
       error: "Couldn't save the key. Try again.",
       watch_video: 'Watch the video walkthrough',
-      keyring_note: 'Stored in your OS keychain — never in the database or logs.',
+      keyring_note: 'Stored in your OS keychain - never in the database or logs.',
       mode_api_title: 'Paste an API key',
       mode_api_sub: 'Pay per use. Works with any of the providers below.',
       mode_cli_title: 'Use a CLI you already pay for',
       mode_cli_sub: 'Claude Code, Codex or Gemini CLI. No API key, no extra bill.',
       skip_warning:
-        'You can skip this — but analysis, tailoring and interview prep stay disabled until a key is added.',
+        'You can skip this - but analysis, tailoring and interview prep stay disabled until a key is added.',
       gemini: {
         name: 'Gemini',
         vendor: 'Google',
@@ -1456,7 +1456,7 @@ const en: TranslationMap = {
         claude_name: 'Claude Code',
         openai_name: 'Codex CLI',
         panel_intro:
-          'Applye runs the CLI you already installed and signed in to. Nothing is stored here — no API key, no second subscription.',
+          'Applye runs the CLI you already installed and signed in to. Nothing is stored here - no API key, no second subscription.',
         checking: 'Checking which CLIs you have…',
         missing: 'not installed',
         broken: 'installed, but it will not run',
@@ -1467,11 +1467,11 @@ const en: TranslationMap = {
         get_node: 'Get Node.js · nodejs.org',
         setup_prefix: 'Two steps to set up',
         step_install: 'Install it. Use the button above, or run',
-        step_repair: 'Reinstall it — it is there but will not start. Use the button above, or run',
+        step_repair: 'Reinstall it - it is there but will not start. Use the button above, or run',
         step_signin: 'Sign in. Open a terminal, run this once and follow the prompts:',
         ready_prefix: 'Ready to use:',
         ready_auth_hint:
-          'It runs — but that does not prove you are signed in. If a task fails with an authentication or plan error, run this once in a terminal and follow what it says:',
+          'It runs - but that does not prove you are signed in. If a task fails with an authentication or plan error, run this once in a terminal and follow what it says:',
       },
       generic: {
         name: 'Other provider',
@@ -1525,7 +1525,7 @@ const en: TranslationMap = {
       paste_placeholder: 'Paste the full text of your resume here…',
       attached: 'Attached',
       ready_to_parse: 'ready to parse',
-      skip_note: 'No problem — you can import a resume any time from your Profile.',
+      skip_note: 'No problem - you can import a resume any time from your Profile.',
       privacy_note:
         'Your resume stays on this computer. It is only sent to the AI model you configured.',
       error: "Couldn't parse that resume. Try pasting the text instead.",
@@ -1533,10 +1533,10 @@ const en: TranslationMap = {
     preview: {
       eyebrow: 'Parsed resume',
       title: 'Check what we pulled',
-      help: 'Your contact details are editable here. Experience and skills are shown as parsed — you can refine them later in Documents.',
+      help: 'Your contact details are editable here. Experience and skills are shown as parsed - you can refine them later in Documents.',
       warning_suffix: 'field(s) need a look',
       warning_help:
-        "We weren't fully sure about some items — fix any mis-parses before continuing.",
+        "We weren't fully sure about some items - fix any mis-parses before continuing.",
       field_name: 'Full name',
       field_email: 'Email',
       field_phone: 'Phone',
@@ -1548,8 +1548,8 @@ const en: TranslationMap = {
     },
     archetypes: {
       eyebrow: 'Targeting',
-      title: 'Two things I inferred — confirm them',
-      help: 'From your resume. These stay editable — nothing is fabricated, just suggested.',
+      title: 'Two things I inferred - confirm them',
+      help: 'From your resume. These stay editable - nothing is fabricated, just suggested.',
       ai_suggested: 'AI suggested',
       roles_label: 'Target roles',
       suggest: 'Suggest again',
@@ -1558,7 +1558,7 @@ const en: TranslationMap = {
       comp_currency_label: 'Currency',
       comp_hint: 'total comp',
       no_fabrication:
-        'These are suggestions only — nothing is invented. Always double-check before applying.',
+        'These are suggestions only - nothing is invented. Always double-check before applying.',
     },
     done: {
       title: "You're all set",
@@ -1740,7 +1740,7 @@ const de: TranslationMap = {
     import: 'Datei importieren',
     import_title: 'Tracklist importieren',
     import_hint:
-      'CSV-, XLSX-, JSON- oder Text-Export aus einem anderen Tracker wählen. Ein KI-Aufruf erkennt die Spalten — nichts wird hinzugefügt, bevor Sie bestätigen.',
+      'CSV-, XLSX-, JSON- oder Text-Export aus einem anderen Tracker wählen. Ein KI-Aufruf erkennt die Spalten - nichts wird hinzugefügt, bevor Sie bestätigen.',
     import_pick_file: 'Datei wählen…',
     import_detecting: 'Erkenne…',
     import_confirm_btn: 'Auswahl importieren',
@@ -1771,7 +1771,7 @@ const de: TranslationMap = {
     link_submit: 'Abrufen',
     link_fetching: 'Wird abgerufen…',
     link_hint:
-      'Nur öffentliche Job-Board-APIs und RSS-Feeds werden automatisch abgerufen — niemals geschlossene Portale.',
+      'Nur öffentliche Job-Board-APIs und RSS-Feeds werden automatisch abgerufen - niemals geschlossene Portale.',
     text_hint: 'Füge die vollständige Stellenbeschreibung ein. Lokale Verarbeitung (0 Tokens).',
     text_placeholder: 'Stellenbeschreibung hier einfügen…',
     submit: 'Analysieren',
@@ -2035,7 +2035,7 @@ const de: TranslationMap = {
   followup: {
     section_label: 'Follow-up-E-Mail',
     draft_action: 'Follow-up entwerfen',
-    cached_hint: 'Unverändert — verwendet zwischengespeicherten Entwurf (0 Token).',
+    cached_hint: 'Unverändert - verwendet zwischengespeicherten Entwurf (0 Token).',
     to_placeholder: 'An (optional)',
     cc_placeholder: 'Cc (optional)',
     subject_placeholder: 'Betreff',
@@ -2056,7 +2056,7 @@ const de: TranslationMap = {
     archetypes_hint:
       'Bis zu 5 Rollen-Archetypen - ein Name, wie gut er passt (primär / sekundär / angrenzend) und wann Sie sich als diese Rolle präsentieren. Wird genutzt, um nicht passende Stellen vor jeder Bewertung zu markieren - 0 Token.',
     archetypes_empty_warning:
-      'Keine Zielrollen definiert — Stellen werden nicht mit Ihren Präferenzen abgeglichen.',
+      'Keine Zielrollen definiert - Stellen werden nicht mit Ihren Präferenzen abgeglichen.',
     archetype_placeholder:
       'z. B. Staff Frontend Engineer, remote EU, Series B-D Produktunternehmen',
     add_archetype: '+ Zielrolle hinzufügen',
@@ -2064,7 +2064,7 @@ const de: TranslationMap = {
     section_markdown: 'Profil',
     section_ai_tools: 'KI-Werkzeuge',
     ai_hint:
-      'Profil zuerst speichern, dann generieren. Ergebnisse werden zwischengespeichert — erneutes Ausführen bei unverändertem Profil kostet 0 Token.',
+      'Profil zuerst speichern, dann generieren. Ergebnisse werden zwischengespeichert - erneutes Ausführen bei unverändertem Profil kostet 0 Token.',
     scoring_title: 'Bewerbungsprofil',
     scoring_desc:
       'Komprimiert Ihr vollständiges Profil in kompaktes JSON für alle Bewertungs- und Anpassungsaufrufe. Einmal generiert; wird zwischengespeichert bis das Profil geändert wird.',
@@ -2079,11 +2079,11 @@ const de: TranslationMap = {
     placeholder: '# Jane Doe\nSenior Frontend Engineer · Berlin\n\n## Erfahrung\n…',
     info_aria: 'Weitere Informationen',
     info_profile:
-      'Ihr Masterprofil ist reines Markdown — die alleinige Grundlage für jede KI-Bewertung und Anpassung.',
+      'Ihr Masterprofil ist reines Markdown - die alleinige Grundlage für jede KI-Bewertung und Anpassung.',
     info_archetypes:
-      'Zielrollen sind kurze Beschreibungen (Archetypen) akzeptabler Positionen. Sie markieren nicht passende Stellen vor der Bewertung — ohne Tokenkosten.',
+      'Zielrollen sind kurze Beschreibungen (Archetypen) akzeptabler Positionen. Sie markieren nicht passende Stellen vor der Bewertung - ohne Tokenkosten.',
     info_scoring:
-      'Ein kompaktes JSON, das die KI einmal aus Ihrem Markdown-Profil generiert und für jede Bewertungs- und Anpassungsanfrage wiederverwendet, um Tokens zu sparen. Es wird automatisch aktualisiert, sobald Sie Ihr Profil speichern — Sie bearbeiten es nie von Hand. Dies ist das zwischengespeicherte, komprimierte Profil, kein separates gespeichertes Objekt.',
+      'Ein kompaktes JSON, das die KI einmal aus Ihrem Markdown-Profil generiert und für jede Bewertungs- und Anpassungsanfrage wiederverwendet, um Tokens zu sparen. Es wird automatisch aktualisiert, sobald Sie Ihr Profil speichern - Sie bearbeiten es nie von Hand. Dies ist das zwischengespeicherte, komprimierte Profil, kein separates gespeichertes Objekt.',
     scaffold_label: 'Beispielstruktur (wird nicht gespeichert)',
     scoring_card_title: 'Bewerbungsprofil (automatisch generiert)',
     cached_chip: 'zwischengespeichert · 0 Token',
@@ -2099,11 +2099,11 @@ const de: TranslationMap = {
     saved_at: 'Gespeichert {date}',
     load_failed: 'Laden fehlgeschlagen: {error}',
     save_failed: 'Speichern fehlgeschlagen: {error}',
-    empty_hint: 'Profil ist leer — zuerst Inhalt hinzufügen.',
+    empty_hint: 'Profil ist leer - zuerst Inhalt hinzufügen.',
     scoring_cached:
-      'Profil unverändert — zwischengespeichertes Bewerbungsprofil wird verwendet (0 Token).',
-    pitch_cached: 'Profil unverändert — zwischengespeicherter Pitch wird verwendet (0 Token).',
-    generated_tokens: 'Generiert — {in} eingehend / {out} ausgehend',
+      'Profil unverändert - zwischengespeichertes Bewerbungsprofil wird verwendet (0 Token).',
+    pitch_cached: 'Profil unverändert - zwischengespeicherter Pitch wird verwendet (0 Token).',
+    generated_tokens: 'Generiert - {in} eingehend / {out} ausgehend',
     generate_failed: 'Fehlgeschlagen: {error}',
     mode_form: 'Formular',
     mode_raw: 'Raw-Markdown',
@@ -2188,7 +2188,7 @@ const de: TranslationMap = {
     linkedin_hint: 'z. B. linkedin.com/in/benutzername',
     ai_view_title: 'So sieht dich die KI',
     strengths: 'Stärken',
-    improve: 'Was du verbessern kannst — schärft das Job-Matching',
+    improve: 'Was du verbessern kannst - schärft das Job-Matching',
     add_field: 'Hinzufügen',
     completeness: 'Profil-Vollständigkeit',
     show_json: 'Technische Daten anzeigen (JSON)',
@@ -2209,7 +2209,7 @@ const de: TranslationMap = {
     archetype_sell_when_hint: 'Wann würden Sie sich als diese Rolle präsentieren?',
     hero_improve: 'Vervollständigen für besseres Matching',
     hero_left: 'noch {n}',
-    hero_complete: 'Profil vollständig — KI-Matching läuft mit voller Stärke.',
+    hero_complete: 'Profil vollständig - KI-Matching läuft mit voller Stärke.',
   },
   comp: {
     badge_above: 'Über deinem Ziel',
@@ -2230,7 +2230,7 @@ const de: TranslationMap = {
     legitimacy_yellow: 'Vorsicht geboten',
     legitimacy_red: 'Betrugs-/Scheinstellen-Signale',
     legitimacy_red_banner_title:
-      'Diese Stellenanzeige weist Betrugs-/Scheinstellen-Signale auf. Prüfen Sie die Hinweise unten, bevor Sie sich bewerben — Sie können trotzdem fortfahren, wenn Sie möchten.',
+      'Diese Stellenanzeige weist Betrugs-/Scheinstellen-Signale auf. Prüfen Sie die Hinweise unten, bevor Sie sich bewerben - Sie können trotzdem fortfahren, wenn Sie möchten.',
     score_btn: 'Stelle bewerten',
     scoring: 'Bewerte…',
     save_job: 'Job speichern',
@@ -2267,7 +2267,7 @@ const de: TranslationMap = {
     tailoring: 'Passe an…',
     portal_section: 'Bewerbungsantworten entwerfen',
     portal_hint:
-      'Die KI entwirft Antworten auf die offenen Fragen des Portals aus deinem Profil und dieser Stellenbeschreibung. Du prüfst, bearbeitest und kopierst jede Antwort — Applye sendet nie etwas ab.',
+      'Die KI entwirft Antworten auf die offenen Fragen des Portals aus deinem Profil und dieser Stellenbeschreibung. Du prüfst, bearbeitest und kopierst jede Antwort - Applye sendet nie etwas ab.',
     portal_never_submits:
       'Nichts wird automatisch abgeschickt. Antwort kopieren und selbst ins Portal einfügen.',
     portal_question_label: 'Frage',
@@ -2276,7 +2276,7 @@ const de: TranslationMap = {
     portal_language_label: 'Antwortsprache',
     portal_draft_btn: 'Antworten entwerfen',
     portal_drafting: 'Entwirft…',
-    portal_cached: 'Aus dem Cache geladen — 0 Tokens',
+    portal_cached: 'Aus dem Cache geladen - 0 Tokens',
     portal_copy: 'Kopieren',
     portal_copied: 'Kopiert!',
     portal_another_version: 'Andere Version',
@@ -2288,7 +2288,7 @@ const de: TranslationMap = {
     export_pdf: 'PDF exportieren',
     export_recommended: 'Empfohlen',
     export_docx_desc:
-      'Bearbeitbare Word-Datei. ATS-sicheres Format — wird von Bewerbersystemen sauber gelesen.',
+      'Bearbeitbare Word-Datei. ATS-sicheres Format - wird von Bewerbersystemen sauber gelesen.',
     export_pdf_desc:
       'Pixelgenaues Layout für Menschen. Am besten, wenn ein Recruiter es direkt liest.',
     exporting: 'Exportiere…',
@@ -2385,12 +2385,12 @@ const de: TranslationMap = {
       phase_running: 'Läuft',
       phase_pending: 'Ausstehend',
       changes_title: 'Änderungen',
-      gaps_title: 'Lücken — nicht aus dem Profil lösbar',
+      gaps_title: 'Lücken - nicht aus dem Profil lösbar',
       updated_score_eyebrow: 'Schritt 3 · Aktualisierte Bewertung',
       updated_score_title: 'Wie die Anpassung deine Passung verändert hat',
       updating_score_hint: 'Dein angepasster Lebenslauf wird neu gegen diese Stelle bewertet…',
       updated_score_skip:
-        'Du hast die Anpassung übersprungen — noch nichts neu zu bewerten. Fahre fort, um dich mit deinem bestehenden Lebenslauf zu bewerben.',
+        'Du hast die Anpassung übersprungen - noch nichts neu zu bewerten. Fahre fort, um dich mit deinem bestehenden Lebenslauf zu bewerben.',
       review_documents_eyebrow: 'Schritt 4 · Dokumente prüfen',
       review_documents_title: 'Erstellten Lebenslauf und Anschreiben prüfen',
       review_documents_hint:
@@ -2452,12 +2452,12 @@ const de: TranslationMap = {
       export_apply_eyebrow: 'Schritt 5 · Export & Bewerbung',
       export_title: 'Verknüpfte Dokumente speichern',
       export_skipped:
-        'Lebenslauf nicht angepasst — gehe zurück zu Lebenslauf anpassen, um einen zu exportieren, oder bewirb dich unten mit deinem bestehenden Lebenslauf.',
+        'Lebenslauf nicht angepasst - gehe zurück zu Lebenslauf anpassen, um einen zu exportieren, oder bewirb dich unten mit deinem bestehenden Lebenslauf.',
       tailor_skip_hint:
-        'Du kannst die Anpassung auch überspringen und dich mit deinem bestehenden Lebenslauf bewerben — Weiter funktioniert immer.',
+        'Du kannst die Anpassung auch überspringen und dich mit deinem bestehenden Lebenslauf bewerben - Weiter funktioniert immer.',
       apply_title: 'Bereit zur Bewerbung',
       apply_subtitle:
-        'Nichts wird automatisch abgeschickt — du fügst es selbst in das Formular des Arbeitgebers ein.',
+        'Nichts wird automatisch abgeschickt - du fügst es selbst in das Formular des Arbeitgebers ein.',
       step_word: 'Schritt',
       step_progress_of: 'von 5',
       continue_label: 'Weiter',
@@ -2470,7 +2470,7 @@ const de: TranslationMap = {
         'Dein angepasster Lebenslauf und die Bewertung für diese Stelle sind gespeichert.',
       redirecting: 'Zurück zur Stelle…',
       apply_no_export:
-        'Noch kein angepasster Lebenslauf exportiert — exportiere oben einen oder bewirb dich trotzdem.',
+        'Noch kein angepasster Lebenslauf exportiert - exportiere oben einen oder bewirb dich trotzdem.',
       export_missing_cv_warning:
         'Noch kein Lebenslauf verknüpft. Du kannst die Bewerbung trotzdem markieren, aber der Export braucht einen verknüpften Lebenslauf.',
       export_missing_cover_letter_warning:
@@ -2607,7 +2607,7 @@ const de: TranslationMap = {
   },
   documents: {
     title: 'Dokumente',
-    coming_soon: 'Anschreiben-Editor — demnächst',
+    coming_soon: 'Anschreiben-Editor - demnächst',
     tab_cv: 'Lebenslauf',
     tab_cover_letter: 'Anschreiben',
     linked_to: 'Verknüpft mit',
@@ -2615,7 +2615,7 @@ const de: TranslationMap = {
     cover_letter_untitled: 'Unbenanntes Anschreiben',
     cover_letter_generate_action: 'Anschreiben erstellen',
     cover_letter_tailor_action: 'Anschreiben anpassen',
-    cover_letter_tailor_none: 'Keines — neu von Grund auf erstellen',
+    cover_letter_tailor_none: 'Keines - neu von Grund auf erstellen',
     cover_letter_field_recipient: 'Empfängername',
     cover_letter_field_company: 'Unternehmen',
     cover_letter_field_street: 'Straße',
@@ -2705,11 +2705,11 @@ const de: TranslationMap = {
     cv_import_low_confidence: 'Bitte prüfen',
     cv_generate_title: 'Basis-Lebenslauf erstellen',
     cv_generate_hint:
-      'Aus deinem Profil für einen Markt und ein Rollenarchetyp — keine Stellenanzeige nötig.',
+      'Aus deinem Profil für einen Markt und ein Rollenarchetyp - keine Stellenanzeige nötig.',
     cv_generate_busy: 'Wird erstellt…',
     cv_generate_confirm_btn: 'Erstellen',
     cv_generate_no_profile:
-      'Lege zuerst ein Profil an — es gibt noch keinen Inhalt für einen Lebenslauf.',
+      'Lege zuerst ein Profil an - es gibt noch keinen Inhalt für einen Lebenslauf.',
     cv_back_to_job: 'Zurück zu {job}',
     cv_back_to_documents: 'Zurück zu Dokumente',
     cover_letter_back_to_job: 'Zurück zu {job}',
@@ -2773,7 +2773,7 @@ const de: TranslationMap = {
     cv_ats_note_birthdate:
       'Ein Geburtsdatum ist in Deutschland üblich, wird aber in Märkten, die Alter als geschützte Information behandeln (z. B. USA/UK), meist weggelassen.',
     cv_ats_note_marital:
-      'Der Familienstand ist in Deutschland üblich, in anderen Märkten aber unüblich — und mitunter unangebracht — in Lebensläufen.',
+      'Der Familienstand ist in Deutschland üblich, in anderen Märkten aber unüblich - und mitunter unangebracht - in Lebensläufen.',
     cv_regenerate_action: 'Diesen Abschnitt neu erstellen',
     cv_save_as_template_action: 'Anordnung als Vorlage speichern',
     cv_save_as_template_title: 'Als eigene Vorlage speichern',
@@ -2804,7 +2804,7 @@ const de: TranslationMap = {
     cv_preview_action: 'Vorschau',
     cv_edit_action: 'Bearbeiten',
     cv_preview_empty:
-      'Noch nichts zum Anzeigen — füge Inhalte hinzu oder erstelle eine Basisversion.',
+      'Noch nichts zum Anzeigen - füge Inhalte hinzu oder erstelle eine Basisversion.',
     cv_present: 'Heute',
     cv_theme_label: 'Design',
     cv_theme_classic: 'Klassisch',
@@ -2813,11 +2813,11 @@ const de: TranslationMap = {
     cv_style_size: 'Größe (pt)',
     cv_style_color: 'Farbe',
     cv_style_note_font:
-      '„{value}" wird möglicherweise nicht von jedem ATS-Parser zuverlässig gelesen — sichere Wahl: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
+      '„{value}" wird möglicherweise nicht von jedem ATS-Parser zuverlässig gelesen - sichere Wahl: Arial, Calibri, Helvetica, Georgia, Times New Roman, Lato, Open Sans.',
     cv_style_note_size:
-      '{value}pt liegt außerhalb des empfohlenen Bereichs von 10–12pt Fließtext — sehr kleiner oder sehr großer Text kann im Druck oder am Bildschirm unpassend wirken.',
+      '{value}pt liegt außerhalb des empfohlenen Bereichs von 10-12pt Fließtext - sehr kleiner oder sehr großer Text kann im Druck oder am Bildschirm unpassend wirken.',
     cv_style_note_color:
-      '{value} könnte nach dem Ausdruck in Graustufen (z. B. bei der Agentur für Arbeit) schwer lesbar sein. Das ist ein Lesbarkeits-/Druckproblem, kein ATS-Parsing-Problem — Farbe beeinflusst die Textextraktion kaum.',
+      '{value} könnte nach dem Ausdruck in Graustufen (z. B. bei der Agentur für Arbeit) schwer lesbar sein. Das ist ein Lesbarkeits-/Druckproblem, kein ATS-Parsing-Problem - Farbe beeinflusst die Textextraktion kaum.',
     cv_style_weight: 'Schriftstärke',
     cv_style_weight_300: 'Leicht',
     cv_style_weight_400: 'Normal',
@@ -2850,7 +2850,7 @@ const de: TranslationMap = {
     cv_live_style_hint:
       'Jedes Feld ist ein eigenes Element. Gestalte eines oder wende es auf die ganze Gruppe an.',
     cv_live_style_empty:
-      'Klicke auf ein Feld auf dem Blatt — einen Titel, einen Firmennamen, einen einzelnen Punkt. Gestalte nur dieses oder die ganze Gruppe.',
+      'Klicke auf ein Feld auf dem Blatt - einen Titel, einen Firmennamen, einen einzelnen Punkt. Gestalte nur dieses oder die ganze Gruppe.',
     cv_live_style_reset: 'Diesen Abschnitt zurücksetzen',
     cv_live_style_editing: 'Bearbeiten',
     cv_live_style_nothing: 'Nichts ausgewählt',
@@ -2858,7 +2858,7 @@ const de: TranslationMap = {
     cv_live_style_format: 'Format',
     cv_live_style_edit_text: 'Text bearbeiten',
     cv_live_style_bold_hint:
-      'Klicke auf ein Wort auf dem Blatt, um es fett zu machen — klicke erneut, um es rückgängig zu machen.',
+      'Klicke auf ein Wort auf dem Blatt, um es fett zu machen - klicke erneut, um es rückgängig zu machen.',
     cv_style_scope_label: 'Anwenden auf',
     cv_style_scope_element: 'Dieses Element',
     cv_style_scope_section: 'Diesen Abschnitt',
@@ -2892,7 +2892,7 @@ const de: TranslationMap = {
     cv_style_margin_left: 'Links',
     cv_style_page_count: 'Seite {n}',
     cv_style_overflow_warning:
-      'Der Inhalt ist höher als der nutzbare Seitenbereich — Ränder oder Inhalt reduzieren.',
+      'Der Inhalt ist höher als der nutzbare Seitenbereich - Ränder oder Inhalt reduzieren.',
     cv_style_export_pdf_wysiwyg: 'PDF exportieren (Druck)',
     cv_style_export_pixel_note:
       'Das PDF entspricht exakt der Vorschau. Das DOCX stimmt bei Größe, Rändern und Struktur überein, jedoch nicht pixelgenau.',
@@ -2985,7 +2985,7 @@ const de: TranslationMap = {
   health: {
     section: 'Systemcheck',
     section_hint:
-      'Deterministische Diagnose — Schlüsselbund, Datenbank, Berechtigungen, Exportordner. 0 KI-Tokens.',
+      'Deterministische Diagnose - Schlüsselbund, Datenbank, Berechtigungen, Exportordner. 0 KI-Tokens.',
     welcome_title: 'Willkommen bei Applye',
     welcome_subtitle:
       'Ein kurzer, offline durchgeführter Check, ob alles auf deinem Rechner korrekt eingerichtet ist.',
@@ -3014,7 +3014,7 @@ const de: TranslationMap = {
       'Ein paar kurze Schritte: KI-Anbieter verbinden, Lebenslauf importieren und Ziele bestätigen. Alles läuft auf deinem Rechner.',
     privacy_card_title: 'Lokal zuerst & privat',
     privacy_1: 'Dein Lebenslauf, Notizen und Bewerbungen werden nur auf diesem Gerät gespeichert.',
-    privacy_2: 'API-Schlüssel liegen in deinem Schlüsselbund — nicht in der Datenbank oder Logs.',
+    privacy_2: 'API-Schlüssel liegen in deinem Schlüsselbund - nicht in der Datenbank oder Logs.',
     privacy_3: 'Nichts wird in die Cloud gesendet außer den KI-Anfragen, die du auslöst.',
     step_names: {
       welcome: 'willkommen',
@@ -3033,7 +3033,7 @@ const de: TranslationMap = {
       eyebrow: 'KI-Anbieter',
       title: 'KI-Anbieter verbinden',
       intro:
-        'Applye nutzt KI, um Stellen zu bewerten und Dokumente anzupassen. Du brauchst dafür einen API-Schlüssel. Stell ihn dir wie ein Passwort für die KI vor — er wird nur auf deinem Rechner gespeichert.',
+        'Applye nutzt KI, um Stellen zu bewerten und Dokumente anzupassen. Du brauchst dafür einen API-Schlüssel. Stell ihn dir wie ein Passwort für die KI vor - er wird nur auf deinem Rechner gespeichert.',
       panel_intro: 'Erstelle einen Schlüssel in der Anbieter-Konsole und füge ihn unten ein.',
       open_console: 'Konsole öffnen & Schlüssel erstellen',
       api_key_label: 'API-Schlüssel',
@@ -3047,14 +3047,14 @@ const de: TranslationMap = {
       error: 'Schlüssel konnte nicht gespeichert werden. Versuche es erneut.',
       watch_video: 'Video-Anleitung ansehen',
       keyring_note:
-        'Im Schlüsselbund deines Betriebssystems gespeichert — niemals in der Datenbank oder Logs.',
+        'Im Schlüsselbund deines Betriebssystems gespeichert - niemals in der Datenbank oder Logs.',
       mode_api_title: 'API-Schlüssel einfügen',
       mode_api_sub: 'Abrechnung nach Nutzung. Funktioniert mit allen Anbietern unten.',
       mode_cli_title: 'Eine CLI nutzen, die du schon bezahlst',
       mode_cli_sub:
         'Claude Code, Codex oder Gemini CLI. Kein API-Schlüssel, keine zweite Rechnung.',
       skip_warning:
-        'Du kannst dies überspringen — aber Analyse, Anpassung und Interview-Vorbereitung bleiben deaktiviert, bis ein Schlüssel hinzugefügt wurde.',
+        'Du kannst dies überspringen - aber Analyse, Anpassung und Interview-Vorbereitung bleiben deaktiviert, bis ein Schlüssel hinzugefügt wurde.',
       gemini: {
         name: 'Gemini',
         vendor: 'Google',
@@ -3064,7 +3064,7 @@ const de: TranslationMap = {
         claude_name: 'Claude Code',
         openai_name: 'Codex CLI',
         panel_intro:
-          'Applye startet die CLI, die du bereits installiert hast und in der du angemeldet bist. Hier wird nichts gespeichert — kein API-Schlüssel, kein zweites Abo.',
+          'Applye startet die CLI, die du bereits installiert hast und in der du angemeldet bist. Hier wird nichts gespeichert - kein API-Schlüssel, kein zweites Abo.',
         checking: 'Prüfe, welche CLIs vorhanden sind…',
         missing: 'nicht installiert',
         broken: 'installiert, startet aber nicht',
@@ -3075,11 +3075,11 @@ const de: TranslationMap = {
         get_node: 'Node.js holen · nodejs.org',
         setup_prefix: 'Zwei Schritte zur Einrichtung von',
         step_install: 'Installieren. Nutze den Button oben oder führe aus:',
-        step_repair: 'Neu installieren — vorhanden, startet aber nicht. Button oben oder:',
+        step_repair: 'Neu installieren - vorhanden, startet aber nicht. Button oben oder:',
         step_signin: 'Anmelden. Öffne ein Terminal, führe dies einmal aus und folge den Schritten:',
         ready_prefix: 'Einsatzbereit:',
         ready_auth_hint:
-          'Sie startet — das heißt aber nicht, dass du angemeldet bist. Schlägt eine Aufgabe mit einem Authentifizierungs- oder Tariffehler fehl, führe dies einmal im Terminal aus und folge der Ausgabe:',
+          'Sie startet - das heißt aber nicht, dass du angemeldet bist. Schlägt eine Aufgabe mit einem Authentifizierungs- oder Tariffehler fehl, führe dies einmal im Terminal aus und folge der Ausgabe:',
       },
       generic: {
         name: 'Anderer Anbieter',
@@ -3134,7 +3134,7 @@ const de: TranslationMap = {
       attached: 'Angehängt',
       ready_to_parse: 'bereit zur Analyse',
       skip_note:
-        'Kein Problem — du kannst jederzeit über dein Profil einen Lebenslauf importieren.',
+        'Kein Problem - du kannst jederzeit über dein Profil einen Lebenslauf importieren.',
       privacy_note:
         'Dein Lebenslauf bleibt auf diesem Rechner. Er wird nur an das von dir konfigurierte KI-Modell gesendet.',
       error:
@@ -3143,10 +3143,10 @@ const de: TranslationMap = {
     preview: {
       eyebrow: 'Analysierter Lebenslauf',
       title: 'Prüfe, was wir übernommen haben',
-      help: 'Deine Kontaktdaten kannst du hier bearbeiten. Berufserfahrung und Fähigkeiten zeigen wir so, wie wir sie gelesen haben — verfeinern kannst du sie später unter Dokumente.',
+      help: 'Deine Kontaktdaten kannst du hier bearbeiten. Berufserfahrung und Fähigkeiten zeigen wir so, wie wir sie gelesen haben - verfeinern kannst du sie später unter Dokumente.',
       warning_suffix: 'Feld(er) benötigen einen Blick',
       warning_help:
-        'Bei einigen Angaben waren wir uns nicht ganz sicher — prüfe sie, bevor du fortfährst.',
+        'Bei einigen Angaben waren wir uns nicht ganz sicher - prüfe sie, bevor du fortfährst.',
       field_name: 'Vollständiger Name',
       field_email: 'E-Mail',
       field_phone: 'Telefon',
@@ -3158,8 +3158,8 @@ const de: TranslationMap = {
     },
     archetypes: {
       eyebrow: 'Zielsetzung',
-      title: 'Zwei Dinge, die wir abgeleitet haben — bestätige sie',
-      help: 'Aus deinem Lebenslauf. Bleibt bearbeitbar — nichts ist erfunden, nur vorgeschlagen.',
+      title: 'Zwei Dinge, die wir abgeleitet haben - bestätige sie',
+      help: 'Aus deinem Lebenslauf. Bleibt bearbeitbar - nichts ist erfunden, nur vorgeschlagen.',
       ai_suggested: 'KI-Vorschlag',
       roles_label: 'Zielrollen',
       suggest: 'Erneut vorschlagen',
@@ -3168,7 +3168,7 @@ const de: TranslationMap = {
       comp_currency_label: 'Währung',
       comp_hint: 'Gesamtvergütung',
       no_fabrication:
-        'Dies sind nur Vorschläge — nichts wird erfunden. Prüfe alles vor der Bewerbung noch einmal.',
+        'Dies sind nur Vorschläge - nichts wird erfunden. Prüfe alles vor der Bewerbung noch einmal.',
     },
     done: {
       title: 'Alles bereit',

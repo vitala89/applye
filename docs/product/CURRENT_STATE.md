@@ -19,13 +19,42 @@
     section later, so the generate button, the AI prep panel, and the component state behind them
     (`generatePrep`, `togglePrep`, `cardsFor`, `formatFor`, `jdText`/`prepOpenId`/`prepCards`/
     `generatingId` signals) were removed from
-    `interview-prep-detail.component.{ts,html,scss}` rather than patched. **The hang itself is
-    still unfixed** - `list_interview_prep` / `save_interview_prep_batch`, the `interview_prep`
-    table, and the `interview-hr` / `interview-technical` / `star-r` skills are untouched. When the
-    larger Interview Prep section gets built, start with `systematic-debugging` on the hang before
-    re-adding a generate button - the most likely causes are an unhandled promise in `ai.run()`
-    for CLI-bridge mode, or a skill-render path that never resolves; neither was diagnosed this
-    session, only routed around.
+    `interview-prep-detail.component.{ts,html,scss}` rather than patched. `list_interview_prep` /
+    `save_interview_prep_batch`, the `interview_prep` table, and the `interview-hr` /
+    `interview-technical` / `star-r` skills are untouched, ready for that section.
+  - **The hang was then root-caused and fixed** (`systematic-debugging`, later the same session).
+    It was **not** an Interview Prep bug at all: **every API-mode AI call used
+    `reqwest::Client::new()`, which carries no timeout of any kind.** A connection that was
+    accepted and then went quiet (dropped wifi, sleeping laptop, stalled provider) was awaited
+    indefinitely, `ai_run` never returned, the promise the UI awaited never settled, and so
+    `generatePrep`'s `finally { generatingId.set(null) }` never ran - hence a spinner that stops
+    for neither success nor error. Interview Prep was simply where it surfaced first: it is the
+    longest generation in the app (up to `DEFAULT_MAX_TOKENS` = 8192, non-streaming), and the ATS
+    card - the other thing being exercised that day - is computed locally in Rust with no API call
+    at all. The same defect sat in **every** API-mode feature: CV tailoring, cover letters,
+    scoring.
+    - Fixed in `ai/api.rs` with a shared `http_client()`: 600s whole-request budget (matching the
+      CLI bridge's existing `CLI_TIMEOUT`, which bounds the same unit of work) plus a 15s
+      `connect_timeout` split out, so an unreachable provider is reported in seconds instead of
+      consuming the full generation budget first.
+    - **Same defect swept for and found twice more**, in `commands/job_url.rs` (`get_json` /
+      `get_text`, the paste-from-link importer) - fixed there with a 30s budget matching
+      `discover.rs`. No untimed `reqwest` client remains in the crate.
+    - Pinned by a behavioural test, not just a compile check: a local TCP listener accepts the
+      connection and then answers nothing. **Verified red before green** - with the `.timeout()`
+      line removed the test FAILS after 30.01s (it only errors once the fake server drops the
+      socket; had the peer held it open, it would have waited forever); with the fix it passes in
+      0.31s.
+    - **Honest caveat**: the mechanism is proven and fixed, but this was diagnosed from code and
+      the user's stored settings (`ai_mode = api`, `provider = deepseek`), not reproduced live -
+      the GUI cannot be driven from here. If the hang recurs after this, the next suspects are
+      `saveInterviewPrepBatch` blocking on a busy SQLite lock, or the run genuinely taking longer
+      than 600s.
+    - **Two follow-ups for whoever rebuilds the section**, neither a hang and neither addressed:
+      (1) `generatePrep` had an early `return` when the computed `inputHash` already existed on a
+      loaded card - correct as a cache hit, but it renders as the button flashing and nothing
+      happening, with no message; (2) even at 600s, ten minutes of "Generating…" with no progress
+      and no cancel is poor. Streaming or a cancel button belongs in that rebuild.
   - **Local markets shipped** (`docs/product/local-markets-analysis.md`, now marked implemented).
     `settings.market: string | null` (migration `0023_local_market.sql`, Rust double-Option patch
     so it can be explicitly cleared back to null); a Local Market picker in Settings' Job search

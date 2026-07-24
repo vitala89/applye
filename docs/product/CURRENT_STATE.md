@@ -245,6 +245,33 @@ desktop`. **Not verified natively** - the browser preview cannot render Settings
       Applying, shows the banner and Refresh yields German jobs with the banner gone; switching to
       Russia and refreshing removes the German jobs and shows Russian ones; reloading Discover
       without changing the market shows no banner. None of the four have been run yet.
+  - **No Fluff Jobs now fetches its real posting content instead of a three-word stub**
+    (`docs/superpowers/plans/2026-07-24-nofluffjobs-detail-fetch.md`). No Fluff Jobs' list endpoint
+    carries no description at all - `parse_nofluffjobs` had always stored just `category /
+technology / seniority` as `jd_text`, which starved everything downstream that reads job
+    description text: the Discover detail view, the salary line, skill detection and the raw
+    keyword score, for every No Fluff Jobs posting since it shipped. Fixed the same way
+    Arbeitsagentur already was: `parse_nofluffjobs` now also computes `detail_ref` (the raw slug,
+    `None` when it is empty or already an absolute `http` URL), and a new
+    `fetch_nofluffjobs_detail(client, slug)` hits `GET https://nofluffjobs.com/api/posting/{slug}`
+    through the existing `get_json` + `percent_encode_segment` helpers. A new pure
+    `parse_nofluffjobs_detail(&serde_json::Value) -> String` builds structured text from the
+    response - `Requirements:` (musts), `Nice to have:` (nices), the HTML-stripped requirements
+    description, `Responsibilities:` (dailyTasks), and a `Salary:` line via
+    `nofluffjobs_salary_line`. The scan's detail-resolve block in `discover_scan` is now
+    source-aware instead of Arbeitsagentur-only: it dispatches on `src.source_type` -
+    `api_arbeitsagentur` keeps calling `fetch_arbeitsagentur_detail`, `api_nofluffjobs` now calls
+    `fetch_nofluffjobs_detail`, anything else still resolves to an empty string - and both sources
+    share the same per-scan detail budget (60 detail requests, spent only on jobs that survive the
+    local title/geo filters). Separately, `CURRENCY_MARKER` in
+    `libs/core/src/lib/profile/compensation.ts` gained `\bPLN\b`, so `extractSalaryFromJd` no
+    longer silently drops a złoty-quoted salary line - it previously recognised only euro, pound,
+    dollar, EUR, USD and GBP. **Not natively verified beyond a live smoke check**: an ignored
+    `live_nofluffjobs_detail_smoke` test hit the real detail endpoint once (1444 chars returned,
+    well past the 100-char sanity threshold) and was then deleted, per the plan, before committing
+    - a real Discover scan against a live Poland-market posting, confirming the Requirements /
+      Nice to have / Responsibilities / Salary sections and the PLN badge render, still needs a
+      `tauri dev` pass.
   - **Fixed: a button alone in a Settings card stretched to full width.** `.section` is a
     stretch-aligned flex column, so any `.btn` dropped directly into one filled the card;
     "Send a test prompt" only looked right because it carried a one-off `.test-btn { align-self }`

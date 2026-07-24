@@ -443,13 +443,18 @@ const US_STATE_NAMES: &[&str] = &[
 
 /// State codes safe to match as bare words. Deliberately partial: `loc_matches`
 /// is case-insensitive, so it cannot tell "Berlin, DE" (Germany) from
-/// "Dover, DE" (Delaware) or "Tel Aviv, IL" (Israel) from "Chicago, IL"
-/// (Illinois). Codes that collide with an ISO 3166-1 alpha-2 country code or
-/// with an ordinary English word are left out - `de`, `in`, `or`, `me`, `hi`,
-/// `ok`, `id`, `la`, `oh`, `il`, `ma`, `co`, `md`, `pa`, `va`, `mo`, `nc`,
-/// `sc`, `ga` - and are reachable through their full name above instead.
+/// "Dover, DE" (Delaware), "Tel Aviv, IL" (Israel) from "Chicago, IL"
+/// (Illinois), "Baku, AZ" (Azerbaijan) from "Phoenix, AZ" (Arizona),
+/// "Ulaanbaatar, MN" (Mongolia) from "Minneapolis, MN" (Minnesota), or
+/// "Tunis, TN" (Tunisia) from "Nashville, TN" (Tennessee). This list holds
+/// only codes that are neither an assigned ISO 3166-1 alpha-2 country code
+/// nor an ordinary English word; every other state is still reachable
+/// through its full name above. `ca` is the one deliberate exception: it is
+/// Canada's ISO code, but in a job location it means California far more
+/// often, so the bare `ca` token is dropped from Canada's own token list
+/// below in exchange for keeping it here.
 const US_STATE_CODES: &[&str] = &[
-    "tx", "ca", "ny", "wa", "fl", "az", "nj", "mi", "mn", "ut", "nv", "tn", "wi", "ct",
+    "tx", "ca", "ny", "wa", "fl", "nj", "mi", "ut", "nv", "wi", "ct",
 ];
 
 fn country_tokens(code: &str) -> Vec<&'static str> {
@@ -2046,6 +2051,9 @@ mod tests {
             "Bogota, CO",
             "Chisinau, MD",
             "Panama City, PA",
+            "Baku, AZ",
+            "Ulaanbaatar, MN",
+            "Tunis, TN",
         ] {
             assert!(!geo_passes(elsewhere, &us), "{elsewhere} is not in the US");
         }
@@ -2054,6 +2062,8 @@ mod tests {
             "Chicago, Illinois",
             "Boston, Massachusetts",
             "Denver, Colorado",
+            "Phoenix, Arizona",
+            "Nashville, Tennessee",
         ] {
             assert!(geo_passes(state, &us), "{state} is in the US");
         }

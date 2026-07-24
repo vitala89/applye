@@ -350,7 +350,8 @@ describe('OnboardingComponent flow', () => {
 
     it('writes the new resume over the old profile markdown', async () => {
       component.parsedCv.set(parsedCv());
-      component.reviewName.set('Vitalii Kasap');
+      component.reviewFirstName.set('Vitalii');
+      component.reviewLastName.set('Kasap');
 
       await component.saveProfile();
 
@@ -419,7 +420,8 @@ describe('OnboardingComponent flow', () => {
   describe('finishing the last step', () => {
     it('saves the profile and the CV, marks onboarding seen, and closes', async () => {
       component.parsedCv.set(parsedCv());
-      component.reviewName.set('Vitalii Kasap');
+      component.reviewFirstName.set('Vitalii');
+      component.reviewLastName.set('Kasap');
       const closed = jest.fn();
       component.completed.subscribe(closed);
 
@@ -509,4 +511,93 @@ describe('OnboardingComponent flow', () => {
       expect(component.step()).toBe(4);
     });
   });
+
+  describe('name confirm nudge', () => {
+    it('seeds both fields from a confident parse and does not nudge', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Kowalska',
+          firstName: 'Anna',
+          lastName: 'Kowalska',
+          nameSplitConfident: true,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Anna');
+      expect(component.reviewLastName()).toBe('Kowalska');
+      expect(component.needsNameConfirm()).toBe(false);
+    });
+
+    it('nudges when the parse was not confident', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Maria Kowalska',
+          firstName: 'Anna Maria',
+          lastName: 'Kowalska',
+          nameSplitConfident: false,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('nudges when the last name is missing', () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Prince');
+      expect(component.reviewLastName()).toBe('');
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('derives the split when the parse omitted it', () => {
+      component.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Anna');
+      expect(component.reviewLastName()).toBe('Kowalska');
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('stops nudging once the user edits either field', () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
+      );
+      component.seedReviewFields();
+      expect(component.needsNameConfirm()).toBe(true);
+
+      component.onNameEdited();
+
+      expect(component.needsNameConfirm()).toBe(false);
+    });
+  });
 });
+
+function makeParsed(personalDetails: Partial<CvParsedContent['personalDetails']>): CvParsedContent {
+  return {
+    personalDetails: {
+      fullName: null,
+      title: null,
+      email: null,
+      phone: null,
+      address: null,
+      website: null,
+      linkedin: null,
+      ...personalDetails,
+    },
+    summary: null,
+    experience: [],
+    education: [],
+    skills: [],
+    languages: [],
+    lowConfidenceNotes: [],
+  } as unknown as CvParsedContent;
+}

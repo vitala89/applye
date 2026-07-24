@@ -422,7 +422,26 @@ export class OnboardingComponent {
   readonly lowConfidenceCount = computed(() => this.parsedCv()?.lowConfidenceNotes?.length ?? 0);
 
   // ---- Review (editable overrides seeded once from the parsed CV) ----
-  readonly reviewName = signal('');
+  readonly reviewFirstName = signal('');
+  readonly reviewLastName = signal('');
+  /** Set the first time the user touches either name field. The nudge is a
+   * question, and a question stops being worth asking once it is answered -
+   * including when the answer is "what you parsed was already right". */
+  readonly nameEdited = signal(false);
+
+  /** True when the parse could not confirm the split, so the review step should
+   * ask. Never gates Continue: Applye augments, it does not block. */
+  readonly needsNameConfirm = computed(() => {
+    if (this.nameEdited()) return false;
+    if (!this.reviewFirstName().trim()) return false;
+    if (!this.reviewLastName().trim()) return true;
+    return this.parsedCv()?.personalDetails.nameSplitConfident !== true;
+  });
+
+  onNameEdited(): void {
+    this.nameEdited.set(true);
+  }
+
   readonly reviewEmail = signal('');
   readonly reviewPhone = signal('');
   readonly reviewAddress = signal('');
@@ -490,18 +509,29 @@ export class OnboardingComponent {
       });
       const cv = parseCvSkillResponse(res.text);
       this.parsedCv.set(cv);
-      // Seed each review field only if still empty — a Back + re-parse must
-      // never silently clobber the user's manual edits.
-      if (!this.reviewName().trim()) this.reviewName.set(cv.personalDetails.fullName ?? '');
-      if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
-      if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
-      if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');
+      this.seedReviewFields();
       this.next();
     } catch {
       this.resumeError.set(true);
     } finally {
       this.parsing.set(false);
     }
+  }
+
+  /** Seed each review field only if still empty - a Back + re-parse must never
+   * silently clobber the user's manual edits. Extracted so tests can drive
+   * seeding without running a full parse. */
+  seedReviewFields(): void {
+    const cv = this.parsedCv();
+    if (!cv) return;
+    const split = splitDisplayName(cv.personalDetails.fullName ?? '');
+    if (!this.reviewFirstName().trim())
+      this.reviewFirstName.set(cv.personalDetails.firstName ?? split.firstName);
+    if (!this.reviewLastName().trim())
+      this.reviewLastName.set(cv.personalDetails.lastName ?? split.lastName);
+    if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
+    if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
+    if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');
   }
 
   // ---- Targeting (archetypes + compensation) ----
@@ -678,7 +708,9 @@ export class OnboardingComponent {
   });
   readonly resumeSummary = computed(() => {
     if (this.resumePath() === 'skip') return this.t()('onboarding.done.skipped');
-    const name = this.reviewName().trim();
+    const name = [this.reviewFirstName().trim(), this.reviewLastName().trim()]
+      .filter(Boolean)
+      .join(' ');
     return `${this.t()('onboarding.done.imported_prefix')}${name ? ' · ' + name : ''}`;
   });
   readonly rolesSummary = computed(
@@ -704,13 +736,9 @@ export class OnboardingComponent {
   }
 
   private reviewOverrides(): OnboardingCvOverrides {
-    // reviewName is still the single display-name field task 6 will split into
-    // two review inputs; until then, derive the parts applyContactOverrides
-    // now expects from the one field this component has.
-    const { firstName, lastName } = splitDisplayName(this.reviewName());
     return {
-      firstName,
-      lastName,
+      firstName: this.reviewFirstName(),
+      lastName: this.reviewLastName(),
       email: this.reviewEmail(),
       phone: this.reviewPhone(),
       address: this.reviewAddress(),

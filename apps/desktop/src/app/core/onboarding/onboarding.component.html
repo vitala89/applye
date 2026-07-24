@@ -521,16 +521,34 @@
               }
               <div class="ob__grid-2">
                 <div class="ob__field">
-                  <label class="ob__field-label" for="ob-review-name">{{
-                    t()('onboarding.preview.field_name')
+                  <label class="ob__field-label" for="ob-review-first-name">{{
+                    t()('onboarding.preview.field_first_name')
                   }}</label>
                   <input
-                    id="ob-review-name"
+                    id="ob-review-first-name"
                     class="ob__input"
-                    [ngModel]="reviewName()"
-                    (ngModelChange)="reviewName.set($event)"
+                    [class.ob__input--confirm]="needsNameConfirm()"
+                    [ngModel]="reviewFirstName()"
+                    (ngModelChange)="reviewFirstName.set($event); onNameEdited()"
                   />
                 </div>
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-review-last-name">{{
+                    t()('onboarding.preview.field_last_name')
+                  }}</label>
+                  <input
+                    id="ob-review-last-name"
+                    class="ob__input"
+                    [class.ob__input--confirm]="needsNameConfirm()"
+                    [ngModel]="reviewLastName()"
+                    (ngModelChange)="reviewLastName.set($event); onNameEdited()"
+                  />
+                </div>
+                @if (needsNameConfirm()) {
+                  <p class="ob__field-hint ob__field-hint--confirm">
+                    {{ t()('onboarding.preview.name_confirm_hint') }}
+                  </p>
+                }
                 <div class="ob__field">
                   <label class="ob__field-label" for="ob-review-email">{{
                     t()('onboarding.preview.field_email')

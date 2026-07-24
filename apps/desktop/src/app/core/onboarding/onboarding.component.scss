@@ -246,6 +246,20 @@
 .ob__input:focus-visible {
   box-shadow: var(--shadow-ring);
 }
+.ob__input--confirm {
+  border-color: var(--warning);
+}
+
+.ob__field-hint {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.ob__field-hint--confirm {
+  grid-column: 1 / -1;
+  margin: calc(var(--space-1) * -1) 0 0;
+  color: var(--warning);
+}
 
 // ---- Step 0: welcome ----
 .ob__privacy-card {

@@ -234,6 +234,10 @@ export class DiscoverComponent {
   private readonly rescanBannerDismissed = signal(false);
   /** "Show all sources" override for the market narrowing. */
   protected readonly showAllSources = signal(false);
+  /** In flight for the whole refresh (clear + scan), so a double-click on the
+   * market-changed banner cannot fire two clears. `scanning()` alone does not
+   * cover the clear that runs before the scan starts. */
+  protected readonly refreshingForMarket = signal(false);
   /** Profile compensation target (min/max/currency/period), parsed from the saved
    * profile markdown; empty strings when the user set no target. */
   private readonly compTarget = signal<{
@@ -757,13 +761,18 @@ export class DiscoverComponent {
    * for the current market. Saved and dismissed jobs are untouched (see
    * db_discover_clear). Then scan(), which realigns lastScanMarket. */
   protected async refreshForMarket(): Promise<void> {
-    if (this.scanning()) return;
+    if (this.refreshingForMarket() || this.scanning()) return;
+    this.refreshingForMarket.set(true);
     try {
-      await this.db.discoverClear();
-    } catch (e) {
-      console.error('discover: clear before refresh failed', e);
+      try {
+        await this.db.discoverClear();
+      } catch (e) {
+        console.error('discover: clear before refresh failed', e);
+      }
+      await this.scan();
+    } finally {
+      this.refreshingForMarket.set(false);
     }
-    await this.scan();
   }
 
   protected dismissRescanBanner(): void {

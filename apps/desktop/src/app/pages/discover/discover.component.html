@@ -660,8 +660,8 @@
           <div class="dv-rescan__actions">
             <button
               type="button"
-              class="dv-btn dv-btn--primary dv-btn--secondary"
-              [disabled]="scanning()"
+              class="dv-btn dv-btn--secondary"
+              [disabled]="scanning() || refreshingForMarket()"
               (click)="refreshForMarket()"
             >
               {{ t()('discover.market_changed_refresh') }}

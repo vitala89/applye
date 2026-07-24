@@ -23,6 +23,7 @@ import {
   LANGUAGE_NATIVE_NAMES,
   LOCAL_MARKETS,
   LocalMarket,
+  MarketSourcePlan,
   parseGeoScopes,
   parseLocalMarkets,
   Settings,
@@ -544,6 +545,54 @@ const CLI_MODELS: Record<string, string[]> = {
               }
             </div>
             <p class="hint">{{ t()('settings.local_market_hint') }}</p>
+            @if (marketPlan(); as plan) {
+              <div
+                class="confirm"
+                role="alertdialog"
+                [attr.aria-label]="t()('settings.market_sources_title')"
+              >
+                <p class="confirm__q">{{ t()('settings.market_sources_title') }}</p>
+                @if (plan.toEnable.length) {
+                  <p class="market-plan__label">{{ t()('settings.market_sources_enable') }}</p>
+                  <ul class="market-plan__list">
+                    @for (s of plan.toEnable; track s.id) {
+                      <li>
+                        {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (plan.toDisable.length) {
+                  <p class="market-plan__label">{{ t()('settings.market_sources_disable') }}</p>
+                  <ul class="market-plan__list">
+                    @for (s of plan.toDisable; track s.id) {
+                      <li>
+                        {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+                <p class="hint">{{ t()('settings.market_sources_note') }}</p>
+                <div class="confirm__actions">
+                  <button
+                    class="btn btn--primary btn--md"
+                    type="button"
+                    [disabled]="applyingPlan()"
+                    (click)="applyMarketPlan()"
+                  >
+                    {{ t()('settings.market_sources_apply') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    [disabled]="applyingPlan()"
+                    (click)="dismissMarketPlan()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            }
           </div>
         </section>
 
@@ -929,6 +978,25 @@ const CLI_MODELS: Record<string, string[]> = {
       .geo-chips--muted .geo-chip:hover,
       .geo-chips--muted .geo-chip:has(:focus-visible) {
         opacity: 1;
+      }
+      .market-plan__label {
+        margin: var(--space-4) 0 var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wider);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+      .market-plan__list {
+        margin: 0;
+        padding-left: var(--space-5);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .market-plan__host {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
       }
       .reply {
         margin-top: var(--space-4);
@@ -1324,6 +1392,10 @@ export class SettingsComponent implements OnInit {
     return this.marketsSelected().has(market);
   }
 
+  /** Pending source changes for the market just picked, awaiting confirmation. */
+  protected readonly marketPlan = signal<MarketSourcePlan | null>(null);
+  protected readonly applyingPlan = signal(false);
+
   /** Both halves as the pure state machine in geo-target.util sees them. */
   private readonly geoTarget = computed<GeoTarget>(() => ({
     scopes: [...this.geoScopeSelected()],
@@ -1342,7 +1414,49 @@ export class SettingsComponent implements OnInit {
 
   /** Picking a market switches to market mode, dropping the region scope. */
   async toggleMarket(market: LocalMarket): Promise<void> {
-    await this.persistGeoTarget(toggleMarketIn(this.geoTarget(), market));
+    const next = toggleMarketIn(this.geoTarget(), market);
+    await this.persistGeoTarget(next);
+    await this.offerMarketSources(next.markets);
+  }
+
+  /** Offers to switch built-in sources to match the market. Never writes by
+   * itself: a built-in source reaching the network is always the user's
+   * explicit choice, so this only prepares what the confirmation will show. */
+  private async offerMarketSources(markets: LocalMarket[]): Promise<void> {
+    if (!markets.length) {
+      this.marketPlan.set(null);
+      return;
+    }
+    try {
+      const plan = await this.db.marketSourcePlan(markets);
+      const empty = !plan.toEnable.length && !plan.toDisable.length;
+      this.marketPlan.set(empty ? null : plan);
+    } catch (e) {
+      console.error('settings: market source plan failed', e);
+      this.marketPlan.set(null);
+    }
+  }
+
+  async applyMarketPlan(): Promise<void> {
+    const plan = this.marketPlan();
+    if (!plan || this.applyingPlan()) return;
+    this.applyingPlan.set(true);
+    try {
+      await this.db.applyMarketSourcePlan(
+        plan.toEnable.map((s) => s.id),
+        plan.toDisable.map((s) => s.id),
+      );
+      this.marketPlan.set(null);
+      this.toast.success(this.t()('settings.saved'));
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.applyingPlan.set(false);
+    }
+  }
+
+  dismissMarketPlan(): void {
+    this.marketPlan.set(null);
   }
 
   /** Writes both halves in one call - they change together or not at all. */

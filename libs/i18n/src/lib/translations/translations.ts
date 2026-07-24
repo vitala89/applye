@@ -923,6 +923,12 @@ const en: TranslationMap = {
     local_market_label: 'Local market',
     local_market_hint:
       'Search specific countries instead of whole regions. Pick as many as you like; the regions above switch off while any is picked, and clearing them all returns to Worldwide.',
+    market_sources_title: 'Update sources for this market?',
+    market_sources_enable: 'Turn on',
+    market_sources_disable: 'Turn off (other markets)',
+    market_sources_note:
+      'Nothing is contacted until you apply this. Worldwide sources and sources you added yourself are left alone.',
+    market_sources_apply: 'Apply',
     local_market_de: 'Germany',
     local_market_gb: 'United Kingdom',
     local_market_us: 'United States',
@@ -2525,6 +2531,12 @@ const de: TranslationMap = {
     local_market_label: 'Lokaler Markt',
     local_market_hint:
       'Nach einzelnen Ländern statt ganzer Regionen suchen. Beliebig viele wählbar; die Regionen oben sind ausgeschaltet, solange einer gewählt ist, und ohne Auswahl geht es zurück auf Weltweit.',
+    market_sources_title: 'Quellen für diesen Markt anpassen?',
+    market_sources_enable: 'Einschalten',
+    market_sources_disable: 'Ausschalten (andere Märkte)',
+    market_sources_note:
+      'Vor dem Anwenden wird nichts kontaktiert. Weltweite und selbst hinzugefügte Quellen bleiben unberührt.',
+    market_sources_apply: 'Anwenden',
     local_market_de: 'Deutschland',
     local_market_gb: 'Vereinigtes Königreich',
     local_market_us: 'USA',

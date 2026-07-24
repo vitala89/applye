@@ -119,6 +119,39 @@ Known trade-off: a manually added Ukrainian feed with no location field would be
 The fix is letting a custom source carry a market tag when it is added; out of scope
 here, revisit if it bites.
 
+## Every market behaves identically - and today the data does not
+
+Nothing in the rules above is Ukraine-specific: they are set operations on the selected
+markets and on token lists. Ukraine is only the running example. But the rules are only
+as good as `country_tokens()`, and that table is **complete for `de`, `ru` and `ua` and
+country-name-only for `gb`, `us`, `es`, `fr` and `pl`**. Under the permissive filter this
+barely mattered, because remote and empty locations passed anyway. Under the strict one
+it silently deletes jobs:
+
+| Market | Job location        | Today's outcome under the new rules           |
+| ------ | ------------------- | --------------------------------------------- |
+| `es`   | `Madrid`            | dropped - no `es` token matches, no evidence  |
+| `fr`   | `Paris`             | dropped                                       |
+| `pl`   | `Warsaw`            | dropped                                       |
+| `gb`   | `London`            | dropped                                       |
+| `us`   | `San Francisco, CA` | dropped **as Canada** - `ca` is Canada's code |
+
+So bringing every market to parity is part of this work, not a follow-up. Reference data
+already exists in the frontend's `COUNTRY_DEFS` (`discover-location.ts`), which carries
+city lists for the UK, France, Spain and Poland and the full US state list with codes;
+mirror it into `country_tokens()`, in local and English spellings, the way `de` and `ru`
+already are.
+
+The `CA` collision needs a decision rather than a copy: drop the bare `"ca"` token from
+Canada and keep `"canada"` plus the province names. In a job location `CA` means
+California far more often than Canada, and a US market that silently loses San Francisco
+is a worse failure than a Canada scope that needs the country spelled out.
+
+Parity is testable, and the test is cheap: for every market in `LOCAL_MARKETS`, its own
+capital or largest tech city must pass a scope of that market and must not pass a scope
+of any other. That test is the guard against a future market being added with a
+country-name-only entry.
+
 ## Adjacent bug found while designing
 
 `EUROPE_COUNTRIES` in `commands/discover.rs` omits Ukraine entirely, so a Kyiv job is
@@ -127,22 +160,27 @@ step 1 by adding the country to that list.
 
 ## Steps
 
-Ordered so the filter is correct after step 1, with or without the dialog.
+Ordered so the filter is correct after step 2, with or without the dialog.
 
-1. **Filter rules (Rust).** Add `geo_tags_json` to the scan's source `SELECT` (it is not
+1. **Market parity in the token table (Rust).** Bring `country_tokens()` to the same depth
+   for all eight markets, mirroring the frontend `COUNTRY_DEFS` city lists and adding the
+   US states; drop the bare `"ca"` token from Canada. Add Ukraine to `EUROPE_COUNTRIES`.
+   Cover it with the every-market parity test. **This comes first**: the strict filter in
+   step 2 is only correct on top of it, and shipping them the other way round would
+   delete jobs in five of the eight markets.
+2. **Filter rules (Rust).** Add `geo_tags_json` to the scan's source `SELECT` (it is not
    selected today). Teach the geo filter whether the job's source is market-tagged, and
-   insert the "names another place" check ahead of the remote check. Add Ukraine to
-   `EUROPE_COUNTRIES`.
-2. **Plan command (Rust).** `db_market_source_plan(markets) -> { to_enable, to_disable }`,
+   insert the "names another place" check ahead of the remote check.
+3. **Plan command (Rust).** `db_market_source_plan(markets) -> { to_enable, to_disable }`,
    each entry carrying id, name and host for display. Read-only; writes nothing.
-3. **Apply command (Rust).** `db_apply_market_source_plan(enable_ids, disable_ids)` in one
+4. **Apply command (Rust).** `db_apply_market_source_plan(enable_ids, disable_ids)` in one
    transaction. Takes explicit ids rather than recomputing, so what the user confirmed is
    exactly what is written.
-4. **Settings dialog (Angular).** Shown on market change when the plan is non-empty, built
+5. **Settings dialog (Angular).** Shown on market change when the plan is non-empty, built
    on the existing confirm dialog. Cancel leaves sources untouched.
-5. **Tests.** The filter table above becomes the case list; plus a test that a source
-   tagged for an unselected market never enters the scan, and that the plan command
-   proposes nothing for worldwide or user-added sources.
+6. **Tests.** The filter table above becomes the case list; plus the every-market parity
+   test from step 1, a test that a source tagged for an unselected market never enters the
+   scan, and that the plan command proposes nothing for worldwide or user-added sources.
 
 ## Out of scope
 

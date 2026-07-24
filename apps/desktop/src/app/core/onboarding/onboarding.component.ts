@@ -34,6 +34,7 @@ import {
   archetypeNames,
   serializeArchetypes,
   parseArchetypes,
+  serializeCompensation,
 } from '@applye/core';
 import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -713,10 +714,15 @@ export class OnboardingComponent {
   private buildProfileCv(): ParsedCv {
     const cv = this.parsedCv();
     return {
-      personalDetails: applyContactOverrides(this.reviewOverrides()),
+      // Spread the parsed contact first so website, LinkedIn and title survive;
+      // the review overrides then replace only the four fields the user edited
+      // (name/email/phone/address), mirroring buildOnboardingCvInput.
+      personalDetails: { ...cv?.personalDetails, ...applyContactOverrides(this.reviewOverrides()) },
       summary: cv?.summary ?? null,
       experience: cv?.experience ?? [],
       skills: cv?.skills ?? [],
+      education: cv?.education ?? [],
+      languages: cv?.languages ?? [],
     };
   }
 
@@ -734,10 +740,14 @@ export class OnboardingComponent {
     const fullMd = base
       ? appendCompensation(
           base,
-          formatCompRange({
+          // Serialize with the same helper the profile form uses so the target
+          // is written under a body `parseProfileMd` reads back. Period is the
+          // targeting step's implicit unit (annual).
+          serializeCompensation({
+            min: String(this.compMin()),
+            max: String(this.compMax()),
             currency: this.compCurrency(),
-            min: this.compMin(),
-            max: this.compMax(),
+            period: 'year',
           }),
         )
       : (existing?.fullMd ?? '');

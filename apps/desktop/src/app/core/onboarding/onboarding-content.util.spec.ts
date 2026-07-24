@@ -267,12 +267,18 @@ describe('parseArchetypesSkillResponse', () => {
 });
 
 describe('appendCompensation', () => {
-  it('appends a Compensation Target section when the range is non-empty', () => {
-    const md = appendCompensation('# Jane Smith', 'EUR 90-120K');
-    expect(md).toBe('# Jane Smith\n\n## Compensation Target\nEUR 90-120K');
+  it('appends a Compensation section the profile form can read back', () => {
+    const md = appendCompensation('# Jane Smith', '80 - 95 EUR per year');
+    // Heading MUST be `## Compensation`; `## Compensation Target` was the bug.
+    expect(md).toBe('# Jane Smith\n\n## Compensation\n80 - 95 EUR per year');
+    const form = parseProfileMd(md);
+    expect(form.compMin).toBe('80');
+    expect(form.compMax).toBe('95');
+    expect(form.compCurrency).toBe('EUR');
+    expect(form.compPeriod).toBe('year');
   });
 
-  it('returns the markdown unchanged when the range is empty or whitespace', () => {
+  it('returns the markdown unchanged when the body is empty or whitespace', () => {
     expect(appendCompensation('# Jane Smith', '')).toBe('# Jane Smith');
     expect(appendCompensation('# Jane Smith', '   ')).toBe('# Jane Smith');
   });
@@ -304,6 +310,14 @@ describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
     summary: 'Engineer.',
     experience: [{ company: 'Celonis', role: 'Senior Frontend Engineer', bullets: ['Shipped X'] }],
     skills: ['TypeScript', 'Angular'],
+    education: [
+      { degree: 'MSc Mechanical Engineering', institution: 'Odesa National Maritime University' },
+      { degree: 'Frontend Developer Certificate', institution: 'FoxmindEd' },
+    ],
+    languages: [
+      { language: 'English', level: 'C1' },
+      { language: 'German', level: '' },
+    ],
   };
 
   it('lands every identity field in the field the user expects', () => {
@@ -315,6 +329,17 @@ describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
     expect(form.phone).toBe('+49 171 206 4899');
     expect(form.website).toBe('vitaliikasap.com');
     expect(form.linkedin).toBe('linkedin.com/in/vitaliikasap');
+  });
+
+  it('carries education and languages into the profile', () => {
+    const form = parseProfileMd(cvToProfileMarkdown(parsed));
+    expect(form.education).toContain(
+      'MSc Mechanical Engineering, Odesa National Maritime University',
+    );
+    expect(form.education).toContain('Frontend Developer Certificate, FoxmindEd');
+    // Dateless education entries must not render a "Present" tail.
+    expect(form.education).not.toContain('Present');
+    expect(form.languages).toEqual(['English (C1)', 'German']);
   });
 
   it('loses nothing when the profile form saves it straight back', () => {

@@ -1,9 +1,12 @@
 import type {
   CvParsedContent,
+  CvParsedEducationEntry,
+  CvParsedLanguageEntry,
   CvTemplate,
   SupportedLanguage,
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
+import { serializeEducationEntries, serializeLanguageEntries } from '@applye/core';
 import { buildCvContent } from '../../pages/documents/cv-content.util';
 
 // structurally compatible subset of CvParsedContent
@@ -20,6 +23,8 @@ export interface ParsedCv {
   summary?: string | null;
   experience?: { company: string; role: string; bullets?: string[] }[] | null;
   skills?: string[] | null;
+  education?: CvParsedEducationEntry[] | null;
+  languages?: CvParsedLanguageEntry[] | null;
 }
 
 /** Writes the exact shape `parseProfileMd` reads. These two used to disagree:
@@ -54,6 +59,28 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
     }
   }
   if (cv.skills?.length) out.push('', '## Skills', cv.skills.join(', '));
+  if (cv.education?.length) {
+    // Reuse the profile serializer so the body matches exactly what
+    // `parseProfileMd` reads back (dropping "Present" for dateless entries).
+    const eduBody = serializeEducationEntries(
+      cv.education.map((e) => ({
+        title: e.degree?.trim() ?? '',
+        institution: e.institution?.trim() ?? '',
+        startDate: e.startDate?.trim() ?? '',
+        endDate: e.endDate?.trim() ?? '',
+      })),
+    );
+    if (eduBody) out.push('', '## Education', eduBody);
+  }
+  if (cv.languages?.length) {
+    const langs = serializeLanguageEntries(
+      cv.languages.map((l) => ({
+        language: l.language?.trim() ?? '',
+        level: l.level?.trim() ?? '',
+      })),
+    );
+    if (langs.length) out.push('', '## Languages', langs.join(', '));
+  }
   // A parse that yielded nothing stays nothing: callers read an empty string as
   // "there is no profile to save", so a lone `#` here would write an empty
   // profile over a real one.
@@ -64,12 +91,15 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
 }
 
 /** Folds the user-edited compensation range into the profile markdown so it
- * survives `saveProfile()` without needing a dedicated `Profile` column
- * (a dual-track comp schema is planned separately). Pure/no-op on blank input. */
-export function appendCompensation(md: string, compRange: string): string {
-  const range = compRange.trim();
-  if (!range) return md;
-  return `${md}\n\n## Compensation Target\n${range}`.trim();
+ * survives `saveProfile()`. The heading MUST be `## Compensation` (not
+ * `## Compensation Target`): `parseProfileMd` only reads `compensation`, so the
+ * old heading meant the target was written but never shown back in the profile.
+ * Pass a body `serializeCompensation` produced so the round-trip holds.
+ * Pure/no-op on blank input. */
+export function appendCompensation(md: string, compBody: string): string {
+  const body = compBody.trim();
+  if (!body) return md;
+  return `${md}\n\n## Compensation\n${body}`.trim();
 }
 
 /** The wizard has no region selector — a first-run flow pays for every extra

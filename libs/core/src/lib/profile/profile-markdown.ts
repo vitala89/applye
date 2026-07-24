@@ -1,5 +1,11 @@
 export interface ProfileForm {
+  /** The display name: the `# H1` of the markdown and the CV document's title.
+   * Stays canonical. `firstName` and `lastName` are the structured parts that
+   * generated documents and job-board autofill need; they sit beside it rather
+   * than replacing it, so nothing that reads the H1 has to change. */
   name: string;
+  firstName: string;
+  lastName: string;
   title: string;
   location: string;
   email: string;
@@ -54,6 +60,8 @@ export interface ScoringProfile {
 
 export const EMPTY_FORM: ProfileForm = {
   name: '',
+  firstName: '',
+  lastName: '',
   title: '',
   location: '',
   email: '',
@@ -80,6 +88,8 @@ export const EMPTY_FORM: ProfileForm = {
  * A label cannot slide. The legacy line is still read (see `parseProfileMd`),
  * just never written. */
 const CONTACT_FIELDS: { key: ContactKey; label: string }[] = [
+  { key: 'firstName', label: 'First name' },
+  { key: 'lastName', label: 'Last name' },
   { key: 'location', label: 'Location' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
@@ -87,7 +97,14 @@ const CONTACT_FIELDS: { key: ContactKey; label: string }[] = [
   { key: 'linkedin', label: 'LinkedIn' },
 ];
 
-type ContactKey = 'location' | 'email' | 'phone' | 'website' | 'linkedin';
+type ContactKey =
+  | 'firstName'
+  | 'lastName'
+  | 'location'
+  | 'email'
+  | 'phone'
+  | 'website'
+  | 'linkedin';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\+?\d[\d\s()./-]{5,}$/;

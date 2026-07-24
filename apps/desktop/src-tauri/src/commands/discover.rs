@@ -443,12 +443,13 @@ const US_STATE_NAMES: &[&str] = &[
 
 /// State codes safe to match as bare words. Deliberately partial: `loc_matches`
 /// is case-insensitive, so it cannot tell "Berlin, DE" (Germany) from
-/// "Dover, DE" (Delaware). Codes that collide with a country code or with an
-/// ordinary English word are left out - `de`, `in`, `or`, `me`, `hi`, `ok`,
-/// `id`, `la`, `oh` - and are reachable through their full name above instead.
+/// "Dover, DE" (Delaware) or "Tel Aviv, IL" (Israel) from "Chicago, IL"
+/// (Illinois). Codes that collide with an ISO 3166-1 alpha-2 country code or
+/// with an ordinary English word are left out - `de`, `in`, `or`, `me`, `hi`,
+/// `ok`, `id`, `la`, `oh`, `il`, `ma`, `co`, `md`, `pa`, `va`, `mo`, `nc`,
+/// `sc`, `ga` - and are reachable through their full name above instead.
 const US_STATE_CODES: &[&str] = &[
-    "tx", "ca", "ny", "wa", "il", "co", "fl", "ga", "ma", "nc", "va", "az", "nj", "mi", "mn", "ut",
-    "nv", "tn", "mo", "wi", "sc", "ct", "md", "pa",
+    "tx", "ca", "ny", "wa", "fl", "az", "nj", "mi", "mn", "ut", "nv", "tn", "wi", "ct",
 ];
 
 fn country_tokens(code: &str) -> Vec<&'static str> {
@@ -530,7 +531,8 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
             "great britain",
             "england",
             "scotland",
-            "wales",
+            "cardiff",
+            "swansea",
             "london",
             "manchester",
             "edinburgh",
@@ -2030,6 +2032,40 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// The token table must not read another country's ISO code as a US state.
+    /// `loc_matches` is case-insensitive, so a two-letter state code that is also
+    /// a country code silently annexes that country into the US market.
+    #[test]
+    fn a_us_market_does_not_swallow_countries_sharing_a_state_code() {
+        let us = build_geo_cfg(&[], &["us".to_string()]);
+        for elsewhere in [
+            "Tel Aviv, IL",
+            "Casablanca, MA",
+            "Bogota, CO",
+            "Chisinau, MD",
+            "Panama City, PA",
+        ] {
+            assert!(!geo_passes(elsewhere, &us), "{elsewhere} is not in the US");
+        }
+        // The states themselves are still reachable by name.
+        for state in [
+            "Chicago, Illinois",
+            "Boston, Massachusetts",
+            "Denver, Colorado",
+        ] {
+            assert!(geo_passes(state, &us), "{state} is in the US");
+        }
+    }
+
+    /// A UK scope must not annex New South Wales.
+    #[test]
+    fn a_uk_market_does_not_swallow_new_south_wales() {
+        let uk = build_geo_cfg(&[], &["gb".to_string()]);
+        assert!(!geo_passes("Sydney, New South Wales", &uk));
+        assert!(geo_passes("Cardiff", &uk));
+        assert!(geo_passes("London, UK", &uk));
     }
 
     // -- Bundesagentur fuer Arbeit -------------------------------------------

@@ -13,6 +13,9 @@ import { buildCvContent } from '../../pages/documents/cv-content.util';
 export interface ParsedCv {
   personalDetails?: {
     fullName?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    nameSplitConfident?: boolean;
     title?: string | null;
     email?: string | null;
     phone?: string | null;
@@ -38,8 +41,13 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   const name = cv.personalDetails?.fullName?.trim();
   const title = cv.personalDetails?.title?.trim();
   if (title) out.push(title);
+  // The labels and their order must match CONTACT_FIELDS in profile-markdown.ts:
+  // this writer and parseProfileMd are held in lockstep only by the round-trip
+  // test below it, so a label typo here silently drops the field on read.
   const contact = (
     [
+      ['First name', cv.personalDetails?.firstName],
+      ['Last name', cv.personalDetails?.lastName],
       ['Location', cv.personalDetails?.address],
       ['Email', cv.personalDetails?.email],
       ['Phone', cv.personalDetails?.phone],
@@ -122,7 +130,10 @@ export function pickCvTemplate(templates: CvTemplate[], regionTag: string): CvTe
 }
 
 export interface OnboardingCvOverrides {
-  fullName: string;
+  /** The review step edits the parts, never the display name: the display name
+   * is composed from them, so the H1 and the Contact lines cannot disagree. */
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
@@ -134,12 +145,18 @@ export interface OnboardingCvOverrides {
  * through here, so a phone cleared for privacy cannot survive in one of them. */
 export function applyContactOverrides(overrides: OnboardingCvOverrides): {
   fullName: string | null;
+  firstName: string | null;
+  lastName: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
 } {
+  const firstName = overrides.firstName.trim();
+  const lastName = overrides.lastName.trim();
   return {
-    fullName: overrides.fullName.trim() || null,
+    fullName: [firstName, lastName].filter(Boolean).join(' ') || null,
+    firstName: firstName || null,
+    lastName: lastName || null,
     email: overrides.email.trim() || null,
     phone: overrides.phone.trim() || null,
     address: overrides.address.trim() || null,

@@ -73,7 +73,7 @@ describe('pickCvTemplate', () => {
 });
 
 describe('buildOnboardingCvInput', () => {
-  const overrides = { fullName: '', email: '', phone: '', address: '' };
+  const overrides = { firstName: '', lastName: '', email: '', phone: '', address: '' };
   const base = {
     parsed: parsedCv(),
     overrides,
@@ -103,7 +103,13 @@ describe('buildOnboardingCvInput', () => {
   it('lets the review step edits win over the raw parse', () => {
     const input = buildOnboardingCvInput({
       ...base,
-      overrides: { fullName: 'Jane S. Smith', email: 'new@x.io', phone: '+49 30 000', address: '' },
+      overrides: {
+        firstName: 'Jane',
+        lastName: 'S. Smith',
+        email: 'new@x.io',
+        phone: '+49 30 000',
+        address: '',
+      },
     });
     expect(input.label).toBe('Jane S. Smith');
     expect(input.contentJson).toContain('new@x.io');
@@ -112,7 +118,13 @@ describe('buildOnboardingCvInput', () => {
   it('honours a contact field the user cleared instead of restoring the parse', () => {
     const input = buildOnboardingCvInput({
       ...base,
-      overrides: { fullName: 'Jane Smith', email: 'jane@x.io', phone: '', address: '' },
+      overrides: {
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@x.io',
+        phone: '',
+        address: '',
+      },
     });
     // The review inputs are seeded from the parse, so blank means deleted.
     // A phone cleared for privacy must not reappear on the exported CV.
@@ -192,9 +204,17 @@ describe('region tags match the seeded templates', () => {
 describe('applyContactOverrides', () => {
   it('nulls a cleared field so both wizard artifacts drop it together', () => {
     expect(
-      applyContactOverrides({ fullName: 'Jane', email: '', phone: '  ', address: 'Berlin' }),
+      applyContactOverrides({
+        firstName: 'Jane',
+        lastName: '',
+        email: '',
+        phone: '  ',
+        address: 'Berlin',
+      }),
     ).toEqual({
       fullName: 'Jane',
+      firstName: 'Jane',
+      lastName: null,
       email: null,
       phone: null,
       address: 'Berlin',
@@ -403,5 +423,68 @@ describe('formatCompRange', () => {
   });
   it('formats a single-character currency symbol without a space', () => {
     expect(formatCompRange({ currency: '$', min: 140, max: 190 })).toBe('$140K – $190K');
+  });
+});
+
+describe('first and last name', () => {
+  it('writes both into the Contact block and they read back', () => {
+    const md = cvToProfileMarkdown({
+      personalDetails: {
+        fullName: 'Anna Kowalska',
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        email: 'anna@example.com',
+      },
+    });
+    expect(md).toContain('- First name: Anna');
+    expect(md).toContain('- Last name: Kowalska');
+    const form = parseProfileMd(md);
+    expect(form.name).toBe('Anna Kowalska');
+    expect(form.firstName).toBe('Anna');
+    expect(form.lastName).toBe('Kowalska');
+  });
+
+  it('omits the lines when the parse had no split', () => {
+    const md = cvToProfileMarkdown({ personalDetails: { fullName: 'Prince' } });
+    expect(md).not.toContain('First name');
+    expect(md).not.toContain('Last name');
+    expect(parseProfileMd(md).name).toBe('Prince');
+  });
+
+  it('composes the display name from the override parts', () => {
+    expect(
+      applyContactOverrides({
+        firstName: ' Anna ',
+        lastName: ' Kowalska ',
+        email: '',
+        phone: '',
+        address: '',
+      }),
+    ).toEqual({
+      fullName: 'Anna Kowalska',
+      firstName: 'Anna',
+      lastName: 'Kowalska',
+      email: null,
+      phone: null,
+      address: null,
+    });
+  });
+
+  it('composes a mononym display name from a first name alone', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Prince',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+      }),
+    ).toMatchObject({ fullName: 'Prince', firstName: 'Prince', lastName: null });
+  });
+
+  it('reports no display name when both parts are blank', () => {
+    expect(
+      applyContactOverrides({ firstName: '  ', lastName: '', email: '', phone: '', address: '' }),
+    ).toMatchObject({ fullName: null, firstName: null, lastName: null });
   });
 });

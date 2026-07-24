@@ -35,6 +35,7 @@ import {
   serializeArchetypes,
   parseArchetypes,
   serializeCompensation,
+  splitDisplayName,
 } from '@applye/core';
 import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -703,8 +704,13 @@ export class OnboardingComponent {
   }
 
   private reviewOverrides(): OnboardingCvOverrides {
+    // reviewName is still the single display-name field task 6 will split into
+    // two review inputs; until then, derive the parts applyContactOverrides
+    // now expects from the one field this component has.
+    const { firstName, lastName } = splitDisplayName(this.reviewName());
     return {
-      fullName: this.reviewName(),
+      firstName,
+      lastName,
       email: this.reviewEmail(),
       phone: this.reviewPhone(),
       address: this.reviewAddress(),

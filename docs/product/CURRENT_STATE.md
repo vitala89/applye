@@ -169,6 +169,44 @@ live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existi
 desktop`. **Not verified natively** - the browser preview cannot render Settings at all
     (it renders only under `@else if (settings(); as s)`, and `getSettings()` needs Tauri IPC),
     so the chips, the muted state and the mode switch have not been seen running.
+  - **Local markets now drive source selection and result filtering, not just the Sources drawer
+    narrowing** (`docs/superpowers/specs/2026-07-24-market-driven-sources-design.md`, status
+    `implemented 2026-07-24`). `country_tokens()` in `commands/discover.rs` was brought to equal
+    depth for all eight local markets (`de`, `gb`, `us`, `ru`, `es`, `fr`, `ua`, `pl`), which
+    previously had city lists only for `de`, `ru` and `ua`. Added `US_STATE_NAMES` (all 51 full
+    state names) and `US_STATE_CODES` - the code list is deliberately partial: a two-letter state
+    code that is also an assigned ISO 3166-1 alpha-2 country code was left out, because the
+    matcher is case-insensitive and cannot tell "Tunis, TN" from "Nashville, TN". Thirteen such
+    codes were removed across three review rounds (`il`, `ma`, `co`, `md`, `pa`, `va`, `mo`, `nc`,
+    `sc`, `ga`, `az`, `mn`, `tn`). `"ca"` is the one deliberate exception, kept for California,
+    with Canada's bare `"ca"` token dropped in exchange - a real trade, not a free fix. `"georgia"`
+    is knowingly ambiguous with the country and was kept on purpose: dropping it would silently
+    lose US-state jobs, keeping it only risks an occasional visible, dismissible wrong result in
+    the other direction, and visible-and-dismissible beats silent-and-lost. `"ukraine"` was added
+    to `EUROPE_COUNTRIES`, which had omitted it, so region-mode Europe had been dropping Kyiv jobs
+    outright.
+    - **A strict market mode in the geo filter.** `build_market_cfg`, an `elsewhere` token set on
+      `GeoCfg`, and `geo_passes` rewritten to check, in order: market tokens, then "names somewhere
+      else", then remote markers, then drop. The order is the actual fix - previously the remote
+      check ran first, so "Remote - US only" passed a Ukraine-market search on the strength of the
+      word "Remote".
+    - **The scan now passes a real per-source flag**: a source whose `geo_tags_json` names a
+      selected market vouches for its own jobs and they all pass, because national boards
+      routinely publish no location field at all. A `worldwide` tag does not earn that vouch.
+    - **Two new Tauri commands**: `db_market_source_plan` (read-only) and
+      `db_apply_market_source_plan` (one transaction, both statements asserting `is_builtin = 1`
+      so a user-added source can never be silently toggled by a market switch).
+    - **Settings gained an inline confirmation** in the Job search section that names the exact
+      hosts before any source is switched on or off when a market is picked, reusing the existing
+      `.confirm` pattern rather than a modal. Cancel touches nothing. Clearing the last market
+      shows no confirmation at all - there is nothing to turn off.
+    - **Not verified natively.** None of the above - the confirmation copy, the plan/apply
+      round-trip, the strict-mode filter change, or the source auto-vouching - has been seen
+      running in `tauri dev`. The plan's own verification section lists four scenarios (pick
+      Ukraine and check the confirmation and Cancel/Apply; scan and confirm DOU/Djinni jobs with no
+      location are kept while worldwide sources are filtered; clear to Worldwide and confirm no
+      confirmation appears; repeat with Germany and Poland to confirm the flow is market-agnostic)
+      and none of them have been run yet.
   - **Fixed: a button alone in a Settings card stretched to full width.** `.section` is a
     stretch-aligned flex column, so any `.btn` dropped directly into one filled the card;
     "Send a test prompt" only looked right because it carried a one-off `.test-btn { align-self }`

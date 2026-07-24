@@ -1,7 +1,7 @@
 # Market-driven source selection and result filtering
 
 Date: 2026-07-24
-Status: approved, not yet implemented
+Status: implemented 2026-07-24
 Area: Discover (`commands/discover.rs`, Settings, Sources drawer)
 
 ## Problem

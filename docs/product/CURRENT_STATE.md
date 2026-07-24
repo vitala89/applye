@@ -207,6 +207,44 @@ desktop`. **Not verified natively** - the browser preview cannot render Settings
       location are kept while worldwide sources are filtered; clear to Worldwide and confirm no
       confirmation appears; repeat with Germany and Poland to confirm the flow is market-agnostic)
       and none of them have been run yet.
+  - **Market coverage and rescan-on-change** (`docs/superpowers/plans/2026-07-24-market-coverage-and-rescan.md`).
+    Two more gaps found in the same round of live testing as the entry above, once a market
+    without a source was actually picked: switching to a market with no seeded source left the
+    previous market's sources scanning (a disable-only plan is suppressed, so nothing happened),
+    and the Discover feed kept showing the previous market's jobs regardless, because it is a
+    persistent list that is never re-filtered when the market changes.
+    - **`LOCAL_MARKETS` shrunk to the five markets that actually have a source**: `de`, `us`,
+      `ru`, `ua`, `pl` (`libs/core/src/lib/geo/local-market.ts`). `gb`, `es`, `fr` are removed
+      from the pickable type and array, and from Rust's `KNOWN_LOCAL_MARKETS`
+      (`commands/discover.rs`) and its parity test's `cases`. Their location tokens are
+      deliberately left in `country_tokens()` / `KNOWN_COUNTRY_CODES` - unchanged - so a UK, Spain
+      or France job still counts as "elsewhere" when filtering the five remaining markets; only
+      the pickable list shrank. Any of the three returns the moment a built-in source is added
+      for it.
+    - **`settings.last_scan_market: TEXT` added** (migration `0026_settings_last_scan_market.sql`,
+      additive, NULL until the first scan). `discover_scan` writes the raw `market` value it ran
+      under via a small helper, `record_scan_market`, factored out so a unit test can exercise the
+      real write path against a migrated DB rather than a hand-copied UPDATE; the scan ignores the
+      write's own result so a failed record never fails the scan. Surfaced to the frontend as
+      `Settings.lastScanMarket: string | null` (`libs/core/src/lib/models/settings.model.ts`),
+      picked up automatically since `db_get_settings` does `SELECT *`. Deliberately excluded from
+      `SettingsPatch` and the update statement - it is not user-editable.
+    - **Discover shows a banner when the current market no longer matches `lastScanMarket`**, with
+      a Refresh button that clears the unsaved scan results and reruns the scan for the current
+      market. Saved and dismissed jobs are untouched by both the mismatch check and the refresh -
+      only the unsaved `discover_scan` feed rows are cleared. The refresh path is guarded by a
+      `refreshingForMarket` signal (added in a same-task review round after a fast double-click
+      was found able to fire two concurrent clear+scan calls) so it cannot overlap with itself or
+      with a manual scan.
+    - **Not verified natively.** All of the above - the shrunk market list actually showing five
+      options in Settings, the banner appearing and disappearing at the right times, and a
+      refresh actually swapping the feed's jobs while leaving saved/dismissed ones alone - has
+      only been checked with `cargo test`, `nx test`/`lint`/`build`, and code review; none of it
+      has been seen running in `tauri dev`. The plan's own verification section lists four
+      scenarios: the market picker lists exactly the five sourced markets; picking Germany, then
+      Applying, shows the banner and Refresh yields German jobs with the banner gone; switching to
+      Russia and refreshing removes the German jobs and shows Russian ones; reloading Discover
+      without changing the market shows no banner. None of the four have been run yet.
   - **Fixed: a button alone in a Settings card stretched to full width.** `.section` is a
     stretch-aligned flex column, so any `.btn` dropped directly into one filled the card;
     "Send a test prompt" only looked right because it carried a one-off `.test-btn { align-self }`

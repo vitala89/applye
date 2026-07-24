@@ -385,8 +385,12 @@ fn parse_local_markets(raw: &str) -> Vec<String> {
 /// both the German and the English spelling. The trade is deliberate: a
 /// same-named city elsewhere (Frankfort, KY) slips through, which the user can
 /// see and dismiss, where a dropped job is invisible.
-/// Full names of every US state. Long and unambiguous, so all of them are safe
-/// to match as substrings.
+/// Full names of every US state, matched as substrings. `"georgia"` is
+/// knowingly ambiguous with the country of the same name, so a US market can
+/// surface an occasional posting from Georgia the country - that is the
+/// deliberate direction of this file's trade, since a visible wrong result
+/// can be dismissed while a dropped job cannot, and the state's own code
+/// `"ga"` is unavailable because it collides with Gabon.
 const US_STATE_NAMES: &[&str] = &[
     "alabama",
     "alaska",
@@ -564,6 +568,7 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
                 "chicago",
                 "denver",
                 "atlanta",
+                "savannah",
                 "los angeles",
                 "san diego",
                 "portland",
@@ -2067,6 +2072,22 @@ mod tests {
         ] {
             assert!(geo_passes(state, &us), "{state} is in the US");
         }
+    }
+
+    /// Georgia is both a US state and a country, and the state's code "ga" is
+    /// unavailable because it collides with Gabon. The state therefore keeps the
+    /// ambiguous full name plus its own cities, and the known cost is recorded
+    /// here rather than left for someone to rediscover: a US market can surface a
+    /// posting from Georgia the country. A visible wrong result can be dismissed;
+    /// a dropped job cannot.
+    #[test]
+    fn georgia_the_state_stays_reachable_and_its_ambiguity_is_known() {
+        let us = build_geo_cfg(&[], &["us".to_string()]);
+        assert!(geo_passes("Atlanta, Georgia", &us));
+        assert!(geo_passes("Savannah, Georgia", &us));
+        // The accepted cost, asserted so a future change to it is a decision and
+        // not an accident.
+        assert!(geo_passes("Tbilisi, Georgia", &us));
     }
 
     /// A UK scope must not annex New South Wales.

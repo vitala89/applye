@@ -147,10 +147,12 @@
   box-shadow: var(--shadow-sm);
 
   &--warn {
-    border-left: 2px solid var(--warning);
+    border-color: var(--warning);
+    background: var(--warning-tint);
   }
   &--accent {
-    border-left: 2px solid var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-tint);
   }
 
   &__icon {

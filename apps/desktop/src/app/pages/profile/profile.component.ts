@@ -1172,6 +1172,7 @@ interface ParsedProfile {
         align-items: center;
         justify-content: space-between;
         gap: var(--space-4);
+        flex-wrap: wrap;
       }
       .profile__head-actions {
         display: flex;

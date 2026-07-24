@@ -654,6 +654,29 @@
   <!-- ============ FEED LIST ============ -->
   @if (detailId() === null && (view() === 'feed' || view() === 'scanning')) {
     <div class="dv-feed" [class.dv-feed--dim]="scanning()">
+      @if (marketChangedSinceScan()) {
+        <div class="dv-rescan" role="status">
+          <span class="dv-rescan__text">{{ t()('discover.market_changed') }}</span>
+          <div class="dv-rescan__actions">
+            <button
+              type="button"
+              class="dv-btn dv-btn--secondary"
+              [disabled]="scanning() || refreshingForMarket()"
+              (click)="refreshForMarket()"
+            >
+              {{ t()('discover.market_changed_refresh') }}
+            </button>
+            <button
+              type="button"
+              class="dv-iconbtn dv-iconbtn--sm"
+              [attr.aria-label]="t()('discover.dismiss')"
+              (click)="dismissRescanBanner()"
+            >
+              <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      }
       @for (section of renderedSections(); track section.key) {
         @if (section.label) {
           <div class="dv-feed__section">
@@ -860,7 +883,7 @@
         </button>
         @if (!groupCollapsed('builtin')) {
           <div class="dv-drawer__list">
-            @for (s of builtinSources(); track s.id) {
+            @for (s of visibleBuiltinSources(); track s.id) {
               <div class="dv-src">
                 <div class="dv-src__info">
                   <div class="dv-src__nameline">
@@ -882,6 +905,16 @@
                   <span class="dv-switch__thumb" aria-hidden="true"></span>
                 </button>
               </div>
+            }
+            @if (hiddenBuiltinCount() > 0) {
+              <label class="dv-srcshowall">
+                <input
+                  type="checkbox"
+                  [checked]="showAllSources()"
+                  (change)="showAllSources.set(!showAllSources())"
+                />
+                {{ t()('discover.show_all_sources').replace('{n}', '' + hiddenBuiltinCount()) }}
+              </label>
             }
           </div>
         }

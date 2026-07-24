@@ -33,13 +33,13 @@ import { HealthCheckPanelComponent } from './health-check-panel.component';
         width: 100%;
         max-width: 480px;
         background: var(--surface-1);
-        border: 1px solid var(--border);
+        border: var(--border-width) solid var(--border-subtle);
         border-radius: var(--radius-lg);
         padding: var(--space-6);
       }
       .first-launch__title {
         font-family: var(--font-mono);
-        font-size: var(--text-xl);
+        font-size: var(--text-h1);
         color: var(--text-primary);
         margin: 0 0 var(--space-2);
       }

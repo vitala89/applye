@@ -120,7 +120,7 @@ export function compareCompensation(
 
 // A salary snippet must carry a real currency marker; a bare number or "401k"
 // (a retirement plan) is NOT treated as a salary, to avoid a wrong badge.
-const CURRENCY_MARKER = /€|£|\$|\bEUR\b|\bUSD\b|\bGBP\b/i;
+const CURRENCY_MARKER = /€|£|\$|\bEUR\b|\bUSD\b|\bGBP\b|\bPLN\b/i;
 const SALARY_KEYWORD = /salary|compensation|\bpay\b|gehalt|verg(?:u|ue|ü)tung|remuneration|wage/i;
 
 /** Pulls the most salary-looking snippet out of a job description, or null.

@@ -1386,6 +1386,10 @@ const en: TranslationMap = {
       'Deterministic diagnostics — keychain, database, permissions, export folder. 0 AI tokens.',
     welcome_title: 'Welcome to Applye',
     welcome_subtitle: 'A quick, offline check that everything on your machine is set up correctly.',
+    welcome_tagline: 'Your private, offline-first job search, from first listing to signed offer.',
+    cta_onboarding: 'Take the tour',
+    cta_skip: 'I will set up myself',
+    recommend_onboarding: 'Recommended, it takes a couple of minutes.',
     checking: 'Checking…',
     rerun: 'Re-run check',
     continue: 'Continue',
@@ -2985,6 +2989,11 @@ const de: TranslationMap = {
     welcome_title: 'Willkommen bei Applye',
     welcome_subtitle:
       'Ein kurzer, offline durchgeführter Check, ob alles auf deinem Rechner korrekt eingerichtet ist.',
+    welcome_tagline:
+      'Deine private, offline-first Jobsuche, von der ersten Anzeige bis zur Zusage.',
+    cta_onboarding: 'Tour starten',
+    cta_skip: 'Ich richte selbst ein',
+    recommend_onboarding: 'Empfohlen, dauert nur ein paar Minuten.',
     checking: 'Prüfe…',
     rerun: 'Erneut prüfen',
     continue: 'Weiter',

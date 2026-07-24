@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ShellLayoutComponent } from './layout/shell-layout.component';
 import { UpdaterService } from './core/updater.service';
-import { FirstLaunchComponent } from './core/first-launch.component';
+import { FirstLaunchComponent, FirstLaunchDismiss } from './core/first-launch.component';
 import { OnboardingComponent } from './core/onboarding/onboarding.component';
 import { OnboardingService } from './core/onboarding/onboarding.service';
 import { shouldAutoOpenOnboarding } from './core/onboarding/onboarding-gate.util';
@@ -20,7 +20,7 @@ import { ToastContainerComponent } from './core/toast/toast-container.component'
   selector: 'app-root',
   template: `
     @if (showFirstLaunch()) {
-      <app-first-launch (dismissed)="onFirstLaunchDismissed()" />
+      <app-first-launch (dismissed)="onFirstLaunchDismissed($event)" />
     } @else if (showOnboarding()) {
       <app-onboarding (completed)="onboarding.close()" />
     } @else {
@@ -53,13 +53,10 @@ export class App implements OnInit {
     }
   }
 
-  async onFirstLaunchDismissed(): Promise<void> {
+  onFirstLaunchDismissed(intent: FirstLaunchDismiss): void {
     this.showFirstLaunch.set(false);
-    try {
-      const settings = await this.db.getSettings();
-      if (shouldAutoOpenOnboarding(settings)) this.onboarding.requestOpen();
-    } catch {
-      // fail open
-    }
+    // The welcome screen already persisted the flags; open the tour only when
+    // the user asked for it. Skipping leaves the empty-profile banner to nudge.
+    if (intent.startOnboarding) this.onboarding.requestOpen();
   }
 }

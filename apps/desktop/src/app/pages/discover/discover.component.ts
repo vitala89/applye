@@ -62,6 +62,7 @@ import {
   type LocClass,
   type RegionKey,
 } from './discover-location';
+import { narrowBuiltinsByMarkets } from './discover-sources.util';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -613,28 +614,24 @@ export class DiscoverComponent {
     this.sources().filter((s) => !s.isBuiltin && !(s.type ?? '').startsWith('ats_')),
   );
 
-  /** Built-in sources tagged for any chosen market, plus worldwide sources -
-   * everything else stays behind "show all sources". User-added sources
-   * (userSources/companyBoards) are never narrowed by market. */
-  protected readonly visibleBuiltinSources = computed(() => {
-    const all = this.builtinSources();
-    const markets = this.markets();
-    if (this.showAllSources() || !markets.length) return all;
-    return all.filter((s) => this.sourceMatchesMarkets(s, markets));
-  });
-  protected readonly hiddenBuiltinCount = computed(
-    () => this.builtinSources().length - this.visibleBuiltinSources().length,
+  /** Built-in sources for the selected markets (rules in discover-sources.util).
+   *
+   * Computed independently of `showAllSources` so `hiddenBuiltinCount` stays
+   * stable while the override is on - otherwise switching it on would drive
+   * the count to zero and unmount the very checkbox that switches it back.
+   *
+   * User-added sources (userSources/companyBoards) are never narrowed. */
+  private readonly marketNarrowedBuiltins = computed(() =>
+    narrowBuiltinsByMarkets(this.builtinSources(), this.markets()),
   );
 
-  private sourceMatchesMarkets(source: DiscoverSource, markets: string[]): boolean {
-    try {
-      const tags: unknown = JSON.parse(source.geoTagsJson ?? '[]');
-      if (!Array.isArray(tags)) return false;
-      return tags.includes('worldwide') || markets.some((m) => tags.includes(m));
-    } catch {
-      return false;
-    }
-  }
+  protected readonly visibleBuiltinSources = computed(() =>
+    this.showAllSources() ? this.builtinSources() : this.marketNarrowedBuiltins(),
+  );
+
+  protected readonly hiddenBuiltinCount = computed(
+    () => this.builtinSources().length - this.marketNarrowedBuiltins().length,
+  );
 
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {

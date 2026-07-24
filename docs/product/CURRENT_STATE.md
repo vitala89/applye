@@ -101,33 +101,45 @@ live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existi
     from a single nullable code to a JSON array (same shape and legacy-scalar tolerance as
     `geoScope`; no migration - the column is TEXT and `parseLocalMarkets` reads the old bare `"fr"`
     as `["fr"]`). The Rust patch field dropped its double-`Option` in the process: `"[]"` is now
-    the empty state, so plain COALESCE works exactly as it does for `geo_scope`.
-    - **Markets now actually filter the scan**, which the first cut did not do - it only narrowed
-      the Sources drawer, so the setting looked live but changed nothing about which jobs arrived.
-      They feed `build_geo_cfg`'s second parameter, which already existed for country codes and
-      was being fed from the `geo_filters` table. That table is **dead**: created in migration
-      0001, never written by any frontend code, empty on this install, so `active_codes` has
-      always been `[]` in practice. Markets take that slot when set; the region path still reads
-      `geo_filters` so nothing is silently removed. `country_tokens()` gained `ru` and `ua` with
-      both Cyrillic and Latin spellings of the major cities - TrudVsem returns `region.name` as
-      "Москва" and Habr Career puts the city in the title, so a Latin-only list would have dropped
-      the entire Russian market. This also partly closes the Habr city-in-title gap noted above:
-      a Russian city in a title still is not extracted into `location`, but a market-mode search
-      no longer depends on that, because empty locations pass anyway.
-    - **Remote postings still pass in either mode** - unchanged, deliberate, and now pinned by a
-      test that says so. A remote job is not "somewhere else".
-    - UI: local markets are chips in the same vocabulary as the region chips (the full-width
-      `<select>` is gone). The inactive row is **muted, not `disabled`** - the user asked for both
-      "disabled" and "clicking a region turns the market off", and only muted-but-clickable
-      satisfies both; the hint under it changes to say what is going on. Chips also gained the
-      `:focus-visible` ring they never had. **Worth a second opinion on the next native pass**: if
-      muted-but-clickable reads as broken rather than as inactive, hard `disabled` plus an
-      explicit "switch to regions" affordance is the alternative.
-    - Verified: `cargo test --lib` (251), `cargo clippy -- -D warnings`, `nx run-many -t test`
-      (core 205 incl. a new `local-market.spec.ts`, desktop 641), `nx lint desktop`, `nx build
+    the empty state, so plain COALESCE works exactly as it does for `geo_scope`. - **Markets now actually filter the scan**, which the first cut did not do - it only narrowed
+    the Sources drawer, so the setting looked live but changed nothing about which jobs arrived.
+    They feed `build_geo_cfg`'s second parameter, which already existed for country codes and
+    was being fed from the `geo_filters` table. That table is **dead**: created in migration
+    0001, never written by any frontend code, empty on this install, so `active_codes` has
+    always been `[]` in practice. Markets take that slot when set; the region path still reads
+    `geo_filters` so nothing is silently removed. `country_tokens()` gained `ru` and `ua` with
+    both Cyrillic and Latin spellings of the major cities - TrudVsem returns `region.name` as
+    "Москва" and Habr Career puts the city in the title, so a Latin-only list would have dropped
+    the entire Russian market. This also partly closes the Habr city-in-title gap noted above:
+    a Russian city in a title still is not extracted into `location`, but a market-mode search
+    no longer depends on that, because empty locations pass anyway. - **Remote postings still pass in either mode** - unchanged, deliberate, and now pinned by a
+    test that says so. A remote job is not "somewhere else". - UI: local markets are chips in the same vocabulary as the region chips (the full-width
+    `<select>` is gone). The inactive row is **muted, not `disabled`** - the user asked for both
+    "disabled" and "clicking a region turns the market off", and only muted-but-clickable
+    satisfies both; the hint under it changes to say what is going on. Chips also gained the
+    `:focus-visible` ring they never had. **Worth a second opinion on the next native pass**: if
+    muted-but-clickable reads as broken rather than as inactive, hard `disabled` plus an
+    explicit "switch to regions" affordance is the alternative. - **Review pass afterwards found two more defects in this same work, both fixed:**
+    (1) the Sources drawer's "show all sources" checkbox was a one-way door - `hiddenBuiltinCount`
+    was derived from the _visible_ list, so switching the override on drove the count to zero and
+    unmounted the checkbox that switches it back. The narrowed set is now computed independently
+    of the override. (2) **A source hidden by the market filter was still being scanned**: the
+    scan selects `WHERE is_enabled = 1` and knows nothing about markets, so an enabled source the
+    drawer had hidden kept fetching from a server the user could no longer see listed or switch
+    off - unacceptable in a privacy-first app. An enabled source is now never hidden, whatever
+    its tags. Both rules moved into the pure, tested `discover-sources.util.ts`, and the
+    mode-switching invariant into `geo-target.util.ts` (whose spec asserts the two sides are
+    never both set, across an arbitrary click sequence) - the same "make it pure and pin it"
+    treatment `cli-models.util.ts` got, and for the same reason: this is exactly the class of
+    bug that was just reported. - Checked and found sound, no change needed: onboarding never writes `geoScope`/`market`, so it
+    cannot desync; Settings' explicit Save re-sends the same values harmlessly; Discover reloads
+    settings in its constructor, so a market changed in Settings is picked up on navigation; a
+    pre-upgrade row holding both a legacy scalar `market` and a stale `geo_scope` self-heals,
+    because market is read first and the next toggle rewrites both. - Verified: `cargo test --lib` (251), `cargo clippy -- -D warnings`, `nx run-many -t test`
+    (core 205 incl. a new `local-market.spec.ts`, desktop 657), `nx lint desktop`, `nx build
 desktop`. **Not verified natively** - the browser preview cannot render Settings at all
-      (it renders only under `@else if (settings(); as s)`, and `getSettings()` needs Tauri IPC),
-      so the chips, the muted state and the mode switch have not been seen running.
+    (it renders only under `@else if (settings(); as s)`, and `getSettings()` needs Tauri IPC),
+    so the chips, the muted state and the mode switch have not been seen running.
   - **Fixed: a button alone in a Settings card stretched to full width.** `.section` is a
     stretch-aligned flex column, so any `.btn` dropped directly into one filled the card;
     "Send a test prompt" only looked right because it carried a one-off `.test-btn { align-self }`

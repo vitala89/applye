@@ -34,6 +34,12 @@ import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models.util';
+import {
+  GeoTarget,
+  toggleMarket as toggleMarketIn,
+  toggleRegion,
+  worldwide,
+} from './geo-target.util';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -1318,35 +1324,33 @@ export class SettingsComponent implements OnInit {
     return this.marketsSelected().has(market);
   }
 
+  /** Both halves as the pure state machine in geo-target.util sees them. */
+  private readonly geoTarget = computed<GeoTarget>(() => ({
+    scopes: [...this.geoScopeSelected()],
+    markets: [...this.marketsSelected()],
+  }));
+
   /** Picking a region switches back to region mode, dropping every market. */
   async toggleGeoScope(key: GeoScopeKey): Promise<void> {
-    const next = new Set(this.marketModeActive() ? [] : this.geoScopeSelected());
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    await this.persistGeoTarget([...next], []);
+    await this.persistGeoTarget(toggleRegion(this.geoTarget(), key));
   }
 
   async setGeoWorldwide(): Promise<void> {
     if (this.geoWorldwideChecked()) return;
-    await this.persistGeoTarget([], []);
+    await this.persistGeoTarget(worldwide());
   }
 
   /** Picking a market switches to market mode, dropping the region scope. */
   async toggleMarket(market: LocalMarket): Promise<void> {
-    const next = new Set(this.marketsSelected());
-    if (next.has(market)) next.delete(market);
-    else next.add(market);
-    // Emptying the list lands on Worldwide rather than on a stale region set:
-    // the regions were cleared when market mode began, so [] is what is left.
-    await this.persistGeoTarget([], [...next]);
+    await this.persistGeoTarget(toggleMarketIn(this.geoTarget(), market));
   }
 
   /** Writes both halves in one call - they change together or not at all. */
-  private async persistGeoTarget(scopes: GeoScopeKey[], markets: LocalMarket[]): Promise<void> {
+  private async persistGeoTarget(next: GeoTarget): Promise<void> {
     const prev = this.settings();
     if (!prev) return;
-    const geoScope = encodeGeoScopes(scopes);
-    const market = encodeLocalMarkets(markets);
+    const geoScope = encodeGeoScopes(next.scopes);
+    const market = encodeLocalMarkets(next.markets);
     this.settings.set({ ...prev, geoScope, market }); // optimistic
     try {
       await this.db.updateSettings({ geoScope, market });

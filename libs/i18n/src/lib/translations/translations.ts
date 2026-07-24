@@ -138,6 +138,7 @@ const en: TranslationMap = {
     sources_active: '{active} of {total} active',
     sources_failing: '{n} failing',
     builtin_sources: 'Built-in sources',
+    show_all_sources: 'Show all sources ({n} hidden by your market selection)',
     company_boards: 'Company boards (ATS)',
     your_sources: 'Your sources',
     add_company_board: 'Add company board',
@@ -157,6 +158,9 @@ const en: TranslationMap = {
     ago_h: '{n}H AGO',
     ago_d: '{n}D AGO',
     ago_now: 'JUST NOW',
+    market_changed:
+      'Your local market changed. Refresh to scan for jobs in it - your current results are from your previous market.',
+    market_changed_refresh: 'Refresh results',
   },
   myjobs: {
     title: 'My Jobs',
@@ -917,6 +921,25 @@ const en: TranslationMap = {
     geo_scope_hint:
       'Discover scans keep only openings in the regions checked here. Pick as many as you like; Worldwide clears them and keeps everything.',
     geo_worldwide: 'Worldwide',
+    geo_scope_hint_muted:
+      'Not in use: a local market is set below, and it searches by country instead. Pick a region here to switch back.',
+    local_market_label: 'Local market',
+    local_market_hint:
+      'Search specific countries instead of whole regions. Pick as many as you like; the regions above switch off while any is picked, and clearing them all returns to Worldwide.',
+    market_sources_title: 'Update sources for this market?',
+    market_sources_enable: 'Turn on',
+    market_sources_disable: 'Turn off (other markets)',
+    market_sources_note:
+      'Nothing is contacted until you apply this. Worldwide sources and sources you added yourself are left alone.',
+    market_sources_apply: 'Apply',
+    local_market_de: 'Germany',
+    local_market_gb: 'United Kingdom',
+    local_market_us: 'United States',
+    local_market_ru: 'Russia',
+    local_market_es: 'Spain',
+    local_market_fr: 'France',
+    local_market_ua: 'Ukraine',
+    local_market_pl: 'Poland',
     ui_lang_label: 'UI language',
     doc_lang_label: 'Document language',
     cli_model_default: 'CLI default (recommended - the CLI knows your plan)',
@@ -1710,6 +1733,7 @@ const de: TranslationMap = {
     sources_active: '{active} von {total} aktiv',
     sources_failing: '{n} fehlerhaft',
     builtin_sources: 'Integrierte Quellen',
+    show_all_sources: 'Alle Quellen anzeigen ({n} durch deine Marktauswahl ausgeblendet)',
     company_boards: 'Firmen-Boards (ATS)',
     your_sources: 'Deine Quellen',
     add_company_board: 'Firmen-Board hinzufügen',
@@ -1729,6 +1753,9 @@ const de: TranslationMap = {
     ago_h: 'VOR {n}H',
     ago_d: 'VOR {n}T',
     ago_now: 'GERADE EBEN',
+    market_changed:
+      'Dein lokaler Markt hat sich geaendert. Aktualisiere, um Stellen darin zu finden - die aktuellen Ergebnisse stammen aus deinem vorherigen Markt.',
+    market_changed_refresh: 'Ergebnisse aktualisieren',
   },
   myjobs: {
     title: 'Meine Stellen',
@@ -2505,6 +2532,25 @@ const de: TranslationMap = {
     geo_scope_hint:
       'Discover-Scans behalten nur Stellen in den hier angehakten Regionen. Beliebig viele wählbar; Weltweit hebt die Auswahl auf und behält alles.',
     geo_worldwide: 'Weltweit',
+    geo_scope_hint_muted:
+      'Nicht aktiv: unten ist ein lokaler Markt gesetzt, gesucht wird stattdessen nach Land. Wähle hier eine Region, um zurückzuwechseln.',
+    local_market_label: 'Lokaler Markt',
+    local_market_hint:
+      'Nach einzelnen Ländern statt ganzer Regionen suchen. Beliebig viele wählbar; die Regionen oben sind ausgeschaltet, solange einer gewählt ist, und ohne Auswahl geht es zurück auf Weltweit.',
+    market_sources_title: 'Quellen für diesen Markt anpassen?',
+    market_sources_enable: 'Einschalten',
+    market_sources_disable: 'Ausschalten (andere Märkte)',
+    market_sources_note:
+      'Vor dem Anwenden wird nichts kontaktiert. Weltweite und selbst hinzugefügte Quellen bleiben unberührt.',
+    market_sources_apply: 'Anwenden',
+    local_market_de: 'Deutschland',
+    local_market_gb: 'Vereinigtes Königreich',
+    local_market_us: 'USA',
+    local_market_ru: 'Russland',
+    local_market_es: 'Spanien',
+    local_market_fr: 'Frankreich',
+    local_market_ua: 'Ukraine',
+    local_market_pl: 'Polen',
     ui_lang_label: 'Oberflächensprache',
     doc_lang_label: 'Dokumentensprache',
     cli_model_default: 'CLI-Standard (empfohlen - die CLI kennt deinen Tarif)',

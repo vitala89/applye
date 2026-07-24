@@ -18,6 +18,14 @@ pub struct Settings {
     pub ui_language: String,
     pub default_doc_language: String,
     pub geo_scope: String,
+    /// JSON-encoded array of ISO 3166-1 alpha-2 codes; empty (or NULL, on a
+    /// row written before local markets shipped) means no local market, so
+    /// `geo_scope` applies instead. The two are mutually exclusive.
+    pub market: Option<String>,
+    /// The raw `market` value the most recent Discover scan ran under, or NULL
+    /// before the first scan. Read-only from the frontend's side; only a scan
+    /// writes it. Used to prompt a refresh when the market has changed since.
+    pub last_scan_market: Option<String>,
     pub followup_days_after_apply: Option<i64>,
     pub followup_days_after_interview: Option<i64>,
     pub min_score_notify: Option<f64>,
@@ -40,6 +48,9 @@ pub struct SettingsPatch {
     pub ui_language: Option<String>,
     pub default_doc_language: Option<String>,
     pub geo_scope: Option<String>,
+    /// Cleared by writing `"[]"` rather than NULL, so plain COALESCE works
+    /// here the same as it does for `geo_scope`.
+    pub market: Option<String>,
     pub followup_days_after_apply: Option<i64>,
     pub followup_days_after_interview: Option<i64>,
     pub health_check_seen: Option<bool>,
@@ -71,6 +82,7 @@ pub async fn db_update_settings(
            ui_language          = COALESCE(?, ui_language),
            default_doc_language = COALESCE(?, default_doc_language),
            geo_scope            = COALESCE(?, geo_scope),
+           market               = COALESCE(?, market),
            followup_days_after_apply     = COALESCE(?, followup_days_after_apply),
            followup_days_after_interview = COALESCE(?, followup_days_after_interview),
            health_check_seen             = COALESCE(?, health_check_seen),
@@ -87,6 +99,7 @@ pub async fn db_update_settings(
     .bind(&settings.ui_language)
     .bind(&settings.default_doc_language)
     .bind(&settings.geo_scope)
+    .bind(&settings.market)
     .bind(settings.followup_days_after_apply)
     .bind(settings.followup_days_after_interview)
     .bind(settings.health_check_seen)

@@ -164,7 +164,7 @@
   &--lg {
     height: 38px;
     padding: 0 var(--space-5);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
   }
 
   &__dot {
@@ -309,7 +309,7 @@
     margin: 0;
     max-width: 380px;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     line-height: 1.6;
     color: var(--text-secondary);
   }
@@ -340,7 +340,7 @@
 
   &__sub {
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     color: var(--text-secondary);
   }
 
@@ -489,7 +489,7 @@
     margin: 0;
     max-width: 360px;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     line-height: 1.6;
     color: var(--text-secondary);
   }
@@ -912,7 +912,7 @@
   &__dp {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     line-height: 1.65;
     color: var(--text-secondary);
   }
@@ -926,7 +926,7 @@
 
     li {
       font-family: var(--font-sans);
-      font-size: var(--text-base);
+      font-size: var(--text-body);
       line-height: 1.55;
       color: var(--text-secondary);
 
@@ -1081,7 +1081,7 @@
 
   &__title {
     margin: 0 0 var(--space-2);
-    font-size: var(--text-base);
+    font-size: var(--text-body);
     font-weight: var(--weight-semibold);
     color: var(--text-primary);
   }
@@ -1262,6 +1262,22 @@
     &--error {
       color: var(--warning);
     }
+  }
+}
+
+.dv-srcshowall {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 14px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  cursor: pointer;
+
+  input {
+    accent-color: var(--text-accent);
   }
 }
 
@@ -2170,4 +2186,29 @@
 .dv-arch-badge--adjacent {
   color: var(--text-tertiary);
   border-color: var(--border-subtle);
+}
+
+/* ---------------- market-changed banner ---------------- */
+
+.dv-rescan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-card);
+  background: var(--accent-tint);
+}
+.dv-rescan__text {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+.dv-rescan__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
 }

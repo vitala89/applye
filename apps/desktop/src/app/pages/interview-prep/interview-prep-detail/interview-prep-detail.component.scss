@@ -36,8 +36,8 @@
 }
 .ipd__company {
   font-family: var(--font-mono);
-  font-size: var(--text-2xl, 22px);
-  font-weight: var(--weight-bold, 700);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }
@@ -300,67 +300,6 @@
   background: var(--danger-tint);
   border-color: var(--danger);
   color: var(--danger);
-}
-.ipd__icon-btn.is-active {
-  background: var(--text-accent-tint, var(--surface-hover));
-  border-color: var(--text-accent);
-  color: var(--text-accent);
-}
-
-/* ---------- AI prep panel ---------- */
-.ipd__prep {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: var(--border-width) solid var(--border-subtle);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.ipd__prep-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-.ipd__prep-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.ipd__prep-empty {
-  font-size: var(--text-sm, 13px);
-  color: var(--text-tertiary);
-  margin: 0;
-}
-.ipd__prep-card {
-  background: var(--surface-sunken);
-  border: var(--border-width) solid var(--border-default);
-  border-radius: 8px;
-  padding: 12px 14px;
-}
-.ipd__prep-q {
-  font-size: var(--text-sm, 14px);
-  font-weight: var(--weight-medium, 500);
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-.ipd__prep-a {
-  margin: 0 0 6px;
-  font-size: var(--text-sm, 13px);
-  line-height: 1.55;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  strong {
-    color: var(--text-tertiary);
-    font-weight: var(--weight-medium, 500);
-  }
 }
 
 /* ---------- modal form ---------- */

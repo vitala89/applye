@@ -36,6 +36,7 @@ import { TranslateService } from '@applye/i18n';
 import { DbService } from '@applye/data';
 import {
   parseGeoScopes,
+  parseLocalMarkets,
   parseProfileMd,
   compareCompensation,
   extractSalaryFromJd,
@@ -61,6 +62,7 @@ import {
   type LocClass,
   type RegionKey,
 } from './discover-location';
+import { narrowBuiltinsByMarkets } from './discover-sources.util';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -224,6 +226,18 @@ export class DiscoverComponent {
   private readonly profileKeywords = signal<string[]>([]);
   private readonly archetypes = signal<Archetype[]>([]);
   protected readonly geoScope = signal('worldwide');
+  /** Settings.market - the country codes narrowing the builtin sources list. */
+  protected readonly markets = signal<string[]>([]);
+  /** The market the feed on screen was last scanned under, from settings. */
+  private readonly lastScanMarket = signal<string[]>([]);
+  /** Session-only dismissal of the "market changed" banner. */
+  private readonly rescanBannerDismissed = signal(false);
+  /** "Show all sources" override for the market narrowing. */
+  protected readonly showAllSources = signal(false);
+  /** In flight for the whole refresh (clear + scan), so a double-click on the
+   * market-changed banner cannot fire two clears. `scanning()` alone does not
+   * cover the clear that runs before the scan starts. */
+  protected readonly refreshingForMarket = signal(false);
   /** Profile compensation target (min/max/currency/period), parsed from the saved
    * profile markdown; empty strings when the user set no target. */
   private readonly compTarget = signal<{
@@ -608,6 +622,32 @@ export class DiscoverComponent {
     this.sources().filter((s) => !s.isBuiltin && !(s.type ?? '').startsWith('ats_')),
   );
 
+  /** Built-in sources for the selected markets (rules in discover-sources.util).
+   *
+   * Computed independently of `showAllSources` so `hiddenBuiltinCount` stays
+   * stable while the override is on - otherwise switching it on would drive
+   * the count to zero and unmount the very checkbox that switches it back.
+   *
+   * User-added sources (userSources/companyBoards) are never narrowed. */
+  private readonly marketNarrowedBuiltins = computed(() =>
+    narrowBuiltinsByMarkets(this.builtinSources(), this.markets()),
+  );
+
+  protected readonly visibleBuiltinSources = computed(() =>
+    this.showAllSources() ? this.builtinSources() : this.marketNarrowedBuiltins(),
+  );
+
+  protected readonly hiddenBuiltinCount = computed(
+    () => this.builtinSources().length - this.marketNarrowedBuiltins().length,
+  );
+
+  /** True when the selected market no longer matches the feed on screen, so the
+   * results shown are for a market the user has moved away from. */
+  protected readonly marketChangedSinceScan = computed(() => {
+    if (this.rescanBannerDismissed()) return false;
+    return JSON.stringify(this.markets()) !== JSON.stringify(this.lastScanMarket());
+  });
+
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {
     try {
@@ -633,6 +673,8 @@ export class DiscoverComponent {
         period: cf.compPeriod,
       });
       this.geoScope.set(settings.geoScope || 'worldwide');
+      this.markets.set(parseLocalMarkets(settings.market));
+      this.lastScanMarket.set(parseLocalMarkets(settings.lastScanMarket));
     } catch (e) {
       console.error('discover: load failed', e);
     } finally {
@@ -700,6 +742,8 @@ export class DiscoverComponent {
       );
       this.displayCount.set(FEED_PAGE);
       await this.reloadSources();
+      this.lastScanMarket.set(this.markets());
+      this.rescanBannerDismissed.set(false);
     } catch (e) {
       console.error('discover: scan failed', e);
       this.consoleLines.update((lines) => [
@@ -710,6 +754,29 @@ export class DiscoverComponent {
       this.scanning.set(false);
       this.consoleExpanded.set(false);
     }
+  }
+
+  // -------------------------------------------------------- market-changed
+  /** From the market-changed banner: drop the stale unsaved results and rescan
+   * for the current market. Saved and dismissed jobs are untouched (see
+   * db_discover_clear). Then scan(), which realigns lastScanMarket. */
+  protected async refreshForMarket(): Promise<void> {
+    if (this.refreshingForMarket() || this.scanning()) return;
+    this.refreshingForMarket.set(true);
+    try {
+      try {
+        await this.db.discoverClear();
+      } catch (e) {
+        console.error('discover: clear before refresh failed', e);
+      }
+      await this.scan();
+    } finally {
+      this.refreshingForMarket.set(false);
+    }
+  }
+
+  protected dismissRescanBanner(): void {
+    this.rescanBannerDismissed.set(true);
   }
 
   // ----------------------------------------------------------- clear inbox
@@ -1233,11 +1300,19 @@ export class DiscoverComponent {
   }
 
   /** Joins every selected scope region ("Europe, Asia"); Worldwide when none are. */
+  /** Mirrors the two geo modes: local markets win when set, exactly as the
+   * scan engine reads them, so this label always names what is really used. */
   protected scopeLabel(): string {
+    const markets = this.markets();
     const keys = parseGeoScopes(this.geoScope());
-    const label = keys.length
-      ? keys.map((k) => this.t()('discover.region_' + k)).join(', ')
-      : this.t()('settings.geo_worldwide');
+    let label: string;
+    if (markets.length) {
+      label = markets.map((m) => this.t()('settings.local_market_' + m)).join(', ');
+    } else if (keys.length) {
+      label = keys.map((k) => this.t()('discover.region_' + k)).join(', ');
+    } else {
+      label = this.t()('settings.geo_worldwide');
+    }
     return this.t()('discover.scope_label').replace('{scope}', label);
   }
 

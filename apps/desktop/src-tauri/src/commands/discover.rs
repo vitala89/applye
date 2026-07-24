@@ -103,6 +103,7 @@ struct SourceRow {
     slug: Option<String>,
     positive_json: Option<String>,
     negative_json: Option<String>,
+    geo_tags_json: Option<String>,
 }
 
 struct TitleFilter {
@@ -736,6 +737,22 @@ fn build_market_cfg(markets: &[String]) -> GeoCfg {
         tokens,
         elsewhere,
     }
+}
+
+/// Whether a source's `geo_tags_json` names any of the selected markets. A
+/// `worldwide` tag deliberately does not count: worldwide feeds carry jobs from
+/// everywhere, so they still have to prove each job belongs to the market.
+fn source_serves_markets(tags_json: Option<&str>, markets: &[String]) -> bool {
+    if markets.is_empty() {
+        return false;
+    }
+    let Some(raw) = tags_json else {
+        return false;
+    };
+    let Ok(tags) = serde_json::from_str::<Vec<String>>(raw) else {
+        return false;
+    };
+    tags.iter().any(|t| markets.contains(&t.to_lowercase()))
 }
 
 /// Short tokens (<= 3 chars, e.g. "de", "eu", "us") only match as whole words -
@@ -1688,7 +1705,8 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
 
     let source_rows = sqlx::query(
         "SELECT id, name, type, url, slug,
-                title_filter_positive_json, title_filter_negative_json
+                title_filter_positive_json, title_filter_negative_json,
+                geo_tags_json
          FROM sources
          WHERE is_enabled = 1 AND type != 'manual'
          ORDER BY id",
@@ -1707,6 +1725,7 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
             slug: r.get("slug"),
             positive_json: r.get("title_filter_positive_json"),
             negative_json: r.get("title_filter_negative_json"),
+            geo_tags_json: r.get("geo_tags_json"),
         })
         .collect();
 
@@ -1763,6 +1782,8 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
             Ok(raw_jobs) => {
                 r.fetched = raw_jobs.len() as i64;
 
+                let serves_market = source_serves_markets(src.geo_tags_json.as_deref(), &markets);
+
                 let positive = {
                     let own = parse_keyword_list(src.positive_json.as_deref());
                     if own.is_empty() {
@@ -1783,7 +1804,7 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
                 for job in &raw_jobs {
                     if job.title.trim().is_empty()
                         || !title_passes(&job.title, &filter)
-                        || !geo_passes(&job.location, &geo_cfg, false)
+                        || !geo_passes(&job.location, &geo_cfg, serves_market)
                     {
                         r.filtered_out += 1;
                         continue;
@@ -2566,6 +2587,19 @@ mod tests {
     }
 
     #[test]
+    fn source_market_tags_are_read_tolerantly() {
+        let markets = vec!["ua".to_string()];
+        assert!(source_serves_markets(Some(r#"["ua"]"#), &markets));
+        assert!(source_serves_markets(Some(r#"["ua","pl"]"#), &markets));
+        assert!(!source_serves_markets(Some(r#"["worldwide"]"#), &markets));
+        assert!(!source_serves_markets(Some(r#"["de"]"#), &markets));
+        assert!(!source_serves_markets(None, &markets));
+        assert!(!source_serves_markets(Some("not json"), &markets));
+        // No market selected: nothing is market-tagged, so region rules apply.
+        assert!(!source_serves_markets(Some(r#"["ua"]"#), &[]));
+    }
+
+    #[test]
     fn a_local_market_narrows_to_its_own_country() {
         let cfg = build_geo_cfg(&[], &["pl".to_string()]);
         assert!(geo_passes("Warsaw, Poland", &cfg, false));
@@ -2904,6 +2938,7 @@ mod tests {
             slug: None,
             positive_json: None,
             negative_json: None,
+            geo_tags_json: None,
         }
     }
 

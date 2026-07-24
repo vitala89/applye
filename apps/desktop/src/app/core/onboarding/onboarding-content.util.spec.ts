@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CvContent, CvParsedContent, CvTemplate } from '@applye/core';
-import { parseProfileMd, serializeProfileForm } from '@applye/core';
+import { parseProfileMd, parseExperienceEntries, serializeProfileForm } from '@applye/core';
 import {
   appendCompensation,
   applyContactOverrides,
@@ -213,7 +213,7 @@ describe('cvToProfileMarkdown', () => {
     expect(md).toContain('# Jane Smith');
     expect(md).toContain('Senior engineer.');
     expect(md).toContain('## Experience');
-    expect(md).toContain('Lead — Acme');
+    expect(md).toContain('Lead - Acme');
     expect(md).toContain('- Shipped X');
     expect(md).toContain('TypeScript, Rust');
   });
@@ -329,6 +329,13 @@ describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
     expect(form.phone).toBe('+49 171 206 4899');
     expect(form.website).toBe('vitaliikasap.com');
     expect(form.linkedin).toBe('linkedin.com/in/vitaliikasap');
+  });
+
+  it('separates role and company so the profile editor does not merge them', () => {
+    const form = parseProfileMd(cvToProfileMarkdown(parsed));
+    const entries = parseExperienceEntries(form.experienceText);
+    expect(entries[0].role).toBe('Senior Frontend Engineer');
+    expect(entries[0].company).toBe('Celonis');
   });
 
   it('carries education and languages into the profile', () => {

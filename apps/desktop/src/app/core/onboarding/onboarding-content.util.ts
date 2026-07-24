@@ -54,7 +54,12 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   if (cv.experience?.length) {
     out.push('', '## Experience');
     for (const e of cv.experience) {
-      out.push('', `### ${e.role} — ${e.company}`);
+      // Role and company are joined with a spaced HYPHEN, exactly what
+      // parseExperienceEntries splits the `### ` header on. The old em dash
+      // never matched, so the profile editor read the whole "Role - Company"
+      // string as the role and left Company empty.
+      const head = [e.role?.trim(), e.company?.trim()].filter(Boolean).join(' - ');
+      out.push('', `### ${head}`);
       for (const b of e.bullets ?? []) out.push(`- ${b}`);
     }
   }

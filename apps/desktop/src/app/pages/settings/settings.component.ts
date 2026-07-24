@@ -1415,8 +1415,13 @@ export class SettingsComponent implements OnInit {
   /** Picking a market switches to market mode, dropping the region scope. */
   async toggleMarket(market: LocalMarket): Promise<void> {
     const next = toggleMarketIn(this.geoTarget(), market);
-    await this.persistGeoTarget(next);
-    await this.offerMarketSources(next.markets);
+    // Only offer to change sources if the market actually persisted. A rolled
+    // back save must never lead to enabling sources for a market the settings
+    // row does not hold - that would send requests on the user's behalf for a
+    // market they are not on.
+    if (await this.persistGeoTarget(next)) {
+      await this.offerMarketSources(next.markets);
+    }
   }
 
   /** Offers to switch built-in sources to match the market. Never writes by
@@ -1459,19 +1464,23 @@ export class SettingsComponent implements OnInit {
     this.marketPlan.set(null);
   }
 
-  /** Writes both halves in one call - they change together or not at all. */
-  private async persistGeoTarget(next: GeoTarget): Promise<void> {
+  /** Writes both halves in one call - they change together or not at all.
+   * Returns whether the save actually persisted, so callers can avoid acting
+   * on a change that was rolled back. */
+  private async persistGeoTarget(next: GeoTarget): Promise<boolean> {
     const prev = this.settings();
-    if (!prev) return;
+    if (!prev) return false;
     const geoScope = encodeGeoScopes(next.scopes);
     const market = encodeLocalMarkets(next.markets);
     this.settings.set({ ...prev, geoScope, market }); // optimistic
     try {
       await this.db.updateSettings({ geoScope, market });
+      return true;
     } catch (e) {
       console.error('settings: geo target save failed', e);
       this.settings.set(prev); // rollback
       this.toast.error(String(e));
+      return false;
     }
   }
 

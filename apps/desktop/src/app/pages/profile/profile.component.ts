@@ -9,6 +9,7 @@ import {
   ProfileFieldKey,
   EMPTY_FORM,
   parseProfileMd,
+  splitDisplayName,
   serializeProfileForm,
   EducationEntry,
   EMPTY_EDUCATION_ENTRY,
@@ -373,15 +374,31 @@ interface ParsedProfile {
 
           @if (!rawMode()) {
             <div class="form-cards">
-              <div class="field">
-                <label class="field__label" for="field-name">{{ t()('profile.field_name') }}</label>
-                <input
-                  id="field-name"
-                  class="field__input"
-                  type="text"
-                  [ngModel]="form().name"
-                  (ngModelChange)="updateField('name', $event)"
-                />
+              <div class="field-row">
+                <div class="field">
+                  <label class="field__label" for="field-first-name">{{
+                    t()('profile.field_first_name')
+                  }}</label>
+                  <input
+                    id="field-first-name"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().firstName"
+                    (ngModelChange)="updateField('firstName', $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="field-last-name">{{
+                    t()('profile.field_last_name')
+                  }}</label>
+                  <input
+                    id="field-last-name"
+                    class="field__input"
+                    type="text"
+                    [ngModel]="form().lastName"
+                    (ngModelChange)="updateField('lastName', $event)"
+                  />
+                </div>
               </div>
               <div class="field-row">
                 <div class="field">
@@ -2020,7 +2037,7 @@ export class ProfileComponent implements OnInit {
       this.profile.set(p);
       this.settings.set(s);
       this.fullMd.set(p?.fullMd ?? '');
-      this.form.set(parseProfileMd(p?.fullMd ?? ''));
+      this.applyLoadedMarkdown(p?.fullMd ?? '');
       this.educationEntries.set(parseEducationEntries(this.form().education));
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
       this.languageEntries.set(parseLanguageEntries(this.form().languages));
@@ -2155,8 +2172,34 @@ export class ProfileComponent implements OnInit {
     this.fullMd.set(serializeProfileForm(this.form()));
   }
 
+  /** Reads markdown into the form, backfilling the name split for profiles that
+   * predate the first/last fields. The derive happens here rather than inside
+   * `parseProfileMd` so the parser stays a faithful reader and its round-trip
+   * identity test keeps its meaning. Nothing is written back on read alone: the
+   * backfilled values reach disk on the user's next save. */
+  applyLoadedMarkdown(md: string): void {
+    const form = parseProfileMd(md);
+    if (!form.firstName.trim() && !form.lastName.trim() && form.name.trim()) {
+      const split = splitDisplayName(form.name);
+      form.firstName = split.firstName;
+      form.lastName = split.lastName;
+    }
+    this.form.set(form);
+  }
+
   updateField<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]): void {
-    this.form.update((f) => ({ ...f, [key]: value }));
+    this.form.update((f) => {
+      const next = { ...f, [key]: value };
+      // Editing a name part recomposes the display name, so the `# H1` and the
+      // Contact lines can never disagree. Only when the parts produce something:
+      // clearing both must not silently wipe a display name the user set by
+      // hand in raw mode.
+      if (key === 'firstName' || key === 'lastName') {
+        const composed = [next.firstName.trim(), next.lastName.trim()].filter(Boolean).join(' ');
+        if (composed) next.name = composed;
+      }
+      return next;
+    });
     this.syncMdFromForm();
   }
 
@@ -2201,7 +2244,7 @@ export class ProfileComponent implements OnInit {
   toggleRawMode(): void {
     if (this.rawMode()) {
       // leaving raw → re-parse edited markdown back into fields
-      this.form.set(parseProfileMd(this.fullMd()));
+      this.applyLoadedMarkdown(this.fullMd());
       this.educationEntries.set(parseEducationEntries(this.form().education));
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
       this.languageEntries.set(parseLanguageEntries(this.form().languages));

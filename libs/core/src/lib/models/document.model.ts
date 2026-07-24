@@ -544,7 +544,17 @@ export interface CvParsedLanguageEntry {
  * produced (e.g. a targeted per-section regenerate). */
 export interface CvParsedContent {
   personalDetails: {
+    /** The display name, used as the CV document's title. Canonical. */
     fullName: string | null;
+    /** The structured parts of the name. Optional on the type because many
+     * test fixtures and older stored parses predate them; `parseCvSkillResponse`
+     * always populates all three, so anything that came through the normalizer
+     * has them. */
+    firstName?: string | null;
+    lastName?: string | null;
+    /** False when the split was guessed rather than read off the CV, which is
+     * what makes the onboarding review step ask the user to confirm it. */
+    nameSplitConfident?: boolean;
     title: string | null;
     email: string | null;
     phone: string | null;

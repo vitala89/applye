@@ -23,6 +23,7 @@ import {
   CvTextStyle,
   PageMargins,
   PageSettings,
+  splitDisplayName,
 } from '@applye/core';
 
 /** A semantic click target in the live CV preview: which section, which
@@ -448,9 +449,16 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
     throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
   }
   const p: Partial<CvParsedContent['personalDetails']> = parsed.personalDetails ?? {};
+  // The AI is asked for the split, but a provider that ignores the new keys
+  // must not leave the fields empty: a derived split is better than none, and
+  // `nameSplitConfident` is what tells the review step to ask about it.
+  const derived = splitDisplayName(p.fullName ?? '');
   return {
     personalDetails: {
       fullName: p.fullName ?? null,
+      firstName: p.firstName ?? (derived.firstName || null),
+      lastName: p.lastName ?? (derived.lastName || null),
+      nameSplitConfident: p.nameSplitConfident ?? derived.confident,
       title: p.title ?? null,
       email: p.email ?? null,
       phone: p.phone ?? null,

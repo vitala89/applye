@@ -1315,7 +1315,18 @@ describe('parseCvSkillResponse — content-only boundary', () => {
     );
     expect(res.personalDetails.fullName).toBe('Ada');
     expect(Object.keys(res.personalDetails).sort()).toEqual(
-      ['address', 'email', 'fullName', 'linkedin', 'phone', 'title', 'website'].sort(),
+      [
+        'address',
+        'email',
+        'firstName',
+        'fullName',
+        'lastName',
+        'linkedin',
+        'nameSplitConfident',
+        'phone',
+        'title',
+        'website',
+      ].sort(),
     );
     expect((res.personalDetails as Record<string, unknown>)['fontFamily']).toBeUndefined();
     expect((res.personalDetails as Record<string, unknown>)['accentColorHex']).toBeUndefined();
@@ -1536,5 +1547,70 @@ describe('withCvPhoto', () => {
     const content = { sections: [{ key: 'photo', order: 0, visible: false } as CvSection] };
     withCvPhoto(content, PHOTO);
     expect((content.sections[0] as Extract<CvSection, { key: 'photo' }>).visible).toBe(false);
+  });
+});
+
+describe('parseCvSkillResponse name split', () => {
+  it('keeps the split the AI supplied', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: {
+          fullName: 'Anna Kowalska',
+          firstName: 'Anna',
+          lastName: 'Kowalska',
+          nameSplitConfident: true,
+        },
+      }),
+    );
+    expect(cv.personalDetails.firstName).toBe('Anna');
+    expect(cv.personalDetails.lastName).toBe('Kowalska');
+    expect(cv.personalDetails.nameSplitConfident).toBe(true);
+  });
+
+  it('derives the split when the AI omitted it, and marks a clean two-token name confident', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({ personalDetails: { fullName: 'Anna Kowalska' } }),
+    );
+    expect(cv.personalDetails.firstName).toBe('Anna');
+    expect(cv.personalDetails.lastName).toBe('Kowalska');
+    expect(cv.personalDetails.nameSplitConfident).toBe(true);
+  });
+
+  it('derives an unconfident split for a three-token name', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({ personalDetails: { fullName: 'Anna Maria Kowalska' } }),
+    );
+    expect(cv.personalDetails.firstName).toBe('Anna Maria');
+    expect(cv.personalDetails.lastName).toBe('Kowalska');
+    expect(cv.personalDetails.nameSplitConfident).toBe(false);
+  });
+
+  it('reports a mononym as unconfident with no last name', () => {
+    const cv = parseCvSkillResponse(JSON.stringify({ personalDetails: { fullName: 'Prince' } }));
+    expect(cv.personalDetails.firstName).toBe('Prince');
+    expect(cv.personalDetails.lastName).toBeNull();
+    expect(cv.personalDetails.nameSplitConfident).toBe(false);
+  });
+
+  it('trusts an explicit false flag even when the name looks clean', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: {
+          fullName: 'Kim Minjun',
+          firstName: 'Minjun',
+          lastName: 'Kim',
+          nameSplitConfident: false,
+        },
+      }),
+    );
+    expect(cv.personalDetails.nameSplitConfident).toBe(false);
+  });
+
+  it('leaves every name field null when there is no name at all', () => {
+    const cv = parseCvSkillResponse(JSON.stringify({ personalDetails: {} }));
+    expect(cv.personalDetails.fullName).toBeNull();
+    expect(cv.personalDetails.firstName).toBeNull();
+    expect(cv.personalDetails.lastName).toBeNull();
+    expect(cv.personalDetails.nameSplitConfident).toBe(false);
   });
 });

@@ -357,7 +357,12 @@ fn parse_geo_scopes(raw: &str) -> Vec<String> {
 /// The LocalMarket vocabulary, kept in lockstep with libs/core's
 /// `LOCAL_MARKETS` (TypeScript). Local markets are the narrow half of geo
 /// targeting: when any is selected, `geo_scope` takes no part in the scan.
-const KNOWN_LOCAL_MARKETS: &[&str] = &["de", "gb", "us", "ru", "es", "fr", "ua", "pl"];
+// A market appears here only when a built-in source serves it. gb, es and fr
+// are omitted until one does, because otherwise picking them enables nothing
+// and leaves the previous market's sources scanning. Their location tokens
+// stay in `country_tokens` / `KNOWN_COUNTRY_CODES` below, since they are still
+// needed to recognise "somewhere else" for the markets that remain.
+const KNOWN_LOCAL_MARKETS: &[&str] = &["de", "us", "ru", "ua", "pl"];
 
 /// Every country code `country_tokens` knows about, used to build the
 /// "somewhere else" set. Kept beside that function so the two stay in step.
@@ -2237,11 +2242,8 @@ mod tests {
     fn every_market_recognises_its_own_city_and_no_other() {
         let cases: &[(&str, &str)] = &[
             ("de", "Berlin"),
-            ("gb", "London"),
             ("us", "San Francisco, CA"),
             ("ru", "Москва"),
-            ("es", "Madrid"),
-            ("fr", "Paris"),
             ("ua", "Київ"),
             ("pl", "Warsaw"),
         ];
@@ -2319,13 +2321,16 @@ mod tests {
         assert!(geo_passes("Tbilisi, Georgia", &us, false));
     }
 
-    /// A UK scope must not annex New South Wales.
+    /// A PL scope must not annex New South Wales. gb is no longer a pickable
+    /// market (see KNOWN_LOCAL_MARKETS), so this uses pl to keep the "a
+    /// market must not swallow an unrelated place" case exercised through a
+    /// market that remains selectable.
     #[test]
-    fn a_uk_market_does_not_swallow_new_south_wales() {
-        let uk = build_market_cfg(&["gb".to_string()]);
-        assert!(!geo_passes("Sydney, New South Wales", &uk, false));
-        assert!(geo_passes("Cardiff", &uk, false));
-        assert!(geo_passes("London, UK", &uk, false));
+    fn a_pl_market_does_not_swallow_new_south_wales() {
+        let pl = build_market_cfg(&["pl".to_string()]);
+        assert!(!geo_passes("Sydney, New South Wales", &pl, false));
+        assert!(geo_passes("Krakow", &pl, false));
+        assert!(geo_passes("Warsaw, Poland", &pl, false));
     }
 
     // -- Bundesagentur fuer Arbeit -------------------------------------------
@@ -2706,8 +2711,8 @@ mod tests {
     #[test]
     fn parse_local_markets_reads_json_array_and_drops_unknown_codes() {
         assert_eq!(
-            parse_local_markets(r#"["de","fr"]"#),
-            vec!["de".to_string(), "fr".to_string()]
+            parse_local_markets(r#"["de","ua"]"#),
+            vec!["de".to_string(), "ua".to_string()]
         );
         assert_eq!(
             parse_local_markets(r#"["de","atlantis"]"#),
@@ -2715,6 +2720,17 @@ mod tests {
         );
         assert!(parse_local_markets("").is_empty());
         assert!(parse_local_markets("[]").is_empty());
+    }
+
+    /// fr is not a pickable market - no built-in source serves it - so it is
+    /// dropped the same as any other unknown code, even though its location
+    /// tokens still exist for the "somewhere else" filter.
+    #[test]
+    fn parse_local_markets_drops_fr_as_not_yet_a_pickable_market() {
+        assert_eq!(
+            parse_local_markets(r#"["de","fr"]"#),
+            vec!["de".to_string()]
+        );
     }
 
     #[test]

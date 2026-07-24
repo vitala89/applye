@@ -2,8 +2,12 @@ import { encodeLocalMarkets, LocalMarket, parseLocalMarkets } from './local-mark
 
 describe('parseLocalMarkets', () => {
   it('reads a JSON array and drops codes outside the vocabulary', () => {
-    expect(parseLocalMarkets('["de","fr"]')).toEqual(['de', 'fr']);
+    expect(parseLocalMarkets('["de","ua"]')).toEqual(['de', 'ua']);
     expect(parseLocalMarkets('["de","atlantis"]')).toEqual(['de']);
+  });
+
+  it('drops fr as an unknown code (not a pickable market - no source yet)', () => {
+    expect(parseLocalMarkets('["de","fr"]')).toEqual(['de']);
   });
 
   it('treats empty, null and an empty array as no local market', () => {

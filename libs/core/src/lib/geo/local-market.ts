@@ -16,18 +16,12 @@
  * Codes are lowercase, matching the convention already used in
  * `sources.geo_tags_json` (e.g. `"de"`, `"worldwide"`).
  */
-export type LocalMarket = 'de' | 'gb' | 'us' | 'ru' | 'es' | 'fr' | 'ua' | 'pl';
+export type LocalMarket = 'de' | 'us' | 'ru' | 'ua' | 'pl';
 
-export const LOCAL_MARKETS: readonly LocalMarket[] = [
-  'de',
-  'gb',
-  'us',
-  'ru',
-  'es',
-  'fr',
-  'ua',
-  'pl',
-];
+// A market appears here only when a built-in source serves it; gb, es and fr
+// are omitted until one does, because otherwise picking them enables nothing
+// and leaves the previous market's sources running.
+export const LOCAL_MARKETS: readonly LocalMarket[] = ['de', 'us', 'ru', 'ua', 'pl'];
 
 export function isLocalMarket(value: string | null | undefined): value is LocalMarket {
   return !!value && (LOCAL_MARKETS as readonly string[]).includes(value);

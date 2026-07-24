@@ -201,3 +201,10 @@ describe('extractSalaryFromJd', () => {
     expect(extractSalaryFromJd(jd)).toContain('120,000');
   });
 });
+
+describe('extractSalaryFromJd - PLN', () => {
+  it('reads a złoty salary line', () => {
+    const jd = 'Requirements:\n- React\n\nSalary: 200 - 220 PLN / Hour (b2b)';
+    expect(extractSalaryFromJd(jd)).toContain('PLN');
+  });
+});

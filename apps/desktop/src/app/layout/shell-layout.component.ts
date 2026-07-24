@@ -24,6 +24,7 @@ import {
 import { AiMode } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
@@ -38,7 +39,7 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
 @Component({
   selector: 'app-shell-layout',
   standalone: true,
-  imports: [RouterModule, LucideAngularModule, PasteJobModalComponent],
+  imports: [RouterModule, LucideAngularModule, PasteJobModalComponent, ButtonDirective],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.scss',
 })

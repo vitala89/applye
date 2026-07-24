@@ -221,49 +221,16 @@
   }
 }
 
-// --- Buttons ---
-.btn-primary {
-  padding: var(--space-3, 8px) var(--space-5, 16px);
-  background: var(--accent);
-  color: var(--accent-fg);
-  border: none;
-  border-radius: var(--radius-card, 8px);
-  font-size: var(--text-body, 14px);
-  font-weight: var(--weight-semibold, 600);
-  font-family: var(--font-sans, sans-serif);
-  cursor: pointer;
-  transition: background var(--dur-fast, 140ms) var(--ease-standard);
-
-  &:hover:not(:disabled) {
-    background: var(--accent-hover);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btn-theme {
-  padding: var(--space-3, 8px);
-  background: transparent;
-  border: var(--border-width, 1px) solid var(--border-default);
-  border-radius: var(--radius-card, 8px);
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: var(--text-title, 16px);
-  line-height: 1;
-  transition: background var(--dur-fast, 140ms) var(--ease-standard);
-
-  &:hover {
-    background: var(--surface-hover);
-  }
-}
-
 // --- Content area ---
+// Bottom padding is intentionally larger than the other sides and paired with
+// scroll-padding so the last element on any page keeps a consistent gap from
+// the window edge at maximum scroll (it was "losing" its footer spacing before).
 .content {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-8, 32px);
+  padding-bottom: var(--space-10, 48px);
+  scroll-padding-block-end: var(--space-10, 48px);
   background: var(--bg-app);
 }
 

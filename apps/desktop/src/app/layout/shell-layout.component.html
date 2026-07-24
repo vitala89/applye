@@ -128,7 +128,10 @@
 
       <div class="topbar__actions">
         <button
-          class="btn-theme"
+          appButton
+          variant="secondary"
+          size="icon"
+          type="button"
           (click)="toggleTheme()"
           [attr.aria-label]="
             theme() === 'dark' ? t()('shell.theme_to_light') : t()('shell.theme_to_dark')
@@ -140,7 +143,7 @@
             aria-hidden="true"
           />
         </button>
-        <button class="btn-primary" (click)="pasteJobModal.open()">
+        <button appButton variant="primary" size="md" type="button" (click)="pasteJobModal.open()">
           {{ t()('actions.paste_job') }}
         </button>
       </div>

@@ -348,6 +348,10 @@ a:hover {
   padding: var(--space-3) var(--space-5);
   font-size: var(--text-body);
 }
+.btn--icon {
+  padding: var(--space-3);
+  line-height: 1;
+}
 
 .btn--primary {
   background: var(--accent);

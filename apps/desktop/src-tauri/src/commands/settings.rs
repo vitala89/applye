@@ -22,6 +22,10 @@ pub struct Settings {
     /// row written before local markets shipped) means no local market, so
     /// `geo_scope` applies instead. The two are mutually exclusive.
     pub market: Option<String>,
+    /// The raw `market` value the most recent Discover scan ran under, or NULL
+    /// before the first scan. Read-only from the frontend's side; only a scan
+    /// writes it. Used to prompt a refresh when the market has changed since.
+    pub last_scan_market: Option<String>,
     pub followup_days_after_apply: Option<i64>,
     pub followup_days_after_interview: Option<i64>,
     pub min_score_notify: Option<f64>,

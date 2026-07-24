@@ -1867,6 +1867,10 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
         results.push(r);
     }
 
+    // Record the market this scan ran under so the Discover feed can prompt a
+    // refresh when the user later changes it. Best-effort: ignore any error.
+    let _ = record_scan_market(&db.pool, market_raw.as_deref()).await;
+
     Ok(ScanSummary {
         total_fetched: results.iter().map(|r| r.fetched).sum(),
         total_new: results.iter().map(|r| r.new_jobs).sum(),
@@ -1919,6 +1923,20 @@ pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>
     .map_err(|e| format!("db_discover_feed: mark shown: {e}"))?;
 
     Ok(items)
+}
+
+/// Records the market a scan ran under, for the Discover feed's refresh prompt.
+/// Best-effort by construction: the caller ignores the result so a failed write
+/// never fails the scan.
+async fn record_scan_market(
+    pool: &SqlitePool,
+    market_raw: Option<&str>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE settings SET last_scan_market = ? WHERE id = 1")
+        .bind(market_raw)
+        .execute(pool)
+        .await?;
+    Ok(())
 }
 
 /// Delete every scanned job the user has not saved. Pure over the pool so it is
@@ -2221,6 +2239,37 @@ mod tests {
             .await
             .expect("run migrations");
         pool
+    }
+
+    #[tokio::test]
+    async fn record_scan_market_writes_the_raw_market_value() {
+        let pool = test_pool().await;
+        // Nothing scanned yet.
+        let before: Option<String> =
+            sqlx::query_scalar("SELECT last_scan_market FROM settings WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(before, None);
+
+        record_scan_market(&pool, Some(r#"["ru"]"#)).await.unwrap();
+
+        let after: Option<String> =
+            sqlx::query_scalar("SELECT last_scan_market FROM settings WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(after.as_deref(), Some(r#"["ru"]"#));
+
+        // A later scan with no market clears it back to NULL, so the banner logic
+        // sees "scanned under worldwide" rather than a stale market.
+        record_scan_market(&pool, None).await.unwrap();
+        let cleared: Option<String> =
+            sqlx::query_scalar("SELECT last_scan_market FROM settings WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(cleared, None);
     }
 
     fn raw(title: &str, jd: &str, url: &str) -> RawJob {

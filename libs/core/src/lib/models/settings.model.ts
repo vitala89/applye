@@ -21,6 +21,12 @@ export interface Settings {
    * Empty means "no local market", so `geoScope` applies instead.
    */
   market: string | null;
+  /**
+   * The raw `market` value the most recent Discover scan ran under, or null
+   * before the first scan. Set only by a scan. The Discover feed compares it
+   * against `market` to know when to prompt a refresh.
+   */
+  lastScanMarket: string | null;
   followupDaysAfterApply?: number;
   followupDaysAfterInterview?: number;
   minScoreNotify?: number;

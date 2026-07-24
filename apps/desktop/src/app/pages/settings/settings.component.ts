@@ -1402,12 +1402,17 @@ export class SettingsComponent implements OnInit {
     markets: [...this.marketsSelected()],
   }));
 
-  /** Picking a region switches back to region mode, dropping every market. */
+  /** Picking a region switches back to region mode, dropping every market.
+   * The pending confirmation belongs to the market that opened it and must
+   * not survive leaving market mode, so it is cleared before the new scope
+   * is persisted. */
   async toggleGeoScope(key: GeoScopeKey): Promise<void> {
+    this.marketPlan.set(null);
     await this.persistGeoTarget(toggleRegion(this.geoTarget(), key));
   }
 
   async setGeoWorldwide(): Promise<void> {
+    this.marketPlan.set(null);
     if (this.geoWorldwideChecked()) return;
     await this.persistGeoTarget(worldwide());
   }

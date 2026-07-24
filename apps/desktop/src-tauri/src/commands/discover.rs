@@ -701,10 +701,22 @@ fn build_geo_cfg(scopes: &[String], active_codes: &[String]) -> GeoCfg {
 }
 
 /// Every country and region token that does NOT belong to the selected markets.
+///
+/// A region whose own country list overlaps the selected markets is skipped
+/// entirely, not just the overlapping token: EMEA includes Ukraine, so an
+/// EMEA-wide remote job is open to a Ukrainian user, while a Germany-specific
+/// job is not. Individual countries stay covered regardless, because
+/// `KNOWN_COUNTRY_CODES` contributes each country's own tokens separately -
+/// so skipping `EUROPE_COUNTRIES` for a Ukraine market still leaves
+/// "germany" in `elsewhere` via `country_tokens("de")`.
 fn elsewhere_tokens(selected: &[String]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for scope in KNOWN_GEO_SCOPES {
-        out.extend(region_countries(scope).iter().map(|s| s.to_string()));
+        let region = region_countries(scope);
+        if region.iter().any(|t| selected.contains(&t.to_string())) {
+            continue;
+        }
+        out.extend(region.iter().map(|s| s.to_string()));
     }
     for code in KNOWN_COUNTRY_CODES {
         out.extend(country_tokens(code).into_iter().map(str::to_string));
@@ -2054,6 +2066,16 @@ async fn market_source_plan(
             to_disable.push(item);
         }
     }
+    // A market with no source of its own must not cost the user the sources
+    // they already had: if there is nothing to enable, propose nothing at
+    // all, disable list included. The Settings UI already renders nothing
+    // for an empty plan.
+    if to_enable.is_empty() {
+        return Ok(MarketSourcePlan {
+            to_enable: Vec::new(),
+            to_disable: Vec::new(),
+        });
+    }
     Ok(MarketSourcePlan {
         to_enable,
         to_disable,
@@ -2232,14 +2254,14 @@ mod tests {
         }
 
         for (market, city) in cases {
-            let cfg = build_geo_cfg(&[], &[market.to_string()]);
+            let cfg = build_market_cfg(&[market.to_string()]);
             assert!(geo_passes(city, &cfg, false), "{market} must accept {city}");
 
             for (other, _) in cases {
                 if other == market {
                     continue;
                 }
-                let other_cfg = build_geo_cfg(&[], &[other.to_string()]);
+                let other_cfg = build_market_cfg(&[other.to_string()]);
                 assert!(
                     !geo_passes(city, &other_cfg, false),
                     "{other} must not accept {city}"
@@ -2253,7 +2275,7 @@ mod tests {
     /// a country code silently annexes that country into the US market.
     #[test]
     fn a_us_market_does_not_swallow_countries_sharing_a_state_code() {
-        let us = build_geo_cfg(&[], &["us".to_string()]);
+        let us = build_market_cfg(&["us".to_string()]);
         for elsewhere in [
             "Tel Aviv, IL",
             "Casablanca, MA",
@@ -2289,7 +2311,7 @@ mod tests {
     /// a dropped job cannot.
     #[test]
     fn georgia_the_state_stays_reachable_and_its_ambiguity_is_known() {
-        let us = build_geo_cfg(&[], &["us".to_string()]);
+        let us = build_market_cfg(&["us".to_string()]);
         assert!(geo_passes("Atlanta, Georgia", &us, false));
         assert!(geo_passes("Savannah, Georgia", &us, false));
         // The accepted cost, asserted so a future change to it is a decision and
@@ -2300,7 +2322,7 @@ mod tests {
     /// A UK scope must not annex New South Wales.
     #[test]
     fn a_uk_market_does_not_swallow_new_south_wales() {
-        let uk = build_geo_cfg(&[], &["gb".to_string()]);
+        let uk = build_market_cfg(&["gb".to_string()]);
         assert!(!geo_passes("Sydney, New South Wales", &uk, false));
         assert!(geo_passes("Cardiff", &uk, false));
         assert!(geo_passes("London, UK", &uk, false));
@@ -2751,15 +2773,15 @@ mod tests {
     #[test]
     fn a_local_market_ignores_the_region_scope_entirely() {
         // The mutual-exclusion contract: Settings clears geo_scope when a
-        // market is picked, and the scan passes an empty scope list to match.
-        // A Europe scope must not smuggle Berlin into a Poland-only search.
-        let cfg = build_geo_cfg(&[], &["pl".to_string()]);
+        // market is picked, and the scan runs the strict market path
+        // (build_market_cfg) instead. A Europe scope must not smuggle Berlin
+        // into a Poland-only search.
+        let cfg = build_market_cfg(&["pl".to_string()]);
         assert!(!geo_passes("Berlin, Germany", &cfg, false));
         assert!(!geo_passes("Munich", &cfg, false));
 
-        // Carve-out, unchanged from region mode and deliberate: anything
-        // carrying a remote marker still passes, because a remote posting is
-        // not "somewhere else" - it is nowhere in particular.
+        // Poland is itself in Europe, so a region-wide remote posting still
+        // reaches it: EMEA is not "somewhere else" for a market inside EMEA.
         assert!(geo_passes("Remote - EMEA", &cfg, false));
     }
 
@@ -2780,6 +2802,18 @@ mod tests {
         assert!(geo_passes("Anywhere", &cfg, false));
         assert!(geo_passes("Worldwide", &cfg, false));
         assert!(geo_passes("Remote", &cfg, false));
+    }
+
+    #[test]
+    fn a_region_wide_remote_job_reaches_a_market_inside_that_region() {
+        let ua = build_market_cfg(&["ua".to_string()]);
+        assert!(geo_passes("Remote - EMEA", &ua, false));
+        assert!(geo_passes("Remote, Europe", &ua, false));
+        // A country inside the same region is still somewhere else.
+        assert!(!geo_passes("Berlin, Germany", &ua, false));
+        // A region that does not contain the market still counts as elsewhere.
+        let us = build_market_cfg(&["us".to_string()]);
+        assert!(!geo_passes("Remote - EMEA", &us, false));
     }
 
     #[test]
@@ -3185,5 +3219,30 @@ mod tests {
                 .await
                 .unwrap();
         assert_eq!(enabled, vec![(200, 1), (201, 0), (202, 1)]);
+    }
+
+    #[tokio::test]
+    async fn a_market_with_no_source_of_its_own_proposes_nothing() {
+        let pool = test_pool().await;
+        sqlx::query("DELETE FROM sources")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO sources (id, name, type, url, is_builtin, is_enabled, geo_tags_json) VALUES
+               (300, 'Habr', 'rss', 'https://career.habr.com/x', 1, 1, '[\"ru\"]'),
+               (301, 'Remotive', 'api', 'https://remotive.com/x', 1, 1, '[\"worldwide\"]')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // No source is tagged "gb", so there is nothing to gain and the user must
+        // not lose Habr for it.
+        let plan = market_source_plan(&pool, &["gb".to_string()])
+            .await
+            .unwrap();
+        assert!(plan.to_enable.is_empty());
+        assert!(plan.to_disable.is_empty());
     }
 }

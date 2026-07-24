@@ -10,6 +10,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-07-24
+
 ### Added
 
 - **The local market picker now lists only markets Applye can actually serve: Germany, USA, Russia, Ukraine and Poland.** United Kingdom, Spain and France are gone from the list - picking one enabled nothing, because no built-in source serves them, and left whichever market was picked before it still scanning. They come back the moment a source for them is added; jobs from those countries are still correctly excluded from the other five markets' results in the meantime.

@@ -69,15 +69,22 @@ Ukraine market it is left alone rather than disabled.
 
 The governing idea: **a source is itself geographic evidence**.
 
-| Job comes from                                      | Rule               |
-| --------------------------------------------------- | ------------------ |
-| A source tagged for a selected market (DOU, Djinni) | Everything passes  |
-| A `worldwide` or user-added source                  | The table below    |
-| A source tagged for another market                  | Not scanned at all |
+| Job comes from                                      | Rule                                     |
+| --------------------------------------------------- | ---------------------------------------- |
+| A source tagged for a selected market (DOU, Djinni) | Everything passes                        |
+| A `worldwide` or user-added source                  | The table below                          |
+| A source tagged for another market                  | Switched off by the plan, so not scanned |
 
 A market-tagged source passes unconditionally because these feeds frequently carry no
 location field at all - DOU and Djinni RSS items often have none. Filtering them on
 location would drop the very sources the market just enabled.
+
+Other-market sources stop being scanned because the plan above switches them off, not
+because the scan silently skips them. The invariant is that an enabled source is always
+scanned and always visible: quietly not scanning something the user can see is enabled is
+the same lie as quietly hiding something that is being scanned. If the user cancels the
+plan, those sources stay on and keep being scanned - their jobs simply fail the "names
+somewhere else" check, which is the honest outcome.
 
 For non-market-tagged sources, evaluated **in this order**:
 

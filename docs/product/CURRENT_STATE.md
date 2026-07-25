@@ -3,7 +3,7 @@
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
 - **Current branch / focus**: `chore/release-readiness-audit` - a pre-release wiring and gate
-  audit. Not merged yet.
+  audit, open as PR #157 against `main`. Not merged yet.
 - **On `chore/release-readiness-audit`: pre-release audit of section wiring and validation gates.**
   Every cross-section link and every Tauri contract was checked mechanically rather than by eye.
   **Clean:** all 19 routes resolve, every route is reachable from the shell nav or another section,

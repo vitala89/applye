@@ -49,8 +49,8 @@ Before a watch can be marked complete:
 - **Status:** partial
 - **Agent/tool:** Claude Code
 - **Branch:** `chore/release-readiness-audit`
-- **Commits:** see branch
-- **Pull request:** not opened yet
+- **Commits:** `7ad8fda` i18n fix, `71c7966` build gates, `0a9e4dd` docs
+- **Pull request:** [#157](https://github.com/vitala89/applye/pull/157), open against `main`, mergeable at the time of this entry
 - **Objective:** Before release prep, verify that every section is genuinely wired to every other, that the versions agree, and that the checks the repository claims to run actually run. Fix what is found.
 - **Completed:**
   - **Version check.** `package.json`, `apps/desktop/src-tauri/tauri.conf.json` and `apps/desktop/src-tauri/Cargo.toml` all read `0.28.0`. `CHANGELOG.md` heads at `[0.28.0] - 2026-07-26`. `apps/mobile` is a README only, as documented. No drift.

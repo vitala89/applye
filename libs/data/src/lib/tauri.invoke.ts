@@ -1,4 +1,4 @@
-// Typed wrapper around Tauri's invoke() — frontend never calls invoke() directly.
+// Typed wrapper around Tauri's invoke() - frontend never calls invoke() directly.
 // Validates we're running inside Tauri before dispatching (dev guard).
 
 declare global {

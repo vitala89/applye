@@ -1,4 +1,4 @@
-// Database layer — SQLite via sqlx (Phase 1).
+// Database layer - SQLite via sqlx (Phase 1).
 // WAL mode, single shared connection pool, all queries async.
 // The pool is held in Tauri managed state; all SQL lives in Rust (commands/*).
 
@@ -47,7 +47,7 @@ impl Db {
 ///
 /// Used for `jd_hash` dedupe and future cache keys. Deterministic across runs
 /// and machines (unlike `DefaultHasher`), which is what the UNIQUE index needs.
-/// 0 tokens — plain code.
+/// 0 tokens - plain code.
 pub fn stable_hash(input: &str) -> String {
     let normalized = normalize_text(input);
     const FNV_OFFSET: u64 = 0xcbf29ce484222325;

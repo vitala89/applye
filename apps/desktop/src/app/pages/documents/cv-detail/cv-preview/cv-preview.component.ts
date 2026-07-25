@@ -64,18 +64,18 @@ import {
 } from '../../cv-content.util';
 
 /** Field key for a per-leaf accessible-name suffix (Task 6 a11y hardening,
- * review minor T2): every per-leaf selectable host — one with its own
+ * review minor T2): every per-leaf selectable host - one with its own
  * distinct `elementPath`, e.g. an experience entry's company/industry/
- * location/role or a skill group's label/values — previously reused the
+ * location/role or a skill group's label/values - previously reused the
  * generic `selectAriaLabel(key, 'body')` name for every field in the same
- * section, so a screen reader announced "Experience — Body text" for company,
+ * section, so a screen reader announced "Experience - Body text" for company,
  * industry, location, AND role alike. `leafAriaLabel` composes the section
  * label with a field-specific label instead, reusing the SAME i18n field
  * labels already shown in the Edit-mode section editors (`cv_field_company`,
  * `cv_field_role`, …) rather than minting parallel strings. Hosts with no
  * single leaf singled out (the whole-entry/whole-row/whole-body wrapper,
  * which never carries an `elementPath`) keep the generic `selectAriaLabel`
- * name — there is nothing to disambiguate there. */
+ * name - there is nothing to disambiguate there. */
 export type CvLeafFieldKey =
   | 'fullName'
   | 'title'
@@ -114,7 +114,7 @@ const LEAF_FIELD_LABEL_KEYS: Record<CvLeafFieldKey, string> = {
 /**
  * Presentational live preview for the CV editor: the paginated page-card
  * sheet, its 8 atom templates, and the pure styling resolvers they depend on.
- * Behavior-preserving extraction from `CvDetailComponent` — no visual or
+ * Behavior-preserving extraction from `CvDetailComponent` - no visual or
  * pagination change. `sections`/`style`/`themeId`/photo state stay owned by
  * the parent (source of truth); this component only renders them and shows
  * its own overflow warning.
@@ -138,7 +138,7 @@ export class CvPreviewComponent {
   readonly includePhoto = input.required<boolean>();
   readonly photoDataUri = input.required<string | null>();
   readonly photoPlacement = input.required<PhotoPlacement>();
-  /** Drives `buildContactLine`'s optional fields in `#headerTpl` — not in the
+  /** Drives `buildContactLine`'s optional fields in `#headerTpl` - not in the
    * original task brief's input list, but required: the header atom template
    * (moved verbatim) reads these two signals directly. Without them the
    * contact line's birthdate/marital-status inclusion would silently break. */
@@ -147,19 +147,19 @@ export class CvPreviewComponent {
 
   /** When true, visible page-card atoms expose click-to-select affordances for
    * the contextual live-style panel. Measurement atoms are never interactive
-   * regardless — the render-mode gate below keeps the measure pass inert. */
+   * regardless - the render-mode gate below keeps the measure pass inert. */
   readonly interactive = input(false);
-  /** The section/part the parent currently has selected — drives the selected
+  /** The section/part the parent currently has selected - drives the selected
    * outline. The parent owns this signal; the preview only reports changes. */
   readonly selection = input<CvPreviewSelection | null>(null);
   /** Emitted when the user clicks a selectable body/title target (page pass
    * only). */
   readonly selectionChange = output<CvPreviewSelection | null>();
-  /** Immutable section-change sink for inline content edits — emitted once per
+  /** Immutable section-change sink for inline content edits - emitted once per
    * committed leaf edit (see `commitSummary`/`commitPersonalField`). */
   readonly sectionChange = output<CvSection>();
 
-  /** True only for a visible page-card render while interactive — the single
+  /** True only for a visible page-card render while interactive - the single
    * gate every atom template uses so the hidden measurement pass (`'measure'`)
    * never gains a role, tabindex, cursor, or click handler. */
   selectable(renderMode: unknown): boolean {
@@ -171,7 +171,7 @@ export class CvPreviewComponent {
     return !!s && s.sectionKey === sectionKey && s.part === part;
   }
 
-  /** True when the WHOLE section body is the selection — i.e. its body is
+  /** True when the WHOLE section body is the selection - i.e. its body is
    * selected with no specific leaf (`elementPath`) singled out. Drives the
    * section-wrapper highlight + chip so selecting a group (e.g. the personal-
    * details block or an experience entry) reads the same as selecting a single
@@ -183,7 +183,7 @@ export class CvPreviewComponent {
   }
 
   /** Element-scope highlight: true when `path` is the specific leaf the
-   * current selection targets (`elementPath`) — distinct from `isSelected`,
+   * current selection targets (`elementPath`) - distinct from `isSelected`,
    * which only tracks section+part. `path` is the same transient draft-id
    * string passed to `leafDraft` for that leaf (see `CvPreviewSelection`),
    * so callers never need a separate lookup table to know "is this the
@@ -193,7 +193,7 @@ export class CvPreviewComponent {
   }
 
   /** True only when `next` differs from the current selection in
-   * `sectionKey`, `part`, or `elementPath` — the shared guard behind both
+   * `sectionKey`, `part`, or `elementPath` - the shared guard behind both
    * `selectPart` and `selectLeaf` (see their docs for why re-emitting an
    * identical selection must be avoided). */
   private isNewSelection(next: CvPreviewSelection): boolean {
@@ -206,20 +206,20 @@ export class CvPreviewComponent {
     );
   }
 
-  /** Emit a semantic selection for a clicked target — a no-op unless this is a
+  /** Emit a semantic selection for a clicked target - a no-op unless this is a
    * selectable page render, so the inert measurement pass can never emit.
    * Also a no-op (after stopping propagation) when the requested region is
    * already the current selection: re-emitting an identical-but-new
    * selection object would still change the `selection` signal's reference,
    * re-running the focus effect and yanking focus back to the section's
-   * first leaf editor — stealing it from whatever leaf inside the same
+   * first leaf editor - stealing it from whatever leaf inside the same
    * section the user actually clicked (e.g. a bullet nested under an
    * already-selected experience entry).
    *
    * `elementPath` is optional and additive (Phase D.2): passing it targets a
    * single body leaf as the style-scope while still gating content editors
    * at the section+part level (`isSelected` ignores it). Only ever pass it
-   * alongside `part: 'body'` — a title selection has no element scope. */
+   * alongside `part: 'body'` - a title selection has no element scope. */
   selectPart(
     sectionKey: CvSectionKey,
     part: 'body' | 'title',
@@ -235,18 +235,18 @@ export class CvPreviewComponent {
     this.selectionChange.emit(next);
   }
 
-  /** Selects one specific body leaf — a thin wrapper over `selectPart` that
+  /** Selects one specific body leaf - a thin wrapper over `selectPart` that
    * always targets `part: 'body'` and stops the click from also being
    * handled by the section-wrapper host's own `selectPart` binding (leaf
    * hosts are nested inside the section body host in the template). `path`
-   * must be the exact same string passed to `leafDraft` for this leaf — see
+   * must be the exact same string passed to `leafDraft` for this leaf - see
    * `CvPreviewSelection.elementPath`. */
   selectLeaf(sectionKey: CvSectionKey, path: string, renderMode: unknown, event?: Event): void {
     this.selectPart(sectionKey, 'body', renderMode, event, path);
   }
 
   /** Keyboard activation of a selectable host. Space would otherwise scroll the
-   * page, so we always `preventDefault` before selecting — this gives Space the
+   * page, so we always `preventDefault` before selecting - this gives Space the
    * same activation semantics as Enter and a native `<button>`. */
   onSelectKey(
     event: Event,
@@ -266,25 +266,25 @@ export class CvPreviewComponent {
     this.selectPart(sectionKey, part, renderMode, event, elementPath);
   }
 
-  /** Accessible name for a selectable body/title host — "<section> — <scope>"
-   * (e.g. "Summary — Body text"), built from existing localized strings so the
+  /** Accessible name for a selectable body/title host - "<section> - <scope>"
+   * (e.g. "Summary - Body text"), built from existing localized strings so the
    * `role="button"` regions are never announced as unnamed buttons. */
   selectAriaLabel(sectionKey: CvSectionKey, part: 'body' | 'title'): string {
     const section = this.t()(sectionLabelKey(sectionKey));
     const scope = this.t()(
       part === 'title' ? 'documents.cv_style_group_titles' : 'documents.cv_style_group_body',
     );
-    return `${section} — ${scope}`;
+    return `${section} - ${scope}`;
   }
 
-  /** Field-specific accessible name for a per-leaf selectable host — "<section>
-   * — <field>" (e.g. "Experience — Company"), so a screen reader can tell
+  /** Field-specific accessible name for a per-leaf selectable host - "<section>
+   * - <field>" (e.g. "Experience - Company"), so a screen reader can tell
    * apart sibling leaves in the same section/part that `selectAriaLabel`
    * alone would announce identically. See `CvLeafFieldKey`'s doc. */
   leafAriaLabel(sectionKey: CvSectionKey, field: CvLeafFieldKey): string {
     const section = this.t()(sectionLabelKey(sectionKey));
     const fieldLabel = this.t()(LEAF_FIELD_LABEL_KEYS[field]);
-    return `${section} — ${fieldLabel}`;
+    return `${section} - ${fieldLabel}`;
   }
 
   /** The selectable host to return keyboard focus to once a committing edit
@@ -292,7 +292,7 @@ export class CvPreviewComponent {
    * effect below). Keyed as `"<sectionKey>:<part>"` to match `data-cv-select`. */
   private returnFocusTo: string | null = null;
 
-  /** `"<sectionKey>:<part>"` (or `null`) — deliberately ignores `elementPath`.
+  /** `"<sectionKey>:<part>"` (or `null`) - deliberately ignores `elementPath`.
    * A `computed()` memoizes on its OUTPUT value, so changing only
    * `elementPath` (Phase D.2: clicking a different leaf inside the same
    * already-selected section/part to move the style-scope target) produces
@@ -300,7 +300,7 @@ export class CvPreviewComponent {
    * this the focus-trap fix (see the effect's doc) would regress: an
    * elementPath-only change would still swap the `selection` input's object
    * reference, re-running the effect and yanking focus to the section's
-   * first leaf editor mid-click — exactly the bug that fix exists to
+   * first leaf editor mid-click - exactly the bug that fix exists to
    * prevent, just triggered by an element change instead of a redundant
    * whole-selection re-emit. */
   private readonly focusKey = computed<string | null>(() => {
@@ -308,7 +308,7 @@ export class CvPreviewComponent {
     return s ? `${s.sectionKey}:${s.part}` : null;
   });
 
-  /** Full selection identity including `elementPath` — the reset basis for
+  /** Full selection identity including `elementPath` - the reset basis for
    * `editing` so moving to a DIFFERENT leaf (even within the same section+part)
    * drops back to view mode. */
   private readonly selKey = computed<string | null>(() => {
@@ -317,7 +317,7 @@ export class CvPreviewComponent {
   });
 
   /** Whether the selected LEAF is in explicit text-EDIT mode (its own inline
-   * editor mounted). Selecting a leaf no longer auto-mounts editors — that
+   * editor mounted). Selecting a leaf no longer auto-mounts editors - that
    * turned every field in the section into an input at once. The user opts in
    * per selection via the live-panel "Edit text" button (`startEditing`). A
    * `linkedSignal` off `selKey` so moving the selection to any other element
@@ -327,7 +327,7 @@ export class CvPreviewComponent {
     return false;
   });
 
-  /** True when THIS specific leaf is the one being text-edited — the per-field
+  /** True when THIS specific leaf is the one being text-edited - the per-field
    * gate that replaced the old section-level editor branch, so "Edit text"
    * mounts only the selected element's editor, not every field in its section. */
   isEditingLeaf(path: string): boolean {
@@ -373,7 +373,7 @@ export class CvPreviewComponent {
   }
 
   /** Finish editing a single-line leaf via Enter: blur commits the draft (the
-   * element's own `(blur)` handler), then leave edit mode — the selection is
+   * element's own `(blur)` handler), then leave edit mode - the selection is
    * KEPT (chip + outline stay, panel stays open) and focus returns to the
    * now-restored selectable host. */
   finishLeafEdit(el: HTMLElement, sectionKey: CvSectionKey, part: 'body' | 'title'): void {
@@ -382,7 +382,7 @@ export class CvPreviewComponent {
     this.editing.set(false);
   }
 
-  /** Clear the selection when the user clicks empty space in the preview —
+  /** Clear the selection when the user clicks empty space in the preview -
    * anywhere that is NOT a selectable host, an inline editor, or an editor's
    * Bold button (selectable hosts already `stopPropagation`; this guard also
    * covers the editor textareas/inputs, which don't). Keeps a focused edit
@@ -390,7 +390,7 @@ export class CvPreviewComponent {
    * interactive page render or when nothing is selected. Any in-progress edit
    * commits independently via the editor's own native `(blur)`. Bound as a
    * host listener (not a template `(click)`) so the deselect catcher needs no
-   * focusable/keyboard affordance — selectable hosts already stop propagation,
+   * focusable/keyboard affordance - selectable hosts already stop propagation,
    * so only genuine empty-space clicks bubble up to here. */
   @HostListener('click', ['$event'])
   onBackgroundClick(event: Event): void {
@@ -403,7 +403,7 @@ export class CvPreviewComponent {
   protected readonly sectionLabelKey = sectionLabelKey;
   protected readonly buildContactLine = buildContactLine;
   protected readonly visiblePersonalContactFields = visiblePersonalContactFields;
-  /** Exposed for the template — see `leafPath`'s doc for why every leaf-id
+  /** Exposed for the template - see `leafPath`'s doc for why every leaf-id
    * template literal now goes through this single builder instead of a raw
    * string, so `leafDraft`'s draft key and `selectLeaf`/`selectPart`'s
    * emitted `elementPath` can never drift apart. */
@@ -412,11 +412,11 @@ export class CvPreviewComponent {
   // --- Inline leaf editing (summary + personal_details) -----------------
   //
   // A leaf becomes a native editor while it is BOTH the active `selection`
-  // (Task 3) and on a selectable (page, interactive) render — the measure
+  // (Task 3) and on a selectable (page, interactive) render - the measure
   // pass is never selectable, so it can never mount an editor. Typing only
   // updates this local draft map (`drafts`); nothing is emitted until the
   // control blurs (or an explicit apply keystroke triggers blur), and only
-  // if the draft actually differs from the resting model value — which also
+  // if the draft actually differs from the resting model value - which also
   // makes "Escape then blur" a no-op for free: Escape resets the draft back
   // to the resting value, so the following blur sees no change and emits
   // nothing.
@@ -428,12 +428,12 @@ export class CvPreviewComponent {
     return this.drafts()[id] ?? resting;
   }
 
-  /** Drafting — updates local state only, emits nothing. */
+  /** Drafting - updates local state only, emits nothing. */
   onLeafInput(id: string, value: string): void {
     this.drafts.update((d) => ({ ...d, [id]: value }));
   }
 
-  /** Escape — discard the in-progress draft. Dropping the entry (rather than
+  /** Escape - discard the in-progress draft. Dropping the entry (rather than
    * writing the resting value back into it) makes `leafDraft` fall through to
    * the live resting value, so the editor reverts AND no stale draft can
    * survive an unmount or selection change that never fires a blur. A
@@ -462,7 +462,7 @@ export class CvPreviewComponent {
     }
   }
 
-  /** Wrap/unwrap `**bold**` around the summary textarea's current selection —
+  /** Wrap/unwrap `**bold**` around the summary textarea's current selection -
    * modifies the draft only (still drafting; the eventual blur commits it),
    * then restores the caret. Bound to the Bold button and Cmd/Ctrl+B. */
   applySummaryBold(el: HTMLTextAreaElement, resting: string): void {
@@ -488,7 +488,7 @@ export class CvPreviewComponent {
   }
 
   /** Commit a single personal-details field on blur: emits one new immutable
-   * `CvPersonalDetailsSection` only if the draft actually changed the value —
+   * `CvPersonalDetailsSection` only if the draft actually changed the value -
    * this is what keeps a localized fallback (e.g. the "Untitled" placeholder)
    * from ever becoming persisted content: the draft starts at the real
    * (possibly empty) field value, never at the fallback label, so an
@@ -506,7 +506,7 @@ export class CvPreviewComponent {
     }
   }
 
-  /** Text fields of an experience entry editable in the preview — dates stay
+  /** Text fields of an experience entry editable in the preview - dates stay
    * plain strings (no date-picker), matching the resting render. */
   private static readonly EXP_TEXT_FIELDS = [
     'company',
@@ -518,7 +518,7 @@ export class CvPreviewComponent {
   ] as const;
 
   /** Commit a single experience-entry field on blur: emits one new immutable
-   * `CvExperienceSection` (only the targeted entry/field replaced) — only if
+   * `CvExperienceSection` (only the targeted entry/field replaced) - only if
    * the draft actually changed the value. */
   commitExperienceField(
     section: CvExperienceSection,
@@ -558,7 +558,7 @@ export class CvPreviewComponent {
   }
 
   /** Wrap/unwrap `**bold**` around an experience bullet textarea's current
-   * selection — mirrors `applySummaryBold` for the per-bullet draft id. */
+   * selection - mirrors `applySummaryBold` for the per-bullet draft id. */
   applyBulletBold(
     el: HTMLTextAreaElement,
     entryIndex: number,
@@ -592,7 +592,7 @@ export class CvPreviewComponent {
     }
   }
 
-  /** Whether the currently-EDITING leaf supports `**bold**` — the summary body
+  /** Whether the currently-EDITING leaf supports `**bold**` - the summary body
    * and experience bullets are the only markdown-backed editors. Drives the
    * live-style panel's Bold button (the inline "B" was removed in favour of a
    * panel control), so it only appears where bold actually applies. */
@@ -677,7 +677,7 @@ export class CvPreviewComponent {
   }
 
   /** Commit a single language's visible value on blur: emits one new
-   * immutable `CvLanguagesSection` touching only that item's `language` —
+   * immutable `CvLanguagesSection` touching only that item's `language` -
    * the (non-rendered) `level` field is left untouched. */
   commitLanguageValue(section: CvLanguagesSection, index: number, resting: string): void {
     const id = `lang.${index}.language`;
@@ -693,10 +693,10 @@ export class CvPreviewComponent {
   /** Theme custom properties for the preview viewport; inherited by all page cards. */
   readonly themeVars = computed<Record<string, string>>(() => themeCssVars(this.activeTheme()));
 
-  /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
+  /** px per mm at 96dpi - fixes the on-screen sheet to real page proportions. */
   private static readonly PX_PER_MM = 96 / 25.4;
 
-  /** Preview page geometry (px) — real A4/Letter proportions plus margins,
+  /** Preview page geometry (px) - real A4/Letter proportions plus margins,
    * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement. */
   readonly geometry = computed<SheetGeometry>(() => {
     const r = resolvePageSettings(this.style().page);
@@ -711,7 +711,7 @@ export class CvPreviewComponent {
     };
   });
 
-  /** True when any single atom is taller than one usable page — set from
+  /** True when any single atom is taller than one usable page - set from
    * `<lib-paginated-sheet>`'s `(blockOverflow)` output. Drives this component's
    * own overflow warning; the parent no longer mirrors it. */
   protected readonly overflow = signal(false);
@@ -720,7 +720,7 @@ export class CvPreviewComponent {
     this.overflow.set(value);
   }
 
-  // Atom templates for the paginated sheet — declared in the HTML (`#headerTpl` etc).
+  // Atom templates for the paginated sheet - declared in the HTML (`#headerTpl` etc).
   readonly headerTpl = viewChild.required<TemplateRef<unknown>>('headerTpl');
   readonly summaryTpl = viewChild.required<TemplateRef<unknown>>('summaryTpl');
   readonly sectionTitleTpl = viewChild.required<TemplateRef<unknown>>('sectionTitleTpl');
@@ -730,7 +730,7 @@ export class CvPreviewComponent {
   readonly eduEntryTpl = viewChild.required<TemplateRef<unknown>>('eduEntryTpl');
   readonly languagesTpl = viewChild.required<TemplateRef<unknown>>('languagesTpl');
 
-  /** Ordered, visible sections as they'd actually render — the photo
+  /** Ordered, visible sections as they'd actually render - the photo
    * toggle isn't written back into `section.visible` until Save, so this
    * mirrors the live toggle state rather than trusting the stored value. */
   readonly previewSections = computed(() => {
@@ -741,7 +741,7 @@ export class CvPreviewComponent {
   });
 
   /** Flattens `previewSections()` (in order) into ordered page atoms for
-   * `<lib-paginated-sheet>`. `photo` has no atom of its own — it folds into
+   * `<lib-paginated-sheet>`. `photo` has no atom of its own - it folds into
    * the header atom's render, mirroring the CSS float it always relied on. */
   readonly atoms = computed<SheetAtom[]>(() => {
     const out: SheetAtom[] = [];
@@ -820,14 +820,14 @@ export class CvPreviewComponent {
           );
           break;
         }
-        // 'photo' folds into the header render — no standalone atom.
+        // 'photo' folds into the header render - no standalone atom.
       }
     }
     return out;
   });
 
   /** `t()` has no interpolation support (see `TranslateService.t`), so page
-   * captions substitute `{i}`/`{n}` manually — same pattern as
+   * captions substitute `{i}`/`{n}` manually - same pattern as
    * `styleNoteMessage`'s `{value}` substitution in the parent. */
   readonly captionFn = (page: number, total: number): string =>
     this.t()('documents.preview_page_of')
@@ -843,7 +843,7 @@ export class CvPreviewComponent {
    * clicking a word toggles its bold. */
   protected readonly wordTokens = wordTokens;
 
-  /** Toggle bold for one word of the summary body — click-a-word-on-the-paper
+  /** Toggle bold for one word of the summary body - click-a-word-on-the-paper
    * (design). Emits a new immutable summary section with the rewritten
    * `**markdown**` text (export-safe, same model the resting render reads). */
   toggleSummaryWord(section: CvSummarySection, wordIndex: number, event: Event): void {
@@ -851,7 +851,7 @@ export class CvPreviewComponent {
     this.sectionChange.emit({ ...section, text: toggleWordBold(section.text, wordIndex) });
   }
 
-  /** Toggle bold for one word of an experience bullet — click-a-word (design).
+  /** Toggle bold for one word of an experience bullet - click-a-word (design).
    * Emits a new immutable `CvExperienceSection` touching only that bullet. */
   toggleBulletWord(
     section: CvExperienceSection,
@@ -867,7 +867,7 @@ export class CvPreviewComponent {
     );
   }
 
-  /** Short chip label shown above a selected single leaf on the paper — the
+  /** Short chip label shown above a selected single leaf on the paper - the
    * field name (e.g. "Company", "Skill values"), reusing the same i18n field
    * labels as the a11y names and the Edit-mode section editors. */
   leafChipLabel(field: CvLeafFieldKey): string {
@@ -882,7 +882,7 @@ export class CvPreviewComponent {
     );
   }
 
-  /** Effective font/size/weight/colour for a section — its own override
+  /** Effective font/size/weight/colour for a section - its own override
    * merged over the document-wide style (`effectiveSectionStyle`). */
   effStyle(key: CvSectionKey) {
     return effectiveSectionStyle(this.style(), key);
@@ -890,7 +890,7 @@ export class CvPreviewComponent {
 
   /** Body-text style for a section wrapper. `color` resolves section colour
    * over the document-wide `bodyColorHex` (element → section → document →
-   * none, per the no-accent-leak rule) — emitted ONLY when one of those two
+   * none, per the no-accent-leak rule) - emitted ONLY when one of those two
    * is actually set, so an untouched document/section never picks up
    * `accentColorHex` via `effStyle`'s (title-oriented) fallback. */
   bodyCss(key: CvSectionKey): Record<string, string> {
@@ -911,7 +911,7 @@ export class CvPreviewComponent {
     }
     // User overrides for the section's body divider (the personal-details
     // header underline / an experience entry's role-dates rule). Both rule
-    // families read the SAME override — a section only draws one of them, so
+    // families read the SAME override - a section only draws one of them, so
     // setting both here is harmless and keeps this generic. Unset → the theme
     // rule (or none) stands.
     const sec = this.style().sectionStyles?.[key];
@@ -925,7 +925,7 @@ export class CvPreviewComponent {
       css['--cv-entry-rule-color'] = sec.bodyRuleColorHex;
     }
     // Divider style. 'none' must win over any theme width, so zero the width
-    // too — a themed rule sets its width from the root and would otherwise
+    // too - a themed rule sets its width from the root and would otherwise
     // keep drawing a solid line through `border-style: none`'s zero-height box
     // in some engines. Unset → the theme's (solid) rule stands.
     if (sec?.bodyBorder) {
@@ -945,7 +945,7 @@ export class CvPreviewComponent {
   }
 
   /** Element-scope style DELTA for a single body leaf (Phase D.2's per-element
-   * cascade layer) — ONLY the CSS properties actually SET in
+   * cascade layer) - ONLY the CSS properties actually SET in
    * `style().elementStyles[path]`, mapped 1:1: `fontFamily`→`font-family`,
    * `fontSizePt`→`font-size:<n>pt`, `fontWeight`→`font-weight`,
    * `colorHex`→`color`, `lineHeight`→`line-height`. Deliberately NOT the full
@@ -954,11 +954,11 @@ export class CvPreviewComponent {
    * resting output to before this task) and keeps inheriting the section's
    * `bodyCss`, already applied on the section wrapper, through normal CSS
    * inheritance. `color` therefore only ever appears here when the ELEMENT
-   * override itself set it — this layer never falls back to the section or
+   * override itself set it - this layer never falls back to the section or
    * document accent colour (mirrors the no-accent-leak rule already enforced
    * by `bodyCss`/`effectiveLeafStyle`, see `015c2e3`). Bound on the leaf
    * element itself (not the wrapper) in both the resting `@else` branch
-   * (rendered in the page card AND the hidden measurement mirror — pure
+   * (rendered in the page card AND the hidden measurement mirror - pure
    * typography, so it must affect pagination) and the inline editor branch,
    * so an editing leaf looks the same as its resting counterpart. */
   leafCss(path: string): Record<string, string> {
@@ -979,20 +979,20 @@ export class CvPreviewComponent {
       css['border-bottom'] = `${w}pt ${o.borderStyle} ${c}`;
       css['padding-bottom'] = '2px';
       // The selectable/selected 4px `border-radius` would curve the rule's
-      // ends inward — square them, matching the section-title/header fix.
+      // ends inward - square them, matching the section-title/header fix.
       css['border-bottom-left-radius'] = '0';
       css['border-bottom-right-radius'] = '0';
     }
     return css;
   }
 
-  /** Live typography of the currently-selected host on the VISIBLE page —
+  /** Live typography of the currently-selected host on the VISIBLE page -
    * read straight from the rendered DOM (never the hidden `aria-hidden`
    * measurement pass) so the live-style panel's "Ag" swatch mirrors exactly
    * what's on the paper, including class/theme styling the `CvStyle` model
    * doesn't carry (the name's uppercase bold monospace, a title's casing, an
    * accent colour applied via a CSS var). Font SIZE is intentionally omitted
-   * — the swatch has its own fixed sizing. Returns `null` with nothing
+   * - the swatch has its own fixed sizing. Returns `null` with nothing
    * selected or before the node has rendered. */
   readSelectedHostStyle(): Record<string, string> | null {
     if (!this.selection()) return null;
@@ -1010,7 +1010,7 @@ export class CvPreviewComponent {
       'text-transform': cs.textTransform,
       'letter-spacing': cs.letterSpacing,
       // The host IS the element carrying the underline (a title, a leaf), so
-      // this is the rule's real colour — including the neutral CSS default,
+      // this is the rule's real colour - including the neutral CSS default,
       // which the panel cannot resolve from the style model alone.
       'border-bottom-color': cs.borderBottomColor,
     };
@@ -1019,13 +1019,13 @@ export class CvPreviewComponent {
   /** Style for a whole experience/education ENTRY head element: the entry's
    * own leaf override PLUS its colour mirrored into `--cv-entry-color`, so the
    * head sub-parts that carry their own colour by default (the company accent,
-   * the muted dates) follow the per-entry override too — i.e. an element-scope
+   * the muted dates) follow the per-entry override too - i.e. an element-scope
    * colour recolours the whole framed head line, not the bullets below it. */
   entryCss(path: string): Record<string, string> {
     const css = this.leafCss(path);
     if (css['color']) css['--cv-entry-color'] = css['color'];
     // An entry wraps its head AND its bullets, so a bottom rule HERE would draw
-    // under the bullets rather than under the head — reading as a stray second
+    // under the bullets rather than under the head - reading as a stray second
     // line. Strip it, and re-express the entry's stored rule as the head's own
     // vars below: `bodyCss` sets those on the section, so setting them again on
     // this entry overrides the section's rule for this entry ALONE. That is
@@ -1063,7 +1063,7 @@ export class CvPreviewComponent {
   }
 
   /** Full style for the bullet list. Bullets are DELIBERATELY independent of
-   * the section-body ("All experiences") scope — that scope styles the entry
+   * the section-body ("All experiences") scope - that scope styles the entry
    * heads only. So the base here is the DOCUMENT typography (never the section
    * override), with the shared bullet style ("All achievements") layered on
    * top; each bullet's own per-leaf override still wins on its `<li>`. No
@@ -1104,7 +1104,7 @@ export class CvPreviewComponent {
     //
     // Picking a line STYLE does not drop the theme's weight/colour: choosing
     // "dashed" must change the dashes only, or the line silently thins to 1pt
-    // and fades to the neutral grey — and the panel could then never show the
+    // and fades to the neutral grey - and the panel could then never show the
     // size it renders at.
     const userW = effectiveTitleRuleWidth(this.style(), key);
     const userC = effectiveTitleRuleColor(this.style(), key);

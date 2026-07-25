@@ -37,7 +37,7 @@ describe('CvSummaryEditorComponent', () => {
     expect(section.text).toBe('Hello');
   });
 
-  it('does not render a Bold button — bold formatting moved to the live preview', () => {
+  it('does not render a Bold button - bold formatting moved to the live preview', () => {
     expect(fixture.nativeElement.querySelector('.cvdetail__bold-btn')).toBeNull();
   });
 });

@@ -49,7 +49,7 @@ export class App implements OnInit {
         this.onboarding.requestOpen();
       }
     } catch {
-      // fail open — never block the app on a health-flag read error
+      // fail open - never block the app on a health-flag read error
     }
   }
 

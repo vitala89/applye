@@ -10,7 +10,7 @@ import { ProfileComponent } from './profile.component';
  * The pure freshness rule is covered by libs/core scoring-state.spec.ts. These tests cover the
  * wiring instead, which is where the rule can be defeated: savedMdHash describes the saved row,
  * so any code path that persists a new fullMd without refreshing it puts the chip back to
- * reporting a stale scoring profile as cached — the exact bug this feature exists to remove.
+ * reporting a stale scoring profile as cached - the exact bug this feature exists to remove.
  */
 describe('ProfileComponent scoring freshness wiring', () => {
   let component: ProfileComponent;
@@ -188,7 +188,7 @@ describe('ProfileComponent scoring freshness wiring', () => {
   });
 
   // #93 whole-row-replace guard: regenerating the scoring profile must carry pitchHash forward,
-  // not NULL it. The pitch here is genuinely stale (md changed since it was written) — the point
+  // not NULL it. The pitch here is genuinely stale (md changed since it was written) - the point
   // is that the rescore preserved the pitch's own hash rather than clobbering it.
   it('carries pitchHash forward untouched when only the scoring profile was regenerated', async () => {
     component.fullMd.set(NEW_MD);

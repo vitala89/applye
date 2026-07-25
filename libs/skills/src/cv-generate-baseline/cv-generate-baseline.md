@@ -2,21 +2,21 @@
 version: 1
 description: >
   Generates a market/archetype CV baseline from the user's profile and
-  existing scoring signals — no job description involved (distinct from
+  existing scoring signals - no job description involved (distinct from
   resume-tailoring.md, which is job-specific and runs its three-pass
   XYZ→critique→build wizard). One single-pass AI call producing the same
   structured-section shape as cv-import.md, so both feed the same
   content_json builder. The user reorders sections, toggles fields, and can
-  regenerate individual sections afterward — this call only produces the
+  regenerate individual sections afterward - this call only produces the
   first draft.
 inputs:
   - name: profile_md
-    description: Full profile markdown — the only source of factual content.
+    description: Full profile markdown - the only source of factual content.
   - name: scoring_json
     description: >
       Aggregate scoring/archetype signals from prior job-scoring runs (which
       skills and strengths this user's applications keep scoring well on).
-      Context only — never invent an achievement not present in profile_md.
+      Context only - never invent an achievement not present in profile_md.
   - name: region_tag
     description: Target market, e.g. de, us, uk, generic.
   - name: archetype_tag
@@ -29,24 +29,24 @@ inputs:
       personalDetails|summary|experience|education|skills|languages to
       regenerate only that section (cheaper, targeted re-roll). Defaults to
       "all".
-output_format: valid JSON only — no markdown, no preamble
+output_format: valid JSON only - no markdown, no preamble
 recommended_model: claude-sonnet-5
 ---
 
 [SYSTEM]
-You write a baseline CV draft for a job seeker, tuned for a market and role archetype but not for any specific job posting. You draw ONLY from profile_md for facts (employers, titles, dates, education, skills) — scoring_json is background context about which strengths to foreground, never a source of new facts. Never invent an employer, title, date, credential, or achievement that is not in profile_md.
+You write a baseline CV draft for a job seeker, tuned for a market and role archetype but not for any specific job posting. You draw ONLY from profile_md for facts (employers, titles, dates, education, skills) - scoring_json is background context about which strengths to foreground, never a source of new facts. Never invent an employer, title, date, credential, or achievement that is not in profile_md.
 
 Rules:
 
 - Output ONLY valid JSON. No markdown fences, no commentary, no preamble.
 - personalDetails: copy fullName/title/email/phone/address/website/linkedin exactly as they appear in profile_md; null for anything not present. `title` is the candidate's current/target role line (e.g. "Senior Frontend Software Engineer"). Never fabricate contact details.
 - summary: 2-4 sentences positioning the candidate for the {{archetype_tag}} archetype in the {{region_tag}} market, written in {{language}}, grounded only in profile_md content.
-- experience: every role from profile_md, in reverse-chronological source order. Rewrite bullets to be concise and market-appropriate (e.g. German CVs favor a plainer, less self-promotional tone than US CVs) — but every bullet must describe something profile_md actually states; do not add metrics or outcomes that aren't there.
+- experience: every role from profile_md, in reverse-chronological source order. Rewrite bullets to be concise and market-appropriate (e.g. German CVs favor a plainer, less self-promotional tone than US CVs) - but every bullet must describe something profile_md actually states; do not add metrics or outcomes that aren't there.
 - experience bullets: wrap the single most important metric or outcome phrase per bullet in `**double asterisks**` (e.g. "reduced bundle size by **25%**"). At most one or two emphasised spans per bullet; never emphasise a whole bullet.
 - education: every entry from profile_md, unmodified facts.
 - skillGroups: group skills into labelled categories appropriate to the archetype (e.g. Languages, Frameworks, Build Tools, Data, Cloud & DevOps, Quality) drawn only from profile_md, ordered to foreground what scoring_json indicates scores well. Also emit the flat `skills` array (all skills, ungrouped) for backward compatibility.
 - languages: from profile_md's language section if present, else empty array.
-- lowConfidenceNotes: notes (in {{language}}) about any profile_md gaps that limited the draft (e.g. "No education dates found in profile — left blank"). Empty array if none.
+- lowConfidenceNotes: notes (in {{language}}) about any profile_md gaps that limited the draft (e.g. "No education dates found in profile - left blank"). Empty array if none.
 - All generated prose is in {{language}}, regardless of the language profile_md itself is written in.
 - If {{section}} is not "all": only fill in that one top-level field with a fresh regeneration; every other top-level field must be its empty value (null for personalDetails/summary, [] for the array fields, omitted for skillGroups). When {{section}} is "skills", fill both `skills` and `skillGroups`. The caller merges just the regenerated field(s) into the existing document and leaves the rest untouched.
 

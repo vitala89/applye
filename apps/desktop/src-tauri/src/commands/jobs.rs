@@ -26,7 +26,7 @@ pub struct Job {
     pub created_at: Option<String>,
 }
 
-/// Payload from the frontend. `jd_hash` is intentionally NOT accepted — it is
+/// Payload from the frontend. `jd_hash` is intentionally NOT accepted - it is
 /// always computed in Rust from `jd_text` so dedupe stays authoritative.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -150,11 +150,11 @@ pub async fn db_upsert_job(job: JobInput, db: State<'_, Db>) -> Result<Job, Stri
 /// Deletes a job and every row that transitively references it. There is no
 /// `ON DELETE CASCADE` in the schema (see migrations) and `foreign_keys` is
 /// ON (db.rs), so a bare `DELETE FROM jobs` would fail the moment any child
-/// row exists — which is the normal case for any scored/applied-to job.
+/// row exists - which is the normal case for any scored/applied-to job.
 /// Deletes bottom-up inside one transaction: deepest dependents first
 /// (interview_prep -> interview_stages -> application-scoped tables ->
 /// applications), then everything hanging directly off the job, then the
-/// job itself. This is a hard, irreversible delete — the frontend must
+/// job itself. This is a hard, irreversible delete - the frontend must
 /// confirm with the user before calling this.
 #[tauri::command]
 pub async fn db_delete_job(id: i64, db: State<'_, Db>) -> Result<(), String> {
@@ -392,7 +392,7 @@ mod delete_tests {
     }
 
     /// Deleting a job with no applications/scoring/etc. at all is a no-op
-    /// beyond removing the `jobs` row — must not error.
+    /// beyond removing the `jobs` row - must not error.
     #[tokio::test]
     async fn deletes_job_with_no_dependents() {
         let pool = test_pool().await;

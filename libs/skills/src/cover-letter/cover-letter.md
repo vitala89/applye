@@ -19,7 +19,7 @@ recommended_model: quality
 language_note: Output in `language`. German: use formal Sie, correct Bewerbungsformat.
 ---
 
-<!-- PROMPT TEMPLATE — fill at runtime -->
+<!-- PROMPT TEMPLATE - fill at runtime -->
 <!-- Injected: {{profile_md}}, {{job_description}}, {{company_name}}, {{language}} -->
 
 TODO: Write cover letter prompt template.

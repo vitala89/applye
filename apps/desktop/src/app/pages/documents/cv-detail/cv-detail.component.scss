@@ -85,7 +85,7 @@
   // The aside IS the scroll container: capped to the viewport height and
   // scrolling its own content when taller than the screen, so the lower
   // controls (colour, line size…) stay reachable on a short window.
-  // It must NOT be a flex column — that let the single `.cvlive` child
+  // It must NOT be a flex column - that let the single `.cvlive` child
   // (which sets `overflow: hidden`) shrink to the cap and clip its content
   // instead of scrolling, which is why the earlier scroll behaved erratically
   // and never reached the end. Plain block flow lets `.cvlive` keep its full
@@ -629,7 +629,7 @@
 // The `.cvpreview__*` rules (page-card content, header/photo layout, section
 // title/body typography hooks) moved to `cv-preview/cv-preview.component.scss`
 // alongside the markup + templates that use them (Task 1 CvPreviewComponent
-// extraction). The print seam below is unaffected — it targets
+// extraction). The print seam below is unaffected - it targets
 // `lib-paginated-sheet`/`.page-card*` by plain class name and lives in the
 // global stylesheet regardless of which component declares `.cvpreview__*`.
 

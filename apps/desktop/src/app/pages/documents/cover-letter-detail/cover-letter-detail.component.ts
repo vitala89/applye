@@ -88,7 +88,7 @@ export class CoverLetterDetailComponent {
   protected readonly fontOptions = CV_ATS_SAFE_FONTS;
   protected readonly blockKeys = COVER_LETTER_BLOCK_KEYS;
 
-  /** Which block/paragraph Style popover is open, if any — only one at a
+  /** Which block/paragraph Style popover is open, if any - only one at a
    * time. A `CoverLetterBlockKey` for a block, or `body_<i>` for a paragraph. */
   readonly openStyleKey = signal<string | null>(null);
 
@@ -151,13 +151,13 @@ export class CoverLetterDetailComponent {
     };
   }
 
-  /** Live body word count (paragraphs only — the target is a body budget). */
+  /** Live body word count (paragraphs only - the target is a body budget). */
   readonly wordCount = computed(
     () =>
       (this.content().bodyParagraphs ?? []).join(' ').trim().split(/\s+/).filter(Boolean).length,
   );
 
-  /** 'under' | 'ok' | 'over' vs the selected length's word budget — drives the
+  /** 'under' | 'ok' | 'over' vs the selected length's word budget - drives the
    * badge colour so the user sees at a glance whether the draft fits. */
   readonly wordStatus = computed<'under' | 'ok' | 'over'>(() => {
     const target = COVER_LETTER_LENGTH_TARGET[this.length()];
@@ -344,7 +344,7 @@ export class CoverLetterDetailComponent {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
   }
 
-  /** Per-block collapse state for the content-block accordion — session only
+  /** Per-block collapse state for the content-block accordion - session only
    * (not persisted); every block starts expanded (an empty set means nothing
    * is collapsed). Keyed by the same string keys as `openStyleKey`/
    * `hasCustomStyle` (`'recipient'`, `'date'`, ..., `'body'`). */
@@ -361,7 +361,7 @@ export class CoverLetterDetailComponent {
     this.collapsedBlocks.set(next);
   }
 
-  /** Collapse state for the "Style" card — open by default. */
+  /** Collapse state for the "Style" card - open by default. */
   readonly styleOpen = signal(true);
 
   toggleStyleOpen(): void {
@@ -390,7 +390,7 @@ export class CoverLetterDetailComponent {
     this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
   }
 
-  /** True when a block/paragraph carries any style override — drives the
+  /** True when a block/paragraph carries any style override - drives the
    * "Custom" badge so the user can see which parts differ from the default. */
   hasCustomStyle(key: string): boolean {
     const o = this.style().sectionStyles?.[key];
@@ -472,9 +472,9 @@ export class CoverLetterDetailComponent {
     this.style.set({ ...current, sectionStyles: next });
   }
 
-  /** Full-letter AI draft — fills every block in one pass honoring the current
+  /** Full-letter AI draft - fills every block in one pass honoring the current
    * tone + length. Populates the editor only; the user still reviews and Saves
-   * (AI assists, the user decides — never auto-applied). */
+   * (AI assists, the user decides - never auto-applied). */
   async draftWithAI(): Promise<void> {
     if (this.drafting() || this.regeneratingBlock()) return;
     const doc = this.doc();
@@ -553,7 +553,7 @@ export class CoverLetterDetailComponent {
       const length = this.length();
 
       // Tone, length and the availability/salary answers are all part of the
-      // input identity — changing any of them must bust the per-block cache,
+      // input identity - changing any of them must bust the per-block cache,
       // so they're folded into the hash.
       const details = this.applicationDetails();
       const hashInput = [
@@ -642,7 +642,7 @@ export class CoverLetterDetailComponent {
    * `window.print()`. Tauri's webview plugin already overrides
    * `window.print` on macOS to route through its native print command (gated
    * by the `core:webview:allow-print` capability); on Windows/Linux the
-   * webview's built-in print is used directly — no `@tauri-apps/api` import
+   * webview's built-in print is used directly - no `@tauri-apps/api` import
    * is needed or available for this in the installed SDK version. Mirrors
    * `exportPdfWysiwyg` on `CvDetailComponent`.
    */

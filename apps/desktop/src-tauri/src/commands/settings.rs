@@ -25,7 +25,7 @@ pub struct Settings {
     pub onboarding_seen: bool,
 }
 
-/// Partial update — only the fields present (non-null) are written; everything
+/// Partial update - only the fields present (non-null) are written; everything
 /// else is preserved via COALESCE.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -98,12 +98,12 @@ pub async fn db_update_settings(
     db_get_settings(db).await
 }
 
-/// Factory reset — wipe every user-data table and reset settings to defaults.
+/// Factory reset - wipe every user-data table and reset settings to defaults.
 ///
 /// Destructive and irreversible: the UI gates this behind an explicit confirm.
 /// Table names are read from `sqlite_master` (not hard-coded) so any table a
 /// future migration adds is cleared automatically. `_sqlx_migrations` is kept
-/// so the schema stays intact — we clear data, never the schema. Foreign keys
+/// so the schema stays intact - we clear data, never the schema. Foreign keys
 /// are disabled for the wipe so delete order doesn't matter, then re-enabled.
 ///
 /// The `settings` row is re-seeded to the same defaults as migration 0002,

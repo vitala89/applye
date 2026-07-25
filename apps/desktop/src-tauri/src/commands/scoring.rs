@@ -298,7 +298,7 @@ async fn job_paste_core(
         .filter(|s| !s.trim().is_empty())
         .or_else(|| extract_company(&jd_text));
 
-    // Legitimacy is informational only — it never blocks the hard filter or
+    // Legitimacy is informational only - it never blocks the hard filter or
     // scoring, it just gets recorded alongside the job (augmentation, not a gate).
     let (legitimacy_tier, legitimacy_notes) = if hard_pass {
         let apply_email = crate::commands::legitimacy::extract_apply_email(&jd_text);
@@ -599,7 +599,7 @@ mod pipeline_tests {
         assert!(notes.contains("already saved under a different company"));
     }
 
-    /// Augmentation guarantee: a red job is informational only — nothing in
+    /// Augmentation guarantee: a red job is informational only - nothing in
     /// the schema or pipeline stops it from being scored/tailored if the user
     /// proceeds anyway.
     #[tokio::test]
@@ -642,7 +642,7 @@ mod pipeline_tests {
     }
 
     /// Same scoring call that produces score/dimensions/etc. also produces
-    /// before_you_submit — it round-trips through the cache untouched.
+    /// before_you_submit - it round-trips through the cache untouched.
     #[tokio::test]
     async fn before_you_submit_round_trips_through_cache() {
         let pool = test_pool().await;
@@ -652,8 +652,8 @@ mod pipeline_tests {
             .unwrap();
 
         let notes = serde_json::to_string(&vec![
-            "Salary not listed — research market rate before applying.",
-            "JD requires a portfolio — prepare 2-3 examples before submitting.",
+            "Salary not listed - research market rate before applying.",
+            "JD requires a portfolio - prepare 2-3 examples before submitting.",
         ])
         .unwrap();
         let saved = score_cache_save_core(save_input(job.id, &notes), &pool)
@@ -666,7 +666,7 @@ mod pipeline_tests {
     }
 
     /// Re-opening a scored job reads the cached before_you_submit notes
-    /// straight from SQLite — no AI call in this path at all (0 tokens).
+    /// straight from SQLite - no AI call in this path at all (0 tokens).
     #[tokio::test]
     async fn reopening_cached_score_returns_notes_with_no_ai_call() {
         let pool = test_pool().await;
@@ -676,13 +676,13 @@ mod pipeline_tests {
             .unwrap();
 
         let notes =
-            serde_json::to_string(&vec!["Posting is 95 days old — verify it's still open."])
+            serde_json::to_string(&vec!["Posting is 95 days old - verify it's still open."])
                 .unwrap();
         score_cache_save_core(save_input(job.id, &notes), &pool)
             .await
             .unwrap();
 
-        // score_cache_get_core only ever issues a SELECT — there is no AI
+        // score_cache_get_core only ever issues a SELECT - there is no AI
         // dispatch reachable from this function, so reading it back is
         // structurally 0 tokens, not just 0 tokens "this time".
         let reopened = score_cache_get_core(job.id, "phash".to_string(), &pool)

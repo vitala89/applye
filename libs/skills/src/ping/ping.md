@@ -1,6 +1,6 @@
 ---
 version: 1
-description: Connectivity probe — proves the end-to-end AI round-trip.
+description: Connectivity probe - proves the end-to-end AI round-trip.
 inputs: message
 output_format: one short sentence, plain text
 recommended_model: claude-haiku-4-5

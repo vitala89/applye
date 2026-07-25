@@ -1,8 +1,8 @@
-// Self-contained field styling — Angular's emulated view encapsulation scopes
+// Self-contained field styling - Angular's emulated view encapsulation scopes
 // the parent's `.cvdetail` rules to its own template, so this editor (a
 // separate component) needs its own copy to render identically. Mirrors the
 // base field rules + pull-button/grid rules in ../cv-detail.component.scss.
-// The `.docedit-*` chip/note classes are NOT duplicated here — they're
+// The `.docedit-*` chip/note classes are NOT duplicated here - they're
 // emitted globally from apps/desktop/src/styles.scss (see
 // ../../_editor-shell.scss) so they already apply unscoped.
 input:not([type='checkbox']) {

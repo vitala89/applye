@@ -1,7 +1,7 @@
 // Deterministic legitimacy check (0 tokens). Pure Rust pattern matching, no AI
 // call ever. Runs in the paste pipeline after the hard filter, before any
 // scoring is offered. Augmentation, not a gate: even a red job can still be
-// scored/tailored if the user chooses — this only informs.
+// scored/tailored if the user chooses - this only informs.
 
 /// Tunable thresholds, kept in one place so they can be retuned without
 /// hunting through the trigger logic below.
@@ -76,7 +76,7 @@ pub fn legitimacy_check(
         notes.push("No company name found in the posting.".to_string());
         tier = tier.max(LegitimacyTier::Red);
     } else if has_conflicting_company_mentions(jd_text) {
-        notes.push("Posting mentions more than one company name — possible mismatch.".to_string());
+        notes.push("Posting mentions more than one company name - possible mismatch.".to_string());
         tier = tier.max(LegitimacyTier::Red);
     }
 
@@ -97,7 +97,7 @@ pub fn legitimacy_check(
         let high = money.iter().cloned().fold(0.0, f64::max);
         if high > 0.0 && low < high * DEFAULT_THRESHOLDS.min_salary_low_high_ratio {
             notes.push(format!(
-                "Salary range looks implausibly wide ({low:.0}–{high:.0})."
+                "Salary range looks implausibly wide ({low:.0}-{high:.0})."
             ));
             tier = tier.max(LegitimacyTier::Red);
         }
@@ -139,7 +139,7 @@ pub fn legitimacy_check(
 
 /// Flags a scam-template repost: the same JD body (company header lines
 /// stripped, whitespace/case normalized) already stored in the DB under a
-/// different company. `jd_hash` excludes the current row — a re-paste of the
+/// different company. `jd_hash` excludes the current row - a re-paste of the
 /// exact same text always lands in the same row already, so that case is not
 /// "a different company", it's the same posting being updated.
 pub async fn duplicate_jd_other_company(
@@ -175,7 +175,7 @@ pub async fn duplicate_jd_other_company(
 }
 
 /// JD body with company-identifying header lines stripped, then
-/// whitespace/case normalized — so a scam template reposted under a
+/// whitespace/case normalized - so a scam template reposted under a
 /// different company name still compares equal.
 fn normalize_body(text: &str) -> String {
     text.lines()
@@ -283,7 +283,7 @@ fn mentions_team_size(lower: &str) -> bool {
 }
 
 /// Currency-prefixed amounts (`€30K`, `$50,000`, `£40000`). Heuristic, not a
-/// full money parser — enough to compare a salary range's low/high spread.
+/// full money parser - enough to compare a salary range's low/high spread.
 /// Detects a salary amount written without a leading currency symbol -
 /// "80k" / "120K" shorthand, or a number sitting next to a currency code
 /// (EUR / USD / GBP). Complements `extract_money_values` (symbol-prefixed) so
@@ -405,7 +405,7 @@ fn find_posting_date(text: &str) -> Option<(i64, i64, i64)> {
     None
 }
 
-/// Days since the Unix epoch for a civil (y, m, d) date — Howard Hinnant's
+/// Days since the Unix epoch for a civil (y, m, d) date - Howard Hinnant's
 /// `days_from_civil`. Dependency-free so we don't need a date crate just for
 /// "is this posting over 90 days old".
 fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {

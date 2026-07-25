@@ -213,7 +213,7 @@ describe('hasCvForInputHash', () => {
   it('never blocks the pasted path, which carries no hash', () => {
     expect(hasCvForInputHash(existing, undefined)).toBe(false);
   });
-  it('ignores generated CVs — only an uploaded twin is a duplicate', () => {
+  it('ignores generated CVs - only an uploaded twin is a duplicate', () => {
     expect(hasCvForInputHash(existing, 'gen999')).toBe(false);
   });
 });
@@ -339,7 +339,7 @@ describe('appendCompensation', () => {
   });
 });
 
-describe('cvToProfileMarkdown — address', () => {
+describe('cvToProfileMarkdown - address', () => {
   it('lands the address in the location field even with no title to anchor it', () => {
     const md = cvToProfileMarkdown({
       personalDetails: { fullName: 'Jane Smith', email: 'jane@x.io', address: 'Lisboa, Portugal' },
@@ -349,7 +349,7 @@ describe('cvToProfileMarkdown — address', () => {
 });
 
 /** The bug this pins: the wizard wrote a profile the profile form could not
- * read back. Assert against the reader, not against a string — a string test is
+ * read back. Assert against the reader, not against a string - a string test is
  * what let the two drift apart in the first place. */
 describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
   const parsed = {

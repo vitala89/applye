@@ -1,7 +1,7 @@
 // libs/ui/src/styles/_paper.scss
 // Pins an element (and its cascade) to light "paper" colours regardless of the
 // active app theme. Used by the on-screen page cards AND the print block so
-// screen == printed PDF. Do not fork these values — change them here only.
+// screen == printed PDF. Do not fork these values - change them here only.
 @mixin paper-light {
   --surface-1: #ffffff;
   --surface-2: #fafaf8;
@@ -31,11 +31,11 @@
 
   // No ligatures on paper. macOS writes the export PDF's ToUnicode map one
   // entry per glyph, and a ligature is a single glyph standing for several
-  // characters — it has no single codepoint to map to, so macOS writes an
+  // characters - it has no single codepoint to map to, so macOS writes an
   // arbitrary wrong one. "Software" renders correctly and extracts as
   // "So+ware" or "SoCware"; "Analytics" extracts as "AnalyGcs". The page looks
-  // perfect and every machine that reads it — an ATS, a recruiter's parser,
-  // our own re-import — gets nonsense in the job titles. A CV no parser can
+  // perfect and every machine that reads it - an ATS, a recruiter's parser,
+  // our own re-import - gets nonsense in the job titles. A CV no parser can
   // read defeats the point of the document, so the f-t and t-i pairs render as
   // separate glyphs. This belongs here, next to the paper colours, because it
   // is the same screen == print contract: only text the preview can produce is

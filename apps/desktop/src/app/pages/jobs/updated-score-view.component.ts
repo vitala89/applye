@@ -15,11 +15,11 @@ import {
 } from './scoring.utils';
 
 /**
- * UpdatedScoreView — the wizard's step-4 "Updated score" payoff. Shows the
+ * UpdatedScoreView - the wizard's step-4 "Updated score" payoff. Shows the
  * honest before→after of the rescore: overall gauges counting up, every
  * scoring dimension animating from its old to new value, and how the
  * tailoring moved missing keywords, the ATS verdict, and red flags. Purely
- * presentational — the parent owns the before/after ScoringCache pair.
+ * presentational - the parent owns the before/after ScoringCache pair.
  */
 @Component({
   selector: 'app-updated-score-view',
@@ -125,7 +125,7 @@ export class UpdatedScoreView {
     this.after() ? parseBeforeYouSubmit(this.after() as ScoringCache) : [],
   );
 
-  /** Bar fill width for a dimension — before value until the breakdown step
+  /** Bar fill width for a dimension - before value until the breakdown step
    * reveals, then the after value, so CSS transitions the growth. */
   protected barWidth(pair: { before: number; after: number }): number {
     return (this.revealStep() >= this.STEP.DIMS ? pair.after : pair.before) * 10;

@@ -45,7 +45,7 @@ export function reportFit(
 /**
  * The printable Eigenbemuehungen / job-application report sheet. Renders the
  * user's OWN visible tracker columns (not a fixed set), packs what fits an A4
- * row for the chosen orientation, and — in `all` mode — wraps the rest onto a
+ * row for the chosen orientation, and - in `all` mode - wraps the rest onto a
  * second line per record so nothing is lost. Same component backs the export
  * preview and the hidden print window, so the PDF equals the preview.
  */
@@ -65,7 +65,7 @@ export function reportFit(
       <div class="paper__fields">
         <div>
           <span class="paper__flabel">{{ txt().name }}</span>
-          <span class="paper__fval">{{ applicant() || '—' }}</span>
+          <span class="paper__fval">{{ applicant() || '-' }}</span>
         </div>
         <div>
           <span class="paper__flabel">{{ txt().period }}</span>
@@ -207,7 +207,7 @@ export class TrackerReportComponent {
     return m ? `${d} ${mo[+m - 1]} ${y.slice(2)}` : v;
   }
   private statusLabel(v?: string): string {
-    if (!v) return '—';
+    if (!v) return '-';
     const map = this.market() === 'de' ? this.STATUS_DE : this.STATUS_EN;
     return map[v] ?? v;
   }
@@ -220,7 +220,7 @@ export class TrackerReportComponent {
     }
   }
   private yesno(v: unknown): string {
-    if (v == null || v === '') return '—';
+    if (v == null || v === '') return '-';
     const on = v === true || v === 'yes' || v === '1' || v === 1;
     return on ? this.txt().yes : this.txt().no;
   }
@@ -228,7 +228,7 @@ export class TrackerReportComponent {
   cell(row: TrackerRow, col: ReportColumn): string {
     if (col.custom) {
       const raw = this.customVal(row, col.id);
-      if (!raw) return '—';
+      if (!raw) return '-';
       if (col.type === 'date') return this.fmtDate(raw);
       if (col.type === 'yesno') return this.yesno(raw);
       return raw;
@@ -236,20 +236,20 @@ export class TrackerReportComponent {
     const rec = row as unknown as Record<string, unknown>;
     switch (col.type) {
       case 'date':
-        return rec[col.id] ? this.fmtDate(String(rec[col.id])) : '—';
+        return rec[col.id] ? this.fmtDate(String(rec[col.id])) : '-';
       case 'status':
         return this.statusLabel(row.status);
       case 'yesno':
         return this.yesno(rec[col.id]);
       case 'link':
-        return row.sourceUrl || '—';
+        return row.sourceUrl || '-';
       case 'stage':
         return row.nextStageLabel
           ? row.nextStageLabel + (row.nextStageAt ? ' · ' + this.fmtDate(row.nextStageAt) : '')
-          : '—';
+          : '-';
       default: {
         const v = rec[col.id];
-        return v != null && v !== '' ? String(v) : '—';
+        return v != null && v !== '' ? String(v) : '-';
       }
     }
   }

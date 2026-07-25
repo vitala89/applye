@@ -7,7 +7,7 @@ export interface ProviderGuide {
   /** i18n key for the short vendor/product subtitle shown under the name. */
   vendorKey: string;
   /** Single decorative glyph shown on the provider selector card. Not
-   * user-facing copy — purely visual, so it is not translated. Fallback for
+   * user-facing copy - purely visual, so it is not translated. Fallback for
    * providers without a brand mark in `iconUrl`. */
   glyph: string;
   /** Path to the provider's official brand mark (served from /public), used

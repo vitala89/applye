@@ -8,7 +8,7 @@ export type SupportedLanguage = 'en' | 'de' | 'ru' | 'es' | 'fr' | 'uk';
 /**
  * Endonyms (each language's own name) for language pickers. A user who lands in
  * the wrong UI language must still recognise their own language in the list, so
- * the label is written in the language it selects — not translated into the
+ * the label is written in the language it selects - not translated into the
  * current locale. Distinct from the AI-prompt names (spelled-out English) used
  * when instructing a model which language to write in.
  */

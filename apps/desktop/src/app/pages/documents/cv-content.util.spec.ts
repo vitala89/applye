@@ -129,7 +129,7 @@ describe('normalizeCvContent', () => {
     } as unknown as CvContent;
     const out = normalizeCvContent(modern);
     // order shifts by 1 because personal_details is now guaranteed to be
-    // prepended when the stored content lacks one — everything else on the
+    // prepended when the stored content lacks one - everything else on the
     // skills section (key, visible, groups) is untouched.
     expect(out.sections.find((s) => s.key === 'skills')).toEqual({
       ...modern.sections[0],
@@ -207,7 +207,7 @@ describe('visiblePersonalContactFields', () => {
     );
   });
 
-  it('omits empty base fields — no leaf for a field with no content', () => {
+  it('omits empty base fields - no leaf for a field with no content', () => {
     const leaves = visiblePersonalContactFields(
       { ...base, website: undefined, linkedin: '' },
       { includeBirthdate: false, includeMaritalStatus: false },
@@ -658,7 +658,7 @@ describe('repairTruncatedJson', () => {
     expect(repairTruncatedJson('totally not json')).toBeNull();
   });
   it('repairTruncatedJson keeps a colon inside a truncated string value', () => {
-    // string value cut off mid-word after a colon — the ":" is inside the string, not a dangling separator
+    // string value cut off mid-word after a colon - the ":" is inside the string, not a dangling separator
     const raw = '{"summary":"Led migration: scale';
     const repaired = repairTruncatedJson(raw);
     expect(repaired).not.toBeNull();
@@ -666,7 +666,7 @@ describe('repairTruncatedJson', () => {
     expect(obj.summary).toBe('Led migration: scale');
   });
   it('repairTruncatedJson keeps a trailing colon truncated inside a string value', () => {
-    // truncation lands exactly on the ":" while still inside the open string —
+    // truncation lands exactly on the ":" while still inside the open string -
     // the dangling-separator guard must not fire here, or the ":" is dropped
     const raw = '{"summary":"Led migration:';
     const repaired = repairTruncatedJson(raw);
@@ -766,7 +766,7 @@ describe('effectiveSectionStyle', () => {
     expect(effectiveSectionStyle(s, 'summary').lineHeight).toBe(1.6);
   });
 
-  it('ignores loaded line heights outside the supported 1.0–2.0 range', () => {
+  it('ignores loaded line heights outside the supported 1.0-2.0 range', () => {
     const low: CvStyle = { ...base, sectionStyles: { summary: { lineHeight: 0.9 } } };
     const high: CvStyle = { ...base, sectionStyles: { summary: { lineHeight: 2.1 } } };
     const nonFinite: CvStyle = {
@@ -880,7 +880,7 @@ describe('patchCvElementStyle', () => {
       'summary.body': { colorHex: '#111111', fontWeight: 700 },
     });
     // Ref-equality immutability (T1 review minor): `original` and its nested
-    // `elementStyles`/override objects must be untouched by the merge — a
+    // `elementStyles`/override objects must be untouched by the merge - a
     // mutating implementation would still pass the `toEqual` above (it reads
     // the mutated `original` back) but fail these reference checks.
     expect(changed).not.toBe(original);
@@ -955,7 +955,7 @@ describe('resetCvElementStyle', () => {
 describe('patchCvDocumentBody', () => {
   it('maps colorHex to bodyColorHex (NOT accentColorHex) and applies the other root fields', () => {
     // Regression: the "Whole document" body colour scope used to write
-    // accentColorHex, which body text never reads (no-accent-leak rule) — so
+    // accentColorHex, which body text never reads (no-accent-leak rule) - so
     // it recoloured titles/name instead of the body it was meant to target.
     const original: CvStyle = { ...CV_STYLE_DEFAULT };
     const changed = patchCvDocumentBody(original, {
@@ -1015,7 +1015,7 @@ describe('effectiveLeafStyle', () => {
 
   it('an empty-string elementPath resolves the same as no elementPath at all (T1 review minor)', () => {
     // An empty path must fall through to the section resolution exactly like
-    // `undefined` — and must NOT accidentally hit an unrelated real override
+    // `undefined` - and must NOT accidentally hit an unrelated real override
     // keyed by some other path (e.g. if a caller ever passed '' by mistake,
     // it must not silently pick up '' as a literal elementStyles key either).
     const s: CvStyle = {
@@ -1051,7 +1051,7 @@ describe('effectiveLeafStyle', () => {
     expect(r.ruleColorHex).toBe(base.accentColorHex);
   });
 
-  it("draws no line when borderStyle is 'none' or unset — even with a stray width/colour", () => {
+  it("draws no line when borderStyle is 'none' or unset - even with a stray width/colour", () => {
     const off: CvStyle = {
       ...base,
       elementStyles: {
@@ -1277,7 +1277,7 @@ describe('title/body style resolution', () => {
   });
 });
 
-describe('parseCvSkillResponse — content-only boundary', () => {
+describe('parseCvSkillResponse - content-only boundary', () => {
   it('strips unknown top-level keys (style/theme/fontFamily) from AI JSON', () => {
     const res = parseCvSkillResponse(
       JSON.stringify({
@@ -1420,7 +1420,7 @@ describe('leafPath', () => {
   // sites (`leafDraft('<path>', ...)` and `selectLeaf(..., '<path>')`),
   // risking silent drift between the transient draft key and the emitted/
   // persisted `elementPath`. `leafPath` is now the single source of truth
-  // both call sites build from — asserted here against the exact strings
+  // both call sites build from - asserted here against the exact strings
   // already persisted in `elementStyles` and used as draft ids.
   it('returns the canonical string for the representative leaves', () => {
     expect(leafPath('summary')).toBe('summary');

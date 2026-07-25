@@ -5,7 +5,7 @@
 // The global print stylesheet targets `lib-paginated-sheet` and `.page-card*`
 // by plain class name (unencapsulated), so it matches this component's
 // rendered DOM regardless of which component declares these `.cvpreview__*`
-// rules — moving them here from `cv-detail.component.scss` changes nothing
+// rules - moving them here from `cv-detail.component.scss` changes nothing
 // about the print seam.
 
 .cvpreview-viewport {
@@ -26,7 +26,7 @@
 }
 // Click-to-select affordance for the live-style panel. `outline` (never
 // `border`/`margin`/`padding`) so a selectable/selected leaf keeps the exact
-// box metrics the hidden measurement pass computes — pagination is unaffected.
+// box metrics the hidden measurement pass computes - pagination is unaffected.
 // Only attached on the visible page render (`selectable()` gates the class).
 .cvpreview__selectable {
   cursor: pointer;
@@ -48,7 +48,7 @@
 }
 // Single-element selection highlight (design). `box-shadow` + `background`
 // (never border/margin/padding) so the box metrics the hidden measurement
-// pass computes are untouched — pagination is unaffected. The measure pass is
+// pass computes are untouched - pagination is unaffected. The measure pass is
 // never selectable, so these classes never reach it. A `::before` chip labels
 // the field above the element, driven by `data-cv-chip`.
 .cvpreview__selected,
@@ -82,7 +82,7 @@
   z-index: 4;
 }
 // A selected CONTAINER (section+part wrapper) that holds a selected leaf shows
-// nothing itself — only the leaf's highlight + chip (design: one element at a
+// nothing itself - only the leaf's highlight + chip (design: one element at a
 // time). `:has()` keeps this in CSS, so no wrapper class binding is needed.
 .cvpreview__selected:has(.cvpreview__element-selected) {
   box-shadow: none;
@@ -105,9 +105,9 @@
   font-weight: 700;
 }
 // Space above each new section. Uses padding (not margin) on the section's
-// first element so the paginated sheet — which measures each atom's
+// first element so the paginated sheet - which measures each atom's
 // offsetHeight in isolation and can't see sibling margins across its
-// per-atom wrappers — includes the gap in its page-fit math.
+// per-atom wrappers - includes the gap in its page-fit math.
 .cvpreview__section-start {
   padding-top: var(--space-6);
 }
@@ -129,7 +129,7 @@
 }
 // Gap above every experience entry except the first. Padding (not an adjacency
 // margin) because each entry head is a separate atom in its own page-card
-// wrapper — sibling `+` selectors never match across atoms, and padding is
+// wrapper - sibling `+` selectors never match across atoms, and padding is
 // included in the atom's measured height so pagination stays accurate.
 .cvpreview__entry--sep {
   padding-top: var(--space-4);
@@ -191,7 +191,7 @@
   white-space: pre;
 }
 // Native leaf editors: swapped in over the resting text/paragraph while a
-// leaf is selected (page render only — see `selectable()`). Reset to blend
+// leaf is selected (page render only - see `selectable()`). Reset to blend
 // with the surrounding typography instead of looking like a form control;
 // `outline` (not `border`) marks focus so no box metrics shift.
 .cvpreview__leaf-editor {
@@ -218,7 +218,7 @@ textarea.cvpreview__leaf-editor {
   line-height: var(--cv-section-line-height, var(--leading-normal));
 }
 // Wraps a bold-capable textarea (summary/bullet) with its visible Bold
-// button — the button only ever renders alongside an already-selected leaf
+// button - the button only ever renders alongside an already-selected leaf
 // editor (page render only), so it never reaches the inert measurement pass.
 .cvpreview__skill-row {
   margin: 0.15rem 0;
@@ -234,7 +234,7 @@ textarea.cvpreview__leaf-editor {
   white-space: pre;
 }
 // Inline leaf editors sized to their content (not the block-level 100%
-// default from `.cvpreview__leaf-editor`) — mirrors `.cvpreview__contact-input`.
+// default from `.cvpreview__leaf-editor`) - mirrors `.cvpreview__contact-input`.
 .cvpreview__entry-company.cvpreview__leaf-editor,
 .cvpreview__entry-industry.cvpreview__leaf-editor,
 .cvpreview__entry-meta.cvpreview__leaf-editor,
@@ -289,7 +289,7 @@ textarea.cvpreview__leaf-editor {
 }
 // These entry sub-parts carry their own theme colour by default (company =
 // accent, industry/meta/dates = muted). But a "This section" colour override
-// must recolour the WHOLE section uniformly — including the company — so each
+// must recolour the WHOLE section uniformly - including the company - so each
 // reads `--cv-section-body-color` FIRST (set on the section wrapper by
 // `bodyCss` only when an override exists) and falls back to its theme colour
 // otherwise. An element-scope override still wins: `leafCss` writes an inline
@@ -297,7 +297,7 @@ textarea.cvpreview__leaf-editor {
 // Priority: a per-ENTRY element override (`--cv-entry-color`, set on the head
 // wrapper when the whole entry is styled) wins, then a "This section" colour
 // (`--cv-section-body-color`), then the part's own theme colour. This lets a
-// per-entry colour recolour the WHOLE head line — company/dates included —
+// per-entry colour recolour the WHOLE head line - company/dates included -
 // even though those parts carry their own colour by default.
 .cvpreview__entry-company {
   font-weight: 700;
@@ -315,7 +315,7 @@ textarea.cvpreview__leaf-editor {
 .cvpreview__entry-head--rule {
   // Aurora draws a thin rule under the experience role/dates line; Classic
   // width 0. Scoped to the experience head only (not education) via the
-  // explicit --rule modifier class — see #expHeadTpl.
+  // explicit --rule modifier class - see #expHeadTpl.
   padding-bottom: var(--space-1);
   border-bottom: var(--cv-entry-rule-width, 0pt) var(--cv-entry-rule-style, solid)
     var(--cv-entry-rule-color, transparent);
@@ -337,7 +337,7 @@ textarea.cvpreview__leaf-editor {
 
 .cvpreview__header {
   // The photo floats, so a sibling block's BORDER box still spans the full
-  // header width and runs behind it — only its line boxes shorten. That made
+  // header width and runs behind it - only its line boxes shorten. That made
   // the name/title/contact selection tint and any per-element rule paint over
   // the photo. `flow-root` gives each a block formatting context, which by
   // definition cannot overlap a float, so the box starts at the photo's edge.

@@ -102,7 +102,7 @@ describe('OnboardingComponent flow', () => {
       expect(component.step()).toBe(4);
     });
 
-    it('is unreachable backwards — back() mirrors the forward jump', () => {
+    it('is unreachable backwards - back() mirrors the forward jump', () => {
       component.step.set(4);
 
       component.back();
@@ -135,7 +135,7 @@ describe('OnboardingComponent flow', () => {
       component.resumeText.set('a resume');
     });
 
-    it('does not advance the wizard — the Targeting step calls it in place', async () => {
+    it('does not advance the wizard - the Targeting step calls it in place', async () => {
       component.step.set(4);
 
       await component.suggestArchetypes();
@@ -475,8 +475,8 @@ describe('OnboardingComponent flow', () => {
     });
 
     // Finish is the only exit now that the Ready step's two CTAs are gone. The
-    // wizard closes onto whatever route is behind it — the dashboard on a first
-    // run, the page a re-run was opened from — instead of picking a
+    // wizard closes onto whatever route is behind it - the dashboard on a first
+    // run, the page a re-run was opened from - instead of picking a
     // destination, which is why it must not navigate.
     it('navigates nowhere itself', async () => {
       component.parsedCv.set(parsedCv());

@@ -268,7 +268,7 @@
   align-items: center;
   gap: 8px;
 
-  /* connector into this step from the previous dot — a track that fills as
+  /* connector into this step from the previous dot - a track that fills as
      the funnel advances. Sits behind the dots (z-index) at their centre. */
   &::before {
     content: '';

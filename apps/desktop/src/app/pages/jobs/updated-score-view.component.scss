@@ -4,7 +4,7 @@
   gap: var(--space-6);
 }
 
-/* Staged reveal — each section fades up as revealStep reaches it. */
+/* Staged reveal - each section fades up as revealStep reaches it. */
 .reveal {
   opacity: 0;
   transform: translateY(10px);

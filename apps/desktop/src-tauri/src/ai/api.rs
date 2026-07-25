@@ -1,4 +1,4 @@
-// Direct API mode — reqwest to the provider endpoint.
+// Direct API mode - reqwest to the provider endpoint.
 //
 // Two request shapes are supported behind one `run`:
 //   - Anthropic Messages API (provider "claude"), with a cache_control

@@ -43,6 +43,7 @@ is the single source of truth; this file tracks what changed at each tag.
 ### Changed
 
 - **The ATS check is now a measurement, not an opinion.** It used to be a single true/false the scoring model emitted alongside a one-line note - so it read as a number while actually being a guess, it never looked at the CV that would be uploaded, and it could disagree with itself on identical input. It is now computed locally in Rust at zero token cost, and gives the same answer every time. The result is a **0-100 score** built from two halves: **keyword coverage** (60 points) matches the posting's own requirement terms against your tailored CV, weighting terms inside a requirements block double because that is where a recruiter's filter comes from, and matching whole words so "Java" no longer counts as covered by "JavaScript"; and **parsability** (40 points), which flags the things that actually lose information in a parser - no findable email or phone, table layouts, missing section headings or creative ones a parser will not recognise, no years to compute tenure from, an export that came out suspiciously short, and a photo **only in markets where a photo is a liability** (a Bewerbungsfoto is normal in DE/AT/CH and is not flagged there). Every finding is shown with the reason attached, and the missing keywords are listed so you can decide rather than trust a number. Requirement headings are recognised in English and German. The model's own ATS remark is still shown, now clearly below the computed result as advice.
+- **Date ranges in exported documents use a plain hyphen.** A CV or cover letter exported from Applye wrote its date ranges with an en dash ("2020 - 2023" was actually "2020 – 2023"). Some applicant tracking systems and older parsers mis-read that character, and it was inconsistent with the rest of the app. Exports now use a plain hyphen throughout. Documents you exported earlier are unaffected until you export them again.
 - **The first launch now welcomes you.** The first time you open Applye it greets you with an animated screen: the logo, a one-line summary of what the app does, and two clear choices - take a short guided setup, or skip it and fill things in yourself. The 0-token health check stays on the same screen so you can confirm everything is set up. Skipping never blocks you, and the empty-profile hint still nudges you from inside the app. The animation stands down when your system asks for reduced motion.
 - **The top-bar buttons use the shared button styles.** The theme toggle and Paste Job button had their own one-off styling; they now use the same design-system buttons as the rest of the app, so sizing, focus rings and hover states match everywhere.
 
@@ -157,9 +158,9 @@ is the single source of truth; this file tracks what changed at each tag.
 - **The Pipeline board has a new design.** A summary strip shows how many applications are active, how many are overdue, and lets you search across company, role and location. Rejected and cancelled columns collapse into slim side rails (an "archive") that you reveal with one click, so the board stays focused on live applications. Cards now carry a company monogram, the location, a colour-coded ATS score, and - for interviews - a segmented stage-progress track. The quick-view now leads with status and ATS fit, shows the interview as a step-by-step tracker, and groups every section clearly.
 - **Leaving a half-finished application no longer loses your place.** If you start tailoring a CV for a job and then click away - to Documents, to another job, anywhere - a "Finish tailoring" button now follows you and brings you back to the exact step you left, instead of dropping you at the job list to start over.
 
-- **Your profile now holds your email, phone, website and LinkedIn.** They were already being read off your resume, but the profile had nowhere to put them, so they were never yours to edit — and were thrown away the first time you saved. Four fields now sit under Location in the profile form.
+- **Your profile now holds your email, phone, website and LinkedIn.** They were already being read off your resume, but the profile had nowhere to put them, so they were never yours to edit - and were thrown away the first time you saved. Four fields now sit under Location in the profile form.
 - **The scoring profile tells you when it is out of date.** The card now reads "out of date · regenerate" once you have saved a change to your profile text, and "unsaved changes" while you are still editing. Previously it only ever said "cached · 0 tokens".
-- **The elevator pitch now tracks its own freshness, and can always be refreshed.** The pitch card gained the same "out of date · regenerate" / "unsaved changes" badge as the scoring card. It also fixes a real trap: the pitch used to share the scoring profile's cache key, so regenerating your scoring profile made the pitch report as "cached" even though it was written from an older version of your profile — and you could not refresh it. The pitch now remembers the exact profile text it was written from (a new `pitch_hash`), so it goes stale and regenerates independently of scoring.
+- **The elevator pitch now tracks its own freshness, and can always be refreshed.** The pitch card gained the same "out of date · regenerate" / "unsaved changes" badge as the scoring card. It also fixes a real trap: the pitch used to share the scoring profile's cache key, so regenerating your scoring profile made the pitch report as "cached" even though it was written from an older version of your profile - and you could not refresh it. The pitch now remembers the exact profile text it was written from (a new `pitch_hash`), so it goes stale and regenerates independently of scoring.
 
 ### Fixed
 
@@ -218,19 +219,19 @@ is the single source of truth; this file tracks what changed at each tag.
 - **The Create and Regenerate buttons show they are working.** Generating a CV or cover letter now shows a loading animation on the button rather than only greying it out.
 
 - **The scoring profile no longer claims to be cached after you change your profile.** The card decided it was up to date by asking whether the form had unsaved edits, which is not the same question. Saving cleared the edits, so the moment your scoring analysis actually went out of date was the moment the card started calling it cached again. It now compares your saved profile text against the text the analysis was built from, so a stale analysis says so and you know to regenerate it before your next application.
-- **Your phone number is no longer your job title, and your contact details survive a save.** A resume imported through onboarding wrote your details as one run-on line, which the profile form read by position: the phone number landed in "Current role", and your email, website and LinkedIn had no field at all — so the first time you pressed Save in Profile, they were deleted from the profile text for good. That text is what every AI scoring and tailoring call reads, so they were gone from those too. Contacts are now stored under a labelled heading where nothing depends on position, and an existing profile is repaired the moment you open it: the phone goes back to Phone, the address to Location, the website and LinkedIn to their own fields. Open Profile and press Save to write the repair down.
-- **Anything the profile cannot file away is kept instead of dropped.** A tagline under your name, a second personal site, a `- GitHub: …` line you added by hand — none of it fits a field, and all of it used to vanish on save. It is now preserved verbatim under a "Notes" heading in the profile text.
-- **Exported PDFs are readable by machines again.** Every CV and cover letter exported since WYSIWYG PDF shipped looked correct on the page but carried broken text: "Software Engineer" extracted as "So+ware Engineer" or "SoCware Engineer", "Analytics" as "AnalyGcs", "applications" as "applicaMons". Anything that reads the text rather than looking at it — an applicant tracking system, a recruiter's parser, a copy-paste, Applye's own resume import — got those words. macOS writes the PDF's character map one entry per glyph, and a ligature (the single joined glyph a font draws for pairs like `ft`, `ti`, `fi`, `fl`) stands for two characters and so has no single character to map to; macOS wrote an arbitrary wrong one. Documents now render those pairs as separate glyphs, so the exported text says what the page says. The visual difference is a fraction of a millimetre per pair.
-  **If you have already sent out a CV exported from Applye, re-export it** — files produced before this fix keep the broken text layer.
-- **Importing a resume with a damaged text layer no longer carries the damage into your CV.** The same macOS flaw affects PDFs from Pages, Word and Preview, so a resume you never exported from Applye can arrive as "Senior Frontend SoCware Engineer". Import now restores those words when the surrounding letters leave no doubt, and says so in the review step's notes so you check rather than trust. It only puts back characters the extraction destroyed — it will not touch a token that is legitimate as written, such as `C++` or `ES6+`, and leaves anything ambiguous exactly as it found it.
-- **Re-running onboarding no longer destroys your profile scoring and pitch.** Finishing the wizard a second time wrote the profile row with only the two fields the wizard authors, blanking the scoring analysis and elevator pitch you had generated — both paid AI calls. They now carry through. Changing your resume still marks the scoring stale, which is what prompts Profile to offer a re-score.
+- **Your phone number is no longer your job title, and your contact details survive a save.** A resume imported through onboarding wrote your details as one run-on line, which the profile form read by position: the phone number landed in "Current role", and your email, website and LinkedIn had no field at all - so the first time you pressed Save in Profile, they were deleted from the profile text for good. That text is what every AI scoring and tailoring call reads, so they were gone from those too. Contacts are now stored under a labelled heading where nothing depends on position, and an existing profile is repaired the moment you open it: the phone goes back to Phone, the address to Location, the website and LinkedIn to their own fields. Open Profile and press Save to write the repair down.
+- **Anything the profile cannot file away is kept instead of dropped.** A tagline under your name, a second personal site, a `- GitHub: …` line you added by hand - none of it fits a field, and all of it used to vanish on save. It is now preserved verbatim under a "Notes" heading in the profile text.
+- **Exported PDFs are readable by machines again.** Every CV and cover letter exported since WYSIWYG PDF shipped looked correct on the page but carried broken text: "Software Engineer" extracted as "So+ware Engineer" or "SoCware Engineer", "Analytics" as "AnalyGcs", "applications" as "applicaMons". Anything that reads the text rather than looking at it - an applicant tracking system, a recruiter's parser, a copy-paste, Applye's own resume import - got those words. macOS writes the PDF's character map one entry per glyph, and a ligature (the single joined glyph a font draws for pairs like `ft`, `ti`, `fi`, `fl`) stands for two characters and so has no single character to map to; macOS wrote an arbitrary wrong one. Documents now render those pairs as separate glyphs, so the exported text says what the page says. The visual difference is a fraction of a millimetre per pair.
+  **If you have already sent out a CV exported from Applye, re-export it** - files produced before this fix keep the broken text layer.
+- **Importing a resume with a damaged text layer no longer carries the damage into your CV.** The same macOS flaw affects PDFs from Pages, Word and Preview, so a resume you never exported from Applye can arrive as "Senior Frontend SoCware Engineer". Import now restores those words when the surrounding letters leave no doubt, and says so in the review step's notes so you check rather than trust. It only puts back characters the extraction destroyed - it will not touch a token that is legitimate as written, such as `C++` or `ES6+`, and leaves anything ambiguous exactly as it found it.
+- **Re-running onboarding no longer destroys your profile scoring and pitch.** Finishing the wizard a second time wrote the profile row with only the two fields the wizard authors, blanking the scoring analysis and elevator pitch you had generated - both paid AI calls. They now carry through. Changing your resume still marks the scoring stale, which is what prompts Profile to offer a re-score.
 - **Re-running onboarding no longer drops your target roles.** The wizard opened blank, so the final screen reported "0 roles selected" and Finish wrote an empty list over the roles you had. Your existing roles are now loaded in, and a fresh suggestion adds to them instead of replacing them.
 - **A re-run that only changes targeting is saved.** With no new resume the wizard saved nothing at all, so re-running purely to adjust your roles was a silent no-op. It now keeps your existing profile text and saves the new roles.
 - **"Suggest again" no longer throws you off the targeting step.** Asking for fresh role suggestions jumped straight to the final screen, because the suggestion always advanced the wizard regardless of who called it.
 - **Re-suggesting keeps the roles you chose.** Roles you typed in by hand were dropped and ones you had unchecked came back. The first suggestion seeds your selection; every later one only adds roles you have not already rejected, and a compensation range you edited is left alone.
 - **Skipping the resume no longer shows an empty review screen.** With nothing parsed, the wizard now goes from the resume step straight to targeting, and the review step stays out of reach from both the Back button and the stepper.
 - **A key from an earlier run is recognised.** Re-running onboarding with a key already in your OS keychain reported "Not connected" on the final screen; the wizard now reads the keychain per provider on open. A key already in the keychain also survives a later paste that fails or is mistyped, which previously reset the wizard's view of it.
-- **A second click on Continue no longer skips a step.** The button stayed live while the resume parse or role suggestion ran, so an impatient double-click started a second (paid) AI call and advanced twice — past Review, or past Targeting to the final screen. Continue and Back now disable while a call is in flight, and Continue says so instead of sitting silently on "Continue".
+- **A second click on Continue no longer skips a step.** The button stayed live while the resume parse or role suggestion ran, so an impatient double-click started a second (paid) AI call and advanced twice - past Review, or past Targeting to the final screen. Continue and Back now disable while a call is in flight, and Continue says so instead of sitting silently on "Continue".
 - **Skipping the resume after it was already parsed actually skips it.** The profile was still written from the parsed resume while the summary said "Skipped"; changing or dropping the resume source now discards what was parsed from it.
 - **Skip is hidden on the final step**, where it sat next to Finish and would have discarded the profile you had just built.
 
@@ -239,9 +240,9 @@ is the single source of truth; this file tracks what changed at each tag.
 - **The Profile page was rebuilt to match its redesign.** The AI tools now lead with an icon and read as cards you act on: the scoring profile collapses open to show its summary with a Regenerate control and a freshness chip, and the default pitch carries its own header and Regenerate. Generating either shows a live "working" indicator instead of a silent wait. Each target role is one row - name, how well it fits, and a remove control - with its "when it fits" note tucked underneath, and the section now describes what a target role actually is instead of the old free-text framing. The completeness and freshness cues carry an icon, and the whole page sits on the shared design tokens for light and dark. Nothing about what the page does changed; only how it looks and reads.
 - **The Experience field admits it is Markdown.** It holds Markdown, and always has: a resume imported through onboarding fills it with `###` headings, which the field then displayed as if they were a typo. The field is now set in a monospaced typeface and says what it expects, so the headings read as formatting rather than as damage. What you type is unchanged and nothing is reformatted for you.
 - **The last onboarding step has one way out.** "Analyze a job" and "Open documents" sat next to "Finish setup", offering three ways to end the same flow and jumping you into the app from a screen that had not saved anything yet. Finish setup is now the only action; it saves, then returns you to the app, where those destinations are a click away in the normal navigation. The summary no longer claims your setup is already saved when it is not.
-- **The API key step says what it does.** The button was "Validate" and the result "Key valid", but nothing ever contacts the provider — it is a copy-paste format check plus a save to your OS keychain, and the wording now says so. An invalid or revoked key still surfaces at your first AI action.
+- **The API key step says what it does.** The button was "Validate" and the result "Key valid", but nothing ever contacts the provider - it is a copy-paste format check plus a save to your OS keychain, and the wording now says so. An invalid or revoked key still surfaces at your first AI action.
 - **The review step explains itself**: contact details are editable there, while experience and skills are shown as parsed and refined later in Documents.
-- **Removed a duplicated paragraph** on the AI setup step, which printed the same explanation twice, and a mislabelled "Setup —" prefix on the coming-soon note.
+- **Removed a duplicated paragraph** on the AI setup step, which printed the same explanation twice, and a mislabelled "Setup -" prefix on the coming-soon note.
 
 ### Fixed
 
@@ -270,19 +271,19 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 ### Added
 
 - **Onboarding leaves you with a real CV.** The wizard already parsed your resume; it now writes it into Documents as an editable CV instead of only saving a profile, so you no longer import the same file a second time. The starting region template follows your UI language (German → German templates, otherwise generic) and can be changed in Documents. Contact fields you clear in the review step stay cleared in both the profile and the CV.
-- **Edit the CV directly on the page preview.** Every region of the rendered page — summary, personal details, each experience field, skills, languages — is selectable by click or keyboard and edits in place. Changes commit on blur or Enter; Escape discards. Structure changes (add / remove / reorder sections, photo, toggles) stay in Edit mode.
-- **Contextual live-style panel with three scopes.** Selecting any region opens a style panel (font, size, weight, colour, line-height) that applies to **this element**, **this section**, or the **whole document** — most specific wins, cascading down to the active theme. Section titles get their own **this title** / **all titles** scopes. "Reset all styling" lives in the panel footer.
+- **Edit the CV directly on the page preview.** Every region of the rendered page - summary, personal details, each experience field, skills, languages - is selectable by click or keyboard and edits in place. Changes commit on blur or Enter; Escape discards. Structure changes (add / remove / reorder sections, photo, toggles) stay in Edit mode.
+- **Contextual live-style panel with three scopes.** Selecting any region opens a style panel (font, size, weight, colour, line-height) that applies to **this element**, **this section**, or the **whole document** - most specific wins, cascading down to the active theme. Section titles get their own **this title** / **all titles** scopes. "Reset all styling" lives in the panel footer.
 - **CV visual themes.** Two built-in themes: Classic (the existing look) and Aurora (teal accent, uppercase ruled section headers, two-line experience entries, Lato). Switching reseeds the base font and accent without wiping per-section overrides. Themes are declarative and sandboxed, separate from layout templates and your own style overrides; an "Import theme…" seam is present but disabled.
 - **Per-element underlines.** Any element or section can carry a line in solid, dotted, or dashed style with its own colour and thickness, inheriting element → section → theme.
 - **Inline bold.** Mark important words in the CV summary and experience bullets with `**word**`, via a Bold button or Cmd/Ctrl+B. Carries through to preview, DOCX, and PDF.
 - **Discrete page cards.** The CV and cover-letter previews render as real separate page cards captioned "Page i of N", split at entry level so a section title never separates from its first entry, and the paper stays white in both app themes.
-- **Photo header placement.** Three slots — left, centre, right — with the photo sitting beside the name and contact block for left and right. Honoured in the preview, the WYSIWYG PDF, and DOCX.
+- **Photo header placement.** Three slots - left, centre, right - with the photo sitting beside the name and contact block for left and right. Honoured in the preview, the WYSIWYG PDF, and DOCX.
 - **CV photo upload.** Pick a local image (jpg/jpeg/png/webp via native file dialog), crop to a fixed 3:4 frame (German Bewerbungsfoto proportions) with zoom and reposition, preview it on the CV when "Include photo" is on, and embed it in DOCX and PDF exports (LaTeX export intentionally omits the photo). Photo stored locally in the CV document as a base64 data URI. Rust `cv_photo_read_file` command; printpdf `embedded_images` feature. i18n EN+DE.
 - **CV default template, rebuilt.** All built-in region templates (DE-ATS-modern, DE-traditional, US, UK, generic) now guarantee a Personal Details section, matching a reference ATS layout: bold-emphasis parsing, grouped skills, contact-line formatting, and title/website/LinkedIn fields (with a "pull from profile" action). Experience and Education entries and bullets can now be added/removed directly in the editor. Fixed AI-import truncation handling (configurable token cap + JSON repair) so long resumes import cleanly.
 - **CV editor per-section style constructor.** Font, size, colour, and weight can now be set per section (Personal Details, Summary, Experience, Education, Skills, Languages) via an inline "Style" popover, inheriting from the global default with a one-click "reset to common". The global style row gained a font-weight control (Light/Normal/Semibold/Bold) and was restyled to match the design system.
-- **CV editor visual redesign, matched to the Claude Design source-of-truth spec.** Region, toggles, and global font/size/accent controls now live in one flat panel with dividers instead of separate cards; the region select shows the full name ("DE — Germany"), and "Default for this region" is a custom checkbox matching the design's checkbox styling. Section headers gained a drag handle, Style trigger, AI-regenerate, and move-up/move-down controls. Skills moved from a raw text area to interactive chip editing per group (add/remove skills and groups inline). Languages moved from a text area to per-row language + CEFR-level (A1–C2, Native, or no level) inputs with add/remove. Experience and Education entries are now bordered cards with icon-driven add/remove actions instead of plain dividers and "×" buttons.
+- **CV editor visual redesign, matched to the Claude Design source-of-truth spec.** Region, toggles, and global font/size/accent controls now live in one flat panel with dividers instead of separate cards; the region select shows the full name ("DE - Germany"), and "Default for this region" is a custom checkbox matching the design's checkbox styling. Section headers gained a drag handle, Style trigger, AI-regenerate, and move-up/move-down controls. Skills moved from a raw text area to interactive chip editing per group (add/remove skills and groups inline). Languages moved from a text area to per-row language + CEFR-level (A1-C2, Native, or no level) inputs with add/remove. Experience and Education entries are now bordered cards with icon-driven add/remove actions instead of plain dividers and "×" buttons.
 
-- **Paginated page preview with numeric margins, and WYSIWYG PDF export.** The CV and cover-letter previews are now real fixed-proportion A4 / Letter sheets with dashed page-break guides and a page-count indicator, so page size is visible and multi-page documents show where they break. Margins became four independent numeric millimetre inputs (top / right / bottom / left, 0–50 mm, clamped) replacing the Narrow / Normal / Wide presets; an overflow warning appears when a single block is taller than the usable page. **PDF export is now WYSIWYG**: "Export PDF" in the preview prints the on-screen sheet through the system dialog ("Save as PDF"), so the PDF matches the preview exactly (print styles pin the sheet to light "paper" colours regardless of app theme). DOCX honours the four-side millimetre margins. Stored in `style_json`; legacy documents with the old margin preset are mapped to millimetres on read (narrow→12.7, normal→20, wide→30) and default to A4 / 20 mm. i18n EN+DE.
+- **Paginated page preview with numeric margins, and WYSIWYG PDF export.** The CV and cover-letter previews are now real fixed-proportion A4 / Letter sheets with dashed page-break guides and a page-count indicator, so page size is visible and multi-page documents show where they break. Margins became four independent numeric millimetre inputs (top / right / bottom / left, 0-50 mm, clamped) replacing the Narrow / Normal / Wide presets; an overflow warning appears when a single block is taller than the usable page. **PDF export is now WYSIWYG**: "Export PDF" in the preview prints the on-screen sheet through the system dialog ("Save as PDF"), so the PDF matches the preview exactly (print styles pin the sheet to light "paper" colours regardless of app theme). DOCX honours the four-side millimetre margins. Stored in `style_json`; legacy documents with the old margin preset are mapped to millimetres on read (narrow→12.7, normal→20, wide→30) and default to A4 / 20 mm. i18n EN+DE.
 
 ### Changed
 
@@ -291,7 +292,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 - **Edit mode is smaller.** The document-wide "body text" and "section titles" style groups are gone, superseded by the live-style panel. Edit mode now shows only the page group (size, margins) and the region and photo toggles.
 - **Cover-letter editor redesigned** to match the CV editor: AI draft with tone and length controls, per-block styling, and block-level regeneration with caching.
 - **PDF export for CV and cover letter moved from the library list to the document preview.** Because WYSIWYG PDF prints the rendered preview, the "PDF" option was removed from the list export menu (DOCX, and LaTeX for CVs, remain there); a note points users to the preview's Export PDF. The Rust `printpdf` renderer is retired from the CV / cover-letter library path (the AI-tailored job-application export still uses it, unchanged).
-- **CV & cover-letter export now honors editor styles, and DOCX/PDF match.** Library exports render from one shared, section-tagged block model, so DOCX and PDF are structurally identical, and both now apply the font, size, colour, and weight chosen in the editor — including per-section and per-paragraph overrides — instead of dropping them at export. The PDF photo moved from a top-right overlay (which could overlap long headings) to the same inline top box as DOCX. Note: PDF uses the 14 built-in PDF fonts, so a custom font (Calibri, Lato) is mapped to the nearest base family in PDF while DOCX keeps the exact font name; embedding fonts for exact PDF rendering is a follow-up. The AI-tailored job-application CV export path is unchanged (still document-wide default style, no photo).
+- **CV & cover-letter export now honors editor styles, and DOCX/PDF match.** Library exports render from one shared, section-tagged block model, so DOCX and PDF are structurally identical, and both now apply the font, size, colour, and weight chosen in the editor - including per-section and per-paragraph overrides - instead of dropping them at export. The PDF photo moved from a top-right overlay (which could overlap long headings) to the same inline top box as DOCX. Note: PDF uses the 14 built-in PDF fonts, so a custom font (Calibri, Lato) is mapped to the nearest base family in PDF while DOCX keeps the exact font name; embedding fonts for exact PDF rendering is a follow-up. The AI-tailored job-application CV export path is unchanged (still document-wide default style, no photo).
 
 ### Fixed
 
@@ -299,7 +300,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 - **"All experiences" now reaches an entry you had styled individually.** A colour change at section scope silently skipped entries carrying their own override; a wider scope now clears the narrower ones it covers.
 - Changing the line size or colour for a single experience entry no longer restyles every experience entry.
 - Section line toggle, square rule corners, and entry/photo line defects.
-- CV editor preview mode now fills the whole detail pane and shows only the rendered CV — the region selector, include-photo/birthdate/marital-status toggles, and style controls no longer leak into the preview. Edit mode no longer reserves empty space for a preview column that isn't shown (the two modes never actually render side by side). Added missing spacing between the "Pull from profile" action and the Personal Details fields below it.
+- CV editor preview mode now fills the whole detail pane and shows only the rendered CV - the region selector, include-photo/birthdate/marital-status toggles, and style controls no longer leak into the preview. Edit mode no longer reserves empty space for a preview column that isn't shown (the two modes never actually render side by side). Added missing spacing between the "Pull from profile" action and the Personal Details fields below it.
 
 ### Known limitations
 
@@ -315,35 +316,35 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 ### Fixed
 
 - Inline errors across the Pipeline, Profile, and Interview Prep screens are now mirrored to toast notifications instead of failing silently. Toast dismissal timers are cleared when a toast is dropped on cap overflow (no stale auto-dismiss), and a dead i18n key was removed.
-- The custom titlebar can drag the window again — the window start-dragging capability was missing.
+- The custom titlebar can drag the window again - the window start-dragging capability was missing.
 
 ## [0.22.0] - 2026-07-06
 
 ### Added
 
 - **First-run onboarding wizard.** A skippable first-run overlay configures an AI provider key (with a per-provider beginner guide) and builds the user's profile from an uploaded or pasted resume, with AI-suggested target archetypes and compensation ranges the user reviews and confirms before anything is saved. Everything runs locally; the provider key is stored in the OS keyring, never in the database or logs. Skipping shows a "finish setup" banner on the dashboard, and onboarding can be re-run any time from Settings or Profile.
-- **Documents — Cover Letter module (ROADMAP §16, step 1c of 1a–1d).** Fill the Cover Letter tab with a list + detail view. Renders cover letters of `docType === 'cover_letter'` from the document library. Split editor layout: left = structured block editor (address block, date, subject, greeting, body paragraphs list, closing, signature), each with cache-matched AI regeneration; right = live business letter style preview. Adds a Cover Letter Tailoring action directly to the Job Detail page, allowing body-paragraph rewriting (using the `cover-letter-tailor` skill) to match the selected job, creating/linking the document, and opening the editor. Registered new prompt skills `cover-letter-generate` and `cover-letter-tailor` in the Rust backend. Added back-navigation tab preservation (carrying the active tab parameter) and direct export capabilities (DOCX & PDF formats) from the cover letter list rows. Added a transient "Saved" checkmark visual feedback UX indicator on the main save button in both CV and Cover Letter detail views. Replaced metadata region text inputs with dropdown selectors matching the design system in both CV and Cover Letter detail interfaces. Added target job selection dropdown to the CV baseline generation modal; when a job is chosen, it automatically incorporates target job description context into the generation prompt and links the created CV to the corresponding application row.
+- **Documents - Cover Letter module (ROADMAP §16, step 1c of 1a-1d).** Fill the Cover Letter tab with a list + detail view. Renders cover letters of `docType === 'cover_letter'` from the document library. Split editor layout: left = structured block editor (address block, date, subject, greeting, body paragraphs list, closing, signature), each with cache-matched AI regeneration; right = live business letter style preview. Adds a Cover Letter Tailoring action directly to the Job Detail page, allowing body-paragraph rewriting (using the `cover-letter-tailor` skill) to match the selected job, creating/linking the document, and opening the editor. Registered new prompt skills `cover-letter-generate` and `cover-letter-tailor` in the Rust backend. Added back-navigation tab preservation (carrying the active tab parameter) and direct export capabilities (DOCX & PDF formats) from the cover letter list rows. Added a transient "Saved" checkmark visual feedback UX indicator on the main save button in both CV and Cover Letter detail views. Replaced metadata region text inputs with dropdown selectors matching the design system in both CV and Cover Letter detail interfaces. Added target job selection dropdown to the CV baseline generation modal; when a job is chosen, it automatically incorporates target job description context into the generation prompt and links the created CV to the corresponding application row.
 - AIF Core foundation for AI-assisted development: shared agent context, Claude Code skills and read-only specialist subagents, Cursor rules, token/context/model policies, and security/privacy trust docs.
 
 ## [0.21.0] - 2026-07-06
 
 ### Added
 
-- **Documents — CV module (ROADMAP §16, step 1b of 1a–1d).** The Documents sidebar item is real: a CV | Cover Letter tab switch (Cover Letter stays a placeholder until 1c). CV list shows label, region/language tags, and a default badge, with open/duplicate/export/delete row actions. CV detail page adds a section constructor — Angular CDK drag-and-drop reorder, photo/birth-date/marital-status field toggles with a non-blocking, market-aware ATS-risk note, per-section AI regenerate (cached by input hash), and saving an arrangement as a named custom `cv_templates` row. Import your own CV (DOCX/PDF via native file dialog → new `cv-import` skill, one cached AI call) with a preview step to fix mis-parsed bits before saving as an editable library doc. Generate a market/archetype baseline from your profile and template choice via a new `cv-generate-baseline` skill (distinct from the existing job-specific `resume-tailoring` skill). CV export reuses the existing DOCX/PDF byte generators; `applications.cv_path` stays the frozen apply-time snapshot and is never rewritten by a library edit.
-- **Documents — CV style/ATS safety + LaTeX export (ROADMAP §16.5–16.6, step 1d, folded into 1b's branch).** CV detail page adds a font/size/accent-colour style section with always-visible recommended-value hints and a deterministic, 0-token `check_style_safety` check: two honestly distinct note types — ATS text-parsing risk (font choice, size) vs print/readability risk (colour, e.g. Agentur für Arbeit greyscale printing) — that only appear once a value leaves the safe default (Calibri 11pt, dark grey). Export gains a LaTeX source (`.tex`) format alongside DOCX/PDF, generated by clean string templating and never compiled (no TeX toolchain bundled); a non-blocking note clarifies it's tuned for print quality, not ATS parsing. DE CV exports use the `Lastname_Vorname_Lebenslauf.ext` filename convention when a full name is available.
-- Fixed the CV constructor's photo/birth-date/marital-status toggles rendering as oversized, overlapping boxes (a blanket input style rule was catching the checkboxes too) — restyled as chip toggles, and added a Preview mode that renders the CV read-only in its real section order before exporting.
+- **Documents - CV module (ROADMAP §16, step 1b of 1a-1d).** The Documents sidebar item is real: a CV | Cover Letter tab switch (Cover Letter stays a placeholder until 1c). CV list shows label, region/language tags, and a default badge, with open/duplicate/export/delete row actions. CV detail page adds a section constructor - Angular CDK drag-and-drop reorder, photo/birth-date/marital-status field toggles with a non-blocking, market-aware ATS-risk note, per-section AI regenerate (cached by input hash), and saving an arrangement as a named custom `cv_templates` row. Import your own CV (DOCX/PDF via native file dialog → new `cv-import` skill, one cached AI call) with a preview step to fix mis-parsed bits before saving as an editable library doc. Generate a market/archetype baseline from your profile and template choice via a new `cv-generate-baseline` skill (distinct from the existing job-specific `resume-tailoring` skill). CV export reuses the existing DOCX/PDF byte generators; `applications.cv_path` stays the frozen apply-time snapshot and is never rewritten by a library edit.
+- **Documents - CV style/ATS safety + LaTeX export (ROADMAP §16.5-16.6, step 1d, folded into 1b's branch).** CV detail page adds a font/size/accent-colour style section with always-visible recommended-value hints and a deterministic, 0-token `check_style_safety` check: two honestly distinct note types - ATS text-parsing risk (font choice, size) vs print/readability risk (colour, e.g. Agentur für Arbeit greyscale printing) - that only appear once a value leaves the safe default (Calibri 11pt, dark grey). Export gains a LaTeX source (`.tex`) format alongside DOCX/PDF, generated by clean string templating and never compiled (no TeX toolchain bundled); a non-blocking note clarifies it's tuned for print quality, not ATS parsing. DE CV exports use the `Lastname_Vorname_Lebenslauf.ext` filename convention when a full name is available.
+- Fixed the CV constructor's photo/birth-date/marital-status toggles rendering as oversized, overlapping boxes (a blanket input style rule was catching the checkboxes too) - restyled as chip toggles, and added a Preview mode that renders the CV read-only in its real section order before exporting.
 
 ## [0.20.0] - 2026-07-05
 
 ### Added
 
-- **Documents library — data layer.** Additive migration `0011_documents_library.sql` adds `document_library` and `cv_templates` (per ROADMAP §12) plus nullable `applications.cv_document_id` / `cover_letter_document_id`, with built-in CV templates seeded (DE-traditional, DE-ATS-modern, US, UK, generic). Rust and `libs/core`/`libs/data` types synced. No feature UI yet — schema foundation for the CV & Cover Letter library (ROADMAP §16, step 1a of 1a–1d).
+- **Documents library - data layer.** Additive migration `0011_documents_library.sql` adds `document_library` and `cv_templates` (per ROADMAP §12) plus nullable `applications.cv_document_id` / `cover_letter_document_id`, with built-in CV templates seeded (DE-traditional, DE-ATS-modern, US, UK, generic). Rust and `libs/core`/`libs/data` types synced. No feature UI yet - schema foundation for the CV & Cover Letter library (ROADMAP §16, step 1a of 1a-1d).
 
 ## [0.19.0] - 2026-07-05
 
 ### Added
 
-- **Follow-up drafting.** Overdue Pipeline cards now offer a "Draft follow-up" action in the quick-view modal that drafts a polite follow-up email from the company, role, and days-overdue via the `followup.md` skill (one AI call, cached per application + language + model). The draft is editable and opens the user's own mail client pre-filled via `mailto:` — Applye never sends it. EN + DE.
+- **Follow-up drafting.** Overdue Pipeline cards now offer a "Draft follow-up" action in the quick-view modal that drafts a polite follow-up email from the company, role, and days-overdue via the `followup.md` skill (one AI call, cached per application + language + model). The draft is editable and opens the user's own mail client pre-filled via `mailto:` - Applye never sends it. EN + DE.
 
 ## [0.18.1] - 2026-07-05
 
@@ -351,7 +352,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 - Pipeline board now has a **Cancelled** column. The status already existed
   in filters and the quick-view modal, but there was no kanban column to
-  drag a card into or see it land — that gap is closed.
+  drag a card into or see it land - that gap is closed.
 
 ## [0.18.0] - 2026-07-05
 
@@ -360,23 +361,23 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 - **Tailor & apply wizard redesigned to 3 symmetric steps** (was 4, with a
   near-empty portal-answers step): Review score → Tailor CV → Export &
   apply. Stepper and the footer's "Step X of 3" counter now always agree.
-- Step 1 (Review score) is a compact recap — score + verdict pill, recruiter
-  verdict text, and an equal-height 2-column dimension breakdown — instead
+- Step 1 (Review score) is a compact recap - score + verdict pill, recruiter
+  verdict text, and an equal-height 2-column dimension breakdown - instead
   of re-rendering the full Job Detail scoring page inside the wizard.
 - Step 2 (Tailor CV) now surfaces a collapsible **Changes** panel (expanded
   by default, explicit Hide/Show toggle, icon-coded rows) and an
-  **always-visible, non-collapsible Gaps** panel — what the tailoring pass
+  **always-visible, non-collapsible Gaps** panel - what the tailoring pass
   intentionally left as a flagged gap rather than fabricated.
 - Step 3 merges Export and Apply into one screen; applying without an
   export is allowed (with an honest warning), never blocked.
-- Single exit control (Close, on the progress rail) — the footer Back
+- Single exit control (Close, on the progress rail) - the footer Back
   button now purely navigates steps, and returns to the job summary from
   step 1 instead of duplicating Close.
 - Removed the portal-answers step from this wizard entirely (that flow
   belongs to interview prep) and all its copy.
 - "Mark as applied" now calls the same status-transition command the
   pipeline board's drag-and-drop uses, instead of duplicating the
-  applied-date / follow-up-date computation on the frontend — one source
+  applied-date / follow-up-date computation on the frontend - one source
   of truth for `status_history` and `follow_up_at`.
 
 ## [0.17.0] - 2026-07-05
@@ -393,13 +394,13 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 - **Profile screen rework for clarity and design consistency**:
   - Fixed raw hardcoded English strings that bypassed i18n (`Last saved …`,
-    `Save failed …`, `Profile is empty …`, `Generated — N in / N out`, etc.)
-    — all now go through `libs/i18n`, EN+DE, with `{placeholder}` interpolation.
+    `Save failed …`, `Profile is empty …`, `Generated - N in / N out`, etc.)
+    - all now go through `libs/i18n`, EN+DE, with `{placeholder}` interpolation.
   - "+ Add target role" is now a visible `appButton` secondary control
     instead of a plain link-styled button.
   - Added plain-language info-icon tooltips (hover/focus) for Profile
     (master Markdown CV, source of truth), Target roles (archetypes), and
-    Scoring profile — explaining it's a compact JSON generated once from the
+    Scoring profile - explaining it's a compact JSON generated once from the
     Markdown and reused for every scoring/tailoring call to save tokens,
     auto-refreshed on save, never hand-edited.
   - Markdown editor: larger padding, clearer "Markdown profile" header, the
@@ -420,7 +421,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 ### Fixed
 
-- **Sidebar AI/API status indicator** — removed the pulsing `applye-ai-pulse`
+- **Sidebar AI/API status indicator** - removed the pulsing `applye-ai-pulse`
   keyframe animation (and its now-unused `--dur-ai-pulse` token) from the
   status dot next to Profile; it read as a distracting blinking light rather
   than a status glance. The dot is now static, the mode label reflects the
@@ -432,7 +433,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 ### Changed
 
-- **Settings polish** — buttons now use the shared design-system variants
+- **Settings polish** - buttons now use the shared design-system variants
   (`btn--primary`/`secondary`/`ghost`/`danger`) instead of page-local CSS:
   Save settings and Send a test prompt are primary, Replace/Save key is
   secondary, Remove is a new `btn--danger` variant, and the health panel's
@@ -451,16 +452,16 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 ### Added
 
-- **Interview Prep is real** — fills the sidebar stub. `interview_stages`
+- **Interview Prep is real** - fills the sidebar stub. `interview_stages`
   already existed in the schema (migration `0001`) with no `CHECK`
   constraint on `status`, so the full lifecycle (`scheduled` /
   `awaiting_scheduling` / `awaiting_response` / `passed` / `rejected` /
   `cancelled`) needed no new migration, just an app-level enum. `stage_type`
   gains an explicit `other` fallback.
   - List (`/interview-prep`): every application with ≥1 stage, current
-    stage + status badge + next date, soonest-upcoming first — reads the
+    stage + status badge + next date, soonest-upcoming first - reads the
     same `db_pipeline_cards` join the Pipeline board uses, no new command.
-  - Detail (`/interview-prep/:applicationId`): full CRUD — add (type +
+  - Detail (`/interview-prep/:applicationId`): full CRUD - add (type +
     required free-text label + date/language/interviewer/notes), inline
     status change, edit, delete, move up/down via adjacent `stage_order`
     swaps. Not a fixed template: any number of stages, any order, any
@@ -469,18 +470,18 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
     (partial patch), `delete_interview_stage`, `list_interview_stages`.
   - **Rejection sync, not a new status path**: `update_interview_stage`
     reuses the same `db_set_application_status_core` drag-and-drop and the
-    quick-view modal already call — whenever a stage's status becomes
+    quick-view modal already call - whenever a stage's status becomes
     `rejected` (at ANY stage position, not just the last one), the parent
     application moves to `rejected` and `status_history` gets a new row.
     `cancelled` never triggers this.
   - Pipeline card footer on INTERVIEW-column cards now shows "Stage N ·
-    &lt;label&gt;" with a small subordinate status dot — deliberately not a
+    &lt;label&gt;" with a small subordinate status dot - deliberately not a
     third color badge next to the legitimacy tier and priority flag.
   - Quick-view modal: read-only "Interview stage" row + "View all stages"
     link, **except** right after a transition into `interview` with 0
     existing stages, when a skippable quick-add mini form appears instead
     (fires at most once per application). The same modal is reused for the
-    drag-and-drop trigger — dragging a card into INTERVIEW opens it
+    drag-and-drop trigger - dragging a card into INTERVIEW opens it
     pre-focused on the mini form instead of building a second popover.
 
 ## [0.15.0] - 2026-07-02
@@ -488,13 +489,13 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 ### Added
 
 - **Pipeline quick-view modal.** Clicking a Pipeline card (drag still works
-  unchanged — CDK's own drag-threshold keeps the two separate) opens a fast
+  unchanged - CDK's own drag-threshold keeps the two separate) opens a fast
   triage modal: status dropdown, priority flag (none/low/medium/high), an
   oldest→newest comment thread, and an "Open full details" link to
-  `/jobs/:id`. The modal is deliberately shallow — no score, JD, tailoring,
+  `/jobs/:id`. The modal is deliberately shallow - no score, JD, tailoring,
   or portal-answers content, that stays on the full Job Detail screen.
   - Status changes go through the _same_ `db_set_application_status`
-    command the kanban drag-and-drop already used — no second status-update
+    command the kanban drag-and-drop already used - no second status-update
     path, so `status_history` is written identically either way.
   - New additive migration `0009_pipeline_priority_comments.sql` adds
     `applications.priority` and a new `application_comments` table. Any
@@ -504,7 +505,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
   - New commands `set_application_priority`, `add_application_comment`,
     `list_application_comments`.
   - The priority flag renders as an outlined flag icon (blue/amber/red for
-    low/medium/high) — deliberately distinct from the existing green/
+    low/medium/high) - deliberately distinct from the existing green/
     yellow/red legitimacy-tier badge so the two are never confused on the
     same card. It also shows in the card's top-right corner on the board
     itself, not just inside the modal.
@@ -516,21 +517,21 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 - **Job Tracker now matches the user's real xlsx tracker 1:1 (19 fields).**
   New additive migration `0008_tracker_fields.sql` adds `jobs.tech_stack` and
   `applications.source_url` / `contact_name` / `contact_role` /
-  `contact_channel` / `next_action` / `next_action_at` / `salary_range` —
+  `contact_channel` / `next_action` / `next_action_at` / `salary_range` -
   purely `ALTER TABLE ADD COLUMN`, dogfooding data preserved.
   - Tracker screen shows all 19 fields (company, role, tech stack,
     location, source link, contact name/role/email-or-LinkedIn, outreach
     type, sent-on, interview #1, follow-up #2, status, next action + date,
     salary range, contract type, Blue Card threshold, EOR provider, notes)
     with per-column show/hide and horizontal scroll.
-  - Inline-edit for contact, next action, salary range, and notes — a
+  - Inline-edit for contact, next action, salary range, and notes - a
     dedicated `db_update_application_tracker_fields` patch command touches
     only those 7 columns so it never clobbers `cv_path` /
     `cover_letter_path` / `application_method` on save.
   - The Agentur für Arbeit PDF/Excel export now states the applicant name
     and generated date and adds a contact column to the official layout
     (period, applicant, date, table of date/company/position/method/
-    status/contact) — 0 tokens, unchanged.
+    status/contact) - 0 tokens, unchanged.
   - The `import-tracklist` skill and Rust import pipeline now detect and
     round-trip all 8 new columns from an imported xlsx/csv into the right
     place.
@@ -545,7 +546,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
   primary and "Import file" is secondary, both with matched icon size and
   spacing. The status/legitimacy/score filter controls were normalized to
   share height, border, radius, focus ring, and placeholder color with the
-  search input — verified in both light and dark themes.
+  search input - verified in both light and dark themes.
 
 ## [0.13.0] - 2026-07-02
 
@@ -553,21 +554,21 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 - **"+ Paste Job" is now functional**, wired to both the topbar and My Jobs
   buttons via a single shared modal with two tabs:
-  - **Paste text** — pastes straight into the existing pipeline (Rust parse
+  - **Paste text** - pastes straight into the existing pipeline (Rust parse
     - hard filter + legitimacy check + cache check; AI recruiter score/ATS
       run from the job detail page as before). No duplicated logic.
-  - **From link** — a URL is classified server-side by `classify_job_url`
+  - **From link** - a URL is classified server-side by `classify_job_url`
     against a legal-first allowlist (open/ATS/RSS sources only:
     `boards-api.greenhouse.io`, `api.lever.co`, `api.ashbyhq.com`,
     `*.jobs.personio.de`, `remotive.com`, `weworkremotely.com`). Allowed
     URLs are fetched via `fetch_job_from_url` (public JSON/RSS APIs only)
     and flow into the same pipeline. Closed boards (LinkedIn, Indeed,
-    StepStone, Glassdoor) and any unrecognized domain are never fetched —
+    StepStone, Glassdoor) and any unrecognized domain are never fetched -
     the app only ever opens them in the browser via `tauri-plugin-opener`,
     shows a warning naming the board, and switches to the Paste text tab.
   - A clipboard helper (`tauri-plugin-clipboard-manager`, read-only) offers
     to fill the textarea when the clipboard holds a long, job-shaped text
-    block after the user copies it themselves — 0 tokens, never reads a
+    block after the user copies it themselves - 0 tokens, never reads a
     browser tab, never auto-submits.
   - All new copy ships in English and German.
 
@@ -577,7 +578,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 - Removed the per-page title heading duplicating the topbar's active-route
   title on all 9 remaining pages (Dashboard, Discover, Interview Prep, Job
-  Tracker, Documents, Analytics, Settings, Profile, My Jobs) — kept each
+  Tracker, Documents, Analytics, Settings, Profile, My Jobs) - kept each
   page's description/actions, cleaned up the CSS that only styled the
   removed headings.
 - Sidebar logo on macOS previously sat beside the traffic lights on the
@@ -614,7 +615,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
   border lines didn't align at the seam. Introduced a shared `--app-header-h`
   token in `libs/ui/tokens.css` and applied identical height + zero vertical
   padding to both `.sidebar__logo` and `.topbar` in `shell-layout.component.scss`
-  — the two divider lines now meet exactly.
+  - the two divider lines now meet exactly.
 
 ### Changed
 
@@ -629,9 +630,9 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 
 - **PR #22 (v0.12.1) fixed the wrong file.** `TranslateService` reads from
   `libs/i18n/src/lib/translations/translations.ts` (a hand-maintained
-  nested TS object) — the `en.json`/`de.json`/etc. files in that same
+  nested TS object) - the `en.json`/`de.json`/etc. files in that same
   folder are dead, unimported by anything at runtime. All i18n work across
-  Phases 6.5–6.7 and the previous "fix" edited only the dead JSON files,
+  Phases 6.5-6.7 and the previous "fix" edited only the dead JSON files,
   so none of it ever reached the running app. This release makes the same
   50 additions (portal answers, follow-up cadence, health check, archetype
   hints, import-tracklist strings, nav labels, etc.) directly in
@@ -641,7 +642,7 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
 - `apps/desktop/src/i18n-keys.spec.ts` now imports `TRANSLATIONS` from
   `@applye/i18n` (newly exported from the package barrel) instead of
   reading `en.json`, so it actually gates the real runtime source. Added a
-  second guard asserting `TRANSLATIONS.de` has the same key set as `en` —
+  second guard asserting `TRANSLATIONS.de` has the same key set as `en` -
   no silent drift between the two fully-maintained locales.
 
 ## [0.12.1] - 2026-07-01
@@ -653,17 +654,17 @@ you saw. Onboarding now hands you a finished CV instead of an empty library.
   Job Detail (Mark as Applied, Add to Pipeline, Export DOCX/PDF, Score/
   Re-score, Start over, etc.) and My Jobs (table columns, search/filter
   labels, paste-job modal), plus 3 nav sidebar labels (Discover, Tracker,
-  Analytics). None of these were introduced by Phases 6.5–6.7 — a full
+  Analytics). None of these were introduced by Phases 6.5-6.7 - a full
   scan turned up debt going back further.
 - Fixed `apps/desktop/src/app/app.spec.ts`, which imported a nonexistent
-  `./nx-welcome` module and could never run — this silently meant `nx test
+  `./nx-welcome` module and could never run - this silently meant `nx test
 desktop` (the CI test target for this project) always failed regardless
   of what else was true, so no test suite in this project could ever gate
   a merge. Replaced with a minimal smoke test.
 
 ### Added
 
-- `apps/desktop/src/i18n-keys.spec.ts` — a fast, deterministic guard test
+- `apps/desktop/src/i18n-keys.spec.ts` - a fast, deterministic guard test
   that scans every `.ts`/`.html` file under `apps/desktop/src/app` for
   `t()('namespace.key')`-shaped references (including the dynamic/ternary
   call sites) and fails if any resolved namespace key is absent from
@@ -675,15 +676,15 @@ desktop` (the CI test target for this project) always failed regardless
 ### Added
 
 - **First-launch health check (Phase 6.7).** A deterministic, 0-token
-  diagnostics report — OS keychain key presence (never a network call),
+  diagnostics report - OS keychain key presence (never a network call),
   SQLite read/write, the sqlx migration ledger, bundled Tauri capabilities,
-  and export-folder writability — shown once on first launch and re-runnable
+  and export-folder writability - shown once on first launch and re-runnable
   any time from Settings. Gated by `settings.health_check_seen`, persisted in
   SQLite (not localStorage), so it survives across windows/profiles.
-- A failing or warning check never blocks the user — "Continue" is always
+- A failing or warning check never blocks the user - "Continue" is always
   available, in line with the augmentation principle. Whether a stored API
   key actually _works_ stays a separate, explicitly user-triggered action
-  (Settings' existing "Test connection") — the health report only ever says
+  (Settings' existing "Test connection") - the health report only ever says
   "stored" or "not stored yet", never "valid".
 
 ## [0.11.0] - 2026-07-01
@@ -694,10 +695,10 @@ desktop` (the CI test target for this project) always failed regardless
   into `applied` or `interview` (via kanban drag or "Mark as Applied") now
   (re)computes `follow_up_at` deterministically in SQL from the settings
   cadence (`followup_days_after_apply` / `followup_days_after_interview`,
-  default 7/5 days) — 0 AI tokens, computed in the same transaction as the
+  default 7/5 days) - 0 AI tokens, computed in the same transaction as the
   `status_history` write. Terminal statuses (`offer`/`rejected`) leave
   `follow_up_at` untouched. A manually-edited follow-up date is never
-  silently recomputed — only a fresh status transition touches it.
+  silently recomputed - only a fresh status transition touches it.
 - Pipeline kanban cards show an amber "Overdue" badge once `follow_up_at`
   has passed, computed in the same SQL query as the rest of the card (no
   extra round trip).
@@ -720,7 +721,7 @@ desktop` (the CI test target for this project) always failed regardless
   defaulting to the application's `doc_language`, and per-answer editable
   boxes with a copy-to-clipboard button. "Another version" re-drafts a
   single answer with a fresh AI call, cached under its own key.
-- Augmentation guarantee: Applye only ever drafts and caches text here —
+- Augmentation guarantee: Applye only ever drafts and caches text here -
   there is no code path that transmits or submits an answer anywhere. The
   user copies it and pastes it into the portal themselves.
 
@@ -731,7 +732,7 @@ desktop` (the CI test target for this project) always failed regardless
 - **Import tracklist (Phase 6.4).** "Import file" in My Jobs picks a CSV,
   XLSX, JSON, or plain-text export from another job tracker via the native
   file dialog. One AI call (`import-tracklist.md`, economy model) detects
-  the column structure and extracts rows — status normalization, dedupe,
+  the column structure and extracts rows - status normalization, dedupe,
   and the insert are all deterministic Rust + SQL, 0 tokens. XLSX is read
   with `calamine` (converted to CSV-like text for the AI call); CSV/JSON/
   text are forwarded as raw text.
@@ -744,7 +745,7 @@ desktop` (the CI test target for this project) always failed regardless
 - Confirm inserts a `jobs` row (plus an `applications` row carrying the
   normalized status) per selected row, tagging `imported_from` as
   `import_csv` / `import_xlsx` / `import_json` / `import_text`. Duplicates
-  are re-checked at insert time — re-importing the same file adds nothing
+  are re-checked at insert time - re-importing the same file adds nothing
   twice.
 
 ## [0.8.0] - 2026-07-01
@@ -753,9 +754,9 @@ desktop` (the CI test target for this project) always failed regardless
 
 - **Before-you-submit notes (Phase 6.3).** The `job-scoring.md` skill now
   also returns `before_you_submit`: 2-4 short, concrete reminders grounded in
-  the job's JD and Phase 6.2 legitimacy notes (e.g. "Salary not listed —
+  the job's JD and Phase 6.2 legitimacy notes (e.g. "Salary not listed -
   research market rate before applying"). Produced in the same `ai_run` call
-  as the score — no second request, 0 extra tokens. Stored in
+  as the score - no second request, 0 extra tokens. Stored in
   `scoring_cache.before_you_submit_json`, part of the existing cache key
   (job, profile, JD hash, language, model), so reopening a scored job shows
   the notes at 0 tokens. Job Detail renders them as a collapsible checklist
@@ -774,7 +775,7 @@ desktop` (the CI test target for this project) always failed regardless
   company mentions), application directed to a personal email domain
   (gmail/hotmail/yahoo/outlook.com), an implausibly wide salary range, or
   the same JD template already saved under a different company.
-  Augmentation, not a gate — a red job can still be scored and tailored if
+  Augmentation, not a gate - a red job can still be scored and tailored if
   the user chooses; My Jobs shows a badge (none/amber/red) and Job Detail
   shows the triggered notes plus a non-blocking warning banner for red.
 
@@ -842,7 +843,7 @@ desktop` (the CI test target for this project) always failed regardless
 ## [0.3.1] - 2026-06-29
 
 > Note: this release was tagged (`v0.3.1` → `6bc1f73`) but the version in
-> `package.json` / `Cargo.toml` / `tauri.conf.json` was never bumped — it stayed
+> `package.json` / `Cargo.toml` / `tauri.conf.json` was never bumped - it stayed
 > at `0.3.0` until the `0.4.0` bump. So `v0.3.1` is the one tag whose manifest
 > does not match its name. The tag is correct about what shipped; the manifest
 > is simply missing a bump that cannot be added retroactively without inventing

@@ -73,7 +73,7 @@ function buildComponent(overrides: { db?: Partial<DbService>; ai?: Partial<AiSer
   return { component: fixture.componentInstance, fixture };
 }
 
-describe('InterviewPrepDetailComponent — AI prep generation', () => {
+describe('InterviewPrepDetailComponent - AI prep generation', () => {
   it('routes hr_screen to interview-hr as qa, behavioral to star-r as star', async () => {
     const { component, fixture } = buildComponent({});
     fixture.detectChanges();

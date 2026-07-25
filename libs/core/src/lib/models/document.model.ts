@@ -22,7 +22,7 @@ interface CvSectionBase {
   key: CvSectionKey;
   order: number;
   visible: boolean;
-  /** Hash of the inputs used to last (re)generate this section's content —
+  /** Hash of the inputs used to last (re)generate this section's content -
    * lets "regenerate this section" skip a repeat AI call when nothing that
    * feeds it has changed. Absent on sections that were never AI-generated
    * (e.g. hand-edited or imported as-is). */
@@ -132,7 +132,7 @@ export interface CoverLetterAddress {
 }
 
 /** Typed shape of `document_library.content_json` when
- * `docType === 'cover_letter'`. Block order is fixed by market convention —
+ * `docType === 'cover_letter'`. Block order is fixed by market convention -
  * not user-reorderable (unlike CV sections). */
 export interface CoverLetterContent {
   address: CoverLetterAddress;
@@ -195,7 +195,7 @@ export const COVER_LETTER_LENGTHS: readonly CoverLetterLength[] = [
 export const COVER_LETTER_TONE_DEFAULT: CoverLetterTone = 'Formal';
 export const COVER_LETTER_LENGTH_DEFAULT: CoverLetterLength = 'Standard';
 
-/** Target body word budget per length preset — the low/high bounds drive both
+/** Target body word budget per length preset - the low/high bounds drive both
  * the AI prompt guidance and the editor's word-count badge colour. Body-only
  * (paragraphs), excludes address/subject/greeting/closing/signature. */
 export const COVER_LETTER_LENGTH_TARGET: Record<CoverLetterLength, { min: number; max: number }> = {
@@ -204,7 +204,7 @@ export const COVER_LETTER_LENGTH_TARGET: Record<CoverLetterLength, { min: number
   Detailed: { min: 320, max: 450 },
 };
 
-/** Styleable cover-letter blocks — the fixed business-letter order. Body
+/** Styleable cover-letter blocks - the fixed business-letter order. Body
  * paragraphs share one `body` key (they render as one styled block). */
 export type CoverLetterBlockKey =
   | 'recipient'
@@ -239,7 +239,7 @@ export interface PageMargins {
 
 /** Page geometry for CV / cover-letter export + preview. Portrait only.
  * Stored inside `style_json`; absent resolves to A4 / 20mm margins.
- * Legacy `style_json` may hold `margin` as a `PageMarginPreset` string —
+ * Legacy `style_json` may hold `margin` as a `PageMarginPreset` string -
  * the read path (resolvePageSettings) maps it to mm. */
 export interface PageSettings {
   size: PageSize;
@@ -251,7 +251,7 @@ export const PAGE_SETTINGS_DEFAULT: PageSettings = {
   margin: { top: 20, right: 20, bottom: 20, left: 20 },
 };
 
-/** Cover letter style choices — mirrors the CV `CvStyle` shape (same field
+/** Cover letter style choices - mirrors the CV `CvStyle` shape (same field
  * names so the deterministic Rust `check_style_safety` command validates it
  * unchanged, including per-block overrides), but preview-only: export renders
  * style-agnostic markdown just like the CV library export. */
@@ -310,11 +310,11 @@ export interface CvSectionStyle {
   /** Per-section title-underline colour; unset inherits the document value,
    * then the active theme's rule colour. */
   titleRuleColorHex?: string;
-  /** Per-section BODY rule style — lets the user turn the section's divider
+  /** Per-section BODY rule style - lets the user turn the section's divider
    * off (`'none'`) or switch it to dotted/dashed. Unset inherits the theme's
    * rule (which is solid when it draws one). */
   bodyBorder?: CvBorderStyle;
-  /** Per-section BODY rule thickness in points — the divider a section draws
+  /** Per-section BODY rule thickness in points - the divider a section draws
    * around its body (the personal-details header underline, an experience
    * entry's role/dates rule). Unset inherits the active theme's rule. */
   bodyRuleWidthPt?: number;
@@ -324,15 +324,15 @@ export interface CvSectionStyle {
   /** Colour of the in-line separators a section draws between items (e.g. the
    * `|` between languages). Unset inherits the muted default. */
   separatorColorHex?: string;
-  /** Size (pt) of those in-line separators — makes the `|` taller/heavier.
+  /** Size (pt) of those in-line separators - makes the `|` taller/heavier.
    * Unset inherits the surrounding text size. */
   separatorSizePt?: number;
   /** Shared style for ALL of a section's bullet lines (the "all achievements"
-   * scope) — layered under each bullet's own per-leaf override. */
+   * scope) - layered under each bullet's own per-leaf override. */
   bulletStyle?: CvElementStyle;
 }
 
-/** Per-leaf (single-element) style override — the most specific layer of the
+/** Per-leaf (single-element) style override - the most specific layer of the
  * CV style cascade (element → section → document → theme). Same optional
  * shape as `CvSectionStyle`'s body fields, minus the section-only `title` /
  * `titleBorder` nesting: an individual leaf (e.g. one bullet, one contact
@@ -354,7 +354,7 @@ export interface CvElementStyle {
   ruleColorHex?: string;
 }
 
-/** CV style choices (ROADMAP §16.5) — typed shape of `document_library.style_json`.
+/** CV style choices (ROADMAP §16.5) - typed shape of `document_library.style_json`.
  * Deliberately small: font, size, an accent colour, and an optional body-text
  * colour. Layout/order lives in `CvTemplate` instead. Safe default: Calibri
  * 11pt, dark-grey (#333333). */
@@ -363,12 +363,12 @@ export interface CvStyle {
   fontSizePt: number;
   accentColorHex: string;
   fontWeight: CvFontWeight;
-  /** Document-wide body-text colour — distinct from `accentColorHex` (which
+  /** Document-wide body-text colour - distinct from `accentColorHex` (which
    * stays the accent/title/rule colour body text never reads, by the
    * no-accent-leak rule). Additive/optional: absent means no forced body
    * colour at the document layer, so un-overridden body text keeps
    * inheriting its theme/dark colour. Neither `CV_STYLE_DEFAULT` nor
-   * `themeStyleSeed` sets this — a fresh or reset document never forces a
+   * `themeStyleSeed` sets this - a fresh or reset document never forces a
    * body colour until the user explicitly picks one at the "Whole document"
    * scope. */
   bodyColorHex?: string;
@@ -386,7 +386,7 @@ export interface CvStyle {
   /** Page geometry (size + margin preset); absent → A4 / normal. */
   page?: PageSettings;
   /** Per-element (single-leaf) style overrides, keyed by a positional path
-   * (e.g. `summary.body`, `experience.0.bullet.1`) — most specific layer of
+   * (e.g. `summary.body`, `experience.0.bullet.1`) - most specific layer of
    * the style cascade, resolved over `sectionStyles` then the document
    * defaults above. Additive-only storage; absent → no per-leaf overrides. */
   elementStyles?: Record<string, CvElementStyle>;
@@ -401,7 +401,7 @@ export const CV_STYLE_DEFAULT: CvStyle = {
 };
 
 /** Curated ATS-safe font list (ROADMAP §16.5), mirrors the Rust
- * `ATS_SAFE_FONTS` constant — for populating a suggestions list in the UI,
+ * `ATS_SAFE_FONTS` constant - for populating a suggestions list in the UI,
  * not for client-side validation (that's `check_style_safety`). */
 export const CV_ATS_SAFE_FONTS = [
   'Arial',
@@ -416,7 +416,7 @@ export const CV_ATS_SAFE_FONTS = [
   'Garamond',
 ];
 
-/** One ATS/readability note from `check_style_safety` — `kind` selects the
+/** One ATS/readability note from `check_style_safety` - `kind` selects the
  * (translated) message; `detail` is the value to interpolate. */
 export type StyleNoteKind =
   | 'font_ats_risk'
@@ -429,7 +429,7 @@ export interface StyleNote {
   detail: string;
 }
 
-/** CV layout templates (ROADMAP §16.2) — layout only, separate from content.
+/** CV layout templates (ROADMAP §16.2) - layout only, separate from content.
  * Built-in presets: DE-traditional (photo), DE-ATS-modern (no photo), US, UK,
  * generic. */
 export interface CvTemplate {
@@ -455,7 +455,7 @@ export interface UpsertCvTemplateInput {
   includeMaritalStatus: boolean;
 }
 
-/** The live, editable CV / Cover-Letter library — distinct from
+/** The live, editable CV / Cover-Letter library - distinct from
  * `generated_docs`, which stays the export journal. `contentJson` is a
  * serialized `CvContent` or `CoverLetterContent` depending on `docType`. */
 export interface DocumentLibraryItem {
@@ -539,7 +539,7 @@ export interface CvParsedLanguageEntry {
 }
 
 /** Shared output shape of both `cv-import.md` and `cv-generate-baseline.md`
- * — structure detection and market-baseline generation feed the same
+ * - structure detection and market-baseline generation feed the same
  * `CvContent` builder. Any field is empty/null when that section wasn't
  * produced (e.g. a targeted per-section regenerate). */
 export interface CvParsedContent {

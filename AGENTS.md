@@ -37,13 +37,13 @@ Before any non-trivial task, and before proposing what to work on next, read
 `docs/product/CURRENT_STATE.md` and locate the task in the plan. Then state, in one line each:
 
 1. **Where it sits**: the roadmap section, `STEP_BY_STEP_PLAN.md` phase, or `docs/product/IDEAS.md`
-   entry this task belongs to — or explicitly that it is off-plan and why it is still worth doing.
+   entry this task belongs to - or explicitly that it is off-plan and why it is still worth doing.
 2. **What is already shipped**: the part of the task that the code already does. Never plan or
    rebuild something `CURRENT_STATE.md` or the code says is done.
 3. **Whether the state doc is stale**: if `CURRENT_STATE.md` disagrees with `main` (wrong branch,
    wrong version, work described as pending that already merged), say so before starting.
 
-A stale state doc is itself a finding — report it, do not silently work around it.
+A stale state doc is itself a finding - report it, do not silently work around it.
 
 ## Before Coding
 
@@ -61,7 +61,7 @@ A stale state doc is itself a finding — report it, do not silently work around
 2. Run only relevant existing checks.
 3. Update docs when behavior, workflow, privacy, or security expectations change.
 4. Update `docs/product/CURRENT_STATE.md` and add a `CHANGELOG.md` `[Unreleased]` entry whenever the
-   task changes what the app does or where the work stands. The Plan Check reads this doc next time —
+   task changes what the app does or where the work stands. The Plan Check reads this doc next time -
    leaving it stale poisons the next task's starting point.
 5. Report changed files, verification, known gaps, and next steps.
 6. Recommend starting a fresh agent session after a completed task.

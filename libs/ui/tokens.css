@@ -1,5 +1,5 @@
 /* ============================================================
-   APPLYE — DESIGN TOKENS
+   APPLYE - DESIGN TOKENS
    Extracted from the "Applye Design System" (claude.ai/design).
    Single source of truth: colors, type, spacing, radii, shadows,
    motion. Monochrome graphite + one controlled indigo accent.
@@ -8,7 +8,7 @@
    Themes: dark is the default/brand canvas; light is first-class.
    Switch via  <html data-theme="light">  /  data-theme="dark".
 
-   Do NOT edit values here by hand — they mirror the design system.
+   Do NOT edit values here by hand - they mirror the design system.
    ============================================================ */
 
 /* ---- Webfonts: JetBrains Mono (brand/mono) + Inter (long-form) ---- */
@@ -62,7 +62,7 @@
   --indigo-a40: rgba(79, 91, 255, 0.4);
 
   /* ============================================================
-     SEMANTIC TOKENS — default = DARK theme (brand-primary canvas)
+     SEMANTIC TOKENS - default = DARK theme (brand-primary canvas)
      ============================================================ */
 
   /* Backgrounds & surfaces */
@@ -154,7 +154,7 @@
 }
 
 /* ============================================================
-   LIGHT THEME — equal first-class
+   LIGHT THEME - equal first-class
    ============================================================ */
 [data-theme='light'] {
   --bg-app: var(--off-white);
@@ -243,7 +243,7 @@
 }
 
 /* ============================================================
-   SPACING TOKENS — strict 8px grid (2px/4px half-steps for dense)
+   SPACING TOKENS - strict 8px grid (2px/4px half-steps for dense)
    ============================================================ */
 :root {
   --space-0: 0;
@@ -267,13 +267,13 @@
   --content-max: 1200px;
   --topbar-height: 56px;
 
-  /* Shared header row height — sidebar header + main topbar both use this
+  /* Shared header row height - sidebar header + main topbar both use this
      so their bottom border lines land on the same y-coordinate. */
   --app-header-h: 56px;
 }
 
 /* ============================================================
-   RADIUS TOKENS — 8px cards/buttons · 6px inputs · 4px badges
+   RADIUS TOKENS - 8px cards/buttons · 6px inputs · 4px badges
    ============================================================ */
 :root {
   --radius-none: 0;
@@ -286,7 +286,7 @@
 }
 
 /* ============================================================
-   ELEVATION TOKENS — soft, low-spread shadows + 1px hairlines.
+   ELEVATION TOKENS - soft, low-spread shadows + 1px hairlines.
    On dark, elevation reads via lighter surface + border more than
    shadow. On light, gentle ambient shadows.
    ============================================================ */
@@ -300,7 +300,7 @@
   /* Focus ring (accent) */
   --shadow-ring: 0 0 0 3px var(--ring);
 
-  /* AI / active glow — used sparingly */
+  /* AI / active glow - used sparingly */
   --glow-accent: 0 0 0 1px var(--indigo-a40), 0 0 20px var(--indigo-a24);
 
   --border-width: 1px;
@@ -315,7 +315,7 @@
 }
 
 /* ============================================================
-   MOTION TOKENS — calm, precise, fast. No bounce.
+   MOTION TOKENS - calm, precise, fast. No bounce.
    Subtle AI states use slow, soft pulses.
    ============================================================ */
 :root {

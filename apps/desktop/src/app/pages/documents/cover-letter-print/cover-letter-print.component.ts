@@ -14,8 +14,8 @@ import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-lette
  * Print-only cover letter route (`print/cover-letter/:id`), loaded by a HIDDEN
  * Tauri window during the silent WYSIWYG PDF export
  * (`cover_letter_document_export_pdf_wysiwyg`). Renders the same
- * `<app-cover-letter-preview>` as the editor — the export therefore IS the
- * editor's render — then signals readiness to Rust once fonts are loaded and
+ * `<app-cover-letter-preview>` as the editor - the export therefore IS the
+ * editor's render - then signals readiness to Rust once fonts are loaded and
  * the paginated sheet has settled, so the native print snapshot never captures
  * a half-rendered document. Mirrors `CvPrintComponent`.
  */
@@ -60,7 +60,7 @@ export class CoverLetterPrintComponent {
     const item = await this.db.documentLibraryGet(id);
     if (!item) return; // Rust side times out and reports the failure.
 
-    // Same parse/merge as the editor's `load()` — the render must be fed
+    // Same parse/merge as the editor's `load()` - the render must be fed
     // byte-identical inputs or the export drifts from the preview.
     if (item.contentJson) {
       const parsed: CoverLetterContent = JSON.parse(item.contentJson);

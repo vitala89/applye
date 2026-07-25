@@ -142,7 +142,7 @@
 }
 .cvlive__sample-text {
   // `min-width: 0` lets this flex item shrink below its content width so the
-  // ellipsis actually engages — without it the long field text refuses to
+  // ellipsis actually engages - without it the long field text refuses to
   // shrink and overflows the swatch (and widens the whole panel).
   min-width: 0;
   font-size: 13px;

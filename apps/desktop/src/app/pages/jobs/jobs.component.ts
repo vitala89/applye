@@ -2438,7 +2438,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly settings = signal<Settings | null>(null);
   readonly cache = signal<ScoringCache | null>(null);
   readonly fromCache = signal(false);
-  /** The shown score was produced against an OLDER profile version — the
+  /** The shown score was produced against an OLDER profile version - the
    * numbers still describe this job, but not the profile the user has now. */
   readonly scoreStale = signal(false);
   readonly wizardOpen = signal(false);
@@ -3134,7 +3134,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       // that the profile lacks, then fold the answers into the profile text the
       // letter is built from. Skipped when a CV is already linked for this job,
       // because that flow just ran the same analysis (and may have saved the
-      // answers to the profile) — no point asking the user twice. Fail-open and
+      // answers to the profile) - no point asking the user twice. Fail-open and
       // skippable; never blocks generation.
       let additionalInfo = '';
       if (!this.linkedCv()) {
@@ -3744,7 +3744,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * Restore this job's score on open. A score is cached per profile version, so
    * editing the profile (adding a target role, rewriting the Markdown) changes
    * the hash and the exact lookup misses. Rather than let the result disappear
-   * — which reads as "this job was never scored" — fall back to the newest
+   * - which reads as "this job was never scored" - fall back to the newest
    * score on record and flag it stale, so the user sees the old numbers plus an
    * explicit prompt to re-score against the profile they have now.
    */

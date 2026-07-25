@@ -99,7 +99,7 @@ const CLI_MODELS: Record<string, string[]> = {
 };
 
 /**
- * Phase 2 Settings — the first screen that touches AI. Wires the existing
+ * Phase 2 Settings - the first screen that touches AI. Wires the existing
  * db_get/update_settings + the OS-keychain commands, and proves the end-to-end
  * AI round-trip via "Test connection". Styled strictly with libs/ui tokens.
  *
@@ -241,7 +241,7 @@ const CLI_MODELS: Record<string, string[]> = {
               In CLI bridge mode Applye stores no API key. It runs the CLI you already installed and
               signed in to yourself, as a one-shot process with a fixed argument list (never a
               shell), in a scratch folder rather than your own files. The prompt still reaches that
-              vendor's servers through their CLI — the difference is that the account, the billing
+              vendor's servers through their CLI - the difference is that the account, the billing
               and the sign-in stay entirely yours. AI is always opt-in: nothing runs until you
               trigger an action.
             </p>
@@ -376,7 +376,7 @@ const CLI_MODELS: Record<string, string[]> = {
                   ><lucide-icon [img]="icons.stored" [size]="14" aria-hidden="true" /> Stored in
                   your OS keychain.</strong
                 >
-                You don't need to re-enter it — the field stays empty because the key is never read
+                You don't need to re-enter it - the field stays empty because the key is never read
                 back to the app. Type a new one only to replace it.
               } @else {
                 Saved to your OS keychain, never written to disk or logs, and sent only to the
@@ -391,7 +391,7 @@ const CLI_MODELS: Record<string, string[]> = {
                   [ngModel]="apiKeyInput()"
                   (ngModelChange)="apiKeyInput.set($event)"
                   [ngModelOptions]="{ standalone: true }"
-                  [placeholder]="keyStored() ? '•••••••••• (stored — type to replace)' : 'sk-ant-…'"
+                  [placeholder]="keyStored() ? '•••••••••• (stored - type to replace)' : 'sk-ant-…'"
                   autocomplete="off"
                 />
               </label>
@@ -935,7 +935,7 @@ const CLI_MODELS: Record<string, string[]> = {
         flex-wrap: wrap;
         gap: var(--space-3);
       }
-      /* Solid, high-commitment destructive button — the confirm step earns the
+      /* Solid, high-commitment destructive button - the confirm step earns the
          weight the resting "Delete all data" trigger deliberately withholds. */
       .btn--danger-solid {
         background: var(--danger);
@@ -1378,7 +1378,7 @@ export class SettingsComponent implements OnInit {
     this.resetting.set(true);
     try {
       await this.db.resetAllData();
-      // Keychain keys live outside the DB — clear each provider we support.
+      // Keychain keys live outside the DB - clear each provider we support.
       // A provider with no stored key throws; swallow per-key so one miss
       // doesn't abort the rest.
       const providers: AiProvider[] = ['claude', 'deepseek', 'openai', 'gemini', 'codex'];

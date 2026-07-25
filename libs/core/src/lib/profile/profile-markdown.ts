@@ -28,7 +28,7 @@ export interface ProfileForm {
    *
    * This is the whole safety net. Parsing a legacy profile is classification,
    * and classification without an overflow bucket deletes whatever it cannot
-   * name — which is the bug this file exists to fix, since the form rewrites
+   * name - which is the bug this file exists to fix, since the form rewrites
    * `fullMd` wholesale on the first keystroke. Nothing may be dropped on the
    * floor: if it has no field, it goes here. */
   notes: string;
@@ -109,12 +109,12 @@ type ContactKey =
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\+?\d[\d\s()./-]{5,}$/;
 const LINKEDIN_RE = /linkedin\.com/i;
-/** The whole token must look like a URL — not merely contain something
+/** The whole token must look like a URL - not merely contain something
  * dot-suffixed. An earlier cut matched any token ending in `.xx`, which ate
  * `Growth Lead @ acme.io` and `Senior Data Scientist, M.Sc` whole and left the
  * title empty. Hence: no spaces, and a lowercase host (`M.Sc` keeps its
  * capital and stays prose). Known and accepted: a header token that is exactly
- * `Node.js` still reads as a website — inside any longer title it is safe,
+ * `Node.js` still reads as a website - inside any longer title it is safe,
  * because the spaces disqualify the token. */
 const URL_RE = /^(https?:\/\/|www\.)\S+$|^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)+(\/\S*)?$/;
 
@@ -149,7 +149,7 @@ function isContactLine(line: string): boolean {
 
 /** Legacy shape: onboarding wrote every contact into one middot-joined header
  * line (`email · phone · address · website · linkedin`), which the old parser
- * read as `Title · Location` — the phone landed in "Current role" and the
+ * read as `Title · Location` - the phone landed in "Current role" and the
  * website and LinkedIn were dropped on the next save. Recover by classifying
  * each token instead of trusting its position, and spill whatever has no free
  * slot into `notes` rather than on the floor. */
@@ -210,7 +210,7 @@ export function parseProfileMd(md: string): ProfileForm {
   for (const rawLine of header) {
     const heading = /^#/.test(rawLine.trim());
     const line = stripEmphasis(rawLine.replace(/^#+\s*/, '').trim());
-    // A `#` line is the name slot even when it is empty — that is what stops a
+    // A `#` line is the name slot even when it is empty - that is what stops a
     // nameless profile from promoting its title into the name on the next read.
     if (heading && !nameSeen) {
       nameSeen = true;
@@ -297,7 +297,7 @@ export function serializeProfileForm(f: ProfileForm): string {
 /** One education / certificate entry as edited in the structured profile UI.
  * Persisted inside the `## Education` markdown body (one line each), so
  * `ProfileForm.education` stays a plain string and nothing downstream needs a
- * new field. Degrees and certificates share this shape — the distinction is
+ * new field. Degrees and certificates share this shape - the distinction is
  * just what the user types as `title`. */
 export interface EducationEntry {
   /** Degree, programme, or certificate name (e.g. "BSc Computer Science",

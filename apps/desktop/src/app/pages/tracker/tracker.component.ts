@@ -48,7 +48,7 @@ type Segment = 'active' | 'archived';
 type ColType = 'text' | 'date' | 'number' | 'yesno' | 'select' | 'status' | 'link' | 'stage';
 const RESPONDED = ['interview', 'offer', 'rejected'];
 
-/** A rendered column — a built-in field or a user-defined custom column. */
+/** A rendered column - a built-in field or a user-defined custom column. */
 interface ColumnDef {
   key: string;
   labelKey?: string;
@@ -134,8 +134,8 @@ export class TrackerComponent {
 
   /** The report is a document in its own language, not app chrome: the German
    * Eigenbemuehungen sheet must read German even when the UI runs in English.
-   * The chosen market therefore drives every string ON the sheet — headings,
-   * column labels and the period — while the surrounding export dialog stays
+   * The chosen market therefore drives every string ON the sheet - headings,
+   * column labels and the period - while the surrounding export dialog stays
    * in the UI language. */
   readonly reportLang = computed<SupportedLanguage>(() =>
     this.reportMarket() === 'de' ? 'de' : 'en',
@@ -311,7 +311,7 @@ export class TrackerComponent {
   }
 
   /** Same column, labelled in the REPORT's language. Custom columns keep the
-   * user's own wording — we have no translation for those. */
+   * user's own wording - we have no translation for those. */
   private reportColLabel(col: ColumnDef): string {
     return col.custom ? (col.label ?? '') : this.reportT()(col.labelKey ?? '');
   }
@@ -629,7 +629,7 @@ export class TrackerComponent {
   private contactDisplay(r: TrackerRow): string {
     return [r.contactName, r.contactChannel].filter(Boolean).join(' - ');
   }
-  /** CSV cell value for a report column — a spreadsheet has no width limit, so
+  /** CSV cell value for a report column - a spreadsheet has no width limit, so
    * CSV always includes every visible column (no A4 fit dropping). */
   private csvCell(r: TrackerRow, col: ReportColumn): string {
     const rec = r as unknown as Record<string, unknown>;

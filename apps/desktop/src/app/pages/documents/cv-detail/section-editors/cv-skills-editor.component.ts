@@ -7,7 +7,7 @@ import { TranslateService } from '@applye/i18n';
 /**
  * Editor arm for the `skills` CV section: labeled skill groups, each a chip
  * list of values, plus add/remove for both groups and individual chips.
- * Behavior-preserving extraction from `CvDetailComponent` — same fields and
+ * Behavior-preserving extraction from `CvDetailComponent` - same fields and
  * buttons, only the mutation model is now immutable: every edit emits a
  * brand-new `CvSkillsSection` via `sectionChange` instead of mutating
  * `section.groups` in place.

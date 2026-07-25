@@ -55,7 +55,7 @@ function skillForStageType(stageType: StageType): { skill: string; format: PrepF
 }
 
 /** The text used both to display a card's prompt and to tell the skill what
- * not to repeat on the next "N more" — the story title for STAR+R, the
+ * not to repeat on the next "N more" - the story title for STAR+R, the
  * question for everything else. */
 function cardPrompt(card: InterviewPrep | NewPrepCardInput): string {
   return card.question ?? '';
@@ -395,7 +395,7 @@ export class InterviewPrepDetailComponent implements OnInit {
     }
   }
 
-  /** Same call whether it's the first generation or "N more" — the existing
+  /** Same call whether it's the first generation or "N more" - the existing
    * cards' prompts are folded into the hash, so a repeat click with no new
    * cards since is a 0-token cache hit, and any new card since changes the
    * hash and produces a genuinely new batch that appends to what's shown. */

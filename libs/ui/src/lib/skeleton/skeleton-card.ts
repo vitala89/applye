@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { Skeleton } from './skeleton';
 
 /**
- * SkeletonCard — a ready-made loading placeholder shaped like a result card,
+ * SkeletonCard - a ready-made loading placeholder shaped like a result card,
  * ported from the Applye Design System: an avatar + two title lines, a body
  * block of text lines, and a footer chip row. Built from lib-skeleton
  * primitives so it shares the same shimmer.

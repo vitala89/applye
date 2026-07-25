@@ -114,7 +114,7 @@ export class ShellLayoutComponent implements OnInit {
     if (p) void this.router.navigate(['/jobs', p.jobId]);
   }
 
-  // Maps a route's top-level path segment to its i18n nav label — reused
+  // Maps a route's top-level path segment to its i18n nav label - reused
   // as the topbar title so it always names the page actually showing.
   private static readonly PAGE_TITLE_KEYS: Record<string, string> = {
     dashboard: 'nav.dashboard',
@@ -143,7 +143,7 @@ export class ShellLayoutComponent implements OnInit {
     return ShellLayoutComponent.PAGE_TITLE_KEYS[segment] ?? 'nav.dashboard';
   }
 
-  // Lucide icons — single minimalist line-icon set across the shell nav.
+  // Lucide icons - single minimalist line-icon set across the shell nav.
   protected readonly icons = {
     dashboard: LayoutDashboard,
     discover: Compass,
@@ -182,7 +182,7 @@ export class ShellLayoutComponent implements OnInit {
   readonly theme = this.themeService.theme;
   readonly aiMode = signal<AiMode>('api');
 
-  // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) — the native
+  // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) - the native
   // traffic lights float over our own header, so reserve space for them.
   // Windows/Linux keep the default native title bar and need no inset.
   protected readonly isMacOverlayChrome =

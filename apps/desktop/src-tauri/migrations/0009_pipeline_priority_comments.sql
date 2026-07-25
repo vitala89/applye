@@ -1,5 +1,5 @@
 -- Pipeline quick-view: user-set priority flag + comment thread.
--- Additive only — never edit an applied migration.
+-- Additive only - never edit an applied migration.
 
 ALTER TABLE applications ADD COLUMN priority TEXT DEFAULT NULL; -- NULL/'low'/'medium'/'high'
 
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS application_comments (
 );
 
 -- Preserve existing notes: any non-empty applications.notes becomes the
--- first comment (notes column stays in place as legacy — never dropped).
+-- first comment (notes column stays in place as legacy - never dropped).
 INSERT INTO application_comments (application_id, comment_text, created_at)
 SELECT id, notes, COALESCE(updated_at, datetime('now'))
 FROM applications

@@ -16,7 +16,7 @@ export function paginate(atoms: PackAtom[], usableH: number): number[][] {
 
   // Pack by glued *runs*, not single atoms. A run is a maximal sequence where
   // each atom (except the last) has `glueToNext`, so the whole run stays on one
-  // page — e.g. a section title glued to an entry's head glued to its first
+  // page - e.g. a section title glued to an entry's head glued to its first
   // bullet. This keeps the head with its title and first line while leaving the
   // remaining (non-glued) bullets free to flow onto the next page, so a long
   // entry splits across a page break instead of jumping down whole and leaving

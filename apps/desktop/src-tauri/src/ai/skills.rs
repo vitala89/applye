@@ -2,7 +2,7 @@
 // markdown skill bundled from `libs/skills`. A skill has YAML-ish frontmatter
 // plus `[SYSTEM]` / `[USER]` sections; this loads it, parses the frontmatter,
 // and interpolates `{{placeholders}}` from the runtime context, producing a
-// ready system/user prompt pair for `ai_run`. No scoring logic here — just
+// ready system/user prompt pair for `ai_run`. No scoring logic here - just
 // load + interpolate.
 
 use serde::Serialize;

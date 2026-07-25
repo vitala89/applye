@@ -27,14 +27,14 @@ import {
 } from '@applye/core';
 
 /** A semantic click target in the live CV preview: which section, which
- * styling scope (body text vs. section title), and — for a body click that
- * landed on a specific leaf — which element the user selected. Consumed by
+ * styling scope (body text vs. section title), and - for a body click that
+ * landed on a specific leaf - which element the user selected. Consumed by
  * the contextual `CvLiveStylePanelComponent`.
  *
  * `elementPath` is additive on top of section-level gating: it is the SAME
  * transient draft-id string already passed to `CvPreviewComponent.leafDraft`
  * for that leaf (e.g. `'summary'`, `'exp.1.role'`, `'exp.1.bullet.0'`,
- * `'skills.0.values'`, `'lang.0.language'`) — one string, reused as both the
+ * `'skills.0.values'`, `'lang.0.language'`) - one string, reused as both the
  * inline-edit draft key and the `elementStyles` override key, so there is a
  * single source of truth for "which leaf is this" with no separate mapping
  * table to keep in sync. It is only ever set alongside `part: 'body'`; a
@@ -56,7 +56,7 @@ export type CvStyleScope = 'element' | 'section' | 'document' | 'bullets';
 /** A scope-tagged change emitted by `CvLiveStylePanelComponent`. The parent
  * maps `(selection.part, scope)` to the correct write target/reducer (see the
  * plan's mapping table). `patch` carries the cleaned body/title font fields
- * (`colorHex` only when the user actually picked a colour — the no-accent-leak
+ * (`colorHex` only when the user actually picked a colour - the no-accent-leak
  * rule); `titleBorder` (title selections only) carries the section-title
  * underline, with `null` meaning inherit/clear; `titleRuleWidth` /
  * `titleRuleColor` (title selections only) carry the underline thickness (pt)
@@ -69,12 +69,12 @@ export interface CvStylePanelChange {
   titleBorder?: CvBorderStyle | null;
   titleRuleWidth?: number | null;
   titleRuleColor?: string | null;
-  /** Section BODY-rule (divider) thickness/colour — carried on body
+  /** Section BODY-rule (divider) thickness/colour - carried on body
    * selections for sections that draw a rule (personal details, experience);
    * always written at section scope. `null` clears back to the theme. */
   bodyRuleWidth?: number | null;
   bodyRuleColor?: string | null;
-  /** Section BODY-rule style — `'none'` turns the divider off, `null` clears
+  /** Section BODY-rule style - `'none'` turns the divider off, `null` clears
    * back to the theme's rule. Section scope, same as the width/colour above. */
   bodyBorder?: CvBorderStyle | null;
   /** In-line item separator (e.g. the `|` between languages) colour and size
@@ -84,7 +84,7 @@ export interface CvStylePanelChange {
   reset?: boolean;
 }
 
-/** Builds the canonical leaf-path string — the single source of truth for a
+/** Builds the canonical leaf-path string - the single source of truth for a
  * leaf's identity, consumed at every place that currently spells the same
  * path out as a raw template literal: `leafDraft`/`onLeafInput`/
  * `onLeafEscape` (the transient draft key) and `selectLeaf`/`selectPart`/
@@ -101,7 +101,7 @@ export function leafPath(kind: string, ...parts: (string | number)[]): string {
   return [kind, ...parts].join('.');
 }
 
-/** Plain text of the leaf a `CvPreviewSelection.elementPath` targets — the
+/** Plain text of the leaf a `CvPreviewSelection.elementPath` targets - the
  * inverse of `leafPath`, used to preview the SELECTED content in the live-style
  * panel's sample swatch. Returns '' for a pathless (whole-part) selection or a
  * title (the parent resolves a title's text from its section label instead). */
@@ -174,7 +174,7 @@ const DEFAULT_SECTION_ORDER: CvSectionKey[] = [
   'languages',
 ];
 
-/** Visible sections in display order — what the preview (and the real
+/** Visible sections in display order - what the preview (and the real
  * export) actually renders, as opposed to the constructor's full
  * edit-everything list. */
 export function orderedVisibleSections(sections: CvSection[]): CvSection[] {
@@ -189,7 +189,7 @@ export function orderedVisibleSections(sections: CvSection[]): CvSection[] {
  * visible, carrying `dataUri`, keeping whatever placement was already chosen.
  * Most templates seed no photo section at all, so one is created and pinned
  * ahead of everything else (a photo belongs at the top of the identity block).
- * Pure — the caller decides whether to persist the result.
+ * Pure - the caller decides whether to persist the result.
  */
 export function withCvPhoto(content: CvContent, dataUri: string): CvContent {
   const existing = content.sections.find((s) => s.key === 'photo');
@@ -226,7 +226,7 @@ export function templateSectionOrder(template: CvTemplate | null): CvSectionKey[
  * came from the AI (or the user's own upload). */
 export function buildCvContent(parsed: CvParsedContent, template: CvTemplate | null): CvContent {
   const order = templateSectionOrder(template);
-  // personal_details is identity, not layout — guarantee it regardless of the
+  // personal_details is identity, not layout - guarantee it regardless of the
   // template's section list (some built-ins omit it). Force it first.
   const keys: CvSectionKey[] = order.includes('personal_details')
     ? order
@@ -307,7 +307,7 @@ export interface CvFieldToggles {
 }
 
 /** Deterministic, 0-token ATS-risk notes for the constructor's field
- * toggles. Distinct from the (1d) font/colour `check_style_safety` note —
+ * toggles. Distinct from the (1d) font/colour `check_style_safety` note -
  * this one is about which facts appear on the page at all. DE traditional
  * CVs conventionally include all three; other markets commonly flag them
  * (photo/age/marital-status bias, and some ATS parsers choke on an
@@ -338,7 +338,7 @@ export function sectionLabelKey(key: CvSectionKey): string {
   return SECTION_LABEL_KEYS[key];
 }
 
-/** Sections a per-section "regenerate" button makes sense for — factual
+/** Sections a per-section "regenerate" button makes sense for - factual
  * identity fields (photo, personal details) are user-edited, not
  * AI-authored, so they're excluded. */
 export const REGENERATABLE_SECTION_KEYS: CvSectionKey[] = [
@@ -570,7 +570,7 @@ export function parseDateAnswer(answer: string): { startDate: string; endDate: s
 
 /** Merges a targeted single-section regenerate result into an existing
  * `CvContent`, updating only that section's content fields (and
- * `sourceHash`) — every other section is untouched. */
+ * `sourceHash`) - every other section is untouched. */
 export function mergeRegeneratedSection(
   content: CvContent,
   key: CvSectionKey,
@@ -586,10 +586,10 @@ export function mergeRegeneratedSection(
   return { sections };
 }
 
-/** Filename convention (ROADMAP §16.6) — DE follows the market convention
+/** Filename convention (ROADMAP §16.6) - DE follows the market convention
  * `Lastname_Vorname_Lebenslauf.ext` when a full name is available; every
  * other region/fallback case is a plain slug of the label. Not a full
- * `market-conventions/{region}.json` config yet — that's future growth
+ * `market-conventions/{region}.json` config yet - that's future growth
  * once a third consumer needs it (§16.2), 0 tokens either way. */
 export function suggestCvFilename(
   item: { label?: string; regionTag?: string; contentJson?: string },
@@ -774,7 +774,7 @@ export function buildContactLine(
     .join(' | ');
 }
 
-/** Contact fields addressable as individual inline-edit leaves — the same
+/** Contact fields addressable as individual inline-edit leaves - the same
  * fields, same order, as `buildContactLine`. */
 export type CvContactFieldKey =
   | 'address'
@@ -793,10 +793,10 @@ export interface CvContactFieldLeaf {
 /** The contact fields that currently render in `buildContactLine`'s output,
  * as individually addressable leaves (same order). The five base fields
  * (address/phone/email/website/linkedin) only become a leaf once they already
- * carry a value — matching what's actually visible in the resting contact
+ * carry a value - matching what's actually visible in the resting contact
  * line, since this task doesn't add an "add a new contact field" affordance.
  * `birthDate`/`maritalStatus` become a leaf whenever their toggle is on, value
- * or not — mirroring the sidebar editor, which shows the input as soon as the
+ * or not - mirroring the sidebar editor, which shows the input as soon as the
  * toggle is enabled so the user can fill it in for the first time. */
 export function visiblePersonalContactFields(
   p: CvPersonalDetailsSection,
@@ -864,7 +864,7 @@ export function patchCvSectionStyle(
 }
 
 /** Leaf-path prefix for a section (`exp`, `edu`, `skills`, `pd`, `lang`,
- * `summary`) — the head of every `elementStyles` key inside that section. */
+ * `summary`) - the head of every `elementStyles` key inside that section. */
 function sectionPathPrefix(key: CvSectionKey): string | null {
   switch (key) {
     case 'personal_details':
@@ -885,7 +885,7 @@ function sectionPathPrefix(key: CvSectionKey): string | null {
 }
 
 /** Drops per-element overrides inside a section so a section-wide change ("All
- * experiences", "All achievements") applies UNIFORMLY — an individual entry's
+ * experiences", "All achievements") applies UNIFORMLY - an individual entry's
  * override no longer wins and silently gets skipped. `bullets: true` targets
  * only that section's bullet overrides (the "All achievements" scope);
  * otherwise it targets the heads/fields (everything except bullets). Sibling
@@ -909,7 +909,7 @@ export function clearSectionElementOverrides(
 }
 
 /** Drops TITLE properties from EVERY per-section override so an "all titles"
- * change applies UNIFORMLY — the counterpart of `clearSectionElementOverrides`
+ * change applies UNIFORMLY - the counterpart of `clearSectionElementOverrides`
  * one layer up. Without this, a title styled on its own ("this title") keeps
  * winning the cascade and silently ignores the new all-titles value while its
  * siblings adopt it.
@@ -926,7 +926,7 @@ export function clearSectionTitleOverrides(
 }
 
 /** Drops RULE properties from every per-ENTRY override in a section so an "All
- * experiences" line change applies UNIFORMLY — the entry-line counterpart of
+ * experiences" line change applies UNIFORMLY - the entry-line counterpart of
  * `clearSectionTitleOverrides`. Without it, an entry whose line the user styled
  * on its own keeps winning and ignores the section's new rule.
  *
@@ -1020,10 +1020,10 @@ export function resetCvElementStyle(style: CvStyle, path: string): CvStyle {
 }
 
 /** Applies an element-style patch onto the `CvStyle` root/document-wide body
- * fields (`fontFamily`/`fontSizePt`/`fontWeight`/`bodyColorHex`) — the
+ * fields (`fontFamily`/`fontSizePt`/`fontWeight`/`bodyColorHex`) - the
  * least-specific layer of the cascade. Only the provided keys are written;
  * `sectionStyles`/`elementStyles`/`titleStyle` are left untouched.
- * `colorHex` maps to `bodyColorHex` — the document-wide BODY text colour —
+ * `colorHex` maps to `bodyColorHex` - the document-wide BODY text colour -
  * NOT `accentColorHex` (the accent/title/rule colour body text never reads;
  * writing `accentColorHex` here was the Phase D.2 bug this fixes, since it
  * recoloured titles instead of the body it was meant to target).
@@ -1039,14 +1039,14 @@ export function patchCvDocumentBody(style: CvStyle, patch: Partial<CvElementStyl
 }
 
 /** Resolved style for a single body leaf: `elementStyles[elementPath]`
- * layered over `effectiveSectionStyle(style, key)` — element → section →
+ * layered over `effectiveSectionStyle(style, key)` - element → section →
  * document → none, most-specific first. An absent `elementPath` (or one with
  * no override) resolves to the section/document colour cascade unchanged.
  * `colorHex` stays `undefined` unless explicitly overridden at the element,
- * section, OR document (`bodyColorHex`) scope — it must NOT fall back to
+ * section, OR document (`bodyColorHex`) scope - it must NOT fall back to
  * `accentColorHex` (the no-accent-leak rule from `015c2e3`); un-overridden
  * body text keeps its inherited/theme colour. `lineHeight` is validated
- * 1.0–2.0, falling back to the section's (already-validated) value when the
+ * 1.0-2.0, falling back to the section's (already-validated) value when the
  * element override is out of range. */
 export function effectiveLeafStyle(
   style: CvStyle,
@@ -1058,7 +1058,7 @@ export function effectiveLeafStyle(
   fontWeight: CvFontWeight;
   colorHex?: string;
   lineHeight?: number;
-  /** Per-leaf bottom rule (underline). Element-only — no section fallback: the
+  /** Per-leaf bottom rule (underline). Element-only - no section fallback: the
    * section's structural body divider is a separate concept. `undefined`/'none'
    * → no line. */
   borderStyle?: CvBorderStyle;
@@ -1104,14 +1104,14 @@ export function effectiveTitleBorder(style: CvStyle, key: CvSectionKey): CvBorde
 }
 
 /** Effective title-underline thickness (pt) for a section: per-section, then
- * document. `undefined` means "no user override" — the renderer falls back to
+ * document. `undefined` means "no user override" - the renderer falls back to
  * the active theme's rule weight (or the neutral default). */
 export function effectiveTitleRuleWidth(style: CvStyle, key: CvSectionKey): number | undefined {
   return style.sectionStyles?.[key]?.titleRuleWidthPt ?? style.titleRuleWidthPt;
 }
 
 /** Effective title-underline colour for a section: per-section, then document.
- * `undefined` means "no user override" — the renderer falls back to the theme
+ * `undefined` means "no user override" - the renderer falls back to the theme
  * rule colour (accent/muted) or the neutral default. */
 export function effectiveTitleRuleColor(style: CvStyle, key: CvSectionKey): string | undefined {
   return style.sectionStyles?.[key]?.titleRuleColorHex ?? style.titleRuleColorHex;
@@ -1122,7 +1122,7 @@ export interface ResolvedPage {
   heightMm: number;
   /** Clamped 4-side margins in mm. */
   margin: { top: number; right: number; bottom: number; left: number };
-  /** Each side as a % of the relevant page dimension — resolution-independent
+  /** Each side as a % of the relevant page dimension - resolution-independent
    * padding for the preview (top/bottom of height, left/right of width). */
   marginPct: { top: number; right: number; bottom: number; left: number };
 }
@@ -1174,7 +1174,7 @@ export function resolvePageSettings(page: PageSettings | undefined): ResolvedPag
   };
 }
 
-/** Effective per-block cover-letter style — the block's override merged over
+/** Effective per-block cover-letter style - the block's override merged over
  * the document-wide style. Mirrors `effectiveSectionStyle` for CVs. */
 export function effectiveCoverLetterBlockStyle(
   style: CoverLetterStyle,
@@ -1189,7 +1189,7 @@ export function effectiveCoverLetterBlockStyle(
   };
 }
 
-/** Effective style for a single body paragraph — its `body_<i>` override
+/** Effective style for a single body paragraph - its `body_<i>` override
  * merged over the `body` block style, merged over the document-wide style. */
 export function effectiveCoverLetterParagraphStyle(
   style: CoverLetterStyle,
@@ -1219,12 +1219,12 @@ export function blankEducationEntry(): CvEducationEntry {
 // Each helper replaces exactly one field/index inside a section's nested
 // array, producing fresh objects at every mutated level (the array itself,
 // the mutated entry/group/item) while every *other* entry/group/item keeps
-// its original object identity — the array `.map` only allocates a new
+// its original object identity - the array `.map` only allocates a new
 // object for the matched index.
 
 /** Immutably replaces one field of one experience entry by index. Every
  * other entry (and the section/array wrapping it) is a fresh reference only
- * at the mutated level — sibling entries keep their original identity. */
+ * at the mutated level - sibling entries keep their original identity. */
 export function replaceExperienceEntryField<K extends keyof CvExperienceEntry>(
   section: CvExperienceSection,
   index: number,
@@ -1286,7 +1286,7 @@ export function replaceSkillGroupLabel(
 }
 
 /** Parses a comma-separated values editor string back into a trimmed,
- * non-empty string array — the inverse of `group.values.join(', ')`. */
+ * non-empty string array - the inverse of `group.values.join(', ')`. */
 export function parseSkillValues(text: string): string[] {
   return text
     .split(',')
@@ -1307,7 +1307,7 @@ export function replaceSkillGroupValues(
 }
 
 /** Immutably replaces one language entry's visible `language` value by
- * index — the (currently non-rendered) `level` field is left untouched. */
+ * index - the (currently non-rendered) `level` field is left untouched. */
 export function replaceLanguageValue(
   section: CvLanguagesSection,
   index: number,

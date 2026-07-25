@@ -166,15 +166,15 @@ pub(crate) async fn db_upsert_application_core(
 }
 
 /// Update status AND append a `status_history` row in a single transaction.
-/// `changed_at` / `updated_at` are auto-stamped — the source of truth for the
+/// `changed_at` / `updated_at` are auto-stamped - the source of truth for the
 /// Agentur für Arbeit report and analytics.
 ///
 /// Entering `applied` or `interview` also (re)computes `follow_up_at`
-/// deterministically in SQL from the settings cadence — 0 AI tokens. This
+/// deterministically in SQL from the settings cadence - 0 AI tokens. This
 /// only fires on an actual status transition (not on every load), so a
 /// manually-edited `follow_up_at` survives until the user changes status
 /// again. Terminal statuses (`offer`/`rejected`) leave `follow_up_at`
-/// untouched — there is no further action to remind the user about.
+/// untouched - there is no further action to remind the user about.
 #[tauri::command]
 pub async fn db_set_application_status(
     id: i64,
@@ -275,7 +275,7 @@ pub struct PipelineCard {
     /// (equals the `profile.scoring_hash` at scoring time). The dashboard marks
     /// a score stale when this no longer equals the current profile's hash.
     pub score_profile_hash: Option<String>,
-    /// When that cached score was created — powers the dashboard "N days old"
+    /// When that cached score was created - powers the dashboard "N days old"
     /// staleness badge.
     pub score_at: Option<String>,
     pub priority: Option<String>,
@@ -283,7 +283,7 @@ pub struct PipelineCard {
     pub current_stage_label: Option<String>,
     pub current_stage_status: Option<String>,
     pub current_stage_scheduled_at: Option<String>,
-    /// Total interview stages logged for this application — powers the card's
+    /// Total interview stages logged for this application - powers the card's
     /// "stage N of M" progress track. `current_stage_order` is the position.
     pub current_stage_total: Option<i64>,
 }
@@ -341,7 +341,7 @@ async fn fetch_application(pool: &sqlx::SqlitePool, id: i64) -> Result<Applicati
         .map_err(|e| format!("fetch_application: {e}"))
 }
 
-/// Patch payload for the Job Tracker's inline edit — only the tracker fields
+/// Patch payload for the Job Tracker's inline edit - only the tracker fields
 /// the screen lets the user edit directly (contact, next action, salary,
 /// notes). Deliberately narrower than `ApplicationInput`: a full upsert would
 /// silently null out `cv_path` / `cover_letter_path` / `doc_language` /
@@ -398,7 +398,7 @@ async fn db_update_application_tracker_fields_core(
     fetch_application(pool, input.id).await
 }
 
-/// Pipeline quick-view priority flag — a different concept from the
+/// Pipeline quick-view priority flag - a different concept from the
 /// deterministic legitimacy tier: this is the user's own triage signal.
 #[tauri::command]
 pub async fn set_application_priority(
@@ -592,7 +592,7 @@ mod followup_tests {
     }
 
     /// Moving into `applied` sets follow_up_at = today + settings cadence
-    /// (default 7 days), read straight from the settings row — 0 tokens.
+    /// (default 7 days), read straight from the settings row - 0 tokens.
     #[tokio::test]
     async fn applied_sets_follow_up_at_from_apply_cadence() {
         let pool = test_pool().await;
@@ -650,7 +650,7 @@ mod followup_tests {
     }
 
     /// A manually-set follow_up_at survives until the user changes status
-    /// again — it is never silently recomputed on an unrelated load/reload.
+    /// again - it is never silently recomputed on an unrelated load/reload.
     #[tokio::test]
     async fn manual_override_is_not_clobbered_by_unrelated_reads() {
         let pool = test_pool().await;
@@ -666,7 +666,7 @@ mod followup_tests {
             .unwrap();
 
         // Plain reads (db_list_applications / db_pipeline_cards path) never
-        // touch follow_up_at — only a fresh status transition does.
+        // touch follow_up_at - only a fresh status transition does.
         let reloaded = fetch_application(&pool, id).await.expect("reload");
         assert_eq!(reloaded.follow_up_at.as_deref(), Some("2099-01-01"));
     }
@@ -718,7 +718,7 @@ mod followup_tests {
         assert!(!overdue(future_id));
     }
 
-    /// The Job Tracker inline-edit patch writes only the 7 tracker fields —
+    /// The Job Tracker inline-edit patch writes only the 7 tracker fields -
     /// it must never null out cv_path/cover_letter_path/application_method,
     /// which the Tracker table doesn't carry and would otherwise clobber.
     #[tokio::test]

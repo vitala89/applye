@@ -1,7 +1,7 @@
 [package]
 name = "applye-desktop"
 version = "0.27.0"
-description = "Applye — local-first AI-powered job search desktop app"
+description = "Applye - local-first AI-powered job search desktop app"
 authors = ["Vitalii Kasap"]
 license = "MIT"
 repository = "https://github.com/vitala89/applye"
@@ -42,7 +42,7 @@ printpdf = { version = "0.7", features = ["embedded_images"] }
 # embeds the TTF but does not expose per-glyph widths to callers.
 ttf-parser = "0.25"
 # Import tracklist (Phase 6.4): XLSX parsing, read-only. CSV/JSON/text are
-# forwarded as raw text — the import-tracklist skill does structure
+# forwarded as raw text - the import-tracklist skill does structure
 # detection on the text directly, no Rust-side CSV parsing needed.
 calamine = "0.35"
 # CV import (Documents 1b, ROADMAP §16.3): PDF text extraction, read-only.
@@ -53,7 +53,7 @@ pdf-extract = "0.7"
 tauri-plugin-updater = "2"
 base64 = "0.22"
 
-# OS keychain — one backend per platform (no unused dbus on macOS/Windows).
+# OS keychain - one backend per platform (no unused dbus on macOS/Windows).
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3", features = ["apple-native"] }
 # Silent WYSIWYG print-to-PDF (commands/print.rs): drives WKWebView's print

@@ -1,13 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@applye/i18n';
 
-/** Tauri v2 runtime check — false in the browser / during SSR. */
+/** Tauri v2 runtime check - false in the browser / during SSR. */
 function inTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
 /**
- * Auto-update flow. Augmentation principle: we only ever *offer* the update —
+ * Auto-update flow. Augmentation principle: we only ever *offer* the update -
  * the user decides. Runs once on launch, non-blocking, and is a no-op outside
  * the Tauri runtime.
  */

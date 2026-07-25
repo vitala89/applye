@@ -1958,7 +1958,7 @@ export class ProfileComponent implements OnInit {
   readonly form = signal<ProfileForm>({ ...EMPTY_FORM });
   /** Structured mirror of `form().education` for the multi-entry editor. Its
    * own signal (not a computed) so a freshly-added blank row survives until the
-   * user fills it — `serializeEducationEntries` drops blank lines from the
+   * user fills it - `serializeEducationEntries` drops blank lines from the
    * string, but the row must stay editable. Re-seeded whenever the form is
    * reparsed (load, leaving raw mode). */
   readonly educationEntries = signal<EducationEntry[]>([]);

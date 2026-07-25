@@ -209,7 +209,7 @@ export class ScoringView {
   readonly fromCache = input<boolean>(false);
   readonly job = input<Job | null>(null);
   readonly icons = input.required<JobDetailIcons>();
-  /** True once the CV has been tailored for this job — flips the CTA to a
+  /** True once the CV has been tailored for this job - flips the CTA to a
    * Tailored badge + Retailor button. */
   readonly tailored = input<boolean>(false);
 

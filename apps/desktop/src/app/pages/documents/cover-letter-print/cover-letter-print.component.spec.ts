@@ -22,7 +22,7 @@ const ITEM = {
 };
 
 /** Drives the component's async `load()` + `signalReady()` chain to completion.
- * `signalReady` uses real `setTimeout`s (never rAF — an off-screen window
+ * `signalReady` uses real `setTimeout`s (never rAF - an off-screen window
  * throttles it), so the test waits them out rather than faking the clock. */
 const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 700));
 
@@ -70,7 +70,7 @@ describe('CoverLetterPrintComponent', () => {
   it('flags the DOM printable before telling Rust to print', async () => {
     const fixture = setup(ITEM);
     printWindowReady.mockImplementation(() => {
-      // The class MUST already be on at this point — Rust snapshots the DOM as
+      // The class MUST already be on at this point - Rust snapshots the DOM as
       // soon as this resolves, and the print styles hang off `body.printing-cv`.
       expect(document.body.classList.contains('printing-cv')).toBe(true);
       return Promise.resolve();

@@ -1,13 +1,13 @@
-// From-link paste flow (legal-first — INSTRUCTIONS.md §0, ROADMAP.md §11).
+// From-link paste flow (legal-first - INSTRUCTIONS.md §0, ROADMAP.md §11).
 //
 // classify_job_url: 0-token deterministic host allowlist check. Only public
 // open/ATS/RSS sources (Tier 2/3) are ever fetched. Closed boards (LinkedIn,
 // Indeed, StepStone, Glassdoor) and any domain not on the allowlist are
-// treated as closed — the app never scrapes them, only opens them in the
+// treated as closed - the app never scrapes them, only opens them in the
 // user's browser and waits for a manual copy-paste.
 //
 // fetch_job_from_url: only ever called for URLs the server itself re-classifies
-// as Allowed. Reads each source's known public JSON/XML/RSS shape — never
+// as Allowed. Reads each source's known public JSON/XML/RSS shape - never
 // parses arbitrary HTML.
 
 use serde::Serialize;
@@ -54,7 +54,7 @@ fn host_matches(host: &str, suffix: &str) -> bool {
     host == suffix || host.ends_with(&format!(".{suffix}"))
 }
 
-/// Tier 2 (open API/RSS) + Tier 3 (ATS public JSON API) sources — ROADMAP §11.
+/// Tier 2 (open API/RSS) + Tier 3 (ATS public JSON API) sources - ROADMAP §11.
 /// URLs are pasted as the API endpoint itself (the machine-readable shape),
 /// not the closed public HTML board.
 const ALLOWED_HOSTS: &[(&str, &str)] = &[
@@ -102,11 +102,11 @@ fn classify_job_url_core(url: &str) -> UrlClassification {
     }
 
     // Safe default: anything not explicitly recognized as open/legal is
-    // treated as closed by the caller — never fetched, never scraped.
+    // treated as closed by the caller - never fetched, never scraped.
     UrlClassification::Unknown
 }
 
-/// Strip HTML tags to plain text (no external crate — the ATS payloads are
+/// Strip HTML tags to plain text (no external crate - the ATS payloads are
 /// small, well-formed job descriptions, not arbitrary web pages).
 pub(crate) fn strip_html(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
@@ -198,7 +198,7 @@ pub(crate) fn titleize_slug(slug: &str) -> String {
         .join(" ")
 }
 
-/// Fetch a job from an allowed open/ATS source. Re-classifies server-side —
+/// Fetch a job from an allowed open/ATS source. Re-classifies server-side -
 /// never trusts the caller to have checked first.
 #[tauri::command]
 pub async fn fetch_job_from_url(url: String) -> Result<FetchedJob, String> {
@@ -245,7 +245,7 @@ async fn get_text(url: &str) -> Result<String, String> {
         .map_err(|e| format!("fetch_job_from_url: invalid response body: {e}"))
 }
 
-/// boards-api.greenhouse.io/v1/boards/{slug}/jobs/{id} — the pasted URL IS
+/// boards-api.greenhouse.io/v1/boards/{slug}/jobs/{id} - the pasted URL IS
 /// the API endpoint. Response: { title, content (HTML), location{name} }.
 /// Company display name needs a second call to /v1/boards/{slug}.
 async fn fetch_greenhouse(url: &str) -> Result<FetchedJob, String> {
@@ -281,9 +281,9 @@ async fn fetch_greenhouse(url: &str) -> Result<FetchedJob, String> {
     })
 }
 
-/// api.lever.co/v0/postings/{slug}/{id} — pasted URL is the API endpoint.
+/// api.lever.co/v0/postings/{slug}/{id} - pasted URL is the API endpoint.
 /// Response: { text (title), descriptionPlain | description, categories{...} }.
-/// No company display name field — falls back to the slug.
+/// No company display name field - falls back to the slug.
 async fn fetch_lever(url: &str) -> Result<FetchedJob, String> {
     let val = get_json(url).await?;
     let title = val
@@ -308,7 +308,7 @@ async fn fetch_lever(url: &str) -> Result<FetchedJob, String> {
 }
 
 /// api.ashbyhq.com/posting-api/job-board/{slug} returns the WHOLE board
-/// ({ name, jobs: [...] }), not a single job — Ashby's public posting API has
+/// ({ name, jobs: [...] }), not a single job - Ashby's public posting API has
 /// no per-job URL. Matches a specific job by id/jobId if the pasted URL
 /// carries one (trailing path segment or `?jobId=`); otherwise falls back to
 /// the single job on the board when there's exactly one, and errors with a
@@ -353,7 +353,7 @@ async fn fetch_ashby(url: &str) -> Result<FetchedJob, String> {
     }
     .or_else(|| if jobs.len() == 1 { jobs.first() } else { None })
     .ok_or(
-        "fetch_job_from_url: could not identify a single job on this Ashby board — \
+        "fetch_job_from_url: could not identify a single job on this Ashby board - \
          paste the description text instead",
     )?;
 
@@ -375,7 +375,7 @@ async fn fetch_ashby(url: &str) -> Result<FetchedJob, String> {
     })
 }
 
-/// {company}.jobs.personio.de/xml — the public XML feed listing every
+/// {company}.jobs.personio.de/xml - the public XML feed listing every
 /// posting for that company. Verified real shape (fetched live):
 ///   <position>
 ///     <id>...</id> <subcompany>...</subcompany> <name>Title</name>
@@ -385,7 +385,7 @@ async fn fetch_ashby(url: &str) -> Result<FetchedJob, String> {
 ///     </jobDescriptions>
 ///     ...
 ///   </position>
-/// Minimal manual tag scan (no XML crate) — matches the <position> whose
+/// Minimal manual tag scan (no XML crate) - matches the <position> whose
 /// <id> equals the job id in the pasted URL, then concatenates every
 /// jobDescription section's <value>.
 async fn fetch_personio(url: &str) -> Result<FetchedJob, String> {
@@ -454,7 +454,7 @@ pub(crate) fn xml_tag(block: &str, tag: &str) -> Option<String> {
     }
 }
 
-/// remotive.com/api/remote-jobs — public JSON list of all remote jobs.
+/// remotive.com/api/remote-jobs - public JSON list of all remote jobs.
 /// No single-job-by-id endpoint; matches the pasted URL against each job's
 /// `url` field (or trailing numeric id) in the list.
 async fn fetch_remotive(url: &str) -> Result<FetchedJob, String> {
@@ -512,9 +512,9 @@ async fn fetch_remotive(url: &str) -> Result<FetchedJob, String> {
     })
 }
 
-/// weworkremotely.com — no public JSON API, only category-scoped RSS feeds.
+/// weworkremotely.com - no public JSON API, only category-scoped RSS feeds.
 /// Tries the common category feeds and matches the pasted URL against each
-/// item's <link>. RSS titles are "Company: Role" — split on the first colon.
+/// item's <link>. RSS titles are "Company: Role" - split on the first colon.
 async fn fetch_weworkremotely(url: &str) -> Result<FetchedJob, String> {
     const FEEDS: &[&str] = &[
         "https://weworkremotely.com/categories/remote-programming-jobs.rss",
@@ -554,7 +554,7 @@ async fn fetch_weworkremotely(url: &str) -> Result<FetchedJob, String> {
         }
     }
 
-    Err("fetch_job_from_url: job not found in WeWorkRemotely feeds — paste the description text instead".to_string())
+    Err("fetch_job_from_url: job not found in WeWorkRemotely feeds - paste the description text instead".to_string())
 }
 
 #[cfg(test)]

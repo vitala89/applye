@@ -32,7 +32,7 @@ export interface ParsedCv {
 
 /** Writes the exact shape `parseProfileMd` reads. These two used to disagree:
  * the title was italicised and every contact was crushed into one middot-joined
- * line, which the profile form read back as `Title · Location` — so the phone
+ * line, which the profile form read back as `Title · Location` - so the phone
  * showed up as the user's current role and the website and LinkedIn were gone
  * the first time they pressed Save. Keep the two in lockstep; the round-trip
  * test in `profile-markdown.spec.ts` is what holds them there. */
@@ -98,7 +98,7 @@ export function cvToProfileMarkdown(cv: ParsedCv): string {
   // "there is no profile to save", so a lone `#` here would write an empty
   // profile over a real one.
   if (!name && !out.length) return '';
-  // Otherwise the `#` line is always written, even nameless — it holds the name
+  // Otherwise the `#` line is always written, even nameless - it holds the name
   // slot, and without it `parseProfileMd` reads the title as the user's name.
   return [`# ${name ?? ''}`.trimEnd(), ...out].join('\n').trim();
 }
@@ -115,8 +115,8 @@ export function appendCompensation(md: string, compBody: string): string {
   return `${md}\n\n## Compensation\n${body}`.trim();
 }
 
-/** The wizard has no region selector — a first-run flow pays for every extra
- * choice in drop-off — so the starting region template follows the UI
+/** The wizard has no region selector - a first-run flow pays for every extra
+ * choice in drop-off - so the starting region template follows the UI
  * language. Documents stays the place to switch template afterwards. */
 export function regionTagForUiLanguage(uiLanguage: string | null | undefined): string {
   return uiLanguage?.toLowerCase().startsWith('de') ? 'de' : 'generic';
@@ -147,7 +147,7 @@ export interface OnboardingCvOverrides {
 }
 
 /** The review step seeds its inputs from the parse, so a blank field means the
- * user *deleted* what we parsed — not "supplied nothing". Both artifacts the
+ * user *deleted* what we parsed - not "supplied nothing". Both artifacts the
  * wizard writes (profile markdown and CV document) resolve the review fields
  * through here, so a phone cleared for privacy cannot survive in one of them. */
 export function applyContactOverrides(overrides: OnboardingCvOverrides): {
@@ -181,7 +181,7 @@ export function applyContactOverrides(overrides: OnboardingCvOverrides): {
 export interface OnboardingCvInputArgs {
   parsed: CvParsedContent;
   /** The review step's edited contact fields. They replace the parsed values
-   * outright — including when blank, see `applyContactOverrides`. */
+   * outright - including when blank, see `applyContactOverrides`. */
   overrides: OnboardingCvOverrides;
   templates: CvTemplate[];
   regionTag: string;
@@ -220,7 +220,7 @@ export function buildOnboardingCvInput(
 }
 
 /** Mirrors the Documents import's duplicate guard: the same source file, once.
- * Only the upload path can be guarded — pasted text carries no hash, so
+ * Only the upload path can be guarded - pasted text carries no hash, so
  * deliberately re-running the wizard and pasting the same resume writes a
  * second CV. Accepted: re-entry is an explicit action from Settings, and
  * Documents can delete the extra. */

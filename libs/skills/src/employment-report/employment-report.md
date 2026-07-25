@@ -1,8 +1,8 @@
 ---
-version: "0.1.0"
+version: '0.1.0'
 description: >
   Agentur für Arbeit Eigenbemühungen report generation.
-  Pure data export — 0 AI tokens. SQL query → formatted report.
+  Pure data export - 0 AI tokens. SQL query → formatted report.
   This skill is a documentation stub; actual logic is in Rust (db.rs).
 inputs:
   - name: period_start
@@ -14,10 +14,10 @@ inputs:
 output_format: |
   Structured table: date / company / position / method / status / contact.
   Formats: PDF (primary, print-ready), xlsx, DOCX.
-recommended_model: none  # No AI — pure SQL export
+recommended_model: none # No AI - pure SQL export
 language_note: Always German (Behördensprache). UI language does not affect this.
-status: v2 feature — Rust implementation, no prompt needed
+status: v2 feature - Rust implementation, no prompt needed
 ---
 
-No prompt here — this is a code-side feature (SQL → PDF/xlsx export).
+No prompt here - this is a code-side feature (SQL → PDF/xlsx export).
 See ROADMAP.md §9 for spec.

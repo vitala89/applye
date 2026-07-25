@@ -266,7 +266,7 @@ describe('CvPreviewComponent', () => {
     expect(component.bulletCss('education')).toEqual({});
   });
 
-  it('bulletListCss ignores the section-body ("All experiences") colour — bullets stay independent', () => {
+  it('bulletListCss ignores the section-body ("All experiences") colour - bullets stay independent', () => {
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,
       // "All experiences" colour override on the experience section.
@@ -283,7 +283,7 @@ describe('CvPreviewComponent', () => {
     fixture.detectChanges();
     const css = component.bulletListCss('experience');
     // Bullets carry no colour and no --cv-section-body-color from the section
-    // scope — only "All achievements" / per-bullet overrides colour them.
+    // scope - only "All achievements" / per-bullet overrides colour them.
     expect(css['color']).toBeUndefined();
     expect(css['--cv-section-body-color']).toBeUndefined();
   });
@@ -323,7 +323,7 @@ describe('CvPreviewComponent', () => {
     });
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
-    // Only the clicked entry's head is framed — not every experience entry.
+    // Only the clicked entry's head is framed - not every experience entry.
     expect(
       root.querySelectorAll('.page-card .cvpreview__entry.cvpreview__element-selected'),
     ).toHaveLength(1);
@@ -469,7 +469,7 @@ describe('CvPreviewComponent', () => {
 
   it('bodyCss omits body colour for a themed document when the section has no override', () => {
     // Regression: an Aurora-like accent colour must not leak into body text via
-    // the document-wide accentColorHex fallback in effectiveSectionStyle — only
+    // the document-wide accentColorHex fallback in effectiveSectionStyle - only
     // an explicit per-section colorHex override should set body colour.
     fixture.componentRef.setInput('style', {
       ...CV_STYLE_DEFAULT,
@@ -530,7 +530,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('leafCss — per-element style override (Phase D.2)', () => {
+  describe('leafCss - per-element style override (Phase D.2)', () => {
     it('returns an empty style object for a leaf with no elementStyles override', () => {
       expect(component.leafCss('summary')).toEqual({});
       expect(component.leafCss('pd.fullName')).toEqual({});
@@ -544,7 +544,7 @@ describe('CvPreviewComponent', () => {
       expect(component.leafCss('')).toEqual({});
     });
 
-    it('returns only the CSS properties actually set on the element override — not the full resolved cascade', () => {
+    it('returns only the CSS properties actually set on the element override - not the full resolved cascade', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,
         elementStyles: { summary: { fontFamily: 'Georgia', fontSizePt: 14 } },
@@ -580,7 +580,7 @@ describe('CvPreviewComponent', () => {
       });
     });
 
-    it('entryCss strips a stored bottom rule — an entry wraps its bullets, so it would draw under them', () => {
+    it('entryCss strips a stored bottom rule - an entry wraps its bullets, so it would draw under them', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,
         elementStyles: { 'exp.0': { borderStyle: 'solid', colorHex: '#123456' } },
@@ -620,7 +620,7 @@ describe('CvPreviewComponent', () => {
       expect(component.leafCss('pd.name')['border-bottom']).toBeUndefined();
     });
 
-    it('never falls back to the section or document accent colour — only an explicit element colorHex appears', () => {
+    it('never falls back to the section or document accent colour - only an explicit element colorHex appears', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,
         accentColorHex: '#1B7464',
@@ -683,7 +683,7 @@ describe('CvPreviewComponent', () => {
       }
     });
 
-    it('renders the element override as inline style on a skills VALUES leaf in BOTH the page card and the hidden measurement mirror (T3 review minor — typography parity beyond summary/exp-company)', () => {
+    it('renders the element override as inline style on a skills VALUES leaf in BOTH the page card and the hidden measurement mirror (T3 review minor - typography parity beyond summary/exp-company)', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,
         elementStyles: {
@@ -713,7 +713,7 @@ describe('CvPreviewComponent', () => {
       }
     });
 
-    it('renders the element override as inline style on a language VALUE leaf in BOTH the page card and the hidden measurement mirror (T3 review minor — typography parity beyond summary/exp-company)', () => {
+    it('renders the element override as inline style on a language VALUE leaf in BOTH the page card and the hidden measurement mirror (T3 review minor - typography parity beyond summary/exp-company)', () => {
       fixture.componentRef.setInput('style', {
         ...CV_STYLE_DEFAULT,
         elementStyles: {
@@ -751,11 +751,11 @@ describe('CvPreviewComponent', () => {
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       const page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
-      // No leaf-level override was ever set — leafCss must contribute nothing.
+      // No leaf-level override was ever set - leafCss must contribute nothing.
       expect(page.style.fontFamily).toBe('');
       expect(page.style.fontSize).toBe('');
       expect(page.style.color).toBe('');
-      // The section wrapper (bodyCss) still carries the effective font —
+      // The section wrapper (bodyCss) still carries the effective font -
       // inheritance, not the new element layer, gives the leaf its font.
       const wrapper = page.closest('.cvpreview__section') as HTMLElement;
       expect(wrapper.style.fontFamily).toContain('Georgia');
@@ -789,12 +789,12 @@ describe('CvPreviewComponent', () => {
       fixture.detectChanges();
       const root = fixture.nativeElement as HTMLElement;
       // The leaf itself gets no per-leaf inline colour (leafCss is untouched
-      // by the document layer) — colour comes from the wrapper via CSS
+      // by the document layer) - colour comes from the wrapper via CSS
       // inheritance, which is what actually shows on screen.
       const page = root.querySelector('.page-card .cvpreview__summary') as HTMLElement;
       expect(page.style.color).toBe('');
       const wrapper = page.closest('.cvpreview__section') as HTMLElement;
-      // jsdom normalizes the inline hex to an rgb() triplet — assert it's set
+      // jsdom normalizes the inline hex to an rgb() triplet - assert it's set
       // rather than comparing string formats.
       expect(wrapper.style.color).not.toBe('');
     });
@@ -853,7 +853,7 @@ describe('CvPreviewComponent', () => {
       const name = root.querySelector('.page-card h2.cvpreview__name') as HTMLElement;
       expect(name.style.color).toBe('rgb(255, 0, 0)');
 
-      // Editor <input> — select the fullName leaf and switch into edit mode.
+      // Editor <input> - select the fullName leaf and switch into edit mode.
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
         sectionKey: 'personal_details',
@@ -939,7 +939,7 @@ describe('CvPreviewComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('SaaS');
   });
 
-  it("an explicit titleBorder changes the dashes only — the Aurora theme's weight and colour stay", () => {
+  it("an explicit titleBorder changes the dashes only - the Aurora theme's weight and colour stay", () => {
     fixture.componentRef.setInput('themeId', 2);
     fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, titleBorder: 'dotted' });
     const css = component.titleBorderCss('summary');
@@ -985,7 +985,7 @@ describe('CvPreviewComponent', () => {
         sectionStyles: { experience: { bodyRuleWidthPt: 1.5 } },
         elementStyles: { 'exp.0': { borderStyle: 'none' } },
       });
-      // Zeroing the WIDTH is what turns a themed rule off — `border-style: none`
+      // Zeroing the WIDTH is what turns a themed rule off - `border-style: none`
       // alone would leave the inherited width drawing.
       expect(component.entryCss('exp.0')['--cv-entry-rule-width']).toBe('0pt');
     });
@@ -1044,7 +1044,7 @@ describe('CvPreviewComponent', () => {
     expect(emitted).toEqual([
       // The summary body atom is exactly one leaf, so its click carries that
       // leaf's elementPath directly (see `selectPart(..., 'summary')` in the
-      // template) — same string `leafDraft('summary', ...)` uses.
+      // template) - same string `leafDraft('summary', ...)` uses.
       { sectionKey: 'summary', part: 'body', elementPath: 'summary' },
       { sectionKey: 'summary', part: 'title' },
     ]);
@@ -1087,7 +1087,7 @@ describe('CvPreviewComponent', () => {
     measured.forEach((el) => expect(el.classList.contains('cvpreview__selectable')).toBe(false));
   });
 
-  describe('focus trap fix — reselecting the same region (Change 1)', () => {
+  describe('focus trap fix - reselecting the same region (Change 1)', () => {
     function setupExperience() {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', { sectionKey: 'experience', part: 'body' });
@@ -1105,11 +1105,11 @@ describe('CvPreviewComponent', () => {
       return fixture.nativeElement as HTMLElement;
     }
 
-    it('clicking a bullet host inside the already-selected experience body DOES emit — it now pins a specific elementPath', () => {
+    it('clicking a bullet host inside the already-selected experience body DOES emit - it now pins a specific elementPath', () => {
       // Phase D.2 supersedes the old blanket "same section/part never
       // re-emits" rule with an element-aware one: the current selection has
       // no elementPath (whole-section state), and the bullet host carries
-      // its own leaf path (`exp.0.bullet.0`) — a genuinely more specific
+      // its own leaf path (`exp.0.bullet.0`) - a genuinely more specific
       // target, so this MUST emit to move the style-scope onto it. Re-
       // emitting no longer risks yanking focus away: the focus effect is
       // keyed on section+part only (see `focusKey`), so an elementPath-only
@@ -1152,7 +1152,7 @@ describe('CvPreviewComponent', () => {
     it('changing the selected leaf drops edit mode back to view', () => {
       // Per-leaf edit model: editing is keyed to the exact selected element, so
       // clicking a different leaf (even within the same section+part) exits
-      // edit mode and returns the resting markup — you re-arm it with Edit text.
+      // edit mode and returns the resting markup - you re-arm it with Edit text.
       const root = setupExperience();
       fixture.componentRef.setInput('selection', {
         sectionKey: 'experience',
@@ -1226,15 +1226,15 @@ describe('CvPreviewComponent', () => {
       const ev = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
       body.dispatchEvent(ev);
       // The summary body atom is exactly one leaf, so Space (like click)
-      // carries that leaf's elementPath — see `onSelectKey(..., 'summary')`.
+      // carries that leaf's elementPath - see `onSelectKey(..., 'summary')`.
       expect(emitted).toEqual([{ sectionKey: 'summary', part: 'body', elementPath: 'summary' }]);
       expect(ev.defaultPrevented).toBe(true); // Space must not scroll the page
     });
 
     it('gives every selectable host an accessible name and a data-cv-select handle', () => {
       const { body, title } = setupSummary();
-      expect(body.getAttribute('aria-label')).toBe('Summary — Body text');
-      expect(title.getAttribute('aria-label')).toBe('Summary — Section titles');
+      expect(body.getAttribute('aria-label')).toBe('Summary - Body text');
+      expect(title.getAttribute('aria-label')).toBe('Summary - Section titles');
       expect(body.getAttribute('data-cv-select')).toBe('summary:body');
       expect(title.getAttribute('data-cv-select')).toBe('summary:title');
     });
@@ -1319,7 +1319,7 @@ describe('CvPreviewComponent', () => {
       const name = root.querySelector('.page-card input.cvpreview__name') as HTMLInputElement;
       name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
       // Enter leaves edit mode (resting markup returns) but the selection is
-      // KEPT — the panel stays open on the same element.
+      // KEPT - the panel stays open on the same element.
       expect(component.editing()).toBe(false);
       fixture.detectChanges();
       await Promise.resolve();
@@ -1330,7 +1330,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('inline leaf editing — summary', () => {
+  describe('inline leaf editing - summary', () => {
     function setup(text = 'A **Key** point') {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
@@ -1445,7 +1445,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('inline leaf editing — personal details', () => {
+  describe('inline leaf editing - personal details', () => {
     function setup(elementPath = 'pd.fullName', section: Record<string, unknown> = {}) {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
@@ -1471,7 +1471,7 @@ describe('CvPreviewComponent', () => {
       return fixture.nativeElement as HTMLElement;
     }
 
-    it('Edit text on the name mounts only the name editor — title stays resting text', () => {
+    it('Edit text on the name mounts only the name editor - title stays resting text', () => {
       const card = setup('pd.fullName').querySelector('.page-card') as HTMLElement;
       expect((card.querySelector('input.cvpreview__name') as HTMLInputElement).value).toBe(
         'Vitalii Kasap',
@@ -1530,7 +1530,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('inline leaf editing — experience', () => {
+  describe('inline leaf editing - experience', () => {
     function setup(elementPath = 'exp.0.company', themeId = 2) {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('themeId', themeId);
@@ -1568,12 +1568,12 @@ describe('CvPreviewComponent', () => {
       return fixture.nativeElement as HTMLElement;
     }
 
-    it('Edit text on a company mounts only that leaf — role/location/dates and other entries stay resting', () => {
+    it('Edit text on a company mounts only that leaf - role/location/dates and other entries stay resting', () => {
       const card = setup('exp.0.company', 2).querySelectorAll('.page-card')[0] as HTMLElement;
       expect((card.querySelector('input.cvpreview__entry-company') as HTMLInputElement).value).toBe(
         'Acme',
       );
-      // Exactly one editor mounts — the selected leaf.
+      // Exactly one editor mounts - the selected leaf.
       expect(card.querySelectorAll('input.cvpreview__entry-company').length).toBe(1);
       expect(card.querySelector('input.cvpreview__entry-role')).toBeNull();
       expect(card.querySelector('input.cvpreview__entry-meta')).toBeNull();
@@ -1586,7 +1586,7 @@ describe('CvPreviewComponent', () => {
       expect(card.querySelector('input.cvpreview__entry-industry')).toBeNull();
     });
 
-    it('dates are never editable inline — the resting date view still shows the Present placeholder', () => {
+    it('dates are never editable inline - the resting date view still shows the Present placeholder', () => {
       const card = setup('exp.0.role', 2).querySelectorAll('.page-card')[0] as HTMLElement;
       // No date inputs even while another field on the entry is being edited.
       expect(card.querySelector('input.cvpreview__date-input')).toBeNull();
@@ -1666,7 +1666,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('inline leaf editing — education', () => {
+  describe('inline leaf editing - education', () => {
     function setup(elementPath = 'edu.0.degree') {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
@@ -1690,7 +1690,7 @@ describe('CvPreviewComponent', () => {
       return fixture.nativeElement as HTMLElement;
     }
 
-    it('Edit text on a field mounts ONLY that field editor — siblings stay resting', () => {
+    it('Edit text on a field mounts ONLY that field editor - siblings stay resting', () => {
       const card = setup('edu.0.degree').querySelector('.page-card') as HTMLElement;
       // Per-leaf editing (like experience): only the selected leaf becomes an
       // editor. The degree input shows; institution/dates stay resting text.
@@ -1773,7 +1773,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('inline leaf editing — skills', () => {
+  describe('inline leaf editing - skills', () => {
     function setup(elementPath = 'skills.0.label') {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
@@ -1857,7 +1857,7 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('inline leaf editing — languages', () => {
+  describe('inline leaf editing - languages', () => {
     function setup(elementPath = 'lang.0.language') {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('selection', {
@@ -1976,11 +1976,11 @@ describe('CvPreviewComponent', () => {
 
     // Representative leaves (per the task's example set): the string a leaf's
     // click emits as `elementPath` must be the exact same string `leafDraft`
-    // uses to key that leaf's draft — one shared identity, asserted
+    // uses to key that leaf's draft - one shared identity, asserted
     // end-to-end (click → emitted path → set as selection → type into the
     // now-mounted editor → read back via `leafDraft` using that same path).
 
-    it('summary — the emitted elementPath is the same key leafDraft uses', () => {
+    it('summary - the emitted elementPath is the same key leafDraft uses', () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('sections', [
         { key: 'summary', order: 0, visible: true, text: 'Hello' },
@@ -2005,7 +2005,7 @@ describe('CvPreviewComponent', () => {
       expect(component.leafDraft('summary', 'unused-resting-fallback')).toBe('Edited');
     });
 
-    it('exp.1.role — the emitted elementPath is the same key leafDraft uses', () => {
+    it('exp.1.role - the emitted elementPath is the same key leafDraft uses', () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('sections', [
         {
@@ -2039,7 +2039,7 @@ describe('CvPreviewComponent', () => {
       expect(component.leafDraft('exp.1.role', 'unused')).toBe('Staff Engineer');
     });
 
-    it('exp.1.bullet.0 — the emitted elementPath is the same key leafDraft uses', () => {
+    it('exp.1.bullet.0 - the emitted elementPath is the same key leafDraft uses', () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('sections', [
         {
@@ -2056,7 +2056,7 @@ describe('CvPreviewComponent', () => {
       const root = fixture.nativeElement as HTMLElement;
       const emitted: (CvPreviewSelection | null)[] = [];
       component.selectionChange.subscribe((v) => emitted.push(v));
-      // Entry 0 has no bullets, so exactly one bullet host exists — entry 1's.
+      // Entry 0 has no bullets, so exactly one bullet host exists - entry 1's.
       const bulletHost = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
       bulletHost.click();
       expect(emitted).toEqual([
@@ -2075,7 +2075,7 @@ describe('CvPreviewComponent', () => {
       expect(component.leafDraft('exp.1.bullet.0', 'unused')).toBe('Shipped X and Y');
     });
 
-    it('skills.0.values — the emitted elementPath is the same key leafDraft uses', () => {
+    it('skills.0.values - the emitted elementPath is the same key leafDraft uses', () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('sections', [
         {
@@ -2107,7 +2107,7 @@ describe('CvPreviewComponent', () => {
       expect(component.leafDraft('skills.0.values', 'unused')).toBe('TypeScript, Go');
     });
 
-    it('lang.0.language — the emitted elementPath is the same key leafDraft uses', () => {
+    it('lang.0.language - the emitted elementPath is the same key leafDraft uses', () => {
       fixture.componentRef.setInput('interactive', true);
       fixture.componentRef.setInput('sections', [
         {
@@ -2177,7 +2177,7 @@ describe('CvPreviewComponent', () => {
       // `cvpreview__selected` binding always carries. Since resting leaf
       // spans render in BOTH the page pass and the hidden measurement
       // mirror, an active elementPath selection leaked the highlight
-      // outline into the measure pass — a contract violation (the measure
+      // outline into the measure pass - a contract violation (the measure
       // pass must render no selection chrome at all). Scoped to `.page-card`
       // vs `.paginated-sheet__measure`, mirroring the existing measurement-
       // mirror tests above.
@@ -2200,7 +2200,7 @@ describe('CvPreviewComponent', () => {
       const root = fixture.nativeElement as HTMLElement;
       // On a page-card render `selectable(renderMode)` is true, so the
       // section+part selection mounts the inline editor (an <input>), not
-      // the resting <span> — the resting branch this bug lives in only
+      // the resting <span> - the resting branch this bug lives in only
       // renders when NOT selectable, i.e. only in the measurement mirror.
       const pageRole = root.querySelector(
         '.page-card input.cvpreview__entry-role',
@@ -2242,7 +2242,7 @@ describe('CvPreviewComponent', () => {
         { sectionKey: 'experience', part: 'body', elementPath: 'exp.0.company' },
       ]);
       // The parent would normally feed the emitted value back in as the new
-      // `selection` input — simulate that, then confirm re-selecting the
+      // `selection` input - simulate that, then confirm re-selecting the
       // exact same leaf is a no-op.
       fixture.componentRef.setInput('selection', emitted[0]);
       component.startEditing();
@@ -2254,10 +2254,10 @@ describe('CvPreviewComponent', () => {
     });
   });
 
-  describe('per-leaf accessible names (Task 6 a11y hardening — T2 review minor)', () => {
+  describe('per-leaf accessible names (Task 6 a11y hardening - T2 review minor)', () => {
     // Regression: every per-leaf selectable host used to reuse the generic
     // `selectAriaLabel(key, 'body')` name, so a screen reader announced the
-    // SAME "<section> — Body text" label for every field in one entry (e.g.
+    // SAME "<section> - Body text" label for every field in one entry (e.g.
     // company/industry/location/role in a single experience entry). Each leaf
     // with its own `elementPath` must now announce its specific field instead.
     function setupFullEntry() {
@@ -2298,7 +2298,7 @@ describe('CvPreviewComponent', () => {
           items: [{ language: 'English', level: 'C1' }],
         },
       ]);
-      fixture.componentRef.setInput('themeId', 2); // Aurora — shows industry
+      fixture.componentRef.setInput('themeId', 2); // Aurora - shows industry
       fixture.detectChanges();
       return fixture.nativeElement as HTMLElement;
     }
@@ -2307,45 +2307,45 @@ describe('CvPreviewComponent', () => {
       const root = setupFullEntry();
       const fullName = root.querySelector('.page-card h2.cvpreview__name') as HTMLElement;
       const title = root.querySelector('.page-card p.cvpreview__title') as HTMLElement;
-      expect(fullName.getAttribute('aria-label')).toBe('Personal Details — Full name');
-      expect(title.getAttribute('aria-label')).toBe('Personal Details — Job title');
+      expect(fullName.getAttribute('aria-label')).toBe('Personal Details - Full name');
+      expect(title.getAttribute('aria-label')).toBe('Personal Details - Job title');
     });
 
-    it('gives each experience-entry leaf (company/industry/location/role/bullet) its own field name — no longer all "Experience — Body text"', () => {
+    it('gives each experience-entry leaf (company/industry/location/role/bullet) its own field name - no longer all "Experience - Body text"', () => {
       const root = setupFullEntry();
       const company = root.querySelector('.page-card .cvpreview__entry-company') as HTMLElement;
       const industry = root.querySelector('.page-card .cvpreview__entry-industry') as HTMLElement;
       const location = root.querySelector('.page-card .cvpreview__entry-meta') as HTMLElement;
       const role = root.querySelector('.page-card .cvpreview__entry-role') as HTMLElement;
       const bullet = root.querySelector('.page-card ul.cvpreview__bullets') as HTMLElement;
-      expect(company.getAttribute('aria-label')).toBe('Experience — Company');
-      expect(industry.getAttribute('aria-label')).toBe('Experience — Industry');
-      expect(location.getAttribute('aria-label')).toBe('Experience — Location');
-      expect(role.getAttribute('aria-label')).toBe('Experience — Role');
-      expect(bullet.getAttribute('aria-label')).toBe('Experience — Achievement / responsibility');
-      // All five are genuinely distinct — the whole point of the fix.
+      expect(company.getAttribute('aria-label')).toBe('Experience - Company');
+      expect(industry.getAttribute('aria-label')).toBe('Experience - Industry');
+      expect(location.getAttribute('aria-label')).toBe('Experience - Location');
+      expect(role.getAttribute('aria-label')).toBe('Experience - Role');
+      expect(bullet.getAttribute('aria-label')).toBe('Experience - Achievement / responsibility');
+      // All five are genuinely distinct - the whole point of the fix.
       const labels = [company, industry, location, role, bullet].map((el) =>
         el.getAttribute('aria-label'),
       );
       expect(new Set(labels).size).toBe(labels.length);
-      // The whole-entry wrapper (no elementPath) keeps the generic name —
+      // The whole-entry wrapper (no elementPath) keeps the generic name -
       // there is no single leaf to disambiguate there.
       const entryWrapper = root.querySelector('.page-card .cvpreview__entry') as HTMLElement;
-      expect(entryWrapper.getAttribute('aria-label')).toBe('Experience — Body text');
+      expect(entryWrapper.getAttribute('aria-label')).toBe('Experience - Body text');
     });
 
     it('gives the skills label and values leaves distinct field names', () => {
       const root = setupFullEntry();
       const label = root.querySelector('.page-card .cvpreview__skill-label-view') as HTMLElement;
       const values = root.querySelector('.page-card .cvpreview__skill-values-view') as HTMLElement;
-      expect(label.getAttribute('aria-label')).toBe('Skills — Label');
-      expect(values.getAttribute('aria-label')).toBe('Skills — Values');
+      expect(label.getAttribute('aria-label')).toBe('Skills - Label');
+      expect(values.getAttribute('aria-label')).toBe('Skills - Values');
     });
 
     it('gives the language-value leaf its field name', () => {
       const root = setupFullEntry();
       const value = root.querySelector('.page-card .cvpreview__language-value') as HTMLElement;
-      expect(value.getAttribute('aria-label')).toBe('Languages — Language');
+      expect(value.getAttribute('aria-label')).toBe('Languages - Language');
     });
   });
 

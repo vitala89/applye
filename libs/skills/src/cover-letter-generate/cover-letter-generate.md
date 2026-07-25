@@ -5,7 +5,7 @@ description: >
   job description, and target language.
 inputs:
   - name: profile_md
-    description: Full profile markdown — factual content.
+    description: Full profile markdown - factual content.
   - name: job_description
     description: Full job description text to align the cover letter.
   - name: language
@@ -33,7 +33,7 @@ inputs:
     description: >
       Notice period at the current employer ("3 Monate zum Quartalsende"). Empty when there is
       none or the user did not state one.
-output_format: valid JSON only — no markdown, no preamble
+output_format: valid JSON only - no markdown, no preamble
 recommended_model: claude-sonnet-5
 ---
 
@@ -44,13 +44,13 @@ Rules:
 
 - Output ONLY valid JSON. No markdown fences (do not wrap in ```json), no commentary, no preamble.
 - Output in the requested language ({{language}}). If DE (German), use formal "Sie" (Sie/Ihnen), and match standard German business letter conventions.
-- Write the body in a {{tone}} tone: Formal = reserved, professional, restrained; Friendly = warm, personable, approachable; Confident = assertive, achievement-led, direct; Enthusiastic = energetic, motivated, positive. The tone shapes wording only — never fabricate facts, and keep DE letters in formal "Sie".
+- Write the body in a {{tone}} tone: Formal = reserved, professional, restrained; Friendly = warm, personable, approachable; Confident = assertive, achievement-led, direct; Enthusiastic = energetic, motivated, positive. The tone shapes wording only - never fabricate facts, and keep DE letters in formal "Sie".
 - Target a {{length}} body length: Concise ≈ 120-200 words, Standard ≈ 200-320 words, Detailed ≈ 320-450 words, counted across all body paragraphs combined. Adjust depth and number of supporting points to hit the target; do not pad with filler or repeat points to reach it.
 - Availability and salary: German postings routinely ask for a frühestmöglicher Eintrittstermin and a Gehaltsvorstellung, and a letter that omits them is often filtered out. When earliest_start ("{{earliest_start}}"), salary_expectation ("{{salary_expectation}}") or notice_period ("{{notice_period}}") is non-empty, state it in the FINAL body paragraph, in one or two plain sentences before the closing - never as a bullet list, never in the subject. Use the values exactly as given; do not convert a currency, reword a date, or invent a figure. When a value is empty, say nothing about it at all: no "salary negotiable", no "available immediately", no placeholder. When only notice_period is given, phrase it as what constrains the start date, not as a standalone fact.
 - If {{section}} is "all": generate the full cover letter structure.
-- If {{section}} is not "all" (e.g., greeting, subject, body_0, body_1, body_2, closing, signature): only regenerate the text for that specific field/paragraph. Every other field/paragraph must be empty (null for address, empty string for date/subject/greeting/closing/signature, or empty array/empty elements in bodyParagraphs) — the caller will merge the newly generated block into the existing letter.
+- If {{section}} is not "all" (e.g., greeting, subject, body_0, body_1, body_2, closing, signature): only regenerate the text for that specific field/paragraph. Every other field/paragraph must be empty (null for address, empty string for date/subject/greeting/closing/signature, or empty array/empty elements in bodyParagraphs) - the caller will merge the newly generated block into the existing letter.
 - For body paragraph indices (body_0, body_1, body_2): return the bodyParagraphs array with ONLY the requested index populated, others empty.
-- signature: the sender's full name ONLY, exactly as it appears in profile_md — this is the sign-off line under the closing. NEVER append a phone number, email, address, title, or any other contact detail to the signature; contact information is not part of the signature. If profile_md gives the name as "Jane Doe" and a phone "+1 555 0100", the signature is "Jane Doe", never "Jane Doe +1 555 0100".
+- signature: the sender's full name ONLY, exactly as it appears in profile_md - this is the sign-off line under the closing. NEVER append a phone number, email, address, title, or any other contact detail to the signature; contact information is not part of the signature. If profile_md gives the name as "Jane Doe" and a phone "+1 555 0100", the signature is "Jane Doe", never "Jane Doe +1 555 0100".
 
 JSON Output Schema when section is "all":
 {
@@ -71,7 +71,7 @@ JSON Output Schema when section is "all":
 "Paragraph 3"
 ],
 "closing": "string",
-"signature": "string (sender's full name ONLY — never a phone, email, or other contact detail)"
+"signature": "string (sender's full name ONLY - never a phone, email, or other contact detail)"
 }
 
 Example JSON Output when section is "body_1":

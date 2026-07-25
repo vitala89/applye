@@ -36,7 +36,7 @@ export interface Application {
   followUpAt?: string;
   cvPath?: string;
   coverLetterPath?: string;
-  /** Which `document_library` doc was used — the frozen `cvPath` /
+  /** Which `document_library` doc was used - the frozen `cvPath` /
    * `coverLetterPath` snapshot above is never rewritten when the library doc
    * is later edited (Agentur report accuracy). */
   cvDocumentId?: number;
@@ -56,7 +56,7 @@ export interface Application {
   updatedAt: string;
 }
 
-/** Job Tracker inline-edit payload — only the fields the screen lets the
+/** Job Tracker inline-edit payload - only the fields the screen lets the
  * user edit directly. Narrower than `Application` on purpose (see the Rust
  * command doc comment): a full upsert would clobber cv/cover-letter paths. */
 export interface ApplicationTrackerFieldsInput {
@@ -96,14 +96,14 @@ export interface PipelineCard {
    * profile.scoringHash at scoring time). A score is stale once this no longer
    * matches the current profile's scoringHash. */
   scoreProfileHash?: string;
-  /** ISO timestamp the cached score was created — powers the "N days old" badge. */
+  /** ISO timestamp the cached score was created - powers the "N days old" badge. */
   scoreAt?: string;
   priority?: Priority;
   currentStageOrder?: number;
   currentStageLabel?: string;
   currentStageStatus?: InterviewStageStatus;
   currentStageScheduledAt?: string;
-  /** Total interview stages logged — the "M" in the card's "stage N of M"
+  /** Total interview stages logged - the "M" in the card's "stage N of M"
    * progress track. */
   currentStageTotal?: number;
 }
@@ -116,7 +116,7 @@ export interface Comment {
 }
 
 /** AI-drafted follow-up email for an overdue application, cached by
- * (applicationId, inputHash). Applye never sends this — the frontend opens
+ * (applicationId, inputHash). Applye never sends this - the frontend opens
  * it via `mailto:` so the user's own mail client sends it. */
 export interface FollowupDraft {
   id: number;

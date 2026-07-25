@@ -18,7 +18,7 @@ Before any architectural choice, ask:
 
 4. **Does it augment (not replace) the user?**
    AI proposes; the user decides. Nothing is auto-applied or auto-sent. This is the non-negotiable
-   one — see the augmentation principle in the [README](../README.md).
+   one - see the augmentation principle in the [README](../README.md).
 
 5. **Is it the simplest solution?**
    The minimum that solves the problem. No speculative abstractions, no flexibility nobody asked for.
@@ -32,7 +32,7 @@ Before any architectural choice, ask:
 ## How to use it
 
 When a choice is genuinely hard, write down each answer. The questions are ordered roughly by how
-often they kill a bad idea — most over-engineering dies on #5, most scope creep on #4, and most
+often they kill a bad idea - most over-engineering dies on #5, most scope creep on #4, and most
 "let's add a backend" ideas on #1 and #2.
 
 A "no" to any question isn't an automatic veto, but it _is_ a reason to stop and justify the

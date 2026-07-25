@@ -200,11 +200,11 @@
                               >{{ t()('tracker.open_link') }}</a
                             >
                           } @else {
-                            <span class="jt-dim">—</span>
+                            <span class="jt-dim">-</span>
                           }
                         } @else if (col.type === 'date') {
                           <span class="jt-mono" [class.jt-dim]="!cellValue(r, col)">{{
-                            cellValue(r, col) ? fmtDate(cellValue(r, col)) : '—'
+                            cellValue(r, col) ? fmtDate(cellValue(r, col)) : '-'
                           }}</span>
                         } @else if (col.type === 'stage') {
                           @if (r.nextStageLabel) {
@@ -215,7 +215,7 @@
                               }
                             </span>
                           } @else {
-                            <span class="jt-dim">—</span>
+                            <span class="jt-dim">-</span>
                           }
                         } @else if (col.type === 'yesno') {
                           <span
@@ -228,7 +228,7 @@
                           >
                         } @else {
                           <span class="jt-cell" [class.jt-dim]="!cellValue(r, col)">{{
-                            cellValue(r, col) || '—'
+                            cellValue(r, col) || '-'
                           }}</span>
                         }
                       }

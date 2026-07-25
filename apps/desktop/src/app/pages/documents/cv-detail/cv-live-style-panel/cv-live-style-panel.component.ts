@@ -31,7 +31,7 @@ import type { CvPreviewSelection, CvStyleScope, CvStylePanelChange } from '../..
  * Contextual live-style panel shown beside the paper in Preview mode. Receives
  * the selected section/part/element and the current document style, exposes a
  * SCOPE selector, and emits a single scope-tagged `CvStylePanelChange`. It
- * never owns persistence or the override-cleaning merge — the parent maps each
+ * never owns persistence or the override-cleaning merge - the parent maps each
  * `(part, scope)` to the correct reducer/target (`patchCvElementStyle` /
  * `patchCvSectionStyle` / `patchCvDocumentBody` / `setSectionTitleStyle` /
  * `updateTitleStyle`) and keeps its own safety-check debounce.
@@ -58,14 +58,14 @@ export class CvLiveStylePanelComponent {
   readonly selection = input<CvPreviewSelection | null>(null);
   readonly style = input.required<CvStyle>();
   /** Whether the document has ANY style override (element/section/title/
-   * document) relative to the active theme's baseline — drives the "reset all
+   * document) relative to the active theme's baseline - drives the "reset all
    * styling" footer button's enabled state. Computed by the parent
    * (`hasAnyCustomStyle`); the panel has no view of the whole style tree. */
   readonly hasCustomStyle = input<boolean>(false);
   /** The active theme's own section-title rule (`themeTitleRule`), or null for
    * a theme that draws none. Lets the line size/colour controls show the exact
    * value the title renders at when the user has set no override of their own,
-   * instead of a blank Inherit. The panel has no view of the theme itself — the
+   * instead of a blank Inherit. The panel has no view of the theme itself - the
    * parent resolves it. */
   readonly themeRule = input<{ widthPt: number; colorHex: string } | null>(null);
   /** The active theme's own rule under an experience entry's head
@@ -73,24 +73,24 @@ export class CvLiveStylePanelComponent {
    * line of its own and no section rule still draws THIS, so its controls must
    * report it rather than "None". */
   readonly themeEntryRule = input<{ widthPt: number; colorHex: string } | null>(null);
-  /** The plain text of the currently-selected element — shown in the "Ag"
+  /** The plain text of the currently-selected element - shown in the "Ag"
    * sample swatch so it previews the real content (not lorem). Resolved by the
    * parent from the selection + sections; empty for pathless selections. */
   readonly sampleText = input<string>('');
 
   /** The selected leaf's REAL rendered typography, read from the paper's DOM by
    * the parent (`CvPreviewComponent.readSelectedHostStyle`). Used as the "Ag"
-   * swatch's base so it mirrors the page exactly — including class/theme
+   * swatch's base so it mirrors the page exactly - including class/theme
    * styling the `CvStyle` model doesn't carry (the name's bold uppercase
    * monospace, an accent colour from a CSS var). The active-scope override is
    * layered on top so a pending edit still previews live. */
   readonly sampleBaseStyle = input<Record<string, string>>({});
 
-  /** Single scope-tagged change — the parent picks the write target from the
+  /** Single scope-tagged change - the parent picks the write target from the
    * current `selection` (part / sectionKey / elementPath) plus `scope`. */
   readonly panelChange = output<CvStylePanelChange>();
   /** Reset EVERY style override (element + section + title + document) back
-   * to the active theme's baseline — the "reset all styling" action, relocated
+   * to the active theme's baseline - the "reset all styling" action, relocated
    * here from Edit mode (Task 5). The parent wires this straight to
    * `resetAllStyles()`; unlike `panelChange`, it doesn't depend on a live
    * selection. */
@@ -98,11 +98,11 @@ export class CvLiveStylePanelComponent {
 
   /** Fired when the user clicks "Edit text". The parent routes it to
    * `CvPreviewComponent.startEditing()`, which mounts the selected element's
-   * inline editor so the wording can be changed — selection alone no longer
+   * inline editor so the wording can be changed - selection alone no longer
    * enters edit mode. */
   readonly editText = output<void>();
 
-  /** Whether the selected leaf is currently in text-edit mode — mirrored from
+  /** Whether the selected leaf is currently in text-edit mode - mirrored from
    * `CvPreviewComponent.editing()`. Gates the panel's Bold button (which
    * replaced the inline "B" removed from the paper's editors). */
   readonly editing = input<boolean>(false);
@@ -116,31 +116,31 @@ export class CvLiveStylePanelComponent {
   protected readonly icons = { chevron: ChevronDown };
 
   /** Collapsible-group state (session only): the Text group opens by default,
-   * the Line group starts collapsed — this keeps the panel short enough that
+   * the Line group starts collapsed - this keeps the panel short enough that
    * the footer reset button stays reachable on small windows without
    * scrolling. */
   readonly textOpen = signal(true);
   readonly lineOpen = signal(false);
 
-  /** "Edit text" applies to editable content — any body selection. Titles are
+  /** "Edit text" applies to editable content - any body selection. Titles are
    * fixed section labels, not user-authored text, so they get no Edit control. */
   readonly canEditText = computed<boolean>(() => {
     const sel = this.selection();
     const p = sel?.elementPath;
     // "Edit text" only applies to a single editable TEXT leaf. Excluded: a
     // pathless whole-section body, the composed contact line, the whole
-    // languages line, and group/entry paths — none has one inline editor.
+    // languages line, and group/entry paths - none has one inline editor.
     return (
       sel?.part === 'body' && !!p && p !== 'pd.contact' && p !== 'lang' && !this.isEntryPath(p)
     );
   });
 
-  /** The specific field label + short id for the current selection — shown in
+  /** The specific field label + short id for the current selection - shown in
    * the panel's "Editing" header so it names exactly what's selected (mirrors
    * the on-paper chip, e.g. "Name  #name"). Derived by parsing the selection's
    * `elementPath`; falls back to the generic body/title labels. */
   /** A "group" path (`exp.0`, `edu.1`, `skills.0`) targets a whole
-   * experience/education entry or a skills group, not a single text leaf — it
+   * experience/education entry or a skills group, not a single text leaf - it
    * behaves like a section selection (section-scope styling, section name in
    * the header) but frames just the clicked group on the paper. */
   private isEntryPath(p: string | undefined): boolean {
@@ -210,7 +210,7 @@ export class CvLiveStylePanelComponent {
   readonly selFieldKey = computed<string>(() => this.fieldInfo()?.key ?? '');
   readonly selFieldId = computed<string>(() => this.fieldInfo()?.id ?? '');
 
-  /** The contextual "APPLY TO" buttons for the current selection — each names
+  /** The contextual "APPLY TO" buttons for the current selection - each names
    * the actual thing it targets ("This experience" / "All experiences") rather
    * than the abstract element/section scope, and single-target selections
    * (personal-details block, body text, languages, a lone field) show just one
@@ -227,7 +227,7 @@ export class CvLiveStylePanelComponent {
       ];
     }
     const p = sel.elementPath;
-    // Whole-section body block (personal details) — one button, named section.
+    // Whole-section body block (personal details) - one button, named section.
     if (!p) return [{ scope: 'section', label: t(sectionLabelKey(sel.sectionKey)) }];
     if (p === 'summary') return [{ scope: 'element', label: D('cv_scope_body_text') }];
     if (p === 'lang') return [{ scope: 'element', label: D('cv_scope_languages') }];
@@ -259,7 +259,7 @@ export class CvLiveStylePanelComponent {
   });
 
   /** The click-a-word-to-bold hint is shown only for the `**markdown**`-backed
-   * leaves — the summary body and experience bullets. Other body leaves have
+   * leaves - the summary body and experience bullets. Other body leaves have
    * no inline-bold representation. */
   readonly showWordBoldHint = computed<boolean>(() => {
     const sel = this.selection();
@@ -270,7 +270,7 @@ export class CvLiveStylePanelComponent {
     );
   });
 
-  /** The selected leaf is one whose text supports `**bold**` — only the
+  /** The selected leaf is one whose text supports `**bold**` - only the
    * summary body and experience bullets. Drives the panel's Bold button
    * (shown while editing such a leaf). */
   readonly canBold = computed<boolean>(() => {
@@ -278,7 +278,7 @@ export class CvLiveStylePanelComponent {
     return !!p && (p === 'summary' || p.split('.').includes('bullet'));
   });
 
-  /** Inline style for the "Ag" preview swatch — reflects the font/weight/colour
+  /** Inline style for the "Ag" preview swatch - reflects the font/weight/colour
    * of the ACTIVE scope's override so the user previews the edit target before
    * committing. Unset properties fall through to the paper's Georgia default. */
   readonly sampleStyle = computed<Record<string, string>>(() => {
@@ -303,7 +303,7 @@ export class CvLiveStylePanelComponent {
   /** Hex for the COLOR control at the active scope. The override wins; with
    * none it shows the leaf's REAL rendered colour (from the paper), so the
    * picker matches the page even when the colour is INHERITED from a higher
-   * scope (e.g. a "This section" colour showing through on a single field) —
+   * scope (e.g. a "This section" colour showing through on a single field) -
    * previously it fell straight to the accent, so the picker read green while
    * the text was blue. Falls back to the accent only when nothing is known. */
   readonly effectiveColorHex = computed<string>(() => {
@@ -364,7 +364,7 @@ export class CvLiveStylePanelComponent {
    * manual switch survives subsequent edits (which mutate `style`, not
    * `selection`). Default is `section` for a title (= this title), `element`
    * for a body leaf with an `elementPath`, and `section` for a pathless body
-   * selection (a section-body wrapper with no single leaf singled out) — the
+   * selection (a section-body wrapper with no single leaf singled out) - the
    * latter matters because `element` scope on a pathless selection would land
    * on nothing (the parent's element-scope branch requires a path) and
    * silently drop the edit. */
@@ -381,23 +381,23 @@ export class CvLiveStylePanelComponent {
     this.scope.set(value);
   }
 
-  /** Body values for the active scope — feeds the control models so each shows
+  /** Body values for the active scope - feeds the control models so each shows
    * the value the selection actually RENDERS with, not a blank: an unset
    * property falls through the same cascade the preview draws with, so the
    * control never contradicts the page (see `activeTitleOverride`).
    *
    * Each scope walks its own chain, because the renderer does:
-   * - `element` — the leaf's own override, then what it inherits: the shared
+   * - `element` - the leaf's own override, then what it inherits: the shared
    *   bullet style for a bullet (`<ul>` `bulletListCss`), the section override
    *   for anything else (`bodyCss`/`entryCss`), then the document.
-   * - `bullets` — the shared bullet style over the DOCUMENT: bullets skip the
+   * - `bullets` - the shared bullet style over the DOCUMENT: bullets skip the
    *   section scope by design (that scope styles the entry heads only).
-   * - `section` — the section override, then the document.
-   * - `document` — the always-present root values.
+   * - `section` - the section override, then the document.
+   * - `document` - the always-present root values.
    *
    * Colour never falls back to `accentColorHex` at any scope (no-accent-leak):
    * body text reads `bodyColorHex`, which is unset unless the user picks one,
-   * and bullets have no colour base at all — both correctly read as Inherit. */
+   * and bullets have no colour base at all - both correctly read as Inherit. */
   readonly activeBodyOverride = computed<Partial<CvElementStyle>>(() => {
     const sel = this.selection();
     if (!sel) return {};
@@ -422,7 +422,7 @@ export class CvLiveStylePanelComponent {
       fontFamily: bullet.fontFamily ?? doc.fontFamily,
       fontSizePt: bullet.fontSizePt ?? doc.fontSizePt,
       fontWeight: bullet.fontWeight ?? doc.fontWeight,
-      // No colour in the bullet base — an unset colour keeps the muted default,
+      // No colour in the bullet base - an unset colour keeps the muted default,
       // so it reads as Inherit rather than the body colour.
       colorHex: bullet.colorHex,
       lineHeight: bullet.lineHeight,
@@ -449,13 +449,13 @@ export class CvLiveStylePanelComponent {
     }
   });
 
-  /** A bullet leaf (`exp.0.bullet.1`) — the one body path whose inherited base
+  /** A bullet leaf (`exp.0.bullet.1`) - the one body path whose inherited base
    * is the shared bullet style rather than the section override. */
   private isBulletPath(p: string | undefined): boolean {
     return !!p && p.includes('.bullet.');
   }
 
-  /** Title text values for the active title scope (this title vs. all titles) —
+  /** Title text values for the active title scope (this title vs. all titles) -
    * feeds the title control models. At "this title" a property with no override
    * of its own shows the all-titles value it INHERITS, not a blank: the control
    * must read as what the title actually renders, so switching scope after an
@@ -477,7 +477,7 @@ export class CvLiveStylePanelComponent {
   });
 
   /** Title-underline value for the active title scope ('' = Inherit; "this
-   * title" falls back to the all-titles line — see `activeTitleOverride`). */
+   * title" falls back to the all-titles line - see `activeTitleOverride`). */
   readonly activeTitleBorder = computed<string>(() => {
     const sel = this.selection();
     if (!sel) return '';
@@ -529,8 +529,8 @@ export class CvLiveStylePanelComponent {
   }
 
   /** Title-underline thickness (pt) for the active title scope. Falls through
-   * the same cascade the title renders with — this title → all titles → the
-   * theme's own rule — so the control shows the size actually on the page.
+   * the same cascade the title renders with - this title → all titles → the
+   * theme's own rule - so the control shows the size actually on the page.
    * `null` (Inherit) only when the theme draws no rule either: that neutral
    * default lives in CSS tokens, which must not be forked into TS. */
   readonly activeTitleRuleWidth = computed<number | null>(() => {
@@ -542,7 +542,7 @@ export class CvLiveStylePanelComponent {
     return user ?? this.themeRule()?.widthPt ?? null;
   });
 
-  /** Title-underline colour for the active title scope — same cascade as
+  /** Title-underline colour for the active title scope - same cascade as
    * `activeTitleRuleWidth`. */
   readonly activeTitleRuleColor = computed<string | null>(() => {
     const sel = this.selection();
@@ -572,12 +572,12 @@ export class CvLiveStylePanelComponent {
     const sel = this.selection();
     if (!sel || sel.part !== 'body') return false;
     if (sel.sectionKey !== 'personal_details' && sel.sectionKey !== 'experience') return false;
-    // The section's structural divider — every entry's line at once, i.e.
+    // The section's structural divider - every entry's line at once, i.e.
     // exactly the "All experiences" scope. Section scope ONLY: an entry now has
     // a rule of its own (`entryCss` re-points the head's vars at it), so at
     // element scope the entry's own line group is the honest control. Showing
     // this one there is what made a "This experience" line edit restyle every
-    // entry — the write lands on the section, which is where this rule lives.
+    // entry - the write lands on the section, which is where this rule lives.
     //
     // Also hidden for a single FIELD (`exp.0.role`, `pd.name`), which likewise
     // has its own per-leaf line group.
@@ -624,7 +624,7 @@ export class CvLiveStylePanelComponent {
     }
   }
 
-  /** Sections that draw in-line item separators the user can size/colour —
+  /** Sections that draw in-line item separators the user can size/colour -
    * the `|` between languages. */
   readonly canSeparator = computed<boolean>(() => {
     const sel = this.selection();
@@ -660,7 +660,7 @@ export class CvLiveStylePanelComponent {
    * An EXPERIENCE entry (`exp.0`) is included: its head is the one entry head
    * that draws a rule, and `entryCss` re-points that rule's vars at the entry's
    * own override. The border still never lands on the container itself (it
-   * would draw under the bullets) — see `entryCss`. */
+   * would draw under the bullets) - see `entryCss`. */
   readonly canElementLine = computed<boolean>(() => {
     const sel = this.selection();
     const p = sel?.elementPath;
@@ -668,12 +668,12 @@ export class CvLiveStylePanelComponent {
     return !this.isEntryPath(p) || this.isExperienceEntryPath(p);
   });
 
-  /** An experience entry (`exp.0`) — the only entry with a rule of its own. */
+  /** An experience entry (`exp.0`) - the only entry with a rule of its own. */
   private isExperienceEntryPath(p: string | undefined): boolean {
     return !!p && /^exp\.\d+$/.test(p);
   }
 
-  /** Whether the selection is an experience entry — the one element whose line
+  /** Whether the selection is an experience entry - the one element whose line
    * is INHERITED when unset (from its section, then the theme) rather than
    * simply absent. Drives the Inherit option, which a plain leaf must not get. */
   readonly isEntrySelection = computed<boolean>(() =>
@@ -682,7 +682,7 @@ export class CvLiveStylePanelComponent {
 
   /** The selected element's line, as it RENDERS. An experience entry with no
    * override of its own inherits its section's divider, then the theme's own
-   * entry rule — reporting "None" while the head draws one is the whole point
+   * entry rule - reporting "None" while the head draws one is the whole point
    * of walking this (see `activeTitleOverride` for the same rule on titles).
    * A plain leaf has no such fallback by design: its underline is its own or
    * absent. */
@@ -691,7 +691,7 @@ export class CvLiveStylePanelComponent {
     const own = p && this.style().elementStyles?.[p]?.borderStyle;
     if (own) return own;
     if (!this.isExperienceEntryPath(p)) return '';
-    // The head's rule renders solid unless the section says otherwise — that is
+    // The head's rule renders solid unless the section says otherwise - that is
     // the `--cv-entry-rule-style` default the theme's rule is drawn with.
     return this.activeBodyBorder() || (this.themeEntryRule() ? 'solid' : '');
   });

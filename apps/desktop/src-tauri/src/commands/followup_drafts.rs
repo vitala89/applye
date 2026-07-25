@@ -1,6 +1,6 @@
 // Follow-up email drafts: AI-drafted polite follow-up emails for overdue
 // applications, cached by (application_id, input_hash). Applye only ever
-// drafts and caches text here — nothing in this module ever sends or
+// drafts and caches text here - nothing in this module ever sends or
 // transmits an email anywhere; the frontend opens a `mailto:` link so the
 // user's own mail client sends it, if the user chooses to.
 
@@ -164,7 +164,7 @@ mod tests {
     }
 
     /// Re-opening with the same (application_id, input_hash) reads the
-    /// cached draft straight from SQLite — 0 tokens, no AI call reachable
+    /// cached draft straight from SQLite - 0 tokens, no AI call reachable
     /// from the get path at all.
     #[tokio::test]
     async fn reopen_with_same_input_hash_hits_cache() {
@@ -182,7 +182,7 @@ mod tests {
         assert_eq!(hit.language, "en");
     }
 
-    /// Changing the language changes the input_hash, which is a cache miss —
+    /// Changing the language changes the input_hash, which is a cache miss -
     /// the old draft is untouched, a new row is inserted alongside it.
     #[tokio::test]
     async fn different_language_input_hash_is_a_cache_miss() {

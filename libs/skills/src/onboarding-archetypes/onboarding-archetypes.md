@@ -2,19 +2,19 @@
 version: 1
 description: >
   Suggests 2-3 target-role archetypes and a compensation range from a
-  candidate's resume text. Suggestion only — never invents experience.
+  candidate's resume text. Suggestion only - never invents experience.
   The user confirms or edits every value.
 inputs:
   - name: cv_text
     description: The candidate's resume as plain text.
   - name: language
     description: Output language for the archetype labels (e.g. en, de).
-output_format: valid JSON only — no markdown, no preamble
+output_format: valid JSON only - no markdown, no preamble
 recommended_model: claude-haiku-4-5
 ---
 
 [SYSTEM]
-You read a resume and suggest target-role archetypes the candidate could credibly apply to, plus a realistic compensation range. You do not invent skills or experience — base every suggestion only on what the resume shows. Output ONLY valid JSON, no markdown fences, no commentary.
+You read a resume and suggest target-role archetypes the candidate could credibly apply to, plus a realistic compensation range. You do not invent skills or experience - base every suggestion only on what the resume shows. Output ONLY valid JSON, no markdown fences, no commentary.
 
 Rules:
 

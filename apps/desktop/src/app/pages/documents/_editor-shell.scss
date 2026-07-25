@@ -4,11 +4,11 @@
 // `@use` this partial so the two editors render one visual system. Angular
 // view-encapsulation scopes the compiled output per-component, so `@use`-ing
 // this file from both places produces identical (but independently scoped)
-// CSS rather than a shared runtime stylesheet — that's intentional.
+// CSS rather than a shared runtime stylesheet - that's intentional.
 //
 // Keep this partial prefix-neutral (`.docedit-*`) and free of anything
 // component-specific (preview rendering, drag-drop internals, popover
-// internals) — those stay in each component's own SCSS file.
+// internals) - those stay in each component's own SCSS file.
 
 // ---------------------------------------------------------------------------
 // Card
@@ -185,10 +185,10 @@
 }
 
 // ---------------------------------------------------------------------------
-// Style grid — the polished control layout
+// Style grid - the polished control layout
 // ---------------------------------------------------------------------------
 
-// Two compact columns, left-clustered — the card is full width, but the
+// Two compact columns, left-clustered - the card is full width, but the
 // controls stay a comfortable size instead of stretching edge-to-edge.
 .docedit-style-grid {
   display: grid;
@@ -209,7 +209,7 @@
   }
 }
 
-// Grouped style section — wraps one `.docedit-style-grid` with a small
+// Grouped style section - wraps one `.docedit-style-grid` with a small
 // uppercase header so Body text / Section titles / Page read as clearly
 // delimited blocks instead of a single jumbled grid.
 .docedit-style-section {
@@ -338,7 +338,7 @@
   height: 100%;
 }
 
-// Margins — one tidy row of 4 compact labelled boxes, left-clustered so they
+// Margins - one tidy row of 4 compact labelled boxes, left-clustered so they
 // read as small numeric fields (not stretched full-width inputs). Wraps when
 // the pane is narrow.
 .docedit-margin-grid {

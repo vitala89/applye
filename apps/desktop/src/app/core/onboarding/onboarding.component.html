@@ -1,6 +1,6 @@
 <div class="ob">
   <div class="ob__frame">
-    <!-- Top bar: brand + horizontal step stepper (focused shell — no left rail) -->
+    <!-- Top bar: brand + horizontal step stepper (focused shell - no left rail) -->
     <div class="ob__panehead">
       <div class="ob__brand">
         <svg width="20" height="20" viewBox="0 0 64 64" fill="none" aria-hidden="true">
@@ -521,16 +521,36 @@
               }
               <div class="ob__grid-2">
                 <div class="ob__field">
-                  <label class="ob__field-label" for="ob-review-name">{{
-                    t()('onboarding.preview.field_name')
+                  <label class="ob__field-label" for="ob-review-first-name">{{
+                    t()('onboarding.preview.field_first_name')
                   }}</label>
                   <input
-                    id="ob-review-name"
+                    id="ob-review-first-name"
                     class="ob__input"
-                    [ngModel]="reviewName()"
-                    (ngModelChange)="reviewName.set($event)"
+                    [class.ob__input--confirm]="needsNameConfirm()"
+                    [attr.aria-describedby]="needsNameConfirm() ? 'ob-name-confirm-hint' : null"
+                    [ngModel]="reviewFirstName()"
+                    (ngModelChange)="reviewFirstName.set($event); onNameEdited()"
                   />
                 </div>
+                <div class="ob__field">
+                  <label class="ob__field-label" for="ob-review-last-name">{{
+                    t()('onboarding.preview.field_last_name')
+                  }}</label>
+                  <input
+                    id="ob-review-last-name"
+                    class="ob__input"
+                    [class.ob__input--confirm]="needsNameConfirm()"
+                    [attr.aria-describedby]="needsNameConfirm() ? 'ob-name-confirm-hint' : null"
+                    [ngModel]="reviewLastName()"
+                    (ngModelChange)="reviewLastName.set($event); onNameEdited()"
+                  />
+                </div>
+                @if (needsNameConfirm()) {
+                  <p id="ob-name-confirm-hint" class="ob__field-hint ob__field-hint--confirm">
+                    {{ t()('onboarding.preview.name_confirm_hint') }}
+                  </p>
+                }
                 <div class="ob__field">
                   <label class="ob__field-label" for="ob-review-email">{{
                     t()('onboarding.preview.field_email')
@@ -678,7 +698,7 @@
                     />
                     <span class="ob__comp-suffix">K</span>
                   </div>
-                  <span class="ob__comp-dash">—</span>
+                  <span class="ob__comp-dash">-</span>
                   <div class="ob__comp-input-wrap">
                     <input
                       type="text"

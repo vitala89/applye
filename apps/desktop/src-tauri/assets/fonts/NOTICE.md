@@ -1,9 +1,9 @@
-# Bundled fonts — attribution & licenses
+# Bundled fonts - attribution & licenses
 
 These TrueType faces are embedded into PDF exports so the Rust `printpdf`
 path renders the user's chosen family accurately instead of approximating it
 with one of the 14 base fonts. Every face below is a **metric-compatible,
-freely-redistributable clone** of a proprietary ATS-safe font — we never
+freely-redistributable clone** of a proprietary ATS-safe font - we never
 bundle the proprietary originals (Calibri, Arial, Times New Roman, Georgia).
 
 | User font (proprietary)    | Bundled clone | Source                                              | License                                                                     |
@@ -17,7 +17,7 @@ bundle the proprietary originals (Calibri, Arial, Times New Roman, Georgia).
 
 Each family ships Regular + Bold. Monospace families (Courier / Consolas /
 "mono") keep the `printpdf` built-in Courier, which is already a real
-monospace metric. Italic is not bundled — the CV style model emits no italic
+monospace metric. Italic is not bundled - the CV style model emits no italic
 runs today; add faces here if that changes.
 
 Carlito and Arimo are metrically compatible with Calibri and Arial

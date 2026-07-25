@@ -40,7 +40,7 @@ import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-mod
 type Tone = 'warning' | 'accent' | 'neutral';
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
-/** One row of the "Needs attention" action queue — a single next action the
+/** One row of the "Needs attention" action queue - a single next action the
  * user can take right now, derived entirely from already-loaded data. */
 interface QueueItem {
   id: string;

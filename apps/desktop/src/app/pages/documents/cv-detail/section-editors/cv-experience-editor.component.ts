@@ -13,14 +13,14 @@ type CvExperienceTextField = Exclude<keyof CvExperienceEntry, 'bullets'>;
 /**
  * Editor arm for the `experience` CV section: a list of role/company entries,
  * each with its own bullet list. Behavior-preserving extraction from
- * `CvDetailComponent` — same fields, only the mutation model is now
+ * `CvDetailComponent` - same fields, only the mutation model is now
  * immutable. This is the most nested arm: every edit (entry field, bullet
  * text, add/remove entry, add/remove bullet) emits a brand-new
- * `CvExperienceSection` — with brand-new `entries` and, for bullet-level
- * edits, a brand-new `bullets` array on the affected entry — via
+ * `CvExperienceSection` - with brand-new `entries` and, for bullet-level
+ * edits, a brand-new `bullets` array on the affected entry - via
  * `sectionChange`, instead of mutating `section.entries` (or any nested
  * entry/bullets array) in place. Bullet bold formatting is no longer
- * available here — it moved to the live preview's inline editor (see
+ * available here - it moved to the live preview's inline editor (see
  * `CvPreviewComponent.applyBulletBold`).
  */
 @Component({

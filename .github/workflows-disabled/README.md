@@ -11,7 +11,7 @@ hitting the cap and failing with a billing error. Until the repo goes public
 (Actions are free + unlimited for public repos), CI and the release build run
 **locally**, not in the cloud.
 
-- `ci.yml` — lint / test / build gate (was: push to main + every PR)
+- `ci.yml` - lint / test / build gate (was: push to main + every PR)
 
 The release workflow is now enabled at `.github/workflows/release.yml`. It runs
 only on version tag pushes (`vX.Y.Z`) and verifies the tag matches

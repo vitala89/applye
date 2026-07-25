@@ -1,6 +1,6 @@
 // Smart, fast pre-commit checks (runs only on staged files).
 // Philosophy: auto-fix formatting, block ONLY on real errors (warnings pass).
-// No test suite / no Tauri build here — kept fast and low-friction.
+// No test suite / no Tauri build here - kept fast and low-friction.
 export default {
   // JS/TS: auto-format, then lint errors-only (--quiet hides warnings).
   '*.{ts,tsx,js,jsx,mjs,cjs}': [

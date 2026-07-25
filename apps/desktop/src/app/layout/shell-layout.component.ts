@@ -24,6 +24,7 @@ import {
 import { AiMode } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
@@ -38,7 +39,7 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
 @Component({
   selector: 'app-shell-layout',
   standalone: true,
-  imports: [RouterModule, LucideAngularModule, PasteJobModalComponent],
+  imports: [RouterModule, LucideAngularModule, PasteJobModalComponent, ButtonDirective],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.scss',
 })
@@ -113,7 +114,7 @@ export class ShellLayoutComponent implements OnInit {
     if (p) void this.router.navigate(['/jobs', p.jobId]);
   }
 
-  // Maps a route's top-level path segment to its i18n nav label — reused
+  // Maps a route's top-level path segment to its i18n nav label - reused
   // as the topbar title so it always names the page actually showing.
   private static readonly PAGE_TITLE_KEYS: Record<string, string> = {
     dashboard: 'nav.dashboard',
@@ -142,7 +143,7 @@ export class ShellLayoutComponent implements OnInit {
     return ShellLayoutComponent.PAGE_TITLE_KEYS[segment] ?? 'nav.dashboard';
   }
 
-  // Lucide icons — single minimalist line-icon set across the shell nav.
+  // Lucide icons - single minimalist line-icon set across the shell nav.
   protected readonly icons = {
     dashboard: LayoutDashboard,
     discover: Compass,
@@ -181,7 +182,7 @@ export class ShellLayoutComponent implements OnInit {
   readonly theme = this.themeService.theme;
   readonly aiMode = signal<AiMode>('api');
 
-  // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) — the native
+  // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) - the native
   // traffic lights float over our own header, so reserve space for them.
   // Windows/Linux keep the default native title bar and need no inset.
   protected readonly isMacOverlayChrome =

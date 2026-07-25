@@ -17,7 +17,7 @@ out-tsc/
 apps/desktop/src-tauri/target/
 apps/mobile/src-tauri/target/
 
-# Personal data — NEVER commit
+# Personal data - NEVER commit
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
@@ -82,7 +82,7 @@ graphify-out/
 .planning/
 tauri-project-bootstrap.md
 
-# Internal competitor-adoption analysis — not for the public repo
+# Internal competitor-adoption analysis - not for the public repo
 AGENT_PROMPT_CAREER_OPS_ADOPTION.md
 docs/product/CAREER_OPS_ADOPTION.md
 

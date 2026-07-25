@@ -1,12 +1,12 @@
 // Silent WYSIWYG PDF export (ROADMAP: single-engine exports).
 //
 // The editor is HTML/CSS rendered by the system WebView; any hand-written PDF
-// renderer inevitably drifts from it (fonts, wrapping, spacing — two layout
+// renderer inevitably drifts from it (fonts, wrapping, spacing - two layout
 // engines never agree). This module removes the second engine for PDF: a
 // HIDDEN window loads the document's dedicated print route (`print/cv/:id` or
 // `print/cover-letter/:id`, each rendering the same preview component as its
 // editor), and once the frontend signals readiness we drive the OS print
-// machinery straight to a file — no print panel, no visible window. The output
+// machinery straight to a file - no print panel, no visible window. The output
 // is the editor's own render, so every current and future theme exports
 // correctly with zero per-theme export code.
 //
@@ -30,7 +30,7 @@ use crate::db::Db;
 pub struct PrintReady(pub Mutex<HashMap<String, tokio::sync::oneshot::Sender<()>>>);
 
 /// Called by the print route once fonts are loaded and the paginated preview
-/// has settled — the signal that the DOM is safe to snapshot.
+/// has settled - the signal that the DOM is safe to snapshot.
 #[tauri::command]
 pub fn print_window_ready(window: tauri::WebviewWindow, state: State<'_, PrintReady>) {
     if let Some(tx) = state.0.lock().unwrap().remove(window.label()) {
@@ -39,7 +39,7 @@ pub fn print_window_ready(window: tauri::WebviewWindow, state: State<'_, PrintRe
 }
 
 /// Exports a library CV to `save_path` as PDF by printing the live preview DOM
-/// of a hidden window — pixel-identical to the editor. Silent: no dialogs, no
+/// of a hidden window - pixel-identical to the editor. Silent: no dialogs, no
 /// visible windows.
 #[tauri::command]
 pub async fn cv_document_export_pdf_wysiwyg(
@@ -65,7 +65,7 @@ pub async fn cv_document_export_pdf_wysiwyg(
 }
 
 /// Exports a library cover letter to `save_path` as PDF via the same hidden-
-/// window print path as the CV — the letter's own `print/cover-letter/:id`
+/// window print path as the CV - the letter's own `print/cover-letter/:id`
 /// route renders `<app-cover-letter-preview>`, the editor's own render.
 #[tauri::command]
 pub async fn cover_letter_document_export_pdf_wysiwyg(
@@ -108,7 +108,7 @@ fn qenc(s: &str) -> String {
 }
 
 /// Exports the Job Tracker report to `save_path` as PDF by printing the hidden
-/// `print/tracker-report` window — the same `<app-tracker-report>` render as the
+/// `print/tracker-report` window - the same `<app-tracker-report>` render as the
 /// export preview, so the file matches the preview exactly (no printpdf drift).
 /// `landscape` swaps A4 to landscape; `fallback_content` is the plain-text
 /// report used on non-macOS platforms (printpdf), where the WYSIWYG print path
@@ -251,7 +251,7 @@ pub async fn tracker_report_export_pdf_wysiwyg(
 /// The shared silent-export machinery behind both document types: spin up an
 /// off-screen window on the given print route, wait for it to signal ready,
 /// then drive the native print straight to a PDF file. `route_kind` is the
-/// `print/<kind>/:id` segment — the ONLY thing that differs per document type,
+/// `print/<kind>/:id` segment - the ONLY thing that differs per document type,
 /// because both routes render their editor's preview component.
 #[cfg(target_os = "macos")]
 async fn export_pdf_wysiwyg_core(
@@ -265,7 +265,7 @@ async fn export_pdf_wysiwyg_core(
     use tauri::{WebviewUrl, WebviewWindowBuilder};
 
     {
-        // Page geometry from the document's style — the print box the preview
+        // Page geometry from the document's style - the print box the preview
         // laid itself out for.
         let doc = crate::commands::documents::document_library_get_core(id, &db.pool)
             .await?
@@ -292,7 +292,7 @@ async fn export_pdf_wysiwyg_core(
 
         // WebKit suspends rendering (and rAF) for `visible(false)` windows, so
         // the print route would never paint or signal ready. Keep it VISIBLE but
-        // parked far off-screen and undecorated — it renders normally, the user
+        // parked far off-screen and undecorated - it renders normally, the user
         // never sees it, and it's gone in well under a second.
         let win = WebviewWindowBuilder::new(
             &app,
@@ -316,7 +316,7 @@ async fn export_pdf_wysiwyg_core(
             return Err("print window timed out while rendering".to_string());
         }
 
-        // A stale file would make the completion poll pass instantly — the OS
+        // A stale file would make the completion poll pass instantly - the OS
         // save dialog already confirmed overwrite, so clear it first.
         let _ = std::fs::remove_file(&save_path);
 
@@ -351,7 +351,7 @@ async fn export_pdf_wysiwyg_core(
         drx.await
             .map_err(|_| "print dispatch dropped".to_string())??;
 
-        // `runOperationModalForWindow` returns before the file is written —
+        // `runOperationModalForWindow` returns before the file is written -
         // poll for a stable, non-empty file.
         let mut ok = false;
         let mut last_len = 0u64;
@@ -381,7 +381,7 @@ async fn export_pdf_wysiwyg_core(
 /// for the dialog print (proven to render our preview correctly), with the
 /// panel suppressed and the job disposition set to save-to-URL.
 ///
-/// Safety: must run on the main thread with valid WKWebView/NSWindow pointers —
+/// Safety: must run on the main thread with valid WKWebView/NSWindow pointers -
 /// guaranteed by `with_webview` (main-thread closure) and `ns_window()`.
 #[cfg(target_os = "macos")]
 // Mirrors the Cocoa print API surface: paper size and four margins are separate
@@ -415,7 +415,7 @@ unsafe fn macos_print_to_pdf(
         return Err("print: WKWebView print requires macOS 11+".to_string());
     }
 
-    // Fresh NSPrintInfo (not the shared one — leave global state alone), set to
+    // Fresh NSPrintInfo (not the shared one - leave global state alone), set to
     // save straight to `save_path` with the document's paper size and margins.
     let print_info: Retained<NSPrintInfo> = msg_send![objc2::class!(NSPrintInfo), new];
     print_info.setJobDisposition(NSPrintSaveJob);

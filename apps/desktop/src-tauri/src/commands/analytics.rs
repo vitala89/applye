@@ -1,4 +1,4 @@
-//! Analytics facts — the raw, per-application signals the Analytics screen
+//! Analytics facts - the raw, per-application signals the Analytics screen
 //! needs to draw its funnel, KPIs, and trend. All aggregation math (bucketing,
 //! conversion %, deltas, low-data thresholds) lives in the frontend pure module
 //! `@applye/core` `computeAnalytics`, so this command stays a thin, honest read:
@@ -33,12 +33,12 @@ pub struct AnalyticsApplication {
     /// Received an offer at any point (current status or history).
     pub reached_offer: bool,
     /// Archived applications are hidden from the active Tracker but still
-    /// happened — analytics counts them.
+    /// happened - analytics counts them.
     pub archived: bool,
     /// Latest ATS-fit score (0..100) for this application's job, or NULL when
     /// the job was never scored (scoring is opt-in AI).
     pub score: Option<f64>,
-    /// When the employer first responded — the earliest `interview`/`offer`
+    /// When the employer first responded - the earliest `interview`/`offer`
     /// status transition. NULL when no response was ever recorded. Paired with
     /// `applied_at` this gives time-to-response.
     pub first_response_at: Option<String>,
@@ -52,7 +52,7 @@ pub struct AnalyticsApplication {
 
 /// A follow-up draft timestamp. NOTE: Applye never sends mail (it hands off to
 /// `mailto:`), so this marks a follow-up that was *drafted*, not confirmed
-/// sent — the closest local signal for follow-up effort.
+/// sent - the closest local signal for follow-up effort.
 #[derive(Debug, Serialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalyticsFollowup {

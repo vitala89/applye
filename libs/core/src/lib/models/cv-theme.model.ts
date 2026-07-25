@@ -34,7 +34,7 @@ export interface CvThemeBullets {
   marker: 'disc' | 'textbullet';
 }
 
-/** A CV visual theme — pure typed data, no CSS/HTML/JS. Renders via
+/** A CV visual theme - pure typed data, no CSS/HTML/JS. Renders via
  * `themeCssVars` (custom properties) + `themeStyleSeed` (CvStyle defaults). */
 export interface CvThemeDescriptor {
   id: number;
@@ -122,7 +122,7 @@ export function themeStyleSeed(
  * `null` when the theme draws none (Classic) and the neutral CSS default
  * applies instead.
  *
- * Concrete numbers — not the `--cv-*` vars `themeCssVars` emits — because the
+ * Concrete numbers - not the `--cv-*` vars `themeCssVars` emits - because the
  * live-style panel has to SHOW this as the line's size/colour when the user
  * hasn't set their own. It stays theme data only: the neutral fallback lives in
  * CSS tokens (`_paper.scss`, which forbids forking its values), so a title with
@@ -135,7 +135,7 @@ export function themeTitleRule(
 
 /** The rule a theme draws under an experience entry's role/dates head, as
  * concrete values, or `null` when it draws none. The entry counterpart of
- * `themeTitleRule` — the live-style panel shows it as the entry's line when
+ * `themeTitleRule` - the live-style panel shows it as the entry's line when
  * neither the entry nor its section sets one. */
 export function themeEntryRule(
   theme: CvThemeDescriptor,

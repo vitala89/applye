@@ -13,6 +13,6 @@ current_state=$(cat docs/product/CURRENT_STATE.md 2>/dev/null || true)
 jq -n --arg pc "$plan_check" --arg cs "$current_state" '{
   hookSpecificOutput: {
     hookEventName: "SessionStart",
-    additionalContext: ("Plan Check (from AGENTS.md) — do this before starting or proposing work:\n\n" + $pc + "\n\n---\n\ndocs/product/CURRENT_STATE.md (current version):\n\n" + $cs)
+    additionalContext: ("Plan Check (from AGENTS.md) - do this before starting or proposing work:\n\n" + $pc + "\n\n---\n\ndocs/product/CURRENT_STATE.md (current version):\n\n" + $cs)
   }
 }'

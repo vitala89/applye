@@ -1,4 +1,4 @@
-# Analytics — Design Prompt
+# Analytics - Design Prompt
 
 Design the **Analytics** screen for **Applye**, a privacy-first desktop job-search app
 (Tauri + Angular). This is the counterpart to the Dashboard: where the Dashboard answers

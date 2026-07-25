@@ -166,7 +166,7 @@ export class AnalyticsComponent implements OnInit {
     const v = this.view();
     if (!v) return null;
     const d = v.scoreDist;
-    if (d.scored === 0) return null; // no scored jobs at all — hide the card
+    if (d.scored === 0) return null; // no scored jobs at all - hide the card
     return {
       scored: d.scored,
       unscored: d.unscored,
@@ -186,7 +186,7 @@ export class AnalyticsComponent implements OnInit {
     if (!v) return null;
     const o = v.scoreOutcome;
     const total = o.groups.reduce((s, g) => s + g.count, 0);
-    if (total === 0) return null; // no scored jobs — hide (same as the distribution card)
+    if (total === 0) return null; // no scored jobs - hide (same as the distribution card)
     const label: Record<string, string> = {
       offer: this.t()('analytics.outcome_offer'),
       interview: this.t()('analytics.outcome_interview'),
@@ -197,7 +197,7 @@ export class AnalyticsComponent implements OnInit {
       groups: o.groups.map((g) => ({
         label: label[g.key],
         count: g.count,
-        avgText: g.avgScore === null ? '—' : `${g.avgScore}%`,
+        avgText: g.avgScore === null ? '-' : `${g.avgScore}%`,
         widthPct: `${g.widthPct}%`,
         accent: g.key === 'offer',
       })),
@@ -208,7 +208,7 @@ export class AnalyticsComponent implements OnInit {
     const v = this.view();
     if (!v) return null;
     const r = v.timeToResponse;
-    if (r.count === 0) return null; // no measured responses — hide the card
+    if (r.count === 0) return null; // no measured responses - hide the card
     const days = this.t()('analytics.ttr_days');
     const d = this.t()('analytics.ttr_d');
     return {
@@ -227,7 +227,7 @@ export class AnalyticsComponent implements OnInit {
     const v = this.view();
     if (!v) return null;
     const a = v.aging;
-    if (a.activeCount === 0) return null; // no in-flight pipeline — hide
+    if (a.activeCount === 0) return null; // no in-flight pipeline - hide
     const days = this.t()('analytics.ttr_days');
     return {
       lowData: a.lowData,
@@ -246,7 +246,7 @@ export class AnalyticsComponent implements OnInit {
     const v = this.view();
     if (!v) return null;
     const l = v.locations;
-    if (l.total === 0) return null; // nothing located — hide
+    if (l.total === 0) return null; // nothing located - hide
     return {
       lowData: l.lowData,
       unknown: l.unknown,
@@ -280,7 +280,7 @@ export class AnalyticsComponent implements OnInit {
       key,
       icon,
       label,
-      valueText: k.value === null ? '—' : String(k.value),
+      valueText: k.value === null ? '-' : String(k.value),
       isPercent: k.isPercent && k.value !== null,
       accent,
       deltaShow: k.delta !== null,

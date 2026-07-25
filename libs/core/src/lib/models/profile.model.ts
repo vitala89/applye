@@ -7,7 +7,7 @@ export interface Profile {
   pitchHash?: string;
   targetArchetypes?: string;
   /** Cropped applicant photo as a JPEG data URI, reusable across CVs. Written
-   * only through `setProfilePhoto` — an ordinary profile save leaves it alone. */
+   * only through `setProfilePhoto` - an ordinary profile save leaves it alone. */
   photoDataUri?: string;
   updatedAt: string;
 }

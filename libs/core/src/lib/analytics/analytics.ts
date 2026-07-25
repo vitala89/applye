@@ -1,4 +1,4 @@
-// Analytics aggregation — pure, locale-free, deterministic.
+// Analytics aggregation - pure, locale-free, deterministic.
 //
 // The Rust `db_analytics_facts` command hands us one row per application plus
 // raw follow-up-draft timestamps; everything the Analytics screen draws
@@ -62,7 +62,7 @@ export interface AnalyticsStage {
   widthPct: number;
   /** Conversion from the previous stage, 0..100, or null when suppressed. */
   conv: number | null;
-  /** Which stage the conversion is "of" — for the caption. */
+  /** Which stage the conversion is "of" - for the caption. */
   convOf: 'saved' | 'applied' | 'interviewing' | null;
   /** The applied stage is the accent-coloured primary bar. */
   primary: boolean;
@@ -176,7 +176,7 @@ export interface AnalyticsLocations {
 
 export interface AnalyticsView {
   state: AnalyticsState;
-  /** Applications sent in the active window — drives the caption count. */
+  /** Applications sent in the active window - drives the caption count. */
   appliedTotal: number;
   kpis: {
     apps: AnalyticsKpi;
@@ -275,7 +275,7 @@ function scoreDistribution(apps: AnalyticsApplication[], from: string | null): A
   };
 }
 
-/** Average score per outcome — the "does fit predict success?" comparison.
+/** Average score per outcome - the "does fit predict success?" comparison.
  *  Groups are mutually exclusive over scored, applied-in-window applications:
  *  reached an offer, reached an interview (no offer yet), or never advanced. */
 function scoreOutcome(apps: AnalyticsApplication[], from: string | null): AnalyticsScoreOutcome {
@@ -312,7 +312,10 @@ function daysBetween(from: string, to: string): number {
 }
 
 /** Days from applied to first employer response, as a median + histogram. */
-function timeToResponse(apps: AnalyticsApplication[], from: string | null): AnalyticsTimeToResponse {
+function timeToResponse(
+  apps: AnalyticsApplication[],
+  from: string | null,
+): AnalyticsTimeToResponse {
   const days: number[] = [];
   for (const a of apps) {
     const applied = toDay(a.appliedAt);
@@ -379,7 +382,7 @@ function pipelineAging(
   };
 }
 
-/** Where the user is applying — top locations by application count. */
+/** Where the user is applying - top locations by application count. */
 function topLocations(apps: AnalyticsApplication[], from: string | null): AnalyticsLocations {
   const counts = new Map<string, number>();
   let unknown = 0;
@@ -418,7 +421,7 @@ function dayStr(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Compare timestamps by their yyyy-mm-dd prefix — robust to the mixed
+/** Compare timestamps by their yyyy-mm-dd prefix - robust to the mixed
  *  `date('now')` / `datetime('now')` shapes SQLite stores. */
 function toDay(ts: string | null): string | null {
   return ts ? ts.slice(0, 10) : null;
@@ -481,7 +484,7 @@ function countStages(
     if (appliedIn || savedOnlyIn) c.saved += 1;
     if (!appliedIn) continue;
     c.applied += 1;
-    // An offer implies an interview was reached — keep the funnel monotonic
+    // An offer implies an interview was reached - keep the funnel monotonic
     // even if the source flags ever disagree.
     if (a.reachedInterview || a.reachedOffer) c.interviewing += 1;
     if (a.reachedOffer) c.offer += 1;

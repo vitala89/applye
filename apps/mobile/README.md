@@ -1,10 +1,11 @@
-# Mobile — Tauri 2 Mobile Target (Placeholder)
+# Mobile - Tauri 2 Mobile Target (Placeholder)
 
 This directory is a placeholder for future iOS/Android builds.
 
 ## Plan
 
 Applye's mobile target will reuse:
+
 - All `libs/` (core models, data services, ui components, i18n)
 - The same Angular frontend from `apps/desktop/src/`
 - A Tauri 2 mobile shell (`src-tauri/` configured for iOS/Android)
@@ -31,6 +32,7 @@ at the same Nx-served Angular output as the desktop app.
 ## Status
 
 Not scaffolded. Do not add tooling here until:
+
 1. The desktop MVP ships
 2. iOS/Android prerequisites are installed
 3. Team capacity exists to maintain a mobile target

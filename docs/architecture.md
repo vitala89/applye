@@ -6,7 +6,7 @@ A short map of how Applye is put together. For the _why_ behind any given choice
 ## Shape
 
 Applye is a [Tauri 2](https://v2.tauri.app/) desktop app: an **Angular** frontend talking to a
-**Rust** backend over Tauri's IPC. State and documents live in a local **SQLite** database — there
+**Rust** backend over Tauri's IPC. State and documents live in a local **SQLite** database - there
 is no server and no cloud component.
 
 It's an [Nx](https://nx.dev) monorepo so the desktop app, a landing site, and shared libraries can
@@ -15,11 +15,11 @@ live together without duplicating contracts.
 ```
 applye/
 ├── apps/
-│   ├── desktop/          Tauri 2 + Angular — the primary app
+│   ├── desktop/          Tauri 2 + Angular - the primary app
 │   │   ├── src/          Angular frontend (UI, routes, components)
 │   │   └── src-tauri/    Rust backend (commands, SQLite, AI bridge, file I/O)
 │   ├── web/              Angular landing site (applye.dev)
-│   └── mobile/           placeholder — scaffolded later
+│   └── mobile/           placeholder - scaffolded later
 └── libs/
     ├── core/             domain models, types, IPC contracts (framework-agnostic)
     ├── data/             Tauri invoke wrappers, DB/AI service abstractions
@@ -31,9 +31,9 @@ applye/
 ## Frontend (Angular)
 
 - **Angular 21**, standalone components, zoneless change detection.
-- **NgRx Signals** for state — a `SignalStore` per feature area, no global Redux-style store.
+- **NgRx Signals** for state - a `SignalStore` per feature area, no global Redux-style store.
 - **Angular CDK** for primitives (the pipeline Kanban board uses CDK drag-drop).
-- All user-facing text flows through `libs/i18n` — no hardcoded strings.
+- All user-facing text flows through `libs/i18n` - no hardcoded strings.
 - Design is driven by CSS custom-property **tokens** in `libs/ui`, not ad-hoc styles.
 
 ## Backend (Rust / Tauri)
@@ -57,7 +57,7 @@ AI is an **opt-in, bring-your-own** capability, never a dependency of the core w
 - The **augmentation principle is structural**: AI produces proposals into the UI; the user reads,
   edits, and accepts them. Nothing is auto-applied, auto-sent, or acted on without an explicit step.
 
-## Data flow — the core loop
+## Data flow - the core loop
 
 ```
 paste JD ──▶ [Rust] hash + cache lookup ──▶ AI check (opt-in) ──▶ proposal shown in UI
@@ -74,9 +74,9 @@ the cache on the way back.
 
 ## Conventions
 
-- Shared types and IPC contracts live in `libs/core` — never duplicated across the boundary.
-- Translations live in `libs/i18n` — never inline.
-- AI prompts live in `libs/skills` — versioned, not embedded in code.
+- Shared types and IPC contracts live in `libs/core` - never duplicated across the boundary.
+- Translations live in `libs/i18n` - never inline.
+- AI prompts live in `libs/skills` - versioned, not embedded in code.
 - Every change is checked against the [decision filter](decision-filter.md).
 
 > A documentation site (Cloudflare Pages) is a later step. For now these docs are plain markdown in

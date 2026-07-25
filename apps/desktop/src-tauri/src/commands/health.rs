@@ -1,8 +1,8 @@
-// Phase 6.7: deterministic, 0-token diagnostics. Every check here is local —
+// Phase 6.7: deterministic, 0-token diagnostics. Every check here is local -
 // keychain presence, SQLite read/write, the sqlx migration ledger, bundled
 // Tauri capabilities, filesystem writability. Nothing here calls the network
 // or an AI provider. Whether a stored key actually WORKS is a separate,
-// explicitly user-triggered action (Settings' "Test connection") — this
+// explicitly user-triggered action (Settings' "Test connection") - this
 // report only ever says "stored" or "not stored yet", never "valid".
 
 use std::path::Path;
@@ -30,7 +30,7 @@ pub struct HealthCheckItem {
 #[serde(rename_all = "camelCase")]
 pub struct HealthReport {
     pub items: Vec<HealthCheckItem>,
-    /// Worst status across `items` — "ok" | "warn" | "fail".
+    /// Worst status across `items` - "ok" | "warn" | "fail".
     pub overall: String,
 }
 
@@ -54,7 +54,7 @@ fn worst(items: &[HealthCheckItem]) -> String {
 }
 
 /// A harmless no-op write (a column set to itself) inside a transaction that
-/// is always rolled back — proves the DB file/WAL is actually writable
+/// is always rolled back - proves the DB file/WAL is actually writable
 /// without leaving any trace.
 async fn check_database(pool: &sqlx::SqlitePool) -> HealthCheckItem {
     if sqlx::query_scalar::<_, i64>("SELECT 1")
@@ -95,7 +95,7 @@ async fn check_database(pool: &sqlx::SqlitePool) -> HealthCheckItem {
     }
 }
 
-/// sqlx records one row per migration with a `success` flag — the ledger it
+/// sqlx records one row per migration with a `success` flag - the ledger it
 /// keeps for itself is the ground truth for "did every migration apply
 /// cleanly", cheaper and more honest than re-deriving it from table shape.
 async fn check_migrations(pool: &sqlx::SqlitePool) -> HealthCheckItem {
@@ -125,7 +125,7 @@ async fn check_migrations(pool: &sqlx::SqlitePool) -> HealthCheckItem {
     }
 }
 
-/// Presence only, from the OS keychain — never a network call. CLI mode
+/// Presence only, from the OS keychain - never a network call. CLI mode
 /// needs no stored key at all.
 async fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
     if ai_mode == "cli" {
@@ -137,7 +137,7 @@ async fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
                 "api_key",
                 "AI provider CLI",
                 "ok",
-                format!("CLI mode — {version}. No stored key needed."),
+                format!("CLI mode - {version}. No stored key needed."),
             ),
             Err(reason) => item("api_key", "AI provider CLI", "error", reason),
         };
@@ -148,7 +148,7 @@ async fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
             "AI provider key",
             "ok",
             format!(
-                "A key is stored for {provider} (not tested yet — use \"Test connection\" in Settings to verify it works)."
+                "A key is stored for {provider} (not tested yet - use \"Test connection\" in Settings to verify it works)."
             ),
         ),
         Ok(None) => item(
@@ -167,7 +167,7 @@ async fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
 }
 
 /// Static check against the capabilities file bundled into the binary at
-/// compile time — no filesystem access, no Tauri runtime call.
+/// compile time - no filesystem access, no Tauri runtime call.
 fn check_capabilities() -> HealthCheckItem {
     let missing: Vec<&str> = REQUIRED_CAPABILITIES
         .iter()
@@ -191,7 +191,7 @@ fn check_capabilities() -> HealthCheckItem {
     }
 }
 
-/// Writes then deletes a tiny probe file — the same shape of check
+/// Writes then deletes a tiny probe file - the same shape of check
 /// `export_report`/CV export ultimately depend on, just without leaving
 /// anything behind.
 fn probe_writable(dir: &Path) -> Result<(), String> {

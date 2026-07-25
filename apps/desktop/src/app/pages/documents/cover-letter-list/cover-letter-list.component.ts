@@ -105,7 +105,7 @@ export class CoverLetterListComponent {
   async exportDoc(item: DocumentLibraryItem, format: 'pdf' | 'docx', event: Event): Promise<void> {
     event.stopPropagation();
     if (!format || this.exportBusyId() != null) return;
-    // Silent export: pick a path, file is written directly — no print dialog,
+    // Silent export: pick a path, file is written directly - no print dialog,
     // no visible windows. PDF goes through the WYSIWYG engine (a hidden window
     // renders the editor's own preview and the OS prints it to the file), so
     // the export is pixel-identical to the editor.
@@ -239,8 +239,8 @@ export class CoverLetterListComponent {
       }
 
       const label = company
-        ? `${company} — ${this.t()('documents.tab_cover_letter')}`
-        : `${this.t()('documents.cover_letter_untitled')} — ${this.generateRegionTag().toUpperCase()}`;
+        ? `${company} - ${this.t()('documents.tab_cover_letter')}`
+        : `${this.t()('documents.cover_letter_untitled')} - ${this.generateRegionTag().toUpperCase()}`;
 
       const created = await this.db.documentLibraryUpsert({
         docType: 'cover_letter',

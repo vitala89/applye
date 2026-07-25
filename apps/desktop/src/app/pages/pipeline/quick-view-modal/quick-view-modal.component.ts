@@ -55,7 +55,7 @@ const FOLLOWUP_LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
 };
 
 /** Highest stage_order that isn't rejected/cancelled, or the most recent one
- * if all are closed — mirrors the SQL in db_pipeline_cards exactly, so the
+ * if all are closed - mirrors the SQL in db_pipeline_cards exactly, so the
  * modal's summary always matches the card footer. */
 function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
   if (!stages.length) return null;
@@ -64,11 +64,11 @@ function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
   return pool.reduce((max, s) => (s.stageOrder > max.stageOrder ? s : max), pool[0]);
 }
 
-// Fast triage surface for a Pipeline card — status, priority, comments, and a
+// Fast triage surface for a Pipeline card - status, priority, comments, and a
 // link out. Deliberately shallow: no score/JD/tailoring/portal-answers here,
 // that depth stays on /jobs/:id. Status changes go through the SAME
 // db_set_application_status command the kanban drag-and-drop uses (via
-// DbService.setApplicationStatus) — there is no second status-update path.
+// DbService.setApplicationStatus) - there is no second status-update path.
 @Component({
   selector: 'app-quick-view-modal',
   standalone: true,
@@ -115,7 +115,7 @@ export class QuickViewModalComponent {
   protected readonly commentText = signal('');
   protected readonly commentBusy = signal(false);
 
-  // Stage summary / quick-add — see the "one write path outside Interview
+  // Stage summary / quick-add - see the "one write path outside Interview
   // Prep" exception: the mini form only ever shows right after a
   // transition INTO interview when the application has 0 stages yet.
   protected readonly stageSummary = signal<InterviewStage | null>(null);
@@ -132,7 +132,7 @@ export class QuickViewModalComponent {
       !this.promptDismissed(),
   );
 
-  // Draft follow-up — one cached AI call per (application, input). Applye
+  // Draft follow-up - one cached AI call per (application, input). Applye
   // never sends anything: "Open in mail" hands a pre-filled mailto: link to
   // the user's own mail client, which is the only thing that can send it.
   protected readonly followupLanguage = signal<SupportedLanguage>('en');
@@ -269,10 +269,10 @@ export class QuickViewModalComponent {
     setTimeout(() => this.followupCopied.set(false), 1500);
   }
 
-  /** Opens the user's own mail client via `mailto:` — Applye never sends this
+  /** Opens the user's own mail client via `mailto:` - Applye never sends this
    * itself, and there is no other code path that transmits it anywhere.
    * Built by hand (not URLSearchParams) because mailto: query values use
-   * RFC 3986 percent-encoding, where a space is `%20` — URLSearchParams
+   * RFC 3986 percent-encoding, where a space is `%20` - URLSearchParams
    * encodes spaces as `+`, which most mail clients show literally instead of
    * decoding. */
   protected async openFollowupInMail(): Promise<void> {
@@ -321,7 +321,7 @@ export class QuickViewModalComponent {
   /** 1-2 letter monogram from the company name, matching the board card. */
   protected initials(): string {
     const company = this.card().company?.trim();
-    if (!company) return '–';
+    if (!company) return '-';
     const words = company.split(/\s+/).filter(Boolean);
     if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
     return (words[0][0] + words[1][0]).toUpperCase();
@@ -346,7 +346,7 @@ export class QuickViewModalComponent {
   }
 
   /** A step (and the connector into it) is "reached" once the funnel has
-   * advanced to at least its position — fills the progress track up to the
+   * advanced to at least its position - fills the progress track up to the
    * current stage. */
   protected stageReached(stage: InterviewStage): boolean {
     return stage.stageOrder <= (this.stageSummary()?.stageOrder ?? 0);
@@ -382,7 +382,7 @@ export class QuickViewModalComponent {
     try {
       const updated = await this.db.setApplicationStatus(card.id, status);
       // Emit the whole row so the board can refresh applied_at / follow_up_at
-      // / overdue too — not just the status literal (those are recomputed in
+      // / overdue too - not just the status literal (those are recomputed in
       // SQL on the applied/interview transitions).
       this.statusChanged.emit(updated);
       this.promptDismissed.set(false);

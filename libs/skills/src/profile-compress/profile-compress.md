@@ -21,7 +21,7 @@ Rules:
 
 - Output ONLY valid JSON. No markdown fences. No commentary.
 - Never fabricate. Only include facts explicitly stated in the profile.
-- Be brutally concise — every field is used to score job fit.
+- Be brutally concise - every field is used to score job fit.
 - red_flags: note gaps, vague claims, or missing info that a recruiter would flag.
 - skills: top skills only, max 20, most relevant first.
 - achievements: one sentence each, max 5, include measurable impact if stated.

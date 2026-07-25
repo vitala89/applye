@@ -1,8 +1,8 @@
 # Feature Brief: Follow-up Message Drafting (Step 2)
 
 - **Status**: `shipped` (v0.19.0)
-- **Source**: `IDEAS.md` (2026-07-05) — "Draft follow-up message for overdue applications".
-- **Roadmap**: §13 v2 — "Follow-up drafting"; complements the shipped overdue badge (§7, v0.11.0).
+- **Source**: `IDEAS.md` (2026-07-05) - "Draft follow-up message for overdue applications".
+- **Roadmap**: §13 v2 - "Follow-up drafting"; complements the shipped overdue badge (§7, v0.11.0).
 
 ---
 
@@ -18,7 +18,7 @@ That is exactly the kind of judgement-light drafting the app should assist.
 
 One click on an overdue card drafts a polite, context-aware follow-up email (company, role, days
 since applied). User reviews/edits, then it opens their mail client via `mailto:` pre-filled. **User
-sends manually — never auto-sent.** Small effort, high daily value, builds directly on shipped work.
+sends manually - never auto-sent.** Small effort, high daily value, builds directly on shipped work.
 
 ---
 
@@ -27,7 +27,7 @@ sends manually — never auto-sent.** Small effort, high daily value, builds dir
 ### In Scope
 
 - A "Draft follow-up" action on overdue Pipeline cards (and/or quick-view modal).
-- New skill file `libs/skills/src/followup/followup.md` (quality or economy model — see Token section).
+- New skill file `libs/skills/src/followup/followup.md` (quality or economy model - see Token section).
 - One AI call per draft, cached by `(application_id, input_hash)` where `input_hash` covers company,
   role, applied date, language, model.
 - Language selector defaulting to the application's `doc_language`.
@@ -36,7 +36,7 @@ sends manually — never auto-sent.** Small effort, high daily value, builds dir
 
 ### Out of Scope
 
-- Any send/transmit path. No SMTP, no API email. `mailto:` only — the OS mail client sends.
+- Any send/transmit path. No SMTP, no API email. `mailto:` only - the OS mail client sends.
 - Gmail/MCP integration (that is a later, separate roadmap item).
 - Follow-up scheduling/reminders beyond the existing `follow_up_at` badge.
 
@@ -53,7 +53,7 @@ sends manually — never auto-sent.** Small effort, high daily value, builds dir
 - [ ] Language defaults to `applications.doc_language`, user can override; language is part of the
       cache key.
 - [ ] Draft is editable; a copy button and a "Open in mail" (`mailto:`) button are present.
-- [ ] **No code path transmits the message** — verified by review (augmentation boundary, §0/filter #8).
+- [ ] **No code path transmits the message** - verified by review (augmentation boundary, §0/filter #8).
 - [ ] EN + DE strings added to `translations.ts` (not the deleted JSON files).
 
 ### AIF Routing
@@ -63,9 +63,9 @@ sends manually — never auto-sent.** Small effort, high daily value, builds dir
 
 ### Expected Files
 
-- `libs/skills/src/followup/followup.md` — new skill (versioned prompt).
+- `libs/skills/src/followup/followup.md` - new skill (versioned prompt).
 - Pipeline card / quick-view component + template (reuse existing overdue-badge component).
-- A draft cache table or reuse of an existing cache pattern (see Data Impact — confirm before adding a
+- A draft cache table or reuse of an existing cache pattern (see Data Impact - confirm before adding a
   table; a `followup_drafts` table mirrors `portal_answers`).
 - `libs/core` / `libs/data` types if a new cache table is added.
 - `libs/i18n/src/lib/translations/translations.ts` (EN + DE).
@@ -77,7 +77,7 @@ sends manually — never auto-sent.** Small effort, high daily value, builds dir
 
 ### Data / Migration Impact
 
-Likely one additive migration `0010_followup_drafts.sql` (or reuse a generic drafts cache) — **confirm
+Likely one additive migration `0010_followup_drafts.sql` (or reuse a generic drafts cache) - **confirm
 the next-free migration number against `apps/desktop/src-tauri/migrations/` at build time** (currently
 0009 is the latest; Documents §16 also wants 0010, so coordinate ordering). Purely additive, never edit
 an applied migration.
@@ -85,7 +85,7 @@ an applied migration.
 ### Privacy / Security Impact
 
 **Critical boundary check.** The draft text is generated locally via `ai_run` (same provider path as
-scoring). Nothing is emailed by the app — only `mailto:` hands a pre-filled draft to the user's own
+scoring). Nothing is emailed by the app - only `mailto:` hands a pre-filled draft to the user's own
 mail client. Passes filter #8 (submit/send stays with the user). No new permissions.
 
 ### i18n Impact
@@ -97,7 +97,7 @@ empty/loading/error states. EN + DE in `translations.ts`; `ru/es/fr/uk` inherit 
 ### Token / AI Impact
 
 One AI call per draft, cached. Short structured output (subject + body). Aggregated context in (company,
-role, days), not raw JD. Economy model is likely sufficient — follow-ups are routine drafting; confirm
+role, days), not raw JD. Economy model is likely sufficient - follow-ups are routine drafting; confirm
 tone quality against a quality-model sample before locking the tier in the skill file front-matter.
 
 ---
@@ -127,7 +127,7 @@ CHANGELOG `[Unreleased]`; move IDEAS.md entry to Accepted → then Done; update 
 > **Follow-up drafting.** Overdue Pipeline cards now offer a "Draft follow-up" action that drafts a
 > polite follow-up email from the company, role, and days-overdue via the `followup.md` skill (one AI
 > call, cached per application + language + model). The draft is editable and opens the user's own mail
-> client pre-filled via `mailto:` — Applye never sends it. EN + DE.
+> client pre-filled via `mailto:` - Applye never sends it. EN + DE.
 
 ---
 
@@ -139,8 +139,8 @@ Branch `feat/followup-drafting` → CHANGELOG + minor version bump across the fo
 
 ### Open Questions
 
-- New `followup_drafts` table vs. a generic drafts cache — decide during architecture pass.
-- Migration 0010 ownership: this feature vs. Documents — whichever ships first takes 0010.
+- New `followup_drafts` table vs. a generic drafts cache - decide during architecture pass.
+- Migration 0010 ownership: this feature vs. Documents - whichever ships first takes 0010.
 
 ### Decision
 

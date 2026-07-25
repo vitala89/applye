@@ -4,10 +4,10 @@ import type { CvSummarySection } from '@applye/core';
 
 /**
  * Editor arm for the `summary` CV section: a single plain-text textarea.
- * Behavior-preserving extraction from `CvDetailComponent` — the mutation
+ * Behavior-preserving extraction from `CvDetailComponent` - the mutation
  * model is immutable: every edit emits a brand-new `CvSummarySection` via
  * `sectionChange` instead of mutating the section object in place.
- * Bold formatting is no longer available here — it moved to the live
+ * Bold formatting is no longer available here - it moved to the live
  * preview's inline editor (see `CvPreviewComponent.applySummaryBold`).
  */
 @Component({

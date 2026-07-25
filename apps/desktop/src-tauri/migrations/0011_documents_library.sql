@@ -1,11 +1,11 @@
 -- 0011_documents_library.sql
--- Documents library (ROADMAP §16, DDL §12) — Step 1a, data layer only.
+-- Documents library (ROADMAP §16, DDL §12) - Step 1a, data layer only.
 --
 -- Purely additive: two new tables plus two nullable FK columns on the
 -- existing `applications` table. `document_library` is the live, editable
 -- CV/Cover-Letter library; distinct from `generated_docs`, which stays the
 -- export journal. `applications.cv_path` / `cover_letter_path` are left
--- untouched — they remain the frozen apply-time snapshot (Agentur report
+-- untouched - they remain the frozen apply-time snapshot (Agentur report
 -- accuracy); the new *_document_id FKs only record which library doc was
 -- used, they never rewrite the snapshot.
 

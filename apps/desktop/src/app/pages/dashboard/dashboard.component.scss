@@ -1,4 +1,4 @@
-// Dashboard (Home) — the app landing surface. Implements Dashboard.dc.html.
+// Dashboard (Home) - the app landing surface. Implements Dashboard.dc.html.
 // The shell `.content` supplies the 32px gutter + scroll; this page only
 // centers its column and stacks the blocks.
 
@@ -147,10 +147,12 @@
   box-shadow: var(--shadow-sm);
 
   &--warn {
-    border-left: 2px solid var(--warning);
+    border-color: var(--warning);
+    background: var(--warning-tint);
   }
   &--accent {
-    border-left: 2px solid var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-tint);
   }
 
   &__icon {

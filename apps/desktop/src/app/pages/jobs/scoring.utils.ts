@@ -113,11 +113,11 @@ export function applicationStatusBadgeClass(status: ApplicationStatus): string {
 export type ChangeType = 'added' | 'reworded';
 
 /**
- * The tailoring pipeline's `changes` field is a flat string[] — the AI
+ * The tailoring pipeline's `changes` field is a flat string[] - the AI
  * output has no per-item type tag (adding this would mean changing the
  * resume-tailoring skill's output contract, out of scope for a
  * presentation-only pass). This is a text heuristic over the existing
- * strings, not an AI-provided classification — used only to pick an icon.
+ * strings, not an AI-provided classification - used only to pick an icon.
  */
 export function classifyChangeType(text: string): ChangeType {
   return /^(added|inserted|new)\b/i.test(text.trim()) ? 'added' : 'reworded';

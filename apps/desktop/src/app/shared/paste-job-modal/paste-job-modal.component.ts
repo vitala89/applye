@@ -20,7 +20,7 @@ type PasteTab = 'link' | 'text';
 
 // Clipboard heuristic (0 tokens): a plausible job description is long and
 // contains at least two job-posting-shaped keywords. Never reads more than
-// this one clipboard check, never auto-submits — the user reviews and
+// this one clipboard check, never auto-submits - the user reviews and
 // clicks "Paste copied description" themselves.
 const CLIPBOARD_MIN_LENGTH = 300;
 const CLIPBOARD_KEYWORDS = [
@@ -54,7 +54,7 @@ function looksLikeJobDescription(text: string): boolean {
 
 // Single shared "Paste Job" modal (topbar + My Jobs both open this same
 // instance via PasteJobModalService). Two modes: fetch from an allowed
-// open/ATS URL, or paste raw text — both funnel into the existing
+// open/ATS URL, or paste raw text - both funnel into the existing
 // job_paste pipeline (hard filter + legitimacy check), 0 duplication.
 @Component({
   selector: 'app-paste-job-modal',
@@ -94,7 +94,7 @@ export class PasteJobModalComponent {
   protected readonly textBusy = signal(false);
   protected readonly textError = signal('');
 
-  // Clipboard helper — never auto-fills, only offers.
+  // Clipboard helper - never auto-fills, only offers.
   protected readonly clipboardOffer = signal('');
 
   protected close(): void {
@@ -198,7 +198,7 @@ export class PasteJobModalComponent {
   // Window focus is the practical proxy for "user switched back from their
   // browser" in a single-window desktop app. The component itself is
   // mounted once at the shell root (so both entry points share it), so this
-  // listener is live even when closed — guard explicitly on modal state so
+  // listener is live even when closed - guard explicitly on modal state so
   // the clipboard is only ever read while the paste modal is actually open.
   @HostListener('window:focus')
   protected onWindowFocus(): void {
@@ -211,7 +211,7 @@ export class PasteJobModalComponent {
       const text = await readText();
       this.clipboardOffer.set(text && looksLikeJobDescription(text) ? text : '');
     } catch {
-      // No text on the clipboard (e.g. an image) — nothing to offer.
+      // No text on the clipboard (e.g. an image) - nothing to offer.
       this.clipboardOffer.set('');
     }
   }

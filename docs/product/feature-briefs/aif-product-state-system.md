@@ -1,7 +1,7 @@
 # Feature Brief: Finalize AIF Product State System (Step 0)
 
 - **Status**: `in-progress`
-- **Source**: developer observation — `CURRENT_STATE.md` shows this layer in-progress, uncommitted.
+- **Source**: developer observation - `CURRENT_STATE.md` shows this layer in-progress, uncommitted.
 
 ---
 
@@ -16,7 +16,7 @@ planning layer is stable and future briefs land on a merged foundation.
 ### User Value
 
 Indirect (developer/agent value): a stable, versioned planning layer that keeps ROADMAP, briefs,
-feature index, and daily state in sync — reduces drift and gives every future agent a reliable
+feature index, and daily state in sync - reduces drift and gives every future agent a reliable
 context entry point.
 
 ---
@@ -35,7 +35,7 @@ context entry point.
 ### Out of Scope
 
 - Any application source code, `package.json`, migrations, or dependency changes.
-- CHANGELOG version bump — this is a docs/config-only change (exempt per `aif-branch-finisher` skill).
+- CHANGELOG version bump - this is a docs/config-only change (exempt per `aif-branch-finisher` skill).
 
 ---
 
@@ -54,11 +54,11 @@ context entry point.
 ### AIF Routing
 
 `aif-docs-sync` (consistency pass), `aif-project-state-sync` (state update), `aif-branch-finisher`
-(commit + PR). No feature builder needed — docs only.
+(commit + PR). No feature builder needed - docs only.
 
 ### Expected Files
 
-- `docs/product/*.md`, `docs/product/feature-briefs/*.md`, `docs/product/decisions/*` — verify/finalize.
+- `docs/product/*.md`, `docs/product/feature-briefs/*.md`, `docs/product/decisions/*` - verify/finalize.
 - No source files.
 
 ---
@@ -71,7 +71,7 @@ None.
 
 ### Privacy / Security Impact
 
-None — docs only, nothing leaves the device.
+None - docs only, nothing leaves the device.
 
 ### i18n Impact
 
@@ -95,7 +95,7 @@ None (docs only).
 
 ### Docs to Update
 
-Self-contained — this IS the docs update.
+Self-contained - this IS the docs update.
 
 ### Changelog Draft
 

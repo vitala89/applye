@@ -67,7 +67,7 @@ export interface PitchStateInput {
  * Freshness of the cached elevator pitch. Same rule as {@link scoringState} but keyed on the
  * pitch's own hash: the pitch and the scoring profile go stale independently, so the pitch must
  * carry the hash of the markdown it was actually written from rather than borrowing the scoring
- * profile's — regenerating one must not silently mark the other fresh.
+ * profile's - regenerating one must not silently mark the other fresh.
  */
 export function pitchState(input: PitchStateInput): ScoringState {
   return artefactState(input.hasPitch, input.mdDirty, input.savedMdHash, input.pitchHash);

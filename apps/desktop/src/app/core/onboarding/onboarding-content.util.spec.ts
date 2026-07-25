@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { CvContent, CvParsedContent, CvTemplate } from '@applye/core';
-import { parseProfileMd, serializeProfileForm } from '@applye/core';
+import { parseProfileMd, parseExperienceEntries, serializeProfileForm } from '@applye/core';
 import {
   appendCompensation,
   applyContactOverrides,
@@ -73,7 +73,15 @@ describe('pickCvTemplate', () => {
 });
 
 describe('buildOnboardingCvInput', () => {
-  const overrides = { fullName: '', email: '', phone: '', address: '' };
+  const overrides = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    parsedFullName: '',
+    nameEdited: true,
+  };
   const base = {
     parsed: parsedCv(),
     overrides,
@@ -103,7 +111,14 @@ describe('buildOnboardingCvInput', () => {
   it('lets the review step edits win over the raw parse', () => {
     const input = buildOnboardingCvInput({
       ...base,
-      overrides: { fullName: 'Jane S. Smith', email: 'new@x.io', phone: '+49 30 000', address: '' },
+      overrides: {
+        ...overrides,
+        firstName: 'Jane',
+        lastName: 'S. Smith',
+        email: 'new@x.io',
+        phone: '+49 30 000',
+        parsedFullName: 'Jane Smith',
+      },
     });
     expect(input.label).toBe('Jane S. Smith');
     expect(input.contentJson).toContain('new@x.io');
@@ -112,12 +127,42 @@ describe('buildOnboardingCvInput', () => {
   it('honours a contact field the user cleared instead of restoring the parse', () => {
     const input = buildOnboardingCvInput({
       ...base,
-      overrides: { fullName: 'Jane Smith', email: 'jane@x.io', phone: '', address: '' },
+      overrides: {
+        ...overrides,
+        firstName: 'Jane',
+        lastName: 'Smith',
+        email: 'jane@x.io',
+      },
     });
     // The review inputs are seeded from the parse, so blank means deleted.
     // A phone cleared for privacy must not reappear on the exported CV.
     expect(input.contentJson).not.toContain('+49 30 000');
     expect(input.contentJson).not.toContain('Berlin');
+  });
+
+  it('titles the CV with the resume name when the user confirmed the split untouched', () => {
+    const input = buildOnboardingCvInput({
+      ...base,
+      parsed: parsedCv({
+        personalDetails: {
+          fullName: 'Kim Minjun',
+          title: null,
+          email: null,
+          phone: null,
+          address: null,
+          website: null,
+          linkedin: null,
+        },
+      }),
+      overrides: {
+        ...overrides,
+        firstName: 'Minjun',
+        lastName: 'Kim',
+        parsedFullName: 'Kim Minjun',
+        nameEdited: false,
+      },
+    });
+    expect(input.label).toBe('Kim Minjun');
   });
 
   it('keeps parsed fields the review step never exposes', () => {
@@ -168,7 +213,7 @@ describe('hasCvForInputHash', () => {
   it('never blocks the pasted path, which carries no hash', () => {
     expect(hasCvForInputHash(existing, undefined)).toBe(false);
   });
-  it('ignores generated CVs — only an uploaded twin is a duplicate', () => {
+  it('ignores generated CVs - only an uploaded twin is a duplicate', () => {
     expect(hasCvForInputHash(existing, 'gen999')).toBe(false);
   });
 });
@@ -192,9 +237,19 @@ describe('region tags match the seeded templates', () => {
 describe('applyContactOverrides', () => {
   it('nulls a cleared field so both wizard artifacts drop it together', () => {
     expect(
-      applyContactOverrides({ fullName: 'Jane', email: '', phone: '  ', address: 'Berlin' }),
+      applyContactOverrides({
+        firstName: 'Jane',
+        lastName: '',
+        email: '',
+        phone: '  ',
+        address: 'Berlin',
+        parsedFullName: '',
+        nameEdited: true,
+      }),
     ).toEqual({
       fullName: 'Jane',
+      firstName: 'Jane',
+      lastName: null,
       email: null,
       phone: null,
       address: 'Berlin',
@@ -213,7 +268,7 @@ describe('cvToProfileMarkdown', () => {
     expect(md).toContain('# Jane Smith');
     expect(md).toContain('Senior engineer.');
     expect(md).toContain('## Experience');
-    expect(md).toContain('Lead — Acme');
+    expect(md).toContain('Lead - Acme');
     expect(md).toContain('- Shipped X');
     expect(md).toContain('TypeScript, Rust');
   });
@@ -267,18 +322,24 @@ describe('parseArchetypesSkillResponse', () => {
 });
 
 describe('appendCompensation', () => {
-  it('appends a Compensation Target section when the range is non-empty', () => {
-    const md = appendCompensation('# Jane Smith', 'EUR 90-120K');
-    expect(md).toBe('# Jane Smith\n\n## Compensation Target\nEUR 90-120K');
+  it('appends a Compensation section the profile form can read back', () => {
+    const md = appendCompensation('# Jane Smith', '80 - 95 EUR per year');
+    // Heading MUST be `## Compensation`; `## Compensation Target` was the bug.
+    expect(md).toBe('# Jane Smith\n\n## Compensation\n80 - 95 EUR per year');
+    const form = parseProfileMd(md);
+    expect(form.compMin).toBe('80');
+    expect(form.compMax).toBe('95');
+    expect(form.compCurrency).toBe('EUR');
+    expect(form.compPeriod).toBe('year');
   });
 
-  it('returns the markdown unchanged when the range is empty or whitespace', () => {
+  it('returns the markdown unchanged when the body is empty or whitespace', () => {
     expect(appendCompensation('# Jane Smith', '')).toBe('# Jane Smith');
     expect(appendCompensation('# Jane Smith', '   ')).toBe('# Jane Smith');
   });
 });
 
-describe('cvToProfileMarkdown — address', () => {
+describe('cvToProfileMarkdown - address', () => {
   it('lands the address in the location field even with no title to anchor it', () => {
     const md = cvToProfileMarkdown({
       personalDetails: { fullName: 'Jane Smith', email: 'jane@x.io', address: 'Lisboa, Portugal' },
@@ -288,7 +349,7 @@ describe('cvToProfileMarkdown — address', () => {
 });
 
 /** The bug this pins: the wizard wrote a profile the profile form could not
- * read back. Assert against the reader, not against a string — a string test is
+ * read back. Assert against the reader, not against a string - a string test is
  * what let the two drift apart in the first place. */
 describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
   const parsed = {
@@ -304,6 +365,14 @@ describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
     summary: 'Engineer.',
     experience: [{ company: 'Celonis', role: 'Senior Frontend Engineer', bullets: ['Shipped X'] }],
     skills: ['TypeScript', 'Angular'],
+    education: [
+      { degree: 'MSc Mechanical Engineering', institution: 'Odesa National Maritime University' },
+      { degree: 'Frontend Developer Certificate', institution: 'FoxmindEd' },
+    ],
+    languages: [
+      { language: 'English', level: 'C1' },
+      { language: 'German', level: '' },
+    ],
   };
 
   it('lands every identity field in the field the user expects', () => {
@@ -315,6 +384,24 @@ describe('cvToProfileMarkdown → parseProfileMd round-trip', () => {
     expect(form.phone).toBe('+49 171 206 4899');
     expect(form.website).toBe('vitaliikasap.com');
     expect(form.linkedin).toBe('linkedin.com/in/vitaliikasap');
+  });
+
+  it('separates role and company so the profile editor does not merge them', () => {
+    const form = parseProfileMd(cvToProfileMarkdown(parsed));
+    const entries = parseExperienceEntries(form.experienceText);
+    expect(entries[0].role).toBe('Senior Frontend Engineer');
+    expect(entries[0].company).toBe('Celonis');
+  });
+
+  it('carries education and languages into the profile', () => {
+    const form = parseProfileMd(cvToProfileMarkdown(parsed));
+    expect(form.education).toContain(
+      'MSc Mechanical Engineering, Odesa National Maritime University',
+    );
+    expect(form.education).toContain('Frontend Developer Certificate, FoxmindEd');
+    // Dateless education entries must not render a "Present" tail.
+    expect(form.education).not.toContain('Present');
+    expect(form.languages).toEqual(['English (C1)', 'German']);
   });
 
   it('loses nothing when the profile form saves it straight back', () => {
@@ -367,9 +454,129 @@ describe('normalizeCurrency', () => {
 
 describe('formatCompRange', () => {
   it('formats a 3-letter currency code with a space', () => {
-    expect(formatCompRange({ currency: 'EUR', min: 90, max: 120 })).toBe('EUR 90K – EUR 120K');
+    expect(formatCompRange({ currency: 'EUR', min: 90, max: 120 })).toBe('EUR 90K - EUR 120K');
   });
   it('formats a single-character currency symbol without a space', () => {
-    expect(formatCompRange({ currency: '$', min: 140, max: 190 })).toBe('$140K – $190K');
+    expect(formatCompRange({ currency: '$', min: 140, max: 190 })).toBe('$140K - $190K');
+  });
+  it('separates the range with a plain hyphen, never a banned dash', () => {
+    expect(formatCompRange({ currency: 'USD', min: 80, max: 120 })).not.toMatch(/[\u2013\u2014]/);
+  });
+});
+
+describe('first and last name', () => {
+  it('writes both into the Contact block and they read back', () => {
+    const md = cvToProfileMarkdown({
+      personalDetails: {
+        fullName: 'Anna Kowalska',
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        email: 'anna@example.com',
+      },
+    });
+    expect(md).toContain('- First name: Anna');
+    expect(md).toContain('- Last name: Kowalska');
+    const form = parseProfileMd(md);
+    expect(form.name).toBe('Anna Kowalska');
+    expect(form.firstName).toBe('Anna');
+    expect(form.lastName).toBe('Kowalska');
+  });
+
+  it('omits the lines when the parse had no split', () => {
+    const md = cvToProfileMarkdown({ personalDetails: { fullName: 'Prince' } });
+    expect(md).not.toContain('First name');
+    expect(md).not.toContain('Last name');
+    expect(parseProfileMd(md).name).toBe('Prince');
+  });
+
+  it('composes the display name from the override parts', () => {
+    expect(
+      applyContactOverrides({
+        firstName: ' Anna ',
+        lastName: ' Kowalska ',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: 'Anna Nowak',
+        nameEdited: true,
+      }),
+    ).toEqual({
+      fullName: 'Anna Kowalska',
+      firstName: 'Anna',
+      lastName: 'Kowalska',
+      email: null,
+      phone: null,
+      address: null,
+    });
+  });
+
+  it('composes a mononym display name from a first name alone', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Prince',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: '',
+        nameEdited: true,
+      }),
+    ).toMatchObject({ fullName: 'Prince', firstName: 'Prince', lastName: null });
+  });
+
+  it('reports no display name when both parts are blank', () => {
+    expect(
+      applyContactOverrides({
+        firstName: '  ',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: '',
+        nameEdited: true,
+      }),
+    ).toMatchObject({ fullName: null, firstName: null, lastName: null });
+  });
+
+  it('keeps the parsed display name when the user confirmed the split untouched', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Minjun',
+        lastName: 'Kim',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: 'Kim Minjun',
+        nameEdited: false,
+      }),
+    ).toMatchObject({ fullName: 'Kim Minjun', firstName: 'Minjun', lastName: 'Kim' });
+  });
+
+  it('composes the display name once the user edits a part', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Minjun',
+        lastName: 'Kim',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: 'Kim Minjun',
+        nameEdited: true,
+      }),
+    ).toMatchObject({ fullName: 'Minjun Kim' });
+  });
+
+  it('falls back to the composed name when the parse carried none', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: '   ',
+        nameEdited: false,
+      }),
+    ).toMatchObject({ fullName: 'Anna Kowalska' });
   });
 });

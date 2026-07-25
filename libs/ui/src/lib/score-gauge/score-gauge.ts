@@ -45,7 +45,7 @@ export class ScoreGauge {
         this.firstRun = false;
         const seed = this.from();
         if (seed == null) {
-          // Snap on mount — no reveal animation requested.
+          // Snap on mount - no reveal animation requested.
           this.displayScore.set(target);
           return;
         }

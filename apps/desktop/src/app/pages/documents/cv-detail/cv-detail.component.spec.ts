@@ -125,7 +125,7 @@ describe('CvDetailComponent per-section style', () => {
       expect(component.style()).toBe(before);
     });
 
-    it('body document scope writes the CvStyle root body fields — colour to bodyColorHex, not accentColorHex', () => {
+    it('body document scope writes the CvStyle root body fields - colour to bodyColorHex, not accentColorHex', () => {
       const accentBefore = component.style().accentColorHex;
       component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
       component.onStylePanelChange({
@@ -191,7 +191,7 @@ describe('CvDetailComponent per-section style', () => {
 
       component.onStylePanelChange({ scope: 'document', titleBorder: 'dashed' });
 
-      // The line is now uniform, but the section's own colour is untouched — an
+      // The line is now uniform, but the section's own colour is untouched - an
       // edit to one control never silently drops an unrelated override.
       expect(effectiveTitleBorder(component.style(), 'experience')).toBe('dashed');
       expect(component.style().sectionStyles?.experience?.title?.colorHex).toBe('#ff0000');
@@ -267,7 +267,7 @@ describe('CvDetailComponent per-section style', () => {
       component.liveSelection.set({ sectionKey: 'experience', part: 'body' });
       component.onStylePanelChange({ scope: 'section', bodyRuleColor: '#000000' });
 
-      // A FIELD's underline is its own line, not the entry rule — untouched.
+      // A FIELD's underline is its own line, not the entry rule - untouched.
       expect(component.style().elementStyles?.['exp.0.role']?.ruleColorHex).toBe('#0000ff');
     });
 
@@ -379,7 +379,7 @@ describe('CvDetailComponent per-section style', () => {
 
   it('is not "custom" on a pristine non-default theme, and resets to that theme', () => {
     // Switch to Aurora: the four base tokens are reseeded, so a pristine
-    // Aurora doc is NOT custom — the badge shows the theme name, not "Custom".
+    // Aurora doc is NOT custom - the badge shows the theme name, not "Custom".
     component.selectTheme(2);
     expect(component.hasAnyCustomStyle()).toBe(false);
     expect(component.activeTheme().name).toBe('Aurora');
@@ -505,7 +505,7 @@ describe('CvDetailComponent per-section style', () => {
     await component.exportPdfWysiwyg();
     const rule = document.getElementById('wysiwyg-page-rule')?.textContent ?? '';
     // Real four-side mm margins (the print stylesheet zeroes the card padding),
-    // never `margin: 0` — the full-bleed value that scaled the margins and spilled
+    // never `margin: 0` - the full-bleed value that scaled the margins and spilled
     // a blank trailing page.
     expect(rule).toMatch(/margin: \d+mm \d+mm \d+mm \d+mm/);
     expect(rule).not.toContain('margin: 0;');
@@ -539,12 +539,12 @@ describe('CvDetailComponent per-section style', () => {
     // Single source of truth: `sections` is the one signal both the preview's
     // inline editors and the sidebar edit-mode form read from and write to
     // via `replaceSection`. Committing on either surface must show up on the
-    // other purely because they share that signal — no save call, no
+    // other purely because they share that signal - no save call, no
     // re-fetch, no reload.
     // The outer `@else if (loadError() || !doc())` branch hides the whole
     // editor (preview included) until a document is loaded; `load()` in this
     // suite's stub resolves null (loadError), so drive the loaded state
-    // directly — this test only needs the template to render, not the async
+    // directly - this test only needs the template to render, not the async
     // load flow itself.
     component.doc.set({ id: 1, docType: 'cv', source: 'generated', isDefault: false });
     component.loading.set(false);
@@ -559,7 +559,7 @@ describe('CvDetailComponent per-section style', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    // Selection alone no longer mounts editors — enter text-edit mode via the
+    // Selection alone no longer mounts editors - enter text-edit mode via the
     // panel's "Edit text" control.
     (root.querySelector('.cvlive__edit-text') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -579,12 +579,12 @@ describe('CvDetailComponent per-section style', () => {
       text: 'New summary from live preview',
     });
 
-    // 2) Switch to edit mode (no save/reload in between) — the sidebar form's
+    // 2) Switch to edit mode (no save/reload in between) - the sidebar form's
     // textarea must already reflect the value committed from the preview.
     // `NgModel` defers its initial `writeValue` to a resolved-promise
     // microtask (to avoid ExpressionChangedAfterItHasBeenCheckedError), so a
     // freshly-mounted `[ngModel]` control needs a stability flush before its
-    // DOM value settles — `whenStable()` does that.
+    // DOM value settles - `whenStable()` does that.
     component.previewMode.set(false);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -594,7 +594,7 @@ describe('CvDetailComponent per-section style', () => {
     ) as HTMLTextAreaElement;
     expect(editTextarea.value).toBe('New summary from live preview');
 
-    // 3) Edit via the sidebar form instead, then flip back to preview mode —
+    // 3) Edit via the sidebar form instead, then flip back to preview mode -
     // the live preview's resting render must reflect it immediately.
     editTextarea.value = 'Edited from the sidebar form';
     editTextarea.dispatchEvent(new Event('input'));
@@ -627,8 +627,8 @@ describe('CvDetailComponent personal-details top card visibility', () => {
   let dbStub: Partial<DbService>;
 
   beforeEach(async () => {
-    // A real document (not null) so the component's own async `load()` —
-    // fired from the constructor — settles into the editor body render
+    // A real document (not null) so the component's own async `load()` -
+    // fired from the constructor - settles into the editor body render
     // instead of racing our test into the loading/error branch. Giving the
     // personal_details section a birthDate/maritalStatus also drives
     // `includeBirthdate`/`includeMaritalStatus` to true via `load()`, so the
@@ -692,7 +692,7 @@ describe('CvDetailComponent personal-details top card visibility', () => {
 
   it('Edit mode no longer renders the body/title style groups; page group + region/photo/include remain', () => {
     // Task 5: document-wide BODY TEXT and SECTION TITLES styling moved to the
-    // live preview panel entirely — only the theme selector and the PAGE
+    // live preview panel entirely - only the theme selector and the PAGE
     // group (size + margins) stay in the collapsible Style card.
     const root = fixture.nativeElement as HTMLElement;
     const groupHeaders = Array.from(root.querySelectorAll('.docedit-style-section__header')).map(
@@ -703,9 +703,9 @@ describe('CvDetailComponent personal-details top card visibility', () => {
       component['t']()('documents.cv_style_group_page'),
     ]);
     // The removed groups were the only places rendering a font/weight/colour
-    // row — `.docedit-color-row` is a reliable fingerprint for them.
+    // row - `.docedit-color-row` is a reliable fingerprint for them.
     expect(root.querySelectorAll('.docedit-color-row').length).toBe(0);
-    // The "Custom" badge and Edit-mode "reset all" button are gone too — the
+    // The "Custom" badge and Edit-mode "reset all" button are gone too - the
     // reset affordance relocated to the live-style panel (Preview mode).
     expect(root.querySelector('.cvdetail__custom-badge')).toBeNull();
     expect(root.querySelector('.docedit-reset')).toBeNull();
@@ -795,8 +795,8 @@ describe('CvDetailComponent style save/load round trip (element + section + docu
   // from Edit mode, every remaining write path (live-panel element/section/
   // document-body/title edits, plus resetAllStyles) still has to survive a
   // save → reload cycle through `styleJson`. This proves the full override
-  // tree — elementStyles, sectionStyles, titleStyle, and the document body
-  // root fields — all round-trip untouched.
+  // tree - elementStyles, sectionStyles, titleStyle, and the document body
+  // root fields - all round-trip untouched.
   let component: CvDetailComponent;
   let fixture: ComponentFixture<CvDetailComponent>;
   let dbStub: Partial<DbService>;
@@ -976,7 +976,7 @@ describe('CvDetailComponent export/print hardening', () => {
     component.previewMode.set(true);
     component.liveSelection.set({ sectionKey: 'summary', part: 'body', elementPath: 'summary' });
     fixture.detectChanges();
-    // Selection alone no longer mounts editors — enter text-edit mode via the
+    // Selection alone no longer mounts editors - enter text-edit mode via the
     // panel's "Edit text" control (routed to CvPreviewComponent.startEditing).
     (fixture.nativeElement.querySelector('.cvlive__edit-text') as HTMLButtonElement).click();
     fixture.detectChanges();

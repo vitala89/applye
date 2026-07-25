@@ -12,6 +12,7 @@
 
 use super::{AiRequest, AiResponse};
 use serde_json::{json, Value};
+use std::time::Duration;
 
 const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
@@ -19,8 +20,39 @@ const ANTHROPIC_VERSION: &str = "2023-06-01";
 const DEEPSEEK_URL: &str = "https://api.deepseek.com/chat/completions";
 const DEFAULT_MAX_TOKENS: u32 = 8192;
 
+/// Whole-request budget, covering connect, response and reading the body.
+///
+/// Matches the CLI bridge's `CLI_TIMEOUT`, because it bounds the same thing:
+/// one full generation. Generous on purpose - a long non-streaming answer at
+/// `DEFAULT_MAX_TOKENS` legitimately takes minutes, and cutting a real answer
+/// short is its own bug. What it rules out is the *unbounded* wait.
+const API_TIMEOUT: Duration = Duration::from_secs(600);
+
+/// Connect-only budget. Split from the total so the common failure - no
+/// network, wrong host, blocked egress - is reported in seconds instead of
+/// consuming the entire generation budget first.
+const API_CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
+
 fn resolve_max_tokens(req: &AiRequest) -> u32 {
     req.max_tokens.unwrap_or(DEFAULT_MAX_TOKENS)
+}
+
+fn build_client(timeout: Duration) -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .timeout(timeout)
+        .connect_timeout(API_CONNECT_TIMEOUT.min(timeout))
+        .build()
+        .map_err(|e| format!("Could not create the HTTP client: {e}"))
+}
+
+/// The shared client for every API-mode call.
+///
+/// `reqwest::Client::new()` - what this used to be - has **no timeout at all**,
+/// so a connection that stalled after being accepted hung the request forever.
+/// Nothing downstream could recover: the Tauri command never returned, so the
+/// promise the UI awaited never settled and its spinner never stopped.
+fn http_client() -> Result<reqwest::Client, String> {
+    build_client(API_TIMEOUT)
 }
 
 pub async fn run(req: &AiRequest, api_key: &str) -> Result<AiResponse, String> {
@@ -48,7 +80,7 @@ async fn anthropic_run(req: &AiRequest, api_key: &str) -> Result<AiResponse, Str
         "messages": [{ "role": "user", "content": req.user_prompt }],
     });
 
-    let resp = reqwest::Client::new()
+    let resp = http_client()?
         .post(ANTHROPIC_URL)
         .header("x-api-key", api_key)
         .header("anthropic-version", ANTHROPIC_VERSION)
@@ -111,7 +143,7 @@ async fn openai_compatible_run(
         ],
     });
 
-    let resp = reqwest::Client::new()
+    let resp = http_client()?
         .post(url)
         .header("authorization", format!("Bearer {api_key}"))
         .header("content-type", "application/json")
@@ -193,5 +225,48 @@ mod tests {
     #[test]
     fn cap_honors_explicit_override() {
         assert_eq!(resolve_max_tokens(&req(Some(4096))), 4096);
+    }
+
+    /// Regression: API mode used `reqwest::Client::new()`, which carries no
+    /// timeout of any kind. A server that accepted the connection and then
+    /// went quiet - a dropped wifi link, a sleeping laptop, a stalled provider -
+    /// left `send()` awaiting forever, so `ai_run` never returned and the UI
+    /// that awaits it sat on "Generating..." with no error, permanently.
+    #[tokio::test]
+    async fn a_stalled_server_times_out_instead_of_waiting_forever() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            // Accept, then answer nothing while holding the socket open. The
+            // binding must be named: dropping it would close the connection and
+            // the client would fail for the wrong reason.
+            let (_socket, _) = listener.accept().await.unwrap();
+            tokio::time::sleep(Duration::from_secs(30)).await;
+        });
+
+        let client = build_client(Duration::from_millis(300)).expect("build client");
+        let started = std::time::Instant::now();
+        let result = client
+            .post(format!("http://{addr}/chat/completions"))
+            .body("{}")
+            .send()
+            .await;
+
+        let err = result.expect_err("a stalled server must not return Ok");
+        assert!(err.is_timeout(), "expected a timeout, got: {err}");
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "gave up eventually but far too late: {:?}",
+            started.elapsed()
+        );
+    }
+
+    #[test]
+    fn the_shipped_budgets_are_finite_and_connect_fails_first() {
+        // The whole point of the fix: no unbounded wait, and an unreachable
+        // host is reported in seconds rather than after the full generation
+        // budget has elapsed.
+        assert!(API_CONNECT_TIMEOUT < API_TIMEOUT);
+        assert!(API_TIMEOUT <= Duration::from_secs(600));
     }
 }

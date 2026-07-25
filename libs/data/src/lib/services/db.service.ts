@@ -40,7 +40,7 @@ import {
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
 import { HealthReport } from '@applye/core';
-import { DiscoverFeedItem, DiscoverSource, ScanSummary } from '@applye/core';
+import { DiscoverFeedItem, DiscoverSource, MarketSourcePlan, ScanSummary } from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /** Typed wrappers over the Rust db_* commands. The frontend stays SQL-free. */
@@ -254,6 +254,16 @@ export class DbService {
 
   async setSourceEnabled(sourceId: number, enabled: boolean): Promise<void> {
     return tauriInvoke<void>('db_set_source_enabled', { sourceId, enabled });
+  }
+
+  /** What changing the local market would do to built-in sources. Read-only. */
+  async marketSourcePlan(markets: string[]): Promise<MarketSourcePlan> {
+    return tauriInvoke<MarketSourcePlan>('db_market_source_plan', { markets });
+  }
+
+  /** Applies exactly the ids the user confirmed, in one transaction. */
+  async applyMarketSourcePlan(enableIds: number[], disableIds: number[]): Promise<void> {
+    return tauriInvoke<void>('db_apply_market_source_plan', { enableIds, disableIds });
   }
 
   /** Add a user source: RSS feed (https url) or ATS board (type + slug). */

@@ -23,3 +23,4 @@ export * from './lib/text/signature';
 export * from './lib/text/letter-format';
 export * from './lib/analytics/analytics';
 export * from './lib/geo/geo-scope';
+export * from './lib/geo/local-market';

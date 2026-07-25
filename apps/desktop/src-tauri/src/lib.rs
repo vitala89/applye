@@ -115,6 +115,8 @@ pub fn run() {
             commands::discover::db_discover_clear,
             commands::discover::db_list_sources,
             commands::discover::db_set_source_enabled,
+            commands::discover::db_market_source_plan,
+            commands::discover::db_apply_market_source_plan,
             commands::discover::db_add_source,
             commands::discover::db_remove_source,
             commands::tailoring::open_file,

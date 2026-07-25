@@ -103,6 +103,7 @@ struct SourceRow {
     slug: Option<String>,
     positive_json: Option<String>,
     negative_json: Option<String>,
+    geo_tags_json: Option<String>,
 }
 
 struct TitleFilter {
@@ -113,7 +114,13 @@ struct TitleFilter {
 struct GeoCfg {
     /// True when no scope is selected ("worldwide") - every job passes.
     unrestricted: bool,
+    /// Tokens of the selected regions or markets - any match lets a job pass.
     tokens: Vec<String>,
+    /// Market mode only: tokens naming somewhere that is NOT a selected market.
+    /// Non-empty is what marks market mode. A location matching one of these is
+    /// somewhere else, and is dropped before the remote marker can wave it
+    /// through - which is exactly what "Remote - US only" used to do.
+    elsewhere: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +219,9 @@ const EUROPE_COUNTRIES: &[&str] = &[
     "malta",
     "cyprus",
     "united kingdom",
+    "ukraine",
+    "russia",
+    "russian federation",
 ];
 
 /// Asian country/region names for the asia scope. Mirrors the client-side
@@ -344,6 +354,47 @@ fn parse_geo_scopes(raw: &str) -> Vec<String> {
     }
 }
 
+/// The LocalMarket vocabulary, kept in lockstep with libs/core's
+/// `LOCAL_MARKETS` (TypeScript). Local markets are the narrow half of geo
+/// targeting: when any is selected, `geo_scope` takes no part in the scan.
+// A market appears here only when a built-in source serves it. gb, es and fr
+// are omitted until one does, because otherwise picking them enables nothing
+// and leaves the previous market's sources scanning. Their location tokens
+// stay in `country_tokens` / `KNOWN_COUNTRY_CODES` below, since they are still
+// needed to recognise "somewhere else" for the markets that remain.
+const KNOWN_LOCAL_MARKETS: &[&str] = &["de", "us", "ru", "ua", "pl"];
+
+/// Every country code `country_tokens` knows about, used to build the
+/// "somewhere else" set. Kept beside that function so the two stay in step.
+const KNOWN_COUNTRY_CODES: &[&str] = &[
+    "de", "at", "ch", "fr", "nl", "es", "it", "pl", "pt", "se", "dk", "fi", "no", "ie", "be", "cz",
+    "gb", "us", "ca", "ru", "ua",
+];
+
+/// Parses the `market` settings column: a JSON array of market codes
+/// (`["de","fr"]`) going forward. An install saved between the single-market
+/// picker and multi-select holds a bare scalar (`de`) - read that as a
+/// one-item list. Mirrors `parseLocalMarkets` in
+/// libs/core/src/lib/geo/local-market.ts. Empty means "no local market", so
+/// the region scope applies instead.
+fn parse_local_markets(raw: &str) -> Vec<String> {
+    let text = raw.trim();
+    if text.is_empty() {
+        return Vec::new();
+    }
+    if let Ok(parsed) = serde_json::from_str::<Vec<String>>(text) {
+        return parsed
+            .into_iter()
+            .filter(|k| KNOWN_LOCAL_MARKETS.contains(&k.as_str()))
+            .collect();
+    }
+    if KNOWN_LOCAL_MARKETS.contains(&text) {
+        vec![text.to_string()]
+    } else {
+        Vec::new()
+    }
+}
+
 /// Names a 2-letter country code also answers to in freetext locations.
 ///
 /// German boards - the federal agency's feed, and the company boards on
@@ -353,6 +404,82 @@ fn parse_geo_scopes(raw: &str) -> Vec<String> {
 /// both the German and the English spelling. The trade is deliberate: a
 /// same-named city elsewhere (Frankfort, KY) slips through, which the user can
 /// see and dismiss, where a dropped job is invisible.
+/// Full names of every US state, matched as substrings. `"georgia"` is
+/// knowingly ambiguous with the country of the same name, so a US market can
+/// surface an occasional posting from Georgia the country - that is the
+/// deliberate direction of this file's trade, since a visible wrong result
+/// can be dismissed while a dropped job cannot, and the state's own code
+/// `"ga"` is unavailable because it collides with Gabon.
+const US_STATE_NAMES: &[&str] = &[
+    "alabama",
+    "alaska",
+    "arizona",
+    "arkansas",
+    "california",
+    "colorado",
+    "connecticut",
+    "delaware",
+    "florida",
+    "georgia",
+    "hawaii",
+    "idaho",
+    "illinois",
+    "indiana",
+    "iowa",
+    "kansas",
+    "kentucky",
+    "louisiana",
+    "maine",
+    "maryland",
+    "massachusetts",
+    "michigan",
+    "minnesota",
+    "mississippi",
+    "missouri",
+    "montana",
+    "nebraska",
+    "nevada",
+    "new hampshire",
+    "new jersey",
+    "new mexico",
+    "new york",
+    "north carolina",
+    "north dakota",
+    "ohio",
+    "oklahoma",
+    "oregon",
+    "pennsylvania",
+    "rhode island",
+    "south carolina",
+    "south dakota",
+    "tennessee",
+    "texas",
+    "utah",
+    "vermont",
+    "virginia",
+    "washington",
+    "west virginia",
+    "wisconsin",
+    "wyoming",
+    "district of columbia",
+];
+
+/// State codes safe to match as bare words. Deliberately partial: `loc_matches`
+/// is case-insensitive, so it cannot tell "Berlin, DE" (Germany) from
+/// "Dover, DE" (Delaware), "Tel Aviv, IL" (Israel) from "Chicago, IL"
+/// (Illinois), "Baku, AZ" (Azerbaijan) from "Phoenix, AZ" (Arizona),
+/// "Ulaanbaatar, MN" (Mongolia) from "Minneapolis, MN" (Minnesota), or
+/// "Tunis, TN" (Tunisia) from "Nashville, TN" (Tennessee). This list holds
+/// only codes that are neither an assigned ISO 3166-1 alpha-2 country code
+/// nor an ordinary English word; every other state is still reachable
+/// through its full name above. `ca` is the one deliberate exception: it is
+/// Canada's ISO code, but in a job location it means California far more
+/// often, so the bare `ca` token is dropped from Canada's own token list
+/// below in exchange for keeping it here.
+const US_STATE_CODES: &[&str] = &[
+    "tx", "ca", "ny", "wa", "fl", "nj", "mi", "ut", "nv", "wi", "ct",
+];
+
 fn country_tokens(code: &str) -> Vec<&'static str> {
     match code {
         "de" => vec![
@@ -385,11 +512,37 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
         ],
         "at" => vec!["at", "austria"],
         "ch" => vec!["ch", "switzerland"],
-        "fr" => vec!["fr", "france"],
+        "fr" => vec![
+            "fr",
+            "france",
+            "paris",
+            "lyon",
+            "marseille",
+            "toulouse",
+            "lille",
+            "bordeaux",
+            "nantes",
+        ],
         "nl" => vec!["nl", "netherlands"],
-        "es" => vec!["es", "spain"],
+        "es" => vec![
+            "es",
+            "spain",
+            "españa",
+            "espana",
+            "madrid",
+            "barcelona",
+            "valencia",
+            "seville",
+            "sevilla",
+            "bilbao",
+            "malaga",
+            "málaga",
+        ],
         "it" => vec!["it", "italy"],
-        "pl" => vec!["pl", "poland"],
+        "pl" => vec![
+            "pl", "poland", "polska", "warsaw", "warszawa", "krakow", "kraków", "cracow",
+            "wroclaw", "wrocław", "gdansk", "gdańsk", "poznan", "poznań", "lodz", "łódź",
+        ],
         "pt" => vec!["pt", "portugal"],
         "se" => vec!["se", "sweden"],
         "dk" => vec!["dk", "denmark"],
@@ -398,9 +551,123 @@ fn country_tokens(code: &str) -> Vec<&'static str> {
         "ie" => vec!["ie", "ireland"],
         "be" => vec!["be", "belgium"],
         "cz" => vec!["cz", "czech"],
-        "uk" | "gb" => vec!["uk", "gb", "united kingdom", "britain", "england"],
-        "us" => vec!["us", "usa", "united states", "america"],
-        "ca" => vec!["ca", "canada"],
+        "uk" | "gb" => vec![
+            "uk",
+            "gb",
+            "united kingdom",
+            "britain",
+            "great britain",
+            "england",
+            "scotland",
+            "cardiff",
+            "swansea",
+            "london",
+            "manchester",
+            "edinburgh",
+            "birmingham",
+            "glasgow",
+            "bristol",
+            "leeds",
+            "cambridge",
+            "oxford",
+        ],
+        "us" => {
+            let mut out = vec![
+                "us",
+                "usa",
+                "u.s.",
+                "united states",
+                "america",
+                "san francisco",
+                "new york city",
+                "nyc",
+                "seattle",
+                "austin",
+                "boston",
+                "chicago",
+                "denver",
+                "atlanta",
+                "savannah",
+                "los angeles",
+                "san diego",
+                "portland",
+            ];
+            out.extend_from_slice(US_STATE_NAMES);
+            out.extend_from_slice(US_STATE_CODES);
+            out
+        }
+        // No bare "ca": in a job location it means California far more often
+        // than Canada, and a US market that silently loses San Francisco is a
+        // worse failure than a Canada scope that needs the country spelled out.
+        "ca" => vec![
+            "canada",
+            "toronto",
+            "vancouver",
+            "montreal",
+            "montréal",
+            "ottawa",
+            "calgary",
+            "ontario",
+            "quebec",
+            "québec",
+            "british columbia",
+            "alberta",
+        ],
+        // Russian and Ukrainian sources write the place in Cyrillic - TrudVsem
+        // returns `region.name` as "Москва", Habr Career puts the city in the
+        // posting title - so both scripts are listed, same reasoning as the
+        // German city list above: a dropped job is invisible, a false positive
+        // is not.
+        "ru" => vec![
+            "ru",
+            "russia",
+            "russian federation",
+            "россия",
+            "москва",
+            "moscow",
+            "санкт-петербург",
+            "saint petersburg",
+            "st petersburg",
+            "новосибирск",
+            "novosibirsk",
+            "екатеринбург",
+            "yekaterinburg",
+            "казань",
+            "kazan",
+            "нижний новгород",
+            "челябинск",
+            "самара",
+            "омск",
+            "ростов-на-дону",
+            "уфа",
+            "красноярск",
+            "воронеж",
+            "пермь",
+            "волгоград",
+        ],
+        "ua" => vec![
+            "ua",
+            "ukraine",
+            "україна",
+            "украина",
+            "київ",
+            "киев",
+            "kyiv",
+            "kiev",
+            "львів",
+            "львов",
+            "lviv",
+            "харків",
+            "харьков",
+            "kharkiv",
+            "одеса",
+            "одесса",
+            "odesa",
+            "odessa",
+            "дніпро",
+            "днепр",
+            "dnipro",
+        ],
         _ => vec![],
     }
 }
@@ -434,7 +701,75 @@ fn build_geo_cfg(scopes: &[String], active_codes: &[String]) -> GeoCfg {
         // search - no region scope AND no individual country code active.
         unrestricted: scopes.is_empty() && active_codes.is_empty(),
         tokens,
+        elsewhere: Vec::new(),
     }
+}
+
+/// Every country and region token that does NOT belong to the selected markets.
+///
+/// A region whose own country list overlaps the selected markets is skipped
+/// entirely, not just the overlapping token: EMEA includes Ukraine, so an
+/// EMEA-wide remote job is open to a Ukrainian user, while a Germany-specific
+/// job is not. Individual countries stay covered regardless, because
+/// `KNOWN_COUNTRY_CODES` contributes each country's own tokens separately -
+/// so skipping `EUROPE_COUNTRIES` for a Ukraine market still leaves
+/// "germany" in `elsewhere` via `country_tokens("de")`.
+fn elsewhere_tokens(selected: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for scope in KNOWN_GEO_SCOPES {
+        let region = region_countries(scope);
+        if region.iter().any(|t| selected.contains(&t.to_string())) {
+            continue;
+        }
+        out.extend(region.iter().map(|s| s.to_string()));
+    }
+    for code in KNOWN_COUNTRY_CODES {
+        out.extend(country_tokens(code).into_iter().map(str::to_string));
+    }
+    out.retain(|t| !selected.contains(t));
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Market mode: narrow to the selected countries and treat anywhere else as a
+/// reason to drop. Mutually exclusive with the region scope by construction -
+/// see libs/core/src/lib/geo/local-market.ts for the whole contract.
+fn build_market_cfg(markets: &[String]) -> GeoCfg {
+    let mut tokens: Vec<String> = Vec::new();
+    for market in markets {
+        let market = market.trim().to_lowercase();
+        let named = country_tokens(&market);
+        if named.is_empty() {
+            tokens.push(market);
+        } else {
+            tokens.extend(named.into_iter().map(str::to_string));
+        }
+    }
+    tokens.sort();
+    tokens.dedup();
+    let elsewhere = elsewhere_tokens(&tokens);
+    GeoCfg {
+        unrestricted: markets.is_empty(),
+        tokens,
+        elsewhere,
+    }
+}
+
+/// Whether a source's `geo_tags_json` names any of the selected markets. A
+/// `worldwide` tag deliberately does not count: worldwide feeds carry jobs from
+/// everywhere, so they still have to prove each job belongs to the market.
+fn source_serves_markets(tags_json: Option<&str>, markets: &[String]) -> bool {
+    if markets.is_empty() {
+        return false;
+    }
+    let Some(raw) = tags_json else {
+        return false;
+    };
+    let Ok(tags) = serde_json::from_str::<Vec<String>>(raw) else {
+        return false;
+    };
+    tags.iter().any(|t| markets.contains(&t.to_lowercase()))
 }
 
 /// Short tokens (<= 3 chars, e.g. "de", "eu", "us") only match as whole words -
@@ -449,20 +784,34 @@ fn loc_matches(loc: &str, token: &str) -> bool {
     }
 }
 
-/// Conservative inclusion: an empty/unknown location never drops a job -
-/// only a location that names somewhere outside the scope does.
-fn geo_passes(location: &str, cfg: &GeoCfg) -> bool {
+/// Conservative inclusion in region mode: an empty or unknown location never
+/// drops a job, only a location naming somewhere outside the scope does.
+///
+/// Market mode is stricter, because a market is a claim about where the user
+/// can actually work. `source_serves_market` is the escape hatch: a feed tagged
+/// for the selected market is itself the evidence, and many such feeds carry no
+/// location field at all.
+fn geo_passes(location: &str, cfg: &GeoCfg, source_serves_market: bool) -> bool {
     if cfg.unrestricted {
         return true;
     }
+    if source_serves_market {
+        return true;
+    }
     let loc = location.trim().to_lowercase();
+    let market_mode = !cfg.elsewhere.is_empty();
     if loc.is_empty() {
+        return !market_mode;
+    }
+    if cfg.tokens.iter().any(|t| loc_matches(&loc, t)) {
         return true;
     }
-    if REMOTE_MARKERS.iter().any(|m| loc_matches(&loc, m)) {
-        return true;
+    // Order matters: somewhere else beats the remote marker, or "Remote - US
+    // only" passes a Ukraine market on the word "Remote".
+    if market_mode && cfg.elsewhere.iter().any(|t| loc_matches(&loc, t)) {
+        return false;
     }
-    cfg.tokens.iter().any(|t| loc_matches(&loc, t))
+    REMOTE_MARKERS.iter().any(|m| loc_matches(&loc, m))
 }
 
 // ---------------------------------------------------------------------------
@@ -946,6 +1295,274 @@ fn parse_arbeitsagentur(val: &serde_json::Value) -> Vec<RawJob> {
         .collect()
 }
 
+/// opendata.trudvsem.ru/api/v1/vacancies: `{ results: { vacancies: [{ vacancy: {
+/// job-name, company: { name }, region: { name }, vac_url, duty, requirement,
+/// employment, schedule, salary_min, salary_max, currency } }] } }`. Official
+/// Rostrud open-data portal, no key required. `region.name` comes back in
+/// Russian (e.g. "Москва"), so ", Russia" is appended the same way
+/// `parse_arbeitsagentur` appends "Deutschland" - a bare geoScope match needs
+/// an English country token somewhere in the location string.
+fn parse_trudvsem(val: &serde_json::Value) -> Vec<RawJob> {
+    let Some(vacancies) = val
+        .get("results")
+        .and_then(|r| r.get("vacancies"))
+        .and_then(|v| v.as_array())
+    else {
+        return Vec::new();
+    };
+    vacancies
+        .iter()
+        .filter_map(|entry| entry.get("vacancy"))
+        .map(|j| {
+            let title = json_str(j, "job-name");
+            let company = j
+                .get("company")
+                .map(|c| json_str(c, "name"))
+                .unwrap_or_default();
+            let region = j
+                .get("region")
+                .map(|r| json_str(r, "name"))
+                .unwrap_or_default();
+            let location = if region.is_empty() {
+                "Russia".to_string()
+            } else {
+                format!("{region}, Russia")
+            };
+            let jd_text = [
+                json_str(j, "duty"),
+                json_str(j, "requirement"),
+                json_str(j, "employment"),
+                json_str(j, "schedule"),
+            ]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+            RawJob {
+                title,
+                company,
+                jd_text,
+                location,
+                url: json_str(j, "vac_url"),
+                detail_ref: None,
+            }
+        })
+        .collect()
+}
+
+/// arbeitnow.com/api/job-board-api: `{ data: [{ title, company_name,
+/// description, location, url, remote }] }`. German-market board - Germany
+/// is appended to the location the same way `parse_arbeitsagentur` does, since
+/// the feed does not reliably carry a country token of its own.
+fn parse_arbeitnow(val: &serde_json::Value) -> Vec<RawJob> {
+    let Some(jobs) = val.get("data").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    jobs.iter()
+        .map(|j| {
+            let location = json_str(j, "location");
+            let location = if location.is_empty() {
+                "Germany".to_string()
+            } else if location.to_lowercase().contains("germany")
+                || location.to_lowercase().contains("deutschland")
+            {
+                location
+            } else {
+                format!("{location}, Germany")
+            };
+            RawJob {
+                title: json_str(j, "title"),
+                company: json_str(j, "company_name"),
+                jd_text: html_to_text(&json_str(j, "description")),
+                location,
+                url: json_str(j, "url"),
+                detail_ref: None,
+            }
+        })
+        .collect()
+}
+
+/// nofluffjobs.com/api/joboffers/main - shape read tolerantly (root array or
+/// `{ postings: [...] }`, several observed field spellings for company/city)
+/// so a feed-side rename degrades to an empty field, not a scan error, same
+/// approach as `parse_himalayas`. Poland-market board.
+///
+/// The list endpoint carries no description, only structured fields
+/// (technology, category, seniority) - `jd_text` is seeded from those, same
+/// placeholder approach as `parse_arbeitsagentur`.
+fn parse_nofluffjobs(val: &serde_json::Value) -> Vec<RawJob> {
+    let postings = val
+        .as_array()
+        .cloned()
+        .or_else(|| val.get("postings").and_then(|v| v.as_array()).cloned())
+        .unwrap_or_default();
+    postings
+        .iter()
+        .map(|j| {
+            let company = [json_str(j, "name"), json_str(j, "companyName")]
+                .into_iter()
+                .find(|s| !s.is_empty())
+                .unwrap_or_default();
+            let city = j
+                .get("location")
+                .and_then(|l| l.get("places"))
+                .and_then(|p| p.as_array())
+                .and_then(|arr| arr.first())
+                .map(|p| json_str(p, "city"))
+                .unwrap_or_default();
+            let remote = j
+                .get("location")
+                .and_then(|l| l.get("fullyRemote"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let location = if !city.is_empty() {
+                format!("{city}, Poland")
+            } else if remote {
+                "Remote, Poland".to_string()
+            } else {
+                "Poland".to_string()
+            };
+            let slug = [json_str(j, "url"), json_str(j, "id")]
+                .into_iter()
+                .find(|s| !s.is_empty())
+                .unwrap_or_default();
+            // The list endpoint has no description; a bare slug lets the scan
+            // pull the full posting from /api/posting/{slug}. An absolute url or
+            // an empty slug does not key that endpoint.
+            let detail_ref = if slug.is_empty() || slug.starts_with("http") {
+                None
+            } else {
+                Some(slug.clone())
+            };
+            let url = if slug.starts_with("http") {
+                slug
+            } else if slug.is_empty() {
+                String::new()
+            } else {
+                format!("https://nofluffjobs.com/job/{slug}")
+            };
+            let seniority = j
+                .get("seniority")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|x| x.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            let jd_text = [
+                json_str(j, "category"),
+                json_str(j, "technology"),
+                seniority,
+            ]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+            RawJob {
+                title: json_str(j, "title"),
+                company,
+                jd_text,
+                location,
+                url,
+                detail_ref,
+            }
+        })
+        .collect()
+}
+
+/// Builds a structured `jd_text` from a No Fluff Jobs posting-detail document
+/// (`GET /api/posting/{slug}`). The list endpoint carries no description at
+/// all, so without this a posting reaches the feed as a three-word stub.
+///
+/// Headings end with `:` and use words the Discover block renderer recognises
+/// (`looksLikeHeading` in discover.component.ts) so the detail screen shows
+/// real sections. Content is left in the posting's own language on purpose;
+/// the value is the structure, not a translation.
+fn parse_nofluffjobs_detail(val: &serde_json::Value) -> String {
+    let mut out: Vec<String> = Vec::new();
+
+    let values = |key: &str| -> Vec<String> {
+        val.get("requirements")
+            .and_then(|r| r.get(key))
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|m| m.get("value").and_then(|v| v.as_str()))
+                    .map(|s| format!("- {s}"))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+
+    let musts = values("musts");
+    if !musts.is_empty() {
+        out.push("Requirements:".to_string());
+        out.extend(musts);
+        out.push(String::new());
+    }
+
+    let nices = values("nices");
+    if !nices.is_empty() {
+        out.push("Nice to have:".to_string());
+        out.extend(nices);
+        out.push(String::new());
+    }
+
+    let desc = val
+        .get("requirements")
+        .map(|r| html_to_text(&json_str(r, "description")))
+        .unwrap_or_default();
+    if !desc.trim().is_empty() {
+        out.push(desc.trim().to_string());
+        out.push(String::new());
+    }
+
+    let tasks: Vec<String> = val
+        .get("specs")
+        .and_then(|s| s.get("dailyTasks"))
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|t| t.as_str())
+                .map(|s| format!("- {s}"))
+                .collect()
+        })
+        .unwrap_or_default();
+    if !tasks.is_empty() {
+        out.push("Responsibilities:".to_string());
+        out.extend(tasks);
+        out.push(String::new());
+    }
+
+    if let Some(line) = nofluffjobs_salary_line(val) {
+        out.push(format!("Salary: {line}"));
+    }
+
+    out.join("\n").trim().to_string()
+}
+
+/// One human line from `essentials.originalSalary`, or None when the pay is
+/// not disclosed. Reads the first salary type present (b2b or permanent).
+fn nofluffjobs_salary_line(val: &serde_json::Value) -> Option<String> {
+    let salary = val.get("essentials")?.get("originalSalary")?;
+    let currency = salary.get("currency")?.as_str()?;
+    let types = salary.get("types")?.as_object()?;
+    let (kind, body) = types.iter().next()?;
+    let range = body.get("range").and_then(|r| r.as_array())?;
+    let from = range.first().and_then(|v| v.as_f64())?;
+    let to = range.get(1).and_then(|v| v.as_f64()).unwrap_or(from);
+    let period = body
+        .get("period")
+        .and_then(|p| p.as_str())
+        .unwrap_or("month");
+    Some(format!(
+        "{} - {} {currency} / {period} ({kind})",
+        from as i64, to as i64
+    ))
+}
+
 // ---------------------------------------------------------------------------
 // Fetch (thin HTTPS layer over the pure parsers)
 // ---------------------------------------------------------------------------
@@ -1028,6 +1645,17 @@ async fn fetch_arbeitsagentur_detail(
     Ok(html_to_text(&json_str(&val, "stellenbeschreibung")))
 }
 
+/// Full posting text for one No Fluff Jobs slug. The detail endpoint keys on
+/// the same slug the list returns in its `url` field.
+async fn fetch_nofluffjobs_detail(client: &reqwest::Client, slug: &str) -> Result<String, String> {
+    let url = format!(
+        "https://nofluffjobs.com/api/posting/{}",
+        percent_encode_segment(slug)
+    );
+    let val = get_json(client, &url).await?;
+    Ok(parse_nofluffjobs_detail(&val))
+}
+
 async fn get_text(client: &reqwest::Client, url: &str) -> Result<String, String> {
     require_https(url)?;
     client
@@ -1094,6 +1722,18 @@ async fn fetch_source_jobs(
                 }
             }
             Ok(out)
+        }
+        "api_trudvsem" => {
+            let val = get_json(client, &src.url).await?;
+            Ok(parse_trudvsem(&val))
+        }
+        "api_arbeitnow" => {
+            let val = get_json(client, &src.url).await?;
+            Ok(parse_arbeitnow(&val))
+        }
+        "api_nofluffjobs" => {
+            let val = get_json(client, &src.url).await?;
+            Ok(parse_nofluffjobs(&val))
         }
         "ats_personio" => {
             // Personio boards key on the subdomain, not a path segment, so the
@@ -1192,7 +1832,8 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
 
     let source_rows = sqlx::query(
         "SELECT id, name, type, url, slug,
-                title_filter_positive_json, title_filter_negative_json
+                title_filter_positive_json, title_filter_negative_json,
+                geo_tags_json
          FROM sources
          WHERE is_enabled = 1 AND type != 'manual'
          ORDER BY id",
@@ -1211,6 +1852,7 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
             slug: r.get("slug"),
             positive_json: r.get("title_filter_positive_json"),
             negative_json: r.get("title_filter_negative_json"),
+            geo_tags_json: r.get("geo_tags_json"),
         })
         .collect();
 
@@ -1220,12 +1862,25 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
         .map_err(|e| format!("discover_scan: load settings: {e}"))?
         .unwrap_or_default();
     let geo_scopes = parse_geo_scopes(&geo_scope_raw);
-    let active_codes: Vec<String> =
-        sqlx::query_scalar("SELECT country_code FROM geo_filters WHERE is_active = 1")
-            .fetch_all(&db.pool)
-            .await
-            .map_err(|e| format!("discover_scan: load geo filters: {e}"))?;
-    let geo_cfg = build_geo_cfg(&geo_scopes, &active_codes);
+    let market_raw: Option<String> = sqlx::query_scalar("SELECT market FROM settings WHERE id = 1")
+        .fetch_optional(&db.pool)
+        .await
+        .map_err(|e| format!("discover_scan: load market: {e}"))?
+        .flatten();
+    let markets = parse_local_markets(market_raw.as_deref().unwrap_or_default());
+    // The two geo modes are mutually exclusive (see libs/core local-market.ts):
+    // a local market narrows to its countries and the region scope sits out
+    // entirely; with no market selected the region scope applies as before.
+    let geo_cfg = if markets.is_empty() {
+        let active_codes: Vec<String> =
+            sqlx::query_scalar("SELECT country_code FROM geo_filters WHERE is_active = 1")
+                .fetch_all(&db.pool)
+                .await
+                .map_err(|e| format!("discover_scan: load geo filters: {e}"))?;
+        build_geo_cfg(&geo_scopes, &active_codes)
+    } else {
+        build_market_cfg(&markets)
+    };
 
     let archetypes: Option<String> =
         sqlx::query_scalar("SELECT target_archetypes FROM profile WHERE id = 1")
@@ -1254,6 +1909,8 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
             Ok(raw_jobs) => {
                 r.fetched = raw_jobs.len() as i64;
 
+                let serves_market = source_serves_markets(src.geo_tags_json.as_deref(), &markets);
+
                 let positive = {
                     let own = parse_keyword_list(src.positive_json.as_deref());
                     if own.is_empty() {
@@ -1274,7 +1931,7 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
                 for job in &raw_jobs {
                     if job.title.trim().is_empty()
                         || !title_passes(&job.title, &filter)
-                        || !geo_passes(&job.location, &geo_cfg)
+                        || !geo_passes(&job.location, &geo_cfg, serves_market)
                     {
                         r.filtered_out += 1;
                         continue;
@@ -1283,9 +1940,18 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
                     // A failed or skipped detail request is not a scan error:
                     // the job still lands with its placeholder body.
                     let detailed: Option<RawJob> = match job.detail_ref.as_deref() {
-                        Some(refnr) if detail_budget > 0 => {
+                        Some(reference) if detail_budget > 0 => {
                             detail_budget -= 1;
-                            match fetch_arbeitsagentur_detail(&client, refnr).await {
+                            let fetched = match src.source_type.as_str() {
+                                "api_arbeitsagentur" => {
+                                    fetch_arbeitsagentur_detail(&client, reference).await
+                                }
+                                "api_nofluffjobs" => {
+                                    fetch_nofluffjobs_detail(&client, reference).await
+                                }
+                                _ => Ok(String::new()),
+                            };
+                            match fetched {
                                 Ok(text) if !text.trim().is_empty() => {
                                     let mut j = job.clone();
                                     j.jd_text = text;
@@ -1319,6 +1985,10 @@ pub async fn discover_scan(db: State<'_, Db>) -> Result<ScanSummary, String> {
 
         results.push(r);
     }
+
+    // Record the market this scan ran under so the Discover feed can prompt a
+    // refresh when the user later changes it. Best-effort: ignore any error.
+    let _ = record_scan_market(&db.pool, market_raw.as_deref()).await;
 
     Ok(ScanSummary {
         total_fetched: results.iter().map(|r| r.fetched).sum(),
@@ -1372,6 +2042,20 @@ pub async fn db_discover_feed(db: State<'_, Db>) -> Result<Vec<DiscoverFeedItem>
     .map_err(|e| format!("db_discover_feed: mark shown: {e}"))?;
 
     Ok(items)
+}
+
+/// Records the market a scan ran under, for the Discover feed's refresh prompt.
+/// Best-effort by construction: the caller ignores the result so a failed write
+/// never fails the scan.
+async fn record_scan_market(
+    pool: &SqlitePool,
+    market_raw: Option<&str>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE settings SET last_scan_market = ? WHERE id = 1")
+        .bind(market_raw)
+        .execute(pool)
+        .await?;
+    Ok(())
 }
 
 /// Delete every scanned job the user has not saved. Pure over the pool so it is
@@ -1457,6 +2141,132 @@ pub async fn db_set_source_enabled(
         .await
         .map_err(|e| format!("db_set_source_enabled: {e}"))?;
     Ok(())
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketSourceItem {
+    pub id: i64,
+    pub name: String,
+    /// Host only, so the confirmation names exactly what will be contacted.
+    pub host: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketSourcePlan {
+    pub to_enable: Vec<MarketSourceItem>,
+    pub to_disable: Vec<MarketSourceItem>,
+}
+
+/// What changing the market would do to the built-in sources. Read-only, and
+/// it proposes only rows that would actually change, so the confirmation never
+/// lists a source that is already in the right state.
+///
+/// Enable when the tags intersect the markets; disable when they do not AND the
+/// source is not tagged worldwide. The two are disjoint, so a dual-tagged
+/// source like Jobicy (`["us","worldwide"]`) is offered for enabling under a US
+/// market and left alone under any other. User-added rows are never touched.
+async fn market_source_plan(
+    pool: &SqlitePool,
+    markets: &[String],
+) -> Result<MarketSourcePlan, String> {
+    let rows = sqlx::query(
+        "SELECT id, name, url, is_enabled, geo_tags_json
+         FROM sources WHERE is_builtin = 1 ORDER BY id",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| format!("db_market_source_plan: {e}"))?;
+
+    let mut to_enable = Vec::new();
+    let mut to_disable = Vec::new();
+    for r in rows {
+        let id: i64 = r.get("id");
+        let name: String = r.get::<Option<String>, _>("name").unwrap_or_default();
+        let url: String = r.get::<Option<String>, _>("url").unwrap_or_default();
+        let enabled: bool = r.get::<i64, _>("is_enabled") != 0;
+        let tags_json: Option<String> = r.get("geo_tags_json");
+        let tags: Vec<String> = tags_json
+            .as_deref()
+            .and_then(|raw| serde_json::from_str::<Vec<String>>(raw).ok())
+            .unwrap_or_default()
+            .into_iter()
+            .map(|t| t.to_lowercase())
+            .collect();
+
+        let item = MarketSourceItem {
+            id,
+            name,
+            host: extract_host(&url).unwrap_or_default(),
+        };
+        let serves = tags.iter().any(|t| markets.contains(t));
+        let worldwide = tags.iter().any(|t| t == "worldwide");
+        if serves && !enabled {
+            to_enable.push(item);
+        } else if !serves && !worldwide && enabled {
+            to_disable.push(item);
+        }
+    }
+    // A market with no source of its own must not cost the user the sources
+    // they already had: if there is nothing to enable, propose nothing at
+    // all, disable list included. The Settings UI already renders nothing
+    // for an empty plan.
+    if to_enable.is_empty() {
+        return Ok(MarketSourcePlan {
+            to_enable: Vec::new(),
+            to_disable: Vec::new(),
+        });
+    }
+    Ok(MarketSourcePlan {
+        to_enable,
+        to_disable,
+    })
+}
+
+/// Applies exactly the ids the user confirmed, in one transaction. `is_builtin`
+/// is asserted in both statements so a stray id can never flip a user's own
+/// source.
+async fn apply_market_source_plan(
+    pool: &SqlitePool,
+    enable_ids: &[i64],
+    disable_ids: &[i64],
+) -> Result<(), String> {
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| format!("db_apply_market_source_plan (begin): {e}"))?;
+    for (ids, value) in [(enable_ids, 1), (disable_ids, 0)] {
+        for id in ids {
+            sqlx::query("UPDATE sources SET is_enabled = ? WHERE id = ? AND is_builtin = 1")
+                .bind(value)
+                .bind(id)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| format!("db_apply_market_source_plan: {e}"))?;
+        }
+    }
+    tx.commit()
+        .await
+        .map_err(|e| format!("db_apply_market_source_plan (commit): {e}"))
+}
+
+#[tauri::command]
+pub async fn db_market_source_plan(
+    markets: Vec<String>,
+    db: State<'_, Db>,
+) -> Result<MarketSourcePlan, String> {
+    let markets: Vec<String> = markets.iter().map(|m| m.trim().to_lowercase()).collect();
+    market_source_plan(&db.pool, &markets).await
+}
+
+#[tauri::command]
+pub async fn db_apply_market_source_plan(
+    enable_ids: Vec<i64>,
+    disable_ids: Vec<i64>,
+    db: State<'_, Db>,
+) -> Result<(), String> {
+    apply_market_source_plan(&db.pool, &enable_ids, &disable_ids).await
 }
 
 /// Add a user source: an RSS feed (url, https-only) or an ATS company board
@@ -1550,6 +2360,37 @@ mod tests {
         pool
     }
 
+    #[tokio::test]
+    async fn record_scan_market_writes_the_raw_market_value() {
+        let pool = test_pool().await;
+        // Nothing scanned yet.
+        let before: Option<String> =
+            sqlx::query_scalar("SELECT last_scan_market FROM settings WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(before, None);
+
+        record_scan_market(&pool, Some(r#"["ru"]"#)).await.unwrap();
+
+        let after: Option<String> =
+            sqlx::query_scalar("SELECT last_scan_market FROM settings WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(after.as_deref(), Some(r#"["ru"]"#));
+
+        // A later scan with no market clears it back to NULL, so the banner logic
+        // sees "scanned under worldwide" rather than a stale market.
+        record_scan_market(&pool, None).await.unwrap();
+        let cleared: Option<String> =
+            sqlx::query_scalar("SELECT last_scan_market FROM settings WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(cleared, None);
+    }
+
     fn raw(title: &str, jd: &str, url: &str) -> RawJob {
         RawJob {
             title: title.to_string(),
@@ -1559,6 +2400,105 @@ mod tests {
             url: url.to_string(),
             detail_ref: None,
         }
+    }
+
+    /// Every market must recognise its own largest tech city, and must not
+    /// recognise another market's. This is the guard against a market being added
+    /// later with a country-name-only token list, which the strict filter in the
+    /// scan would turn into silently dropped jobs.
+    #[test]
+    fn every_market_recognises_its_own_city_and_no_other() {
+        let cases: &[(&str, &str)] = &[
+            ("de", "Berlin"),
+            ("us", "San Francisco, CA"),
+            ("ru", "Москва"),
+            ("ua", "Київ"),
+            ("pl", "Warsaw"),
+        ];
+
+        for market in KNOWN_LOCAL_MARKETS {
+            assert!(
+                cases.iter().any(|(code, _)| code == market),
+                "market {market} has no parity case - add one"
+            );
+        }
+
+        for (market, city) in cases {
+            let cfg = build_market_cfg(&[market.to_string()]);
+            assert!(geo_passes(city, &cfg, false), "{market} must accept {city}");
+
+            for (other, _) in cases {
+                if other == market {
+                    continue;
+                }
+                let other_cfg = build_market_cfg(&[other.to_string()]);
+                assert!(
+                    !geo_passes(city, &other_cfg, false),
+                    "{other} must not accept {city}"
+                );
+            }
+        }
+    }
+
+    /// The token table must not read another country's ISO code as a US state.
+    /// `loc_matches` is case-insensitive, so a two-letter state code that is also
+    /// a country code silently annexes that country into the US market.
+    #[test]
+    fn a_us_market_does_not_swallow_countries_sharing_a_state_code() {
+        let us = build_market_cfg(&["us".to_string()]);
+        for elsewhere in [
+            "Tel Aviv, IL",
+            "Casablanca, MA",
+            "Bogota, CO",
+            "Chisinau, MD",
+            "Panama City, PA",
+            "Baku, AZ",
+            "Ulaanbaatar, MN",
+            "Tunis, TN",
+        ] {
+            assert!(
+                !geo_passes(elsewhere, &us, false),
+                "{elsewhere} is not in the US"
+            );
+        }
+        // The states themselves are still reachable by name.
+        for state in [
+            "Chicago, Illinois",
+            "Boston, Massachusetts",
+            "Denver, Colorado",
+            "Phoenix, Arizona",
+            "Nashville, Tennessee",
+        ] {
+            assert!(geo_passes(state, &us, false), "{state} is in the US");
+        }
+    }
+
+    /// Georgia is both a US state and a country, and the state's code "ga" is
+    /// unavailable because it collides with Gabon. The state therefore keeps the
+    /// ambiguous full name plus its own cities, and the known cost is recorded
+    /// here rather than left for someone to rediscover: a US market can surface a
+    /// posting from Georgia the country. A visible wrong result can be dismissed;
+    /// a dropped job cannot.
+    #[test]
+    fn georgia_the_state_stays_reachable_and_its_ambiguity_is_known() {
+        let us = build_market_cfg(&["us".to_string()]);
+        assert!(geo_passes("Atlanta, Georgia", &us, false));
+        assert!(geo_passes("Savannah, Georgia", &us, false));
+        // The accepted cost, asserted so a future change to it is a decision and
+        // not an accident.
+        assert!(geo_passes("Tbilisi, Georgia", &us, false));
+    }
+
+    /// A PL scope must not annex New South Wales. gb is no longer a pickable
+    /// market (see KNOWN_LOCAL_MARKETS), so this uses pl to keep the "a
+    /// market must not swallow an unrelated place" case exercised through a
+    /// market that remains selectable.
+    #[test]
+    fn a_pl_market_does_not_swallow_new_south_wales() {
+        let pl = build_market_cfg(&["pl".to_string()]);
+        assert!(!geo_passes("Sydney, New South Wales", &pl, false));
+        assert!(geo_passes("Krakow", &pl, false));
+        assert!(geo_passes("Warsaw, Poland", &pl, false));
     }
 
     // -- Bundesagentur fuer Arbeit -------------------------------------------
@@ -1614,13 +2554,193 @@ mod tests {
         )
         .unwrap();
         let jobs = parse_arbeitsagentur(&val);
-        assert!(geo_passes(&jobs[0].location, &cfg));
+        assert!(geo_passes(&jobs[0].location, &cfg, false));
     }
 
     #[test]
     fn arbeitsagentur_empty_or_foreign_shape_yields_nothing() {
         assert!(parse_arbeitsagentur(&serde_json::json!({})).is_empty());
         assert!(parse_arbeitsagentur(&serde_json::json!({"stellenangebote":[]})).is_empty());
+    }
+
+    // -- TrudVsem (Russia) ----------------------------------------------------
+
+    #[test]
+    fn trudvsem_reads_vacancy_fields_and_appends_russia() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"results":{"vacancies":[{"vacancy":{
+                 "job-name":"Backend Developer",
+                 "company":{"name":"Acme LLC"},
+                 "region":{"name":"Москва"},
+                 "vac_url":"https://trudvsem.ru/vacancy/1",
+                 "duty":"Write code",
+                 "requirement":"Rust experience"
+               }}]}}"#,
+        )
+        .unwrap();
+        let jobs = parse_trudvsem(&val);
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].title, "Backend Developer");
+        assert_eq!(jobs[0].company, "Acme LLC");
+        assert_eq!(jobs[0].location, "Москва, Russia");
+        assert_eq!(jobs[0].url, "https://trudvsem.ru/vacancy/1");
+        assert!(jobs[0].jd_text.contains("Write code"));
+        assert!(jobs[0].jd_text.contains("Rust experience"));
+    }
+
+    #[test]
+    fn trudvsem_missing_region_falls_back_to_bare_russia() {
+        let val: serde_json::Value =
+            serde_json::from_str(r#"{"results":{"vacancies":[{"vacancy":{"job-name":"QA"}}]}}"#)
+                .unwrap();
+        assert_eq!(parse_trudvsem(&val)[0].location, "Russia");
+    }
+
+    #[test]
+    fn trudvsem_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_trudvsem(&serde_json::json!({})).is_empty());
+        assert!(parse_trudvsem(&serde_json::json!({"results":{"vacancies":[]}})).is_empty());
+    }
+
+    // -- Arbeitnow (Germany) ---------------------------------------------------
+
+    #[test]
+    fn arbeitnow_reads_job_fields_and_appends_germany() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"data":[{
+                 "title":"Frontend Engineer",
+                 "company_name":"Muster GmbH",
+                 "description":"<p>Build things.</p>",
+                 "location":"Berlin",
+                 "url":"https://arbeitnow.com/jobs/1"
+               }]}"#,
+        )
+        .unwrap();
+        let jobs = parse_arbeitnow(&val);
+        assert_eq!(jobs[0].title, "Frontend Engineer");
+        assert_eq!(jobs[0].company, "Muster GmbH");
+        assert_eq!(jobs[0].location, "Berlin, Germany");
+        assert!(jobs[0].jd_text.contains("Build things."));
+    }
+
+    #[test]
+    fn arbeitnow_missing_location_falls_back_to_bare_germany() {
+        let val: serde_json::Value = serde_json::from_str(r#"{"data":[{"title":"QA"}]}"#).unwrap();
+        assert_eq!(parse_arbeitnow(&val)[0].location, "Germany");
+    }
+
+    #[test]
+    fn arbeitnow_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_arbeitnow(&serde_json::json!({})).is_empty());
+        assert!(parse_arbeitnow(&serde_json::json!({"data":[]})).is_empty());
+    }
+
+    // -- No Fluff Jobs (Poland) -------------------------------------------------
+
+    #[test]
+    fn nofluffjobs_reads_root_array_shape() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"[{
+                 "title":"Java Developer",
+                 "name":"Acme Sp. z o.o.",
+                 "url":"java-developer-acme",
+                 "category":"backend",
+                 "technology":"java",
+                 "seniority":["Mid"],
+                 "location":{"places":[{"city":"Warsaw"}],"fullyRemote":false}
+               }]"#,
+        )
+        .unwrap();
+        let jobs = parse_nofluffjobs(&val);
+        assert_eq!(jobs[0].title, "Java Developer");
+        assert_eq!(jobs[0].company, "Acme Sp. z o.o.");
+        assert_eq!(jobs[0].location, "Warsaw, Poland");
+        assert_eq!(
+            jobs[0].url,
+            "https://nofluffjobs.com/job/java-developer-acme"
+        );
+        assert!(jobs[0].jd_text.contains("backend"));
+        assert!(jobs[0].jd_text.contains("java"));
+        assert!(jobs[0].jd_text.contains("Mid"));
+        assert_eq!(jobs[0].detail_ref.as_deref(), Some("java-developer-acme"));
+    }
+
+    #[test]
+    fn nofluffjobs_reads_postings_wrapper_shape_and_remote() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"postings":[{
+                 "title":"DevOps",
+                 "companyName":"Acme",
+                 "url":"https://nofluffjobs.com/job/devops-acme",
+                 "location":{"places":[],"fullyRemote":true}
+               }]}"#,
+        )
+        .unwrap();
+        let jobs = parse_nofluffjobs(&val);
+        assert_eq!(jobs[0].company, "Acme");
+        assert_eq!(jobs[0].location, "Remote, Poland");
+        assert_eq!(jobs[0].url, "https://nofluffjobs.com/job/devops-acme");
+        assert_eq!(jobs[0].detail_ref, None);
+    }
+
+    #[test]
+    fn nofluffjobs_empty_or_foreign_shape_yields_nothing() {
+        assert!(parse_nofluffjobs(&serde_json::json!({})).is_empty());
+        assert!(parse_nofluffjobs(&serde_json::json!([])).is_empty());
+    }
+
+    #[test]
+    fn nofluffjobs_detail_builds_structured_text() {
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{
+              "requirements": {
+                "musts": [{"value":"React"},{"value":"Next.js"},{"value":"TypeScript"}],
+                "nices": [{"value":"AWS"},{"value":"Nest.js"}],
+                "description": "<p>You have 5 years of commercial experience.</p>"
+              },
+              "specs": {
+                "dailyTasks": [
+                  "Design and build complete product features.",
+                  "Monitoring and tracing."
+                ]
+              },
+              "essentials": {
+                "originalSalary": {
+                  "currency": "PLN",
+                  "types": { "b2b": { "period": "Hour", "range": [200.0, 220.0] } }
+                }
+              }
+            }"#,
+        )
+        .unwrap();
+
+        let text = parse_nofluffjobs_detail(&val);
+        // Headings the block renderer recognises, each on its own line.
+        assert!(text.contains("Requirements:"));
+        assert!(text.contains("- React"));
+        assert!(text.contains("- TypeScript"));
+        assert!(text.contains("Nice to have:"));
+        assert!(text.contains("- AWS"));
+        assert!(text.contains("Responsibilities:"));
+        assert!(text.contains("- Design and build complete product features."));
+        assert!(text.contains("You have 5 years of commercial experience."));
+        // Salary line carries the currency and range so the extractor can read it.
+        assert!(text.contains("Salary:"));
+        assert!(text.contains("PLN"));
+        assert!(text.contains("200"));
+        assert!(text.contains("220"));
+    }
+
+    #[test]
+    fn nofluffjobs_detail_tolerates_missing_sections() {
+        // A posting with no nices, no tasks, no salary must still yield its musts,
+        // and never panic on the absent keys.
+        let val: serde_json::Value =
+            serde_json::from_str(r#"{"requirements":{"musts":[{"value":"Java"}]}}"#).unwrap();
+        let text = parse_nofluffjobs_detail(&val);
+        assert!(text.contains("- Java"));
+        assert!(!text.contains("Nice to have:"));
+        assert!(!text.contains("Salary:"));
     }
 
     // -- Personio company boards ---------------------------------------------
@@ -1680,9 +2800,12 @@ mod tests {
     fn german_city_alone_passes_a_germany_scope() {
         let cfg = build_geo_cfg(&[], &["de".to_string()]);
         for city in ["Berlin", "München", "Koeln", "Frankfurt am Main"] {
-            assert!(geo_passes(city, &cfg), "{city} should pass a DE scope");
+            assert!(
+                geo_passes(city, &cfg, false),
+                "{city} should pass a DE scope"
+            );
         }
-        assert!(!geo_passes("Warsaw", &cfg));
+        assert!(!geo_passes("Warsaw", &cfg, false));
     }
 
     #[test]
@@ -1737,27 +2860,27 @@ mod tests {
     #[test]
     fn geo_worldwide_passes_everything() {
         let cfg = build_geo_cfg(&[], &[]);
-        assert!(geo_passes("Tokyo, Japan", &cfg));
-        assert!(geo_passes("", &cfg));
+        assert!(geo_passes("Tokyo, Japan", &cfg, false));
+        assert!(geo_passes("", &cfg, false));
     }
 
     #[test]
     fn geo_europe_scope() {
         let cfg = build_geo_cfg(&["europe".to_string()], &[]);
-        assert!(geo_passes("Berlin, Germany", &cfg));
-        assert!(geo_passes("Remote - EMEA", &cfg));
-        assert!(geo_passes("Remote", &cfg)); // remote marker always passes
-        assert!(geo_passes("", &cfg)); // unknown location never drops
-        assert!(!geo_passes("New York, USA", &cfg));
+        assert!(geo_passes("Berlin, Germany", &cfg, false));
+        assert!(geo_passes("Remote - EMEA", &cfg, false));
+        assert!(geo_passes("Remote", &cfg, false)); // remote marker always passes
+        assert!(geo_passes("", &cfg, false)); // unknown location never drops
+        assert!(!geo_passes("New York, USA", &cfg, false));
     }
 
     #[test]
     fn geo_country_codes_match_names_not_substrings() {
         let cfg = build_geo_cfg(&[], &["de".to_string()]);
-        assert!(geo_passes("Munich, Germany", &cfg));
-        assert!(geo_passes("DE", &cfg));
+        assert!(geo_passes("Munich, Germany", &cfg, false));
+        assert!(geo_passes("DE", &cfg, false));
         // "de" must not light up inside unrelated words
-        assert!(!geo_passes("Designer Hub, Tokyo", &cfg));
+        assert!(!geo_passes("Designer Hub, Tokyo", &cfg, false));
     }
 
     #[test]
@@ -1765,34 +2888,34 @@ mod tests {
         // Europe + Asia selected together -> a job from either passes, one
         // from neither (e.g. Brazil) does not.
         let cfg = build_geo_cfg(&["europe".to_string(), "asia".to_string()], &[]);
-        assert!(geo_passes("Berlin, Germany", &cfg));
-        assert!(geo_passes("Tokyo, Japan", &cfg));
-        assert!(!geo_passes("Sao Paulo, Brazil", &cfg));
+        assert!(geo_passes("Berlin, Germany", &cfg, false));
+        assert!(geo_passes("Tokyo, Japan", &cfg, false));
+        assert!(!geo_passes("Sao Paulo, Brazil", &cfg, false));
     }
 
     #[test]
     fn geo_namerica_scope_covers_us_canada_and_mexico() {
         let cfg = build_geo_cfg(&["namerica".to_string()], &[]);
-        assert!(geo_passes("Austin, USA", &cfg));
-        assert!(geo_passes("Toronto, Canada", &cfg));
-        assert!(geo_passes("Mexico City, Mexico", &cfg));
-        assert!(!geo_passes("Berlin, Germany", &cfg));
+        assert!(geo_passes("Austin, USA", &cfg, false));
+        assert!(geo_passes("Toronto, Canada", &cfg, false));
+        assert!(geo_passes("Mexico City, Mexico", &cfg, false));
+        assert!(!geo_passes("Berlin, Germany", &cfg, false));
     }
 
     #[test]
     fn geo_samerica_oceania_mena_africa_scopes() {
         let samerica = build_geo_cfg(&["samerica".to_string()], &[]);
-        assert!(geo_passes("Montevideo, Uruguay", &samerica));
-        assert!(!geo_passes("Berlin, Germany", &samerica));
+        assert!(geo_passes("Montevideo, Uruguay", &samerica, false));
+        assert!(!geo_passes("Berlin, Germany", &samerica, false));
 
         let oceania = build_geo_cfg(&["oceania".to_string()], &[]);
-        assert!(geo_passes("Sydney, Australia", &oceania));
+        assert!(geo_passes("Sydney, Australia", &oceania, false));
 
         let mena = build_geo_cfg(&["mena".to_string()], &[]);
-        assert!(geo_passes("Dubai, UAE", &mena));
+        assert!(geo_passes("Dubai, UAE", &mena, false));
 
         let africa = build_geo_cfg(&["africa".to_string()], &[]);
-        assert!(geo_passes("Cape Town, South Africa", &africa));
+        assert!(geo_passes("Cape Town, South Africa", &africa, false));
     }
 
     #[test]
@@ -1807,6 +2930,168 @@ mod tests {
         );
         assert!(parse_geo_scopes("").is_empty());
         assert!(parse_geo_scopes("[]").is_empty());
+    }
+
+    #[test]
+    fn parse_local_markets_reads_json_array_and_drops_unknown_codes() {
+        assert_eq!(
+            parse_local_markets(r#"["de","ua"]"#),
+            vec!["de".to_string(), "ua".to_string()]
+        );
+        assert_eq!(
+            parse_local_markets(r#"["de","atlantis"]"#),
+            vec!["de".to_string()]
+        );
+        assert!(parse_local_markets("").is_empty());
+        assert!(parse_local_markets("[]").is_empty());
+    }
+
+    /// fr is not a pickable market - no built-in source serves it - so it is
+    /// dropped the same as any other unknown code, even though its location
+    /// tokens still exist for the "somewhere else" filter.
+    #[test]
+    fn parse_local_markets_drops_fr_as_not_yet_a_pickable_market() {
+        assert_eq!(
+            parse_local_markets(r#"["de","fr"]"#),
+            vec!["de".to_string()]
+        );
+    }
+
+    #[test]
+    fn parse_local_markets_reads_the_legacy_single_scalar() {
+        // Written by the first cut of the picker, before multi-select.
+        assert_eq!(parse_local_markets("de"), vec!["de".to_string()]);
+        assert!(parse_local_markets("atlantis").is_empty());
+    }
+
+    #[test]
+    fn source_market_tags_are_read_tolerantly() {
+        let markets = vec!["ua".to_string()];
+        assert!(source_serves_markets(Some(r#"["ua"]"#), &markets));
+        assert!(source_serves_markets(Some(r#"["ua","pl"]"#), &markets));
+        assert!(!source_serves_markets(Some(r#"["worldwide"]"#), &markets));
+        assert!(!source_serves_markets(Some(r#"["de"]"#), &markets));
+        assert!(!source_serves_markets(None, &markets));
+        assert!(!source_serves_markets(Some("not json"), &markets));
+        // No market selected: nothing is market-tagged, so region rules apply.
+        assert!(!source_serves_markets(Some(r#"["ua"]"#), &[]));
+    }
+
+    #[test]
+    fn a_local_market_narrows_to_its_own_country() {
+        let cfg = build_geo_cfg(&[], &["pl".to_string()]);
+        assert!(geo_passes("Warsaw, Poland", &cfg, false));
+        assert!(!geo_passes("Berlin, Germany", &cfg, false));
+        // Conservative inclusion still holds: remote and unknown never drop.
+        assert!(geo_passes("Remote", &cfg, false));
+        assert!(geo_passes("", &cfg, false));
+    }
+
+    #[test]
+    fn several_local_markets_union_their_countries() {
+        let cfg = build_geo_cfg(&[], &["de".to_string(), "ua".to_string()]);
+        assert!(geo_passes("Berlin", &cfg, false));
+        assert!(geo_passes("Kyiv, Ukraine", &cfg, false));
+        assert!(!geo_passes("Warsaw, Poland", &cfg, false));
+    }
+
+    #[test]
+    fn russian_and_ukrainian_places_pass_in_either_script() {
+        let ru = build_geo_cfg(&[], &["ru".to_string()]);
+        // What TrudVsem actually emits once parse_trudvsem appends the country.
+        assert!(geo_passes("Москва, Russia", &ru, false));
+        assert!(geo_passes("Санкт-Петербург", &ru, false));
+        assert!(geo_passes("Moscow", &ru, false));
+        assert!(!geo_passes("Kyiv, Ukraine", &ru, false));
+
+        let ua = build_geo_cfg(&[], &["ua".to_string()]);
+        assert!(geo_passes("Київ", &ua, false));
+        assert!(geo_passes("Lviv, Ukraine", &ua, false));
+        assert!(!geo_passes("Москва, Russia", &ua, false));
+    }
+
+    #[test]
+    fn a_local_market_ignores_the_region_scope_entirely() {
+        // The mutual-exclusion contract: Settings clears geo_scope when a
+        // market is picked, and the scan runs the strict market path
+        // (build_market_cfg) instead. A Europe scope must not smuggle Berlin
+        // into a Poland-only search.
+        let cfg = build_market_cfg(&["pl".to_string()]);
+        assert!(!geo_passes("Berlin, Germany", &cfg, false));
+        assert!(!geo_passes("Munich", &cfg, false));
+
+        // Poland is itself in Europe, so a region-wide remote posting still
+        // reaches it: EMEA is not "somewhere else" for a market inside EMEA.
+        assert!(geo_passes("Remote - EMEA", &cfg, false));
+    }
+
+    #[test]
+    fn market_mode_drops_somewhere_else_before_the_remote_marker() {
+        // The whole point: "Remote" used to wave this through untouched.
+        let cfg = build_market_cfg(&["ua".to_string()]);
+        assert!(!geo_passes("Remote - US only", &cfg, false));
+        assert!(!geo_passes("Berlin, Germany", &cfg, false));
+    }
+
+    #[test]
+    fn market_mode_keeps_the_market_and_globally_open_remote() {
+        let cfg = build_market_cfg(&["ua".to_string()]);
+        assert!(geo_passes("Kyiv", &cfg, false));
+        assert!(geo_passes("Ukraine", &cfg, false));
+        assert!(geo_passes("Львів", &cfg, false));
+        assert!(geo_passes("Anywhere", &cfg, false));
+        assert!(geo_passes("Worldwide", &cfg, false));
+        assert!(geo_passes("Remote", &cfg, false));
+    }
+
+    #[test]
+    fn a_region_wide_remote_job_reaches_a_market_inside_that_region() {
+        let ua = build_market_cfg(&["ua".to_string()]);
+        assert!(geo_passes("Remote - EMEA", &ua, false));
+        assert!(geo_passes("Remote, Europe", &ua, false));
+        // A country inside the same region is still somewhere else.
+        assert!(!geo_passes("Berlin, Germany", &ua, false));
+        // A region that does not contain the market still counts as elsewhere.
+        let us = build_market_cfg(&["us".to_string()]);
+        assert!(!geo_passes("Remote - EMEA", &us, false));
+    }
+
+    #[test]
+    fn market_mode_drops_an_empty_or_unreadable_location() {
+        let cfg = build_market_cfg(&["ua".to_string()]);
+        assert!(!geo_passes("", &cfg, false));
+        assert!(!geo_passes("(m/w/d) Full-Time", &cfg, false));
+    }
+
+    #[test]
+    fn a_source_tagged_for_the_market_passes_everything() {
+        // DOU and Djinni RSS items frequently carry no location at all; the source
+        // itself is the geographic evidence.
+        let cfg = build_market_cfg(&["ua".to_string()]);
+        assert!(geo_passes("", &cfg, true));
+        assert!(geo_passes("(m/w/d) Full-Time", &cfg, true));
+        assert!(geo_passes("Berlin, Germany", &cfg, true));
+    }
+
+    #[test]
+    fn several_markets_accept_each_other_and_reject_the_rest() {
+        let cfg = build_market_cfg(&["de".to_string(), "pl".to_string()]);
+        assert!(geo_passes("Berlin", &cfg, false));
+        assert!(geo_passes("Warsaw", &cfg, false));
+        assert!(!geo_passes("Kyiv", &cfg, false));
+    }
+
+    #[test]
+    fn region_mode_is_untouched_by_the_market_rules() {
+        // No market selected: conservative inclusion still applies, unchanged.
+        let cfg = build_geo_cfg(&["europe".to_string()], &[]);
+        assert!(geo_passes("Berlin, Germany", &cfg, false));
+        assert!(geo_passes("Remote", &cfg, false));
+        assert!(
+            geo_passes("", &cfg, false),
+            "unknown location must not drop"
+        );
+        assert!(!geo_passes("New York, USA", &cfg, false));
     }
 
     #[test]
@@ -2043,6 +3328,7 @@ mod tests {
             slug: None,
             positive_json: None,
             negative_json: None,
+            geo_tags_json: None,
         }
     }
 
@@ -2059,6 +3345,28 @@ mod tests {
                 "https://weworkremotely.com/remote-jobs.rss",
             ),
             live_source(3, "Himalayas", "api", "https://himalayas.app/jobs/api"),
+            live_source(5, "DOU.ua", "rss", "https://jobs.dou.ua/vacancies/feeds/"),
+            live_source(6, "Djinni.co", "rss", "https://djinni.co/jobs/rss/"),
+            live_source(7, "Habr Career", "rss", "https://career.habr.com/vacancies/rss"),
+            live_source(8, "Jobicy", "rss", "https://jobicy.com/?feed=job_feed"),
+            live_source(
+                9,
+                "TrudVsem",
+                "api_trudvsem",
+                "https://opendata.trudvsem.ru/api/v1/vacancies?limit=100",
+            ),
+            live_source(
+                10,
+                "Arbeitnow",
+                "api_arbeitnow",
+                "https://www.arbeitnow.com/api/job-board-api",
+            ),
+            live_source(
+                11,
+                "No Fluff Jobs",
+                "api_nofluffjobs",
+                "https://nofluffjobs.com/api/joboffers/main?salaryCurrency=PLN&salaryPeriod=month&region=pl",
+            ),
         ];
         for src in &sources {
             let jobs = fetch_source_jobs(&client, src)
@@ -2078,5 +3386,103 @@ mod tests {
         let b = raw("Dev B", "", "https://x/b");
         assert!(insert_scanned_job(&pool, &a, "WWR").await.unwrap());
         assert!(insert_scanned_job(&pool, &b, "WWR").await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn the_plan_proposes_only_real_changes() {
+        let pool = test_pool().await;
+        // test_pool runs the migrations, which seed eleven built-in sources - and
+        // several are ua-tagged. Clear them so the fixtures below are the whole
+        // world for this test.
+        sqlx::query("DELETE FROM sources")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO sources (id, name, type, url, is_builtin, is_enabled, geo_tags_json) VALUES
+               (100, 'DOU', 'rss', 'https://jobs.dou.ua/x', 1, 0, '[\"ua\"]'),
+               (101, 'Djinni', 'rss', 'https://djinni.co/x', 1, 1, '[\"ua\"]'),
+               (102, 'Habr', 'rss', 'https://career.habr.com/x', 1, 1, '[\"ru\"]'),
+               (103, 'Remotive', 'api', 'https://remotive.com/x', 1, 1, '[\"worldwide\"]'),
+               (104, 'Jobicy', 'rss', 'https://jobicy.com/x', 1, 1, '[\"us\",\"worldwide\"]'),
+               (105, 'Mine', 'rss', 'https://example.com/x', 0, 1, '[\"de\"]')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let plan = market_source_plan(&pool, &["ua".to_string()])
+            .await
+            .unwrap();
+
+        // Only the disabled Ukrainian source is worth enabling; Djinni is already on.
+        assert_eq!(
+            plan.to_enable.iter().map(|s| s.id).collect::<Vec<_>>(),
+            vec![100]
+        );
+        assert_eq!(plan.to_enable[0].host, "jobs.dou.ua");
+        // Habr is another market. Remotive and Jobicy carry worldwide, so they are
+        // left alone; source 105 is user-added and is never touched.
+        assert_eq!(
+            plan.to_disable.iter().map(|s| s.id).collect::<Vec<_>>(),
+            vec![102]
+        );
+    }
+
+    #[tokio::test]
+    async fn applying_the_plan_touches_only_builtin_rows() {
+        let pool = test_pool().await;
+        // test_pool runs the migrations, which seed eleven built-in sources - and
+        // several are ua-tagged. Clear them so the fixtures below are the whole
+        // world for this test.
+        sqlx::query("DELETE FROM sources")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO sources (id, name, type, url, is_builtin, is_enabled, geo_tags_json) VALUES
+               (200, 'DOU', 'rss', 'https://jobs.dou.ua/x', 1, 0, '[\"ua\"]'),
+               (201, 'Habr', 'rss', 'https://career.habr.com/x', 1, 1, '[\"ru\"]'),
+               (202, 'Mine', 'rss', 'https://example.com/x', 0, 1, '[\"de\"]')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        apply_market_source_plan(&pool, &[200], &[201, 202])
+            .await
+            .unwrap();
+
+        let enabled: Vec<(i64, i64)> =
+            sqlx::query_as("SELECT id, is_enabled FROM sources ORDER BY id")
+                .fetch_all(&pool)
+                .await
+                .unwrap();
+        assert_eq!(enabled, vec![(200, 1), (201, 0), (202, 1)]);
+    }
+
+    #[tokio::test]
+    async fn a_market_with_no_source_of_its_own_proposes_nothing() {
+        let pool = test_pool().await;
+        sqlx::query("DELETE FROM sources")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO sources (id, name, type, url, is_builtin, is_enabled, geo_tags_json) VALUES
+               (300, 'Habr', 'rss', 'https://career.habr.com/x', 1, 1, '[\"ru\"]'),
+               (301, 'Remotive', 'api', 'https://remotive.com/x', 1, 1, '[\"worldwide\"]')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // No source is tagged "gb", so there is nothing to gain and the user must
+        // not lose Habr for it.
+        let plan = market_source_plan(&pool, &["gb".to_string()])
+            .await
+            .unwrap();
+        assert!(plan.to_enable.is_empty());
+        assert!(plan.to_disable.is_empty());
     }
 }

@@ -1,7 +1,9 @@
 # Local markets for Discover - analysis
 
-Status: analysis only, nothing implemented. Written 2026-07-23 against `main` at `ab2d5d4`
-(v0.26.0).
+Status: implemented 2026-07-24 (settings.market, Settings picker, Sources drawer filtering,
+7 new built-in sources - DOU, Djinni, Habr Career, Jobicy, TrudVsem, Arbeitnow, No Fluff Jobs).
+See `docs/product/CURRENT_STATE.md` for the current state. Originally written 2026-07-23 against
+`main` at `ab2d5d4` (v0.26.0).
 
 ## The ask
 

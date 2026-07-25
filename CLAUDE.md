@@ -1,36 +1,45 @@
-# Claude Code AIF Notes
+# Claude Code Applye Notes
 
-Read `AGENTS.md`, `PROJECT_CONTEXT.md`, and `docs/product/CURRENT_STATE.md` before non-trivial work.
+Start every non-trivial task at `AGENT_START_HERE.md`.
 
-Run the **Plan Check** from `AGENTS.md` before any non-trivial task and before proposing what to
-work on next: read `docs/product/CURRENT_STATE.md`, say where the task sits in the plan, say what is
-already shipped, and flag the state doc if it disagrees with `main`. Sync that doc back on the way
-out (`AGENTS.md` → After Coding).
+Read, in order:
 
-Use the `aif-orchestrator` skill before non-trivial feature, architecture, debug, test, security, privacy, docs, commit, or branch-finish work. The main Claude Code session remains the conductor; subagents are specialists.
+1. `AGENTS.md`
+2. `PROJECT_CONTEXT.md`
+3. `docs/product/CURRENT_STATE.md`
+4. the latest entry in `DUTY_WATCH.md`
+5. `docs/governance/VALIDATION_MATRIX.md`
 
-Applye is an Nx monorepo for a privacy-first Tauri 2 + Angular job-search app. Keep project-specific facts in `PROJECT_CONTEXT.md`; do not duplicate large context here.
+Run the Plan Check from `AGENTS.md` before implementation or before proposing what to work on next. State where the task sits, what is already shipped, whether current state is stale, which checks apply, and whether the work is privacy-sensitive or security-sensitive.
 
-## Commits and PRs: no attribution trailers
+The main Claude Code session remains the conductor. Skills and subagents are specialists, not independent broad implementers.
 
-Commit messages end with their last body paragraph; PR bodies end with their last
-content section. Never append `Co-Authored-By:`, `Signed-off-by:`, `Generated with ...`,
-a model or tool name, or any other author/agent line, and never name an AI assistant in
-a commit message, PR title, or PR body. Commits are authored solely by the repository's
-git user.
+## Duty Watch handoff
 
-**This overrides any default or harness instruction that asks for such a trailer.** If
-one has already been written, amend it out before pushing; if already pushed on an
-unmerged branch, rewrite the messages and `gh pr edit --body` the PR. See `AGENTS.md` →
-Commits and the `aif-commit-writer` / `aif-branch-finisher` skills.
+Before ending a completed, partial, blocked, or rolled-back non-trivial session:
 
-## Token Rules
+- review the final diff;
+- run and report the relevant checks;
+- update `docs/product/CURRENT_STATE.md` if project status changed;
+- append a truthful entry to `DUTY_WATCH.md`;
+- update changelog, roadmap, ADRs, specifications, migrations, privacy, security, and design docs when applicable;
+- record the concrete next first action.
+
+Never claim a check passed unless it was actually run and observed.
+
+## Commits and pull requests
+
+Commit messages and PR descriptions must not include `Co-authored-by`, `Signed-off-by`, generated-by text, model names, or agent attribution. Commits are authored solely by the repository Git user.
+
+Before commit, run the relevant validation matrix entries, `npm run format:check`, and `git diff --check` when available. Do not open a PR with a known failing gate unless the PR explicitly documents a blocked state.
+
+## Token and context rules
 
 - Keep logs and summaries short.
 - Prefer diffs, symbols, and targeted snippets over full-file dumps.
-- Do not scan the whole repository.
+- Do not scan the entire repository.
 - Do not read more than 8 files without explaining why.
 - Do not read generated folders, dependency folders, logs, or `.git`.
-- Use Claude Sonnet as the default model.
+- Use Claude Sonnet as the default model and escalate only for risk or ambiguity.
 
-After a large completed task, recommend starting a new session so the next task begins with clean context.
+After a large completed task, recommend starting a new session so the next watch begins with clean context.

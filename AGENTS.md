@@ -1,14 +1,27 @@
-# AIF Core Agent Instructions
+# Applye Agent Instructions
 
 Applye is an open-source, privacy-first job-search productivity app built as an Nx monorepo with Tauri 2, Angular, Rust, SQLite, TypeScript, and shared domain/UI/i18n libraries. Treat user career data, applications, notes, contacts, notifications, resumes, and imported job content as sensitive by default.
 
-See `PROJECT_CONTEXT.md` for product, architecture, and command context.
+This repository adopts the Intentloom Duty Watch workflow. Start every non-trivial task at `AGENT_START_HERE.md`.
 
-## AIF Conductor Model
+## Duty Watch entry sequence
+
+Before any non-trivial work, read in order:
+
+1. `AGENT_START_HERE.md`
+2. `PROJECT_CONTEXT.md`
+3. `docs/product/CURRENT_STATE.md`
+4. the latest entry in `DUTY_WATCH.md`
+5. `docs/governance/VALIDATION_MATRIX.md`
+6. the smallest relevant roadmap, plan, ADR, design-system, specification, and code files
+
+Do not begin from the user request alone. Verify branch, commits, open pull requests, code, and current state first.
+
+## Conductor model
 
 The main agent session is the conductor. It owns task framing, context selection, implementation decisions, verification, and the final response. Skills and subagents are specialists. They advise, review, or scout context; they do not replace the conductor and they do not perform broad implementation.
 
-## Task Types
+## Task types
 
 - `simple`: small edits, direct answers, formatting, or local command checks.
 - `feature`: user-facing or workflow behavior changes.
@@ -19,111 +32,116 @@ The main agent session is the conductor. It owns task framing, context selection
 - `privacy`: user data, local storage, sync, notifications, external job sources, plugins, or MCP.
 - `docs`: README, project docs, AI docs, ADRs, and docs sync.
 - `commit`: prepare a focused commit message and change summary.
-- `branch finish`: final verification, release notes, docs sync, and PR summary.
+- `branch finish`: final verification, release notes, docs sync, PR summary, and Duty Watch handoff.
 
-## Canonical Document Roles
+## Canonical document roles
 
-The project separates strategic documents from operational daily tracking:
+- `ROADMAP.md`: strategy, vision, and product principles.
+- `INSTRUCTIONS.md`: working agreement and engineering rules.
+- `STEP_BY_STEP_PLAN.md`: phased execution checklist.
+- `CHANGELOG.md`: historical record of shipped changes.
+- `PROJECT_CONTEXT.md`: durable product and architecture context.
+- `docs/product/CURRENT_STATE.md`: the single operational state file. Check it before feature work and update it when project status changes.
+- `DUTY_WATCH.md`: chronological handoff log between sessions and agents.
 
-- **ROADMAP.md**: Strategy / vision / product principles.
-- **INSTRUCTIONS.md**: Working agreement / engineering rules.
-- **STEP_BY_STEP_PLAN.md**: Phased execution checklist.
-- **CHANGELOG.md**: Historical record of shipped changes.
-- **docs/product/CURRENT_STATE.md**: Operational daily/focus state. Check this first before starting feature work.
+Do not create a duplicate `PROJECT_STATE.md`.
 
-## Plan Check (mandatory, every task)
+## Plan check, mandatory for every non-trivial task
 
-Before any non-trivial task, and before proposing what to work on next, read
-`docs/product/CURRENT_STATE.md` and locate the task in the plan. Then state, in one line each:
+Before implementing or proposing what to work on next, read `docs/product/CURRENT_STATE.md` and state briefly:
 
-1. **Where it sits**: the roadmap section, `STEP_BY_STEP_PLAN.md` phase, or `docs/product/IDEAS.md`
-   entry this task belongs to - or explicitly that it is off-plan and why it is still worth doing.
-2. **What is already shipped**: the part of the task that the code already does. Never plan or
-   rebuild something `CURRENT_STATE.md` or the code says is done.
-3. **Whether the state doc is stale**: if `CURRENT_STATE.md` disagrees with `main` (wrong branch,
-   wrong version, work described as pending that already merged), say so before starting.
+1. Where the task sits in the roadmap, `STEP_BY_STEP_PLAN.md`, or `docs/product/IDEAS.md`, or that it is off-plan and why it is still justified.
+2. What the repository already implements. Never rebuild something already shipped.
+3. Whether `CURRENT_STATE.md` disagrees with `main`, Git history, open PRs, or the code.
+4. Which validation rows from `docs/governance/VALIDATION_MATRIX.md` apply.
+5. Whether the task is privacy-sensitive or security-sensitive.
 
-A stale state doc is itself a finding - report it, do not silently work around it.
+A stale state file is a finding. Report and correct it rather than silently working around it.
 
-## Before Coding
+## Before coding
 
 1. Classify the task type.
-2. For `feature`, `debug`, or any other task that adds, changes, or fixes application code: create and switch to a new branch before editing (e.g. `feat/<slug>`, `fix/<slug>`). Never make feature/fix edits directly on `main`. Skip only for pure `docs`, `commit`, or `branch finish` tasks, or when the user is already on a dedicated branch for this exact task.
-3. Read `PROJECT_CONTEXT.md` and the smallest relevant docs or files.
-4. Use the AIF Context Gate for non-trivial work.
-5. State the working plan before editing when the change has meaningful blast radius.
+2. For feature, debug, fix, or other application-code work, create and switch to a dedicated branch before editing. Never make such edits directly on `main`.
+3. Read `PROJECT_CONTEXT.md` and the smallest relevant files.
+4. Use the context gate for non-trivial work.
+5. State a working plan when the change has meaningful blast radius.
 6. Do not read broad directories or generated outputs.
 7. Do not modify application source code unless the user explicitly asked for it.
 
-## After Coding
+## After coding and before commit
 
-1. Review the diff before summarizing.
-2. Run only relevant existing checks.
-3. Update docs when behavior, workflow, privacy, or security expectations change.
-4. Update `docs/product/CURRENT_STATE.md` and add a `CHANGELOG.md` `[Unreleased]` entry whenever the
-   task changes what the app does or where the work stands. The Plan Check reads this doc next time -
-   leaving it stale poisons the next task's starting point.
-5. Report changed files, verification, known gaps, and next steps.
-6. Recommend starting a fresh agent session after a completed task.
+1. Review the final diff.
+2. Run the smallest sufficient checks from `docs/governance/VALIDATION_MATRIX.md`.
+3. Run `npm run format:check` and `git diff --check` when available.
+4. Do not open a PR with a known formatting, lint, type, test, build, migration, or security failure unless the PR is explicitly documenting that blocked state.
+5. Update docs when behavior, workflow, privacy, security, architecture, migrations, or design expectations change.
+6. Update `docs/product/CURRENT_STATE.md` whenever the task changes current focus, implementation status, blockers, or next action.
+7. Append a truthful entry to `DUTY_WATCH.md` for every completed, partial, blocked, or rolled-back non-trivial watch.
+8. Add a `CHANGELOG.md` `[Unreleased]` entry when the user-visible product or shipped developer workflow changes.
+9. Report changed files, checks actually run, known gaps, and the concrete next first action.
+10. Recommend a fresh agent session after a large completed task.
 
-## Model Tiers
+A task is not complete when its required state update or Duty Watch handoff is missing.
+
+## Duty Watch evidence rules
+
+- Never claim a check passed unless it was run and observed.
+- Record failed, skipped, unavailable, and manual-only checks.
+- Do not declare a milestone complete without repository evidence.
+- Do not erase old watch entries to hide mistakes. Add a correcting entry.
+- Do not record secrets, personal data, credentials, private prompts, or hidden reasoning in the watch log.
+- The next first action must be specific and executable, not "continue development".
+
+## Model tiers
 
 - `fast`: simple edits, docs cleanup, short inspections.
 - `standard`: normal feature, test, docs, and review work. Use Claude Sonnet by default.
-- `deep`: architecture, security, privacy, hard debugging, cross-cutting refactors.
+- `deep`: architecture, security, privacy, hard debugging, and cross-cutting refactors.
 
 Escalate model depth only for task risk, ambiguity, or blast radius.
 
-## Context Gate
+## Context gate
 
-- Start with the user request, `AGENTS.md`, `CLAUDE.md`, and `PROJECT_CONTEXT.md`.
+- Start with the user request and the Duty Watch entry sequence above.
 - Read targeted files by path or symbol.
 - Do not read more than 8 files without explaining why.
 - Prefer diff-first and symbol-first context.
-- For structural code lookups (find a symbol, trace callers, map a module), prefer the `codebase-memory-mcp` graph tools before grep, find, or manual file walks. In this repo `codebase-memory-mcp` is the single graph tool of record; do not also reach for CodeGraph, so the two do not duplicate work.
+- For structural code lookups, prefer the configured `codebase-memory-mcp` graph tools before broad grep or manual file walks.
 - Do not read `node_modules`, `dist`, `.angular`, `coverage`, `target`, `src-tauri/target`, `.git`, logs, or generated files.
-- Do not configure or install Graphify, CodeGraph, Headroom, Context Mode, Token Optimizer, Superpowers, Browser Harness, Agent Reach, MCP, or other external tools in this PR.
+- Do not install or configure unrelated external tools in a task unless explicitly requested.
 
-## Git Workflow
+## Git workflow
 
-- Do feature/fix/change work on a dedicated branch (see Before Coding step 2), never directly on `main`.
-- Commit atomically: one logical change per commit, not one giant end-of-session commit.
-- Push after each commit on a feature branch, so remote stays in sync as work lands.
-- NEVER include "Co-authored-by" or mention AI assistants/agents in commit messages or pull request descriptions (e.g., "generated by Claude", "written by Codex"). Commits and PRs must be clean and authored entirely under the user's name.
+- Use a dedicated branch for feature, fix, and change work.
+- Commit atomically, one logical change per commit.
+- Push after each commit on a feature branch.
+- Never include `Co-authored-by`, agent names, model names, or generated-by attribution in commit messages or PR descriptions.
+- Do not merge, publish, tag, or release unless the user explicitly requests it and repository protections allow it.
 
-## Safety Rules
+## Safety rules
 
 - Never create real secrets, tokens, credentials, or production configs.
-- Never run destructive git commands.
+- Never run destructive Git commands.
 - Do not install dependencies or change `package.json` unless explicitly requested.
 - Treat auth, secrets, shell execution, browser automation, dependencies, MCP, and external tools as security-sensitive.
 - Treat user data, storage, sync, notifications, external job sources, plugins, and MCP as privacy-sensitive.
 - Ask before expanding scope beyond the current task.
 
-## Applye Conventions
+## Applye conventions
 
 - Core workflows must work offline.
 - AI features are opt-in, cached where practical, and token-frugal.
 - Shared types and IPC contracts belong in `libs/core`.
-- Data access abstractions belong in `libs/data`.
+- Data-access abstractions belong in `libs/data`.
 - Shared components and design tokens belong in `libs/ui`.
 - User-facing strings must go through `libs/i18n`.
 - AI assists; the user decides. Never auto-apply AI output.
 
-## Design Consistency (any UI change)
+## Design consistency for UI changes
 
-Applye has a fixed design system; keep it fixed. For any task that adds or changes UI:
-
-1. **Before building**, read `design-system/MASTER.md` (the design contract) and the
-   matching `design-system/pages/<page>.md` if one exists. The canonical token values
-   live in `libs/ui/tokens.css`. State which button variant, tokens, and typeface the
-   change uses before editing.
-2. **While building**, use `--token` values only - never raw hex, px, or rgba. Match the
-   component contracts in MASTER (buttons, inputs, cards, badges) exactly; do not skip
-   button states (hover, pressed, focus-visible ring, disabled). Route copy through i18n.
-3. **After building**, run `npx impeccable detect <changed-path>` (on-demand drift check,
-   no install) and reconcile findings against MASTER. Verify both `data-theme="dark"` and
-   `light`.
-4. If the user provides a design reference (link or mock), it overrides MASTER for that
-   screen - implement all of it (including button and control styling) and record the
-   deltas in `design-system/pages/<page>.md`.
+1. Before building, read `design-system/MASTER.md` and the matching page contract when present.
+2. Use design tokens only, never arbitrary values when a canonical token exists.
+3. Preserve hover, pressed, focus-visible, disabled, keyboard, light-theme, and dark-theme behavior.
+4. Route user-facing copy through i18n.
+5. Run the repository design-drift check when available and reconcile findings against the canonical design contract.
+6. If a user-provided design reference conflicts with the current page contract, implement the approved reference and record the deltas in the page documentation.

@@ -218,8 +218,22 @@ pub async fn fetch_job_from_url(url: String) -> Result<FetchedJob, String> {
     }
 }
 
+/// Same reason as `discover.rs`'s client and `ai/api.rs`'s: a bare
+/// `reqwest::Client::new()` has no timeout, so a board that accepts the
+/// connection and then stalls hangs the paste-from-link flow with no error and
+/// no way out. 30s matches the Discover scan's budget - this fetches the same
+/// kind of page.
+const FETCH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
+fn http_client() -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .timeout(FETCH_TIMEOUT)
+        .build()
+        .map_err(|e| format!("fetch_job_from_url: could not create the HTTP client: {e}"))
+}
+
 async fn get_json(url: &str) -> Result<serde_json::Value, String> {
-    reqwest::Client::new()
+    http_client()?
         .get(url)
         .header("accept", "application/json")
         .send()
@@ -233,7 +247,7 @@ async fn get_json(url: &str) -> Result<serde_json::Value, String> {
 }
 
 async fn get_text(url: &str) -> Result<String, String> {
-    reqwest::Client::new()
+    http_client()?
         .get(url)
         .send()
         .await

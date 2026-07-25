@@ -53,3 +53,17 @@ export interface DiscoverSource {
   /** The last ScanSourceResult for this source, JSON-encoded. */
   lastScanJson: string | null;
 }
+
+/** One source a market change would switch on or off. */
+export interface MarketSourceItem {
+  id: number;
+  name: string;
+  /** Host only - the confirmation names exactly what will be contacted. */
+  host: string;
+}
+
+/** What changing the local market would do to the built-in sources. */
+export interface MarketSourcePlan {
+  toEnable: MarketSourceItem[];
+  toDisable: MarketSourceItem[];
+}

@@ -19,8 +19,13 @@ import {
   encodeGeoScopes,
   GEO_SCOPE_KEYS,
   GeoScopeKey,
+  encodeLocalMarkets,
   LANGUAGE_NATIVE_NAMES,
+  LOCAL_MARKETS,
+  LocalMarket,
+  MarketSourcePlan,
   parseGeoScopes,
+  parseLocalMarkets,
   Settings,
   SupportedLanguage,
 } from '@applye/core';
@@ -30,6 +35,12 @@ import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models.util';
+import {
+  GeoTarget,
+  toggleMarket as toggleMarketIn,
+  toggleRegion,
+  worldwide,
+} from './geo-target.util';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -483,12 +494,15 @@ const CLI_MODELS: Record<string, string[]> = {
           </div>
         </section>
 
-        <!-- Job search scope (drives the Discover scan's geo filter) -->
+        <!-- Job search geo target: regions OR local markets, never both.
+             Whichever row the user touches becomes the active mode and clears
+             the other; the inactive row stays clickable so switching back is
+             one click, but is muted and says so. -->
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.jobsearch_section') }}</h3>
           <div class="field grow">
             <span class="cap">{{ t()('settings.geo_scope_label') }}</span>
-            <div class="geo-chips">
+            <div class="geo-chips" [class.geo-chips--muted]="marketModeActive()">
               <label class="geo-chip" [class.geo-chip--on]="geoWorldwideChecked()">
                 <input
                   type="checkbox"
@@ -508,7 +522,77 @@ const CLI_MODELS: Record<string, string[]> = {
                 </label>
               }
             </div>
-            <p class="hint">{{ t()('settings.geo_scope_hint') }}</p>
+            <p class="hint">
+              {{
+                marketModeActive()
+                  ? t()('settings.geo_scope_hint_muted')
+                  : t()('settings.geo_scope_hint')
+              }}
+            </p>
+          </div>
+          <div class="field grow">
+            <span class="cap">{{ t()('settings.local_market_label') }}</span>
+            <div class="geo-chips">
+              @for (market of localMarkets; track market) {
+                <label class="geo-chip" [class.geo-chip--on]="marketChecked(market)">
+                  <input
+                    type="checkbox"
+                    [checked]="marketChecked(market)"
+                    (change)="toggleMarket(market)"
+                  />
+                  {{ t()('settings.local_market_' + market) }}
+                </label>
+              }
+            </div>
+            <p class="hint">{{ t()('settings.local_market_hint') }}</p>
+            @if (marketPlan(); as plan) {
+              <div
+                class="confirm"
+                role="alertdialog"
+                [attr.aria-label]="t()('settings.market_sources_title')"
+              >
+                <p class="confirm__q">{{ t()('settings.market_sources_title') }}</p>
+                @if (plan.toEnable.length) {
+                  <p class="market-plan__label">{{ t()('settings.market_sources_enable') }}</p>
+                  <ul class="market-plan__list">
+                    @for (s of plan.toEnable; track s.id) {
+                      <li>
+                        {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (plan.toDisable.length) {
+                  <p class="market-plan__label">{{ t()('settings.market_sources_disable') }}</p>
+                  <ul class="market-plan__list">
+                    @for (s of plan.toDisable; track s.id) {
+                      <li>
+                        {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+                <p class="hint">{{ t()('settings.market_sources_note') }}</p>
+                <div class="confirm__actions">
+                  <button
+                    class="btn btn--primary btn--md"
+                    type="button"
+                    [disabled]="applyingPlan()"
+                    (click)="applyMarketPlan()"
+                  >
+                    {{ t()('settings.market_sources_apply') }}
+                  </button>
+                  <button
+                    class="btn btn--secondary btn--md"
+                    type="button"
+                    [disabled]="applyingPlan()"
+                    (click)="dismissMarketPlan()"
+                  >
+                    {{ t()('actions.cancel') }}
+                  </button>
+                </div>
+              </div>
+            }
           </div>
         </section>
 
@@ -563,7 +647,7 @@ const CLI_MODELS: Record<string, string[]> = {
         <section class="section">
           <h3 class="eyebrow">{{ t()('settings.test_section') }}</h3>
           <button
-            class="btn btn--primary btn--md test-btn"
+            class="btn btn--primary btn--md"
             [disabled]="testing() || !canTest()"
             (click)="testConnection()"
           >
@@ -811,7 +895,12 @@ const CLI_MODELS: Record<string, string[]> = {
         border-color: var(--accent);
         background: var(--surface-1);
       }
-      .test-btn {
+      /* .section is a stretch-aligned flex column, so a .btn dropped straight
+         into one spans the full card width - which no button in this layout
+         ever wants. Fixed for the class rather than per-button: "Re-run
+         onboarding" had this bug precisely because it lacked the one-off
+         override that "Send a test prompt" carried. */
+      .section > .btn {
         align-self: flex-start;
       }
       .toggle {
@@ -862,7 +951,13 @@ const CLI_MODELS: Record<string, string[]> = {
           color var(--dur-fast) var(--ease-standard);
       }
       .geo-chip:hover {
-        border-color: var(--border-strong, var(--text-tertiary));
+        border-color: var(--border-strong);
+      }
+      /* The checkbox inside is what actually takes focus, so the ring has to
+         be drawn by the label around it. */
+      .geo-chip:has(:focus-visible) {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
       .geo-chip input {
         margin: 0;
@@ -873,6 +968,35 @@ const CLI_MODELS: Record<string, string[]> = {
         background: var(--accent-tint);
         border-color: var(--accent);
         color: var(--text-accent);
+      }
+      /* The row that is not the active geo mode. Muted rather than disabled:
+         clicking a chip here is how the user switches back, so it must stay
+         reachable by mouse and keyboard. The hint below it says as much. */
+      .geo-chips--muted .geo-chip {
+        opacity: 0.45;
+      }
+      .geo-chips--muted .geo-chip:hover,
+      .geo-chips--muted .geo-chip:has(:focus-visible) {
+        opacity: 1;
+      }
+      .market-plan__label {
+        margin: var(--space-4) 0 var(--space-2);
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        letter-spacing: var(--tracking-wider);
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+      .market-plan__list {
+        margin: 0;
+        padding-left: var(--space-5);
+        font-size: var(--text-sm);
+        color: var(--text-secondary);
+      }
+      .market-plan__host {
+        font-family: var(--font-mono);
+        font-size: var(--text-2xs);
+        color: var(--text-tertiary);
       }
       .reply {
         margin-top: var(--space-4);
@@ -1223,48 +1347,145 @@ export class SettingsComponent implements OnInit {
     if (key === 'uiLanguage') this.i18n.setLocale(value as SupportedLanguage);
   }
 
-  // --- Job search geo scope ---
+  // --- Job search geo target ---
+  //
+  // One question ("where do you want to work?") answered in exactly one of two
+  // mutually exclusive modes:
+  //
+  //   regions  - geoScope holds continent keys, or is empty, which renders as
+  //              Worldwide (no restriction at all).
+  //   markets  - market holds country codes, and geoScope is cleared so the
+  //              regions take no part in the scan.
+  //
+  // Picking either side clears the other, so the pair can never both be set
+  // and the scan engine's "market first, else geoScope" read is unambiguous.
+  // Clearing the last market falls back to Worldwide, exactly as clearing the
+  // last region already did.
+  //
   // Auto-saves immediately on every toggle (like Discover's own source
   // toggles) instead of waiting for the page's explicit Save button - this
   // setting drives live Discover scan behavior, so a choice here must take
   // effect right away even if the user never touches Save.
   readonly geoScopeKeys = GEO_SCOPE_KEYS;
+  readonly localMarkets = LOCAL_MARKETS;
 
   readonly geoScopeSelected = computed<ReadonlySet<GeoScopeKey>>(
     () => new Set(parseGeoScopes(this.settings()?.geoScope)),
   );
 
+  readonly marketsSelected = computed<ReadonlySet<LocalMarket>>(
+    () => new Set(parseLocalMarkets(this.settings()?.market)),
+  );
+
+  /** True while local markets own the search, so the region row is inert. */
+  readonly marketModeActive = computed(() => this.marketsSelected().size > 0);
+
   geoScopeChecked(key: GeoScopeKey): boolean {
-    return this.geoScopeSelected().has(key);
+    return !this.marketModeActive() && this.geoScopeSelected().has(key);
   }
 
   geoWorldwideChecked(): boolean {
-    return this.geoScopeSelected().size === 0;
+    return !this.marketModeActive() && this.geoScopeSelected().size === 0;
   }
 
+  marketChecked(market: LocalMarket): boolean {
+    return this.marketsSelected().has(market);
+  }
+
+  /** Pending source changes for the market just picked, awaiting confirmation. */
+  protected readonly marketPlan = signal<MarketSourcePlan | null>(null);
+  protected readonly applyingPlan = signal(false);
+
+  /** Both halves as the pure state machine in geo-target.util sees them. */
+  private readonly geoTarget = computed<GeoTarget>(() => ({
+    scopes: [...this.geoScopeSelected()],
+    markets: [...this.marketsSelected()],
+  }));
+
+  /** Picking a region switches back to region mode, dropping every market.
+   * The pending confirmation belongs to the market that opened it and must
+   * not survive leaving market mode, so it is cleared before the new scope
+   * is persisted. */
   async toggleGeoScope(key: GeoScopeKey): Promise<void> {
-    const next = new Set(this.geoScopeSelected());
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    await this.persistGeoScopes([...next]);
+    this.marketPlan.set(null);
+    await this.persistGeoTarget(toggleRegion(this.geoTarget(), key));
   }
 
   async setGeoWorldwide(): Promise<void> {
+    this.marketPlan.set(null);
     if (this.geoWorldwideChecked()) return;
-    await this.persistGeoScopes([]);
+    await this.persistGeoTarget(worldwide());
   }
 
-  private async persistGeoScopes(next: GeoScopeKey[]): Promise<void> {
-    const prev = this.settings();
-    if (!prev) return;
-    const geoScope = encodeGeoScopes(next);
-    this.settings.set({ ...prev, geoScope }); // optimistic
+  /** Picking a market switches to market mode, dropping the region scope. */
+  async toggleMarket(market: LocalMarket): Promise<void> {
+    const next = toggleMarketIn(this.geoTarget(), market);
+    // Only offer to change sources if the market actually persisted. A rolled
+    // back save must never lead to enabling sources for a market the settings
+    // row does not hold - that would send requests on the user's behalf for a
+    // market they are not on.
+    if (await this.persistGeoTarget(next)) {
+      await this.offerMarketSources(next.markets);
+    }
+  }
+
+  /** Offers to switch built-in sources to match the market. Never writes by
+   * itself: a built-in source reaching the network is always the user's
+   * explicit choice, so this only prepares what the confirmation will show. */
+  private async offerMarketSources(markets: LocalMarket[]): Promise<void> {
+    if (!markets.length) {
+      this.marketPlan.set(null);
+      return;
+    }
     try {
-      await this.db.updateSettings({ geoScope });
+      const plan = await this.db.marketSourcePlan(markets);
+      const empty = !plan.toEnable.length && !plan.toDisable.length;
+      this.marketPlan.set(empty ? null : plan);
     } catch (e) {
-      console.error('settings: geo scope save failed', e);
+      console.error('settings: market source plan failed', e);
+      this.marketPlan.set(null);
+    }
+  }
+
+  async applyMarketPlan(): Promise<void> {
+    const plan = this.marketPlan();
+    if (!plan || this.applyingPlan()) return;
+    this.applyingPlan.set(true);
+    try {
+      await this.db.applyMarketSourcePlan(
+        plan.toEnable.map((s) => s.id),
+        plan.toDisable.map((s) => s.id),
+      );
+      this.marketPlan.set(null);
+      this.toast.success(this.t()('settings.saved'));
+    } catch (e) {
+      this.toast.error(String(e));
+    } finally {
+      this.applyingPlan.set(false);
+    }
+  }
+
+  dismissMarketPlan(): void {
+    this.marketPlan.set(null);
+  }
+
+  /** Writes both halves in one call - they change together or not at all.
+   * Returns whether the save actually persisted, so callers can avoid acting
+   * on a change that was rolled back. */
+  private async persistGeoTarget(next: GeoTarget): Promise<boolean> {
+    const prev = this.settings();
+    if (!prev) return false;
+    const geoScope = encodeGeoScopes(next.scopes);
+    const market = encodeLocalMarkets(next.markets);
+    this.settings.set({ ...prev, geoScope, market }); // optimistic
+    try {
+      await this.db.updateSettings({ geoScope, market });
+      return true;
+    } catch (e) {
+      console.error('settings: geo target save failed', e);
       this.settings.set(prev); // rollback
       this.toast.error(String(e));
+      return false;
     }
   }
 

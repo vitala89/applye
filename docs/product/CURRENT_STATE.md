@@ -1,20 +1,307 @@
 # Current Operational State
 
-- **Current version**: `0.26.0` (package.json / tauri.conf.json)
-- **Current branch / focus**: `feat/onboarding-welcome`, open since the 2026-07-24 session and
-  still unmerged. It now holds, in order: the design QA sweep and the migration of the topbar
-  buttons onto the design system, plus a footer scroll-spacing fix; an animated welcome screen
-  built from a Claude Design spec; removal of banned em and en dashes across the app; a dashboard
-  side-stripe fix and a profile header wrap fix; onboarding-to-profile sync fixes (website,
-  LinkedIn, education, spoken languages and salary were parsed but never reached the saved
-  profile; role and company were being merged into one string; a dateless entry rendered as
-  "Present"); and, most recently, the profile name first/last split with the onboarding confirm
-  nudge.
-- **Next action**: a `tauri dev` pass. Four features merged with **no native verification between
-  them** (CLI-bridge Settings + onboarding UI, the ATS card, the assisted installer, Interview
-  Prep batch generation), plus the work on `feat/onboarding-welcome` above - most notably the
-  first/last name confirm nudge, which has never been seen running natively since the browser
-  preview cannot reach Tauri IPC. This is the only thing standing between `main` and launch prep.
+- **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml)
+- **Current branch / focus**: none - `main`, clean tree. `feat/onboarding-welcome` merged as
+  PR #156 and cut release `0.28.0`.
+- **Merged: `feat/onboarding-welcome` -> PR #156, release 0.28.0.** Three strands. (1) The
+  **animated welcome screen**, built from the design spec, plus the topbar buttons moved onto the
+  design system, a footer scroll-spacing fix, a dashboard side-stripe fix and a profile header
+  wrap fix. Its vertical rhythm was drawn in fixed pixels and came to 822px, so any window shorter
+  than that scrolled; every step is now a `clamp()` on `vh` whose upper bound is the original spec
+  value, verified with no overflow at 700x600, 860x640 and 1000x700. (2) The **profile name split
+  into a first and a last name**. `fullName` stays canonical - still the markdown H1 and the CV
+  document title - and the parts sit beside it as `## Contact` lines carried by the existing
+  `CONTACT_FIELDS` machinery. `splitDisplayName` in `libs/core` is the only place that ever
+  guesses, and reports confidence only for an unambiguous two-token name. When the parse cannot
+  confirm the split, the onboarding review step nudges without ever blocking, and a test pins that
+  Continue stays enabled. A whole-branch review caught three defects that every per-task review had
+  passed, because all three lived between commits: an AI returning `firstName: ""` rather than
+  `null` destroyed the name; the write path recomposed family-name-first names in Western order,
+  which the prompt had just been taught to detect; and a hand-edited H1 in raw markdown drifted
+  from the parts and was then silently overwritten. The last two were fixed together by making the
+  display name independent and visible. (3) **Onboarding-to-profile sync fixes**: website, LinkedIn,
+  education, spoken languages and salary were parsed but never reached the saved profile, role and
+  company were merged into one string, and a dateless entry rendered as "Present".
+
+  Also in the release: a repo-wide pass on the banned em and en dashes. The earlier cleanup only
+  covered the translation strings, so dashes were still reaching users from exported CV and
+  cover-letter date ranges, messages raised from Rust, the document editors' region labels and the
+  Analytics empty placeholder. Three occurrences are deliberately kept, all parser inputs rather
+  than output - real job postings contain en dashes, and those tests are the proof that parsing
+  tolerates one. A boolean assertion in the CLI probe test that clippy rejected under `-D warnings`
+  was also minimised; that failure predated the branch.
+
+- **Next action**: a `tauri dev` pass on what has still never run natively. The welcome screen and
+  the name-split confirm step were verified natively before merge, but the CLI-bridge Settings and
+  onboarding UI, the ATS card, the assisted installer, and Interview Prep's CRUD (add/edit/delete/
+  reorder stages) have not been. The browser preview cannot reach Tauri IPC, so none of that has
+  been seen running. This is the only thing standing between `main` and launch prep.
+- **2026-07-24 session, uncommitted on `main`:**
+  - **Interview Prep AI generation UI removed** (workaround, not a fix). Native testing found the
+    "Generate" button hangs on "Generating...". Interview prep is slated to become its own larger
+    section later, so the generate button, the AI prep panel, and the component state behind them
+    (`generatePrep`, `togglePrep`, `cardsFor`, `formatFor`, `jdText`/`prepOpenId`/`prepCards`/
+    `generatingId` signals) were removed from
+    `interview-prep-detail.component.{ts,html,scss}` rather than patched. `list_interview_prep` /
+    `save_interview_prep_batch`, the `interview_prep` table, and the `interview-hr` /
+    `interview-technical` / `star-r` skills are untouched, ready for that section.
+  - **The hang was then root-caused and fixed** (`systematic-debugging`, later the same session).
+    It was **not** an Interview Prep bug at all: **every API-mode AI call used
+    `reqwest::Client::new()`, which carries no timeout of any kind.** A connection that was
+    accepted and then went quiet (dropped wifi, sleeping laptop, stalled provider) was awaited
+    indefinitely, `ai_run` never returned, the promise the UI awaited never settled, and so
+    `generatePrep`'s `finally { generatingId.set(null) }` never ran - hence a spinner that stops
+    for neither success nor error. Interview Prep was simply where it surfaced first: it is the
+    longest generation in the app (up to `DEFAULT_MAX_TOKENS` = 8192, non-streaming), and the ATS
+    card - the other thing being exercised that day - is computed locally in Rust with no API call
+    at all. The same defect sat in **every** API-mode feature: CV tailoring, cover letters,
+    scoring.
+    - Fixed in `ai/api.rs` with a shared `http_client()`: 600s whole-request budget (matching the
+      CLI bridge's existing `CLI_TIMEOUT`, which bounds the same unit of work) plus a 15s
+      `connect_timeout` split out, so an unreachable provider is reported in seconds instead of
+      consuming the full generation budget first.
+    - **Same defect swept for and found twice more**, in `commands/job_url.rs` (`get_json` /
+      `get_text`, the paste-from-link importer) - fixed there with a 30s budget matching
+      `discover.rs`. No untimed `reqwest` client remains in the crate.
+    - Pinned by a behavioural test, not just a compile check: a local TCP listener accepts the
+      connection and then answers nothing. **Verified red before green** - with the `.timeout()`
+      line removed the test FAILS after 30.01s (it only errors once the fake server drops the
+      socket; had the peer held it open, it would have waited forever); with the fix it passes in
+      0.31s.
+    - **Honest caveat**: the mechanism is proven and fixed, but this was diagnosed from code and
+      the user's stored settings (`ai_mode = api`, `provider = deepseek`), not reproduced live -
+      the GUI cannot be driven from here. If the hang recurs after this, the next suspects are
+      `saveInterviewPrepBatch` blocking on a busy SQLite lock, or the run genuinely taking longer
+      than 600s.
+    - **Two follow-ups for whoever rebuilds the section**, neither a hang and neither addressed:
+      (1) `generatePrep` had an early `return` when the computed `inputHash` already existed on a
+      loaded card - correct as a cache hit, but it renders as the button flashing and nothing
+      happening, with no message; (2) even at 600s, ten minutes of "Generating…" with no progress
+      and no cancel is poor. Streaming or a cancel button belongs in that rebuild.
+  - **Local markets shipped** (`docs/product/local-markets-analysis.md`, now marked implemented).
+    `settings.market: string | null` (migration `0023_local_market.sql`, Rust double-Option patch
+    so it can be explicitly cleared back to null); a Local Market picker in Settings' Job search
+    section, under the geoScope chips, auto-saving the same way geoScope does; the Discover Sources
+    drawer now filters built-in sources to the chosen market plus worldwide ones, behind a "show
+    all sources" toggle - user-added sources are never filtered. Seven new built-in sources, all
+    shipped **disabled** (migration `0024_local_market_sources.sql`), every endpoint probed live
+    both in the prior research session and again just now via `cargo test -- --ignored
+live_tier2_sources_fetch_and_parse`, which passed for all 10 built-ins (3 existing + 7 new):
+    DOU.ua, Djinni.co, Habr Career, Jobicy (plain RSS, zero parser code), TrudVsem, Arbeitnow, No
+    Fluff Jobs (new JSON parsers - No Fluff Jobs needed `?salaryCurrency=PLN&salaryPeriod=month&region=pl`
+    query params to avoid a 400, found live rather than assumed). `EUROPE_COUNTRIES` in
+    `discover.rs` gained `"russia"`/`"russian federation"` tokens so TrudVsem's Cyrillic
+    `region.name` (with ", Russia" appended, same pattern as Arbeitsagentur's ", Deutschland")
+    matches a Europe geoScope. **Known gap, not fixed**: Habr Career puts the city in the RSS
+    title, e.g. "Требуется DevOps (Москва)", and the shared `parse_rss_items` was deliberately left
+    untouched (the zero-parser-code promise for the four RSS sources), so Habr postings get no
+    location and fall into "Other" under a restrictive geoScope - only visible with geoScope set to
+    worldwide or with Russia's continent included. Extracting the city would mean parsing
+    parenthesised text out of titles in the _shared_ RSS parser, which risks false positives on
+    every other RSS source (WWR, user-added feeds) and needs its own design pass, not a quick
+    patch. Gates run clean: `cargo test --lib` (245 passed), `cargo clippy -- -D warnings` (0
+    warnings), `nx run-many -t test --all` (6 projects), `nx lint desktop` (0 errors, pre-existing
+    warnings only), `nx build desktop`. Not verified natively (Settings picker, Sources drawer
+    toggle, an actual scan of a new source) - covered by the `tauri dev` pass above.
+  - **Design polish: nonexistent CSS token sweep.** Cross-checked every `var(--...)` in
+    `apps/desktop/src` against `libs/ui/tokens.css`. Found the same failure mode a prior session
+    hit with `--border`/`--surface-raised`: names that read like tokens but were never defined.
+    Eight fixed across six files - `--text-base`, `--text-2xl`, `--text-lg` (x3), `--text-md`
+    (x2), `--border`, `--text-xl` - swapped for the real token with the closest size/semantic
+    match (`--text-body`, `--text-h2`, `--text-h3`, `--border-subtle`, `--text-h1`). Some had no
+    CSS fallback, so were a real (if quiet) styling bug: an invalid `var()` with no fallback makes
+    the whole declaration invalid at computed-value time, so `border` disappeared entirely on
+    `first-launch.component.ts`'s card instead of rendering `--border-subtle`. **Left alone, not
+    fixed**: `--radius-md`, `--radius-modal`, `--motion-fast`, `--ok`, `--surface`,
+    `--text-caption`, `--text-quaternary`, `--warning-strong` are the same pattern but every one
+    carries a safe CSS fallback already, so nothing renders wrong today - swapping them to a real
+    token risks an unverified visual size change with no native run available to check it
+    against. Also confirmed as **not bugs** (false positives from the token-name check): `--cv-*`,
+    `--col-accent`, `--ana-neutral-fill` are all real custom properties, just set dynamically
+    per-instance (inline `[style.--x]` bindings or a component-scoped `:host` block) rather than
+    declared globally in `tokens.css` - by design, not an oversight.
+  - **Live bug found and fixed after the user's native `tauri dev` run: built-in sources with a
+    hardcoded id can silently fail to install.** The run panicked first on a migration-checksum
+    mismatch (`migration 24 was previously applied but has been modified` - migration `0024`'s
+    No Fluff Jobs URL had been edited, adding the required query params, after an earlier
+    background run had already applied the pre-fix version). Investigating the real dev DB
+    surfaced a worse, pre-existing bug: `sources.id` is an ordinary autoincrementing column that
+    user-added sources consume too, and both this session's migration `0024` (ids 5-11) and the
+    already-shipped `0021` (`Bundesagentur fuer Arbeit`, id=4) hardcoded low explicit ids assuming
+    they were free. On this real database - 4 custom sources already at ids 5-8 - the inserts for
+    those ids silently no-op on the primary-key conflict instead of erroring, so **Bundesagentur
+    fuer Arbeit was never actually installed despite `0021` shipping weeks ago**, and DOU.ua /
+    Djinni.co / Habr Career / Jobicy were about to repeat the same silent failure. Fixed by
+    renumbering: `0024_sources_url_unique_index.sql` (new, safe to renumber - unpushed) adds a
+    partial unique index on `sources.url` (excluding the empty-url ATS-slug rows) and backfills
+    Bundesagentur fuer Arbeit via `INSERT OR IGNORE` keyed on that index; `0025_local_market_sources.sql`
+    (renamed from the old `0024`) now omits `id` entirely, same as a user-added source would get.
+    Verified against the actual affected database (a throwaway, never-committed
+    `#[ignore]`d test calling the real `Db::init` against the real app-data path, then deleted):
+    all 7 local-market sources plus the backfilled Bundesagentur row now present with correct
+    URLs, the 4 pre-existing custom sources and the 3 already-shipped built-ins untouched, no
+    duplicates. `cargo test --lib` (245 passed) and `cargo clippy -- -D warnings` (clean) re-run
+    after the fix. **Not yet re-verified with an actual `tauri dev` run** - the user's next one
+    should now start cleanly; if it does not, this is the first place to look.
+  - **Geo targeting reworked into two mutually exclusive modes** (after the user reviewed the first
+    cut natively and found the logic wrong: a local market left the continent chips checked and
+    still scanning, so "France" really meant "France plus all of Europe"). There is now one
+    question, "where do you want to work?", answered in exactly one mode: **regions**
+    (`geoScope` = continents, or empty = Worldwide) **or local markets** (`market` = country
+    codes). Picking either side clears the other, so the pair is never both set; clearing the last
+    market lands on Worldwide, exactly as clearing the last region already did. `market` changed
+    from a single nullable code to a JSON array (same shape and legacy-scalar tolerance as
+    `geoScope`; no migration - the column is TEXT and `parseLocalMarkets` reads the old bare `"fr"`
+    as `["fr"]`). The Rust patch field dropped its double-`Option` in the process: `"[]"` is now
+    the empty state, so plain COALESCE works exactly as it does for `geo_scope`. - **Markets now actually filter the scan**, which the first cut did not do - it only narrowed
+    the Sources drawer, so the setting looked live but changed nothing about which jobs arrived.
+    They feed `build_geo_cfg`'s second parameter, which already existed for country codes and
+    was being fed from the `geo_filters` table. That table is **dead**: created in migration
+    0001, never written by any frontend code, empty on this install, so `active_codes` has
+    always been `[]` in practice. Markets take that slot when set; the region path still reads
+    `geo_filters` so nothing is silently removed. `country_tokens()` gained `ru` and `ua` with
+    both Cyrillic and Latin spellings of the major cities - TrudVsem returns `region.name` as
+    "Москва" and Habr Career puts the city in the title, so a Latin-only list would have dropped
+    the entire Russian market. This also partly closes the Habr city-in-title gap noted above:
+    a Russian city in a title still is not extracted into `location`, but a market-mode search
+    no longer depends on that, because empty locations pass anyway. - **Remote postings still pass in either mode** - unchanged, deliberate, and now pinned by a
+    test that says so. A remote job is not "somewhere else". - UI: local markets are chips in the same vocabulary as the region chips (the full-width
+    `<select>` is gone). The inactive row is **muted, not `disabled`** - the user asked for both
+    "disabled" and "clicking a region turns the market off", and only muted-but-clickable
+    satisfies both; the hint under it changes to say what is going on. Chips also gained the
+    `:focus-visible` ring they never had. **Worth a second opinion on the next native pass**: if
+    muted-but-clickable reads as broken rather than as inactive, hard `disabled` plus an
+    explicit "switch to regions" affordance is the alternative. - **Review pass afterwards found two more defects in this same work, both fixed:**
+    (1) the Sources drawer's "show all sources" checkbox was a one-way door - `hiddenBuiltinCount`
+    was derived from the _visible_ list, so switching the override on drove the count to zero and
+    unmounted the checkbox that switches it back. The narrowed set is now computed independently
+    of the override. (2) **A source hidden by the market filter was still being scanned**: the
+    scan selects `WHERE is_enabled = 1` and knows nothing about markets, so an enabled source the
+    drawer had hidden kept fetching from a server the user could no longer see listed or switch
+    off - unacceptable in a privacy-first app. An enabled source is now never hidden, whatever
+    its tags. Both rules moved into the pure, tested `discover-sources.util.ts`, and the
+    mode-switching invariant into `geo-target.util.ts` (whose spec asserts the two sides are
+    never both set, across an arbitrary click sequence) - the same "make it pure and pin it"
+    treatment `cli-models.util.ts` got, and for the same reason: this is exactly the class of
+    bug that was just reported. - Checked and found sound, no change needed: onboarding never writes `geoScope`/`market`, so it
+    cannot desync; Settings' explicit Save re-sends the same values harmlessly; Discover reloads
+    settings in its constructor, so a market changed in Settings is picked up on navigation; a
+    pre-upgrade row holding both a legacy scalar `market` and a stale `geo_scope` self-heals,
+    because market is read first and the next toggle rewrites both. - Verified: `cargo test --lib` (251), `cargo clippy -- -D warnings`, `nx run-many -t test`
+    (core 205 incl. a new `local-market.spec.ts`, desktop 657), `nx lint desktop`, `nx build
+desktop`. **Not verified natively** - the browser preview cannot render Settings at all
+    (it renders only under `@else if (settings(); as s)`, and `getSettings()` needs Tauri IPC),
+    so the chips, the muted state and the mode switch have not been seen running.
+  - **Local markets now drive source selection and result filtering, not just the Sources drawer
+    narrowing** (`docs/superpowers/specs/2026-07-24-market-driven-sources-design.md`, status
+    `implemented 2026-07-24`). `country_tokens()` in `commands/discover.rs` was brought to equal
+    depth for all eight local markets (`de`, `gb`, `us`, `ru`, `es`, `fr`, `ua`, `pl`), which
+    previously had city lists only for `de`, `ru` and `ua`. Added `US_STATE_NAMES` (all 51 full
+    state names) and `US_STATE_CODES` - the code list is deliberately partial: a two-letter state
+    code that is also an assigned ISO 3166-1 alpha-2 country code was left out, because the
+    matcher is case-insensitive and cannot tell "Tunis, TN" from "Nashville, TN". Thirteen such
+    codes were removed across three review rounds (`il`, `ma`, `co`, `md`, `pa`, `va`, `mo`, `nc`,
+    `sc`, `ga`, `az`, `mn`, `tn`). `"ca"` is the one deliberate exception, kept for California,
+    with Canada's bare `"ca"` token dropped in exchange - a real trade, not a free fix. `"georgia"`
+    is knowingly ambiguous with the country and was kept on purpose: dropping it would silently
+    lose US-state jobs, keeping it only risks an occasional visible, dismissible wrong result in
+    the other direction, and visible-and-dismissible beats silent-and-lost. `"ukraine"` was added
+    to `EUROPE_COUNTRIES`, which had omitted it, so region-mode Europe had been dropping Kyiv jobs
+    outright.
+    - **A strict market mode in the geo filter.** `build_market_cfg`, an `elsewhere` token set on
+      `GeoCfg`, and `geo_passes` rewritten to check, in order: market tokens, then "names somewhere
+      else", then remote markers, then drop. The order is the actual fix - previously the remote
+      check ran first, so "Remote - US only" passed a Ukraine-market search on the strength of the
+      word "Remote".
+    - **The scan now passes a real per-source flag**: a source whose `geo_tags_json` names a
+      selected market vouches for its own jobs and they all pass, because national boards
+      routinely publish no location field at all. A `worldwide` tag does not earn that vouch.
+    - **Two new Tauri commands**: `db_market_source_plan` (read-only) and
+      `db_apply_market_source_plan` (one transaction, both statements asserting `is_builtin = 1`
+      so a user-added source can never be silently toggled by a market switch).
+    - **Settings gained an inline confirmation** in the Job search section that names the exact
+      hosts before any source is switched on or off when a market is picked, reusing the existing
+      `.confirm` pattern rather than a modal. Cancel touches nothing. Clearing the last market
+      shows no confirmation at all - there is nothing to turn off.
+    - **Not verified natively.** None of the above - the confirmation copy, the plan/apply
+      round-trip, the strict-mode filter change, or the source auto-vouching - has been seen
+      running in `tauri dev`. The plan's own verification section lists four scenarios (pick
+      Ukraine and check the confirmation and Cancel/Apply; scan and confirm DOU/Djinni jobs with no
+      location are kept while worldwide sources are filtered; clear to Worldwide and confirm no
+      confirmation appears; repeat with Germany and Poland to confirm the flow is market-agnostic)
+      and none of them have been run yet.
+  - **Market coverage and rescan-on-change** (`docs/superpowers/plans/2026-07-24-market-coverage-and-rescan.md`).
+    Two more gaps found in the same round of live testing as the entry above, once a market
+    without a source was actually picked: switching to a market with no seeded source left the
+    previous market's sources scanning (a disable-only plan is suppressed, so nothing happened),
+    and the Discover feed kept showing the previous market's jobs regardless, because it is a
+    persistent list that is never re-filtered when the market changes.
+    - **`LOCAL_MARKETS` shrunk to the five markets that actually have a source**: `de`, `us`,
+      `ru`, `ua`, `pl` (`libs/core/src/lib/geo/local-market.ts`). `gb`, `es`, `fr` are removed
+      from the pickable type and array, and from Rust's `KNOWN_LOCAL_MARKETS`
+      (`commands/discover.rs`) and its parity test's `cases`. Their location tokens are
+      deliberately left in `country_tokens()` / `KNOWN_COUNTRY_CODES` - unchanged - so a UK, Spain
+      or France job still counts as "elsewhere" when filtering the five remaining markets; only
+      the pickable list shrank. Any of the three returns the moment a built-in source is added
+      for it.
+    - **`settings.last_scan_market: TEXT` added** (migration `0026_settings_last_scan_market.sql`,
+      additive, NULL until the first scan). `discover_scan` writes the raw `market` value it ran
+      under via a small helper, `record_scan_market`, factored out so a unit test can exercise the
+      real write path against a migrated DB rather than a hand-copied UPDATE; the scan ignores the
+      write's own result so a failed record never fails the scan. Surfaced to the frontend as
+      `Settings.lastScanMarket: string | null` (`libs/core/src/lib/models/settings.model.ts`),
+      picked up automatically since `db_get_settings` does `SELECT *`. Deliberately excluded from
+      `SettingsPatch` and the update statement - it is not user-editable.
+    - **Discover shows a banner when the current market no longer matches `lastScanMarket`**, with
+      a Refresh button that clears the unsaved scan results and reruns the scan for the current
+      market. Saved and dismissed jobs are untouched by both the mismatch check and the refresh -
+      only the unsaved `discover_scan` feed rows are cleared. The refresh path is guarded by a
+      `refreshingForMarket` signal (added in a same-task review round after a fast double-click
+      was found able to fire two concurrent clear+scan calls) so it cannot overlap with itself or
+      with a manual scan.
+    - **Not verified natively.** All of the above - the shrunk market list actually showing five
+      options in Settings, the banner appearing and disappearing at the right times, and a
+      refresh actually swapping the feed's jobs while leaving saved/dismissed ones alone - has
+      only been checked with `cargo test`, `nx test`/`lint`/`build`, and code review; none of it
+      has been seen running in `tauri dev`. The plan's own verification section lists four
+      scenarios: the market picker lists exactly the five sourced markets; picking Germany, then
+      Applying, shows the banner and Refresh yields German jobs with the banner gone; switching to
+      Russia and refreshing removes the German jobs and shows Russian ones; reloading Discover
+      without changing the market shows no banner. None of the four have been run yet.
+  - **No Fluff Jobs now fetches its real posting content instead of a three-word stub**
+    (`docs/superpowers/plans/2026-07-24-nofluffjobs-detail-fetch.md`). No Fluff Jobs' list endpoint
+    carries no description at all - `parse_nofluffjobs` had always stored just `category /
+technology / seniority` as `jd_text`, which starved everything downstream that reads job
+    description text: the Discover detail view, the salary line, skill detection and the raw
+    keyword score, for every No Fluff Jobs posting since it shipped. Fixed the same way
+    Arbeitsagentur already was: `parse_nofluffjobs` now also computes `detail_ref` (the raw slug,
+    `None` when it is empty or already an absolute `http` URL), and a new
+    `fetch_nofluffjobs_detail(client, slug)` hits `GET https://nofluffjobs.com/api/posting/{slug}`
+    through the existing `get_json` + `percent_encode_segment` helpers. A new pure
+    `parse_nofluffjobs_detail(&serde_json::Value) -> String` builds structured text from the
+    response - `Requirements:` (musts), `Nice to have:` (nices), the HTML-stripped requirements
+    description, `Responsibilities:` (dailyTasks), and a `Salary:` line via
+    `nofluffjobs_salary_line`. The scan's detail-resolve block in `discover_scan` is now
+    source-aware instead of Arbeitsagentur-only: it dispatches on `src.source_type` -
+    `api_arbeitsagentur` keeps calling `fetch_arbeitsagentur_detail`, `api_nofluffjobs` now calls
+    `fetch_nofluffjobs_detail`, anything else still resolves to an empty string - and both sources
+    share the same per-scan detail budget (60 detail requests, spent only on jobs that survive the
+    local title/geo filters). Separately, `CURRENCY_MARKER` in
+    `libs/core/src/lib/profile/compensation.ts` gained `\bPLN\b`, so `extractSalaryFromJd` no
+    longer silently drops a złoty-quoted salary line - it previously recognised only euro, pound,
+    dollar, EUR, USD and GBP. **Not natively verified beyond a live smoke check**: an ignored
+    `live_nofluffjobs_detail_smoke` test hit the real detail endpoint once (1444 chars returned,
+    well past the 100-char sanity threshold) and was then deleted, per the plan, before committing - a real Discover scan against a live Poland-market posting, confirming the Requirements /
+    Nice to have / Responsibilities / Salary sections and the PLN badge render, still needs a
+    `tauri dev` pass.
+  - **Fixed: a button alone in a Settings card stretched to full width.** `.section` is a
+    stretch-aligned flex column, so any `.btn` dropped directly into one filled the card;
+    "Send a test prompt" only looked right because it carried a one-off `.test-btn { align-self }`
+    override. Replaced with `.section > .btn { align-self: flex-start }` and the one-off deleted,
+    so the next button added cannot inherit the bug. Onboarding's own `<select>` was checked and
+    is fine (fixed height inside a centered flex row); the report was about this Settings button.
+  - Not done this session (deferred, see Task 3 in the original prompt): a second general bug pass
+    beyond the token sweep above. Next session can pick this up directly.
 - **Merged: `fix/cli-bridge-probe-and-models` → PR #153.** Two defects found in the first live
   CLI-bridge run, then five more found while checking the surface end to end. (1) `cli_probe` only
   checked that a file with the right name existed on the search path, so a partially installed

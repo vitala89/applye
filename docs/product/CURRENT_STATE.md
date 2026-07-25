@@ -2,9 +2,29 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `chore/release-readiness-audit` - a pre-release wiring and gate
-  audit, open as PR #157 against `main`. Not merged yet.
-- **On `chore/release-readiness-audit`: pre-release audit of section wiring and validation gates.**
+- **Current branch / focus**: `feat/i18n-complete-locales` - finishing the four stub locales, so
+  the UI is genuinely available in all six shipped languages. Not merged yet.
+- **On `feat/i18n-complete-locales`: ru, es, fr and uk are complete.** The previous entry fixed the
+  merge that dropped labels from those four locales, but only 33-36 of 1438 keys were ever
+  translated in each: they covered `nav`, `actions`, `status`, `ai` and `common`, and every other
+  section - `documents` (272 keys), `jobs` (242), `profile` (154), `onboarding` (145), `discover`
+  (133) and the rest - rendered in English. The key-set parity test could not see it, because the
+  keys were all present, holding English strings. All four are now translated in full: 1438 of 1438
+  keys each, matching `de`, which was already at 95%. Two structural changes came with it.
+  `translations.ts` was one 3471-line file; it is now one file per locale (`en`, `de`, `ru`, `es`,
+  `fr`, `uk`) plus `merge.ts`, `types.ts` and a 13-line `translations.ts` that only assembles
+  `TRANSLATIONS`. And a second test now asserts that no locale's value equals the English one
+  unless the key is listed in `SHARED_WITH_ENGLISH` - 122 entries covering product names, URLs,
+  placeholders, empty strings and genuine cognates - so a locale cannot quietly revert to English
+  again. The locales still go through `stub(en, ...)`: nothing falls back today, but a key added to
+  `en` tomorrow renders in English rather than as a raw dotted key. **One gate moved:** six complete
+  locales pushed the desktop initial bundle from 692.69 kB to 1.26 MB raw (173.86 kB to 240.53 kB
+  transferred) and broke the `1mb` error budget in `apps/desktop/project.json`, which was set when
+  four locales were 5 kB stubs. Raised to `1300kb` warning / `1500kb` error, with the reasoning in
+  `libs/i18n/README.md`: Applye loads its assets from local disk, so the cost is parse time, not
+  download, and lazy-loading locales would mean making the synchronous `tFor()` async.
+- **Merged: `chore/release-readiness-audit` -> PR #157. Pre-release audit of section wiring and
+  validation gates.**
   Every cross-section link and every Tauri contract was checked mechanically rather than by eye.
   **Clean:** all 19 routes resolve, every route is reachable from the shell nav or another section,
   and no link points at a route that does not exist; all 91 Rust `#[tauri::command]` functions are

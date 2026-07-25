@@ -81,10 +81,9 @@ describe('i18n keys', () => {
 
     expect(missing).toEqual([]);
   });
-
-  it('TRANSLATIONS.de has the same key set as TRANSLATIONS.en (no silent drift)', () => {
-    const en = flatten(TRANSLATIONS.en as unknown as Record<string, unknown>);
-    const de = flatten(TRANSLATIONS.de as unknown as Record<string, unknown>);
-    expect([...de].sort()).toEqual([...en].sort());
-  });
 });
+
+// Key-set parity across locales, and the check that a locale has not silently
+// reverted to English, live next to the data in
+// libs/i18n/src/lib/translations/translations.spec.ts - they cover all five
+// translated locales rather than de alone.

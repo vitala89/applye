@@ -748,6 +748,8 @@ export class OnboardingComponent {
       email: this.reviewEmail(),
       phone: this.reviewPhone(),
       address: this.reviewAddress(),
+      parsedFullName: this.parsedCv()?.personalDetails.fullName ?? '',
+      nameEdited: this.nameEdited(),
     };
   }
 

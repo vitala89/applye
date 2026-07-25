@@ -374,6 +374,18 @@ interface ParsedProfile {
 
           @if (!rawMode()) {
             <div class="form-cards">
+              <div class="field">
+                <label class="field__label" for="field-document-name">{{
+                  t()('profile.field_document_name')
+                }}</label>
+                <input
+                  id="field-document-name"
+                  class="field__input"
+                  type="text"
+                  [ngModel]="form().name"
+                  (ngModelChange)="updateField('name', $event)"
+                />
+              </div>
               <div class="field-row">
                 <div class="field">
                   <label class="field__label" for="field-first-name">{{
@@ -2190,13 +2202,15 @@ export class ProfileComponent implements OnInit {
   updateField<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]): void {
     this.form.update((f) => {
       const next = { ...f, [key]: value };
-      // Editing a name part recomposes the display name, so the `# H1` and the
-      // Contact lines can never disagree. Only when the parts produce something:
-      // clearing both must not silently wipe a display name the user set by
-      // hand in raw mode.
+      // The display name follows the parts until the user touches it. On a part
+      // edit it is recomposed only while it still reads exactly as the previous
+      // parts composed - a name typed by hand (in the display name field or in
+      // raw markdown) is deliberate and must survive later part edits. Only when
+      // the parts produce something: clearing both must not wipe the name.
       if (key === 'firstName' || key === 'lastName') {
+        const previous = [f.firstName.trim(), f.lastName.trim()].filter(Boolean).join(' ');
         const composed = [next.firstName.trim(), next.lastName.trim()].filter(Boolean).join(' ');
-        if (composed) next.name = composed;
+        if (composed && f.name.trim() === previous) next.name = composed;
       }
       return next;
     });

@@ -130,13 +130,20 @@ export function pickCvTemplate(templates: CvTemplate[], regionTag: string): CvTe
 }
 
 export interface OnboardingCvOverrides {
-  /** The review step edits the parts, never the display name: the display name
-   * is composed from them, so the H1 and the Contact lines cannot disagree. */
+  /** The review step edits the parts, never the display name. The display name
+   * is composed from them only when the user actually edited one - see
+   * `applyContactOverrides`. */
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   address: string;
+  /** The display name exactly as the resume carried it. Kept as-is unless the
+   * user edited a part, so a family-name-first name is not reordered. */
+  parsedFullName: string;
+  /** The review step's `nameEdited` signal: true once the user touched either
+   * name field. */
+  nameEdited: boolean;
 }
 
 /** The review step seeds its inputs from the parse, so a blank field means the
@@ -153,8 +160,16 @@ export function applyContactOverrides(overrides: OnboardingCvOverrides): {
 } {
   const firstName = overrides.firstName.trim();
   const lastName = overrides.lastName.trim();
+  // Composing unconditionally reorders every family-name-first name: the review
+  // step asks the user to confirm `Kim Minjun` split into Minjun/Kim, they agree
+  // without editing, and the profile H1 would come back "Minjun Kim". So the
+  // composition only applies once the user actually edited a part; otherwise the
+  // resume's own display name stands, and the composition is only a fallback for
+  // a parse that carried no display name at all.
+  const composed = [firstName, lastName].filter(Boolean).join(' ');
+  const parsedFullName = overrides.parsedFullName.trim();
   return {
-    fullName: [firstName, lastName].filter(Boolean).join(' ') || null,
+    fullName: (overrides.nameEdited ? composed : parsedFullName || composed) || null,
     firstName: firstName || null,
     lastName: lastName || null,
     email: overrides.email.trim() || null,

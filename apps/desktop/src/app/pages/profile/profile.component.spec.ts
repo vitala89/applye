@@ -79,4 +79,30 @@ describe('name backfill', () => {
     c.updateField('lastName', 'Nowak');
     expect(c.form().name).toBe('Anna Nowak');
   });
+
+  it('never blanks the display name when both parts are cleared', () => {
+    const c = createComponent();
+    c.applyLoadedMarkdown('# Anna Kowalska');
+    c.updateField('firstName', '');
+    c.updateField('lastName', '');
+    // A composition that comes out empty never overwrites, so the last
+    // non-empty one stands and the generated documents keep a name on them.
+    expect(c.form().name).toBe('Kowalska');
+  });
+
+  it('leaves a hand-set display name alone when a part is edited afterwards', () => {
+    const c = createComponent();
+    c.applyLoadedMarkdown('# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska');
+    c.updateField('firstName', 'Ania');
+    expect(c.form().name).toBe('Anna Nowak');
+    expect(c.form().firstName).toBe('Ania');
+  });
+
+  it('follows the parts again once the display name matches them', () => {
+    const c = createComponent();
+    c.applyLoadedMarkdown('# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska');
+    c.updateField('name', 'Anna Kowalska');
+    c.updateField('lastName', 'Nowak');
+    expect(c.form().name).toBe('Anna Nowak');
+  });
 });

@@ -73,7 +73,15 @@ describe('pickCvTemplate', () => {
 });
 
 describe('buildOnboardingCvInput', () => {
-  const overrides = { firstName: '', lastName: '', email: '', phone: '', address: '' };
+  const overrides = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    parsedFullName: '',
+    nameEdited: true,
+  };
   const base = {
     parsed: parsedCv(),
     overrides,
@@ -104,11 +112,12 @@ describe('buildOnboardingCvInput', () => {
     const input = buildOnboardingCvInput({
       ...base,
       overrides: {
+        ...overrides,
         firstName: 'Jane',
         lastName: 'S. Smith',
         email: 'new@x.io',
         phone: '+49 30 000',
-        address: '',
+        parsedFullName: 'Jane Smith',
       },
     });
     expect(input.label).toBe('Jane S. Smith');
@@ -119,17 +128,41 @@ describe('buildOnboardingCvInput', () => {
     const input = buildOnboardingCvInput({
       ...base,
       overrides: {
+        ...overrides,
         firstName: 'Jane',
         lastName: 'Smith',
         email: 'jane@x.io',
-        phone: '',
-        address: '',
       },
     });
     // The review inputs are seeded from the parse, so blank means deleted.
     // A phone cleared for privacy must not reappear on the exported CV.
     expect(input.contentJson).not.toContain('+49 30 000');
     expect(input.contentJson).not.toContain('Berlin');
+  });
+
+  it('titles the CV with the resume name when the user confirmed the split untouched', () => {
+    const input = buildOnboardingCvInput({
+      ...base,
+      parsed: parsedCv({
+        personalDetails: {
+          fullName: 'Kim Minjun',
+          title: null,
+          email: null,
+          phone: null,
+          address: null,
+          website: null,
+          linkedin: null,
+        },
+      }),
+      overrides: {
+        ...overrides,
+        firstName: 'Minjun',
+        lastName: 'Kim',
+        parsedFullName: 'Kim Minjun',
+        nameEdited: false,
+      },
+    });
+    expect(input.label).toBe('Kim Minjun');
   });
 
   it('keeps parsed fields the review step never exposes', () => {
@@ -210,6 +243,8 @@ describe('applyContactOverrides', () => {
         email: '',
         phone: '  ',
         address: 'Berlin',
+        parsedFullName: '',
+        nameEdited: true,
       }),
     ).toEqual({
       fullName: 'Jane',
@@ -459,6 +494,8 @@ describe('first and last name', () => {
         email: '',
         phone: '',
         address: '',
+        parsedFullName: 'Anna Nowak',
+        nameEdited: true,
       }),
     ).toEqual({
       fullName: 'Anna Kowalska',
@@ -478,13 +515,65 @@ describe('first and last name', () => {
         email: '',
         phone: '',
         address: '',
+        parsedFullName: '',
+        nameEdited: true,
       }),
     ).toMatchObject({ fullName: 'Prince', firstName: 'Prince', lastName: null });
   });
 
   it('reports no display name when both parts are blank', () => {
     expect(
-      applyContactOverrides({ firstName: '  ', lastName: '', email: '', phone: '', address: '' }),
+      applyContactOverrides({
+        firstName: '  ',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: '',
+        nameEdited: true,
+      }),
     ).toMatchObject({ fullName: null, firstName: null, lastName: null });
+  });
+
+  it('keeps the parsed display name when the user confirmed the split untouched', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Minjun',
+        lastName: 'Kim',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: 'Kim Minjun',
+        nameEdited: false,
+      }),
+    ).toMatchObject({ fullName: 'Kim Minjun', firstName: 'Minjun', lastName: 'Kim' });
+  });
+
+  it('composes the display name once the user edits a part', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Minjun',
+        lastName: 'Kim',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: 'Kim Minjun',
+        nameEdited: true,
+      }),
+    ).toMatchObject({ fullName: 'Minjun Kim' });
+  });
+
+  it('falls back to the composed name when the parse carried none', () => {
+    expect(
+      applyContactOverrides({
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        email: '',
+        phone: '',
+        address: '',
+        parsedFullName: '   ',
+        nameEdited: false,
+      }),
+    ).toMatchObject({ fullName: 'Anna Kowalska' });
   });
 });

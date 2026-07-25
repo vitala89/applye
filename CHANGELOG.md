@@ -10,6 +10,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-07-26
+
 ### Removed
 
 - **Gemini CLI is no longer offered for CLI bridge mode.** Google shut it down for personal accounts on 18 June 2026 - Google AI Pro, AI Ultra and free accounts all stopped being served, leaving only enterprise Code Assist licences and API keys. That is exactly the opposite of who this mode is for, so keeping it would only have offered a provider that cannot work. Claude Code and Codex CLI are unaffected. If your settings still pointed at Gemini they move to Claude Code automatically, and Gemini remains listed for API mode where it is unaffected.
@@ -29,6 +31,7 @@ is the single source of truth; this file tracks what changed at each tag.
 - **Settings no longer claims a broken CLI is ready to use.** The CLI bridge checked only that a command with the right name existed, so a half-finished install showed a green tick and then failed on the first real task. These CLIs are small wrappers around a platform binary, and an interrupted install leaves the wrapper behind with the binary missing. Applye now actually runs the CLI to check it, and shows one of three things: working (with its version), **found but broken** (with the exact reinstall command and the error it printed), or not installed. "Send a test prompt" is only enabled for a CLI that genuinely runs.
 - **You can now pick a CLI model from a list instead of typing its name.** CLI mode used free-text model fields, which assumed you knew what your CLI calls its models - and a leftover name from API mode could be sent to a CLI that does not recognise it. Each CLI now offers a dropdown: **CLI default**, which is the recommended choice and simply lets the signed-in CLI pick whatever your subscription covers; the model names that CLI accepts; and **Other**, which reveals a text field for anything not listed. Claude Code offers `sonnet` / `opus` / `haiku` and Codex its `gpt-5.x` names; Gemini CLI publishes no list that can be read without signing in, so it offers the default and a text field rather than names that might be wrong.
 - **The bottom of long pages keeps its breathing room.** Scrolling to the very end of a page (your Profile, for one) could leave the last card pressed against the window edge; every scrolling page now keeps a consistent gap at the bottom.
+- **The welcome screen fits a window that is not maximised.** Its spacing was fixed rather than proportional, so on a half-height window the very first screen you ever see arrived with a scrollbar and the health check pushed off the bottom. The layout now scales with the window: a large screen looks exactly as before, a smaller one tightens up instead of scrolling.
 - **The Profile header no longer clips its buttons.** On a narrow window the status text and the Save / Re-run onboarding buttons could run off the right edge; the row now wraps instead.
 - **Dashboard attention cards read more clearly.** The needs-attention cards used a thin colored stripe down one edge; they now use a full colored border with a subtle tint, easier to read and consistent with the rest of the interface.
 - **Consistent dashes across the interface.** Every user-facing string and separator now uses a plain hyphen, in line with the project's typography rule.

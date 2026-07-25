@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { SupportedLanguage } from '@applye/core';
+import { stub } from '../translations/merge';
 import { TRANSLATIONS } from '../translations/translations';
 import { TranslateService } from './translate.service';
 
@@ -24,31 +25,29 @@ describe('TranslateService', () => {
       expect(service.t()('tracker.col_company')).toBe('Company');
     });
 
-    it('falls back to English for a locale with no entry for the key', () => {
-      // ru is a partial bundle: a missing key must not blank the label.
-      expect(service.tFor('ru')('tracker.col_role')).toBe('Role');
-    });
-
     it('returns the key itself when it exists in no bundle', () => {
       expect(service.tFor('de')('tracker.does_not_exist')).toBe('tracker.does_not_exist');
     });
   });
 
-  describe('partial locales', () => {
-    // A partial locale is layered over English section by section. A shallow
-    // merge drops every English key the locale's own section omits, and
-    // `resolve()` then renders the raw key - so the user reads `actions.close`
-    // where a button label belongs.
-    const partial: SupportedLanguage[] = ['ru', 'es', 'fr', 'uk'];
+  describe('locale bundles', () => {
+    // Every locale is complete today, so no shipped key exercises the English
+    // fallback. `stub()` is still what makes a key added to `en` tomorrow show
+    // up in English rather than as a raw dotted key, so it is tested directly
+    // on a synthetic partial rather than on a gap that no longer exists.
+    it('layers a partial locale over English without dropping the keys it omits', () => {
+      const base = { section: { translated: 'Translated', untouched: 'Untouched' } };
+      const merged = stub(base, { section: { translated: 'Übersetzt' } }) as {
+        section: Record<string, string>;
+      };
 
-    it.each(partial)('%s keeps English leaves its own section does not translate', (locale) => {
-      const t = service.tFor(locale);
-      expect(t('actions.close')).toBe('Close');
-      expect(t('common.back')).toBe('Back');
-      expect(t('common.next')).toBe('Next');
+      expect(merged.section['translated']).toBe('Übersetzt');
+      expect(merged.section['untouched']).toBe('Untouched');
     });
 
-    it.each(partial)('%s still overrides the leaves it does translate', (locale) => {
+    const translated: SupportedLanguage[] = ['de', 'ru', 'es', 'fr', 'uk'];
+
+    it.each(translated)('%s overrides the English leaves', (locale) => {
       expect(service.tFor(locale)('nav.dashboard')).not.toBe('Dashboard');
     });
 

@@ -10,12 +10,17 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **Russian, Spanish, French and Ukrainian are now fully translated.** They were listed as supported languages, but only about 35 of the app's 1438 labels were ever translated in each: the sidebar, a handful of buttons and the status names. Everything else - Documents, the apply wizard, Profile, onboarding, Discover, the tracker, Analytics and Settings - was in English. All four now cover every label, matching German. A new test refuses any label that is left as its English text, unless the word is genuinely the same in that language (a product name, a URL, or a word like the French "Documents"), so a language cannot quietly drift back to English again.
+
 ### Fixed
 
 - **Russian, Spanish, French and Ukrainian no longer show raw key names in place of some labels.** Those four languages are layered over English, and the layering replaced a whole group of labels at a time rather than only the ones actually translated. Any label the translation left out was lost instead of falling back to English, and the app then printed the internal key: the Close button on the job-paste, CV-import and pipeline dialogs read `actions.close`, and the apply wizard's Back and Next buttons read `common.back` and `common.next`. All four languages now fall back to English label by label, so a label that has not been translated yet reads in English instead of leaking a key name.
 
 ### Changed
 
+- **The desktop bundle-size budget was raised to fit six complete languages.** Four of the six were near-empty placeholders when the limit was set, so completing them took the app's startup bundle from 693 kB to 1.26 MB and turned the build's own size check into a hard failure. The limit is now 1500 kB. Applye loads its files from your disk rather than over a network, so the difference is startup parse time, not a download; the reasoning and the numbers are in `libs/i18n/README.md`.
 - **`npm run type-check` actually type-checks now.** No project defined the target, so the command the contributor docs tell you to run before every commit exited successfully having compiled nothing. It now runs `tsc --noEmit` across all six projects. `npm run lint` likewise skipped `libs/core` entirely, which had a lint config but no lint target; it is now linted with the rest.
 
 ## [0.28.0] - 2026-07-26

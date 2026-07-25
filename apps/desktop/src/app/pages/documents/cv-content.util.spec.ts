@@ -1622,6 +1622,16 @@ describe('parseCvSkillResponse name split', () => {
     expect(cv.personalDetails.lastName).toBe('Kowalska');
   });
 
+  it('derives the split when the AI sent a non-string for a name part', () => {
+    const cv = parseCvSkillResponse(
+      JSON.stringify({
+        personalDetails: { fullName: 'Anna Kowalska', firstName: 123, lastName: 'Kowalska' },
+      }),
+    );
+    expect(cv.personalDetails.firstName).toBe('Anna');
+    expect(cv.personalDetails.lastName).toBe('Kowalska');
+  });
+
   it('derives the confidence flag when the AI sent a non-boolean for it', () => {
     const cv = parseCvSkillResponse(
       JSON.stringify({

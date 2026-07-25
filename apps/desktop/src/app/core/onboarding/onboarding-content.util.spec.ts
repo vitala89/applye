@@ -460,7 +460,7 @@ describe('formatCompRange', () => {
     expect(formatCompRange({ currency: '$', min: 140, max: 190 })).toBe('$140K - $190K');
   });
   it('separates the range with a plain hyphen, never a banned dash', () => {
-    expect(formatCompRange({ currency: 'USD', min: 80, max: 120 })).not.toMatch(/[–—]/);
+    expect(formatCompRange({ currency: 'USD', min: 80, max: 120 })).not.toMatch(/[\u2013\u2014]/);
   });
 });
 

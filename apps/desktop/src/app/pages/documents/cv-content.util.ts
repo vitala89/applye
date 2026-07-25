@@ -459,8 +459,10 @@ export function parseCvSkillResponse(text: string): CvParsedContent {
   return {
     personalDetails: {
       fullName: p.fullName ?? null,
-      firstName: p.firstName?.trim() || derived.firstName || null,
-      lastName: p.lastName?.trim() || derived.lastName || null,
+      firstName:
+        (typeof p.firstName === 'string' ? p.firstName.trim() : '') || derived.firstName || null,
+      lastName:
+        (typeof p.lastName === 'string' ? p.lastName.trim() : '') || derived.lastName || null,
       // Only a real boolean is trusted, so an explicit `false` still wins over
       // the derived guess while a stray string or null falls back to it.
       nameSplitConfident:

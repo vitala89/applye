@@ -90,6 +90,14 @@ describe('name backfill', () => {
     expect(c.form().name).toBe('Kowalska');
   });
 
+  it('re-adopts the composed name after the display name itself is cleared', () => {
+    const c = createComponent();
+    c.applyLoadedMarkdown('# Anna Kowalska');
+    c.updateField('name', '');
+    c.updateField('firstName', 'Ania');
+    expect(c.form().name).toBe('Ania Kowalska');
+  });
+
   it('leaves a hand-set display name alone when a part is edited afterwards', () => {
     const c = createComponent();
     c.applyLoadedMarkdown('# Anna Nowak\n\n## Contact\n- First name: Anna\n- Last name: Kowalska');

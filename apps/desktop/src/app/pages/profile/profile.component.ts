@@ -2206,11 +2206,16 @@ export class ProfileComponent implements OnInit {
       // edit it is recomposed only while it still reads exactly as the previous
       // parts composed - a name typed by hand (in the display name field or in
       // raw markdown) is deliberate and must survive later part edits. Only when
-      // the parts produce something: clearing both must not wipe the name.
+      // the parts produce something: clearing both must not wipe the name. An
+      // emptied display name counts as untouched too, so a display name cleared
+      // by the user (rather than hand-set to something else) still re-adopts the
+      // parts on the next part edit instead of freezing on a blank name.
       if (key === 'firstName' || key === 'lastName') {
         const previous = [f.firstName.trim(), f.lastName.trim()].filter(Boolean).join(' ');
         const composed = [next.firstName.trim(), next.lastName.trim()].filter(Boolean).join(' ');
-        if (composed && f.name.trim() === previous) next.name = composed;
+        if (composed && (f.name.trim() === previous || f.name.trim() === '')) {
+          next.name = composed;
+        }
       }
       return next;
     });

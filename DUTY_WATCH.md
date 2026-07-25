@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, ship the completed locales
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/i18n-complete-locales`, then `docs/sync-state-after-i18n-merge`
+- **Commits:** `eb461ef` on `main` (squash of `bcb969f`)
+- **Pull request:** [#158](https://github.com/vitala89/applye/pull/158), merged
+- **Objective:** Open and land the locale-completion branch, then correct the state documents, which still described it as unmerged.
+- **Completed:** PR #158 opened against `main`, mergeable and clean with no required checks configured on the repository, squash-merged and the remote branch deleted. `docs/product/CURRENT_STATE.md` now records `main` as the focus with nothing in flight, and the locale work as merged rather than pending.
+- **Not completed:** Nothing outstanding from this watch. The native-speaker read of `ru.ts`, `es.ts`, `fr.ts` and `uk.ts` carried over from the previous entry is still open, and is a review task rather than a code task.
+- **Files or packages changed:** `docs/product/CURRENT_STATE.md`, `DUTY_WATCH.md`.
+- **Validation:** `npm run format:check` pass, `git diff --check` pass. Documentation-only change, so the matrix requires nothing further; the full gate set was run on the code in the previous entry and is unchanged by this one.
+- **Privacy/security impact:** None.
+- **Decisions and assumptions:** The previous entry recorded "pull request: not opened yet" and a next action of opening it, both true when written; this entry supersedes them rather than editing them, per the log's own rule.
+- **Risks or compatibility impact:** None.
+- **Open issues or blockers:** None.
+- **Next first action:** Have a native speaker read `libs/i18n/src/lib/translations/{ru,es,fr,uk}.ts` for idiom, starting with the `onboarding` and `jobs.wizard` sections, which carry the longest sentences.
+- **Evidence:** `git log --oneline -1` on `main` reads `eb461ef feat(i18n): complete the ru, es, fr and uk locales (#158)`; `gh pr view 158` reports state `MERGED`.
+
 ### 2026-07-26, complete the ru, es, fr and uk locales
 
 - **Status:** complete

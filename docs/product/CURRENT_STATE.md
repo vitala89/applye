@@ -2,9 +2,9 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `feat/i18n-complete-locales` - finishing the four stub locales, so
-  the UI is genuinely available in all six shipped languages. Not merged yet.
-- **On `feat/i18n-complete-locales`: ru, es, fr and uk are complete.** The previous entry fixed the
+- **Current branch / focus**: `main`. Nothing in flight - the last two branches are merged and the
+  next piece of work has not been picked yet.
+- **Merged: `feat/i18n-complete-locales` -> PR #158. ru, es, fr and uk are complete.** The previous entry fixed the
   merge that dropped labels from those four locales, but only 33-36 of 1438 keys were ever
   translated in each: they covered `nav`, `actions`, `status`, `ai` and `common`, and every other
   section - `documents` (272 keys), `jobs` (242), `profile` (154), `onboarding` (145), `discover`

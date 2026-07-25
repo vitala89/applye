@@ -714,9 +714,10 @@ export class OnboardingComponent {
   });
   readonly resumeSummary = computed(() => {
     if (this.resumePath() === 'skip') return this.t()('onboarding.done.skipped');
-    const name = [this.reviewFirstName().trim(), this.reviewLastName().trim()]
-      .filter(Boolean)
-      .join(' ');
+    // Resolve the name through the same rule the artifacts are written with, so
+    // the recap cannot claim a different name from the one on the profile and
+    // the CV - notably for a family-name-first name the user did not reorder.
+    const name = applyContactOverrides(this.reviewOverrides()).fullName;
     return `${this.t()('onboarding.done.imported_prefix')}${name ? ' · ' + name : ''}`;
   });
   readonly rolesSummary = computed(

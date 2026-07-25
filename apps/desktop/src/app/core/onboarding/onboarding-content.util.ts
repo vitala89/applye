@@ -260,7 +260,8 @@ export interface CompRange {
 const DEFAULT_COMP_RANGE: CompRange = { currency: 'USD', min: 80, max: 120 };
 
 /** Best-effort extraction of a currency + two numbers from a free-text AI
- * suggestion (e.g. "EUR 90-120K", "$140k – $190k") so the two numeric
+ * suggestion (e.g. "EUR 90-120K", or "$140k" and "$190k" separated by any dash
+ * character the model chose) so the two numeric
  * min/max inputs can be pre-filled. Never throws; falls back to a sane
  * default range when nothing parseable is found. */
 export function parseCompRange(text: string | null | undefined): CompRange {
@@ -279,7 +280,7 @@ export function parseCompRange(text: string | null | undefined): CompRange {
  * common case (does not need to round-trip exactly). */
 export function formatCompRange(range: CompRange): string {
   const symbol = range.currency.length === 1 ? range.currency : `${range.currency} `;
-  return `${symbol}${range.min}K – ${symbol}${range.max}K`;
+  return `${symbol}${range.min}K - ${symbol}${range.max}K`;
 }
 
 export const CURRENCY_OPTIONS = ['USD', 'EUR'] as const;

@@ -454,10 +454,13 @@ describe('normalizeCurrency', () => {
 
 describe('formatCompRange', () => {
   it('formats a 3-letter currency code with a space', () => {
-    expect(formatCompRange({ currency: 'EUR', min: 90, max: 120 })).toBe('EUR 90K – EUR 120K');
+    expect(formatCompRange({ currency: 'EUR', min: 90, max: 120 })).toBe('EUR 90K - EUR 120K');
   });
   it('formats a single-character currency symbol without a space', () => {
-    expect(formatCompRange({ currency: '$', min: 140, max: 190 })).toBe('$140K – $190K');
+    expect(formatCompRange({ currency: '$', min: 140, max: 190 })).toBe('$140K - $190K');
+  });
+  it('separates the range with a plain hyphen, never a banned dash', () => {
+    expect(formatCompRange({ currency: 'USD', min: 80, max: 120 })).not.toMatch(/[–—]/);
   });
 });
 

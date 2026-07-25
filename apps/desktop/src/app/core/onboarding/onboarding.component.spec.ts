@@ -645,6 +645,34 @@ describe('OnboardingComponent flow', () => {
       expect(next?.disabled).toBe(false);
     });
 
+    it('recaps the resume name the artifacts got, not a reordered composition', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Kim Minjun',
+          firstName: 'Minjun',
+          lastName: 'Kim',
+          nameSplitConfident: false,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.resumeSummary()).toContain('Kim Minjun');
+      expect(component.resumeSummary()).not.toContain('Minjun Kim');
+    });
+
+    it('recaps the composed name once the user edits a part', () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Kim Minjun', firstName: 'Minjun', lastName: 'Kim' }),
+      );
+      component.seedReviewFields();
+
+      component.reviewLastName.set('Park');
+      component.onNameEdited();
+
+      expect(component.resumeSummary()).toContain('Minjun Park');
+    });
+
     it('does not nudge when there is no name at all', () => {
       component.parsedCv.set(makeParsed({ fullName: null }));
 

@@ -21,6 +21,17 @@
       "options": {
         "jestConfig": "libs/core/jest.config.cts"
       }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default"],
+      "options": {
+        "command": "tsc -p libs/core/tsconfig.lib.json --noEmit"
+      }
     }
   }
 }

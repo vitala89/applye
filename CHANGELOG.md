@@ -10,6 +10,14 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Russian, Spanish, French and Ukrainian no longer show raw key names in place of some labels.** Those four languages are layered over English, and the layering replaced a whole group of labels at a time rather than only the ones actually translated. Any label the translation left out was lost instead of falling back to English, and the app then printed the internal key: the Close button on the job-paste, CV-import and pipeline dialogs read `actions.close`, and the apply wizard's Back and Next buttons read `common.back` and `common.next`. All four languages now fall back to English label by label, so a label that has not been translated yet reads in English instead of leaking a key name.
+
+### Changed
+
+- **`npm run type-check` actually type-checks now.** No project defined the target, so the command the contributor docs tell you to run before every commit exited successfully having compiled nothing. It now runs `tsc --noEmit` across all six projects. `npm run lint` likewise skipped `libs/core` entirely, which had a lint config but no lint target; it is now linted with the rest.
+
 ## [0.28.0] - 2026-07-26
 
 ### Removed

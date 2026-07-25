@@ -87,13 +87,20 @@ export interface FirstLaunchDismiss {
   `,
   styles: [
     `
+      /* Every vertical step below is a clamp on vh units, not a fixed px value.
+       * The design was drawn for a maximised window and came to 822px tall,
+       * which scrolls the moment the window is anything less than that - a
+       * half-height window is the ordinary case, not an edge case. The upper
+       * bound of each clamp is the original spec value, so a tall window is
+       * pixel-identical to the design; shorter ones compress instead of
+       * scrolling. */
       .welcome {
         min-height: 100vh;
         width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 96px 32px 120px;
+        padding: clamp(40px, 9vh, 96px) 32px clamp(48px, 11vh, 120px);
         background: var(--bg-app);
         font-family: var(--font-sans);
       }
@@ -111,7 +118,7 @@ export interface FirstLaunchDismiss {
         align-items: center;
         justify-content: center;
         gap: 22px;
-        margin-bottom: 64px;
+        margin-bottom: clamp(28px, 6vh, 64px);
         color: var(--text-primary);
       }
       .welcome__mark-wrap {
@@ -163,7 +170,7 @@ export interface FirstLaunchDismiss {
       .welcome__wordmark {
         font-family: var(--font-mono);
         font-weight: 500;
-        font-size: 48px;
+        font-size: clamp(34px, 4.4vw, 48px);
         line-height: 1;
         letter-spacing: -0.03em;
         color: var(--text-primary);
@@ -176,7 +183,7 @@ export interface FirstLaunchDismiss {
         text-align: center;
         font-family: var(--font-mono);
         font-weight: 500;
-        font-size: 54px;
+        font-size: clamp(34px, 5.2vw, 54px);
         line-height: 1.05;
         letter-spacing: -0.03em;
         color: var(--text-primary);
@@ -195,7 +202,7 @@ export interface FirstLaunchDismiss {
           welcome-caret-blink 1.1s steps(1) 3.45s infinite;
       }
       .welcome__tagline {
-        margin: 22px auto 0;
+        margin: clamp(14px, 2.4vh, 22px) auto 0;
         max-width: 480px;
         text-align: center;
         font-family: var(--font-sans);
@@ -212,11 +219,11 @@ export interface FirstLaunchDismiss {
         align-items: center;
         justify-content: center;
         gap: 16px;
-        margin-top: 44px;
+        margin-top: clamp(24px, 5vh, 44px);
         animation: welcome-rise 0.6s cubic-bezier(0.2, 0, 0, 1) 3.25s both;
       }
       .welcome__hint {
-        margin: 18px auto 0;
+        margin: clamp(12px, 2vh, 18px) auto 0;
         text-align: center;
         font-family: var(--font-sans);
         font-size: 14px;
@@ -228,12 +235,12 @@ export interface FirstLaunchDismiss {
       .welcome__divider {
         height: 1px;
         background: var(--border-subtle);
-        margin: 64px 0 40px;
+        margin: clamp(28px, 6vh, 64px) 0 clamp(20px, 4.5vh, 40px);
         transform-origin: center;
         animation: welcome-line-grow 0.7s cubic-bezier(0.2, 0, 0, 1) 3.7s both;
       }
       .welcome__check-label {
-        margin: 0 0 28px;
+        margin: 0 0 clamp(16px, 3vh, 28px);
         font-family: var(--font-sans);
         font-size: 15px;
         color: var(--text-tertiary);

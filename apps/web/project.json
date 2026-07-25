@@ -69,6 +69,14 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default"],
+      "options": {
+        "command": "tsc -p apps/web/tsconfig.app.json --noEmit"
+      }
+    },
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],

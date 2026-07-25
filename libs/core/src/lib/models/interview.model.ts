@@ -9,12 +9,12 @@ export type StageType =
   | 'other';
 
 /**
- * scheduled — has a confirmed scheduledAt.
- * awaitingScheduling — passed the previous stage, this one not yet booked.
- * awaitingResponse — interview happened, waiting to hear back.
- * passed — cleared this stage.
- * rejected — ends the process (syncs the parent application's kanban status).
- * cancelled — ended without a rejection verdict (no sync).
+ * scheduled - has a confirmed scheduledAt.
+ * awaitingScheduling - passed the previous stage, this one not yet booked.
+ * awaitingResponse - interview happened, waiting to hear back.
+ * passed - cleared this stage.
+ * rejected - ends the process (syncs the parent application's kanban status).
+ * cancelled - ended without a rejection verdict (no sync).
  */
 export type InterviewStageStatus =
   | 'scheduled'
@@ -31,7 +31,7 @@ export interface InterviewStage {
   applicationId: number;
   stageOrder: number;
   stageType: StageType;
-  /** Free-text name the user sees everywhere — the primary field, not stageType. */
+  /** Free-text name the user sees everywhere - the primary field, not stageType. */
   stageLabel: string;
   scheduledAt?: string;
   status: InterviewStageStatus;

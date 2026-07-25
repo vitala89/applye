@@ -1,4 +1,4 @@
--- Applye initial schema — all tables from ROADMAP §12.
+-- Applye initial schema - all tables from ROADMAP §12.
 -- Implemented in full now (even tables unused until later phases) to avoid
 -- schema churn. Pragmas (WAL, foreign_keys) are set on the connection in db.rs.
 
@@ -175,6 +175,6 @@ VALUES
 -- Fixed ids keep the seed idempotent across re-runs.
 INSERT OR IGNORE INTO sources (id, name, type, url, is_builtin, is_enabled, geo_tags_json, legality_note)
 VALUES
-  (1, 'Remotive', 'api', 'https://remotive.com/api/remote-jobs', 1, 0, '["worldwide"]', 'Tier 2 — public API built for machine reading.'),
-  (2, 'We Work Remotely', 'rss', 'https://weworkremotely.com/remote-jobs.rss', 1, 0, '["worldwide"]', 'Tier 2 — public RSS feed.'),
-  (3, 'Himalayas', 'api', 'https://himalayas.app/jobs/api', 1, 0, '["worldwide"]', 'Tier 2 — public API built for machine reading.');
+  (1, 'Remotive', 'api', 'https://remotive.com/api/remote-jobs', 1, 0, '["worldwide"]', 'Tier 2 - public API built for machine reading.'),
+  (2, 'We Work Remotely', 'rss', 'https://weworkremotely.com/remote-jobs.rss', 1, 0, '["worldwide"]', 'Tier 2 - public RSS feed.'),
+  (3, 'Himalayas', 'api', 'https://himalayas.app/jobs/api', 1, 0, '["worldwide"]', 'Tier 2 - public API built for machine reading.');

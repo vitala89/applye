@@ -1,5 +1,5 @@
 ---
-version: "0.1.0"
+version: '0.1.0'
 description: >
   ATS filter check for a CV/resume against a job description.
   Checks hyperref, fonts, formatting issues, keyword presence.
@@ -24,7 +24,7 @@ recommended_model: economy
 language_note: Output language controlled by `language` input.
 ---
 
-<!-- PROMPT TEMPLATE — fill at runtime -->
+<!-- PROMPT TEMPLATE - fill at runtime -->
 <!-- Injected: {{cv_text}}, {{job_description}}, {{language}} -->
 
 TODO: Write ATS check prompt template.

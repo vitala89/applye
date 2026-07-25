@@ -1,6 +1,6 @@
 // Import tracklist (Phase 6.4). One AI call total, made from the frontend via
 // the `import-tracklist` skill for structure detection only. Everything
-// here — file reading, status normalization, dedupe, insert — is
+// here - file reading, status normalization, dedupe, insert - is
 // deterministic Rust + SQL, 0 tokens.
 
 use serde::{Deserialize, Serialize};
@@ -77,7 +77,7 @@ fn read_xlsx_as_csv(path: &str) -> Result<String, String> {
 }
 
 /// One row as extracted by the `import-tracklist` skill. `status` is
-/// whatever raw text the skill found in that column — normalization happens
+/// whatever raw text the skill found in that column - normalization happens
 /// in `normalize_status`, never in the AI call.
 #[derive(Debug, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -253,7 +253,7 @@ async fn import_confirm_core(
         let applied_at = row.applied_at.clone();
         let notes = row.notes.clone();
 
-        // No real JD text exists for an imported row — hash the row's own
+        // No real JD text exists for an imported row - hash the row's own
         // identity (plus its position, in case two rows are literally
         // identical) so jd_hash stays unique without colliding across rows.
         let jd_hash = stable_hash(&format!(

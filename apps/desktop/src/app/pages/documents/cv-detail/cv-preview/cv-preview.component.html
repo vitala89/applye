@@ -16,7 +16,7 @@
      `<lib-paginated-sheet>` (measure pass + final page cards). Interactive
      click-to-select affordances are gated on `$sheetRenderMode === 'page'`
      (via `selectable()`), so the hidden measurement pass stays inert and
-     geometry-identical — outline-only highlighting never changes box metrics.
+     geometry-identical - outline-only highlighting never changes box metrics.
      Selectable hosts carry role="button" + tabindex, an aria-label, and both
      Enter and Space activation (native-button parity); `data-cv-select` marks
      the host so a committing edit can return keyboard focus to it. -->
@@ -558,7 +558,7 @@
           >
         }
         @if (entry.startDate || selectable(renderMode)) {
-          <span class="cvpreview__date-sep"> – </span>
+          <span class="cvpreview__date-sep"> - </span>
         }
         @if (isEditingLeaf(leafPath('exp', i, 'endDate')) && selectable(renderMode)) {
           <input
@@ -589,7 +589,7 @@
             (keydown.space)="
               onSelectKey($event, key, 'body', renderMode, leafPath('exp', i, 'endDate'))
             "
-            >{{ entry.endDate || t()('documents.cv_present') }}</span
+            >{{ entry.endDate || (entry.startDate ? t()('documents.cv_present') : '') }}</span
           >
         }
       </span>
@@ -785,7 +785,7 @@
           >
         }
         @if (entry.startDate || selectable(renderMode)) {
-          <span class="cvpreview__date-sep"> – </span>
+          <span class="cvpreview__date-sep"> - </span>
         }
         @if (isEditingLeaf(leafPath('edu', i, 'endDate')) && selectable(renderMode)) {
           <input
@@ -816,7 +816,7 @@
             (keydown.space)="
               onSelectKey($event, key, 'body', renderMode, leafPath('edu', i, 'endDate'))
             "
-            >{{ entry.endDate || t()('documents.cv_present') }}</span
+            >{{ entry.endDate || (entry.startDate ? t()('documents.cv_present') : '') }}</span
           >
         }
       </span>

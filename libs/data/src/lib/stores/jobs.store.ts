@@ -23,7 +23,7 @@ const initialState: JobsState = {
 
 /**
  * Shared reactive projection over the jobs list + currently open job detail.
- * SQLite (via DbService) stays the source of truth — this store only mirrors
+ * SQLite (via DbService) stays the source of truth - this store only mirrors
  * it in memory so My Jobs and the job detail view stay in sync without a
  * full reload after every mutation.
  */

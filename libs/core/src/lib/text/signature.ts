@@ -26,7 +26,7 @@ const PHONE_RE = /\+?\s*\(?\d[\d\s().\-/]{5,}\d/g;
 
 // Leading/trailing separators left after removing a contact chunk
 // (e.g. "Jane Doe · " → "Jane Doe", "| Jane Doe" → "Jane Doe").
-const EDGE_SEPARATORS_RE = /^[\s·,;|/\\\-–—]+|[\s·,;|/\\\-–—]+$/g;
+const EDGE_SEPARATORS_RE = /^[\s·,;|/\\\---]+|[\s·,;|/\\\---]+$/g;
 
 /**
  * Reduce a model-produced signature to the sender's name only.
@@ -42,7 +42,7 @@ export function sanitizeSignature(raw: string | null | undefined): string {
   if (!raw) return '';
 
   // Prefer the first line that still has letters after contact detail is
-  // stripped — that is the name. Fall back to the whole string collapsed.
+  // stripped - that is the name. Fall back to the whole string collapsed.
   const lines = raw.split(/\r?\n/);
   for (const line of lines) {
     const cleaned = stripContactDetail(line);

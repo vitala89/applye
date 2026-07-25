@@ -752,7 +752,7 @@ mod tests {
             // Installed or not depends on the machine; the path must agree.
             assert_eq!(s.installed, s.path.is_some());
             // A CLI cannot be runnable without being present at all.
-            assert!(!(s.working && !s.installed), "{s:?}");
+            assert!(!s.working || s.installed, "{s:?}");
             // Whichever way the probe went, it must say which: a working CLI
             // reports a version, a broken one reports why.
             if s.installed {

@@ -53,7 +53,7 @@ Instead of exact hour estimates or story points, we prioritize and estimate task
 
 - **XS**: Very small, less than half a day.
 - **S**: Small, about 1 day.
-- **M**: Medium, 2–3 days.
+- **M**: Medium, 2-3 days.
 - **L**: Large, about 1 week.
 - **XL**: Too large. **Must be split** into smaller features or tasks before implementation starts.
 

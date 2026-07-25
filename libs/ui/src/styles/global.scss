@@ -1,5 +1,5 @@
 /* ============================================================
-   APPLYE — base resets & primitives
+   APPLYE - base resets & primitives
    Mirrors the design system's base layer. Tokens come from
    libs/ui/tokens.css (loaded globally); this only consumes them.
    ============================================================ */
@@ -70,7 +70,7 @@ a:hover {
   color: var(--text-tertiary);
 }
 
-/* Accessible focus — indigo ring everywhere. */
+/* Accessible focus - indigo ring everywhere. */
 :focus-visible {
   outline: none;
   box-shadow: var(--shadow-ring);
@@ -102,11 +102,11 @@ a:hover {
 }
 
 /* ============================================================
-   STATE UTILITIES — loading, empty, error
+   STATE UTILITIES - loading, empty, error
    Used globally across all page components.
    ============================================================ */
 
-/* Skeleton — shimmering loading placeholder. Verbatim from the Applye
+/* Skeleton - shimmering loading placeholder. Verbatim from the Applye
    Design System Skeleton primitive: a sliding highlight over a sunken
    surface, degrading to a soft opacity pulse under reduced motion. Consumed
    by the lib-skeleton component (@applye/ui). */
@@ -290,7 +290,7 @@ a:hover {
 }
 
 /* Bouncing three-dot loading indicator. Standalone (not nested under
-   `.ai-thinking`) so it also renders inside buttons — e.g. the Generate /
+   `.ai-thinking`) so it also renders inside buttons - e.g. the Generate /
    Regenerate document buttons show it while a draft is being generated.
    `currentColor` lets it inherit the host button's text colour. */
 .ai-thinking__dots {
@@ -319,7 +319,7 @@ a:hover {
 }
 
 /* ============================================================
-   BUTTON — shared control used via the [appButton] directive.
+   BUTTON - shared control used via the [appButton] directive.
    Variants: primary (indigo fill), secondary (neutral outline),
    ghost (borderless), danger (ghost-style, destructive actions).
    Sizes: sm, md. Token-driven, no hardcoded colors/sizes.
@@ -347,6 +347,14 @@ a:hover {
 .btn--md {
   padding: var(--space-3) var(--space-5);
   font-size: var(--text-body);
+}
+.btn--lg {
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-body);
+}
+.btn--icon {
+  padding: var(--space-3);
+  line-height: 1;
 }
 
 .btn--primary {
@@ -406,7 +414,7 @@ a:hover {
 }
 
 /* ============================================================
-   BADGE — compact status/label chip. Matches the Applye Design
+   BADGE - compact status/label chip. Matches the Applye Design
    System Badge component: mono, uppercase, soft tinted surface.
    Tones: neutral (muted), accent (indigo/AI), pass (success),
    warn (warning), danger (danger).

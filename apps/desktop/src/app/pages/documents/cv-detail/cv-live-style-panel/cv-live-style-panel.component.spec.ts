@@ -153,7 +153,7 @@ describe('CvLiveStylePanelComponent', () => {
 
     it("the line swatch shows the rule's rendered colour when neither the user nor the theme set one", () => {
       // Classic draws no rule, so the line falls back to a neutral CSS token.
-      // That value only exists in the DOM — reading it back is the only way the
+      // That value only exists in the DOM - reading it back is the only way the
       // swatch can avoid showing a colour the line does not have.
       fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT, accentColorHex: '#333333' });
       fixture.componentRef.setInput('themeRule', null);
@@ -190,7 +190,7 @@ describe('CvLiveStylePanelComponent', () => {
 
   // Same rule as the title controls, one layer down: a body control shows what
   // the element actually renders with, not a blank. Each scope walks the cascade
-  // the RENDERER uses — which is not the same for a bullet as for a field.
+  // the RENDERER uses - which is not the same for a bullet as for a field.
   describe('body controls reflect the value actually applied to the selection', () => {
     const DOC = {
       ...CV_STYLE_DEFAULT,
@@ -240,7 +240,7 @@ describe('CvLiveStylePanelComponent', () => {
     it('a BULLET inherits the shared bullet style, never the section (the renderer skips it)', () => {
       fixture.componentRef.setInput('style', {
         ...DOC,
-        // The section value styles the entry heads only — a bullet must not
+        // The section value styles the entry heads only - a bullet must not
         // report a size it does not render at.
         sectionStyles: {
           experience: { fontSizePt: 13, bulletStyle: { fontSizePt: 9, colorHex: '#00ff00' } },
@@ -331,7 +331,7 @@ describe('CvLiveStylePanelComponent', () => {
 
   // "This experience" must style THIS entry's line; the section divider is what
   // "All experiences" means. Before the entry had a rule of its own, the panel
-  // showed it the section's — so a line edit under "This experience" silently
+  // showed it the section's - so a line edit under "This experience" silently
   // restyled every entry.
   describe('an experience entry has a line of its own', () => {
     const SECTION_RULE = {
@@ -475,7 +475,7 @@ describe('CvLiveStylePanelComponent', () => {
     });
 
     it("a plain leaf with no line still reads 'None', never Inherit", () => {
-      // A leaf has nothing to inherit — absent IS off, so the select must not
+      // A leaf has nothing to inherit - absent IS off, so the select must not
       // offer Inherit there.
       fixture.componentRef.setInput('style', { ...CV_STYLE_DEFAULT });
       fixture.componentRef.setInput('themeEntryRule', { widthPt: 0.4, colorHex: '#666666' });
@@ -533,7 +533,7 @@ describe('CvLiveStylePanelComponent', () => {
     fixture.detectChanges();
     const group: HTMLElement = fixture.nativeElement.querySelector('.cvlive__seg');
     expect(group).toBeTruthy();
-    // The segmented control is a labelled group of native <button>s — each is
+    // The segmented control is a labelled group of native <button>s - each is
     // keyboard-reachable/operable by default (Tab focuses, Enter/Space clicks).
     expect(group.getAttribute('role')).toBe('group');
     expect(group.getAttribute('aria-label')).toBe('Apply to');
@@ -593,10 +593,10 @@ describe('CvLiveStylePanelComponent', () => {
     ]);
   });
 
-  it('an entry selection reaches a line control at its default scope — its OWN', () => {
+  it('an entry selection reaches a line control at its default scope - its OWN', () => {
     // Regression: gating the section rule to section scope AND excluding entry
     // containers from the per-leaf line left an entry with NO line control at
-    // its default (element) scope — the line became unreachable. The entry now
+    // its default (element) scope - the line became unreachable. The entry now
     // has a rule of its own, so that is the control it reaches, and the edit
     // lands on this entry alone rather than on every entry in the section.
     fixture.componentRef.setInput('selection', {
@@ -614,7 +614,7 @@ describe('CvLiveStylePanelComponent', () => {
     expect(events).toEqual([{ scope: 'element', patch: { borderStyle: 'dashed' } }]);
   });
 
-  it('a single field never shows the section rule — only its own per-leaf line', () => {
+  it('a single field never shows the section rule - only its own per-leaf line', () => {
     fixture.componentRef.setInput('selection', {
       sectionKey: 'experience',
       part: 'body',
@@ -627,7 +627,7 @@ describe('CvLiveStylePanelComponent', () => {
 
   it('offers no line for an entry container whose head draws none', () => {
     // Education and skills heads draw no rule, so a line control there would do
-    // nothing. Only the experience head draws one — and it is fed the entry's
+    // nothing. Only the experience head draws one - and it is fed the entry's
     // own override by `entryCss`, never a border on the container itself (that
     // would land under the bullets).
     for (const p of ['edu.1', 'skills.0']) {
@@ -659,7 +659,7 @@ describe('CvLiveStylePanelComponent', () => {
     });
     fixture.detectChanges();
     expect(component.canElementLine()).toBe(true);
-    // The section structural divider must NOT show for a single leaf — that
+    // The section structural divider must NOT show for a single leaf - that
     // was the bug where editing a field rewrote personal_details.
     expect(component.canBodyRule()).toBe(false);
 

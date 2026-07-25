@@ -66,7 +66,7 @@ export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
   /** Measured atom heights (px). Zero-length until the first measure pass. */
   private readonly heights = signal<number[]>([]);
 
-  /** Content width available inside the margins — the measure column width. */
+  /** Content width available inside the margins - the measure column width. */
   readonly contentWidthPx = computed(() => {
     const g = this.geometry();
     return Math.max(1, g.pageWidthPx - g.marginLeftPx - g.marginRightPx);

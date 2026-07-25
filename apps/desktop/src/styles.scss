@@ -6,8 +6,8 @@
 @use '../../../libs/ui/src/styles/paper' as paper;
 
 // Shared document-editor shell (Region/Style cards, collapsible sections,
-// style grid). Emitted once here — plain `.docedit-*` classes used by the CV
-// and cover-letter editor templates — rather than `@use`d into each
+// style grid). Emitted once here - plain `.docedit-*` classes used by the CV
+// and cover-letter editor templates - rather than `@use`d into each
 // component's encapsulated SCSS, which duplicated ~11.5 kB per component and
 // blew the per-component style budget.
 @use './app/pages/documents/editor-shell' as *;
@@ -16,7 +16,7 @@
 // name (e.g. "Lato"); without these @font-face rules the browser can't find it
 // and falls back to its default serif, so the editor looked nothing like the
 // exported PDF/DOCX (which embed these exact faces). We load the SAME bundled
-// TTFs the Rust PDF embeds — mapping each family name to its metric-clone —
+// TTFs the Rust PDF embeds - mapping each family name to its metric-clone -
 // so the editor, PDF, and DOCX render byte-identical type. Served from /fonts
 // via the project.json asset glob over `src-tauri/assets/fonts`.
 @each $family,
@@ -52,11 +52,11 @@
 // from the section above. When a section lands as the first atom on a page,
 // that padding stacks on top of the page's own top margin and reads as an
 // oversized leading gap. Zero it for the first atom of every page-card so a
-// section at the top of a page begins flush with the margin — identical on
+// section at the top of a page begins flush with the margin - identical on
 // screen and in the printed / exported PDF (both render the same page-cards).
 // Global (not component-scoped): `.page-card__atom` belongs to the
 // view-encapsulated paginated-sheet, `.cvpreview__section-start` to the CV
-// editor — only an unencapsulated rule can span both.
+// editor - only an unencapsulated rule can span both.
 .page-card__atom:first-child .cvpreview__section-start,
 .page-card__atom:first-child .cvpreview__entry--sep {
   padding-top: 0;
@@ -90,8 +90,8 @@
   }
 
   // Pin the sheet to the page origin (the app shell is only `visibility:
-  // hidden`, so it still occupies layout space). `top/left/right: 0` — not
-  // `inset: 0` — leaves the height content-driven so the cards below can
+  // hidden`, so it still occupies layout space). `top/left/right: 0` - not
+  // `inset: 0` - leaves the height content-driven so the cards below can
   // paginate instead of being clipped to one viewport.
   body.printing-cv lib-paginated-sheet {
     @include paper.paper-light;
@@ -106,14 +106,14 @@
   // One on-screen page-card = one physical page. The `@page` rule (injected by
   // `exportPdfWysiwyg`) owns the real margins, so the card sheds its simulated
   // padding and fixed full-page height here and prints as its content box inside
-  // the page's margin area — exact margins, no full-bleed scaling.
+  // the page's margin area - exact margins, no full-bleed scaling.
   body.printing-cv .page-card-wrap {
     @include paper.paper-light;
     display: block;
     margin: 0;
     break-inside: avoid;
   }
-  // Break BEFORE each card after the first — never `break-after` on a card that
+  // Break BEFORE each card after the first - never `break-after` on a card that
   // already fills its page, which emits a trailing blank page. This starts cards
   // 2..n on a fresh page and forces no break after the last one.
   body.printing-cv .page-card-wrap + .page-card-wrap {
@@ -138,7 +138,7 @@
   }
 
   // Live-editor chrome must never print. The panel lives outside
-  // `lib-paginated-sheet` (so `visibility: hidden` already blanks it) — drop it
+  // `lib-paginated-sheet` (so `visibility: hidden` already blanks it) - drop it
   // from layout too. The click-to-select outline, however, is painted on atoms
   // *inside* the sheet, so it survives the visibility reveal above; strip it
   // explicitly so a section that happened to be selected doesn't print an
@@ -146,7 +146,7 @@
   // per-leaf dashed outline) is included defensively alongside the section-
   // level classes: both print paths (`exportPdfWysiwyg`, the `beforeprint`
   // handler) already clear `liveSelection` before printing, so no leaf is ever
-  // actually flagged `isElementSelected` at print time — this rule is a second,
+  // actually flagged `isElementSelected` at print time - this rule is a second,
   // CSS-only guarantee in case that invariant is ever broken upstream.
   body.printing-cv .cvdetail__live-panel {
     display: none !important;

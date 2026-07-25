@@ -1,4 +1,4 @@
-// Domain models and types — framework-agnostic
+// Domain models and types - framework-agnostic
 export * from './lib/models/ats.model';
 export * from './lib/models/job.model';
 export * from './lib/models/application.model';
@@ -14,6 +14,7 @@ export * from './lib/types/common.types';
 
 // Pure utilities
 export * from './lib/profile/profile-markdown';
+export * from './lib/profile/split-display-name';
 export * from './lib/profile/compensation';
 export * from './lib/profile/archetype';
 export * from './lib/profile/scoring-state';

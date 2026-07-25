@@ -1,5 +1,5 @@
 // Layer-1 archetype awareness (0 tokens). Deterministic keyword overlap between
-// a job's title/JD and the user's target archetype sentences — no AI involved.
+// a job's title/JD and the user's target archetype sentences - no AI involved.
 
 const STOPWORDS: &[&str] = &[
     "and", "or", "the", "in", "on", "at", "for", "with", "to", "of", "is", "are", "this", "that",
@@ -63,7 +63,7 @@ pub fn archetype_keyword_overlap(text: &str, archetypes: &[String]) -> bool {
 
 /// `archetypes_json` is the raw `profile.target_archetypes` JSON array string (may be
 /// None/empty if the user hasn't defined any yet). Returns false only when archetypes
-/// exist and none of their keywords match — the UI surfaces that as "off-archetype".
+/// exist and none of their keywords match - the UI surfaces that as "off-archetype".
 #[tauri::command]
 pub fn check_archetype_match(
     title: Option<String>,
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn on_archetype_job_matches() {
         let matched = archetype_keyword_overlap(
-            "Staff Frontend Engineer at Acme — React, TypeScript, remote EU",
+            "Staff Frontend Engineer at Acme - React, TypeScript, remote EU",
             &archetypes(),
         );
         assert!(matched);
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn off_archetype_job_does_not_match() {
         let matched = archetype_keyword_overlap(
-            "Warehouse Logistics Coordinator — night shift, forklift certified",
+            "Warehouse Logistics Coordinator - night shift, forklift certified",
             &archetypes(),
         );
         assert!(!matched);

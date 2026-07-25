@@ -22,7 +22,7 @@ export class TranslateService {
 
   /**
    * Signal returning a translation function for the current locale.
-   * Reading t() in a template creates a reactive dependency — template
+   * Reading t() in a template creates a reactive dependency - template
    * re-evaluates automatically when locale changes.
    *
    * Template: {{ t()('nav.dashboard') }}
@@ -36,7 +36,7 @@ export class TranslateService {
   /**
    * Translation function for an EXPLICIT locale, independent of the UI locale.
    * For documents whose language is a property of the document itself, not of
-   * the app chrome — e.g. the German Eigenbemuehungen report must be fully
+   * the app chrome - e.g. the German Eigenbemuehungen report must be fully
    * German even while the app runs in English.
    */
   tFor(locale: SupportedLanguage): (key: string) => string {

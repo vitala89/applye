@@ -37,7 +37,7 @@ interface KanbanCol {
   status: ApplicationStatus;
   labelKey: string;
   accent: string;
-  /** rejected / cancelled — collapsed into a side rail ("archive") unless the
+  /** rejected / cancelled - collapsed into a side rail ("archive") unless the
    * user reveals them via the strip's Show archived toggle. */
   terminal: boolean;
 }
@@ -45,7 +45,7 @@ interface KanbanCol {
 // Pipeline shows only ACTIVE applications. "saved" jobs live in My Jobs
 // (status filter); a job enters the board via the Apply wizard. Terminal
 // columns (rejected/cancelled) act as the archive: collapsed to side rails
-// by default, revealed on demand — there is no separate archived flag.
+// by default, revealed on demand - there is no separate archived flag.
 const COLS: KanbanCol[] = [
   { status: 'applied', labelKey: 'status.applied', accent: 'var(--text-accent)', terminal: false },
   { status: 'interview', labelKey: 'status.interview', accent: 'var(--warning)', terminal: false },
@@ -83,7 +83,7 @@ const ACTIVE_STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer'];
         </div>
       } @else if (error()) {
         <div class="state-error" role="alert">
-          <p class="state-error__msg">{{ t()('pipeline.loading') }} — {{ error() }}</p>
+          <p class="state-error__msg">{{ t()('pipeline.loading') }} - {{ error() }}</p>
           <button class="state-error__retry" (click)="reload()">{{ t()('common.retry') }}</button>
         </div>
       } @else {
@@ -527,7 +527,7 @@ const ACTIVE_STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer'];
         gap: var(--space-2);
         min-height: 120px;
         /* WKWebView (Tauri) clips the leading-edge border of a flex child
-           flush against an overflow:auto container — a little padding keeps the
+           flush against an overflow:auto container - a little padding keeps the
            empty drop-zone's top dashed border fully visible. */
         padding: 2px;
       }
@@ -861,7 +861,7 @@ export class PipelineComponent implements OnInit {
   readonly totalCards = signal(0);
   readonly selectedCard = signal<PipelineCard | null>(null);
   readonly search = signal('');
-  // Terminal columns (rejected/cancelled) collapse to rails independently —
+  // Terminal columns (rejected/cancelled) collapse to rails independently -
   // each carries its own open/closed state, both closed by default.
   readonly collapsedCols = signal<ReadonlySet<ApplicationStatus>>(
     new Set<ApplicationStatus>(['rejected', 'cancelled']),
@@ -952,9 +952,9 @@ export class PipelineComponent implements OnInit {
   }
 
   initials(company?: string): string {
-    if (!company) return '–';
+    if (!company) return '-';
     const words = company.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return '–';
+    if (words.length === 0) return '-';
     if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
     return (words[0][0] + words[1][0]).toUpperCase();
   }
@@ -963,7 +963,7 @@ export class PipelineComponent implements OnInit {
     return Math.max(card.currentStageTotal ?? 0, card.currentStageOrder ?? 0);
   }
 
-  /** Booleans for the segmented progress track — one per logged stage, filled
+  /** Booleans for the segmented progress track - one per logged stage, filled
    * up to the current stage's position. */
   segments(card: PipelineCard): boolean[] {
     const total = this.stageTotal(card);
@@ -1005,7 +1005,7 @@ export class PipelineComponent implements OnInit {
     }
   }
 
-  /** Mirror the DB row onto the in-memory card. `overdue` is not a column —
+  /** Mirror the DB row onto the in-memory card. `overdue` is not a column -
    * it is derived in `db_pipeline_cards` as `follow_up_at < date('now')`
    * (UTC), so replicate that exact predicate here to stay in sync with what
    * a reload would show. */
@@ -1024,7 +1024,7 @@ export class PipelineComponent implements OnInit {
   // The one write path allowed outside Interview Prep: dragging a card into
   // INTERVIEW with no open modal to host the prompt, so the quick-view
   // modal itself is opened (pre-focused on the mini form by the modal's own
-  // showQuickAdd logic). Only opens when the application has 0 stages yet —
+  // showQuickAdd logic). Only opens when the application has 0 stages yet -
   // never re-prompts on a reschedule that briefly leaves and returns.
   private async maybePromptFirstStage(card: PipelineCard): Promise<void> {
     const stages = await this.db.listInterviewStages(card.id);

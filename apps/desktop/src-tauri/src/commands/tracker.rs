@@ -11,7 +11,7 @@ use tauri::{Manager, State};
 /// One row of the tracker table: applications JOIN jobs, latest update from
 /// status_history, and the first two interview_stages dates (interview #1 /
 /// follow-up #2). All deterministic SQL, no AI. Mirrors the user's real xlsx
-/// tracker 1:1 (19 fields) — see ROADMAP §9 + §12.
+/// tracker 1:1 (19 fields) - see ROADMAP §9 + §12.
 #[derive(Debug, Serialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct TrackerRow {
@@ -221,7 +221,7 @@ pub async fn export_report(
         .blocking_save_file();
 
     let Some(target) = picked else {
-        // User cancelled the Save dialog — not an error.
+        // User cancelled the Save dialog - not an error.
         return Ok(String::new());
     };
     let path = target
@@ -307,7 +307,7 @@ mod tests {
              \n\
              ## Job Tracker\n\
              #   Date Applied Company             Role                Method      Status     Contact\n\
-             1   2026-06-01   Acme Robotics       Backend Engineer    email       applied    Jane Doe — jane@acme.example";
+             1   2026-06-01   Acme Robotics       Backend Engineer    email       applied    Jane Doe - jane@acme.example";
 
         let bytes = text_to_pdf_bytes(content).expect("render pdf");
         assert!(!bytes.is_empty());

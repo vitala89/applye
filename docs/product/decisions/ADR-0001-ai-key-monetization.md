@@ -1,4 +1,4 @@
-# Architecture Decision Record: AI Access Monetization — BYOK / Bridge / Managed Proxy
+# Architecture Decision Record: AI Access Monetization - BYOK / Bridge / Managed Proxy
 
 - **Status**: `draft`
 - **Date**: 2026-07-07
@@ -24,7 +24,7 @@ our API accounts, gated by a subscription token.
 
 ### Current architecture (the seam)
 
-- Keys stored in OS keychain via `keyring` crate — `apps/desktop/src-tauri/src/keys.rs`,
+- Keys stored in OS keychain via `keyring` crate - `apps/desktop/src-tauri/src/keys.rs`,
   frontend wrapper `libs/data/src/lib/services/keys.service.ts`. Keys never
   reach JS.
 - Single AI entry point: `AiService.run()` → Tauri `ai_run` →
@@ -61,12 +61,12 @@ by rewriting request logic:
    provider keys.
 5. Settings UI section for managed signup / token entry.
 
-The proxy itself is a **stateless, zero-retention** forwarder — this is a
+The proxy itself is a **stateless, zero-retention** forwarder - this is a
 first-class privacy feature, not an afterthought.
 
 ## Options Considered
 
-- **Option 1: Three-tier (BYOK + Bridge + Managed proxy)** — chosen.
+- **Option 1: Three-tier (BYOK + Bridge + Managed proxy)** - chosen.
   - Pros: widest market (covers no-key and no-account users); code = commodity,
     managed service = the moat a fork can't copy; BYOK stays free/private;
     single-seam integration, low blast radius.
@@ -75,12 +75,12 @@ first-class privacy feature, not an afterthought.
     traffic; ongoing ops + support load.
   - Costs: Stripe + proxy service + on-call; provider ToS review is a hard gate.
 
-- **Option 2: BYOK only (status quo)** — rejected.
+- **Option 2: BYOK only (status quo)** - rejected.
   - Pros: zero backend, zero ops, purest privacy story.
   - Cons: no revenue; excludes all non-technical users; leaves the widest market
     segment unserved.
 
-- **Option 3: Managed only (drop BYOK, SaaS-style)** — rejected.
+- **Option 3: Managed only (drop BYOK, SaaS-style)** - rejected.
   - Pros: simplest billing, one path to support.
   - Cons: destroys privacy-first positioning and the open/local value prop;
     alienates the current technical user base; a fork would immediately
@@ -97,12 +97,12 @@ first-class privacy feature, not an afterthought.
   Settings; both tiers can run behind a settings flag (A/B).
 - **Negative**: new operational surface (auth server, billing, usage metering,
   key rotation, proxy, abuse monitoring); thin margin if reselling tokens near
-  cost — price for support + ops, not just token markup; managed users raise
+  cost - price for support + ops, not just token markup; managed users raise
   support expectations ("AI doesn't work") that BYOK users self-serve.
 
 ### Privacy / Security Impact
 
-**Significant — this is the crux.** BYOK sends zero user data through Applye.
+**Significant - this is the crux.** BYOK sends zero user data through Applye.
 The managed tier routes prompts (resume text, job data) through our
 infrastructure, making us a **data processor**.
 
@@ -128,7 +128,7 @@ Mitigations (non-negotiable for shipping managed):
 
 ## References
 
-- **Follow-up decision**: [ADR-0002](ADR-0002-pro-entitlements.md) — how a paid
+- **Follow-up decision**: [ADR-0002](ADR-0002-pro-entitlements.md) - how a paid
   Pro feature tier is gated on top of the managed token without breaking MIT
   (server-anchored entitlements; no client-side unlock).
 - **ToS pre-condition (RESOLVED 2026-07-07)**: Anthropic / OpenAI / DeepSeek all
@@ -137,7 +137,7 @@ Mitigations (non-negotiable for shipping managed):
   provider. Conditions: key never client-side; sell _our app/subscription_ not
   "API access" (esp. OpenAI); flow provider AUP down to end users; have our own
   end-user Terms; we bear full liability. OpenAI §3.1-vs-§3.2 is the one
-  ambiguous point — get a short legal read before OpenAI managed traffic is
+  ambiguous point - get a short legal read before OpenAI managed traffic is
   material. See [managed-tier-implementation-plan.md](../managed-tier-implementation-plan.md) Gate 0.
 - **Key files**: `apps/desktop/src-tauri/src/ai/api.rs` (seam),
   `apps/desktop/src-tauri/src/ai/mod.rs` (`ai_run`),

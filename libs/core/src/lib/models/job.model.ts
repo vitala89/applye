@@ -55,7 +55,7 @@ export interface JobOverview {
 
 /** One row of the Job Tracker: applications + jobs + last status change +
  * interview_stages #1/#2 dates. Mirrors the user's real xlsx tracker 1:1
- * (19 fields) — see ROADMAP §9 + §12. */
+ * (19 fields) - see ROADMAP §9 + §12. */
 export interface TrackerRow {
   id: number;
   jobId?: number;
@@ -141,7 +141,7 @@ export interface ScoringResult {
 }
 
 /** One row extracted by the import-tracklist skill (Phase 6.4). `status` is
- * raw text — normalization happens deterministically in Rust. */
+ * raw text - normalization happens deterministically in Rust. */
 export interface ImportRawRow {
   company?: string | null;
   role?: string | null;
@@ -177,7 +177,7 @@ export interface ImportResult {
   skippedDuplicate: number;
 }
 
-/** Result of classify_job_url — legal-first host allowlist check (0 tokens).
+/** Result of classify_job_url - legal-first host allowlist check (0 tokens).
  * `Closed` covers both known closed boards and unrecognized domains (the
  * app never scrapes either); `boardName` names the board when known. */
 export type UrlClassification =

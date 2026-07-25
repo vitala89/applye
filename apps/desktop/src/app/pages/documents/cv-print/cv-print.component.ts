@@ -16,8 +16,8 @@ import { normalizeCvContent } from '../cv-content.util';
 /**
  * Print-only CV route (`print/cv/:id`), loaded by a HIDDEN Tauri window during
  * the silent WYSIWYG PDF export (`cv_document_export_pdf_wysiwyg`). Renders the
- * same `<app-cv-preview>` as the editor — the export therefore IS the editor's
- * render — then signals readiness to Rust once fonts are loaded and the
+ * same `<app-cv-preview>` as the editor - the export therefore IS the editor's
+ * render - then signals readiness to Rust once fonts are loaded and the
  * paginated sheet has settled, so the native print snapshot never captures a
  * half-rendered document.
  */

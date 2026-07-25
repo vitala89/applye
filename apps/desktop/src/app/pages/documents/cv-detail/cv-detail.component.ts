@@ -156,7 +156,7 @@ export class CvDetailComponent {
   readonly regionOptions = computed(() =>
     this.regionTags.map((tag) => ({
       tag,
-      label: `${tag.toUpperCase()} — ${this.t()(`documents.cv_region_${tag}`)}`,
+      label: `${tag.toUpperCase()} - ${this.t()(`documents.cv_region_${tag}`)}`,
     })),
   );
 
@@ -214,16 +214,16 @@ export class CvDetailComponent {
   readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
   readonly themeId = signal<number>(1);
   readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
-  /** The active theme's own section-title rule — fed to the live-style panel so
+  /** The active theme's own section-title rule - fed to the live-style panel so
    * its line size/colour controls can show the value the title renders at. */
   readonly activeThemeTitleRule = computed(() => themeTitleRule(this.activeTheme()));
-  /** The theme's own rule under an experience entry head — fed to the panel for
+  /** The theme's own rule under an experience entry head - fed to the panel for
    * the same reason as `activeThemeTitleRule`. */
   readonly activeThemeEntryRule = computed(() => themeEntryRule(this.activeTheme()));
   /** The clean baseline for the active theme: document defaults with the
    * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
    * "Reset styles" are measured against THIS, not the hard-coded Classic
-   * default — so a pristine Aurora doc reads as "Aurora", not "Custom", and
+   * default - so a pristine Aurora doc reads as "Aurora", not "Custom", and
    * Reset returns to the selected theme. */
   readonly themeBaseStyle = computed<CvStyle>(() => ({
     ...CV_STYLE_DEFAULT,
@@ -332,7 +332,7 @@ export class CvDetailComponent {
     }
   });
 
-  /** Per-section collapse state for the content-section accordion — session
+  /** Per-section collapse state for the content-section accordion - session
    * only (not persisted); every section starts expanded (an empty set means
    * nothing is collapsed). */
   readonly collapsedSections = signal<Set<CvSectionKey>>(new Set());
@@ -348,7 +348,7 @@ export class CvDetailComponent {
     this.collapsedSections.set(next);
   }
 
-  /** Collapse state for the "Style" card — open by default. */
+  /** Collapse state for the "Style" card - open by default. */
   readonly styleOpen = signal(true);
 
   toggleStyleOpen(): void {
@@ -380,7 +380,7 @@ export class CvDetailComponent {
   }
 
   /** Immutably commits a fully-built next style and debounces the ATS safety
-   * re-check — shared by the element/document-scope panel paths that don't go
+   * re-check - shared by the element/document-scope panel paths that don't go
    * through an existing single-target setter. */
   private applyStyle(next: CvStyle): void {
     this.style.set(next);
@@ -450,7 +450,7 @@ export class CvDetailComponent {
   /** Writes an "all titles" (document-scope) title property. The per-section
    * overrides of that SAME property are cleared first, so a title the user
    * styled on its own adopts the new value instead of silently keeping its old
-   * one — the title-layer counterpart of the `clearSectionElementOverrides`
+   * one - the title-layer counterpart of the `clearSectionElementOverrides`
    * step in `applyBodyScopeChange`. Sibling properties survive: only what this
    * control writes is made uniform. */
   private applyToAllTitles(inherit: Partial<CvSectionStyle>, patch: Partial<CvStyle>): void {
@@ -468,7 +468,7 @@ export class CvDetailComponent {
 
   private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
     const key = sel.sectionKey;
-    // Section body-rule (divider) is a section-level property — written at
+    // Section body-rule (divider) is a section-level property - written at
     // section scope regardless of the font scope selector.
     if (change.bodyBorder !== undefined) {
       this.applyToAllEntries(key, { borderStyle: undefined });
@@ -517,7 +517,7 @@ export class CvDetailComponent {
         return;
       }
       // Applying to the whole section (e.g. "All experiences") first wipes the
-      // per-entry/field overrides in it (bullets excepted — their own scope),
+      // per-entry/field overrides in it (bullets excepted - their own scope),
       // so EVERY entry adopts the section value uniformly instead of the
       // individually-styled ones silently keeping their old colour.
       this.style.set(clearSectionElementOverrides(this.style(), key));
@@ -539,13 +539,13 @@ export class CvDetailComponent {
     this.applyStyle(patchCvDocumentBody(this.style(), change.patch ?? {}));
   }
 
-  /** True when the style differs from the active theme's baseline in any way —
+  /** True when the style differs from the active theme's baseline in any way -
    * a document-wide field (body font/size/weight/colour, title style, title
    * line), a per-section override, or a per-element override. Page geometry
    * is deliberately NOT part of this comparison: `resetAllStyles` preserves
    * the current `page` rather than reseeding it, so page geometry never makes
    * a document read as "custom" here. Drives the live-style panel's "reset
-   * all styling" enabled state (Task 5 — the Edit-mode "Custom" badge that
+   * all styling" enabled state (Task 5 - the Edit-mode "Custom" badge that
    * used to read this was removed along with the document-wide style
    * groups), so it reacts to global, per-section, AND per-element changes
    * alike. A pristine doc on a theme is NOT custom (a fresh Aurora doc
@@ -612,7 +612,7 @@ export class CvDetailComponent {
    * `window.print()`. Tauri's webview plugin already overrides
    * `window.print` on macOS to route through its native print command (gated
    * by the `core:webview:allow-print` capability); on Windows/Linux the
-   * webview's built-in print is used directly — no `@tauri-apps/api` import
+   * webview's built-in print is used directly - no `@tauri-apps/api` import
    * is needed or available for this in the installed SDK version.
    */
   async exportPdfWysiwyg(): Promise<void> {
@@ -657,8 +657,8 @@ export class CvDetailComponent {
     window.print();
   }
 
-  /** Blur the focused inline editor — firing its `(blur)` handler, which commits
-   * the draft if it changed — and clear the live selection so all inline editor
+  /** Blur the focused inline editor - firing its `(blur)` handler, which commits
+   * the draft if it changed - and clear the live selection so all inline editor
    * chrome unmounts and the page cards fall back to committed text. */
   private commitAndCloseEditors(): void {
     (document.activeElement as HTMLElement | null)?.blur?.();
@@ -681,7 +681,7 @@ export class CvDetailComponent {
   /**
    * Direct OS/browser print (Cmd/Ctrl+P), bypassing the Export button. Drop the
    * live selection so every inline editor unmounts and the page cards render
-   * their last-committed canonical text — the uncommitted draft and its native
+   * their last-committed canonical text - the uncommitted draft and its native
    * control never reach the print snapshot. Unlike the Export action this does
    * NOT commit the draft (a raw Cmd+P should not silently persist a half-typed
    * edit). `tick()` performs the swap synchronously, before the browser captures
@@ -813,7 +813,7 @@ export class CvDetailComponent {
     });
   }
 
-  /** Header sections whose position is fixed — they carry the document's
+  /** Header sections whose position is fixed - they carry the document's
    *  identity (photo + personal details) and must stay pinned to the top,
    *  so reordering (drag or move buttons) is disabled for them. */
   private static readonly LOCKED_SECTION_KEYS: readonly CvSectionKey[] = [
@@ -863,7 +863,7 @@ export class CvDetailComponent {
     this.moveSection(key, 1);
   }
 
-  /** Swaps a single section by key with a new immutable value — the sink for
+  /** Swaps a single section by key with a new immutable value - the sink for
    * extracted section-editor children's `(sectionChange)` output (e.g.
    * `CvSummaryEditorComponent`, `CvLanguagesEditorComponent`). */
   replaceSection(updated: CvSection): void {

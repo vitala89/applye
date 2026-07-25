@@ -13,7 +13,7 @@ import {
  * Print-only report route (`print/tracker-report`), loaded by a HIDDEN Tauri
  * window during the silent WYSIWYG PDF export (`tracker_report_export_pdf_wysiwyg`).
  * Renders the SAME `<app-tracker-report>` as the export preview, so the saved
- * PDF IS the preview's render — then signals readiness to Rust once fonts and
+ * PDF IS the preview's render - then signals readiness to Rust once fonts and
  * layout have settled. Params (applicant, period, market) arrive as query args.
  */
 @Component({
@@ -138,7 +138,7 @@ export class TrackerReportPrintComponent {
     await new Promise((r) => setTimeout(r, 250));
     await new Promise((r) => setTimeout(r, 250));
     // Flags the print-media rules (styles.scss) that hide the app shell so only
-    // the report sheet prints — same mechanism as the CV export.
+    // the report sheet prints - same mechanism as the CV export.
     document.body.classList.add('printing-report');
     await new Promise((r) => setTimeout(r, 50));
     await this.db.printWindowReady();

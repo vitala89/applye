@@ -1,4 +1,4 @@
-// Tauri command handlers — each module maps to a frontend invoke() call.
+// Tauri command handlers - each module maps to a frontend invoke() call.
 // All DB commands are async and receive the shared Db pool via Tauri State.
 // All SQL lives here in Rust; the Angular frontend only calls typed invoke()s.
 
@@ -29,7 +29,7 @@ use crate::db::Db;
 
 /// Backup stub for the future "export your data" feature: writes a clean,
 /// WAL-consistent copy of the SQLite database to `target_path` via VACUUM INTO.
-/// No UI yet — callable from the frontend / a future Settings action.
+/// No UI yet - callable from the frontend / a future Settings action.
 #[tauri::command]
 pub async fn db_export(target_path: String, db: State<'_, Db>) -> Result<String, String> {
     sqlx::query("VACUUM INTO ?")

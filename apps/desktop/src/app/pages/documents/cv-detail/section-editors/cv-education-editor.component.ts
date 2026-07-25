@@ -8,7 +8,7 @@ import { blankEducationEntry } from '../../cv-content.util';
 /**
  * Editor arm for the `education` CV section: a list of degree/institution/
  * date entries plus add/remove. Behavior-preserving extraction from
- * `CvDetailComponent` — same fields and buttons, only the mutation model is
+ * `CvDetailComponent` - same fields and buttons, only the mutation model is
  * now immutable: every edit emits a brand-new `CvEducationSection` via
  * `sectionChange` instead of mutating `section.entries` in place.
  */

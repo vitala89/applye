@@ -19,10 +19,10 @@ output_format: |
   }
 recommended_model: economy
 language_note: Output in `language`. German: include Unternehmenskultur angle.
-status: v2 feature — not in MVP
+status: v2 feature - not in MVP
 ---
 
-<!-- PROMPT TEMPLATE — fill at runtime -->
+<!-- PROMPT TEMPLATE - fill at runtime -->
 <!-- Injected: {{company_name}}, {{job_description}}, {{language}} -->
 
 TODO: Write company research prompt template.

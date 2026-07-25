@@ -5,7 +5,7 @@ name: CI
 # backend gets clippy + unit tests. Any lint error, failing test, or build
 # break fails the job and blocks merge.
 #
-# NOT here: the multi-OS Tauri release/packaging build — that is a separate
+# NOT here: the multi-OS Tauri release/packaging build - that is a separate
 # tag-triggered workflow in Phase 4.
 
 on:

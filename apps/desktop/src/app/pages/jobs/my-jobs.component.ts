@@ -82,7 +82,7 @@ export class MyJobsComponent {
   readonly statuses = APPLICATION_STATUSES;
   readonly legitimacies = ['green', 'yellow', 'red'];
 
-  // Import tracklist flow (Phase 6.4) — pick file -> detect (1 AI call) ->
+  // Import tracklist flow (Phase 6.4) - pick file -> detect (1 AI call) ->
   // preview (deterministic) -> confirm (deterministic insert).
   readonly importOpen = signal(false);
   readonly importStep = signal<ImportStep>('pick');

@@ -35,7 +35,7 @@ export function wordTokens(text: string): { text: string; bold: boolean; index: 
 }
 
 /** Flip the bold state of the word at `index` (as numbered by `wordTokens`)
- * and reserialize the whole line back to `**bold**` markdown — the persisted,
+ * and reserialize the whole line back to `**bold**` markdown - the persisted,
  * export-safe representation. Maximal runs of adjacent bold words share one
  * `**…**` wrapper. Out-of-range indices return the input unchanged. Pure. */
 export function toggleWordBold(text: string, index: number): string {
@@ -65,7 +65,7 @@ export function toggleWordBold(text: string, index: number): string {
   return parts.join(' ');
 }
 
-/** Ordered whitespace-delimited words with their run bold state — the shared
+/** Ordered whitespace-delimited words with their run bold state - the shared
  * tokenizer behind `wordTokens`/`toggleWordBold`. */
 function splitWords(text: string): { text: string; bold: boolean }[] {
   const out: { text: string; bold: boolean }[] = [];
@@ -77,7 +77,7 @@ function splitWords(text: string): { text: string; bold: boolean }[] {
   return out;
 }
 
-/** Toggle `**bold**` around the selection of a plain text field. Pure — the
+/** Toggle `**bold**` around the selection of a plain text field. Pure - the
  * caller reads selStart/selEnd from the DOM field, applies the result to the
  * model, and restores the returned selection. */
 export function toggleBoldWrap(

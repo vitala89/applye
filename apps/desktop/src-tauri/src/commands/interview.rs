@@ -1,17 +1,17 @@
 // Interview stages: a free-form, ordered list per application. Every real
 // hiring process looks different, so this is deliberately NOT a fixed
-// template — stage_type is only a coarse category for future AI prep-
+// template - stage_type is only a coarse category for future AI prep-
 // generation routing, stage_label is the free-text name the user actually
 // sees everywhere.
 //
-// Status lifecycle (app-level enum, no DB CHECK constraint — `status` is
+// Status lifecycle (app-level enum, no DB CHECK constraint - `status` is
 // plain TEXT in the schema):
 //   scheduled | awaiting_scheduling | awaiting_response | passed | rejected
 //   | cancelled
 //
 // Rejection is terminal at ANY stage (not just the last one) and syncs the
 // parent application's kanban status via the SAME db_set_application_status
-// core used by drag-and-drop and the quick-view modal — no second
+// core used by drag-and-drop and the quick-view modal - no second
 // status-update path. `cancelled` never triggers this sync.
 
 use serde::{Deserialize, Serialize};
@@ -98,10 +98,10 @@ async fn create_interview_stage_core(
     fetch_stage(pool, id).await
 }
 
-/// Partial patch — every field but `stageId` is optional; an absent field
+/// Partial patch - every field but `stageId` is optional; an absent field
 /// keeps its current value. When the merged status becomes `rejected` (and
 /// wasn't already), this reuses db_set_application_status_core to move the
-/// parent application to `rejected` and write status_history — the exact
+/// parent application to `rejected` and write status_history - the exact
 /// same path drag-and-drop and the quick-view modal use.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -218,7 +218,7 @@ async fn fetch_stage(pool: &SqlitePool, id: i64) -> Result<InterviewStage, Strin
 }
 
 // Interview prep cards: AI-generated Q&A / STAR+R study cards for one stage,
-// cached by (stage_id, format, input_hash) — the frontend computes input_hash
+// cached by (stage_id, format, input_hash) - the frontend computes input_hash
 // over profile+JD+language+existing questions, so re-opening a stage with an
 // unchanged profile and JD is a 0-token read, and "give me N more" (a fresh
 // hash because existing_questions changed) appends rather than replacing.
@@ -285,7 +285,7 @@ async fn list_interview_prep_core(
     .map_err(|e| format!("list_interview_prep: {e}"))
 }
 
-/// Inserts one row per generated card, all sharing the same input_hash —
+/// Inserts one row per generated card, all sharing the same input_hash -
 /// a cache hit is "any row already exists for this (stage_id, format,
 /// input_hash)", checked by the frontend via list_interview_prep before
 /// calling `ai_run` at all.
@@ -429,7 +429,7 @@ mod tests {
     }
 
     /// Rejecting an EARLY stage (not the last one added) still syncs the
-    /// parent application to rejected — the sync isn't gated on stage_order
+    /// parent application to rejected - the sync isn't gated on stage_order
     /// being the max.
     #[tokio::test]
     async fn rejecting_early_stage_syncs_application_status() {
@@ -517,7 +517,7 @@ mod tests {
         assert_eq!(app_status, "interview");
     }
 
-    /// Partial update only touches the fields provided — everything else
+    /// Partial update only touches the fields provided - everything else
     /// (label, type, interviewer info) survives untouched.
     #[tokio::test]
     async fn partial_update_only_changes_provided_fields() {
@@ -599,7 +599,7 @@ mod tests {
         }
     }
 
-    /// Saving a batch inserts one row per card, all sharing the input_hash —
+    /// Saving a batch inserts one row per card, all sharing the input_hash -
     /// a cache-hit check just needs list_interview_prep to be non-empty.
     #[tokio::test]
     async fn save_batch_inserts_one_row_per_card() {
@@ -622,7 +622,7 @@ mod tests {
         assert_eq!(listed.len(), 3);
     }
 
-    /// "Give me N more" is a second batch save with a fresh input_hash — it
+    /// "Give me N more" is a second batch save with a fresh input_hash - it
     /// appends alongside the first batch rather than replacing it.
     #[tokio::test]
     async fn a_second_batch_appends_rather_than_replacing() {

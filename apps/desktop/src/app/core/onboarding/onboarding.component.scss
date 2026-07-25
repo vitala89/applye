@@ -1,5 +1,5 @@
 // Focused-shell onboarding wizard: single centered column, a horizontal
-// step stepper up top, scrollable step body, footer nav. Tokens only — no
+// step stepper up top, scrollable step body, footer nav. Tokens only - no
 // hardcoded colors/sizes, so dark/light apply automatically. Theme is bound
 // on the host element (see the component's @HostBinding), not assumed from
 // an ancestor, so the overlay can never drift from the app's live theme.
@@ -245,6 +245,20 @@
 }
 .ob__input:focus-visible {
   box-shadow: var(--shadow-ring);
+}
+.ob__input--confirm {
+  border-color: var(--warning);
+}
+
+.ob__field-hint {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.ob__field-hint--confirm {
+  grid-column: 1 / -1;
+  margin: calc(var(--space-1) * -1) 0 0;
+  color: var(--warning);
 }
 
 // ---- Step 0: welcome ----

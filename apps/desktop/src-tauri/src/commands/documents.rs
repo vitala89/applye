@@ -1,5 +1,5 @@
 // Documents library (ROADMAP §16): the live, editable CV / Cover-Letter
-// library — distinct from `generated_docs`, which stays the export journal.
+// library - distinct from `generated_docs`, which stays the export journal.
 // `content_json` is a serialized JSON string whose shape is locked as a typed
 // contract in `libs/core` (`CvContent` for `doc_type = 'cv'`,
 // `CoverLetterContent` for `doc_type = 'cover_letter'`) so the 1b/1c UI
@@ -121,7 +121,7 @@ pub struct UpsertCvTemplateInput {
 }
 
 /// Saves a constructor arrangement as a named custom template. Always
-/// `is_builtin = 0` — the five seeded presets are the only builtins and are
+/// `is_builtin = 0` - the five seeded presets are the only builtins and are
 /// never touched here.
 #[tauri::command]
 pub async fn cv_template_upsert(
@@ -184,7 +184,7 @@ pub struct CvImportFile {
 }
 
 /// Reads a CV file picked via the OS file dialog (DOCX or PDF) and extracts
-/// its plain text. No parsing into sections happens here — that is the
+/// its plain text. No parsing into sections happens here - that is the
 /// `cv-import` skill's job (one cached AI call); this step is deterministic
 /// and free.
 #[tauri::command]
@@ -235,7 +235,7 @@ fn data_uri_to_bytes(uri: &str) -> Option<Vec<u8>> {
 }
 
 /// Reads a picked CV photo file and returns it as a base64 data URI for
-/// inline storage/preview — no separate asset file, matches the
+/// inline storage/preview - no separate asset file, matches the
 /// `content_json`-opaque-blob convention used elsewhere in this module.
 #[tauri::command]
 pub fn cv_photo_read_file(path: String) -> Result<String, String> {
@@ -283,7 +283,7 @@ fn read_pdf_text(path: &str) -> Result<String, String> {
 /// Renders a `CvContent` JSON blob (opaque everywhere else in this module)
 /// into plain markdown for the existing docx/pdf byte generators. Reads
 /// `content_json` generically via `serde_json::Value` rather than a full
-/// typed mirror of the `libs/core` union — this module only ever needs to
+/// typed mirror of the `libs/core` union - this module only ever needs to
 /// walk it in visible/order sequence, not round-trip it.
 /// Structured, section-tagged block list for the
 /// styled DOCX/PDF exporters: same section walk, but each line is emitted as a
@@ -351,12 +351,12 @@ fn cv_content_to_blocks(
                 if let Some(name) = str_field("fullName") {
                     out.push(block(BlockLevel::H1, "personal_details", name, false));
                 }
-                // Position/title line (bold, dark) — mirrors the editor's
+                // Position/title line (bold, dark) - mirrors the editor's
                 // `.cvpreview__title` under the name.
                 if let Some(title) = str_field("title") {
                     out.push(block(BlockLevel::Body, "personal_details", title, true));
                 }
-                // Contact line — same fields, order, and " | " separator as the
+                // Contact line - same fields, order, and " | " separator as the
                 // editor's `buildContactLine`.
                 let contact: Vec<String> = [
                     "address",
@@ -426,7 +426,7 @@ fn cv_content_to_blocks(
                             format!("{head}\t{location}")
                         };
                         out.push(block(BlockLevel::EntryHead, "experience", head_line, false));
-                        let dates = format!("{start} – {end}");
+                        let dates = format!("{start} - {end}");
                         let role_line = if role.is_empty() {
                             dates.clone()
                         } else {
@@ -471,9 +471,9 @@ fn cv_content_to_blocks(
                             .filter(|p| !p.is_empty())
                             .collect::<Vec<_>>()
                             .join(", ");
-                        let dates = format!("{start} – {end}");
+                        let dates = format!("{start} - {end}");
                         let dates = dates.trim();
-                        // Two-column: degree/institution left, dates right —
+                        // Two-column: degree/institution left, dates right -
                         // mirrors the editor's education rows.
                         let line = if head.is_empty() {
                             dates.to_string()
@@ -606,7 +606,7 @@ fn cover_letter_content_to_blocks(
     Ok(out)
 }
 
-/// CV style choices (ROADMAP §16.5) — layout-adjacent but distinct from
+/// CV style choices (ROADMAP §16.5) - layout-adjacent but distinct from
 /// `cv_templates` (section order/toggles): font, size, one accent colour.
 /// Deserializes with safe defaults so a document with no `style_json` yet
 /// (every CV before this feature) resolves to the safe default, not an error.
@@ -623,7 +623,7 @@ pub struct CvStyle {
     pub font_weight: i64,
     /// Document-wide body-text colour (mirrors the TS `CvStyle.bodyColorHex`).
     /// Distinct from `accent_color_hex`: body text reads this (or dark), never
-    /// the accent — the no-accent-leak rule the export previously ignored.
+    /// the accent - the no-accent-leak rule the export previously ignored.
     #[serde(default)]
     pub body_color_hex: Option<String>,
     #[serde(default)]
@@ -721,7 +721,7 @@ impl Default for PageSettings {
     }
 }
 
-/// Curated ATS-safe font list (ROADMAP §16.5) — case-insensitive match.
+/// Curated ATS-safe font list (ROADMAP §16.5) - case-insensitive match.
 /// Fonts outside this list aren't blocked, just flagged: some ATS parsers
 /// choke on decorative/condensed/script fonts when extracting text.
 const ATS_SAFE_FONTS: &[&str] = &[
@@ -739,7 +739,7 @@ const ATS_SAFE_FONTS: &[&str] = &[
 
 /// One ATS/readability note. `kind` selects the (translated, honestly
 /// worded) message on the frontend; `detail` is the value to interpolate
-/// (font name / point size / hex) — Rust never renders user-facing text.
+/// (font name / point size / hex) - Rust never renders user-facing text.
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StyleNote {
@@ -750,7 +750,7 @@ pub struct StyleNote {
 /// Deterministic, 0-token style-safety check. Two honestly distinct note
 /// types (ROADMAP §16.5): `font_ats_risk` / `size_out_of_range` are about
 /// ATS text-parsing risk; `color_readability_risk` is about print/greyscale
-/// legibility, NOT ATS parsing — colour barely affects text extraction.
+/// legibility, NOT ATS parsing - colour barely affects text extraction.
 /// A note only appears when the value leaves the safe default.
 #[tauri::command]
 pub fn check_style_safety(style_json: Option<String>) -> Vec<StyleNote> {
@@ -958,12 +958,12 @@ fn weight_note(weight: i64) -> Option<StyleNote> {
 }
 
 /// Flags an accent colour too light to stay legible once printed in
-/// greyscale (e.g. by an Agentur für Arbeit printer) — a readability/print
+/// greyscale (e.g. by an Agentur für Arbeit printer) - a readability/print
 /// concern, not an ATS-parsing one.
 fn is_low_print_contrast(hex: &str) -> bool {
     let hex = hex.trim_start_matches('#');
     if hex.len() != 6 {
-        return false; // malformed value — don't nag, `check_style_safety` isn't a validator
+        return false; // malformed value - don't nag, `check_style_safety` isn't a validator
     }
     let Ok(r) = u8::from_str_radix(&hex[0..2], 16) else {
         return false;
@@ -981,7 +981,7 @@ fn is_low_print_contrast(hex: &str) -> bool {
 
 /// Exports a library CV to a user-chosen path as DOCX or PDF. This is a
 /// library export, distinct from the job-specific `generated_docs` journal
-/// (`export_docx`/`export_pdf` in `commands::tailoring`) — it never touches
+/// (`export_docx`/`export_pdf` in `commands::tailoring`) - it never touches
 /// `applications.cv_path`, which stays the frozen apply-time snapshot.
 #[tauri::command]
 pub async fn cv_document_export(
@@ -995,7 +995,7 @@ pub async fn cv_document_export(
     Ok(save_path)
 }
 
-/// Effective export style — mirrors the TS load-time merge
+/// Effective export style - mirrors the TS load-time merge
 /// `{ ...CV_STYLE_DEFAULT, ...themeStyleSeed(theme), ...styleJson }`: the theme
 /// seed (font/size/weight/accent) is the base, and only the fields the user
 /// actually persisted in `style_json` override it. Serde's field defaults can't
@@ -1044,7 +1044,7 @@ pub(crate) async fn cv_document_export_bytes_core(
         .await?
         .ok_or_else(|| "cv_document_export: document not found".to_string())?;
     // The user's style choices live in `style_json`, over the selected theme's
-    // seed — resolved together so the export matches the live preview's
+    // seed - resolved together so the export matches the live preview's
     // effective style. Read before moving `content_json` out of `doc`.
     let theme = crate::commands::tailoring::builtin_theme(doc.theme_id);
     let style = resolve_export_style(doc.style_json.as_deref(), &theme);
@@ -1524,7 +1524,7 @@ mod tests {
         }
     }
 
-    /// Insert then read back a `document_library` row — the round-trip
+    /// Insert then read back a `document_library` row - the round-trip
     /// required by the 1a acceptance criteria.
     #[tokio::test]
     async fn document_library_insert_and_read_round_trip() {
@@ -1822,7 +1822,7 @@ mod tests {
     fn resolve_export_style_seeds_from_theme_then_overrides() {
         use crate::commands::tailoring::builtin_theme;
         let aurora = builtin_theme(Some(2));
-        // No style_json → pure theme seed (Lato 10pt, accent green) — the
+        // No style_json → pure theme seed (Lato 10pt, accent green) - the
         // wrong-font regression guard.
         let seeded = resolve_export_style(None, &aurora);
         assert_eq!(seeded.font_family, "Lato");
@@ -1863,7 +1863,7 @@ mod tests {
             .find(|b| b.level == BlockLevel::EntryRole)
             .expect("entry role");
         // Two-column: role left, dates right.
-        assert_eq!(role.text, "Engineer\t2020 – 2023");
+        assert_eq!(role.text, "Engineer\t2020 - 2023");
     }
 
     #[test]

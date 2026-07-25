@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::db::Db;
 
-/// Single profile row (id is always 1 — there is one profile).
+/// Single profile row (id is always 1 - there is one profile).
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
@@ -73,7 +73,7 @@ pub async fn db_upsert_profile(
         .ok_or_else(|| "db_upsert_profile: row missing after upsert".to_string())
 }
 
-/// Compute the stable FNV-1a hash used for cache keys — same algorithm as db::stable_hash.
+/// Compute the stable FNV-1a hash used for cache keys - same algorithm as db::stable_hash.
 /// Exposed so the frontend can check if a cached result is still valid without an extra DB round-trip.
 #[tauri::command]
 pub fn hash_text(text: String) -> String {

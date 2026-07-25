@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 
 /**
- * Skeleton — a shimmering placeholder that reserves layout while content
+ * Skeleton - a shimmering placeholder that reserves layout while content
  * loads. Mirrors the Applye Design System `Skeleton` primitive: a sliding
  * indigo-neutral shimmer over a sunken surface, falling back to a soft pulse
  * under `prefers-reduced-motion`. The `.applye-skeleton` styles live in the

@@ -25,7 +25,7 @@ import {
 } from '../cv-content.util';
 
 /**
- * The cover letter's rendered page view — the single render shared by the
+ * The cover letter's rendered page view - the single render shared by the
  * editor (`app-cover-letter-detail`) and the silent PDF export's print route
  * (`app-cover-letter-print`). Both consume this component, so the exported PDF
  * IS the editor's render and cannot drift from it. Mirrors `app-cv-preview`.
@@ -50,10 +50,10 @@ export class CoverLetterPreviewComponent {
    * so an embedder that has no language still renders. */
   readonly language = input<string>('en');
 
-  /** px per mm at 96dpi — fixes the on-screen sheet to real page proportions. */
+  /** px per mm at 96dpi - fixes the on-screen sheet to real page proportions. */
   private static readonly PX_PER_MM = 96 / 25.4;
 
-  /** Preview page geometry (px) — real A4/Letter proportions plus margins,
+  /** Preview page geometry (px) - real A4/Letter proportions plus margins,
    * consumed by `<lib-paginated-sheet>`, which owns pagination/measurement.
    * Mirrors `geometry` on `CvPreviewComponent`. */
   readonly geometry = computed<SheetGeometry>(() => {
@@ -69,7 +69,7 @@ export class CoverLetterPreviewComponent {
     };
   });
 
-  /** True when any single atom is taller than one usable page — set from
+  /** True when any single atom is taller than one usable page - set from
    * `<lib-paginated-sheet>`'s `(blockOverflow)` output. */
   protected readonly overflow = signal(false);
 
@@ -77,7 +77,7 @@ export class CoverLetterPreviewComponent {
     this.overflow.set(value);
   }
 
-  // Atom templates for the paginated sheet — declared in the HTML.
+  // Atom templates for the paginated sheet - declared in the HTML.
   readonly addressTpl = viewChild.required<TemplateRef<unknown>>('addressTpl');
   readonly dateTpl = viewChild.required<TemplateRef<unknown>>('dateTpl');
   readonly subjectTpl = viewChild.required<TemplateRef<unknown>>('subjectTpl');
@@ -128,7 +128,7 @@ export class CoverLetterPreviewComponent {
       .replace('{i}', String(page))
       .replace('{n}', String(total));
 
-  /** Effective font/size/weight/colour for a block — its override merged over
+  /** Effective font/size/weight/colour for a block - its override merged over
    * the document-wide style. */
   effBlockStyle(key: CoverLetterBlockKey) {
     return effectiveCoverLetterBlockStyle(this.style(), key);

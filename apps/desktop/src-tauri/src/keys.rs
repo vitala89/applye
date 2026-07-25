@@ -1,7 +1,7 @@
-// OS keychain operations — provider API keys stored via the `keyring` crate.
+// OS keychain operations - provider API keys stored via the `keyring` crate.
 // macOS Keychain / Windows Credential Manager / Linux Secret Service.
 // Keys are never written to SQLite, logs, or the repo, and the raw key is
-// never returned to the frontend — only store / check / delete.
+// never returned to the frontend - only store / check / delete.
 
 use keyring::{Entry, Error as KeyringError};
 
@@ -22,7 +22,7 @@ impl KeyStore {
     }
 
     /// Returns the stored key, or `None` if no entry exists. Used internally by
-    /// `ai_run` — the raw value is never exposed to the frontend.
+    /// `ai_run` - the raw value is never exposed to the frontend.
     pub fn get_key(provider: &str) -> Result<Option<String>, String> {
         match Self::entry(provider)?.get_password() {
             Ok(k) => Ok(Some(k)),

@@ -4,11 +4,11 @@ import { TRANSLATIONS } from '@applye/i18n';
 
 // Guard: every `t()('namespace.key')` reference anywhere under apps/desktop
 // must resolve to a real value in TRANSLATIONS.en (libs/i18n/src/lib/
-// translations/translations.ts — the ACTUAL runtime source TranslateService
+// translations/translations.ts - the ACTUAL runtime source TranslateService
 // reads; the sibling .json files in that folder are unused legacy and must
 // never be treated as the source of truth again). Without this, a missing
 // key renders as the raw dotted string in the UI instead of failing the
-// build — this test turns that into a fast, deterministic CI failure.
+// build - this test turns that into a fast, deterministic CI failure.
 
 const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
 const APP_DIR = path.join(WORKSPACE_ROOT, 'apps', 'desktop', 'src', 'app');
@@ -39,7 +39,7 @@ function flatten(obj: Record<string, unknown>, prefix = ''): Set<string> {
 }
 
 // Matches the direct call shape `t()('a.b')` and the `? 'a.b'` / `: 'a.b'`
-// shape of ternaries and object-literal values — covers every dynamic key
+// shape of ternaries and object-literal values - covers every dynamic key
 // call site in this codebase (e.g. `t()(col.labelKey)` where `labelKey` is
 // itself defined as `'status.applied'` in an object literal).
 const KEY_PATTERN =
@@ -53,7 +53,7 @@ function extractKeys(content: string): string[] {
     // matches the literal `documents.cover_letter_tone_`, but the real keys
     // are formed at runtime (`..._formal`, `..._friendly`, …). A trailing
     // `+` right after the closing quote means this is a concatenation prefix,
-    // not a complete key — the runtime-resolved key can't be checked statically.
+    // not a complete key - the runtime-resolved key can't be checked statically.
     const rest = content.slice(match.index + match[0].length).trimStart();
     if (rest.startsWith('+')) continue;
     keys.push((match[1] ?? match[2]) as string);

@@ -102,7 +102,7 @@ describe('OnboardingComponent flow', () => {
       expect(component.step()).toBe(4);
     });
 
-    it('is unreachable backwards — back() mirrors the forward jump', () => {
+    it('is unreachable backwards - back() mirrors the forward jump', () => {
       component.step.set(4);
 
       component.back();
@@ -135,7 +135,7 @@ describe('OnboardingComponent flow', () => {
       component.resumeText.set('a resume');
     });
 
-    it('does not advance the wizard — the Targeting step calls it in place', async () => {
+    it('does not advance the wizard - the Targeting step calls it in place', async () => {
       component.step.set(4);
 
       await component.suggestArchetypes();
@@ -350,7 +350,8 @@ describe('OnboardingComponent flow', () => {
 
     it('writes the new resume over the old profile markdown', async () => {
       component.parsedCv.set(parsedCv());
-      component.reviewName.set('Vitalii Kasap');
+      component.reviewFirstName.set('Vitalii');
+      component.reviewLastName.set('Kasap');
 
       await component.saveProfile();
 
@@ -419,7 +420,8 @@ describe('OnboardingComponent flow', () => {
   describe('finishing the last step', () => {
     it('saves the profile and the CV, marks onboarding seen, and closes', async () => {
       component.parsedCv.set(parsedCv());
-      component.reviewName.set('Vitalii Kasap');
+      component.reviewFirstName.set('Vitalii');
+      component.reviewLastName.set('Kasap');
       const closed = jest.fn();
       component.completed.subscribe(closed);
 
@@ -473,8 +475,8 @@ describe('OnboardingComponent flow', () => {
     });
 
     // Finish is the only exit now that the Ready step's two CTAs are gone. The
-    // wizard closes onto whatever route is behind it — the dashboard on a first
-    // run, the page a re-run was opened from — instead of picking a
+    // wizard closes onto whatever route is behind it - the dashboard on a first
+    // run, the page a re-run was opened from - instead of picking a
     // destination, which is why it must not navigate.
     it('navigates nowhere itself', async () => {
       component.parsedCv.set(parsedCv());
@@ -509,4 +511,195 @@ describe('OnboardingComponent flow', () => {
       expect(component.step()).toBe(4);
     });
   });
+
+  describe('name confirm nudge', () => {
+    it('seeds both fields from a confident parse and does not nudge', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Kowalska',
+          firstName: 'Anna',
+          lastName: 'Kowalska',
+          nameSplitConfident: true,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Anna');
+      expect(component.reviewLastName()).toBe('Kowalska');
+      expect(component.needsNameConfirm()).toBe(false);
+    });
+
+    it('nudges when the parse was not confident', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Maria Kowalska',
+          firstName: 'Anna Maria',
+          lastName: 'Kowalska',
+          nameSplitConfident: false,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('nudges when the last name is missing', () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Prince');
+      expect(component.reviewLastName()).toBe('');
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('derives the split when the parse omitted it', () => {
+      component.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Anna');
+      expect(component.reviewLastName()).toBe('Kowalska');
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('stops nudging once the user edits either field', () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
+      );
+      component.seedReviewFields();
+      expect(component.needsNameConfirm()).toBe(true);
+
+      component.onNameEdited();
+
+      expect(component.needsNameConfirm()).toBe(false);
+    });
+
+    it('seeds from the display name when the parse carried empty strings', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Kowalska',
+          firstName: '',
+          lastName: '',
+          nameSplitConfident: true,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Anna');
+      expect(component.reviewLastName()).toBe('Kowalska');
+    });
+
+    it('nudges when only the last name survived the parse', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Anna Kowalska',
+          firstName: null,
+          lastName: 'Kowalska',
+          nameSplitConfident: true,
+        }),
+      );
+      component.reviewLastName.set('Kowalska');
+
+      expect(component.needsNameConfirm()).toBe(true);
+    });
+
+    it('leaves a hand-edited field alone when a re-parse seeds again', () => {
+      component.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
+      component.seedReviewFields();
+      component.reviewFirstName.set('Ania');
+
+      component.parsedCv.set(makeParsed({ fullName: 'Jane Smith' }));
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Ania');
+      expect(component.reviewLastName()).toBe('Kowalska');
+    });
+
+    it('keeps Continue enabled and describes the inputs while the nudge is up', async () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
+      );
+      component.seedReviewFields();
+      component.step.set(3);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(component.needsNameConfirm()).toBe(true);
+      const el = fixture.nativeElement as HTMLElement;
+      const hint = el.querySelector('.ob__field-hint--confirm');
+      expect(hint?.id).toBeTruthy();
+      for (const id of ['ob-review-first-name', 'ob-review-last-name']) {
+        expect(el.querySelector(`#${id}`)?.getAttribute('aria-describedby')).toBe(hint?.id);
+      }
+      const next = [...el.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Continue'),
+      );
+      expect(next).toBeTruthy();
+      expect(next?.disabled).toBe(false);
+    });
+
+    it('recaps the resume name the artifacts got, not a reordered composition', () => {
+      component.parsedCv.set(
+        makeParsed({
+          fullName: 'Kim Minjun',
+          firstName: 'Minjun',
+          lastName: 'Kim',
+          nameSplitConfident: false,
+        }),
+      );
+
+      component.seedReviewFields();
+
+      expect(component.resumeSummary()).toContain('Kim Minjun');
+      expect(component.resumeSummary()).not.toContain('Minjun Kim');
+    });
+
+    it('recaps the composed name once the user edits a part', () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Kim Minjun', firstName: 'Minjun', lastName: 'Kim' }),
+      );
+      component.seedReviewFields();
+
+      component.reviewLastName.set('Park');
+      component.onNameEdited();
+
+      expect(component.resumeSummary()).toContain('Minjun Park');
+    });
+
+    it('does not nudge when there is no name at all', () => {
+      component.parsedCv.set(makeParsed({ fullName: null }));
+
+      component.seedReviewFields();
+
+      expect(component.needsNameConfirm()).toBe(false);
+    });
+  });
 });
+
+function makeParsed(personalDetails: Partial<CvParsedContent['personalDetails']>): CvParsedContent {
+  return {
+    personalDetails: {
+      fullName: null,
+      title: null,
+      email: null,
+      phone: null,
+      address: null,
+      website: null,
+      linkedin: null,
+      ...personalDetails,
+    },
+    summary: null,
+    experience: [],
+    education: [],
+    skills: [],
+    languages: [],
+    lowConfidenceNotes: [],
+  } as unknown as CvParsedContent;
+}

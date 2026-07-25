@@ -91,9 +91,9 @@ export class DbService {
   }
 
   /**
-   * Factory reset — wipe every user-data table and reset settings to defaults
+   * Factory reset - wipe every user-data table and reset settings to defaults
    * (including `onboardingSeen = false`). Destructive and irreversible; the UI
-   * gates it behind an explicit confirm. Does NOT touch OS-keychain API keys —
+   * gates it behind an explicit confirm. Does NOT touch OS-keychain API keys -
    * the caller clears those separately via KeysService.
    */
   async resetAllData(): Promise<void> {
@@ -185,7 +185,7 @@ export class DbService {
     return tauriInvoke<ScoringCache | null>('score_cache_get', { jobId, profileHash });
   }
 
-  /** Newest score for a job regardless of which profile version produced it —
+  /** Newest score for a job regardless of which profile version produced it -
    * the fallback that keeps an earlier result visible (marked stale) after a
    * profile edit changes the hash. */
   async scoreCacheLatest(jobId: number): Promise<ScoringCache | null> {
@@ -291,12 +291,12 @@ export class DbService {
     return tauriInvoke<Application>('db_set_application_status', { id, status });
   }
 
-  /** Job Tracker inline edit — patches only contact/next-action/salary/notes. */
+  /** Job Tracker inline edit - patches only contact/next-action/salary/notes. */
   async updateApplicationTrackerFields(input: ApplicationTrackerFieldsInput): Promise<Application> {
     return tauriInvoke<Application>('db_update_application_tracker_fields', { input });
   }
 
-  /** Pipeline quick-view priority flag — distinct from the legitimacy tier. */
+  /** Pipeline quick-view priority flag - distinct from the legitimacy tier. */
   async setApplicationPriority(applicationId: number, priority: Priority): Promise<Application> {
     return tauriInvoke<Application>('set_application_priority', { applicationId, priority });
   }
@@ -315,7 +315,7 @@ export class DbService {
     return tauriInvoke<InterviewStage>('create_interview_stage', { input });
   }
 
-  /** Partial patch — only stageId is required; other fields keep their current value. */
+  /** Partial patch - only stageId is required; other fields keep their current value. */
   async updateInterviewStage(input: UpdateInterviewStageInput): Promise<InterviewStage> {
     return tauriInvoke<InterviewStage>('update_interview_stage', { input });
   }
@@ -324,20 +324,20 @@ export class DbService {
     return tauriInvoke<void>('delete_interview_stage', { stageId });
   }
 
-  /** Hard delete — removes the job and every dependent row (applications,
+  /** Hard delete - removes the job and every dependent row (applications,
    *  scoring, tailoring, interview data). Irreversible; caller must confirm
    *  with the user first. */
   async deleteJob(id: number): Promise<void> {
     return tauriInvoke<void>('db_delete_job', { id });
   }
 
-  /** Ordered by id ascending — insertion order across every generated batch. */
+  /** Ordered by id ascending - insertion order across every generated batch. */
   async listInterviewPrep(stageId: number): Promise<InterviewPrep[]> {
     return tauriInvoke<InterviewPrep[]>('list_interview_prep', { stageId });
   }
 
   /** Inserts one row per card, all sharing inputHash. The caller checks
-   *  listInterviewPrep for an existing hash before calling AI at all — this
+   *  listInterviewPrep for an existing hash before calling AI at all - this
    *  command never dedupes, so it must not be called on a cache hit. */
   async saveInterviewPrepBatch(input: SaveInterviewPrepBatchInput): Promise<InterviewPrep[]> {
     return tauriInvoke<InterviewPrep[]>('save_interview_prep_batch', { input });
@@ -420,7 +420,7 @@ export class DbService {
   }
 
   /** Reads a picked DOCX/PDF and extracts its plain text (deterministic,
-   * 0 tokens) — ready for the `cv-import` skill. */
+   * 0 tokens) - ready for the `cv-import` skill. */
   async cvImportReadFile(path: string): Promise<CvImportFile> {
     return tauriInvoke<CvImportFile>('cv_import_read_file', { path });
   }
@@ -431,21 +431,21 @@ export class DbService {
     return tauriInvoke<string>('cv_photo_read_file', { path });
   }
 
-  /** Exports a library CV to `savePath` as DOCX or PDF — a library export,
+  /** Exports a library CV to `savePath` as DOCX or PDF - a library export,
    * distinct from the job-specific tailoring export journal. */
   async cvDocumentExport(id: number, format: 'docx' | 'pdf', savePath: string): Promise<string> {
     return tauriInvoke<string>('cv_document_export', { id, format, savePath });
   }
 
   /** Silent WYSIWYG PDF export: a hidden window renders the same preview as
-   * the editor and the OS prints it straight to `savePath` — pixel-identical
+   * the editor and the OS prints it straight to `savePath` - pixel-identical
    * to the editor, no dialogs. Falls back to the structured renderer on
    * platforms without a native print-to-file call. */
   async cvDocumentExportPdfWysiwyg(id: number, savePath: string): Promise<string> {
     return tauriInvoke<string>('cv_document_export_pdf_wysiwyg', { id, savePath });
   }
 
-  /** Called by the print route once its preview has settled — releases the
+  /** Called by the print route once its preview has settled - releases the
    * export command waiting on this window. */
   printWindowReady(): Promise<void> {
     return tauriInvoke<void>('print_window_ready');
@@ -459,13 +459,13 @@ export class DbService {
     return tauriInvoke<string>('cover_letter_document_export', { id, format, savePath });
   }
 
-  /** The cover letter's counterpart to `cvDocumentExportPdfWysiwyg` — same
+  /** The cover letter's counterpart to `cvDocumentExportPdfWysiwyg` - same
    * hidden-window print path, via the `print/cover-letter/:id` route. */
   async coverLetterDocumentExportPdfWysiwyg(id: number, savePath: string): Promise<string> {
     return tauriInvoke<string>('cover_letter_document_export_pdf_wysiwyg', { id, savePath });
   }
 
-  /** Deterministic, 0-token ATS/readability check (ROADMAP §16.5) — empty
+  /** Deterministic, 0-token ATS/readability check (ROADMAP §16.5) - empty
    * array when `styleJson` is unset or already at the safe default. */
   async checkStyleSafety(styleJson?: string): Promise<StyleNote[]> {
     return tauriInvoke<StyleNote[]>('check_style_safety', { styleJson });

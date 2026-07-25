@@ -1,4 +1,4 @@
-// CV tailoring — cache CRUD for 3-pass results + DOCX/PDF export.
+// CV tailoring - cache CRUD for 3-pass results + DOCX/PDF export.
 // Cache key: input_hash covers all inputs for a given pass (including upstream
 // pass results), so a different pass-1 output invalidates the pass-2 cache.
 // Export: DOCX via docx-rs (ATS-reliable); PDF via printpdf 0.7 (pure Rust).
@@ -246,7 +246,7 @@ fn cv_filename(title: &str, company: &str, hash: &str, ext: &str) -> String {
 
 use crate::commands::documents::CvStyle;
 
-/// Logical role of a block — drives relative size scale and spacing so both
+/// Logical role of a block - drives relative size scale and spacing so both
 /// renderers agree on hierarchy without hardcoding absolute sizes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum BlockLevel {
@@ -256,10 +256,10 @@ pub(crate) enum BlockLevel {
     Body,
     Bullet,
     /// An experience/education entry's lead line (company / institution). Body
-    /// size, bold, and coloured with the theme's entry accent — the CV export
+    /// size, bold, and coloured with the theme's entry accent - the CV export
     /// mirror of the preview's accented entry heading.
     EntryHead,
-    /// An entry's role/degree line — body size, non-accent, italic when the
+    /// An entry's role/degree line - body size, non-accent, italic when the
     /// theme asks for it. Rendered right under its `EntryHead`.
     EntryRole,
 }
@@ -292,7 +292,7 @@ pub(crate) struct StyledBlock {
     pub bold: bool,
 }
 
-/// A horizontal divider drawn under a block — the export mirror of the
+/// A horizontal divider drawn under a block - the export mirror of the
 /// preview's section/header underline rules. `pt` is the stroke weight in
 /// points; `rgb` its colour.
 #[derive(Debug, Clone, Copy)]
@@ -301,7 +301,7 @@ pub(crate) struct RuleSpec {
     pub rgb: (u8, u8, u8),
 }
 
-/// A block with its style fully resolved — renderers consume this and stay
+/// A block with its style fully resolved - renderers consume this and stay
 /// agnostic of the CV-vs-cover-letter cascade rules.
 pub(crate) struct RenderBlock {
     pub level: BlockLevel,
@@ -309,7 +309,7 @@ pub(crate) struct RenderBlock {
     pub size_pt: f64,
     pub rgb: (u8, u8, u8),
     pub bold: bool,
-    /// Italic run — DOCX honours it directly; the PDF path has no bundled
+    /// Italic run - DOCX honours it directly; the PDF path has no bundled
     /// italic faces, so it renders upright (an honest font-availability limit,
     /// same class as the family→clone mapping).
     pub italic: bool,
@@ -318,9 +318,9 @@ pub(crate) struct RenderBlock {
     /// location/dates column). Regular weight, `right_rgb` colour: the PDF
     /// measures and right-aligns it; DOCX places it after a right tab stop.
     pub right_text: Option<String>,
-    /// Colour for `right_text` — body colour, never the accent.
+    /// Colour for `right_text` - body colour, never the accent.
     pub right_rgb: (u8, u8, u8),
-    /// Divider drawn under this block, if any — section titles and the header
+    /// Divider drawn under this block, if any - section titles and the header
     /// carry the theme's rule; everything else is `None`.
     pub rule_below: Option<RuleSpec>,
     /// Section this block belongs to; the DOCX renderer uses
@@ -339,7 +339,7 @@ struct EffStyle {
 fn hex_to_rgb(hex: &str) -> (u8, u8, u8) {
     let h = hex.trim_start_matches('#');
     if h.len() != 6 {
-        return (51, 51, 51); // #333333 default — matches CV_STYLE_DEFAULT
+        return (51, 51, 51); // #333333 default - matches CV_STYLE_DEFAULT
     }
     let byte = |a: usize, b: usize| u8::from_str_radix(&h[a..b], 16).ok();
     match (byte(0, 2), byte(2, 4), byte(4, 6)) {
@@ -417,8 +417,8 @@ fn effective_cv(style: &CvStyle, key: Option<&str>) -> EffStyle {
 /// which text is accent-coloured, which titles uppercase, whether roles are
 /// italic, and the header/section divider rules. Keyed by `theme_id` (built-in
 /// 1=Classic, 2=Aurora); an unknown/absent id resolves to Classic, matching
-/// `getBuiltinTheme`. Kept a hand-maintained mirror on purpose — same
-/// cross-language duplication pattern as `CvStyle` — with a parity test.
+/// `getBuiltinTheme`. Kept a hand-maintained mirror on purpose - same
+/// cross-language duplication pattern as `CvStyle` - with a parity test.
 pub(crate) struct CvTheme {
     pub accent_rgb: (u8, u8, u8),
     pub font_family: String,
@@ -441,7 +441,7 @@ pub(crate) struct CvTheme {
 }
 
 impl CvTheme {
-    /// Body-text colour when nothing overrides it — the safe dark grey shared
+    /// Body-text colour when nothing overrides it - the safe dark grey shared
     /// with `CV_STYLE_DEFAULT` / `hex_to_rgb`'s fallback.
     const TEXT_RGB: (u8, u8, u8) = (51, 51, 51);
 }
@@ -456,7 +456,7 @@ fn rule_spec(weight_pt: f64, color: Option<(u8, u8, u8)>) -> Option<RuleSpec> {
     }
 }
 
-/// Built-in theme by id — mirror of `CV_THEME_CLASSIC` / `CV_THEME_AURORA`.
+/// Built-in theme by id - mirror of `CV_THEME_CLASSIC` / `CV_THEME_AURORA`.
 pub(crate) fn builtin_theme(theme_id: Option<i64>) -> CvTheme {
     let classic_accent = (0x33, 0x33, 0x33);
     match theme_id {
@@ -496,7 +496,7 @@ pub(crate) fn builtin_theme(theme_id: Option<i64>) -> CvTheme {
     }
 }
 
-/// CV export resolution — the theme-and-role-aware cascade that makes the
+/// CV export resolution - the theme-and-role-aware cascade that makes the
 /// DOCX/PDF match the live preview. Font/size/weight still come from
 /// `effective_cv` (per-section override ?? document-wide). Colour, italics, the
 /// uppercase section case, and the divider rules come from `theme`, mirroring
@@ -507,7 +507,7 @@ pub(crate) fn builtin_theme(theme_id: Option<i64>) -> CvTheme {
 /// - `H2`/`H3` (section title): theme section title colour.
 /// - `EntryHead` (company/institution): theme entry-company colour.
 /// - `Body`/`Bullet`/`EntryRole`: per-section colour ?? document body colour ??
-///   dark — the no-accent-leak rule, so body text is never green.
+///   dark - the no-accent-leak rule, so body text is never green.
 ///
 /// The header rule attaches to the last leading `personal_details` block (under
 /// the contact line, as in the preview), not to the name.
@@ -536,7 +536,7 @@ pub(crate) fn resolve_cv_blocks(
                 .map(hex_to_rgb);
 
             // Title/name/entry accent text follows the effective accent
-            // (`style.accentColorHex`, seeded from the theme, user-overridable) —
+            // (`style.accentColorHex`, seeded from the theme, user-overridable) -
             // mirrors `effectiveTitleStyle`. Divider rules instead use the theme
             // token (`theme.section_rule`/`header_rule`), mirroring `--cv-accent`.
             let accent = hex_to_rgb(&style.accent_color_hex);
@@ -576,7 +576,7 @@ pub(crate) fn resolve_cv_blocks(
             };
             // Two-column entry lines: `\t` splits the left text from the
             // right-aligned tail (location/dates), which renders regular-weight
-            // in the body colour — mirroring the editor's entry rows.
+            // in the body colour - mirroring the editor's entry rows.
             let (text, right_text) = match text.split_once('\t') {
                 Some((l, r)) => (l.to_string(), Some(r.to_string())),
                 None => (text, None),
@@ -592,7 +592,7 @@ pub(crate) fn resolve_cv_blocks(
             // CV heading sizes mirror the editor's CSS, NOT the generic
             // `BlockLevel::scale()` (which the journal/cover-letter paths use):
             // the name is `.cvpreview__name { font-size: 1.6rem }` ≈ 1.9× the
-            // 10pt body, and section titles carry NO CSS font-size — they inherit
+            // 10pt body, and section titles carry NO CSS font-size - they inherit
             // the body size and read as headings via uppercase + bold + colour.
             let cv_scale = match b.level {
                 BlockLevel::H1 => 1.9,
@@ -608,7 +608,7 @@ pub(crate) fn resolve_cv_blocks(
                 font_family: eff.font_family,
                 size_pt: eff.size_pt * cv_scale,
                 rgb,
-                // The name and entry company are bold; SECTION TITLES ARE NOT —
+                // The name and entry company are bold; SECTION TITLES ARE NOT -
                 // the editor's `.cvpreview__section-title` sets no font-weight
                 // (uppercase + colour carry the hierarchy).
                 bold: b.level == BlockLevel::H1
@@ -697,7 +697,7 @@ pub(crate) fn resolve_blocks(
 }
 
 /// Parses already-rendered markdown (the tailored-CV journal path, which has no
-/// per-section style) into blocks tagged with no section key — they resolve to
+/// per-section style) into blocks tagged with no section key - they resolve to
 /// the document-wide style. A `**wrapped**` line becomes bold body text.
 fn md_to_blocks(content_md: &str) -> Vec<StyledBlock> {
     let mk = |level, text: &str, bold| StyledBlock {
@@ -799,7 +799,7 @@ pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
     let page = resolve_page(&crate::commands::documents::PageSettings::default());
     // Journal exports have no section tags; a photo (when present) sits at the
-    // top of the document — AboveCenter mirrors that top placement.
+    // top of the document - AboveCenter mirrors that top placement.
     render_blocks_docx(
         &resolved,
         photo,
@@ -859,7 +859,7 @@ fn block_paragraph(b: &RenderBlock, content_tw: i32) -> docx_rs::Paragraph {
         para = para.add_run(mk_run(&seg.text, b.bold || seg.bold));
     }
     // Right-aligned column tail (entry location/dates): a right tab stop at the
-    // content edge + tab + regular-weight run in the body colour — the DOCX
+    // content edge + tab + regular-weight run in the body colour - the DOCX
     // equivalent of the editor's flex row.
     if let Some(right) = &b.right_text {
         let (rr, rg, rb) = b.right_rgb;
@@ -887,7 +887,7 @@ fn block_paragraph(b: &RenderBlock, content_tw: i32) -> docx_rs::Paragraph {
     if b.level == BlockLevel::Bullet {
         para = para.indent(Some(360), None, None, None);
     }
-    // Divider rule — a bottom paragraph border, the DOCX mirror of the
+    // Divider rule - a bottom paragraph border, the DOCX mirror of the
     // preview's section/header underline. OOXML border `size` is in eighths of
     // a point.
     if let Some(rule) = b.rule_below {
@@ -895,7 +895,7 @@ fn block_paragraph(b: &RenderBlock, content_tw: i32) -> docx_rs::Paragraph {
         let rc = format!("{rr:02X}{rg:02X}{rb:02X}");
         let sz = ((rule.pt * 8.0).round() as usize).max(2);
         // `set_border` merges onto `ParagraphBorders::default()`, which has all
-        // four sides set to a visible Single border — that renders as a full box
+        // four sides set to a visible Single border - that renders as a full box
         // around the heading, not an underline. Build from `with_empty()` so ONLY
         // the bottom edge is drawn.
         para.property = para.property.set_borders(
@@ -923,12 +923,12 @@ fn finish_docx(doc: docx_rs::Docx) -> Result<Vec<u8>, String> {
 // ── DOCX font embedding ───────────────────────────────────────────────────────
 //
 // docx-rs has no font-embedding API, so a .docx that names a non-standard font
-// (Lato, Open Sans — the theme fonts Word/WPS don't ship) renders with a
+// (Lato, Open Sans - the theme fonts Word/WPS don't ship) renders with a
 // substitute, diverging from the preview/PDF (which embed the real face). We
 // close that gap by post-processing the packed .docx zip: inject the TrueType
 // faces the document actually uses as OOXML embedded fonts so it renders
 // identically everywhere. Standard fonts (Calibri, Arial, Times, Georgia) are
-// left un-embedded — every Office install already has them.
+// left un-embedded - every Office install already has them.
 
 /// A bundled face to embed, tied to the exact `w:name` its runs reference.
 struct EmbedFace {
@@ -937,7 +937,7 @@ struct EmbedFace {
     bold: &'static [u8],
 }
 
-/// The non-standard bundled faces actually referenced by these blocks — the only
+/// The non-standard bundled faces actually referenced by these blocks - the only
 /// ones worth embedding (Word lacks them). Standard families resolve to a font
 /// the viewer already has, so they're skipped.
 fn faces_to_embed(blocks: &[RenderBlock]) -> Vec<EmbedFace> {
@@ -971,7 +971,7 @@ fn faces_to_embed(blocks: &[RenderBlock]) -> Vec<EmbedFace> {
 
 /// A stable 128-bit GUID for embedded-font part `idx`, returned as both the raw
 /// 32-hex string (used to obfuscate the bytes) and the braced form (the
-/// `w:fontKey` Word reads to de-obfuscate). Fixed, not random — the value only
+/// `w:fontKey` Word reads to de-obfuscate). Fixed, not random - the value only
 /// has to agree between the two.
 fn font_guid(idx: u32) -> (String, String) {
     let base: u128 = 0xA1B2_C3D4_E5F6_0718_293A_4B5C_6D7E_8F90;
@@ -989,7 +989,7 @@ fn font_guid(idx: u32) -> (String, String) {
 }
 
 /// OOXML embedded-font obfuscation (ECMA-376 §17.8.1): XOR the first 32 bytes
-/// with the 16-byte fontKey applied in reverse. Symmetric — Word runs the same
+/// with the 16-byte fontKey applied in reverse. Symmetric - Word runs the same
 /// pass to recover the TrueType file.
 fn obfuscate_font(data: &[u8], guid_hex32: &str) -> Vec<u8> {
     let key: Vec<u8> = (0..16)
@@ -1154,7 +1154,7 @@ pub(crate) fn render_blocks_docx(
                 .right(tw(page.margin.right)),
         );
 
-    // Printable width in twips — the right-tab position for two-column entry
+    // Printable width in twips - the right-tab position for two-column entry
     // lines (location/dates flush with the right margin, as in the editor).
     let content_tw = tw(page.width_mm - page.margin.left - page.margin.right);
 
@@ -1290,13 +1290,13 @@ const FONT_OPENSANS_B: &[u8] = include_bytes!("../../assets/fonts/OpenSans-Bold.
 /// one out: no bundled clone, it falls back to the printpdf builtin.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum PdfFamily {
-    Carlito,  // Calibri clone (also the default fallback — matches CvStyle default)
+    Carlito,  // Calibri clone (also the default fallback - matches CvStyle default)
     Arimo,    // Arial / Helvetica clone; also covers Verdana/Tahoma (no closer ATS clone)
     Tinos,    // Times New Roman clone; also covers Garamond/Cambria/generic serif
     Gelasio,  // Georgia clone
     Lato,     // native OFL font
     OpenSans, // native OFL font
-    Courier,  // builtin (monospace) — no embedded bytes
+    Courier,  // builtin (monospace) - no embedded bytes
 }
 
 /// Map a user font-family string to the nearest bundled face. Specific names are
@@ -1369,7 +1369,7 @@ const EMBEDDED_FACES: &[(PdfFamily, bool)] = &[
 ];
 
 /// Rendered width of `text` at `size_pt`, in points, from the real glyph
-/// advances of `face`. Missing glyphs contribute zero — a negligible
+/// advances of `face`. Missing glyphs contribute zero - a negligible
 /// under-estimate for the odd unsupported character.
 fn text_width_pt(text: &str, size_pt: f32, face: &ttf_parser::Face) -> f32 {
     let upem = face.units_per_em() as f32;
@@ -1471,7 +1471,7 @@ pub(crate) fn render_blocks_pdf(
         .add_builtin_font(BuiltinFont::CourierBold)
         .map_err(|e| format!("pdf font: {e}"))?;
     // printpdf embeds every font added to the document, with no subsetting, so
-    // only load the (family, weight) pairs the blocks actually use — otherwise
+    // only load the (family, weight) pairs the blocks actually use - otherwise
     // every PDF would carry all ~5 MB of bundled faces.
     let mut needed: std::collections::HashSet<(PdfFamily, bool)> = std::collections::HashSet::new();
     for b in blocks {
@@ -1526,7 +1526,7 @@ pub(crate) fn render_blocks_pdf(
         // printpdf 0.7 (`embedded_images`): decode with the crate's re-exported
         // `image` (0.24) so the `DynamicImage` type matches. Force the same
         // ~2.7cm x 3.6cm box as DOCX (independent x/y scale) and place it
-        // top-left; text then starts below it — mirroring the DOCX inline-top
+        // top-left; text then starts below it - mirroring the DOCX inline-top
         // placement instead of the old top-right overlay that clipped headings.
         let dynimg = printpdf::image_crate::load_from_memory(bytes)
             .map_err(|e| format!("pdf photo decode: {e}"))?;
@@ -1621,7 +1621,7 @@ pub(crate) fn render_blocks_pdf(
 
         // Right-aligned column tail (entry location/dates): drawn with the
         // regular face in the body colour, flush with the right margin on the
-        // block's first line — the editor's two-column entry row.
+        // block's first line - the editor's two-column entry row.
         const PT_TO_MM: f32 = 0.352_777_8;
         let right_col = b.right_text.as_deref().map(|txt| {
             let (rfont, rface) = match fam {
@@ -1643,7 +1643,7 @@ pub(crate) fn render_blocks_pdf(
             None => avail_mm,
         };
 
-        // Wrap to the printable width — printpdf's `use_text` never wraps, so a
+        // Wrap to the printable width - printpdf's `use_text` never wraps, so a
         // long line would run off the right edge and be clipped. Measure each
         // candidate line against the embedded font's real glyph advances.
         let wrapped = wrap_measured(&b.text, b.size_pt as f32, avail_mm, face);
@@ -1695,7 +1695,7 @@ pub(crate) fn render_blocks_pdf(
             }
             y -= line_h;
         }
-        // Divider rule under this block — the PDF mirror of the preview's
+        // Divider rule under this block - the PDF mirror of the preview's
         // section/header underline. Drawn just below the last text line, across
         // the printable width, on the current page/layer.
         if let Some(rule) = b.rule_below {
@@ -2188,7 +2188,7 @@ mod tests {
             sb(
                 BlockLevel::EntryRole,
                 Some("experience"),
-                "Dev · 2020 – 2023",
+                "Dev · 2020 - 2023",
                 false,
             ),
             sb(BlockLevel::Bullet, Some("experience"), "Did things", false),
@@ -2306,7 +2306,7 @@ mod tests {
     fn pdf_photo_left_places_header_beside_and_body_below() {
         // AboveLeft: the personal_details header must render in the column to the
         // RIGHT of the photo (x well past the left margin), while body sections
-        // sit full-width at the margin — the editor's photo-beside layout.
+        // sit full-width at the margin - the editor's photo-beside layout.
         let style = crate::commands::documents::CvStyle::default();
         let blocks = resolve_blocks(
             &style,
@@ -2333,7 +2333,7 @@ mod tests {
         let out =
             render_blocks_pdf(&blocks, Some(photo), PhotoPlacement::AboveLeft, &page).unwrap();
 
-        // printpdf writes text as `<size> Tf <x> <y> Td` — collect the x of each.
+        // printpdf writes text as `<size> Tf <x> <y> Td` - collect the x of each.
         let s = String::from_utf8_lossy(&out);
         let xs: Vec<f32> = s
             .match_indices(" Td")
@@ -2375,12 +2375,12 @@ mod tests {
                 sb(
                     BlockLevel::EntryRole,
                     Some("experience"),
-                    "Dev\t2020 – 2023",
+                    "Dev\t2020 - 2023",
                     false,
                 ),
             ],
         );
-        // Section titles are NOT bold — the editor carries hierarchy via
+        // Section titles are NOT bold - the editor carries hierarchy via
         // uppercase + colour only.
         assert!(!r[0].bold, "section title must not be bold");
         // `\t` splits into left text + right-aligned tail in the body colour.
@@ -2389,7 +2389,7 @@ mod tests {
         assert_eq!(r[1].right_rgb, (51, 51, 51), "tail uses body colour");
         assert!(r[1].bold, "company stays bold");
         assert_eq!(r[2].text, "Dev");
-        assert_eq!(r[2].right_text.as_deref(), Some("2020 – 2023"));
+        assert_eq!(r[2].right_text.as_deref(), Some("2020 - 2023"));
     }
 
     #[test]

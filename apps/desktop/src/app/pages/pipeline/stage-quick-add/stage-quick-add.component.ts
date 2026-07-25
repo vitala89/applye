@@ -26,7 +26,7 @@ const STAGE_TYPES: StageType[] = [
 // One write path allowed outside Interview Prep: right after an
 // application's status changes TO interview (dropdown or drag-and-drop),
 // this mini form offers to log the first stage (stage_order = 1). Never a
-// gate — always skippable — and only ever fires once per application
+// gate - always skippable - and only ever fires once per application
 // (the parent checks stage count before rendering this).
 @Component({
   selector: 'app-stage-quick-add',

@@ -1,4 +1,4 @@
-// AI dispatch layer — two modes, one abstraction.
+// AI dispatch layer - two modes, one abstraction.
 // Frontend calls invoke('ai_run', { req }) regardless of mode.
 // `ai_run` is the SINGLE AI entry point: adding a provider later is one branch
 // in api.rs; the frontend never knows whether a reply came from API or CLI.
@@ -18,7 +18,7 @@ pub enum AiMode {
 
 /// A request to run one AI task. The stable prefix (`system_prompt`) is kept
 /// separate from the dynamic `user_prompt` so prompt caching can key on it.
-/// The API key is NEVER part of this request — it is read from the keychain.
+/// The API key is NEVER part of this request - it is read from the keychain.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiRequest {
@@ -54,7 +54,7 @@ async fn dispatch(req: AiRequest, api_key: Option<String>) -> Result<AiResponse,
 
 /// The single AI entry point. In API mode the provider key is loaded from the
 /// OS keychain here (never passed from the frontend) and sent only to the
-/// chosen provider. Errors are returned cleanly — no panics, no key in logs.
+/// chosen provider. Errors are returned cleanly - no panics, no key in logs.
 #[tauri::command]
 pub async fn ai_run(req: AiRequest) -> Result<AiResponse, String> {
     let api_key = match req.mode {

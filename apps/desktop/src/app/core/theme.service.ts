@@ -6,7 +6,7 @@ export type Theme = 'dark' | 'light';
  * `<html data-theme>` (index.html sets the initial default). Previously
  * `ShellLayoutComponent` held this as component-instance state, which reset
  * to 'dark' every time the shell remounted (e.g. after the onboarding
- * overlay — a sibling branch in app.ts's template — unmounts it), leaving
+ * overlay - a sibling branch in app.ts's template - unmounts it), leaving
  * `<html>` and the shell's own `data-theme` binding out of sync. A shared
  * root-provided service survives remounts of either consumer. */
 @Injectable({ providedIn: 'root' })

@@ -1,4 +1,4 @@
-// Direct API mode — reqwest to the provider endpoint.
+// Direct API mode - reqwest to the provider endpoint.
 //
 // Two request shapes are supported behind one `run`:
 //   - Anthropic Messages API (provider "claude"), with a cache_control
@@ -252,7 +252,7 @@ mod tests {
             .send()
             .await;
 
-        let err = result.err().expect("a stalled server must not return Ok");
+        let err = result.expect_err("a stalled server must not return Ok");
         assert!(err.is_timeout(), "expected a timeout, got: {err}");
         assert!(
             started.elapsed() < Duration::from_secs(5),

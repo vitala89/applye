@@ -13,18 +13,18 @@ On first launch a new user lands in an empty app with no profile. Nothing can
 be scored, tailored, or generated until a profile exists, and today the only way
 to create one is the manual `/profile` form. Non-technical users also have no
 guidance on the one hard prerequisite: configuring an AI provider API key.
-Career-ops proves the winning pattern — ingest a resume, auto-fill, confirm the
-gaps — which turns a cold start into a 2-minute guided setup.
+Career-ops proves the winning pattern - ingest a resume, auto-fill, confirm the
+gaps - which turns a cold start into a 2-minute guided setup.
 
 ### User Value
 
 - A guided, skippable first-run flow that fills the whole profile from a resume
   (PDF/DOCX/text) instead of a blank form.
 - A beginner-friendly AI-setup step: pick a provider, open its console, create a
-  key, paste it — with a link and a slot for a video tutorial. Written for
+  key, paste it - with a link and a slot for a video tutorial. Written for
   non-technical users, not just developers.
 - Auto-suggested target archetypes + compensation range the user just confirms
-  or corrects — no fabrication.
+  or corrects - no fabrication.
 - Privacy reassurance up front: everything stays local.
 
 ---
@@ -44,10 +44,10 @@ gaps — which turns a cold start into a 2-minute guided setup.
   beginner guide (intro, "Open console & create key" → `openExternal()`, numbered
   steps, paste field, "Validate" reusing health-check validation, optional
   `helpVideoUrl` opened externally). Key stored in keyring only.
-- **Archetype + comp suggestion:** new small skill `onboarding-archetypes` — from
-  the parsed resume, propose 2–3 archetypes + a comp range (1 AI call, cached,
+- **Archetype + comp suggestion:** new small skill `onboarding-archetypes` - from
+  the parsed resume, propose 2-3 archetypes + a comp range (1 AI call, cached,
   Haiku). Suggestion only; user confirms/edits.
-- Writes to the **existing** `Profile` (`fullMd`, flat `targetArchetypes`) — no
+- Writes to the **existing** `Profile` (`fullMd`, flat `targetArchetypes`) - no
   new profile schema in v1.
 - **Skip** anywhere sets `onboardingSeen = true`. If skipped with an empty
   profile, a dismissible `OnboardingBannerComponent` on the dashboard offers
@@ -61,9 +61,9 @@ gaps — which turns a cold start into a 2-minute guided setup.
 - **Conversational resume path** ("tell me about your experience" →
   `cv-generate-baseline`).
 - **CLI-bridge / account-subscription login** (sign in with a Claude/OpenAI
-  account instead of a key) — ROADMAP §v2. Reserve a place on the AI-setup step
+  account instead of a key) - ROADMAP §v2. Reserve a place on the AI-setup step
   for it; do not build now.
-- Embedded/bundled video assets — v1 only links out via `helpVideoUrl`.
+- Embedded/bundled video assets - v1 only links out via `helpVideoUrl`.
 
 ---
 
@@ -92,8 +92,8 @@ gaps — which turns a cold start into a 2-minute guided setup.
 
 - `apps/desktop/src/app/core/onboarding/onboarding.component.ts` + per-step sub-components.
 - `apps/desktop/src/app/core/onboarding/onboarding-banner.component.ts`.
-- `apps/desktop/src/app/app.ts` — gate after `first-launch`.
-- `libs/core/src/lib/models/settings.model.ts` — `onboardingSeen: boolean`.
+- `apps/desktop/src/app/app.ts` - gate after `first-launch`.
+- `libs/core/src/lib/models/settings.model.ts` - `onboardingSeen: boolean`.
 - Migration `apps/desktop/src-tauri/.../migrations/0012_onboarding_seen.sql` + Rust settings command/mapping.
 - `libs/skills/src/onboarding-archetypes/onboarding-archetypes.md`.
 - i18n keys in `libs/i18n` (EN + DE).
@@ -104,13 +104,13 @@ gaps — which turns a cold start into a 2-minute guided setup.
 
 ### Data / Migration Impact
 
-- `0012_onboarding_seen.sql`: `ALTER TABLE settings ADD COLUMN onboarding_seen INTEGER DEFAULT 0;` — additive, no data loss (`DATA_CONTRACT.md`). Mirrors `0007_health_check_seen.sql`.
+- `0012_onboarding_seen.sql`: `ALTER TABLE settings ADD COLUMN onboarding_seen INTEGER DEFAULT 0;` - additive, no data loss (`DATA_CONTRACT.md`). Mirrors `0007_health_check_seen.sql`.
 - No profile-schema change; writes existing `Profile` columns.
 
 ### Privacy / Security Impact
 
 - Resume file parsed **locally** (Rust `pdf-extract`); only the extracted text is sent to the AI for structuring/archetype suggestion, with an explicit on-screen notice at that step.
-- API key stored in the OS keyring only — never in SQLite, never logged.
+- API key stored in the OS keyring only - never in SQLite, never logged.
 - No auto-submit, no scraping. Every value is user-confirmed before save.
 
 ### i18n Impact
@@ -143,11 +143,11 @@ profile → dashboard banner appears → "Finish setup" reopens onboarding.
 ### Docs to Update
 
 - `docs/product/CURRENT_STATE.md`, `docs/product/FEATURE_INDEX.md` (status + brief link), `CHANGELOG.md [Unreleased]`.
-- `ROADMAP.md` §17 — mark in-progress when work starts.
+- `ROADMAP.md` §17 - mark in-progress when work starts.
 
 ### Changelog Draft
 
-`Added — First-run onboarding wizard: guided, skippable setup that configures an
+`Added - First-run onboarding wizard: guided, skippable setup that configures an
 AI provider key and builds the profile from an uploaded/pasted resume, with
 AI-suggested target archetypes and compensation the user confirms. All local;
 key stored in keyring.`
@@ -164,7 +164,7 @@ key stored in keyring.`
 
 ### Open Questions
 
-- Provider set for v1 AI-setup: Claude (Anthropic), OpenAI (Codex), DeepSeek —
+- Provider set for v1 AI-setup: Claude (Anthropic), OpenAI (Codex), DeepSeek -
   confirm final list against the current `AiProvider` enum during implementation.
 - Where exactly the "re-run onboarding" entry point lives in Settings vs Profile
   (both, per design).

@@ -151,7 +151,7 @@ describe('CvExperienceEditorComponent', () => {
     expect(section.entries[1].bullets).toEqual(originalBullets);
   });
 
-  it('does not render a Bold button — bold formatting moved to the live preview', () => {
+  it('does not render a Bold button - bold formatting moved to the live preview', () => {
     expect(fixture.nativeElement.querySelector('.cvdetail__bold-btn')).toBeNull();
   });
 });

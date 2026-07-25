@@ -1,6 +1,6 @@
 // Portal answer drafts: AI-drafted answers to a job portal's open-ended
 // questions, cached by (job_id, profile_hash, input_hash). Applye only ever
-// drafts and caches text here — nothing in this module ever submits or
+// drafts and caches text here - nothing in this module ever submits or
 // transmits an answer anywhere; the frontend copies it to the clipboard.
 
 use serde::{Deserialize, Serialize};
@@ -155,7 +155,7 @@ mod tests {
     }
 
     /// Re-opening with the same (job_id, profile_hash, input_hash) reads the
-    /// cached draft straight from SQLite — 0 tokens, no AI call reachable
+    /// cached draft straight from SQLite - 0 tokens, no AI call reachable
     /// from the get path at all.
     #[tokio::test]
     async fn reopen_with_same_input_hash_hits_cache() {
@@ -175,7 +175,7 @@ mod tests {
     }
 
     /// Changing the question set changes the input_hash, which is a cache
-    /// miss — the old draft is untouched, a new row is inserted alongside it.
+    /// miss - the old draft is untouched, a new row is inserted alongside it.
     #[tokio::test]
     async fn different_input_hash_is_a_cache_miss() {
         let pool = test_pool().await;

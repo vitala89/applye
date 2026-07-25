@@ -21,6 +21,8 @@ import {
 
 const fullForm: ProfileForm = {
   name: 'Vitalii Kasap',
+  firstName: '',
+  lastName: '',
   title: 'Senior Frontend Engineer',
   location: 'Germany',
   email: 'vitalii@example.com',
@@ -518,6 +520,59 @@ describe('profile-markdown', () => {
     it('omits the Compensation section when unset', () => {
       const form = parseProfileMd('# Jane\n');
       expect(serializeProfileForm(form)).not.toContain('## Compensation');
+    });
+  });
+
+  describe('first and last name', () => {
+    it('serializes both into the Contact section', () => {
+      const md = serializeProfileForm({
+        ...EMPTY_FORM,
+        name: 'Anna Kowalska',
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        email: 'anna@example.com',
+      });
+      expect(md).toContain('# Anna Kowalska');
+      expect(md).toContain('- First name: Anna');
+      expect(md).toContain('- Last name: Kowalska');
+    });
+
+    it('reads both back out of the Contact section', () => {
+      const form = parseProfileMd(
+        ['# Anna Kowalska', '', '## Contact', '- First name: Anna', '- Last name: Kowalska'].join(
+          '\n',
+        ),
+      );
+      expect(form.name).toBe('Anna Kowalska');
+      expect(form.firstName).toBe('Anna');
+      expect(form.lastName).toBe('Kowalska');
+    });
+
+    it('matches the labels case-insensitively, like every other contact line', () => {
+      const form = parseProfileMd(
+        ['## Contact', '- first name: Anna', '- LAST NAME: Kowalska'].join('\n'),
+      );
+      expect(form.firstName).toBe('Anna');
+      expect(form.lastName).toBe('Kowalska');
+    });
+
+    it('round-trips a form carrying the new fields', () => {
+      const form = {
+        ...EMPTY_FORM,
+        name: 'Anna Kowalska',
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        title: 'Senior Engineer',
+        location: 'Lisboa, Portugal',
+        email: 'anna@example.com',
+      };
+      expect(parseProfileMd(serializeProfileForm(form))).toEqual(form);
+    });
+
+    it('omits the lines entirely when the parts are empty', () => {
+      const md = serializeProfileForm({ ...EMPTY_FORM, name: 'Prince' });
+      expect(md).not.toContain('First name');
+      expect(md).not.toContain('Last name');
     });
   });
 });

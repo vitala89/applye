@@ -77,14 +77,14 @@ export const appRoutes: Route[] = [
   },
   {
     // Loaded only by the hidden silent-PDF-export window (see
-    // `cv_document_export_pdf_wysiwyg` in Rust) — never linked from the UI.
+    // `cv_document_export_pdf_wysiwyg` in Rust) - never linked from the UI.
     path: 'print/cv/:id',
     loadComponent: () =>
       import('./pages/documents/cv-print/cv-print.component').then((m) => m.CvPrintComponent),
   },
   {
     // Loaded only by the hidden silent-PDF-export window (see
-    // `cover_letter_document_export_pdf_wysiwyg` in Rust) — never linked from
+    // `cover_letter_document_export_pdf_wysiwyg` in Rust) - never linked from
     // the UI.
     path: 'print/cover-letter/:id',
     loadComponent: () =>
@@ -94,7 +94,7 @@ export const appRoutes: Route[] = [
   },
   {
     // Loaded only by the hidden silent-PDF-export window (see
-    // `tracker_report_export_pdf_wysiwyg` in Rust) — never linked from the UI.
+    // `tracker_report_export_pdf_wysiwyg` in Rust) - never linked from the UI.
     path: 'print/tracker-report',
     loadComponent: () =>
       import('./pages/tracker/tracker-report-print.component').then(

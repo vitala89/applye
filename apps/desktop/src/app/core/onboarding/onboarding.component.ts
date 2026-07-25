@@ -34,6 +34,8 @@ import {
   archetypeNames,
   serializeArchetypes,
   parseArchetypes,
+  serializeCompensation,
+  splitDisplayName,
 } from '@applye/core';
 import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -60,7 +62,7 @@ import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
-/** Feedback for the key INPUT only — never a claim about the keyring. Whether a
+/** Feedback for the key INPUT only - never a claim about the keyring. Whether a
  * key exists is `keyStored`, which a failed paste must not disturb. Neither
  * means the provider accepted the key: nothing here calls the API. */
 type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
@@ -68,7 +70,7 @@ type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
  * a single centered column with a horizontal step stepper up top, the
- * current step body, and a footer nav — no left rail. */
+ * current step body, and a footer nav - no left rail. */
 @Component({
   selector: 'app-onboarding',
   standalone: true,
@@ -86,7 +88,7 @@ export class OnboardingComponent {
   protected readonly t = this.i18n.t;
 
   // Bound on the host element (not the inner template) so the whole overlay
-  // — including anything future markup adds outside `.ob` — always carries
+  // - including anything future markup adds outside `.ob` - always carries
   // the SAME live theme as the rest of the app, instead of silently
   // inheriting a stale `<html data-theme>` if it ever drifts.
   @HostBinding('attr.data-theme') get hostTheme() {
@@ -159,7 +161,7 @@ export class OnboardingComponent {
   readonly guide = computed(() => guideForProvider(this.selectedProvider()));
   readonly keyInput = signal('');
   readonly keyStatus = signal<KeyStatus>('idle');
-  /** Whether the selected provider has a key in the OS keyring — from the
+  /** Whether the selected provider has a key in the OS keyring - from the
    * keyring itself, so it survives a re-run and an input the user fumbles. */
   readonly keyStored = signal(false);
   readonly keySaveError = signal(false);
@@ -327,7 +329,7 @@ export class OnboardingComponent {
   }
 
   /** On a re-run the wizard opens blank, so the roles the user already has must
-   * be loaded in — otherwise Ready reports "0 roles selected" and Finish writes
+   * be loaded in - otherwise Ready reports "0 roles selected" and Finish writes
    * an empty list over them. Only seeds; the user stays free to unpick. */
   private async seedFromExistingProfile(): Promise<void> {
     const existing = await this.readExistingProfile();
@@ -361,7 +363,7 @@ export class OnboardingComponent {
       if (this.selectedProvider() !== provider) return;
       this.keyStored.set(has);
     } catch {
-      // Keyring unreadable — leave it as "no key" and let the user paste one.
+      // Keyring unreadable - leave it as "no key" and let the user paste one.
     }
   }
 
@@ -375,7 +377,7 @@ export class OnboardingComponent {
   }
 
   /** Lightweight format sanity-check (length + provider prefix hint) before
-   * touching the keyring — this is NOT a live validation against the
+   * touching the keyring - this is NOT a live validation against the
    * provider's API (no such check exists), just a copy-paste sanity guard.
    * The button and status copy say "save", never "valid", for that reason. */
   async saveKey(): Promise<void> {
@@ -396,7 +398,7 @@ export class OnboardingComponent {
       this.keyStored.set(saved);
     } catch {
       // A write that fails leaves whatever was already in the keyring intact,
-      // so `keyStored` is deliberately untouched here — reporting "no key" for
+      // so `keyStored` is deliberately untouched here - reporting "no key" for
       // a provider that still has a working one is the worse lie.
       this.keyStatus.set('idle');
       this.keySaveError.set(true);
@@ -407,7 +409,7 @@ export class OnboardingComponent {
   readonly resumePath = signal<ResumePath>('upload');
   readonly resumeFileName = signal<string | null>(null);
   readonly resumeText = signal('');
-  /** Set only by the upload path — the paste path has no file to hash. Carried
+  /** Set only by the upload path - the paste path has no file to hash. Carried
    * so the CV document written on finish can reuse the Documents import's
    * duplicate guard. */
   readonly resumeInputHash = signal<string | undefined>(undefined);
@@ -420,7 +422,30 @@ export class OnboardingComponent {
   readonly lowConfidenceCount = computed(() => this.parsedCv()?.lowConfidenceNotes?.length ?? 0);
 
   // ---- Review (editable overrides seeded once from the parsed CV) ----
-  readonly reviewName = signal('');
+  readonly reviewFirstName = signal('');
+  readonly reviewLastName = signal('');
+  /** Set the first time the user touches either name field. The nudge is a
+   * question, and a question stops being worth asking once it is answered -
+   * including when the answer is "what you parsed was already right". */
+  readonly nameEdited = signal(false);
+
+  /** True when the parse could not confirm the split, so the review step should
+   * ask. Never gates Continue: Applye augments, it does not block. */
+  readonly needsNameConfirm = computed(() => {
+    if (this.nameEdited()) return false;
+    const first = this.reviewFirstName().trim();
+    const last = this.reviewLastName().trim();
+    // Nothing parsed at all, nothing to confirm. But one part alone is exactly
+    // the case worth asking about, whichever of the two it is.
+    if (!first && !last) return false;
+    if (!first || !last) return true;
+    return this.parsedCv()?.personalDetails.nameSplitConfident !== true;
+  });
+
+  onNameEdited(): void {
+    this.nameEdited.set(true);
+  }
+
   readonly reviewEmail = signal('');
   readonly reviewPhone = signal('');
   readonly reviewAddress = signal('');
@@ -447,7 +472,7 @@ export class OnboardingComponent {
   }
 
   /** Any change to the resume source invalidates what was parsed from the old
-   * one — a stale parse would otherwise reach the profile and the CV document,
+   * one - a stale parse would otherwise reach the profile and the CV document,
    * and keep the Review step reachable for text that is no longer there. */
   private discardParse(): void {
     this.parsedCv.set(null);
@@ -488,12 +513,7 @@ export class OnboardingComponent {
       });
       const cv = parseCvSkillResponse(res.text);
       this.parsedCv.set(cv);
-      // Seed each review field only if still empty — a Back + re-parse must
-      // never silently clobber the user's manual edits.
-      if (!this.reviewName().trim()) this.reviewName.set(cv.personalDetails.fullName ?? '');
-      if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
-      if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
-      if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');
+      this.seedReviewFields();
       this.next();
     } catch {
       this.resumeError.set(true);
@@ -502,16 +522,34 @@ export class OnboardingComponent {
     }
   }
 
+  /** Seed each review field only if still empty - a Back + re-parse must never
+   * silently clobber the user's manual edits. Extracted so tests can drive
+   * seeding without running a full parse. */
+  seedReviewFields(): void {
+    const cv = this.parsedCv();
+    if (!cv) return;
+    const split = splitDisplayName(cv.personalDetails.fullName ?? '');
+    // `||` rather than `??`: a part the parse left as an empty string carries no
+    // more information than a missing one, so both fall back to the derived split.
+    if (!this.reviewFirstName().trim())
+      this.reviewFirstName.set(cv.personalDetails.firstName || split.firstName);
+    if (!this.reviewLastName().trim())
+      this.reviewLastName.set(cv.personalDetails.lastName || split.lastName);
+    if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
+    if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
+    if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');
+  }
+
   // ---- Targeting (archetypes + compensation) ----
   readonly suggestedRoles = signal<string[]>([]);
   readonly archetypes = signal<string[]>([]);
   readonly suggesting = signal(false);
-  /** True once the selection has a deliberate author — the first AI suggestion,
+  /** True once the selection has a deliberate author - the first AI suggestion,
    * or the roles seeded from an existing profile on a re-run. Distinguishes an
    * unauthored blank from "the user unchecked everything", and stops a
    * suggestion from replacing roles the user already had. */
   readonly selectionSeeded = signal(false);
-  /** Roles the user unchecked by hand — a re-suggest must not bring them back. */
+  /** Roles the user unchecked by hand - a re-suggest must not bring them back. */
   readonly rejectedRoles = signal<ReadonlySet<string>>(new Set());
   readonly currencyOptions = CURRENCY_OPTIONS;
   readonly compCurrency = signal<string>('USD');
@@ -591,7 +629,7 @@ export class OnboardingComponent {
     const s = this.step();
     if (s === 2) {
       // With no resume there is nothing to review, so Review would be a dead
-      // screen of empty fields — jump straight to Targeting, which the user can
+      // screen of empty fields - jump straight to Targeting, which the user can
       // still fill in by hand.
       if (this.resumePath() === 'skip' || !this.resumeText().trim()) {
         this.step.set(4);
@@ -608,7 +646,7 @@ export class OnboardingComponent {
     this.next();
   }
 
-  /** Suggestion only — it never advances the wizard, because the Targeting step
+  /** Suggestion only - it never advances the wizard, because the Targeting step
    * offers this same action as a "Suggest again" button and advancing there
    * would throw the user off the step they are working on. */
   async suggestArchetypes(): Promise<void> {
@@ -634,7 +672,7 @@ export class OnboardingComponent {
       this.suggestedRoles.set(parsed.archetypes);
       // The first suggestion seeds the selection; every later one only offers
       // its roles as chips. Union-ing on a re-suggest would re-check roles the
-      // user had just unchecked, and an empty selection is a real choice — not
+      // user had just unchecked, and an empty selection is a real choice - not
       // the same state as "never suggested", which is why this needs its own
       // flag rather than an `archetypes().length` test.
       if (this.selectionSeeded()) {
@@ -647,7 +685,7 @@ export class OnboardingComponent {
       }
       this.selectionSeeded.set(true);
       // Comp is a single range with no user-authored parts to preserve, and it
-      // is only ever seeded before the user reaches the step — but once they
+      // is only ever seeded before the user reaches the step - but once they
       // have edited it, a re-suggest must not overwrite their number.
       if (!this.compTouched()) {
         const range = parseCompRange(parsed.compRange);
@@ -656,7 +694,7 @@ export class OnboardingComponent {
         this.compMax.set(range.max);
       }
     } catch {
-      // Suggestion is an enhancement, not a requirement — fail soft and let
+      // Suggestion is an enhancement, not a requirement - fail soft and let
       // the user confirm/add roles manually on the targeting step.
     } finally {
       this.suggesting.set(false);
@@ -676,7 +714,10 @@ export class OnboardingComponent {
   });
   readonly resumeSummary = computed(() => {
     if (this.resumePath() === 'skip') return this.t()('onboarding.done.skipped');
-    const name = this.reviewName().trim();
+    // Resolve the name through the same rule the artifacts are written with, so
+    // the recap cannot claim a different name from the one on the profile and
+    // the CV - notably for a family-name-first name the user did not reorder.
+    const name = applyContactOverrides(this.reviewOverrides()).fullName;
     return `${this.t()('onboarding.done.imported_prefix')}${name ? ' · ' + name : ''}`;
   });
   readonly rolesSummary = computed(
@@ -703,24 +744,32 @@ export class OnboardingComponent {
 
   private reviewOverrides(): OnboardingCvOverrides {
     return {
-      fullName: this.reviewName(),
+      firstName: this.reviewFirstName(),
+      lastName: this.reviewLastName(),
       email: this.reviewEmail(),
       phone: this.reviewPhone(),
       address: this.reviewAddress(),
+      parsedFullName: this.parsedCv()?.personalDetails.fullName ?? '',
+      nameEdited: this.nameEdited(),
     };
   }
 
   private buildProfileCv(): ParsedCv {
     const cv = this.parsedCv();
     return {
-      personalDetails: applyContactOverrides(this.reviewOverrides()),
+      // Spread the parsed contact first so website, LinkedIn and title survive;
+      // the review overrides then replace only the four fields the user edited
+      // (name/email/phone/address), mirroring buildOnboardingCvInput.
+      personalDetails: { ...cv?.personalDetails, ...applyContactOverrides(this.reviewOverrides()) },
       summary: cv?.summary ?? null,
       experience: cv?.experience ?? [],
       skills: cv?.skills ?? [],
+      education: cv?.education ?? [],
+      languages: cv?.languages ?? [],
     };
   }
 
-  /** `db_upsert_profile` replaces the whole row — a field left out is written as
+  /** `db_upsert_profile` replaces the whole row - a field left out is written as
    * NULL, not preserved. The wizard only authors `fullMd` and the archetypes,
    * so on a re-run it must carry the rest forward or it silently destroys the
    * scoring and pitch the user paid an AI call for. The stale scoring that
@@ -729,15 +778,19 @@ export class OnboardingComponent {
   async saveProfile(): Promise<void> {
     const existing = await this.readExistingProfile();
     const base = cvToProfileMarkdown(this.buildProfileCv()).trim();
-    // No resume this run — a re-run that only re-targets keeps the markdown the
+    // No resume this run - a re-run that only re-targets keeps the markdown the
     // user already has instead of blanking it.
     const fullMd = base
       ? appendCompensation(
           base,
-          formatCompRange({
+          // Serialize with the same helper the profile form uses so the target
+          // is written under a body `parseProfileMd` reads back. Period is the
+          // targeting step's implicit unit (annual).
+          serializeCompensation({
+            min: String(this.compMin()),
+            max: String(this.compMax()),
             currency: this.compCurrency(),
-            min: this.compMin(),
-            max: this.compMax(),
+            period: 'year',
           }),
         )
       : (existing?.fullMd ?? '');
@@ -759,7 +812,7 @@ export class OnboardingComponent {
     try {
       return await this.db.getProfile();
     } catch {
-      // Unreadable profile — better to write the new one than to lose the run.
+      // Unreadable profile - better to write the new one than to lose the run.
       return null;
     }
   }
@@ -767,7 +820,7 @@ export class OnboardingComponent {
   /** The wizard already parsed the resume into exactly the shape Documents
    * stores, so it writes the CV document itself instead of leaving the user to
    * import the same file a second time. Fail-open: a CV that cannot be written
-   * must never trap the user in onboarding or lose the profile — the Documents
+   * must never trap the user in onboarding or lose the profile - the Documents
    * import stays available either way. */
   async saveCvDocument(): Promise<void> {
     const parsed = this.parsedCv();
@@ -791,7 +844,7 @@ export class OnboardingComponent {
         }),
       );
     } catch (e) {
-      // Fail open — the CV is a bonus on top of the profile, never a blocker.
+      // Fail open - the CV is a bonus on top of the profile, never a blocker.
       // Still say so: the alternative is a user who finds no CV in Documents
       // and has nothing to report.
       console.error('onboarding: could not write the CV document', e);
@@ -805,8 +858,8 @@ export class OnboardingComponent {
   }
 
   /** The only way out of the last step. Closing the overlay drops the user back
-   * on whatever route is behind it — the dashboard on a first run, the page
-   * they opened a re-run from — so the wizard does not pick a destination for
+   * on whatever route is behind it - the dashboard on a first run, the page
+   * they opened a re-run from - so the wizard does not pick a destination for
    * them; the app's own navigation does. */
   async finish(): Promise<void> {
     await this.saveProfile();
@@ -833,7 +886,7 @@ export class OnboardingComponent {
         ...(this.isCliMode() ? { defaultModel: '', economyModel: '' } : {}),
       });
     } catch {
-      // fail open — never trap the user in onboarding
+      // fail open - never trap the user in onboarding
     }
   }
 }

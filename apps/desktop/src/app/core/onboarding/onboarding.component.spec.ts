@@ -609,6 +609,42 @@ describe('OnboardingComponent flow', () => {
       expect(component.needsNameConfirm()).toBe(true);
     });
 
+    it('leaves a hand-edited field alone when a re-parse seeds again', () => {
+      component.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
+      component.seedReviewFields();
+      component.reviewFirstName.set('Ania');
+
+      component.parsedCv.set(makeParsed({ fullName: 'Jane Smith' }));
+      component.seedReviewFields();
+
+      expect(component.reviewFirstName()).toBe('Ania');
+      expect(component.reviewLastName()).toBe('Kowalska');
+    });
+
+    it('keeps Continue enabled and describes the inputs while the nudge is up', async () => {
+      component.parsedCv.set(
+        makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
+      );
+      component.seedReviewFields();
+      component.step.set(3);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(component.needsNameConfirm()).toBe(true);
+      const el = fixture.nativeElement as HTMLElement;
+      const hint = el.querySelector('.ob__field-hint--confirm');
+      expect(hint?.id).toBeTruthy();
+      for (const id of ['ob-review-first-name', 'ob-review-last-name']) {
+        expect(el.querySelector(`#${id}`)?.getAttribute('aria-describedby')).toBe(hint?.id);
+      }
+      const next = [...el.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Continue'),
+      );
+      expect(next).toBeTruthy();
+      expect(next?.disabled).toBe(false);
+    });
+
     it('does not nudge when there is no name at all', () => {
       component.parsedCv.set(makeParsed({ fullName: null }));
 

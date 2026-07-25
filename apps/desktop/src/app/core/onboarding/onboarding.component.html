@@ -528,6 +528,7 @@
                     id="ob-review-first-name"
                     class="ob__input"
                     [class.ob__input--confirm]="needsNameConfirm()"
+                    [attr.aria-describedby]="needsNameConfirm() ? 'ob-name-confirm-hint' : null"
                     [ngModel]="reviewFirstName()"
                     (ngModelChange)="reviewFirstName.set($event); onNameEdited()"
                   />
@@ -540,12 +541,13 @@
                     id="ob-review-last-name"
                     class="ob__input"
                     [class.ob__input--confirm]="needsNameConfirm()"
+                    [attr.aria-describedby]="needsNameConfirm() ? 'ob-name-confirm-hint' : null"
                     [ngModel]="reviewLastName()"
                     (ngModelChange)="reviewLastName.set($event); onNameEdited()"
                   />
                 </div>
                 @if (needsNameConfirm()) {
-                  <p class="ob__field-hint ob__field-hint--confirm">
+                  <p id="ob-name-confirm-hint" class="ob__field-hint ob__field-hint--confirm">
                     {{ t()('onboarding.preview.name_confirm_hint') }}
                   </p>
                 }

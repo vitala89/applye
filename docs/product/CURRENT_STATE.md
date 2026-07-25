@@ -1,8 +1,30 @@
 # Current Operational State
 
-- **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml)
-- **Current branch / focus**: none - `main`, clean tree. `feat/onboarding-welcome` merged as
-  PR #156 and cut release `0.28.0`.
+- **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
+  in all three on 2026-07-26)
+- **Current branch / focus**: `chore/release-readiness-audit` - a pre-release wiring and gate
+  audit. Not merged yet.
+- **On `chore/release-readiness-audit`: pre-release audit of section wiring and validation gates.**
+  Every cross-section link and every Tauri contract was checked mechanically rather than by eye.
+  **Clean:** all 19 routes resolve, every route is reachable from the shell nav or another section,
+  and no link points at a route that does not exist; all 91 Rust `#[tauri::command]` functions are
+  registered in `generate_handler!` and every one the frontend calls exists (`validate_theme` is
+  registered but has no caller - left in place, it is a pure validator); migrations `0001`-`0026`
+  are gapless and `sqlx::migrate!` discovers the directory, so no registry can drift; the banned em
+  and en dashes are down to the three documented parser-input fixtures; all eleven top-level pages
+  render with no unexpected console error in the browser preview. **Three defects found and fixed:**
+  (1) **Partial locales dropped labels.** `stub()` layered ru/es/fr/uk over English with a shallow
+  spread, so a locale that translated a section replaced that whole section, and every English key
+  it omitted vanished. `resolve()` renders a missing key as the key, so those four languages printed
+  `actions.close` on the job-paste, CV-import and pipeline dialogs and `common.back` / `common.next`
+  in the apply wizard. `stub()` now merges deeply; all six locales resolve the same 1438 keys, and a
+  test asserts that parity so a key added to `en` cannot silently disappear from four languages
+  again. (2) **`npm run type-check` was a no-op.** No project defined the target, so the command
+  `AGENTS.md` and the validation matrix require before every commit printed
+  `NX No tasks were run` and exited 0. Six `type-check` targets added, running `tsc --noEmit`
+  against each project's app/lib config; all six pass. (3) **`libs/core` was never linted** - it has
+  an `eslint.config.mjs` but no `lint` target, so `npm run lint` covered five projects and skipped
+  it. Added; it passes (11 warnings, 0 errors, all pre-existing non-null assertions).
 - **Merged: `feat/onboarding-welcome` -> PR #156, release 0.28.0.** Three strands. (1) The
   **animated welcome screen**, built from the design spec, plus the topbar buttons moved onto the
   design system, a footer scroll-spacing fix, a dashboard side-stripe fix and a profile header
@@ -31,7 +53,8 @@
   tolerates one. A boolean assertion in the CLI probe test that clippy rejected under `-D warnings`
   was also minimised; that failure predated the branch.
 
-- **Next action**: a `tauri dev` pass on what has still never run natively. The welcome screen and
+- **Next action**: unchanged by the audit, which could not reach any of it - a `tauri dev` pass on
+  what has still never run natively. The welcome screen and
   the name-split confirm step were verified natively before merge, but the CLI-bridge Settings and
   onboarding UI, the ATS card, the assisted installer, and Interview Prep's CRUD (add/edit/delete/
   reorder stages) have not been. The browser preview cannot reach Tauri IPC, so none of that has

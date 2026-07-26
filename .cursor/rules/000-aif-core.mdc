@@ -9,7 +9,7 @@ Applye is an open-source, privacy-first job-search productivity app.
 
 The main chat is the conductor. Keep task framing, context choice, edits, verification, and final decisions in the main session. Use specialists only for focused advice.
 
-Follow `AGENTS.md`, `PROJECT_CONTEXT.md`, and `docs/ai/*`.
+Follow `AGENTS.md`, `docs/internal/PROJECT_CONTEXT.md`, and `docs/ai/*`.
 
 Rules:
 

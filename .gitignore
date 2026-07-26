@@ -94,6 +94,11 @@ tauri-project-bootstrap.md
 AGENT_PROMPT_CAREER_OPS_ADOPTION.md
 docs/product/CAREER_OPS_ADOPTION.md
 
+# One-off agent hand-off prompts and the original bootstrap plan. Local scratch,
+# already untracked; listed so they can never be committed by accident.
+AGENT_PROMPT_*.md
+STEP_BY_STEP_PLAN.md
+
 # superpowers scratch state
 .superpowers/
 # Session hand-off notes are local scratch, not project docs

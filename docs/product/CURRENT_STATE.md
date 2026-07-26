@@ -2,8 +2,21 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `main`. Nothing in flight - the last two branches are merged and the
-  next piece of work has not been picked yet.
+- **Current branch / focus**: `feat/toast-coverage`. Toast feedback is now wired to every
+  user-initiated save, delete, duplicate, export, import and generate action on the desktop pages,
+  and to the failure of each. The work is complete in the working tree and not yet committed.
+- **In flight: `feat/toast-coverage`.** The toast system itself (`core/toast/`, `ToastErrorHandler`,
+  `provideBrowserGlobalErrorListeners()`) was already correct: an uncaught error toasts on its own.
+  What was missing was every caught error and most success paths. `cover-letter-list` had no toasts
+  at all while its `cv-list` sibling had five; `cv-detail`, `cover-letter-detail` and `profile`
+  confirmed a save only with inline text; `jobs` wrote save, apply and delete errors into
+  `actionMsg`, which is invisible after the navigation two of those three actions perform; `discover`
+  sent seven user-action failures to `console.error` and nothing else. All are now on the same
+  pattern the Tracker, Settings and Interview Prep already used - `toast.success(t()('ns.key'))` and
+  `toast.error(String(e))` - across 9 components, with 16 new i18n keys in all six locales. Inline
+  status text was kept, not replaced. Gates run: `type-check`, `test` (759), `lint`,
+  `format:check`, `git diff --check`, all pass. `desktop:build` not run and no on-screen check in
+  the Tauri app yet.
 - **Merged: `feat/i18n-complete-locales` -> PR #158. ru, es, fr and uk are complete.** The previous entry fixed the
   merge that dropped labels from those four locales, but only 33-36 of 1438 keys were ever
   translated in each: they covered `nav`, `actions`, `status`, `ai` and `common`, and every other

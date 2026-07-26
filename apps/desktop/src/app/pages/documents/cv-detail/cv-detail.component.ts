@@ -1051,6 +1051,7 @@ export class CvDetailComponent {
       });
       this.doc.set(saved);
       this.justSaved.set(true);
+      this.toast.success(this.t()('documents.cv_saved'));
       if (this.shouldReturnToApplyWizard()) {
         await this.returnToApplyWizard(true);
         return;
@@ -1090,6 +1091,9 @@ export class CvDetailComponent {
       });
       this.templates.set(await this.db.cvTemplatesList());
       this.saveTemplateOpen.set(false);
+      this.toast.success(this.t()('documents.cv_template_saved'));
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.savingTemplate.set(false);
     }

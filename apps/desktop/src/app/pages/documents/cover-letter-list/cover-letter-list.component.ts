@@ -12,6 +12,7 @@ import type {
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { ToastService } from '../../../core/toast/toast.service';
 import { cleanJsonText } from '../cv-content.util';
 
 const REGION_TAGS = ['de', 'us', 'uk', 'generic'];
@@ -30,6 +31,7 @@ export class CoverLetterListComponent {
   private readonly ai = inject(AiService);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
@@ -66,8 +68,9 @@ export class CoverLetterListComponent {
       this.coverLetters.set(letters);
       this.trackedJobs.set(jobs);
       this.applications.set(applications);
-    } catch {
+    } catch (e) {
       this.loadError.set(true);
+      this.toast.error(String(e));
     } finally {
       this.loading.set(false);
     }
@@ -86,18 +89,23 @@ export class CoverLetterListComponent {
 
   async duplicate(item: DocumentLibraryItem, event: Event): Promise<void> {
     event.stopPropagation();
-    await this.db.documentLibraryUpsert({
-      docType: 'cover_letter',
-      source: item.source,
-      label: `${item.label ?? this.t()('documents.cover_letter_untitled')} ${this.t()('documents.cv_copy_suffix')}`,
-      contentJson: item.contentJson,
-      styleJson: item.styleJson,
-      regionTag: item.regionTag,
-      language: item.language,
-      archetypeTag: item.archetypeTag,
-      isDefault: false,
-    });
-    await this.load();
+    try {
+      await this.db.documentLibraryUpsert({
+        docType: 'cover_letter',
+        source: item.source,
+        label: `${item.label ?? this.t()('documents.cover_letter_untitled')} ${this.t()('documents.cv_copy_suffix')}`,
+        contentJson: item.contentJson,
+        styleJson: item.styleJson,
+        regionTag: item.regionTag,
+        language: item.language,
+        archetypeTag: item.archetypeTag,
+        isDefault: false,
+      });
+      await this.load();
+      this.toast.success(this.t()('documents.duplicated'));
+    } catch (e) {
+      this.toast.error(String(e));
+    }
   }
 
   readonly exportBusyId = signal<number | null>(null);
@@ -119,6 +127,9 @@ export class CoverLetterListComponent {
       } else {
         await this.db.coverLetterDocumentExport(item.id, format, path);
       }
+      this.toast.success(this.t()('documents.exported').replace('{path}', path));
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.exportBusyId.set(null);
     }
@@ -156,6 +167,9 @@ export class CoverLetterListComponent {
       await this.db.documentLibraryDelete(item.id);
       this.deleteTarget.set(null);
       await this.load();
+      this.toast.success(this.t()('documents.cover_letter_deleted'));
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.deleting.set(false);
     }
@@ -256,9 +270,11 @@ export class CoverLetterListComponent {
 
       this.generateOpen.set(false);
       await this.load();
+      this.toast.success(this.t()('documents.cover_letter_generated'));
       this.open(created.id);
     } catch (e) {
       this.generateError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.generateBusy.set(false);
     }

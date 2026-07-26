@@ -99,6 +99,7 @@ import {
   type CvGapQuestion,
 } from '../documents/cv-content.util';
 import { CvGapDialog } from './cv-gap-dialog.component';
+import { ToastService } from '../../core/toast/toast.service';
 
 interface PassResult {
   pass: number;
@@ -2333,6 +2334,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly ai = inject(AiService);
   private readonly ats = inject(AtsService);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
@@ -2871,6 +2873,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
+      this.toast.error(String(e));
     }
   }
 
@@ -3107,6 +3110,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
+      this.toast.error(String(e));
     } finally {
       if (job.id) this.docGen.end(job.id, 'cv');
     }
@@ -3229,6 +3233,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
+      this.toast.error(String(e));
     } finally {
       if (job.id) this.docGen.end(job.id, 'cover_letter');
     }
@@ -3260,6 +3265,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
+      this.toast.error(String(e));
     }
   }
 
@@ -3566,6 +3572,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       void this.router.navigate(['/documents/cover-letter', created.id]);
     } catch (e) {
       this.tailorCoverLetterError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.tailoringCoverLetter.set(false);
     }
@@ -4012,6 +4019,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch (e) {
       this.portalError.set(true);
       this.portalStatus.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.portalDrafting.set(false);
     }
@@ -4066,6 +4074,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     } catch (e) {
       this.portalError.set(true);
       this.portalStatus.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.portalRedrafting.set(null);
     }
@@ -4090,8 +4099,10 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.application.set(app);
       this.jobsStore.patchOverviewRow(j.id, { status: app.status });
       this.actionMsg.set(this.t()('jobs.saved_ok'));
+      this.toast.success(this.t()('jobs.saved_ok'));
     } catch (e) {
       this.actionMsg.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.actionBusy.set(false);
     }
@@ -4126,10 +4137,13 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.editingLocked.set(false);
       this.wizardProgress.clear(j.id);
       // Applied - send the user back to My Jobs; re-entering the job shows
-      // its Applied + Tailored state.
+      // its Applied + Tailored state. The toast is the only feedback that
+      // survives the navigation, so it fires before the route change.
+      this.toast.success(this.t()('jobs.applied_ok'));
       await this.router.navigate(['/jobs']);
     } catch (e) {
       this.actionMsg.set(String(e));
+      this.toast.error(String(e));
       this.actionBusy.set(false);
     }
   }
@@ -4274,9 +4288,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.deleting.set(true);
     try {
       await this.jobsStore.deleteJob(j.id);
+      this.toast.success(this.t()('jobs.delete_ok'));
       await this.router.navigate(['/jobs']);
     } catch (e) {
       this.actionMsg.set(String(e));
+      this.toast.error(String(e));
       this.deleting.set(false);
       this.deleteConfirmOpen.set(false);
     }

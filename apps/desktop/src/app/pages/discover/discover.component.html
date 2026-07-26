@@ -282,6 +282,12 @@
             {{ t()('discover.last_scan').replace('{time}', lastScanLabel()) }}
           </span>
         }
+        <!-- Sources is a scan setting, not a filter: it stays reachable in every
+             view, including an empty feed where the filter row is not rendered. -->
+        <button type="button" class="dv-btn dv-btn--ghost" (click)="drawerOpen.set(true)">
+          <lucide-icon [img]="icons.source" [size]="13" aria-hidden="true" />
+          {{ t()('discover.sources') }}
+        </button>
         @if (!scanning()) {
           <button type="button" class="dv-btn dv-btn--primary" (click)="scan()">
             <lucide-icon [img]="icons.scan" [size]="15" aria-hidden="true" />
@@ -590,13 +596,6 @@
           {{ t()('discover.tab_all') }}
         </button>
       </div>
-      <button
-        type="button"
-        class="dv-btn dv-btn--ghost dv-filters__sources"
-        (click)="drawerOpen.set(true)"
-      >
-        {{ t()('discover.sources') }}
-      </button>
       <button
         type="button"
         class="dv-btn dv-btn--ghost dv-filters__clear"

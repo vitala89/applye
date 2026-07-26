@@ -589,7 +589,8 @@
   }
 }
 
-.dv-filters__sources {
+/* Sources moved to the header row; Clear now takes the right edge. */
+.dv-filters__clear {
   margin-left: auto;
 }
 

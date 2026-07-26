@@ -2,8 +2,18 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `main`. Restoring the nine migration files that 0.28.0's em dash
-  cleanup edited after they had shipped. Complete in the working tree, not yet committed.
+- **Current branch / focus**: `main`. Discover's Sources control moved out of the filter row.
+  Complete in the working tree, not yet committed.
+- **In flight: Discover Sources placement (uncommitted, on `main`).** Reported from use: an empty
+  Discover list had no route to the sources drawer, so clearing the list or disabling every feed
+  left the screen with a Scan button and nothing to scan. The button lived in `.dv-filters`, which
+  renders only for `view() === 'feed'`; `caughtup`, `never` and `scanning` had no opener at all, and
+  the first-run CTA needs both never-enabled and never-scanned. Moved into `.dv-head__right` beside
+  Scan, which `showHeader()` covers for every view except `first` and `skeleton`. `.dv-filters__clear`
+  inherited the `margin-left: auto`. New `discover.component.spec.ts` pins one opener per view across
+  `caughtup`, `never`, `feed` and `first`, and pins that the header button opens the drawer. Gates:
+  `type-check`, `lint`, `npm test` (desktop 696 -> 701), `format:check`, `nx build desktop`,
+  `git diff --check` all pass. Not verified natively - Discover needs Tauri IPC to render.
 - **Also in flight: public-release documentation pass (uncommitted, on `main`).** Version badge in
   all six READMEs was `0.25.0` against an actual `0.28.0` and is bumped. `AGENT_START_HERE.md`,
   `PROJECT_CONTEXT.md`, `INSTRUCTIONS.md` and `DUTY_WATCH.md` moved from the repository root to

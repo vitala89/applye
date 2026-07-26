@@ -47,7 +47,7 @@ ttf-parser = "0.25"
 calamine = "0.35"
 # CV import (Documents 1b, ROADMAP §16.3): PDF text extraction, read-only.
 # docx-rs (already a dependency, used for export) also reads .docx.
-pdf-extract = "0.7"
+pdf-extract = "0.12"
 # Auto-updater. Registered behind #[cfg(desktop)] in lib.rs; kept in the plain
 # [dependencies] table so tauri-build picks up its capability permissions.
 tauri-plugin-updater = "2"

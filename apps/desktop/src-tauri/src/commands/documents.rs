@@ -10,6 +10,7 @@
 // `applications.cv_path` / `cover_letter_path` stay the frozen apply-time
 // snapshot and are never touched here.
 
+use crate::commands::untrusted::catch_parser_panic;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -249,7 +250,8 @@ pub fn cv_photo_read_file(path: String) -> Result<String, String> {
 
 fn read_docx_text(path: &str) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("read_docx_text: {e}"))?;
-    let docx = docx_rs::read_docx(&bytes).map_err(|e| format!("read_docx_text: {e}"))?;
+    let docx = catch_parser_panic("read_docx_text", || docx_rs::read_docx(&bytes))?
+        .map_err(|e| format!("read_docx_text: {e}"))?;
 
     let mut out = String::new();
     for child in &docx.document.children {
@@ -273,7 +275,8 @@ fn read_docx_text(path: &str) -> Result<String, String> {
 }
 
 fn read_pdf_text(path: &str) -> Result<String, String> {
-    let text = pdf_extract::extract_text(path).map_err(|e| format!("read_pdf_text: {e}"))?;
+    let text = catch_parser_panic("read_pdf_text", || pdf_extract::extract_text(path))?
+        .map_err(|e| format!("read_pdf_text: {e}"))?;
     if text.trim().is_empty() {
         return Err("read_pdf_text: no extractable text found".into());
     }

@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, stand up the security@ and conduct@ reporting mailboxes
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (guidance only; the maintainer performed all Cloudflare dashboard actions)
+- **Branch:** `main`
+- **Commits:** none - infrastructure change, no repository files required edits
+- **Pull request:** none
+- **Objective:** The public-release documentation pass (entry below, 2026-07-26) flagged that `SECURITY.md` and `CODE_OF_CONDUCT.md` publish `security@applye.dev` and `conduct@applye.dev`, but neither mailbox existed - a dead vulnerability/conduct reporting channel on a domain about to go public.
+- **Completed:** Cloudflare Email Routing enabled on `applye.dev`. Destination address `vitala2089@gmail.com` added and verified. DNS records added (3 MX to `route{1,2,3}.mx.cloudflare.net`, SPF TXT, DKIM TXT) - all showed "Missing" before, no pre-existing MX conflict. Two routing rules created: `security@applye.dev` and `conduct@applye.dev`, both forwarding to the verified destination. Delivery confirmed in both directions with a real external test email. A DMARC TXT record (`_dmarc.applye.dev`, `v=DMARC1; p=reject; rua=mailto:security@applye.dev`) was added afterward against domain spoofing.
+- **Not completed:** Catch-all routing was deliberately left disabled (would collect spam for every unused local part). No SMTP send-as was configured - Email Routing is receive-only, so replies go out from the maintainer's personal address, not from the alias. That is acceptable for a reporting channel where the maintainer replies personally.
+- **Files or packages changed:** `docs/product/CURRENT_STATE.md` (new bullet marking the item resolved). `SECURITY.md` and `CODE_OF_CONDUCT.md` were checked and already referenced the correct addresses - no edit needed.
+- **Validation:** Manual: destination-address verification email received and confirmed; DNS records confirmed added in the Cloudflare dashboard; end-to-end delivery to both `security@` and `conduct@` confirmed by the maintainer. No automated repository gates apply - no tracked source files changed.
+- **Privacy/security impact:** Direct security-relevant change. Closes the dead-channel gap the previous watch flagged: reports sent to the published addresses now reach the maintainer instead of bouncing. DMARC `p=reject` reduces the domain's exposure to spoofed mail sent as `@applye.dev`. The maintainer's personal address remains the actual delivery destination (visible to Cloudflare, not published in the repository) - unchanged risk, already accepted per the prior entry.
+- **Decisions and assumptions:** Cloudflare Email Routing (free, receive-and-forward) chosen over a full mailbox provider (Google Workspace, Zoho, Migadu) since the channel only needs to receive reports, not send as the alias.
+- **Risks or compatibility impact:** None to the codebase. If the domain's nameservers or MX ever move off Cloudflare, both aliases stop receiving silently unless someone checks - worth a periodic manual send-test.
+- **Open issues or blockers:** None.
+- **Next first action:** No code follow-up. Optional: a periodic (e.g. quarterly) manual test email to `security@` / `conduct@` to catch silent DNS drift.
+- **Evidence:** Cloudflare Email Routing dashboard (DNS records all Active, destination Verified, 2 routing rules); maintainer-confirmed delivery of test emails to both addresses.
+
 ### 2026-07-26, move Discover's Sources control out of the filter row
 
 - **Status:** complete

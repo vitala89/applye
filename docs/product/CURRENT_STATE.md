@@ -2,8 +2,26 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `main`. Discover's Sources control moved out of the filter row.
-  Complete in the working tree, not yet committed.
+- **Current branch / focus**: `main`. Marketing-site design pass against
+  `docs/design/WEBSITE_PLAN.md`. Complete in the working tree, not yet committed.
+- **In flight: website design pass (uncommitted, on `main`).** Five of the eight gaps in the plan's
+  gap analysis are closed; gaps 1-3 (hero product shot, demo GIF, six feature screenshots) are
+  blocked on assets that do not exist and no placeholder was shipped in their place. Closed: the
+  hero's two dead controls became one live primary CTA ("Read the docs") plus a download _status_
+  carrying its own reason; a new `#engines` band proves the bring-your-own-AI claim with wordmarks
+  rather than vendor logos; the OG image turned out to be already shipped and correct (the plan's
+  "1280x640, not wired" was stale); and a measured consistency pass fixed contrast (`--text-tertiary`
+  was 2.75-3.38:1 doing body-text duty; light-theme `--success`/`--warning`/`--danger` were
+  2.61/2.23/3.73:1 as text), three independent causes of horizontal scroll at 375px, a missing
+  `forced-colors` focus fallback, a banned side-stripe border, and a clipped comparison tag when
+  stacked. Separately, the site claimed a Gemini CLI bridge in all six locales that
+  `apps/desktop/src-tauri/src/ai/cli.rs:222` does not implement - corrected. Contrast fixes are
+  web-scoped overrides, **not** token edits: `libs/ui/tokens.css` mirrors the design system, is not
+  hand-edited, and is shared with the desktop app, so **whether these corrections go back into the
+  design system is an open decision that also affects the app.** Gates: `nx test web` (41),
+  `nx lint web`, `tsc --noEmit`, `format:check`, `nx build web`, `git diff --check` all pass.
+  Verified in-browser: zero AA contrast failures in both themes, zero horizontal overflow at 375px
+  across ten routes.
 - **In flight: Discover Sources placement (uncommitted, on `main`).** Reported from use: an empty
   Discover list had no route to the sources drawer, so clearing the list or disabling every feed
   left the screen with a Scan button and nothing to scan. The button lived in `.dv-filters`, which

@@ -12,6 +12,7 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **Discover's Sources button is now in the header, where an empty list can still reach it.** It sat in the filter row, and that row is only drawn when the list has something in it. Clear the list or turn every feed off and the one control that turns feeds back on disappeared with it - the screen offered a Scan button and nothing to scan. Sources is a scan setting rather than a filter, so it now sits beside Scan and is present in every state of the screen.
 - **0.28.0 could not start on any existing installation.** The em dash cleanup that shipped with 0.28.0 also rewrote punctuation inside nine database migration files that users had already run - almost all of it in comments. The app records a fingerprint of every migration it applies and refuses to start when a migration it has already run no longer matches, which is what protects a database from a silently altered schema, so the app aborted at launch with "migration 1 was previously applied but has been modified". The nine files are restored exactly as they shipped, and a test now pins the fingerprint of every migration so an edit to an applied one fails a check instead of reaching a release.
 
 ### Security

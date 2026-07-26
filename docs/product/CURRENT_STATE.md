@@ -2,29 +2,50 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `feat/web-analytics`. Website analytics: traffic attribution and
-  click tracking. The preceding marketing-site design pass shipped in `a7e4574` - the entry below
-  describing it as uncommitted was stale and is corrected here.
-- **In flight: website analytics (on `feat/web-analytics`).** The code is complete and every gate
-  passes, but **no data flows and none will until a GA4 property exists**: the shipped measurement
-  ID is `G-PLACEHOLDER` and `AnalyticsService` refuses to load GA while it says that. Six events are
-  defined and wired (`page_view`, `download_click`, `outbound_click`, `cta_click`, `locale_switch`,
-  `consent_decision`), the ID now arrives from a build-time environment variable rather than source,
-  and `/cookies` and `/privacy` were corrected - they had claimed download-click tracking that did
-  not exist. The hard consent gate is unchanged. Note the structural limit: `download_click` counts
-  clicks on a link that leaves for GitHub, so completed downloads come from
-  `npm run web:downloads`, not from GA4. **Open decision:** whether to add Cloudflare Web Analytics
-  as a cookieless complement, since GA4 sees only visitors who opt in. Next action and full setup
-  steps: `docs/internal/ANALYTICS_SETUP.md`.
-- **In flight: applye.dev deployment (on `feat/web-analytics`).** The site has never been deployed.
-  A `deploy-web` job now builds and uploads to Cloudflare Pages on every push to `main`, but only
-  after the CI gate passes, so a red main cannot reach the live site. **It has never run** - it
-  needs a Direct Upload Pages project, an API token, an account ID and the custom domain in
-  Cloudflare, plus four secrets/variables in GitHub, all of which are manual and outstanding. The
-  GA4 property exists (`G-ZY158GV42C`) with Enhanced measurement correctly switched off, but the ten
-  custom dimensions are not registered, and they must exist **before** the first traffic or those
-  parameters are stored permanently unreportable. Checklist for both consoles:
+- **Current branch / focus**: `feat/web-cookieless-analytics`. Preparing applye.dev for a public
+  launch that precedes the repository and the desktop release. The preceding analytics and
+  deployment work shipped to `main` in `495d413` (#164), so `feat/web-analytics` is merged and
+  gone; entries below still describing work as "in flight on `feat/web-analytics`" mean the
+  dashboard setup that code cannot do, not uncommitted code.
+- **In flight: website analytics (dashboard setup only).** The code is complete and every gate
+  passes, but **no data flows yet, because nothing is deployed**. Six GA4 events are defined and
+  wired (`page_view`, `download_click`, `outbound_click`, `cta_click`, `locale_switch`,
+  `consent_decision`) behind a hard consent gate. The measurement ID is committed as
+  `G-PLACEHOLDER` on purpose and `AnalyticsService` refuses to load GA while it says that; the real
+  ID arrives from the `GA_MEASUREMENT_ID` build variable, so checkouts, dev servers and tests can
+  never reach the live property. Note the structural limit: `download_click` counts clicks on a
+  link that leaves for GitHub, so completed downloads come from `npm run web:downloads`, not GA4.
+  **Resolved 2026-07-27: Cloudflare Web Analytics is in**, as the cookieless complement that counts
+  everyone GA4's consent gate hides. It needs no snippet - `applye.dev` is proxied through
+  Cloudflare, so the beacon is injected at the edge once the hostname is added in the dashboard.
+  `/privacy`, `/cookies` and the consent-bar copy in all six locales were rewritten to describe
+  both tools honestly, including that the cookieless one runs before any consent decision.
+  Setup steps and the reasoning: `docs/internal/ANALYTICS_SETUP.md`.
+- **In flight: applye.dev deployment (dashboard setup only).** The site has never been deployed.
+  A `deploy-web` job builds and uploads to Cloudflare Pages on every push to `main`, but only after
+  the CI gate passes, so a red main cannot reach the live site. **It has never run.** Done
+  2026-07-27: the Direct Upload Pages project `applye` exists with no Git connection, as required.
+  Still outstanding, all manual: the API token and account ID as GitHub secrets, the
+  `GA_MEASUREMENT_ID` variable, the `applye.dev` custom domain on the Pages project, and adding the
+  hostname under Web Analytics. The GA4 property is fully configured - `G-ZY158GV42C`, Enhanced
+  measurement off, Google signals off, data-sharing unticked, 14-month retention, DPA accepted, and
+  **all ten event-scoped custom dimensions registered** on 2026-07-26, before any traffic, which is
+  the only point at which that can be done correctly. (An earlier version of this file said the
+  dimensions were missing; that was stale.) Checklist for both consoles:
   `docs/internal/ANALYTICS_SETUP.md`.
+- **Shipped to the branch: launch SEO pass (`a510885`, `bb29b58`).** The sitemap, canonicals,
+  `hreflang` and per-locale `<html lang>` were already correct and were left alone. Landing
+  descriptions were trimmed under the roughly 160 characters search results show; landing pages now
+  emit `FAQPage` in their own language and the 24 docs pages emit `BreadcrumbList`. This uncovered a
+  defect live since `495d413`: `og:title` and `twitter:title` read the previous page's title, so
+  every route except the six landings advertised the home page headline when shared. Fixed, with a
+  regression test verified to fail against the old code. 62 tests, up from 48.
+- **Launch sequence agreed 2026-07-27.** Website first, repository and desktop release later. The
+  site ships in coming-soon mode (`COMING_SOON = true`, `SOURCE_PUBLIC = false` in
+  `apps/web/src/app/site.ts`) with no download and deliberately no waitlist form, runs live long
+  enough to accumulate traffic and search indexing, and only then does the author's launch article
+  publish, followed by opening the repository and cutting the public release. All six locales ship
+  on day one. General contact is `hello@applye.dev`.
 - **Shipped: website design pass (`a7e4574` on `main`).** Five of the eight gaps in the plan's
   gap analysis are closed; gaps 1-3 (hero product shot, demo GIF, six feature screenshots) are
   blocked on assets that do not exist and no placeholder was shipped in their place. Closed: the

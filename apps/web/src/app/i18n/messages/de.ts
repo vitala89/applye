@@ -4,7 +4,7 @@ export const de: Messages = {
   meta: {
     title: 'Applye: Der Entwurf ist automatisiert. Das Absenden nicht.',
     description:
-      'Eine kostenlose, quelloffene, lokal arbeitende Desktop-App für die KI-gestützte Jobsuche. Ehrliche Recruiter-Checks, angepasste Lebensläufe, ein Pipeline-Kanban. Deine Daten, dein Rechner, deine KI.',
+      'Kostenlose, quelloffene Desktop-App für die KI-gestützte Jobsuche, ganz auf deinem Rechner. Ehrliche Recruiter-Checks, angepasste Lebensläufe, Pipeline-Kanban.',
   },
 
   nav: {
@@ -36,7 +36,7 @@ export const de: Messages = {
   },
 
   consent: {
-    body: 'Wir würden gern anonyme Seitenaufrufe zählen, um zu sehen, welche Doku sich zu schreiben lohnt. Ohne deine Zustimmung werden keine Cookies gesetzt und keine Anfragen an Google gesendet - und die App selbst sendet ohnehin nie etwas.',
+    body: 'Ein cookiefreier Zähler erfasst Besuche bereits, ohne etwas zu speichern oder jemanden zu identifizieren. Google Analytics würde zusätzlich zeigen, was gelesen und geklickt wird, und lädt nur mit deiner Zustimmung. In beiden Fällen keine Cookies - und die App selbst sendet ohnehin nie etwas.',
     learnMore: 'Was erfasst wird',
     decline: 'Ablehnen',
     allow: 'Analyse erlauben',

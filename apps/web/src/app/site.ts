@@ -5,6 +5,14 @@ export const DATA_CONTRACT = `${REPO}/blob/main/README.md#how-it-works`;
 export const AUTHOR = 'https://vitaliikasap.com';
 export const YEAR = 2026;
 
+/**
+ * General contact address, routed by Cloudflare Email Routing to the
+ * maintainer. `security@` and `conduct@` are deliberately not shown here:
+ * they belong to SECURITY.md and CODE_OF_CONDUCT.md, and pointing a marketing
+ * footer at a vulnerability inbox invites everything except vulnerabilities.
+ */
+export const CONTACT_EMAIL = 'hello@applye.dev';
+
 // Community / social. PLACEHOLDER values: replace when the real channels exist.
 export const SPONSORS = 'https://github.com/sponsors/vitala89'; // PLACEHOLDER: enable GitHub Sponsors
 export const DISCORD = ''; // PLACEHOLDER: Discord invite URL once a server exists
@@ -24,6 +32,17 @@ export const SOURCE_PUBLIC = false;
 
 /** Google Analytics 4 measurement ID. PLACEHOLDER: replace with the real `G-XXXXXXXXXX`. */
 export const GA_MEASUREMENT_ID = 'G-PLACEHOLDER';
+
+/**
+ * Whether the site is meant to appear in search results yet.
+ *
+ * False until launch: the site is deployed while the documentation still shows
+ * placeholder boxes where its screenshots and video will go, and an indexed
+ * placeholder is far harder to remove than to prevent. While this is false,
+ * `public/_headers` must send `X-Robots-Tag: noindex`; a test fails if the two
+ * disagree, so flipping this flag forces the header to be dealt with.
+ */
+export const SEARCH_INDEXABLE = false;
 
 /** Canonical production origin, used for canonical URLs, hreflang, OG tags and the sitemap. */
 export const SITE_ORIGIN = 'https://applye.dev';

@@ -54,6 +54,30 @@ describe('locale bundles', () => {
         });
       }
 
+      /**
+       * The landing pages are the only routes whose title and description come
+       * from a bundle rather than from `app.routes.ts`, so the length check in
+       * seo.spec.ts never sees them. Search results cut a description around
+       * 160 characters and a title around 60; all six were over the
+       * description limit before launch, losing the closing line of the pitch.
+       */
+      it('keeps the landing title and description inside what search results show', () => {
+        expect(bundle['meta.title'].length).toBeLessThanOrEqual(60);
+        expect(bundle['meta.description'].length).toBeLessThanOrEqual(160);
+      });
+
+      /**
+       * The landing page emits its FAQ as `FAQPage` structured data built from
+       * this bundle. Google treats structured data describing content that is
+       * not on the page as a manual-action risk, so an empty or half-filled
+       * FAQ must fail here rather than ship.
+       */
+      it('has a complete FAQ for the structured data built from it', () => {
+        const items = BUNDLES[locale.code].faq.items;
+        expect(items.length).toBeGreaterThan(0);
+        expect(items.filter((i) => !i.q.trim() || !i.a.trim())).toEqual([]);
+      });
+
       it('has a landing route', () => {
         const path = locale.code === 'en' ? '' : locale.code;
         expect(appRoutes.some((r) => r.path === path && r.data?.['locale'] === locale.code)).toBe(

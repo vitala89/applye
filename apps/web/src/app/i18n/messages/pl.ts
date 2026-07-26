@@ -4,7 +4,7 @@ export const pl: Messages = {
   meta: {
     title: 'Applye: pisanie jest zautomatyzowane. Wysyłka nie.',
     description:
-      'Bezpłatna aplikacja desktopowa o otwartym kodzie do szukania pracy z pomocą AI, działająca lokalnie. Szczera ocena oferty, dopasowane CV, kanban aplikacji. Twoje dane, twój komputer, twoje AI.',
+      'Bezpłatna aplikacja desktopowa o otwartym kodzie do szukania pracy z AI, w całości na twoim komputerze. Szczera ocena oferty, dopasowane CV, kanban aplikacji.',
   },
 
   nav: {
@@ -36,7 +36,7 @@ export const pl: Messages = {
   },
 
   consent: {
-    body: 'Chcielibyśmy liczyć anonimowe odsłony, żeby wiedzieć, którą dokumentację warto pisać dalej. Bez twojej zgody nie zapisujemy ciasteczek ani nie wysyłamy żadnych żądań do Google, a sama aplikacja i tak nigdy niczego nie wysyła.',
+    body: 'Licznik bez ciasteczek już zlicza wizyty, niczego nie zapisując ani nikogo nie identyfikując. Google Analytics pokazałby dodatkowo, co jest czytane i klikane, i ładuje się tylko za twoją zgodą. W żadnym wypadku bez ciasteczek, a sama aplikacja i tak nigdy niczego nie wysyła.',
     learnMore: 'Co jest zbierane',
     decline: 'Odrzuć',
     allow: 'Zezwól na analitykę',

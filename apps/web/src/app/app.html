@@ -79,6 +79,8 @@
       <a routerLink="/privacy">{{ m().footer.privacy }}</a>
       <a routerLink="/cookies">{{ m().footer.cookies }}</a>
       <a routerLink="/sustain">{{ m().footer.sustain }}</a>
+      <!-- The address is its own label: an email needs no translation. -->
+      <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
     </nav>
     <div class="footer__social" aria-label="Social links">
       <app-source-link

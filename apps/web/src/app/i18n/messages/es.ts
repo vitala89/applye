@@ -4,7 +4,7 @@ export const es: Messages = {
   meta: {
     title: 'Applye: redactar está automatizado. Enviar, no.',
     description:
-      'Una aplicación de escritorio gratuita, de código abierto y local para buscar trabajo con IA. Evaluación honesta de la vacante, CV adaptado, un kanban de candidaturas. Tus datos, tu equipo, tu IA.',
+      'Aplicación de escritorio gratuita y de código abierto para buscar trabajo con IA, todo en tu equipo. Evaluación honesta, CV adaptado, kanban de candidaturas.',
   },
 
   nav: {
@@ -36,7 +36,7 @@ export const es: Messages = {
   },
 
   consent: {
-    body: 'Nos gustaría contar visitas anónimas para saber qué documentación merece la pena escribir. Sin tu permiso no se instalan cookies ni se envía ninguna petición a Google, y la aplicación en sí nunca envía nada en ningún caso.',
+    body: 'Un contador sin cookies ya registra las visitas sin almacenar nada ni identificar a nadie. Google Analytics mostraría además qué se lee y qué se pulsa, y solo se carga si tú lo permites. Sin cookies en ningún caso, y la aplicación en sí nunca envía nada.',
     learnMore: 'Qué se recoge',
     decline: 'Rechazar',
     allow: 'Permitir analítica',

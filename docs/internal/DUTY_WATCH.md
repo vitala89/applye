@@ -44,6 +44,133 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-27, launch SEO pass: structured data added, a shipped og:title bug found and fixed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-cookieless-analytics`
+- **Commits:** `a510885`, `bb29b58`
+- **Pull request:** not opened at time of writing
+- **Objective:** the launch plan puts the site live before the repository and the release, so search
+  indexing has to be right on the first crawl rather than corrected later. Audit the SEO surface
+  and close what can be closed without a deployment.
+- **Completed:** The audit found the infrastructure sound and left it alone: the sitemap is
+  generated from `tools/site-paths.json` with a test that fails on drift, its 39 URLs match the 39
+  prerendered routes exactly, every page carries a title, description, canonical and OG image,
+  `<html lang>` is correct per locale, and `hreflang` emits seven head links with no duplicates.
+  Two things were wrong. First, all six landing descriptions ran past the roughly 160 characters a
+  search result displays, the longest at 198, cutting the closing line of the pitch; each is
+  rewritten, and the English one had been duplicated in four places (bundle, `app.routes.ts`,
+  `seo.service.ts`, `index.html`) so the root page kept the long copy until all four were aligned.
+  Second, structured data: landing pages now emit `FAQPage` in their own language from the same
+  bundle that renders the visible FAQ, and the 24 documentation pages emit `BreadcrumbList`. Blocks
+  carry a `data-seo` marker and are cleared on each navigation, without which a single-page app
+  accumulates the structured data of every page visited.
+- **Not completed:** Search Console and Bing verification, which need a live domain. Localised OG
+  images - one English image serves all six locales. A Content-Security-Policy, still deferred to
+  after deployment.
+- **Files or packages changed:** `apps/web/src/index.html`, `apps/web/src/app/app.routes.ts`,
+  `apps/web/src/app/seo/seo.service.ts`, `apps/web/src/app/seo/seo.spec.ts`,
+  `apps/web/src/app/i18n/i18n.service.ts`, `apps/web/src/app/i18n/i18n.spec.ts`, all six
+  `apps/web/src/app/i18n/messages/*.ts`, `CHANGELOG.md`.
+- **Validation:** Run and observed: `npm run format:check` passed; `nx run web:lint
+--skip-nx-cache` passed; `nx run web:test --skip-nx-cache` passed, 62 tests in 5 suites, up from
+  48; `nx run web:build` passed, 39 routes prerendered; `git diff --check` clean. Additionally, a
+  script over all 39 prerendered pages confirmed zero `<title>` versus `og:title` mismatches, six
+  `FAQPage` blocks with the correct `inLanguage` and six questions each, and 24 breadcrumb trails
+  with correct leaf names. The new `og:title` regression test was verified to fail against the old
+  implementation before being kept.
+- **Privacy/security impact:** None. No data collection, storage or transmission changed.
+- **Decisions and assumptions:** Breadcrumbs are emitted for the documentation only; on a top-level
+  page a trail states the obvious. Structured data is built from what the page already renders,
+  because describing absent content is a manual-action risk rather than a ranking bonus.
+- **Risks or compatibility impact:** The breadcrumb leaf is cut from the page title at the `·`
+  separator, so a docs title without one would put the full string into the crumb. A test now
+  rejects that.
+- **Open issues or blockers:** None from this work.
+- **Next first action:** none for SEO until the site is deployed; then verify `applye.dev` in
+  Search Console and submit `sitemap.xml`.
+- **Evidence:** `setStructuredData`, `faqPage`, `breadcrumbs` and `pageTitle` in
+  `apps/web/src/app/seo/seo.service.ts`; the `SeoService tags` describe block in `seo.spec.ts`.
+
+#### Correction to the entry below
+
+That entry reported a shipped defect this pass uncovered. `og:title` and `twitter:title` were read
+from `Title.getTitle()` inside the same `NavigationEnd` handler that Angular's title strategy also
+subscribes to, with no ordering guarantee between the two, so both carried the **previous** page's
+title. Every route except the six landing pages advertised the home page headline when shared -
+including `/privacy`, `/press` and all 24 documentation pages. This predates this branch and was
+live in `495d413`. Both tags now read the resolved route title from the snapshot.
+
+### 2026-07-27, launch sequence decided; Cloudflare Web Analytics adopted and disclosed
+
+- **Status:** complete for the code and docs; the Cloudflare and GitHub dashboard steps remain
+  manual and outstanding
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-cookieless-analytics`, branched from `main` at `495d413`
+- **Commits:** see the branch; the preceding analytics work shipped in `495d413` (#164)
+- **Pull request:** not opened
+- **Objective:** agree the order of the public launch, then close the decisions it depends on. The
+  maintainer's plan: finish and deploy the website first, let traffic and search indexing
+  accumulate, publish a launch article personally, and only then open the repository and cut the
+  desktop release.
+- **Completed:** Four launch decisions taken and recorded. (1) The site ships in coming-soon mode
+  with no download and no waitlist form - the flags for this already existed in `site.ts`, so the
+  initially-flagged "download CTA points at a private repo" conflict turned out to be already
+  handled. (2) Cloudflare Web Analytics is adopted as a cookieless complement to GA4. (3)
+  `hello@applye.dev` becomes the general contact address. (4) All six locales launch on day one.
+  Implemented: `CONTACT_EMAIL` added to `site.ts` and surfaced in the footer, on `/press`, and in
+  the `/privacy` closing paragraph, which previously invited questions "by email" while giving no
+  address. `/privacy` and `/cookies` rewritten so the always-on cookieless counter is described
+  explicitly and separately from the consent-gated GA4, including the correction that the site is
+  no longer free of third-party scripts before consent. The consent-bar copy was rewritten in all
+  six locales for the same reason: it asked permission to "count anonymous page views" when a
+  counter now does that regardless of the answer. `ANALYTICS_SETUP.md` gained a Cloudflare Web
+  Analytics section with the decision, its reasoning, and the finding that no snippet is needed.
+- **Not completed:** Every dashboard step. The Pages project `applye` was created by the maintainer
+  as Direct Upload with no Git connection, and that is all that exists; the API token, account ID,
+  `GA_MEASUREMENT_ID` variable, custom domain and Web Analytics hostname are still to be done.
+- **Files or packages changed:** `apps/web/src/app/site.ts`, `app.ts`, `app.html`, `privacy.ts`,
+  `privacy.html`, `press.ts`, `press.html`, `cookies.ts`, all six
+  `apps/web/src/app/i18n/messages/*.ts`, `docs/internal/ANALYTICS_SETUP.md`,
+  `docs/product/CURRENT_STATE.md`.
+- **Validation:** Run and observed: `npm run format:check` passed; `nx run web:lint` passed;
+  `nx run web:test` passed, 48 tests in 5 suites; `nx run web:build` passed, 39 static routes
+  prerendered; `git diff --check` clean. Manual, in the dev server: the footer link renders as
+  `hello@applye.dev` with `mailto:` and inherits its siblings' styling exactly; `/privacy` shows
+  both analytics bullets and the address; `/cookies` shows the new "The always-on counter" section
+  ahead of "Optional analytics"; `/ru` shows the rewritten consent bar; no console errors on any of
+  them. Not verified: screenshots - the preview pane returned blank frames while the DOM read
+  correctly, so verification was done through the DOM rather than visually. Nothing was verified in
+  a deployed environment, because nothing is deployed.
+- **Privacy/security impact:** Directly privacy-relevant, and the change is a net widening of what
+  runs without consent. Cloudflare Web Analytics loads on every visit before any consent decision.
+  It sets no cookie, writes nothing to the device and creates no identifier, which is why it is
+  disclosed rather than gated - but the previous claim that the site loaded no third-party script
+  until the visitor agreed is now false, and every page and locale that made that claim was
+  corrected in the same change. No secrets were handled; the maintainer entered the Cloudflare
+  credentials directly into GitHub without exposing them to the session.
+- **Decisions and assumptions:** Two tools rather than one, because a hard consent gate makes GA4
+  structurally unable to answer "did anyone visit" - the exact question a launch asks. The EU
+  exclusion option in Cloudflare's Manage site is deliberately left off: there is no identifier for
+  it to protect and it would delete most of the target traffic. No waitlist form, accepted with its
+  cost stated - pre-launch traffic will not convert into an audience.
+- **Risks or compatibility impact:** The privacy and cookies pages now describe behaviour that will
+  only be true once the hostname is actually added under Web Analytics. Deploying the site without
+  doing that leaves the pages describing a counter that is not running - honest in the wrong
+  direction, but still wrong. Do both in the same session.
+- **Open issues or blockers:** A Content-Security-Policy still does not exist; `_headers` explains
+  why it was deferred until it can be measured on a live site. When it is written it must allow
+  `static.cloudflareinsights.com` as well as the googletagmanager origin. This is Phase 4 work.
+- **Next first action:** In Cloudflare, create the API token (My Profile, API Tokens, template
+  "Edit Cloudflare Workers") and copy the account ID, then add both to GitHub as the secrets
+  `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` plus the repository variable
+  `GA_MEASUREMENT_ID=G-ZY158GV42C`.
+- **Evidence:** `apps/web/src/app/site.ts` (`CONTACT_EMAIL`), the "The always-on counter" section
+  in `apps/web/src/app/cookies.ts`, the two analytics bullets in `apps/web/src/app/privacy.html`,
+  the `consent.body` string in each of the six locale files, and the "Cloudflare Web Analytics"
+  section in `docs/internal/ANALYTICS_SETUP.md`.
+
 ### 2026-07-26, applye.dev gets a deployment path, gated on CI
 
 - **Status:** complete for the code; both dashboards still need manual setup before anything deploys

@@ -44,22 +44,37 @@
 
     <h2 class="docs__h2">This website</h2>
     <ul class="docs__list">
-      <li>Static pages. No forms, no accounts, no third-party embeds.</li>
       <li>
-        No cookies at all. Your theme preference and your analytics choice are kept in your
-        browser's local storage, and nowhere else.
+        Static pages. No forms, no accounts, no comment widgets, no social embeds. The only
+        third-party scripts on the site are the two analytics ones described below.
       </li>
       <li>
-        One optional measurement tool: Google Analytics 4, which loads
-        <strong>only</strong> if you explicitly allow it, with anonymised IPs and advertising
+        No cookies at all - not for analytics either. Your theme preference and your analytics
+        choice are kept in your browser's local storage, and nowhere else.
+      </li>
+      <li>
+        <strong>Cloudflare Web Analytics runs on every visit</strong>, including before you answer
+        the consent bar. It is why we can say the site had visitors at all. It sets no cookie,
+        writes nothing to your browser, builds no identifier, and cannot follow you to another site:
+        it counts a page view, its referrer, and coarse device and country information, and that is
+        the whole of it. Because it stores nothing on your device and identifies nobody, it needs no
+        permission to ask for.
+      </li>
+      <li>
+        <strong>Google Analytics 4 runs only if you allow it.</strong> Anonymised IPs, advertising
         signals switched off. It records page views and six named clicks - nothing else, and nothing
         you type. Decline and nothing is loaded or sent.
         <a routerLink="/cookies">The full list, and the switch itself</a>.
       </li>
     </ul>
     <p>
-      The distinction matters: the app has no telemetry whatsoever, and that will not change. The
-      website counts page views if you let it, so the docs that get read are the docs that get
+      Two tools sound like more surveillance than one; it is the opposite trade. The cookieless one
+      counts everybody but knows nothing about anybody, so the consenting one never has to be the
+      source of the basic question "did anyone visit". Neither can see anything you type.
+    </p>
+    <p>
+      The distinction that matters is elsewhere: the app has no telemetry whatsoever, and that will
+      not change. The website counts page views, so the docs that get read are the docs that get
       written.
     </p>
 
@@ -68,7 +83,8 @@
       Every claim above is checkable, because the code opens to the public shortly:
       <app-source-link label="audit the source on GitHub" soonLabel="source: coming soon" />. Until
       then the deeper technical notes live in <a routerLink="/docs/privacy">the privacy docs</a>,
-      and questions about privacy behavior are welcome by email.
+      and questions about privacy behavior are welcome at
+      <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>.
     </p>
   </div>
 </div>

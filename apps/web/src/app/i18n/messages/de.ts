@@ -50,8 +50,11 @@ export const de: Messages = {
     titleTop: 'Der Entwurf ist automatisiert.',
     titleAccent: 'Das Absenden nicht.',
     sub: 'Eine quelloffene, lokal arbeitende Desktop-App für die KI-gestützte Jobsuche. Deine Daten, dein Rechner, deine KI. Sie bewertet Stellen, passt deinen Lebenslauf an und verfolgt die Pipeline - jede Entscheidung bleibt bei dir.',
+    readDocs: 'Dokumentation lesen',
     download: 'Herunterladen',
-    downloadSoon: 'Download (bald verfügbar)',
+    downloadSoon: 'Download: bald verfügbar',
+    downloadSoonWhy:
+      'Signierte Installer erscheinen mit dem ersten öffentlichen Release. Bis dahin wird die App aus dem Quellcode gebaut - die Dokumentation führt dich Schritt für Schritt durch.',
     viewSource: 'Quellcode auf GitHub ansehen',
     sourceSoon: 'Quellcode: bald verfügbar',
     meta: 'Kostenlos · MIT-lizenziert · Kein Konto · Keine Telemetrie',
@@ -103,7 +106,7 @@ export const de: Messages = {
       {
         title: 'Bring deine eigene KI mit',
         example:
-          'Eigener API-Schlüssel, oder das CLI-Abo anbinden, das du schon bezahlst: Claude Code, Codex oder Gemini. Code erledigt die günstige, deterministische Arbeit; das Modell wird nur zum Urteilen gefragt.',
+          'Eigener API-Schlüssel - Anthropic, OpenAI, Gemini oder DeepSeek - oder ein CLI-Abo anbinden, das du schon bezahlst: Claude Code oder Codex. Code erledigt die günstige, deterministische Arbeit; das Modell wird nur zum Urteilen gefragt.',
         note: 'Token-sparsam gebaut. Eine echte Suche kostet Cent-Beträge.',
       },
       {
@@ -127,6 +130,15 @@ export const de: Messages = {
       'DSGVO-konform durch Architektur: deine Daten verlassen den Rechner gar nicht erst - damit ist auch die strengste Regelung erfüllt.',
       'Deutschland im Detail: den Eigenbemühungen-Nachweis für die Agentur für Arbeit direkt aus deinen erfassten Bewerbungen erzeugen.',
     ],
+  },
+
+  engines: {
+    title: 'Funktioniert mit der KI, für die du ohnehin zahlst.',
+    intro:
+      'Applye bringt kein eigenes Modell mit und verkauft keine Tokens weiter. Hinterlege einen Anbieter-Schlüssel oder binde ein CLI-Abo ein, das du schon hast - die Anfragen gehen direkt von deinem Rechner dorthin.',
+    apiLabel: 'Direkte API-Schlüssel',
+    cliLabel: 'CLI-Abos, eingebunden',
+    note: 'Eigenständige Marken ihrer jeweiligen Inhaber. Keine Verbindung oder Empfehlung impliziert.',
   },
 
   principles: [
@@ -174,7 +186,7 @@ export const de: Messages = {
       },
       {
         q: 'Welche KI brauche ich?',
-        a: 'Entweder einen eigenen API-Schlüssel oder ein CLI-Abo, das du schon hast (Claude Code, Codex oder Gemini CLI), angebunden ohne zusätzliche API-Token. KI ist opt-in: Es wird kein Modell aufgerufen, bevor du es verlangst.',
+        a: 'Entweder einen eigenen API-Schlüssel (Anthropic, OpenAI, Gemini oder DeepSeek) oder ein CLI-Abo, das du schon hast - Claude Code oder Codex -, angebunden ohne zusätzliche API-Token. Gemini geht nur per API-Schlüssel: Google hat die Gemini CLI für private Konten im Juni 2026 eingestellt. KI ist opt-in: Es wird kein Modell aufgerufen, bevor du es verlangst.',
       },
       {
         q: 'Sind meine Daten privat?',

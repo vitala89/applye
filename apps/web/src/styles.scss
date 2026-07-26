@@ -30,6 +30,45 @@ html {
   scroll-behavior: auto;
 }
 
+/* ============================================================
+   CONTRAST (web-scoped token overrides)
+
+   These override two token groups for the marketing site only. The desktop
+   app keeps the design-system values; `libs/ui/tokens.css` mirrors the design
+   system and is not hand-edited. The same measurements apply to the app and
+   should be taken back to the design system separately - see the note in
+   docs/design/WEBSITE_PLAN.md.
+   ============================================================ */
+
+/* `--text-tertiary` is a UI-chrome grey pressed into service as body text
+   here: hero meta, footer, captions, card sub-labels, changelog dates, the
+   "coming soon" pill. Measured against this site's own dark surfaces it is
+   3.38:1 on the canvas, 3.13:1 on a card and 2.75:1 on a sunken panel - below
+   the 4.5:1 WCAG AA floor at every size the site uses it. On this canvas no
+   grey is both dimmer than `--text-secondary` and still passing, so the third
+   text tier is retired and the demotion is carried by size, weight and
+   family instead. Light theme is untouched: it already measures 4.87:1. */
+:root,
+[data-theme='dark'] {
+  --text-tertiary: var(--graphite-400); /* 4.73:1 worst case across dark surfaces */
+}
+
+[data-theme='light'] {
+  /* Restated because this file loads after the tokens and the two selectors
+     carry equal specificity: without it the dark value above would leak into
+     the light theme, where #9a968c on #fafaf8 measures 2.24:1. */
+  --text-tertiary: var(--graphite-500); /* 4.87:1 on the light canvas */
+
+  /* Semantic colours are tuned for the dark canvas. On white they fall to
+     2.61:1 (success), 2.23:1 (warning) and 3.73:1 (danger), and the site uses
+     all three as text: methodology bands, honest-expectation markers, docs
+     tables. Darkened for the light theme only, so the dark brand reading of
+     these colours is unchanged. */
+  --success: #16794a; /* 5.43:1 on white */
+  --warning: #8a5f0f; /* 5.64:1 on white */
+  --danger: #c23434; /* 5.48:1 on white */
+}
+
 /* ---- Layout primitives ---- */
 .shell {
   width: 100%;
@@ -209,6 +248,13 @@ html {
   line-height: var(--leading-snug);
   margin: var(--space-3) 0 var(--space-9);
   max-width: 22ch;
+  text-wrap: balance;
+}
+/* 22ch is tuned for the short English section titles; longer sentences, and
+   the German and Polish translations of the shorter ones, need the room. */
+.section-title--wide {
+  max-width: 34ch;
+  margin-bottom: var(--space-6);
 }
 .applye-eyebrow {
   color: var(--text-accent);
@@ -263,6 +309,25 @@ html {
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wide);
   color: var(--text-tertiary);
+}
+
+/* Pre-release download state. Deliberately a status line under the buttons,
+   not a fourth button: it says what is missing and why, in one row, and never
+   invites a click that cannot happen. */
+.hero__pending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-6);
+}
+.hero__pendingwhy {
+  flex: 1 1 22rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-tertiary);
+  max-width: 48ch;
 }
 
 /* ---- Hero app mock ---- */
@@ -482,6 +547,55 @@ html {
   color: var(--text-primary);
 }
 
+/* ---- Engines ("bring your own AI") ----
+   Two labelled rows of wordmarks. Not cards: these are names, and boxing each
+   one would claim more than a name deserves. The rule between the groups does
+   the separating. */
+.engines {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-7) var(--space-10);
+  margin-top: var(--space-9);
+  padding-top: var(--space-7);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+.engines__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-5);
+}
+.engines__list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding: 0;
+}
+.engines__item {
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  padding: var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-badge);
+  background: var(--surface-1);
+  white-space: nowrap;
+}
+.engines__note {
+  margin-top: var(--space-7);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-tertiary);
+  max-width: 60ch;
+}
+
 /* ---- German market ---- */
 .german__list {
   list-style: none;
@@ -489,13 +603,25 @@ html {
   display: grid;
   gap: var(--space-5);
 }
+/* Leading accent marker rather than a coloured left stripe per item: the same
+   affordance the docs lists already use, so the two read as one system. */
 .german__list li {
+  position: relative;
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
   padding-left: var(--space-6);
-  border-left: 2px solid var(--border-accent);
+}
+.german__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
 }
 .german__list strong {
   color: var(--text-primary);
@@ -636,9 +762,12 @@ html {
   font-size: var(--text-sm);
   color: var(--text-tertiary);
 }
+/* Eight links in a nowrap row measured 762px against a 375px viewport, which
+   made the whole document scroll sideways on a phone. */
 .footer__links {
   display: flex;
-  gap: var(--space-7);
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-7);
 }
 .footer__links a {
   font-family: var(--font-mono);
@@ -716,6 +845,11 @@ html {
   .honest {
     grid-template-columns: 1fr;
   }
+  /* Stacked, the "Applye" tag hangs above its card and lands in the gap. The
+     default gap is shorter than the tag, so it clips the card above. */
+  .compare {
+    gap: var(--space-9);
+  }
   .principles {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -734,10 +868,6 @@ html {
   .principles {
     grid-template-columns: 1fr;
   }
-  .nav__source span,
-  .nav__source {
-    /* keep label; just tighten */
-  }
 }
 
 /* Honour reduced-motion preference. */
@@ -745,6 +875,20 @@ html {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* The shared focus ring is a box-shadow, which forced-colors mode discards -
+   leaving keyboard users with no visible focus at all. Put a real outline
+   back, and let the sticky nav's translucency fall back to a solid bar. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+  .nav {
+    background: Canvas;
+    backdrop-filter: none;
   }
 }
 
@@ -1022,6 +1166,18 @@ html {
   font-weight: var(--weight-bold);
 }
 
+/* Wide comparison tables scroll inside themselves. `tabindex="0"` in the
+   markup is what makes the scroller reachable without a mouse. */
+.docs__tablescroll {
+  overflow-x: auto;
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-card);
+}
+.docs__tablescroll .docs__table {
+  min-width: 34rem;
+  margin-bottom: 0;
+}
+
 /* Docs table (code vs AI) */
 .docs__table {
   border: var(--border-width) solid var(--border-default);
@@ -1147,6 +1303,10 @@ html {
   }
   .docs__nav {
     position: static;
+    /* A grid item defaults to min-width:auto, so the scroller below it could
+       push the whole document 845px wider than a phone viewport instead of
+       scrolling inside itself. */
+    min-width: 0;
     border-bottom: var(--border-width) solid var(--border-subtle);
     padding-bottom: var(--space-6);
   }

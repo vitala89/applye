@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, marketing-site design pass: 5 of 8 WEBSITE_PLAN gaps closed
+
+- **Status:** partial - every unblocked item is done; three are blocked on assets that do not exist
+- **Agent/tool:** Claude Code with the `impeccable` skill (brand register), verified in the browser preview
+- **Branch:** `main`
+- **Commits:** none yet - uncommitted in the working tree
+- **Pull request:** none
+- **Objective:** Work the 8-item gap analysis in `docs/design/WEBSITE_PLAN.md` to bring `apps/web` to launch quality.
+- **Completed:**
+  - **Gap 4 + 8 (hero CTA).** Both hero controls were disabled: a `disabled` "Download (coming soon)" button plus the private-repo source pill. A hero whose only two controls are dead reads as broken, not as pre-release. The primary CTA is now "Read the docs", the one thing a visitor can actually do today; the download became a status line carrying its own reason. Flipping `COMING_SOON` in `site.ts` promotes the real download and demotes the docs link to ghost.
+  - **Gap 6 (engine-agnostic proof).** New `#engines` band on `/`, in two labelled groups. Deliberately wordmarks rather than vendor logos: reproducing another company's mark on a marketing page implies a partnership that does not exist.
+  - **Gap 5 (OG image).** Verified already shipped and correct - `applye-og.png` is 1200x630, wired in `index.html` and `seo.service.ts`. The plan doc's "1280x640, not wired" was stale; corrected there.
+  - **Gap 7 (consistency pass).** Detailed in `WEBSITE_PLAN.md` §3. Headlines: contrast (`--text-tertiary` was 2.75-3.38:1 doing body-text duty against a 4.5:1 floor; light-theme `--success`/`--warning`/`--danger` were 2.61/2.23/3.73:1 as text); three independent causes of horizontal document scroll on a 375px viewport; a `forced-colors` focus fallback for a `box-shadow`-only ring; a banned side-stripe border on the local-rules list; clipped comparison tag when stacked.
+  - **Out of scope but false.** The site claimed a Gemini CLI bridge in all six locales. `apps/desktop/src-tauri/src/ai/cli.rs:222` only has adapters for Claude Code and Codex - Google withdrew Gemini CLI for personal accounts on 2026-06-18. Corrected in the feature copy and the FAQ across every locale; the new engines band lists Gemini under API keys only.
+- **Not completed:** Gaps 1 (hero product shot), 2 (demo GIF or video band) and 3 (six feature screenshots). All three need captures of the running desktop app seeded with the ASSETS_BRIEF persona; none of `docs/assets/hero-banner.png`, `demo.gif` or `screens/*.png` exists. No placeholder was shipped in their place - a colored box where a product shot belongs is worse than the current CSS mock, which at least depicts the real UI.
+- **Files or packages changed:** `apps/web/src/app/landing.html`, `landing.ts`, `compare.html`, `styles.scss`, `i18n/messages.ts` and all six `i18n/messages/*.ts`; `docs/design/WEBSITE_PLAN.md`.
+- **Validation:** `npx nx test web` (41 passed), `npx nx lint web`, `npx tsc -p apps/web/tsconfig.app.json --noEmit`, `npm run format:check`, `npx nx build web` (39 routes prerendered), `git diff --check` - all pass and all observed. In-browser on the running dev server: a full text-node contrast sweep reports zero AA failures in both themes; zero horizontal document overflow at 375px across `/`, `/docs`, `/docs/guide/score`, `/methodology`, `/compare`, `/changelog`, `/press`, `/manifesto`, `/sustain`, `/privacy`. No new unit tests - the changes are CSS, copy and markup with no new component logic.
+- **Privacy/security impact:** None. No data handling, storage, network or permission surface touched. The corrected AI-provider copy makes a public claim more accurate, which is an honesty improvement rather than a security one.
+- **Decisions and assumptions:**
+  - Contrast fixes are **web-scoped overrides in `apps/web/src/styles.scss`, not token edits**. `libs/ui/tokens.css` states it mirrors the design system and is not hand-edited, and it is shared with the desktop app. The measurements apply to the app too.
+  - The dark canvas has no grey both dimmer than `--text-secondary` and passing 4.5:1, so the third text tier is retired web-side; the demotion is carried by size and family instead of a failing colour.
+  - The `applye-eyebrow` kicker above nearly every section is the `impeccable` skill's flagged AI-scaffold pattern, but it is an established named class in the shipped design system. Identity preservation won; the new engines band simply does not add another one. Raising it is a separate call.
+  - Engine lists live in `landing.ts`, not the locale bundles: they are proper nouns, and they must track `cli.rs` rather than a translator.
+- **Risks or compatibility impact:** Low. The `--text-tertiary` override flattens two text tiers to one shade on the marketing site only; the desktop app is untouched. `.docs__tablescroll` is new markup on `/compare` only.
+- **Open issues or blockers:**
+  - **Blocking gaps 1-3:** hero banner, demo GIF, six app screenshots. Maintainer-produced per `docs/assets/ASSETS_BRIEF.md`.
+  - **Needs a decision:** whether the measured contrast corrections go back into `libs/ui/tokens.css` and the design system, which would fix the desktop app too.
+  - `WEBSITE_PLAN.md` §1 still says "as of v0.24.0" against an actual 0.28.0; the route inventory was spot-checked and is still accurate.
+- **Next first action:** Review the diff and commit as `fix(web): close the unblocked website-plan gaps`, or split the Gemini CLI copy correction into its own `fix(web)` commit since it is a truthfulness fix independent of the design pass.
+- **Evidence:** Gate output above. Contrast figures and overflow widths were computed in-page against the running dev server, not estimated. Screenshot verification was partial: the browser pane reported a zero-size viewport for scrolled content, so the hero and the engines band were confirmed visually and everything else numerically via measured DOM geometry.
+
 ### 2026-07-26, stand up the security@ and conduct@ reporting mailboxes
 
 - **Status:** complete

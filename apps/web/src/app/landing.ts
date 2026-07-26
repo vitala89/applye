@@ -8,6 +8,17 @@ import { SourceLink } from './ui/source-link';
 /** Icons for the principles strip, paired with the translated labels by index. */
 const PRINCIPLE_ICONS: IconName[] = ['hard-drive', 'shield-check', 'file-text', 'key', 'sparkles'];
 
+/**
+ * Engines Applye can talk to. Names are proper nouns, so they are not
+ * translated. Kept honest against the app itself: API mode covers every
+ * provider in `AiProvider`, while the CLI bridge only has adapters for Claude
+ * Code and Codex - Google withdrew Gemini CLI for personal accounts on
+ * 2026-06-18 (see `apps/desktop/src-tauri/src/ai/cli.rs`). If an adapter is
+ * added or dropped there, this list moves with it.
+ */
+const API_ENGINES = ['Anthropic Claude', 'OpenAI', 'Google Gemini', 'DeepSeek'];
+const CLI_ENGINES = ['Claude Code', 'Codex CLI'];
+
 @Component({
   selector: 'app-landing',
   standalone: true,
@@ -23,6 +34,9 @@ export class Landing {
 
   readonly releases = RELEASES;
   readonly comingSoon = COMING_SOON;
+
+  readonly apiEngines = API_ENGINES;
+  readonly cliEngines = CLI_ENGINES;
 
   readonly openFaq = signal<number | null>(0);
 

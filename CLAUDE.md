@@ -1,13 +1,13 @@
 # Claude Code Applye Notes
 
-Start every non-trivial task at `AGENT_START_HERE.md`.
+Start every non-trivial task at `docs/internal/AGENT_START_HERE.md`.
 
 Read, in order:
 
 1. `AGENTS.md`
-2. `PROJECT_CONTEXT.md`
+2. `docs/internal/PROJECT_CONTEXT.md`
 3. `docs/product/CURRENT_STATE.md`
-4. the latest entry in `DUTY_WATCH.md`
+4. the latest entry in `docs/internal/DUTY_WATCH.md`
 5. `docs/governance/VALIDATION_MATRIX.md`
 
 Run the Plan Check from `AGENTS.md` before implementation or before proposing what to work on next. State where the task sits, what is already shipped, whether current state is stale, which checks apply, and whether the work is privacy-sensitive or security-sensitive.
@@ -21,7 +21,7 @@ Before ending a completed, partial, blocked, or rolled-back non-trivial session:
 - review the final diff;
 - run and report the relevant checks;
 - update `docs/product/CURRENT_STATE.md` if project status changed;
-- append a truthful entry to `DUTY_WATCH.md`;
+- append a truthful entry to `docs/internal/DUTY_WATCH.md`;
 - update changelog, roadmap, ADRs, specifications, migrations, privacy, security, and design docs when applicable;
 - record the concrete next first action.
 

@@ -1,4 +1,4 @@
-// Discover scan engine (ROADMAP §11, STEP_BY_STEP_PLAN `feat/discover`).
+// Discover scan engine (ROADMAP §11, branch `feat/discover`).
 //
 // Deterministic Tier-2/Tier-3 collection: every enabled source's public
 // JSON/RSS feed is fetched over HTTPS and parsed with the same known-shape

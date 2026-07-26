@@ -11,8 +11,7 @@ To preserve stability and avoid unnecessary noise in root level repositories, th
 These documents reside at the repository root and act as the high-level canonical truth of the project:
 
 - **[ROADMAP.md](../../ROADMAP.md)**: Strategic product vision, scope, priorities, and what to build.
-- **[INSTRUCTIONS.md](../../INSTRUCTIONS.md)**: Constitutional / working agreement and how to build (engineering principles, constraints, architectures).
-- **[STEP_BY_STEP_PLAN.md](../../STEP_BY_STEP_PLAN.md)**: Execution checklist and phased step-by-step milestones.
+- **[INSTRUCTIONS.md](../internal/INSTRUCTIONS.md)**: Constitutional / working agreement and how to build (engineering principles, constraints, architectures).
 - **[CHANGELOG.md](../../CHANGELOG.md)**: Historical release record of shipped changes.
 
 ### Operational Planning Layer (`docs/product/`)

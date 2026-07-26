@@ -3,7 +3,7 @@
 ## Standard Flow
 
 1. Classify the task.
-2. Read `AGENTS.md`, `CLAUDE.md`, and `PROJECT_CONTEXT.md` when needed.
+2. Read `AGENTS.md`, `CLAUDE.md`, and `docs/internal/PROJECT_CONTEXT.md` when needed.
 3. Use `aif-orchestrator` for non-trivial work.
 4. Use `aif-context-gate` before broad context gathering.
 5. Use focused skills or read-only subagents for specialist input.

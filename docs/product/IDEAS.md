@@ -59,10 +59,10 @@ the profile photo plus the German photo prompt in the tailor wizard.
 
 ## Needs Analysis
 
-> Source: [Career-Ops Feature Adoption Analysis](CAREER_OPS_ADOPTION.md) - deltas
+> Source: internal career-ops feature adoption analysis (kept local, not in the repo) - deltas
 > that are genuinely new (not already on `ROADMAP.md`). Ranked in §3 of that doc.
 
-- **Dual-track archetypes + per-track comp** in the profile schema (P1/M). Structured archetypes (`fit` / `track` / `sell_when`) + `alternate_ranges`; powers onboarding + Layer-1 hard-filter. See CAREER_OPS_ADOPTION.md §4.
+- **Dual-track archetypes + per-track comp** in the profile schema (P1/M). Structured archetypes (`fit` / `track` / `sell_when`) + `alternate_ranges`; powers onboarding + Layer-1 hard-filter. See the internal career-ops adoption analysis §4.
 - **Knock-out question detection** in Apply (P2/S) - warn before applying when a form auto-rejects on visa / degree / years / salary floor.
 - **Voice-DNA guardrail** on generated prose (P2/S) - anti-AI-slop + correct register (ATS formal vs conversational).
 - **Plugin/MCP trust model** - spec only (P2/M) - badges, commit-pinning, two consent gates, egress allowlist, no auto-submit. Foundation for the marketplace vision.

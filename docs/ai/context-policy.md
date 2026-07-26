@@ -5,7 +5,7 @@ The context gate prevents accidental broad scans and stale assumptions.
 ## Order
 
 1. User request.
-2. `AGENTS.md`, `CLAUDE.md`, and `PROJECT_CONTEXT.md`.
+2. `AGENTS.md`, `CLAUDE.md`, and `docs/internal/PROJECT_CONTEXT.md`.
 3. Explicitly named files.
 4. Targeted symbol or path search.
 5. Context scout subagent for focused discovery.

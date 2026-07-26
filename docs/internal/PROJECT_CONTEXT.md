@@ -1,6 +1,6 @@
 # Applye Project Context
 
-For the daily operational planning, current branch focus, and status of active features, refer to the operational state file: [docs/product/CURRENT_STATE.md](docs/product/CURRENT_STATE.md).
+For the daily operational planning, current branch focus, and status of active features, refer to the operational state file: [docs/product/CURRENT_STATE.md](../product/CURRENT_STATE.md).
 
 ## Product
 

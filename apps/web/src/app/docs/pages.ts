@@ -52,8 +52,9 @@ export class Overview {}
       <ul class="docs__list">
         <li>A desktop OS: macOS, Windows, or Linux.</li>
         <li>
-          One AI source: a direct API key, <em>or</em> a CLI subscription you already have (Claude
-          Code, Codex, or Gemini CLI). Optional until you ask for an AI action.
+          One AI source: a direct API key for Anthropic Claude or DeepSeek, <em>or</em> a CLI
+          subscription you already have (Claude Code or Codex). Optional until you ask for an AI
+          action.
         </li>
         <li>No account. No terminal. No cloud service to sign up for.</li>
       </ul>
@@ -183,12 +184,12 @@ export class Judgement {}
       <h2 id="modes" class="docs__h2">Two modes</h2>
       <ul class="docs__list">
         <li>
-          <strong>CLI bridge:</strong> use a Claude Code, Codex, or Gemini CLI subscription you
-          already pay for. Zero extra API tokens.
+          <strong>CLI bridge:</strong> use a Claude Code or Codex subscription you already pay for.
+          Zero extra API tokens. Codex is also the only route to OpenAI models.
         </li>
         <li>
-          <strong>Direct API:</strong> paste your own API key. A token counter is shown so cost is
-          visible.
+          <strong>Direct API:</strong> paste your own Anthropic Claude or DeepSeek key. A token
+          counter is shown so cost is visible.
         </li>
       </ul>
     </section>

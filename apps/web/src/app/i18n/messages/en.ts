@@ -107,7 +107,7 @@ export const en: Messages = {
       {
         title: 'Bring your own AI',
         example:
-          'Plug in a direct API key - Anthropic, OpenAI, Gemini or DeepSeek - or bridge a CLI subscription you already pay for: Claude Code or Codex. Code does the cheap, deterministic work; the model is only asked to judge.',
+          'Plug in a direct API key - Anthropic or DeepSeek - or bridge a CLI subscription you already pay for: Claude Code or Codex. Code does the cheap, deterministic work; the model is only asked to judge.',
         note: 'Token-economical by design. A real search costs cents.',
       },
       {
@@ -187,7 +187,7 @@ export const en: Messages = {
       },
       {
         q: 'What AI do I need?',
-        a: 'Either a direct API key (Anthropic, OpenAI, Gemini or DeepSeek), or a CLI subscription you already have - Claude Code or Codex - bridged so it costs you zero extra API tokens. Gemini is API-key only: Google withdrew Gemini CLI for personal accounts in June 2026. AI is opt-in: nothing calls a model until you ask it to.',
+        a: 'Either a direct API key (Anthropic or DeepSeek), or a CLI subscription you already have - Claude Code or Codex - bridged so it costs you zero extra API tokens. Codex is how OpenAI models are reached; there is no OpenAI API-key mode. Google is not supported at all: Gemini CLI was withdrawn for personal accounts in June 2026. AI is opt-in: nothing calls a model until you ask it to.',
       },
       {
         q: 'Is my data private?',

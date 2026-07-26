@@ -36,6 +36,16 @@
   remembering: `download_click` counts clicks on a link that leaves for GitHub, so completed
   downloads come from `npm run web:downloads`, never from GA4. Full setup:
   `docs/internal/ANALYTICS_SETUP.md`.
+- **Corrected 2026-07-27: the advertised AI providers were wrong, twice.** The site and README
+  offered Google Gemini and an OpenAI API key; the app supports neither. The dispatch tables are
+  the only truth here: `run` in `apps/desktop/src-tauri/src/ai/api.rs` has arms for `claude` and
+  `deepseek` and nothing else, and `adapter_for` in `ai/cli.rs` has `claude` and `openai`/`codex`.
+  So OpenAI is reachable only through Codex CLI, and Gemini is reachable through nothing. An
+  earlier pass had "fixed" this by claiming Gemini was API-key only, which swapped one false claim
+  for another. Copy across the landing page, `/press`, both AI docs pages, the FAQ in six locales
+  and the README now names exactly those four arms. **Known app-side defect, not fixed here:**
+  `settings.component.ts` still offers `openai` and `gemini` as API-mode providers that the backend
+  rejects at call time.
 - **NEXT BLOCKER FOR LAUNCH: 26 visible media placeholders**, all in `/docs/guide/*`, rendered as
   dashed boxes reading "PLACEHOLDER: guide/... ". They are the only thing between the current site
   and a public launch; every other page is finished. The shot list, with capture rules and

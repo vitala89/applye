@@ -11,13 +11,18 @@ const PRINCIPLE_ICONS: IconName[] = ['hard-drive', 'shield-check', 'file-text', 
 
 /**
  * Engines Applye can talk to. Names are proper nouns, so they are not
- * translated. Kept honest against the app itself: API mode covers every
- * provider in `AiProvider`, while the CLI bridge only has adapters for Claude
- * Code and Codex - Google withdrew Gemini CLI for personal accounts on
- * 2026-06-18 (see `apps/desktop/src-tauri/src/ai/cli.rs`). If an adapter is
- * added or dropped there, this list moves with it.
+ * translated.
+ *
+ * These two lists are the app's two dispatch tables, and nothing else. API mode
+ * is `run` in `apps/desktop/src-tauri/src/ai/api.rs`, which has exactly two
+ * arms; the CLI bridge is `adapter_for` in `ai/cli.rs`, which has two more.
+ * `AiProvider` is a wider set than either, so listing it here is what made this
+ * page wrong twice: OpenAI has no API arm at all and reaches Applye only
+ * through Codex CLI, and Gemini reaches it through nothing, because Google
+ * withdrew Gemini CLI for personal accounts on 2026-06-18 and no API arm was
+ * ever written. If an arm is added or dropped there, this list moves with it.
  */
-const API_ENGINES = ['Anthropic Claude', 'OpenAI', 'Google Gemini', 'DeepSeek'];
+const API_ENGINES = ['Anthropic Claude', 'DeepSeek'];
 const CLI_ENGINES = ['Claude Code', 'Codex CLI'];
 
 @Component({

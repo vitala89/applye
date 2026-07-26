@@ -106,7 +106,7 @@ export const es: Messages = {
       {
         title: 'Trae tu propia IA',
         example:
-          'Usa tu clave de API - Anthropic, OpenAI, Gemini o DeepSeek - o conecta la suscripción de CLI que ya pagas: Claude Code o Codex. El código hace el trabajo barato y determinista; al modelo solo se le pide criterio.',
+          'Usa tu clave de API - Anthropic o DeepSeek - o conecta la suscripción de CLI que ya pagas: Claude Code o Codex. El código hace el trabajo barato y determinista; al modelo solo se le pide criterio.',
         note: 'Ahorra tokens por diseño. Una búsqueda real cuesta céntimos.',
       },
       {
@@ -186,7 +186,7 @@ export const es: Messages = {
       },
       {
         q: '¿Qué IA necesito?',
-        a: 'O bien una clave de API propia (Anthropic, OpenAI, Gemini o DeepSeek), o bien una suscripción de CLI que ya tengas - Claude Code o Codex - conectada de forma que no gastes tokens de API adicionales. Gemini funciona solo con clave de API: Google retiró Gemini CLI para cuentas personales en junio de 2026. La IA es opcional: no se llama a ningún modelo hasta que tú lo pides.',
+        a: 'O bien una clave de API propia (Anthropic o DeepSeek), o bien una suscripción de CLI que ya tengas - Claude Code o Codex - conectada de forma que no gastes tokens de API adicionales. Codex es la vía para los modelos de OpenAI; no existe un modo de OpenAI por clave de API. Google no es compatible en absoluto: Gemini CLI se retiró para cuentas personales en junio de 2026. La IA es opcional: no se llama a ningún modelo hasta que tú lo pides.',
       },
       {
         q: '¿Mis datos son privados?',

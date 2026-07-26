@@ -29,18 +29,16 @@ As of 2026-07-26 the property and the `applye.dev` web stream exist. Measurement
 ID `G-ZY158GV42C`, stream ID `15328752672`. Nothing is being collected yet: the
 ID is not set on any deployment, and no deployment exists.
 
-Done: stream created, Enhanced measurement switched off, Google signals left
-off (they default to off).
+Done: stream created, Enhanced measurement switched off, Google signals left off
+(they default to off), and all ten event-scoped custom dimensions registered -
+before any traffic, which is the only time it can be done correctly.
 
 Still outstanding, in the order they matter:
 
-1. The ten custom dimensions below. **Before any traffic** - GA4 does not
-   backfill, and a parameter that arrives before its dimension exists is stored
-   and permanently unreportable.
-2. Data retention 14 months (defaults to 2, which silently loses history).
-3. Google Ads Data Processing Terms.
-4. The Cloudflare and GitHub setup under "Cloudflare Pages" below.
-5. `download_click` as a key event, and the internal-traffic filter - both only
+1. Data retention 14 months (defaults to 2, which silently loses history).
+2. Google Ads Data Processing Terms.
+3. The Cloudflare and GitHub setup under "Cloudflare Pages" below.
+4. `download_click` as a key event, and the internal-traffic filter - both only
    possible once events are arriving.
 
 ## Creating the property

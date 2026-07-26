@@ -37,7 +37,7 @@ export const en: Messages = {
   },
 
   consent: {
-    body: 'We would like to count anonymous page views to see which docs are worth writing. No cookies and no requests to Google happen unless you allow it, and the app itself never sends anything either way.',
+    body: 'A cookieless counter already tallies visits without storing anything or identifying anyone. Google Analytics would additionally show what gets read and clicked, and it loads only if you allow it. No cookies either way, and the app itself never sends anything at all.',
     learnMore: 'What is collected',
     decline: 'Decline',
     allow: 'Allow analytics',

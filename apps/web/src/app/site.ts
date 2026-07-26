@@ -5,6 +5,14 @@ export const DATA_CONTRACT = `${REPO}/blob/main/README.md#how-it-works`;
 export const AUTHOR = 'https://vitaliikasap.com';
 export const YEAR = 2026;
 
+/**
+ * General contact address, routed by Cloudflare Email Routing to the
+ * maintainer. `security@` and `conduct@` are deliberately not shown here:
+ * they belong to SECURITY.md and CODE_OF_CONDUCT.md, and pointing a marketing
+ * footer at a vulnerability inbox invites everything except vulnerabilities.
+ */
+export const CONTACT_EMAIL = 'hello@applye.dev';
+
 // Community / social. PLACEHOLDER values: replace when the real channels exist.
 export const SPONSORS = 'https://github.com/sponsors/vitala89'; // PLACEHOLDER: enable GitHub Sponsors
 export const DISCORD = ''; // PLACEHOLDER: Discord invite URL once a server exists

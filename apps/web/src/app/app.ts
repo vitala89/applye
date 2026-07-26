@@ -6,7 +6,7 @@ import { Track } from './analytics/track.directive';
 import { I18nService } from './i18n/i18n.service';
 import { SeoService } from './seo/seo.service';
 import { LanguageSwitcher } from './ui/language-switcher';
-import { AUTHOR, DATA_CONTRACT, DISCORD, LINKEDIN, X_TWITTER, YEAR } from './site';
+import { AUTHOR, CONTACT_EMAIL, DATA_CONTRACT, DISCORD, LINKEDIN, X_TWITTER, YEAR } from './site';
 import { ConsentBanner } from './ui/consent-banner';
 import { Icon } from './ui/icon';
 import { SourceLink } from './ui/source-link';
@@ -52,6 +52,7 @@ export class App {
 
   readonly dataContract = DATA_CONTRACT;
   readonly author = AUTHOR;
+  readonly contactEmail = CONTACT_EMAIL;
   readonly year = YEAR;
   readonly discord = DISCORD;
   readonly linkedin = LINKEDIN;

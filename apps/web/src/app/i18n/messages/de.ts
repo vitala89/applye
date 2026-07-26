@@ -36,7 +36,7 @@ export const de: Messages = {
   },
 
   consent: {
-    body: 'Wir würden gern anonyme Seitenaufrufe zählen, um zu sehen, welche Doku sich zu schreiben lohnt. Ohne deine Zustimmung werden keine Cookies gesetzt und keine Anfragen an Google gesendet - und die App selbst sendet ohnehin nie etwas.',
+    body: 'Ein cookiefreier Zähler erfasst Besuche bereits, ohne etwas zu speichern oder jemanden zu identifizieren. Google Analytics würde zusätzlich zeigen, was gelesen und geklickt wird, und lädt nur mit deiner Zustimmung. In beiden Fällen keine Cookies - und die App selbst sendet ohnehin nie etwas.',
     learnMore: 'Was erfasst wird',
     decline: 'Ablehnen',
     allow: 'Analyse erlauben',

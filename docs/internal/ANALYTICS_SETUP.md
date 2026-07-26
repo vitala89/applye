@@ -193,10 +193,36 @@ npm run web:downloads
 Report the two together. Clicks measure the site; GitHub's counts measure the
 product. They will not match, and the gap between them is itself a signal.
 
-**Traffic that declined.** See the consent decision above. If the blind spot
-becomes a problem, Cloudflare Web Analytics is cookieless, needs no consent
-banner, and would count everyone - as a complement to GA4, not a replacement,
-since it has no event model.
+**Traffic that declined.** See the consent decision above. This is the blind
+spot Cloudflare Web Analytics covers, and it is why the site runs both.
+
+## Cloudflare Web Analytics
+
+Decided 2026-07-27, before launch: GA4 behind a hard consent gate reports the
+shape of consenting traffic only, which is the wrong instrument for the one
+question the launch actually asks - did anyone come. CWA answers that and
+nothing else. The two are not redundant: CWA has no event model and cannot say
+what a visitor did, GA4 cannot say how many visitors there were.
+
+**No snippet is added to the site.** `applye.dev` is proxied through Cloudflare
+via the Pages custom domain, so it is an "automatic setup" site: Analytics, Web
+Analytics, Add a site, pick the hostname from the drop-down, Done. Cloudflare
+injects the beacon at the edge. Nothing in `index.html`, nothing in the bundle,
+nothing to keep in step with a release.
+
+Manage site offers "Enable, excluding visitor data in the EU". Leave it off:
+CWA sets no cookie and creates no identifier, so there is nothing an EU carve
+out would protect, and excluding the EU would silently delete most of the
+traffic this site is built for.
+
+Because the beacon loads before any consent decision, `/privacy` and `/cookies`
+describe it explicitly as the always-on, cookieless counter, and the consent
+bar copy in all six locales says the same. Those three and this file have to
+move together, exactly as they do for the GA4 event list.
+
+Consequence for Phase 4: a Content-Security-Policy, when one is finally
+measured rather than guessed, has to allow `static.cloudflareinsights.com`
+alongside the googletagmanager origin.
 
 ## Campaign tagging
 

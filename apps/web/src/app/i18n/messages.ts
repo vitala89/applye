@@ -48,8 +48,15 @@ export interface Messages {
     titleTop: string;
     titleAccent: string;
     sub: string;
+    /**
+     * Primary call to action. Until installers exist there is nothing to
+     * download, so the hero's one live action is the documentation.
+     */
+    readDocs: string;
     download: string;
     downloadSoon: string;
+    /** Tooltip on the "coming soon" download state, so it reads as deliberate. */
+    downloadSoonWhy: string;
     viewSource: string;
     sourceSoon: string;
     meta: string;
@@ -81,6 +88,12 @@ export interface Messages {
    * with Germany as the first and deepest example rather than the frame.
    */
   local: { eyebrow: string; title: string; intro: string; points: string[] };
+
+  /**
+   * "Bring your own AI" proof. Engine names are proper nouns and live in
+   * landing.ts, not here - only the framing copy is translatable.
+   */
+  engines: { title: string; intro: string; apiLabel: string; cliLabel: string; note: string };
 
   principles: { label: string; line: string }[];
 

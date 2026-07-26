@@ -50,8 +50,11 @@ export const pl: Messages = {
     titleTop: 'Pisanie jest zautomatyzowane.',
     titleAccent: 'Wysyłka nie.',
     sub: 'Desktopowa aplikacja o otwartym kodzie do szukania pracy z pomocą AI, działająca lokalnie. Twoje dane, twój komputer, twoje AI. Ocenia oferty, dopasowuje CV i prowadzi lejek aplikacji, a każdą decyzję zostawia tobie.',
+    readDocs: 'Przeczytaj dokumentację',
     download: 'Pobierz',
-    downloadSoon: 'Pobierz (wkrótce)',
+    downloadSoon: 'Pobieranie: wkrótce',
+    downloadSoonWhy:
+      'Podpisane instalatory pojawią się wraz z pierwszym publicznym wydaniem. Do tego czasu aplikację buduje się ze źródeł - dokumentacja przeprowadza przez to krok po kroku.',
     viewSource: 'Zobacz kod na GitHubie',
     sourceSoon: 'Kod: wkrótce',
     meta: 'Za darmo · Licencja MIT · Bez konta · Bez telemetrii',
@@ -103,7 +106,7 @@ export const pl: Messages = {
       {
         title: 'Własne AI',
         example:
-          'Podłącz własny klucz API albo już opłaconą subskrypcję CLI: Claude Code, Codex lub Gemini. Tanią, deterministyczną robotę wykonuje kod; model pytany jest wyłącznie o ocenę.',
+          'Podłącz własny klucz API - Anthropic, OpenAI, Gemini lub DeepSeek - albo już opłaconą subskrypcję CLI: Claude Code lub Codex. Tanią, deterministyczną robotę wykonuje kod; model pytany jest wyłącznie o ocenę.',
         note: 'Oszczędne na tokenach z założenia. Realne poszukiwania kosztują grosze.',
       },
       {
@@ -127,6 +130,15 @@ export const pl: Messages = {
       'Zgodność z RODO z samej architektury: dane nie opuszczają twojego komputera, co spełnia nawet najostrzejszy reżim.',
       'Niemcy, dogłębnie: raport Eigenbemühungen dla Agentur für Arbeit prosto z zapisanych aplikacji.',
     ],
+  },
+
+  engines: {
+    title: 'Działa z AI, za które już płacisz.',
+    intro:
+      'Applye nie ma własnego modelu i nie odsprzedaje tokenów. Podaj klucz dostawcy albo podepnij subskrypcję CLI, którą już masz - zapytania idą prosto z twojego komputera do nich.',
+    apiLabel: 'Bezpośrednie klucze API',
+    cliLabel: 'Subskrypcje CLI, podpięte',
+    note: 'Niezależne znaki towarowe ich właścicieli. Nie sugerujemy powiązania ani rekomendacji.',
   },
 
   principles: [
@@ -174,7 +186,7 @@ export const pl: Messages = {
       },
       {
         q: 'Jakiego AI potrzebuję?',
-        a: 'Albo własnego klucza API, albo subskrypcji CLI, którą już masz (Claude Code, Codex lub Gemini CLI), podłączonej tak, że nie zużywasz dodatkowych tokenów API. AI jest opcjonalne: żaden model nie zostanie wywołany, dopóki sam o to nie poprosisz.',
+        a: 'Albo własnego klucza API (Anthropic, OpenAI, Gemini lub DeepSeek), albo subskrypcji CLI, którą już masz - Claude Code lub Codex - podłączonej tak, że nie zużywasz dodatkowych tokenów API. Gemini działa wyłącznie przez klucz API: Google wycofał Gemini CLI dla kont prywatnych w czerwcu 2026. AI jest opcjonalne: żaden model nie zostanie wywołany, dopóki sam o to nie poprosisz.',
       },
       {
         q: 'Czy moje dane są prywatne?',

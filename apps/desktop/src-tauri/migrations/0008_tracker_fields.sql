@@ -12,7 +12,7 @@
 ALTER TABLE jobs ADD COLUMN tech_stack TEXT;
 
 -- applications: source link, contact details, next action, and salary range
--- - the remaining columns from the user's xlsx tracker that don't already
+-- — the remaining columns from the user's xlsx tracker that don't already
 -- exist on applications (contract_type, eor_provider, notes are from 0001).
 ALTER TABLE applications ADD COLUMN source_url TEXT;
 ALTER TABLE applications ADD COLUMN contact_name TEXT;

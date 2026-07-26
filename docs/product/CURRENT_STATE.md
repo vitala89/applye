@@ -27,7 +27,8 @@ modified`. The repo-wide em dash sweep in `e06fd4b` rewrote `—` to `-` inside 
 _never_edited` now pins all 26 checksums, so the next sweep fails a test rather than a release.
   The three non-comment lines seed `sources.notes`, which nothing renders, so no data migration was
   needed. Gates: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`
-  (280 -> 281), `npm run format:check`, `git diff --check` all pass. `tauri dev` not relaunched.
+  (280 -> 281), `npm run format:check`, `git diff --check` all pass. **`tauri dev` relaunched and verified after the restore was
+  committed (`04db799`): the desktop binary starts and stays up, so the launch abort is gone.**
 - **Merged: `chore/dependency-and-input-hardening` -> PR #161.** `cargo audit` had never been run on this
   project and was not installed; it found 7 advisories. Four are now gone: `cargo update` took
   `docx-rs` to 0.4.22 and `quick-xml` to 0.41.0, and `pdf-extract` 0.7 -> 0.12 took `lopdf` to 0.42.

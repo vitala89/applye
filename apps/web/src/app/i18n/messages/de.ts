@@ -106,7 +106,7 @@ export const de: Messages = {
       {
         title: 'Bring deine eigene KI mit',
         example:
-          'Eigener API-Schlüssel - Anthropic, OpenAI, Gemini oder DeepSeek - oder ein CLI-Abo anbinden, das du schon bezahlst: Claude Code oder Codex. Code erledigt die günstige, deterministische Arbeit; das Modell wird nur zum Urteilen gefragt.',
+          'Eigener API-Schlüssel - Anthropic oder DeepSeek - oder ein CLI-Abo anbinden, das du schon bezahlst: Claude Code oder Codex. Code erledigt die günstige, deterministische Arbeit; das Modell wird nur zum Urteilen gefragt.',
         note: 'Token-sparsam gebaut. Eine echte Suche kostet Cent-Beträge.',
       },
       {
@@ -186,7 +186,7 @@ export const de: Messages = {
       },
       {
         q: 'Welche KI brauche ich?',
-        a: 'Entweder einen eigenen API-Schlüssel (Anthropic, OpenAI, Gemini oder DeepSeek) oder ein CLI-Abo, das du schon hast - Claude Code oder Codex -, angebunden ohne zusätzliche API-Token. Gemini geht nur per API-Schlüssel: Google hat die Gemini CLI für private Konten im Juni 2026 eingestellt. KI ist opt-in: Es wird kein Modell aufgerufen, bevor du es verlangst.',
+        a: 'Entweder einen eigenen API-Schlüssel (Anthropic oder DeepSeek) oder ein CLI-Abo, das du schon hast - Claude Code oder Codex -, angebunden ohne zusätzliche API-Token. Über Codex erreichst du OpenAI-Modelle; einen OpenAI-Modus per API-Schlüssel gibt es nicht. Google wird gar nicht unterstützt: Die Gemini CLI wurde im Juni 2026 für private Konten eingestellt. KI ist opt-in: Es wird kein Modell aufgerufen, bevor du es verlangst.',
       },
       {
         q: 'Sind meine Daten privat?',

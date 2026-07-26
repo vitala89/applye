@@ -24,7 +24,7 @@ export class Press {
     {
       label: 'AI model',
       value:
-        'Bring your own: API keys (Anthropic Claude, OpenAI, Google Gemini, DeepSeek) or a local AI CLI bridge',
+        'Bring your own: an API key (Anthropic Claude or DeepSeek) or a bridged CLI subscription (Claude Code or Codex)',
     },
     {
       label: 'Markets',

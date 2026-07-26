@@ -265,7 +265,7 @@ export const appRoutes: Route[] = [
         title: 'Bring your own AI · Applye Docs',
         data: {
           description:
-            'Use your own API key, or bridge a CLI subscription you already pay for: Claude Code, Codex, or Gemini. AI is opt-in and never runs unasked.',
+            'Use your own API key for Anthropic Claude or DeepSeek, or bridge a CLI subscription you already pay for: Claude Code or Codex. AI is opt-in and never runs unasked.',
         },
       },
       {

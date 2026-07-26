@@ -946,12 +946,13 @@ export class GuideInsights {}
       <h2 id="ai" class="docs__h2">Connect your AI (optional)</h2>
       <ol class="docs__list docs__list--ol">
         <li>
-          <strong>API mode</strong> - paste your own key for Anthropic Claude, OpenAI, Google
-          Gemini, or DeepSeek. Keys are stored in the OS keychain, never in the database or logs.
+          <strong>API mode</strong> - paste your own key for Anthropic Claude or DeepSeek. Keys are
+          stored in the OS keychain, never in the database or logs.
         </li>
         <li>
-          <strong>CLI mode</strong> - bridge a coding CLI you already subscribe to (Claude Code,
-          Codex, Gemini CLI) instead of paying per token.
+          <strong>CLI mode</strong> - bridge a coding CLI you already subscribe to, Claude Code or
+          Codex, instead of paying per token. This is how OpenAI models are reached: through Codex,
+          not through an API key.
         </li>
         <li>
           A privacy note under every cloud provider states plainly what an API call sends (the job

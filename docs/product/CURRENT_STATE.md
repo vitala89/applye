@@ -2,37 +2,55 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `feat/web-cookieless-analytics`. Preparing applye.dev for a public
-  launch that precedes the repository and the desktop release. The preceding analytics and
-  deployment work shipped to `main` in `495d413` (#164), so `feat/web-analytics` is merged and
-  gone; entries below still describing work as "in flight on `feat/web-analytics`" mean the
-  dashboard setup that code cannot do, not uncommitted code.
-- **In flight: website analytics (dashboard setup only).** The code is complete and every gate
-  passes, but **no data flows yet, because nothing is deployed**. Six GA4 events are defined and
-  wired (`page_view`, `download_click`, `outbound_click`, `cta_click`, `locale_switch`,
-  `consent_decision`) behind a hard consent gate. The measurement ID is committed as
-  `G-PLACEHOLDER` on purpose and `AnalyticsService` refuses to load GA while it says that; the real
-  ID arrives from the `GA_MEASUREMENT_ID` build variable, so checkouts, dev servers and tests can
-  never reach the live property. Note the structural limit: `download_click` counts clicks on a
-  link that leaves for GitHub, so completed downloads come from `npm run web:downloads`, not GA4.
-  **Resolved 2026-07-27: Cloudflare Web Analytics is in**, as the cookieless complement that counts
-  everyone GA4's consent gate hides. It needs no snippet - `applye.dev` is proxied through
-  Cloudflare, so the beacon is injected at the edge once the hostname is added in the dashboard.
-  `/privacy`, `/cookies` and the consent-bar copy in all six locales were rewritten to describe
-  both tools honestly, including that the cookieless one runs before any consent decision.
-  Setup steps and the reasoning: `docs/internal/ANALYTICS_SETUP.md`.
-- **In flight: applye.dev deployment (dashboard setup only).** The site has never been deployed.
-  A `deploy-web` job builds and uploads to Cloudflare Pages on every push to `main`, but only after
-  the CI gate passes, so a red main cannot reach the live site. **It has never run.** Done
-  2026-07-27: the Direct Upload Pages project `applye` exists with no Git connection, as required.
-  Still outstanding, all manual: the API token and account ID as GitHub secrets, the
-  `GA_MEASUREMENT_ID` variable, the `applye.dev` custom domain on the Pages project, and adding the
-  hostname under Web Analytics. The GA4 property is fully configured - `G-ZY158GV42C`, Enhanced
-  measurement off, Google signals off, data-sharing unticked, 14-month retention, DPA accepted, and
-  **all ten event-scoped custom dimensions registered** on 2026-07-26, before any traffic, which is
-  the only point at which that can be done correctly. (An earlier version of this file said the
-  dimensions were missing; that was stale.) Checklist for both consoles:
+- **Current branch / focus**: `main`. Preparing applye.dev for a public launch that precedes the
+  repository going public and the desktop release. `feat/web-cookieless-analytics` merged in
+  `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
+- **THE SITE IS LIVE at `https://applye.pages.dev`, deliberately not indexable.** First deployed
+  2026-07-26. Every response sends `X-Robots-Tag: noindex` because the documentation still shows
+  placeholder boxes where its screenshots and video will go. `robots.txt` still allows crawling on
+  purpose: a crawler blocked from fetching never reads the noindex and may list the URL anyway.
+  `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts` and that header must agree, and a test fails
+  while they do not, so the site cannot launch still hidden. **`applye.dev` is deliberately not
+  attached yet** - a certificate appears in Certificate Transparency logs within hours and crawlers
+  follow, so the domain waits until the media exists.
+- **Verified on the live site 2026-07-26**, not merely locally: all six security headers present;
+  39 routes served; per-locale titles correct; canonicals point at `applye.dev`; JSON-LD present
+  (product + FAQ on landings, product + breadcrumbs on docs); 404 works; sitemap and robots served.
+  The consent gate was exercised end to end - before consent no Google script, no `gtag`, no
+  cookies; after clicking allow, `googletagmanager.com/gtag/js?id=G-ZY158GV42C` loads, confirming
+  both the gate and that the build carried the real measurement ID rather than the placeholder.
+- **Blocked: GitHub Actions cannot run.** Jobs fail in seconds with "the job was not started
+  because recent account payments have failed or your spending limit needs to be increased".
+  Actions bill minutes on private repositories. Every run since before #164 failed this way,
+  including on `main`, so the `deploy-web` job has still never executed and the CI gate has never
+  actually gated anything - the local gates are what has been protecting the tree. Until billing is
+  fixed, deployment is manual: `npm run web:deploy` (needs `CLOUDFLARE_API_TOKEN` and
+  `CLOUDFLARE_ACCOUNT_ID` in the environment) runs format, lint and tests first and refuses to
+  upload if any fail, because the gate is the point of the job it stands in for.
+- **Analytics: code done, one dashboard step left.** Six GA4 events behind a hard consent gate,
+  ten custom dimensions registered before any traffic, Enhanced measurement and Google signals off,
+  DPA accepted. The measurement ID is committed as `G-PLACEHOLDER` and injected at build time, so
+  checkouts, dev servers and tests can never reach the live property. Cloudflare Web Analytics is
+  adopted as the cookieless complement and needs no snippet, but **the hostname has not been added
+  in the dashboard yet** - do that after `applye.dev` is attached. Structural limit worth
+  remembering: `download_click` counts clicks on a link that leaves for GitHub, so completed
+  downloads come from `npm run web:downloads`, never from GA4. Full setup:
   `docs/internal/ANALYTICS_SETUP.md`.
+- **Corrected 2026-07-27: the advertised AI providers were wrong, twice.** The site and README
+  offered Google Gemini and an OpenAI API key; the app supports neither. The dispatch tables are
+  the only truth here: `run` in `apps/desktop/src-tauri/src/ai/api.rs` has arms for `claude` and
+  `deepseek` and nothing else, and `adapter_for` in `ai/cli.rs` has `claude` and `openai`/`codex`.
+  So OpenAI is reachable only through Codex CLI, and Gemini is reachable through nothing. An
+  earlier pass had "fixed" this by claiming Gemini was API-key only, which swapped one false claim
+  for another. Copy across the landing page, `/press`, both AI docs pages, the FAQ in six locales
+  and the README now names exactly those four arms. **Known app-side defect, not fixed here:**
+  `settings.component.ts` still offers `openai` and `gemini` as API-mode providers that the backend
+  rejects at call time.
+- **NEXT BLOCKER FOR LAUNCH: 26 visible media placeholders**, all in `/docs/guide/*`, rendered as
+  dashed boxes reading "PLACEHOLDER: guide/... ". They are the only thing between the current site
+  and a public launch; every other page is finished. The shot list, with capture rules and
+  priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for a session dedicated to
+  producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
 - **Shipped to the branch: launch SEO pass (`a510885`, `bb29b58`).** The sitemap, canonicals,
   `hreflang` and per-locale `<html lang>` were already correct and were left alone. Landing
   descriptions were trimmed under the roughly 160 characters search results show; landing pages now

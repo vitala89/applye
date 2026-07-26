@@ -106,7 +106,7 @@ export const pl: Messages = {
       {
         title: 'Własne AI',
         example:
-          'Podłącz własny klucz API - Anthropic, OpenAI, Gemini lub DeepSeek - albo już opłaconą subskrypcję CLI: Claude Code lub Codex. Tanią, deterministyczną robotę wykonuje kod; model pytany jest wyłącznie o ocenę.',
+          'Podłącz własny klucz API - Anthropic lub DeepSeek - albo już opłaconą subskrypcję CLI: Claude Code lub Codex. Tanią, deterministyczną robotę wykonuje kod; model pytany jest wyłącznie o ocenę.',
         note: 'Oszczędne na tokenach z założenia. Realne poszukiwania kosztują grosze.',
       },
       {
@@ -186,7 +186,7 @@ export const pl: Messages = {
       },
       {
         q: 'Jakiego AI potrzebuję?',
-        a: 'Albo własnego klucza API (Anthropic, OpenAI, Gemini lub DeepSeek), albo subskrypcji CLI, którą już masz - Claude Code lub Codex - podłączonej tak, że nie zużywasz dodatkowych tokenów API. Gemini działa wyłącznie przez klucz API: Google wycofał Gemini CLI dla kont prywatnych w czerwcu 2026. AI jest opcjonalne: żaden model nie zostanie wywołany, dopóki sam o to nie poprosisz.',
+        a: 'Albo własnego klucza API (Anthropic lub DeepSeek), albo subskrypcji CLI, którą już masz - Claude Code lub Codex - podłączonej tak, że nie zużywasz dodatkowych tokenów API. Modele OpenAI są dostępne przez Codex; trybu OpenAI na klucz API nie ma. Google nie jest obsługiwane wcale: Gemini CLI wycofano dla kont prywatnych w czerwcu 2026. AI jest opcjonalne: żaden model nie zostanie wywołany, dopóki sam o to nie poprosisz.',
       },
       {
         q: 'Czy moje dane są prywatne?',

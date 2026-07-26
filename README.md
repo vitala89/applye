@@ -167,8 +167,9 @@ there is nothing to leak - there is no server holding your data.
 **Bring your own AI.** Applye doesn't bundle a model or resell tokens. You wire in the AI you
 already pay for:
 
-- **API key** - point Applye at a provider API (Anthropic Claude, OpenAI, Google Gemini, DeepSeek) with your own key.
-- **CLI bridge** - or route through a local AI CLI you already have (Claude Code, Codex, Gemini CLI).
+- **API key** - point Applye at Anthropic Claude or DeepSeek with your own key.
+- **CLI bridge** - or route through a local AI CLI you already have: Claude Code, or Codex, which
+  is also how OpenAI models are reached.
 
 Either way the keys are yours, the billing is yours, and you can run the whole app with AI features
 switched off.

@@ -44,6 +44,66 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, applye.dev goes live on pages.dev, held out of search; Actions found to be blocked
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `main` (via `feat/web-cookieless-analytics`, merged as `d7cd346`, PR #165)
+- **Commits:** `5520098` plus the branch merge
+- **Pull request:** https://github.com/vitala89/applye/pull/165
+- **Objective:** get the site deployed and verified end to end, without letting an unfinished site
+  into search results.
+- **Completed:** The site is live at `https://applye.pages.dev`. Every response sends
+  `X-Robots-Tag: noindex`; `robots.txt` still allows crawling on purpose, because a crawler blocked
+  from fetching never reads the noindex and Google will list a URL it was told not to fetch.
+  `SEARCH_INDEXABLE` in `site.ts` and the header are cross-checked by a test, verified to fail when
+  they disagree, so the likely failure - launching while still hidden - cannot happen silently.
+  `npm run web:deploy` was added as a stopgap that reproduces the workflow's build and upload while
+  running format, lint and tests first, and restores the committed measurement-ID placeholder
+  afterwards so a real property ID cannot reach source. The maintainer completed the Cloudflare and
+  GitHub setup: Pages project, API token, account ID, `GA_MEASUREMENT_ID` variable, and the
+  `hello@applye.dev` routing rule.
+- **Not completed:** The `applye.dev` custom domain, the Web Analytics hostname, HSTS and Search
+  Console. All four deliberately wait until the documentation's media placeholders are replaced -
+  attaching the domain publishes a certificate to Certificate Transparency logs, which is how
+  crawlers find new sites.
+- **Files or packages changed:** `apps/web/public/_headers`, `apps/web/src/app/site.ts`,
+  `apps/web/src/app/seo/seo.spec.ts`, `apps/web/tools/deploy.sh` (new), `package.json`,
+  `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, `docs/product/MEDIA_SHOTLIST.md`,
+  `docs/internal/MEDIA_SESSION_PROMPT.md` (new).
+- **Validation:** Local, run and observed: `npm run format:check`, `nx run web:lint
+--skip-nx-cache`, `nx run web:test --skip-nx-cache` (64 tests, 5 suites), `nx run web:build` (39
+  routes prerendered), `git diff --check`. The `SEARCH_INDEXABLE` guard was verified to fail when
+  the flag was flipped without removing the header. **Against the live deployment:** all six
+  security headers plus `x-robots-tag: noindex` present; 39 routes served with correct per-locale
+  titles and canonicals pointing at `applye.dev`; JSON-LD present in the expected combinations; 404,
+  sitemap and robots served. The consent gate was exercised in a browser - before consent, no
+  Google script, no `gtag`, no cookies; after clicking allow,
+  `googletagmanager.com/gtag/js?id=G-ZY158GV42C` loads, which also confirms the deployed bundle
+  carried the real measurement ID rather than the placeholder.
+- **Privacy/security impact:** The consent gate was verified in production rather than assumed,
+  which is the claim `/privacy` and `/cookies` make to visitors. No cookies are set before or after
+  consent at page load. Deployment credentials were entered by the maintainer directly into GitHub
+  and the local environment; they were never exposed to the session.
+- **Decisions and assumptions:** Manual deployment was chosen over fixing GitHub billing or making
+  the repository public, both of which are the maintainer's call. `noindex` was chosen over
+  Cloudflare Access because the launch plan needs traffic to accumulate before the announcement
+  article, which Access would prevent.
+- **Risks or compatibility impact:** **The CI gate is currently decorative.** Actions cannot run,
+  so nothing stops a broken commit reaching `main`; only the local gates and `web:deploy`'s own
+  checks protect the site. Treat every merge as unguarded until billing is resolved.
+- **Open issues or blockers:** GitHub Actions blocked by billing - "recent account payments have
+  failed or your spending limit needs to be increased". Every run since before #164 failed this
+  way, including on `main`, which is why `deploy-web` has never executed. Earlier watch entries
+  that reported passing gates were reporting local runs; that was accurate but easy to misread as
+  CI having passed.
+- **Next first action:** Produce the Priority 1 media in `docs/product/MEDIA_SHOTLIST.md`, starting
+  with `guide/tour-walkthrough.mp4`. Use `docs/internal/MEDIA_SESSION_PROMPT.md` to open a session
+  dedicated to it.
+- **Evidence:** `apps/web/public/_headers`, `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts`, the
+  `search indexing switch` describe block in `apps/web/src/app/seo/seo.spec.ts`,
+  `apps/web/tools/deploy.sh`.
+
 ### 2026-07-27, launch SEO pass: structured data added, a shipped og:title bug found and fixed
 
 - **Status:** complete

@@ -46,6 +46,27 @@ cargo check
 
 Also run the relevant frontend type-check/build when Rust contracts cross Tauri IPC.
 
+## Dependency changes
+
+Whenever `package.json`, `package-lock.json`, `Cargo.toml`, or `Cargo.lock` changes:
+
+```bash
+npm audit --omit=dev
+cd apps/desktop/src-tauri && cargo audit
+```
+
+`npm audit` without `--omit=dev` reports the build toolchain (Nx, the Angular
+CLI, webpack-dev-server), none of which ships inside the Tauri bundle. The
+`--omit=dev` run is the one that describes what users actually install, and it
+is expected to stay at zero. Fix or explain anything it reports.
+
+`cargo audit` must exit 0. It reads its ignore list from
+`apps/desktop/src-tauri/.cargo/audit.toml`, so it has to be run from that
+directory. Every ignored advisory in that file states why it is not reachable
+and what would let us drop the entry; a new finding means either a real fix or
+a new entry with the same standard of justification. `cargo-audit` is not
+bundled with Rust - install it once with `cargo install cargo-audit --locked`.
+
 Migration changes require:
 
 - additive and backward-compatible design unless an approved migration plan says otherwise;

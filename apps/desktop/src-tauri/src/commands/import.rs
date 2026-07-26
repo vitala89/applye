@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use tauri::State;
 
+use crate::commands::untrusted::catch_parser_panic;
 use crate::db::{stable_hash, Db};
 
 #[derive(Debug, Serialize)]
@@ -52,16 +53,26 @@ fn read_text(path: &str) -> Result<String, String> {
 fn read_xlsx_as_csv(path: &str) -> Result<String, String> {
     use calamine::{open_workbook, Reader, Xlsx};
 
-    let mut workbook: Xlsx<_> =
-        open_workbook(path).map_err(|e| format!("read_xlsx_as_csv: open: {e}"))?;
-    let sheet_name = workbook
-        .sheet_names()
-        .first()
-        .cloned()
-        .ok_or_else(|| "read_xlsx_as_csv: workbook has no sheets".to_string())?;
-    let range = workbook
-        .worksheet_range(&sheet_name)
-        .map_err(|e| format!("read_xlsx_as_csv: {e}"))?;
+    // The whole calamine interaction sits inside the panic guard, not just the
+    // open: `worksheet_range` is where the XML body is actually walked, and
+    // that is the part fed by the untrusted file. See `audit.toml` - calamine
+    // still pins a `quick-xml` with two open DoS advisories and has no newer
+    // release, so this path is the one carrying known-unfixed parser risk.
+    let range = catch_parser_panic(
+        "read_xlsx_as_csv",
+        || -> Result<calamine::Range<calamine::Data>, String> {
+            let mut workbook: Xlsx<_> =
+                open_workbook(path).map_err(|e| format!("read_xlsx_as_csv: open: {e}"))?;
+            let sheet_name = workbook
+                .sheet_names()
+                .first()
+                .cloned()
+                .ok_or_else(|| "read_xlsx_as_csv: workbook has no sheets".to_string())?;
+            workbook
+                .worksheet_range(&sheet_name)
+                .map_err(|e| format!("read_xlsx_as_csv: {e}"))
+        },
+    )??;
 
     let mut out = String::new();
     for row in range.rows() {

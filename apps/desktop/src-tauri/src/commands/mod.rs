@@ -22,6 +22,7 @@ pub mod scoring;
 pub mod settings;
 pub mod tailoring;
 pub mod tracker;
+pub mod untrusted;
 
 use tauri::State;
 

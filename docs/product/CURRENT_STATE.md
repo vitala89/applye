@@ -2,21 +2,30 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `feat/toast-coverage`. Toast feedback is now wired to every
-  user-initiated save, delete, duplicate, export, import and generate action on the desktop pages,
-  and to the failure of each. The work is complete in the working tree and not yet committed.
-- **In flight: `feat/toast-coverage`.** The toast system itself (`core/toast/`, `ToastErrorHandler`,
-  `provideBrowserGlobalErrorListeners()`) was already correct: an uncaught error toasts on its own.
-  What was missing was every caught error and most success paths. `cover-letter-list` had no toasts
-  at all while its `cv-list` sibling had five; `cv-detail`, `cover-letter-detail` and `profile`
-  confirmed a save only with inline text; `jobs` wrote save, apply and delete errors into
-  `actionMsg`, which is invisible after the navigation two of those three actions perform; `discover`
-  sent seven user-action failures to `console.error` and nothing else. All are now on the same
-  pattern the Tracker, Settings and Interview Prep already used - `toast.success(t()('ns.key'))` and
-  `toast.error(String(e))` - across 9 components, with 16 new i18n keys in all six locales. Inline
-  status text was kept, not replaced. Gates run: `type-check`, `test` (759), `lint`,
-  `format:check`, `git diff --check`, all pass. `desktop:build` not run and no on-screen check in
-  the Tauri app yet.
+- **Current branch / focus**: `chore/dependency-and-input-hardening`. Dependency auditing and the
+  untrusted-file input paths. Complete in the working tree, not yet committed.
+- **In flight: `chore/dependency-and-input-hardening`.** `cargo audit` had never been run on this
+  project and was not installed; it found 7 advisories. Four are now gone: `cargo update` took
+  `docx-rs` to 0.4.22 and `quick-xml` to 0.41.0, and `pdf-extract` 0.7 -> 0.12 took `lopdf` to 0.42.
+  Three remain, each justified in writing in `apps/desktop/src-tauri/.cargo/audit.toml` - `lopdf`
+  via `printpdf` is unreachable (it only writes our own PDFs), `quick-xml` via `calamine` is
+  reachable through .xlsx import but has no fixed release upstream, and `rsa` is not in the desktop
+  target's graph. Two code changes came with it: `commands::untrusted::catch_parser_panic` wraps the
+  PDF, DOCX and XLSX readers so a panicking parser returns an error instead of killing the app, and
+  `open_file` / `reveal_in_folder` now refuse any path that canonicalizes outside `app_data_dir`,
+  is not a regular file, or does not exist. `cargo audit` and `npm audit --omit=dev` are now entries
+  in the validation matrix. Gates: all Rust and frontend gates pass, `cargo audit` exit 0,
+  `npm audit --omit=dev` zero, Rust tests 272 -> 280. Real-PDF extraction quality after the
+  `pdf-extract` jump is not covered by tests and wants a spot check.
+- **Merged: `feat/toast-coverage` -> PR #160.** Every user-initiated save, delete, duplicate,
+  export, import and generate action on the desktop pages now raises the bottom-right toast, and so
+  does each of their failures. The toast infrastructure was already correct - an uncaught error
+  toasts on its own - so the gaps were caught-and-swallowed errors and success paths with only
+  inline feedback: `cover-letter-list` had no toasts at all while its `cv-list` sibling had five,
+  `jobs` wrote errors into `actionMsg` which is invisible after the navigation two of its actions
+  perform, and `discover` sent seven user-action failures to `console.error` only. 9 components,
+  16 new i18n keys in all six locales, inline status text kept rather than replaced. Still not
+  checked on screen in the running Tauri app.
 - **Merged: `feat/i18n-complete-locales` -> PR #158. ru, es, fr and uk are complete.** The previous entry fixed the
   merge that dropped labels from those four locales, but only 33-36 of 1438 keys were ever
   translated in each: they covered `nav`, `actions`, `status`, `ai` and `common`, and every other

@@ -27,6 +27,13 @@
   twelve media files that do not exist (hero, demo GIF, six screenshots, two wordmarks, video
   thumbnail); the maintainer produces those separately. Do not push the enabled CI workflow until
   the repository is public - Actions minutes are capped on the free plan while it is private.
+- **Resolved: `security@applye.dev` / `conduct@applye.dev` are live (2026-07-26).** The
+  documentation pass above noted these addresses were published in `SECURITY.md` and
+  `CODE_OF_CONDUCT.md` before the mailboxes existed - a dead reporting channel. The maintainer set
+  up Cloudflare Email Routing on `applye.dev`: MX/SPF/DKIM records added, both addresses forward to
+  the maintainer's personal inbox, delivery confirmed both ways, and a DMARC record
+  (`v=DMARC1; p=reject`) was added against spoofing. No file changes needed - both docs already
+  referenced the correct addresses.
 - **In flight: migration checksum restore (uncommitted, on `main`).** 0.28.0 aborts at launch on
   every pre-existing install: `run migrations: migration 1 was previously applied but has been
 modified`. The repo-wide em dash sweep in `e06fd4b` rewrote `—` to `-` inside migrations 0001,

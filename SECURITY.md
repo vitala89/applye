@@ -21,7 +21,7 @@ Only the latest release line receives security fixes.
 Preferred channel: [GitHub private vulnerability reporting](https://github.com/vitala89/applye/security/advisories/new)
 ("Report a vulnerability" on the Security tab).
 
-Alternative: email **vitala2089@gmail.com** with subject `[SECURITY] Applye`.
+Alternative: email **security@applye.dev** with subject `[SECURITY] Applye`.
 
 Include if you can:
 

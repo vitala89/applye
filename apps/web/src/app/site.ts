@@ -33,5 +33,16 @@ export const SOURCE_PUBLIC = false;
 /** Google Analytics 4 measurement ID. PLACEHOLDER: replace with the real `G-XXXXXXXXXX`. */
 export const GA_MEASUREMENT_ID = 'G-PLACEHOLDER';
 
+/**
+ * Whether the site is meant to appear in search results yet.
+ *
+ * False until launch: the site is deployed while the documentation still shows
+ * placeholder boxes where its screenshots and video will go, and an indexed
+ * placeholder is far harder to remove than to prevent. While this is false,
+ * `public/_headers` must send `X-Robots-Tag: noindex`; a test fails if the two
+ * disagree, so flipping this flag forces the header to be dealt with.
+ */
+export const SEARCH_INDEXABLE = false;
+
 /** Canonical production origin, used for canonical URLs, hreflang, OG tags and the sitemap. */
 export const SITE_ORIGIN = 'https://applye.dev';

@@ -6,6 +6,7 @@ import { Meta } from '@angular/platform-browser';
 import { provideRouter, Route } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { appRoutes } from '../app.routes';
+import { SEARCH_INDEXABLE } from '../site';
 import { SeoService } from './seo.service';
 
 @Component({ selector: 'app-blank', standalone: true, template: '' })
@@ -82,6 +83,28 @@ describe('SEO route manifest', () => {
       });
 
     expect(walk(appRoutes)).toEqual([]);
+  });
+});
+
+describe('search indexing switch', () => {
+  const headers = readFileSync(join(__dirname, '../../../public/_headers'), 'utf8');
+  const sendsNoindex = headers
+    .split('\n')
+    .some((line) => /^\s*X-Robots-Tag:\s*noindex/i.test(line));
+
+  /**
+   * Two files have to agree, and neither is obvious from the other. The flag is
+   * what a reader of the source sees; the header is what a crawler sees. Left
+   * to drift, the likely failure is a site that is live, finished, and quietly
+   * still telling Google to stay away.
+   */
+  it('keeps the noindex header and SEARCH_INDEXABLE in step', () => {
+    expect(sendsNoindex).toBe(!SEARCH_INDEXABLE);
+  });
+
+  it('lets crawlers fetch, so they can read the noindex it is sent', () => {
+    const robots = readFileSync(join(__dirname, '../../../public/robots.txt'), 'utf8');
+    expect(robots).not.toMatch(/^\s*Disallow:\s*\/\s*$/m);
   });
 });
 

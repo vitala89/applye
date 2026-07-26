@@ -1759,16 +1759,63 @@ pub async fn export_pdf(
 
 // ── File reveal / open ───────────────────────────────────────────────────────
 
+/// Resolves a path the frontend asked to open and refuses anything outside the
+/// app's own data directory.
+///
+/// Both commands below hand the path to the OS launcher, which will happily
+/// run an application bundle or a script. The only paths these commands are
+/// meant to receive are `generated_docs.file_path` rows - exports Applye wrote
+/// itself under `app_data_dir/companies/<slug>/`. Nothing validated that, so a
+/// bug or a compromised renderer could ask the backend to launch any file on
+/// disk. Containment is cheap here and the callers already satisfy it.
+///
+/// `canonicalize` on both sides is what makes the check meaningful: it
+/// resolves `..` segments and follows symlinks, so a link inside the data
+/// directory pointing at `/Applications/Something.app` fails the prefix test
+/// rather than passing it.
+fn resolve_app_owned_file(app: &AppHandle, path: &str) -> Result<std::path::PathBuf, String> {
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("app_data_dir: {e}"))?;
+    resolve_within(&base, path)
+}
+
+/// The containment rule on its own, so it can be tested without an `AppHandle`.
+fn resolve_within(base: &std::path::Path, path: &str) -> Result<std::path::PathBuf, String> {
+    let base = base
+        .canonicalize()
+        .map_err(|e| format!("app_data_dir: {e}"))?;
+    let target = std::path::Path::new(path)
+        .canonicalize()
+        .map_err(|e| format!("no such file: {e}"))?;
+    if !target.starts_with(&base) {
+        return Err("refused: that file is outside Applye's own document folder".to_string());
+    }
+    if !target.is_file() {
+        return Err("refused: not a regular file".to_string());
+    }
+    Ok(target)
+}
+
 #[tauri::command]
-pub fn open_file(path: String) -> Result<(), String> {
+pub fn open_file(app: AppHandle, path: String) -> Result<(), String> {
+    let path = resolve_app_owned_file(&app, &path)?;
     #[cfg(target_os = "macos")]
     std::process::Command::new("open")
         .arg(&path)
         .spawn()
         .map_err(|e| format!("open_file: {e}"))?;
+    // `cmd /C start` on Windows is the one launcher that re-parses its
+    // arguments, so it is the only place a metacharacter in a filename could
+    // matter. Two things keep it safe: every name Applye writes goes through
+    // `readable_slug` (alphanumeric plus hyphen, nothing else survives), and
+    // the containment check above means no path from outside that folder ever
+    // reaches here. The empty `""` is `start`'s title argument - without it,
+    // `start` treats a quoted path as the window title and opens nothing.
     #[cfg(target_os = "windows")]
     std::process::Command::new("cmd")
-        .args(["/C", "start", "", &path])
+        .args(["/C", "start", "", &path.to_string_lossy().to_string()])
         .spawn()
         .map_err(|e| format!("open_file: {e}"))?;
     #[cfg(target_os = "linux")]
@@ -1780,23 +1827,21 @@ pub fn open_file(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn reveal_in_folder(path: String) -> Result<(), String> {
+pub fn reveal_in_folder(app: AppHandle, path: String) -> Result<(), String> {
+    let path = resolve_app_owned_file(&app, &path)?;
     #[cfg(target_os = "macos")]
     std::process::Command::new("open")
-        .args(["-R", &path])
+        .args([std::ffi::OsStr::new("-R"), path.as_os_str()])
         .spawn()
         .map_err(|e| format!("reveal_in_folder: {e}"))?;
     #[cfg(target_os = "windows")]
     std::process::Command::new("explorer")
-        .arg(format!("/select,{path}"))
+        .arg(format!("/select,{}", path.to_string_lossy()))
         .spawn()
         .map_err(|e| format!("reveal_in_folder: {e}"))?;
     #[cfg(target_os = "linux")]
     {
-        let parent = std::path::Path::new(&path)
-            .parent()
-            .and_then(|p| p.to_str())
-            .unwrap_or(&path);
+        let parent = path.parent().unwrap_or(path.as_path());
         std::process::Command::new("xdg-open")
             .arg(parent)
             .spawn()
@@ -1810,6 +1855,66 @@ mod tests {
     use super::*;
     use crate::commands::documents::{CvSectionStyle, CvStyle, PhotoPlacement};
     use std::collections::HashMap;
+
+    // ── open_file / reveal_in_folder containment ────────────────────────────
+
+    /// A scratch "app data dir" with one export inside it, plus a sibling
+    /// directory standing in for the rest of the disk.
+    fn containment_fixture() -> (std::path::PathBuf, std::path::PathBuf) {
+        let root = std::env::temp_dir().join(format!("applye-contain-{}", std::process::id()));
+        let inside = root.join("app-data").join("companies").join("acme");
+        let outside = root.join("elsewhere");
+        std::fs::create_dir_all(&inside).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(inside.join("cv.pdf"), b"%PDF-1.4").unwrap();
+        std::fs::write(outside.join("payload.sh"), b"#!/bin/sh\n").unwrap();
+        (root.join("app-data"), outside)
+    }
+
+    #[test]
+    fn allows_a_file_inside_the_app_data_dir() {
+        let (base, _) = containment_fixture();
+        let target = base.join("companies").join("acme").join("cv.pdf");
+        let out = resolve_within(&base, target.to_str().unwrap());
+        assert!(out.is_ok(), "got: {out:?}");
+    }
+
+    #[test]
+    fn refuses_a_file_outside_the_app_data_dir() {
+        let (base, outside) = containment_fixture();
+        let target = outside.join("payload.sh");
+        let err = resolve_within(&base, target.to_str().unwrap())
+            .expect_err("a path outside the data dir must be refused");
+        assert!(err.contains("outside"), "got: {err}");
+    }
+
+    #[test]
+    fn refuses_a_traversal_that_climbs_out() {
+        let (base, _) = containment_fixture();
+        // Syntactically "inside", but `..` walks it back out to the sibling.
+        let target = base.join("companies/../../elsewhere/payload.sh");
+        let err = resolve_within(&base, target.to_str().unwrap())
+            .expect_err("`..` must not escape the data dir");
+        assert!(err.contains("outside"), "got: {err}");
+    }
+
+    #[test]
+    fn refuses_a_directory() {
+        let (base, _) = containment_fixture();
+        let target = base.join("companies").join("acme");
+        let err = resolve_within(&base, target.to_str().unwrap())
+            .expect_err("a directory is not an exported document");
+        assert!(err.contains("not a regular file"), "got: {err}");
+    }
+
+    #[test]
+    fn refuses_a_path_that_does_not_exist() {
+        let (base, _) = containment_fixture();
+        let target = base.join("companies").join("acme").join("missing.pdf");
+        let err = resolve_within(&base, target.to_str().unwrap())
+            .expect_err("a missing file must not be launched");
+        assert!(err.contains("no such file"), "got: {err}");
+    }
 
     fn section(
         font: Option<&str>,

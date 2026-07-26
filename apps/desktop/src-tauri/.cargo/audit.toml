@@ -1,0 +1,63 @@
+# cargo-audit configuration.
+#
+# Run it with the rest of the Rust gates:
+#
+#     cd apps/desktop/src-tauri && cargo audit
+#
+# The path matters: cargo-audit only reads `.cargo/audit.toml` relative to the
+# directory it runs in, so this file has to live here rather than beside
+# Cargo.toml. Run the command from `apps/desktop/src-tauri` or the ignore list
+# below is silently skipped and every entry reappears as a finding.
+#
+# Everything listed under `ignore` is an advisory that is still open upstream
+# and that we have checked is not reachable from untrusted input, or that has
+# no fixed release to move to. Each entry states which, and what would let us
+# drop it. An entry without a reason does not belong here: if an advisory is
+# reachable, fix it or record it as a blocker in DUTY_WATCH.md instead.
+#
+# Re-check this list whenever `cargo update` runs. The point of the file is to
+# keep `cargo audit` at zero unexplained findings, so a *new* advisory is
+# immediately visible instead of being lost in known noise.
+
+[advisories]
+ignore = [
+  # lopdf 0.31 via printpdf 0.7 - stack overflow on deeply nested PDF objects.
+  #
+  # Not reachable. printpdf is the PDF *writer*: it renders CV and cover-letter
+  # content that Applye itself produced, and never parses a file from disk. The
+  # advisory is about parsing hostile input. The reader path (pdf-extract) was
+  # moved to lopdf 0.42, which carries the fix.
+  #
+  # Drop when: printpdf ships a release on lopdf >= 0.42. Moving to the current
+  # printpdf 0.12 is a breaking API change across the whole export renderer and
+  # would risk the WYSIWYG parity the exporters are built around, so it is not
+  # worth doing for an unreachable advisory.
+  "RUSTSEC-2026-0187",
+
+  # quick-xml 0.39 via calamine 0.35 - unbounded namespace allocation, and
+  # quadratic time on duplicate attribute checks. Both are denial of service.
+  #
+  # Reachable, but bounded, and there is nowhere to move to: calamine 0.35.0 is
+  # its latest release and pins quick-xml 0.39. The input is an .xlsx the user
+  # picked from the file dialog for tracklist import - not remote, not
+  # automatic. Worst case is the import hanging or eating memory on a file the
+  # user chose. `read_xlsx_as_csv` runs the whole calamine interaction inside
+  # `catch_parser_panic`, and the RSS/ATS fetchers do not use quick-xml at all
+  # (Discover parses feeds with its own splitter), so no network input reaches
+  # this parser.
+  #
+  # Drop when: calamine releases on quick-xml >= 0.41.
+  "RUSTSEC-2026-0195",
+  "RUSTSEC-2026-0194",
+
+  # rsa 0.9.10 - Marvin attack, key recovery through timing side channels.
+  # No patched release exists.
+  #
+  # Not reachable. `cargo tree -i rsa` is empty for the desktop target, so the
+  # crate is not in the normal dependency graph we build. Even if it were, the
+  # attack needs an adversary who can submit ciphertexts and measure decryption
+  # timing; Applye does no RSA work of its own and its TLS goes through rustls.
+  #
+  # Drop when: a fixed rsa release exists, or the crate leaves the graph.
+  "RUSTSEC-2023-0071",
+]

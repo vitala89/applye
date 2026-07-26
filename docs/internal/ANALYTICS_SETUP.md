@@ -29,17 +29,20 @@ As of 2026-07-26 the property and the `applye.dev` web stream exist. Measurement
 ID `G-ZY158GV42C`, stream ID `15328752672`. Nothing is being collected yet: the
 ID is not set on any deployment, and no deployment exists.
 
-Done: stream created, Enhanced measurement switched off, Google signals left off
-(they default to off), and all ten event-scoped custom dimensions registered -
-before any traffic, which is the only time it can be done correctly.
+**The GA4 property is fully configured.** Stream created, Enhanced measurement
+off, Google signals off, all four account data-sharing options unticked, data
+retention 14 months, Data Processing Terms accepted 2026-07-26, and all ten
+event-scoped custom dimensions registered before any traffic - the only point at
+which that can be done correctly.
 
-Still outstanding, in the order they matter:
+Outstanding:
 
-1. Data retention 14 months (defaults to 2, which silently loses history).
-2. Google Ads Data Processing Terms.
-3. The Cloudflare and GitHub setup under "Cloudflare Pages" below.
-4. `download_click` as a key event, and the internal-traffic filter - both only
-   possible once events are arriving.
+1. The Cloudflare and GitHub setup under "Cloudflare Pages" below. Nothing is
+   deployed, so the property is still receiving nothing.
+2. `download_click` as a key event, and the internal-traffic filter. Both are
+   impossible until events start arriving, so they come after the first deploy.
+3. Optionally, the DPA contact and legal-entity fields ("Изменить сведения DPA"),
+   which are blank by default. The agreement is in force either way.
 
 ## Creating the property
 

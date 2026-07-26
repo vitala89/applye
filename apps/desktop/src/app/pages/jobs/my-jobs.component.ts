@@ -16,6 +16,7 @@ import { AiService, DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
+import { ToastService } from '../../core/toast/toast.service';
 
 type SortKey = 'company' | 'title' | 'score' | 'status' | 'legitimacyTier' | 'createdAt' | 'source';
 type ImportStep = 'pick' | 'preview' | 'done';
@@ -58,6 +59,7 @@ export class MyJobsComponent {
   private readonly router = inject(Router);
   protected readonly jobsStore = inject(JobsStore);
   private readonly i18n = inject(TranslateService);
+  private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
   protected readonly icons = {
@@ -179,6 +181,9 @@ export class MyJobsComponent {
     try {
       await this.jobsStore.deleteJob(row.id);
       this.deleteTarget.set(null);
+      this.toast.success(this.t()('jobs.delete_ok'));
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.deleting.set(false);
     }
@@ -263,6 +268,7 @@ export class MyJobsComponent {
       this.importStep.set('preview');
     } catch (e) {
       this.importError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.importBusy.set(false);
     }
@@ -307,8 +313,10 @@ export class MyJobsComponent {
       );
       this.importStep.set('done');
       await this.load();
+      this.toast.success(this.t()('myjobs.import_done').replace('{n}', String(result.inserted)));
     } catch (e) {
       this.importError.set(String(e));
+      this.toast.error(String(e));
     } finally {
       this.importBusy.set(false);
     }

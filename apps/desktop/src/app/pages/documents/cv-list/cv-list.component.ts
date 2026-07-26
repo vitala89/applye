@@ -102,19 +102,24 @@ export class CvListComponent {
 
   async duplicate(item: DocumentLibraryItem, event: Event): Promise<void> {
     event.stopPropagation();
-    await this.db.documentLibraryUpsert({
-      docType: 'cv',
-      source: item.source,
-      label: `${item.label ?? this.t()('documents.cv_untitled')} ${this.t()('documents.cv_copy_suffix')}`,
-      contentJson: item.contentJson,
-      templateId: item.templateId,
-      styleJson: item.styleJson,
-      regionTag: item.regionTag,
-      language: item.language,
-      archetypeTag: item.archetypeTag,
-      isDefault: false,
-    });
-    await this.load();
+    try {
+      await this.db.documentLibraryUpsert({
+        docType: 'cv',
+        source: item.source,
+        label: `${item.label ?? this.t()('documents.cv_untitled')} ${this.t()('documents.cv_copy_suffix')}`,
+        contentJson: item.contentJson,
+        templateId: item.templateId,
+        styleJson: item.styleJson,
+        regionTag: item.regionTag,
+        language: item.language,
+        archetypeTag: item.archetypeTag,
+        isDefault: false,
+      });
+      await this.load();
+      this.toast.success(this.t()('documents.duplicated'));
+    } catch (e) {
+      this.toast.error(String(e));
+    }
   }
 
   readonly exportBusyId = signal<number | null>(null);
@@ -136,6 +141,7 @@ export class CvListComponent {
       } else {
         await this.db.cvDocumentExport(item.id, format, path);
       }
+      this.toast.success(this.t()('documents.exported').replace('{path}', path));
     } catch (e) {
       this.toast.error(String(e));
     } finally {
@@ -167,6 +173,9 @@ export class CvListComponent {
       await this.db.documentLibraryDelete(item.id);
       this.deleteTarget.set(null);
       await this.load();
+      this.toast.success(this.t()('documents.cv_deleted'));
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.deleting.set(false);
     }
@@ -275,6 +284,7 @@ export class CvListComponent {
       });
       this.importStep.set('done');
       await this.load();
+      this.toast.success(this.t()('documents.cv_import_done'));
     } catch (e) {
       this.importError.set(String(e));
       this.toast.error(String(e));
@@ -403,6 +413,7 @@ export class CvListComponent {
 
       this.generateOpen.set(false);
       await this.load();
+      this.toast.success(this.t()('documents.cv_generated'));
       this.open(created.id);
     } catch (e) {
       this.generateError.set(String(e));

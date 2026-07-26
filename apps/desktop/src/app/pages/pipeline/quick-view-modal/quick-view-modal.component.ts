@@ -401,6 +401,8 @@ export class QuickViewModalComponent {
     try {
       await this.db.setApplicationPriority(card.id, priority);
       this.priorityChanged.emit({ id: card.id, priority });
+    } catch (e) {
+      this.toast.error(String(e));
     } finally {
       this.priorityBusy.set(false);
     }
@@ -415,6 +417,7 @@ export class QuickViewModalComponent {
       const comment = await this.db.addApplicationComment(this.card().id, text);
       this.comments.set([...this.comments(), comment]);
       this.commentText.set('');
+      this.toast.success(this.t()('pipeline.comment_added'));
     } catch (e) {
       this.commentsError.set(String(e));
       this.toast.error(String(e));

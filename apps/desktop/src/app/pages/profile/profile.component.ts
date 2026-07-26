@@ -2386,6 +2386,7 @@ export class ProfileComponent implements OnInit {
       });
       this.archetypes.set(parseArchetypes(saved.targetArchetypes));
       this.saveStatus.set(this.t()('profile.saved_at').replace('{date}', saved.updatedAt ?? 'now'));
+      this.toast.success(this.t()('profile.saved_ok'));
     } catch (e) {
       this.saveStatus.set(this.t()('profile.save_failed').replace('{error}', String(e)));
       this.saveError.set(true);

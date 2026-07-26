@@ -1,6 +1,6 @@
 -- 0001 seeds `sources` but never inserts a `settings` row, so
 -- `SELECT * FROM settings WHERE id = 1` (fetch_one) fails with RowNotFound and
--- db_get_settings errors - the Settings screen can't load. 0001 is already
+-- db_get_settings errors — the Settings screen can't load. 0001 is already
 -- applied (can't be edited without a checksum mismatch), so create the row
 -- here. INSERT OR IGNORE is a no-op if a row already exists; the follow-up
 -- UPDATE backfills any columns an older partial row left NULL. Idempotent.

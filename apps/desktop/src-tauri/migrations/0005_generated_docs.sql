@@ -1,5 +1,5 @@
 -- Tailoring pass results cache (keyed by all inputs for that pass).
--- Pass 2 input_hash includes pass-1 result; pass 3 includes both - so
+-- Pass 2 input_hash includes pass-1 result; pass 3 includes both — so
 -- a different upstream pass always invalidates downstream cache entries.
 CREATE TABLE IF NOT EXISTS tailoring_cache (
     id            INTEGER PRIMARY KEY,

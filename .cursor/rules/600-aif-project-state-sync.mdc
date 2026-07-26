@@ -4,8 +4,7 @@ globs:
   - "docs/product/**/*"
   - "docs/ai/**/*"
   - "ROADMAP.md"
-  - "INSTRUCTIONS.md"
-  - "STEP_BY_STEP_PLAN.md"
+  - "docs/internal/INSTRUCTIONS.md"
   - "CHANGELOG.md"
 alwaysApply: false
 ---
@@ -26,5 +25,5 @@ Trigger this rule when planning, checking next steps, recording ideas, prioritiz
    * **Idea**: Update [docs/product/IDEAS.md](docs/product/IDEAS.md) only.
    * **Feature brief**: Create/update under `docs/product/feature-briefs/` and update [docs/product/FEATURE_INDEX.md](docs/product/FEATURE_INDEX.md).
    * **Architectural decision**: Create ADR under `docs/product/decisions/`.
-4. **Prevent Noise**: Do not modify root-level canonical files (`ROADMAP.md`, `INSTRUCTIONS.md`, `STEP_BY_STEP_PLAN.md`, `CHANGELOG.md`) for minor feature steps or raw ideas.
+4. **Prevent Noise**: Do not modify root-level canonical files (`ROADMAP.md`, `docs/internal/INSTRUCTIONS.md`, `CHANGELOG.md`) for minor feature steps or raw ideas.
 5. **Release Logs**: Add unreleased entry to `CHANGELOG.md` only when a product feature is completed and ready, never for raw ideas.

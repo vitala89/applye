@@ -4,6 +4,19 @@
   in all three on 2026-07-26)
 - **Current branch / focus**: `main`. Restoring the nine migration files that 0.28.0's em dash
   cleanup edited after they had shipped. Complete in the working tree, not yet committed.
+- **Also in flight: public-release documentation pass (uncommitted, on `main`).** Version badge in
+  all six READMEs was `0.25.0` against an actual `0.28.0` and is bumped. `AGENT_START_HERE.md`,
+  `PROJECT_CONTEXT.md`, `INSTRUCTIONS.md` and `DUTY_WATCH.md` moved from the repository root to
+  `docs/internal/` with a README explaining the directory; all 30 references were rewritten and
+  verified. Twelve tracked files pointed at `STEP_BY_STEP_PLAN.md`, which has never been in git -
+  references removed, the file gitignored alongside `AGENT_PROMPT_*.md`. Fifteen links to the
+  gitignored `CAREER_OPS_ADOPTION.md` unlinked. CI re-enabled at `.github/workflows/ci.yml` and
+  `workflows-disabled/` removed; `CONTRIBUTING.md` gained the CI reference, `format:check`, and a
+  never-edit-a-shipped-migration rule. Gates: Nx lint/test/build on 6 projects, `cargo clippy`,
+  `cargo test`, `format:check`, `git diff --check` - all pass. **Open:** the README still points at
+  twelve media files that do not exist (hero, demo GIF, six screenshots, two wordmarks, video
+  thumbnail); the maintainer produces those separately. Do not push the enabled CI workflow until
+  the repository is public - Actions minutes are capped on the free plan while it is private.
 - **In flight: migration checksum restore (uncommitted, on `main`).** 0.28.0 aborts at launch on
   every pre-existing install: `run migrations: migration 1 was previously applied but has been
 modified`. The repo-wide em dash sweep in `e06fd4b` rewrote `—` to `-` inside migrations 0001,

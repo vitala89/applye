@@ -80,7 +80,7 @@ _Steps for manual verification on the running app._
 
 ### Docs to Update
 
-_Docs to update during or after implementation (e.g. INSTRUCTIONS.md, data contract, etc.)._
+_Docs to update during or after implementation (e.g. docs/internal/INSTRUCTIONS.md, data contract, etc.)._
 
 ### Changelog Draft
 

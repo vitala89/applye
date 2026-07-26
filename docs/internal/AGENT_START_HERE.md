@@ -18,7 +18,7 @@ Do not begin implementation from the user request alone. First verify the curren
 - `PROJECT_CONTEXT.md` contains durable product and architecture context.
 - `docs/product/CURRENT_STATE.md` is the canonical operational state: current focus, blockers, completed work, and next action.
 - `DUTY_WATCH.md` is the chronological handoff log between sessions and agents.
-- `ROADMAP.md` and `STEP_BY_STEP_PLAN.md` describe strategic and phased work.
+- `ROADMAP.md` describes strategic and phased work.
 - `CHANGELOG.md` records shipped changes, not future work.
 
 Applye deliberately does not add a second `PROJECT_STATE.md`. The existing `docs/product/CURRENT_STATE.md` remains the single operational state file.

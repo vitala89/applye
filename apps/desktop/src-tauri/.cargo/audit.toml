@@ -13,7 +13,7 @@
 # and that we have checked is not reachable from untrusted input, or that has
 # no fixed release to move to. Each entry states which, and what would let us
 # drop it. An entry without a reason does not belong here: if an advisory is
-# reachable, fix it or record it as a blocker in DUTY_WATCH.md instead.
+# reachable, fix it or record it as a blocker in docs/internal/DUTY_WATCH.md instead.
 #
 # Re-check this list whenever `cargo update` runs. The point of the file is to
 # keep `cargo audit` at zero unexplained findings, so a *new* advisory is

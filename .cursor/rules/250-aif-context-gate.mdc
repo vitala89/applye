@@ -10,7 +10,7 @@ alwaysApply: false
 Context order:
 
 1. User request.
-2. `AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`.
+2. `AGENTS.md`, `CLAUDE.md`, `docs/internal/PROJECT_CONTEXT.md`.
 3. Named files.
 4. Targeted symbol or path search.
 5. Focused scout only when relevant files are unknown.

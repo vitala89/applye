@@ -1,4 +1,4 @@
-// From-link paste flow (legal-first - INSTRUCTIONS.md §0, ROADMAP.md §11).
+// From-link paste flow (legal-first - docs/internal/INSTRUCTIONS.md §0, ROADMAP.md §11).
 //
 // classify_job_url: 0-token deterministic host allowlist check. Only public
 // open/ATS/RSS sources (Tier 2/3) are ever fetched. Closed boards (LinkedIn,

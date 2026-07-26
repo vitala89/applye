@@ -19,8 +19,7 @@ Use this skill when dealing with planning, next steps, ideas, roadmap updates, f
    - For feature work: corresponding brief in `docs/product/feature-briefs/`
    - For ideas: [IDEAS.md](docs/product/IDEAS.md)
    - For strategy: [ROADMAP.md](ROADMAP.md)
-   - For execution steps: [STEP_BY_STEP_PLAN.md](STEP_BY_STEP_PLAN.md)
-3. **Determine Write List**: Identify which documents require updates. Prevent unnecessary modifications to root canonical files (`ROADMAP.md`, `INSTRUCTIONS.md`, `STEP_BY_STEP_PLAN.md`, `CHANGELOG.md`) for minor/non-strategic changes.
+3. **Determine Write List**: Identify which documents require updates. Prevent unnecessary modifications to root canonical files (`ROADMAP.md`, `docs/internal/INSTRUCTIONS.md`, `CHANGELOG.md`) for minor/non-strategic changes.
 4. **Create or Update Feature Brief**: If a feature is accepted, ensure a feature brief exists under `docs/product/feature-briefs/` using [FEATURE_BRIEF_TEMPLATE.md](docs/product/feature-briefs/FEATURE_BRIEF_TEMPLATE.md).
 5. **Update Indices**: Update [CURRENT_STATE.md](docs/product/CURRENT_STATE.md) and [FEATURE_INDEX.md](docs/product/FEATURE_INDEX.md) when feature states or focus branches change.
 6. **Changelog Rules**: Only add `CHANGELOG.md` `[Unreleased]` entries for actual code/docs/product changes. Do not include raw ideas or draft proposals in the changelog.

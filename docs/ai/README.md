@@ -8,7 +8,7 @@ The main session is the conductor. Skills and subagents are focused specialists 
 
 - `AGENTS.md`: rules for all AI coding agents.
 - `CLAUDE.md`: Claude Code-specific operating notes.
-- `PROJECT_CONTEXT.md`: Applye product and architecture context.
+- `docs/internal/PROJECT_CONTEXT.md`: Applye product and architecture context.
 - `docs/ai/workflow.md`: task workflow.
 - `docs/ai/model-policy.md`: model routing.
 - `docs/ai/token-policy.md`: token-saving policy.

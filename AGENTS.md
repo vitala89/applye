@@ -2,16 +2,16 @@
 
 Applye is an open-source, privacy-first job-search productivity app built as an Nx monorepo with Tauri 2, Angular, Rust, SQLite, TypeScript, and shared domain/UI/i18n libraries. Treat user career data, applications, notes, contacts, notifications, resumes, and imported job content as sensitive by default.
 
-This repository adopts the Intentloom Duty Watch workflow. Start every non-trivial task at `AGENT_START_HERE.md`.
+This repository adopts the Intentloom Duty Watch workflow. Start every non-trivial task at `docs/internal/AGENT_START_HERE.md`.
 
 ## Duty Watch entry sequence
 
 Before any non-trivial work, read in order:
 
-1. `AGENT_START_HERE.md`
-2. `PROJECT_CONTEXT.md`
+1. `docs/internal/AGENT_START_HERE.md`
+2. `docs/internal/PROJECT_CONTEXT.md`
 3. `docs/product/CURRENT_STATE.md`
-4. the latest entry in `DUTY_WATCH.md`
+4. the latest entry in `docs/internal/DUTY_WATCH.md`
 5. `docs/governance/VALIDATION_MATRIX.md`
 6. the smallest relevant roadmap, plan, ADR, design-system, specification, and code files
 
@@ -37,12 +37,11 @@ The main agent session is the conductor. It owns task framing, context selection
 ## Canonical document roles
 
 - `ROADMAP.md`: strategy, vision, and product principles.
-- `INSTRUCTIONS.md`: working agreement and engineering rules.
-- `STEP_BY_STEP_PLAN.md`: phased execution checklist.
+- `docs/internal/INSTRUCTIONS.md`: working agreement and engineering rules.
 - `CHANGELOG.md`: historical record of shipped changes.
-- `PROJECT_CONTEXT.md`: durable product and architecture context.
+- `docs/internal/PROJECT_CONTEXT.md`: durable product and architecture context.
 - `docs/product/CURRENT_STATE.md`: the single operational state file. Check it before feature work and update it when project status changes.
-- `DUTY_WATCH.md`: chronological handoff log between sessions and agents.
+- `docs/internal/DUTY_WATCH.md`: chronological handoff log between sessions and agents.
 
 Do not create a duplicate `PROJECT_STATE.md`.
 
@@ -50,7 +49,7 @@ Do not create a duplicate `PROJECT_STATE.md`.
 
 Before implementing or proposing what to work on next, read `docs/product/CURRENT_STATE.md` and state briefly:
 
-1. Where the task sits in the roadmap, `STEP_BY_STEP_PLAN.md`, or `docs/product/IDEAS.md`, or that it is off-plan and why it is still justified.
+1. Where the task sits in the roadmap or `docs/product/IDEAS.md`, or that it is off-plan and why it is still justified.
 2. What the repository already implements. Never rebuild something already shipped.
 3. Whether `CURRENT_STATE.md` disagrees with `main`, Git history, open PRs, or the code.
 4. Which validation rows from `docs/governance/VALIDATION_MATRIX.md` apply.
@@ -62,7 +61,7 @@ A stale state file is a finding. Report and correct it rather than silently work
 
 1. Classify the task type.
 2. For feature, debug, fix, or other application-code work, create and switch to a dedicated branch before editing. Never make such edits directly on `main`.
-3. Read `PROJECT_CONTEXT.md` and the smallest relevant files.
+3. Read `docs/internal/PROJECT_CONTEXT.md` and the smallest relevant files.
 4. Use the context gate for non-trivial work.
 5. State a working plan when the change has meaningful blast radius.
 6. Do not read broad directories or generated outputs.
@@ -76,7 +75,7 @@ A stale state file is a finding. Report and correct it rather than silently work
 4. Do not open a PR with a known formatting, lint, type, test, build, migration, or security failure unless the PR is explicitly documenting that blocked state.
 5. Update docs when behavior, workflow, privacy, security, architecture, migrations, or design expectations change.
 6. Update `docs/product/CURRENT_STATE.md` whenever the task changes current focus, implementation status, blockers, or next action.
-7. Append a truthful entry to `DUTY_WATCH.md` for every completed, partial, blocked, or rolled-back non-trivial watch.
+7. Append a truthful entry to `docs/internal/DUTY_WATCH.md` for every completed, partial, blocked, or rolled-back non-trivial watch.
 8. Add a `CHANGELOG.md` `[Unreleased]` entry when the user-visible product or shipped developer workflow changes.
 9. Report changed files, checks actually run, known gaps, and the concrete next first action.
 10. Recommend a fresh agent session after a large completed task.

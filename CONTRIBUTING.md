@@ -40,8 +40,24 @@ Verify your changes:
 npm test                 # Jest test suite (all projects)
 npm run lint             # ESLint
 npm run type-check       # TypeScript type checks
+npm run format:check     # Prettier
 cd apps/desktop/src-tauri && cargo test   # Rust backend tests
 ```
+
+The same gate runs in CI on every pull request
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Nx lint, test and build for the affected
+projects, then `cargo clippy` and `cargo test` for the Rust backend.
+
+## Database migrations
+
+Migrations live in `apps/desktop/src-tauri/migrations/` and are applied by `sqlx`, which stores a
+checksum of every file it has run. **Never edit a migration that has already shipped in a release.**
+Not the SQL, and not even a comment. The app refuses to start when a migration it already applied no
+longer matches its checksum, and there is no recovery path from inside the app: the change bricks
+every existing installation. This has happened once, in 0.28.0, from a repo-wide punctuation sweep.
+
+To change the schema, add a new numbered migration. `db::tests` pins the checksum of every shipped
+migration, so an edit to one fails a test rather than reaching a release.
 
 ## Project layout
 

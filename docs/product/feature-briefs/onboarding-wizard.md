@@ -1,7 +1,7 @@
 # Feature Brief: First-run Onboarding Wizard
 
 - **Status**: `planned`
-- **Source**: ROADMAP §17; Career-Ops adoption analysis ([CAREER_OPS_ADOPTION.md](../CAREER_OPS_ADOPTION.md) §2 onboarding). Design dialogue 2026-07-06.
+- **Source**: ROADMAP §17; internal career-ops adoption analysis (kept local, not in the repo) §2 onboarding. Design dialogue 2026-07-06.
 
 ---
 
@@ -57,7 +57,7 @@ gaps - which turns a cold start into a 2-minute guided setup.
 ### Out of Scope (deferred)
 
 - **Dual-track profile schema** (archetypes with `fit`/`track`/`sell_when` +
-  `alternate_ranges`). Separate P1 brief; see CAREER_OPS_ADOPTION.md §4.
+  `alternate_ranges`). Separate P1 brief; see the internal career-ops adoption analysis §4.
 - **Conversational resume path** ("tell me about your experience" →
   `cv-generate-baseline`).
 - **CLI-bridge / account-subscription login** (sign in with a Claude/OpenAI

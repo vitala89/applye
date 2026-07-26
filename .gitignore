@@ -82,6 +82,14 @@ graphify-out/
 .planning/
 tauri-project-bootstrap.md
 
+# Git hooks installed by local tooling, not by this project. `graphify hook
+# install` writes post-commit and post-checkout with an absolute interpreter
+# path from the machine that ran it, so they are per-developer and would break
+# for anyone else. The project's own hooks - commit-msg and pre-commit - stay
+# tracked.
+.husky/post-commit
+.husky/post-checkout
+
 # Internal competitor-adoption analysis - not for the public repo
 AGENT_PROMPT_CAREER_OPS_ADOPTION.md
 docs/product/CAREER_OPS_ADOPTION.md

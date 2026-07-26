@@ -44,6 +44,155 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, applye.dev gets a deployment path, gated on CI
+
+- **Status:** complete for the code; both dashboards still need manual setup before anything deploys
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-analytics`
+- **Commits:** `f0ed533`
+- **Pull request:** not opened
+- **Objective:** the site had nowhere to go. `public/_redirects` already named Cloudflare Pages as
+  the target, but nothing built or uploaded anything, so publishing was an undefined manual step.
+- **Completed:**
+  - `deploy-web` job added to `.github/workflows/ci.yml`. It `needs: ci` and runs only on a push to
+    `main`, so a failing gate means no deploy. Uses `cloudflare/wrangler-action@v3` with
+    `pages deploy dist/apps/web/browser`.
+  - `apps/web/public/_headers`: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`,
+    `Cross-Origin-Opener-Policy`, a `Permissions-Policy` denying camera/microphone/geolocation/
+    payment/USB, and immutable caching for the content-hashed JS and CSS. Verified it reaches
+    `dist/apps/web/browser/_headers` through the existing asset glob.
+  - `ANALYTICS_SETUP.md` gained the full dashboard checklist for both Cloudflare and GitHub, and its
+    status section now reflects that Enhanced measurement has been switched off.
+- **Not completed:** nothing is deployed. The Cloudflare Pages project, API token, account ID,
+  custom domain, and the four GitHub secrets/variables are all manual and outstanding. The ten GA4
+  custom dimensions are still unregistered.
+- **Files or packages changed:** `.github/workflows/ci.yml`, `apps/web/public/_headers`,
+  `docs/internal/ANALYTICS_SETUP.md`, `CHANGELOG.md`.
+- **Validation:** `nx test web` 48 passed, `nx lint web` pass, `npm run web:build` pass with
+  `_headers` present in the output, workflow YAML parsed and the job's `needs`/`if`/step list
+  checked. `format:check` and `git diff --check` pass. **The deploy job itself has never run** - it
+  cannot until the credentials exist, so it is unverified end to end.
+- **Privacy/security impact:** security-relevant and improving. No CSP was added: Angular emits
+  inline styles and analytics injects a script post-consent, so a correct policy needs measuring
+  rather than guessing, and a wrong one fails silently in production only. No HSTS in `_headers`
+  either - browsers remember it for its whole max-age, so it belongs on Cloudflare's TLS page where
+  it can be switched off again. `GA_MEASUREMENT_ID` is passed as a repository variable rather than a
+  secret, deliberately: the ID is public in any GA site's page source, and filing it as a secret
+  would only obscure what a build shipped.
+- **Decisions and assumptions:** deploy from Actions rather than Cloudflare's Git integration,
+  because the Git integration builds on every push regardless of whether the gate passed. The Pages
+  project must therefore be **Direct Upload** with no repository connected. Preview deployments
+  deliberately not wired: they would publish unlaunched marketing copy on a guessable URL while the
+  repository is private.
+- **Risks or compatibility impact:** the first run of the deploy job is untested. If the project
+  name differs from `applye`, set the `CLOUDFLARE_PAGES_PROJECT` variable or the job fails.
+- **Open issues or blockers:** all remaining work is in the Cloudflare and Google consoles.
+- **Next first action:** register the ten GA4 custom dimensions from `ANALYTICS_SETUP.md` - they
+  must exist before the first traffic arrives or those parameters are permanently unreportable.
+- **Evidence:** `.github/workflows/ci.yml`, `apps/web/public/_headers`,
+  `docs/internal/ANALYTICS_SETUP.md`.
+
+### 2026-07-26, analytics follow-up: the real measurement ID broke the production build
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-analytics`
+- **Commits:** see branch
+- **Pull request:** not opened
+- **Objective:** the maintainer created the GA4 property (`G-ZY158GV42C`, stream `15328752672`).
+  Verify the build actually works with a real ID rather than only with the placeholder.
+- **Completed:**
+  - **Found and fixed a defect the previous watch shipped.** `GA_MEASUREMENT_ID` was declared
+    without a type annotation, so TypeScript inferred the literal `'G-PLACEHOLDER'`. The moment the
+    generator wrote a real ID, the placeholder guard in `analytics.service.ts` failed to compile:
+    `TS2367: types '"G-ZY158GV42C"' and '"G-PLACEHOLDER"' have no overlap`. Every production build
+    would have failed, and only production builds - the placeholder path that all tests and local
+    builds exercise compiled fine. Fixed by widening the type to `string`.
+  - `@typescript-eslint/no-inferrable-types` flags that annotation and its autofix reintroduces the
+    bug, so the line carries a targeted disable with the reason stated.
+  - Two regression guards: a test pins the `: string` declaration shape, and the generator now exits
+    non-zero if the declaration no longer matches instead of silently rewriting nothing.
+  - Recorded the live property ID and the local production-build recipe in `ANALYTICS_SETUP.md`.
+- **Not completed:** the property is still unconfigured - Enhanced measurement is on, custom
+  dimensions are unregistered, retention and the DPA are untouched. `GA_MEASUREMENT_ID` is not set
+  on any deployment, and no Cloudflare Pages project exists.
+- **Files or packages changed:** `apps/web/src/app/analytics/measurement-id.ts`,
+  `analytics.spec.ts`, `apps/web/tools/generate-analytics-config.mjs`,
+  `docs/internal/ANALYTICS_SETUP.md`.
+- **Validation:** `nx lint web --skip-nx-cache` and `tsc --noEmit -p apps/web/tsconfig.app.json`
+  both pass **with the real ID written in and with the placeholder** - the previous watch had only
+  checked the placeholder, which is exactly why the defect got through. `npm run web:build` with
+  `GA_MEASUREMENT_ID=G-ZY158GV42C` succeeds, 39 static routes prerendered, the ID reaches exactly
+  one bundle file, and `googletagmanager` appears in zero of the 41 emitted HTML files.
+  `nx test web` 48 passed. `format:check` and `git diff --check` pass.
+- **Privacy/security impact:** none beyond the previous watch. The consent gate is untouched, and
+  the real ID is not committed - `measurement-id.ts` still holds the placeholder.
+- **Decisions and assumptions:** the measurement ID stays out of the repository even though it is
+  public information, so that the "unset means dormant" property holds for every checkout.
+- **Risks or compatibility impact:** the previous watch's validation claim of "43 routes
+  prerendered" was wrong - the build reports 39 static routes and emits 41 HTML files. Corrected
+  here rather than edited there.
+- **Open issues or blockers:** none in the code.
+- **Next first action:** in the GA4 console, switch Enhanced measurement **off** on the `applye.dev`
+  stream, then register the ten custom dimensions from `ANALYTICS_SETUP.md`.
+- **Evidence:** `apps/web/src/app/analytics/measurement-id.ts`, `docs/internal/ANALYTICS_SETUP.md`.
+
+### 2026-07-26, website analytics: traffic attribution and click tracking wired
+
+- **Status:** complete for the code; the GA4 property itself does not exist yet, so no data flows
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-analytics`
+- **Commits:** see branch
+- **Pull request:** not opened
+- **Objective:** know where visitors come from and how many click through to a download.
+- **Completed:**
+  - Measurement ID moved out of hand-edited source into `analytics/measurement-id.ts`, generated at
+    build time by `tools/generate-analytics-config.mjs` from `GA_MEASUREMENT_ID`, chained into
+    `npm run web:build`. Malformed value fails the build; unset keeps `G-PLACEHOLDER`.
+  - `analytics/events.ts` added as the single event contract: six events, twelve parameters, an
+    allow-list sanitiser, and user-agent OS detection. Anything off the list is dropped in the
+    browser before it reaches gtag.
+  - `AnalyticsService` gained `downloadClick`, `outboundClick`, `ctaClick`, `localeSwitch`, and now
+    stamps `locale` on every event.
+  - `Track` directive (`appTrack`) for declarative click tracking; wired into the hero CTAs (both
+    `COMING_SOON` branches), `SourceLink` (nav/footer/hero sections), the footer social and author
+    links, and the language switcher.
+  - `docs/internal/ANALYTICS_SETUP.md`: GA4 property creation, the ten custom dimensions to register
+    before traffic arrives, internal-traffic filter, Search Console link, Cloudflare Pages settings,
+    and UTM conventions.
+  - `tools/release-downloads.mjs` (`npm run web:downloads`): completed download counts from the
+    GitHub releases API, the number GA4 structurally cannot produce.
+- **Not completed:** the GA4 property is not created and `GA_MEASUREMENT_ID` is not set anywhere, so
+  the site still ships analytics switched off. Cloudflare Pages project not created. Decision on
+  adding Cloudflare Web Analytics as a cookieless complement is open.
+- **Files or packages changed:** `apps/web/src/app/analytics/*`, `app.html`, `app.ts`, `landing.html`,
+  `landing.ts`, `cookies.ts`, `privacy.html`, `ui/source-link.ts`, `ui/language-switcher.ts`,
+  `apps/web/tools/*`, `package.json`, `docs/internal/ANALYTICS_SETUP.md`.
+- **Validation:** `nx test web` 47 passed (was 41), `nx lint web` pass, `tsc --noEmit -p
+apps/web/tsconfig.app.json` pass, `npm run format:check` pass, `git diff --check` pass,
+  `npm run web:build` pass (43 routes prerendered). Generator verified in all three modes: valid ID
+  written, malformed ID exits 1, unset resets to placeholder. Prerendered output checked directly -
+  `googletagmanager` appears in the JS bundle only, in zero of 43 HTML files. Browser-preview
+  verification was attempted and blocked by a policy check on the tab; the static output check above
+  stands in for it.
+- **Privacy/security impact:** privacy-sensitive. The hard consent gate is unchanged: nothing loads
+  before opt-in. Collection is now _narrower_ in guarantee than before, because `sanitiseParams`
+  makes the documented list enforceable rather than aspirational. Corrected a false claim: `/cookies`
+  stated download clicks were tracked when no such event existed. Both `/cookies` and `/privacy` now
+  enumerate the exact six events, including that declining records nothing at all.
+- **Decisions and assumptions:** gtag over GTM, so the measurable surface stays reviewable in a diff.
+  Hard consent gate over Consent Mode v2 - stricter, at the cost of consenting-traffic-only reports.
+  GA4 enhanced measurement must be switched OFF on the data stream or page views double-count.
+  Measurement ID treated as a public build variable, not a secret.
+- **Risks or compatibility impact:** none shipped - with no ID set, every code path stays dormant.
+  The `download_click` wiring sits in the `COMING_SOON = false` branch and is therefore untested
+  against a real download button until that flag flips.
+- **Open issues or blockers:** GA4 property creation is a manual console task for the maintainer.
+- **Next first action:** create the GA4 property by following `docs/internal/ANALYTICS_SETUP.md`,
+  then set `GA_MEASUREMENT_ID` on the Cloudflare Pages production environment.
+- **Evidence:** `docs/internal/ANALYTICS_SETUP.md`, `apps/web/src/app/analytics/events.ts`,
+  `apps/web/src/app/analytics/analytics.spec.ts`.
+
 ### 2026-07-26, marketing-site design pass: 5 of 8 WEBSITE_PLAN gaps closed
 
 - **Status:** partial - every unblocked item is done; three are blocked on assets that do not exist

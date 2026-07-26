@@ -5,6 +5,12 @@ name: CI
 # backend gets clippy + unit tests. Any lint error, failing test, or build
 # break fails the job and blocks merge.
 #
+# Also here: the marketing site deploys to Cloudflare Pages, but only after the
+# gate above has passed on a push to main. Deploying from a job that `needs` the
+# gate rather than from Cloudflare's own Git integration is the whole point: the
+# Git integration builds on every push regardless of whether tests pass, which
+# would let a red main reach applye.dev.
+#
 # NOT here: the multi-OS Tauri release/packaging build - that is a separate
 # tag-triggered workflow in Phase 4.
 
@@ -84,3 +90,45 @@ jobs:
 
       - name: Cargo test (Rust)
         run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+  deploy-web:
+    name: Deploy applye.dev (Cloudflare Pages)
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://applye.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # `web:build` generates the analytics config and the sitemap before the
+      # Angular build. GA_MEASUREMENT_ID is a repository *variable*, not a
+      # secret: the ID is visible in the page source of every site that uses GA,
+      # and pretending otherwise would only make it harder to audit. Unset it
+      # and the site deploys with analytics dormant rather than failing.
+      - name: Build site
+        env:
+          GA_MEASUREMENT_ID: ${{ vars.GA_MEASUREMENT_ID }}
+        run: npm run web:build
+
+      # Only production deploys from here. Preview deployments are deliberately
+      # not wired: they would publish unlaunched marketing copy on a guessable
+      # URL while the repository is still private, and they must never carry the
+      # measurement ID.
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist/apps/web/browser
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'applye' }}
+            --branch=main

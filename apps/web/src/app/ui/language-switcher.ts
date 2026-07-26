@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { I18nService } from '../i18n/i18n.service';
-import { localePath } from '../i18n/locales';
+import { LocaleCode, localePath } from '../i18n/locales';
 
 /**
  * Switches between the localised landing pages.
@@ -27,6 +28,7 @@ import { localePath } from '../i18n/locales';
               [class.is-active]="i18n.uiLocale() === l.code"
               [attr.hreflang]="l.code"
               [attr.aria-current]="i18n.uiLocale() === l.code ? 'true' : null"
+              (click)="switched(l.code)"
               >{{ l.label }}</a
             >
           </li>
@@ -38,4 +40,16 @@ import { localePath } from '../i18n/locales';
 export class LanguageSwitcher {
   readonly i18n = inject(I18nService);
   readonly path = localePath;
+  private readonly analytics = inject(AnalyticsService);
+
+  /**
+   * Records the switch. Clicking the language you are already reading is not a
+   * switch, and counting it would inflate the one number this event exists to
+   * answer: which translations people actually reach for.
+   */
+  switched(to: LocaleCode): void {
+    const from = this.i18n.uiLocale();
+    if (from === to) return;
+    this.analytics.localeSwitch(from, to);
+  }
 }

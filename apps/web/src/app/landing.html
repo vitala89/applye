@@ -16,17 +16,38 @@
          the docs step back to ghost. -->
     <div class="hero__cta">
       @if (comingSoon) {
-      <a class="btn btn--primary" routerLink="/docs">{{ m().hero.readDocs }}</a>
+      <a
+        class="btn btn--primary"
+        routerLink="/docs"
+        appTrack="cta"
+        trackId="read_docs"
+        trackSection="hero"
+        >{{ m().hero.readDocs }}</a
+      >
       <app-source-link
         variant="ghost"
+        section="hero"
         [label]="m().hero.viewSource"
         [soonLabel]="m().hero.sourceSoon"
       />
       } @else {
-      <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener"
+      <a
+        class="btn btn--primary"
+        [href]="releases"
+        target="_blank"
+        rel="noopener"
+        appTrack="download"
+        trackSection="hero"
         >{{ m().hero.download }}</a
       >
-      <a class="btn btn--ghost" routerLink="/docs">{{ m().hero.readDocs }}</a>
+      <a
+        class="btn btn--ghost"
+        routerLink="/docs"
+        appTrack="cta"
+        trackId="read_docs"
+        trackSection="hero"
+        >{{ m().hero.readDocs }}</a
+      >
       }
     </div>
 

@@ -1,7 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { AnalyticsService } from './analytics.service';
 import { ConsentService } from './consent.service';
+import { detectOs, sanitiseParams } from './events';
+import { GA_MEASUREMENT_ID } from './measurement-id';
 
 const gaScripts = () => document.querySelectorAll('script[src*="googletagmanager"]').length;
 
@@ -38,5 +42,70 @@ describe('analytics consent gating', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     expect(TestBed.inject(ConsentService).consent()).toBe('denied');
+  });
+
+  it('sends nothing to gtag before consent, even when a call site asks it to', () => {
+    const win = window as typeof window & { gtag?: unknown; dataLayer?: unknown[] };
+    // Pretend GA is already on the page: the guard must be the consent state,
+    // not merely the absence of the script.
+    const calls: unknown[][] = [];
+    win.gtag = (...args: unknown[]) => calls.push(args);
+
+    const analytics = TestBed.inject(AnalyticsService);
+    analytics.downloadClick('hero', 'https://github.com/vitala89/applye/releases');
+    analytics.outboundClick('https://example.com/x', 'Example');
+    analytics.ctaClick('read_docs', 'hero');
+    analytics.localeSwitch('en', 'de');
+
+    expect(calls).toEqual([]);
+    delete win.gtag;
+  });
+});
+
+describe('event contract', () => {
+  it('drops any parameter that is not on the documented allow list', () => {
+    const out = sanitiseParams({
+      os: 'macos',
+      email: 'someone@example.com',
+      user_id: '42',
+      cta_id: 'read_docs',
+    });
+    expect(out).toEqual({ os: 'macos', cta_id: 'read_docs' });
+  });
+
+  it('drops empty and non-string values rather than sending blanks', () => {
+    expect(sanitiseParams({ os: '', locale: undefined, cta_id: 7 })).toEqual({});
+  });
+
+  it('caps a parameter so a long value cannot become a payload', () => {
+    const { link_text } = sanitiseParams({ link_text: 'x'.repeat(1000) });
+    expect(link_text).toHaveLength(300);
+  });
+
+  it('reads the platform from the user agent, and does not mistake mobile for desktop', () => {
+    expect(detectOs('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')).toBe('macos');
+    expect(detectOs('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe('windows');
+    expect(detectOs('Mozilla/5.0 (X11; Linux x86_64)')).toBe('linux');
+    // Android reports "Linux" and iPadOS reports "Mac": neither is a desktop
+    // installer target, so neither may be counted as one.
+    expect(detectOs('Mozilla/5.0 (Linux; Android 14; Pixel 8)')).toBe('other');
+    expect(detectOs('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)')).toBe('other');
+    expect(detectOs('')).toBe('other');
+  });
+
+  it('keeps the shipped measurement ID a placeholder', () => {
+    // The real ID is written at build time by tools/generate-analytics-config.mjs.
+    // Committing one would turn every checkout and CI run into live traffic.
+    expect(GA_MEASUREMENT_ID).toBe('G-PLACEHOLDER');
+  });
+
+  it('declares the measurement ID as a widened string, not a literal', () => {
+    // Without the `: string` annotation TypeScript infers the literal type of
+    // the committed placeholder, and the guard in analytics.service.ts fails to
+    // compile the moment a real ID is generated in. That breaks production
+    // builds and nothing else, so the annotation is pinned here rather than
+    // left to be rediscovered on a release.
+    const source = readFileSync(join(__dirname, 'measurement-id.ts'), 'utf8');
+    expect(source).toMatch(/^export const GA_MEASUREMENT_ID: string = '.*';$/m);
   });
 });

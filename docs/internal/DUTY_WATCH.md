@@ -44,6 +44,51 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, analytics follow-up: the real measurement ID broke the production build
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-analytics`
+- **Commits:** see branch
+- **Pull request:** not opened
+- **Objective:** the maintainer created the GA4 property (`G-ZY158GV42C`, stream `15328752672`).
+  Verify the build actually works with a real ID rather than only with the placeholder.
+- **Completed:**
+  - **Found and fixed a defect the previous watch shipped.** `GA_MEASUREMENT_ID` was declared
+    without a type annotation, so TypeScript inferred the literal `'G-PLACEHOLDER'`. The moment the
+    generator wrote a real ID, the placeholder guard in `analytics.service.ts` failed to compile:
+    `TS2367: types '"G-ZY158GV42C"' and '"G-PLACEHOLDER"' have no overlap`. Every production build
+    would have failed, and only production builds - the placeholder path that all tests and local
+    builds exercise compiled fine. Fixed by widening the type to `string`.
+  - `@typescript-eslint/no-inferrable-types` flags that annotation and its autofix reintroduces the
+    bug, so the line carries a targeted disable with the reason stated.
+  - Two regression guards: a test pins the `: string` declaration shape, and the generator now exits
+    non-zero if the declaration no longer matches instead of silently rewriting nothing.
+  - Recorded the live property ID and the local production-build recipe in `ANALYTICS_SETUP.md`.
+- **Not completed:** the property is still unconfigured - Enhanced measurement is on, custom
+  dimensions are unregistered, retention and the DPA are untouched. `GA_MEASUREMENT_ID` is not set
+  on any deployment, and no Cloudflare Pages project exists.
+- **Files or packages changed:** `apps/web/src/app/analytics/measurement-id.ts`,
+  `analytics.spec.ts`, `apps/web/tools/generate-analytics-config.mjs`,
+  `docs/internal/ANALYTICS_SETUP.md`.
+- **Validation:** `nx lint web --skip-nx-cache` and `tsc --noEmit -p apps/web/tsconfig.app.json`
+  both pass **with the real ID written in and with the placeholder** - the previous watch had only
+  checked the placeholder, which is exactly why the defect got through. `npm run web:build` with
+  `GA_MEASUREMENT_ID=G-ZY158GV42C` succeeds, 39 static routes prerendered, the ID reaches exactly
+  one bundle file, and `googletagmanager` appears in zero of the 41 emitted HTML files.
+  `nx test web` 48 passed. `format:check` and `git diff --check` pass.
+- **Privacy/security impact:** none beyond the previous watch. The consent gate is untouched, and
+  the real ID is not committed - `measurement-id.ts` still holds the placeholder.
+- **Decisions and assumptions:** the measurement ID stays out of the repository even though it is
+  public information, so that the "unset means dormant" property holds for every checkout.
+- **Risks or compatibility impact:** the previous watch's validation claim of "43 routes
+  prerendered" was wrong - the build reports 39 static routes and emits 41 HTML files. Corrected
+  here rather than edited there.
+- **Open issues or blockers:** none in the code.
+- **Next first action:** in the GA4 console, switch Enhanced measurement **off** on the `applye.dev`
+  stream, then register the ten custom dimensions from `ANALYTICS_SETUP.md`.
+- **Evidence:** `apps/web/src/app/analytics/measurement-id.ts`, `docs/internal/ANALYTICS_SETUP.md`.
+
 ### 2026-07-26, website analytics: traffic attribution and click tracking wired
 
 - **Status:** complete for the code; the GA4 property itself does not exist yet, so no data flows

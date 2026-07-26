@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { AnalyticsService } from './analytics.service';
 import { ConsentService } from './consent.service';
 import { detectOs, sanitiseParams } from './events';
@@ -95,5 +97,15 @@ describe('event contract', () => {
     // The real ID is written at build time by tools/generate-analytics-config.mjs.
     // Committing one would turn every checkout and CI run into live traffic.
     expect(GA_MEASUREMENT_ID).toBe('G-PLACEHOLDER');
+  });
+
+  it('declares the measurement ID as a widened string, not a literal', () => {
+    // Without the `: string` annotation TypeScript infers the literal type of
+    // the committed placeholder, and the guard in analytics.service.ts fails to
+    // compile the moment a real ID is generated in. That breaks production
+    // builds and nothing else, so the annotation is pinned here rather than
+    // left to be rediscovered on a release.
+    const source = readFileSync(join(__dirname, 'measurement-id.ts'), 'utf8');
+    expect(source).toMatch(/^export const GA_MEASUREMENT_ID: string = '.*';$/m);
   });
 });

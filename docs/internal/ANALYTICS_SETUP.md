@@ -23,6 +23,15 @@ consenting traffic, not of all traffic. Judge absolute numbers accordingly.
 against the ones the router sends, and its automatic outbound/file-download
 events carry parameters we never declared. Everything is explicit instead.
 
+## Current status
+
+The property and the `applye.dev` web stream exist as of 2026-07-26; the
+measurement ID is `G-ZY158GV42C`, and the stream ID is `15328752672`. It is not
+set on any deployment yet, so no data is being collected. The steps below remain
+the checklist for the property's configuration - several of them are still
+outstanding, in particular **Enhanced measurement is still switched on** and the
+custom dimensions are not registered.
+
 ## Creating the property
 
 1. **Account** - analytics.google.com, Admin, Create account. Name `Applye`.
@@ -91,6 +100,22 @@ the real property".
 `apps/web/tools/generate-analytics-config.mjs` rewrites that file from the
 `GA_MEASUREMENT_ID` environment variable, and `npm run web:build` runs it first.
 A malformed value fails the build rather than falling back silently.
+
+**Do not remove the `: string` annotation on that constant**, and do not "fix"
+the eslint-disable above it. Without the annotation TypeScript infers the
+literal type of the committed placeholder, and the guard in
+`analytics.service.ts` stops compiling the moment a real ID is generated in -
+so the build breaks in production and nowhere else. A test pins the annotation,
+and the generator refuses to run if the declaration no longer matches.
+
+To reproduce a production build locally:
+
+```bash
+GA_MEASUREMENT_ID=G-ZY158GV42C npm run web:build
+```
+
+Then run `npm run web:analytics-config` with the variable unset to restore the
+placeholder before committing.
 
 ## Cloudflare Pages
 

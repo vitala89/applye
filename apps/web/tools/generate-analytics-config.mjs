@@ -30,9 +30,22 @@ if (raw && !/^G-[A-Z0-9]{6,}$/.test(raw)) {
 
 const id = raw || PLACEHOLDER;
 const current = readFileSync(target, 'utf8');
-const next = current.replace(/^export const GA_MEASUREMENT_ID = '.*';$/m, () => {
-  return `export const GA_MEASUREMENT_ID = '${id}';`;
-});
+
+// The `: string` annotation is required, not decoration: without it TypeScript
+// infers a literal type and the placeholder guard in analytics.service.ts stops
+// compiling as soon as a real ID is written here. Matching it explicitly means
+// dropping the annotation fails this script rather than the production build.
+const declaration = /^export const GA_MEASUREMENT_ID: string = '.*';$/m;
+
+if (!declaration.test(current)) {
+  console.error(
+    `Could not find the GA_MEASUREMENT_ID declaration in ${target}.\n` +
+      `Expected a line reading: export const GA_MEASUREMENT_ID: string = '...';`,
+  );
+  process.exit(1);
+}
+
+const next = current.replace(declaration, `export const GA_MEASUREMENT_ID: string = '${id}';`);
 
 if (next === current) {
   console.log(`analytics config: measurement ID already ${id}`);

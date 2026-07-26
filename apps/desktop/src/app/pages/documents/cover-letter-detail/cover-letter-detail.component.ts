@@ -709,6 +709,7 @@ export class CoverLetterDetailComponent {
       });
       this.doc.set(saved);
       this.justSaved.set(true);
+      this.toast.success(this.t()('documents.cover_letter_saved'));
       if (this.shouldReturnToApplyWizard()) {
         await this.returnToApplyWizard(true);
         return;

@@ -746,6 +746,7 @@ export class DiscoverComponent {
       this.rescanBannerDismissed.set(false);
     } catch (e) {
       console.error('discover: scan failed', e);
+      this.toast.error(String(e));
       this.consoleLines.update((lines) => [
         ...lines.map((l) => ({ ...l, tone: l.tone === 'active' ? ('err' as const) : l.tone })),
         { text: this.t()('discover.con_line_err').replace('{err}', String(e)), tone: 'err' },
@@ -1158,8 +1159,10 @@ export class DiscoverComponent {
       this.feed.update((rows) =>
         rows.map((r) => (r.id === row.id ? { ...r, saved: true, isNew: false } : r)),
       );
+      this.toast.success(this.t()('discover.saved_ok'));
     } catch (e) {
       console.error('discover: save failed', e);
+      this.toast.error(String(e));
     }
   }
 
@@ -1171,6 +1174,7 @@ export class DiscoverComponent {
       await this.db.discoverDismiss(row.id, true);
     } catch (e) {
       console.error('discover: dismiss failed', e);
+      this.toast.error(String(e));
     }
   }
 
@@ -1181,6 +1185,7 @@ export class DiscoverComponent {
       await this.db.discoverDismiss(row.id, false);
     } catch (e) {
       console.error('discover: undo failed', e);
+      this.toast.error(String(e));
     }
   }
 
@@ -1199,6 +1204,7 @@ export class DiscoverComponent {
       await this.db.setSourceEnabled(source.id, enabled);
     } catch (e) {
       console.error('discover: toggle source failed', e);
+      this.toast.error(String(e));
       await this.reloadSources();
     }
   }
@@ -1216,8 +1222,10 @@ export class DiscoverComponent {
       this.boardSlug.set('');
       this.boardFormOpen.set(false);
       await this.reloadSources();
+      this.toast.success(this.t()('discover.source_added'));
     } catch (e) {
       console.error('discover: add board failed', e);
+      this.toast.error(String(e));
     }
   }
 
@@ -1230,8 +1238,10 @@ export class DiscoverComponent {
       this.rssUrl.set('');
       this.rssName.set('');
       await this.reloadSources();
+      this.toast.success(this.t()('discover.source_added'));
     } catch (e) {
       console.error('discover: add source failed', e);
+      this.toast.error(String(e));
     }
   }
 
@@ -1240,8 +1250,10 @@ export class DiscoverComponent {
     try {
       await this.db.removeSource(source.id);
       await this.reloadSources();
+      this.toast.success(this.t()('discover.source_removed'));
     } catch (e) {
       console.error('discover: remove source failed', e);
+      this.toast.error(String(e));
     }
   }
 

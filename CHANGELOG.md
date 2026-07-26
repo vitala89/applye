@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **0.28.0 could not start on any existing installation.** The em dash cleanup that shipped with 0.28.0 also rewrote punctuation inside nine database migration files that users had already run - almost all of it in comments. The app records a fingerprint of every migration it applies and refuses to start when a migration it has already run no longer matches, which is what protects a database from a silently altered schema, so the app aborted at launch with "migration 1 was previously applied but has been modified". The nine files are restored exactly as they shipped, and a test now pins the fingerprint of every migration so an edit to an applied one fails a check instead of reaching a release.
+
 ### Security
 
 - **A malformed CV or tracklist can no longer take the app down.** Importing a CV reads a PDF or DOCX, and importing a tracklist reads an XLSX - files that came from an email, a download, or a recruiter's export, and that Applye hands straight to a third-party parser. Those parsers panic on some malformed input instead of reporting an error, which crashed the whole app mid-import. All three now report "this file could not be read" and leave the app running. The PDF reader also moved to a version that fixes a crash on deeply nested PDF objects (RUSTSEC-2026-0187), and the DOCX reader to one that fixes two denial-of-service bugs in its XML parser (RUSTSEC-2026-0194, RUSTSEC-2026-0195).

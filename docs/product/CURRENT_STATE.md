@@ -33,6 +33,13 @@
   the only point at which that can be done correctly. (An earlier version of this file said the
   dimensions were missing; that was stale.) Checklist for both consoles:
   `docs/internal/ANALYTICS_SETUP.md`.
+- **Shipped to the branch: launch SEO pass (`a510885`, `bb29b58`).** The sitemap, canonicals,
+  `hreflang` and per-locale `<html lang>` were already correct and were left alone. Landing
+  descriptions were trimmed under the roughly 160 characters search results show; landing pages now
+  emit `FAQPage` in their own language and the 24 docs pages emit `BreadcrumbList`. This uncovered a
+  defect live since `495d413`: `og:title` and `twitter:title` read the previous page's title, so
+  every route except the six landings advertised the home page headline when shared. Fixed, with a
+  regression test verified to fail against the old code. 62 tests, up from 48.
 - **Launch sequence agreed 2026-07-27.** Website first, repository and desktop release later. The
   site ships in coming-soon mode (`COMING_SOON = true`, `SOURCE_PUBLIC = false` in
   `apps/web/src/app/site.ts`) with no download and deliberately no waitlist form, runs live long

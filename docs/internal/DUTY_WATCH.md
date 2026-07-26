@@ -44,6 +44,64 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-27, launch SEO pass: structured data added, a shipped og:title bug found and fixed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-cookieless-analytics`
+- **Commits:** `a510885`, `bb29b58`
+- **Pull request:** not opened at time of writing
+- **Objective:** the launch plan puts the site live before the repository and the release, so search
+  indexing has to be right on the first crawl rather than corrected later. Audit the SEO surface
+  and close what can be closed without a deployment.
+- **Completed:** The audit found the infrastructure sound and left it alone: the sitemap is
+  generated from `tools/site-paths.json` with a test that fails on drift, its 39 URLs match the 39
+  prerendered routes exactly, every page carries a title, description, canonical and OG image,
+  `<html lang>` is correct per locale, and `hreflang` emits seven head links with no duplicates.
+  Two things were wrong. First, all six landing descriptions ran past the roughly 160 characters a
+  search result displays, the longest at 198, cutting the closing line of the pitch; each is
+  rewritten, and the English one had been duplicated in four places (bundle, `app.routes.ts`,
+  `seo.service.ts`, `index.html`) so the root page kept the long copy until all four were aligned.
+  Second, structured data: landing pages now emit `FAQPage` in their own language from the same
+  bundle that renders the visible FAQ, and the 24 documentation pages emit `BreadcrumbList`. Blocks
+  carry a `data-seo` marker and are cleared on each navigation, without which a single-page app
+  accumulates the structured data of every page visited.
+- **Not completed:** Search Console and Bing verification, which need a live domain. Localised OG
+  images - one English image serves all six locales. A Content-Security-Policy, still deferred to
+  after deployment.
+- **Files or packages changed:** `apps/web/src/index.html`, `apps/web/src/app/app.routes.ts`,
+  `apps/web/src/app/seo/seo.service.ts`, `apps/web/src/app/seo/seo.spec.ts`,
+  `apps/web/src/app/i18n/i18n.service.ts`, `apps/web/src/app/i18n/i18n.spec.ts`, all six
+  `apps/web/src/app/i18n/messages/*.ts`, `CHANGELOG.md`.
+- **Validation:** Run and observed: `npm run format:check` passed; `nx run web:lint
+--skip-nx-cache` passed; `nx run web:test --skip-nx-cache` passed, 62 tests in 5 suites, up from
+  48; `nx run web:build` passed, 39 routes prerendered; `git diff --check` clean. Additionally, a
+  script over all 39 prerendered pages confirmed zero `<title>` versus `og:title` mismatches, six
+  `FAQPage` blocks with the correct `inLanguage` and six questions each, and 24 breadcrumb trails
+  with correct leaf names. The new `og:title` regression test was verified to fail against the old
+  implementation before being kept.
+- **Privacy/security impact:** None. No data collection, storage or transmission changed.
+- **Decisions and assumptions:** Breadcrumbs are emitted for the documentation only; on a top-level
+  page a trail states the obvious. Structured data is built from what the page already renders,
+  because describing absent content is a manual-action risk rather than a ranking bonus.
+- **Risks or compatibility impact:** The breadcrumb leaf is cut from the page title at the `·`
+  separator, so a docs title without one would put the full string into the crumb. A test now
+  rejects that.
+- **Open issues or blockers:** None from this work.
+- **Next first action:** none for SEO until the site is deployed; then verify `applye.dev` in
+  Search Console and submit `sitemap.xml`.
+- **Evidence:** `setStructuredData`, `faqPage`, `breadcrumbs` and `pageTitle` in
+  `apps/web/src/app/seo/seo.service.ts`; the `SeoService tags` describe block in `seo.spec.ts`.
+
+#### Correction to the entry below
+
+That entry reported a shipped defect this pass uncovered. `og:title` and `twitter:title` were read
+from `Title.getTitle()` inside the same `NavigationEnd` handler that Angular's title strategy also
+subscribes to, with no ordering guarantee between the two, so both carried the **previous** page's
+title. Every route except the six landing pages advertised the home page headline when shared -
+including `/privacy`, `/press` and all 24 documentation pages. This predates this branch and was
+live in `495d413`. Both tags now read the resolved route title from the snapshot.
+
 ### 2026-07-27, launch sequence decided; Cloudflare Web Analytics adopted and disclosed
 
 - **Status:** complete for the code and docs; the Cloudflare and GitHub dashboard steps remain

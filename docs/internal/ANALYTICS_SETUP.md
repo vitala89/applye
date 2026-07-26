@@ -25,12 +25,23 @@ events carry parameters we never declared. Everything is explicit instead.
 
 ## Current status
 
-The property and the `applye.dev` web stream exist as of 2026-07-26; the
-measurement ID is `G-ZY158GV42C`, and the stream ID is `15328752672`. It is not
-set on any deployment yet, so no data is being collected. The steps below remain
-the checklist for the property's configuration - several of them are still
-outstanding, in particular **Enhanced measurement is still switched on** and the
-custom dimensions are not registered.
+As of 2026-07-26 the property and the `applye.dev` web stream exist. Measurement
+ID `G-ZY158GV42C`, stream ID `15328752672`. Nothing is being collected yet: the
+ID is not set on any deployment, and no deployment exists.
+
+Done: stream created, Enhanced measurement switched off, Google signals left
+off (they default to off).
+
+Still outstanding, in the order they matter:
+
+1. The ten custom dimensions below. **Before any traffic** - GA4 does not
+   backfill, and a parameter that arrives before its dimension exists is stored
+   and permanently unreportable.
+2. Data retention 14 months (defaults to 2, which silently loses history).
+3. Google Ads Data Processing Terms.
+4. The Cloudflare and GitHub setup under "Cloudflare Pages" below.
+5. `download_click` as a key event, and the internal-traffic filter - both only
+   possible once events are arriving.
 
 ## Creating the property
 
@@ -120,17 +131,53 @@ placeholder before committing.
 ## Cloudflare Pages
 
 The site is `outputMode: "static"` with every route prerendered, so it is plain
-static hosting - no Workers, no SSR adapter.
+static hosting - no Workers, no SSR adapter. `public/_redirects` and
+`public/_headers` ship with the build and are read by Pages directly.
 
-| Setting          | Value                   |
-| ---------------- | ----------------------- |
-| Build command    | `npm run web:build`     |
-| Output directory | `dist/apps/web/browser` |
-| Environment      | `GA_MEASUREMENT_ID`     |
+**Deployment is automatic and runs from GitHub Actions, not from Cloudflare's
+Git integration.** The `deploy-web` job in `.github/workflows/ci.yml` `needs`
+the CI gate and only runs on a push to `main`, so a red main cannot reach
+applye.dev. Cloudflare's own Git integration would build on every push whether
+or not the tests passed, which is exactly the property we do not want.
 
-Set the variable on the **Production** environment only. Preview deployments
-then keep the placeholder and stay out of the property, which is what you want
-when every branch push builds a preview.
+So the Pages project must be created **without** connecting a repository -
+"Direct Upload" - and left alone. Wrangler pushes the built directory to it.
+
+Preview deployments are deliberately not wired. They would publish unlaunched
+marketing copy on a guessable URL while the repository is still private, and
+they must never carry the measurement ID.
+
+### What has to exist in the two dashboards
+
+In **Cloudflare**:
+
+1. Workers & Pages, Create, Pages, **Direct Upload**. Project name `applye`
+   (if you pick another name, set the `CLOUDFLARE_PAGES_PROJECT` repository
+   variable to match).
+2. An API token: My Profile, API Tokens, Create Token, template **Edit
+   Cloudflare Workers**, or a custom token with `Account / Cloudflare Pages /
+Edit`. Copy it once - it is not shown again.
+3. Your account ID, from the right-hand sidebar of the account home page.
+4. After the first deploy: the project's Custom domains tab, add `applye.dev`.
+   Cloudflare writes the DNS record itself because the domain is already in the
+   account.
+5. TLS/SSL, Edge Certificates: consider enabling **HSTS** there. It is
+   deliberately not in `_headers` - browsers remember it for its whole max-age,
+   so it belongs somewhere it can be switched off again.
+
+In **GitHub**, under Settings, Secrets and variables, Actions:
+
+| Kind     | Name                       | Value                               |
+| -------- | -------------------------- | ----------------------------------- |
+| Secret   | `CLOUDFLARE_API_TOKEN`     | the token from step 2               |
+| Secret   | `CLOUDFLARE_ACCOUNT_ID`    | the account ID from step 3          |
+| Variable | `GA_MEASUREMENT_ID`        | `G-ZY158GV42C`                      |
+| Variable | `CLOUDFLARE_PAGES_PROJECT` | only if the project is not `applye` |
+
+`GA_MEASUREMENT_ID` is a **variable**, not a secret. The ID is visible in the
+page source of every site that uses GA; filing it as a secret would only make it
+harder to audit what a build shipped. If it is missing the site still deploys,
+with analytics dormant.
 
 ## What GA4 cannot tell you
 

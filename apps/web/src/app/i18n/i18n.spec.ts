@@ -54,6 +54,18 @@ describe('locale bundles', () => {
         });
       }
 
+      /**
+       * The landing pages are the only routes whose title and description come
+       * from a bundle rather than from `app.routes.ts`, so the length check in
+       * seo.spec.ts never sees them. Search results cut a description around
+       * 160 characters and a title around 60; all six were over the
+       * description limit before launch, losing the closing line of the pitch.
+       */
+      it('keeps the landing title and description inside what search results show', () => {
+        expect(bundle['meta.title'].length).toBeLessThanOrEqual(60);
+        expect(bundle['meta.description'].length).toBeLessThanOrEqual(160);
+      });
+
       it('has a landing route', () => {
         const path = locale.code === 'en' ? '' : locale.code;
         expect(appRoutes.some((r) => r.path === path && r.data?.['locale'] === locale.code)).toBe(

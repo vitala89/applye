@@ -5,7 +5,7 @@ export const en: Messages = {
   meta: {
     title: 'Applye: Drafting is automated. Submitting is not.',
     description:
-      'A free, open-source, local-first desktop app for an AI-powered job search. Blunt recruiter checks, tailored CVs, a pipeline kanban. Your data, your machine, your AI.',
+      'A free, open-source desktop app for an AI-powered job search, running entirely on your own machine. Blunt recruiter checks, tailored CVs, a pipeline kanban.',
   },
 
   nav: {

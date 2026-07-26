@@ -4,7 +4,7 @@ export const es: Messages = {
   meta: {
     title: 'Applye: redactar está automatizado. Enviar, no.',
     description:
-      'Una aplicación de escritorio gratuita, de código abierto y local para buscar trabajo con IA. Evaluación honesta de la vacante, CV adaptado, un kanban de candidaturas. Tus datos, tu equipo, tu IA.',
+      'Aplicación de escritorio gratuita y de código abierto para buscar trabajo con IA, todo en tu equipo. Evaluación honesta, CV adaptado, kanban de candidaturas.',
   },
 
   nav: {

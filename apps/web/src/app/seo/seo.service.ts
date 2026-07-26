@@ -17,7 +17,7 @@ export interface SeoRouteData {
 }
 
 const DEFAULT_DESCRIPTION =
-  'Applye is a free, open-source, local-first desktop app for an AI-powered job search. Blunt recruiter checks, tailored CVs, a pipeline kanban. Your data, your machine, your AI.';
+  'A free, open-source desktop app for an AI-powered job search, running entirely on your own machine. Blunt recruiter checks, tailored CVs, a pipeline kanban.';
 
 const DEFAULT_IMAGE = '/og/applye-og.png';
 

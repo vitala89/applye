@@ -4,7 +4,7 @@ export const pl: Messages = {
   meta: {
     title: 'Applye: pisanie jest zautomatyzowane. Wysyłka nie.',
     description:
-      'Bezpłatna aplikacja desktopowa o otwartym kodzie do szukania pracy z pomocą AI, działająca lokalnie. Szczera ocena oferty, dopasowane CV, kanban aplikacji. Twoje dane, twój komputer, twoje AI.',
+      'Bezpłatna aplikacja desktopowa o otwartym kodzie do szukania pracy z AI, w całości na twoim komputerze. Szczera ocena oferty, dopasowane CV, kanban aplikacji.',
   },
 
   nav: {

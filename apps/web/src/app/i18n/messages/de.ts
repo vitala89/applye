@@ -4,7 +4,7 @@ export const de: Messages = {
   meta: {
     title: 'Applye: Der Entwurf ist automatisiert. Das Absenden nicht.',
     description:
-      'Eine kostenlose, quelloffene, lokal arbeitende Desktop-App für die KI-gestützte Jobsuche. Ehrliche Recruiter-Checks, angepasste Lebensläufe, ein Pipeline-Kanban. Deine Daten, dein Rechner, deine KI.',
+      'Kostenlose, quelloffene Desktop-App für die KI-gestützte Jobsuche, ganz auf deinem Rechner. Ehrliche Recruiter-Checks, angepasste Lebensläufe, Pipeline-Kanban.',
   },
 
   nav: {

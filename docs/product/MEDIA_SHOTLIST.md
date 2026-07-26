@@ -75,7 +75,9 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 These are configuration, not assets, and live in `apps/web/src/app/site.ts`:
 
-- `GA_MEASUREMENT_ID` - still `G-PLACEHOLDER`; analytics stays inert until a real ID is set.
+- `GA_MEASUREMENT_ID` - stays `G-PLACEHOLDER` in source **on purpose**; the real ID is injected at
+  build time from an environment variable, and analytics is confirmed live on the deployed site.
+  Nothing to do here.
 - `SOURCE_PUBLIC` - `false` while the repository is private; flipping it turns every
   "coming soon" pill back into a GitHub link.
 - `DISCORD`, `LINKEDIN`, `X_TWITTER` - empty; each footer icon appears only once its URL is set.

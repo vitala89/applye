@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AnalyticsService } from './analytics/analytics.service';
+import { Track } from './analytics/track.directive';
 import { I18nService } from './i18n/i18n.service';
 import { SeoService } from './seo/seo.service';
 import { LanguageSwitcher } from './ui/language-switcher';
@@ -25,6 +26,7 @@ const STORAGE_KEY = 'applye-theme';
     ConsentBanner,
     Icon,
     LanguageSwitcher,
+    Track,
   ],
   templateUrl: './app.html',
 })

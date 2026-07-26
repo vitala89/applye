@@ -44,6 +44,62 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, website analytics: traffic attribution and click tracking wired
+
+- **Status:** complete for the code; the GA4 property itself does not exist yet, so no data flows
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-analytics`
+- **Commits:** see branch
+- **Pull request:** not opened
+- **Objective:** know where visitors come from and how many click through to a download.
+- **Completed:**
+  - Measurement ID moved out of hand-edited source into `analytics/measurement-id.ts`, generated at
+    build time by `tools/generate-analytics-config.mjs` from `GA_MEASUREMENT_ID`, chained into
+    `npm run web:build`. Malformed value fails the build; unset keeps `G-PLACEHOLDER`.
+  - `analytics/events.ts` added as the single event contract: six events, twelve parameters, an
+    allow-list sanitiser, and user-agent OS detection. Anything off the list is dropped in the
+    browser before it reaches gtag.
+  - `AnalyticsService` gained `downloadClick`, `outboundClick`, `ctaClick`, `localeSwitch`, and now
+    stamps `locale` on every event.
+  - `Track` directive (`appTrack`) for declarative click tracking; wired into the hero CTAs (both
+    `COMING_SOON` branches), `SourceLink` (nav/footer/hero sections), the footer social and author
+    links, and the language switcher.
+  - `docs/internal/ANALYTICS_SETUP.md`: GA4 property creation, the ten custom dimensions to register
+    before traffic arrives, internal-traffic filter, Search Console link, Cloudflare Pages settings,
+    and UTM conventions.
+  - `tools/release-downloads.mjs` (`npm run web:downloads`): completed download counts from the
+    GitHub releases API, the number GA4 structurally cannot produce.
+- **Not completed:** the GA4 property is not created and `GA_MEASUREMENT_ID` is not set anywhere, so
+  the site still ships analytics switched off. Cloudflare Pages project not created. Decision on
+  adding Cloudflare Web Analytics as a cookieless complement is open.
+- **Files or packages changed:** `apps/web/src/app/analytics/*`, `app.html`, `app.ts`, `landing.html`,
+  `landing.ts`, `cookies.ts`, `privacy.html`, `ui/source-link.ts`, `ui/language-switcher.ts`,
+  `apps/web/tools/*`, `package.json`, `docs/internal/ANALYTICS_SETUP.md`.
+- **Validation:** `nx test web` 47 passed (was 41), `nx lint web` pass, `tsc --noEmit -p
+apps/web/tsconfig.app.json` pass, `npm run format:check` pass, `git diff --check` pass,
+  `npm run web:build` pass (43 routes prerendered). Generator verified in all three modes: valid ID
+  written, malformed ID exits 1, unset resets to placeholder. Prerendered output checked directly -
+  `googletagmanager` appears in the JS bundle only, in zero of 43 HTML files. Browser-preview
+  verification was attempted and blocked by a policy check on the tab; the static output check above
+  stands in for it.
+- **Privacy/security impact:** privacy-sensitive. The hard consent gate is unchanged: nothing loads
+  before opt-in. Collection is now _narrower_ in guarantee than before, because `sanitiseParams`
+  makes the documented list enforceable rather than aspirational. Corrected a false claim: `/cookies`
+  stated download clicks were tracked when no such event existed. Both `/cookies` and `/privacy` now
+  enumerate the exact six events, including that declining records nothing at all.
+- **Decisions and assumptions:** gtag over GTM, so the measurable surface stays reviewable in a diff.
+  Hard consent gate over Consent Mode v2 - stricter, at the cost of consenting-traffic-only reports.
+  GA4 enhanced measurement must be switched OFF on the data stream or page views double-count.
+  Measurement ID treated as a public build variable, not a secret.
+- **Risks or compatibility impact:** none shipped - with no ID set, every code path stays dormant.
+  The `download_click` wiring sits in the `COMING_SOON = false` branch and is therefore untested
+  against a real download button until that flag flips.
+- **Open issues or blockers:** GA4 property creation is a manual console task for the maintainer.
+- **Next first action:** create the GA4 property by following `docs/internal/ANALYTICS_SETUP.md`,
+  then set `GA_MEASUREMENT_ID` on the Cloudflare Pages production environment.
+- **Evidence:** `docs/internal/ANALYTICS_SETUP.md`, `apps/web/src/app/analytics/events.ts`,
+  `apps/web/src/app/analytics/analytics.spec.ts`.
+
 ### 2026-07-26, marketing-site design pass: 5 of 8 WEBSITE_PLAN gaps closed
 
 - **Status:** partial - every unblocked item is done; three are blocked on assets that do not exist

@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, move Discover's Sources control out of the filter row
+
+- **Status:** complete
+- **Agent/tool:** Claude Code
+- **Branch:** `main`
+- **Commits:** not yet committed at the time of this entry
+- **Pull request:** not opened yet
+- **Objective:** Reported from use: with an empty Discover list there is no way to reach the sources drawer, so a user who has cleared the list or disabled every feed cannot turn one back on.
+- **Completed:** Confirmed in the template. The Sources button lived inside `.dv-filters`, which renders only under `view() === 'feed'`, so views `caughtup`, `never` and `scanning` had no entry to the drawer at all; the only other entry is the first-run CTA, and `first` requires that nothing has ever been enabled _and_ nothing has ever been scanned. Moved the button into `.dv-head__right` beside Scan, which `showHeader()` renders for every view except `first` and `skeleton`, so one move covers all four dead-end states. `first` keeps its own large "Choose sources" CTA. `.dv-filters__clear` took over the `margin-left: auto` that the moved button was carrying, so the filter row's right edge is unchanged. New `discover.component.spec.ts` pins the drawer as reachable in `caughtup`, `never` and `feed`, pins the first-run CTA as the single opener in `first`, asserts exactly one opener per view so the control cannot be quietly duplicated, and clicks the header button to confirm it opens the drawer.
+- **Not completed:** No native check of the rendered screen. Discover reads everything through Tauri IPC, so it does not render meaningfully in a plain browser preview; the move is covered by the DOM assertions in the new spec instead.
+- **Files or packages changed:** `apps/desktop/src/app/pages/discover/discover.component.html`, `discover.component.scss`, new `discover.component.spec.ts`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, `docs/internal/DUTY_WATCH.md`.
+- **Validation:** Run and observed: `npm run type-check` (6 projects, pass), `npm run lint` (6 projects, pass), `npm test` (6 projects, pass; desktop 696 -> 701 tests), `npm run format:check` (pass), `npx nx build desktop` (pass), `git diff --check` (clean). **Not run:** `tauri dev`.
+- **Privacy/security impact:** None. Presentation-only; no data, IPC surface or network behavior changed.
+- **Decisions and assumptions:** The header was chosen over duplicating the button into each empty state (three copies of one action drift apart) and over rendering the filter row unconditionally (filters over an empty list are noise). Sources controls what gets scanned, so it does not belong among controls that narrow what was already scanned.
+- **Risks or compatibility impact:** The header row gains a control, so it is now three items wide at its widest (last-scan text, Sources, Scan). Not checked below the app's minimum window width.
+- **Open issues or blockers:** None.
+- **Next first action:** Launch `npm run desktop:dev`, clear the Discover list, and confirm Sources opens the drawer from the caught-up state; check the header does not wrap at the narrowest supported window.
+- **Evidence:** Branch diff; `npx nx test desktop --testPathPattern=discover.component` output; check output quoted above.
+
 ### 2026-07-26, public-release documentation and repository hygiene pass
 
 - **Status:** partial

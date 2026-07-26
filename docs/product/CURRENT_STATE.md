@@ -16,6 +16,15 @@
   `npm run web:downloads`, not from GA4. **Open decision:** whether to add Cloudflare Web Analytics
   as a cookieless complement, since GA4 sees only visitors who opt in. Next action and full setup
   steps: `docs/internal/ANALYTICS_SETUP.md`.
+- **In flight: applye.dev deployment (on `feat/web-analytics`).** The site has never been deployed.
+  A `deploy-web` job now builds and uploads to Cloudflare Pages on every push to `main`, but only
+  after the CI gate passes, so a red main cannot reach the live site. **It has never run** - it
+  needs a Direct Upload Pages project, an API token, an account ID and the custom domain in
+  Cloudflare, plus four secrets/variables in GitHub, all of which are manual and outstanding. The
+  GA4 property exists (`G-ZY158GV42C`) with Enhanced measurement correctly switched off, but the ten
+  custom dimensions are not registered, and they must exist **before** the first traffic or those
+  parameters are stored permanently unreportable. Checklist for both consoles:
+  `docs/internal/ANALYTICS_SETUP.md`.
 - **Shipped: website design pass (`a7e4574` on `main`).** Five of the eight gaps in the plan's
   gap analysis are closed; gaps 1-3 (hero product shot, demo GIF, six feature screenshots) are
   blocked on assets that do not exist and no placeholder was shipped in their place. Closed: the

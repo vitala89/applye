@@ -44,6 +44,54 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-26, applye.dev gets a deployment path, gated on CI
+
+- **Status:** complete for the code; both dashboards still need manual setup before anything deploys
+- **Agent/tool:** Claude Code
+- **Branch:** `feat/web-analytics`
+- **Commits:** `f0ed533`
+- **Pull request:** not opened
+- **Objective:** the site had nowhere to go. `public/_redirects` already named Cloudflare Pages as
+  the target, but nothing built or uploaded anything, so publishing was an undefined manual step.
+- **Completed:**
+  - `deploy-web` job added to `.github/workflows/ci.yml`. It `needs: ci` and runs only on a push to
+    `main`, so a failing gate means no deploy. Uses `cloudflare/wrangler-action@v3` with
+    `pages deploy dist/apps/web/browser`.
+  - `apps/web/public/_headers`: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`,
+    `Cross-Origin-Opener-Policy`, a `Permissions-Policy` denying camera/microphone/geolocation/
+    payment/USB, and immutable caching for the content-hashed JS and CSS. Verified it reaches
+    `dist/apps/web/browser/_headers` through the existing asset glob.
+  - `ANALYTICS_SETUP.md` gained the full dashboard checklist for both Cloudflare and GitHub, and its
+    status section now reflects that Enhanced measurement has been switched off.
+- **Not completed:** nothing is deployed. The Cloudflare Pages project, API token, account ID,
+  custom domain, and the four GitHub secrets/variables are all manual and outstanding. The ten GA4
+  custom dimensions are still unregistered.
+- **Files or packages changed:** `.github/workflows/ci.yml`, `apps/web/public/_headers`,
+  `docs/internal/ANALYTICS_SETUP.md`, `CHANGELOG.md`.
+- **Validation:** `nx test web` 48 passed, `nx lint web` pass, `npm run web:build` pass with
+  `_headers` present in the output, workflow YAML parsed and the job's `needs`/`if`/step list
+  checked. `format:check` and `git diff --check` pass. **The deploy job itself has never run** - it
+  cannot until the credentials exist, so it is unverified end to end.
+- **Privacy/security impact:** security-relevant and improving. No CSP was added: Angular emits
+  inline styles and analytics injects a script post-consent, so a correct policy needs measuring
+  rather than guessing, and a wrong one fails silently in production only. No HSTS in `_headers`
+  either - browsers remember it for its whole max-age, so it belongs on Cloudflare's TLS page where
+  it can be switched off again. `GA_MEASUREMENT_ID` is passed as a repository variable rather than a
+  secret, deliberately: the ID is public in any GA site's page source, and filing it as a secret
+  would only obscure what a build shipped.
+- **Decisions and assumptions:** deploy from Actions rather than Cloudflare's Git integration,
+  because the Git integration builds on every push regardless of whether the gate passed. The Pages
+  project must therefore be **Direct Upload** with no repository connected. Preview deployments
+  deliberately not wired: they would publish unlaunched marketing copy on a guessable URL while the
+  repository is private.
+- **Risks or compatibility impact:** the first run of the deploy job is untested. If the project
+  name differs from `applye`, set the `CLOUDFLARE_PAGES_PROJECT` variable or the job fails.
+- **Open issues or blockers:** all remaining work is in the Cloudflare and Google consoles.
+- **Next first action:** register the ten GA4 custom dimensions from `ANALYTICS_SETUP.md` - they
+  must exist before the first traffic arrives or those parameters are permanently unreportable.
+- **Evidence:** `.github/workflows/ci.yml`, `apps/web/public/_headers`,
+  `docs/internal/ANALYTICS_SETUP.md`.
+
 ### 2026-07-26, analytics follow-up: the real measurement ID broke the production build
 
 - **Status:** complete

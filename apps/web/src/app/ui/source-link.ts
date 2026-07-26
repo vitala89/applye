@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Track } from '../analytics/track.directive';
+import { SourceSection } from '../analytics/events';
 import { REPO, SOURCE_PUBLIC } from '../site';
 
 /**
@@ -13,9 +15,17 @@ import { REPO, SOURCE_PUBLIC } from '../site';
   selector: 'app-source-link',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [Track],
   template: `
     @if (isPublic) {
-      <a [class]="linkClass()" [href]="href()" target="_blank" rel="noopener">
+      <a
+        [class]="linkClass()"
+        [href]="href()"
+        target="_blank"
+        rel="noopener"
+        appTrack="outbound"
+        [trackSection]="section()"
+      >
         @if (icon()) {
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
             <path [attr.d]="githubPath" />
@@ -46,6 +56,8 @@ export class SourceLink {
   readonly variant = input<'link' | 'ghost' | 'primary'>('link');
   /** Prefix the label with the GitHub mark. */
   readonly icon = input(false);
+  /** Where this link sits, so outbound clicks can be told apart in reports. */
+  readonly section = input<SourceSection>('landing');
 
   readonly isPublic = SOURCE_PUBLIC;
 

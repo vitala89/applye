@@ -78,8 +78,34 @@ import { ConsentService } from './analytics/consent.service';
           <li>Which page was viewed, and which page referred you.</li>
           <li>Approximate country, from a truncated IP address (IP anonymisation is forced on).</li>
           <li>Device class, browser, and language.</li>
-          <li>A few named interactions: download clicks and the consent decision itself.</li>
         </ul>
+        <p>
+          Plus six named interactions, and no others. This is the complete list, kept in step with
+          the code that sends them (<code>analytics/events.ts</code>):
+        </p>
+        <ul class="docs__list">
+          <li><code>page_view</code> - a page was opened, with its path and title.</li>
+          <li>
+            <code>download_click</code> - a download link was clicked, with the section of the page
+            it sat in and which desktop platform your browser reports. The download itself happens
+            on GitHub, which we cannot see.
+          </li>
+          <li>
+            <code>outbound_click</code> - a link leaving this site was clicked, with its
+            destination.
+          </li>
+          <li><code>cta_click</code> - a labelled button on this site was clicked.</li>
+          <li><code>locale_switch</code> - you changed the site language.</li>
+          <li>
+            <code>consent_decision</code> - recorded when you allow analytics. Declining records
+            nothing, because declining means nothing is loaded to record it with.
+          </li>
+        </ul>
+        <p>
+          Every event also carries the language of the page you were on. Any parameter not on this
+          list is discarded in the browser before it is sent, so a mistake in our own code cannot
+          quietly widen this.
+        </p>
         <p>What it never records:</p>
         <ul class="docs__list">
           <li>Your name, email, CV, profile, jobs, or anything you type into the app.</li>

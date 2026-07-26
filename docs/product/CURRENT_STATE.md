@@ -2,9 +2,30 @@
 
 - **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-26)
-- **Current branch / focus**: `main`. Marketing-site design pass against
-  `docs/design/WEBSITE_PLAN.md`. Complete in the working tree, not yet committed.
-- **In flight: website design pass (uncommitted, on `main`).** Five of the eight gaps in the plan's
+- **Current branch / focus**: `feat/web-analytics`. Website analytics: traffic attribution and
+  click tracking. The preceding marketing-site design pass shipped in `a7e4574` - the entry below
+  describing it as uncommitted was stale and is corrected here.
+- **In flight: website analytics (on `feat/web-analytics`).** The code is complete and every gate
+  passes, but **no data flows and none will until a GA4 property exists**: the shipped measurement
+  ID is `G-PLACEHOLDER` and `AnalyticsService` refuses to load GA while it says that. Six events are
+  defined and wired (`page_view`, `download_click`, `outbound_click`, `cta_click`, `locale_switch`,
+  `consent_decision`), the ID now arrives from a build-time environment variable rather than source,
+  and `/cookies` and `/privacy` were corrected - they had claimed download-click tracking that did
+  not exist. The hard consent gate is unchanged. Note the structural limit: `download_click` counts
+  clicks on a link that leaves for GitHub, so completed downloads come from
+  `npm run web:downloads`, not from GA4. **Open decision:** whether to add Cloudflare Web Analytics
+  as a cookieless complement, since GA4 sees only visitors who opt in. Next action and full setup
+  steps: `docs/internal/ANALYTICS_SETUP.md`.
+- **In flight: applye.dev deployment (on `feat/web-analytics`).** The site has never been deployed.
+  A `deploy-web` job now builds and uploads to Cloudflare Pages on every push to `main`, but only
+  after the CI gate passes, so a red main cannot reach the live site. **It has never run** - it
+  needs a Direct Upload Pages project, an API token, an account ID and the custom domain in
+  Cloudflare, plus four secrets/variables in GitHub, all of which are manual and outstanding. The
+  GA4 property exists (`G-ZY158GV42C`) with Enhanced measurement correctly switched off, but the ten
+  custom dimensions are not registered, and they must exist **before** the first traffic or those
+  parameters are stored permanently unreportable. Checklist for both consoles:
+  `docs/internal/ANALYTICS_SETUP.md`.
+- **Shipped: website design pass (`a7e4574` on `main`).** Five of the eight gaps in the plan's
   gap analysis are closed; gaps 1-3 (hero product shot, demo GIF, six feature screenshots) are
   blocked on assets that do not exist and no placeholder was shipped in their place. Closed: the
   hero's two dead controls became one live primary CTA ("Read the docs") plus a download _status_

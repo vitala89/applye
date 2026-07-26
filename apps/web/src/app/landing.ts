@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Track } from './analytics/track.directive';
 import { I18nService } from './i18n/i18n.service';
 import { COMING_SOON, RELEASES } from './site';
 import { Icon, IconName } from './ui/icon';
@@ -22,7 +23,7 @@ const CLI_ENGINES = ['Claude Code', 'Codex CLI'];
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, SourceLink, Icon],
+  imports: [RouterLink, SourceLink, Icon, Track],
   templateUrl: './landing.html',
 })
 export class Landing {

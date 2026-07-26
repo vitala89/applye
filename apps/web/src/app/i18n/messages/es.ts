@@ -50,8 +50,11 @@ export const es: Messages = {
     titleTop: 'Redactar está automatizado.',
     titleAccent: 'Enviar, no.',
     sub: 'Una aplicación de escritorio de código abierto y local para buscar trabajo con IA. Tus datos, tu equipo, tu IA. Puntúa vacantes, adapta tu CV y sigue tus candidaturas, y te devuelve cada decisión.',
+    readDocs: 'Leer la documentación',
     download: 'Descargar',
-    downloadSoon: 'Descargar (muy pronto)',
+    downloadSoon: 'Descarga: muy pronto',
+    downloadSoonWhy:
+      'Los instaladores firmados llegan con la primera versión pública. Hasta entonces la app se compila desde el código fuente, y la documentación te guía paso a paso.',
     viewSource: 'Ver el código en GitHub',
     sourceSoon: 'Código: muy pronto',
     meta: 'Gratis · Licencia MIT · Sin cuenta · Sin telemetría',
@@ -103,7 +106,7 @@ export const es: Messages = {
       {
         title: 'Trae tu propia IA',
         example:
-          'Usa tu clave de API o conecta la suscripción de CLI que ya pagas: Claude Code, Codex o Gemini. El código hace el trabajo barato y determinista; al modelo solo se le pide criterio.',
+          'Usa tu clave de API - Anthropic, OpenAI, Gemini o DeepSeek - o conecta la suscripción de CLI que ya pagas: Claude Code o Codex. El código hace el trabajo barato y determinista; al modelo solo se le pide criterio.',
         note: 'Ahorra tokens por diseño. Una búsqueda real cuesta céntimos.',
       },
       {
@@ -127,6 +130,15 @@ export const es: Messages = {
       'Alineado con el RGPD por arquitectura: tus datos no salen de tu equipo, lo que satisface incluso al régimen más estricto.',
       'Alemania, en profundidad: genera el informe Eigenbemühungen para la Agentur für Arbeit directamente desde tus candidaturas registradas.',
     ],
+  },
+
+  engines: {
+    title: 'Funciona con la IA que ya pagas.',
+    intro:
+      'Applye no trae modelo propio ni revende tokens. Indícale una clave de proveedor o conecta una suscripción de CLI que ya tengas: las llamadas salen de tu equipo directamente hacia ellos.',
+    apiLabel: 'Claves de API directas',
+    cliLabel: 'Suscripciones de CLI, conectadas',
+    note: 'Marcas independientes de sus titulares. No implica afiliación ni respaldo.',
   },
 
   principles: [
@@ -174,7 +186,7 @@ export const es: Messages = {
       },
       {
         q: '¿Qué IA necesito?',
-        a: 'O bien una clave de API propia, o bien una suscripción de CLI que ya tengas (Claude Code, Codex o Gemini CLI) conectada de forma que no gastes tokens de API adicionales. La IA es opcional: no se llama a ningún modelo hasta que tú lo pides.',
+        a: 'O bien una clave de API propia (Anthropic, OpenAI, Gemini o DeepSeek), o bien una suscripción de CLI que ya tengas - Claude Code o Codex - conectada de forma que no gastes tokens de API adicionales. Gemini funciona solo con clave de API: Google retiró Gemini CLI para cuentas personales en junio de 2026. La IA es opcional: no se llama a ningún modelo hasta que tú lo pides.',
       },
       {
         q: '¿Mis datos son privados?',

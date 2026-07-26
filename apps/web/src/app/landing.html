@@ -9,22 +9,36 @@
     </h1>
     <p class="hero__sub">{{ m().hero.sub }}</p>
 
+    <!-- Primary CTA is whatever the visitor can actually do today. Until
+         installers ship that is the documentation, not a dead download
+         button: a hero whose only two controls are disabled reads as broken.
+         Once COMING_SOON flips, the real download takes the primary slot and
+         the docs step back to ghost. -->
     <div class="hero__cta">
       @if (comingSoon) {
-      <button type="button" class="btn btn--primary" disabled aria-disabled="true">
-        {{ m().hero.downloadSoon }}
-      </button>
-      } @else {
-      <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener"
-        >{{ m().hero.download }}</a
-      >
-      }
+      <a class="btn btn--primary" routerLink="/docs">{{ m().hero.readDocs }}</a>
       <app-source-link
         variant="ghost"
         [label]="m().hero.viewSource"
         [soonLabel]="m().hero.sourceSoon"
       />
+      } @else {
+      <a class="btn btn--primary" [href]="releases" target="_blank" rel="noopener"
+        >{{ m().hero.download }}</a
+      >
+      <a class="btn btn--ghost" routerLink="/docs">{{ m().hero.readDocs }}</a>
+      }
     </div>
+
+    @if (comingSoon) {
+    <!-- The download is not a broken button, it is a status. Stated as one,
+         with the reason attached, so the state reads as deliberate. -->
+    <p class="hero__pending">
+      <span class="soon-pill" [title]="m().hero.downloadSoonWhy">{{ m().hero.downloadSoon }}</span>
+      <span class="hero__pendingwhy">{{ m().hero.downloadSoonWhy }}</span>
+    </p>
+    }
+
     <p class="hero__meta">{{ m().hero.meta }}</p>
   </div>
 
@@ -114,6 +128,39 @@
       </article>
       }
     </div>
+  </div>
+</section>
+
+<!-- ===================== ENGINES ("bring your own AI" proof) =====================
+     Wordmarks, not vendor logos: reproducing another company's mark on a
+     marketing page implies a partnership that does not exist, and the honest
+     version is simply naming who Applye can talk to. The two groups are not
+     interchangeable - CLI mode has adapters only for Claude Code and Codex. -->
+<section id="engines" class="band">
+  <div class="shell">
+    <h2 class="section-title section-title--wide">{{ m().engines.title }}</h2>
+    <p class="prose">{{ m().engines.intro }}</p>
+
+    <div class="engines">
+      <div class="engines__group">
+        <p class="engines__label">{{ m().engines.apiLabel }}</p>
+        <ul class="engines__list">
+          @for (engine of apiEngines; track engine) {
+          <li class="engines__item">{{ engine }}</li>
+          }
+        </ul>
+      </div>
+      <div class="engines__group">
+        <p class="engines__label">{{ m().engines.cliLabel }}</p>
+        <ul class="engines__list">
+          @for (engine of cliEngines; track engine) {
+          <li class="engines__item">{{ engine }}</li>
+          }
+        </ul>
+      </div>
+    </div>
+
+    <p class="engines__note">{{ m().engines.note }}</p>
   </div>
 </section>
 

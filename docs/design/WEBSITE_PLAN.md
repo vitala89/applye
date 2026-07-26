@@ -63,16 +63,56 @@ CLI. Applye gives everyone a desktop."**
 
 ## 3. Gap analysis -> what to change
 
-| #   | Gap                                         | Where                  | Fix                                                                                                                                     |
-| --- | ------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Hero is a CSS mock, not a real product shot | `/` hero               | Swap in `hero-banner.png` (see ASSETS_BRIEF). Keep the CSS mock as the dark-mode fallback/decoration.                                   |
-| 2   | No moving proof of the loop                 | `/` below hero         | Embed `demo.gif` or the walkthrough video (YouTube) in a "See it work" band.                                                            |
-| 3   | Features are text-only                      | `/` features + `/docs` | Add the six real `screens/*.png` beside their feature copy.                                                                             |
-| 4   | No single obvious first action              | `/` hero CTA           | Until installers ship, primary CTA = "Read the docs" / "Build from source"; secondary = GitHub. Swap to real download links at release. |
-| 5   | No social preview / OG image                | site meta              | Generate the 1280x640 OG image (ASSETS_BRIEF §6) and wire `<meta og:image>`.                                                            |
-| 6   | Engine-agnostic proof is only in prose      | `/` or `/docs/ai`      | Add a small provider/CLI logo row (Anthropic, OpenAI, Gemini, DeepSeek; Claude Code, Codex, Gemini CLI).                                |
-| 7   | Consistency pass not yet run                | all pages              | Run one design QA pass for spacing, type scale, dark/light parity, focus states, mobile.                                                |
-| 8   | Download buttons say "coming soon"          | `/` hero               | Keep until installers exist; make sure the state is obviously intentional, not broken.                                                  |
+Status as of the 2026-07-26 design pass. Items 1-3 are the only ones still open,
+and all three are blocked on assets that do not exist yet.
+
+| #   | Gap                                         | Where                  | Status                       | Fix                                                                                                                                                                                                                          |
+| --- | ------------------------------------------- | ---------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Hero is a CSS mock, not a real product shot | `/` hero               | Blocked on `hero-banner.png` | Swap in `hero-banner.png` (see ASSETS_BRIEF). Keep the CSS mock as the dark-mode fallback/decoration.                                                                                                                        |
+| 2   | No moving proof of the loop                 | `/` below hero         | Blocked on `demo.gif`        | Embed `demo.gif` or the walkthrough video (YouTube) in a "See it work" band.                                                                                                                                                 |
+| 3   | Features are text-only                      | `/` features + `/docs` | Blocked on `screens/*.png`   | Add the six real `screens/*.png` beside their feature copy. The `.docs__mediabox` placeholders in the guide are where they land.                                                                                             |
+| 4   | No single obvious first action              | `/` hero CTA           | Done                         | Primary CTA is now "Read the docs"; the source link stays ghost. Both hero controls used to be disabled, which read as broken. Flipping `COMING_SOON` in `site.ts` promotes the real download and demotes the docs to ghost. |
+| 5   | No social preview / OG image                | site meta              | Done (was already shipped)   | `applye-og.png` is 1200x630 and wired in `index.html` plus `seo.service.ts`. The 1280x640 figure in this doc was wrong.                                                                                                      |
+| 6   | Engine-agnostic proof is only in prose      | `/` or `/docs/ai`      | Done                         | New `#engines` band on `/`. Wordmarks, not vendor logos: reproducing another company's mark implies a partnership that does not exist.                                                                                       |
+| 7   | Consistency pass not yet run                | all pages              | Done                         | See "What the consistency pass changed" below.                                                                                                                                                                               |
+| 8   | Download buttons say "coming soon"          | `/` hero               | Done                         | The download is now a status line with the reason attached, not a dead button.                                                                                                                                               |
+
+### What the consistency pass changed
+
+Measured, not eyeballed. Every number below was read off the running site.
+
+- **Contrast.** `--text-tertiary` was doing body-text duty (hero meta, footer,
+  captions, card sub-labels, the "coming soon" pill) at 3.38:1 on the canvas,
+  3.13:1 on a card and 2.75:1 on a sunken panel, against a 4.5:1 AA floor. The
+  dark canvas has no grey that is both dimmer than `--text-secondary` and
+  passing, so the third text tier is retired web-side and the demotion is
+  carried by size and family. In the light theme `--success`, `--warning` and
+  `--danger` measured 2.61:1, 2.23:1 and 3.73:1 as _text_ and were darkened.
+  A full sweep of every text node now reports zero failures in both themes.
+- **Horizontal scroll on mobile.** Three separate causes, all fixed:
+  `.footer__links` did not wrap (762px against a 375px viewport), `.docs__nav`
+  lacked `min-width: 0` so its scroller pushed `/methodology` to 1220px, and
+  `/compare`'s five-column table had no scroll container. Checked across `/`,
+  `/docs`, a guide page, `/methodology`, `/compare`, `/changelog`, `/press`,
+  `/manifesto`, `/sustain` and `/privacy`.
+- **Focus.** The shared ring is a `box-shadow`, which forced-colors mode
+  discards; a real `outline` fallback was added.
+- **Side-stripe borders.** The local-rules list used a 2px accent left border
+  per item; replaced with the leading accent dot the docs lists already use.
+- **Stacked comparison cards.** The "Applye" tag hung into a gap shorter than
+  itself and clipped the card above.
+- Dead empty rule removed; `text-wrap: balance` on section titles.
+
+**Not fixed here, needs a decision:** the contrast measurements apply to
+`libs/ui/tokens.css` and therefore to the desktop app as well. The fixes above
+are web-scoped overrides, because that file states it mirrors the design system
+and is not hand-edited. Taking the corrected values back into the design system
+is a separate task.
+
+**Also fixed, out of scope but wrong:** the site claimed a Gemini CLI bridge in
+six locales. `apps/desktop/src-tauri/src/ai/cli.rs` only has adapters for Claude
+Code and Codex - Google withdrew Gemini CLI for personal accounts on
+2026-06-18. Gemini is API-key only, and the copy now says so.
 
 Non-goals for this phase: new routes, a site-wide i18n switcher (site stays English at launch; the
 _app_ is multilingual), a blog content backlog.

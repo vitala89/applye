@@ -12,28 +12,32 @@
   </header>
 
   <div class="docs__section">
-    <table class="docs__table">
-      <thead>
-        <tr class="docs__trow docs__trow--head">
-          <th></th>
-          <th>Applye</th>
-          <th>Cloud SaaS</th>
-          <th>career-ops (CLI)</th>
-          <th>Spreadsheet</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of rows; track r.label) {
-        <tr class="docs__trow">
-          <th>{{ r.label }}</th>
-          <td>{{ r.applye }}</td>
-          <td>{{ r.saas }}</td>
-          <td>{{ r.cli }}</td>
-          <td>{{ r.sheet }}</td>
-        </tr>
-        }
-      </tbody>
-    </table>
+    <!-- Five columns of comparison do not fit a phone. The table scrolls
+         inside its own box rather than dragging the page sideways with it. -->
+    <div class="docs__tablescroll" tabindex="0" role="region" aria-label="Feature comparison">
+      <table class="docs__table">
+        <thead>
+          <tr class="docs__trow docs__trow--head">
+            <th></th>
+            <th>Applye</th>
+            <th>Cloud SaaS</th>
+            <th>career-ops (CLI)</th>
+            <th>Spreadsheet</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows; track r.label) {
+          <tr class="docs__trow">
+            <th>{{ r.label }}</th>
+            <td>{{ r.applye }}</td>
+            <td>{{ r.saas }}</td>
+            <td>{{ r.cli }}</td>
+            <td>{{ r.sheet }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="prose">

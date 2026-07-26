@@ -51,8 +51,11 @@ export const en: Messages = {
     titleTop: 'Drafting is automated.',
     titleAccent: 'Submitting is not.',
     sub: 'An open-source, local-first desktop app for an AI-powered job search. Your data, your machine, your AI. It scores roles, tailors your CV, and tracks the pipeline, then hands every decision back to you.',
+    readDocs: 'Read the docs',
     download: 'Download',
-    downloadSoon: 'Download (coming soon)',
+    downloadSoon: 'Download: coming soon',
+    downloadSoonWhy:
+      'Signed installers ship with the first public release. Until then the app is built from source - the docs walk you through it.',
     viewSource: 'View source on GitHub',
     sourceSoon: 'Source: coming soon',
     meta: 'Free · MIT licensed · No account · No telemetry',
@@ -104,7 +107,7 @@ export const en: Messages = {
       {
         title: 'Bring your own AI',
         example:
-          'Plug in a direct API key, or bridge the CLI subscription you already pay for: Claude Code, Codex, or Gemini. Code does the cheap, deterministic work; the model is only asked to judge.',
+          'Plug in a direct API key - Anthropic, OpenAI, Gemini or DeepSeek - or bridge a CLI subscription you already pay for: Claude Code or Codex. Code does the cheap, deterministic work; the model is only asked to judge.',
         note: 'Token-economical by design. A real search costs cents.',
       },
       {
@@ -128,6 +131,15 @@ export const en: Messages = {
       'GDPR-aligned by architecture: your data never leaves your machine, which satisfies the strictest regime by default.',
       'Germany, in depth: generate the Agentur für Arbeit Eigenbemühungen report straight from your tracked applications.',
     ],
+  },
+
+  engines: {
+    title: 'Works with the AI you already pay for.',
+    intro:
+      'Applye ships no model of its own and resells no tokens. Point it at a provider key, or bridge a CLI subscription you already have - the calls go straight from your machine to them.',
+    apiLabel: 'Direct API keys',
+    cliLabel: 'CLI subscriptions, bridged',
+    note: 'Independent trademarks of their owners. No affiliation or endorsement implied.',
   },
 
   principles: [
@@ -175,7 +187,7 @@ export const en: Messages = {
       },
       {
         q: 'What AI do I need?',
-        a: 'Either a direct API key, or a CLI subscription you already have (Claude Code, Codex, or Gemini CLI) bridged so it costs you zero extra API tokens. AI is opt-in: nothing calls a model until you ask it to.',
+        a: 'Either a direct API key (Anthropic, OpenAI, Gemini or DeepSeek), or a CLI subscription you already have - Claude Code or Codex - bridged so it costs you zero extra API tokens. Gemini is API-key only: Google withdrew Gemini CLI for personal accounts in June 2026. AI is opt-in: nothing calls a model until you ask it to.',
       },
       {
         q: 'Is my data private?',

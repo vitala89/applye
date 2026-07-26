@@ -16,23 +16,28 @@ import { ConsentService } from './analytics/consent.service';
         <p class="applye-eyebrow">Cookies &amp; analytics</p>
         <h1 class="docs__h1">What this website measures.</h1>
         <p class="docs__lede">
-          The Applye app collects nothing, ever. This website is the one place where a single,
-          optional measurement tool exists - and it stays switched off until you say otherwise.
+          The Applye app collects nothing, ever. This website counts visits two ways: one that
+          stores nothing and identifies nobody, and one that waits for your permission. Neither sets
+          a cookie.
         </p>
       </header>
 
       <div class="prose">
         <h2 class="docs__h2">Your current choice</h2>
         <p>
+          This switch governs Google Analytics, the optional one. The cookieless counter described
+          below is not affected by it, because it has nothing to opt out of.
+        </p>
+        <p>
           @switch (consent.consent()) {
             @case ('granted') {
-              Analytics is <strong>on</strong>. Anonymous page views are counted.
+              Google Analytics is <strong>on</strong>. Anonymous page views are counted.
             }
             @case ('denied') {
-              Analytics is <strong>off</strong>. Nothing is loaded and nothing is sent.
+              Google Analytics is <strong>off</strong>. Nothing is loaded and nothing is sent.
             }
             @default {
-              You have not decided yet. Until you do, analytics is off.
+              You have not decided yet. Until you do, Google Analytics is off.
             }
           }
         </p>
@@ -68,10 +73,37 @@ import { ConsentService } from './analytics/consent.service';
           visit, and they are readable only by this site.
         </p>
 
+        <h2 class="docs__h2">The always-on counter</h2>
+        <p>
+          Cloudflare Web Analytics runs on every visit, before and regardless of any consent
+          decision. Its job is one number: how many people opened a page. It records the page, the
+          referring site, and coarse device, browser and country information derived from the
+          request itself.
+        </p>
+        <p>Why it needs no permission:</p>
+        <ul class="docs__list">
+          <li>It writes no cookie and nothing to local storage.</li>
+          <li>
+            It creates no identifier - not a random one, not a fingerprint. Two visits by you are
+            not knowably two visits by the same person.
+          </li>
+          <li>It cannot follow you to any other website, because there is nothing to follow.</li>
+          <li>Nothing you type anywhere on this site reaches it.</li>
+        </ul>
+        <p>
+          Cloudflare serves this site, so the request already passes through them either way; the
+          counter reads what the request already carries rather than adding a tracker on top.
+        </p>
+
         <h2 class="docs__h2">Optional analytics</h2>
         <p>
           If, and only if, you allow it, the site loads Google Analytics 4. Before that moment no
           request is made to Google, no analytics cookie is written, and no identifier is created.
+        </p>
+        <p>
+          It answers a different question from the counter above: not "did anyone come", but "what
+          did they do once here" - which docs page was read, which language was chosen, which button
+          was pressed.
         </p>
         <p>What it records once enabled:</p>
         <ul class="docs__list">

@@ -14,6 +14,7 @@
     "web:analytics-config": "node apps/web/tools/generate-analytics-config.mjs",
     "web:downloads": "node apps/web/tools/release-downloads.mjs",
     "web:og": "bash apps/web/tools/generate-og.sh",
+    "web:deploy": "bash apps/web/tools/deploy.sh",
     "mobile:dev": "echo 'Mobile not scaffolded yet. See apps/mobile/README.md'",
     "test": "nx run-many --target=test",
     "lint": "nx run-many --target=lint",

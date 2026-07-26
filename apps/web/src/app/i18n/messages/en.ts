@@ -5,7 +5,7 @@ export const en: Messages = {
   meta: {
     title: 'Applye: Drafting is automated. Submitting is not.',
     description:
-      'A free, open-source, local-first desktop app for an AI-powered job search. Blunt recruiter checks, tailored CVs, a pipeline kanban. Your data, your machine, your AI.',
+      'A free, open-source desktop app for an AI-powered job search, running entirely on your own machine. Blunt recruiter checks, tailored CVs, a pipeline kanban.',
   },
 
   nav: {
@@ -37,7 +37,7 @@ export const en: Messages = {
   },
 
   consent: {
-    body: 'We would like to count anonymous page views to see which docs are worth writing. No cookies and no requests to Google happen unless you allow it, and the app itself never sends anything either way.',
+    body: 'A cookieless counter already tallies visits without storing anything or identifying anyone. Google Analytics would additionally show what gets read and clicked, and it loads only if you allow it. No cookies either way, and the app itself never sends anything at all.',
     learnMore: 'What is collected',
     decline: 'Decline',
     allow: 'Allow analytics',

@@ -13,6 +13,13 @@ import { uk } from './messages/uk';
 
 const BUNDLES: Record<LocaleCode, Messages> = { en, de, es, pl, ru, uk };
 
+/**
+ * The same bundles, by locale, for code that has a locale but no service -
+ * `SeoService` builds the landing page's FAQ structured data straight from the
+ * route's declared locale rather than from whatever the reader last chose.
+ */
+export const MESSAGE_BUNDLES: Record<LocaleCode, Messages> = BUNDLES;
+
 const STORAGE_KEY = 'applye-locale';
 
 /**

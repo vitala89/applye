@@ -52,14 +52,28 @@
   mode over to Claude, the same rescue `0022` performed for Gemini in CLI mode. Correcting an
   earlier note in this file: those Settings entries were `disabled`, so they could not be picked and
   rejected at call time; the selectable defect was in onboarding.
-- **NEXT BLOCKER FOR LAUNCH: media placeholders, 24 of 25 left** in `/docs/guide/*`, rendered as
+- **NEXT BLOCKER FOR LAUNCH: media placeholders, 20 of 25 left** in `/docs/guide/*`, rendered as
   dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
   kit on `/press`. They are the only thing between the current site and a public launch; every other
-  page is finished. The first one is done: `guide/settings-ai.png` was captured on 2026-07-27 from
-  the running desktop app and is live on `/docs/guide/settings`. Note the earlier count of "26" was
+  page is finished. Done on 2026-07-27, all captured from the running desktop app: `settings-ai`,
+  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`. Note the earlier count of "26" was
   off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
   list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
   a session dedicated to producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
+- **The remaining shots split three ways.** Ready to capture with no AI spend:
+  `interview-timeline`, `analytics`, `tracker-report`, `pipeline-drag`, `dashboard-empty`. Blocked on
+  a real scoring run, because the columns they show read "Not scored" until one exists:
+  `score-result`, `my-jobs-table`, `dashboard-full` (which also needs the stale-score cards that only
+  appear after a score and a profile edit). Blocked on a real tailoring run and a CV import:
+  `tailor-wizard`, `gap-dialog`, `documents-library`, `cv-editor`, `cv-import`. The second and third
+  groups spend the maintainer's own API credit, so they need explicit approval each time.
+- **Seed and capture fixtures live in `tools/capture/`.** `seed.mjs` fills a throwaway database with
+  the demo persona and eight invented jobs; `demo-jobs.xml` is an invented feed kept out of
+  `apps/web/public` so a deploy cannot publish fake vacancies. Two app behaviours worth knowing
+  before the next session: the current interview stage is the highest `stage_order` that is not
+  rejected or cancelled, so an undated later round hides a booked earlier one from the Dashboard;
+  and the app does not scroll by keyboard or expose scroll bars to accessibility, so the working
+  technique is Tab, which pulls the container to the focused field.
 - **Capture rig, working as of 2026-07-27.** Claude has macOS Screen Recording and Accessibility
   permission, so the agent can size the dev-build window to exactly 1440x900 with `osascript`, click
   through the app with System Events, and write 2880x1800 PNGs with `screencapture -R`. The dev

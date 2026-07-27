@@ -497,6 +497,9 @@
                   <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
                   {{ t()('onboarding.resume.error') }}
                 </div>
+                @if (resumeErrorDetail(); as detail) {
+                  <p class="ob__muted-note">{{ detail }}</p>
+                }
               }
             }
             @case (3) {

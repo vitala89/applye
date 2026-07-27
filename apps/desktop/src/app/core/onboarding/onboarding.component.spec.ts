@@ -440,6 +440,65 @@ describe('OnboardingComponent flow', () => {
     });
   });
 
+  // Regression: the AI-setup choices only reached the settings row when the
+  // wizard finished, so the resume and targeting calls made mid-wizard were
+  // dispatched with the pre-onboarding defaults (`api` + `claude`). Picking
+  // DeepSeek, or CLI mode, sent them to a provider with no key - and the resume
+  // step reported it as "Couldn't parse that resume".
+  describe('in-wizard AI calls follow the mode and provider just picked', () => {
+    beforeEach(() => {
+      component.resumeText.set('a resume');
+      run.mockResolvedValue({ text: '{"personalDetails":{"fullName":"Mira Halvorsen"}}' });
+    });
+
+    it('parses the resume with the chosen provider, not the stored one', async () => {
+      component.selectProvider('deepseek');
+
+      await component.parseResume();
+
+      expect(run).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'deepseek', mode: 'api' }),
+      );
+      expect(component.resumeError()).toBe(false);
+    });
+
+    it('sends no model in CLI mode, where the stored API ids are unusable', async () => {
+      await component.chooseAiMode('cli');
+
+      await component.parseResume();
+
+      expect(run).toHaveBeenCalledWith(expect.objectContaining({ mode: 'cli', model: '' }));
+    });
+
+    it('suggests archetypes with the chosen provider too', async () => {
+      run.mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
+      component.selectProvider('deepseek');
+
+      await component.suggestArchetypes();
+
+      expect(run).toHaveBeenCalledWith(expect.objectContaining({ provider: 'deepseek' }));
+    });
+
+    it('commits the choice to settings when the AI step is left', async () => {
+      component.step.set(1);
+      component.selectProvider('deepseek');
+
+      await component.goNext();
+
+      expect(updateSettings).toHaveBeenCalledWith({ aiMode: 'api', provider: 'deepseek' });
+      expect(component.step()).toBe(2);
+    });
+
+    it('surfaces the real failure instead of only the parse wording', async () => {
+      run.mockRejectedValue(new Error('no API key for deepseek'));
+
+      await component.parseResume();
+
+      expect(component.resumeError()).toBe(true);
+      expect(component.resumeErrorDetail()).toContain('no API key for deepseek');
+    });
+  });
+
   describe('finishing the last step', () => {
     it('saves the profile and the CV, marks onboarding seen, and closes', async () => {
       component.parsedCv.set(parsedCv());

@@ -1517,7 +1517,7 @@ export const ru: TranslationMap = stub(en, {
       mode_api_title: 'Вставить API-ключ',
       mode_api_sub: 'Оплата по факту использования. Работает с любым из провайдеров ниже.',
       mode_cli_title: 'Использовать CLI, за который вы уже платите',
-      mode_cli_sub: 'Claude Code, Codex или Gemini CLI. Без API-ключа и без второй подписки.',
+      mode_cli_sub: 'Claude Code или Codex. Без API-ключа и без второй подписки.',
       skip_warning:
         'Этот шаг можно пропустить, но анализ, доработка и подготовка к интервью останутся выключенными, пока не добавлен ключ.',
       gemini: {

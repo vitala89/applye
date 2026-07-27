@@ -1511,7 +1511,7 @@ export const uk: TranslationMap = stub(en, {
       mode_api_title: 'Вставити API-ключ',
       mode_api_sub: 'Оплата за фактом використання. Працює з будь-яким із провайдерів нижче.',
       mode_cli_title: 'Використати CLI, за який ви вже платите',
-      mode_cli_sub: 'Claude Code, Codex або Gemini CLI. Без API-ключа й без другої підписки.',
+      mode_cli_sub: 'Claude Code або Codex. Без API-ключа й без другої підписки.',
       skip_warning:
         'Цей крок можна пропустити, але аналіз, доопрацювання та підготовка до співбесід залишаться вимкненими, доки не додано ключ.',
       gemini: {

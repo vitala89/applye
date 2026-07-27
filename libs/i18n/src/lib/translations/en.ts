@@ -1482,7 +1482,7 @@ export const en: TranslationMap = {
       mode_api_title: 'Paste an API key',
       mode_api_sub: 'Pay per use. Works with any of the providers below.',
       mode_cli_title: 'Use a CLI you already pay for',
-      mode_cli_sub: 'Claude Code, Codex or Gemini CLI. No API key, no extra bill.',
+      mode_cli_sub: 'Claude Code or Codex. No API key, no extra bill.',
       skip_warning:
         'You can skip this - but analysis, tailoring and interview prep stay disabled until a key is added.',
       gemini: {

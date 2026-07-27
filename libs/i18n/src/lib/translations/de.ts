@@ -1515,8 +1515,7 @@ export const de: TranslationMap = {
       mode_api_title: 'API-Schlüssel einfügen',
       mode_api_sub: 'Abrechnung nach Nutzung. Funktioniert mit allen Anbietern unten.',
       mode_cli_title: 'Eine CLI nutzen, die du schon bezahlst',
-      mode_cli_sub:
-        'Claude Code, Codex oder Gemini CLI. Kein API-Schlüssel, keine zweite Rechnung.',
+      mode_cli_sub: 'Claude Code oder Codex. Kein API-Schlüssel, keine zweite Rechnung.',
       skip_warning:
         'Du kannst dies überspringen - aber Analyse, Anpassung und Interview-Vorbereitung bleiben deaktiviert, bis ein Schlüssel hinzugefügt wurde.',
       gemini: {

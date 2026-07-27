@@ -170,10 +170,13 @@ const CLI_MODELS: Record<string, string[]> = {
                 (ngModelChange)="onProviderChange($event)"
                 [ngModelOptions]="{ standalone: true }"
               >
+                <!-- The two arms ai/api.rs has, and no more. OpenAI and
+                     Gemini sat here as disabled "(coming soon)" rows, which
+                     promised work that is not planned: OpenAI is reached
+                     through Codex in CLI mode, and Gemini has no path at all
+                     since Google withdrew its CLI for personal accounts. -->
                 <option value="claude">Claude (Anthropic)</option>
                 <option value="deepseek">DeepSeek</option>
-                <option value="openai" disabled>OpenAI (coming soon)</option>
-                <option value="gemini" disabled>Gemini (coming soon)</option>
               </select>
             </label>
           }

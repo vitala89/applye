@@ -165,7 +165,12 @@ export class OnboardingComponent {
    * keyring itself, so it survives a re-run and an input the user fumbles. */
   readonly keyStored = signal(false);
   readonly keySaveError = signal(false);
-  readonly v1Providers: AiProvider[] = ['claude', 'openai', 'deepseek'];
+  /** Providers that API mode can actually dispatch to. `ai/api.rs` handles
+   * `claude` and `deepseek` and answers anything else with "not supported in
+   * API mode yet", so offering OpenAI here sent the user to buy a key that
+   * every later action would reject. OpenAI is reachable, but through Codex in
+   * CLI mode - see `cliProviders`. */
+  readonly v1Providers: AiProvider[] = ['claude', 'deepseek'];
 
   readonly providerSteps = computed(() =>
     this.guide().stepKeys.map((key, i) => ({ n: i + 1, text: this.t()(key) })),
@@ -186,7 +191,7 @@ export class OnboardingComponent {
   /**
    * API key or CLI bridge. Onboarding offered only the key flow while CLI mode
    * was unimplemented; now that it works, a user who already pays for Claude
-   * Code, Codex or Gemini CLI should never be asked to buy API credit on top.
+   * Code or Codex should never be asked to buy API credit on top.
    */
   readonly aiMode = signal<AiMode>('api');
   readonly isCliMode = computed(() => this.aiMode() === 'cli');

@@ -39,8 +39,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | Slot                           | Page                    | Type       | What to capture                                                                             |
 | ------------------------------ | ----------------------- | ---------- | ------------------------------------------------------------------------------------------- |
 | `guide/dashboard-empty.png`    | `/docs/guide/dashboard` | SCREENSHOT | The "You're all caught up" empty state.                                                     |
-| `guide/profile-filled.png`     | `/docs/guide/profile`   | SCREENSHOT | Form mode: contact block, two expanded experience entries, skills and languages sections.   |
-| `guide/profile-archetypes.png` | `/docs/guide/profile`   | SCREENSHOT | Target roles: three cards, one per fit tier, each with its "when it fits" line.             |
 | `guide/profile-regenerate.gif` | `/docs/guide/profile`   | GIF        | Regenerate on the scoring card: pulse while running, freshness chip turning current.        |
 | `guide/my-jobs-table.png`      | `/docs/guide/add-job`   | SCREENSHOT | My Jobs table with legitimacy tiers and statuses.                                           |
 | `guide/gap-dialog.png`         | `/docs/guide/tailor`    | SCREENSHOT | Gap-fill dialog: one question, answer field, Skip, save-to-profile toggle.                  |
@@ -64,6 +62,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/profile-filled.png` - captured 2026-07-27, a tall crop of the form column: contact block,
+  both experience entries expanded, and the collapsed Skills and Languages rows.
+- `guide/profile-archetypes.png` - captured 2026-07-27, a tight crop of the Target roles panel with
+  one role per fit tier.
 - `guide/sidebar.png` - captured 2026-07-27 on the seeded demo database (`tools/capture/seed.mjs`),
   Dashboard open so the sidebar is shown against a working screen rather than an empty one.
 - `guide/onboarding.png` - captured 2026-07-27, wizard step 02 of 06. Shot after the provider lists

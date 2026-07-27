@@ -43,9 +43,16 @@
   So OpenAI is reachable only through Codex CLI, and Gemini is reachable through nothing. An
   earlier pass had "fixed" this by claiming Gemini was API-key only, which swapped one false claim
   for another. Copy across the landing page, `/press`, both AI docs pages, the FAQ in six locales
-  and the README now names exactly those four arms. **Known app-side defect, not fixed here:**
-  `settings.component.ts` still offers `openai` and `gemini` as API-mode providers that the backend
-  rejects at call time.
+  and the README now names exactly those four arms. **The app-side half is fixed on
+  `fix/onboarding-ai-provider-claims`** (2026-07-27), found while capturing the onboarding
+  screenshot: the onboarding AI step offered an OpenAI card in the API-key flow, and its CLI card
+  still read "Claude Code, Codex or Gemini CLI" in all six languages. Both are corrected, and
+  migration `0027_drop_openai_api_provider.sql` moves stranded installs off `openai`/`gemini` in API
+  mode. Correcting the earlier note in this file: `settings.component.ts` does **not** offer those
+  two as selectable providers - they are `disabled` options labelled "(coming soon)", so nothing
+  there can be picked and rejected at call time. Whether "coming soon" is itself an honest label for
+  two paths with no plan behind them is an open question for the maintainer, not a defect this entry
+  claims.
 - **NEXT BLOCKER FOR LAUNCH: 26 visible media placeholders**, all in `/docs/guide/*`, rendered as
   dashed boxes reading "PLACEHOLDER: guide/... ". They are the only thing between the current site
   and a public launch; every other page is finished. The shot list, with capture rules and

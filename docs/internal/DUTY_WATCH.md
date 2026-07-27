@@ -44,6 +44,64 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-27 (later), fourteen guide screenshots captured; a tailoring run left mid-wizard
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, driving the dev build through AppleScript, `screencapture` and a
+  CoreGraphics scroll helper
+- **Branch:** `main`
+- **Commits:** `10ae4ce`, `c98a39a`, `bcf086e`, `3968c48`, `617d523`, `baf8cb2`, `6f87fc6`,
+  `9d9cec9`, `de4f41e`, `d1f28b0`, `f48d506`
+- **Pull request:** none; committed to `main` and pushed
+- **Objective:** replace as many of the 25 guide media placeholders as possible from the running
+  app, without staging anything the product does not actually do.
+- **Completed:** Fourteen of twenty-five placeholders now show the real app: `settings-ai`,
+  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`,
+  `analytics`, `tracker-report`, `dashboard-full`, `discover-sources`, `discover-badges`,
+  `discover-detail`, `dashboard-empty`. `tools/capture/seed.mjs` grew a `--discover-only` mode and a
+  reimplementation of the app's own `stable_hash`, because the job page prints the first twelve
+  characters of `jd_hash` and the earlier placeholder value would have put the seed script's name in
+  a published screenshot. A full tailoring run completed on Northlane Systems: three passes, 22
+  recorded changes.
+- **Not completed:** Eleven placeholders. `gap-dialog` did not occur - the tailoring run produced no
+  gap questions, because the seeded profile answers everything the job asks; forcing one means
+  thinning the profile and running again. `documents-library` and `cv-editor` need the wizard
+  carried to steps 4 and 5, where documents are actually written; `tailoring_cache` has three rows
+  but `document_library` is still empty. The five GIFs and the two videos are untouched. **The
+  wizard is sitting on step 2 with its result intact**, so the next session can continue rather than
+  re-run it.
+- **Files or packages changed:** fourteen PNGs under `apps/web/public/guide/`,
+  `apps/web/src/app/docs/guide-pages.ts`, `tools/capture/seed.mjs`, `docs/product/MEDIA_SHOTLIST.md`,
+  `docs/product/CURRENT_STATE.md`, `CHANGELOG.md`.
+- **Validation:** Run and observed after every asset: `npm run format:check`, `nx run web:lint`,
+  `nx run web:test` (64), `nx run web:build`, `git diff --check`. All green. **Not verified:** the
+  guide pages have never been seen rendered - the browser preview pane returns a blank frame with
+  `innerWidth` 0, so the claim is only that each image is served with correct intrinsic size and
+  attributes, checked through the DOM.
+- **Privacy/security impact:** Every company in every frame is invented, on `example.com` /
+  `example.org`. No API key, contact or real employer appears. **Two capture mistakes, both caught
+  and contained:** one frame captured the maintainer's browser showing a personal login page with a
+  filled password field, and one captured the Claude Code window; both files were deleted
+  immediately, neither reached the repository, and the rule now is to verify the frontmost process
+  before every single `screencapture`. Four API calls were spent with the maintainer's approval
+  (one scoring profile, two scoring runs, one tailoring run).
+- **Decisions and assumptions:** Discover rows are seeded rather than scanned, because a live scan
+  would put real employers' postings on the website as demo data. Where the app could not produce
+  what a shot-list line asked for, the shot shows what the app does and the gap is recorded in the
+  shot list rather than staged - the scored view does not fit one frame, the feed row has no salary
+  badge, and the adjacent archetype tier cannot appear at all.
+- **Risks or compatibility impact:** None to shipped code; this watch changed no application source.
+- **Open issues or blockers:** Two product findings, neither fixed: clicking a row in Interview Prep
+  opens an overflow menu whose only entry deletes the application from prep, instead of opening its
+  timeline; and a target role whose only distinctive word is under three letters ("UI Engineer") can
+  never match anything, silently. Both are written up in `CURRENT_STATE.md`. Captures also depend on
+  the 5K display being the main one - `screencapture` silently returns 1x on the 1920x1080 screen.
+- **Next first action:** Continue the open wizard from step 3 to step 5 so `document_library` gets
+  its rows, then capture `documents-library` and `cv-editor`. `gap-dialog` needs a separate run
+  against a deliberately thinner profile.
+- **Evidence:** `apps/web/public/guide/`, `tools/capture/seed.mjs`, the "Already produced" section
+  of `docs/product/MEDIA_SHOTLIST.md`.
+
 ### 2026-07-27, first guide screenshot captured; two false AI-provider claims found and fixed
 
 - **Status:** partial

@@ -874,13 +874,19 @@ export class GuideDocuments {}
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/tracker-report.png - the report preview modal in Germany format:
-            letterhead, applicant, period, table - with the format and orientation controls visible.
-          </p>
-        </div>
+        <img
+          src="/guide/tracker-report.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The report preview dialog. Controls across the top set the applicant name, the report
+            format (Germany, Eigenbemühungen), the orientation (A4 portrait) and how columns fit,
+            with buttons to save as PDF or CSV. A notice says two columns do not fit A4 portrait and
+            are hidden. The preview below is the German document: Nachweise über
+            Bewerbungsbemühungen, to be presented to the Agentur für Arbeit, with the applicant, the
+            period, and five applications with German column headings and statuses."
+        />
         <figcaption>The Eigenbemühungen report, previewed before saving.</figcaption>
       </figure>
     </section>

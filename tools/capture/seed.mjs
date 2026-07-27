@@ -64,6 +64,25 @@ function sqlite(db, sql) {
   return execFileSync('sqlite3', [db, sql], { encoding: 'utf8' });
 }
 
+/**
+ * The app's own `jd_hash`, reimplemented: FNV-1a over whitespace-normalised,
+ * lowercased text (see `stable_hash` in src-tauri/src/db.rs). It matters
+ * visually, not just for dedupe - the job page prints the first twelve
+ * characters of this hash under the title, so a made-up value like
+ * "capture-seed-1" would put the name of this script on a screenshot.
+ */
+function stableHash(text) {
+  const normalized = text.split(/\s+/).filter(Boolean).join(' ').toLowerCase();
+  let hash = 0xcbf29ce484222325n;
+  const prime = 0x100000001b3n;
+  const mask = 0xffffffffffffffffn;
+  for (const byte of Buffer.from(normalized, 'utf8')) {
+    hash = (hash ^ BigInt(byte)) & mask;
+    hash = (hash * prime) & mask;
+  }
+  return hash.toString(16).padStart(16, '0');
+}
+
 function q(value) {
   if (value === null || value === undefined) return 'NULL';
   if (typeof value === 'number') return String(value);
@@ -406,7 +425,7 @@ function main() {
          salary_min, hard_filter_passed, created_at, legitimacy_tier, legitimacy_notes,
          imported_from, discover_shown_at, source_url)
        VALUES (${jobId}, ${q(job.company)}, ${q(job.title)}, ${q(job.jd)},
-         ${q(`capture-seed-${jobId}`)}, ${q('manual')}, ${q(job.location)}, ${q('en')},
+         ${q(stableHash(job.jd))}, ${q('manual')}, ${q(job.location)}, ${q('en')},
          ${q(job.salaryMin)}, 1, ${q(createdAt)}, ${q(job.tier)}, ${q(job.notes)},
          ${q('manual_paste')}, ${q(createdAt)},
          ${q(`https://jobs.example.com/${job.company.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)});`,

@@ -22,26 +22,19 @@ Keep these identical across every shot, or the docs will look assembled from thr
   shots (badges, dialogs), with at least 24 px of padding around the subject.
 - **Naming**: exactly the file name in the table. The placeholder text in the code names it too.
 
-## Priority 1 - needed for launch
+## Still open
 
-| Slot                          | Page                    | Type       | What to capture                                                                                                                                    |
-| ----------------------------- | ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `guide/tour-walkthrough.mp4`  | `/docs/guide/tour`      | VIDEO      | Narrated 2-3 min: first launch, onboarding, one paste-to-tailor loop, a look at each sidebar section. The single most important asset on the site. |
-| `guide/paste-job.gif`         | `/docs/guide/add-job`   | GIF        | Copy a JD, click Paste job, parsed result appears (company, title, salary, legitimacy tier).                                                       |
-| `guide/tailor-wizard.mp4`     | `/docs/guide/tailor`    | VIDEO      | 60-90 s: tailor pass, gap-fill dialog, review documents, export and apply with the native save dialog.                                             |
-| `guide/documents-library.png` | `/docs/guide/documents` | SCREENSHOT | CV tab with 3-4 CVs, one "Default" badge, one "Tailored" badge.                                                                                    |
+One guide slot. Everything else on the guide is captured; see "Already produced".
 
-## Priority 2 - fills out the guide
+| Slot                      | Page                   | Type | What to capture                                                            |
+| ------------------------- | ---------------------- | ---- | -------------------------------------------------------------------------- |
+| `guide/discover-scan.mp4` | `/docs/guide/discover` | GIF  | Scan running: console lines per source, collapsing into the summary strip. |
 
-| Slot                           | Page                    | Type       | What to capture                                                                             |
-| ------------------------------ | ----------------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| `guide/profile-regenerate.gif` | `/docs/guide/profile`   | GIF        | Regenerate on the scoring card: pulse while running, freshness chip turning current.        |
-| `guide/gap-dialog.png`         | `/docs/guide/tailor`    | SCREENSHOT | Gap-fill dialog: one question, answer field, Skip, save-to-profile toggle.                  |
-| `guide/discover-scan.gif`      | `/docs/guide/discover`  | GIF        | Scan running: console lines per source, collapsing into the summary strip.                  |
-| `guide/cv-import.gif`          | `/docs/guide/documents` | GIF        | Choose a PDF, parsing state, found-sections summary with the low-confidence list, save.     |
-| `guide/cv-editor.png`          | `/docs/guide/documents` | SCREENSHOT | Section list with a drag handle, live preview, one section showing style overrides.         |
-| `guide/pipeline-drag.gif`      | `/docs/guide/track`     | GIF        | Drag a card applied to interview, status pill updates, quick-view modal opens.              |
-| `guide/interview-timeline.png` | `/docs/guide/insights`  | SCREENSHOT | Three stage cards (screening done, technical upcoming, final planned) on the timeline rail. |
+**A take exists and was rejected, so re-shoot it deliberately.** Scanning the built-in sources
+returns real openings from real German employers, and those companies and their job titles fill the
+feed on screen. No frame in this documentation may carry a real employer, recruiter or contact. To
+capture this honestly, scan only a user-added source pointing at a reserved example domain, or stop
+the recording before results land and show the console alone.
 
 ## Priority 3 - marketing surfaces
 
@@ -52,6 +45,62 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | Press logo strip             | `/press`     | SVG set | Greyscale outlet logos linked to the articles, once coverage exists.        |
 
 ## Already produced
+
+All ten below were captured 2026-07-28 by the maintainer, on the seeded demo database, at 1440x900
+logical. Stills are 2x; the recordings are 1x, which keeps them small and costs nothing visible
+since a video is scaled to the column anyway.
+
+**Every GIF slot shipped as a silent looping MP4 instead**, which the capture rules already allow as
+the fallback above ~3 MB. They are marked up as `<video autoplay loop muted playsinline>`, so they
+behave like the GIF the slot asked for. None of them carries narration.
+
+- `guide/tour-walkthrough.mp4` - **shorter and narrower than the slot asked for, deliberately
+  shipped anyway.** The slot wants a narrated 2-3 minute tour of every sidebar section; this is 18
+  silent seconds of first run only: provider setup, the offer to read an existing CV, and the fields
+  it pulled out for confirmation. It is honest about what it shows, but it is not yet the tour, and
+  the docs page still promises one. Re-record before launch.
+- `guide/tailor-wizard.mp4` - 36 s against a 60-90 s slot. Covers the three tailoring passes, the
+  list of concrete changes, and Review documents. **Stops before Export & Apply**, so the native save
+  dialog and the resulting PDF - the part the caption used to promise - are absent. The caption was
+  changed to "From scored job to generated documents" rather than leave a claim the video does not
+  support.
+- `guide/paste-job.mp4` - 8 s, paste to parsed job. The parsed result lands with the legitimacy panel
+  flagging two real signals on the seeded posting: no company name, and an implausibly wide salary
+  range. Nothing was staged to produce them.
+- `guide/cv-import.mp4` - 6 s, importing `tools/capture/mira-cv.html` converted to DOCX. See the CV
+  source note below.
+- `guide/pipeline-drag.mp4` - 3 s against a 5-12 s floor. The drag and the quick-view modal are both
+  there, but it loops fast enough to read as a flicker. Worth re-recording with pauses.
+- `guide/profile-regenerate.mp4` - 2.2 s, well under the floor and the weakest asset shipped. The
+  scoring card is regenerated and fills in, but the pulse state the slot asks for is gone before a
+  viewer can see it.
+- `guide/documents-library.png` - **two documents, not the three or four the slot asks for, and no
+  Default badge on either.** Shows a tailored CV named after its job with a "Linked to" line, and an
+  imported CV under the applicant's name. Two further deviations, both because of how the app
+  behaves: there is no "Tailored" badge anywhere in the app - `cv-list.component.html` renders only
+  region, language and Default - and a tailored document is instead recognisable by its label and its
+  linked-application line. Duplicating the imported CV twice and marking one Default would fill the
+  list out; it is free, no AI call, and was simply not done.
+- `guide/cv-editor.png` - the section stack with Personal details, Summary and Experience open, drag
+  handles and per-section controls visible. **Two deviations from the slot, both because the app does
+  not work the way the slot assumed:** the preview is a mode that replaces the editor, not a panel
+  beside it (`cv-detail.component.html` renders `editor-col` or `preview-col`, never both), and there
+  are no section-level style overrides at all - style is one document-wide block. The caption was
+  changed from "with the preview alongside" to "one section at a time".
+- `guide/gap-dialog.png` - a tight crop, 1156x698, cut from the full-window frame. Question one of
+  two, with the reason it is being asked. **The save-to-profile toggle is not on this dialog**; it
+  lives on a separate confirmation dialog after the last question, so the slot's description of one
+  screen covers two. Shipping only the question was a deliberate choice.
+- `guide/interview-timeline.png` - three stages in three different states: screening passed,
+  technical scheduled, final awaiting scheduling. Reach this page from My Jobs, not from Interview
+  Prep: in Interview Prep a row click opens a menu whose only entry deletes the application, a defect
+  recorded in `CURRENT_STATE.md`.
+- CV source for the import: `tools/capture/mira-cv.html`, converted with
+  `textutil -convert docx`. It exists because the Documents library cannot be seeded - the only ways
+  a row reaches `document_library` are importing a file, generating a baseline, or finishing the
+  apply wizard, and the first two are AI calls. Writing rows straight into the database would put it
+  in a state no user could reach. The content is the same invented person as `PROFILE_MD` in
+  `seed.mjs`, word for word where they overlap.
 
 - `guide/dashboard-empty.png` - captured 2026-07-27. The quiet state was produced by clearing the
   actual reasons for each card - the follow-up date, the imminent interview, the cached scores -

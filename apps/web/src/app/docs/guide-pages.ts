@@ -4,11 +4,16 @@ import { RouterLink } from '@angular/router';
 /*
  * User guide - step-by-step, screen by screen, honest to what ships today.
  *
- * MEDIA PLACEHOLDERS: every <figure class="docs__media"> below is a stub. The
- * .docs__mediatag says what kind of asset goes there (SCREENSHOT / GIF / VIDEO)
- * and the text says exactly what to capture. Drop the real asset into
- * apps/web/public/guide/ and replace the placeholder box with an <img> or a
- * video embed, keeping the <figcaption>.
+ * MEDIA: every <figure class="docs__media"> holds a real capture from the
+ * running desktop app, except the one remaining stub. A stub keeps its
+ * .docs__mediabox, whose .docs__mediatag says what kind of asset goes there
+ * (SCREENSHOT / GIF / VIDEO) and whose text says exactly what to capture. Drop
+ * the real asset into apps/web/public/guide/ and replace the box with an <img>
+ * or a <video>, keeping the <figcaption>.
+ *
+ * Product shots are captured, never drawn. A picture of a UI that does not
+ * match the shipped app is a false claim about the product, in documentation
+ * whose whole argument is that this project is honest.
  */
 
 /* -------------------------------------------------------- First run & tour */
@@ -23,15 +28,21 @@ import { RouterLink } from '@angular/router';
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">VIDEO</span>
-        <p>
-          PLACEHOLDER: guide/tour-walkthrough - a 2-3 minute narrated walkthrough: first launch,
-          onboarding, one paste-to-tailor loop, one look at each sidebar section. This is the single
-          most important asset on the docs.
-        </p>
-      </div>
-      <figcaption>The full tour in one take.</figcaption>
+      <video
+        src="/guide/tour-walkthrough.mp4"
+        width="1440"
+        height="900"
+        controls
+        muted
+        playsinline
+        preload="metadata"
+        aria-label="A silent screen recording of the first run: the onboarding wizard asks which AI
+          provider to connect, offering a pasted API key or a CLI you already pay for, then offers
+          to read an existing CV by upload, pasted text, or skipping entirely, and finally shows the
+          fields it pulled out of that CV for confirmation - name, contact details, current title
+          and skills - before the app opens."
+      ></video>
+      <figcaption>First launch, start to finish.</figcaption>
     </figure>
 
     <section class="docs__section">
@@ -340,13 +351,20 @@ export class GuideDashboard {}
         </li>
       </ul>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">GIF</span>
-          <p>
-            PLACEHOLDER: guide/profile-regenerate.gif - clicking Regenerate on the scoring card: the
-            pulse indicator while it runs, then the freshness chip turning current.
-          </p>
-        </div>
+        <video
+          src="/guide/profile-regenerate.mp4"
+          width="1440"
+          height="900"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="metadata"
+          aria-label="A silent screen recording of the Profile page. The scoring profile card is
+            regenerated, and the card fills in with the compact JSON the app caches for scoring:
+            archetypes, skills grouped by kind, and the seniority reading, above a note saying when
+            it was generated and which model produced it."
+        ></video>
         <figcaption>Regenerating the scoring profile.</figcaption>
       </figure>
       <p>
@@ -371,13 +389,21 @@ export class GuideProfile {}
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">GIF</span>
-        <p>
-          PLACEHOLDER: guide/paste-job.gif - copying a JD from a browser, clicking "Paste job" in My
-          Jobs, and the parsed result appearing (company, title, salary detected, legitimacy tier).
-        </p>
-      </div>
+      <video
+        src="/guide/paste-job.mp4"
+        width="1440"
+        height="900"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="metadata"
+        aria-label="A silent screen recording. The Paste Job dialog opens over the Dashboard, a job
+          description is pasted in and analysed, and the app lands on the parsed job: title, a
+          location line, employment type, and a legitimacy panel that has passed the hard filter but
+          flags two suspicious signals - no company name in the posting, and a salary range wide
+          enough to be implausible."
+      ></video>
       <figcaption>Paste to parsed job in a few seconds.</figcaption>
     </figure>
 
@@ -491,15 +517,21 @@ export class GuideScore {}
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">VIDEO</span>
-        <p>
-          PLACEHOLDER: guide/tailor-wizard - a 60-90s capture of the whole wizard: Tailor pass
-          running, the gap-fill question dialog, Review documents, Export &amp; Apply with the
-          native save dialog and the resulting PDF.
-        </p>
-      </div>
-      <figcaption>From scored job to exported PDF.</figcaption>
+      <video
+        src="/guide/tailor-wizard.mp4"
+        width="1440"
+        height="900"
+        controls
+        muted
+        playsinline
+        preload="metadata"
+        aria-label="A silent screen recording of the apply wizard on a scored job. Step two runs
+          three passes in turn - rewrite, HR critique, build - then lists every change it made, each
+          one a concrete rewrite of a CV bullet rather than a summary. Step four opens Review
+          documents, with the generated CV and cover letter side by side and the final ATS, HR
+          critique and fit checks still unrun."
+      ></video>
+      <figcaption>From scored job to generated documents.</figcaption>
     </figure>
 
     <section class="docs__section">
@@ -533,13 +565,17 @@ export class GuideScore {}
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/gap-dialog.png - the gap-fill dialog mid-flow: one question, answer
-            field, Skip button, save-to-profile toggle.
-          </p>
-        </div>
+        <img
+          src="/guide/gap-dialog.png"
+          width="1156"
+          height="698"
+          loading="lazy"
+          decoding="async"
+          alt="The gap-fill dialog, question one of two. It asks how the applicant typically handles
+            tight deadlines and unplanned release pressure, and states plainly why it is asking: the
+            job emphasises stress-resistance and willingness to work beyond standard hours. Below is
+            an empty answer box reading Type your answer, or Skip, with a Skip button beside Next."
+        />
         <figcaption>The wizard asks; it does not invent.</figcaption>
       </figure>
       <p>
@@ -711,13 +747,18 @@ export class GuideDiscover {}
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">SCREENSHOT</span>
-        <p>
-          PLACEHOLDER: guide/documents-library.png - the Documents page on the CV tab with three or
-          four CVs, one carrying the "Default" badge and one the "Tailored" badge.
-        </p>
-      </div>
+      <img
+        src="/guide/documents-library.png"
+        width="2880"
+        height="1800"
+        loading="lazy"
+        decoding="async"
+        alt="The Documents page on the CV tab, with a Cover Letter tab beside it and Import CV and
+          Generate baseline as the two ways in. Two documents are listed: a tailored CV named after
+          the job it was written for, tagged generic and English, with a line underneath recording
+          which application it is linked to; and an imported CV under the applicant's own name,
+          tagged DE and English. Each row carries duplicate, export and delete controls."
+      />
       <figcaption>The library: CV tab and Cover Letter tab.</figcaption>
     </figure>
 
@@ -748,13 +789,20 @@ export class GuideDiscover {}
         applied, so the library never fills up with half-finished attempts.
       </p>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">GIF</span>
-          <p>
-            PLACEHOLDER: guide/cv-import.gif - choosing a PDF, the "Reading and parsing…" state, the
-            found-sections summary with the low-confidence list, then "Save to library".
-          </p>
-        </div>
+        <video
+          src="/guide/cv-import.mp4"
+          width="1440"
+          height="900"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="metadata"
+          aria-label="A silent screen recording. The Import your CV dialog opens over the Documents
+            page, noting that a PDF or DOCX is parsed locally and that the parse can be reviewed
+            section by section. It works, then reports that the CV was imported and saved to the
+            library, and the new document appears in the list."
+        ></video>
         <figcaption>Import shows its work before saving.</figcaption>
       </figure>
     </section>
@@ -787,15 +835,20 @@ export class GuideDiscover {}
         </li>
       </ul>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/cv-editor.png - the CV detail view: section list on one side with a
-            drag handle visible, live document preview on the other, one section showing its style
-            override controls.
-          </p>
-        </div>
-        <figcaption>Section-level control, with the preview alongside.</figcaption>
+        <img
+          src="/guide/cv-editor.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The CV editor, scrolled to the section stack. Personal details is open with the
+            applicant's name, title, email, phone, city and links, and a Pull from profile button
+            above them. Summary follows, holding an editable paragraph. Experience follows that,
+            with a role, employer, start year, an empty end date labelled blank equals present, and
+            four bullet points, each removable. Every movable section carries a drag handle on the
+            left and regenerate and reorder controls on the right."
+        />
+        <figcaption>Section-level control, one section at a time.</figcaption>
       </figure>
     </section>
 
@@ -867,13 +920,20 @@ export class GuideDocuments {}
         </li>
       </ul>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">GIF</span>
-          <p>
-            PLACEHOLDER: guide/pipeline-drag.gif - dragging a card from applied to interview, the
-            status pill updating, then opening the quick-view modal.
-          </p>
-        </div>
+        <video
+          src="/guide/pipeline-drag.mp4"
+          width="1440"
+          height="900"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="metadata"
+          aria-label="A silent screen recording of the Pipeline board. A card is dragged out of the
+            applied column and dropped into interview, and the quick-view modal opens on it: status
+            now interview, the score beside it, priority and the stage log, with an empty date field
+            and buttons to skip the interview stage or add it."
+        ></video>
         <figcaption>The board in motion.</figcaption>
       </figure>
     </section>
@@ -948,13 +1008,18 @@ export class GuideTrack {}
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/interview-timeline.png - a detail page with three stage cards
-            (screening done, technical upcoming, final planned) on the timeline rail.
-          </p>
-        </div>
+        <img
+          src="/guide/interview-timeline.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="One application's interview timeline: three stages, one upcoming. A numbered rail
+            runs down the left. Stage one, a screening call with HR held in July, is marked passed.
+            Stage two, a technical round in August, is scheduled. Stage three, the final
+            conversation, has no date and is awaiting scheduling. Each row can be reordered, edited
+            or deleted, and Add stage sits above them."
+        />
         <figcaption>One application, every round.</figcaption>
       </figure>
     </section>

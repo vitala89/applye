@@ -950,13 +950,18 @@ export class GuideTrack {}
         </li>
       </ul>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/analytics.png - the Analytics screen with counters, funnel, and the
-            over-time chart visible in one frame.
-          </p>
-        </div>
+        <img
+          src="/guide/analytics.png"
+          width="2360"
+          height="1816"
+          loading="lazy"
+          decoding="async"
+          alt="The Analytics screen over the last 90 days. Four counters read five applications sent,
+            a 60 per cent response rate, three interviews and one offer. An application funnel below
+            them steps from eight saved to five applied, three interviewing and one offer, with the
+            conversion between each pair on the right and a leakage row showing one rejection. A
+            weekly chart of applications over time runs along the bottom."
+        />
         <figcaption>Your search, measured locally.</figcaption>
       </figure>
       <p>

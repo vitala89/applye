@@ -48,7 +48,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | `guide/pipeline-drag.gif`      | `/docs/guide/track`     | GIF        | Drag a card applied to interview, status pill updates, quick-view modal opens.              |
 | `guide/tracker-report.png`     | `/docs/guide/track`     | SCREENSHOT | Report preview in Germany format with the format and orientation controls visible.          |
 | `guide/interview-timeline.png` | `/docs/guide/insights`  | SCREENSHOT | Three stage cards (screening done, technical upcoming, final planned) on the timeline rail. |
-| `guide/analytics.png`          | `/docs/guide/insights`  | SCREENSHOT | Counters, funnel and the over-time chart in one frame.                                      |
 
 ## Priority 3 - marketing surfaces
 
@@ -60,6 +59,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/analytics.png` - captured 2026-07-27, a crop of the content column holding the four
+  counters, the funnel and the weekly chart. Needed a taller window than the 1440x900 standard,
+  since the three do not fit a 900-point viewport; the width, which is what fixes layout, is
+  unchanged.
 - `guide/my-jobs-table.png` - captured 2026-07-27, after two real scoring runs so the score column
   is not uniformly empty. Shows all five statuses and all three legitimacy tiers.
 - `guide/score-result.png` - captured 2026-07-27 from a real scoring run against the seeded profile

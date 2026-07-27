@@ -424,7 +424,7 @@ export class GuideAddJob {}
       <h2 id="run" class="docs__h2">Running the check</h2>
       <ol class="docs__list docs__list--ol">
         <li>Open the job's detail page from My Jobs.</li>
-        <li>Click <strong>Score with AI</strong>. One opt-in call runs; the result is cached.</li>
+        <li>Click <strong>Score this job</strong>. One opt-in call runs; the result is cached.</li>
         <li>
           You get a <strong>percentage match</strong> gauge, a per-dimension breakdown, the
           <strong>keywords you are missing</strong>, <strong>red flags</strong> a screener would
@@ -432,13 +432,20 @@ export class GuideAddJob {}
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/score-result.png - a scored job: the percentage gauge, dimension
-            breakdown, missing keywords chips, and red flags list.
-          </p>
-        </div>
+        <img
+          src="/guide/score-result.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The lower half of a scored job in Applye. A Language Requirements dimension scores 60
+            per cent and explains that the role wants German B2 while the profile states B1. Below
+            it, a missing-keywords panel shows one chip reading German B2 (candidate is B1), an ATS
+            check reports the CV is likely to pass a scan, and three red flags list the language
+            gap, an undisclosed notice period and achievements that do not evidence two of the job's
+            specifics. A before-you-submit list turns each into an action, and a footer offers to
+            tailor an application against the job."
+        />
         <figcaption>A scored role, honest verdict included.</figcaption>
       </figure>
     </section>

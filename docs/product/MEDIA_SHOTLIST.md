@@ -29,7 +29,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | `guide/tour-walkthrough.mp4`  | `/docs/guide/tour`      | VIDEO      | Narrated 2-3 min: first launch, onboarding, one paste-to-tailor loop, a look at each sidebar section. The single most important asset on the site. |
 | `guide/dashboard-full.png`    | `/docs/guide/dashboard` | SCREENSHOT | All four KPI tiles populated, 3-4 different "needs attention" cards, an upcoming interview.                                                        |
 | `guide/paste-job.gif`         | `/docs/guide/add-job`   | GIF        | Copy a JD, click Paste job, parsed result appears (company, title, salary, legitimacy tier).                                                       |
-| `guide/score-result.png`      | `/docs/guide/score`     | SCREENSHOT | Percentage gauge, dimension breakdown, missing-keyword chips, red flags.                                                                           |
 | `guide/tailor-wizard.mp4`     | `/docs/guide/tailor`    | VIDEO      | 60-90 s: tailor pass, gap-fill dialog, review documents, export and apply with the native save dialog.                                             |
 | `guide/discover-badges.png`   | `/docs/guide/discover`  | SCREENSHOT | Tight crop of three feed rows: primary, secondary and adjacent tiers, plus a salary badge and a NEW pill.                                          |
 | `guide/documents-library.png` | `/docs/guide/documents` | SCREENSHOT | CV tab with 3-4 CVs, one "Default" badge, one "Tailored" badge.                                                                                    |
@@ -62,6 +61,11 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/score-result.png` - captured 2026-07-27 from a real scoring run against the seeded profile
+  (Vantaform GmbH, 72 per cent). **Known limitation, not a capture error:** the result is taller than
+  a 1440x900 window, so the percentage gauge and the red flags cannot appear in one frame. The shot
+  keeps the half that is harder to guess - the missing-keyword chips, the ATS check and the red
+  flags. If the gauge should also be shown, the page needs a second figure rather than a wider crop.
 - `guide/profile-filled.png` - captured 2026-07-27, a tall crop of the form column: contact block,
   both experience entries expanded, and the collapsed Skills and Languages rows.
 - `guide/profile-archetypes.png` - captured 2026-07-27, a tight crop of the Target roles panel with

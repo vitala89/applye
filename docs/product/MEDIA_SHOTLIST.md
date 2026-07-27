@@ -27,7 +27,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | Slot                          | Page                    | Type       | What to capture                                                                                                                                    |
 | ----------------------------- | ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `guide/tour-walkthrough.mp4`  | `/docs/guide/tour`      | VIDEO      | Narrated 2-3 min: first launch, onboarding, one paste-to-tailor loop, a look at each sidebar section. The single most important asset on the site. |
-| `guide/dashboard-full.png`    | `/docs/guide/dashboard` | SCREENSHOT | All four KPI tiles populated, 3-4 different "needs attention" cards, an upcoming interview.                                                        |
 | `guide/paste-job.gif`         | `/docs/guide/add-job`   | GIF        | Copy a JD, click Paste job, parsed result appears (company, title, salary, legitimacy tier).                                                       |
 | `guide/tailor-wizard.mp4`     | `/docs/guide/tailor`    | VIDEO      | 60-90 s: tailor pass, gap-fill dialog, review documents, export and apply with the native save dialog.                                             |
 | `guide/discover-badges.png`   | `/docs/guide/discover`  | SCREENSHOT | Tight crop of three feed rows: primary, secondary and adjacent tiers, plus a salary badge and a NEW pill.                                          |
@@ -58,6 +57,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/dashboard-full.png` - captured 2026-07-27. Getting three different card kinds on screen
+  took real state, not staging: the seeded interview was moved inside the 48-hour window the card
+  needs, and the profile was edited and its scoring profile regenerated, which is what genuinely
+  stales an existing score.
 - `guide/tracker-report.png` - captured 2026-07-27 in the Germany (Eigenbemuehungen) format, with
   the applicant name filled in so the document reads as a real one.
 - `guide/analytics.png` - captured 2026-07-27, a crop of the content column holding the four

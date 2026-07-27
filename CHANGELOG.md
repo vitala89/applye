@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **The documentation's AI settings page now shows the real screen instead of a dashed box.** `guide/settings-ai.png` is captured from the running desktop app at 1440x900 in the dark theme, and it shows what the page claims: API mode with Anthropic selected, the full privacy note about what an API call sends, and the API key block in its stored state. No key is visible in the frame and none had to be painted over, because the app never reads a stored key back to the interface. This is the first of the site's media placeholders to be replaced; the remaining ones are tracked in `docs/product/MEDIA_SHOTLIST.md`.
+
 ### Fixed
 
 - **Onboarding sold an OpenAI API key that Applye cannot use.** The AI step offered three provider cards in its "paste an API key" flow - Claude, OpenAI and DeepSeek - but API mode only dispatches to Anthropic and DeepSeek; anything else is answered with "not supported in API mode yet". A user who picked OpenAI was walked through creating a key at the OpenAI console, told it was saved, and then had every scoring, tailoring and interview-prep call fail, with nothing pointing at the provider as the cause. The card is gone. OpenAI is still reachable the way it always was, through Codex in CLI bridge mode. A migration moves anyone whose settings already name OpenAI or Gemini in API mode over to Claude, the same rescue the Gemini CLI removal shipped in 0.28.0, because otherwise their install stays broken with no in-app way out.

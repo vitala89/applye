@@ -44,6 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-28, onboarding resume import fixed: in-wizard AI calls used the pre-onboarding provider
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus)
+- **Branch:** `fix/onboarding-cv-parse`
+- **Commits:** one fix commit on the branch
+- **Pull request:** not opened
+- **Objective:** Find and fix why the onboarding resume step answered every import - uploaded PDF, uploaded DOCX, and pasted text alike - with "Couldn't parse that resume. Try pasting the text instead."
+- **Completed:** Root cause was not parsing. `parseResume()` and `suggestArchetypes()` read `aiMode`, `provider` and `economyModel` back from the settings row, but the AI-setup step only persisted its choices in `markSeen()`, which runs at finish or skip. Every call made inside the wizard therefore used the migration defaults from `0002_settings_defaults.sql` (`api`, `claude`, `claude-haiku-4-5`): picking DeepSeek dispatched to Claude with no key in the keyring, and picking the CLI bridge dispatched to API mode with a model id no CLI accepts. Both threw, and the component's bare `catch {}` replaced the reason with the parse wording, which is why the three input paths failed identically and why the message pointed at the document. Fixed by dispatching from the wizard's own state (`aiDispatch()`, which also sends no model in CLI mode, matching the rule `markSeen()` already applied), committing mode and provider to settings when the AI step is left (`persistAiChoice()`), and keeping the raw failure in `resumeErrorDetail` so it renders under the friendly line. The import now also passes `maxTokens: 8192`, the ceiling the Documents importer has and this one lacked. Model ids are still only blanked at finish, so trying CLI mode and switching back to API within one run cannot leave the user with no model.
+- **Not completed:** Not verified natively. This branch was neither run under `npm run desktop:dev` nor exercised against a real provider, so the fix is proven by unit tests only. The five surfaces the previous watch listed as never natively verified remain so.
+- **Files or packages changed:** `apps/desktop/src/app/core/onboarding/onboarding.component.ts`, `.html`, `.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`. Untracked `media-inbox/` and `tools/capture/mira-cv.html` were left untouched on purpose - they belong to the media watch running in parallel.
+- **Validation:** Run and observed on this branch: `nx test desktop` (41 suites, 709 tests, pass; onboarding suite 52 -> 57), `nx lint desktop` (0 errors, 11 pre-existing warnings), `npm run format:check` (pass), `git diff --check` (clean). The five new tests were confirmed to fail against the stashed pre-fix component and pass after, so they test the fix rather than the current behavior. **Not run:** `tauri dev`, `npm run type-check`, the Rust gates, the web build - nothing in this diff reaches Rust, IPC or the site.
+- **Privacy/security impact:** None on storage or network. One surface change: the resume step now prints the raw error string from `ai_run`. That string is a provider or transport failure, not resume content, and the same string is already shown by the Documents importer through a toast.
+- **Decisions and assumptions:** Fixed at both ends deliberately - persisting on step exit makes settings agree with the user, and dispatching from wizard state keeps the calls correct even when that write fails, which is a path `persistAiChoice()` swallows to avoid trapping the user in onboarding. Assumed the reported failure is this one; it explains all three input paths failing identically and it is the only shared difference between the working Documents import and the broken onboarding import, but with the error swallowed there is no captured log from the reporting session to confirm against.
+- **Risks or compatibility impact:** Low. Mode and provider now land in settings one step earlier, which is what the user picked either way; a user who abandons the wizard after the AI step now keeps that choice rather than reverting to Claude.
+- **Open issues or blockers:** `suggestArchetypes()` still swallows its error entirely, by design - it is an enhancement - but that means a provider misconfiguration there is invisible. Not changed in this watch.
+- **Next first action:** Run `npm run desktop:dev`, walk onboarding with DeepSeek selected and an API key stored, and confirm the resume step parses; then repeat in CLI mode with Claude Code installed.
+- **Evidence:** Branch diff; the test run above; `0002_settings_defaults.sql` lines 19-22 for the defaults the wizard was falling back to.
+
 ### 2026-07-27 (later), fourteen guide screenshots captured; a tailoring run left mid-wizard
 
 - **Status:** partial

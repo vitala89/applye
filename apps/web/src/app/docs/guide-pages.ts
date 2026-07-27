@@ -667,13 +667,18 @@ export class GuideTailor {}
         no badge is shown at all - an honest blank rather than a guess.
       </p>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/discover-badges.png - a close crop of three feed rows showing all
-            three archetype tiers side by side, plus one salary badge and one NEW pill.
-          </p>
-        </div>
+        <img
+          src="/guide/discover-badges.png"
+          width="2360"
+          height="1206"
+          loading="lazy"
+          decoding="async"
+          alt="Four rows of the Discover feed. Under a For you heading, two roles are labelled
+            Primary role and one Web Platform Engineer is labelled Secondary role; each row carries
+            a NEW pill, the feed it came from, its location, and the words that matched. Below, a
+            More openings heading holds a row with no role label, which is how the feed shows an
+            opening that did not match any target role."
+        />
         <figcaption>Three tiers, at a glance.</figcaption>
       </figure>
     </section>

@@ -52,11 +52,11 @@
   mode over to Claude, the same rescue `0022` performed for Gemini in CLI mode. Correcting an
   earlier note in this file: those Settings entries were `disabled`, so they could not be picked and
   rejected at call time; the selectable defect was in onboarding.
-- **NEXT BLOCKER FOR LAUNCH: media placeholders, 14 of 25 left** in `/docs/guide/*`, rendered as
+- **NEXT BLOCKER FOR LAUNCH: media placeholders, 13 of 25 left** in `/docs/guide/*`, rendered as
   dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
   kit on `/press`. They are the only thing between the current site and a public launch; every other
   page is finished. Done on 2026-07-27, all captured from the running desktop app: `settings-ai`,
-  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`, `analytics`, `tracker-report`, `dashboard-full`, `discover-sources`.
+  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`, `analytics`, `tracker-report`, `dashboard-full`, `discover-sources`, `discover-badges`.
   Note the earlier count of "26" was
   off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
   list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
@@ -74,6 +74,13 @@
   action - rather than opening that application's stage timeline. It blocked `interview-timeline.png`
   during the session, and it is worth a look on its own: the row's obvious action should not be
   deletion.
+- **Second product finding from the capture session: a target role whose distinctive word is under
+  three letters can never match anything.** `archetypeWords` in `libs/core/src/lib/profile/archetype.ts`
+  drops words shorter than three characters, and `matchArchetype` requires at least one distinctive
+  (non-generic) word to anchor. A role named "UI Engineer" therefore reduces to "engineer", which is
+  generic, so the archetype is silently dead: no Discover badge, no For-you grouping, no effect on
+  scoring prompts. The user gets no indication. Found while trying to show the adjacent tier in
+  `discover-badges.png`, which is why that shot shows an unmatched row instead.
 - **Open decision: the scored view does not fit one frame.** The gauge and the red flags are more
   than 900 logical points apart, so `score-result.png` shows the lower half - chips, ATS check, red
   flags, before-you-submit. Either that stands, or `/docs/guide/score` gains a second figure for the

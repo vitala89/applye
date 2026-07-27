@@ -51,9 +51,13 @@ function iso(daysFromNow, hour = 10, minute = 0) {
 }
 
 function parseArgs(argv) {
-  const args = { db: DEFAULT_DB, confirmed: false };
+  const args = { db: DEFAULT_DB, confirmed: false, discoverOnly: false };
   for (let i = 2; i < argv.length; i += 1) {
     if (argv[i] === '--i-know-this-wipes-the-db') args.confirmed = true;
+    // Re-inserts only the Discover rows, leaving everything else alone. Exists
+    // because a full re-seed also drops the profile, and the scoring profile on
+    // it is real AI output that costs a call to regenerate.
+    else if (argv[i] === '--discover-only') args.discoverOnly = true;
     else if (argv[i] === '--db') args.db = argv[(i += 1)];
     else throw new Error(`unknown argument: ${argv[i]}`);
   }
@@ -377,7 +381,97 @@ const USER_SOURCE = {
   lastScanDaysAgo: 0,
 };
 
+/**
+ * Rows for the Discover inbox. They are separate from JOBS because the feed
+ * only shows `imported_from = 'discover_scan'`, and because scanning for real
+ * would fill the screenshots with real companies' postings.
+ *
+ * Titles are chosen to hit each archetype tier, which takes care: `matchArchetype`
+ * picks the HIGHEST tier whose distinctive word appears, regardless of how well
+ * the rest matches. Any title containing "frontend" therefore reads primary. To
+ * show a secondary badge the title must carry "platform" without "frontend", and
+ * for adjacent, "ui" without either. `discoverShownAt` stays null so the rows
+ * still carry their NEW pill.
+ */
+const DISCOVER_JOBS = [
+  {
+    company: 'Halvard Systems',
+    title: 'Senior Frontend Engineer',
+    location: 'Berlin, Germany',
+    salaryMin: 85000,
+    hoursAgo: 2,
+    jd: `Own the customer-facing app end to end: Angular, TypeScript, a design system shared with
+two other teams. You will set the frontend architecture and review most of what ships.
+
+Requirements: 5+ years, strong TypeScript, accessibility experience.
+
+EUR 85,000 - 98,000 per year. Hybrid in Berlin.`,
+  },
+  {
+    company: 'Nordhaven Labs',
+    title: 'Web Platform Engineer',
+    location: 'Remote, EU',
+    salaryMin: 78000,
+    hoursAgo: 5,
+    jd: `Platform team owning the component library, the build pipeline and the release train for
+five product teams. Nx monorepo, Storybook, Playwright.
+
+EUR 78,000 - 90,000 per year. Remote within the EU.`,
+  },
+  {
+    company: 'Brightfen Studio',
+    title: 'UI Engineer',
+    location: 'Hamburg, Germany',
+    salaryMin: null,
+    hoursAgo: 9,
+    jd: `Editorial tooling for a publishing house: an article editor and a newsletter builder used
+by the newsroom every day.
+
+Requirements: solid CSS, one component framework, care for editorial workflows.`,
+  },
+  {
+    company: 'Steinbeck Interactive',
+    title: 'Senior Frontend Engineer (Design Systems)',
+    location: 'Remote, CET',
+    salaryMin: 82000,
+    hoursAgo: 20,
+    jd: `Design-system ownership across web and mobile web. Tokens, documentation, migration
+support for four product teams.
+
+EUR 82,000 - 95,000 per year.`,
+  },
+  {
+    company: 'Wrenfield Data',
+    title: 'UI Engineer, Analytics',
+    location: 'Munich, Germany',
+    salaryMin: 72000,
+    hoursAgo: 30,
+    jd: `Dashboards over a large time-series backend. Charting, virtualised tables, performance
+budgets that are actually enforced.
+
+EUR 72,000 - 84,000 per year. Hybrid in Munich.`,
+  },
+];
+
 // ----------------------------------------------------------------- execution
+
+/** Inserts the Discover inbox rows. Shared by the full seed and --discover-only. */
+function pushDiscoverJobs(sql) {
+  DISCOVER_JOBS.forEach((job, index) => {
+    const jobId = 100 + index;
+    const seen = new Date(NOW.getTime() - job.hoursAgo * 3600_000).toISOString();
+    const slug = job.company.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    sql.push(
+      `INSERT INTO jobs (id, company, title, jd_text, jd_hash, source, location, language,
+         salary_min, hard_filter_passed, created_at, legitimacy_tier, imported_from,
+         discover_shown_at, discover_dismissed, source_url)
+       VALUES (${jobId}, ${q(job.company)}, ${q(job.title)}, ${q(job.jd)},
+         ${q(stableHash(job.jd))}, ${q('Frontend roles (EU)')}, ${q(job.location)}, ${q('en')},
+         ${q(job.salaryMin)}, 1, ${q(seen)}, ${q('green')}, ${q('discover_scan')},
+         NULL, 0, ${q(`https://jobs.example.com/${slug}`)});`,
+    );
+  });
+}
 
 function main() {
   const args = parseArgs(process.argv);
@@ -403,6 +497,17 @@ function main() {
   const sql = [];
   sql.push('PRAGMA foreign_keys = ON;');
   sql.push('BEGIN;');
+
+  if (args.discoverOnly) {
+    sql.push("DELETE FROM jobs WHERE imported_from = 'discover_scan';");
+    pushDiscoverJobs(sql);
+    sql.push('COMMIT;');
+    sqlite(args.db, sql.join('\n'));
+    console.log(
+      `Discover rows only: ${sqlite(args.db, "SELECT COUNT(*) FROM jobs WHERE imported_from = 'discover_scan';").trim()} inserted`,
+    );
+    return;
+  }
 
   // Order matters: children before parents.
   sql.push('DELETE FROM interview_stages;');
@@ -465,6 +570,8 @@ function main() {
       );
     });
   });
+
+  pushDiscoverJobs(sql);
 
   sql.push(
     `INSERT INTO sources (name, type, url, is_builtin, is_enabled, geo_tags_json,

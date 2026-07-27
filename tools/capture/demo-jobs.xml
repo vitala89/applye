@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Capture fixture: a job feed of invented companies, for producing the website's
+  Discover screenshots without putting a real company's posting on applye.dev.
+
+  Every company here is made up. The domains are example.com and example.org,
+  which RFC 2606 reserves for exactly this purpose, so none of them can ever
+  belong to someone. No real recruiter, address or contact appears.
+
+  NOT SERVED FROM THE SITE ON PURPOSE. This file lives outside apps/web/public
+  so `npm run web:deploy` cannot publish it: applye.dev should not host fake
+  vacancies. Discover only fetches https:// sources (see `require_https` in
+  commands/discover.rs) and reqwest is built with rustls on the Mozilla root
+  store, so a self-signed local server is not an option either. To scan this
+  feed for real, host it on an https origin you control and add it as an RSS
+  source; otherwise seed the Discover rows straight into the database.
+
+  KNOWN PARSER LIMIT: `parse_rss_items` splits "Company: Role" into separate
+  fields only for weworkremotely hosts. Every other feed lands with an empty
+  company, so rows scanned from here will show the whole title and no company
+  name. That is why the badge and detail screenshots are seeded rather than
+  scanned.
+-->
+<rss version="2.0">
+  <channel>
+    <title>Frontend roles - capture fixture</title>
+    <link>https://jobs.example.com/frontend</link>
+    <description>Invented postings used to produce Applye's documentation screenshots.</description>
+    <language>en</language>
+
+    <item>
+      <title>Northlane Systems: Senior Frontend Engineer</title>
+      <link>https://jobs.example.com/northlane-systems/senior-frontend-engineer</link>
+      <pubDate>Mon, 27 Jul 2026 08:10:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Berlin, hybrid (2 days on site). EUR 78,000 - 92,000 per year.</p>
+        <p>We are looking for a senior frontend engineer to own our customer console.
+        The stack is Angular 20, TypeScript, RxJS and a Node BFF. You will lead the
+        migration from our legacy dashboard, set the testing bar, and review most of
+        the frontend work that ships.</p>
+        <p>Requirements: 5+ years with a component framework, strong TypeScript,
+        experience with accessibility audits, German B1 or better for internal
+        meetings.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Kestrel Analytics: Frontend Platform Engineer</title>
+      <link>https://jobs.example.com/kestrel-analytics/frontend-platform-engineer</link>
+      <pubDate>Sun, 26 Jul 2026 14:40:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Remote within the EU. EUR 75,000 - 88,000 per year.</p>
+        <p>Platform team, four engineers. You will own the design-system package,
+        the build pipeline and the release train for six product teams. Angular and
+        Nx monorepo, Storybook, Playwright.</p>
+        <p>Requirements: monorepo experience, comfort with build tooling, an eye for
+        API design in shared components.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Pellworm Digital: Senior Web Engineer</title>
+      <link>https://jobs.example.org/pellworm-digital/senior-web-engineer</link>
+      <pubDate>Fri, 24 Jul 2026 09:05:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Hamburg, hybrid. EUR 80,000 - 95,000 per year.</p>
+        <p>Rebuilding a booking flow that serves 40,000 sessions a day. TypeScript
+        everywhere, Angular on the front, a small Rust service behind it. Strong
+        performance culture: every release is measured against a Core Web Vitals
+        budget.</p>
+        <p>Requirements: senior frontend experience, measurable performance work,
+        willingness to pair with designers weekly.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Marlowe &amp; Fen: Staff Frontend Engineer</title>
+      <link>https://jobs.example.com/marlowe-fen/staff-frontend-engineer</link>
+      <pubDate>Thu, 23 Jul 2026 17:25:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Berlin or remote (CET +/- 2). EUR 100,000 - 115,000 per year.</p>
+        <p>Staff role across three product teams. You will set frontend direction,
+        own the architecture of the next client, and mentor six engineers. Angular,
+        TypeScript, a shared design system, and a heavy accessibility commitment.</p>
+        <p>Requirements: 8+ years, prior staff or principal scope, a track record of
+        migrations delivered without a freeze.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Umbra Labs: Angular Engineer</title>
+      <link>https://jobs.example.org/umbra-labs/angular-engineer</link>
+      <pubDate>Wed, 22 Jul 2026 11:00:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Berlin. EUR 70,000 per year.</p>
+        <p>Small team, fast pace. We are a family and we work hard and play hard.
+        Looking for someone stress-resistant who can wear many hats and is not a
+        clock-watcher. Angular, some backend when needed, occasional weekend
+        releases before a launch.</p>
+        <p>Requirements: 3+ years Angular, flexibility, a can-do attitude.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Vantaform GmbH: Fullstack Engineer (frontend-heavy)</title>
+      <link>https://jobs.example.com/vantaform/fullstack-engineer</link>
+      <pubDate>Tue, 21 Jul 2026 08:45:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Munich, hybrid. Salary not stated.</p>
+        <p>Roughly 70% frontend, 30% Node services. You will work on an internal
+        logistics tool used by 300 staff: dense tables, offline-tolerant forms,
+        printable reports.</p>
+        <p>Requirements: TypeScript, a component framework, some SQL, German B2 for
+        stakeholder interviews.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Cindertree Studio: Frontend Developer</title>
+      <link>https://jobs.example.org/cindertree-studio/frontend-developer</link>
+      <pubDate>Mon, 20 Jul 2026 16:30:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Remote, Europe. Salary not stated.</p>
+        <p>Agency work: three to five client projects a year, mostly marketing sites
+        and configurators. Expect a new codebase every quarter and a lot of
+        animation work.</p>
+        <p>Requirements: solid CSS, one component framework, comfort switching
+        stacks, portfolio required.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Roosterhill Media: UI Engineer</title>
+      <link>https://jobs.example.com/roosterhill-media/ui-engineer</link>
+      <pubDate>Sat, 18 Jul 2026 10:15:00 +0200</pubDate>
+      <description><![CDATA[
+        <p>Cologne, on site. EUR 62,000 - 70,000 per year.</p>
+        <p>Publishing house, editorial tooling. You will maintain the article editor
+        and the newsletter builder used by the newsroom every day.</p>
+        <p>Requirements: 2+ years frontend, care for editorial workflows, German C1
+        because the newsroom works in German.</p>
+      ]]></description>
+    </item>
+  </channel>
+</rss>

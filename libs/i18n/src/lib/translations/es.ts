@@ -1522,7 +1522,7 @@ export const es: TranslationMap = stub(en, {
       mode_api_title: 'Pegar una clave de API',
       mode_api_sub: 'Pago por uso. Funciona con cualquiera de los proveedores de abajo.',
       mode_cli_title: 'Usar una CLI que ya pagas',
-      mode_cli_sub: 'Claude Code, Codex o Gemini CLI. Sin clave de API ni factura extra.',
+      mode_cli_sub: 'Claude Code o Codex. Sin clave de API ni factura extra.',
       skip_warning:
         'Puedes omitir esto, pero el análisis, la adaptación y la preparación de entrevistas seguirán desactivados hasta que añadas una clave.',
       gemini: {

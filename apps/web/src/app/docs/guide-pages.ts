@@ -631,13 +631,20 @@ export class GuideTailor {}
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/discover-detail.png - the full-screen job detail: hero with the
-            archetype-fit badge and salary badge, parsed JD blocks, keyword-fit ring sidebar.
-          </p>
-        </div>
+        <img
+          src="/guide/discover-detail.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="A Discover opening opened full screen. The header shows the feed it came from, an 89
+            per cent match chip, the role, a Primary role badge, the company, the location and the
+            matched words. The description is broken into readable blocks. A sidebar scores the raw
+            keyword fit at 89 with the note that the saved profile already lines up and no tailoring
+            is needed, marks the compensation as in your range, and lists the source, location and
+            posting date. An Apply now button is captioned: Applye opens the original posting in
+            your browser, it never submits anything on your behalf."
+        />
         <figcaption>Discover's job detail with the fit ring.</figcaption>
       </figure>
     </section>

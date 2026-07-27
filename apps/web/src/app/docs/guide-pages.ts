@@ -129,14 +129,19 @@ export class GuideTour {}
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">SCREENSHOT</span>
-        <p>
-          PLACEHOLDER: guide/dashboard-full.png - the Dashboard with all four KPI tiles populated,
-          three or four "needs attention" cards of different kinds, and an upcoming interview in the
-          right column. Dark theme, 1440px wide window.
-        </p>
-      </div>
+      <img
+        src="/guide/dashboard-full.png"
+        width="2880"
+        height="1800"
+        loading="lazy"
+        decoding="async"
+        alt="The Dashboard on a working day. Four counters read four active applications, one
+          upcoming interview, one overdue follow-up and one offer. Three needs-attention cards of
+          different kinds follow: a follow-up with Kestrel Analytics four days overdue offering to
+          draft a nudge, an interview with Northlane Systems in 22 hours offering preparation, and a
+          score that went stale because the profile changed after it was generated. Below them sit
+          the upcoming interview and a list of recent jobs with their statuses."
+      />
       <figcaption>The Dashboard on a working day.</figcaption>
     </figure>
 

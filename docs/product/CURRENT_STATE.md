@@ -52,21 +52,27 @@
   mode over to Claude, the same rescue `0022` performed for Gemini in CLI mode. Correcting an
   earlier note in this file: those Settings entries were `disabled`, so they could not be picked and
   rejected at call time; the selectable defect was in onboarding.
-- **NEXT BLOCKER FOR LAUNCH: media placeholders, 20 of 25 left** in `/docs/guide/*`, rendered as
+- **NEXT BLOCKER FOR LAUNCH: media placeholders, 18 of 25 left** in `/docs/guide/*`, rendered as
   dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
   kit on `/press`. They are the only thing between the current site and a public launch; every other
   page is finished. Done on 2026-07-27, all captured from the running desktop app: `settings-ai`,
-  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`. Note the earlier count of "26" was
+  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`.
+  Note the earlier count of "26" was
   off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
   list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
   a session dedicated to producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
-- **The remaining shots split three ways.** Ready to capture with no AI spend:
-  `interview-timeline`, `analytics`, `tracker-report`, `pipeline-drag`, `dashboard-empty`. Blocked on
-  a real scoring run, because the columns they show read "Not scored" until one exists:
-  `score-result`, `my-jobs-table`, `dashboard-full` (which also needs the stale-score cards that only
-  appear after a score and a profile edit). Blocked on a real tailoring run and a CV import:
-  `tailor-wizard`, `gap-dialog`, `documents-library`, `cv-editor`, `cv-import`. The second and third
-  groups spend the maintainer's own API credit, so they need explicit approval each time.
+- **The remaining shots split two ways.** Ready to capture with no further AI spend:
+  `interview-timeline`, `analytics`, `tracker-report`, `pipeline-drag`, `dashboard-empty`,
+  `dashboard-full` (whose stale-score cards now only need a profile edit, since scores exist),
+  `paste-job`, `discover-*`. Still blocked on a real tailoring run and a CV import:
+  `tailor-wizard`, `gap-dialog`, `documents-library`, `cv-editor`, `cv-import`. **Three API calls
+  have been spent so far with the maintainer's approval** - one scoring profile, and scoring runs on
+  Northlane (82) and Vantaform (72). Vantaform was scored specifically because Northlane matched too
+  well to produce the missing-keyword chips the docs page promises.
+- **Open decision: the scored view does not fit one frame.** The gauge and the red flags are more
+  than 900 logical points apart, so `score-result.png` shows the lower half - chips, ATS check, red
+  flags, before-you-submit. Either that stands, or `/docs/guide/score` gains a second figure for the
+  gauge and the recruiter verdict. Nothing is blocked on the answer.
 - **Seed and capture fixtures live in `tools/capture/`.** `seed.mjs` fills a throwaway database with
   the demo persona and eight invented jobs; `demo-jobs.xml` is an invented feed kept out of
   `apps/web/public` so a deploy cannot publish fake vacancies. Two app behaviours worth knowing

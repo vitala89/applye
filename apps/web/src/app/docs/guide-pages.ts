@@ -51,13 +51,19 @@ import { RouterLink } from '@angular/router';
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/onboarding.png - the onboarding wizard on the AI-provider step,
-            showing the provider cards and the option to skip.
-          </p>
-        </div>
+        <img
+          src="/guide/onboarding.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The Applye onboarding wizard on step two of six, AI setup. Two cards offer either
+            pasting an API key or bridging a CLI you already pay for, Claude Code or Codex. Below
+            them, provider cards for Claude and DeepSeek, then a key field showing only a masked
+            placeholder and a note that a key is already stored in the OS keychain. A warning across
+            the bottom reads that this step can be skipped, but analysis, tailoring and interview
+            prep stay disabled until a key is added, with a Skip button beside Back and Continue."
+        />
         <figcaption>Onboarding: AI is optional, and says so.</figcaption>
       </figure>
     </section>

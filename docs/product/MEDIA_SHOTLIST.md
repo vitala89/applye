@@ -39,7 +39,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 | Slot                           | Page                    | Type       | What to capture                                                                             |
 | ------------------------------ | ----------------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| `guide/onboarding.png`         | `/docs/guide/tour`      | SCREENSHOT | Onboarding on the AI-provider step, provider cards and the skip option visible.             |
 | `guide/dashboard-empty.png`    | `/docs/guide/dashboard` | SCREENSHOT | The "You're all caught up" empty state.                                                     |
 | `guide/profile-filled.png`     | `/docs/guide/profile`   | SCREENSHOT | Form mode: contact block, two expanded experience entries, skills and languages sections.   |
 | `guide/profile-archetypes.png` | `/docs/guide/profile`   | SCREENSHOT | Target roles: three cards, one per fit tier, each with its "when it fits" line.             |
@@ -66,6 +65,9 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/onboarding.png` - captured 2026-07-27, wizard step 02 of 06. Shot after the provider lists
+  were corrected: an earlier capture showed an OpenAI card in the API-key flow and a CLI card naming
+  Gemini CLI, both of which the app cannot serve, so it was discarded rather than published.
 - `guide/settings-ai.png` - captured 2026-07-27 from the dev build at 1440x900 logical / 2880x1800
   actual, dark theme. API mode, Claude (Anthropic) provider, the full privacy note, and the API key
   block in its "stored in the keychain, field stays empty" state, so no key is visible and nothing

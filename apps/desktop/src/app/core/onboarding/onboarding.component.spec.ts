@@ -225,6 +225,29 @@ describe('OnboardingComponent flow', () => {
     });
   });
 
+  describe('AI provider cards', () => {
+    /** API mode is dispatched in `ai/api.rs`, which handles Anthropic and
+     * DeepSeek and answers everything else with "not supported in API mode
+     * yet". Offering a card the backend rejects walks the user through buying
+     * a key that can never work, so the two lists have to agree. */
+    it('offers only the providers API mode can actually dispatch to', () => {
+      expect(component.v1Providers).toEqual(['claude', 'deepseek']);
+    });
+
+    it('keeps Codex available in CLI mode, where OpenAI is reachable', () => {
+      expect(component.cliProviders).toContain('openai');
+    });
+
+    it('moves a Codex pick to Claude when the user switches back to API mode', async () => {
+      component.aiMode.set('cli');
+      component.selectedProvider.set('openai');
+
+      await component.chooseAiMode('api');
+
+      expect(component.selectedProvider()).toBe('claude');
+    });
+  });
+
   describe('a key saved by an earlier run', () => {
     it('is reported as present instead of "not connected"', async () => {
       hasProviderKey.mockResolvedValue(true);

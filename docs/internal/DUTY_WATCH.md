@@ -44,6 +44,78 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-27, first guide screenshot captured; two false AI-provider claims found and fixed
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, driving the dev build through AppleScript and `screencapture`
+- **Branch:** `main` (via `feat/web-media-assets`, `fix/onboarding-ai-provider-claims`,
+  `chore/capture-fixtures`, `chore/capture-seed`, all merged)
+- **Commits:** `16ffb99`, `160bd1d`, `c745274`, `219a07a`, `9cff371`, `500495b`, `683e679`
+- **Pull request:** none; merged locally and pushed to `origin/main` up to `500495b`
+- **Objective:** start producing the 25 media placeholders that block the launch, beginning with a
+  cheap shot that proves the capture pipeline.
+- **Completed:** `guide/settings-ai.png` is captured and live on `/docs/guide/settings` - full
+  window, dark theme, 2880x1800, API mode with Anthropic, the whole privacy note, and the API key
+  block in its stored state. Nothing was redacted, because the app never reads a stored key back to
+  the interface, so the field is genuinely empty. `.docs__media` gained the image and video rules
+  the remaining shots will reuse. **Capturing the onboarding shot surfaced two false claims in the
+  app**, both now fixed: the AI step offered an OpenAI card in the API-key flow, which `ai/api.rs`
+  cannot serve, so picking it walked the user through buying a key that every later call rejects;
+  and the CLI card still read "Claude Code, Codex or Gemini CLI" in all six languages, seven weeks
+  after that adapter was deleted. Settings also listed both providers as disabled "(coming soon)"
+  rows for work that is not planned; removed on the maintainer's instruction. Migration
+  `0027_drop_openai_api_provider.sql` moves installs already stranded on `openai`/`gemini` in API
+  mode, mirroring what `0022` did for Gemini in CLI mode. Two capture tools were added under
+  `tools/capture/`: an invented job feed and a database seed for the demo persona and eight jobs.
+  The seed ran successfully (8 jobs, 8 applications, 3 interview stages, 1 profile, 1 user source).
+- **Not completed:** `guide/onboarding.png`. It was captured once on the old code, rejected because
+  it displayed both false claims, and the re-shoot is blocked. Nothing else in the shot list was
+  attempted. The seeded database has not been looked at in the running app, so the seed is verified
+  only by its row counts, not visually.
+- **Files or packages changed:** `apps/web/public/guide/settings-ai.png` (new),
+  `apps/web/src/app/docs/guide-pages.ts`, `apps/web/src/styles.scss`,
+  `apps/desktop/src/app/core/onboarding/onboarding.component.ts` and its spec,
+  `apps/desktop/src/app/pages/settings/settings.component.ts`,
+  `apps/desktop/src-tauri/migrations/0027_drop_openai_api_provider.sql` (new),
+  `apps/desktop/src-tauri/src/db.rs`, all six `libs/i18n/src/lib/translations/*.ts`,
+  `tools/capture/demo-jobs.xml` (new), `tools/capture/seed.mjs` (new), `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, `docs/product/MEDIA_SHOTLIST.md`.
+- **Validation:** Run and observed. Frontend: `nx run web:lint`, `nx run web:test` (64), `nx run
+web:build`, `nx run desktop:lint`, `nx run desktop:test` (704, 41 suites), `nx run i18n:test`,
+  `npm run type-check` (6 projects), `npm run format:check`, `git diff --check`. Rust:
+  `cargo fmt --check`, `cargo test --lib` (281 passed, 1 ignored), `cargo clippy -- -D warnings`.
+  All green, re-run after the merge. **Not verified:** the guide page was never seen rendered - the
+  browser preview pane returned a blank frame with `innerWidth` 0, so the claim is only that the
+  image is served with the right attributes and intrinsic size, checked through the DOM.
+- **Privacy/security impact:** No key, contact or real company appears in the shipped screenshot,
+  checked before it was committed. The maintainer's database was copied to
+  `~/applye-capture-states/99-your-real-data` before anything was driven, and it turned out to be
+  empty of jobs and profile anyway. The onboarding wizard was re-opened by resetting
+  `settings.onboarding_seen` rather than by "Delete all data", which would also have wiped the
+  maintainer's API key from the keychain. Claude was granted macOS Screen Recording and
+  Accessibility for this work.
+- **Decisions and assumptions:** Product screenshots are captured from the running app, never
+  generated, because a drawn UI is a false claim about the product in documentation whose argument
+  is honesty. The Discover shots will be seeded rather than scanned, because `parse_rss_items`
+  splits a company out of the title only for weworkremotely hosts, so any other feed lands with an
+  empty company and the screenshot would look broken. The demo feed is deliberately not served from
+  `apps/web/public`: applye.dev should not host invented vacancies.
+- **Risks or compatibility impact:** Migration 0027 changes stored settings on upgrade. It only
+  touches rows in API mode naming `openai` or `gemini`, both of which were already broken, and its
+  checksum is pinned like the twenty-six before it.
+- **Open issues or blockers:** **Captures need the 5K display to be the main one.** It was swapped
+  for a 1920x1080 screen mid-session, and `screencapture` silently returns 1x there, which produced
+  a 1440x900 file that breaks the shot list's 2x rule. At the time of writing the screen is asleep
+  and the app has no window, so nothing can be captured. GitHub Actions remain blocked by billing,
+  so every gate above is local and the pushed commits have no CI behind them.
+- **Next first action:** With the 5K display main and the app awake, re-capture
+  `guide/onboarding.png` on the fixed code (wizard step 02, both mode cards, Claude and DeepSeek
+  cards, the key field, the skip warning), then look at the seeded database in the app and correct
+  the seed if any screen renders wrong.
+- **Evidence:** `apps/web/public/guide/settings-ai.png`, `v1Providers` in
+  `apps/desktop/src/app/core/onboarding/onboarding.component.ts`, `PINNED_CHECKSUMS` in
+  `apps/desktop/src-tauri/src/db.rs`, `tools/capture/seed.mjs`.
+
 ### 2026-07-26, applye.dev goes live on pages.dev, held out of search; Actions found to be blocked
 
 - **Status:** complete

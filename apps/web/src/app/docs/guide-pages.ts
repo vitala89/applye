@@ -194,13 +194,18 @@ export class GuideTour {}
         first job.
       </p>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/dashboard-empty.png - the "You're all caught up" empty state, so the
-            docs show both the busy and the quiet day.
-          </p>
-        </div>
+        <img
+          src="/guide/dashboard-empty.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The same Dashboard on a quiet day. The counters still read four active applications,
+            one upcoming interview and one offer, but overdue follow-ups is zero and the attention
+            queue has been replaced by a single panel: You're all caught up, nothing needs your
+            attention right now, paste a new job description when you're ready for the next one. The
+            upcoming interview and the recent jobs list carry on below."
+        />
         <figcaption>A quiet day says so.</figcaption>
       </figure>
     </section>

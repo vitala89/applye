@@ -35,7 +35,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 | Slot                           | Page                    | Type       | What to capture                                                                             |
 | ------------------------------ | ----------------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| `guide/dashboard-empty.png`    | `/docs/guide/dashboard` | SCREENSHOT | The "You're all caught up" empty state.                                                     |
 | `guide/profile-regenerate.gif` | `/docs/guide/profile`   | GIF        | Regenerate on the scoring card: pulse while running, freshness chip turning current.        |
 | `guide/gap-dialog.png`         | `/docs/guide/tailor`    | SCREENSHOT | Gap-fill dialog: one question, answer field, Skip, save-to-profile toggle.                  |
 | `guide/discover-scan.gif`      | `/docs/guide/discover`  | GIF        | Scan running: console lines per source, collapsing into the summary strip.                  |
@@ -54,6 +53,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/dashboard-empty.png` - captured 2026-07-27. The quiet state was produced by clearing the
+  actual reasons for each card - the follow-up date, the imminent interview, the cached scores -
+  on a database snapshot taken first, then restoring it. Nothing about the screen was mocked, and
+  the busy state it was taken from is intact.
 - `guide/discover-detail.png` - captured 2026-07-27 on a seeded opening. This is where the salary
   reading lives ("in your range"), which the feed row does not carry, and where the keyword-fit
   ring appears. The job reads SAVED because opening it from the feed saved it, which is the app's

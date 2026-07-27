@@ -391,13 +391,18 @@ export class GuideProfile {}
         <li>The job lands in the My Jobs table; click the row to open its detail page.</li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/my-jobs-table.png - the My Jobs table with a few jobs, showing the
-            legitimacy tiers and statuses.
-          </p>
-        </div>
+        <img
+          src="/guide/my-jobs-table.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The My Jobs table listing eight roles with columns for company, role, score, status,
+            legitimacy, date added and source. Two rows carry a score, 72 and 82, and the rest read
+            Not scored. Statuses run from saved through applied, interview, offer and rejected. One
+            posting is flagged red and two amber in the legitimacy column, while the rest show a
+            neutral dot. Filters for status, legitimacy and a minimum score sit above the table."
+        />
         <figcaption>My Jobs: the working list.</figcaption>
       </figure>
       <p>

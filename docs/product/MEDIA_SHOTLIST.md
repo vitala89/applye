@@ -39,7 +39,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | ------------------------------ | ----------------------- | ---------- | ------------------------------------------------------------------------------------------- |
 | `guide/dashboard-empty.png`    | `/docs/guide/dashboard` | SCREENSHOT | The "You're all caught up" empty state.                                                     |
 | `guide/profile-regenerate.gif` | `/docs/guide/profile`   | GIF        | Regenerate on the scoring card: pulse while running, freshness chip turning current.        |
-| `guide/my-jobs-table.png`      | `/docs/guide/add-job`   | SCREENSHOT | My Jobs table with legitimacy tiers and statuses.                                           |
 | `guide/gap-dialog.png`         | `/docs/guide/tailor`    | SCREENSHOT | Gap-fill dialog: one question, answer field, Skip, save-to-profile toggle.                  |
 | `guide/discover-scan.gif`      | `/docs/guide/discover`  | GIF        | Scan running: console lines per source, collapsing into the summary strip.                  |
 | `guide/discover-sources.png`   | `/docs/guide/discover`  | SCREENSHOT | Sources drawer: built-in toggles, add-ATS-board form, an RSS feed with its last-scan line.  |
@@ -61,6 +60,8 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/my-jobs-table.png` - captured 2026-07-27, after two real scoring runs so the score column
+  is not uniformly empty. Shows all five statuses and all three legitimacy tiers.
 - `guide/score-result.png` - captured 2026-07-27 from a real scoring run against the seeded profile
   (Vantaform GmbH, 72 per cent). **Known limitation, not a capture error:** the result is taller than
   a 1440x900 window, so the percentage gauge and the red flags cannot appear in one frame. The shot

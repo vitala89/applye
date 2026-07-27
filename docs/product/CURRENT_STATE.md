@@ -52,11 +52,11 @@
   mode over to Claude, the same rescue `0022` performed for Gemini in CLI mode. Correcting an
   earlier note in this file: those Settings entries were `disabled`, so they could not be picked and
   rejected at call time; the selectable defect was in onboarding.
-- **NEXT BLOCKER FOR LAUNCH: media placeholders, 18 of 25 left** in `/docs/guide/*`, rendered as
+- **NEXT BLOCKER FOR LAUNCH: media placeholders, 17 of 25 left** in `/docs/guide/*`, rendered as
   dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
   kit on `/press`. They are the only thing between the current site and a public launch; every other
   page is finished. Done on 2026-07-27, all captured from the running desktop app: `settings-ai`,
-  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`.
+  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`, `analytics`.
   Note the earlier count of "26" was
   off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
   list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
@@ -69,6 +69,11 @@
   have been spent so far with the maintainer's approval** - one scoring profile, and scoring runs on
   Northlane (82) and Vantaform (72). Vantaform was scored specifically because Northlane matched too
   well to produce the missing-keyword chips the docs page promises.
+- **Product observation from the capture session, not yet a ticket.** In Interview Prep, clicking a
+  row opens its overflow menu, whose only entry is "Remove from Interview Prep" - a destructive
+  action - rather than opening that application's stage timeline. It blocked `interview-timeline.png`
+  during the session, and it is worth a look on its own: the row's obvious action should not be
+  deletion.
 - **Open decision: the scored view does not fit one frame.** The gauge and the red flags are more
   than 900 logical points apart, so `score-result.png` shows the lower half - chips, ATS check, red
   flags, before-you-submit. Either that stands, or `/docs/guide/score` gains a second figure for the

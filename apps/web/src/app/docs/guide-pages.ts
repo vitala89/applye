@@ -961,13 +961,19 @@ export class GuideInsights {}
         </li>
       </ol>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/settings-ai.png - the AI section with a provider selected, the key
-            field (redacted), and the privacy note visible.
-          </p>
-        </div>
+        <img
+          src="/guide/settings-ai.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="Applye Settings in dark theme. AI mode is set to API (direct) with Claude (Anthropic)
+            as the provider. A privacy note states that in API mode the job description and profile
+            text are sent to Anthropic's servers, that the key is stored in the OS keychain and
+            never written to the database or logs, and that nothing is sent until an action is
+            triggered. Below it the API key section reads Stored in your OS keychain and the key
+            field is empty apart from a masked placeholder."
+        />
         <figcaption>AI settings with the privacy note.</figcaption>
       </figure>
     </section>

@@ -55,7 +55,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | `guide/tracker-report.png`     | `/docs/guide/track`     | SCREENSHOT | Report preview in Germany format with the format and orientation controls visible.          |
 | `guide/interview-timeline.png` | `/docs/guide/insights`  | SCREENSHOT | Three stage cards (screening done, technical upcoming, final planned) on the timeline rail. |
 | `guide/analytics.png`          | `/docs/guide/insights`  | SCREENSHOT | Counters, funnel and the over-time chart in one frame.                                      |
-| `guide/settings-ai.png`        | `/docs/guide/settings`  | SCREENSHOT | AI section: provider selected, key field redacted, privacy note visible.                    |
 
 ## Priority 3 - marketing surfaces
 
@@ -67,6 +66,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/settings-ai.png` - captured 2026-07-27 from the dev build at 1440x900 logical / 2880x1800
+  actual, dark theme. API mode, Claude (Anthropic) provider, the full privacy note, and the API key
+  block in its "stored in the keychain, field stays empty" state, so no key is visible and nothing
+  had to be redacted by hand.
 - `og/applye-og.png` - the 1200x630 Open Graph card. Regenerate with `npm run web:og` after editing
   `og/applye-og.svg`; the script uses macOS built-ins only.
 - `brand/*.svg` - wordmark and icon in light and dark variants.

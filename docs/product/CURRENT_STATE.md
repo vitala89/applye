@@ -46,11 +46,20 @@
   and the README now names exactly those four arms. **Known app-side defect, not fixed here:**
   `settings.component.ts` still offers `openai` and `gemini` as API-mode providers that the backend
   rejects at call time.
-- **NEXT BLOCKER FOR LAUNCH: 26 visible media placeholders**, all in `/docs/guide/*`, rendered as
-  dashed boxes reading "PLACEHOLDER: guide/... ". They are the only thing between the current site
-  and a public launch; every other page is finished. The shot list, with capture rules and
-  priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for a session dedicated to
-  producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
+- **NEXT BLOCKER FOR LAUNCH: media placeholders, 24 of 25 left** in `/docs/guide/*`, rendered as
+  dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
+  kit on `/press`. They are the only thing between the current site and a public launch; every other
+  page is finished. The first one is done: `guide/settings-ai.png` was captured on 2026-07-27 from
+  the running desktop app and is live on `/docs/guide/settings`. Note the earlier count of "26" was
+  off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
+  list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
+  a session dedicated to producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
+- **Capture rig, working as of 2026-07-27.** Claude has macOS Screen Recording and Accessibility
+  permission, so the agent can size the dev-build window to exactly 1440x900 with `osascript`, click
+  through the app with System Events, and write 2880x1800 PNGs with `screencapture -R`. The dev
+  binary is not an `.app` bundle, so the computer-use grant path cannot target it; the AppleScript
+  path is what works. The maintainer's live database was copied to
+  `~/applye-capture-states/99-your-real-data` before anything was driven.
 - **Shipped to the branch: launch SEO pass (`a510885`, `bb29b58`).** The sitemap, canonicals,
   `hreflang` and per-locale `<html lang>` were already correct and were left alone. Landing
   descriptions were trimmed under the roughly 160 characters search results show; landing pages now

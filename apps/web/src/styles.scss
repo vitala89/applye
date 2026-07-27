@@ -1625,6 +1625,17 @@ html {
   border-radius: var(--radius-badge);
   padding: 1px var(--space-3);
 }
+/* Captured product shots. The intrinsic size is 2x, so the rendered width is
+   capped by the column and the height follows the aspect ratio. */
+.docs__media img,
+.docs__media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
 .docs__media figcaption {
   margin-top: var(--space-3);
   font-family: var(--font-mono);

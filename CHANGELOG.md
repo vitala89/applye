@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **The documentation's AI settings page now shows the real screen instead of a dashed box.** `guide/settings-ai.png` is captured from the running desktop app at 1440x900 in the dark theme, and it shows what the page claims: API mode with Anthropic selected, the full privacy note about what an API call sends, and the API key block in its stored state. No key is visible in the frame and none had to be painted over, because the app never reads a stored key back to the interface. This is the first of the site's media placeholders to be replaced; the remaining ones are tracked in `docs/product/MEDIA_SHOTLIST.md`.
+
 ### Fixed
 
 - **The website said Applye could use a Gemini CLI subscription. It cannot.** Google withdrew Gemini CLI for personal accounts on 18 June 2026, and Applye only ever bridges Claude Code and Codex; Gemini works through a direct API key. The claim was live in all six site languages, on the front page and in the FAQ, and is corrected in both places.

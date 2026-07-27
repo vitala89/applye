@@ -39,7 +39,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | `guide/profile-regenerate.gif` | `/docs/guide/profile`   | GIF        | Regenerate on the scoring card: pulse while running, freshness chip turning current.        |
 | `guide/gap-dialog.png`         | `/docs/guide/tailor`    | SCREENSHOT | Gap-fill dialog: one question, answer field, Skip, save-to-profile toggle.                  |
 | `guide/discover-scan.gif`      | `/docs/guide/discover`  | GIF        | Scan running: console lines per source, collapsing into the summary strip.                  |
-| `guide/discover-detail.png`    | `/docs/guide/discover`  | SCREENSHOT | Full-screen detail: hero with archetype and salary badges, parsed JD, keyword-fit ring.     |
 | `guide/cv-import.gif`          | `/docs/guide/documents` | GIF        | Choose a PDF, parsing state, found-sections summary with the low-confidence list, save.     |
 | `guide/cv-editor.png`          | `/docs/guide/documents` | SCREENSHOT | Section list with a drag handle, live preview, one section showing style overrides.         |
 | `guide/pipeline-drag.gif`      | `/docs/guide/track`     | GIF        | Drag a card applied to interview, status pill updates, quick-view modal opens.              |
@@ -55,6 +54,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/discover-detail.png` - captured 2026-07-27 on a seeded opening. This is where the salary
+  reading lives ("in your range"), which the feed row does not carry, and where the keyword-fit
+  ring appears. The job reads SAVED because opening it from the feed saved it, which is the app's
+  own behaviour and was left as it happened.
 - `guide/discover-badges.png` - captured 2026-07-27 from seeded Discover rows of invented companies,
   never from a live scan, so no real employer's posting is used as demo data. **Two deviations from
   the original line, both because of how the app behaves:** the feed row has no salary badge at all

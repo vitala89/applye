@@ -31,6 +31,7 @@ import {
   AiProvider,
   CvParsedContent,
   Profile,
+  Settings,
   archetypeNames,
   serializeArchetypes,
   parseArchetypes,
@@ -420,6 +421,8 @@ export class OnboardingComponent {
   readonly resumeInputHash = signal<string | undefined>(undefined);
   readonly parsing = signal(false);
   readonly resumeError = signal(false);
+  /** The raw failure behind `resumeError`, shown under the friendly line. */
+  readonly resumeErrorDetail = signal<string | null>(null);
   readonly parsedCv = signal<CvParsedContent | null>(null);
 
   readonly experience = computed(() => this.parsedCv()?.experience ?? []);
@@ -497,11 +500,38 @@ export class OnboardingComponent {
     this.discardParse();
   }
 
+  /**
+   * Which provider the wizard's own AI calls must go to.
+   *
+   * The AI-setup step's choices only reach the settings row when the wizard
+   * finishes, so reading `aiMode`/`provider` back from settings here dispatched
+   * every in-wizard call to the pre-onboarding defaults (`api` + `claude`).
+   * A user who picked DeepSeek, or CLI mode, was sent to a provider with no key
+   * and got only "Couldn't parse that resume" for it. The wizard's own state is
+   * the truth for the duration of the wizard.
+   *
+   * The model follows the same rule as `markSeen()`: the stored ids are API ids
+   * (`claude-haiku-4-5`) that no CLI accepts, so CLI mode sends none and lets
+   * the CLI pick its own default.
+   */
+  private aiDispatch(settings: Settings): {
+    mode: AiMode;
+    provider: AiProvider;
+    model: string;
+  } {
+    return {
+      mode: this.aiMode(),
+      provider: this.selectedProvider(),
+      model: this.isCliMode() ? '' : settings.economyModel,
+    };
+  }
+
   async parseResume(): Promise<void> {
     const text = this.resumeText().trim();
     if (!text) return;
     this.parsing.set(true);
     this.resumeError.set(false);
+    this.resumeErrorDetail.set(null);
     try {
       const settings = await this.db.getSettings();
       // Match the Documents cv-import pipeline: the skill's `language` drives
@@ -509,19 +539,24 @@ export class OnboardingComponent {
       const language = settings.uiLanguage ?? 'en';
       const rendered = await this.ai.renderSkill('cv-import', { cv_text: text, language });
       const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.economyModel,
+        ...this.aiDispatch(settings),
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
+        // Same ceiling as the Documents import: a resume long enough to truncate
+        // the answer comes back as unparseable JSON, which reads as a parse bug.
+        maxTokens: 8192,
       });
       const cv = parseCvSkillResponse(res.text);
       this.parsedCv.set(cv);
       this.seedReviewFields();
       this.next();
-    } catch {
+    } catch (e) {
       this.resumeError.set(true);
+      // The friendly line stays, but the real reason has to be visible: an
+      // auth failure, a missing key and a genuinely malformed answer all landed
+      // on the same sentence, and none of them was ever a parsing problem.
+      this.resumeErrorDetail.set(String(e));
     } finally {
       this.parsing.set(false);
     }
@@ -632,6 +667,14 @@ export class OnboardingComponent {
   async goNext(): Promise<void> {
     if (this.busy()) return;
     const s = this.step();
+    if (s === 1) {
+      // Leaving AI setup commits the mode and provider, so anything the app
+      // reads back from settings mid-wizard - and everything after it - agrees
+      // with what the user just picked here.
+      await this.persistAiChoice();
+      this.next();
+      return;
+    }
     if (s === 2) {
       // With no resume there is nothing to review, so Review would be a dead
       // screen of empty fields - jump straight to Targeting, which the user can
@@ -666,9 +709,7 @@ export class OnboardingComponent {
         language,
       });
       const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.economyModel,
+        ...this.aiDispatch(settings),
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
@@ -873,13 +914,28 @@ export class OnboardingComponent {
     this.completed.emit();
   }
 
+  /** The mode and provider chosen on the AI-setup step must be persisted, not
+   * just held in component state: every AI call reads them back from settings.
+   * Without this the wizard was a no-op for anyone who did not pick the default
+   * - choosing OpenAI or DeepSeek and saving that key still left
+   * `provider = 'claude'`, so every task went to Claude, which had no key.
+   *
+   * The model ids are deliberately left alone until the wizard finishes: a user
+   * who tries CLI mode and switches back to API within the same run would
+   * otherwise be left with the blanked ids and no model to call. */
+  private async persistAiChoice(): Promise<void> {
+    try {
+      await this.db.updateSettings({
+        aiMode: this.aiMode(),
+        provider: this.selectedProvider(),
+      });
+    } catch {
+      // fail open - never trap the user in onboarding
+    }
+  }
+
   private async markSeen(): Promise<void> {
     try {
-      // The mode and provider chosen here must be persisted, not just held in
-      // component state: every AI call reads them back from settings. Without
-      // this the wizard was a no-op for anyone who did not pick the default -
-      // choosing OpenAI or DeepSeek and saving that key still left
-      // `provider = 'claude'`, so every task went to Claude, which had no key.
       await this.db.updateSettings({
         onboardingSeen: true,
         aiMode: this.aiMode(),

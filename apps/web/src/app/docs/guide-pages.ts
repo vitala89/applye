@@ -237,13 +237,20 @@ export class GuideDashboard {}
         260ms" is material a tailoring pass can reuse; "results-driven professional" is not.
       </p>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/profile-filled.png - the Profile page in Form mode: contact block,
-            two experience entries expanded, the skills and languages sections visible.
-          </p>
-        </div>
+        <img
+          src="/guide/profile-filled.png"
+          width="1758"
+          height="2304"
+          loading="lazy"
+          decoding="async"
+          alt="The profile form filled in. A contact block holds the name shown on generated
+            documents, first and last name, current role, location, email, phone, website and
+            LinkedIn. Below it the Experience section is expanded with two positions, each carrying
+            a role, company, location, a date range and bullets written as measurable outcomes:
+            rebuilding a console used by 12,000 accounts, cutting a bundle from 1.9 MB to 640 KB,
+            cutting CI from 22 to 7 minutes. Collapsed Skills and Languages rows sit at the bottom,
+            showing twelve skills and three languages."
+        />
         <figcaption>The structured profile form.</figcaption>
       </figure>
       <p>
@@ -281,13 +288,19 @@ export class GuideDashboard {}
         guessed one.
       </p>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/profile-archetypes.png - the Target roles section with three cards:
-            one primary, one secondary, one adjacent, each with its "when it fits" line filled in.
-          </p>
-        </div>
+        <img
+          src="/guide/profile-archetypes.png"
+          width="1856"
+          height="1336"
+          loading="lazy"
+          decoding="async"
+          alt="The Target roles section of the profile, holding three roles. Senior Frontend Engineer
+            is marked Primary and fits when the role owns a product surface end to end. Frontend
+            Platform Engineer is Secondary and fits a team running a design system or a monorepo. UI
+            Engineer is Adjacent and fits when the work is closer to craft than architecture and the
+            pay band still clears the target. A note above says the roles flag off-target jobs
+            before any scoring call, at zero tokens."
+        />
         <figcaption>Three target roles, three fit tiers.</figcaption>
       </figure>
     </section>

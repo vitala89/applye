@@ -29,7 +29,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | `guide/tour-walkthrough.mp4`  | `/docs/guide/tour`      | VIDEO      | Narrated 2-3 min: first launch, onboarding, one paste-to-tailor loop, a look at each sidebar section. The single most important asset on the site. |
 | `guide/paste-job.gif`         | `/docs/guide/add-job`   | GIF        | Copy a JD, click Paste job, parsed result appears (company, title, salary, legitimacy tier).                                                       |
 | `guide/tailor-wizard.mp4`     | `/docs/guide/tailor`    | VIDEO      | 60-90 s: tailor pass, gap-fill dialog, review documents, export and apply with the native save dialog.                                             |
-| `guide/discover-badges.png`   | `/docs/guide/discover`  | SCREENSHOT | Tight crop of three feed rows: primary, secondary and adjacent tiers, plus a salary badge and a NEW pill.                                          |
 | `guide/documents-library.png` | `/docs/guide/documents` | SCREENSHOT | CV tab with 3-4 CVs, one "Default" badge, one "Tailored" badge.                                                                                    |
 
 ## Priority 2 - fills out the guide
@@ -56,6 +55,12 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/discover-badges.png` - captured 2026-07-27 from seeded Discover rows of invented companies,
+  never from a live scan, so no real employer's posting is used as demo data. **Two deviations from
+  the original line, both because of how the app behaves:** the feed row has no salary badge at all
+  (salary appears on the detail screen), and the adjacent tier cannot be shown - `archetypeWords`
+  drops words under three letters, so a target role called "UI Engineer" keeps only the generic
+  word "engineer" and can never match. The shot shows primary, secondary and an unmatched row.
 - `guide/discover-sources.png` - captured 2026-07-27. The visible last-scan line belongs to a
   built-in source that was genuinely scanned; the seeded user feed reads NEVER SCANNED because its
   URL is a reserved example domain that was never fetched. Nothing was faked to make it say

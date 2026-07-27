@@ -97,13 +97,19 @@ import { RouterLink } from '@angular/router';
         <li><strong>Settings</strong> - AI, language, theme, job-search scope, data reset.</li>
       </ul>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/sidebar.png - the full app window with the sidebar visible and the
-            Dashboard open, dark theme.
-          </p>
-        </div>
+        <img
+          src="/guide/sidebar.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The Applye window in dark theme. The left sidebar lists Dashboard and Discover, then a
+            Workspace group with My Jobs, Pipeline, Interview Prep, Job Tracker, Documents and
+            Analytics, then a System group with Settings, and a local profile card pinned to the
+            bottom. The Dashboard fills the rest: four counters reading four active applications,
+            one upcoming interview, one overdue follow-up and one offer, an overdue follow-up card,
+            a scheduled technical round and a list of recent jobs with their statuses."
+        />
         <figcaption>Home: sidebar plus Dashboard.</figcaption>
       </figure>
     </section>

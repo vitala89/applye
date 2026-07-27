@@ -27,7 +27,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | Slot                          | Page                    | Type       | What to capture                                                                                                                                    |
 | ----------------------------- | ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `guide/tour-walkthrough.mp4`  | `/docs/guide/tour`      | VIDEO      | Narrated 2-3 min: first launch, onboarding, one paste-to-tailor loop, a look at each sidebar section. The single most important asset on the site. |
-| `guide/sidebar.png`           | `/docs/guide/tour`      | SCREENSHOT | Full window, sidebar visible, Dashboard open.                                                                                                      |
 | `guide/dashboard-full.png`    | `/docs/guide/dashboard` | SCREENSHOT | All four KPI tiles populated, 3-4 different "needs attention" cards, an upcoming interview.                                                        |
 | `guide/paste-job.gif`         | `/docs/guide/add-job`   | GIF        | Copy a JD, click Paste job, parsed result appears (company, title, salary, legitimacy tier).                                                       |
 | `guide/score-result.png`      | `/docs/guide/score`     | SCREENSHOT | Percentage gauge, dimension breakdown, missing-keyword chips, red flags.                                                                           |
@@ -65,6 +64,8 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/sidebar.png` - captured 2026-07-27 on the seeded demo database (`tools/capture/seed.mjs`),
+  Dashboard open so the sidebar is shown against a working screen rather than an empty one.
 - `guide/onboarding.png` - captured 2026-07-27, wizard step 02 of 06. Shot after the provider lists
   were corrected: an earlier capture showed an OpenAI card in the API-key flow and a CLI card naming
   Gemini CLI, both of which the app cannot serve, so it was discarded rather than published.

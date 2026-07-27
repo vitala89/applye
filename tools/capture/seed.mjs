@@ -165,7 +165,15 @@ EUR 78,000 - 92,000 per year. Hybrid, two days on site in Berlin.`,
     // Statuses are the ones create_interview_stage_core writes and the UI reads
     // (see InterviewStageStatus): a cleared round is `passed`, a booked one is
     // `scheduled` with a date, and a round that exists but has no date yet is
-    // `awaiting_scheduling`. This is the trio guide/interview-timeline.png needs.
+    // `awaiting_scheduling`.
+    //
+    // Only two rounds here, and the booked one is deliberately last. The
+    // Dashboard's "upcoming interviews" reads the CURRENT stage, and
+    // db_pipeline_cards defines that as the highest stage_order that is not
+    // rejected or cancelled (see applications.rs). Adding a third, undated
+    // round would make the undated one current and the counter would read zero
+    // while an interview sat three days away. The three-round timeline lives on
+    // Pellworm Digital instead.
     stages: [
       { order: 1, type: 'hr_screen', label: 'Screening call', daysFromNow: -9, status: 'passed' },
       {
@@ -174,13 +182,6 @@ EUR 78,000 - 92,000 per year. Hybrid, two days on site in Berlin.`,
         label: 'Technical round',
         daysFromNow: 3,
         status: 'scheduled',
-      },
-      {
-        order: 3,
-        type: 'final',
-        label: 'Final conversation',
-        daysFromNow: null,
-        status: 'awaiting_scheduling',
       },
     ],
   },
@@ -233,7 +234,7 @@ EUR 75,000 - 88,000 per year. Remote within the EU.`,
     tier: 'green',
     notes: null,
     createdDaysAgo: 9,
-    status: 'applied',
+    status: 'interview',
     appliedDaysAgo: 7,
     followUpDaysAgo: null,
     jd: `Rebuilding a booking flow that serves 40,000 sessions a day. TypeScript everywhere,
@@ -244,7 +245,27 @@ Requirements: senior frontend experience, measurable performance work, weekly pa
 with designers.
 
 EUR 80,000 - 95,000 per year. Hybrid in Hamburg.`,
-    stages: [],
+    // The three-round timeline guide/interview-timeline.png needs: one cleared,
+    // one booked, one that exists but has no date yet. It sits here rather than
+    // on Northlane because the undated round becomes the current stage and would
+    // empty the Dashboard's upcoming-interview counter.
+    stages: [
+      { order: 1, type: 'hr_screen', label: 'Screening call', daysFromNow: -4, status: 'passed' },
+      {
+        order: 2,
+        type: 'technical',
+        label: 'Technical round',
+        daysFromNow: 9,
+        status: 'scheduled',
+      },
+      {
+        order: 3,
+        type: 'final',
+        label: 'Final conversation',
+        daysFromNow: null,
+        status: 'awaiting_scheduling',
+      },
+    ],
   },
   {
     company: 'Vantaform GmbH',

@@ -1,0 +1,91 @@
+<!--
+  Source CV for the capture persona, Mira Halvorsen.
+
+  WHY THIS EXISTS. The Documents library cannot be seeded: the only ways a row
+  reaches `document_library` are importing a file, generating a baseline, or
+  finishing the apply wizard, and the first two are AI calls. Hand-writing rows
+  into the database would put it in a state no user could reach, so instead the
+  persona gets a CV file she could plausibly have written, and it is imported
+  through the app's own import flow like any real user's CV.
+
+  The content is the same invented person as `PROFILE_MD` in seed.mjs, word for
+  word where they overlap. Every contact detail uses example.com, which RFC 2606
+  reserves. Nothing here belongs to anyone.
+
+  Build the importable file with macOS built-ins only:
+
+    textutil -convert docx -output ~/applye-capture-states/mira-halvorsen-cv.docx \
+      tools/capture/mira-cv.html
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mira Halvorsen - Senior Frontend Engineer</title>
+  </head>
+  <body style="font-family: Helvetica, Arial, sans-serif; font-size: 11pt">
+    <h1 style="margin-bottom: 2pt">Mira Halvorsen</h1>
+    <p style="margin-top: 0"><b>Senior Frontend Engineer</b></p>
+    <p>
+      Berlin, Germany<br />
+      mira.halvorsen@example.com<br />
+      +49 30 0000 0000<br />
+      example.com/mira<br />
+      linkedin.com/in/example-mira
+    </p>
+
+    <h2>Summary</h2>
+    <p>
+      Senior frontend engineer with seven years on product surfaces that other teams depend on. Owns
+      quality end to end: performance budgets, accessibility gates and the build that enforces both.
+      Open to hybrid in Berlin or remote within CET +/- 2.
+    </p>
+
+    <h2>Experience</h2>
+
+    <h3>Senior Frontend Engineer, Halden Interactive</h3>
+    <p><i>Berlin, Germany. 2022 to Present</i></p>
+    <ul>
+      <li>
+        Led the rebuild of a customer console used by 12,000 accounts, moving it off a jQuery admin
+        without a feature freeze.
+      </li>
+      <li>
+        Cut the largest bundle from 1.9 MB to 640 KB by splitting the editor route and dropping
+        three overlapping date libraries.
+      </li>
+      <li>
+        Introduced accessibility review as a release gate; the console now passes WCAG 2.2 AA on
+        every shipped screen.
+      </li>
+      <li>Mentored three engineers, two of whom now run their own areas.</li>
+    </ul>
+
+    <h3>Frontend Engineer, Sorenson Grid</h3>
+    <p><i>Oslo, Norway. 2019 to 2022</i></p>
+    <ul>
+      <li>
+        Built the component library six product teams still ship on, including its dark theme and
+        its documentation site.
+      </li>
+      <li>
+        Owned the migration from a hand-rolled build to a monorepo with cached tasks, cutting CI
+        from 22 to 7 minutes.
+      </li>
+      <li>
+        Wrote the offline-tolerant form layer used by field engineers on unreliable connections.
+      </li>
+    </ul>
+
+    <h2>Education</h2>
+    <p>BSc Computer Science, University of Bergen. 2015 to 2018.</p>
+
+    <h2>Skills</h2>
+    <p>
+      TypeScript, Angular, RxJS, Node.js, Nx, Playwright, Jest, CSS architecture, Web performance,
+      Accessibility (WCAG 2.2), Design systems, SQL
+    </p>
+
+    <h2>Languages</h2>
+    <p>English C1, Norwegian native, German B1</p>
+  </body>
+</html>

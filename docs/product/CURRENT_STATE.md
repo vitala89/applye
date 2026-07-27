@@ -52,23 +52,41 @@
   mode over to Claude, the same rescue `0022` performed for Gemini in CLI mode. Correcting an
   earlier note in this file: those Settings entries were `disabled`, so they could not be picked and
   rejected at call time; the selectable defect was in onboarding.
-- **NEXT BLOCKER FOR LAUNCH: media placeholders, 11 of 25 left** in `/docs/guide/*`, rendered as
-  dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
-  kit on `/press`. They are the only thing between the current site and a public launch; every other
-  page is finished. Done on 2026-07-27, all captured from the running desktop app: `settings-ai`,
-  `onboarding`, `sidebar`, `profile-filled`, `profile-archetypes`, `score-result`, `my-jobs-table`, `analytics`, `tracker-report`, `dashboard-full`, `discover-sources`, `discover-badges`, `discover-detail`, `dashboard-empty`.
-  Note the earlier count of "26" was
-  off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
-  list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
-  a session dedicated to producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
-- **The remaining shots split two ways.** Ready to capture with no further AI spend:
-  `interview-timeline`, `analytics`, `tracker-report`, `pipeline-drag`, `dashboard-empty`,
-  `dashboard-full` (whose stale-score cards now only need a profile edit, since scores exist),
-  `paste-job`, `discover-*`. Still blocked on a real tailoring run and a CV import:
-  `tailor-wizard`, `gap-dialog`, `documents-library`, `cv-editor`, `cv-import`. **Three API calls
-  have been spent so far with the maintainer's approval** - one scoring profile, and scoring runs on
-  Northlane (82) and Vantaform (72). Vantaform was scored specifically because Northlane matched too
-  well to produce the missing-keyword chips the docs page promises.
+- **NEXT BLOCKER FOR LAUNCH: one media placeholder of 25 left**, `guide/discover-scan`, in
+  `/docs/guide/discover`, still rendered as a dashed box. Plus a signature image on `/manifesto` and
+  a press kit on `/press`, which are marketing surfaces rather than guide slots. Note the earlier
+  count of "26" was off; the code holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`.
+  Fourteen were captured 2026-07-27; the remaining ten were captured by the maintainer on
+  2026-07-28 and wired in: `documents-library`, `cv-editor`, `gap-dialog`, `interview-timeline`,
+  and six recordings - `tour-walkthrough`, `tailor-wizard`, `paste-job`, `cv-import`,
+  `pipeline-drag`, `profile-regenerate`. **Every GIF slot shipped as a silent looping MP4**, which
+  the capture rules allow as the fallback above ~3 MB. The shot list, with capture rules and a
+  per-asset record of how each shipped asset deviates from its slot, is
+  `docs/product/MEDIA_SHOTLIST.md`.
+- **`discover-scan` was captured and rejected, and needs a deliberate re-shoot.** Scanning the
+  built-in sources returns real openings from real German employers, and they fill the feed on
+  screen. No frame in this documentation may carry a real employer, recruiter or contact, so the
+  take was left out of the repository. Capture it against a user-added source on a reserved example
+  domain, or stop the recording before results land and show the console alone. The rejected file is
+  kept outside the repo at `~/applye-capture-states/media-inbox-2026-07-28/`.
+- **Two shipped assets miss their slot and are known to.** `tour-walkthrough.mp4` is 18 silent
+  seconds of first run against a slot asking for a narrated 2-3 minute tour of every sidebar
+  section; it is the asset the docs lean on hardest and should be re-recorded before launch.
+  `tailor-wizard.mp4` is 36 s against 60-90 s and stops before Export & Apply, so its caption was
+  changed from "to exported PDF" to "to generated documents" rather than leave an unsupported claim.
+  `documents-library.png` shows two rows rather than three or four and carries no Default badge;
+  filling it out is free, no AI call.
+- **The guide has still never been seen rendered.** The browser preview reports `innerWidth` 0, so
+  every "it looks right" claim is really "the asset is served with the right attributes", verified
+  through the DOM and over HTTP against `localhost:4300`. Looking at the pages by eye is worth doing
+  before launch.
+- **Four API calls were spent with the maintainer's approval** - one scoring profile, scoring runs
+  on Northlane (82) and Vantaform (72), and one tailoring run. Vantaform was scored specifically
+  because Northlane matched too well to produce the missing-keyword chips the docs page promises.
+  The CV import that filled the Documents library used the app's own import flow on
+  `tools/capture/mira-cv.html` converted to DOCX, because `document_library` rows can only be
+  created by importing, generating, or finishing the apply wizard - writing rows straight into
+  SQLite would produce a state no user can reach.
 - **Product observation from the capture session, not yet a ticket.** In Interview Prep, clicking a
   row opens its overflow menu, whose only entry is "Remove from Interview Prep" - a destructive
   action - rather than opening that application's stage timeline. It blocked `interview-timeline.png`
@@ -81,6 +99,17 @@
   generic, so the archetype is silently dead: no Discover badge, no For-you grouping, no effect on
   scoring prompts. The user gets no indication. Found while trying to show the adjacent tier in
   `discover-badges.png`, which is why that shot shows an unmatched row instead.
+- **Third finding, from the 2026-07-28 capture session: three guide slots described a UI that does
+  not exist**, which is worth deciding on rather than only documenting. In the CV editor the preview
+  is a mode that replaces the editor (`cv-detail.component.html` renders `editor-col` or
+  `preview-col`, never both), so it can never be shown beside the section list; and there are no
+  section-level style overrides at all - style is one document-wide block. In the Documents library
+  there is no "Tailored" badge anywhere: `cv-list.component.html` renders only region, language and
+  Default, and a tailored document is recognisable instead by its label and its linked-application
+  line. In the apply wizard the save-to-profile toggle is not on the gap question; it sits on a
+  separate confirmation dialog after the last question. Each of the three is a plausible feature
+  someone expected to exist, so the question is whether the product grows toward the description or
+  the description settles for the product.
 - **Open decision: the scored view does not fit one frame.** The gauge and the red flags are more
   than 900 logical points apart, so `score-result.png` shows the lower half - chips, ATS check, red
   flags, before-you-submit. Either that stands, or `/docs/guide/score` gains a second figure for the

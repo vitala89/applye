@@ -294,6 +294,52 @@ fn truncate_stderr(raw: &str) -> String {
     format!("{}…", &trimmed[..STDERR_LIMIT])
 }
 
+/// Why a CLI that exited non-zero failed, in the user's words where possible.
+///
+/// stderr is checked first because that is where a CLI that fails to *start* a
+/// session (bad flag, missing binary behind a wrapper) writes. But Claude Code
+/// in `-p --output-format json` mode reports a failed *session* - expired
+/// OAuth, rate limit, API error - as its normal JSON on **stdout**, exits 1 and
+/// writes nothing to stderr at all. Reading only stderr turned every one of
+/// those into "no error output", which named neither the cause nor the fix and
+/// reached the onboarding resume step as "Couldn't parse that resume".
+///
+/// The adapter's own parser already knows how to pull that reason out, and its
+/// error text already names the CLI, so it is returned as-is.
+fn failure_message(
+    adapter: &dyn CliAdapter,
+    code: Option<i32>,
+    stdout: &str,
+    stderr: &str,
+) -> String {
+    if !stderr.is_empty() {
+        return format!("{} exited with an error: {stderr}", adapter.label());
+    }
+    if !stdout.trim().is_empty() {
+        return match adapter.parse_output(stdout) {
+            Err(detail) => detail,
+            // A reply that parses cleanly alongside a failed exit status says
+            // nothing usable, so report the status rather than the reply.
+            Ok(_) => exit_status_message(adapter, code),
+        };
+    }
+    exit_status_message(adapter, code)
+}
+
+fn exit_status_message(adapter: &dyn CliAdapter, code: Option<i32>) -> String {
+    match code {
+        Some(c) => format!(
+            "{} exited with status {c} and printed no error. Run `{}` in a terminal to check it is installed and signed in.",
+            adapter.label(),
+            adapter.command()
+        ),
+        None => format!(
+            "{} was stopped before it answered.",
+            adapter.label()
+        ),
+    }
+}
+
 fn not_installed_error(adapter: &dyn CliAdapter) -> String {
     format!(
         "{} is not installed, or Applye cannot see it. Install `{}` and make sure it runs in a terminal, then try again. If it works in a terminal but not here, it is installed somewhere Applye does not look - reinstall it to a standard location such as /usr/local/bin.",
@@ -357,14 +403,11 @@ pub async fn run(req: &AiRequest) -> Result<AiResponse, String> {
     let stderr = truncate_stderr(&String::from_utf8_lossy(&output.stderr));
 
     if !output.status.success() {
-        let detail = if stderr.is_empty() {
-            "no error output".to_string()
-        } else {
-            stderr
-        };
-        return Err(format!(
-            "{} exited with an error: {detail}",
-            adapter.label()
+        return Err(failure_message(
+            &*adapter,
+            output.status.code(),
+            &stdout,
+            &stderr,
         ));
     }
 
@@ -708,6 +751,36 @@ mod tests {
         assert_eq!(reply.tokens_input, 10);
         assert_eq!(reply.tokens_output, 4);
         assert_eq!(reply.cached_tokens, 7);
+    }
+
+    // Regression: Claude Code answers a failed session with its normal JSON on
+    // stdout, exit 1 and an empty stderr. Reading stderr alone reported "no
+    // error output" and threw the reason away - which is how an expired OAuth
+    // session reached the user as "Couldn't parse that resume". This payload is
+    // a real one, trimmed, from `claude -p --output-format json` after the
+    // session expired.
+    #[test]
+    fn a_failed_claude_session_reports_what_claude_said_not_the_exit_code() {
+        let stdout = r#"{"is_error":true,"terminal_reason":"api_error","subtype":"success",
+            "result":"Failed to authenticate: OAuth session expired and could not be refreshed"}"#;
+
+        let msg = failure_message(&ClaudeCli, Some(1), stdout, "");
+
+        assert!(msg.contains("OAuth session expired"), "{msg}");
+        assert!(!msg.contains("no error"), "{msg}");
+    }
+
+    #[test]
+    fn stderr_still_wins_when_the_cli_fails_before_it_answers() {
+        let msg = failure_message(&ClaudeCli, Some(2), "", "error: unknown option '--nope'");
+        assert!(msg.contains("--nope"), "{msg}");
+    }
+
+    #[test]
+    fn a_silent_failure_names_the_status_and_what_to_try() {
+        let msg = failure_message(&CodexCli, Some(127), "", "");
+        assert!(msg.contains("127"), "{msg}");
+        assert!(msg.contains("codex"), "{msg}");
     }
 
     #[test]

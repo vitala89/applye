@@ -589,13 +589,19 @@ export class GuideTailor {}
         </li>
       </ul>
       <figure class="docs__media">
-        <div class="docs__mediabox">
-          <span class="docs__mediatag">SCREENSHOT</span>
-          <p>
-            PLACEHOLDER: guide/discover-sources.png - the Sources drawer: built-in toggles, the
-            add-ATS-board form, an added RSS feed with its last-scan line.
-          </p>
-        </div>
+        <img
+          src="/guide/discover-sources.png"
+          width="2880"
+          height="1800"
+          loading="lazy"
+          decoding="async"
+          alt="The Sources drawer open over the Discover inbox. Built-in sources are listed with a
+            toggle each, most idle and off, one enabled and showing its last scan: 96 new at 5:20 PM.
+            Below them a company boards section offers to add an ATS board, then a user-added RSS
+            feed with its own toggle, and a form to add another source by URL and name. A note under
+            the form states that Applye only reads public, machine-readable feeds and never signs in
+            or scrapes closed boards."
+        />
         <figcaption>The Sources drawer.</figcaption>
       </figure>
     </section>

@@ -40,7 +40,6 @@ Keep these identical across every shot, or the docs will look assembled from thr
 | `guide/profile-regenerate.gif` | `/docs/guide/profile`   | GIF        | Regenerate on the scoring card: pulse while running, freshness chip turning current.        |
 | `guide/gap-dialog.png`         | `/docs/guide/tailor`    | SCREENSHOT | Gap-fill dialog: one question, answer field, Skip, save-to-profile toggle.                  |
 | `guide/discover-scan.gif`      | `/docs/guide/discover`  | GIF        | Scan running: console lines per source, collapsing into the summary strip.                  |
-| `guide/discover-sources.png`   | `/docs/guide/discover`  | SCREENSHOT | Sources drawer: built-in toggles, add-ATS-board form, an RSS feed with its last-scan line.  |
 | `guide/discover-detail.png`    | `/docs/guide/discover`  | SCREENSHOT | Full-screen detail: hero with archetype and salary badges, parsed JD, keyword-fit ring.     |
 | `guide/cv-import.gif`          | `/docs/guide/documents` | GIF        | Choose a PDF, parsing state, found-sections summary with the low-confidence list, save.     |
 | `guide/cv-editor.png`          | `/docs/guide/documents` | SCREENSHOT | Section list with a drag handle, live preview, one section showing style overrides.         |
@@ -57,6 +56,10 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Already produced
 
+- `guide/discover-sources.png` - captured 2026-07-27. The visible last-scan line belongs to a
+  built-in source that was genuinely scanned; the seeded user feed reads NEVER SCANNED because its
+  URL is a reserved example domain that was never fetched. Nothing was faked to make it say
+  otherwise.
 - `guide/dashboard-full.png` - captured 2026-07-27. Getting three different card kinds on screen
   took real state, not staging: the seeded interview was moved inside the 48-hour window the card
   needs, and the profile was edited and its scoring profile regenerated, which is what genuinely

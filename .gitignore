@@ -108,3 +108,7 @@ docs/superpowers/NEXT-SESSION-*.md
 implementation_plan.md
 task.md
 walkthrough.md
+
+# Capture drop box: raw frames and takes handed over before they are reviewed,
+# cropped and moved into apps/web/public/guide/. Never part of the site build.
+media-inbox/

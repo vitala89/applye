@@ -113,11 +113,13 @@ impl CliAdapter for ClaudeCli {
             .and_then(Value::as_bool)
             .unwrap_or(false)
         {
+            let detail = val
+                .get("result")
+                .and_then(Value::as_str)
+                .unwrap_or("no detail");
             return Err(format!(
-                "Claude Code reported an error: {}",
-                val.get("result")
-                    .and_then(Value::as_str)
-                    .unwrap_or("no detail")
+                "Claude Code reported an error: {detail}{}",
+                sign_in_hint(detail, "claude")
             ));
         }
         let text = val
@@ -198,6 +200,30 @@ fn join_prompt(req: &AiRequest) -> String {
         return req.user_prompt.clone();
     }
     format!("{}\n\n{}", req.system_prompt, req.user_prompt)
+}
+
+/// The one repair a user has to make themselves, appended to the CLI's own
+/// words when the CLI says the session is not authenticated.
+///
+/// Applye cannot fix this for them: CLI bridge mode exists precisely because
+/// the user authenticates the CLI against their own subscription, outside the
+/// app, and there is no key here to refresh. Without the hint the message is
+/// accurate and still leaves the user with nowhere to go - the expired session
+/// reads as an Applye failure, and the resume import stays broken for as long
+/// as it takes them to guess otherwise.
+fn sign_in_hint(detail: &str, command: &str) -> String {
+    let d = detail.to_ascii_lowercase();
+    let is_auth = d.contains("authenticate")
+        || d.contains("oauth")
+        || d.contains("unauthorized")
+        || d.contains("log in")
+        || d.contains("login")
+        || d.contains("sign in");
+    if is_auth {
+        format!(" Run `{command}` in a terminal and sign in, then try again.")
+    } else {
+        String::new()
+    }
 }
 
 fn usage_u32(usage: Option<&Value>, key: &str) -> u32 {
@@ -313,7 +339,11 @@ fn failure_message(
     stderr: &str,
 ) -> String {
     if !stderr.is_empty() {
-        return format!("{} exited with an error: {stderr}", adapter.label());
+        return format!(
+            "{} exited with an error: {stderr}{}",
+            adapter.label(),
+            sign_in_hint(stderr, adapter.command())
+        );
     }
     if !stdout.trim().is_empty() {
         return match adapter.parse_output(stdout) {
@@ -768,6 +798,27 @@ mod tests {
 
         assert!(msg.contains("OAuth session expired"), "{msg}");
         assert!(!msg.contains("no error"), "{msg}");
+        // Applye holds no key in CLI mode, so signing the CLI in is the user's
+        // to do and the message has to say so.
+        assert!(msg.contains("Run `claude` in a terminal"), "{msg}");
+    }
+
+    #[test]
+    fn a_codex_auth_failure_on_stderr_gets_the_same_hint() {
+        let msg = failure_message(&CodexCli, Some(1), "", "stream error: unauthorized");
+        assert!(msg.contains("Run `codex` in a terminal"), "{msg}");
+    }
+
+    #[test]
+    fn a_failure_that_is_not_about_auth_gets_no_sign_in_hint() {
+        let msg = failure_message(
+            &ClaudeCli,
+            Some(1),
+            r#"{"is_error":true,"result":"rate limit"}"#,
+            "",
+        );
+        assert!(msg.contains("rate limit"), "{msg}");
+        assert!(!msg.contains("sign in"), "{msg}");
     }
 
     #[test]

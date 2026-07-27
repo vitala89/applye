@@ -43,21 +43,32 @@
   So OpenAI is reachable only through Codex CLI, and Gemini is reachable through nothing. An
   earlier pass had "fixed" this by claiming Gemini was API-key only, which swapped one false claim
   for another. Copy across the landing page, `/press`, both AI docs pages, the FAQ in six locales
-  and the README now names exactly those four arms. **The app-side half is fixed on
-  `fix/onboarding-ai-provider-claims`** (2026-07-27), found while capturing the onboarding
-  screenshot: the onboarding AI step offered an OpenAI card in the API-key flow, and its CLI card
-  still read "Claude Code, Codex or Gemini CLI" in all six languages. Both are corrected, and
-  migration `0027_drop_openai_api_provider.sql` moves stranded installs off `openai`/`gemini` in API
-  mode. Correcting the earlier note in this file: `settings.component.ts` does **not** offer those
-  two as selectable providers - they are `disabled` options labelled "(coming soon)", so nothing
-  there can be picked and rejected at call time. Whether "coming soon" is itself an honest label for
-  two paths with no plan behind them is an open question for the maintainer, not a defect this entry
-  claims.
-- **NEXT BLOCKER FOR LAUNCH: 26 visible media placeholders**, all in `/docs/guide/*`, rendered as
-  dashed boxes reading "PLACEHOLDER: guide/... ". They are the only thing between the current site
-  and a public launch; every other page is finished. The shot list, with capture rules and
-  priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for a session dedicated to
-  producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
+  and the README now names exactly those four arms. **The app side is fixed too, on `main` as of
+  2026-07-27** (`160bd1d`, `c745274`), found while capturing the onboarding screenshot: the
+  onboarding AI step offered an OpenAI card in the API-key flow, its CLI card still read "Claude
+  Code, Codex or Gemini CLI" in all six languages, and Settings listed both providers as disabled
+  "(coming soon)" rows promising work that is not planned. All three are corrected, and migration
+  `0027_drop_openai_api_provider.sql` moves installs already stranded on `openai`/`gemini` in API
+  mode over to Claude, the same rescue `0022` performed for Gemini in CLI mode. Correcting an
+  earlier note in this file: those Settings entries were `disabled`, so they could not be picked and
+  rejected at call time; the selectable defect was in onboarding.
+- **NEXT BLOCKER FOR LAUNCH: media placeholders, 24 of 25 left** in `/docs/guide/*`, rendered as
+  dashed boxes reading "PLACEHOLDER: guide/... ", plus a signature image on `/manifesto` and a press
+  kit on `/press`. They are the only thing between the current site and a public launch; every other
+  page is finished. The first one is done: `guide/settings-ai.png` was captured on 2026-07-27 from
+  the running desktop app and is live on `/docs/guide/settings`. Note the earlier count of "26" was
+  off; the code actually holds 25 media boxes in `apps/web/src/app/docs/guide-pages.ts`. The shot
+  list, with capture rules and priorities, is `docs/product/MEDIA_SHOTLIST.md`. A handoff prompt for
+  a session dedicated to producing them is `docs/internal/MEDIA_SESSION_PROMPT.md`.
+- **Capture rig, working as of 2026-07-27.** Claude has macOS Screen Recording and Accessibility
+  permission, so the agent can size the dev-build window to exactly 1440x900 with `osascript`, click
+  through the app with System Events, and write 2880x1800 PNGs with `screencapture -R`. The dev
+  binary is not an `.app` bundle, so the computer-use grant path cannot target it; the AppleScript
+  path is what works. The maintainer's live database was copied to
+  `~/applye-capture-states/99-your-real-data` before anything was driven. **The rig depends on the
+  5K display being the main one**: `screencapture` returns 1x on the 1920x1080 screen, which
+  silently produces 1440x900 files that break the shot list's 2x rule. Check
+  `system_profiler SPDisplaysDataType` before a session.
 - **Shipped to the branch: launch SEO pass (`a510885`, `bb29b58`).** The sitemap, canonicals,
   `hreflang` and per-locale `<html lang>` were already correct and were left alone. Landing
   descriptions were trimmed under the roughly 160 characters search results show; landing pages now

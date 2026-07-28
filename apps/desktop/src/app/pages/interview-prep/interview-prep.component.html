@@ -65,6 +65,7 @@
           tabindex="0"
           (click)="open(r.id)"
           (keydown.enter)="open(r.id)"
+          (keydown.space)="open(r.id); $event.preventDefault()"
         >
           <div class="ip__co">{{ r.company || '·' }}</div>
           <div class="ip__role">{{ r.title || '·' }}</div>
@@ -97,6 +98,12 @@
             </button>
             @if (menuId() === r.id) {
               <div class="ip__pop" role="menu">
+                <!-- The row itself already opens the timeline; this repeats it in
+                     the menu so removal is not the only thing offered here. -->
+                <button type="button" class="ip__pop-item" (click)="openFromMenu(r.id, $event)">
+                  <lucide-icon [img]="icons.timeline" [size]="15" />
+                  {{ t()('interview.open_stage_timeline') }}
+                </button>
                 <button
                   type="button"
                   class="ip__pop-item ip__pop-item--danger"

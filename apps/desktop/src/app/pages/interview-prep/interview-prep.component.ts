@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { MoreHorizontal, LucideAngularModule, Target, Trash2 } from 'lucide-angular';
+import { ListOrdered, MoreHorizontal, LucideAngularModule, Target, Trash2 } from 'lucide-angular';
 import { PipelineCard } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -31,7 +31,12 @@ export class InterviewPrepComponent implements OnInit {
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons = { menu: MoreHorizontal, trash: Trash2, empty: Target };
+  protected readonly icons = {
+    menu: MoreHorizontal,
+    timeline: ListOrdered,
+    trash: Trash2,
+    empty: Target,
+  };
 
   private readonly cards = signal<PipelineCard[]>([]);
   readonly loading = signal(true);
@@ -83,6 +88,13 @@ export class InterviewPrepComponent implements OnInit {
 
   open(applicationId: number): void {
     void this.router.navigate(['/interview-prep', applicationId]);
+  }
+
+  /** Same destination as clicking the row, reached from inside the row menu. */
+  openFromMenu(applicationId: number, event: Event): void {
+    event.stopPropagation();
+    this.menuId.set(null);
+    this.open(applicationId);
   }
 
   toggleMenu(id: number, event: Event): void {

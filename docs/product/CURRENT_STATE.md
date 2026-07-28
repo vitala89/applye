@@ -27,6 +27,17 @@
   fixed, deployment is manual: `npm run web:deploy` (needs `CLOUDFLARE_API_TOKEN` and
   `CLOUDFLARE_ACCOUNT_ID` in the environment) runs format, lint and tests first and refuses to
   upload if any fail, because the gate is the point of the job it stands in for.
+- **The guide's screen recordings live in Git LFS, and a clone without it deploys stubs.** `*.mp4`
+  is tracked through LFS as of `chore/web-guide-media-lfs`, because the recordings will be retaken
+  and git keeps every version of a binary in full. Deployment is manual from a working copy, so a
+  machine without `git-lfs` installed would check out 132-byte pointers, pass every gate - the
+  build copies whatever is in `public/` without looking at it - and upload those to Cloudflare in
+  place of the videos. Install Git LFS before deploying. The `.husky/pre-push` hook covers the
+  other direction and refuses to push when git-lfs is missing. **LFS hooks belong in `.husky/`,
+  not `.git/hooks`**: the repository sets `core.hooksPath`, so `git lfs install` writes where git
+  never looks here, which is how the first attempt pushed pointers with no objects behind them.
+  The six recordings merged in #168 remain ordinary blobs in history, roughly 12 MB; reclaiming
+  that means rewriting `main` and is an open decision, cheapest before the repository goes public.
 - **Analytics: code done, one dashboard step left.** Six GA4 events behind a hard consent gate,
   ten custom dimensions registered before any traffic, Enhanced measurement and Google signals off,
   DPA accepted. The measurement ID is committed as `G-PLACEHOLDER` and injected at build time, so

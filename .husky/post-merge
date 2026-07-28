@@ -1,0 +1,5 @@
+#!/bin/sh
+# Git LFS: replace pointers with their real contents after a merge or pull.
+# See .husky/pre-push for why LFS hooks live here rather than in .git/hooks.
+command -v git-lfs >/dev/null 2>&1 || exit 0
+git lfs post-merge "$@"

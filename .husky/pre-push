@@ -1,0 +1,13 @@
+#!/bin/sh
+# Git LFS: upload the objects behind any LFS pointers being pushed.
+#
+# This project keeps hooks in .husky/ via core.hooksPath, so `git lfs install`
+# writes to .git/hooks where git never looks. Without this line the pointer is
+# pushed and the file behind it is not, which produces a repository that clones
+# but cannot check out - the failure is silent on the pushing machine and only
+# appears for whoever clones next.
+command -v git-lfs >/dev/null 2>&1 || {
+  printf >&2 "\ngit-lfs is not installed, and this repository stores its guide videos in LFS.\nInstall it (brew install git-lfs) and run 'git lfs install --manual', or the push will upload broken pointers.\n\n"
+  exit 2
+}
+git lfs pre-push "$@"

@@ -1,2 +1,11 @@
+# Git LFS. Screen recordings are binary and get re-recorded, so every take git
+# stores is a whole extra copy that can never be removed without rewriting
+# history. Pointers keep the history light; the bytes live in LFS and are
+# fetched only for the revision being checked out.
+#
+# The six recordings already in history at 738d133 stay as ordinary blobs -
+# that weight is spent. Everything from here on is a pointer.
+# LFS hooks live in .husky/, not .git/hooks, because this repository sets
+# core.hooksPath. See .husky/pre-push.
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 apps/web/public/guide/*.png filter=lfs diff=lfs merge=lfs -text

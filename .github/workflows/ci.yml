@@ -100,7 +100,15 @@ jobs:
       name: production
       url: https://applye.dev
     steps:
+      # `lfs: true` is not optional here. Every screenshot and video under
+      # apps/web/public/guide/ is stored in Git LFS, and a plain checkout writes
+      # 132-byte pointer files in their place. Nothing downstream would notice:
+      # the Angular build copies public/ without looking inside it, so the gate
+      # stays green and Cloudflare receives stubs instead of the 25 assets the
+      # documentation is made of.
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - uses: actions/setup-node@v4
         with:

@@ -58,7 +58,13 @@ describe('archetype', () => {
   });
 });
 
-import { archetypeWords, archetypeKeywordBag, tierRank, matchArchetype } from './archetype';
+import {
+  archetypeWords,
+  archetypeKeywordBag,
+  hasDistinctiveWord,
+  tierRank,
+  matchArchetype,
+} from './archetype';
 
 describe('archetypeWords', () => {
   it('lowercases, drops <3-char words and stopwords, dedupes', () => {
@@ -168,6 +174,60 @@ describe('matchArchetype word-boundary matching', () => {
   it('matches symbol-carrying tokens like c++ as whole words', () => {
     const list: Archetype[] = [{ name: 'C++ Engineer', fit: 'primary', sellWhen: '' }];
     expect(matchArchetype('Senior C++ Engineer', list)?.fit).toBe('primary');
+  });
+});
+
+describe('short distinctive tokens', () => {
+  // A role whose only distinctive word is a two-letter domain token ("UI
+  // Engineer", "UX Researcher") used to reduce to its generic word alone, so
+  // matchArchetype could never anchor and the archetype was silently dead.
+  it('keeps allowlisted two-letter domain tokens as words', () => {
+    expect(archetypeWords('UI Engineer')).toEqual(['ui', 'engineer']);
+    expect(archetypeWords('UX Researcher')).toEqual(['ux', 'researcher']);
+    expect(archetypeWords('QA Lead')).toEqual(['qa', 'lead']);
+    expect(archetypeWords('ML Engineer')).toEqual(['ml', 'engineer']);
+  });
+
+  it('still drops short words that are not domain tokens', () => {
+    // "at"/"of" are prose, "go" collides with the English verb in job text.
+    expect(archetypeWords('Engineer at Go')).toEqual(['engineer']);
+    expect(archetypeWords('Head of UI')).toEqual(['head', 'ui']);
+  });
+
+  it('anchors a match on a short distinctive token', () => {
+    const roles: Archetype[] = [
+      { name: 'UI Engineer', fit: 'primary', sellWhen: '' },
+      { name: 'UX Researcher', fit: 'adjacent', sellWhen: '' },
+    ];
+    expect(matchArchetype('Senior UI Engineer (Design Systems)', roles)?.fit).toBe('primary');
+    expect(matchArchetype('UX Researcher', roles)?.fit).toBe('adjacent');
+  });
+
+  it('does not let a short token match inside a longer word', () => {
+    const roles: Archetype[] = [{ name: 'UI Engineer', fit: 'primary', sellWhen: '' }];
+    // "ui" must not hit "UIs", "guild" or "build"; "engineer" alone is generic.
+    expect(matchArchetype('Engineer building UIs for the guild', roles)).toBeNull();
+    expect(matchArchetype('Build Engineer', roles)).toBeNull();
+  });
+});
+
+describe('hasDistinctiveWord', () => {
+  it('is false for a name made only of generic role words', () => {
+    expect(hasDistinctiveWord('Engineer')).toBe(false);
+    expect(hasDistinctiveWord('Senior Developer')).toBe(false);
+    expect(hasDistinctiveWord('Lead Engineering')).toBe(false);
+  });
+
+  it('is false for an empty or word-less name', () => {
+    expect(hasDistinctiveWord('')).toBe(false);
+    expect(hasDistinctiveWord('   ')).toBe(false);
+    expect(hasDistinctiveWord('at of')).toBe(false);
+  });
+
+  it('is true as soon as one distinctive word survives tokenization', () => {
+    expect(hasDistinctiveWord('UI Engineer')).toBe(true);
+    expect(hasDistinctiveWord('Senior Angular Engineer')).toBe(true);
+    expect(hasDistinctiveWord('C++ Developer')).toBe(true);
   });
 });
 

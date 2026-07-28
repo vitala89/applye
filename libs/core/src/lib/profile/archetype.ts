@@ -96,16 +96,46 @@ export interface ArchetypeMatch {
   coverage: number;
 }
 
-/** Tokenize a phrase into meaningful lowercase words (>=3 chars, no stopwords, deduped). */
+/**
+ * Two-letter domain tokens that carry a role's whole identity. The general
+ * minimum length is three characters, because two-letter words in job text are
+ * almost always prose ("at", "of", "in"). These are the exceptions: without
+ * them "UI Engineer" tokenizes to "engineer" alone, which is generic, so the
+ * archetype can never anchor a match and dies silently.
+ *
+ * Deliberately kept short and boring. Every entry has to be a term that reads
+ * as a discipline in a job title and does not collide with an ordinary word -
+ * which is why "go" is absent: the language is real, but `wordHit` would also
+ * fire on "go live" and "go-to-market".
+ */
+const SHORT_DOMAIN_WORDS = new Set<string>(['ui', 'ux', 'qa', 'ml', 'ai', 'bi', 'db']);
+
+/**
+ * Tokenize a phrase into meaningful lowercase words (no stopwords, deduped).
+ * Words shorter than three characters are dropped unless they are one of the
+ * `SHORT_DOMAIN_WORDS`.
+ */
 export function archetypeWords(phrase: string): string[] {
   const words: string[] = [];
   for (const raw of phrase.split(/[^\p{L}\p{N}+#]+/u)) {
     const w = raw.trim().toLowerCase();
-    if (w.length >= 3 && !KEYWORD_STOPWORDS.includes(w) && !words.includes(w)) {
+    const longEnough = w.length >= 3 || SHORT_DOMAIN_WORDS.has(w);
+    if (longEnough && !KEYWORD_STOPWORDS.includes(w) && !words.includes(w)) {
       words.push(w);
     }
   }
   return words;
+}
+
+/**
+ * Whether a role name carries at least one word that can anchor a match.
+ * `matchArchetype` requires exactly this, so a name that fails here can never
+ * match any job title, however many generic words it has. Surfaces in the
+ * profile editor so the user learns it while typing rather than from an empty
+ * feed a month later.
+ */
+export function hasDistinctiveWord(name: string): boolean {
+  return archetypeWords(name).some(isDistinctiveWord);
 }
 
 /** Flattened, deduped name-word bag across all archetypes. */

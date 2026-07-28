@@ -115,10 +115,11 @@
   declared `role="button"` while handling only Enter, so Space did nothing. Both are fixed on
   `fix/prelaunch-capture-findings` - the menu now opens the timeline as its first, non-destructive
   entry, and the row responds to Space. Five tests cover the row's actions, where the component had
-  no spec at all before; three of them fail against the old template. **Not natively verified**: what
-  actually blocked `interview-timeline.png` during the capture session is still unexplained, because
-  the reproduction was never captured. The most likely cause is that the click landed on the `⋯`
-  button at the row's right edge.
+  no spec at all before; three of them fail against the old template. **Natively verified by the
+  maintainer on 2026-07-28** under `npm run desktop:dev`, which is what closes this one: both the row
+  menu's new first entry and the Space key were exercised by hand. Still unexplained: what actually
+  blocked `interview-timeline.png` during the capture session, because the reproduction was never
+  captured. The most likely cause is that the click landed on the `⋯` button at the row's right edge.
 - **Second product finding: a target role whose distinctive word is under three letters could never
   match anything. Fixed 2026-07-28.** `archetypeWords` dropped every word shorter than three
   characters and `matchArchetype` requires one distinctive (non-generic) word to anchor, so "UI

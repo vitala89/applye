@@ -1,10 +1,14 @@
-# Git LFS. Screen recordings are binary and get re-recorded, so every take git
-# stores is a whole extra copy that can never be removed without rewriting
-# history. Pointers keep the history light; the bytes live in LFS and are
-# fetched only for the revision being checked out.
+# Git LFS. The guide's screenshots and screen recordings are binary and get
+# retaken, so every version git stores is a whole extra copy that can only be
+# removed by rewriting history. Pointers keep the history light; the bytes live
+# in LFS and are fetched only for the revision being checked out.
 #
-# The six recordings already in history at 738d133 stay as ordinary blobs -
-# that weight is spent. Everything from here on is a pointer.
+# History was rewritten once, over v0.25.0..main, to move the media already
+# committed there into LFS as well. No tag moved and no release changed: every
+# guide asset was added after v0.25.0, which is the last tag. That rewrite is
+# not to be repeated - it was cheap only because the repository was private,
+# unforked and had a single working copy.
+#
 # LFS hooks live in .husky/, not .git/hooks, because this repository sets
 # core.hooksPath. See .husky/pre-push.
 *.mp4 filter=lfs diff=lfs merge=lfs -text

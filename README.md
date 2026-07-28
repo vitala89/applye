@@ -124,8 +124,8 @@ deterministic code. AI is only spent where judgement is genuinely needed, and on
 **Prerequisites:** Node 20+, Rust (stable, 2021 edition), and the
 [Tauri 2 system dependencies](https://v2.tauri.app/start/prerequisites/) for your OS. Add
 [Git LFS](https://git-lfs.com) if you intend to build or deploy the website: the documentation's
-screen recordings are stored as LFS pointers, and a clone without it gets 132-byte stubs where the
-videos should be. The desktop app does not depend on them.
+screenshots and screen recordings are stored as LFS pointers, and a clone without it gets
+132-byte stubs where the images and videos should be. The desktop app does not depend on them.
 
 ```bash
 git clone https://github.com/vitala89/applye.git

@@ -27,17 +27,25 @@
   fixed, deployment is manual: `npm run web:deploy` (needs `CLOUDFLARE_API_TOKEN` and
   `CLOUDFLARE_ACCOUNT_ID` in the environment) runs format, lint and tests first and refuses to
   upload if any fail, because the gate is the point of the job it stands in for.
-- **The guide's screen recordings live in Git LFS, and a clone without it deploys stubs.** `*.mp4`
-  is tracked through LFS as of `chore/web-guide-media-lfs`, because the recordings will be retaken
-  and git keeps every version of a binary in full. Deployment is manual from a working copy, so a
-  machine without `git-lfs` installed would check out 132-byte pointers, pass every gate - the
-  build copies whatever is in `public/` without looking at it - and upload those to Cloudflare in
-  place of the videos. Install Git LFS before deploying. The `.husky/pre-push` hook covers the
-  other direction and refuses to push when git-lfs is missing. **LFS hooks belong in `.husky/`,
-  not `.git/hooks`**: the repository sets `core.hooksPath`, so `git lfs install` writes where git
-  never looks here, which is how the first attempt pushed pointers with no objects behind them.
-  The six recordings merged in #168 remain ordinary blobs in history, roughly 12 MB; reclaiming
-  that means rewriting `main` and is an open decision, cheapest before the repository goes public.
+- **All guide media lives in Git LFS, and a clone without it deploys stubs.** `*.mp4` and
+  `apps/web/public/guide/*.png` are tracked through LFS, because both get retaken and git keeps
+  every version of a binary in full. Deployment is manual from a working copy, so a machine without
+  `git-lfs` installed would check out 132-byte pointers, pass every gate - the build copies whatever
+  is in `public/` without looking at it - and upload those to Cloudflare in place of the assets.
+  Install Git LFS before deploying. The `.husky/pre-push` hook covers the other direction and
+  refuses to push when git-lfs is missing. **LFS hooks belong in `.husky/`, not `.git/hooks`**: the
+  repository sets `core.hooksPath`, so `git lfs install` writes where git never looks here, which is
+  how the first attempt pushed pointers with no objects behind them.
+- **History was rewritten once, on 2026-07-28, and must not be again.** The media committed before
+  LFS was introduced was moved into it by rewriting `v0.25.0..main`, 74 commits. A like-for-like
+  clone of `main` fell from 23.70 MiB to 7.07 MiB. **No tag moved and no release changed** - every
+  guide asset was added after `v0.25.0`, the last tag, which is the whole reason the rewrite was
+  cheap, along with the repository being private, unforked and checked out once. Commit SHAs in that
+  range all changed, so PRs #168 and #169 reference commits that are no longer on `main`; their
+  descriptions survive, the commit links do not. The pre-rewrite state is kept on the remote branch
+  `backup/pre-history-rewrite` and as a local mirror at
+  `~/applye-capture-states/repo-mirror-pre-rewrite.git`. Once the repository is public, this
+  operation stops being available at any acceptable price.
 - **Analytics: code done, one dashboard step left.** Six GA4 events behind a hard consent gate,
   ten custom dimensions registered before any traffic, Enhanced measurement and Google signals off,
   DPA accepted. The measurement ID is committed as `G-PLACEHOLDER` and injected at build time, so

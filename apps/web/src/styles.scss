@@ -1597,7 +1597,117 @@ html {
 /* Media placeholder blocks in the user guide. Replace the box with a real
    <img>/<video> when the asset exists; keep the figcaption. */
 .docs__media {
+  position: relative;
   margin-block: var(--space-6);
+}
+/* The figures are 2880x1800 files in a column a third that wide, so the detail
+   the text points at is in the asset and not on the page. Clicking the picture
+   opens it; this button is the same door for a keyboard, and the only one for
+   the tour video, whose own controls own its clicks. */
+.docs__media img,
+.docs__media video:not([controls]) {
+  cursor: zoom-in;
+}
+.docs__zoom {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.docs__media:hover .docs__zoom,
+.docs__zoom:focus-visible {
+  opacity: 1;
+}
+.docs__zoom:hover {
+  color: var(--text-primary);
+}
+/* Nothing hovers on a touch screen, so there the button is simply always on. */
+@media (hover: none) {
+  .docs__zoom {
+    opacity: 1;
+  }
+}
+
+/* ---- Lightbox ---- */
+body.is-lightboxed {
+  overflow: hidden;
+}
+.lbx {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: color-mix(in srgb, #05060a 88%, transparent);
+  backdrop-filter: blur(2px);
+  animation: lbx-in var(--dur-fast) var(--ease-standard);
+}
+@keyframes lbx-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lbx {
+    animation: none;
+  }
+}
+.lbx__figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  margin: 0;
+  max-width: 100%;
+}
+.lbx__media {
+  display: block;
+  max-width: min(96vw, 1600px);
+  /* Leaves room for the caption and the close button above it. */
+  max-height: 84vh;
+  width: auto;
+  height: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+.lbx__caption {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+.lbx__close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+}
+.lbx__close:hover {
+  color: var(--text-primary);
 }
 .docs__mediabox {
   display: flex;

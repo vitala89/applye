@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { serializeProfileForm, parseProfileMd, EMPTY_FORM } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -6,7 +6,7 @@ import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { ProfileComponent } from './profile.component';
 
-function createComponent(): ProfileComponent {
+function createFixture(): ComponentFixture<ProfileComponent> {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [ProfileComponent],
@@ -31,8 +31,11 @@ function createComponent(): ProfileComponent {
       ToastService,
     ],
   });
-  const fixture = TestBed.createComponent(ProfileComponent);
-  return fixture.componentInstance;
+  return TestBed.createComponent(ProfileComponent);
+}
+
+function createComponent(): ProfileComponent {
+  return createFixture().componentInstance;
 }
 
 describe('ProfileComponent form/md sync (unit-level contract)', () => {
@@ -52,6 +55,45 @@ describe('ProfileComponent form/md sync (unit-level contract)', () => {
     const roundTripped = serializeProfileForm(parseProfileMd(md));
     expect(roundTripped).toContain('## Awards');
     expect(roundTripped).toContain('Prize');
+  });
+});
+
+describe('unmatchable target role warning', () => {
+  function warnings(fixture: ComponentFixture<ProfileComponent>): string[] {
+    fixture.detectChanges();
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('.archetype-card__warn') as NodeListOf<HTMLElement>,
+    ).map((el) => el.textContent?.trim() ?? '');
+  }
+
+  it('warns about a role whose words are all generic', () => {
+    const fixture = createFixture();
+    const c = fixture.componentInstance;
+    c.loading.set(false);
+    c.sectionOpen.update((s) => ({ ...s, archetypes: true }));
+    c.archetypes.set([{ name: 'Senior Engineer', fit: 'primary', sellWhen: '' }]);
+    expect(warnings(fixture)).toHaveLength(1);
+  });
+
+  it('stays silent for a role with a distinctive word, including a short one', () => {
+    const fixture = createFixture();
+    const c = fixture.componentInstance;
+    c.loading.set(false);
+    c.sectionOpen.update((s) => ({ ...s, archetypes: true }));
+    c.archetypes.set([
+      { name: 'UI Engineer', fit: 'primary', sellWhen: '' },
+      { name: 'Senior Angular Engineer', fit: 'secondary', sellWhen: '' },
+    ]);
+    expect(warnings(fixture)).toHaveLength(0);
+  });
+
+  it('says nothing about a name the user has not typed yet', () => {
+    const fixture = createFixture();
+    const c = fixture.componentInstance;
+    c.loading.set(false);
+    c.sectionOpen.update((s) => ({ ...s, archetypes: true }));
+    c.archetypes.set([{ name: '  ', fit: 'primary', sellWhen: '' }]);
+    expect(warnings(fixture)).toHaveLength(0);
   });
 });
 

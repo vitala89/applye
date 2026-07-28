@@ -5,14 +5,17 @@
 - **Current branch / focus**: `main`. Preparing applye.dev for a public launch that precedes the
   repository going public and the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
-- **THE SITE IS LIVE at `https://applye.pages.dev`, deliberately not indexable.** First deployed
-  2026-07-26. Every response sends `X-Robots-Tag: noindex` because the documentation still shows
-  placeholder boxes where its screenshots and video will go. `robots.txt` still allows crawling on
-  purpose: a crawler blocked from fetching never reads the noindex and may list the URL anyway.
-  `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts` and that header must agree, and a test fails
-  while they do not, so the site cannot launch still hidden. **`applye.dev` is deliberately not
-  attached yet** - a certificate appears in Certificate Transparency logs within hours and crawlers
-  follow, so the domain waits until the media exists.
+- **THE SITE IS LIVE at `https://applye.pages.dev`, deliberately not indexable - and as of
+  2026-07-28 the reason for that has been removed.** First deployed 2026-07-26. Every response still
+  sends `X-Robots-Tag: noindex`, which was there because the documentation showed placeholder boxes
+  where its screenshots and video would go; **no placeholder box is left on the site**, so the flip
+  is now a decision rather than a blocker and it waits on the maintainer's word. `robots.txt` still
+  allows crawling on purpose: a crawler blocked from fetching never reads the noindex and may list
+  the URL anyway. `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts` and that header must agree, and a
+  test fails while they do not, so the site cannot launch still hidden - flip both, or neither.
+  **`applye.dev` is deliberately not attached yet** - a certificate appears in Certificate
+  Transparency logs within hours and crawlers follow, so the domain waits for the same word. One
+  check is still outstanding before flipping: nobody has looked at the rendered guide by eye.
 - **Verified on the live site 2026-07-26**, not merely locally: all six security headers present;
   39 routes served; per-locale titles correct; canonicals point at `applye.dev`; JSON-LD present
   (product + FAQ on landings, product + breadcrumbs on docs); 404 works; sitemap and robots served.
@@ -88,17 +91,47 @@
   take was left out of the repository. Capture it against a user-added source on a reserved example
   domain, or stop the recording before results land and show the console alone. The rejected file is
   kept outside the repo at `~/applye-capture-states/media-inbox-2026-07-28/`.
-- **Two shipped assets miss their slot and are known to.** `tour-walkthrough.mp4` is 18 silent
-  seconds of first run against a slot asking for a narrated 2-3 minute tour of every sidebar
-  section; it is the asset the docs lean on hardest and should be re-recorded before launch.
-  `tailor-wizard.mp4` is 36 s against 60-90 s and stops before Export & Apply, so its caption was
-  changed from "to exported PDF" to "to generated documents" rather than leave an unsupported claim.
+- **The two weakest recordings were re-shot 2026-07-28; one shipped asset still misses its slot.**
+  `tour-walkthrough.mp4` is now the whole first run, 45.9 s across all six onboarding steps, slowed
+  enough to read and with the model-call waits cut. It is still not the narrated 2-3 minute tour of
+  every sidebar section the slot describes - there is no narration and the sidebar is covered by the
+  page's own text - but it is complete for what it shows, where the 18-second version stopped
+  mid-flow. `profile-regenerate.mp4` went from 2.2 s to 5.1 s and now shows the working state the
+  slot asks for. `pipeline-drag.mp4` was reviewed again and kept at 3 s: under the floor, but the
+  drag and the modal both read. `tailor-wizard.mp4` is unchanged - 36 s against 60-90 s, stopping
+  before Export & Apply, with its caption already corrected to "to generated documents".
   `documents-library.png` shows two rows rather than three or four and carries no Default badge;
   filling it out is free, no AI call.
-- **The guide has still never been seen rendered.** The browser preview reports `innerWidth` 0, so
-  every "it looks right" claim is really "the asset is served with the right attributes", verified
-  through the DOM and over HTTP against `localhost:4300`. Looking at the pages by eye is worth doing
-  before launch.
+- **A personal path nearly shipped in the tour video, and was cut.** Its last half-second, after the
+  app opened on Settings, showed the CLI detection block listing absolute paths under the
+  maintainer's home directory. That is a real account name in published documentation, so the take
+  ends on the "You're all set" summary instead. Worth remembering for any Settings capture in CLI
+  bridge mode: the detected-binary lines carry the home directory and need cropping, redaction or
+  cutting. Separately, every guide recording is now silent as a file rather than merely muted in the
+  markup - the screen recorder had attached an empty AAC track to all seven - and the four heaviest
+  were re-encoded at CRF 23, taking the guide's video weight from about 14.7 MB to 4.1 MB.
+- **The guide was reviewed by eye on 2026-07-29 and reads correctly** - by the maintainer, not by
+  any agent. The browser preview still returns a blank frame with `innerWidth` 0, so every agent-side
+  "it looks right" remains "the asset is served with the right attributes", verified through the DOM,
+  over HTTP against `localhost:4300`, and against the prerendered HTML in `dist`. One change came out
+  of that review: the wordmark's trailing cursor bar was dropped from the header and the footer,
+  because the mark already carries a vertical stroke on its left and the pair read as brackets around
+  the name.
+- **The last guide asset, `guide/discover-scan.mp4`, shipped 2026-07-28.** How it was captured
+  matters for any re-shoot: `discover_scan` refuses anything that is not `https://`
+  (`require_https`, `discover.rs:1578`) and reqwest is built with `rustls-tls` on the bundled
+  Mozilla roots (`Cargo.toml:32`), so no local server - plain HTTP, self-signed, or mkcert - can
+  ever be scanned. The invented feed in `tools/capture/demo-jobs.xml` was therefore hosted on a
+  throwaway Cloudflare Pages project, scanned with every built-in source switched off, and the
+  project deleted right after. The deviations from what the slot asked for are recorded in
+  `MEDIA_SHOTLIST.md`; the short version is that the scan console is legible only on a freeze frame,
+  because a single small feed resolves in about 0.15 s. **The maintainer's own database was restored
+  afterwards** from `applye.db.pre-seed-2026-07-27T10-26-53-893Z`: eight source rows, TrudVsem
+  enabled and the other seven off, no jobs and no profile - which is what it held before the first
+  capture session. The seeded demo state it replaced is archived at
+  `~/applye-capture-states/70-capture-2026-07-28-post-scan/`. Note that
+  `~/applye-capture-states/99-your-real-data/` no longer contains real data despite its name: it was
+  overwritten with a seeded copy on 2026-07-28.
 - **Four API calls were spent with the maintainer's approval** - one scoring profile, scoring runs
   on Northlane (82) and Vantaform (72), and one tailoring run. Vantaform was scored specifically
   because Northlane matched too well to produce the missing-keyword chips the docs page promises.

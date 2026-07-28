@@ -5,11 +5,11 @@ import { RouterLink } from '@angular/router';
  * User guide - step-by-step, screen by screen, honest to what ships today.
  *
  * MEDIA: every <figure class="docs__media"> holds a real capture from the
- * running desktop app, except the one remaining stub. A stub keeps its
- * .docs__mediabox, whose .docs__mediatag says what kind of asset goes there
- * (SCREENSHOT / GIF / VIDEO) and whose text says exactly what to capture. Drop
- * the real asset into apps/web/public/guide/ and replace the box with an <img>
- * or a <video>, keeping the <figcaption>.
+ * running desktop app. No stub is left. Should a new slot ever be added before
+ * its asset exists, it keeps a .docs__mediabox, whose .docs__mediatag says what
+ * kind of asset goes there (SCREENSHOT / GIF / VIDEO) and whose text says
+ * exactly what to capture; drop the real asset into apps/web/public/guide/ and
+ * replace the box with an <img> or a <video>, keeping the <figcaption>.
  *
  * Product shots are captured, never drawn. A picture of a UI that does not
  * match the shipped app is a false claim about the product, in documentation
@@ -30,17 +30,18 @@ import { RouterLink } from '@angular/router';
     <figure class="docs__media">
       <video
         src="/guide/tour-walkthrough.mp4"
-        width="1440"
-        height="900"
+        width="1264"
+        height="788"
         controls
         muted
         playsinline
         preload="metadata"
-        aria-label="A silent screen recording of the first run: the onboarding wizard asks which AI
-          provider to connect, offering a pasted API key or a CLI you already pay for, then offers
-          to read an existing CV by upload, pasted text, or skipping entirely, and finally shows the
-          fields it pulled out of that CV for confirmation - name, contact details, current title
-          and skills - before the app opens."
+        aria-label="A silent screen recording of the whole first run, all six steps: the welcome
+          screen, the AI setup that offers either a pasted API key or a CLI you already pay for,
+          bringing in a resume by upload or pasted text or skipping it, the review screen showing
+          the name, contact details, experience and skills that were pulled out of that resume, the
+          targeting screen where suggested roles and a compensation range are confirmed, and the
+          summary of what finishing will save on the device."
       ></video>
       <figcaption>First launch, start to finish.</figcaption>
     </figure>
@@ -361,9 +362,10 @@ export class GuideDashboard {}
           playsinline
           preload="metadata"
           aria-label="A silent screen recording of the Profile page. The scoring profile card is
-            regenerated, and the card fills in with the compact JSON the app caches for scoring:
-            archetypes, skills grouped by kind, and the seniority reading, above a note saying when
-            it was generated and which model produced it."
+            regenerated: it reads 'Compressing profile' while it works, then fills in with what the
+            app caches for scoring - the name and seniority line, a row of strengths, and the notes
+            the model made about what the profile does not say - above a footer reading cached, 0
+            tokens, with the token counts of the run that produced it."
         ></video>
         <figcaption>Regenerating the scoring profile.</figcaption>
       </figure>
@@ -601,14 +603,21 @@ export class GuideTailor {}
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">GIF</span>
-        <p>
-          PLACEHOLDER: guide/discover-scan.gif - clicking Scan: the terminal-style console logging
-          each source line by line, collapsing into the summary strip (LAST SCAN · N NEW · N
-          FILTERED · 0 TOKENS).
-        </p>
-      </div>
+      <video
+        src="/guide/discover-scan.mp4"
+        width="1440"
+        height="900"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="metadata"
+        aria-label="A silent screen recording. Discover shows an empty inbox, Scan is pressed, and
+          the scan console appears for a moment with the line 'scan started · 1 sources' above the
+          source being read. The console then collapses into the summary strip - LAST SCAN, 8 NEW, 0
+          FILTERED, 0 TOKENS - and the feed fills with eight openings, each carrying a NEW pill, a
+          target-role label and the keywords that matched."
+      ></video>
       <figcaption>A scan run, live.</figcaption>
     </figure>
 

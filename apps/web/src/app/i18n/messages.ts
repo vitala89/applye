@@ -34,6 +34,11 @@ export interface Messages {
     privacy: string;
     cookies: string;
     sustain: string;
+    /** Column headings, and the label on the mailto link under Legal. */
+    groupProduct: string;
+    groupProject: string;
+    groupLegal: string;
+    contact: string;
     licence: string;
     builtBy: string;
   };

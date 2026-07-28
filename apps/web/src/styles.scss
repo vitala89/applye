@@ -188,14 +188,6 @@ html {
   width: 1.05em;
   height: 1.05em;
 }
-.brand__cursor {
-  display: inline-block;
-  width: 2px;
-  height: 0.95em;
-  margin-left: 1px;
-  background: var(--accent);
-}
-
 /* ---- Nav ---- */
 .nav {
   position: sticky;
@@ -749,54 +741,95 @@ html {
   padding-block: var(--space-11) var(--space-8);
   background: var(--surface-1);
 }
+/* A brand column and three named link columns. The columns collapse to a
+   two-up grid on a tablet and to one on a phone: eleven links in a wrapping
+   row used to run 762px wide against a 375px viewport and scrolled the whole
+   document sideways. */
 .footer__inner {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(120px, 0.75fr));
+  gap: var(--space-8) var(--space-7);
+  align-items: start;
+}
+.footer__brand {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-7);
-  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 .footer__brand p {
-  margin-top: var(--space-3);
+  margin: 0;
+  max-width: 34ch;
   font-family: var(--font-sans);
   font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
   color: var(--text-tertiary);
 }
-/* Eight links in a nowrap row measured 762px against a 375px viewport, which
-   made the whole document scroll sideways on a phone. */
-.footer__links {
+.footer__col {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4) var(--space-7);
+  flex-direction: column;
+  gap: var(--space-3);
 }
-.footer__links a {
+.footer__coltitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.footer__col a {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-secondary);
   text-decoration: none;
 }
-.footer__links a:hover {
+.footer__col a:hover {
   color: var(--text-primary);
 }
 .footer__legal {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
-  margin-top: var(--space-9);
-  padding-top: var(--space-6);
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
   border-top: var(--border-width) solid var(--border-subtle);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--text-tertiary);
 }
+.footer__legalend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
 .footer__legal a {
   color: var(--text-secondary);
 }
+/* Sits under the tagline in the brand column: the source pill, and whichever
+   social links have a URL set in site.ts. */
 .footer__social {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 860px) {
+  .footer__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 520px) {
+  .footer__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ---- Manifesto ---- */
@@ -925,41 +958,83 @@ html {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ---- Language switcher (see app/ui/language-switcher.ts) ---- */
-.footer__langs {
-  padding-block: var(--space-4);
-}
+/* ---- Language switcher (see app/ui/language-switcher.ts) ----
+   A disclosure, not a select: the six links are in the markup either way, so a
+   crawler and a shared URL see all of them while the footer shows one. */
 .langs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-3) var(--space-4);
+  position: relative;
 }
-.langs__label {
+.langs__current {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.langs__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  margin: 0;
-  padding: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
   list-style: none;
 }
+.langs__current::-webkit-details-marker {
+  display: none;
+}
+.langs__current:hover {
+  color: var(--text-primary);
+}
+.langs__code {
+  letter-spacing: var(--tracking-wide);
+}
+.langs__name {
+  color: var(--text-tertiary);
+}
+.langs__caret {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.langs[open] .langs__caret {
+  transform: rotate(180deg);
+}
+.langs__list {
+  position: absolute;
+  right: 0;
+  /* Opens upward: this sits at the bottom of the page. */
+  bottom: calc(100% + var(--space-2));
+  z-index: 20;
+  min-width: 190px;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-popover, 0 8px 24px rgb(0 0 0 / 18%));
+}
 .langs__list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-secondary);
   text-decoration: none;
+  border-radius: var(--radius-input);
 }
 .langs__list a:hover {
   color: var(--text-primary);
+  background: var(--surface-2);
 }
 .langs__list a.is-active {
   color: var(--text-accent);
+  background: var(--surface-2);
+}
+.langs__tag {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
 }
 
 /* A translated landing page links into English docs; say so, quietly. */
@@ -1512,6 +1587,16 @@ html {
 .dx__chev {
   transition: transform var(--dur-fast) var(--ease-standard);
 }
+/* One landmark per section. Accent-coloured so the eye finds the group it
+   wants without reading five uppercase labels; the chevron beside it stays
+   the affordance. */
+.dx__groupicon {
+  flex: none;
+  color: var(--accent);
+}
+.dx__group.is-collapsed .dx__groupicon {
+  color: var(--text-tertiary);
+}
 .dx__group.is-collapsed .dx__chev {
   transform: rotate(-90deg);
 }
@@ -1595,7 +1680,117 @@ html {
 /* Media placeholder blocks in the user guide. Replace the box with a real
    <img>/<video> when the asset exists; keep the figcaption. */
 .docs__media {
+  position: relative;
   margin-block: var(--space-6);
+}
+/* The figures are 2880x1800 files in a column a third that wide, so the detail
+   the text points at is in the asset and not on the page. Clicking the picture
+   opens it; this button is the same door for a keyboard, and the only one for
+   the tour video, whose own controls own its clicks. */
+.docs__media img,
+.docs__media video:not([controls]) {
+  cursor: zoom-in;
+}
+.docs__zoom {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.docs__media:hover .docs__zoom,
+.docs__zoom:focus-visible {
+  opacity: 1;
+}
+.docs__zoom:hover {
+  color: var(--text-primary);
+}
+/* Nothing hovers on a touch screen, so there the button is simply always on. */
+@media (hover: none) {
+  .docs__zoom {
+    opacity: 1;
+  }
+}
+
+/* ---- Lightbox ---- */
+body.is-lightboxed {
+  overflow: hidden;
+}
+.lbx {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: color-mix(in srgb, #05060a 88%, transparent);
+  backdrop-filter: blur(2px);
+  animation: lbx-in var(--dur-fast) var(--ease-standard);
+}
+@keyframes lbx-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lbx {
+    animation: none;
+  }
+}
+.lbx__figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  margin: 0;
+  max-width: 100%;
+}
+.lbx__media {
+  display: block;
+  max-width: min(96vw, 1600px);
+  /* Leaves room for the caption and the close button above it. */
+  max-height: 84vh;
+  width: auto;
+  height: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+.lbx__caption {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+.lbx__close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+}
+.lbx__close:hover {
+  color: var(--text-primary);
 }
 .docs__mediabox {
   display: flex;

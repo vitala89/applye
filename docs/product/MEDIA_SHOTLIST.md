@@ -24,17 +24,9 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Still open
 
-One guide slot. Everything else on the guide is captured; see "Already produced".
-
-| Slot                      | Page                   | Type | What to capture                                                            |
-| ------------------------- | ---------------------- | ---- | -------------------------------------------------------------------------- |
-| `guide/discover-scan.mp4` | `/docs/guide/discover` | GIF  | Scan running: console lines per source, collapsing into the summary strip. |
-
-**A take exists and was rejected, so re-shoot it deliberately.** Scanning the built-in sources
-returns real openings from real German employers, and those companies and their job titles fill the
-feed on screen. No frame in this documentation may carry a real employer, recruiter or contact. To
-capture this honestly, scan only a user-added source pointing at a reserved example domain, or stop
-the recording before results land and show the console alone.
+**No guide slot is open.** Every figure on the seven guide pages holds a real capture from the
+running app; see "Already produced". What remains on this list is Priority 3 marketing material,
+which no page currently blocks on.
 
 ## Priority 3 - marketing surfaces
 
@@ -46,19 +38,59 @@ the recording before results land and show the console alone.
 
 ## Already produced
 
-All ten below were captured 2026-07-28 by the maintainer, on the seeded demo database, at 1440x900
-logical. Stills are 2x; the recordings are 1x, which keeps them small and costs nothing visible
-since a video is scaled to the column anyway.
+All eleven below were captured 2026-07-28 by the maintainer, on the seeded demo database, at
+1440x900 logical. Stills are 2x; the recordings are 1x, which keeps them small and costs nothing
+visible since a video is scaled to the column anyway.
+
+- `guide/discover-scan.mp4` - 6.2 s, the slot's re-shoot after the first take was rejected for
+  showing real employers. Captured against a single user-added RSS source: the invented feed in
+  `tools/capture/demo-jobs.xml`, temporarily hosted on a throwaway Cloudflare Pages project that was
+  deleted straight after, because `discover_scan` fetches `https://` only and reqwest is built on
+  the bundled Mozilla roots, so a local server - plain or self-signed - can never be scanned. Every
+  built-in source was switched off first, so nothing real was fetched. **Three deviations from the
+  slot, all in the same direction.** The slot asks for "console lines per source": there was one
+  enabled source, so there is one line. The console is on screen for roughly 0.15 s - the scan
+  resolves that fast against a single small feed - so the line reading `> scan started · 1 sources`
+  is legible only on a freeze frame, and the resolved per-source line and the `> done in Ns` line
+  are never drawn at all, because the console collapses the moment results land. What the recording
+  does show clearly is the outcome the slot cares about: the summary strip reading LAST SCAN · 8
+  NEW · 0 FILTERED · 0 TOKENS, and the feed filling with eight invented companies carrying NEW
+  pills, target-role labels and matched keywords. The `aria-label` on the page describes exactly
+  that and promises no log. The original take carried an audio track from the screen recorder and
+  3.5 s of static screen before the click; both were removed before shipping (`-an`, trimmed from
+  2.3 s), which is why the file is 123 KB rather than 1.1 MB. The untrimmed original is in
+  `~/applye-capture-states/media-inbox-2026-07-28/`.
 
 **Every GIF slot shipped as a silent looping MP4 instead**, which the capture rules already allow as
 the fallback above ~3 MB. They are marked up as `<video autoplay loop muted playsinline>`, so they
 behave like the GIF the slot asked for. None of them carries narration.
 
-- `guide/tour-walkthrough.mp4` - **shorter and narrower than the slot asked for, deliberately
-  shipped anyway.** The slot wants a narrated 2-3 minute tour of every sidebar section; this is 18
-  silent seconds of first run only: provider setup, the offer to read an existing CV, and the fields
-  it pulled out for confirmation. It is honest about what it shows, but it is not yet the tour, and
-  the docs page still promises one. Re-record before launch.
+**All seven recordings are silent as files, not merely muted in the markup.** The screen recorder
+attached an empty AAC track to every take; each was stripped on 2026-07-28 (`-an`). The same pass
+re-encoded the four heaviest at CRF 23, which took the guide's video weight from about 14.7 MB to
+4.1 MB with no visible change - screen content with long static stretches compresses far below what
+the recorder emits. Check a re-encode by eye at 1:1 before shipping it; these were.
+
+- `guide/tour-walkthrough.mp4` - **re-recorded 2026-07-28; now the whole first run, 45.9 s.** All six
+  onboarding steps end to end: welcome, AI setup, bringing in a resume, the review of what was parsed
+  out of it, the targeting screen with its suggested roles and compensation range, and the summary of
+  what finishing will save. Played back slightly slowed so each screen is readable, with the long
+  model-call waits cut - nothing happens on screen during them and their length is not a claim the
+  documentation needs to make. **Still not what the slot literally asks for**, which is a narrated
+  2-3 minute tour of every sidebar section: there is no narration, the sidebar sections are covered
+  by the page's own text rather than by the video, and it runs 46 seconds rather than two minutes.
+  It is now a complete recording of what it does show, which the 18-second version was not.
+  **Two edits before shipping.** The take carried an AAC track from the screen recorder, which the
+  capture rules forbid. And its last half-second, after the app opened on Settings, showed the CLI
+  detection block with absolute paths under the maintainer's home directory - a real account name,
+  which is personal data and has no place in published documentation. The video is cut to end on the
+  "You're all set" summary instead. It was also captured with the window inset in a larger frame, so
+  it is cropped from 1440x900 to its actual 1264x788 content; the page's `width`/`height` say so.
+- `guide/profile-regenerate.mp4` - **re-recorded 2026-07-28, 5.1 s**, replacing a 2.2-second take
+  whose pulse state was gone before a viewer could see it. The card now reads "Compressing profile"
+  while it works and lands on the filled result: name and seniority line, strengths, the model's
+  notes on what the profile does not say, and a footer reading cached, 0 tokens with the run's token
+  counts. Inside the slot's 5-12 s floor.
 - `guide/tailor-wizard.mp4` - 36 s against a 60-90 s slot. Covers the three tailoring passes, the
   list of concrete changes, and Review documents. **Stops before Export & Apply**, so the native save
   dialog and the resulting PDF - the part the caption used to promise - are absent. The caption was
@@ -70,10 +102,8 @@ behave like the GIF the slot asked for. None of them carries narration.
 - `guide/cv-import.mp4` - 6 s, importing `tools/capture/mira-cv.html` converted to DOCX. See the CV
   source note below.
 - `guide/pipeline-drag.mp4` - 3 s against a 5-12 s floor. The drag and the quick-view modal are both
-  there, but it loops fast enough to read as a flicker. Worth re-recording with pauses.
-- `guide/profile-regenerate.mp4` - 2.2 s, well under the floor and the weakest asset shipped. The
-  scoring card is regenerated and fills in, but the pulse state the slot asks for is gone before a
-  viewer can see it.
+  there. Reviewed again on 2026-07-28 and kept as it is: the card moves, the modal opens and both are
+  legible on the loop, so the length is under the floor but nothing is missing.
 - `guide/documents-library.png` - **two documents, not the three or four the slot asks for, and no
   Default badge on either.** Shows a tailored CV named after its job with a "Linked to" line, and an
   imported CV under the applicant's name. Two further deviations, both because of how the app

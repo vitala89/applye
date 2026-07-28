@@ -22,7 +22,12 @@ export type IconName =
   | 'sparkles'
   | 'sun'
   | 'moon'
-  | 'chevron-down';
+  | 'chevron-down'
+  | 'rocket'
+  | 'book-open'
+  | 'lightbulb'
+  | 'compass'
+  | 'book-marked';
 
 @Component({
   selector: 'app-icon',
@@ -83,6 +88,39 @@ export type IconName =
         }
         @case ('chevron-down') {
           <path d="m6 9 6 6 6-6" />
+        }
+        @case ('rocket') {
+          <path
+            d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z"
+          />
+          <path
+            d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"
+          />
+          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+          <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+        }
+        @case ('book-open') {
+          <path d="M12 7v14" />
+          <path
+            d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+          />
+        }
+        @case ('lightbulb') {
+          <path
+            d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+          />
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+        }
+        @case ('compass') {
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+          <circle cx="12" cy="12" r="10" />
+        }
+        @case ('book-marked') {
+          <path d="M10 2v8l3-3 3 3V2" />
+          <path
+            d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"
+          />
         }
       }
     </svg>

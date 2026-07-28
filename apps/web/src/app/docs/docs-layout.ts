@@ -2,7 +2,8 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { afterNextRender, Component, inject, PLATFORM_ID, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { Icon } from '../ui/icon';
+import { Icon, IconName } from '../ui/icon';
+import { MediaLightbox } from '../ui/media-lightbox';
 
 interface NavLeaf {
   text: string;
@@ -11,6 +12,8 @@ interface NavLeaf {
 interface NavGroup {
   id: string;
   title: string;
+  /** One per group, never per link: 25 icons in a sidebar is noise, 5 is a landmark. */
+  icon: IconName;
   links: NavLeaf[];
 }
 interface TocItem {
@@ -24,7 +27,7 @@ const NAV_STORAGE_KEY = 'applye-docs-nav';
 @Component({
   selector: 'app-docs-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, MediaLightbox],
   templateUrl: './docs-layout.html',
 })
 export class DocsLayout {
@@ -37,6 +40,7 @@ export class DocsLayout {
     {
       id: 'start',
       title: 'Quick start',
+      icon: 'rocket',
       links: [
         { text: 'Overview', to: '/docs' },
         { text: 'Requirements', to: '/docs/requirements' },
@@ -46,6 +50,7 @@ export class DocsLayout {
     {
       id: 'guide',
       title: 'User guide',
+      icon: 'book-open',
       links: [
         { text: 'First run & tour', to: '/docs/guide/tour' },
         { text: 'The Dashboard', to: '/docs/guide/dashboard' },
@@ -63,6 +68,7 @@ export class DocsLayout {
     {
       id: 'concepts',
       title: 'Concepts',
+      icon: 'lightbulb',
       links: [
         { text: 'The core flow', to: '/docs/flow' },
         { text: 'Code vs LLM judgement', to: '/docs/judgement' },
@@ -72,6 +78,7 @@ export class DocsLayout {
     {
       id: 'guides',
       title: 'Guides',
+      icon: 'compass',
       links: [
         { text: 'Reading the recruiter check', to: '/docs/scoring' },
         { text: 'Local markets', to: '/docs/local-markets' },
@@ -80,6 +87,7 @@ export class DocsLayout {
     {
       id: 'reference',
       title: 'Reference',
+      icon: 'book-marked',
       links: [
         { text: 'Privacy & transparency', to: '/docs/privacy' },
         { text: 'Your data & backup', to: '/docs/data' },
@@ -172,6 +180,8 @@ export class DocsLayout {
     );
     this.activeId.set(heads[0]?.id ?? '');
 
+    if (center) this.addZoomButtons(center);
+
     this.observer?.disconnect();
     this.observer = new IntersectionObserver(
       (entries) => {
@@ -180,6 +190,33 @@ export class DocsLayout {
       { rootMargin: '-15% 0px -75% 0px', threshold: 0 },
     );
     for (const h of heads) this.observer.observe(h);
+  }
+
+  /**
+   * Gives every figure an explicit "enlarge" control.
+   *
+   * Clicking the picture itself already opens the lightbox, but that is
+   * invisible to a keyboard and unannounced to a screen reader, and a video
+   * that carries its own controls cannot use it at all - a click there is a
+   * scrub. The button is added here rather than written into two dozen figure
+   * templates, so a figure added later gets one without being told about it.
+   */
+  private addZoomButtons(center: Element): void {
+    for (const figure of Array.from(center.querySelectorAll<HTMLElement>('.docs__media'))) {
+      if (figure.querySelector('.docs__zoom')) continue;
+      if (!figure.querySelector('img, video')) continue;
+
+      const button = this.doc.createElement('button');
+      button.type = 'button';
+      button.className = 'docs__zoom';
+      button.setAttribute('aria-label', 'Enlarge this figure');
+      button.innerHTML =
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>' +
+        '</svg>';
+      figure.appendChild(button);
+    }
   }
 
   private readCollapsed(): Record<string, boolean> {

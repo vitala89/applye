@@ -54,8 +54,13 @@
       }
     </script>
 
-    <link rel="icon" type="image/svg+xml" href="brand/applye-favicon.svg" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- The SVG is the icon; the raster files are the fallback for engines that
+         ignore it, and for iOS home screens. Absolute paths on purpose: these
+         are served from every route, and a relative href resolves against the
+         current one. Regenerate with apps/web/tools/generate-icons.sh. -->
+    <link rel="icon" type="image/svg+xml" href="/brand/applye-favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <link rel="canonical" href="https://applye.dev" />
 
     <!-- No-FOUC theme bootstrap: apply the stored theme before first paint. -->

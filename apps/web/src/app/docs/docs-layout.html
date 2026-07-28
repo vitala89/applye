@@ -11,6 +11,7 @@
           [attr.aria-expanded]="!isCollapsed(g.id)"
         >
           <app-icon class="dx__chev" name="chevron-down" [size]="14" [strokeWidth]="2.2" />
+          <app-icon class="dx__groupicon" [name]="g.icon" [size]="14" [strokeWidth]="1.9" />
           {{ g.title }}
         </button>
         @if (!isCollapsed(g.id)) {

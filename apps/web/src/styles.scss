@@ -1504,6 +1504,16 @@ html {
 .dx__chev {
   transition: transform var(--dur-fast) var(--ease-standard);
 }
+/* One landmark per section. Accent-coloured so the eye finds the group it
+   wants without reading five uppercase labels; the chevron beside it stays
+   the affordance. */
+.dx__groupicon {
+  flex: none;
+  color: var(--accent);
+}
+.dx__group.is-collapsed .dx__groupicon {
+  color: var(--text-tertiary);
+}
 .dx__group.is-collapsed .dx__chev {
   transform: rotate(-90deg);
 }

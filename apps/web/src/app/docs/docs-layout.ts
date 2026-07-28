@@ -2,7 +2,7 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { afterNextRender, Component, inject, PLATFORM_ID, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { Icon } from '../ui/icon';
+import { Icon, IconName } from '../ui/icon';
 
 interface NavLeaf {
   text: string;
@@ -11,6 +11,8 @@ interface NavLeaf {
 interface NavGroup {
   id: string;
   title: string;
+  /** One per group, never per link: 25 icons in a sidebar is noise, 5 is a landmark. */
+  icon: IconName;
   links: NavLeaf[];
 }
 interface TocItem {
@@ -37,6 +39,7 @@ export class DocsLayout {
     {
       id: 'start',
       title: 'Quick start',
+      icon: 'rocket',
       links: [
         { text: 'Overview', to: '/docs' },
         { text: 'Requirements', to: '/docs/requirements' },
@@ -46,6 +49,7 @@ export class DocsLayout {
     {
       id: 'guide',
       title: 'User guide',
+      icon: 'book-open',
       links: [
         { text: 'First run & tour', to: '/docs/guide/tour' },
         { text: 'The Dashboard', to: '/docs/guide/dashboard' },
@@ -63,6 +67,7 @@ export class DocsLayout {
     {
       id: 'concepts',
       title: 'Concepts',
+      icon: 'lightbulb',
       links: [
         { text: 'The core flow', to: '/docs/flow' },
         { text: 'Code vs LLM judgement', to: '/docs/judgement' },
@@ -72,6 +77,7 @@ export class DocsLayout {
     {
       id: 'guides',
       title: 'Guides',
+      icon: 'compass',
       links: [
         { text: 'Reading the recruiter check', to: '/docs/scoring' },
         { text: 'Local markets', to: '/docs/local-markets' },
@@ -80,6 +86,7 @@ export class DocsLayout {
     {
       id: 'reference',
       title: 'Reference',
+      icon: 'book-marked',
       links: [
         { text: 'Privacy & transparency', to: '/docs/privacy' },
         { text: 'Your data & backup', to: '/docs/data' },

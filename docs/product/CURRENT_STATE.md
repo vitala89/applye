@@ -5,17 +5,19 @@
 - **Current branch / focus**: `main`. Preparing applye.dev for a public launch that precedes the
   repository going public and the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
-- **THE SITE IS LIVE at `https://applye.pages.dev`, deliberately not indexable - and as of
-  2026-07-28 the reason for that has been removed.** First deployed 2026-07-26. Every response still
-  sends `X-Robots-Tag: noindex`, which was there because the documentation showed placeholder boxes
-  where its screenshots and video would go; **no placeholder box is left on the site**, so the flip
-  is now a decision rather than a blocker and it waits on the maintainer's word. `robots.txt` still
-  allows crawling on purpose: a crawler blocked from fetching never reads the noindex and may list
-  the URL anyway. `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts` and that header must agree, and a
-  test fails while they do not, so the site cannot launch still hidden - flip both, or neither.
-  **`applye.dev` is deliberately not attached yet** - a certificate appears in Certificate
-  Transparency logs within hours and crawlers follow, so the domain waits for the same word. One
-  check is still outstanding before flipping: nobody has looked at the rendered guide by eye.
+- **THE SITE IS LIVE at `https://applye.dev`.** First deployed to `applye.pages.dev` 2026-07-26;
+  the custom domain was attached 2026-07-29, apex and `www` both proxied CNAMEs to
+  `applye.pages.dev`, certificate issued the same evening. `applye.pages.dev` keeps working and
+  cannot be removed - it is the project's built-in hostname - but every page canonicalises to
+  `applye.dev`, so search consolidates on the domain. The maintainer's DNS showed NXDOMAIN for
+  roughly ten minutes afterwards; that was a resolver cache, not a misconfiguration.
+- **The site is indexable as of 2026-07-29.** `X-Robots-Tag: noindex` was removed from
+  `public/_headers` and `SEARCH_INDEXABLE` flipped to `true` in the same change. The header had held
+  the site out of search while the documentation still showed placeholder boxes where its
+  screenshots and video would go; all 25 assets shipped in #171, so the reason expired. `robots.txt`
+  allows crawling and always did: a crawler blocked from fetching never reads a noindex and may list
+  the URL anyway. The two remain coupled by a test - verified on 2026-07-29 to fail when only the
+  flag was changed - so putting the header back means flipping the flag too.
 - **Verified on the live site 2026-07-26**, not merely locally: all six security headers present;
   39 routes served; per-locale titles correct; canonicals point at `applye.dev`; JSON-LD present
   (product + FAQ on landings, product + breadcrumbs on docs); 404 works; sitemap and robots served.

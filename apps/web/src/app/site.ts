@@ -36,13 +36,14 @@ export const GA_MEASUREMENT_ID = 'G-PLACEHOLDER';
 /**
  * Whether the site is meant to appear in search results yet.
  *
- * False until launch: the site is deployed while the documentation still shows
- * placeholder boxes where its screenshots and video will go, and an indexed
- * placeholder is far harder to remove than to prevent. While this is false,
- * `public/_headers` must send `X-Robots-Tag: noindex`; a test fails if the two
- * disagree, so flipping this flag forces the header to be dealt with.
+ * True since launch. It was false while the documentation still showed
+ * placeholder boxes where its screenshots and video would go, because an
+ * indexed placeholder is far harder to remove than to prevent; all 25 assets
+ * shipped, so the reason expired. While this is false, `public/_headers` must
+ * send `X-Robots-Tag: noindex`, and a test fails if the two disagree - so
+ * neither the flag nor the header can be changed on its own.
  */
-export const SEARCH_INDEXABLE = false;
+export const SEARCH_INDEXABLE = true;
 
 /** Canonical production origin, used for canonical URLs, hreflang, OG tags and the sitemap. */
 export const SITE_ORIGIN = 'https://applye.dev';

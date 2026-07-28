@@ -110,10 +110,13 @@
   cutting. Separately, every guide recording is now silent as a file rather than merely muted in the
   markup - the screen recorder had attached an empty AAC track to all seven - and the four heaviest
   were re-encoded at CRF 23, taking the guide's video weight from about 14.7 MB to 4.1 MB.
-- **The guide has still never been seen rendered.** The browser preview reports `innerWidth` 0, so
-  every "it looks right" claim is really "the asset is served with the right attributes", verified
-  through the DOM and over HTTP against `localhost:4300`. Looking at the pages by eye is worth doing
-  before launch.
+- **The guide was reviewed by eye on 2026-07-29 and reads correctly** - by the maintainer, not by
+  any agent. The browser preview still returns a blank frame with `innerWidth` 0, so every agent-side
+  "it looks right" remains "the asset is served with the right attributes", verified through the DOM,
+  over HTTP against `localhost:4300`, and against the prerendered HTML in `dist`. One change came out
+  of that review: the wordmark's trailing cursor bar was dropped from the header and the footer,
+  because the mark already carries a vertical stroke on its left and the pair read as brackets around
+  the name.
 - **The last guide asset, `guide/discover-scan.mp4`, shipped 2026-07-28.** How it was captured
   matters for any re-shoot: `discover_scan` refuses anything that is not `https://`
   (`require_https`, `discover.rs:1578`) and reqwest is built with `rustls-tls` on the bundled

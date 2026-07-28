@@ -12,22 +12,18 @@
 #   TLS settings page where it can be turned off again, not in a file that ships
 #   with a build.
 
-# PRE-LAUNCH ONLY: the `X-Robots-Tag: noindex` line below. Remove it and flip
-# SEARCH_INDEXABLE in apps/web/src/app/site.ts on the day the site launches - a
-# test fails while the two disagree, so neither can be forgotten on its own.
+# The `X-Robots-Tag: noindex` line that used to live in the block below was
+# removed at launch, together with flipping SEARCH_INDEXABLE in
+# apps/web/src/app/site.ts. It held the site out of search while the
+# documentation still showed placeholder boxes where its screenshots and video
+# would go; all 25 assets shipped, so the reason expired. A test fails while
+# the flag and this file disagree, so putting the header back means flipping
+# the flag too.
 #
-# The site is deployed before its screenshots and video exist, and a domain
-# appears in Certificate Transparency logs within hours of its certificate being
-# issued, which is how crawlers find new sites. Without this, the placeholder
-# version of the documentation is what gets indexed, and removing a page from
-# search results takes far longer than keeping it out.
-#
-# robots.txt deliberately still allows crawling: a disallowed crawler never
-# reads this header, and Google will happily index a URL it was told not to
-# fetch. Allow the fetch, refuse the indexing.
+# robots.txt allows crawling and always did: a disallowed crawler never reads a
+# noindex header, and Google will happily index a URL it was told not to fetch.
 
 /*
-  X-Robots-Tag: noindex
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY

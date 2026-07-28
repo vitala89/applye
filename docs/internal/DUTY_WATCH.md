@@ -44,7 +44,30 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-28 (latest), the last placeholder on the site is gone, and the maintainer's database was put back
+### 2026-07-29 (latest), applye.dev is attached and the site is opened to search
+
+- **Status:** partial - the domain is attached and verified; the indexing flip is committed but not yet deployed
+- **Agent/tool:** Claude Code (Opus 5), maintainer driving the Cloudflare side
+- **Branch:** `fix/ci-lfs-checkout`, then `feat/web-launch-indexable`
+- **Commits:** `2117dc1` (LFS checkout), the indexing flip on the launch branch
+- **Pull request:** #172 (merged as `5192335`), plus the launch PR
+- **Objective:** attach `applye.dev`, remove the pre-launch search block, and get the current build online.
+- **Completed:**
+  - **`applye.dev` and `www.applye.dev` are attached to the `applye` Pages project.** Two proxied CNAMEs to `applye.pages.dev` created through the Cloudflare API, certificate issued 2026-07-28 22:39 UTC, valid to 2026-10-26. Verified from outside: `HTTP/2 200`, correct `<title>`, all six security headers, `DNS:applye.dev` on the certificate. The apex is a CNAME; Cloudflare flattens it, so no ALIAS record was needed. Email Routing records (3 MX, SPF, DKIM, DMARC) were not touched.
+  - **`X-Robots-Tag: noindex` removed and `SEARCH_INDEXABLE` flipped to `true`.** The coupling test was verified to fail when only the flag was changed, then the file was restored - the guard is real, not assumed.
+  - **The deploy job would have shipped LFS stubs.** `actions/checkout@v4` in `deploy-web` had no `lfs: true`, so a restored-Actions run would have uploaded 132-byte pointers in place of all 25 guide assets, with every gate still green. Fixed in #172. Never shipped, because the job has never run.
+  - **The current build is live.** The maintainer redeployed from `main`; `/guide/discover-scan.mp4` and `/guide/tour-walkthrough.mp4` went from 404 to 200, and `chunk-2T35UHGN.js` carries the real `G-ZY158GV42C` rather than the placeholder.
+- **Not completed:** the indexing flip is not deployed - it needs a merge and another `npm run web:deploy`. Search Console, the Cloudflare Web Analytics hostname and HSTS all remain untouched. `SOURCE_PUBLIC` is still `false` and the README still ships its placeholder asset set.
+- **Files or packages changed:** `.github/workflows/ci.yml`, `apps/web/public/_headers`, `apps/web/src/app/site.ts`, `docs/product/CURRENT_STATE.md`, `docs/internal/DUTY_WATCH.md`.
+- **Validation:** `npx nx run web:test` (70 passed, 6 suites) on the flipped tree; the same suite with the flag alone reverted fails on `keeps the noindex header and SEARCH_INDEXABLE in step`, 1 failed / 69 passed, confirming the guard. `npm run format:check` and `git diff --check` pass. Against the live site: apex and `www` both 200 over IPv4 and IPv6, guide media 200, `sitemap.xml` and `robots.txt` 200, `x-robots-tag: noindex` still present because the flip is not deployed yet.
+- **Privacy/security impact:** No user data involved. Two notes. The Cloudflare API token minted for the attachment is a user token scoped to Pages Edit and DNS Edit on this zone with a short TTL; it should be deleted once the launch settles. Opening the site to search is a deliberate exposure decision, taken by the maintainer, and only after every documentation placeholder had shipped.
+- **Decisions and assumptions:** Attached the domain before removing `noindex`, so a wrong result could be undone before crawlers were invited. Left `applye.pages.dev` alone - it cannot be removed without deleting the project, and the canonical tags already consolidate search on the domain. Did not touch the zone's SSL mode from a script; that is a whole-zone setting that also affects mail, and belongs in the dashboard.
+- **Risks or compatibility impact:** Once the flip deploys, removal from search is far slower than exclusion was. Nothing else regresses: the header block keeps all six security headers, and only the `X-Robots-Tag` line was removed.
+- **Open issues or blockers:** GitHub Actions still cannot run, so deployment stays manual. `SOURCE_PUBLIC` and the README asset set still stand between the site and the repository going public.
+- **Next first action:** merge the launch PR, run `npm run web:deploy`, then confirm `curl -sI https://applye.dev | grep -i x-robots-tag` returns nothing. Only after that, add `applye.dev` to Search Console and submit `https://applye.dev/sitemap.xml`.
+- **Evidence:** `apps/web/public/_headers`, `apps/web/src/app/site.ts:46`, `apps/web/src/app/seo/seo.spec.ts:101`, `.github/workflows/ci.yml:103`, PR #172.
+
+### 2026-07-28, the last placeholder on the site is gone, and the maintainer's database was put back
 
 - **Status:** complete
 - **Agent/tool:** Claude Code (Opus). The maintainer captured the recording; the agent planned the capture, cleaned and wired the asset, and restored the database.

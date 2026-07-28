@@ -24,6 +24,7 @@ import {
   parseLanguageEntries,
   serializeLanguageEntries,
   Archetype,
+  hasDistinctiveWord,
   parseArchetypes,
   serializeArchetypes,
   profileCompleteness,
@@ -254,6 +255,11 @@ interface ParsedProfile {
                             <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
                           </button>
                         </div>
+                        @if (a.name.trim() && !isMatchable(a.name)) {
+                          <p class="status status--warn archetype-card__warn" role="status">
+                            {{ t()('profile.archetype_not_matchable') }}
+                          </p>
+                        }
                         <div class="archetype-card__sell">
                           <label
                             class="archetype-card__label"
@@ -1691,6 +1697,12 @@ interface ParsedProfile {
         cursor: pointer;
         outline: none;
       }
+      .archetype-card__warn {
+        /* Aligned with the sell-when block, i.e. under the name input rather
+           than under the target icon. */
+        margin: 0;
+        padding-left: calc(16px + var(--space-3));
+      }
       .archetype-card__sell {
         display: flex;
         flex-direction: column;
@@ -2291,6 +2303,17 @@ export class ProfileComponent implements OnInit {
 
   updateArchetype(index: number, patch: Partial<Archetype>): void {
     this.archetypes.update((a) => a.map((v, i) => (i === index ? { ...v, ...patch } : v)));
+  }
+
+  /**
+   * Whether this role name can match any job at all. A name built only from
+   * seniority and role-family words ("Senior Engineer") never anchors a match,
+   * so Discover shows no badge, For-you does not group it and scoring prompts
+   * ignore it. Warn while the user types instead of leaving them with a feed
+   * that quietly never reacts.
+   */
+  isMatchable(name: string): boolean {
+    return hasDistinctiveWord(name);
   }
 
   addEducation(): void {

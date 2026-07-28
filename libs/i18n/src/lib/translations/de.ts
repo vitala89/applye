@@ -490,6 +490,8 @@ export const de: TranslationMap = {
       'Bis zu 5 Rollen-Archetypen - ein Name, wie gut er passt (primär / sekundär / angrenzend) und wann Sie sich als diese Rolle präsentieren. Wird genutzt, um nicht passende Stellen vor jeder Bewertung zu markieren - 0 Token.',
     archetypes_empty_warning:
       'Keine Zielrollen definiert - Stellen werden nicht mit Ihren Präferenzen abgeglichen.',
+    archetype_not_matchable:
+      'Hier stehen nur allgemeine Wörter, deshalb kann keine Stelle zu dieser Rolle passen. Ergänzen Sie eine Spezialisierung, zum Beispiel "UI" oder "Angular".',
     archetype_placeholder:
       'z. B. Staff Frontend Engineer, remote EU, Series B-D Produktunternehmen',
     add_archetype: '+ Zielrolle hinzufügen',
@@ -1379,6 +1381,7 @@ export const de: TranslationMap = {
     stat_upcoming: 'Anstehend',
     stat_next: 'Nächstes Interview',
     row_actions: 'Zeilenaktionen',
+    open_stage_timeline: 'Runden-Zeitleiste öffnen',
     remove_from_prep: 'Aus Interview-Vorbereitung entfernen',
     remove: 'Entfernen',
     removed: 'Aus Interview-Vorbereitung entfernt',

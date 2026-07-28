@@ -106,18 +106,32 @@
   `tools/capture/mira-cv.html` converted to DOCX, because `document_library` rows can only be
   created by importing, generating, or finishing the apply wizard - writing rows straight into
   SQLite would produce a state no user can reach.
-- **Product observation from the capture session, not yet a ticket.** In Interview Prep, clicking a
-  row opens its overflow menu, whose only entry is "Remove from Interview Prep" - a destructive
-  action - rather than opening that application's stage timeline. It blocked `interview-timeline.png`
-  during the session, and it is worth a look on its own: the row's obvious action should not be
-  deletion.
-- **Second product finding from the capture session: a target role whose distinctive word is under
-  three letters can never match anything.** `archetypeWords` in `libs/core/src/lib/profile/archetype.ts`
-  drops words shorter than three characters, and `matchArchetype` requires at least one distinctive
-  (non-generic) word to anchor. A role named "UI Engineer" therefore reduces to "engineer", which is
-  generic, so the archetype is silently dead: no Discover badge, no For-you grouping, no effect on
-  scoring prompts. The user gets no indication. Found while trying to show the adjacent tier in
-  `discover-badges.png`, which is why that shot shows an unmatched row instead.
+- **Corrected 2026-07-28: the Interview Prep observation this entry replaces was wrong as written.**
+  It said clicking a row opened the overflow menu instead of the stage timeline. The code never did that:
+  `interview-prep.component.html:66` binds `(click)="open(r.id)"`, `open()` navigates to
+  `/interview-prep/:applicationId`, the route exists and the detail page renders the round timeline.
+  The menu hangs off its own button inside a wrapper that stops propagation, which is why pressing it
+  does not navigate. What was true is smaller: the menu offered removal and nothing else, and the row
+  declared `role="button"` while handling only Enter, so Space did nothing. Both are fixed on
+  `fix/prelaunch-capture-findings` - the menu now opens the timeline as its first, non-destructive
+  entry, and the row responds to Space. Five tests cover the row's actions, where the component had
+  no spec at all before; three of them fail against the old template. **Natively verified by the
+  maintainer on 2026-07-28** under `npm run desktop:dev`, which is what closes this one: both the row
+  menu's new first entry and the Space key were exercised by hand. Still unexplained: what actually
+  blocked `interview-timeline.png` during the capture session, because the reproduction was never
+  captured. The most likely cause is that the click landed on the `⋯` button at the row's right edge.
+- **Second product finding: a target role whose distinctive word is under three letters could never
+  match anything. Fixed 2026-07-28.** `archetypeWords` dropped every word shorter than three
+  characters and `matchArchetype` requires one distinctive (non-generic) word to anchor, so "UI
+  Engineer" reduced to "engineer", which is generic, and the archetype was silently dead: no Discover
+  badge, no For-you grouping, no effect on scoring prompts. A seven-entry allowlist (`ui`, `ux`, `qa`,
+  `ml`, `ai`, `bi`, `db`) now survives tokenization; `go` was deliberately left out because
+  boundary-aware matching would also fire it on "go live". The user is now told as well: the profile
+  editor warns under any target role built only from generic words, using the shared
+  `hasDistinctiveWord()` so the warning and the matcher can never disagree. Warning shipped in the
+  profile editor only, not in onboarding, where names come from AI suggestions the user then edits.
+  The bug was found while trying to show the adjacent tier in `discover-badges.png`, which is why
+  that shot shows an unmatched row; the shot was not retaken, so it still shows the pre-fix state.
 - **Third finding, from the 2026-07-28 capture session: three guide slots described a UI that does
   not exist**, which is worth deciding on rather than only documenting. In the CV editor the preview
   is a mode that replaces the editor (`cv-detail.component.html` renders `editor-col` or
@@ -129,6 +143,21 @@
   separate confirmation dialog after the last question. Each of the three is a plausible feature
   someone expected to exist, so the question is whether the product grows toward the description or
   the description settles for the product.
+- **Decided 2026-07-28: the description settles for the product, for all four gaps, and they are
+  parked rather than dropped.** The guide already describes what ships, so no code was written for
+  any of them; the decision is deliberate rather than inaction, and the reasoning is now in
+  `docs/product/IDEAS.md` under "Features the documentation expected to find" - Tailored badge
+  (P2/S, cheapest and the one with real daily value), live preview beside the section list (P2/M, a
+  layout question at 1440 points, not a template change), section-level style overrides (P3/M, needs
+  a schema addition, a migration and an export path for a mostly cosmetic gain), and the
+  save-to-profile toggle moving onto each gap question (P3/S, splits one consent point into several,
+  which is why the single dialog was built). Nothing here blocks the launch.
+- **Decided 2026-07-28: a manual empty CV is worth building, but after launch.** `document_library`
+  fills by exactly three paths - importing a file, generating a baseline, finishing the apply wizard
+  - and the first two are AI calls, so a new user cannot start a CV by hand and no documentation
+    state can be prepared without spending money. A fourth path, an empty CV from the section template
+    with no AI, is filed in `IDEAS.md` at P2/S. Not done in this watch: it is a new write path into
+    the user's document store, which deserves its own watch rather than a pre-launch aside.
 - **Open decision: the scored view does not fit one frame.** The gauge and the red flags are more
   than 900 logical points apart, so `score-result.png` shows the lower half - chips, ATS check, red
   flags, before-you-submit. Either that stands, or `/docs/guide/score` gains a second figure for the

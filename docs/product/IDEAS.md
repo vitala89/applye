@@ -11,6 +11,31 @@ This file serves as the raw inbox for ideas, feature requests, and product sugge
 
 - _Add raw ideas here to capture them before they are forgotten._
 
+### Features the documentation expected to find
+
+Framing: while capturing the guide on 2026-07-27 and 2026-07-28, four slots described a UI that does
+not exist. The decision taken on 2026-07-28 was to let the descriptions settle for the product for
+launch - the guide now documents what ships - and to keep the four here rather than lose them, because
+each is a feature someone reasonably expected. None blocks the launch.
+
+- **"Tailored" badge in the Documents library (P2/S)** - `cv-list.component.html` renders region,
+  language and Default only, so a tailored CV is told apart by its label and its "Linked to" line.
+  The cheapest of the four and the one with the clearest daily value once a user has a dozen CVs.
+- **Live CV preview beside the section list (P2/M)** - `cv-detail.component.html` renders `editor-col`
+  or `preview-col`, never both, so preview is a mode rather than a companion pane. Wanting both at
+  1440 points wide is a layout question, not just a template change.
+- **Section-level style overrides in the CV editor (P3/M)** - style is one document-wide block today.
+  Per-section overrides mean a schema addition, so it needs a migration and an export path that
+  honours them, for a gain that is mostly cosmetic.
+- **Save-to-profile on the gap question itself (P3/S)** - the toggle sits on a separate confirmation
+  dialog after the last question. Moving it onto each question reads as more direct, but it splits one
+  consent point into several, which is the reason it was built as a single dialog.
+- **A manual, empty CV in the Documents library (P2/S)** - `document_library` fills by exactly three
+  paths: importing a file, generating a baseline, and finishing the apply wizard. The first two are AI
+  calls, so a new user cannot start a CV by hand and a documentation state cannot be prepared without
+  spending money. A fourth path - an empty CV from the section template, no AI - would fix both. Worth
+  doing on the same argument as the rest of the app: AI assists, the user decides.
+
 ### Germany pack
 
 Framing: the landing page deliberately moved from "Built for the German market" to the

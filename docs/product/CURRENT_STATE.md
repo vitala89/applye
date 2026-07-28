@@ -91,13 +91,25 @@
   take was left out of the repository. Capture it against a user-added source on a reserved example
   domain, or stop the recording before results land and show the console alone. The rejected file is
   kept outside the repo at `~/applye-capture-states/media-inbox-2026-07-28/`.
-- **Two shipped assets miss their slot and are known to.** `tour-walkthrough.mp4` is 18 silent
-  seconds of first run against a slot asking for a narrated 2-3 minute tour of every sidebar
-  section; it is the asset the docs lean on hardest and should be re-recorded before launch.
-  `tailor-wizard.mp4` is 36 s against 60-90 s and stops before Export & Apply, so its caption was
-  changed from "to exported PDF" to "to generated documents" rather than leave an unsupported claim.
+- **The two weakest recordings were re-shot 2026-07-28; one shipped asset still misses its slot.**
+  `tour-walkthrough.mp4` is now the whole first run, 45.9 s across all six onboarding steps, slowed
+  enough to read and with the model-call waits cut. It is still not the narrated 2-3 minute tour of
+  every sidebar section the slot describes - there is no narration and the sidebar is covered by the
+  page's own text - but it is complete for what it shows, where the 18-second version stopped
+  mid-flow. `profile-regenerate.mp4` went from 2.2 s to 5.1 s and now shows the working state the
+  slot asks for. `pipeline-drag.mp4` was reviewed again and kept at 3 s: under the floor, but the
+  drag and the modal both read. `tailor-wizard.mp4` is unchanged - 36 s against 60-90 s, stopping
+  before Export & Apply, with its caption already corrected to "to generated documents".
   `documents-library.png` shows two rows rather than three or four and carries no Default badge;
   filling it out is free, no AI call.
+- **A personal path nearly shipped in the tour video, and was cut.** Its last half-second, after the
+  app opened on Settings, showed the CLI detection block listing absolute paths under the
+  maintainer's home directory. That is a real account name in published documentation, so the take
+  ends on the "You're all set" summary instead. Worth remembering for any Settings capture in CLI
+  bridge mode: the detected-binary lines carry the home directory and need cropping, redaction or
+  cutting. Separately, every guide recording is now silent as a file rather than merely muted in the
+  markup - the screen recorder had attached an empty AAC track to all seven - and the four heaviest
+  were re-encoded at CRF 23, taking the guide's video weight from about 14.7 MB to 4.1 MB.
 - **The guide has still never been seen rendered.** The browser preview reports `innerWidth` 0, so
   every "it looks right" claim is really "the asset is served with the right attributes", verified
   through the DOM and over HTTP against `localhost:4300`. Looking at the pages by eye is worth doing

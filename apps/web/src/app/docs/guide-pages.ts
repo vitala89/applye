@@ -30,17 +30,18 @@ import { RouterLink } from '@angular/router';
     <figure class="docs__media">
       <video
         src="/guide/tour-walkthrough.mp4"
-        width="1440"
-        height="900"
+        width="1264"
+        height="788"
         controls
         muted
         playsinline
         preload="metadata"
-        aria-label="A silent screen recording of the first run: the onboarding wizard asks which AI
-          provider to connect, offering a pasted API key or a CLI you already pay for, then offers
-          to read an existing CV by upload, pasted text, or skipping entirely, and finally shows the
-          fields it pulled out of that CV for confirmation - name, contact details, current title
-          and skills - before the app opens."
+        aria-label="A silent screen recording of the whole first run, all six steps: the welcome
+          screen, the AI setup that offers either a pasted API key or a CLI you already pay for,
+          bringing in a resume by upload or pasted text or skipping it, the review screen showing
+          the name, contact details, experience and skills that were pulled out of that resume, the
+          targeting screen where suggested roles and a compensation range are confirmed, and the
+          summary of what finishing will save on the device."
       ></video>
       <figcaption>First launch, start to finish.</figcaption>
     </figure>
@@ -361,9 +362,10 @@ export class GuideDashboard {}
           playsinline
           preload="metadata"
           aria-label="A silent screen recording of the Profile page. The scoring profile card is
-            regenerated, and the card fills in with the compact JSON the app caches for scoring:
-            archetypes, skills grouped by kind, and the seniority reading, above a note saying when
-            it was generated and which model produced it."
+            regenerated: it reads 'Compressing profile' while it works, then fills in with what the
+            app caches for scoring - the name and seniority line, a row of strengths, and the notes
+            the model made about what the profile does not say - above a footer reading cached, 0
+            tokens, with the token counts of the run that produced it."
         ></video>
         <figcaption>Regenerating the scoring profile.</figcaption>
       </figure>

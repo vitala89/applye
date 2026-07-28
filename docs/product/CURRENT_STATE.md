@@ -5,14 +5,17 @@
 - **Current branch / focus**: `main`. Preparing applye.dev for a public launch that precedes the
   repository going public and the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
-- **THE SITE IS LIVE at `https://applye.pages.dev`, deliberately not indexable.** First deployed
-  2026-07-26. Every response sends `X-Robots-Tag: noindex` because the documentation still shows
-  placeholder boxes where its screenshots and video will go. `robots.txt` still allows crawling on
-  purpose: a crawler blocked from fetching never reads the noindex and may list the URL anyway.
-  `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts` and that header must agree, and a test fails
-  while they do not, so the site cannot launch still hidden. **`applye.dev` is deliberately not
-  attached yet** - a certificate appears in Certificate Transparency logs within hours and crawlers
-  follow, so the domain waits until the media exists.
+- **THE SITE IS LIVE at `https://applye.pages.dev`, deliberately not indexable - and as of
+  2026-07-28 the reason for that has been removed.** First deployed 2026-07-26. Every response still
+  sends `X-Robots-Tag: noindex`, which was there because the documentation showed placeholder boxes
+  where its screenshots and video would go; **no placeholder box is left on the site**, so the flip
+  is now a decision rather than a blocker and it waits on the maintainer's word. `robots.txt` still
+  allows crawling on purpose: a crawler blocked from fetching never reads the noindex and may list
+  the URL anyway. `SEARCH_INDEXABLE` in `apps/web/src/app/site.ts` and that header must agree, and a
+  test fails while they do not, so the site cannot launch still hidden - flip both, or neither.
+  **`applye.dev` is deliberately not attached yet** - a certificate appears in Certificate
+  Transparency logs within hours and crawlers follow, so the domain waits for the same word. One
+  check is still outstanding before flipping: nobody has looked at the rendered guide by eye.
 - **Verified on the live site 2026-07-26**, not merely locally: all six security headers present;
   39 routes served; per-locale titles correct; canonicals point at `applye.dev`; JSON-LD present
   (product + FAQ on landings, product + breadcrumbs on docs); 404 works; sitemap and robots served.
@@ -99,6 +102,21 @@
   every "it looks right" claim is really "the asset is served with the right attributes", verified
   through the DOM and over HTTP against `localhost:4300`. Looking at the pages by eye is worth doing
   before launch.
+- **The last guide asset, `guide/discover-scan.mp4`, shipped 2026-07-28.** How it was captured
+  matters for any re-shoot: `discover_scan` refuses anything that is not `https://`
+  (`require_https`, `discover.rs:1578`) and reqwest is built with `rustls-tls` on the bundled
+  Mozilla roots (`Cargo.toml:32`), so no local server - plain HTTP, self-signed, or mkcert - can
+  ever be scanned. The invented feed in `tools/capture/demo-jobs.xml` was therefore hosted on a
+  throwaway Cloudflare Pages project, scanned with every built-in source switched off, and the
+  project deleted right after. The deviations from what the slot asked for are recorded in
+  `MEDIA_SHOTLIST.md`; the short version is that the scan console is legible only on a freeze frame,
+  because a single small feed resolves in about 0.15 s. **The maintainer's own database was restored
+  afterwards** from `applye.db.pre-seed-2026-07-27T10-26-53-893Z`: eight source rows, TrudVsem
+  enabled and the other seven off, no jobs and no profile - which is what it held before the first
+  capture session. The seeded demo state it replaced is archived at
+  `~/applye-capture-states/70-capture-2026-07-28-post-scan/`. Note that
+  `~/applye-capture-states/99-your-real-data/` no longer contains real data despite its name: it was
+  overwritten with a seeded copy on 2026-07-28.
 - **Four API calls were spent with the maintainer's approval** - one scoring profile, scoring runs
   on Northlane (82) and Vantaform (72), and one tailoring run. Vantaform was scored specifically
   because Northlane matched too well to produce the missing-keyword chips the docs page promises.

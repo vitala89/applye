@@ -5,11 +5,11 @@ import { RouterLink } from '@angular/router';
  * User guide - step-by-step, screen by screen, honest to what ships today.
  *
  * MEDIA: every <figure class="docs__media"> holds a real capture from the
- * running desktop app, except the one remaining stub. A stub keeps its
- * .docs__mediabox, whose .docs__mediatag says what kind of asset goes there
- * (SCREENSHOT / GIF / VIDEO) and whose text says exactly what to capture. Drop
- * the real asset into apps/web/public/guide/ and replace the box with an <img>
- * or a <video>, keeping the <figcaption>.
+ * running desktop app. No stub is left. Should a new slot ever be added before
+ * its asset exists, it keeps a .docs__mediabox, whose .docs__mediatag says what
+ * kind of asset goes there (SCREENSHOT / GIF / VIDEO) and whose text says
+ * exactly what to capture; drop the real asset into apps/web/public/guide/ and
+ * replace the box with an <img> or a <video>, keeping the <figcaption>.
  *
  * Product shots are captured, never drawn. A picture of a UI that does not
  * match the shipped app is a false claim about the product, in documentation
@@ -601,14 +601,21 @@ export class GuideTailor {}
     </p>
 
     <figure class="docs__media">
-      <div class="docs__mediabox">
-        <span class="docs__mediatag">GIF</span>
-        <p>
-          PLACEHOLDER: guide/discover-scan.gif - clicking Scan: the terminal-style console logging
-          each source line by line, collapsing into the summary strip (LAST SCAN · N NEW · N
-          FILTERED · 0 TOKENS).
-        </p>
-      </div>
+      <video
+        src="/guide/discover-scan.mp4"
+        width="1440"
+        height="900"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="metadata"
+        aria-label="A silent screen recording. Discover shows an empty inbox, Scan is pressed, and
+          the scan console appears for a moment with the line 'scan started · 1 sources' above the
+          source being read. The console then collapses into the summary strip - LAST SCAN, 8 NEW, 0
+          FILTERED, 0 TOKENS - and the feed fills with eight openings, each carrying a NEW pill, a
+          target-role label and the keywords that matched."
+      ></video>
       <figcaption>A scan run, live.</figcaption>
     </figure>
 

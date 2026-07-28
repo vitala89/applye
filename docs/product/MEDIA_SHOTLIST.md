@@ -24,17 +24,9 @@ Keep these identical across every shot, or the docs will look assembled from thr
 
 ## Still open
 
-One guide slot. Everything else on the guide is captured; see "Already produced".
-
-| Slot                      | Page                   | Type | What to capture                                                            |
-| ------------------------- | ---------------------- | ---- | -------------------------------------------------------------------------- |
-| `guide/discover-scan.mp4` | `/docs/guide/discover` | GIF  | Scan running: console lines per source, collapsing into the summary strip. |
-
-**A take exists and was rejected, so re-shoot it deliberately.** Scanning the built-in sources
-returns real openings from real German employers, and those companies and their job titles fill the
-feed on screen. No frame in this documentation may carry a real employer, recruiter or contact. To
-capture this honestly, scan only a user-added source pointing at a reserved example domain, or stop
-the recording before results land and show the console alone.
+**No guide slot is open.** Every figure on the seven guide pages holds a real capture from the
+running app; see "Already produced". What remains on this list is Priority 3 marketing material,
+which no page currently blocks on.
 
 ## Priority 3 - marketing surfaces
 
@@ -46,9 +38,28 @@ the recording before results land and show the console alone.
 
 ## Already produced
 
-All ten below were captured 2026-07-28 by the maintainer, on the seeded demo database, at 1440x900
-logical. Stills are 2x; the recordings are 1x, which keeps them small and costs nothing visible
-since a video is scaled to the column anyway.
+All eleven below were captured 2026-07-28 by the maintainer, on the seeded demo database, at
+1440x900 logical. Stills are 2x; the recordings are 1x, which keeps them small and costs nothing
+visible since a video is scaled to the column anyway.
+
+- `guide/discover-scan.mp4` - 6.2 s, the slot's re-shoot after the first take was rejected for
+  showing real employers. Captured against a single user-added RSS source: the invented feed in
+  `tools/capture/demo-jobs.xml`, temporarily hosted on a throwaway Cloudflare Pages project that was
+  deleted straight after, because `discover_scan` fetches `https://` only and reqwest is built on
+  the bundled Mozilla roots, so a local server - plain or self-signed - can never be scanned. Every
+  built-in source was switched off first, so nothing real was fetched. **Three deviations from the
+  slot, all in the same direction.** The slot asks for "console lines per source": there was one
+  enabled source, so there is one line. The console is on screen for roughly 0.15 s - the scan
+  resolves that fast against a single small feed - so the line reading `> scan started · 1 sources`
+  is legible only on a freeze frame, and the resolved per-source line and the `> done in Ns` line
+  are never drawn at all, because the console collapses the moment results land. What the recording
+  does show clearly is the outcome the slot cares about: the summary strip reading LAST SCAN · 8
+  NEW · 0 FILTERED · 0 TOKENS, and the feed filling with eight invented companies carrying NEW
+  pills, target-role labels and matched keywords. The `aria-label` on the page describes exactly
+  that and promises no log. The original take carried an audio track from the screen recorder and
+  3.5 s of static screen before the click; both were removed before shipping (`-an`, trimmed from
+  2.3 s), which is why the file is 123 KB rather than 1.1 MB. The untrimmed original is in
+  `~/applye-capture-states/media-inbox-2026-07-28/`.
 
 **Every GIF slot shipped as a silent looping MP4 instead**, which the capture rules already allow as
 the fallback above ~3 MB. They are marked up as `<video autoplay loop muted playsinline>`, so they

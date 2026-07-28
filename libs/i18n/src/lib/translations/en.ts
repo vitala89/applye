@@ -484,6 +484,8 @@ export const en: TranslationMap = {
       'Up to 5 role archetypes - a name, how well it fits (primary / secondary / adjacent), and when to pitch yourself as it. Used to flag off-target jobs before any scoring call - 0 tokens.',
     archetypes_empty_warning:
       "No target roles defined - jobs won't be checked against your preferences.",
+    archetype_not_matchable:
+      'Only generic words here, so no job can match this role. Add a specialisation, for example "UI" or "Angular".',
     archetype_placeholder: 'e.g. Staff Frontend Engineer, remote EU, Series B-D product company',
     add_archetype: '+ Add target role',
     remove_archetype: 'Remove',
@@ -1351,6 +1353,7 @@ export const en: TranslationMap = {
     stat_upcoming: 'Upcoming',
     stat_next: 'Next interview',
     row_actions: 'Row actions',
+    open_stage_timeline: 'Open stage timeline',
     remove_from_prep: 'Remove from Interview Prep',
     remove: 'Remove',
     removed: 'Removed from Interview Prep',

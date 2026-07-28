@@ -503,6 +503,8 @@ export const fr: TranslationMap = stub(en, {
       "Jusqu'à 5 archétypes de poste : un intitulé, le niveau d'adéquation (principal / secondaire / connexe) et le moment où vous vous présentez ainsi. Sert à écarter les offres hors cible avant tout appel d'évaluation - 0 jeton.",
     archetypes_empty_warning:
       'Aucun poste visé défini - les offres ne seront pas confrontées à vos préférences.',
+    archetype_not_matchable:
+      'Il n\'y a ici que des mots génériques, donc aucune offre ne pourra correspondre à ce poste. Ajoutez une spécialisation, par exemple "UI" ou "Angular".',
     archetype_placeholder:
       'ex. Staff Frontend Engineer, télétravail UE, entreprise produit série B-D',
     add_archetype: '+ Ajouter un poste visé',
@@ -1389,6 +1391,7 @@ export const fr: TranslationMap = stub(en, {
     stat_upcoming: 'À venir',
     stat_next: 'Prochain entretien',
     row_actions: 'Actions sur la ligne',
+    open_stage_timeline: 'Ouvrir la chronologie des tours',
     remove_from_prep: 'Retirer de la préparation aux entretiens',
     remove: 'Retirer',
     removed: 'Retiré de la préparation aux entretiens',

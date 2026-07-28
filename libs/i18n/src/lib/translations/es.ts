@@ -500,6 +500,8 @@ export const es: TranslationMap = stub(en, {
       'Hasta 5 arquetipos de puesto: un nombre, cómo de bien encaja (principal / secundario / adyacente) y cuándo presentarte así. Sirve para marcar ofertas fuera de objetivo antes de cualquier llamada de puntuación - 0 tokens.',
     archetypes_empty_warning:
       'No has definido puestos objetivo - las ofertas no se contrastarán con tus preferencias.',
+    archetype_not_matchable:
+      'Aquí solo hay palabras genéricas, así que ninguna oferta podrá coincidir con este puesto. Añade una especialización, por ejemplo "UI" o "Angular".',
     archetype_placeholder:
       'p. ej. Staff Frontend Engineer, remoto en la UE, empresa de producto serie B-D',
     add_archetype: '+ Añadir puesto objetivo',
@@ -1386,6 +1388,7 @@ export const es: TranslationMap = stub(en, {
     stat_upcoming: 'Próximas',
     stat_next: 'Próxima entrevista',
     row_actions: 'Acciones de la fila',
+    open_stage_timeline: 'Abrir cronología de rondas',
     remove_from_prep: 'Quitar de Preparación de entrevistas',
     remove: 'Quitar',
     removed: 'Quitada de Preparación de entrevistas',

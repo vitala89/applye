@@ -1,5 +1,12 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { afterNextRender, Component, inject, PLATFORM_ID, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { Icon, IconName } from '../ui/icon';
@@ -29,6 +36,7 @@ const NAV_STORAGE_KEY = 'applye-docs-nav';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, MediaLightbox],
   templateUrl: './docs-layout.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocsLayout {
   private readonly doc = inject(DOCUMENT);

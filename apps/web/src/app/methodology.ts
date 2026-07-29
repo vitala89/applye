@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { afterNextRender, Component, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SourceLink } from './ui/source-link';
 
@@ -13,6 +13,7 @@ interface MethSection {
   standalone: true,
   imports: [RouterLink, SourceLink],
   templateUrl: './methodology.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Methodology {
   private readonly doc = inject(DOCUMENT);

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 interface CompareRow {
@@ -32,6 +32,7 @@ interface Alternative {
   standalone: true,
   imports: [RouterLink],
   templateUrl: './compare.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Compare {
   /** The three things a reader is actually choosing between, and why. */

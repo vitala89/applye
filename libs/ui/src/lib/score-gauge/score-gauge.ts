@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 
 export type ScoreBand = 'low' | 'mid' | 'high';
 export type ScoreGaugeSize = 'lg' | 'sm';
@@ -19,6 +19,7 @@ const clampScore = (n: number): number => Math.max(0, Math.min(100, Math.round(n
   imports: [],
   templateUrl: './score-gauge.html',
   styleUrl: './score-gauge.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScoreGauge {
   readonly score = input.required<number>();

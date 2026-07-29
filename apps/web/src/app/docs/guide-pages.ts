@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /*
@@ -126,6 +126,7 @@ import { RouterLink } from '@angular/router';
       </figure>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideTour {}
 
@@ -232,6 +233,7 @@ export class GuideTour {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideDashboard {}
 
@@ -376,6 +378,7 @@ export class GuideDashboard {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideProfile {}
 
@@ -449,6 +452,7 @@ export class GuideProfile {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideAddJob {}
 
@@ -504,6 +508,7 @@ export class GuideAddJob {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideScore {}
 
@@ -588,6 +593,7 @@ export class GuideScore {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideTailor {}
 
@@ -740,6 +746,7 @@ export class GuideTailor {}
       </figure>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideDiscover {}
 
@@ -897,6 +904,7 @@ export class GuideDiscover {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideDocuments {}
 
@@ -988,6 +996,7 @@ export class GuideDocuments {}
       </figure>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideTrack {}
 
@@ -1078,6 +1087,7 @@ export class GuideTrack {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideInsights {}
 
@@ -1151,5 +1161,6 @@ export class GuideInsights {}
       </ul>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuideSettings {}

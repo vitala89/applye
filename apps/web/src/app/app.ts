@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AnalyticsService } from './analytics/analytics.service';
 import { Track } from './analytics/track.directive';
@@ -29,6 +29,7 @@ const STORAGE_KEY = 'applye-theme';
     Track,
   ],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
   private readonly doc = inject(DOCUMENT);

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SourceLink } from '../ui/source-link';
 
@@ -35,6 +35,7 @@ const CAREER_OPS = 'https://career-ops.org';
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Overview {}
 
@@ -60,6 +61,7 @@ export class Overview {}
       </ul>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Requirements {}
 
@@ -83,6 +85,7 @@ export class Requirements {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Install {}
 
@@ -120,6 +123,7 @@ export class Install {}
       </ol>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Flow {}
 
@@ -169,6 +173,7 @@ export class Flow {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Judgement {}
 
@@ -201,6 +206,7 @@ export class Judgement {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BringAi {}
 
@@ -236,6 +242,7 @@ export class BringAi {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Scoring {}
 
@@ -284,6 +291,7 @@ export class Scoring {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocalMarkets {}
 
@@ -312,6 +320,7 @@ export class LocalMarkets {}
       </ul>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Privacy {}
 
@@ -332,6 +341,7 @@ export class Privacy {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Legality {}
 
@@ -409,6 +419,7 @@ export class Legality {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataAndBackup {}
 
@@ -533,6 +544,7 @@ export class DataAndBackup {}
       </ul>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Troubleshooting {}
 
@@ -562,5 +574,6 @@ export class Troubleshooting {}
       </p>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Status {}

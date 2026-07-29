@@ -1,15 +1,16 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  OnDestroy,
-  TemplateRef,
   computed,
   effect,
+  ElementRef,
   input,
+  OnDestroy,
   output,
   signal,
+  TemplateRef,
   viewChildren,
 } from '@angular/core';
 import { PackAtom, paginate } from './paginate.util';
@@ -53,6 +54,7 @@ export const SHEET_RENDER_MODE_KEY = '$sheetRenderMode';
   imports: [NgTemplateOutlet],
   templateUrl: './paginated-sheet.html',
   styleUrl: './paginated-sheet.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginatedSheetComponent implements AfterViewInit, OnDestroy {
   readonly atoms = input.required<SheetAtom[]>();

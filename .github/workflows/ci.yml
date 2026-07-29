@@ -83,6 +83,13 @@ jobs:
       - name: Build desktop frontend
         run: npx nx build desktop
 
+      # The packaged app runs under a CSP that forbids inline scripts, so any
+      # build output depending on an inline handler renders unstyled - and only
+      # in a packaged build, never in dev and never in a test. Checked here
+      # because the frontend output exists at this point in the job.
+      - name: Verify the build is CSP-compatible
+        run: npm run verify:csp
+
       # Rust backend: clippy blocks on errors (warnings allowed, matching the
       # local hooks); unit tests must pass. Lighter single-OS check for now.
       - name: Clippy (Rust)

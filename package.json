@@ -7,7 +7,7 @@
     "desktop:dev": "cd apps/desktop && npx tauri dev",
     "desktop:serve": "nx run desktop:serve",
     "desktop:build": "nx build desktop",
-    "desktop:build:tauri": "cd apps/desktop && npx tauri build",
+    "desktop:build:tauri": "npm run desktop:build && npm run verify:csp && cd apps/desktop && npx tauri build",
     "web:dev": "nx run web:serve",
     "web:build": "npm run web:analytics-config && npm run web:sitemap && nx build web",
     "web:sitemap": "node apps/web/tools/generate-sitemap.mjs",
@@ -22,7 +22,8 @@
     "format": "nx format:write",
     "format:check": "nx format:check",
     "affected:test": "nx affected --target=test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "verify:csp": "node tools/verify-csp-compat.mjs"
   },
   "dependencies": {
     "@angular/animations": "~21.2.9",

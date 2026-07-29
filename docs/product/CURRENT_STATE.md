@@ -11,6 +11,28 @@
 - **Current branch / focus**: `main`. Preparing applye.dev for a public launch that precedes the
   repository going public and the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
+- **The desktop bundle could not be built until 2026-07-29, and nobody knew.** `frontendDist` in
+  `tauri.conf.json` pointed two directory levels up from `src-tauri/` instead of three, so
+  `tauri build` aborted with "Unable to find your web assets" before ever producing an installer.
+  It survived five tagged releases because the release workflow is blocked on GitHub billing and
+  never reached the build step. Fixed; `Applye_0.29.0_aarch64.dmg` (16 MB) now builds and is
+  verified on Apple Silicon. Windows and Linux remain unbuilt - they need CI or a VM of the
+  target OS, and `docs/RELEASE.md` documents both paths plus a smoke-test checklist.
+- **The architecture is enforced as of 2026-07-29, not merely intended.** All six projects carry
+  `type:`/`scope:` tags and `@nx/enforce-module-boundaries` declares the dependency stack; it went
+  in green, because the graph was already clean. `jobs.component.ts` dropped from 4975 to 2795 lines
+  by moving its inline template and styles into files, and 53 components gained
+  `ChangeDetectionStrategy.OnPush` (not Angular 21.2's default, though the framework is moving
+  there). Conventions for both stacks live in `.claude/skills/applye-angular` and
+  `.claude/skills/applye-rust`; `.mcp.json` wires the first-party Angular CLI MCP server read-only.
+  **Still open (Tier 1):** `JobsComponent` needs decomposing into services, `pages/` wants
+  reorganising into per-feature folders, eight large stateful screens are still on eager change
+  detection, and `discover.rs`/`tailoring.rs`/`documents.rs` are oversized single modules.
+- **README and repository infrastructure are launch-ready as of 2026-07-29.** All six READMEs
+  carry an FAQ, a source table for Discover, a Connect section, and tech-stack badges;
+  `SUPPORT.md`, `dependabot.yml`, `CODEOWNERS` and an "Applye helped" issue template exist. The
+  `PLACEHOLDER: release links` block stays until real installers are published. A CLI surface was
+  explicitly decided against - the desktop app is the product.
 - **THE SITE IS LIVE at `https://applye.dev`.** First deployed to `applye.pages.dev` 2026-07-26;
   the custom domain was attached 2026-07-29, apex and `www` both proxied CNAMEs to
   `applye.pages.dev`, certificate issued the same evening. `applye.pages.dev` keeps working and

@@ -54,5 +54,6 @@ npx wrangler pages deploy dist/apps/web/browser \
   --branch=main
 
 echo
-echo "Deployed. The site sends 'X-Robots-Tag: noindex' until launch; verify with:"
-echo "  curl -sI https://${PROJECT}.pages.dev | grep -i x-robots-tag"
+echo "Deployed to https://applye.dev - live, and open to search since 2026-07-29."
+echo "The pre-launch 'X-Robots-Tag: noindex' is gone; confirm it stayed gone with:"
+echo "  curl -sI https://applye.dev | grep -i x-robots-tag   # expects no output"

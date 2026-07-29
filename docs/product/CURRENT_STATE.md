@@ -17,7 +17,23 @@
   screenshots and video would go; all 25 assets shipped in #171, so the reason expired. `robots.txt`
   allows crawling and always did: a crawler blocked from fetching never reads a noindex and may list
   the URL anyway. The two remain coupled by a test - verified on 2026-07-29 to fail when only the
-  flag was changed - so putting the header back means flipping the flag too.
+  flag was changed - so putting the header back means flipping the flag too. **Deployed and
+  confirmed on the live domain the same evening:** no `X-Robots-Tag` on any response.
+- **Every URL handed to a crawler now carries a trailing slash** (#174). The build writes
+  `de/index.html`, so Pages answers `/de` with a 308 to `/de/`, while the sitemap, `hreflang`,
+  breadcrumbs and each page's own canonical emitted the slashless form - all 39 sitemap URLs were
+  redirects, and the page a crawler landed on named the redirecting URL as its canonical. Search
+  Console reports that as "Page with redirect" rather than indexing it. One helper, `siteUrl()` in
+  `apps/web/src/app/site.ts`, now feeds all four; the sitemap generator is a Node script that cannot
+  import it, so it mirrors the rule and a test reads the generated file back and checks it.
+  **Verified live after deploy: 39 of 39 sitemap URLs return 200 with no redirect**, and canonical
+  and `hreflang` on `/` and `/de/` match the sitemap exactly.
+- **`BingSiteAuth.xml` is served from the site root** for Bing Webmaster Tools verification.
+- **Outstanding after launch, none of it blocking:** Google Search Console (property not created,
+  sitemap not submitted), Bing verification not yet clicked, the Cloudflare Web Analytics hostname,
+  and HSTS - deliberately deferred about a week, since browsers remember it for its whole max-age.
+  The short-lived Cloudflare API token minted for the domain attachment carries DNS edit rights and
+  should be deleted.
 - **Verified on the live site 2026-07-26**, not merely locally: all six security headers present;
   39 routes served; per-locale titles correct; canonicals point at `applye.dev`; JSON-LD present
   (product + FAQ on landings, product + breadcrumbs on docs); 404 works; sitemap and robots served.

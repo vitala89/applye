@@ -47,3 +47,19 @@ export const SEARCH_INDEXABLE = true;
 
 /** Canonical production origin, used for canonical URLs, hreflang, OG tags and the sitemap. */
 export const SITE_ORIGIN = 'https://applye.dev';
+
+/**
+ * Absolute URL for a route path, in the one form the server actually serves.
+ *
+ * Cloudflare Pages redirects `/de` to `/de/` with a 308, because the build
+ * writes `de/index.html`. Emitting the slashless form anywhere a crawler reads
+ * it - canonical, hreflang, breadcrumbs, the sitemap - points Google at a URL
+ * that redirects, and the page it lands on then names the redirecting URL as
+ * its canonical. Google resolves that, but reports every affected page as
+ * "Page with redirect" instead of indexing it cleanly. One helper, so the four
+ * places cannot drift apart again.
+ */
+export function siteUrl(path: string): string {
+  const clean = path.split('#')[0].split('?')[0];
+  return `${SITE_ORIGIN}${clean.endsWith('/') ? clean : `${clean}/`}`;
+}

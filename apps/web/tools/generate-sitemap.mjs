@@ -14,6 +14,15 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const ORIGIN = 'https://applye.dev';
 
+/**
+ * Mirrors `siteUrl` in src/app/site.ts, which cannot be imported here: this is
+ * a plain Node script that runs before the Angular build. The trailing slash
+ * is the form Cloudflare Pages serves - `/docs` 308s to `/docs/` - and a
+ * sitemap full of redirecting URLs is reported as such rather than indexed.
+ * A test asserts the two agree.
+ */
+const locFor = (path) => `${ORIGIN}${path.endsWith('/') ? path : `${path}/`}`;
+
 const { paths } = JSON.parse(readFileSync(resolve(here, 'site-paths.json'), 'utf8'));
 const lastmod = new Date().toISOString().slice(0, 10);
 
@@ -29,7 +38,7 @@ const urls = paths
   .map(
     (path) =>
       `  <url>\n` +
-      `    <loc>${ORIGIN}${path === '/' ? '/' : path}</loc>\n` +
+      `    <loc>${locFor(path)}</loc>\n` +
       `    <lastmod>${lastmod}</lastmod>\n` +
       `    <changefreq>weekly</changefreq>\n` +
       `    <priority>${priorityFor(path)}</priority>\n` +

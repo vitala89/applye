@@ -5,7 +5,7 @@ import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router } from '@
 import { filter, map } from 'rxjs';
 import { MESSAGE_BUNDLES } from '../i18n/i18n.service';
 import { DEFAULT_LOCALE, LOCALES, LocaleCode, localePath } from '../i18n/locales';
-import { SITE_ORIGIN } from '../site';
+import { SITE_ORIGIN, siteUrl } from '../site';
 
 /** Route `data` fields this service understands. Set them in app.routes.ts. */
 export interface SeoRouteData {
@@ -70,7 +70,7 @@ export class SeoService {
     const data = leaf.data as SeoRouteData;
     const title = this.pageTitle(leaf);
     const description = data.description ?? DEFAULT_DESCRIPTION;
-    const canonical = `${SITE_ORIGIN}${url === '/' ? '' : url.split('#')[0].split('?')[0]}`;
+    const canonical = siteUrl(url);
     const image = `${SITE_ORIGIN}${data.image ?? DEFAULT_IMAGE}`;
 
     this.meta.updateTag({ name: 'description', content: description });
@@ -152,8 +152,8 @@ export class SeoService {
     if (path !== '/docs' && !path.startsWith('/docs/')) return undefined;
 
     const trail: { name: string; item: string }[] = [
-      { name: 'Applye', item: `${SITE_ORIGIN}/` },
-      { name: 'Docs', item: `${SITE_ORIGIN}/docs` },
+      { name: 'Applye', item: siteUrl('/') },
+      { name: 'Docs', item: siteUrl('/docs') },
     ];
 
     if (path !== '/docs') {
@@ -189,7 +189,7 @@ export class SeoService {
       const link = this.doc.createElement('link');
       link.setAttribute('rel', 'alternate');
       link.setAttribute('hreflang', hreflang);
-      link.setAttribute('href', `${SITE_ORIGIN}${path}`);
+      link.setAttribute('href', siteUrl(path));
       this.doc.head.appendChild(link);
     };
 

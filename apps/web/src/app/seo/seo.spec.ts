@@ -6,7 +6,7 @@ import { Meta } from '@angular/platform-browser';
 import { provideRouter, Route } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { appRoutes } from '../app.routes';
-import { SEARCH_INDEXABLE } from '../site';
+import { SEARCH_INDEXABLE, SITE_ORIGIN, siteUrl } from '../site';
 import { SeoService } from './seo.service';
 
 @Component({ selector: 'app-blank', standalone: true, template: '' })
@@ -105,6 +105,51 @@ describe('search indexing switch', () => {
   it('lets crawlers fetch, so they can read the noindex it is sent', () => {
     const robots = readFileSync(join(__dirname, '../../../public/robots.txt'), 'utf8');
     expect(robots).not.toMatch(/^\s*Disallow:\s*\/\s*$/m);
+  });
+});
+
+/**
+ * The build writes `de/index.html`, so Cloudflare Pages answers `/de` with a
+ * 308 to `/de/`. Every URL handed to a crawler therefore has to carry the
+ * slash, or the sitemap points at redirects and each landing page names a
+ * redirecting URL as its own canonical. The symptom is not an error anywhere -
+ * it is Search Console quietly reporting "Page with redirect" instead of
+ * indexing, which is why this is pinned rather than left to review.
+ */
+describe('trailing slashes', () => {
+  const sitemap = readFileSync(join(__dirname, '../../../public/sitemap.xml'), 'utf8');
+  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+
+  it('has a sitemap that is not empty, so the checks below mean something', () => {
+    expect(locs.length).toBeGreaterThan(0);
+  });
+
+  it('ends every sitemap URL with a slash, matching what the server serves', () => {
+    expect(locs.filter((loc) => !loc.endsWith('/'))).toEqual([]);
+  });
+
+  it('builds canonical URLs in the same form', () => {
+    expect(siteUrl('/')).toBe(`${SITE_ORIGIN}/`);
+    expect(siteUrl('/de')).toBe(`${SITE_ORIGIN}/de/`);
+    expect(siteUrl('/docs/guide/tour')).toBe(`${SITE_ORIGIN}/docs/guide/tour/`);
+  });
+
+  it('does not double the slash on a path that already has one', () => {
+    expect(siteUrl('/docs/')).toBe(`${SITE_ORIGIN}/docs/`);
+  });
+
+  it('drops the fragment and query a canonical must never carry', () => {
+    expect(siteUrl('/docs#install')).toBe(`${SITE_ORIGIN}/docs/`);
+    expect(siteUrl('/docs?ref=x')).toBe(`${SITE_ORIGIN}/docs/`);
+  });
+
+  it('agrees with the sitemap generator, which cannot import it', () => {
+    const generator = readFileSync(join(__dirname, '../../../tools/generate-sitemap.mjs'), 'utf8');
+    const paths: string[] = JSON.parse(
+      readFileSync(join(__dirname, '../../../tools/site-paths.json'), 'utf8'),
+    ).paths;
+    expect(generator).toContain('endsWith');
+    for (const path of paths) expect(locs).toContain(siteUrl(path));
   });
 });
 

@@ -120,10 +120,9 @@ cuando tú haces clic.
 
 **[Descargar para macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
 
-Las versiones para Windows, Linux y macOS Intel aún no están publicadas: las produce el flujo de
-release, que no puede ejecutarse hasta que se resuelva la facturación de GitHub Actions de este
-repositorio. Mientras tanto, [compila desde el código fuente](#inicio-rápido): son tres comandos y
-funcionan en las tres plataformas.
+Las versiones para Windows, Linux y macOS Intel las produce el flujo de release y aparecerán aquí
+con la próxima versión etiquetada. Mientras tanto, [compila desde el código fuente](#inicio-rápido):
+son tres comandos y funcionan en las tres plataformas.
 
 > La versión de macOS no está firmada con un certificado de Apple Developer, así que el primer
 > arranque requiere clic derecho sobre la app y **Abrir** en lugar de doble clic. Las

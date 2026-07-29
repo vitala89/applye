@@ -119,10 +119,9 @@ klikniesz.
 
 **[Pobierz na macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
 
-Buildy na Windows, Linux i macOS Intel nie są jeszcze opublikowane: powstają w workflow release,
-który nie może się uruchomić, dopóki nie zostanie rozwiązana kwestia rozliczeń GitHub Actions dla
-tego repozytorium. Do tego czasu [zbuduj ze źródeł](#szybki-start) - trzy komendy, na wszystkich
-trzech platformach.
+Buildy na Windows, Linux i macOS Intel powstają w workflow release i pojawią się tutaj wraz z
+następną otagowaną wersją. Do tego czasu [zbuduj ze źródeł](#szybki-start) - trzy komendy, na
+wszystkich trzech platformach.
 
 > Build na macOS nie jest podpisany certyfikatem Apple Developer, więc pierwsze uruchomienie wymaga
 > kliknięcia prawym przyciskiem na aplikację i **Otwórz**, a nie podwójnego kliknięcia.

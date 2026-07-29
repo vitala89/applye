@@ -117,10 +117,9 @@ deterministic code. AI is only spent where judgement is genuinely needed, and on
 
 **[Download for macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
 
-Windows, Linux and Intel macOS builds are not published yet: they are produced by the release
-workflow, which cannot run until this repository's GitHub Actions billing is resolved. Until then,
-[build from source](#build-from-source) - it is three commands, and it works on all three
-platforms.
+Windows, Linux and Intel macOS builds come from the release workflow and will appear here with the
+next tagged version. Until then, [build from source](#build-from-source) - it is three commands,
+and it works on all three platforms.
 
 > The macOS build is not signed with an Apple Developer certificate, so the first launch needs a
 > right-click on the app and **Open** rather than a double-click. The

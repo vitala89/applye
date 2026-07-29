@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../../../dist/apps/desktop/browser",
     "devUrl": "http://localhost:4200",
-    "beforeDevCommand": "nx run desktop:serve",
-    "beforeBuildCommand": "nx run desktop:build"
+    "beforeDevCommand": "npx nx run desktop:serve",
+    "beforeBuildCommand": "npx nx run desktop:build"
   },
   "app": {
     "windows": [

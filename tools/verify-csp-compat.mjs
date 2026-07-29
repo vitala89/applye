@@ -17,9 +17,15 @@
  * Run after building the desktop frontend and before bundling.
  */
 import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
-const INDEX = 'dist/apps/desktop/browser/index.html';
-const CONF = 'apps/desktop/src-tauri/tauri.conf.json';
+// Resolved from this file, not from the working directory. Tauri runs
+// `beforeBuildCommand` with the cwd set to src-tauri/, while npm scripts and CI
+// run it from the repository root - relative paths would only work in one of them.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const INDEX = join(ROOT, 'dist/apps/desktop/browser/index.html');
+const CONF = join(ROOT, 'apps/desktop/src-tauri/tauri.conf.json');
 
 const fail = (msg) => {
   console.error(`\n  CSP compatibility check FAILED\n\n${msg}\n`);

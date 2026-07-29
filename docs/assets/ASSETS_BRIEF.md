@@ -110,10 +110,25 @@ difference nobody reading a README will notice.
 
 ---
 
-## 4. Walkthrough video - `walkthrough-thumb.png` (800px wide) + hosted video (2-3 min)
+## 4. Walkthrough poster - `walkthrough-thumb.png` (800x450)
 
-Record a narrated 2-3 minute walkthrough, upload to YouTube (unlisted or public), and drop a
-clickable thumbnail into the README.
+**Shipped, pointing at the tour the site already publishes.** The READMEs now carry a clickable
+poster linking to `https://applye.dev/docs/guide/tour/`, built by
+[`walkthrough-thumb.mjs`](walkthrough-thumb.mjs): a frame of `tour-walkthrough.mp4` on the hero
+backdrop at half scale, with a play button, because an image that is a link has to say so.
+
+This is a deliberate substitution for what the section below asks for. A narrated YouTube walkthrough
+does not exist, and the README pointed at it anyway - so the choice was a placeholder promising a
+video, or a poster linking to the six-screen silent tour that is live today. The latter is true now.
+The narration script survives below for whenever the narrated version gets made; when it does, the
+poster's `href` is the only thing that changes.
+
+**The frame is 44s, and one frame is off limits.** At roughly 3s the welcome screen's environment
+check renders the capturing machine's export path, which contains a real home directory name. That
+frame is in the shipped video on the live site; the poster does not make a second, still, indexable
+copy of it. See the Duty Watch entry for 2026-07-29 - the video itself is unfixed.
+
+### If the narrated video does get recorded
 
 **Narration script (beats):**
 
@@ -129,8 +144,10 @@ clickable thumbnail into the README.
 6. **Close (2:30-3:00)** "No account, no telemetry, bring your own AI. Open source. Link in the
    description." Show the applye.dev URL and the GitHub repo.
 
-**Thumbnail prompt / recipe:** the dashboard screenshot on the indigo hero backdrop, big bold text
-"See Applye in 3 minutes", a play triangle centered, tagline small at the bottom. 800px wide, 16:9.
+**Thumbnail:** rerun `walkthrough-thumb.mjs` against the new recording rather than designing a
+second poster, and repoint the `href` in all six READMEs. Do not bake "See Applye in 3 minutes" or
+any other copy into the image: it would have to be produced in six languages, and the caption under
+the poster already carries it in markdown.
 
 ---
 

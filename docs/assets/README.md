@@ -17,7 +17,7 @@ captures would drift from the first.
 | `hero-banner.png`          | **Shipped.** Dashboard on the brand backdrop, built by `hero-banner.mjs`            | 1600x900   |
 | `hero-banner-plate.png`    | **Shipped.** The same backdrop without the window, for the social preview and thumb | 1600x900   |
 | `demo.gif`                 | **Shipped.** The core loop, cut from three of the guide's recordings                | 800px wide |
-| `walkthrough-thumb.png`    | Thumbnail linking to the 2-3 min narrated video walkthrough                         | 800px wide |
+| `walkthrough-thumb.png`    | **Shipped.** Clickable poster for the first-run tour on applye.dev                  | 800x450    |
 | `screens/dashboard.png`    | **Shipped.** Counters, needs-attention and the next interview                       | 1440x900   |
 | `screens/discover.png`     | **Shipped.** The feed grouped by target roles                                       | 1440x736   |
 | `screens/job-detail.png`   | **Shipped.** Missing keywords, the ATS check and the red flags                      | 1440x900   |
@@ -25,6 +25,6 @@ captures would drift from the first.
 | `screens/pipeline.png`     | **Shipped.** Applied / interview / offer, mid-drag                                  | 1440x900   |
 | `screens/analytics.png`    | **Shipped.** Counters, the funnel and weekly volume                                 | 1440x1108  |
 
-`walkthrough-thumb.png` is the only one left, and it is blocked rather than pending: the README links
-it to a narrated video on YouTube that does not exist yet. The placeholder is a comment, so nothing
-renders broken while it waits.
+Every file in this inventory now exists. The only placeholder left anywhere in the READMEs is the
+release links, which waits on installable builds and renders as a blockquote rather than a broken
+image.

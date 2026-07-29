@@ -152,7 +152,13 @@ w pełni użyteczna bez nich.
 5. **Śledź** - oferta wędruje po kanbanie; gdy zapada cisza, pojawiają się szkice follow-upów.
 6. **Przygotuj się** - śledź etapy rozmów na osi czasu i trzymaj notatki przy każdej ofercie.
 
-<!-- PLACEHOLDER: wideo instruktażowe. 2-3-minutowy narracyjny przewodnik po głównej pętli na YouTube; wstaw tu miniaturę docs/assets/walkthrough-thumb.png z linkiem do wideo. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Zobacz przewodnik po pierwszym uruchomieniu Applye" width="800">
+  </a>
+  <br>
+  <em>Cichy przewodnik po sześciu ekranach pierwszego uruchomienia, na applye.dev.</em>
+</p>
 
 ## Jak to działa
 

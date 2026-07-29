@@ -154,7 +154,13 @@ La app es totalmente usable sin ellas.
 5. **Sigue** - la vacante avanza por el kanban; aparecen borradores de seguimiento cuando hay silencio.
 6. **Prepárate** - sigue cada etapa de entrevista en una línea de tiempo y guarda tus notas por oferta.
 
-<!-- PLACEHOLDER: vídeo tutorial. Un recorrido narrado de 2-3 minutos del flujo principal, alojado en YouTube; insertar aquí la miniatura docs/assets/walkthrough-thumb.png enlazando al vídeo. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Ver el recorrido de la primera ejecución de Applye" width="800">
+  </a>
+  <br>
+  <em>Un recorrido silencioso por las seis pantallas del primer arranque, en applye.dev.</em>
+</p>
 
 ## Cómo funciona
 

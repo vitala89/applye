@@ -152,7 +152,13 @@ npm run type-check       # перевірка типів усіх проєкті
 5. **Відстежуйте** - роль рухається канбаном пайплайну; чернетки фолоу-апів з'являються, коли все затихає.
 6. **Готуйтеся** - відстежуйте кожен етап співбесіди на таймлайні й ведіть нотатки за кожною роллю.
 
-<!-- PLACEHOLDER: video walkthrough. A 2-3 minute narrated walkthrough of the core loop, hosted on YouTube; embed the thumbnail here as docs/assets/walkthrough-thumb.png linking to the video. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Подивитися огляд першого запуску Applye" width="800">
+  </a>
+  <br>
+  <em>Німий огляд шести екранів першого запуску, на applye.dev.</em>
+</p>
 
 ## Як це працює
 

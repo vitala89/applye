@@ -154,7 +154,13 @@ without them.
 5. **Track** - the role moves across the pipeline kanban; follow-up drafts appear when things go quiet.
 6. **Prep** - track every interview stage on a timeline and keep your notes per role.
 
-<!-- PLACEHOLDER: video walkthrough. A 2-3 minute narrated walkthrough of the core loop, hosted on YouTube; embed the thumbnail here as docs/assets/walkthrough-thumb.png linking to the video. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Watch the first-run tour of Applye" width="800">
+  </a>
+  <br>
+  <em>A silent six-screen tour of the first run, on applye.dev.</em>
+</p>
 
 ## How it works
 

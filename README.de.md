@@ -155,7 +155,13 @@ hinterlegst. Die App ist ohne sie voll nutzbar.
 5. **Verfolgen** - die Stelle wandert über das Pipeline-Kanban; Follow-up-Entwürfe erscheinen bei Funkstille.
 6. **Vorbereiten** - jede Interview-Phase auf einer Timeline verfolgen und Notizen pro Stelle festhalten.
 
-<!-- PLACEHOLDER: Video-Walkthrough. Ein 2-3-minütiger kommentierter Durchlauf des Kernablaufs auf YouTube; hier das Thumbnail docs/assets/walkthrough-thumb.png einbetten und aufs Video verlinken. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Den Rundgang durch den ersten Start von Applye ansehen" width="800">
+  </a>
+  <br>
+  <em>Ein stummer Rundgang durch die sechs Bildschirme des ersten Starts, auf applye.dev.</em>
+</p>
 
 ## Wie es funktioniert
 

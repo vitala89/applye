@@ -119,10 +119,15 @@ wenn du klickst.
 
 ### Download
 
-> **PLACEHOLDER: Release-Links.** Installierbare Builds (Windows `.msi`, macOS `.dmg`, Linux
-> `.AppImage`/`.deb`) werden zum öffentlichen Launch auf der
-> [Releases-Seite](https://github.com/vitala89/applye/releases) veröffentlicht. Bis dahin: unten aus
-> dem Quellcode bauen.
+**[Download für macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
+
+Builds für Windows, Linux und Intel-macOS entstehen im Release-Workflow und erscheinen hier mit der
+nächsten getaggten Version. Bis dahin [aus dem Quellcode bauen](#schnellstart) - drei Befehle, auf
+allen drei Plattformen.
+
+> Der macOS-Build ist nicht mit einem Apple-Developer-Zertifikat signiert. Der erste Start
+> erfordert daher einen Rechtsklick auf die App und **Öffnen** statt eines Doppelklicks. Die
+> [Release-Notes](https://github.com/vitala89/applye/releases/latest) erklären das und nennen die Alternative in einer Zeile.
 
 ### Aus dem Quellcode bauen
 

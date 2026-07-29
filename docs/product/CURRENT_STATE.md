@@ -42,6 +42,11 @@
   never reached the build step. Fixed; `Applye_0.29.0_aarch64.dmg` (16 MB) now builds and is
   verified on Apple Silicon. Windows and Linux remain unbuilt - they need CI or a VM of the
   target OS, and `docs/RELEASE.md` documents both paths plus a smoke-test checklist.
+- **Angular 22 was investigated and deliberately not taken.** Nothing in the app needs it, 21.2 is
+  supported and patched, and the upgrade existed only because Dependabot opened a PR. The
+  investigation was still worth it: it found that `@nx/angular` 23.0.1 caps Angular below 22 (23.1.0
+  lifts it), that Angular 22 needs TypeScript 6.0.x specifically and not 7, and that `@ngrx/signals`
+  had no stable release for Angular 22 at all. That last one is now moot - NgRx is removed.
 - **The architecture is enforced as of 2026-07-29, not merely intended.** All six projects carry
   `type:`/`scope:` tags and `@nx/enforce-module-boundaries` declares the dependency stack; it went
   in green, because the graph was already clean. `jobs.component.ts` dropped from 4975 to 2795 lines

@@ -66,9 +66,11 @@ Imports go through the published entry point (`@applye/core`, never
 
 - **Angular 21**, standalone components, **zoneless** change detection (no `zone.js` polyfill is
   loaded in either app).
-- **Signals for state.** Component state is signals and `computed`; NgRx Signals `SignalStore` is
-  used where a feature needs state that outlives a single component (`libs/data/.../jobs.store.ts`).
-  There is no global Redux-style store.
+- **Signals for state, and nothing else.** Component state is `signal()` and `computed()`. State
+  that outlives a component lives in an `@Injectable({providedIn:'root'})` service built from the
+  same primitives - `libs/data/.../jobs.store.ts` is the pattern. There is no state-management
+  library: NgRx was removed once it amounted to one store of seventy-six lines whose peer range
+  would have gated every future Angular major.
 - **`ChangeDetectionStrategy.OnPush` on every component.** It is not Angular's default in 21.2, but
   the framework is moving there - `ChangeDetectionStrategy.Default` is already deprecated in favour
   of `Eager` - so new components declare `OnPush` explicitly. A handful of large legacy screens are

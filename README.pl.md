@@ -117,9 +117,16 @@ klikniesz.
 
 ### Pobieranie
 
-> **PLACEHOLDER: linki do wydań.** Instalatory (Windows `.msi`, macOS `.dmg`, Linux
-> `.AppImage`/`.deb`) pojawią się na [stronie Releases](https://github.com/vitala89/applye/releases)
-> przy publicznym starcie. Do tego czasu - kompilacja ze źródeł poniżej.
+**[Pobierz na macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
+
+Buildy na Windows, Linux i macOS Intel nie są jeszcze opublikowane: powstają w workflow release,
+który nie może się uruchomić, dopóki nie zostanie rozwiązana kwestia rozliczeń GitHub Actions dla
+tego repozytorium. Do tego czasu [zbuduj ze źródeł](#szybki-start) - trzy komendy, na wszystkich
+trzech platformach.
+
+> Build na macOS nie jest podpisany certyfikatem Apple Developer, więc pierwsze uruchomienie wymaga
+> kliknięcia prawym przyciskiem na aplikację i **Otwórz**, a nie podwójnego kliknięcia.
+> [Informacje o wydaniu](https://github.com/vitala89/applye/releases/latest) wyjaśniają dlaczego i podają alternatywę w jednej linijce.
 
 ### Kompilacja ze źródeł
 

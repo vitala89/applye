@@ -118,10 +118,16 @@ cuando tú haces clic.
 
 ### Descargar
 
-> **PLACEHOLDER: enlaces de descarga.** Los instaladores (Windows `.msi`, macOS `.dmg`, Linux
-> `.AppImage`/`.deb`) se publicarán en la
-> [página de Releases](https://github.com/vitala89/applye/releases) en el lanzamiento público.
-> Hasta entonces, compila desde el código fuente.
+**[Descargar para macOS (Apple Silicon)](https://github.com/vitala89/applye/releases/latest)** - `.dmg`, 15 MB.
+
+Las versiones para Windows, Linux y macOS Intel aún no están publicadas: las produce el flujo de
+release, que no puede ejecutarse hasta que se resuelva la facturación de GitHub Actions de este
+repositorio. Mientras tanto, [compila desde el código fuente](#inicio-rápido): son tres comandos y
+funcionan en las tres plataformas.
+
+> La versión de macOS no está firmada con un certificado de Apple Developer, así que el primer
+> arranque requiere clic derecho sobre la app y **Abrir** en lugar de doble clic. Las
+> [notas de la versión](https://github.com/vitala89/applye/releases/latest) lo explican y dan la alternativa en una línea.
 
 ### Compilar desde el código fuente
 

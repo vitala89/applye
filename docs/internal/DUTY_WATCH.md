@@ -44,7 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-29 (latest), the README's hero banner is built and README media joins LFS
+### 2026-07-29 (latest), the README wordmark is generated from the site header
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/readme-wordmark`
+- **Commits:** one documentation commit on the branch
+- **Pull request:** opened at the end of this watch
+- **Objective:** Fix the broken image at the top of all six READMEs: they referenced wordmark SVGs that had never been created.
+- **Completed:** `docs/assets/brand/wordmark-light.svg` and `wordmark-dark.svg` (250x56), plus `wordmark.mjs`, the generator that produced them from the JetBrains Mono TTF. The `<!-- PLACEHOLDER: wordmark -->` comment removed from all six READMEs. Section 1 of `ASSETS_BRIEF.md` replaced with the shipped recipe, and `docs/assets/README.md` updated.
+- **Not completed:** The remaining README assets - `demo.gif`, the walkthrough thumbnail and the six screens under `docs/assets/screens/`. Also untouched: the press kit placeholder in `apps/web/src/app/press.html`, which asks for a zip of these wordmarks plus the app icon. That is now buildable but was not in scope.
+- **Files or packages changed:** `docs/assets/brand/wordmark-light.svg`, `docs/assets/brand/wordmark-dark.svg`, `docs/assets/brand/wordmark.mjs`, `docs/assets/ASSETS_BRIEF.md`, `docs/assets/README.md`, all six `README*.md`, `CHANGELOG.md`, this file. No application code changed.
+- **Validation:** Run and observed on this branch: `npm run format:check` (pass), `git diff --check` (clean), an em-dash and en-dash scan across every changed file (0 hits), and both SVGs rasterised and inspected against the light and dark canvases. **Not run:** the test, lint, type-check, build and Rust gates - nothing outside `docs/` was touched. Separately confirmed on the live repository that the previous watch's claim holds: GitHub resolves the LFS pointer and renders `hero-banner.png` in the README.
+- **Privacy/security impact:** None. Two vector files and a build script; no data, network or permission surface.
+- **Decisions and assumptions:** The lockup is transcribed from `.brand` in the site header, not designed fresh, so the README and the site cannot drift into two different logos. Glyphs are outlines because GitHub blocks webfonts in `<img>`-served SVG. The canvas stays 250x56 because the READMEs hardcode those attributes; the type was sized up to 40px to fill it, since at 30px the lockup used 59% of the width and shipped its own margin. `opentype.js` could not shape the string - JetBrains Mono uses a ccmp substitution format it does not implement - so the script steps the advance width glyph by glyph, which is equivalent for six unshaped lowercase letters. JetBrains Mono is SIL OFL 1.1: embedding outlines is permitted, and the font itself is not redistributed.
+- **Risks or compatibility impact:** None expected. The SVGs are static, have no external references and carry no fonts. If `.brand` in `styles.scss` changes, these files go stale silently - nothing enforces the link, and the script header says so.
+- **Open issues or blockers:** None.
+- **Next first action:** Capture the six screens under `docs/assets/screens/` at 1440x900 in the dark theme against the seeded persona in `ASSETS_BRIEF.md`, starting with `dashboard.png`.
+- **Evidence:** Branch diff; rasterised previews of both SVGs reviewed in session; the generator's own output reporting `mark 42.0px + gap 12 + text 140.0px = 194.0px on 250x56`.
+
+### 2026-07-29, the README's hero banner is built and README media joins LFS
 
 - **Status:** complete
 - **Agent/tool:** Claude Code (Opus 5), maintainer supplying the screenshot

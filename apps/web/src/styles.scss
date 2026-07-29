@@ -1861,6 +1861,263 @@ body.is-lightboxed {
 }
 
 /* ============================================================
+   COMPARE PAGE
+
+   The landing page has its own `.compare` strip of three market cards;
+   this is the dedicated /compare route and deliberately does not share
+   those class names. The page states its recommendation in four cards
+   and keeps the eleven-row matrix underneath as the evidence, which is
+   why the table here is quieter than the cards rather than the reverse.
+   ============================================================ */
+.cmp {
+  display: grid;
+  grid-template-columns: 1.35fr repeat(3, 1fr);
+  gap: var(--space-5);
+  align-items: stretch;
+  margin-bottom: var(--space-11);
+}
+.cmp__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-card);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+}
+
+/* Applye's card is the one the page is arguing for, so it is the only
+   one carrying the accent. In the light theme it inverts to the brand
+   graphite, which is the strongest contrast available; inverting in the
+   dark theme would make it vanish into the canvas, so there it keeps the
+   surface and takes the accent border and glow instead - the same pair
+   the landing page's own "us" card uses. */
+.cmp__card--us {
+  gap: var(--space-6);
+  border-color: var(--border-accent);
+  box-shadow: var(--glow-accent);
+}
+[data-theme='light'] .cmp__card--us {
+  background: var(--graphite-950);
+  border-color: transparent;
+  box-shadow: none;
+}
+.cmp__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.cmp__head--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.cmp__name {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-normal);
+  color: var(--text-primary);
+}
+.cmp__card--us .cmp__name {
+  font-size: var(--text-title);
+}
+[data-theme='light'] .cmp__card--us .cmp__name {
+  color: #f4f2ed;
+}
+.cmp__name a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+.cmp__name a:hover {
+  text-decoration-color: var(--accent);
+}
+.cmp__tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--accent-fg);
+  background: var(--accent);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-badge);
+}
+.cmp__meta {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.cmp__blurb {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+[data-theme='light'] .cmp__card--us .cmp__blurb {
+  color: var(--graphite-300);
+}
+.cmp__points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+  list-style: none;
+}
+.cmp__point {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+[data-theme='light'] .cmp__card--us .cmp__point {
+  color: #f4f2ed;
+}
+.cmp__point--limit {
+  color: var(--text-secondary);
+}
+[data-theme='light'] .cmp__card--us .cmp__point--limit {
+  color: var(--graphite-400);
+}
+.cmp__mark {
+  color: var(--success);
+  flex-shrink: 0;
+}
+.cmp__mark--limit {
+  color: var(--warning);
+}
+.cmp__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.cmp__block--last {
+  margin-top: auto;
+}
+.cmp__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.cmp__text {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+.cmp__text--muted {
+  color: var(--text-tertiary);
+}
+
+/* ---- The matrix, demoted to reference ---- */
+.cmp__specshead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+.cmp__specstitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.cmp__specscount {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.cmp__scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-card);
+}
+.cmp__table {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+.cmp__table th,
+.cmp__table td {
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  vertical-align: top;
+  color: var(--text-secondary);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+.cmp__table thead th {
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  font-weight: var(--weight-regular);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+.cmp__table tbody th {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-regular);
+  color: var(--text-primary);
+}
+.cmp__table tbody tr:last-child th,
+.cmp__table tbody tr:last-child td {
+  border-bottom: none;
+}
+/* The one column the page is about keeps a tint down its whole length, so
+   the eye can follow Applye's answers without reading the header again. */
+.cmp__table .cmp__col--us {
+  background: var(--accent-tint);
+  color: var(--text-primary);
+}
+.cmp__table thead .cmp__col--us {
+  color: var(--text-accent);
+}
+/* Visually hidden: the empty top-left corner still needs a name for a
+   screen reader reading the header row. */
+.cmp__vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cmp__cta {
+  margin-top: var(--space-8);
+}
+
+@media (max-width: 900px) {
+  .cmp {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cmp__card--us {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .cmp {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
    CHANGELOG
    ============================================================ */
 .clog {

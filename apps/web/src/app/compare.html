@@ -1,55 +1,91 @@
 <div class="clog shell compare-page">
   <header class="clog__head">
     <p class="applye-eyebrow">Compare</p>
-    <h1 class="clog__h1">Where Applye fits.</h1>
+    <h1 class="clog__h1">Four tools. Pick the honest one.</h1>
     <p class="clog__lede">
-      Honest comparison, including the things others do better. Cloud SaaS trackers (Teal, Huntr,
-      Jobscan) are polished and mobile-friendly. career-ops is a superb CLI pipeline if you live in
-      a terminal. A spreadsheet is free and familiar. Applye exists for the overlap none of them
-      covers: a local-first desktop GUI, free, that knows the paperwork differs from country to
-      country.
+      Three of these are good. Here is exactly when each of them beats Applye, and the one overlap
+      none of them covers: a local-first desktop GUI, free, that knows the paperwork differs from
+      country to country.
     </p>
   </header>
 
-  <div class="docs__section">
-    <!-- Five columns of comparison do not fit a phone. The table scrolls
-         inside its own box rather than dragging the page sideways with it. -->
-    <div class="docs__tablescroll" tabindex="0" role="region" aria-label="Feature comparison">
-      <table class="docs__table">
-        <thead>
-          <tr class="docs__trow docs__trow--head">
-            <th></th>
-            <th>Applye</th>
-            <th>Cloud SaaS</th>
-            <th>career-ops (CLI)</th>
-            <th>Spreadsheet</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (r of rows; track r.label) {
-          <tr class="docs__trow">
-            <th>{{ r.label }}</th>
-            <td>{{ r.applye }}</td>
-            <td>{{ r.saas }}</td>
-            <td>{{ r.cli }}</td>
-            <td>{{ r.sheet }}</td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+  <!-- The recommendation comes before the evidence. A four-column matrix asks
+       the reader to derive the answer; these cards state it, and the table
+       below is what they check it against. -->
+  <div class="cmp">
+    <article class="cmp__card cmp__card--us">
+      <header class="cmp__head">
+        <h2 class="cmp__name">Applye</h2>
+        <span class="cmp__tag">This one</span>
+      </header>
+      <p class="cmp__blurb">
+        A local-first desktop GUI, free, that knows the paperwork differs from country to country.
+      </p>
+      <ul class="cmp__points">
+        @for (point of strengths; track point) {
+        <li class="cmp__point"><span class="cmp__mark" aria-hidden="true">+</span>{{ point }}</li>
+        }
+        <li class="cmp__point cmp__point--limit">
+          <span class="cmp__mark cmp__mark--limit" aria-hidden="true">-</span>{{ limitation }}
+        </li>
+      </ul>
+    </article>
+
+    @for (alt of alternatives; track alt.name) {
+    <article class="cmp__card">
+      <header class="cmp__head cmp__head--stacked">
+        <h2 class="cmp__name">
+          @if (alt.href) {
+          <a [href]="alt.href" target="_blank" rel="noopener">{{ alt.name }}</a>
+          } @else { {{ alt.name }} }
+        </h2>
+        <p class="cmp__meta">{{ alt.meta }}</p>
+      </header>
+      <div class="cmp__block">
+        <h3 class="cmp__label">Better if</h3>
+        <p class="cmp__text">{{ alt.betterIf }}</p>
+      </div>
+      <div class="cmp__block cmp__block--last">
+        <h3 class="cmp__label">Trade-off</h3>
+        <p class="cmp__text cmp__text--muted">{{ alt.tradeOff }}</p>
+      </div>
+    </article>
+    }
   </div>
 
-  <div class="prose">
-    <p>
-      If you want a phone app with reminders, pick a SaaS tracker. If you are a developer who wants
-      maximum control and already lives in an AI coding CLI, use
-      <a href="https://career-ops.org" target="_blank" rel="noopener">career-ops</a> - it is
-      excellent and openly inspired parts of Applye. If you want the full pipeline as a desktop app
-      anyone can run, with your data staying on your machine: that is Applye.
-    </p>
-    <p>
-      <a class="btn btn--ghost" routerLink="/docs">Get started</a>
-    </p>
+  <div class="cmp__specshead">
+    <h2 class="cmp__specstitle">The details, unabridged</h2>
+    <p class="cmp__specscount">{{ rows.length }} differences</p>
   </div>
+
+  <!-- Five columns of comparison do not fit a phone. The table scrolls
+       inside its own box rather than dragging the page sideways with it. -->
+  <div class="cmp__scroll" tabindex="0" role="region" aria-label="Feature comparison">
+    <table class="cmp__table">
+      <thead>
+        <tr>
+          <th scope="col"><span class="cmp__vh">Feature</span></th>
+          <th scope="col" class="cmp__col--us">Applye</th>
+          <th scope="col">Cloud SaaS</th>
+          <th scope="col">career-ops (CLI)</th>
+          <th scope="col">Spreadsheet</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows; track r.label) {
+        <tr>
+          <th scope="row">{{ r.label }}</th>
+          <td class="cmp__col--us">{{ r.applye }}</td>
+          <td>{{ r.saas }}</td>
+          <td>{{ r.cli }}</td>
+          <td>{{ r.sheet }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cmp__cta">
+    <a class="btn btn--primary" routerLink="/docs">Get started</a>
+  </p>
 </div>

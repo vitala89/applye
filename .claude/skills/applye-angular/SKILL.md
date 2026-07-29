@@ -48,8 +48,10 @@ The dependency stack points one way only:
 
 - Component-local state is `signal()` and `computed()`. Never a plain mutable field that the
   template reads - with OnPush it will not repaint.
-- State that outlives a component, or that two features share, goes into an NgRx `SignalStore` in
-  `libs/data/src/lib/stores/`.
+- State that outlives a component, or that two features share, goes into an
+  `@Injectable({providedIn:'root'})` service in `libs/data/src/lib/stores/`, built from `signal()`
+  and `computed()`. There is no state-management library and adding one needs an argument stronger
+  than familiarity - the last one was removed for pinning `@angular/core` to a single major.
 - Orchestration that spans several screens (a wizard, a generation pipeline) belongs in a service,
   not in the component that happens to host the first step. `tailor-score.service`,
   `document-gen.service` and `wizard-progress.service` are the pattern to follow.

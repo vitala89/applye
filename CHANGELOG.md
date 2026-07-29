@@ -10,16 +10,13 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **`libs/data` has real tests.** The layer had one spec for its entire surface, and the store is the part of it that holds state, so it is the part most able to drift. Ten cases pin what actually matters about a cache in front of SQLite: that the overview is read once and cached, that `force` re-reads, that a failed read leaves `loading` off and - the one worth having - does not mark the overview as cached, so the next attempt retries instead of leaving the screen empty until something forces a reload. Plus that a delete drops its row, a _failed_ delete does not, and a patch touches exactly one row.
+
 ### Changed
 
 - **Dev tooling moves forward as far as Angular lets it.** `@commitlint/cli`, `@swc-node/register`, `@swc/core`, `jest-environment-node`, `jest-util`, `ts-jest`, `prettier`, `typescript-eslint` and `@typescript-eslint/utils` take their bumps, along with three majors that do not care which Angular version this repository is on: `@types/node` 20 -> 26, `jsonc-eslint-parser` 2 -> 3, `lint-staged` 16 -> 17. `typescript`, `eslint`, `@eslint/js`, `angular-eslint`, `@schematics/angular` and `zone.js` are deliberately held. The grouped Dependabot PR raised `typescript` to `~7.0.2`, which nothing here can accept - Angular 21 wants `~5.9` and Angular 22's compiler wants `>=6.0.0 <6.1.0`, so nx failed to build the project graph before running a single task. Those six move with the Angular 22 upgrade, which is itself waiting on `@ngrx/signals`: its latest stable release is 21.1.1, with `@angular/core: ^21.0.0` as a peer.
-
-### Fixed
-
-- **The release matrix could not build anything.** All four jobs for `v0.29.1` failed within seconds of `'nx' is not recognized as an internal or external command`. `tauri-action` invokes `tauri build` directly rather than through an npm script, and only npm puts `node_modules/.bin` on `PATH`; locally the command works because `desktop:build:tauri` wraps it, so nothing local could reproduce it. Both `beforeDevCommand` and `beforeBuildCommand` are `npx`-prefixed now.
-- **The CSP guard was absent from the one path that ships bytes to users.** It runs inside the npm script and as a `ci.yml` step, and `tauri-action` goes through neither - so the release build, the only build a user ever downloads, was the only build without the check that exists precisely because a release went out unstyled. It is now an explicit step in `release.yml` ahead of `tauri-action`, and the script resolves its paths from its own location rather than the working directory. Putting the check inside `beforeBuildCommand` was tried first and rejected: it needs a relative path from whatever directory Tauri picks as cwd, and I wrote that off-by-one wrong on the first attempt - the same one that made `frontendDist` wrong for five releases.
-
-### Changed
 
 - **Rust dependency majors, and the minimum Rust version with them.** `sqlx` 0.8 -> 0.9,
   `zip` 0.6 -> 8.6, `calamine` 0.35 -> 0.36, `base64` 0.22 -> 0.23. Two of these changed APIs
@@ -30,6 +27,16 @@ is the single source of truth; this file tracks what changed at each tag.
   they are wrapped in `AssertSqlSafe` with the audit recorded at the call site. The declared
   `rust-version` moves from 1.77.2 to 1.94.0 because `sqlx` 0.9 requires it - CI already
   builds on stable, so nothing about the release path changes.
+
+### Removed
+
+- **NgRx is gone, and the reason is not the one usually given.** `@ngrx/signals` was a single `signalStore` in `libs/data`, seventy-six lines holding six externally-used members, five more that nothing called, and a peer range pinning `@angular/core` to one major. It has been replaced by a plain `@Injectable` using `signal()` and `update()` - the same behaviour, the same public surface for the two components that consume it, no library. The bundle argument, which is the one usually reached for, does not hold up: tree-shaken it was a small slice of a 2.2 MB bundle and removing it saves almost nothing. The argument that does hold is coupling. NgRx's peer range would have gated _every_ future Angular major on a release of a dependency doing seventy-six lines of work, and it was already gating this one. `libs/data` also stops re-exporting `Job` and `JobOverview`, which had it republishing the domain layer's API through the data layer's entry point.
+- The store's dead members went with it: `selected`, `selectedId`, `count`, `mutating` and `loadJob` were unreferenced across every `.ts` and `.html` in the workspace.
+
+### Fixed
+
+- **The release matrix could not build anything.** All four jobs for `v0.29.1` failed within seconds of `'nx' is not recognized as an internal or external command`. `tauri-action` invokes `tauri build` directly rather than through an npm script, and only npm puts `node_modules/.bin` on `PATH`; locally the command works because `desktop:build:tauri` wraps it, so nothing local could reproduce it. Both `beforeDevCommand` and `beforeBuildCommand` are `npx`-prefixed now.
+- **The CSP guard was absent from the one path that ships bytes to users.** It runs inside the npm script and as a `ci.yml` step, and `tauri-action` goes through neither - so the release build, the only build a user ever downloads, was the only build without the check that exists precisely because a release went out unstyled. It is now an explicit step in `release.yml` ahead of `tauri-action`, and the script resolves its paths from its own location rather than the working directory. Putting the check inside `beforeBuildCommand` was tried first and rejected: it needs a relative path from whatever directory Tauri picks as cwd, and I wrote that off-by-one wrong on the first attempt - the same one that made `frontendDist` wrong for five releases.
 
 ## [0.29.1] - 2026-07-30
 

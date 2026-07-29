@@ -44,7 +44,36 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-29 (latest), the launch sections land in all six READMEs, and the desktop build is found to have been broken the whole time
+### 2026-07-30, four red workflows triaged: three fixed, one is a migration rather than a CI bug
+
+- **Status:** partial
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `fix/release-build-path`, `chore/rust-deps-major-bumps`, `chore/dev-tooling-safe`, `docs/duty-watch-ci-fixes`
+- **Commits:** `0abeb1f`, `e03994f` (merged as `6c05322`); `a66d002`, `b906cbb`; `27d5a95`, `3af6243`
+- **Pull request:** #197 (merged), #198, #199, and this docs branch
+- **Objective:** Review the open pull requests and fix the failing GitHub Actions runs.
+- **Completed:**
+  - **The release matrix.** All four `v0.29.1` jobs died in seconds on `nx: not found` (exit 127) before the frontend was built, so the tag produced no installers on any platform. `tauri-action` calls `tauri build` directly and only npm puts `node_modules/.bin` on `PATH`; nothing local reproduced it because `desktop:build:tauri` wraps the command. `beforeBuildCommand`/`beforeDevCommand` are `npx`-prefixed, `release.yml` gained an explicit frontend-build plus CSP-guard step ahead of `tauri-action`, and `tools/verify-csp-compat.mjs` now resolves its paths from `import.meta.url` rather than the cwd, since Tauri runs it from `src-tauri/` while npm and CI run it from the repository root. Merged as #197; CI green on `main`.
+  - **The rust dependency group (#184 -> #198).** The manifest bump alone cannot compile. `zip` 8 made `FileOptions` generic over its extra-field type, so the docx repacker now builds `SimpleFileOptions`. `sqlx` 0.9 added a `SqlSafeStr` bound that rejects any SQL string that is not `&'static str`, which caught four table-name-interpolating queries; each was audited and wrapped in `AssertSqlSafe` with the reasoning recorded at the call site. `rust-version` moved 1.77.2 -> 1.94.0, which is what `sqlx` 0.9 requires. `calamine` and `base64` needed no code changes.
+  - **The dev-tooling group (#196 -> #199).** Split into the part that can ship: commitlint, swc, jest-environment-node, jest-util, ts-jest, prettier, typescript-eslint, `@typescript-eslint/utils`, plus `@types/node` 20 -> 26, `jsonc-eslint-parser` 2 -> 3 and `lint-staged` 16 -> 17. `typescript`, `eslint`, `@eslint/js`, `angular-eslint`, `@schematics/angular` and `zone.js` are held.
+- **Not completed:**
+  - **#185, the Angular 22 group.** Left untouched. It is a scoped migration, not a CI fix, and it is double-blocked (see Open issues). A `chore/angular-22` branch appears in the local reflog from an earlier session, so work on it may already exist elsewhere.
+  - **Re-releasing `v0.29.1`.** The fix is on `main` but the tag has not been re-run, so there are still no installers for it. Deliberately left as a maintainer decision.
+  - **Closing #184 and #196**, and commenting on them to point at their replacements. Left to the maintainer.
+- **Files or packages changed:** `.github/workflows/release.yml`, `apps/desktop/src-tauri/tauri.conf.json`, `tools/verify-csp-compat.mjs`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/src/commands/{jobs,settings,tailoring}.rs`, `package.json`, `package-lock.json`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, `docs/internal/DUTY_WATCH.md`
+- **Validation:**
+  - #197: `npx nx run desktop:build` then `npm run verify:csp` passed from the repository root and again from `src-tauri/`, which is the cwd the old relative paths broke on. `npm run format:check` and `git diff --check` clean. CI green on the merge commit.
+  - #198: `cargo test` 286 passed, 0 failed, 1 ignored. `cargo clippy` 0 errors. `cargo fmt --check` clean. `git diff --check` clean. CI green on the pull request, CodeQL included. `nx format:check` could not run in that worktree (no `node_modules`); the diff there is Rust plus `CHANGELOG.md`, and the changelog was checked with `prettier --check` directly.
+  - #199: `npx nx run-many -t lint test build --all` passed for all 6 projects, `npx nx format:check` clean (prettier 3.9.6 reformats nothing), `npm run verify:csp` passed on the built bundle, and committing exercised husky + lint-staged 17 + commitlint 21.2.1 end to end. CI was still running when this entry was written.
+  - Local `rustc` was 1.92.0 and could not resolve `sqlx` 0.9 at all, so the toolchain was updated to stable 1.97.1 before any of the Rust work. That is a change to the maintainer's machine, not to the repository.
+- **Privacy/security impact:** The `sqlx` 0.9 `AssertSqlSafe` wrappers are the only security-relevant change. They bypass a new compile-time injection guard, so each was audited rather than waved through: three interpolate a string literal from an array declared in the same function (`db_delete_job` and its test), and the fourth interpolates a table name read from this app's own `sqlite_master` during factory reset. No caller-supplied value reaches any of them, every one still binds its parameters, and the audit is written at each call site so a future edit cannot quietly widen the input.
+- **Decisions and assumptions:** Superseding the two Dependabot PRs with hand-authored branches was chosen over pushing to the bot's branches, which stops Dependabot from maintaining them and loses the audit trail. The dev-tooling group was split rather than held whole, because most of it is independent of the Angular version and holding all of it would keep 12 bumps hostage to a migration. `rust-version` was raised to match `sqlx`'s real requirement rather than left as a claim the code no longer satisfies.
+- **Risks or compatibility impact:** `rust-version` 1.94.0 is recent; anyone building locally on an older toolchain now gets a hard cargo error rather than a confusing compile failure. Both workflows use `dtolnay/rust-toolchain@stable`, so CI and the release path are unaffected. `@types/node` 26 over Node 20 typings is the widest surface in #199 and is covered by the full lint/test/build run.
+- **Open issues or blockers:** Angular 22 (#185) needs two things at once: TypeScript pinned into `>=6.0.0 <6.1.0`, and an `@ngrx/signals` that supports Angular 22 - only `22.0.0-beta.0` exists, and the current stable 21.1.1 pins `@angular/core: ^21.0.0`. `@ngrx/signals` is imported from exactly one file, so dropping it is a real alternative to waiting on the beta. Until that lands, Dependabot will keep reopening #185 and #196; ignore rules for those specific majors would stop the churn.
+- **Next first action:** Merge #198 and #199 once green, close #184 and #196 as superseded, then re-run the release workflow against `v0.29.1` so the tag finally produces installers.
+- **Evidence:** `gh run view 30497973236 --log-failed` for the `nx: not found` failure on all four release jobs; `gh run view 30498225477 --log-failed` for the `zip`/`sqlx` compile errors; `gh run view 30498270577 --log-failed` for `The Angular Compiler requires TypeScript >=6.0.0 and <6.1.0 but 5.9.3 was found instead`; `gh run view 30497885920 --log-failed` for `Failed to process project graph` on the dev-tooling branch; `npm view @ngrx/signals@latest peerDependencies` for the Angular 21 peer pin.
+
+### 2026-07-29, the launch sections land in all six READMEs, and the desktop build is found to have been broken the whole time
 
 - **Status:** partial
 - **Agent/tool:** Claude Code (Opus 5)

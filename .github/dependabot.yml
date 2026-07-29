@@ -10,11 +10,29 @@ updates:
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'
+    # Angular majors are a migration, not a bump, and Dependabot cannot tell the
+    # difference. Its Angular 22 PR raised eighteen packages at once and could
+    # not compile: Angular 22 requires TypeScript 6.0.x, which lives in another
+    # group and stayed at 5.9. Landing an Angular major means `ng update` with
+    # its migrations, in the right order (Nx first - @nx/angular caps the
+    # Angular version it accepts), which is deliberate work rather than a review.
+    #
+    # Patches and minors still come through, so security fixes are not blocked.
+    # To take a major: delete the matching entry here, or run the upgrade by hand
+    # and let the next cycle catch up.
+    ignore:
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@angular-devkit/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@schematics/angular'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'angular-eslint'
+        update-types: ['version-update:semver-major']
     groups:
       angular:
         patterns:
           - '@angular*'
-          - '@ngrx*'
       nx:
         patterns:
           - '@nx*'

@@ -44,6 +44,61 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-07-30 (latest), the repository goes public, and the release pipeline produces installers for the first time
+
+- **Status:** partial - a draft release is built and waiting on a manual smoke test
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `main`, via PRs #192, #194, #195, #197, #200, #204
+- **Objective:** Open the repository, harden it for a public audience, and get installers into users' hands.
+
+#### Where things stand
+
+- **The repository is public.** Secret scanning and push protection on, private vulnerability reporting on, Dependabot alerts and security updates on, CodeQL default setup configured for `javascript-typescript` and `actions` (Rust is not a CodeQL language - `cargo clippy` and Dependabot's cargo alerts cover it). `main` is protected: pull request required, no force pushes, no deletion, linear history, conversation resolution. **Zero required approvals and `enforce_admins` off, deliberately** - a solo maintainer must not be locked out of their own repository. Required status checks are still off, and turning them on is now safe because CI passes; it was left off while CI could not run.
+- **`v0.29.1` is a draft release with 17 assets** covering macOS on both architectures, Windows `.msi` and `.exe`, and Linux `.deb`/`.rpm`/`.AppImage`, each with a `.sig` and a `latest.json`, so auto-update works. **It is not published.** It needs the smoke test in `docs/RELEASE.md`, and macOS/Windows both need the unsigned-binary note that is already written into the draft notes.
+- **applye.dev deploys itself** on every merge to `main`. That was already configured; it only ever looked broken because the job depends on a CI run that could not start.
+
+#### The three bugs that mattered, and the single reason none was caught
+
+Each was invisible for the same reason: **GitHub Actions was blocked while the repository was private**, so CI never once reached a build step.
+
+1. `frontendDist` in `tauri.conf.json` resolved one directory level short. `tauri build` compiled the Rust binary and aborted with "Unable to find your web assets". The desktop bundle had been unbuildable across five tagged releases.
+2. The packaged app rendered with **no layout at all**. Angular's `inlineCritical` defers the stylesheet as `media="print"` behind an inline `onload`, and the app's CSP forbids inline handlers, so it never activated. Only the inlined critical CSS applied - correct fonts, nothing else. Fixed by disabling `inlineCritical` for the desktop build rather than loosening `script-src`.
+3. `beforeBuildCommand` called `nx` without `npx`. `tauri-action` does not go through the npm script that puts `node_modules/.bin` on `PATH`, so all four release jobs died in seconds.
+
+`tools/verify-csp-compat.mjs` exists because of the second one and runs in `ci.yml`, in `release.yml` and inside `desktop:build:tauri`. It was checked in both directions - green on the fixed output, red with a pointed message on the broken one.
+
+#### Two corrections I owe the record
+
+- **I claimed going public did not fix Actions. It did.** I read runs from 21:45 and concluded the account's billing state still blocked public repositories; the repository actually became public at 21:50:50. Every run after that executes fully. The real mechanism: a private repository draws on the 2,000 included minutes, those were exhausted, and a $0 Actions budget with stop-usage refuses anything past the allowance. Public repositories on standard runners are metered as gross usage and discounted in full, which is why the maintainer's other public repository never stopped. That wrong claim had reached six READMEs, the release notes and a PR body; all are corrected.
+- **The bundle-size argument for removing NgRx does not hold.** Tree-shaken it was a small slice of a 2.2 MB bundle. The argument that holds is coupling: its `@angular/core: ^21.0.0` peer would have gated every future Angular major.
+
+#### Decisions, so they are not relitigated
+
+- **Angular 22 is declined.** Nothing in the app needs it, 21.2 is supported, and the upgrade existed because a bot opened a PR. #204 stops Dependabot re-proposing it monthly; patches and minors still flow. If someone takes it later, the order is Nx first (`@nx/angular` 23.0.1 caps Angular below 22, 23.1.0 lifts it), then TypeScript **6.0.x specifically, not 7**, then Angular via `ng update`.
+- **No CLI for Applye.** The desktop app is the product; a CLI would reimplement the domain a second time.
+- **NgRx removed**, replaced by a plain `@Injectable` over signals, with ten specs where the layer had one.
+- **CodeRabbit not installed.** It is noisy, and on a repository whose code is visibly AI-assisted, an AI reviewer sharpens exactly the signal the maintainer is uneasy about. Revisit when external contributions arrive. Installing a third-party GitHub App with write access is the maintainer's click, not an agent's.
+
+#### What is left, roughly in order
+
+1. **Smoke-test and publish the `v0.29.1` draft.** Checklist in `docs/RELEASE.md`; macOS natively, Windows in a UTM ARM VM (x64 emulation works), Linux in an emulated x86_64 VM.
+2. **Five open CodeQL alerts, all `js/polynomial-redos`, all high** - regexes in `libs/core` (`profile/profile-markdown.ts`, `profile/compensation.ts`, `text/signature.ts`). These run over user-pasted job descriptions and CVs, which is exactly "uncontrolled data". Real, fixable, and the most valuable security work available.
+3. **16 Dependabot alerts** (7 high, 9 medium) in transitive npm dependencies.
+4. **PR #202** (dev-tooling) is mergeable; **#203** (Angular) conflicts and should be closed once #204 lands, which will stop it returning.
+5. **Tier 1 architecture, still open:** `jobs.component.ts` is 2794 lines holding roughly ten responsibilities - portal answers, final checks and export are the three most isolated and move to services almost mechanically. `pages/` has not been reorganised into per-feature folders. Eight large stateful desktop screens are still on eager change detection. `discover.rs` (3488), `tailoring.rs` (2699) and `documents.rs` (2070) each mix fetching, parsing, filtering and persistence; `discover.rs` has clean seams at filters / per-source parsers / HTTP / orchestration.
+6. **`score-gauge.spec.ts` asserts behaviour production does not have.** The gauge tweens its band over 700ms of `requestAnimationFrame`; the tests pass only because zone.js patches rAF in the library test environment. The apps are zoneless. Migrating `libs/{data,i18n,ui}/src/test-setup.ts` to `setupZonelessTestEnv` exposes it and would let `zone.js` be dropped entirely.
+7. **`Dependabot Updates` workflow fails** with `The updater encountered one or more errors` - GitHub's own updater, not this repository's CI. Cosmetic, but it keeps a red mark on the Actions tab.
+
+#### Things a fresh agent should know before touching anything
+
+- Read `.claude/skills/applye-angular` and `.claude/skills/applye-rust` first; they hold the conventions, the size budgets and the exact gate commands.
+- The full gate is `nx run-many --target=lint|type-check|test|build`, `npm run verify:csp`, `npm run format:check`, `git diff --check`, and `cargo clippy --all-targets -- -D warnings` from `apps/desktop/src-tauri`.
+- Local updater signing fails: `~/.tauri/applye_updater.key` is password-protected and only the maintainer has the password. `.dmg` builds fine without it; CI signs properly.
+- README media is deliberately **not** in Git LFS. Putting it back would let a traffic spike exhaust the LFS allowance, which breaks every README image and `git clone` at once.
+- The pre-LFS history is still fetchable from GitHub by SHA via PR #169 even though the branch is deleted. It contains an unblurred frame showing a home-directory name. Low severity; only a GitHub Support purge removes it.
+
+- **Next first action:** run the `docs/RELEASE.md` smoke test against the `v0.29.1` draft and publish it. Everything else can wait behind having a working download.
+
 ### 2026-07-30, four red workflows triaged: three fixed, one is a migration rather than a CI bug
 
 - **Status:** partial

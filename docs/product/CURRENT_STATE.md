@@ -1,6 +1,14 @@
 # Current Operational State
 
-- **Current version**: `0.29.1`, tagged but **not yet released**: the first run of the release matrix
+- **Current version**: `0.29.1`, built and waiting as a **draft release with 17 assets** - macOS on
+  both architectures, Windows `.msi` and `.exe`, Linux `.deb`/`.rpm`/`.AppImage`, each signed with a
+  `.sig`, plus `latest.json` so auto-update works. It is the first release CI has ever produced.
+  **Not published**: it needs the smoke test in `docs/RELEASE.md`. Three bugs had to be fixed to get
+  here, all invisible for the same reason - Actions was blocked while the repository was private, so
+  CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
+  unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
+  forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Superseded note, kept for the record**: `0.29.1` was previously the first run of the release matrix
   failed on all four platforms because `beforeBuildCommand` called `nx` without `npx`, and
   `tauri-action` does not go through the npm script that puts it on `PATH`. Fixed on
   `fix/release-build-path`; the tag has to be re-pointed at that commit for the matrix to run again.

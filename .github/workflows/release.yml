@@ -100,6 +100,16 @@ jobs:
             exit 1
           fi
 
+      # tauri-action calls `tauri build` directly, so it never goes through the
+      # npm script that gates the local build - the CSP check has to be its own
+      # step here or a release could ship the unstyled bundle 0.29.0 shipped.
+      # Building the frontend first also warms the Nx cache for the build that
+      # tauri-action's beforeBuildCommand runs a moment later.
+      - name: Build desktop frontend and verify it is CSP-compatible
+        run: |
+          npx nx run desktop:build
+          npm run verify:csp
+
       - name: Build + publish draft release
         uses: tauri-apps/tauri-action@v0
         env:

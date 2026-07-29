@@ -10,6 +10,11 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The release matrix could not build anything.** All four jobs for `v0.29.1` failed within seconds of `'nx' is not recognized as an internal or external command`. `tauri-action` invokes `tauri build` directly rather than through an npm script, and only npm puts `node_modules/.bin` on `PATH`; locally the command works because `desktop:build:tauri` wraps it, so nothing local could reproduce it. Both `beforeDevCommand` and `beforeBuildCommand` are `npx`-prefixed now.
+- **The CSP guard was absent from the one path that ships bytes to users.** It runs inside the npm script and as a `ci.yml` step, and `tauri-action` goes through neither - so the release build, the only build a user ever downloads, was the only build without the check that exists precisely because a release went out unstyled. It is now an explicit step in `release.yml` ahead of `tauri-action`, and the script resolves its paths from its own location rather than the working directory. Putting the check inside `beforeBuildCommand` was tried first and rejected: it needs a relative path from whatever directory Tauri picks as cwd, and I wrote that off-by-one wrong on the first attempt - the same one that made `frontendDist` wrong for five releases.
+
 ## [0.29.1] - 2026-07-30
 
 ### Removed

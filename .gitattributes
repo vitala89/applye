@@ -19,3 +19,7 @@ apps/web/public/guide/*.png filter=lfs diff=lfs merge=lfs -text
 # to happen. GitHub resolves LFS pointers when it renders markdown, so the
 # READMEs keep working.
 docs/assets/**/*.png filter=lfs diff=lfs merge=lfs -text
+# The press kit is a rebuild of assets tracked above, so it changes whenever any
+# of them does and every version Git stored in full would be a second copy of
+# media that is already in LFS once.
+apps/web/public/press/*.zip filter=lfs diff=lfs merge=lfs -text

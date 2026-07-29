@@ -54,6 +54,15 @@
   fixed, deployment is manual: `npm run web:deploy` (needs `CLOUDFLARE_API_TOKEN` and
   `CLOUDFLARE_ACCOUNT_ID` in the environment) runs format, lint and tests first and refuses to
   upload if any fail, because the gate is the point of the job it stands in for.
+  **The second consequence surfaced on 2026-07-29: `release.yml` has never built an installer.** It
+  triggers on `v*` tags and uses tauri-action to build and attach the `.msi`, `.dmg` and
+  `.AppImage`, so with the block in place all five published releases carry notes and no assets, and
+  the READMEs' "builds will be published at public launch" placeholder cannot be closed. The
+  workflow has no `workflow_dispatch`, so once billing is fixed the release build has to be
+  triggered by re-pushing a tag or the artifacts uploaded by hand with `gh release upload`. **The
+  third is cosmetic until it is not:** every push leaves a red run on the branch, and a repository
+  that opens to the public with a failing CI badge and asset-less releases reads as abandoned
+  regardless of what the code says. Fix billing before the repository goes public.
 - **All guide media lives in Git LFS, and a clone without it deploys stubs.** `*.mp4` and
   `apps/web/public/guide/*.png` are tracked through LFS, because both get retaken and git keeps
   every version of a binary in full. Deployment is manual from a working copy, so a machine without

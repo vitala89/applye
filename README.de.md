@@ -17,9 +17,8 @@
   <strong>Entwürfe sind automatisiert. Das Absenden nicht.</strong>
 </p>
 
-<!-- PLACEHOLDER: Hero-Banner. Ein breiter Produkt-Screenshot (Dashboard oder Job-Detailseite), ca. 1600x900, gespeichert als docs/assets/hero-banner.png. -->
 <p align="center">
-  <img src="docs/assets/hero-banner.png" alt="Applye Desktop-App - Dashboard mit Pipeline und Recruiter-Fit-Score" width="800">
+  <img src="docs/assets/hero-banner.png" alt="Applye Desktop-App - Dashboard mit aktiven Bewerbungen, überfälligen Follow-ups und anstehenden Interviews" width="800">
 </p>
 
 <p align="center">

@@ -1,13 +1,16 @@
 # docs/assets - media referenced by the READMEs
 
-Placeholder inventory. Every path below is already referenced from `README*.md`; drop the real
-capture in and it lights up.
+Inventory. Every path below is already referenced from `README*.md`; drop the real capture in and it
+lights up. `hero-banner.png` is done - it is built by [`hero-banner.mjs`](hero-banner.mjs) from a
+screenshot of the running app, and the recipe for the rest lives in
+[`ASSETS_BRIEF.md`](ASSETS_BRIEF.md).
 
 | File                       | What to capture                                                                         | Size       |
 | -------------------------- | --------------------------------------------------------------------------------------- | ---------- |
 | `brand/wordmark-light.svg` | Applye wordmark for light backgrounds                                                   | ~250x56    |
 | `brand/wordmark-dark.svg`  | Applye wordmark for dark backgrounds                                                    | ~250x56    |
-| `hero-banner.png`          | Wide product shot (dashboard or job detail)                                             | ~1600x900  |
+| `hero-banner.png`          | **Shipped.** Dashboard on the brand backdrop, built by `hero-banner.mjs`                | 1600x900   |
+| `hero-banner-plate.png`    | **Shipped.** The same backdrop without the window, for the social preview and thumb     | 1600x900   |
 | `demo.gif`                 | 30-45s capture of the core loop: paste JD -> recruiter check -> tailored CV -> pipeline | 800px wide |
 | `walkthrough-thumb.png`    | Thumbnail linking to the 2-3 min narrated video walkthrough                             | 800px wide |
 | `screens/dashboard.png`    | Dashboard: pipeline health + follow-ups due                                             | 1440x900   |

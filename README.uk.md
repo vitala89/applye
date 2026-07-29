@@ -17,9 +17,8 @@
   <strong>Чернетки автоматизовано. Подання - ні.</strong>
 </p>
 
-<!-- PLACEHOLDER: hero banner. A wide product shot (dashboard or job detail screen), approx. 1600x900, saved as docs/assets/hero-banner.png. -->
 <p align="center">
-  <img src="docs/assets/hero-banner.png" alt="Десктоп-застосунок Applye - дашборд із пайплайном і оцінкою відповідності рекрутеру" width="800">
+  <img src="docs/assets/hero-banner.png" alt="Десктоп-застосунок Applye - дашборд з активними відгуками, простроченими фоллоу-апами і найближчими співбесідами" width="800">
 </p>
 
 <p align="center">

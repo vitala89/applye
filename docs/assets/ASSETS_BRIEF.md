@@ -14,9 +14,17 @@ actually make each one" companion.
 
 **Seed persona (use in all screenshots so they tell one coherent story)**
 
-- Name: `Alex Mercer` · Role target: `Senior Frontend Engineer` · Location: `Berlin, DE (EU remote)`
-- 3-5 sample companies: `Nord Systems`, `Helio Labs`, `Kettle`, `Aurora Health`, `Vela Robotics`
-- Pipeline spread: 2 Applied, 1 Interview, 1 Offer, plus 3 in Discover with match scores 62-91%.
+This is the persona already captured in `hero-banner.png`. The remaining screens have to match it
+line for line, or the six screenshots stop reading as one session.
+
+- Role target: `Senior Frontend Engineer` · Location: `Berlin, DE (EU remote)` · Profile: `Local profile`
+- Companies: `Kestrel Analytics`, `Northlane Systems`, `Umbra Labs`, `Cindertree Studio`,
+  `Vantaform GmbH`, `Pellworm Digital`
+- Dashboard counters: 4 active applications, 1 upcoming interview, 1 overdue follow-up, 1 offer.
+- Needs attention: follow-up with `Kestrel Analytics` 4 days overdue; technical-round interview with
+  `Northlane Systems` in 22h; a stale score on `Northlane Systems`.
+- Recent jobs: `Umbra Labs` saved, `Cindertree Studio` saved, `Vantaform GmbH` saved,
+  `Pellworm Digital` at interview.
 
 ---
 
@@ -41,22 +49,34 @@ display font, export at 250x56 for dark and light. Hand this to Claude Design / 
 
 ## 2. Hero banner - `hero-banner.png` (~1600x900, shown at 800 wide)
 
-A wide, confident product shot - the first thing a visitor sees. Recipe (real screenshot,
-preferred):
+**Shipped.** Built deterministically by [`hero-banner.mjs`](hero-banner.mjs) in this folder, not by
+an image generator: the UI is a real screenshot and must never be redrawn, because generated
+interface text is the fastest way to lose a reader's trust on a repository's first screen.
 
-1. Launch the app in **dark theme** at a 16:9 window.
-2. Open the **Dashboard** (or **Job detail with recruiter check** - pick whichever looks fullest)
-   seeded with the persona above so the pipeline and a fit score are both visible.
-3. Capture at 2x for crispness, then downscale to 1600x900.
-4. Optional polish in the design step: place the screenshot on a subtle indigo gradient backdrop with
-   a soft window shadow, and add the tagline "Drafting is automated. Submitting is not." top-left.
+To retake it:
 
-If you would rather composite/generate the backdrop, prompt:
+1. Launch the desktop app in **dark theme** at a 16:10 window, seeded with the persona above.
+2. Open the **Dashboard** and capture at 2x (2880x1800).
+3. Run `hero-banner.mjs` per the instructions in its header.
 
-> A sleek product hero for a privacy-first desktop job-search app. Center: a floating dark-theme app
-> window (I will paste the real screenshot in). Background: deep charcoal with a faint indigo
-> `#4F5BFF` radial glow, subtle grid texture, generous negative space. Cinematic soft shadow under
-> the window. 1600x900, no text (I add copy separately).
+What the script does, and why each part is there:
+
+- **Crops the bottom 7%** of the shot. The dashboard's lower-left is empty at this data volume, and
+  empty space in a hero reads as an empty product.
+- **Backdrop `#131211`**, deliberately darker than the app canvas `#1c1b19`. Matching the canvas
+  makes the window dissolve into the page; the hairline `#45423a` and the inner top highlight are
+  what actually separate it.
+- **Indigo `#4F5BFF` glow** at 18% behind the upper third, a 5% cyan `#24C8DB` wash lower right, a
+  32px grid at 3% fading outward, a corner vignette and 2% grain against banding.
+- **Window 1344px wide at y=170**, bleeding 49px off the bottom edge. The width is tuned so the
+  canvas edge lands in the gap between two list rows: a half-sliced line of text reads as a broken
+  crop, a clean gap reads as "there is more below".
+- **No text on the image.** The READMEs supply the headline and tagline in markdown across six
+  languages; baked-in copy would have to be produced six times and would not be selectable or
+  translatable.
+
+The script also emits `hero-banner-plate.png`, the same backdrop with the shadow but no window, for
+the GitHub social preview and the video thumbnail.
 
 ---
 

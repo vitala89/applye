@@ -44,7 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-29 (latest), dead branches pruned, three untagged releases recovered, 0.29.0 cut
+### 2026-07-29 (latest), the press kit is built, and CI is found to be failing on billing rather than absent
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `chore/press-kit`
+- **Pull request:** opened at the end of this watch
+- **Objective:** Close the two remaining items that did not depend on the maintainer's credentials: the press kit placeholder, and the branch-deletion manifest living only in a session scratchpad.
+- **Completed:**
+  - `apps/web/public/press/applye-press-kit.zip` (1.1 MB) and `apps/web/tools/build-press-kit.sh` that assembles it: wordmarks, the app icon and symbol in both themes, three README screenshots, the hero banner, and a `README.txt` covering mark usage and what the screenshots contain. The press page links it and describes what is inside instead of telling a journalist to ask the author.
+  - The archive rebuilds byte-identically, verified by building twice and comparing SHA-256. That needed pinned timestamps as well as `zip -X` and a sorted file list, because a zip stores every entry's mtime and staging into a temp directory stamps them with the moment the script ran.
+  - The branch-deletion manifest was copied out of the session scratchpad to `~/applye-branch-restore-2026-07-29.txt`, since the scratchpad dies with the session.
+  - `v0.29.0` tagged on `33ffec2` and released, closing the tag work from the previous watch.
+- **Not completed:** The site deploy, which needs the maintainer's Cloudflare credentials. `applye.dev` still serves the pre-0.29.0 `CHANGELOG.md`, so the live changelog page is a release behind.
+- **Files or packages changed:** `apps/web/public/press/applye-press-kit.zip`, `apps/web/tools/build-press-kit.sh`, `apps/web/src/app/press.html`, `.gitattributes`, `CHANGELOG.md`, this file.
+- **Validation:** `nx run web:test` (6 suites, 76 tests, pass), `nx run web:lint` (pass), `nx run web:build` (pass, with the zip confirmed in `dist/apps/web/browser/press/` and the download link present in the prerendered `press/index.html`), `npm run format:check` (pass), `git diff --check` (clean), an em-dash and en-dash scan of the added lines (0), and the archive built twice to compare hashes.
+- **Privacy/security impact:** None new, and one thing checked deliberately: every file in the kit is already published in the repository or on the site, and the screenshots are the demo persona against invented companies. The `README.txt` says so, so a publication cannot mistake them for a real user's data.
+- **Decisions and assumptions:** Three screenshots and the hero rather than all six, because a press kit is a selection and the three chosen are the ones a reader has already seen in the README. The zip is LFS-tracked: it is a rebuild of assets already in LFS, so storing full copies in Git would duplicate the same media a second time.
+- **Risks or compatibility impact:** The kit is downstream of the brand assets and the screens. Nothing enforces the link - if a wordmark or screenshot is regenerated, the zip is stale until the script is rerun, and its contents are what a publication will print. Worth rerunning as the last step of any brand change.
+- **Open issues or blockers, and this is the one that matters:** **GitHub Actions runs on this repository and fails within seconds on billing - it is not absent, and `apps/web/tools/deploy.sh` said it was.** `CURRENT_STATE.md` had it right; the deploy script's header comment did not, and is corrected here, because "unavailable" and "failing on every push" imply different things about what `main` looks like to a visitor. Every job returns "The job was not started because recent account payments have failed or your spending limit needs to be increased". Three consequences: `release.yml` has never built an installer, so all five releases carry notes and no assets; the `deploy-web` job in `ci.yml` never runs, which is why deploying is manual; and `main` now shows a red run per push, including four this watch produced by pushing tags. A public repository opening with a red CI badge and asset-less releases is a worse first impression than any of the media work in the last several watches was worth, so billing should be fixed before the repository goes public.
+- **Next first action:** Fix the GitHub billing block, then re-run the release build for `v0.29.0` so the release carries installers - `release.yml` triggers only on tag push and has no `workflow_dispatch`, so that means re-pushing the tag or uploading locally built artifacts with `gh release upload`.
+- **Evidence:** Branch diff; the two SHA-256 hashes of the rebuilt archive; `unzip -l` of the kit; `gh run view` output naming the billing failure.
+
+### 2026-07-29, dead branches pruned, three untagged releases recovered, 0.29.0 cut
 
 - **Status:** complete; the 0.29.0 tag and release wait on the PR being merged
 - **Agent/tool:** Claude Code (Opus 5)

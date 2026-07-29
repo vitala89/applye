@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Added
+
+- **The press page offers a press kit instead of asking a journalist to email for one.** `/press/applye-press-kit.zip` carries the wordmark for light and dark backgrounds, the app icon and bare symbol in both themes, three of the README's product screenshots, the hero banner, and a usage note covering the marks and what the screenshots show. It is assembled by `apps/web/tools/build-press-kit.sh` rather than curated by hand, because a zip built once by dragging files into it goes stale the first time a wordmark changes and nobody notices until a publication has already used the old one. The build is reproducible, which took three things rather than one: `-X` to drop the uid and extended attributes, a sorted file list for stable order, and pinned timestamps - a zip records the mtime of every entry, and staging into a temp directory stamps them all with the moment the script ran, so without that an unchanged rebuild produced different bytes and landed as a meaningless diff. The archive is stored in LFS on the same reasoning as the rest of the README media: it is a rebuild of assets already tracked there, so every full copy Git kept would be a second copy of the same media.
+
 ## [0.29.0] - 2026-07-29
 
 ### Added

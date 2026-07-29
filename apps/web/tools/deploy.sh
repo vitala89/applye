@@ -4,8 +4,11 @@
 #
 # The intended path is the `deploy-web` job in .github/workflows/ci.yml, which
 # only runs after the CI gate passes, so a red main cannot reach the live site.
-# This script exists because GitHub Actions is currently unavailable on this
-# repository (private repo, blocked billing), and it deliberately reproduces
+# This script exists because GitHub Actions cannot run on this repository: the
+# jobs are queued and then fail within seconds with "recent account payments
+# have failed or your spending limit needs to be increased". They are not
+# absent, which matters - every push leaves a failed run on the branch. This
+# script deliberately reproduces
 # the same two steps the job performs: build with the measurement ID, then
 # upload the built directory to the `applye` project.
 #

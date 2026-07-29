@@ -86,6 +86,15 @@ the recorder emits. Check a re-encode by eye at 1:1 before shipping it; these we
   which is personal data and has no place in published documentation. The video is cut to end on the
   "You're all set" summary instead. It was also captured with the window inset in a larger frame, so
   it is cropped from 1440x900 to its actual 1264x788 content; the page's `width`/`height` say so.
+  **A third edit, 2026-07-29: the same class of leak was still in the take, at the other end.** From
+  2.600 s to 3.900 s the welcome screen's environment check renders the export folder as an absolute
+  path under the maintainer's home directory. Cutting the end of the video in July did not touch it,
+  and nobody looked at the first four seconds. The line is now blurred - `gblur=sigma=12:steps=3`
+  over a 320x28 rectangle at (305, 714), luma only, enabled for `between(t,2.5,3.92)` - and the file
+  re-encoded at CRF 26, 820 KB to 661 KB, with the resolution, frame rate and 45.900 s duration
+  unchanged. **The lesson generalises past Settings:** any screen that prints a filesystem path is a
+  capture hazard, and the first-run environment check is one of them. Check the whole take, both
+  ends, before shipping.
 - `guide/profile-regenerate.mp4` - **re-recorded 2026-07-28, 5.1 s**, replacing a 2.2-second take
   whose pulse state was gone before a viewer could see it. The card now reads "Compressing profile"
   while it works and lands on the filled result: name and seniority line, strengths, the model's

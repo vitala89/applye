@@ -120,12 +120,18 @@
   before Export & Apply, with its caption already corrected to "to generated documents".
   `documents-library.png` shows two rows rather than three or four and carries no Default badge;
   filling it out is free, no AI call.
-- **A personal path nearly shipped in the tour video, and was cut.** Its last half-second, after the
-  app opened on Settings, showed the CLI detection block listing absolute paths under the
-  maintainer's home directory. That is a real account name in published documentation, so the take
-  ends on the "You're all set" summary instead. Worth remembering for any Settings capture in CLI
-  bridge mode: the detected-binary lines carry the home directory and need cropping, redaction or
-  cutting. Separately, every guide recording is now silent as a file rather than merely muted in the
+- **A personal path shipped in the tour video twice, and both instances are now closed.** The first
+  was caught before release: the take's last half-second, after the app opened on Settings, showed
+  the CLI detection block listing absolute paths under the maintainer's home directory, so the video
+  was cut to end on the "You're all set" summary instead. **The second was found on 2026-07-29 and
+  had been live.** The welcome screen's environment check renders the export folder as an absolute
+  path from 2.600 s to 3.900 s - the opening of the same file, which the July fix never looked at.
+  The line is blurred now (luma-only `gblur` over a 320x28 rectangle, enabled only for that window)
+  and the file re-encoded at CRF 26, 820 KB to 661 KB, at unchanged resolution, frame rate and
+  duration. **The rule is wider than Settings:** any screen that prints a filesystem path is a
+  capture hazard, the first-run environment check included, and a take has to be checked at both
+  ends rather than at the end that failed last time. **This needs a redeploy to reach the live
+  site**; until then `applye.dev/docs/guide/tour/` serves the version with the path in it. Separately, every guide recording is now silent as a file rather than merely muted in the
   markup - the screen recorder had attached an empty AAC track to all seven - and the four heaviest
   were re-encoded at CRF 23, taking the guide's video weight from about 14.7 MB to 4.1 MB.
 - **The guide was reviewed by eye on 2026-07-29 and reads correctly** - by the maintainer, not by

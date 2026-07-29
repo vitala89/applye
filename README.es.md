@@ -43,7 +43,6 @@
 
 ---
 
-<!-- PLACEHOLDER: GIF de demostración. Captura de pantalla de 30-45s del flujo principal (pegar oferta -> chequeo de reclutador -> CV adaptado -> pipeline), aprox. 800px de ancho, guardada como docs/assets/demo.gif. -->
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Demo de Applye - pega una oferta, recibe un chequeo de reclutador, adapta el CV, haz seguimiento" width="800">
 </p>
@@ -155,7 +154,13 @@ La app es totalmente usable sin ellas.
 5. **Sigue** - la vacante avanza por el kanban; aparecen borradores de seguimiento cuando hay silencio.
 6. **Prepárate** - sigue cada etapa de entrevista en una línea de tiempo y guarda tus notas por oferta.
 
-<!-- PLACEHOLDER: vídeo tutorial. Un recorrido narrado de 2-3 minutos del flujo principal, alojado en YouTube; insertar aquí la miniatura docs/assets/walkthrough-thumb.png enlazando al vídeo. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Ver el recorrido de la primera ejecución de Applye" width="800">
+  </a>
+  <br>
+  <em>Un recorrido silencioso por las seis pantallas del primer arranque, en applye.dev.</em>
+</p>
 
 ## Cómo funciona
 
@@ -188,19 +193,17 @@ ellos al no automatizar nunca la recolección ni el envío.
 
 ## Capturas de pantalla
 
-<!-- PLACEHOLDER: set de capturas. Capturar cada pantalla a 1440x900 (claro + oscuro), guardar en docs/assets/screens/ y sustituir las celdas de ejemplo. -->
+| Dashboard                                                                                           | Discover                                                                                                                       |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| ![Dashboard](docs/assets/screens/dashboard.png) <br> _salud del pipeline + seguimientos pendientes_ | ![Discover](docs/assets/screens/discover.png) <br> _el feed agrupado por tus roles objetivo, con lo que coincide en cada fila_ |
 
-| Dashboard                                                                                                                        | Discover                                                                                                         |
-| -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| ![Dashboard](docs/assets/screens/dashboard.png) <br> _PLACEHOLDER: dashboard.png - salud del pipeline + seguimientos pendientes_ | ![Discover](docs/assets/screens/discover.png) <br> _PLACEHOLDER: discover.png - feed con puntuaciones y filtros_ |
+| Detalle de oferta y chequeo                                                                                                  | Adaptación del CV                                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| ![Detalle](docs/assets/screens/job-detail.png) <br> _palabras clave que faltan, la comprobación ATS y las señales de alarma_ | ![Adaptación](docs/assets/screens/tailoring.png) <br> _el paso de revisión del asistente, con el CV adaptado y la carta_ |
 
-| Detalle de oferta y chequeo                                                                                                                | Adaptación del CV                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| ![Detalle](docs/assets/screens/job-detail.png) <br> _PLACEHOLDER: job-detail.png - anillo de puntuación, palabras clave ausentes, alertas_ | ![Adaptación](docs/assets/screens/tailoring.png) <br> _PLACEHOLDER: tailoring.png - revisión tipo diff antes de exportar_ |
-
-| Kanban de pipeline                                                                                                       | Analítica                                                                                                            |
-| ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| ![Pipeline](docs/assets/screens/pipeline.png) <br> _PLACEHOLDER: pipeline.png - columnas aplicado / entrevista / oferta_ | ![Analítica](docs/assets/screens/analytics.png) <br> _PLACEHOLDER: analytics.png - embudo + antigüedad del pipeline_ |
+| Kanban de pipeline                                                                           | Analítica                                                                                                         |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| ![Pipeline](docs/assets/screens/pipeline.png) <br> _columnas aplicado / entrevista / oferta_ | ![Analítica](docs/assets/screens/analytics.png) <br> _contadores, el embudo de candidaturas y el volumen semanal_ |
 
 ## Estructura del proyecto
 

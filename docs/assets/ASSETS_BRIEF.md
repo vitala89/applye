@@ -14,10 +14,12 @@ actually make each one" companion.
 
 **Seed persona (use in all screenshots so they tell one coherent story)**
 
-This is the persona already captured in `hero-banner.png`. The remaining screens have to match it
-line for line, or the six screenshots stop reading as one session.
+This is the persona in `hero-banner.png` and in every frame under `apps/web/public/guide/`, which is
+where the README's screens and demo GIF come from. It is one seeded database, captured once. Anything
+added later has to match it line for line, or the set stops reading as one session; the fixtures that
+produce it live in `tools/capture/`.
 
-- Role target: `Senior Frontend Engineer` · Location: `Berlin, DE (EU remote)` · Profile: `Local profile`
+- Name: `Mira Halvorsen` · Role target: `Senior Frontend Engineer` · Location: `Berlin, DE (EU remote)`
 - Companies: `Kestrel Analytics`, `Northlane Systems`, `Umbra Labs`, `Cindertree Studio`,
   `Vantaform GmbH`, `Pellworm Digital`
 - Dashboard counters: 4 active applications, 1 upcoming interview, 1 overdue follow-up, 1 offer.
@@ -80,28 +82,53 @@ the GitHub social preview and the video thumbnail.
 
 ---
 
-## 3. Demo GIF - `demo.gif` (800px wide, 30-45s, loops)
+## 3. Demo GIF - `demo.gif` (800px wide, 17.8s, loops, 1.9 MB)
 
-The core loop in one silent, captioned take. Shot list (record at 1440x900 dark theme, then crop/
-scale to 800 wide, keep under ~8 MB):
+**Shipped, and not recorded for this.** It is cut from three recordings the documentation site
+already has, which is the whole point: a fresh take would be a second version of footage that exists,
+shot on a different day against a differently seeded database, and the two would disagree about the
+persona within a month.
 
-1. **0-6s** Paste a job description into the paste pipeline; parsed company/title/salary chips appear.
-2. **6-14s** Legitimacy check resolves, then click **Recruiter check** - score ring fills, missing
-   keywords and one red flag render.
-3. **14-26s** Open **CV tailoring**; scroll the diff-style review; hit **Export PDF**.
-4. **26-36s** Drag the role across the **pipeline kanban** (Applied -> Interview).
-5. **36-42s** Land back on the **Dashboard** showing the updated pipeline + a follow-up due.
+```sh
+ffmpeg -i paste-job.mp4 -ss 29 -t 7 -i tailor-wizard.mp4 -i pipeline-drag.mp4 \
+  -filter_complex "[0:v]fps=10,scale=800:-1:flags=lanczos[a];\
+                   [1:v]fps=10,scale=800:-1:flags=lanczos[b];\
+                   [2:v]fps=10,scale=800:-1:flags=lanczos[c];\
+                   [a][b][c]concat=n=3:v=1:a=0[v]" -map "[v]" concat.mp4
+ffmpeg -i concat.mp4 -vf "palettegen=max_colors=128" pal.png
+ffmpeg -i concat.mp4 -i pal.png -lavfi "paletteuse=dither=bayer:bayer_scale=3" demo.gif
+```
 
-Add short lower-third captions per step ("Paste", "Recruiter check", "Tailor", "Track"). Keep the
-cursor visible and movements slow enough to read. Tools: macOS screen record + Gifski, or
-`ffmpeg` + `gifsicle`.
+The cut runs paste a job description, watch it parse and pass the legitimacy check, review the
+tailored CV and cover letter, then drag the role across the board. There is no dedicated
+recruiter-check segment because no recording of one exists; the scoring state is visible in passing
+during the paste clip, and the README's caption promises only what the file shows.
+
+Sizing, since it is the one asset with a real budget: 800px wide, 10fps and a 128-colour palette
+land at 1.9 MB. Raising the frame rate to 12 or the palette to 256 roughly doubles it for a
+difference nobody reading a README will notice.
 
 ---
 
-## 4. Walkthrough video - `walkthrough-thumb.png` (800px wide) + hosted video (2-3 min)
+## 4. Walkthrough poster - `walkthrough-thumb.png` (800x450)
 
-Record a narrated 2-3 minute walkthrough, upload to YouTube (unlisted or public), and drop a
-clickable thumbnail into the README.
+**Shipped, pointing at the tour the site already publishes.** The READMEs now carry a clickable
+poster linking to `https://applye.dev/docs/guide/tour/`, built by
+[`walkthrough-thumb.mjs`](walkthrough-thumb.mjs): a frame of `tour-walkthrough.mp4` on the hero
+backdrop at half scale, with a play button, because an image that is a link has to say so.
+
+This is a deliberate substitution for what the section below asks for. A narrated YouTube walkthrough
+does not exist, and the README pointed at it anyway - so the choice was a placeholder promising a
+video, or a poster linking to the six-screen silent tour that is live today. The latter is true now.
+The narration script survives below for whenever the narrated version gets made; when it does, the
+poster's `href` is the only thing that changes.
+
+**The frame is 44s, and one frame is off limits.** At roughly 3s the welcome screen's environment
+check renders the capturing machine's export path, which contains a real home directory name. That
+frame is in the shipped video on the live site; the poster does not make a second, still, indexable
+copy of it. See the Duty Watch entry for 2026-07-29 - the video itself is unfixed.
+
+### If the narrated video does get recorded
 
 **Narration script (beats):**
 
@@ -117,27 +144,44 @@ clickable thumbnail into the README.
 6. **Close (2:30-3:00)** "No account, no telemetry, bring your own AI. Open source. Link in the
    description." Show the applye.dev URL and the GitHub repo.
 
-**Thumbnail prompt / recipe:** the dashboard screenshot on the indigo hero backdrop, big bold text
-"See Applye in 3 minutes", a play triangle centered, tagline small at the bottom. 800px wide, 16:9.
+**Thumbnail:** rerun `walkthrough-thumb.mjs` against the new recording rather than designing a
+second poster, and repoint the `href` in all six READMEs. Do not bake "See Applye in 3 minutes" or
+any other copy into the image: it would have to be produced in six languages, and the caption under
+the poster already carries it in markdown.
 
 ---
 
-## 5. Screenshots - `screens/*.png` (1440x900, light + dark)
+## 5. Screenshots - `screens/*.png` (1440px wide)
 
-Capture each at 1440x900 with the seed persona. Dark is the default; also capture light where quick.
-For every shot: hide any real API keys, use the persona data, keep the window chrome clean.
+**Shipped, and none of them was captured for the README.** All six are prepared by
+[`screens/build.mjs`](screens/build.mjs) from media the documentation site already ships under
+`apps/web/public/guide/`. Recapturing would have produced a second set, shot on a different day
+against a differently seeded database, and the two would have drifted apart.
 
-| File             | Screen & exact state to stage                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `dashboard.png`  | Dashboard with pipeline health tiles, "follow-ups due" list (1-2 items), recent activity feed populated.            |
-| `discover.png`   | Discover feed: 5-6 role cards, visible **match scores** (62-91%), the keyword + geography filter panel open.        |
-| `job-detail.png` | Job detail after a recruiter check: score ring, missing-keywords chips, at least one red flag, verdict text.        |
-| `tailoring.png`  | CV tailoring mid-review: the diff-style before/after with a few accepted and one pending change, Export PDF button. |
-| `pipeline.png`   | Pipeline kanban with Applied / Interview / Offer columns populated per the persona; one card mid-drag if possible.  |
-| `analytics.png`  | Analytics: funnel conversion chart + pipeline-aging view, all from the seeded data.                                 |
+| File             | Source                      | Size      |
+| ---------------- | --------------------------- | --------- |
+| `dashboard.png`  | `dashboard-full.png`        | 1440x900  |
+| `discover.png`   | `discover-badges.png`       | 1440x736  |
+| `job-detail.png` | `score-result.png`          | 1440x900  |
+| `pipeline.png`   | `pipeline-drag.mp4` at 1.2s | 1440x900  |
+| `tailoring.png`  | `tailor-wizard.mp4` at 35s  | 1440x900  |
+| `analytics.png`  | `analytics.png`             | 1440x1108 |
 
-After capturing, replace the corresponding placeholder cells in `README*.md` (all language variants
-reference the same paths, so one capture serves every translation).
+Two of the six exist in the guide only as recordings, so they come out of the MP4s with `ffmpeg` at a
+timestamp chosen for a clean state: 1.2s is before the card detail opens over the board and dims it,
+and 35s is the tailoring wizard's last step with both documents generated rather than half-rendered.
+
+Heights vary because two sources are not 16:10, and cropping them to match would cut the weekly chart
+off the analytics screen and the save controls off the Discover feed. A markdown table scales every
+cell to the column width regardless.
+
+The README captions were rewritten to match what these frames actually contain, which is not what the
+brief originally specified: `job-detail.png` is scrolled past the score ring, `discover.png` shows
+target-role grouping rather than numeric match scores and filters, `tailoring.png` is the wizard's
+review step rather than a diff, and `analytics.png` shows weekly volume rather than pipeline aging.
+Captions follow the file, never the other way round.
+
+One capture serves every translation: all six `README*.md` reference the same paths.
 
 ---
 

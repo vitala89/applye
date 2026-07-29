@@ -43,7 +43,6 @@
 
 ---
 
-<!-- PLACEHOLDER: Demo-GIF. Eine 30-45s Bildschirmaufnahme des Kernablaufs (JD einfügen -> Recruiter-Check -> angepasster CV -> Pipeline), ca. 800px breit, gespeichert als docs/assets/demo.gif. -->
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Applye-Demo - Stellenanzeige einfügen, Recruiter-Check erhalten, CV anpassen, Bewerbung verfolgen" width="800">
 </p>
@@ -156,7 +155,13 @@ hinterlegst. Die App ist ohne sie voll nutzbar.
 5. **Verfolgen** - die Stelle wandert über das Pipeline-Kanban; Follow-up-Entwürfe erscheinen bei Funkstille.
 6. **Vorbereiten** - jede Interview-Phase auf einer Timeline verfolgen und Notizen pro Stelle festhalten.
 
-<!-- PLACEHOLDER: Video-Walkthrough. Ein 2-3-minütiger kommentierter Durchlauf des Kernablaufs auf YouTube; hier das Thumbnail docs/assets/walkthrough-thumb.png einbetten und aufs Video verlinken. -->
+<p align="center">
+  <a href="https://applye.dev/docs/guide/tour/">
+    <img src="docs/assets/walkthrough-thumb.png" alt="Den Rundgang durch den ersten Start von Applye ansehen" width="800">
+  </a>
+  <br>
+  <em>Ein stummer Rundgang durch die sechs Bildschirme des ersten Starts, auf applye.dev.</em>
+</p>
 
 ## Wie es funktioniert
 
@@ -191,19 +196,17 @@ auf der richtigen Seite bleibst, weil sie Sammlung und Absenden nie automatisier
 
 ## Screenshots
 
-<!-- PLACEHOLDER: Screenshot-Set. Jeden Screen unten in 1440x900 aufnehmen (hell + dunkel), unter docs/assets/screens/ speichern und die Platzhalterzellen ersetzen. -->
+| Dashboard                                                                                   | Discover                                                                                                                    |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| ![Dashboard](docs/assets/screens/dashboard.png) <br> _Pipeline-Status + fällige Follow-ups_ | ![Discover](docs/assets/screens/discover.png) <br> _der Feed, gruppiert nach deinen Zielrollen, mit dem jeweiligen Treffer_ |
 
-| Dashboard                                                                                                                | Discover                                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| ![Dashboard](docs/assets/screens/dashboard.png) <br> _PLACEHOLDER: dashboard.png - Pipeline-Status + fällige Follow-ups_ | ![Discover](docs/assets/screens/discover.png) <br> _PLACEHOLDER: discover.png - Feed mit Match-Scores und Filtern_ |
+| Job-Detail & Recruiter-Check                                                                                  | CV-Anpassung                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| ![Job-Detail](docs/assets/screens/job-detail.png) <br> _fehlende Keywords, der ATS-Check und die Warnsignale_ | ![Anpassung](docs/assets/screens/tailoring.png) <br> _der Review-Schritt des Assistenten, mit angepasstem CV und Anschreiben_ |
 
-| Job-Detail & Recruiter-Check                                                                                                    | CV-Anpassung                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| ![Job-Detail](docs/assets/screens/job-detail.png) <br> _PLACEHOLDER: job-detail.png - Score-Ring, fehlende Keywords, Red Flags_ | ![Anpassung](docs/assets/screens/tailoring.png) <br> _PLACEHOLDER: tailoring.png - Diff-Ansicht vor dem Export_ |
-
-| Pipeline-Kanban                                                                                                         | Analytics                                                                                                   |
-| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| ![Pipeline](docs/assets/screens/pipeline.png) <br> _PLACEHOLDER: pipeline.png - Spalten Beworben / Interview / Angebot_ | ![Analytics](docs/assets/screens/analytics.png) <br> _PLACEHOLDER: analytics.png - Funnel + Pipeline-Alter_ |
+| Pipeline-Kanban                                                                             | Analytics                                                                                                      |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| ![Pipeline](docs/assets/screens/pipeline.png) <br> _Spalten Beworben / Interview / Angebot_ | ![Analytics](docs/assets/screens/analytics.png) <br> _Zähler, der Bewerbungs-Funnel und das Volumen pro Woche_ |
 
 ## Projektstruktur
 

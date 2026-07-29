@@ -28,20 +28,67 @@ applye/
     └── skills/           markdown skill files (AI prompts), versioned
 ```
 
+## Layers and the dependency rule
+
+The libraries are a stack, and dependencies only ever point downward:
+
+```
+        apps/desktop            apps/web
+        (type:app)              (type:app)
+        scope:desktop           scope:web
+             │                       │
+    ┌────────┼────────┬──────────┐   │ (styles only - no TypeScript
+    ▼        ▼        ▼          ▼   ▼  dependency on any library)
+  data      i18n     ui        core
+ type:data type:util type:ui  type:domain
+ scope:desktop  ────── scope:shared ──────
+```
+
+- **`core` (type:domain)** depends on nothing. Framework-agnostic models, types and pure functions.
+  It is the only layer both other libraries and the apps may reach into freely, and the only place a
+  contract shared with Rust is allowed to live.
+- **`ui` (type:ui)** depends on nothing either: presentational Angular components and the design
+  tokens. It never imports `data`, so a shared component can never trigger IPC.
+- **`i18n` (type:util)** and **`data` (type:data)** depend on `core` only.
+- **`data` is `scope:desktop` on purpose.** It wraps Tauri IPC, and the web app has no Tauri
+  runtime; the tag is what stops someone importing it into `apps/web` and shipping a broken page.
+- **Apps depend on libraries. Libraries never depend on apps, and never on each other sideways.**
+
+This is enforced, not merely documented: every project carries `type:` and `scope:` tags in its
+`project.json`, and `@nx/enforce-module-boundaries` in `eslint.config.mjs` fails the lint run on any
+edge that points the wrong way. Adding a new library means giving it tags; `npm run lint` will tell
+you immediately if its dependencies contradict them.
+
+Imports go through the published entry point (`@applye/core`, never
+`@applye/core/lib/models/job.model`). Deep imports bypass the public API and are treated as a defect.
+
 ## Frontend (Angular)
 
-- **Angular 21**, standalone components, zoneless change detection.
-- **NgRx Signals** for state - a `SignalStore` per feature area, no global Redux-style store.
+- **Angular 21**, standalone components, **zoneless** change detection (no `zone.js` polyfill is
+  loaded in either app).
+- **Signals for state.** Component state is signals and `computed`; NgRx Signals `SignalStore` is
+  used where a feature needs state that outlives a single component (`libs/data/.../jobs.store.ts`).
+  There is no global Redux-style store.
+- **`ChangeDetectionStrategy.OnPush` on every component.** It is not Angular's default in 21.2, but
+  the framework is moving there - `ChangeDetectionStrategy.Default` is already deprecated in favour
+  of `Eager` - so new components declare `OnPush` explicitly. A handful of large legacy screens are
+  still on the default strategy and are being migrated as each one is refactored.
+- **Templates and styles live in their own files** (`templateUrl` / `styleUrl`) for anything beyond
+  a trivial component. A component whose `.ts` has to be scrolled past its own template is a
+  component that has stopped being reviewable.
 - **Angular CDK** for primitives (the pipeline Kanban board uses CDK drag-drop).
 - All user-facing text flows through `libs/i18n` - no hardcoded strings.
-- Design is driven by CSS custom-property **tokens** in `libs/ui`, not ad-hoc styles.
+- Design is driven by CSS custom-property **tokens** in `libs/ui`, not ad-hoc styles. Both apps
+  `@use` the same `libs/ui/src/styles/global`, so there is one token source, not one per app.
 
 ## Backend (Rust / Tauri)
 
 - Commands are exposed via Tauri IPC and consumed through typed wrappers in `libs/data`.
 - **SQLite** (via `sqlx`) is the single source of truth: profile, jobs, pipeline status history,
   generated documents, and the AI result cache.
-- Document export is **DOCX-first** (`docx-rs`) with a PDF path (`printpdf`).
+- Document export **ships as PDF**, rendered from the same HTML the preview shows. A DOCX renderer
+  (`docx-rs`) exists in the backend but is not surfaced in the UI; treat it as dormant rather than
+  as a second supported format.
 - Tauri v2 conventions: runtime check via `window.__TAURI_INTERNALS__`; events via `emit` + the
   `Emitter` trait; window actions need a capability entry under `src-tauri/capabilities/`.
 
@@ -77,7 +124,15 @@ the cache on the way back.
 - Shared types and IPC contracts live in `libs/core` - never duplicated across the boundary.
 - Translations live in `libs/i18n` - never inline.
 - AI prompts live in `libs/skills` - versioned, not embedded in code.
+- Components import libraries through their entry point only; the boundary lint enforces it.
+- A feature's screen, its child components and its services live together under that feature's
+  folder. Cross-feature reuse is a signal to move the thing down into `libs/ui` or `libs/core`.
 - Every change is checked against the [decision filter](decision-filter.md).
+
+Working conventions for each stack - naming, state, testing, error handling, lint and formatting -
+are written up as skills rather than prose here, so an agent and a human read the same rules:
+[`.claude/skills/applye-angular/SKILL.md`](../.claude/skills/applye-angular/SKILL.md) and
+[`.claude/skills/applye-rust/SKILL.md`](../.claude/skills/applye-rust/SKILL.md).
 
 > A documentation site (Cloudflare Pages) is a later step. For now these docs are plain markdown in
 > the repo.

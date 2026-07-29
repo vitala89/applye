@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/mcp.json",
+  "mcpServers": {
+    "angular-cli": {
+      "command": "npx",
+      "args": ["ng", "mcp", "--read-only"],
+      "env": {}
+    }
+  }
+}

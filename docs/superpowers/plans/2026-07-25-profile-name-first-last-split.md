@@ -18,7 +18,7 @@
 - **Test first.** Every task writes the failing test, runs it and sees it fail, then implements.
 - **The confirm nudge never gates.** The Continue button in onboarding review must stay enabled in every case.
 - **`parseProfileMd` stays a faithful reader.** It never derives or guesses; the round-trip identity `parseProfileMd(serializeProfileForm(f)) === f` must keep holding.
-- Run commands from the repo root `/Users/eugenekasap/WebstormProjects/applye`.
+- Run commands from the repository root.
 
 ## File Structure
 

@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Changed
+
+- **Dev tooling moves forward as far as Angular lets it.** `@commitlint/cli`, `@swc-node/register`, `@swc/core`, `jest-environment-node`, `jest-util`, `ts-jest`, `prettier`, `typescript-eslint` and `@typescript-eslint/utils` take their bumps, along with three majors that do not care which Angular version this repository is on: `@types/node` 20 -> 26, `jsonc-eslint-parser` 2 -> 3, `lint-staged` 16 -> 17. `typescript`, `eslint`, `@eslint/js`, `angular-eslint`, `@schematics/angular` and `zone.js` are deliberately held. The grouped Dependabot PR raised `typescript` to `~7.0.2`, which nothing here can accept - Angular 21 wants `~5.9` and Angular 22's compiler wants `>=6.0.0 <6.1.0`, so nx failed to build the project graph before running a single task. Those six move with the Angular 22 upgrade, which is itself waiting on `@ngrx/signals`: its latest stable release is 21.1.1, with `@angular/core: ^21.0.0` as a peer.
+
 ### Fixed
 
 - **The release matrix could not build anything.** All four jobs for `v0.29.1` failed within seconds of `'nx' is not recognized as an internal or external command`. `tauri-action` invokes `tauri build` directly rather than through an npm script, and only npm puts `node_modules/.bin` on `PATH`; locally the command works because `desktop:build:tauri` wraps it, so nothing local could reproduce it. Both `beforeDevCommand` and `beforeBuildCommand` are `npx`-prefixed now.

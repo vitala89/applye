@@ -154,7 +154,9 @@ pub async fn db_reset_all_data(db: State<'_, Db>) -> Result<(), String> {
 
     for (name,) in &tables {
         // `name` comes from sqlite_master (trusted); quote it defensively.
-        sqlx::query(&format!("DELETE FROM \"{name}\""))
+        // Audited for sqlx 0.9's `SqlSafeStr`: the only source is the local
+        // schema this app created, so no caller input reaches the SQL.
+        sqlx::query(sqlx::AssertSqlSafe(format!("DELETE FROM \"{name}\"")))
             .execute(&mut *tx)
             .await
             .map_err(|e| format!("db_reset_all_data (clear {name}): {e}"))?;

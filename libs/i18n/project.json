@@ -4,7 +4,7 @@
   "sourceRoot": "libs/i18n/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": ["type:util", "scope:shared"],
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",

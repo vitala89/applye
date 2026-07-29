@@ -1113,8 +1113,8 @@ fn embed_fonts_in_docx(docx: Vec<u8>, faces: &[EmbedFace]) -> Result<Vec<u8>, St
     let mut buf = Vec::new();
     {
         let mut zout = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
-        let opts =
-            zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let opts = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
         for (name, bytes) in &files {
             zout.start_file(name, opts)
                 .map_err(|e| format!("docx zip write {name}: {e}"))?;

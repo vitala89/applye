@@ -6,7 +6,9 @@ authors = ["Vitalii Kasap"]
 license = "MIT"
 repository = "https://github.com/vitala89/applye"
 edition = "2021"
-rust-version = "1.77.2"
+# sqlx 0.9 raised its own MSRV to 1.94, so the old 1.77.2 claim would no longer
+# build. CI uses dtolnay/rust-toolchain@stable, which is well past this.
+rust-version = "1.94.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,12 +30,12 @@ tauri-plugin-process = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-clipboard-manager = "2"
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "migrate"] }
+sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "migrate"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 docx-rs = "0.4"
 # Post-process the docx-rs output zip to embed fonts (docx-rs has no font-embed
 # API). Pinned to 0.6 to reuse the copy docx-rs already compiles.
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "8.6", default-features = false, features = ["deflate"] }
 # `embedded_images` pulls printpdf's bundled `image` crate (0.24) and the
 # `image_crate` re-export used to decode the CV photo for PDF embedding.
 printpdf = { version = "0.7", features = ["embedded_images"] }
@@ -44,14 +46,14 @@ ttf-parser = "0.25"
 # Import tracklist (Phase 6.4): XLSX parsing, read-only. CSV/JSON/text are
 # forwarded as raw text - the import-tracklist skill does structure
 # detection on the text directly, no Rust-side CSV parsing needed.
-calamine = "0.35"
+calamine = "0.36"
 # CV import (Documents 1b, ROADMAP §16.3): PDF text extraction, read-only.
 # docx-rs (already a dependency, used for export) also reads .docx.
 pdf-extract = "0.12"
 # Auto-updater. Registered behind #[cfg(desktop)] in lib.rs; kept in the plain
 # [dependencies] table so tauri-build picks up its capability permissions.
 tauri-plugin-updater = "2"
-base64 = "0.22"
+base64 = "0.23"
 
 # OS keychain - one backend per platform (no unused dbus on macOS/Windows).
 [target.'cfg(target_os = "macos")'.dependencies]

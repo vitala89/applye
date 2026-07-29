@@ -195,11 +195,13 @@ async fn db_delete_job_core(id: i64, pool: &sqlx::SqlitePool) -> Result<(), Stri
         "company_research",
         "status_history",
     ] {
-        sqlx::query(&format!(
+        // Audited for sqlx 0.9's `SqlSafeStr`: `table` is one of the literals in
+        // the array above, never caller input, so nothing external reaches the SQL.
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DELETE FROM {table} WHERE application_id IN (
                SELECT id FROM applications WHERE job_id = ?
              )"
-        ))
+        )))
         .bind(id)
         .execute(&mut *tx)
         .await
@@ -218,11 +220,14 @@ async fn db_delete_job_core(id: i64, pool: &sqlx::SqlitePool) -> Result<(), Stri
         "generated_docs",
         "scoring_cache",
     ] {
-        sqlx::query(&format!("DELETE FROM {table} WHERE job_id = ?"))
-            .bind(id)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| format!("db_delete_job ({table}): {e}"))?;
+        // Audited: `table` is a literal from the array above, not caller input.
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "DELETE FROM {table} WHERE job_id = ?"
+        )))
+        .bind(id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("db_delete_job ({table}): {e}"))?;
     }
 
     sqlx::query("DELETE FROM jobs WHERE id = ?")
@@ -369,12 +374,14 @@ mod delete_tests {
             "tailoring_cache",
             "portal_answers",
         ] {
-            let count: i64 =
-                sqlx::query_scalar(&format!("SELECT COUNT(*) FROM {table} WHERE job_id = ?"))
-                    .bind(job_id)
-                    .fetch_one(&pool)
-                    .await
-                    .unwrap();
+            // Audited: `table` is a literal from the array above.
+            let count: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+                "SELECT COUNT(*) FROM {table} WHERE job_id = ?"
+            )))
+            .bind(job_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
             assert_eq!(count, 0, "{table} still has rows for deleted job");
         }
 

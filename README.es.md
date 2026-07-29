@@ -62,14 +62,18 @@ Construida primero para el mercado alemán/europeo, útil en cualquier lugar.
 - [Inicio rápido](#inicio-rápido)
 - [Uso: el flujo principal](#uso-el-flujo-principal)
 - [Cómo funciona](#cómo-funciona)
+- [Dónde busca Discover](#dónde-busca-discover)
 - [Capturas de pantalla](#capturas-de-pantalla)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Stack tecnológico](#stack-tecnológico)
 - [Hoja de ruta](#hoja-de-ruta)
+- [Preguntas frecuentes](#preguntas-frecuentes)
 - [Contribuir](#contribuir)
 - [Sobre el autor](#sobre-el-autor)
+- [También open source](#también-open-source)
 - [Aviso legal](#aviso-legal)
 - [Licencia](#licencia)
+- [Contacto](#contacto)
 
 ## Por qué Applye
 
@@ -191,6 +195,35 @@ Discover solo consulta APIs públicas y feeds pensados para ser leídos por soft
 términos de servicio de cualquier sitio que uses - la app está construida para mantenerte dentro de
 ellos al no automatizar nunca la recolección ni el envío.
 
+## Dónde busca Discover
+
+Applye incluye un conjunto de fuentes integradas, y **todas vienen desactivadas**. Recolectar es
+una decisión explícita: activas las fuentes que encajan con tu mercado, y hasta entonces no se
+descarga nada. Cada fuente es una API pública o un feed RSS pensado para lectura automática, y
+cada una lleva en la app una nota sobre su base legal.
+
+| Fuente                   | Tipo | Mercado    | Notas                                                    |
+| ------------------------ | ---- | ---------- | -------------------------------------------------------- |
+| Remotive                 | API  | Mundial    | Empleo remoto, API pública                               |
+| We Work Remotely         | RSS  | Mundial    | Feed RSS público                                         |
+| Himalayas                | API  | Mundial    | Empleo remoto, API pública                               |
+| Jobicy                   | RSS  | Mundial    | Feed RSS público                                         |
+| Arbeitnow                | API  | Europa     | API pública, fuerte en ofertas en alemán                 |
+| Bundesagentur für Arbeit | API  | Alemania   | API REST oficial de la agencia federal de empleo alemana |
+| No Fluff Jobs            | API  | Polonia    | API pública, centrada en TI                              |
+| DOU.ua                   | RSS  | Ucrania    | Feed RSS público                                         |
+| Djinni.co                | RSS  | Ucrania    | Feed RSS público                                         |
+| Habr Career              | RSS  | Mercado RU | Feed RSS público                                         |
+| TrudVsem (Rostrud)       | API  | Mercado RU | API pública oficial                                      |
+
+Además puedes añadir **portales de empleo de empresas**: Greenhouse, Lever, Ashby y Personio.
+Apunta Applye al portal de una empresa y sus vacantes aparecen en Discover junto a los agregadores.
+También admite cualquier feed RSS propio.
+
+Lo que Applye deliberadamente **no** hace: no scrapea portales HTML, no inicia sesión en tu nombre
+y no recolecta ofertas a gran escala. Si un sitio no publica un feed legible por máquinas, Applye
+no lo lee.
+
 ## Capturas de pantalla
 
 | Dashboard                                                                                           | Discover                                                                                                                       |
@@ -236,6 +269,14 @@ applye/
 | Monorepo            | [Nx](https://nx.dev)                      | Un repo para escritorio, web y librerías compartidas    |
 | Calidad             | Jest, ESLint, Prettier, Husky, commitlint | Tests y conventional commits obligatorios               |
 
+![Tauri](https://img.shields.io/badge/Tauri_2-24C8DB?style=flat&logo=tauri&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)
+![Angular](https://img.shields.io/badge/Angular_21-DD0031?style=flat&logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Nx](https://img.shields.io/badge/Nx-143055?style=flat&logo=nx&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white)
+
 Consulta [`docs/architecture.md`](docs/architecture.md) para la estructura y el
 [filtro de decisiones](docs/decision-filter.md) con el que se valida cada cambio.
 
@@ -245,13 +286,67 @@ El plan a corto plazo vive en [ROADMAP.md](ROADMAP.md); el trabajo publicado se 
 [CHANGELOG.md](CHANGELOG.md). Próximos hitos: más fuentes en Discover, preparación de entrevistas
 más profunda y builds instalables para las tres plataformas.
 
+## Preguntas frecuentes
+
+**¿Qué es Applye?**
+Applye es una app de escritorio gratuita y de código abierto para una búsqueda de empleo asistida
+por IA, que funciona en local. Puntúa ofertas frente a tu perfil, adapta tu CV a cada vacante,
+redacta cartas de presentación y seguimientos, y lleva todo el pipeline en tu propia máquina.
+Funciona en Windows, macOS y Linux, y nunca se postula por ti.
+
+**¿Applye es gratis? ¿Necesito una cuenta?**
+Sí, gratis y con licencia MIT, y no hay cuenta. Sin registro, sin servidor y sin suscripción:
+descargas la app y funciona. Lo único que puedes pagar es la IA que conectes, y le pagas
+directamente a tu proveedor, nunca a Applye.
+
+**¿Applye se postula a ofertas por mí?**
+No, y nunca lo hará. Applye puntúa, redacta y sugiere; tú revisas, editas y envías. No hay
+auto-postulación, ni envío automático, ni un agente en segundo plano hablando con reclutadores en
+tu nombre. El humano en el bucle es el primer principio de diseño, no una opción configurable.
+
+**¿Dónde se guardan mis datos?**
+En una base de datos SQLite local en tu máquina, junto a los documentos que Applye genera. Sin
+nube, sin sincronización y sin telemetría. Nada sale del dispositivo hasta que tú lanzas una
+llamada de IA, y entonces solo se envía el mínimo necesario para esa única petición.
+
+**¿Con qué proveedores de IA funciona Applye?**
+Trae el tuyo: una clave de Anthropic Claude o DeepSeek, o un puente a una CLI de IA local como
+Claude Code o Codex, que es también la vía para los modelos de OpenAI. Las claves y la facturación
+siguen siendo tuyas. Toda función de IA es opt-in, y la app es plenamente usable con la IA apagada.
+
+**¿Puedo usar Applye sin IA o sin internet?**
+Sí. El panel, el kanban del pipeline, el seguimiento, la línea temporal de entrevistas, la
+analítica y la verificación determinista de legitimidad funcionan sin conexión y sin tokens. La IA
+se gasta solo donde hace falta criterio de verdad, y solo cuando tú haces clic.
+
+**¿Applye scrapea portales de empleo?**
+No. Discover lee APIs públicas y feeds RSS publicados para lectura automática, además de portales
+de empresas (Greenhouse, Lever, Ashby, Personio) que añades tú. No scrapea HTML, no evita logins y
+no recolecta ofertas a gran escala. Todas las fuentes integradas vienen desactivadas.
+
+**¿Applye es solo para Alemania?**
+No. Está pensada primero para el mercado alemán y europeo - hay un informe de Eigenbemühungen para
+la Agentur für Arbeit, documentos en alemán y soporte para la Blue Card -, pero las fuentes cubren
+mercados mundiales, polaco, ucraniano y RU, y la interfaz habla inglés, alemán, ruso, español,
+francés y ucraniano.
+
+**¿Qué plataformas están soportadas?**
+Windows, macOS (Apple Silicon e Intel) y Linux. Los instaladores se publican en la
+[página de releases](https://github.com/vitala89/applye/releases); compilar desde el código fuente
+está documentado en [Inicio rápido](#inicio-rápido).
+
 ## Contribuir
 
 Las contribuciones son bienvenidas - issues, documentación, traducciones y código.
 
 - Lee [CONTRIBUTING.md](CONTRIBUTING.md) para el setup, el flujo de ramas y las convenciones de commits.
+- ¿No sabes dónde va tu pregunta? [SUPPORT.md](SUPPORT.md) la encamina.
 - Sé amable: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 - ¿Encontraste una vulnerabilidad? Mira [SECURITY.md](SECURITY.md) - por favor, no abras un issue público.
+
+**¿Applye te ayudó a conseguir algo?**
+[Cuenta la historia](https://github.com/vitala89/applye/issues/new?template=applye-helped.yml) - es
+la única métrica que tiene el proyecto, porque dentro de la app no se mide nada.
 
 ## Sobre el autor
 
@@ -259,10 +354,13 @@ Applye está construida por **[Vitalii Kasap](https://vitaliikasap.com)**, ingen
 residente en Alemania, durante la misma búsqueda de empleo para la que está diseñada la app. Cada
 función se publica porque hizo falta en una búsqueda real, no porque quede bien en una demo.
 
-**También open source:** la filosofía de pipeline de Applye está abiertamente inspirada en
-[career-ops](https://github.com/santifer/career-ops) de Santiago Fernández de Valderrama Aparicio -
-una brillante aproximación CLI-first al mismo problema. career-ops da a los desarrolladores una CLI;
-Applye da a todos un escritorio. Si vives en una terminal, dale una estrella.
+## También open source
+
+- **[career-ops](https://github.com/santifer/career-ops)** de Santiago Fernández de Valderrama
+  Aparicio - el proyecto que me dio ganas de construir esto. Una brillante aproximación CLI-first
+  al mismo problema: convierte cualquier CLI de IA en un centro de mando para la búsqueda de
+  empleo. career-ops da a los desarrolladores una CLI; Applye da a todos un escritorio. Si vives en
+  una terminal, ve allí y dale una estrella.
 
 ## Aviso legal
 
@@ -276,3 +374,11 @@ portal de empleo, proveedor de ATS ni proveedor de IA mencionado en este documen
 ## Licencia
 
 [MIT](LICENSE) © 2026 Vitalii Kasap
+
+## Contacto
+
+[![Website](https://img.shields.io/badge/vitaliikasap.com-4F5BFF?style=for-the-badge&logo=safari&logoColor=white)](https://vitaliikasap.com)
+[![LinkedIn](https://img.shields.io/badge/Vitalii_Kasap-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/vitaliikasap/)
+[![X](https://img.shields.io/badge/@vitala89-000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/vitala89)
+[![GitHub](https://img.shields.io/badge/vitala89-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vitala89)
+[![Discussions](https://img.shields.io/badge/Preguntar-Discussions-2ea44f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vitala89/applye/discussions)

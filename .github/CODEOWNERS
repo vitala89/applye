@@ -1,0 +1,4 @@
+# Every path is reviewed by the maintainer. Kept as a single rule on purpose:
+# a solo project does not need a routing table, it needs a guarantee that no
+# pull request merges without a review.
+* @vitala89

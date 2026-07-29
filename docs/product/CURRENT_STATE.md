@@ -1,7 +1,11 @@
 # Current Operational State
 
-- **Current version**: `0.29.1`, the first release whose installers are built by CI rather than by
-  hand. `0.29.0` shipped a macOS bundle that rendered completely unstyled - Angular's
+- **Current version**: `0.29.1`, tagged but **not yet released**: the first run of the release matrix
+  failed on all four platforms because `beforeBuildCommand` called `nx` without `npx`, and
+  `tauri-action` does not go through the npm script that puts it on `PATH`. Fixed on
+  `fix/release-build-path`; the tag has to be re-pointed at that commit for the matrix to run again.
+  No draft was created, so nothing was published. The macOS artifact attached to `v0.29.0` was built
+  by hand. `0.29.0` shipped a macOS bundle that rendered completely unstyled - Angular's
   `inlineCritical` optimisation defers the stylesheet behind an inline `onload` handler that the
   app's CSP forbids - and `tools/verify-csp-compat.mjs` now fails the build on that class of bug.
   GitHub Actions started working the moment the repository went public: it was never a failed

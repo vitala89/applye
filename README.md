@@ -43,7 +43,6 @@
 
 ---
 
-<!-- PLACEHOLDER: demo GIF. A 30-45s screen capture of the core loop (paste JD -> recruiter check -> tailored CV -> pipeline), approx. 800px wide, saved as docs/assets/demo.gif. -->
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Applye demo - paste a job description, get a recruiter check, tailor the CV, track the application" width="800">
 </p>
@@ -190,19 +189,17 @@ collection or submission.
 
 ## Screenshots
 
-<!-- PLACEHOLDER: screenshot set. Capture each screen below at 1440x900 (light + dark), save under docs/assets/screens/, then replace the placeholder cells. -->
+| Dashboard                                                                               | Discover                                                                                                               |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| ![Dashboard](docs/assets/screens/dashboard.png) <br> _pipeline health + follow-ups due_ | ![Discover](docs/assets/screens/discover.png) <br> _the feed grouped by your target roles, with what each row matched_ |
 
-| Dashboard                                                                                                            | Discover                                                                                                            |
-| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| ![Dashboard](docs/assets/screens/dashboard.png) <br> _PLACEHOLDER: dashboard.png - pipeline health + follow-ups due_ | ![Discover](docs/assets/screens/discover.png) <br> _PLACEHOLDER: discover.png - feed with match scores and filters_ |
+| Job detail & recruiter check                                                                               | CV tailoring                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| ![Job detail](docs/assets/screens/job-detail.png) <br> _missing keywords, the ATS check and the red flags_ | ![Tailoring](docs/assets/screens/tailoring.png) <br> _the wizard review step, with the tailored CV and cover letter_ |
 
-| Job detail & recruiter check                                                                                                   | CV tailoring                                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| ![Job detail](docs/assets/screens/job-detail.png) <br> _PLACEHOLDER: job-detail.png - score ring, missing keywords, red flags_ | ![Tailoring](docs/assets/screens/tailoring.png) <br> _PLACEHOLDER: tailoring.png - diff-style CV review before export_ |
-
-| Pipeline kanban                                                                                                      | Analytics                                                                                                   |
-| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| ![Pipeline](docs/assets/screens/pipeline.png) <br> _PLACEHOLDER: pipeline.png - applied / interview / offer columns_ | ![Analytics](docs/assets/screens/analytics.png) <br> _PLACEHOLDER: analytics.png - funnel + pipeline aging_ |
+| Pipeline kanban                                                                          | Analytics                                                                                                 |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| ![Pipeline](docs/assets/screens/pipeline.png) <br> _applied / interview / offer columns_ | ![Analytics](docs/assets/screens/analytics.png) <br> _counters, the application funnel and weekly volume_ |
 
 ## Project structure
 

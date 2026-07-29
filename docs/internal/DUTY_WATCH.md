@@ -44,7 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-29 (latest), the README wordmark is generated from the site header
+### 2026-07-29 (latest), the README's screens and demo GIF are cut from the guide's media
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/readme-wordmark` (second commit; the branch now carries both the wordmark and this)
+- **Commits:** two documentation commits on the branch
+- **Pull request:** #178, retitled to cover both
+- **Objective:** Fill the README's remaining asset placeholders without shooting anything new, reusing what `apps/web/public/guide/` already holds.
+- **Completed:** Six screens under `docs/assets/screens/` and `docs/assets/demo.gif` (17.8s, 800px, 1.9 MB), plus `screens/build.mjs`, which prepares the stills from the guide's PNGs and pulls two frames out of its MP4s with `ffmpeg`. The screenshot-table and demo-GIF placeholders removed from all six READMEs, and four captions rewritten to match what the frames contain. Sections 3 and 5 of `ASSETS_BRIEF.md` replaced with the shipped recipes, and `docs/assets/README.md` updated.
+- **Not completed:** `walkthrough-thumb.png`. It is blocked rather than pending: the READMEs link it to a narrated YouTube video that does not exist. The release-links placeholder is likewise waiting on builds. Neither renders as a broken image - both are comments or blockquotes.
+- **Files or packages changed:** `docs/assets/screens/*.png` (6), `docs/assets/screens/build.mjs`, `docs/assets/demo.gif`, `docs/assets/ASSETS_BRIEF.md`, `docs/assets/README.md`, all six `README*.md`, `CHANGELOG.md`, this file. No application code changed, and nothing under `apps/web/public/guide/` was touched or moved.
+- **Validation:** Run and observed: `npm run format:check` (pass), `git diff --check` (clean), an em-dash and en-dash scan across every changed file (0 hits), `git lfs status` (all six PNGs and the GIF staged as pointers). Every candidate frame was inspected as a contact sheet before selection, and the concatenated GIF was sampled at six timestamps to confirm the joins land on complete states. **Not run:** the test, lint, type-check, build and Rust gates - nothing outside `docs/` was touched.
+- **Privacy/security impact:** None beyond what already shipped. These frames are the documentation site's, which were vetted when they were captured: invented companies, the demo persona, no real employer, key or contact. Reusing them adds no new exposure, and the Discover frame is the fixture feed rather than a real scan.
+- **Decisions and assumptions:** Reuse over recapture, because two capture sessions produce two personas that diverge. Captions follow the file rather than the brief: four of them described a screen that was never captured, and the honest fix is to describe the frame. Heights are not normalised to 16:10 - cropping would cut the weekly chart off analytics and the save controls off the Discover feed, and a markdown table scales cells to the column width anyway. The GIF is 10fps/128 colours on purpose; the quality difference against 12fps and a full palette is invisible at 800px and costs double the bytes. The wordmark work was left on the same branch rather than split, since both changes fill placeholders in the same six files and would have conflicted.
+- **Risks or compatibility impact:** The screens are now downstream of `apps/web/public/guide/`. If a guide asset is recaptured, these go stale silently - nothing links them but `build.mjs`, which names its sources. The GIF pushes the repository's LFS footprint up by roughly 3 MB.
+- **Open issues or blockers:** `walkthrough-thumb.png` needs a hosted video first. The press-kit placeholder in `apps/web/src/app/press.html` asks for a zip of the wordmarks and the app icon, which is now buildable.
+- **Next first action:** Merge #178, then decide whether the walkthrough section points at YouTube or simply links to the tour already published at `applye.dev/docs/guide/tour`.
+- **Evidence:** Branch diff; `build.mjs` output naming each source and output size; the contact sheets and GIF frame samples reviewed in session.
+
+### 2026-07-29, the README wordmark is generated from the site header
 
 - **Status:** complete
 - **Agent/tool:** Claude Code (Opus 5)

@@ -43,7 +43,6 @@
 
 ---
 
-<!-- PLACEHOLDER: GIF demonstracyjny. Nagranie ekranu 30-45s głównej pętli (wklej ogłoszenie -> sprawdzenie rekrutera -> dopasowane CV -> pipeline), szerokość ok. 800px, zapisane jako docs/assets/demo.gif. -->
 <p align="center">
   <img src="docs/assets/demo.gif" alt="Demo Applye - wklej opis stanowiska, otrzymaj ocenę rekrutera, dopasuj CV, śledź aplikację" width="800">
 </p>
@@ -186,19 +185,17 @@ właściwej stronie: nigdy nie automatyzuje zbierania ani wysyłania.
 
 ## Zrzuty ekranu
 
-<!-- PLACEHOLDER: zestaw zrzutów. Zrób każdy ekran w 1440x900 (jasny + ciemny motyw), zapisz w docs/assets/screens/ i podmień komórki-zaślepki. -->
+| Dashboard                                                                                        | Discover                                                                                                                     |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| ![Dashboard](docs/assets/screens/dashboard.png) <br> _stan pipeline'u + follow-upy do zrobienia_ | ![Discover](docs/assets/screens/discover.png) <br> _feed pogrupowany według ról docelowych, z dopasowaniem w każdym wierszu_ |
 
-| Dashboard                                                                                                                     | Discover                                                                                                   |
-| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| ![Dashboard](docs/assets/screens/dashboard.png) <br> _PLACEHOLDER: dashboard.png - stan pipeline'u + follow-upy do zrobienia_ | ![Discover](docs/assets/screens/discover.png) <br> _PLACEHOLDER: discover.png - feed z ocenami i filtrami_ |
+| Szczegóły oferty i ocena                                                                                           | Dopasowanie CV                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| ![Szczegóły](docs/assets/screens/job-detail.png) <br> _brakujące słowa kluczowe, sprawdzenie ATS i czerwone flagi_ | ![Dopasowanie](docs/assets/screens/tailoring.png) <br> _krok przeglądu w kreatorze: dopasowane CV i list motywacyjny_ |
 
-| Szczegóły oferty i ocena                                                                                                                        | Dopasowanie CV                                                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| ![Szczegóły](docs/assets/screens/job-detail.png) <br> _PLACEHOLDER: job-detail.png - pierścień oceny, brakujące słowa kluczowe, czerwone flagi_ | ![Dopasowanie](docs/assets/screens/tailoring.png) <br> _PLACEHOLDER: tailoring.png - podgląd diff przed eksportem_ |
-
-| Kanban pipeline'u                                                                                                     | Analityka                                                                                                   |
-| --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| ![Pipeline](docs/assets/screens/pipeline.png) <br> _PLACEHOLDER: pipeline.png - kolumny aplikacja / rozmowa / oferta_ | ![Analityka](docs/assets/screens/analytics.png) <br> _PLACEHOLDER: analytics.png - lejek + wiek pipeline'u_ |
+| Kanban pipeline'u                                                                         | Analityka                                                                                             |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| ![Pipeline](docs/assets/screens/pipeline.png) <br> _kolumny aplikacja / rozmowa / oferta_ | ![Analityka](docs/assets/screens/analytics.png) <br> _liczniki, lejek aplikacji i wolumen tygodniowy_ |
 
 ## Struktura projektu
 

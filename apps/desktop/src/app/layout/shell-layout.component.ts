@@ -1,4 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -42,6 +49,7 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
   imports: [RouterModule, LucideAngularModule, PasteJobModalComponent, ButtonDirective],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellLayoutComponent implements OnInit {
   protected readonly db = inject(DbService);

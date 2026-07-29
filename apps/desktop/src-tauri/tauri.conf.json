@@ -4,7 +4,7 @@
   "version": "0.29.0",
   "identifier": "dev.applye.app",
   "build": {
-    "frontendDist": "../../dist/apps/desktop/browser",
+    "frontendDist": "../../../dist/apps/desktop/browser",
     "devUrl": "http://localhost:4200",
     "beforeDevCommand": "nx run desktop:serve",
     "beforeBuildCommand": "nx run desktop:build"

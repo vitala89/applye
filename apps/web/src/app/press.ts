@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { AUTHOR, CONTACT_EMAIL } from './site';
 import { SourceLink } from './ui/source-link';
 
@@ -7,6 +7,7 @@ import { SourceLink } from './ui/source-link';
   standalone: true,
   imports: [SourceLink],
   templateUrl: './press.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Press {
   readonly author = AUTHOR;

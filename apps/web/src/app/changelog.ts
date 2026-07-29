@@ -1,5 +1,12 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { afterNextRender, Component, inject, PLATFORM_ID, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { SOURCE_PUBLIC } from './site';
 import { SourceLink } from './ui/source-link';
 
@@ -19,6 +26,7 @@ interface Release {
   standalone: true,
   imports: [SourceLink],
   templateUrl: './changelog.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Changelog {
   private readonly doc = inject(DOCUMENT);

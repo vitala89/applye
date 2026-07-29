@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
  * Skeleton - a shimmering placeholder that reserves layout while content
@@ -18,6 +18,7 @@ import { Component, computed, input } from '@angular/core';
     [style.height.px]="height()"
     [style.borderRadius]="resolvedRadius()"
   ></span>`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Skeleton {
   /** Width for non-circle skeletons (any CSS length, e.g. '100%', '55%'). */

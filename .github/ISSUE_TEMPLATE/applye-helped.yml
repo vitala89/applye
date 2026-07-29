@@ -1,0 +1,69 @@
+name: Applye helped
+description: Applye helped you get an interview or an offer - share the story
+title: '[helped]: '
+labels: ['applye-helped']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Applye measures nothing. There is no telemetry, no analytics, no server counting
+        anything about your search - so this issue template is literally the only way the
+        project learns whether it works. Share as much or as little as you want.
+
+        Do not post anything you would not want public: no recruiter names, no company
+        contacts, no salary figures you agreed to keep confidential.
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: What happened
+      options:
+        - Got interviews
+        - Got an offer
+        - Signed a contract
+        - Something else worth telling
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: Role and seniority
+      placeholder: 'Senior Frontend Engineer'
+    validations:
+      required: false
+  - type: input
+    id: market
+    attributes:
+      label: Country or market
+      placeholder: 'Germany'
+    validations:
+      required: false
+  - type: dropdown
+    id: features
+    attributes:
+      label: Which parts carried the most weight
+      multiple: true
+      options:
+        - Discover
+        - Recruiter check
+        - CV tailoring
+        - Cover letters
+        - Pipeline and follow-ups
+        - Interview prep
+        - Analytics
+        - German market tools
+    validations:
+      required: false
+  - type: textarea
+    id: story
+    attributes:
+      label: The story
+      description: What the search looked like, and where Applye actually changed something.
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What was missing
+      description: The thing you wished Applye did. This is the most useful field in the form.
+    validations:
+      required: false

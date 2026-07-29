@@ -1,0 +1,55 @@
+# Dependency updates. Grouped and monthly on purpose: a solo-maintained repo drowns
+# in a weekly per-package firehose, and a grouped PR is reviewable in one sitting.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    groups:
+      angular:
+        patterns:
+          - '@angular*'
+          - '@ngrx*'
+      nx:
+        patterns:
+          - '@nx*'
+          - 'nx'
+      tauri:
+        patterns:
+          - '@tauri-apps*'
+      dev-tooling:
+        dependency-type: development
+        patterns:
+          - '*'
+      production:
+        dependency-type: production
+        patterns:
+          - '*'
+
+  - package-ecosystem: cargo
+    directory: '/apps/desktop/src-tauri'
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      rust:
+        patterns:
+          - '*'
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      actions:
+        patterns:
+          - '*'

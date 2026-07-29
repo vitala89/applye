@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Track } from './analytics/track.directive';
 import { I18nService } from './i18n/i18n.service';
@@ -30,6 +30,7 @@ const CLI_ENGINES = ['Claude Code', 'Codex CLI'];
   standalone: true,
   imports: [RouterLink, SourceLink, Icon, Track],
   templateUrl: './landing.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Landing {
   private readonly i18n = inject(I18nService);

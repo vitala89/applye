@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { parseScoringJson } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 
@@ -118,6 +118,7 @@ import { TranslateService } from '@applye/i18n';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScoringSummaryComponent {
   private readonly i18n = inject(TranslateService);

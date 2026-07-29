@@ -9,7 +9,7 @@ Everything it needs is here; no need to re-investigate.
 
 > Work on the Applye desktop app (Nx monorepo, Tauri 2 + Angular). Continue on the
 > existing branch **`feat/onboarding-welcome`** (do NOT branch from main - the user
-> chose to keep this work on that branch). Repo: `/Users/eugenekasap/WebstormProjects/applye`.
+> chose to keep this work on that branch). Repo: the `applye` working copy on the maintainer's machine.
 >
 > **Task:** split the profile "name" into **first name + last name**, with a
 > **confirm-when-unsure** step: when the resume parse cannot confidently split the

@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Skeleton } from './skeleton';
 
 /**
@@ -70,6 +70,7 @@ import { Skeleton } from './skeleton';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SkeletonCard {
   /** Number of body text lines. Last line is shortened for realism. */

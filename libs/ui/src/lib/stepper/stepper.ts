@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 @Component({
   selector: 'lib-stepper',
@@ -6,6 +6,7 @@ import { Component, computed, input } from '@angular/core';
   imports: [],
   templateUrl: './stepper.html',
   styleUrl: './stepper.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Stepper {
   readonly steps = input.required<string[]>();

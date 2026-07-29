@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ConsentService } from './analytics/consent.service';
 
@@ -164,6 +164,7 @@ import { ConsentService } from './analytics/consent.service';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Cookies {
   readonly consent = inject(ConsentService);

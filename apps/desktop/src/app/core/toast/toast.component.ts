@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LucideAngularModule, CircleX, CircleCheck, TriangleAlert, Info, X } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { Toast, ToastKind } from './toast.model';
@@ -138,6 +138,7 @@ const KIND_ICON = {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToastComponent {
   protected readonly svc = inject(ToastService);

@@ -1,4 +1,12 @@
-import { Component, OnInit, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -104,6 +112,7 @@ import { TranslateService } from '@applye/i18n';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HealthCheckPanelComponent implements OnInit {
   private readonly db = inject(DbService);

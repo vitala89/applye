@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Output, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  EventEmitter,
+  inject,
+  input,
+  Output,
+} from '@angular/core';
 import { ProfileFieldKey } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { LucideAngularModule, Plus, BadgeCheck } from 'lucide-angular';
@@ -157,6 +165,7 @@ const CIRC = 2 * Math.PI * RADIUS;
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompletenessHeroComponent {
   private readonly i18n = inject(TranslateService);

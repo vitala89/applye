@@ -1,4 +1,11 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ShellLayoutComponent } from './layout/shell-layout.component';
 import { UpdaterService } from './core/updater.service';
@@ -29,6 +36,7 @@ import { ToastContainerComponent } from './core/toast/toast-container.component'
     <app-toast-container />
   `,
   styles: [':host { display: block; height: 100%; }'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App implements OnInit {
   private readonly updater = inject(UpdaterService);

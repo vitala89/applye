@@ -4,7 +4,7 @@
   "sourceRoot": "libs/data/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": ["type:data", "scope:desktop"],
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",

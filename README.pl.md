@@ -1,5 +1,4 @@
 <p align="center">
-  <!-- PLACEHOLDER: pliki SVG ze znakiem słownym. Wyeksportuj jasną/ciemną wersję do docs/assets/brand/wordmark-light.svg i wordmark-dark.svg (ok. 250x56). -->
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/wordmark-dark.svg">
     <img src="docs/assets/brand/wordmark-light.svg" alt="Applye" width="250" height="56">

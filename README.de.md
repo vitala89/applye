@@ -1,5 +1,4 @@
 <p align="center">
-  <!-- PLACEHOLDER: Wordmark-SVGs. Helle/dunkle Wordmarks nach docs/assets/brand/wordmark-light.svg und wordmark-dark.svg exportieren (ca. 250x56). -->
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/wordmark-dark.svg">
     <img src="docs/assets/brand/wordmark-light.svg" alt="Applye" width="250" height="56">

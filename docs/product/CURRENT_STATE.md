@@ -1,6 +1,12 @@
 # Current Operational State
 
-- **Current version**: `0.29.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
+- **Current version**: `0.29.1`, the first release whose installers are built by CI rather than by
+  hand. `0.29.0` shipped a macOS bundle that rendered completely unstyled - Angular's
+  `inlineCritical` optimisation defers the stylesheet behind an inline `onload` handler that the
+  app's CSP forbids - and `tools/verify-csp-compat.mjs` now fails the build on that class of bug.
+  GitHub Actions started working the moment the repository went public: it was never a failed
+  payment, it was a private repository drawing on exhausted included minutes against a $0 budget.
+- **Previous version**: `0.29.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
   in all three on 2026-07-29), and the tag history is complete again. `v0.26.0`, `v0.27.0` and
   `v0.28.0` had shipped as versions in the manifests and as sections in the changelog but were never
   tagged and never released: the tag list stopped at `v0.25.0` while the app said `0.28.0`. All three

@@ -10,6 +10,12 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+## [0.29.1] - 2026-07-30
+
+### Removed
+
+- **Two dependencies nothing imports.** `@ngx-translate/core` and `@ngx-translate/http-loader` were declared as runtime dependencies with zero references anywhere in `apps/` or `libs/` - translation has always gone through this repository's own `libs/i18n`. `zone.js` was unreferenced too and no zone polyfill is loaded by either application, so it is not a runtime dependency either; it moved to `devDependencies`, where it is genuinely needed because the library test setups still call `setupZoneTestEnv`. Migrating those setups to zoneless, so the dependency could go entirely, was attempted and reverted: it exposes two `score-gauge` tests that assert an instant colour-band change while the component tweens it over 700ms of `requestAnimationFrame`. Those tests pass today only because zone.js patches rAF and the zone test environment drains it, which means they currently agree with a runtime the apps do not have. Reworking that spec is its own task rather than a rider on a dependency clean-up.
+
 ### Added
 
 - **The press page offers a press kit instead of asking a journalist to email for one.** `/press/applye-press-kit.zip` carries the wordmark for light and dark backgrounds, the app icon and bare symbol in both themes, three of the README's product screenshots, the hero banner, and a usage note covering the marks and what the screenshots show. It is assembled by `apps/web/tools/build-press-kit.sh` rather than curated by hand, because a zip built once by dragging files into it goes stale the first time a wordmark changes and nobody notices until a publication has already used the old one. The build is reproducible, which took three things rather than one: `-X` to drop the uid and extended attributes, a sorted file list for stable order, and pinned timestamps - a zip records the mtime of every entry, and staging into a temp directory stamps them all with the moment the script ran, so without that an unchanged rebuild produced different bytes and landed as a meaningless diff. The archive is stored in LFS on the same reasoning as the rest of the README media: it is a rebuild of assets already tracked there, so every full copy Git kept would be a second copy of the same media.
@@ -1025,6 +1031,7 @@ The version moved from `0.1.0` straight to `0.3.0`; `0.2.0` was never tagged.
   slice.
 
 [Unreleased]: https://github.com/vitala89/applye/compare/v0.29.0...HEAD
+[0.29.1]: https://github.com/vitala89/applye/compare/v0.29.0...v0.29.1
 [0.29.0]: https://github.com/vitala89/applye/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/vitala89/applye/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/vitala89/applye/compare/v0.26.0...v0.27.0

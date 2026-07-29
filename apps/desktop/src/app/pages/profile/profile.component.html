@@ -1,0 +1,1052 @@
+@if (loading()) {
+  <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
+    {{ t()('common.loading') }}
+  </div>
+} @else {
+  <div class="profile">
+    <!-- Header -->
+    <header class="profile__head">
+      <p class="muted">
+        {{ t()('profile.subtitle') }}
+        <span class="info info--below" tabindex="0" [attr.aria-label]="t()('profile.info_aria')">
+          <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
+          <span class="info__tip" role="tooltip">{{ t()('profile.info_profile') }}</span>
+        </span>
+      </p>
+      <div class="profile__head-actions">
+        @if (saveError() && saveStatus()) {
+          <span class="head-status status--error">{{ saveStatus() }}</span>
+        } @else if (dirty()) {
+          <span class="head-status head-status--warn">
+            <lucide-icon [img]="unsavedIcon" [size]="13" aria-hidden="true" />
+            {{ t()('profile.unsaved') }}
+          </span>
+        } @else if (saveStatus()) {
+          <span class="head-status head-status--ok">
+            <lucide-icon [img]="checkIcon" [size]="13" aria-hidden="true" />
+            {{ t()('profile.saved_status') }}
+          </span>
+        }
+        <button appButton variant="secondary" size="md" (click)="onboarding.requestOpen()">
+          <lucide-icon [img]="rerunIcon" [size]="15" aria-hidden="true" />
+          {{ t()('onboarding.rerun') }}
+        </button>
+        <button
+          appButton
+          variant="primary"
+          size="md"
+          [disabled]="saving() || !dirty() || scoring() || pitching()"
+          (click)="save()"
+        >
+          <lucide-icon [img]="dirty() ? saveIcon : checkIcon" [size]="15" aria-hidden="true" />
+          {{
+            saving()
+              ? t()('profile.saving')
+              : dirty()
+                ? t()('profile.save_btn')
+                : t()('profile.saved_status')
+          }}
+        </button>
+      </div>
+    </header>
+
+    <app-completeness-hero
+      [completeness]="completeness()"
+      [gaps]="gaps()"
+      [name]="form().name"
+      [subtitle]="heroSubtitle()"
+      (addField)="focusField($event)"
+    />
+
+    <!-- Target roles (archetypes) -->
+    <section class="section section--card">
+      <h3 class="eyebrow-row">
+        <span class="eyebrow">{{ t()('profile.section_archetypes') }}</span>
+        <span class="info info--below" tabindex="0" [attr.aria-label]="t()('profile.info_aria')">
+          <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
+          <span class="info__tip" role="tooltip">{{ t()('profile.info_archetypes') }}</span>
+        </span>
+      </h3>
+      <div class="collapse-card">
+        <div
+          class="collapse-card__head"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="sectionOpen().archetypes"
+          (click)="toggleSection('archetypes')"
+          (keydown.enter)="toggleSection('archetypes')"
+          (keydown.space)="toggleSection('archetypes'); $event.preventDefault()"
+        >
+          <span class="collapse-card__title">{{ t()('profile.section_archetypes') }}</span>
+          <span class="collapse-card__summary">
+            {{
+              archetypes().length
+                ? t()('profile.summary_archetypes').replace('{count}', archetypes().length + '')
+                : t()('profile.summary_empty')
+            }}
+          </span>
+          <lucide-icon
+            [img]="chevronIcon"
+            [size]="17"
+            class="chevron"
+            [class.chevron--open]="sectionOpen().archetypes"
+            aria-hidden="true"
+          />
+        </div>
+        @if (sectionOpen().archetypes) {
+          <div class="collapse-card__body">
+            <p class="muted">{{ t()('profile.archetypes_hint') }}</p>
+            @if (archetypes().length === 0) {
+              <p class="status status--warn">{{ t()('profile.archetypes_empty_warning') }}</p>
+            }
+            @if (archetypes().length > 0) {
+              <div class="archetype-list">
+                @for (a of archetypes(); track $index) {
+                  <div class="archetype-card">
+                    <div class="archetype-card__top">
+                      <lucide-icon
+                        [img]="targetIcon"
+                        [size]="16"
+                        class="archetype-card__icon"
+                        aria-hidden="true"
+                      />
+                      <input
+                        class="archetype-input"
+                        type="text"
+                        [ngModel]="a.name"
+                        (ngModelChange)="updateArchetype($index, { name: $event })"
+                        [placeholder]="t()('profile.archetype_placeholder')"
+                        [attr.aria-label]="t()('profile.archetype_name')"
+                      />
+                      <select
+                        class="archetype-fit"
+                        [ngModel]="a.fit"
+                        (ngModelChange)="updateArchetype($index, { fit: $event })"
+                        [attr.aria-label]="t()('profile.archetype_fit')"
+                      >
+                        <option value="primary">{{ t()('profile.fit_primary') }}</option>
+                        <option value="secondary">{{ t()('profile.fit_secondary') }}</option>
+                        <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
+                      </select>
+                      <button
+                        class="btn-ghost"
+                        type="button"
+                        (click)="removeArchetype($index)"
+                        [attr.aria-label]="t()('profile.remove_archetype')"
+                      >
+                        <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                      </button>
+                    </div>
+                    @if (a.name.trim() && !isMatchable(a.name)) {
+                      <p class="status status--warn archetype-card__warn" role="status">
+                        {{ t()('profile.archetype_not_matchable') }}
+                      </p>
+                    }
+                    <div class="archetype-card__sell">
+                      <label
+                        class="archetype-card__label"
+                        [attr.for]="'archetype-sell-' + $index"
+                        >{{ t()('profile.archetype_sell_when') }}</label
+                      >
+                      <textarea
+                        [id]="'archetype-sell-' + $index"
+                        class="archetype-sell"
+                        [ngModel]="a.sellWhen"
+                        (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
+                        [placeholder]="t()('profile.archetype_sell_when_hint')"
+                      ></textarea>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            @if (archetypes().length < 5) {
+              <button class="btn-dashed" type="button" (click)="addArchetype()">
+                <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                {{ t()('profile.add_archetype') }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Photo: one cropped headshot, reused by any CV that wants one. -->
+    <section class="section section--card">
+      <div class="collapse-card">
+        <div
+          class="collapse-card__head"
+          role="button"
+          tabindex="0"
+          [attr.aria-expanded]="sectionOpen().photo"
+          (click)="toggleSection('photo')"
+          (keydown.enter)="toggleSection('photo')"
+          (keydown.space)="toggleSection('photo'); $event.preventDefault()"
+        >
+          <span class="collapse-card__title">{{ t()('profile.section_photo') }}</span>
+          <span class="collapse-card__summary">
+            {{ t()(photoDataUri() ? 'profile.summary_photo_set' : 'profile.summary_empty') }}
+          </span>
+          <lucide-icon
+            [img]="chevronIcon"
+            [size]="17"
+            class="chevron"
+            [class.chevron--open]="sectionOpen().photo"
+            aria-hidden="true"
+          />
+        </div>
+        @if (sectionOpen().photo) {
+          <div class="collapse-card__body">
+            <p class="field__hint">{{ t()('profile.photo_hint') }}</p>
+            <div class="photo-editor">
+              @if (photoDataUri(); as uri) {
+                <img class="photo-editor__thumb" [src]="uri" alt="" />
+                <div class="photo-editor__actions">
+                  <button
+                    class="btn-dashed"
+                    type="button"
+                    [disabled]="photoSaving()"
+                    (click)="pickPhoto()"
+                  >
+                    {{ t()('documents.cv_photo_replace') }}
+                  </button>
+                  <button
+                    class="btn-dashed"
+                    type="button"
+                    [disabled]="photoSaving()"
+                    (click)="removePhoto()"
+                  >
+                    {{ t()('documents.cv_photo_remove') }}
+                  </button>
+                </div>
+              } @else {
+                <button
+                  class="btn-dashed"
+                  type="button"
+                  [disabled]="photoSaving()"
+                  (click)="pickPhoto()"
+                >
+                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                  {{ t()('documents.cv_photo_upload') }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Editor -->
+    <section class="section section--card">
+      <div class="editor-head">
+        <h3 class="eyebrow">{{ t()('profile.section_markdown') }}</h3>
+        <div class="mode-toggle" role="tablist">
+          <button
+            type="button"
+            class="mode-btn"
+            [class.mode-btn--on]="!rawMode()"
+            (click)="rawMode() && toggleRawMode()"
+          >
+            {{ t()('profile.mode_form') }}
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            [class.mode-btn--on]="rawMode()"
+            (click)="!rawMode() && toggleRawMode()"
+          >
+            {{ t()('profile.mode_raw') }}
+          </button>
+        </div>
+      </div>
+
+      @if (!rawMode()) {
+        <div class="form-cards">
+          <div class="field">
+            <label class="field__label" for="field-document-name">{{
+              t()('profile.field_document_name')
+            }}</label>
+            <input
+              id="field-document-name"
+              class="field__input"
+              type="text"
+              [ngModel]="form().name"
+              (ngModelChange)="updateField('name', $event)"
+            />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="field-first-name">{{
+                t()('profile.field_first_name')
+              }}</label>
+              <input
+                id="field-first-name"
+                class="field__input"
+                type="text"
+                [ngModel]="form().firstName"
+                (ngModelChange)="updateField('firstName', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="field-last-name">{{
+                t()('profile.field_last_name')
+              }}</label>
+              <input
+                id="field-last-name"
+                class="field__input"
+                type="text"
+                [ngModel]="form().lastName"
+                (ngModelChange)="updateField('lastName', $event)"
+              />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="field-title">{{ t()('profile.field_title') }}</label>
+              <input
+                id="field-title"
+                class="field__input"
+                type="text"
+                [ngModel]="form().title"
+                (ngModelChange)="updateField('title', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="field-location">{{
+                t()('profile.field_location')
+              }}</label>
+              <input
+                id="field-location"
+                class="field__input"
+                type="text"
+                [ngModel]="form().location"
+                (ngModelChange)="updateField('location', $event)"
+              />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="field-email">{{ t()('profile.field_email') }}</label>
+              <input
+                id="field-email"
+                class="field__input"
+                type="email"
+                [ngModel]="form().email"
+                (ngModelChange)="updateField('email', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="field-phone">{{ t()('profile.field_phone') }}</label>
+              <input
+                id="field-phone"
+                class="field__input"
+                type="tel"
+                [ngModel]="form().phone"
+                (ngModelChange)="updateField('phone', $event)"
+              />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="field-website">{{
+                t()('profile.field_website')
+              }}</label>
+              <input
+                id="field-website"
+                class="field__input"
+                type="text"
+                [ngModel]="form().website"
+                (ngModelChange)="updateField('website', $event)"
+                [placeholder]="t()('profile.website_hint')"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="field-linkedin">{{
+                t()('profile.field_linkedin')
+              }}</label>
+              <input
+                id="field-linkedin"
+                class="field__input"
+                type="text"
+                [ngModel]="form().linkedin"
+                (ngModelChange)="updateField('linkedin', $event)"
+                [placeholder]="t()('profile.linkedin_hint')"
+              />
+            </div>
+          </div>
+
+          <div class="field field--full" id="field-experience">
+            <div class="collapse-card">
+              <div
+                class="collapse-card__head"
+                role="button"
+                tabindex="0"
+                [attr.aria-expanded]="sectionOpen().experience"
+                (click)="toggleSection('experience')"
+                (keydown.enter)="toggleSection('experience')"
+                (keydown.space)="toggleSection('experience'); $event.preventDefault()"
+              >
+                <span class="collapse-card__title">{{ t()('profile.section_experience') }}</span>
+                <span class="collapse-card__summary">
+                  {{
+                    experienceEntries().length
+                      ? t()('profile.summary_positions').replace(
+                          '{count}',
+                          experienceEntries().length + ''
+                        )
+                      : t()('profile.summary_empty')
+                  }}
+                </span>
+                <lucide-icon
+                  [img]="chevronIcon"
+                  [size]="17"
+                  class="chevron"
+                  [class.chevron--open]="sectionOpen().experience"
+                  aria-hidden="true"
+                />
+              </div>
+              @if (sectionOpen().experience) {
+                <div class="collapse-card__body">
+                  <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
+                  @if (experienceEntries().length > 0) {
+                    <div class="archetype-list">
+                      @for (e of experienceEntries(); track ei; let ei = $index) {
+                        <div class="archetype-card">
+                          <div class="archetype-card__top">
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.role"
+                              (ngModelChange)="updateExperienceField(ei, 'role', $event)"
+                              [placeholder]="t()('profile.exp_role')"
+                              [attr.aria-label]="t()('profile.exp_role')"
+                            />
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.company"
+                              (ngModelChange)="updateExperienceField(ei, 'company', $event)"
+                              [placeholder]="t()('profile.exp_company')"
+                              [attr.aria-label]="t()('profile.exp_company')"
+                            />
+                            <button
+                              class="btn-ghost"
+                              type="button"
+                              (click)="removeExperience(ei)"
+                              [attr.aria-label]="t()('profile.remove_experience')"
+                            >
+                              <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                            </button>
+                          </div>
+                          <div class="archetype-card__top">
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.location"
+                              (ngModelChange)="updateExperienceField(ei, 'location', $event)"
+                              [placeholder]="t()('profile.exp_location')"
+                              [attr.aria-label]="t()('profile.exp_location')"
+                            />
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.startDate"
+                              (ngModelChange)="updateExperienceField(ei, 'startDate', $event)"
+                              [placeholder]="t()('profile.exp_start')"
+                              [attr.aria-label]="t()('profile.exp_start')"
+                            />
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.endDate"
+                              (ngModelChange)="updateExperienceField(ei, 'endDate', $event)"
+                              [placeholder]="t()('profile.exp_end')"
+                              [attr.aria-label]="t()('profile.exp_end')"
+                            />
+                          </div>
+                          <div class="exp-bullets">
+                            @for (b of e.bullets; track bi; let bi = $index) {
+                              <div class="exp-bullet-row">
+                                <input
+                                  class="archetype-input"
+                                  type="text"
+                                  [ngModel]="b"
+                                  (ngModelChange)="updateExperienceBullet(ei, bi, $event)"
+                                  [placeholder]="t()('profile.exp_bullet_hint')"
+                                  [attr.aria-label]="t()('profile.exp_bullet_hint')"
+                                />
+                                <button
+                                  class="btn-ghost"
+                                  type="button"
+                                  (click)="removeExperienceBullet(ei, bi)"
+                                  [attr.aria-label]="t()('profile.exp_remove_bullet')"
+                                >
+                                  <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                                </button>
+                              </div>
+                            }
+                            <button
+                              class="btn-dashed"
+                              type="button"
+                              (click)="addExperienceBullet(ei)"
+                            >
+                              <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                              {{ t()('profile.exp_add_bullet') }}
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                  <button class="btn-dashed" type="button" (click)="addExperience()">
+                    <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                    {{ t()('profile.add_experience') }}
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="collapse-card">
+                <div
+                  class="collapse-card__head"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-expanded]="sectionOpen().skills"
+                  (click)="toggleSection('skills')"
+                  (keydown.enter)="toggleSection('skills')"
+                  (keydown.space)="toggleSection('skills'); $event.preventDefault()"
+                >
+                  <span class="collapse-card__title">{{ t()('profile.section_skills') }}</span>
+                  <span class="collapse-card__summary">
+                    {{
+                      form().skills.length
+                        ? t()('profile.summary_skills').replace(
+                            '{count}',
+                            form().skills.length + ''
+                          )
+                        : t()('profile.summary_empty')
+                    }}
+                  </span>
+                  <lucide-icon
+                    [img]="chevronIcon"
+                    [size]="17"
+                    class="chevron"
+                    [class.chevron--open]="sectionOpen().skills"
+                    aria-hidden="true"
+                  />
+                </div>
+                @if (sectionOpen().skills) {
+                  <div class="collapse-card__body">
+                    <div class="chip-input">
+                      @for (s of form().skills; track $index) {
+                        <span class="skill-chip">
+                          {{ s }}
+                          <button
+                            type="button"
+                            class="skill-chip__x"
+                            (click)="removeSkillChip($index)"
+                            [attr.aria-label]="t()('profile.remove_skill')"
+                          >
+                            <lucide-icon [img]="removeIcon" [size]="12" aria-hidden="true" />
+                          </button>
+                        </span>
+                      }
+                      <input
+                        id="field-skills"
+                        class="chip-input__field"
+                        type="text"
+                        (keydown.enter)="addSkillChip($event)"
+                        [placeholder]="t()('profile.skills_add_hint')"
+                        [attr.aria-label]="t()('profile.field_skills')"
+                      />
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="field" id="field-languages">
+              <div class="collapse-card">
+                <div
+                  class="collapse-card__head"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-expanded]="sectionOpen().languages"
+                  (click)="toggleSection('languages')"
+                  (keydown.enter)="toggleSection('languages')"
+                  (keydown.space)="toggleSection('languages'); $event.preventDefault()"
+                >
+                  <span class="collapse-card__title">{{ t()('profile.section_languages') }}</span>
+                  <span class="collapse-card__summary">
+                    {{
+                      languageEntries().length
+                        ? t()('profile.summary_languages').replace(
+                            '{count}',
+                            languageEntries().length + ''
+                          )
+                        : t()('profile.summary_empty')
+                    }}
+                  </span>
+                  <lucide-icon
+                    [img]="chevronIcon"
+                    [size]="17"
+                    class="chevron"
+                    [class.chevron--open]="sectionOpen().languages"
+                    aria-hidden="true"
+                  />
+                </div>
+                @if (sectionOpen().languages) {
+                  <div class="collapse-card__body">
+                    @if (languageEntries().length > 0) {
+                      <div class="lang-list">
+                        @for (l of languageEntries(); track $index) {
+                          <div class="lang-row">
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="l.language"
+                              (ngModelChange)="updateLanguageField($index, 'language', $event)"
+                              [placeholder]="t()('profile.lang_name')"
+                              [attr.aria-label]="t()('profile.lang_name')"
+                            />
+                            <select
+                              class="archetype-fit"
+                              [ngModel]="l.level"
+                              (ngModelChange)="updateLanguageField($index, 'level', $event)"
+                              [attr.aria-label]="t()('profile.lang_level')"
+                            >
+                              @for (lvl of languageLevels; track lvl) {
+                                <option [value]="lvl">
+                                  {{ lvl || t()('profile.lang_level_none') }}
+                                </option>
+                              }
+                            </select>
+                            <button
+                              class="btn-ghost"
+                              type="button"
+                              (click)="removeLanguage($index)"
+                              [attr.aria-label]="t()('profile.remove_language')"
+                            >
+                              <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                            </button>
+                          </div>
+                        }
+                      </div>
+                    }
+                    <button class="btn-dashed" type="button" (click)="addLanguage()">
+                      <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                      {{ t()('profile.add_language') }}
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="field field--full" id="field-compensation">
+            <div class="field__label-row">
+              <span class="field__label">{{ t()('profile.section_compensation') }}</span>
+              <span class="field__hint field__hint--inline">{{ t()('profile.comp_hint') }}</span>
+            </div>
+            <div class="comp-row">
+              <input
+                class="field__input"
+                type="number"
+                inputmode="numeric"
+                [ngModel]="form().compMin"
+                (ngModelChange)="updateField('compMin', $event)"
+                [placeholder]="t()('profile.comp_min')"
+                [attr.aria-label]="t()('profile.comp_min')"
+              />
+              <span class="comp-sep">-</span>
+              <input
+                class="field__input"
+                type="number"
+                inputmode="numeric"
+                [ngModel]="form().compMax"
+                (ngModelChange)="updateField('compMax', $event)"
+                [placeholder]="t()('profile.comp_max')"
+                [attr.aria-label]="t()('profile.comp_max')"
+              />
+              <select
+                class="field__input comp-select"
+                [ngModel]="form().compCurrency"
+                (ngModelChange)="updateField('compCurrency', $event)"
+                [attr.aria-label]="t()('profile.comp_currency')"
+              >
+                <option value="">-</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+              <select
+                class="field__input comp-select"
+                [ngModel]="form().compPeriod"
+                (ngModelChange)="updateField('compPeriod', $event)"
+                [attr.aria-label]="t()('profile.comp_period')"
+              >
+                <option value="">-</option>
+                <option value="year">{{ t()('profile.comp_period_year') }}</option>
+                <option value="month">{{ t()('profile.comp_period_month') }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field field--full" id="field-education">
+            <div class="collapse-card">
+              <div
+                class="collapse-card__head"
+                role="button"
+                tabindex="0"
+                [attr.aria-expanded]="sectionOpen().education"
+                (click)="toggleSection('education')"
+                (keydown.enter)="toggleSection('education')"
+                (keydown.space)="toggleSection('education'); $event.preventDefault()"
+              >
+                <span class="collapse-card__title">{{ t()('profile.section_education') }}</span>
+                <span class="collapse-card__summary">
+                  {{
+                    educationEntries().length
+                      ? t()('profile.summary_education').replace(
+                          '{count}',
+                          educationEntries().length + ''
+                        )
+                      : t()('profile.summary_empty')
+                  }}
+                </span>
+                <lucide-icon
+                  [img]="chevronIcon"
+                  [size]="17"
+                  class="chevron"
+                  [class.chevron--open]="sectionOpen().education"
+                  aria-hidden="true"
+                />
+              </div>
+              @if (sectionOpen().education) {
+                <div class="collapse-card__body">
+                  <p class="muted">{{ t()('profile.education_hint') }}</p>
+                  @if (educationEntries().length > 0) {
+                    <div class="archetype-list">
+                      @for (e of educationEntries(); track $index) {
+                        <div class="archetype-card">
+                          <div class="archetype-card__top">
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.title"
+                              (ngModelChange)="updateEducation($index, 'title', $event)"
+                              [placeholder]="t()('profile.education_title_hint')"
+                              [attr.aria-label]="t()('profile.education_title')"
+                            />
+                            <button
+                              class="btn-ghost"
+                              type="button"
+                              (click)="removeEducation($index)"
+                              [attr.aria-label]="t()('profile.remove_education')"
+                            >
+                              <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
+                            </button>
+                          </div>
+                          <div class="archetype-card__top">
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.institution"
+                              (ngModelChange)="updateEducation($index, 'institution', $event)"
+                              [placeholder]="t()('profile.education_institution_hint')"
+                              [attr.aria-label]="t()('profile.education_institution')"
+                            />
+                          </div>
+                          <div class="archetype-card__top">
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.startDate"
+                              (ngModelChange)="updateEducation($index, 'startDate', $event)"
+                              [placeholder]="t()('profile.education_start_hint')"
+                              [attr.aria-label]="t()('profile.education_start')"
+                            />
+                            <input
+                              class="archetype-input"
+                              type="text"
+                              [ngModel]="e.endDate"
+                              (ngModelChange)="updateEducation($index, 'endDate', $event)"
+                              [placeholder]="t()('profile.education_end_hint')"
+                              [attr.aria-label]="t()('profile.education_end')"
+                            />
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                  <button class="btn-dashed" type="button" (click)="addEducation()">
+                    <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
+                    {{ t()('profile.add_education') }}
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="editor-panel">
+          <textarea
+            class="editor"
+            [ngModel]="fullMd()"
+            (ngModelChange)="fullMd.set($event)"
+            spellcheck="false"
+          ></textarea>
+          <div class="scaffold">
+            <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
+            <span class="scaffold__line"># Name · Title · Location</span>
+            <span class="scaffold__line">## Contact</span>
+            <span class="scaffold__line">## Experience &nbsp;&nbsp;### Role, Company</span>
+            <span class="scaffold__line">## Skills · Education · Languages</span>
+          </div>
+          <div class="raw-parse">
+            <button
+              appButton
+              variant="secondary"
+              size="md"
+              [disabled]="parsing() || !fullMd().trim()"
+              (click)="parseRawText()"
+            >
+              <lucide-icon [img]="sparklesIcon" [size]="15" aria-hidden="true" />
+              {{ parsing() ? t()('profile.raw_parsing') : t()('profile.raw_parse_btn') }}
+            </button>
+            <span class="field__hint">{{ t()('profile.raw_parse_desc') }}</span>
+            @if (parseStatus()) {
+              <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
+            }
+          </div>
+          @if (parsePreview(); as pv) {
+            <div class="parse-preview">
+              <p class="parse-preview__title">{{ t()('profile.parse_preview_title') }}</p>
+              <div class="parse-preview__grid">
+                @if (pv.name) {
+                  <span>{{ pv.name }}</span>
+                }
+                @if (pv.title) {
+                  <span>{{ pv.title }}</span>
+                }
+                @if (pv.location) {
+                  <span>{{ pv.location }}</span>
+                }
+                @if (pv.email) {
+                  <span>{{ pv.email }}</span>
+                }
+                @if (pv.phone) {
+                  <span>{{ pv.phone }}</span>
+                }
+                @if (pv.linkedin) {
+                  <span>{{ pv.linkedin }}</span>
+                }
+              </div>
+              <p class="muted">
+                {{ pv.experience?.length || 0 }} · {{ pv.skills?.length || 0 }} ·
+                {{ pv.languages?.length || 0 }} · {{ pv.education?.length || 0 }}
+              </p>
+              @if (pv.lowConfidenceNotes?.length) {
+                <div class="parse-preview__notes">
+                  <span class="parse-preview__notes-title">{{
+                    t()('profile.parse_notes_title')
+                  }}</span>
+                  @for (n of pv.lowConfidenceNotes; track $index) {
+                    <span>{{ n }}</span>
+                  }
+                </div>
+              }
+              <div class="parse-preview__actions">
+                <button appButton variant="primary" size="sm" (click)="applyParsedProfile()">
+                  {{ t()('profile.parse_apply_btn') }}
+                </button>
+                <button appButton variant="secondary" size="sm" (click)="discardParse()">
+                  {{ t()('profile.parse_discard_btn') }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      @if (dirty()) {
+        <p class="unsaved-hint">
+          <lucide-icon [img]="unsavedIcon" [size]="13" aria-hidden="true" />
+          {{ t()('profile.unsaved') }}
+        </p>
+      }
+    </section>
+
+    <!-- AI Tools -->
+    <section class="section">
+      <h3 class="eyebrow">{{ t()('profile.section_ai_tools') }}</h3>
+      <p class="muted">{{ t()('profile.ai_hint') }}</p>
+
+      <div class="ai-tools">
+        <div class="tool-card">
+          <div
+            class="tool-card__head tool-card__head--toggle"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="scoringOpen()"
+            (click)="toggleScoring()"
+            (keydown.enter)="toggleScoring()"
+            (keydown.space)="toggleScoring(); $event.preventDefault()"
+          >
+            <span class="tool-card__icon" aria-hidden="true">
+              <lucide-icon [img]="scoringIcon" [size]="16" />
+            </span>
+            <div class="tool-card__body">
+              <p class="tool-card__title">
+                {{ t()('profile.scoring_card_title') }}
+                <span
+                  class="info info--below"
+                  tabindex="0"
+                  (click)="$event.stopPropagation()"
+                  (keydown)="$event.stopPropagation()"
+                  [attr.aria-label]="t()('profile.info_aria')"
+                >
+                  <lucide-icon
+                    [img]="infoIcon"
+                    [size]="14"
+                    class="info__glyph"
+                    aria-hidden="true"
+                  />
+                  <span class="info__tip" role="tooltip">{{ t()('profile.info_scoring') }}</span>
+                </span>
+              </p>
+              <p class="tool-card__desc">{{ t()('profile.scoring_desc') }}</p>
+            </div>
+            <lucide-icon
+              [img]="chevronIcon"
+              [size]="17"
+              class="chevron"
+              [class.chevron--open]="scoringOpen()"
+              aria-hidden="true"
+            />
+          </div>
+          @if (scoringOpen()) {
+            @if (scoring()) {
+              <div class="ai-loading">
+                <span class="ai-loading__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="ai-loading__label">{{ t()('profile.scoring_loading') }}</span>
+              </div>
+            } @else if (profile()?.scoringJson) {
+              <app-scoring-summary [scoringJson]="profile()?.scoringJson ?? null" />
+            }
+            <div class="tool-card__foot">
+              <button
+                appButton
+                variant="secondary"
+                size="sm"
+                [disabled]="scoring() || pitching() || saving() || !fullMd().trim()"
+                (click)="generateScoringProfile()"
+              >
+                <lucide-icon [img]="regenIcon" [size]="13" aria-hidden="true" />
+                {{
+                  scoring()
+                    ? t()('profile.generating')
+                    : profile()?.scoringJson
+                      ? t()('profile.regenerate')
+                      : t()('profile.generate')
+                }}
+              </button>
+              @if (scoringState() === 'fresh') {
+                <span class="chip">
+                  <lucide-icon [img]="checkIcon" [size]="12" aria-hidden="true" />
+                  {{ t()('profile.cached_chip') }}
+                </span>
+              } @else if (scoringState() === 'stale') {
+                <span class="chip chip--stale">
+                  <lucide-icon [img]="staleIcon" [size]="12" aria-hidden="true" />
+                  {{ t()('profile.stale_chip') }}
+                </span>
+                <span class="chip-hint">{{ t()('profile.stale_hint') }}</span>
+              } @else if (scoringState() === 'unsaved') {
+                <span class="chip chip--stale">
+                  <lucide-icon [img]="unsavedIcon" [size]="12" aria-hidden="true" />
+                  {{ t()('profile.unsaved_chip') }}
+                </span>
+                <span class="chip-hint">{{ t()('profile.unsaved_scoring_hint') }}</span>
+              }
+              @if (scoreStatus()) {
+                <span class="status" [class.status--error]="scoreError()">{{ scoreStatus() }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="tool-card">
+          <div class="tool-card__head">
+            <span class="tool-card__icon" aria-hidden="true">
+              <lucide-icon [img]="pitchIcon" [size]="16" />
+            </span>
+            <div class="tool-card__body">
+              <p class="tool-card__title">{{ t()('profile.pitch_title') }}</p>
+              <p class="tool-card__desc">{{ t()('profile.pitch_desc') }}</p>
+            </div>
+            <button
+              appButton
+              variant="secondary"
+              size="sm"
+              [disabled]="pitching() || scoring() || saving() || !fullMd().trim()"
+              (click)="generatePitch()"
+            >
+              <lucide-icon [img]="regenIcon" [size]="13" aria-hidden="true" />
+              {{
+                pitching()
+                  ? t()('profile.generating')
+                  : profile()?.pitchMd
+                    ? t()('profile.regenerate')
+                    : t()('profile.generate')
+              }}
+            </button>
+          </div>
+          @if (pitching()) {
+            <div class="ai-loading">
+              <span class="ai-loading__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="ai-loading__label">{{ t()('profile.pitch_loading') }}</span>
+            </div>
+          } @else if (profile()?.pitchMd) {
+            <div class="output-block output-block--prose">{{ profile()?.pitchMd }}</div>
+          }
+          <div class="tool-card__foot">
+            @if (pitchState() === 'fresh') {
+              <span class="chip">
+                <lucide-icon [img]="checkIcon" [size]="12" aria-hidden="true" />
+                {{ t()('profile.cached_chip') }}
+              </span>
+            } @else if (pitchState() === 'stale') {
+              <span class="chip chip--stale">
+                <lucide-icon [img]="staleIcon" [size]="12" aria-hidden="true" />
+                {{ t()('profile.stale_chip') }}
+              </span>
+              <span class="chip-hint">{{ t()('profile.pitch_stale_hint') }}</span>
+            } @else if (pitchState() === 'unsaved') {
+              <span class="chip chip--stale">
+                <lucide-icon [img]="unsavedIcon" [size]="12" aria-hidden="true" />
+                {{ t()('profile.unsaved_chip') }}
+              </span>
+              <span class="chip-hint">{{ t()('profile.unsaved_pitch_hint') }}</span>
+            }
+            @if (pitchStatus()) {
+              <span class="status" [class.status--error]="pitchError()">{{ pitchStatus() }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+}
+
+<!-- Same crop modal the CV editor uses, so a profile photo lands in the
+     exact frame a CV expects and never needs re-cropping per document. -->
+@if (cropSourceUri(); as src) {
+  <app-cv-photo-crop
+    [sourceDataUri]="src"
+    (confirmed)="onCropConfirmed($event)"
+    (cancelled)="onCropCancelled()"
+  />
+}

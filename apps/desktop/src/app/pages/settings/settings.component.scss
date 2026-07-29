@@ -1,0 +1,364 @@
+.settings {
+  max-width: var(--content-max);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  color: var(--text-primary);
+  /* The shell's scroll container clips flush at the last section; give the
+     page its own breathing room so the final card never kisses the edge. */
+  padding-bottom: var(--space-8);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 0 var(--space-4);
+}
+.section {
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.row {
+  display: flex;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 220px;
+}
+.field.grow {
+  flex: 1;
+}
+.field.actions {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.cap {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.disclosure {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  background: var(--warning-tint);
+  border: var(--border-width) solid color-mix(in srgb, var(--warning) 30%, transparent);
+  border-radius: var(--radius-input);
+  padding: var(--space-4) var(--space-5);
+  margin: 0;
+}
+.disclosure strong {
+  color: var(--text-primary);
+}
+.cli-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.cli-status__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+.cli-status__row strong {
+  color: var(--text-primary);
+}
+.cli-status__row--missing {
+  color: var(--text-tertiary);
+}
+/* Present but unrunnable is a louder problem than absent: the user
+   believes this CLI is installed, and nothing else on screen disagrees. */
+.cli-status__row--broken {
+  flex-wrap: wrap;
+  color: var(--warning);
+}
+.cli-status__broken code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.cli-status__error {
+  flex-basis: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  word-break: break-all;
+}
+.cli-status__version {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.cli-status__path {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  word-break: break-all;
+}
+input,
+select {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: var(--space-3) var(--space-4);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+input::placeholder {
+  color: var(--text-tertiary);
+}
+select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: var(--space-8);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - var(--space-4) - 5px) center,
+    calc(100% - var(--space-4)) center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+select:disabled {
+  background-image: none;
+}
+input:hover:not(:disabled),
+select:hover:not(:disabled) {
+  border-color: var(--border-strong, var(--text-tertiary));
+}
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-1);
+}
+/* .section is a stretch-aligned flex column, so a .btn dropped straight
+   into one spans the full card width - which no button in this layout
+   ever wants. Fixed for the class rather than per-button: "Re-run
+   onboarding" had this bug precisely because it lacked the one-off
+   override that "Send a test prompt" carried. */
+.section > .btn {
+  align-self: flex-start;
+}
+.toggle {
+  display: inline-flex;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  width: fit-content;
+}
+.seg {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+}
+.seg--on {
+  background: var(--accent-tint);
+  color: var(--text-accent);
+}
+.hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.geo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.geo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-badge);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.geo-chip:hover {
+  border-color: var(--border-strong);
+}
+/* The checkbox inside is what actually takes focus, so the ring has to
+   be drawn by the label around it. */
+.geo-chip:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.geo-chip input {
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+.geo-chip--on {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--text-accent);
+}
+/* The row that is not the active geo mode. Muted rather than disabled:
+   clicking a chip here is how the user switches back, so it must stay
+   reachable by mouse and keyboard. The hint below it says as much. */
+.geo-chips--muted .geo-chip {
+  opacity: 0.45;
+}
+.geo-chips--muted .geo-chip:hover,
+.geo-chips--muted .geo-chip:has(:focus-visible) {
+  opacity: 1;
+}
+.market-plan__label {
+  margin: var(--space-4) 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.market-plan__list {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.market-plan__host {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+.reply {
+  margin-top: var(--space-4);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  padding: var(--space-5);
+}
+.reply__text {
+  margin: 0 0 var(--space-3);
+  color: var(--text-primary);
+}
+.reply__tokens {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.muted {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: 0;
+  line-height: var(--leading-relaxed);
+  max-width: 64ch;
+}
+.seg lucide-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: var(--space-1);
+}
+
+/* Danger zone */
+.section--danger {
+  border-color: color-mix(in srgb, var(--danger) 32%, transparent);
+  background: color-mix(in srgb, var(--danger-tint) 45%, var(--surface-1));
+}
+.eyebrow--danger {
+  color: var(--danger);
+}
+.danger-btn {
+  align-self: flex-start;
+}
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--danger-tint);
+  border: var(--border-width) solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: var(--radius-input);
+}
+.confirm__q {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+.confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+/* Solid, high-commitment destructive button - the confirm step earns the
+   weight the resting "Delete all data" trigger deliberately withholds. */
+.btn--danger-solid {
+  background: var(--danger);
+  color: var(--white, #fff);
+  border: none;
+}
+.btn--danger-solid:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 84%, black);
+}
+.spin {
+  animation: settings-spin 0.7s linear infinite;
+}
+@keyframes settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+/* About */
+.about {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.about__name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.about__version {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  padding: 2px var(--space-2);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-input);
+}

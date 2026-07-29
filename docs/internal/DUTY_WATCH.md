@@ -46,7 +46,7 @@ Before a watch can be marked complete:
 
 ### 2026-07-29 (latest), the last README placeholder is filled, and the tour video is found to leak a home directory path
 
-- **Status:** complete for the README work; one privacy finding left open and unfixed on purpose
+- **Status:** complete, including the privacy finding, which was fixed in a follow-up on the same branch
 - **Agent/tool:** Claude Code (Opus 5)
 - **Branch:** `docs/readme-wordmark` (third commit)
 - **Commits:** three documentation commits on the branch
@@ -60,8 +60,18 @@ Before a watch can be marked complete:
 - **Decisions and assumptions:** Pointing the poster at the existing silent tour beats leaving a placeholder for a narrated video nobody has scheduled: the link is true today, and swapping it later is a one-line change in six files. No copy is baked into the image, for the same reason as the hero banner - it would have to exist in six languages. The video leak was reported rather than fixed, because fixing it means re-encoding a deployed asset and the call belongs to the maintainer.
 - **Risks or compatibility impact:** The poster hardcodes an external URL, so it breaks silently if the tour page ever moves. The frame is downstream of `tour-walkthrough.mp4`; if that is re-recorded, the poster is stale until the script is rerun.
 - **Open issues or blockers:** The home directory path in `tour-walkthrough.mp4`. Options, cheapest first: trim the video to start after the environment check; blur that rectangle for the seconds it is visible with `ffmpeg`'s `boxblur` and re-encode; or re-record the first-run segment on a machine with a neutral account name. All three need a redeploy. Worth checking the other recordings for the same thing in the same pass - only this frame was inspected.
-- **Next first action:** Decide on the video. If it is to be fixed, `ffmpeg -i tour-walkthrough.mp4 -filter_complex "[0:v]crop=...,boxblur=10[b];[0:v][b]overlay=...:enable='between(t,1,6)'"` is the smallest change that keeps the rest of the take.
+- **Next first action:** Superseded by the follow-up below.
 - **Evidence:** Branch diff; the zoomed crop of the 3s frame; `curl` status for the tour URL; both poster renders reviewed in session.
+
+**Follow-up in the same watch, on the same branch: the path is blurred out and the video re-encoded.** The maintainer chose the surgical option, so `apps/web/public/guide/tour-walkthrough.mp4` was rebuilt with a luma-only Gaussian blur over the export-path line, and nothing else about the take changed.
+
+- **How the window and the rectangle were established, rather than eyeballed:** the video was sampled at 5fps for its first eight seconds, and the standard deviation of the 320x28 rectangle at (305, 714) was measured per frame. The path renders from 2.600s to 3.900s - stdev 29.5 while present, 0 before it draws, 2.8 once the screen advances - and a 30fps sweep of 3.7s to 4.2s put the last frame carrying it at exactly 3.900. The blur is enabled for `between(t,2.5,3.92)` and no longer, because the same rectangle holds unrelated interface on later screens and a wider window would smear it.
+- **Why luma-only:** the first attempt used `boxblur` across all planes and left a green cast over the blurred strip, since chroma averaging over a near-neutral region amplifies whatever tint is in it. `gblur=sigma=12:steps=3:planes=1` blurs the luma and leaves chroma untouched, which reads as a neutral smudge.
+- **The rest of the take was checked, not assumed.** The tour ends on the targeting step and never reaches a summary screen, so there is no second place a path could appear. The API key field visible around 5s is the input's placeholder - `sk-ant-api03-…`, dim, ellipsised - and not a typed key: the take switches to CLI bridge mode and never pastes one. Frames at 22s were compared before and after at 2x to confirm the re-encode did not soften text, and the rectangle at 5.2s was confirmed sharp, so the blur really is windowed.
+- **Encoding:** libx264, CRF 26, `-preset slow`, `-an`, `+faststart`. 820 KB to 661 KB at the same 1264x788, 30fps and 45.900s duration, so the page's `width`/`height` attributes and the shot list's stated length still hold.
+- **This is the second instance of this class of leak in this same file.** The 2026-07-28 watch caught absolute paths in the last half-second, after the app opened on Settings, and cut the file to end earlier; `CURRENT_STATE.md` was given a warning about Settings captures in CLI bridge mode at the time. The welcome screen's environment check prints the same kind of path at the _start_ of the take, and that survived. The warning should be widened from "Settings in CLI bridge mode" to "any screen that prints a filesystem path", which includes the first-run environment check.
+- **Validation after the swap:** `nx run web:test`, `nx run web:lint`, `nx run web:build`, `npm run format:check`, `git diff --check`, and the frame comparisons above. **A redeploy is required for this to reach the live site**; until then `applye.dev/docs/guide/tour/` still serves the old file.
+- **Next first action:** Redeploy the site so the corrected video replaces the one currently served, then widen the capture warning in `CURRENT_STATE.md` and `MEDIA_SHOTLIST.md` from Settings to any path-printing screen.
 
 ### 2026-07-29, the README's screens and demo GIF are cut from the guide's media
 

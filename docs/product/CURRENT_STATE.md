@@ -1,7 +1,13 @@
 # Current Operational State
 
-- **Current version**: `0.28.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
-  in all three on 2026-07-26)
+- **Current version**: `0.29.0` (package.json / tauri.conf.json / Cargo.toml, verified identical
+  in all three on 2026-07-29), and the tag history is complete again. `v0.26.0`, `v0.27.0` and
+  `v0.28.0` had shipped as versions in the manifests and as sections in the changelog but were never
+  tagged and never released: the tag list stopped at `v0.25.0` while the app said `0.28.0`. All three
+  are now annotated tags on the commits that bumped the version and wrote their changelog section -
+  `c656c40`, `7dffc6c`, `65330a3`, the same convention `v0.25.0` follows - with GitHub Releases
+  carrying their changelog text. Their release dates on GitHub read 2026-07-29 because that is when
+  they were published; the changelog dates are the real ones.
 - **Current branch / focus**: `main`. Preparing applye.dev for a public launch that precedes the
   repository going public and the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.

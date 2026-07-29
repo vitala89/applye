@@ -44,7 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-29 (latest), the last README placeholder is filled, and the tour video is found to leak a home directory path
+### 2026-07-29 (latest), dead branches pruned, three untagged releases recovered, 0.29.0 cut
+
+- **Status:** complete; the 0.29.0 tag and release wait on the PR being merged
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `chore/release-0.29.0`
+- **Pull request:** opened at the end of this watch
+- **Objective:** Audit branches, tags, releases and version strings for consistency before the repository goes public, and clean up what is dead.
+- **Completed:**
+  - **Branch cleanup.** 66 remote and 20 local branches deleted. Every one was checked first by comparing the files it touched against `main` rather than by commit SHA, because squash merges leave branch commits looking unmerged forever: `git rev-list` claimed `feat/web-analytics` was 46 commits ahead when its content had been in `main` for days. Four remote branches had no pull request at all - `docs/readme`, `feat/i18n-states`, `feat/web-landing` proved byte-identical to `main` and were removed; `backup/pre-history-rewrite` is the deliberate snapshot from before the LFS history rewrite and stays. The three local `backup/*` branches stay for the same reason. A restore manifest with every deleted branch's SHA is in the session scratchpad.
+  - **Three releases recovered.** `v0.26.0`, `v0.27.0` and `v0.28.0` existed as versions in the manifests and as sections in the changelog, but the tag list stopped at `v0.25.0` and GitHub showed one release against an app reporting `0.28.0`. All three are now annotated tags on `c656c40`, `7dffc6c` and `65330a3` - in each of those commits the version bump and the changelog section land together, which is exactly what `v0.25.0`'s commit did, so the convention was read off the history rather than invented - with GitHub Releases carrying each section's text.
+  - **0.29.0 cut.** Version bumped in all three manifests and the six README badges, `[Unreleased]` promoted to `## [0.29.0] - 2026-07-29`, and the changelog's link references repaired: they had `[Unreleased]` comparing against `v0.25.0` and no entries for the three recovered versions.
+- **Not completed:** The `v0.29.0` tag and its release, which have to wait until this branch is merged so the tag can point at the release commit on `main`.
+- **Files or packages changed:** `package.json`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/tauri.conf.json`, `CHANGELOG.md`, all six `README*.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** `npm run format:check`, `git diff --check`, an em-dash and en-dash scan of the changed lines, and the three published releases confirmed with `gh release list`. The site was checked live: `applye.dev/changelog/` renders the changelog correctly. **Not run:** the test, lint, build and Rust gates - see the risk note below, which is the reason they matter here.
+- **Privacy/security impact:** None. No user data, network or permission surface.
+- **Decisions and assumptions:** Tags point at the version-bump commits rather than at a synthetic release commit, because that is what the existing history does. GitHub will show all three as published on 2026-07-29 since that is when they were created; the changelog carries the real dates and `CURRENT_STATE.md` says so rather than pretending otherwise. Backup branches were kept: they are cheap and exist precisely for the case where this kind of cleanup turns out to have been wrong.
+- **Risks or compatibility impact:** A version bump touches the Tauri manifest and `Cargo.toml`, so the desktop build is the gate that matters and it has not been run on this branch. Run `nx build desktop` and `cargo test --lib` before merging. Deleting 86 branches is the kind of thing that is only reversible while the manifest exists - it is in a session-scoped scratchpad, so anything worth keeping should be recreated now rather than later.
+- **Open issues or blockers:** None.
+- **Next first action:** Run the desktop and Rust gates on this branch, merge, then tag `v0.29.0` on the merge commit and publish its release from the new changelog section.
+- **Evidence:** Branch diff; `gh release list` output; the deletion manifest; the file-level comparisons behind each branch deletion.
+
+### 2026-07-29, the last README placeholder is filled, and the tour video is found to leak a home directory path
 
 - **Status:** complete, including the privacy finding, which was fixed in a follow-up on the same branch
 - **Agent/tool:** Claude Code (Opus 5)

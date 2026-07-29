@@ -17,9 +17,8 @@
   <strong>Черновики автоматизированы. Отправка - нет.</strong>
 </p>
 
-<!-- PLACEHOLDER: главный баннер. Широкий скриншот продукта (дашборд или экран вакансии), примерно 1600x900, сохранить как docs/assets/hero-banner.png. -->
 <p align="center">
-  <img src="docs/assets/hero-banner.png" alt="Десктоп-приложение Applye - дашборд с пайплайном и оценкой соответствия" width="800">
+  <img src="docs/assets/hero-banner.png" alt="Десктоп-приложение Applye - дашборд с активными откликами, просроченными фоллоу-апами и ближайшими интервью" width="800">
 </p>
 
 <p align="center">

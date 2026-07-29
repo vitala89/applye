@@ -17,9 +17,8 @@
   <strong>Drafting is automated. Submitting is not.</strong>
 </p>
 
-<!-- PLACEHOLDER: hero banner. A wide product shot (dashboard or job detail screen), approx. 1600x900, saved as docs/assets/hero-banner.png. -->
 <p align="center">
-  <img src="docs/assets/hero-banner.png" alt="Applye desktop app - dashboard with pipeline and recruiter-fit score" width="800">
+  <img src="docs/assets/hero-banner.png" alt="Applye desktop app - dashboard with active applications, overdue follow-ups and upcoming interviews" width="800">
 </p>
 
 <p align="center">

@@ -17,9 +17,8 @@
   <strong>Redactar está automatizado. Enviar, no.</strong>
 </p>
 
-<!-- PLACEHOLDER: banner principal. Una captura ancha del producto (dashboard o detalle de oferta), aprox. 1600x900, guardada como docs/assets/hero-banner.png. -->
 <p align="center">
-  <img src="docs/assets/hero-banner.png" alt="Applye - dashboard con pipeline y puntuación de encaje" width="800">
+  <img src="docs/assets/hero-banner.png" alt="Applye - dashboard con candidaturas activas, seguimientos vencidos y entrevistas próximas" width="800">
 </p>
 
 <p align="center">

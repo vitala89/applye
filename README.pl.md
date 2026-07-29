@@ -17,9 +17,8 @@
   <strong>Szkice są zautomatyzowane. Wysyłanie nie.</strong>
 </p>
 
-<!-- PLACEHOLDER: baner główny. Szeroki zrzut ekranu produktu (dashboard lub widok oferty), ok. 1600x900, zapisany jako docs/assets/hero-banner.png. -->
 <p align="center">
-  <img src="docs/assets/hero-banner.png" alt="Aplikacja desktopowa Applye - dashboard z pipeline'em i oceną dopasowania" width="800">
+  <img src="docs/assets/hero-banner.png" alt="Aplikacja desktopowa Applye - dashboard z aktywnymi aplikacjami, zaległymi follow-upami i nadchodzącymi rozmowami" width="800">
 </p>
 
 <p align="center">

@@ -44,7 +44,31 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-29 (latest), applye.dev is attached and the site is opened to search
+### 2026-07-29 (latest), the README's hero banner is built and README media joins LFS
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5), maintainer supplying the screenshot
+- **Branch:** `docs/readme-hero-banner`
+- **Commits:** one documentation commit on the branch
+- **Pull request:** opened at the end of this watch
+- **Objective:** Fill the first of the README's asset placeholders - the hero banner - and leave the rest of the set reproducible rather than one-off.
+- **Completed:**
+  - `docs/assets/hero-banner.png` (1600x900) and `hero-banner-plate.png`, the same backdrop without the window, for the GitHub social preview and the video thumbnail.
+  - `docs/assets/hero-banner.mjs`, the compositor that produced them: crop, window framing, backdrop, shadow, grain. Not wired into the workspace and adds no dependency - it needs `sharp` installed into a throwaway directory, which its header explains. Retakes are now a command rather than a design session.
+  - The `<!-- PLACEHOLDER: hero banner -->` comment removed from all six READMEs, and each locale's `alt` text corrected: it promised "recruiter-fit score", which is not on the captured screen.
+  - `docs/assets/**/*.png` and `*.gif` added to `.gitattributes` as LFS, matching the guide media's treatment.
+  - The seed persona in `ASSETS_BRIEF.md` rewritten to the one actually in the frame, and section 2 replaced with the shipped recipe and the reasoning behind each measurement.
+- **Not completed:** The other README placeholders - wordmark SVGs, `demo.gif`, the walkthrough thumbnail and the six screens under `docs/assets/screens/`. None was in scope.
+- **Files or packages changed:** `docs/assets/hero-banner.png`, `docs/assets/hero-banner-plate.png`, `docs/assets/hero-banner.mjs`, `docs/assets/ASSETS_BRIEF.md`, `docs/assets/README.md`, `.gitattributes`, all six `README*.md`, `CHANGELOG.md`, this file. No application code changed.
+- **Validation:** Run and observed on this branch: `npm run format:check` (pass, after Prettier reformatted the new script), `git diff --check` (clean), `git lfs status` (both PNGs staged as LFS pointers, not raw bytes), an em-dash and en-dash scan across every changed file (0 hits). The banner was inspected visually at each of the three framing iterations. **Not run:** the test, lint, type-check, build and Rust gates - nothing outside `docs/` and `.gitattributes` was touched, and the validation matrix does not require them for documentation-only changes.
+- **Privacy/security impact:** None, with one thing checked on purpose: the screenshot shows invented companies (Kestrel Analytics, Northlane Systems, Umbra Labs, Cindertree Studio, Vantaform GmbH, Pellworm Digital) and a "Local profile" with no name, contact detail, key or real employer in the frame. Same rule the guide captures follow.
+- **Decisions and assumptions:** The UI is a real screenshot composited by a script, never a generated image. A hero banner is the first thing a visitor reads, and generated interface text - almost-words, almost-numbers - would cost more trust than the banner buys. The window is 1344px wide so that the canvas edge falls in the gap between two list rows: at 1280 it sliced the Vantaform line in half and read as a broken crop. The backdrop is `#131211`, darker than the app canvas `#1c1b19`, because matching the canvas made the window dissolve into the page. No text is baked into the image, since the READMEs carry the headline in six languages and baked copy would need six renders.
+- **Risks or compatibility impact:** The LFS rule means anyone cloning without `git lfs` sees pointer files where the README media should be, and CI jobs touching these paths need `lfs: true` - the same trap that was found in the deploy workflow for the guide assets. The deploy workflow does not read `docs/`, so nothing there changes. GitHub resolves LFS pointers when rendering markdown, so the READMEs display normally.
+- **Open issues or blockers:** None for this watch. The remaining README assets are unblocked and now have a documented persona to match.
+- **Next first action:** Capture the six screens under `docs/assets/screens/` at 1440x900 in the dark theme against the same seeded persona, starting with `dashboard.png`.
+- **Evidence:** Branch diff; `git lfs status` output; the three rendered iterations of the banner reviewed in session.
+
+### 2026-07-29, applye.dev is attached and the site is opened to search
 
 - **Status:** partial - the domain is attached and verified; the indexing flip is committed but not yet deployed
 - **Agent/tool:** Claude Code (Opus 5), maintainer driving the Cloudflare side

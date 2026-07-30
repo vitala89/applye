@@ -346,13 +346,7 @@ const CONTACT_FIELDS: { key: ContactKey; label: string }[] = [
 ];
 
 type ContactKey =
-  | 'firstName'
-  | 'lastName'
-  | 'location'
-  | 'email'
-  | 'phone'
-  | 'website'
-  | 'linkedin';
+  'firstName' | 'lastName' | 'location' | 'email' | 'phone' | 'website' | 'linkedin';
 ```
 
 No other change is needed: `parseContactSection` already matches any `- Label: value` line whose label appears in `CONTACT_FIELDS`, case-insensitively, and its regex `/^[-*]\s*([A-Za-z][A-Za-z ]*?)\s*:\s*(.+)$/` already accepts a label containing a space. `serializeProfileForm` already writes every `CONTACT_FIELDS` entry whose value is non-empty.

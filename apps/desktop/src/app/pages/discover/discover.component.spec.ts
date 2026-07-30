@@ -124,8 +124,7 @@ describe('Discover: the sources drawer is always reachable', () => {
     const button: HTMLButtonElement | undefined = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
     ).find((b) => ((b as HTMLButtonElement).textContent ?? '').trim() === 'Sources') as
-      | HTMLButtonElement
-      | undefined;
+      HTMLButtonElement | undefined;
 
     button?.click();
     fixture.detectChanges();

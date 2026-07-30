@@ -2,12 +2,7 @@ import { SupportedLanguage } from '../types/common.types';
 import { InterviewStageStatus } from './interview.model';
 
 export type ApplicationStatus =
-  | 'saved'
-  | 'applied'
-  | 'interview'
-  | 'offer'
-  | 'rejected'
-  | 'cancelled';
+  'saved' | 'applied' | 'interview' | 'offer' | 'rejected' | 'cancelled';
 
 /**
  * All application statuses in funnel order. Single source for the status

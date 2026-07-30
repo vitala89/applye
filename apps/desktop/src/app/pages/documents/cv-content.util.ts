@@ -777,13 +777,7 @@ export function buildContactLine(
 /** Contact fields addressable as individual inline-edit leaves - the same
  * fields, same order, as `buildContactLine`. */
 export type CvContactFieldKey =
-  | 'address'
-  | 'phone'
-  | 'email'
-  | 'website'
-  | 'linkedin'
-  | 'birthDate'
-  | 'maritalStatus';
+  'address' | 'phone' | 'email' | 'website' | 'linkedin' | 'birthDate' | 'maritalStatus';
 
 export interface CvContactFieldLeaf {
   field: CvContactFieldKey;

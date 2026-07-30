@@ -1,11 +1,5 @@
 export type SourceType =
-  | 'rss'
-  | 'api'
-  | 'ats_greenhouse'
-  | 'ats_lever'
-  | 'ats_ashby'
-  | 'ats_personio'
-  | 'manual';
+  'rss' | 'api' | 'ats_greenhouse' | 'ats_lever' | 'ats_ashby' | 'ats_personio' | 'manual';
 
 export interface JobSource {
   id: number;

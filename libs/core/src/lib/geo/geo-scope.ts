@@ -6,13 +6,7 @@
  * restrict scanning to here.
  */
 export type GeoScopeKey =
-  | 'europe'
-  | 'namerica'
-  | 'samerica'
-  | 'asia'
-  | 'oceania'
-  | 'mena'
-  | 'africa';
+  'europe' | 'namerica' | 'samerica' | 'asia' | 'oceania' | 'mena' | 'africa';
 
 export const GEO_SCOPE_KEYS: readonly GeoScopeKey[] = [
   'europe',

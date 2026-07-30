@@ -62,12 +62,7 @@ import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-ph
  * the non-nullable strings `ProfileForm` and the section entries expect. */
 /** Every collapsible section on the profile page. */
 type ProfileSectionKey =
-  | 'archetypes'
-  | 'photo'
-  | 'experience'
-  | 'skills'
-  | 'languages'
-  | 'education';
+  'archetypes' | 'photo' | 'experience' | 'skills' | 'languages' | 'education';
 
 interface ParsedProfile {
   name?: string | null;

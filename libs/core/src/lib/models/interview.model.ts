@@ -1,12 +1,7 @@
 import { SupportedLanguage } from '../types/common.types';
 
 export type StageType =
-  | 'hr_screen'
-  | 'technical'
-  | 'system_design'
-  | 'behavioral'
-  | 'final'
-  | 'other';
+  'hr_screen' | 'technical' | 'system_design' | 'behavioral' | 'final' | 'other';
 
 /**
  * scheduled - has a confirmed scheduledAt.
@@ -17,12 +12,7 @@ export type StageType =
  * cancelled - ended without a rejection verdict (no sync).
  */
 export type InterviewStageStatus =
-  | 'scheduled'
-  | 'awaiting_scheduling'
-  | 'awaiting_response'
-  | 'passed'
-  | 'rejected'
-  | 'cancelled';
+  'scheduled' | 'awaiting_scheduling' | 'awaiting_response' | 'passed' | 'rejected' | 'cancelled';
 
 export type PrepFormat = 'qa' | 'star';
 

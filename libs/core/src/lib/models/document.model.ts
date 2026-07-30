@@ -10,13 +10,7 @@ export type LibraryDocType = 'cv' | 'cover_letter';
 export type DocumentSource = 'uploaded' | 'generated';
 
 export type CvSectionKey =
-  | 'photo'
-  | 'personal_details'
-  | 'summary'
-  | 'experience'
-  | 'education'
-  | 'skills'
-  | 'languages';
+  'photo' | 'personal_details' | 'summary' | 'experience' | 'education' | 'skills' | 'languages';
 
 interface CvSectionBase {
   key: CvSectionKey;
@@ -207,13 +201,7 @@ export const COVER_LETTER_LENGTH_TARGET: Record<CoverLetterLength, { min: number
 /** Styleable cover-letter blocks - the fixed business-letter order. Body
  * paragraphs share one `body` key (they render as one styled block). */
 export type CoverLetterBlockKey =
-  | 'recipient'
-  | 'date'
-  | 'subject'
-  | 'greeting'
-  | 'body'
-  | 'closing'
-  | 'signature';
+  'recipient' | 'date' | 'subject' | 'greeting' | 'body' | 'closing' | 'signature';
 
 export const COVER_LETTER_BLOCK_KEYS: readonly CoverLetterBlockKey[] = [
   'recipient',
@@ -419,10 +407,7 @@ export const CV_ATS_SAFE_FONTS = [
 /** One ATS/readability note from `check_style_safety` - `kind` selects the
  * (translated) message; `detail` is the value to interpolate. */
 export type StyleNoteKind =
-  | 'font_ats_risk'
-  | 'size_out_of_range'
-  | 'color_readability_risk'
-  | 'weight_unavailable_risk';
+  'font_ats_risk' | 'size_out_of_range' | 'color_readability_risk' | 'weight_unavailable_risk';
 
 export interface StyleNote {
   kind: StyleNoteKind;

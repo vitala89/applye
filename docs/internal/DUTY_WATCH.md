@@ -46,11 +46,11 @@ Before a watch can be marked complete:
 
 ### 2026-07-31 (latest), onboarding could not pick a model, so it sent an empty one
 
-- **Status:** complete, with the native gate pending
+- **Status:** complete, merged and verified
 - **Agent/tool:** Claude Code, Opus
 - **Branch:** `fix/onboarding-model-selection`
-- **Commits:** `f315adc`, plus this entry
-- **Pull request:** #226
+- **Commits:** `f315adc`, `93a1942`, squashed to `8d1f3fb` on `main`
+- **Pull request:** #226 (merged)
 - **Objective:** a user report with two screenshots - choosing DeepSeek on the onboarding AI step,
   saving the key successfully, and then getting `Couldn't parse that resume` with
   `DeepSeek API error (400): The supported API model names are deepseek-v4-pro or
@@ -101,8 +101,11 @@ deepseek-v4-flash, but you passed .` underneath it.
     which fails outside a Tauri runtime, so a browser-served build never renders the step. The
     template compiles (it is type-checked by `nx build desktop`), but that is not the same as seeing
     it. The running `tauri dev` instance did hot-reload the change.
-  - **Pending, not run:** the native gate. Screen-control permission was denied this session, so the
-    wizard was not driven end to end.
+  - **Native gate: passed, run by the maintainer, not by this agent.** Screen-control permission was
+    denied to the agent, so it could not drive the window. The maintainer ran the wizard end to end
+    in the `tauri dev` build after the change hot-reloaded and reported onboarding completing with
+    no errors. Recorded as observed-by-the-maintainer rather than as an agent-run check, because
+    the agent did not see the screen.
 
 - **Privacy/security impact:** No change to key handling. Keys stay in the OS keychain via
   `KeysService`; nothing here reads, logs or transmits one. The change only decides which model id
@@ -122,10 +125,11 @@ deepseek-v4-flash, but you passed .` underneath it.
   GHSA-mh99-v99m-4gvg remain open on purpose with drop conditions in
   `docs/governance/VALIDATION_MATRIX.md`; neither was touched.
 
-- **Next first action:** In the running `tauri dev` window, re-run onboarding from Settings, pick
-  DeepSeek on the AI step, confirm the two model dropdowns appear and read `deepseek-v4-pro` /
-  `deepseek-v4-flash`, then paste a resume and confirm it parses instead of returning the 400. Then
-  open Settings and confirm it shows the same pair.
+- **Next first action:** none for this fix - it is verified and merged as `8d1f3fb`. The next
+  outstanding gate belongs to the previous watch and is unaffected by this one: `npm run
+desktop:dev`, then export a CV to PDF and to DOCX from the apply wizard's final step, confirming
+  the file is written, the status line reads the saved path, and the document leaves draft state
+  into the Documents library. Onboarding passing says nothing about the export path.
 
 - **Evidence:** The reported error string is reproduced by the stored-model path: migration
   `0002_settings_defaults.sql` seeds `economy_model = 'claude-haiku-4-5'`, and `markSeen` wrote

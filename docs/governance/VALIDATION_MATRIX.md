@@ -60,6 +60,37 @@ CLI, webpack-dev-server), none of which ships inside the Tauri bundle. The
 `--omit=dev` run is the one that describes what users actually install, and it
 is expected to stay at zero. Fix or explain anything it reports.
 
+Transitive advisories that have a patched release inside the same major are
+pinned through `overrides` in `package.json` rather than waited on, because a
+transitive dependency has no other lever. The `@major` selectors matter: several
+of these advisories were backported to each release line separately, and a
+blanket override would drag an old consumer across a major boundary. When adding
+one, pin the line the vulnerable copy is actually on - `npm ls <pkg> --all` tells
+you which versions are installed, and the advisory's own `first_patched_version`
+per range tells you what to pin to. Never pin across a major to silence an
+advisory; that trades a reported risk for an unreported one.
+
+Three dev-only advisories are knowingly accepted, on the same standard the
+`cargo audit` ignore list uses - each states why it is tolerable and what would
+let us drop it:
+
+- **`brace-expansion`, GHSA-mh99-v99m-4gvg, high.** Patched only in 5.0.8, with
+  no backport to the 1.x or 2.x lines, and copies of both are pulled in by
+  `minimatch` 3.x under the older Jest and ESLint plugins. Forcing every copy to
+  5.x is the only complete remedy and is not worth it: 5.x is dual-published with
+  an `exports` map, so a CJS consumer that does `require('brace-expansion')`
+  expecting a bare function is at real risk of breaking, in exchange for a
+  denial-of-service advisory in a glob helper that only ever runs at build time.
+  The sibling advisory GHSA-3jxr-9vmj-r5cp _was_ backported and is pinned.
+  **Drop when:** `minimatch` 3.x leaves the tree, or upstream backports.
+- **`uuid`, CVE-2026-41907, medium.** Installed at 8.3.2, fixed in 11.1.1, three
+  majors away, reached only through `sockjs` under `webpack-dev-server`.
+  **Drop when:** the Angular CLI's dev-server chain moves to `uuid` 11.
+- **`@hono/node-server`, GHSA-frvp-7c67-39w9, medium.** Installed at 1.19.14,
+  fixed in 2.0.5, a major away, and it is a Windows path-traversal issue in
+  `serve-static` reached only through the Angular CLI's MCP server.
+  **Drop when:** the Angular CLI moves to `@hono/node-server` 2.x.
+
 `cargo audit` must exit 0. It reads its ignore list from
 `apps/desktop/src-tauri/.cargo/audit.toml`, so it has to be run from that
 directory. Every ignored advisory in that file states why it is not reachable

@@ -35,13 +35,16 @@ import {
   parseLocalMarkets,
   Settings,
   SupportedLanguage,
+  apiModelsFor,
+  apiModelsToRestore,
+  providerModelDefaults,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
 import { ToastService } from '../../core/toast/toast.service';
-import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models.util';
+import { CLI_MODEL_CUSTOM, cliModelSelectValue } from './cli-models.util';
 import {
   GeoTarget,
   toggleMarket as toggleMarketIn,
@@ -52,22 +55,9 @@ import {
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
 // Current Claude model IDs (Anthropic). Verified against the model catalogue.
-const CLAUDE_MODELS = [
-  'claude-opus-4-8',
-  'claude-opus-4-7',
-  'claude-sonnet-4-6',
-  'claude-haiku-4-5',
-];
-
-// Current DeepSeek model IDs. Verified against api-docs.deepseek.com (2026-06):
-// v4-pro for quality, v4-flash for the economy tier. OpenAI-compatible API.
-const DEEPSEEK_MODELS = ['deepseek-v4-pro', 'deepseek-v4-flash'];
-
-// Per-provider default (quality) and economy model picks.
-const PROVIDER_DEFAULTS: Record<string, { default: string; economy: string }> = {
-  claude: { default: 'claude-opus-4-8', economy: 'claude-haiku-4-5' },
-  deepseek: { default: 'deepseek-v4-pro', economy: 'deepseek-v4-flash' },
-};
+// The API model catalogue and its per-provider defaults live in `@applye/core`
+// because the onboarding wizard writes the same two settings fields and has to
+// agree with this screen about what a valid value is.
 
 // Vendor (company) the API key talks to, per provider. Used in the privacy
 // note: every cloud provider sends job + profile text off-device, so the note
@@ -177,8 +167,12 @@ export class SettingsComponent implements OnInit {
 
   /** Model list for the currently selected provider. API mode only - in CLI
    * mode the model string is free text passed straight to the CLI. */
-  get models(): string[] {
-    return this.settings()?.provider === 'deepseek' ? DEEPSEEK_MODELS : CLAUDE_MODELS;
+  get models(): readonly string[] {
+    const provider = this.settings()?.provider;
+    // Falls back to the Claude catalogue for a provider API mode cannot serve,
+    // which is what the previous ternary did and what the dropdown needs to
+    // stay non-empty.
+    return apiModelsFor(provider).length ? apiModelsFor(provider) : apiModelsFor('claude');
   }
 
   // --- CLI bridge mode ---
@@ -320,7 +314,7 @@ export class SettingsComponent implements OnInit {
   /** Puts back this provider's default model pair when the stored ones are
    * blank or belong to a different provider. */
   private restoreApiModels(provider: string): void {
-    const patch = apiModelsToRestore(this.settings(), PROVIDER_DEFAULTS[provider], this.models);
+    const patch = apiModelsToRestore(this.settings(), providerModelDefaults(provider), this.models);
     if (patch.defaultModel !== undefined) this.patch('defaultModel', patch.defaultModel);
     if (patch.economyModel !== undefined) this.patch('economyModel', patch.economyModel);
   }
@@ -530,7 +524,7 @@ export class SettingsComponent implements OnInit {
     }
     // Reset model picks to the new provider's defaults when the current ones
     // do not belong to it (e.g. switching claude <-> deepseek).
-    const d = PROVIDER_DEFAULTS[provider];
+    const d = providerModelDefaults(provider);
     const s = this.settings();
     if (d && s && !this.models.includes(s.defaultModel)) {
       this.patch('defaultModel', d.default);

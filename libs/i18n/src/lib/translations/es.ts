@@ -1522,6 +1522,11 @@ export const es: TranslationMap = stub(en, {
       watch_video: 'Ver el vídeo explicativo',
       keyring_note:
         'Se guarda en el llavero de tu sistema, nunca en la base de datos ni en los registros.',
+      models_intro: 'Elige qué modelo usa cada tarea. Puedes cambiarlo más tarde en Configuración.',
+      model_quality_label: 'Modelo de calidad',
+      model_quality_hint: 'Puntuación y adaptación. Más lento y caro, mejores resultados.',
+      model_economy_label: 'Modelo económico',
+      model_economy_hint: 'Importaciones y pasadas rápidas. Más barato y rápido.',
       mode_api_title: 'Pegar una clave de API',
       mode_api_sub: 'Pago por uso. Funciona con cualquiera de los proveedores de abajo.',
       mode_cli_title: 'Usar una CLI que ya pagas',

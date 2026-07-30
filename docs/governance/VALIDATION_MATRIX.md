@@ -70,26 +70,27 @@ you which versions are installed, and the advisory's own `first_patched_version`
 per range tells you what to pin to. Never pin across a major to silence an
 advisory; that trades a reported risk for an unreported one.
 
-Three dev-only advisories are knowingly accepted, on the same standard the
-`cargo audit` ignore list uses - each states why it is tolerable and what would
-let us drop it:
+One dev-only advisory is knowingly accepted, on the same standard the
+`cargo audit` ignore list uses - it states why it is tolerable and what would let
+us drop it:
 
 - **`brace-expansion`, GHSA-mh99-v99m-4gvg, high.** Patched only in 5.0.8, with
   no backport to the 1.x or 2.x lines, and copies of both are pulled in by
-  `minimatch` 3.x under the older Jest and ESLint plugins. Forcing every copy to
-  5.x is the only complete remedy and is not worth it: 5.x is dual-published with
-  an `exports` map, so a CJS consumer that does `require('brace-expansion')`
-  expecting a bare function is at real risk of breaking, in exchange for a
-  denial-of-service advisory in a glob helper that only ever runs at build time.
-  The sibling advisory GHSA-3jxr-9vmj-r5cp _was_ backported and is pinned.
-  **Drop when:** `minimatch` 3.x leaves the tree, or upstream backports.
-- **`uuid`, CVE-2026-41907, medium.** Installed at 8.3.2, fixed in 11.1.1, three
-  majors away, reached only through `sockjs` under `webpack-dev-server`.
-  **Drop when:** the Angular CLI's dev-server chain moves to `uuid` 11.
-- **`@hono/node-server`, GHSA-frvp-7c67-39w9, medium.** Installed at 1.19.14,
-  fixed in 2.0.5, a major away, and it is a Windows path-traversal issue in
-  `serve-static` reached only through the Angular CLI's MCP server.
-  **Drop when:** the Angular CLI moves to `@hono/node-server` 2.x.
+  `minimatch` 3.1.5 under `test-exclude` and `fork-ts-checker-webpack-plugin`.
+  Forcing every copy to 5.x is the only complete remedy, and **it was tried and
+  reverted, because it breaks them.** `brace-expansion` 5's CJS entry exports
+  `{ EXPANSION_MAX, EXPANSION_MAX_LENGTH, expand }` rather than a bare function,
+  and `minimatch` 3.1.5 does `var expand = require('brace-expansion')` and then
+  calls it, so both copies throw `expand is not a function` on load.
+  **The dangerous part is that nothing catches this.** With the global override in
+  place `npm audit` read 0, the whole gate went green, and `nx test core
+--coverage` passed as well, because Jest 30 resolves its own newer
+  `minimatch`. So a pin that looks like a clean sweep leaves two live landmines
+  behind. This is the concrete reason the rule above says never to pin across a
+  major. The sibling advisory GHSA-3jxr-9vmj-r5cp _was_ backported per line and
+  is pinned.
+  **Drop when:** `minimatch` 3.1.5 leaves the tree, or upstream backports to 1.x
+  and 2.x.
 
 `cargo audit` must exit 0. It reads its ignore list from
 `apps/desktop/src-tauri/.cargo/audit.toml`, so it has to be run from that

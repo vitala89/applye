@@ -111,14 +111,32 @@ verify:csp` reported `CSP compatibility OK`. `npm run format:check` and `git dif
   quietly: it silently freezes a transitive version, so `npm ls <pkg> --all` is the check that tells
   you whether an entry is still doing anything.
 
-- **Open issues or blockers:** #213 is open and failing, and should be closed after #215 merges
-  rather than retried. The Prettier drift from the previous watch is still open, now confirmed at 15
-  files. The `Dependabot Updates` workflow error from two watches ago is still cosmetic and still
-  GitHub's own updater rather than this repository's CI.
+- **Second half of the same watch, after the maintainer merged #214, #215 and #216:** the alert count
+  fell 17 -> 3, and #213 closed itself the moment #215's ignore rule landed, which is the rule working
+  exactly as intended. #217 then took the last two npm advisories that had a fix - `uuid`
+  8.3.2 -> 11.1.1 and `@hono/node-server` 1.19.14 -> 2.0.5, both majors, both verified against their
+  actual consumer rather than assumed. Sixteen of the original seventeen are closed. **The one
+  genuinely interesting result is the advisory that was refused.** A zero `npm audit` was available by
+  forcing every `brace-expansion` copy to 5.x. It was tried, it reported zero, and it breaks
+  `minimatch` 3.1.5 under `test-exclude` and `fork-ts-checker-webpack-plugin`: version 5's CJS entry
+  exports `{ EXPANSION_MAX, EXPANSION_MAX_LENGTH, expand }` instead of a bare function, and
+  `minimatch` 3.1.5 calls the module directly, so both copies throw `expand is not a function` on
+  load. **Every signal this repository has said the change was clean** - `npm audit` 0, the full gate
+  green across all six projects with the cache skipped, and `nx test core --coverage` passing too,
+  because Jest 30 resolves its own newer `minimatch`. It was reverted, and the exact failure is now
+  recorded in `docs/governance/VALIDATION_MATRIX.md` beside the rule it justifies.
 
-- **Next first action:** Merge #214 and #215, close #213, then run the `docs/RELEASE.md` smoke test
-  against the `v0.29.1` draft and publish it. That is still the only thing standing between the work
-  of the last three watches and a user being able to download any of it.
+- **Open issues or blockers:** The Prettier drift from the previous watch is still open, now confirmed
+  at 15 files, and still deliberately unmixed with security work. The `Dependabot Updates` workflow
+  error from two watches ago is still cosmetic and still GitHub's own updater rather than this
+  repository's CI. One npm advisory and one Rust advisory stay open on purpose, both documented with
+  drop conditions: `brace-expansion` GHSA-mh99-v99m-4gvg and `glib` RUSTSEC-2024-0429.
+
+- **Next first action:** Merge #217, then run the `docs/RELEASE.md` smoke test against the `v0.29.1`
+  draft and publish it. That is still the only thing standing between the work of the last three
+  watches and a user being able to download any of it. After that the Prettier drift is the cheapest
+  remaining job, and Tier 1 - `jobs.component.ts` at 2794 lines, `discover.rs` at 3488 - is the
+  largest.
 
 - **Evidence:** **The previous watch's open question is now answered.** It recorded that CodeQL had
   not re-scanned and that the five ReDoS alerts should be read as open until GitHub said otherwise.

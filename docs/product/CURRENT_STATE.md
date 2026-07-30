@@ -8,13 +8,19 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **Open security alerts, as of 2026-07-30**: CodeQL had five, all `js/polynomial-redos` and all high,
-  in `libs/core` - `profile/profile-markdown.ts` (three), `text/signature.ts`, `profile/compensation.ts`.
-  All five are fixed on `fix/core-redos`, measured rather than assumed: on a 40 000-character
-  pathological input the old patterns cost 0.6-1.5 s each, and cost is quadratic in length. **CodeQL
-  has not re-scanned yet** - the alerts close only after the branch merges and default setup runs
-  again, so treat them as open until GitHub says otherwise. Dependabot has 27 open alerts (10 high,
-  13 medium, 4 low), all in transitive npm dependencies and none yet triaged.
+- **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
+  `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
+  merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character
+  pathological input the old patterns cost 0.6-1.5 s each, and the cost was quadratic in length.
+- **Dependency alerts, as of 2026-07-30: 17 open, of which 16 cannot reach a user.** `npm audit
+--omit=dev` reports **0 vulnerabilities** - nothing vulnerable ships inside the Tauri bundle. The
+  count was 27; merging #207, #209 and #212 closed ten, and #214 pins six transitive packages to
+  close twelve more. What remains after #214 is three npm advisories whose only remedy crosses a
+  major boundary - `brace-expansion` GHSA-mh99-v99m-4gvg, `uuid`, `@hono/node-server` - each recorded
+  in `docs/governance/VALIDATION_MATRIX.md` with a drop condition, plus `glib`. **`glib` is the only
+  alert with runtime scope and it is not fixable here**: the gtk-rs 0.18 stack reaches it through
+  `gtk` 0.18.2, which `tauri` 2.11.5 pins, so `cargo update -p glib` moves nothing. Linux-only, never
+  called directly, and `cargo audit` already tolerates it at exit 0.
 - **Superseded note, kept for the record**: `0.29.1` was previously the first run of the release matrix
   failed on all four platforms because `beforeBuildCommand` called `nx` without `npx`, and
   `tauri-action` does not go through the npm script that puts it on `PATH`. Fixed on
@@ -37,10 +43,16 @@
   already public and applye.dev is live, so the launch preparation this line used to describe is
   done; what remains is publishing the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
-- **Open pull requests, as of 2026-07-30**: three, all Dependabot - #207 (actions group, 4 updates),
-  #208 (dev-tooling, 5 updates), #209 (angular group, 14 updates, minors and patches only, which is
-  the #204 ignore rule working as intended). #202, #203 and #206 were closed as superseded; #204 and
-  #205 merged at 06:57.
+- **Open pull requests, as of 2026-07-30**: #214 (transitive dependency pins), #215 (Dependabot
+  ignore rule for the TypeScript major), this handoff, and #213 - which is Dependabot's isolated
+  `typescript` 5.9.3 -> 7.0.2, **fails CI, and should be closed rather than retried once #215 lands**.
+  Merged today: #204, #205, #207, #209, #210 (the ReDoS fix), #212 (eslint 10 and the four packages
+  #208 was blocking). Closed as superseded: #202, #203, #206, #208.
+- **`typescript` is blocked by two constraints, not one.** Angular 21's compiler wants `~5.9`, and
+  `typescript-eslint` 8 declares `>=4.8.4 <6.1.0`. Both have to move before a TypeScript major can
+  land, so the Angular 22 upgrade alone would not unblock it. A TypeScript major fails before any task
+  runs, because nx cannot build the project graph - which is why it took down three separate pull
+  requests and masked the four innocent packages grouped with it.
 - **The `v0.29.1` tag exists but shipped no installers.** Every job in the release matrix failed on
   `nx: not found` before building anything, because `tauri-action` runs `tauri build` directly and
   only npm puts `node_modules/.bin` on `PATH`. Fixed in `6c05322` (#197), which also gave

@@ -44,7 +44,133 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-30 (latest), the dependency alerts are triaged rather than counted, and TypeScript is finally named as the thing that kept breaking CI
+### 2026-07-30 (latest), the jobs page loses three of its ten responsibilities, and the template does not change at all
+
+- **Status:** complete, with one gate explicitly pending
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-portal-answers-service`, `refactor/jobs-final-checks-service`,
+  `refactor/jobs-export-service` (stacked, in that order)
+- **Commits:** `f570694`, `eb8dc2e`, `85456a5`, plus this entry
+- **Pull request:** #222 (merged), #223, #225 (reopened from #224)
+- **Objective:** begin the Tier 1 split of `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  (2788 lines, roughly ten responsibilities) by extracting the three most isolated seams into
+  services, one pull request each, with behaviour held constant.
+
+- **Completed:** Three extractions, in the order the seams were isolable rather than the order they
+  appear in the file.
+
+  **Portal answers (#222)** was the easy one, and the reason is worth recording: it has _no template
+  surface at all_. `draftPortalAnswers`, `portalAnswers`, `copyPortalAnswer` and the rest are
+  referenced nowhere outside the component. Nine signals, two AI calls and one cache read moved to
+  `PortalAnswersService` with nothing else to reconcile.
+
+  **Final checks (#223)** was harder. Six of its members are bound from `jobs.component.html` and
+  `finalChecksOutdated` is written from twelve component call sites plus one template binding. Rather
+  than rewrite those bindings, the component now exposes `finalChecks` and `finalChecksOutdated` as
+  aliases onto the service's **writable** signals - not `asReadonly()` views. That is what let the
+  template stay byte-identical, including the `finalChecksOutdated.set(!!finalChecks())` binding at
+  `jobs.component.html:586`. `documentText` moved with the rules and became private; the
+  `DocumentRegionTag`, `FinalCheckStatus` and `FinalChecks` types moved to the service file so the
+  component imports them without a cycle.
+
+  **Export (#225)** used the same alias technique for four signals and seven bindings.
+
+  All three services are listed in the component's `providers` rather than `providedIn: 'root'`. That
+  was chosen over the repository's existing root-singleton convention on purpose: a component-scoped
+  provider gives one instance per page-component instance, which is exactly the lifetime the signals
+  had as fields. A root singleton would have been _probably_ equivalent, because the component resets
+  this state in `loadJob`, and "probably" is not the standard for a change that is supposed to be
+  invisible.
+
+  **48 tests, where there had been none.** Not a bonus - it is the evidence that these were moves.
+  They pin the things a careless extraction changes silently: which questions reach the portal-answers
+  cache key after trimming and filtering, that a redraft never consults the batch cache, each
+  final-check note trigger and the 900/500-character floors, that the input hash marks a result
+  outdated when a document changes and leaves it fresh when it does not, and the PDF-versus-DOCX
+  routing with the Tauri save dialog mocked.
+
+- **Not completed:** Seven of the ten responsibilities remain in the file - tailoring passes, scoring
+  and rescoring, CV/cover-letter draft generation, the CV gap dialog, the apply wizard's step and
+  reset machinery, the job/application CRUD actions, and the compensation and archetype derivations.
+  #222 is merged. #223 and #225 are open and CI-green at hand-off. **#224 no longer exists as a
+  pending change** - see the risk section below for what happened to it.
+
+- **Files or packages changed:** `apps/desktop/src/app/pages/jobs/jobs.component.ts` (2788 -> 2481);
+  new `apps/desktop/src/app/shared/{portal-answers,final-checks,document-export}.service.ts` and
+  their three spec files; `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+  `jobs.component.html` is unchanged.
+
+- **Validation:** Run and observed, per pull request:
+  - `nx run-many --target=lint,type-check,test,build --all` - passed, 6 projects. Desktop test count
+    733 -> 752 -> 765. The 11 lint warnings are pre-existing `no-non-null-assertion` in untouched code.
+  - `npm run verify:csp` - passed.
+  - `npm run format:check` - passed. (`nx format:check` initially flagged the new service file;
+    `npx prettier --write` on that path fixed it. Note that `nx format:write --projects=.` does _not_
+    scope to a project - it reformats the whole repository. `--uncommitted` is the safe flag.)
+  - `git diff --check` - clean.
+  - Browser, `nx serve desktop` on port 4201: `/jobs/1` renders and `app-jobs` instantiates after each
+    of the three changes, with no `NullInjectorError`, `NG0201`, `NG0203` or `NG0600` in the console.
+    The `tauriInvoke called outside Tauri context` errors are structural for a browser-served build.
+  - **Pending, not run:** the native Tauri gate, `npm run desktop:dev`. This matters most for #225 -
+    the export path is Tauri-only, and the unit tests mock `@tauri-apps/plugin-dialog`, so they are
+    not evidence that a real save works.
+
+- **Privacy/security impact:** No new data flow and no new egress. Portal answers still hash the same
+  inputs into the same SQLite cache; final checks still park the same payload under the same
+  `applye:wizardFinalChecks:<hash>` sessionStorage key. #225 touches a security-relevant surface - the
+  save dialog and the open/reveal shell bridges - and invokes them with the same values in the same
+  order. No new shell interpolation, no widened filesystem reach.
+
+- **Decisions and assumptions:** Two things were found and deliberately _not_ fixed, per the
+  move-not-redesign constraint.
+  1. **`portalLanguages` is misnamed.** It is the generic supported-document-language list, and the
+     template binds it twice for the CV and cover-letter selects. It stayed on the component under its
+     wrong name, with a comment saying so. Renaming it is a separate change.
+  2. **`doExport` reports a commit failure as an export failure.** `commitLinkedDocument` runs inside
+     the export `try`/`catch`, so if it threw, the status line would read `export_failed` even though
+     the file was written. The branch is unreachable today because that method swallows its own
+     errors, which is why this is a note and not a bug report. It was preserved exactly - passed in as
+     an `onExported` callback so it still runs inside the `try` - because moving it out would have
+     changed the code's meaning with no test able to notice.
+
+- **Risks or compatibility impact:** Stacked branches, and the stack did go wrong once - recorded here
+  rather than tidied away, because the failure mode is easy to repeat.
+
+  During the watch, #223 was amended and force-pushed after #224 revealed that its `reset()` was
+  reachable from three component sites; #224 was rebased onto the amended commit and both were
+  re-verified. That part went fine.
+
+  What did not: **#224 was merged into #223's branch instead of into `main`.** That was its base, so
+  GitHub did exactly what it was asked - it reported #224 as merged, put the export work and the docs
+  commit inside #223's branch, and left #223 retargeted at `main` and conflicting. The conflict was
+  not in the code. It was that `main` had #222 as a _squash_ (`864b57c`), while #223's branch still
+  carried the original pre-squash `f570694`, so the two histories no longer shared a base.
+
+  Rebuilt rather than force-merged: both tips were backed up to local `backup/pr223-branch` and
+  `backup/pr224-squash` first, #223 was reset to its own commit and rebased onto `origin/main` with
+  `--onto`, and the export work was rebased on top of the result and reopened as **#225**. The full
+  gate was re-run on each. No content was lost; #225 is byte-identical in content to what #224 held.
+
+  **The lesson for the next stacked series:** a squash merge of the bottom PR orphans every branch
+  above it, and merging a stacked PR without first retargeting it lands the change in the wrong
+  branch silently. Retarget upward one level at a time, and rebase the rest of the stack after each
+  merge.
+
+- **Open issues or blockers:** None blocking. The `glib` RUSTSEC-2024-0429 and `brace-expansion`
+  GHSA-mh99-v99m-4gvg advisories remain open on purpose with drop conditions recorded in
+  `docs/governance/VALIDATION_MATRIX.md`; neither was touched.
+
+- **Next first action:** Merge #223 into `main`, then retarget #225 to `main`, confirm its check
+  re-runs green, and merge it. Then run `npm run desktop:dev` and export a CV to PDF and to DOCX from the
+  apply wizard's final step, confirming the file is written, the status line reads the saved path, and
+  the document leaves draft state and appears in the Documents library - the one gate this watch could
+  not run.
+
+- **Evidence:** `git log --oneline -3` on `refactor/jobs-export-service` shows `85456a5`, `eb8dc2e`,
+  `f570694`. `wc -l apps/desktop/src/app/pages/jobs/jobs.component.ts` reports 2481.
+  `git diff main --stat -- apps/desktop/src/app/pages/jobs/jobs.component.html` is empty.
+
+### 2026-07-30, the dependency alerts are triaged rather than counted, and TypeScript is finally named as the thing that kept breaking CI
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

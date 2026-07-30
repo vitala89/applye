@@ -44,7 +44,94 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-30 (latest), the jobs page loses three of its ten responsibilities, and the template does not change at all
+### 2026-07-31 (latest), onboarding could not pick a model, so it sent an empty one
+
+- **Status:** complete, with the native gate pending
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/onboarding-model-selection`
+- **Commits:** `f315adc`, plus this entry
+- **Pull request:** #226
+- **Objective:** a user report with two screenshots - choosing DeepSeek on the onboarding AI step,
+  saving the key successfully, and then getting `Couldn't parse that resume` with
+  `DeepSeek API error (400): The supported API model names are deepseek-v4-pro or
+deepseek-v4-flash, but you passed .` underneath it.
+
+- **Completed:** The visible symptom was a resume that would not parse. The cause was that nothing
+  in the wizard ever chose a model.
+
+  The AI-setup step persisted `aiMode` and `provider`, and `aiDispatch` read the model back out of
+  the settings row. So the wizard sent whatever was stored there - `claude-haiku-4-5` on a fresh
+  install, which DeepSeek rejects, or the empty string a previous CLI-mode run deliberately leaves
+  behind, which is the reported error. Note that `markSeen` blanks the model ids in CLI mode on
+  purpose and migration `0002` only `COALESCE`s a NULL, so once blanked the pair stays blank.
+
+  **This exact class of bug had already been fixed once, for the provider.** The comment on
+  `aiDispatch` explains at length why reading `provider` back from settings was wrong - the wizard's
+  own state is the truth for the duration of the wizard - and then the very next line read the model
+  back from settings anyway.
+
+  Settings already had everything needed to prevent it: a model catalogue, per-provider defaults,
+  and `apiModelsToRestore`, which repairs a blank or foreign model id. All of it was private to that
+  screen, so the second screen writing the same two fields could not use it and was free to
+  disagree. The catalogue, the defaults and the reconciler moved to `@applye/core` as `api-models`,
+  with a new `resolveApiModels` that always returns both fields filled; Settings now reads from
+  there instead of its own copies, and onboarding gained quality and economy selects seeded from
+  stored settings and reconciled on every provider or mode change. Both `persistAiChoice` and
+  `markSeen` now write the pair alongside the provider.
+
+  One further defect found while wiring the seed: the settings read is async and the AI step is
+  interactive from the first frame, so a user clicking a provider before the read resolved had their
+  choice silently overwritten. Guarded with a touched flag.
+
+- **Not completed:** The `openai` and `gemini` providers still have no API-mode catalogue, which is
+  correct - `ai/api.rs` cannot dispatch to them - but it means `resolveApiModels` returns null for
+  them and the selects do not render. That is the existing v1 boundary, not a regression.
+
+- **Files or packages changed:** new `libs/core/src/lib/ai/api-models.ts` + spec, exported from the
+  `core` barrel; `apps/desktop/src/app/core/onboarding/onboarding.component.{ts,html,scss,spec.ts}`;
+  `apps/desktop/src/app/pages/settings/settings.component.ts`; all six locale files in `libs/i18n`.
+
+- **Validation:** Run and observed:
+  - `nx run-many --target=lint,type-check,test,build --all` - passed, 6 projects, 773 desktop tests
+    (up from 765) and 252 core tests. The 11 lint warnings are pre-existing `no-non-null-assertion`.
+  - `npm run verify:csp` - passed.
+  - `npm run format:check` - passed.
+  - `git diff --check` - clean.
+  - **Not verifiable in the browser preview:** the onboarding overlay is gated on a settings read,
+    which fails outside a Tauri runtime, so a browser-served build never renders the step. The
+    template compiles (it is type-checked by `nx build desktop`), but that is not the same as seeing
+    it. The running `tauri dev` instance did hot-reload the change.
+  - **Pending, not run:** the native gate. Screen-control permission was denied this session, so the
+    wizard was not driven end to end.
+
+- **Privacy/security impact:** No change to key handling. Keys stay in the OS keychain via
+  `KeysService`; nothing here reads, logs or transmits one. The change only decides which model id
+  accompanies a request the user already authorised. Model ids are not secrets.
+
+- **Decisions and assumptions:** The catalogue went to `libs/core` rather than a desktop-side shared
+  folder because two screens depend on it and `AiProvider` already lives there. `apiModelsToRestore`
+  moved with it; `CLI_MODEL_CUSTOM` and `cliModelSelectValue` stayed in `pages/settings` because
+  they are specific to that screen's free-text CLI picker.
+
+- **Risks or compatibility impact:** Existing settings rows are not migrated. They are repaired on
+  read instead - the first time the user opens either screen, a blank or foreign model id is
+  reconciled to the selected provider's default. That is deliberate: a migration cannot know which
+  provider the user meant, and repairing on read fixes rows this bug has already corrupted.
+
+- **Open issues or blockers:** None. `glib` RUSTSEC-2024-0429 and `brace-expansion`
+  GHSA-mh99-v99m-4gvg remain open on purpose with drop conditions in
+  `docs/governance/VALIDATION_MATRIX.md`; neither was touched.
+
+- **Next first action:** In the running `tauri dev` window, re-run onboarding from Settings, pick
+  DeepSeek on the AI step, confirm the two model dropdowns appear and read `deepseek-v4-pro` /
+  `deepseek-v4-flash`, then paste a resume and confirm it parses instead of returning the 400. Then
+  open Settings and confirm it shows the same pair.
+
+- **Evidence:** The reported error string is reproduced by the stored-model path: migration
+  `0002_settings_defaults.sql` seeds `economy_model = 'claude-haiku-4-5'`, and `markSeen` wrote
+  `economyModel: ''` in CLI mode, while `aiDispatch` passed `settings.economyModel` straight through.
+
+### 2026-07-30, the jobs page loses three of its ten responsibilities, and the template does not change at all
 
 - **Status:** complete, with one gate explicitly pending
 - **Agent/tool:** Claude Code, Opus

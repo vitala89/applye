@@ -44,7 +44,84 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-30 (latest), the repository goes public, and the release pipeline produces installers for the first time
+### 2026-07-30 (latest), the five CodeQL ReDoS alerts are closed, and a repository-wide formatting drift surfaces
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/core-redos`
+- **Commits:** `91b1791`
+- **Pull request:** #210
+- **Objective:** item 2 of the previous watch's backlog - the five open CodeQL `js/polynomial-redos`
+  alerts in `libs/core`, all high severity.
+
+- **Completed:** All five sites are linear now, and the fix was chosen per site rather than applied
+  as a pattern. Two take bounded repetition counts where a bound is honest: the salary parser's
+  percentage strip caps digit runs at twelve, and the signature sanitiser's email pattern takes the
+  RFC 5321 lengths. The scoring-JSON closing fence loses a leading `\s*` that the following `.trim()`
+  already covered. The two trailing-`(...)` parsers behind the education and language editors - the
+  same regex written twice, `^(.*?)\s*\(([^)]*)\)\s*$`, quadratic on a run of `(` and again on a run
+  of spaces - now share one string scan that cannot backtrack.
+
+- **Not completed:** Nothing in scope. Item 1 of the backlog (smoke-test and publish `v0.29.1`) was
+  not attempted: it needs a Windows VM, a Linux VM, and a publish action that is the maintainer's to
+  take. Dependabot's 27 alerts were counted, not triaged.
+
+- **Files or packages changed:** `libs/core/src/lib/profile/{compensation,profile-markdown}.ts` and
+  their specs, `libs/core/src/lib/text/signature.ts` and its spec, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+
+- **Validation:** Run and observed on the branch: `nx run-many --target=lint,type-check,test --all`
+  (6 projects green, 0 errors, 10 pre-existing `no-non-null-assertion` warnings in `compensation.*`
+  that this change does not touch); `nx run-many --target=build --all` green; `npm run verify:csp`
+  reported `CSP compatibility OK`; `npm run format:check` clean; `git diff --check` clean. The
+  `cargo` rows of the validation matrix do not apply - no Rust changed, and despite the change being
+  inside `libs/core` no shared type or IPC contract changed, only the bodies of five functions. The
+  native gate was not run and is not applicable: no IPC, migration, keychain or dialog is involved.
+
+- **Privacy/security impact:** Both. The security half is the point of the watch. The privacy half is
+  `signature.ts`, which exists to keep a phone number or email the model appended out of a cover
+  letter. Bounding that regex was the only change here that could weaken a guarantee, so the bound
+  was picked to make weakening impossible rather than merely unlikely: a bounded match still consumes
+  the `@` and the domain, so a partial strip cannot leave a usable address behind. `PHONE_RE` and
+  `EDGE_SEPARATORS_RE` in the same file were deliberately left alone - see the decisions below.
+
+- **Decisions and assumptions:** Fix only what CodeQL flagged. `PHONE_RE` and `EDGE_SEPARATORS_RE`
+  in `signature.ts` are the same class of pattern and CodeQL did not flag either, and bounding
+  `PHONE_RE` would mean a long numeric run is stripped only in part - which for a phone-number
+  sanitiser is worse than the quadratic cost, because a fragment of a real number still leaks. They
+  are recorded here instead of changed. Second decision: the trailing-`(...)` behaviour on
+  unbalanced input was preserved exactly rather than improved. `Title (a(b)` still yields head
+  `Title` and body `a(b`, and `Title (2019 - (2020))` still yields no split at all. Neither is
+  obviously right, but the old regex chose them and nothing should change silently during a security
+  fix; three tests now pin both.
+
+- **Risks or compatibility impact:** Low, and bounded to absurd input. A percentage with more than
+  twelve digits or an email local part longer than the RFC allows is now stripped in part rather
+  than whole. No stored data, migration, or contract is affected.
+
+- **Open issues or blockers:** **A repository-wide Prettier drift, newly found and not fixed.**
+  Fifteen files are stale against the current Prettier: six under `libs/core/src/lib/{geo,models}`,
+  nine under `apps/desktop/src/app/pages` including `jobs.component.ts` and `profile.component.ts`.
+  `nx format:check` only inspects files changed against the base, so the drift is invisible until
+  something touches one of those files - which is exactly what happened here, and why this branch
+  carries two formatting-only hunks in `profile-markdown.ts` reflowing type unions nobody edited.
+  Every future PR touching one of those fifteen files inherits the same noise. It wants one
+  formatting-only commit, on its own, so the diff is self-evidently mechanical.
+
+- **Next first action:** Unchanged from the previous watch - run the `docs/RELEASE.md` smoke test
+  against the `v0.29.1` draft and publish it. Everything else still waits behind having a working
+  download. After that, Dependabot's 27 alerts (10 high, 13 medium, 4 low) are the next security
+  item, and the Prettier drift above is a clean fifteen-minute job for whoever wants a quiet start.
+
+- **Evidence:** The cost figures in #210 were measured on this machine at 40 000 characters, old
+  pattern against new, not inferred from the alert text: 1517 ms, 989 ms, 639 ms, 633 ms and 612 ms
+  before, sub-4 ms or no regex after. The regression tests use a 100 000-character input, where the
+  old patterns need four to nine seconds against a two-second budget, so they fail rather than merely
+  slow down. **One thing is not yet evidence:** CodeQL has not re-scanned. Default setup runs on push
+  to `main`, so the five alerts close after #210 merges, not before, and until GitHub says so they
+  should be read as open.
+
+### 2026-07-30, the repository goes public, and the release pipeline produces installers for the first time
 
 - **Status:** partial - a draft release is built and waiting on a manual smoke test
 - **Agent/tool:** Claude Code (Opus 5)

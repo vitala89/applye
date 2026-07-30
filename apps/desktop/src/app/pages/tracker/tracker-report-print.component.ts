@@ -93,7 +93,7 @@ export class TrackerReportPrintComponent {
     }
     const period = q.get('period') ?? 'all';
 
-    let all: TrackerRow[] = [];
+    let all: TrackerRow[];
     try {
       all = await this.db.trackerRows();
     } catch {

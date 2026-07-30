@@ -20,6 +20,13 @@ updates:
     # Patches and minors still come through, so security fixes are not blocked.
     # To take a major: delete the matching entry here, or run the upgrade by hand
     # and let the next cycle catch up.
+    #
+    # `typescript` is on the list for a different reason: two separate constraints
+    # refuse a major, so no amount of retrying helps. Angular 21's compiler wants
+    # `~5.9`, and `typescript-eslint` 8 declares `>=4.8.4 <6.1.0`. A TypeScript
+    # major therefore fails before a single task runs - nx cannot build the
+    # project graph - which is what took down two grouped dev-tooling PRs and
+    # then a third that proposed it alone. Both constraints have to move first.
     ignore:
       - dependency-name: '@angular/*'
         update-types: ['version-update:semver-major']
@@ -28,6 +35,8 @@ updates:
       - dependency-name: '@schematics/angular'
         update-types: ['version-update:semver-major']
       - dependency-name: 'angular-eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
     groups:
       angular:

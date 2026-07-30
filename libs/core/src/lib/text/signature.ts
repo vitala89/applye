@@ -11,8 +11,14 @@
  * Prompt rules are best-effort; this is the guarantee.
  */
 
-// Matches an email address anywhere in the text.
-const EMAIL_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/g;
+// Matches an email address anywhere in the text. The runs are bounded to the
+// RFC 5321 limits (64-character local part, 255-character domain, 63-character
+// final label): unbounded `[^\s@]+` is quadratic on a long run of non-'@'
+// characters, and this text comes from a model response (CodeQL
+// js/polynomial-redos). A local part longer than the RFC allows is not a real
+// address, and the part that does get stripped still takes the '@' and the
+// domain with it, so no usable address survives.
+const EMAIL_RE = /[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,63}/g;
 
 // Matches a URL / www host.
 const URL_RE = /\b(?:https?:\/\/|www\.)\S+/gi;

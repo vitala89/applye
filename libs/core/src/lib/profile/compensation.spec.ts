@@ -208,3 +208,32 @@ describe('extractSalaryFromJd - PLN', () => {
     expect(extractSalaryFromJd(jd)).toContain('PLN');
   });
 });
+
+// A pasted job description is uncontrolled input, so the salary regexes must be
+// linear in its length. Each case below is a string that made the pre-fix regex
+// backtrack quadratically; on a regression these do not fail, they hang, so the
+// wall-clock assertion is what catches it.
+describe('parseSalaryRange is linear on pathological input', () => {
+  const PUMP = 100_000;
+  const BUDGET_MS = 2_000;
+
+  it('handles a long digit run that never reaches a percent sign', () => {
+    const text = '9'.repeat(PUMP);
+    const started = Date.now();
+    // 100k digits overflow to Infinity, so there is no usable figure.
+    expect(parseSalaryRange(text)).toBeNull();
+    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+  });
+
+  it('still strips a bonus percentage after a long digit run', () => {
+    const text = `${'9'.repeat(PUMP)} salary €80k - 100k, bonus 15%`;
+    const started = Date.now();
+    expect(parseSalaryRange(text)).toEqual({
+      min: 80000,
+      max: 100000,
+      currency: 'EUR',
+      period: '',
+    });
+    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+  });
+});

@@ -37,3 +37,19 @@ describe('sanitizeSignature', () => {
     expect(sanitizeSignature('José María O’Connor-Smith')).toBe('José María O’Connor-Smith');
   });
 });
+
+// The signature arrives from a model, which is uncontrolled input for this
+// purpose, so the contact-detail regexes must be linear in its length. On a
+// regression this hangs rather than fails, so the wall-clock bound is the guard.
+describe('sanitizeSignature is linear on pathological input', () => {
+  it('handles a long run of non-@ characters', () => {
+    const name = 'a'.repeat(100_000);
+    const started = Date.now();
+    expect(sanitizeSignature(name)).toBe(name);
+    expect(Date.now() - started).toBeLessThan(2_000);
+  });
+
+  it('still strips an email that follows a long run', () => {
+    expect(sanitizeSignature(`${'a'.repeat(5_000)} jane@doe.io`)).toBe('a'.repeat(5_000));
+  });
+});

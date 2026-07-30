@@ -576,3 +576,56 @@ describe('profile-markdown', () => {
     });
   });
 });
+
+// Education and language lines come from pasted CV text, so the trailing-"(...)"
+// split must be linear in the line length. The three strings below each made the
+// pre-fix regexes backtrack quadratically; on a regression they hang rather than
+// fail, so the wall-clock bound is what catches it.
+describe('profile parsing is linear on pathological input', () => {
+  const PUMP = 100_000;
+  const BUDGET_MS = 2_000;
+
+  it('parses an education line that is a long run of opening brackets', () => {
+    const line = '('.repeat(PUMP);
+    const started = Date.now();
+    expect(parseEducationEntries(line)).toEqual([
+      { title: line, institution: '', startDate: '', endDate: '' },
+    ]);
+    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+  });
+
+  it('parses a language entry with a long internal run of spaces', () => {
+    const item = `a${' '.repeat(PUMP)}b`;
+    const started = Date.now();
+    expect(parseLanguageEntries([item])).toEqual([{ language: item, level: '' }]);
+    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+  });
+
+  it('rejects a scoring payload that is a long run of whitespace', () => {
+    const started = Date.now();
+    expect(parseScoringJson(' '.repeat(PUMP))).toBeNull();
+    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+  });
+});
+
+// The trailing-"(...)" split is now string scanning rather than a regex; these
+// pin the unbalanced-input behaviour the regex had, so a future rewrite cannot
+// change it silently.
+describe('trailing bracket split, unbalanced input', () => {
+  it('takes the innermost group when an opening bracket is unclosed', () => {
+    expect(parseLanguageEntries(['Klingon (a(b)'])).toEqual([
+      { language: 'Klingon', level: 'a(b' },
+    ]);
+  });
+
+  it('leaves a nested group alone, since the body may not contain a bracket', () => {
+    const item = 'Klingon (2019 - (2020))';
+    expect(parseLanguageEntries([item])).toEqual([{ language: item, level: '' }]);
+  });
+
+  it('still splits a normal level, including with trailing spaces', () => {
+    expect(parseLanguageEntries(['English (C1)  '])).toEqual([
+      { language: 'English', level: 'C1' },
+    ]);
+  });
+});

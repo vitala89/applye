@@ -62,8 +62,11 @@ export function parseSalaryRange(text: string | null | undefined): ParsedSalary 
   const period = detectPeriod(text);
   // Strip figures that are not pay: bonus percentages ("15%") and retirement-plan
   // names ("401k", "403(b)", "457b") that would otherwise be misread as salary.
+  // The digit runs are bounded: `\d+` here is quadratic on a long run of digits
+  // that never reaches a '%', and this text is a pasted job description
+  // (CodeQL js/polynomial-redos). Twelve digits is far past any real percentage.
   const forNumbers = text
-    .replace(/\d+(?:[.,]\d+)?\s*%/g, ' ')
+    .replace(/\d{1,12}(?:[.,]\d{1,12})?\s*%/g, ' ')
     .replace(/\b(?:401|403|457)\s*\(?\s*[kb]\)?/gi, ' ');
   // Grab number-with-optional-k tokens in order.
   const tokens = forNumbers.match(/\d[\d.,]*\d\s*[kK]?|\d\s*[kK]?/g) ?? [];

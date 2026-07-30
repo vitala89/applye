@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   OnDestroy,
@@ -139,6 +140,7 @@ interface FinalChecks {
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);

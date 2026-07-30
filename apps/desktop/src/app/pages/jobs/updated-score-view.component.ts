@@ -1,4 +1,12 @@
-import { Component, afterNextRender, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { AtsReport, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -27,6 +35,7 @@ import {
   imports: [LucideAngularModule, ScoreGauge],
   templateUrl: './updated-score-view.component.html',
   styleUrl: './updated-score-view.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UpdatedScoreView {
   private readonly i18n = inject(TranslateService);

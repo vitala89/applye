@@ -102,6 +102,12 @@ import {
 import { CvGapDialog } from './cv-gap-dialog.component';
 import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
+import {
+  DocumentRegionTag,
+  FinalCheckInputs,
+  FinalCheckStatus,
+  FinalChecksService,
+} from '../../shared/final-checks.service';
 
 interface PassResult {
   pass: number;
@@ -114,18 +120,7 @@ interface PassResult {
   tokensOut: number;
 }
 
-type DocumentRegionTag = 'de' | 'us' | 'uk' | 'generic';
 type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
-type FinalCheckStatus =
-  'not_run' | 'pass' | 'needs_review' | 'strong' | 'needs_edits' | 'valid' | 'rescore' | 'outdated';
-
-interface FinalChecks {
-  inputHash: string;
-  ats: FinalCheckStatus;
-  hr: FinalCheckStatus;
-  fit: FinalCheckStatus;
-  notes: string[];
-}
 
 @Component({
   selector: 'app-jobs',
@@ -144,7 +139,7 @@ interface FinalChecks {
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Component-scoped: portal-answer drafts belong to the job open on this page
   // and must not outlive it, which is the lifetime they had as component fields.
-  providers: [PortalAnswersService],
+  providers: [PortalAnswersService, FinalChecksService],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
@@ -162,6 +157,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly docGen = inject(DocumentGenService);
   /** Draft-portal-answers state and AI calls. */
   protected readonly portal = inject(PortalAnswersService);
+  /** The wizard's token-free final-checks step. */
+  private readonly finalChecksSvc = inject(FinalChecksService);
 
   // Previous running activity for this job, so the effect below can detect the
   // moment a background step finished and pull its fresh result into a page
@@ -446,8 +443,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly documentReviewError = signal(false);
   readonly chooseCvOpen = signal(false);
   readonly chooseCoverLetterOpen = signal(false);
-  readonly finalChecks = signal<FinalChecks | null>(null);
-  readonly finalChecksOutdated = signal(false);
+  /** Aliases onto `FinalChecksService`. The template writes `finalChecksOutdated`
+   * directly, so these stay the same writable signals rather than views of them. */
+  readonly finalChecks = this.finalChecksSvc.checks;
+  readonly finalChecksOutdated = this.finalChecksSvc.outdated;
 
   readonly cvReviewStatus = computed<ReviewDocumentStatus>(() =>
     this.documentCardStatus('cv', this.linkedCv()),
@@ -490,7 +489,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     const job = this.job();
     if (!job?.id) return;
     const reviewHash = await this.currentDocumentsHash();
-    this.storeFinalChecksForReturn(reviewHash);
+    this.finalChecksSvc.storeForReturn(reviewHash);
     const path = kind === 'cv' ? ['/documents/cv', id] : ['/documents/cover-letter', id];
     await this.router.navigate(path, {
       queryParams: {
@@ -504,24 +503,6 @@ export class JobsComponent implements OnInit, OnDestroy {
         preview: '1',
       },
     });
-  }
-
-  private storeFinalChecksForReturn(reviewHash: string): void {
-    const checks = this.finalChecks();
-    const storage = this.document.defaultView?.sessionStorage;
-    if (!checks || !storage) return;
-    storage.setItem(`applye:wizardFinalChecks:${reviewHash}`, JSON.stringify(checks));
-  }
-
-  private restoreFinalChecksAfterReturn(reviewHash: string): FinalChecks | null {
-    const storage = this.document.defaultView?.sessionStorage;
-    const raw = storage?.getItem(`applye:wizardFinalChecks:${reviewHash}`);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as FinalChecks;
-    } catch {
-      return null;
-    }
   }
 
   private inferDocumentRegion(job: Job | null): DocumentRegionTag {
@@ -550,7 +531,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   finalCheckStatusKey(status: FinalCheckStatus): string {
-    return `jobs.wizard.final_check_${status}`;
+    return this.finalChecksSvc.statusKey(status);
   }
 
   async ensureApplicationDraft(): Promise<Application> {
@@ -1074,45 +1055,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async runFinalChecks(): Promise<void> {
-    const hash = await this.currentDocumentsHash();
-    const cvText = this.documentText(this.linkedCv());
-    const letterText = this.documentText(this.linkedCoverLetter());
-    const jobText = this.jdText().toLowerCase();
-    const keywords = Array.from(new Set(jobText.match(/[a-zäöüß]{5,}/gi) ?? [])).slice(0, 24);
-    const overlap = keywords.filter((word) =>
-      cvText.toLowerCase().includes(word.toLowerCase()),
-    ).length;
-    const cvReasonable = cvText.trim().length >= 900;
-    const hasSettings = !!this.documentReviewLanguage() && !!this.documentReviewRegion();
-    const notes: string[] = [];
-
-    if (!this.linkedCv()) notes.push(this.t()('jobs.wizard.final_note_missing_cv'));
-    if (!this.linkedCoverLetter())
-      notes.push(this.t()('jobs.wizard.final_note_missing_cover_letter'));
-    if (this.linkedCv() && !cvReasonable) notes.push(this.t()('jobs.wizard.final_note_short_cv'));
-    if (keywords.length && overlap < Math.min(4, keywords.length)) {
-      notes.push(this.t()('jobs.wizard.final_note_keyword_overlap'));
-    }
-    if (!hasSettings) notes.push(this.t()('jobs.wizard.final_note_market_language'));
-    if (letterText && letterText.length < 500) {
-      notes.push(this.t()('jobs.wizard.final_note_short_cover_letter'));
-    }
-
-    this.finalChecks.set({
-      inputHash: hash,
-      ats: this.linkedCv() && cvReasonable && hasSettings ? 'pass' : 'needs_review',
-      hr: notes.length <= 1 ? 'strong' : 'needs_edits',
-      fit: this.finalChecksOutdated() ? 'rescore' : 'valid',
-      notes,
-    });
-    this.finalChecksOutdated.set(false);
+  runFinalChecks(): Promise<void> {
+    return this.finalChecksSvc.run(this.finalCheckInputs());
   }
 
   finalChecksNeedRetailor(): boolean {
-    const checks = this.finalChecks();
-    if (!checks || this.finalChecksOutdated()) return false;
-    return !!this.linkedCv() && (checks.ats === 'needs_review' || checks.fit === 'rescore');
+    return this.finalChecksSvc.needRetailor(this.linkedCv());
   }
 
   async retailorFromFinalChecks(): Promise<void> {
@@ -1133,59 +1081,23 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.wizardInitialStep.set(2);
   }
 
-  private documentText(item: DocumentLibraryItem | null): string {
-    if (!item?.contentJson) return '';
-    try {
-      if (item.docType === 'cv') return cvContentToMd(JSON.parse(item.contentJson) as CvContent);
-      const content = JSON.parse(item.contentJson) as CoverLetterContent;
-      return [
-        content.subject,
-        content.greeting,
-        ...(content.bodyParagraphs ?? []),
-        content.closing,
-        content.signature,
-      ]
-        .filter(Boolean)
-        .join('\n\n');
-    } catch {
-      return item.contentJson;
-    }
+  /** The linked documents and review settings the final checks run against. */
+  private finalCheckInputs(): FinalCheckInputs {
+    return {
+      cv: this.linkedCv(),
+      coverLetter: this.linkedCoverLetter(),
+      jdText: this.jdText(),
+      language: this.documentReviewLanguage(),
+      region: this.documentReviewRegion(),
+    };
   }
 
   private currentDocumentsHash(): Promise<string> {
-    const cv = this.linkedCv();
-    const coverLetter = this.linkedCoverLetter();
-    return this.db.hashText(
-      JSON.stringify({
-        cv: cv
-          ? {
-              label: cv.label ?? '',
-              contentJson: cv.contentJson ?? '',
-              language: cv.language ?? '',
-              regionTag: cv.regionTag ?? '',
-            }
-          : null,
-        coverLetter: coverLetter
-          ? {
-              label: coverLetter.label ?? '',
-              contentJson: coverLetter.contentJson ?? '',
-              language: coverLetter.language ?? '',
-              regionTag: coverLetter.regionTag ?? '',
-            }
-          : null,
-        language: this.documentReviewLanguage(),
-        region: this.documentReviewRegion(),
-      }),
-    );
+    return this.finalChecksSvc.documentsHash(this.finalCheckInputs());
   }
 
-  private async refreshFinalChecksFreshness(): Promise<void> {
-    const checks = this.finalChecks();
-    if (!checks) {
-      this.finalChecksOutdated.set(false);
-      return;
-    }
-    this.finalChecksOutdated.set((await this.currentDocumentsHash()) !== checks.inputHash);
+  private refreshFinalChecksFreshness(): Promise<void> {
+    return this.finalChecksSvc.refreshFreshness(this.finalCheckInputs());
   }
 
   async openTailorCoverLetterModal(): Promise<void> {
@@ -1522,8 +1434,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.tailorError.set(false);
     this.tailorCancelled.set(false);
     this.postTailorSaved.set(false);
-    this.finalChecks.set(null);
-    this.finalChecksOutdated.set(false);
+    this.finalChecksSvc.reset();
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     this.exportStatus.set('');
@@ -1644,7 +1555,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
     const currentHash = await this.currentDocumentsHash();
     if (currentHash === previousHash) {
-      const restoredChecks = this.restoreFinalChecksAfterReturn(previousHash);
+      const restoredChecks = this.finalChecksSvc.restoreAfterReturn(previousHash);
       if (restoredChecks) this.finalChecks.set(restoredChecks);
       this.finalChecksOutdated.set(false);
       this.documentReviewError.set(false);
@@ -2103,8 +2014,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
     this.tailorScore.begin(j.id);
     this.activity.begin(j.id, 'scoring');
-    this.finalChecks.set(null);
-    this.finalChecksOutdated.set(false);
+    this.finalChecksSvc.reset();
 
     // Deterministic ATS check on the tailored CV, before the AI call and
     // independent of whether it succeeds: it costs no tokens, cannot fail on a
@@ -2310,8 +2220,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.lastExport.set(null);
     this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
-    this.finalChecks.set(null);
-    this.finalChecksOutdated.set(false);
+    this.finalChecksSvc.reset();
 
     this.tailorCancelled.set(false);
     const tailorJobId = this.job()?.id;

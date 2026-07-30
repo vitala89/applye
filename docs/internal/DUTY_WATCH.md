@@ -44,7 +44,106 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-30 (latest), the five CodeQL ReDoS alerts are closed, and a repository-wide formatting drift surfaces
+### 2026-07-30 (latest), the dependency alerts are triaged rather than counted, and TypeScript is finally named as the thing that kept breaking CI
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `chore/dev-tooling-eslint-10`, `chore/pin-transitive-advisories`,
+  `chore/dependabot-ignore-typescript-major`, `docs/redos-and-deps-watch`
+- **Commits:** `43885e2`, `920d1e5`, plus this entry
+- **Pull request:** #212 (merged), #214, #215, and this one
+- **Objective:** the failing Dependabot pull requests, then backlog item 3 - the dependency alerts.
+
+- **Completed:** Three things, in the order they turned out to depend on each other.
+
+  First, **the failing bot PR.** #208 grouped five dev-tooling updates and failed on `Failed to
+process project graph`. One package, `typescript` at `~7.0.2`, caused it; the other four were
+  fine. #212 takes the four - `eslint` 9 -> 10, `@eslint/js` 9 -> 10, `zone.js` 0.15 -> 0.16,
+  `@schematics/angular` 21.2.9 -> 21.2.19 - after checking every peer that constrains them rather
+  than trying and hoping. ESLint 10 then found a real dead store in
+  `tracker-report-print.component.ts`, fixed in the same commit.
+
+  Second, **the alerts, triaged rather than counted.** #212 and the two bot PRs the maintainer
+  merged took the count from 27 to 17. #214 pins six transitive packages through `overrides` and
+  closes twelve more: `axios`, `postcss`, `webpack-dev-server`, `body-parser`, `js-yaml` and
+  `brace-expansion`, each to the patched release inside its own major.
+
+  Third, **the cause of three failed pipelines, named in configuration.** Dependabot isolated
+  `typescript` into #213 and it failed exactly as it had inside the group. #215 adds it to the npm
+  semver-major ignore list, so it stops returning. #213 can be closed once #215 lands.
+
+- **Not completed:** Item 1 of the backlog is still untouched and still first - smoke-test and
+  publish `v0.29.1`. It needs a Windows VM, a Linux VM and a publish action, all the maintainer's.
+  The Prettier drift found in the previous watch is still open; it is a clean mechanical job and was
+  deliberately left as its own PR rather than mixed into a security change.
+
+- **Files or packages changed:** `package.json`, `package-lock.json`,
+  `apps/desktop/src/app/pages/tracker/tracker-report-print.component.ts`,
+  `.github/dependabot.yml`, `docs/governance/VALIDATION_MATRIX.md`, `CHANGELOG.md`, this file.
+
+- **Validation:** For #212 and #214: `nx run-many --target=lint,type-check,test,build --all` green
+  across 6 projects, run with `--skip-nx-cache` for #214 because a cache hit proves nothing about a
+  change to the build toolchain itself. `npm audit --omit=dev` at 0 before and after. `npm run
+verify:csp` reported `CSP compatibility OK`. `npm run format:check` and `git diff --check` clean
+  on every branch. CI green on #212 (3m39s), #214 (3m48s) and #215 (3m22s). `cargo audit` was run
+  while triaging `glib` and exits 0 with 19 allowed warnings; it was not re-run per branch because
+  no Cargo manifest is touched. Native gate not run and not applicable - no runtime dependency
+  moved.
+
+- **Privacy/security impact:** Security, and smaller than the numbers suggested. The honest framing
+  is that **none of the seventeen alerts ever shipped**: sixteen have `scope=development` and
+  `npm audit --omit=dev` is at zero. The seventeenth is the only one that could have shipped, and it
+  is a Rust crate rather than an npm package - see the trap below.
+
+- **Decisions and assumptions:** Clearing dev-only advisories was judged worth doing even though
+  nothing shipped, for the reason `.cargo/audit.toml` already states for the Rust side: a list of
+  known findings that nobody expects to reach zero is a list that hides the next real one. Against
+  that, three advisories were deliberately **not** cleared, because the only remedy crossed a major
+  boundary - `brace-expansion` GHSA-mh99-v99m-4gvg (no backport below 5.0.8, and forcing every copy
+  to 5.x risks CJS interop under `minimatch` 3.x), `uuid` (three majors), `@hono/node-server` (one
+  major). Each is recorded in the validation matrix with a drop condition, to the same standard the
+  cargo ignore list uses. Pinning across a major to make a number go down trades a reported risk for
+  an unreported one, and that trade was refused.
+
+- **Risks or compatibility impact:** ESLint 10 is a major on the lint toolchain and `zone.js` 0.16 is
+  a breaking bump by 0.x convention; both are covered by the full gate passing, and `zone.js` now
+  survives only in the library test setup. The `overrides` block is the one thing here that can rot
+  quietly: it silently freezes a transitive version, so `npm ls <pkg> --all` is the check that tells
+  you whether an entry is still doing anything.
+
+- **Open issues or blockers:** #213 is open and failing, and should be closed after #215 merges
+  rather than retried. The Prettier drift from the previous watch is still open, now confirmed at 15
+  files. The `Dependabot Updates` workflow error from two watches ago is still cosmetic and still
+  GitHub's own updater rather than this repository's CI.
+
+- **Next first action:** Merge #214 and #215, close #213, then run the `docs/RELEASE.md` smoke test
+  against the `v0.29.1` draft and publish it. That is still the only thing standing between the work
+  of the last three watches and a user being able to download any of it.
+
+- **Evidence:** **The previous watch's open question is now answered.** It recorded that CodeQL had
+  not re-scanned and that the five ReDoS alerts should be read as open until GitHub said otherwise.
+  GitHub has said otherwise: all five report `state: fixed`, `fixed_at 2026-07-30T08:34:00Z`, and
+  there are zero open code-scanning alerts. Two claims in this entry are measured rather than
+  inferred: the advisory ranges were read from the GitHub advisory API per release line, which is how
+  the `@major` selectors were chosen, and the installed versions were read from `npm ls <pkg> --all`
+  before and after each override. The first attempt at #214 pinned what the Dependabot alerts named
+  and moved the count by two - npm's advisory data and Dependabot's disagree on the ranges, and the
+  copies that actually needed pinning were `js-yaml` 3.14.2 and `brace-expansion` 5.0.6, not the
+  majors the alerts pointed at. Anyone repeating this work should trust `npm ls` over either alert
+  feed.
+
+- **Traps for a fresh agent:** **`glib` will look like an unfixed high-value runtime alert. It is
+  not fixable here.** RUSTSEC-2024-0429 is unsoundness in `glib::VariantStrIter`, and `glib` sits at
+  0.18.5 because the whole gtk-rs 0.18 stack - `atk`, `cairo-rs`, `gdk`, `gdk-pixbuf`, `gdkx11`,
+  `gio` - reaches it through `gtk` 0.18.2, which is what `tauri` 2.11.5, `wry`, `tao` and `muda`
+  pin. `cargo update -p glib` locks 0 packages. It is Linux-only, Applye's Rust never calls `glib`
+  directly, and `cargo audit` already tolerates it at exit 0. Drop it when Tauri's Linux backend
+  moves off gtk-rs 0.18, not before. Second trap: **four of the six packages recorded as "held for
+  Angular 22" were never actually blocked.** They were held because the grouped PR could not
+  install. `angular-eslint` is the one that genuinely is gated - 22.1.0 requires
+  `@angular/cli >= 22`.
+
+### 2026-07-30, the five CodeQL ReDoS alerts are closed, and a repository-wide formatting drift surfaces
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

@@ -36,12 +36,7 @@ export interface ProfileForm {
 }
 
 export type ProfileFieldKey =
-  | 'title'
-  | 'location'
-  | 'experience'
-  | 'skills'
-  | 'education'
-  | 'languages';
+  'title' | 'location' | 'experience' | 'skills' | 'education' | 'languages';
 
 export interface ScoringProfile {
   name?: string;
@@ -98,13 +93,7 @@ const CONTACT_FIELDS: { key: ContactKey; label: string }[] = [
 ];
 
 type ContactKey =
-  | 'firstName'
-  | 'lastName'
-  | 'location'
-  | 'email'
-  | 'phone'
-  | 'website'
-  | 'linkedin';
+  'firstName' | 'lastName' | 'location' | 'email' | 'phone' | 'website' | 'linkedin';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\+?\d[\d\s()./-]{5,}$/;
@@ -325,6 +314,25 @@ export const EMPTY_EDUCATION_ENTRY: EducationEntry = {
   endDate: '',
 };
 
+/** Splits a trailing parenthesised group off a line: "English (C1)" becomes
+ * `{ head: 'English', body: 'C1' }`, and a line without one returns null.
+ *
+ * Deliberately string scanning rather than the obvious `^(.*?)\s*\(([^)]*)\)\s*$`:
+ * that regex is quadratic twice over, on a long run of '(' and on a long run of
+ * spaces, and these lines are pasted CV text (CodeQL js/polynomial-redos).
+ * Behaviour matches the regex exactly, including on unbalanced input: the group
+ * is the one closing at the end of the line, and it may not contain ')'. */
+function splitTrailingParen(line: string): { head: string; body: string } | null {
+  const trimmed = line.trimEnd();
+  const close = trimmed.length - 1;
+  if (close < 1 || trimmed[close] !== ')') return null;
+  // The body may not contain ')', so the opening bracket is the first '(' after
+  // whatever ')' came before this one.
+  const open = trimmed.indexOf('(', trimmed.lastIndexOf(')', close - 1) + 1);
+  if (open < 0 || open >= close) return null;
+  return { head: trimmed.slice(0, open).trim(), body: trimmed.slice(open + 1, close) };
+}
+
 /** Parses the `## Education` body into structured entries, one per non-empty
  * line. Lenient and lossless: a line that does not match the canonical
  * "Title, Institution (start - end)" shape keeps whatever it has (a legacy
@@ -339,10 +347,10 @@ export function parseEducationEntries(education: string): EducationEntry[] {
       let startDate = '';
       let endDate = '';
       let head = line;
-      const paren = /\(([^)]*)\)\s*$/.exec(line);
+      const paren = splitTrailingParen(line);
       if (paren) {
-        head = line.slice(0, paren.index).trim();
-        const range = paren[1].split(EDU_RANGE_SEP).map((s) => s.trim());
+        head = paren.head;
+        const range = paren.body.split(EDU_RANGE_SEP).map((s) => s.trim());
         startDate = range[0] ?? '';
         const rawEnd = range[1] ?? '';
         endDate = /^(present|current|now|heute|jetzt|aktuell)$/i.test(rawEnd) ? '' : rawEnd;
@@ -622,8 +630,8 @@ export function parseLanguageEntries(languages: readonly string[]): LanguageEntr
     .map((raw) => (raw || '').trim())
     .filter(Boolean)
     .map((item) => {
-      const m = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(item);
-      if (m) return { language: m[1].trim(), level: m[2].trim() };
+      const paren = splitTrailingParen(item);
+      if (paren) return { language: paren.head, level: paren.body.trim() };
       return { language: item, level: '' };
     });
 }
@@ -643,9 +651,12 @@ export function serializeLanguageEntries(entries: LanguageEntry[]): string[] {
 
 export function parseScoringJson(raw: string | null | undefined): ScoringProfile | null {
   if (!raw) return null;
+  // The closing fence is matched without a leading `\s*` - that made the regex
+  // quadratic on a long run of whitespace, and the `.trim()` below removes the
+  // same whitespace anyway (CodeQL js/polynomial-redos).
   const cleaned = raw
     .replace(/^\s*```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/, '')
+    .replace(/```\s*$/, '')
     .trim();
   try {
     const obj = JSON.parse(cleaned);

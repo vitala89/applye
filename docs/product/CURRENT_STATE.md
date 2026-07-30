@@ -60,8 +60,11 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   Claude default on a fresh install, or the empty string a CLI-mode run leaves behind. Fixed in
   #226: the model catalogue, the per-provider defaults and the reconciler moved to `@applye/core`
   as `api-models`, Settings and onboarding now share them, and the wizard gained quality/economy
-  selects. Existing corrupted rows are repaired on read rather than migrated. **Open, not merged**,
-  and the native gate is pending - the onboarding overlay cannot render in a browser-served build.
+  selects. Existing corrupted rows are repaired on read rather than migrated. **Merged as `8d1f3fb`
+  and verified natively**: the browser preview cannot render the onboarding overlay at all, so the
+  only meaningful check was a `tauri dev` run, and the maintainer confirmed the wizard now completes
+  with no errors. That verification is the maintainer's, not an agent's - screen-control permission
+  was denied, so no agent saw the screen.
 - **The Tier 1 split of `JobsComponent` has started, and three of its ten responsibilities are out.**
   Three stacked pull requests - #222 portal answers (merged), #223 final checks, #225 export - take
   `jobs.component.ts` from 2788 to 2481 lines by moving those seams into `PortalAnswersService`,

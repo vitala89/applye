@@ -54,15 +54,15 @@
   deliberately **not** required: CodeQL reports skipped on pull requests and the deploy job only runs
   on a push to `main`, so requiring either would deadlock every merge.
 - **The Tier 1 split of `JobsComponent` has started, and three of its ten responsibilities are out.**
-  Three stacked pull requests - #222 portal answers, #223 final checks, #224 export - take
+  Three stacked pull requests - #222 portal answers (merged), #223 final checks, #225 export - take
   `jobs.component.ts` from 2788 to 2481 lines by moving those seams into `PortalAnswersService`,
   `FinalChecksService` and `DocumentExportService` under `apps/desktop/src/app/shared/`. Each is a
   move, not a redesign: same guards, same cache keys, same thresholds, same status strings, same
   storage keys, and `jobs.component.html` is untouched across all three because the component exposes
   the moved signals as aliases onto the services' _writable_ signals. All three are component-scoped
   via `providers`, not `providedIn: 'root'`, so lifetime matches what the fields had. 48 new tests -
-  the first coverage any of that logic has had. **Not yet merged**, and the export path in particular
-  is Tauri-only, so `npm run desktop:dev` is a pending gate on #224. Seven responsibilities remain in
+  the first coverage any of that logic has had. **#222 is merged; #223 and #225 are open**, and the
+  export path is Tauri-only, so `npm run desktop:dev` is a pending gate on #225. Seven responsibilities remain in
   the file, the largest being tailoring passes and scoring.
 - **Every desktop page component is on OnPush.** The seven that were still on the default strategy -
   `jobs` (2788 lines at the time), `profile`, `settings`, `pipeline`, `apply-wizard`, `scoring-view`,
@@ -124,7 +124,7 @@
   there). Conventions for both stacks live in `.claude/skills/applye-angular` and
   `.claude/skills/applye-rust`; `.mcp.json` wires the first-party Angular CLI MCP server read-only.
   **Still open (Tier 1):** `JobsComponent` is being decomposed into services - three seams are out in
-  #222/#223/#224, seven responsibilities remain - `pages/` wants reorganising into per-feature
+  #222 (merged), #223 and #225, seven responsibilities remain - `pages/` wants reorganising into per-feature
   folders, and `discover.rs`/`tailoring.rs`/`documents.rs` are oversized single modules. The eager
   change-detection item is closed: every page component is on OnPush.
 - **README and repository infrastructure are launch-ready as of 2026-07-29.** All six READMEs

@@ -51,7 +51,7 @@ Before a watch can be marked complete:
 - **Branch:** `refactor/jobs-portal-answers-service`, `refactor/jobs-final-checks-service`,
   `refactor/jobs-export-service` (stacked, in that order)
 - **Commits:** `f570694`, `eb8dc2e`, `85456a5`, plus this entry
-- **Pull request:** #222, #223, #224
+- **Pull request:** #222 (merged), #223, #225 (reopened from #224)
 - **Objective:** begin the Tier 1 split of `apps/desktop/src/app/pages/jobs/jobs.component.ts`
   (2788 lines, roughly ten responsibilities) by extracting the three most isolated seams into
   services, one pull request each, with behaviour held constant.
@@ -73,7 +73,7 @@ Before a watch can be marked complete:
   `DocumentRegionTag`, `FinalCheckStatus` and `FinalChecks` types moved to the service file so the
   component imports them without a cycle.
 
-  **Export (#224)** used the same alias technique for four signals and seven bindings.
+  **Export (#225)** used the same alias technique for four signals and seven bindings.
 
   All three services are listed in the component's `providers` rather than `providedIn: 'root'`. That
   was chosen over the repository's existing root-singleton convention on purpose: a component-scoped
@@ -92,8 +92,8 @@ Before a watch can be marked complete:
 - **Not completed:** Seven of the ten responsibilities remain in the file - tailoring passes, scoring
   and rescoring, CV/cover-letter draft generation, the CV gap dialog, the apply wizard's step and
   reset machinery, the job/application CRUD actions, and the compensation and archetype derivations.
-  The three pull requests are open and unmerged; #222 is CI-green, #223 and #224 were still running at
-  hand-off.
+  #222 is merged. #223 and #225 are open and CI-green at hand-off. **#224 no longer exists as a
+  pending change** - see the risk section below for what happened to it.
 
 - **Files or packages changed:** `apps/desktop/src/app/pages/jobs/jobs.component.ts` (2788 -> 2481);
   new `apps/desktop/src/app/shared/{portal-answers,final-checks,document-export}.service.ts` and
@@ -111,13 +111,13 @@ Before a watch can be marked complete:
   - Browser, `nx serve desktop` on port 4201: `/jobs/1` renders and `app-jobs` instantiates after each
     of the three changes, with no `NullInjectorError`, `NG0201`, `NG0203` or `NG0600` in the console.
     The `tauriInvoke called outside Tauri context` errors are structural for a browser-served build.
-  - **Pending, not run:** the native Tauri gate, `npm run desktop:dev`. This matters most for #224 -
+  - **Pending, not run:** the native Tauri gate, `npm run desktop:dev`. This matters most for #225 -
     the export path is Tauri-only, and the unit tests mock `@tauri-apps/plugin-dialog`, so they are
     not evidence that a real save works.
 
 - **Privacy/security impact:** No new data flow and no new egress. Portal answers still hash the same
   inputs into the same SQLite cache; final checks still park the same payload under the same
-  `applye:wizardFinalChecks:<hash>` sessionStorage key. #224 touches a security-relevant surface - the
+  `applye:wizardFinalChecks:<hash>` sessionStorage key. #225 touches a security-relevant surface - the
   save dialog and the open/reveal shell bridges - and invokes them with the same values in the same
   order. No new shell interpolation, no widened filesystem reach.
 
@@ -133,17 +133,35 @@ Before a watch can be marked complete:
      an `onExported` callback so it still runs inside the `try` - because moving it out would have
      changed the code's meaning with no test able to notice.
 
-- **Risks or compatibility impact:** The three branches are stacked, so they must merge in order
-  (#222, then #223, then #224) or be retargeted. #223 was amended and force-pushed after #224 revealed
-  that its `reset()` was reachable from three component sites; #224 was rebased onto the amended
-  commit and both were re-verified.
+- **Risks or compatibility impact:** Stacked branches, and the stack did go wrong once - recorded here
+  rather than tidied away, because the failure mode is easy to repeat.
+
+  During the watch, #223 was amended and force-pushed after #224 revealed that its `reset()` was
+  reachable from three component sites; #224 was rebased onto the amended commit and both were
+  re-verified. That part went fine.
+
+  What did not: **#224 was merged into #223's branch instead of into `main`.** That was its base, so
+  GitHub did exactly what it was asked - it reported #224 as merged, put the export work and the docs
+  commit inside #223's branch, and left #223 retargeted at `main` and conflicting. The conflict was
+  not in the code. It was that `main` had #222 as a _squash_ (`864b57c`), while #223's branch still
+  carried the original pre-squash `f570694`, so the two histories no longer shared a base.
+
+  Rebuilt rather than force-merged: both tips were backed up to local `backup/pr223-branch` and
+  `backup/pr224-squash` first, #223 was reset to its own commit and rebased onto `origin/main` with
+  `--onto`, and the export work was rebased on top of the result and reopened as **#225**. The full
+  gate was re-run on each. No content was lost; #225 is byte-identical in content to what #224 held.
+
+  **The lesson for the next stacked series:** a squash merge of the bottom PR orphans every branch
+  above it, and merging a stacked PR without first retargeting it lands the change in the wrong
+  branch silently. Retarget upward one level at a time, and rebase the rest of the stack after each
+  merge.
 
 - **Open issues or blockers:** None blocking. The `glib` RUSTSEC-2024-0429 and `brace-expansion`
   GHSA-mh99-v99m-4gvg advisories remain open on purpose with drop conditions recorded in
   `docs/governance/VALIDATION_MATRIX.md`; neither was touched.
 
-- **Next first action:** Merge #222, confirm #223 retargets `main` and its check passes, merge it,
-  then the same for #224. Then run `npm run desktop:dev` and export a CV to PDF and to DOCX from the
+- **Next first action:** Merge #223 into `main`, then retarget #225 to `main`, confirm its check
+  re-runs green, and merge it. Then run `npm run desktop:dev` and export a CV to PDF and to DOCX from the
   apply wizard's final step, confirming the file is written, the status line reads the saved path, and
   the document leaves draft state and appears in the Documents library - the one gate this watch could
   not run.

@@ -47,11 +47,16 @@
   already public and applye.dev is live, so the launch preparation this line used to describe is
   done; what remains is publishing the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
-- **Open pull requests, as of 2026-07-30**: #214 (transitive dependency pins), #215 (Dependabot
-  ignore rule for the TypeScript major), this handoff, and #213 - which is Dependabot's isolated
-  `typescript` 5.9.3 -> 7.0.2, **fails CI, and should be closed rather than retried once #215 lands**.
+- **Open pull requests, as of 2026-07-30**: #218 (this, the release verification runbook plus this
+  state sync) and #219 (a formatting-only sweep of nineteen files). Nothing else is open.
   Merged today: #204, #205, #207, #209, #210 (the ReDoS fix), #212 (eslint 10 and the four packages
-  #208 was blocking). Closed as superseded: #202, #203, #206, #208.
+  #208 was blocking), #214, #215, #216, #217. Closed as superseded or withdrawn: #202, #203, #206,
+  #208, #213 - #213 closed itself the moment #215's ignore rule landed.
+- **The smoke test is now a procedure rather than a research task.** `docs/RELEASE.md` section 3 has a
+  step-by-step runbook: macOS natively first, Windows in a free UTM machine running Windows 11 on ARM
+  (which emulates the published x86_64 installers transparently), and three routes for x86_64 Linux
+  with their trade-offs. It also records what none of it proves. **It has not itself been executed** -
+  the first pass through it is also a review of it.
 - **`typescript` is blocked by two constraints, not one.** Angular 21's compiler wants `~5.9`, and
   `typescript-eslint` 8 declares `>=4.8.4 <6.1.0`. Both have to move before a TypeScript major can
   land, so the Angular 22 upgrade alone would not unblock it. A TypeScript major fails before any task

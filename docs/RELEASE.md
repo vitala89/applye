@@ -31,23 +31,23 @@ Then review the draft release, download one installer per platform, smoke-test, 
 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` are configured, and the updater public key is committed in
 `tauri.conf.json`. The private key must never enter the repository.
 
-### Known blocker
+### Resolved: the blocker that stopped every release before this one
 
-Every release run so far has failed before starting a single job, with:
+For five tagged releases, every run failed before starting a single job, with a message about
+payments having failed or a spending limit needing to be raised. **That message was misleading and
+the diagnosis it invited was wrong.** There was no failed payment. The repository was private, which
+means Actions minutes are metered, the account's included minutes were exhausted, and the spending
+limit was $0 - so jobs were refused rather than billed.
 
-> The job was not started because recent account payments have failed or your spending limit needs
-> to be increased.
+Making the repository public fixed it immediately: Actions minutes on standard runners are free for
+public repositories. `v0.29.1` is the first release CI has ever actually built, and it produced the
+full matrix.
 
-This is a **GitHub billing state, not a workflow bug**. Private repositories consume Actions
-minutes, and macOS runners bill at 10x the Linux rate. Two ways out:
-
-1. Fix the payment method / raise the spending limit in GitHub billing settings.
-2. Make the repository public - Actions minutes on standard runners are free for public
-   repositories, which removes the constraint permanently.
-
-Since the repository is going public anyway, option 2 resolves it. But the first release then has
-to happen _after_ the repository is open, so the launch order matters: open the repository, push
-the tag, let CI build, publish the draft, and only then point people at the download links.
+Worth keeping in mind, because it cost real time: while this was in effect **no release job ran, so
+no release bug could surface**. Three separate bugs were sitting in the release path and were only
+found once CI could reach a build step - `frontendDist` resolving one directory level short, the CSP
+blocking Angular's deferred stylesheet, and `beforeBuildCommand` calling `nx` without `npx`. A gate
+that cannot run is not a gate.
 
 ## 2. Building by hand
 
@@ -106,32 +106,138 @@ Artifacts: `bundle\msi\*.msi` and `bundle\nsis\*-setup.exe`.
 ## 3. Verifying Windows and Linux builds from a Mac
 
 The awkward part on Apple Silicon is **architecture**, not virtualization: a VM on an M-series Mac
-runs ARM64 guests natively, but CI produces **x86_64** installers.
+runs ARM64 guests natively, but CI produces **x86_64** installers for both Windows and Linux. There
+is no ARM64 build of either, so every route below is about getting x86_64 code to run.
 
-### Windows: this works well
+Which asset belongs to which platform:
 
-Run **Windows 11 ARM64** in [UTM](https://mac.getutm.app) (free) or Parallels Desktop. Windows on
-ARM emulates x64 applications transparently, so the x86_64 `.msi` and `.exe` from CI install and
-run. Good enough for a smoke test of the installer, first run, database creation and the UI.
+| Platform         | Asset                                             | Arch   |
+| ---------------- | ------------------------------------------------- | ------ |
+| macOS, M-series  | `Applye_0.29.1_aarch64.dmg`                       | native |
+| macOS, Intel     | `Applye_0.29.1_x64.dmg`                           | native |
+| Windows, MSI     | `Applye_0.29.1_x64_en-US.msi`                     | x86_64 |
+| Windows, NSIS    | `Applye_0.29.1_x64-setup.exe`                     | x86_64 |
+| Debian / Ubuntu  | `Applye_0.29.1_amd64.deb`                         | x86_64 |
+| Fedora / RHEL    | `Applye-0.29.1-1.x86_64.rpm`                      | x86_64 |
+| Any Linux        | `Applye_0.29.1_amd64.AppImage`                    | x86_64 |
+| Updater manifest | `latest.json` plus the `.sig` beside every bundle | -      |
 
-What it does _not_ prove: native x64 performance, and anything driver-adjacent. For a job-search
-desktop app that is an acceptable gap.
+Where the app keeps its data, which the uninstall check needs. The identifier is `dev.applye.app`:
 
-### Linux: the architecture problem is real
+| Platform | Path                                            |
+| -------- | ----------------------------------------------- |
+| macOS    | `~/Library/Application Support/dev.applye.app/` |
+| Windows  | `%APPDATA%\dev.applye.app\`                     |
+| Linux    | `~/.local/share/dev.applye.app/`                |
 
-An ARM64 Ubuntu VM **cannot** run an amd64 `.deb` or `.AppImage`. Three honest options:
+The database is `applye.db` inside that directory.
 
-1. **Emulated x86_64 Ubuntu in UTM.** UTM supports full QEMU emulation, not just virtualization.
-   Slow - expect a sluggish desktop - but it runs the exact artifact users will download. Best
-   choice for verifying an installer before a release.
-2. **A throwaway x86 cloud VM.** Any provider, a few cents an hour, Ubuntu 22.04 with a lightweight
-   desktop and VNC or an X server. Fastest real x86_64 verification.
-3. **Add an ARM64 Linux target to the release matrix.** Then an ARM64 Ubuntu VM tests natively at
-   full speed, and ARM Linux users get a build too. This is the only option that also improves the
-   product, and it is a few lines in the workflow matrix.
+### Step 0. macOS, natively, about five minutes
 
-Recommended: option 1 for release verification now, option 3 when there is a reason to support
-ARM Linux.
+Do this first. It is the cheapest way to find a bug that would also affect the other platforms.
+
+1. On the draft release page, download `Applye_0.29.1_aarch64.dmg`.
+2. Open it, drag **Applye** to Applications.
+3. The build is unsigned and not notarized, so Gatekeeper refuses the first launch. Right-click the
+   app in Applications and choose **Open**, then confirm. Once only. Or:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Applye.app
+   ```
+
+4. Run the checklist below.
+5. To prove first-run behaviour again later, delete
+   `~/Library/Application Support/dev.applye.app/` and relaunch.
+
+### Step 1. Windows, in a free UTM virtual machine
+
+Windows 11 on ARM emulates x64 applications transparently, so the x86_64 installers work. This is
+the route that behaves best on Apple Silicon.
+
+1. Install [UTM](https://mac.getutm.app) - free, and the App Store version is the same app with a
+   paid convenience wrapper:
+
+   ```bash
+   brew install --cask utm
+   ```
+
+2. Download the official **Windows 11 ARM64** ISO from
+   <https://www.microsoft.com/en-us/software-download/windows11arm64>. It is a multi-edition ISO.
+   A product key is not needed to finish setup and use the machine; an unactivated Windows shows a
+   desktop watermark and blocks personalisation, neither of which affects this test.
+3. In UTM: **Create a New Virtual Machine → Virtualize → Windows**, select the ISO, give it 4 CPUs,
+   8 GB RAM and a 64 GB disk. Leave the guest-tools option on, so clipboard and display resizing
+   work.
+4. Complete Windows setup. Setup may insist on a network connection and a Microsoft account - that is
+   Windows, not Applye.
+5. Inside the VM, open the draft release page and download `Applye_0.29.1_x64_en-US.msi`.
+6. Run it. SmartScreen shows **"Windows protected your PC"** because the installer has no
+   code-signing certificate: **More info → Run anyway**. This is the exact path a real user takes,
+   so it is worth seeing rather than skipping.
+7. WebView2 ships with Windows 11, so nothing else needs installing.
+8. Run the checklist below.
+9. Then repeat steps 5-8 with `Applye_0.29.1_x64-setup.exe`. **Do not skip this**: MSI and NSIS are
+   two different installers with two different failure modes, and both are published.
+
+Paid alternative: Parallels Desktop downloads and installs Windows 11 ARM for you in one step. If
+the UTM setup fights back, the trial is a reasonable shortcut.
+
+### Step 2. Linux, x86_64
+
+An ARM64 Ubuntu VM **cannot** run an amd64 `.deb` or `.AppImage`, so pick one of these.
+
+**Route A, recommended: a throwaway x86_64 cloud VM.** Fastest real verification, billed by the
+hour, destroyed when done. Any provider with hourly x86 instances; Ubuntu 24.04.
+
+```bash
+# on the VM, over ssh - a light desktop reachable by RDP
+sudo apt update
+sudo apt install -y xfce4 xfce4-goodies xrdp
+sudo adduser xrdp ssl-cert
+sudo systemctl enable --now xrdp
+```
+
+Connect from the Mac with Microsoft Remote Desktop, then:
+
+```bash
+# from the Mac, push the artifacts up
+scp Applye_0.29.1_amd64.deb Applye_0.29.1_amd64.AppImage <user>@<host>:~
+
+# on the VM - the .deb
+sudo apt install ./Applye_0.29.1_amd64.deb
+applye
+
+# on the VM - the AppImage, which needs FUSE 2 on 24.04
+sudo apt install -y libfuse2t64
+chmod +x Applye_0.29.1_amd64.AppImage
+./Applye_0.29.1_amd64.AppImage
+```
+
+Run the checklist for both, then destroy the instance.
+
+**Route B, free and local: emulated x86_64 in UTM.** UTM does full QEMU emulation as well as
+virtualization: **Create a New Virtual Machine → Emulate → Linux**, architecture `x86_64`, with an
+Ubuntu desktop ISO. It runs the exact artifact a user downloads, but expect a sluggish desktop.
+Fine for "does it install and launch", tedious for clicking through the whole checklist.
+
+**The `.rpm` is the least-verified artifact.** It needs a Fedora or RHEL guest, which is a third VM.
+Either spin one up or state plainly in the release notes that the `.rpm` was only built, not tested.
+Do not quietly imply it was.
+
+**Route C, the fix rather than the workaround:** add an `aarch64` Linux target to the release matrix.
+Then an ARM64 Ubuntu VM tests natively at full speed, and ARM Linux users get a build. A few lines in
+the workflow matrix, and the only option here that also improves the product.
+
+### What none of this proves
+
+Be honest about the gap when recording results:
+
+- Emulation says nothing about native x64 performance.
+- A VM says nothing about driver-adjacent behaviour or real GPU compositing.
+- Testing an unsigned installer verifies the SmartScreen and Gatekeeper detour a real user hits, not
+  the experience they would get with certificates.
+- The updater is only exercised by installing an older version and letting it update. `latest.json`
+  and the `.sig` files being present is not the same as the update path working.
 
 ### Smoke test checklist, per platform
 
@@ -146,5 +252,14 @@ Run this against every installer before publishing a draft release:
 - [ ] Language switching works, including a non-Latin locale.
 - [ ] Uninstalling removes the app and leaves user data where the docs say it will be.
 
+Two checks worth adding, because they map to bugs that actually shipped:
+
+- [ ] **The window is styled.** `0.29.0` shipped a macOS bundle that rendered completely unstyled,
+      because Angular's `inlineCritical` defers the stylesheet behind an inline handler the CSP
+      forbids. `tools/verify-csp-compat.mjs` now fails the build on that class of bug, but the
+      cheapest confirmation is still looking at the window.
+- [ ] **The frontend is actually in the bundle.** `frontendDist` resolved one directory level short
+      for five releases. A blank window rather than an unstyled one is this bug, not the CSP one.
+
 Record the result in the release notes: which platforms were tested on real hardware, which in a
-VM, and which only by CI.
+VM, and which only by CI. Never write that a platform was verified when only its build succeeded.

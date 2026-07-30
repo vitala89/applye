@@ -47,6 +47,16 @@
   already public and applye.dev is live, so the launch preparation this line used to describe is
   done; what remains is publishing the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
+- **`main` now requires CI to pass before a merge.** Required status checks are on, with exactly one
+  context: `Lint / Test / Build (affected) + Rust`. `strict` is deliberately off, so a pull request
+  does not need rebasing every time `main` moves. Required approvals stay at 0 and `enforce_admins`
+  stays off, so a solo maintainer cannot be locked out. `Analyze (…)` and the Cloudflare deploy are
+  deliberately **not** required: CodeQL reports skipped on pull requests and the deploy job only runs
+  on a push to `main`, so requiring either would deadlock every merge.
+- **Every desktop page component is on OnPush.** The seven that were still on the default strategy -
+  `jobs` (2786 lines), `profile`, `settings`, `pipeline`, `apply-wizard`, `scoring-view`,
+  `updated-score-view` - now declare it. Safe because all seven are signal-driven and none injects
+  `ChangeDetectorRef`; verified in the browser as well as by the suite.
 - **The whole workspace now tests the way it runs.** All five test environments are zoneless; the
   three library suites had been on `setupZoneTestEnv` while both applications run zoneless. `zone.js`
   and the unused `@angular/animations` are removed, which also clears the one `invalid` peer in the

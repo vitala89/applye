@@ -147,6 +147,30 @@ verify:csp` reported `CSP compatibility OK`. `npm run format:check` and `git dif
   removes the optional leading `|`, which is a token change. The check that settles it is comparing the
   built bundle: `nx build desktop` gives a byte-identical digest before and after.
 
+- **Fifth part of the same watch: branch protection, and the OnPush pass.** Required status checks are
+  now on for `main`, with one context - `Lint / Test / Build (affected) + Rust`. **Two checks were
+  deliberately left out and the reason matters**: `Analyze (javascript-typescript)` and
+  `Analyze (actions)` report _skipped_ on pull requests, and `Deploy applye.dev` only runs on a push to
+  `main`, so requiring either would have deadlocked every merge. `strict` is off so a pull request does
+  not need rebasing whenever `main` moves; approvals stay at 0 and `enforce_admins` stays off, which is
+  the existing deliberate choice not to lock a solo maintainer out.
+
+  The seven page components still on default change detection are now on OnPush. **The check that
+  mattered was done before annotating, not after**: OnPush in a zoneless app silently breaks any
+  component whose rendered state lives outside signals. All seven are signal-driven (6 to 88 signal
+  declarations), none injects `ChangeDetectorRef` or calls `markForCheck`/`detectChanges`, none has a
+  `protected`/`public` non-signal mutable field a template could bind, and none mutates class state in
+  place with `push`/`splice`/`sort`. The only plain mutable fields are three `private` ones in
+  `jobs.component.ts`, which a template cannot reach.
+
+  Verified in the browser, because a green unit suite cannot catch a view that stops updating. A
+  first measurement looked like a regression - every route rendered 75 characters short - and it was
+  not: the offset was constant across all five routes, which means shell-level, and it was an error
+  toast dismissed by a stray click in one run and present in the other. Re-measured from a clean
+  reload, before and after are identical: 237 / 1855 / 509 / 544 / 1000 characters on `/settings`,
+  `/profile`, `/pipeline`, `/jobs`, `/dashboard`. **A constant difference across unrelated pages is a
+  measurement artifact, not a finding** - worth remembering before reverting something.
+
 - **Fourth part of the same watch, the zoneless test migration.** The three library suites ran under
   `setupZoneTestEnv` while both applications run zoneless, so their test environment was not the one
   production uses. `i18n` (10 tests) and `data` (22) moved across unchanged. `ui` failed exactly two,
@@ -189,11 +213,12 @@ context`, which is structural - `tauriInvoke` throws whenever `window.__TAURI_IN
 - **Next first action:** Merge #218 and #219, then work `docs/RELEASE.md` section 3 against the
   `v0.29.1` draft and publish it. The runbook now exists, so this is a procedure rather than a research
   task - and the first pass through it doubles as a review of it, since nobody has executed it yet.
-  After that: turn on required status checks for `main`, which the earlier watches left off only because
-  CI could not run and which is exactly what would have caught the five release bugs. Tier 1 -
-  `jobs.component.ts` at 2794 lines, `discover.rs` at 3488 - is then the largest remaining item, and
-  `jobs.component.ts` has the cleanest seams: portal answers, final checks and export move to services
-  almost mechanically.
+  Required status checks are now on, so that item is closed. What remains after publishing is Tier 1:
+  `jobs.component.ts` at 2786 lines has the cleanest seams - portal answers, final checks and export
+  move to services almost mechanically - and `discover.rs` at 3488 splits at filters / per-source
+  parsers / HTTP / orchestration. `pages/` has still not been reorganised into per-feature folders.
+  Note that the earlier figure of 2794 lines for `jobs.component.ts` predates the Prettier sweep; it is
+  2786 now, and the "eight screens on eager change detection" in an earlier entry was seven.
 
 - **Evidence:** **The previous watch's open question is now answered.** It recorded that CodeQL had
   not re-scanned and that the five ReDoS alerts should be read as open until GitHub said otherwise.

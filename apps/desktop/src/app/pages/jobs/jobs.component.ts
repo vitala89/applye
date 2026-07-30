@@ -101,6 +101,7 @@ import {
 } from '../documents/cv-content.util';
 import { CvGapDialog } from './cv-gap-dialog.component';
 import { ToastService } from '../../core/toast/toast.service';
+import { PortalAnswersService } from '../../shared/portal-answers.service';
 
 interface PassResult {
   pass: number;
@@ -141,6 +142,9 @@ interface FinalChecks {
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Component-scoped: portal-answer drafts belong to the job open on this page
+  // and must not outlive it, which is the lifetime they had as component fields.
+  providers: [PortalAnswersService],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
@@ -156,6 +160,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
+  /** Draft-portal-answers state and AI calls. */
+  protected readonly portal = inject(PortalAnswersService);
 
   // Previous running activity for this job, so the effect below can detect the
   // moment a background step finished and pull its fresh result into a page
@@ -240,13 +246,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     dangerGlyph: CircleX,
   };
 
+  /** Supported document languages. Named for the portal-answers language select
+   * it was introduced for; the template now also uses it for the CV/cover-letter
+   * language dropdowns. */
   protected readonly portalLanguages: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
-  private static readonly DEFAULT_PORTAL_QUESTIONS = [
-    'Why this role?',
-    'Why this company?',
-    'Tell us about a relevant project',
-    'What excites you about this?',
-  ];
 
   readonly jdText = signal('');
   readonly job = signal<Job | null>(null);
@@ -294,17 +297,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly jobLocked = computed(() => !this.canMarkApplied());
 
   protected readonly statusBadgeClass = applicationStatusBadgeClass;
-
-  // Draft portal answers
-  readonly portalQuestions = signal<string[]>([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
-  readonly portalLanguage = signal<SupportedLanguage>('en');
-  readonly portalAnswers = signal<{ question: string; answer: string }[]>([]);
-  readonly portalDrafting = signal(false);
-  readonly portalRedrafting = signal<number | null>(null);
-  readonly portalFromCache = signal(false);
-  readonly portalStatus = signal('');
-  readonly portalError = signal(false);
-  readonly portalCopiedIndex = signal<number | null>(null);
 
   // Tailoring wizard
   readonly tailorResults = signal<PassResult[]>([]);
@@ -1627,15 +1619,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       );
       await this.loadLinkedDocuments();
 
-      this.portalQuestions.set([...JobsComponent.DEFAULT_PORTAL_QUESTIONS]);
-      this.portalAnswers.set([]);
-      this.portalFromCache.set(false);
-      this.portalStatus.set('');
-      this.portalError.set(false);
-      this.portalRedrafting.set(null);
-      this.portalCopiedIndex.set(null);
-      this.portalLanguage.set(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
-      await this.loadPortalAnswersFromCache();
+      this.portal.reset(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');
+      await this.portal.loadFromCache(this.job(), this.profile(), this.settings());
       await this.restoreTailoringFromCache();
     } catch {
       // non-fatal - detail still renders, user can re-score
@@ -1707,190 +1692,34 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (restored.length) this.tailorResults.set(restored);
   }
 
-  /** Best-effort cache read for the current default question set. Never calls AI. */
-  private async loadPortalAnswersFromCache(): Promise<void> {
-    const job = this.job();
-    const p = this.profile();
-    const s = this.settings();
-    const questions = this.portalQuestions()
-      .map((q) => q.trim())
-      .filter(Boolean);
-    if (!job || !p?.scoringHash || !s || !questions.length) return;
-    try {
-      const inputHash = await this.portalInputHash(questions, s.defaultModel);
-      const cached = await this.db.portalAnswersGet(job.id, p.scoringHash, inputHash);
-      if (cached) {
-        this.portalAnswers.set(JSON.parse(cached.answersJson ?? '[]'));
-        this.portalFromCache.set(true);
-      }
-    } catch {
-      // non-fatal - user can still click "Draft answers"
-    }
-  }
-
-  private portalInputHash(questions: string[], model: string): Promise<string> {
-    return this.db.hashText(JSON.stringify({ q: questions, lang: this.portalLanguage(), model }));
-  }
-
-  private parsePortalAnswers(text: string): { question: string; answer: string }[] {
-    const raw = text
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```\s*$/i, '')
-      .trim();
-    let parsed: { answers: { question: string; answer: string }[] };
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new Error(`AI returned invalid JSON: ${text.slice(0, 200)}`);
-    }
-    return parsed.answers ?? [];
-  }
-
   addPortalQuestion(): void {
-    this.portalQuestions.set([...this.portalQuestions(), '']);
+    this.portal.addQuestion();
   }
 
   updatePortalQuestion(index: number, value: string): void {
-    const qs = this.portalQuestions().slice();
-    qs[index] = value;
-    this.portalQuestions.set(qs);
+    this.portal.updateQuestion(index, value);
   }
 
   removePortalQuestion(index: number): void {
-    const qs = this.portalQuestions().slice();
-    qs.splice(index, 1);
-    this.portalQuestions.set(qs);
+    this.portal.removeQuestion(index);
   }
 
   editPortalAnswer(index: number, value: string): void {
-    const answers = this.portalAnswers().slice();
-    if (!answers[index]) return;
-    answers[index] = { ...answers[index], answer: value };
-    this.portalAnswers.set(answers);
+    this.portal.editAnswer(index, value);
   }
 
-  async copyPortalAnswer(index: number): Promise<void> {
-    const answer = this.portalAnswers()[index]?.answer;
-    if (!answer) return;
-    await navigator.clipboard.writeText(answer);
-    this.portalCopiedIndex.set(index);
-    setTimeout(() => this.portalCopiedIndex.set(null), 1500);
+  copyPortalAnswer(index: number): Promise<void> {
+    return this.portal.copyAnswer(index);
   }
 
   /** One AI call for the whole question set, cached by (job, profile, questions+language+model). */
-  async draftPortalAnswers(): Promise<void> {
-    if (this.portalDrafting()) return;
-    const job = this.job();
-    const p = this.profile();
-    const s = this.settings();
-    const questions = this.portalQuestions()
-      .map((q) => q.trim())
-      .filter(Boolean);
-    if (!job || !p?.scoringJson || !p.scoringHash || !s || !questions.length) return;
-
-    this.portalDrafting.set(true);
-    this.portalError.set(false);
-    this.portalStatus.set('');
-    try {
-      const inputHash = await this.portalInputHash(questions, s.defaultModel);
-      const cached = await this.db.portalAnswersGet(job.id, p.scoringHash, inputHash);
-      if (cached) {
-        this.portalAnswers.set(JSON.parse(cached.answersJson ?? '[]'));
-        this.portalFromCache.set(true);
-        this.portalStatus.set(this.t()('jobs.portal_cached'));
-        return;
-      }
-
-      const rendered = await this.ai.renderSkill('portal-answers', {
-        profile_json: p.scoringJson,
-        job_description: job.jdText ?? '',
-        questions: JSON.stringify(questions),
-        language: this.portalLanguage(),
-      });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: this.portalLanguage(),
-      });
-      const parsed = this.parsePortalAnswers(res.text);
-      this.portalAnswers.set(parsed);
-      this.portalFromCache.set(false);
-      await this.db.portalAnswersSave({
-        jobId: job.id,
-        profileHash: p.scoringHash,
-        questionsJson: JSON.stringify(questions),
-        answersJson: JSON.stringify(parsed),
-        inputHash,
-        modelUsed: s.defaultModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
-      this.portalStatus.set(`${res.tokensInput + res.tokensOutput} tokens used.`);
-    } catch (e) {
-      this.portalError.set(true);
-      this.portalStatus.set(String(e));
-      this.toast.error(String(e));
-    } finally {
-      this.portalDrafting.set(false);
-    }
+  draftPortalAnswers(): Promise<void> {
+    return this.portal.draft(this.job(), this.profile(), this.settings());
   }
 
-  /** Re-drafts a single answer. Always a fresh AI call (a unique variant marker keeps the
-   * cache key distinct from both the batch draft and any prior version), still cached. */
-  async redraftPortalAnswer(index: number): Promise<void> {
-    if (this.portalRedrafting() !== null) return;
-    const job = this.job();
-    const p = this.profile();
-    const s = this.settings();
-    const current = this.portalAnswers()[index];
-    if (!job || !p?.scoringJson || !p.scoringHash || !s || !current) return;
-
-    this.portalRedrafting.set(index);
-    this.portalError.set(false);
-    try {
-      const question = current.question;
-      const inputHash = await this.db.hashText(
-        `${question}::${this.portalLanguage()}::${s.defaultModel}::${Date.now()}`,
-      );
-      const rendered = await this.ai.renderSkill('portal-answers', {
-        profile_json: p.scoringJson,
-        job_description: job.jdText ?? '',
-        questions: JSON.stringify([question]),
-        language: this.portalLanguage(),
-      });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: this.portalLanguage(),
-      });
-      const parsed = this.parsePortalAnswers(res.text);
-      const answer = parsed[0]?.answer ?? current.answer;
-      await this.db.portalAnswersSave({
-        jobId: job.id,
-        profileHash: p.scoringHash,
-        questionsJson: JSON.stringify([question]),
-        answersJson: JSON.stringify([{ question, answer }]),
-        inputHash,
-        modelUsed: s.defaultModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
-      const answers = this.portalAnswers().slice();
-      answers[index] = { question, answer };
-      this.portalAnswers.set(answers);
-    } catch (e) {
-      this.portalError.set(true);
-      this.portalStatus.set(String(e));
-      this.toast.error(String(e));
-    } finally {
-      this.portalRedrafting.set(null);
-    }
+  /** Re-drafts a single answer. Always a fresh AI call, still cached. */
+  redraftPortalAnswer(index: number): Promise<void> {
+    return this.portal.redraft(index, this.job(), this.profile(), this.settings());
   }
 
   /** Save this job: track it as a 'saved' lead (My Jobs / Job Tracker) without

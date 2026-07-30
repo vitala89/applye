@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -182,6 +183,7 @@ import {
     </div>
   `,
   styleUrl: './apply-wizard.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ApplyWizard {
   private readonly i18n = inject(TranslateService);

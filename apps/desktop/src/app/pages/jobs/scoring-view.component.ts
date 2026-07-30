@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { Job, ScoringCache } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -200,6 +200,7 @@ import {
     }
   `,
   styleUrl: './scoring-view.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScoringView {
   private readonly i18n = inject(TranslateService);

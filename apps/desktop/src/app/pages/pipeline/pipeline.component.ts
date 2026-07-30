@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CdkDrag,
@@ -75,6 +75,7 @@ const ACTIVE_STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer'];
   ],
   templateUrl: './pipeline.component.html',
   styleUrl: './pipeline.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PipelineComponent implements OnInit {
   private readonly db = inject(DbService);

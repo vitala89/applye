@@ -31,12 +31,13 @@ import {
   AiProvider,
   CvParsedContent,
   Profile,
-  Settings,
   archetypeNames,
   serializeArchetypes,
   parseArchetypes,
   serializeCompensation,
   splitDisplayName,
+  apiModelsFor,
+  resolveApiModels,
 } from '@applye/core';
 import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -173,6 +174,32 @@ export class OnboardingComponent {
    * CLI mode - see `cliProviders`. */
   readonly v1Providers: AiProvider[] = ['claude', 'deepseek'];
 
+  /**
+   * The quality and economy model ids for API mode.
+   *
+   * These exist here because the wizard's own AI calls need a model the chosen
+   * provider accepts, and nothing else in the wizard supplied one. The step
+   * persisted `provider` but never the model ids, so picking DeepSeek left the
+   * Claude defaults in the settings row - or, after a CLI-mode run blanked them,
+   * an empty string - and every wizard call came back as
+   * `The supported API model names are deepseek-v4-pro or deepseek-v4-flash,
+   * but you passed .`
+   *
+   * Seeded from the stored settings so a re-run shows what the user already has,
+   * and reconciled against the selected provider's catalogue so a stale or blank
+   * value can never survive into a request.
+   */
+  readonly qualityModel = signal('');
+  readonly economyModel = signal('');
+
+  /** Set once the user changes anything on the AI step, so the async seed from
+   * settings can tell "still showing defaults" from "the user has chosen". */
+  private aiChoiceTouched = false;
+
+  /** Models offered for the selected provider. Empty in CLI mode, where the
+   * model string is free text the CLI interprets. */
+  readonly providerModels = computed(() => apiModelsFor(this.selectedProvider()));
+
   readonly providerSteps = computed(() =>
     this.guide().stepKeys.map((key, i) => ({ n: i + 1, text: this.t()(key) })),
   );
@@ -270,6 +297,7 @@ export class OnboardingComponent {
 
   async chooseAiMode(mode: AiMode): Promise<void> {
     if (this.aiMode() === mode) return;
+    this.aiChoiceTouched = true;
     this.aiMode.set(mode);
     this.installError.set(null);
     if (mode === 'cli') {
@@ -279,9 +307,15 @@ export class OnboardingComponent {
         this.selectedProvider.set('claude');
       }
       await this.refreshCliProbe();
-    } else if (!this.v1Providers.includes(this.selectedProvider())) {
+      return;
+    }
+    // Back to API mode. A provider API mode cannot serve has to move, and the
+    // model pair has to be valid either way - CLI mode is allowed to leave it
+    // blank, and a blank model is not a valid API request.
+    if (!this.v1Providers.includes(this.selectedProvider())) {
       this.selectedProvider.set('claude');
     }
+    this.reconcileModels();
   }
 
   async refreshCliProbe(): Promise<void> {
@@ -330,8 +364,51 @@ export class OnboardingComponent {
   }
 
   constructor() {
+    // Kicked off independently of the settings read, so "does this provider have
+    // a key?" resolves in one turn rather than waiting behind it.
     void this.refreshKeyStored();
+    void this.seedAiChoiceFromSettings();
     void this.seedFromExistingProfile();
+  }
+
+  /**
+   * Opens the AI step on what the user already has rather than on the hardcoded
+   * defaults: a re-run that showed "Claude" while the settings row said DeepSeek
+   * would silently move them back on Finish.
+   *
+   * The model pair is reconciled rather than trusted. A row written before this
+   * step existed can hold another provider's model id, or the empty string a
+   * CLI-mode run leaves behind, and neither is a valid API request.
+   */
+  private async seedAiChoiceFromSettings(): Promise<void> {
+    try {
+      const settings = await this.db.getSettings();
+      // The read is async and the step is interactive from the first frame, so
+      // a fast click must win over the seed rather than be overwritten by it.
+      if (this.aiChoiceTouched) return;
+      if (settings.aiMode === 'cli' || settings.aiMode === 'api') {
+        this.aiMode.set(settings.aiMode);
+      }
+      const provider = settings.provider;
+      const allowed = this.isCliMode() ? this.cliProviders : this.v1Providers;
+      if (provider && allowed.includes(provider) && provider !== this.selectedProvider()) {
+        this.selectedProvider.set(provider);
+        // The constructor already asked about the provider it opened on; a
+        // different one has to be asked about too, or Ready reports "not
+        // connected" for a provider that does have a key.
+        void this.refreshKeyStored();
+      }
+      this.qualityModel.set(settings.defaultModel ?? '');
+      this.economyModel.set(settings.economyModel ?? '');
+      if (this.isCliMode()) {
+        await this.refreshCliProbe();
+        return;
+      }
+      this.reconcileModels();
+    } catch {
+      // No settings row yet, or no Tauri runtime - the defaults above stand.
+      this.reconcileModels();
+    }
   }
 
   /** On a re-run the wizard opens blank, so the roles the user already has must
@@ -351,11 +428,36 @@ export class OnboardingComponent {
   }
 
   selectProvider(id: AiProvider): void {
+    this.aiChoiceTouched = true;
     this.selectedProvider.set(id);
     this.keyStatus.set('idle');
     this.keyStored.set(false);
     this.keySaveError.set(false);
+    this.reconcileModels();
     void this.refreshKeyStored();
+  }
+
+  /** Puts the model pair back on the selected provider's catalogue. A value
+   * that is blank, or belongs to the provider the user just switched away from,
+   * is replaced by that provider's default; a valid non-default pick is kept. */
+  private reconcileModels(): void {
+    const models = resolveApiModels(this.selectedProvider(), {
+      defaultModel: this.qualityModel(),
+      economyModel: this.economyModel(),
+    });
+    if (!models) return;
+    this.qualityModel.set(models.defaultModel);
+    this.economyModel.set(models.economyModel);
+  }
+
+  setQualityModel(model: string): void {
+    this.aiChoiceTouched = true;
+    this.qualityModel.set(model);
+  }
+
+  setEconomyModel(model: string): void {
+    this.aiChoiceTouched = true;
+    this.economyModel.set(model);
   }
 
   /** A key saved by an earlier run lives in the keyring, not in this component,
@@ -513,8 +615,14 @@ export class OnboardingComponent {
    * The model follows the same rule as `markSeen()`: the stored ids are API ids
    * (`claude-haiku-4-5`) that no CLI accepts, so CLI mode sends none and lets
    * the CLI pick its own default.
+   *
+   * In API mode the model comes from the wizard's own economy pick, not from
+   * `settings.economyModel`. Reading it back from settings was the same class of
+   * bug as reading the provider back: the settings row still holds the previous
+   * provider's model id, or the empty string a CLI-mode run left behind, and
+   * either one is rejected by the provider the user just chose.
    */
-  private aiDispatch(settings: Settings): {
+  private aiDispatch(): {
     mode: AiMode;
     provider: AiProvider;
     model: string;
@@ -522,7 +630,7 @@ export class OnboardingComponent {
     return {
       mode: this.aiMode(),
       provider: this.selectedProvider(),
-      model: this.isCliMode() ? '' : settings.economyModel,
+      model: this.isCliMode() ? '' : this.economyModel(),
     };
   }
 
@@ -539,7 +647,7 @@ export class OnboardingComponent {
       const language = settings.uiLanguage ?? 'en';
       const rendered = await this.ai.renderSkill('cv-import', { cv_text: text, language });
       const res = await this.ai.run({
-        ...this.aiDispatch(settings),
+        ...this.aiDispatch(),
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
@@ -709,7 +817,7 @@ export class OnboardingComponent {
         language,
       });
       const res = await this.ai.run({
-        ...this.aiDispatch(settings),
+        ...this.aiDispatch(),
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
         language,
@@ -928,10 +1036,23 @@ export class OnboardingComponent {
       await this.db.updateSettings({
         aiMode: this.aiMode(),
         provider: this.selectedProvider(),
+        // The model ids travel with the provider. Writing one without the other
+        // is what left DeepSeek users pointed at a Claude model id.
+        ...this.apiModelPatch(),
       });
     } catch {
       // fail open - never trap the user in onboarding
     }
+  }
+
+  /** The model fields to persist alongside the provider, or nothing in CLI mode,
+   * where a blank pair is the correct value ("let the CLI choose"). */
+  private apiModelPatch(): { defaultModel: string; economyModel: string } | Record<string, never> {
+    if (this.isCliMode()) return {};
+    const quality = this.qualityModel();
+    const economy = this.economyModel();
+    if (!quality || !economy) return {};
+    return { defaultModel: quality, economyModel: economy };
   }
 
   private async markSeen(): Promise<void> {
@@ -944,7 +1065,11 @@ export class OnboardingComponent {
         // which a CLI does not accept - `codex --model claude-opus-4-8` is a
         // guaranteed failure. Blank them so the CLI picks its own default; the
         // user can choose a CLI model name later in Settings.
-        ...(this.isCliMode() ? { defaultModel: '', economyModel: '' } : {}),
+        //
+        // In API mode the opposite is required: the pair chosen on the AI step
+        // has to land in the settings row, or the rest of the app keeps calling
+        // the previous provider's model.
+        ...(this.isCliMode() ? { defaultModel: '', economyModel: '' } : this.apiModelPatch()),
       });
     } catch {
       // fail open - never trap the user in onboarding

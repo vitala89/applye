@@ -485,7 +485,12 @@ describe('OnboardingComponent flow', () => {
 
       await component.goNext();
 
-      expect(updateSettings).toHaveBeenCalledWith({ aiMode: 'api', provider: 'deepseek' });
+      expect(updateSettings).toHaveBeenCalledWith({
+        aiMode: 'api',
+        provider: 'deepseek',
+        defaultModel: 'deepseek-v4-pro',
+        economyModel: 'deepseek-v4-flash',
+      });
       expect(component.step()).toBe(2);
     });
 
@@ -496,6 +501,97 @@ describe('OnboardingComponent flow', () => {
 
       expect(component.resumeError()).toBe(true);
       expect(component.resumeErrorDetail()).toContain('no API key for deepseek');
+    });
+  });
+
+  /**
+   * The AI step persisted the provider but never the model ids, so a DeepSeek
+   * user kept the Claude defaults - or, after a CLI-mode run blanked them, an
+   * empty string - and every wizard call came back as
+   * `The supported API model names are deepseek-v4-pro or deepseek-v4-flash,
+   * but you passed .`
+   */
+  describe('the model ids follow the provider', () => {
+    beforeEach(() => {
+      component.resumeText.set('a resume');
+      run.mockResolvedValue({ text: '{"personalDetails":{"fullName":"Mira Halvorsen"}}' });
+    });
+
+    it('opens on the Claude pair', () => {
+      expect(component.qualityModel()).toBe('claude-opus-4-8');
+      expect(component.economyModel()).toBe('claude-haiku-4-5');
+    });
+
+    it('remaps both models when the provider changes', () => {
+      component.selectProvider('deepseek');
+
+      expect(component.qualityModel()).toBe('deepseek-v4-pro');
+      expect(component.economyModel()).toBe('deepseek-v4-flash');
+    });
+
+    it('offers only the selected provider models', () => {
+      component.selectProvider('deepseek');
+      expect(component.providerModels()).toEqual(['deepseek-v4-pro', 'deepseek-v4-flash']);
+
+      component.selectProvider('claude');
+      expect(component.providerModels()).toContain('claude-opus-4-8');
+    });
+
+    it('sends the chosen economy model, never an empty one', async () => {
+      component.selectProvider('deepseek');
+
+      await component.parseResume();
+
+      expect(run).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'deepseek', model: 'deepseek-v4-flash' }),
+      );
+    });
+
+    it('keeps a hand-picked economy model and dispatches with it', async () => {
+      component.setEconomyModel('claude-sonnet-4-6');
+
+      await component.parseResume();
+
+      expect(run).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'claude', model: 'claude-sonnet-4-6' }),
+      );
+    });
+
+    it('restores a usable pair when leaving CLI mode, which blanks them', async () => {
+      await component.chooseAiMode('cli');
+      expect(component.qualityModel()).toBe('claude-opus-4-8');
+
+      component.qualityModel.set('');
+      component.economyModel.set('');
+      await component.chooseAiMode('api');
+
+      expect(component.qualityModel()).toBe('claude-opus-4-8');
+      expect(component.economyModel()).toBe('claude-haiku-4-5');
+    });
+
+    it('persists both models with the provider on finish', async () => {
+      component.selectProvider('deepseek');
+
+      await component.finish();
+
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          onboardingSeen: true,
+          provider: 'deepseek',
+          defaultModel: 'deepseek-v4-pro',
+          economyModel: 'deepseek-v4-flash',
+        }),
+      );
+    });
+
+    it('still blanks the models on finish in CLI mode', async () => {
+      await component.chooseAiMode('cli');
+
+      await component.finish();
+
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ aiMode: 'cli', defaultModel: '', economyModel: '' }),
+      );
     });
   });
 
@@ -515,6 +611,8 @@ describe('OnboardingComponent flow', () => {
         onboardingSeen: true,
         aiMode: 'api',
         provider: 'claude',
+        defaultModel: 'claude-opus-4-8',
+        economyModel: 'claude-haiku-4-5',
       });
       expect(closed).toHaveBeenCalled();
     });

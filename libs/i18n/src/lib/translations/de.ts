@@ -1515,6 +1515,12 @@ export const de: TranslationMap = {
       watch_video: 'Video-Anleitung ansehen',
       keyring_note:
         'Im Schlüsselbund deines Betriebssystems gespeichert - niemals in der Datenbank oder Logs.',
+      models_intro:
+        'Wähle, welches Modell welche Aufgabe übernimmt. Du kannst das später in den Einstellungen ändern.',
+      model_quality_label: 'Qualitätsmodell',
+      model_quality_hint: 'Bewertung und Anpassung. Langsamer und teurer, bessere Ergebnisse.',
+      model_economy_label: 'Sparmodell',
+      model_economy_hint: 'Importe und schnelle Durchläufe. Günstiger und schneller.',
       mode_api_title: 'API-Schlüssel einfügen',
       mode_api_sub: 'Abrechnung nach Nutzung. Funktioniert mit allen Anbietern unten.',
       mode_cli_title: 'Eine CLI nutzen, die du schon bezahlst',

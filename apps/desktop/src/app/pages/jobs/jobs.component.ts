@@ -108,6 +108,7 @@ import {
   FinalCheckStatus,
   FinalChecksService,
 } from '../../shared/final-checks.service';
+import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
 
 interface PassResult {
   pass: number;
@@ -139,7 +140,7 @@ type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review'
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Component-scoped: portal-answer drafts belong to the job open on this page
   // and must not outlive it, which is the lifetime they had as component fields.
-  providers: [PortalAnswersService, FinalChecksService],
+  providers: [PortalAnswersService, FinalChecksService, DocumentExportService],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
@@ -159,6 +160,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   protected readonly portal = inject(PortalAnswersService);
   /** The wizard's token-free final-checks step. */
   private readonly finalChecksSvc = inject(FinalChecksService);
+  /** Writing the linked documents to disk. */
+  private readonly exportSvc = inject(DocumentExportService);
 
   // Previous running activity for this job, so the effect below can detect the
   // moment a background step finished and pull its fresh result into a page
@@ -1331,10 +1334,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     return keys[Math.min(this.tailorResults().length, 2)];
   });
 
-  readonly exporting = signal<string | false>(false);
-  readonly exportStatus = signal('');
-  readonly exportError = signal(false);
-  readonly lastExport = signal<{ filePath: string; format: 'docx' | 'pdf' } | null>(null);
+  /** Aliases onto `DocumentExportService`. Several component methods reset the
+   * status line directly, so these stay the same writable signals. */
+  readonly exporting = this.exportSvc.exporting;
+  readonly exportStatus = this.exportSvc.status;
+  readonly exportError = this.exportSvc.error;
+  readonly lastExport = this.exportSvc.lastExport;
 
   readonly parsing = signal(false);
   readonly scoring = signal(false);
@@ -1437,9 +1442,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.finalChecksSvc.reset();
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
-    this.exportStatus.set('');
-    this.exportError.set(false);
-    this.lastExport.set(null);
+    this.exportSvc.resetStatus();
     this.editingLocked.set(false);
     this.crossJobConfirmOpen.set(false);
     this.deleteConfirmOpen.set(false);
@@ -2311,69 +2314,21 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.scrollContentToTop();
   }
 
-  async doExport(kind: ReviewDocumentKind, format: 'docx' | 'pdf'): Promise<void> {
-    const item = kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter();
-    if (!item) {
-      this.exportStatus.set(
-        kind === 'cv'
-          ? this.t()('jobs.wizard.export_missing_cv_warning')
-          : this.t()('jobs.wizard.export_missing_cover_letter_warning'),
-      );
-      this.exportError.set(true);
-      return;
-    }
-
-    const exportingKey = `${kind}-${format}`;
-    this.exporting.set(exportingKey);
-    this.exportStatus.set('');
-    this.exportError.set(false);
-    this.lastExport.set(null);
-    try {
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const filePath = await save({ defaultPath: this.documentExportFilename(item, format) });
-      if (!filePath) return;
-      // PDF: silent WYSIWYG engine (hidden window prints the editor's own
-      // preview) - pixel-identical to the editor for every theme.
-      if (kind === 'cv') {
-        if (format === 'pdf') {
-          await this.db.cvDocumentExportPdfWysiwyg(item.id, filePath);
-        } else {
-          await this.db.cvDocumentExport(item.id, format, filePath);
-        }
-      } else {
-        if (format === 'pdf') {
-          await this.db.coverLetterDocumentExportPdfWysiwyg(item.id, filePath);
-        } else {
-          await this.db.coverLetterDocumentExport(item.id, format, filePath);
-        }
-      }
-      this.exportStatus.set(`${this.t()('jobs.wizard.export_saved')}: ${filePath}`);
-      this.lastExport.set({ filePath, format });
-      // Exporting a document commits it: clear the apply-wizard draft flag so it
-      // now appears in the Documents library (deferred-to-step-5 rule).
-      await this.commitLinkedDocument(kind);
-    } catch (e) {
-      this.exportStatus.set(`${this.t()('jobs.wizard.export_failed')}: ${String(e)}`);
-      this.exportError.set(true);
-    } finally {
-      this.exporting.set(false);
-    }
-  }
-
-  private documentExportFilename(item: DocumentLibraryItem, format: 'docx' | 'pdf'): string {
-    const base = (item.label || item.docType)
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    return `${base || item.docType}.${format}`;
+  doExport(kind: ReviewDocumentKind, format: ExportFormat): Promise<void> {
+    return this.exportSvc.run(
+      kind,
+      format,
+      kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter(),
+      (committed) => this.commitLinkedDocument(committed),
+    );
   }
 
   openExportedFile(path: string): void {
-    void this.db.openFile(path);
+    this.exportSvc.openFile(path);
   }
 
   revealExportedFile(path: string): void {
-    void this.db.revealInFolder(path);
+    this.exportSvc.revealFile(path);
   }
 
   private async runTailorPass(passNum: 1 | 2 | 3): Promise<void> {

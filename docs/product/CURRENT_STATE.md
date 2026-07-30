@@ -47,8 +47,15 @@
   already public and applye.dev is live, so the launch preparation this line used to describe is
   done; what remains is publishing the desktop release. `feat/web-cookieless-analytics` merged in
   `d7cd346` (#165); `feat/web-analytics` merged earlier in `495d413` (#164). Both branches are gone.
-- **Open pull requests, as of 2026-07-30**: #218 (this, the release verification runbook plus this
-  state sync) and #219 (a formatting-only sweep of nineteen files). Nothing else is open.
+- **The whole workspace now tests the way it runs.** All five test environments are zoneless; the
+  three library suites had been on `setupZoneTestEnv` while both applications run zoneless. `zone.js`
+  and the unused `@angular/animations` are removed, which also clears the one `invalid` peer in the
+  dependency tree. Moving the libraries across immediately failed two `score-gauge` tests that had
+  been asserting the opposite of what the gauge does - see the changelog; the spec is fixed and the
+  animation now has honest coverage for the first time.
+- **Open pull requests, as of 2026-07-30**: #218 (the release verification runbook plus a state sync)
+  and #219 (a formatting-only sweep of nineteen files), both merged since; the zoneless migration is
+  the one currently open.
   Merged today: #204, #205, #207, #209, #210 (the ReDoS fix), #212 (eslint 10 and the four packages
   #208 was blocking), #214, #215, #216, #217. Closed as superseded or withdrawn: #202, #203, #206,
   #208, #213 - #213 closed itself the moment #215's ignore rule landed.

@@ -147,8 +147,41 @@ verify:csp` reported `CSP compatibility OK`. `npm run format:check` and `git dif
   removes the optional leading `|`, which is a token change. The check that settles it is comparing the
   built bundle: `nx build desktop` gives a byte-identical digest before and after.
 
+- **Fourth part of the same watch, the zoneless test migration.** The three library suites ran under
+  `setupZoneTestEnv` while both applications run zoneless, so their test environment was not the one
+  production uses. `i18n` (10 tests) and `data` (22) moved across unchanged. `ui` failed exactly two,
+  and the previous watch had predicted which: `score-gauge`'s band tests.
+
+  **The prediction was right about the symptom and worth restating precisely, because the spec was
+  asserting the opposite of what the component does.** The gauge snaps on mount when `from` is null
+  and tweens only on _later_ score changes, over 700 ms of `requestAnimationFrame`, with the colour
+  band following the animated value. The spec set a score in `beforeEach` and then changed it inside
+  each band test - the animating path - then asserted the new band on the very next frame. Under
+  zone.js that passed; in a browser it never would, because the band has not moved yet. The band
+  tests now set their score before the first effect run, so they test threshold logic alone. Two
+  tests were added rather than removed: one pins snap-on-mount, and one drives real animation frames
+  to assert the band does _not_ jump on the frame the input changes and does arrive once the tween
+  settles. The animation had no honest coverage before this.
+
+  `zone.js` and `@angular/animations` are both removed. `zone.js` is an optional peer of
+  `@angular/core` and was never bundled - no project configuration has a `polyfills` entry - so its
+  only remaining effect was patching rAF in three test environments. `@angular/animations` was simply
+  unused, and was also the one `invalid` peer in the tree: it had resolved to 21.2.17 and pins
+  `@angular/core` to exactly 21.2.17 while core is 21.2.19. Removing it resolves that instead of
+  bumping a package nothing imports.
+
+  Verified at runtime, not inferred: the dev server boots with both gone, the app renders, and
+  `window.Zone` is `undefined`. The only console errors are `tauriInvoke called outside Tauri
+context`, which is structural - `tauriInvoke` throws whenever `window.__TAURI_INTERNALS__` is
+  absent, so serving the desktop app in a plain browser always logs it.
+
+  Second time in one watch that `npm pkg delete <block>.zone.js` was reached for and produced a
+  `"zone": {}` stub, because npm reads the dot as a path separator. Edit `package.json` with a script
+  for any key containing a dot.
+
 - **Open issues or blockers:** The Prettier drift is now cleared in #219, so the item the previous
-  entry left open is closed. The `Dependabot Updates` workflow
+  entry left open is closed. `score-gauge` and the zoneless test setup, open since two watches ago,
+  are closed here. The `Dependabot Updates` workflow
   error from two watches ago is still cosmetic and still GitHub's own updater rather than this
   repository's CI. One npm advisory and one Rust advisory stay open on purpose, both documented with
   drop conditions: `brace-expansion` GHSA-mh99-v99m-4gvg and `glib` RUSTSEC-2024-0429.
@@ -157,9 +190,10 @@ verify:csp` reported `CSP compatibility OK`. `npm run format:check` and `git dif
   `v0.29.1` draft and publish it. The runbook now exists, so this is a procedure rather than a research
   task - and the first pass through it doubles as a review of it, since nobody has executed it yet.
   After that: turn on required status checks for `main`, which the earlier watches left off only because
-  CI could not run and which is exactly what would have caught the five release bugs. Then
-  `score-gauge.spec.ts` and the zoneless test-setup migration, which also lets `zone.js` be dropped.
-  Tier 1 - `jobs.component.ts` at 2794 lines, `discover.rs` at 3488 - is the largest remaining item.
+  CI could not run and which is exactly what would have caught the five release bugs. Tier 1 -
+  `jobs.component.ts` at 2794 lines, `discover.rs` at 3488 - is then the largest remaining item, and
+  `jobs.component.ts` has the cleanest seams: portal answers, final checks and export move to services
+  almost mechanically.
 
 - **Evidence:** **The previous watch's open question is now answered.** It recorded that CodeQL had
   not re-scanned and that the five ReDoS alerts should be read as open until GitHub said otherwise.

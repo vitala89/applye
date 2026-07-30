@@ -12,15 +12,19 @@
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character
   pathological input the old patterns cost 0.6-1.5 s each, and the cost was quadratic in length.
-- **Dependency alerts, as of 2026-07-30: 17 open, of which 16 cannot reach a user.** `npm audit
---omit=dev` reports **0 vulnerabilities** - nothing vulnerable ships inside the Tauri bundle. The
-  count was 27; merging #207, #209 and #212 closed ten, and #214 pins six transitive packages to
-  close twelve more. What remains after #214 is three npm advisories whose only remedy crosses a
-  major boundary - `brace-expansion` GHSA-mh99-v99m-4gvg, `uuid`, `@hono/node-server` - each recorded
-  in `docs/governance/VALIDATION_MATRIX.md` with a drop condition, plus `glib`. **`glib` is the only
-  alert with runtime scope and it is not fixable here**: the gtk-rs 0.18 stack reaches it through
-  `gtk` 0.18.2, which `tauri` 2.11.5 pins, so `cargo update -p glib` moves nothing. Linux-only, never
-  called directly, and `cargo audit` already tolerates it at exit 0.
+- **Dependency alerts: 16 of the original 17 closed, and none of them ever shipped.** `npm audit
+--omit=dev` reports **0 vulnerabilities** and has throughout - nothing vulnerable reaches the Tauri
+  bundle. The count went 27 -> 17 (merging #207, #209, #212) -> 3 (#214, six transitive pins) -> 1
+  once #217 lands, which takes `uuid` to 11.1.1 and `@hono/node-server` to 2.0.5. **Two advisories
+  stay open on purpose, each with a drop condition in `docs/governance/VALIDATION_MATRIX.md`.**
+  `glib` RUSTSEC-2024-0429 is the only one with runtime scope and is not fixable here: the gtk-rs 0.18
+  stack reaches it through `gtk` 0.18.2, which `tauri` 2.11.5 pins, so `cargo update -p glib` moves
+  nothing; Linux-only, never called directly, and `cargo audit` already tolerates it at exit 0.
+  `brace-expansion` GHSA-mh99-v99m-4gvg was refused rather than merely deferred: forcing every copy to
+  5.x does take `npm audit` to zero, and it breaks the `minimatch` 3.1.5 copies under `test-exclude`
+  and `fork-ts-checker-webpack-plugin`, which call the module as a function while version 5 exports an
+  object. **Nothing here catches that** - with the pin in place `npm audit` read 0, the full gate went
+  green, and coverage passed. Do not re-attempt it expecting a different result.
 - **Superseded note, kept for the record**: `0.29.1` was previously the first run of the release matrix
   failed on all four platforms because `beforeBuildCommand` called `nx` without `npx`, and
   `tauri-action` does not go through the npm script that puts it on `PATH`. Fixed on

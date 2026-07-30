@@ -126,17 +126,40 @@ verify:csp` reported `CSP compatibility OK`. `npm run format:check` and `git dif
   because Jest 30 resolves its own newer `minimatch`. It was reverted, and the exact failure is now
   recorded in `docs/governance/VALIDATION_MATRIX.md` beside the rule it justifies.
 
-- **Open issues or blockers:** The Prettier drift from the previous watch is still open, now confirmed
-  at 15 files, and still deliberately unmixed with security work. The `Dependabot Updates` workflow
+- **Third part of the same watch, unblocking the thing that has gated four watches:** the smoke test
+  had no procedure, only a description of why it was awkward, so `docs/RELEASE.md` gained one (#218) -
+  macOS natively, Windows in a free UTM machine on Windows 11 ARM, three routes for x86_64 Linux, the
+  asset-to-platform table, the per-platform data paths the uninstall check needs, and a section on what
+  none of it proves. It also corrects that file's "Known blocker", which was stale **and** misdiagnosed:
+  there was never a failed payment, the repository was private with exhausted included minutes against
+  a $0 limit. The Prettier drift was cleared as well (#219), at 19 files rather than the 15 previously
+  recorded - the earlier count came from grepping only `libs/**` and `apps/**`, missing four plan
+  documents and a spec.
+
+  **One process mistake, worth recording because it is easy to repeat.** Running `nx format:write
+--projects=.` does not scope to the current project; it formatted the whole repository and swept the
+  entire drift into the docs commit - precisely the mixing the previous entry said to avoid. Caught by
+  reading `git show --stat` before pushing, then split into two branches. Check what a formatter
+  actually touched before committing it, rather than trusting a scoping flag.
+
+  Also worth knowing for next time: "formatting-only" was nearly claimed and would have been wrong.
+  `git diff --ignore-all-space` is **not** empty for a Prettier reflow, because collapsing a union
+  removes the optional leading `|`, which is a token change. The check that settles it is comparing the
+  built bundle: `nx build desktop` gives a byte-identical digest before and after.
+
+- **Open issues or blockers:** The Prettier drift is now cleared in #219, so the item the previous
+  entry left open is closed. The `Dependabot Updates` workflow
   error from two watches ago is still cosmetic and still GitHub's own updater rather than this
   repository's CI. One npm advisory and one Rust advisory stay open on purpose, both documented with
   drop conditions: `brace-expansion` GHSA-mh99-v99m-4gvg and `glib` RUSTSEC-2024-0429.
 
-- **Next first action:** Merge #217, then run the `docs/RELEASE.md` smoke test against the `v0.29.1`
-  draft and publish it. That is still the only thing standing between the work of the last three
-  watches and a user being able to download any of it. After that the Prettier drift is the cheapest
-  remaining job, and Tier 1 - `jobs.component.ts` at 2794 lines, `discover.rs` at 3488 - is the
-  largest.
+- **Next first action:** Merge #218 and #219, then work `docs/RELEASE.md` section 3 against the
+  `v0.29.1` draft and publish it. The runbook now exists, so this is a procedure rather than a research
+  task - and the first pass through it doubles as a review of it, since nobody has executed it yet.
+  After that: turn on required status checks for `main`, which the earlier watches left off only because
+  CI could not run and which is exactly what would have caught the five release bugs. Then
+  `score-gauge.spec.ts` and the zoneless test-setup migration, which also lets `zone.js` be dropped.
+  Tier 1 - `jobs.component.ts` at 2794 lines, `discover.rs` at 3488 - is the largest remaining item.
 
 - **Evidence:** **The previous watch's open question is now answered.** It recorded that CodeQL had
   not re-scanned and that the five ReDoS alerts should be read as open until GitHub said otherwise.

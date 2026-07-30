@@ -129,10 +129,7 @@ Also extend the note kind:
 
 ```ts
 export type StyleNoteKind =
-  | 'font_ats_risk'
-  | 'size_out_of_range'
-  | 'color_readability_risk'
-  | 'weight_unavailable_risk';
+  'font_ats_risk' | 'size_out_of_range' | 'color_readability_risk' | 'weight_unavailable_risk';
 ```
 
 - [ ] **Step 4: Implement the util**

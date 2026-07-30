@@ -146,12 +146,7 @@ export interface ProfileForm {
 }
 
 export type ProfileFieldKey =
-  | 'title'
-  | 'location'
-  | 'experience'
-  | 'skills'
-  | 'education'
-  | 'languages';
+  'title' | 'location' | 'experience' | 'skills' | 'education' | 'languages';
 
 export interface ScoringProfile {
   name?: string;

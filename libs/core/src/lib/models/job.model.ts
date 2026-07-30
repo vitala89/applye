@@ -181,9 +181,7 @@ export interface ImportResult {
  * `Closed` covers both known closed boards and unrecognized domains (the
  * app never scrapes either); `boardName` names the board when known. */
 export type UrlClassification =
-  | { kind: 'allowed'; source: string }
-  | { kind: 'closed'; boardName: string }
-  | { kind: 'unknown' };
+  { kind: 'allowed'; source: string } | { kind: 'closed'; boardName: string } | { kind: 'unknown' };
 
 /** Parsed job fetched from an allowed open/ATS source's public API. */
 export interface FetchedJob {

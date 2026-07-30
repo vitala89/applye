@@ -69,8 +69,7 @@ export class CvPrintComponent {
     this.sections.set(ordered);
 
     const photo = ordered.find((s) => s.key === 'photo') as
-      | Extract<CvSection, { key: 'photo' }>
-      | undefined;
+      Extract<CvSection, { key: 'photo' }> | undefined;
     this.includePhoto.set(photo?.visible ?? false);
     this.photoDataUri.set(photo?.dataUri ?? null);
     this.photoPlacement.set(photo?.placement ?? 'above_left');

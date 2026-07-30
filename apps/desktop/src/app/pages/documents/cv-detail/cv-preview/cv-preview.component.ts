@@ -621,8 +621,7 @@ export class CvPreviewComponent {
       const i = Number(seg[1]);
       const b = Number(seg[3]);
       const s = this.sections().find((x) => x.key === sel.sectionKey) as
-        | CvExperienceSection
-        | undefined;
+        CvExperienceSection | undefined;
       this.applyBulletBold(el, i, b, s?.entries[i]?.bullets?.[b] ?? '');
     }
   }

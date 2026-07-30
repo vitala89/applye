@@ -115,14 +115,7 @@ interface PassResult {
 type DocumentRegionTag = 'de' | 'us' | 'uk' | 'generic';
 type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
 type FinalCheckStatus =
-  | 'not_run'
-  | 'pass'
-  | 'needs_review'
-  | 'strong'
-  | 'needs_edits'
-  | 'valid'
-  | 'rescore'
-  | 'outdated';
+  'not_run' | 'pass' | 'needs_review' | 'strong' | 'needs_edits' | 'valid' | 'rescore' | 'outdated';
 
 interface FinalChecks {
   inputHash: string;
@@ -454,8 +447,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly gapDialogOpen = signal(false);
   readonly gapQuestions = signal<CvGapQuestion[]>([]);
   private gapResolver:
-    | ((result: { answers: CvGapAnswer[]; saveToProfile: boolean } | null) => void)
-    | null = null;
+    ((result: { answers: CvGapAnswer[]; saveToProfile: boolean } | null) => void) | null = null;
   readonly documentReviewStatus = signal('');
   readonly documentReviewError = signal(false);
   readonly chooseCvOpen = signal(false);

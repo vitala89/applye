@@ -23,14 +23,7 @@
  */
 
 export type RegionKey =
-  | 'europe'
-  | 'namerica'
-  | 'samerica'
-  | 'asia'
-  | 'oceania'
-  | 'mena'
-  | 'africa'
-  | 'other';
+  'europe' | 'namerica' | 'samerica' | 'asia' | 'oceania' | 'mena' | 'africa' | 'other';
 
 /** Deterministic classification of one free-text location. */
 export interface LocClass {

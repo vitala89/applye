@@ -240,7 +240,12 @@ describe('computeAnalytics', () => {
       app({ status: 'applied', appliedAt: '2026-07-10', statusChangedAt: '2026-07-11' }), // 7 days
       app({ status: 'interview', appliedAt: '2026-07-01', statusChangedAt: '2026-07-01' }), // 17 days -> stale
       app({ status: 'offer', appliedAt: '2026-07-05', statusChangedAt: '2026-07-06' }), // terminal, excluded
-      app({ status: 'applied', appliedAt: '2026-07-15', statusChangedAt: '2026-07-15', archived: true }), // excluded
+      app({
+        status: 'applied',
+        appliedAt: '2026-07-15',
+        statusChangedAt: '2026-07-15',
+        archived: true,
+      }), // excluded
     ];
     const ag = computeAnalytics(facts(apps), '30d', NOW).aging;
     expect(ag.activeCount).toBe(2);

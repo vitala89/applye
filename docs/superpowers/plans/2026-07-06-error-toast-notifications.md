@@ -929,7 +929,7 @@ Tracker current: `exportMsg` signal set to `\`${t('tracker.saved_to')} ${path}\`
 
 Add `import { ToastService } from '../../core/toast/toast.service';` and `private readonly toast = inject(ToastService);`.
 
-- Export success: `this.exportMsg.set(\`${this.t()('tracker.saved_to')} ${path}\`)` → `this.toast.success(\`${this.t()('tracker.saved_to')} ${path}\`)` (raw resolved string passes through the service unchanged).
+- Export success: `this.exportMsg.set(\`${this.t()('tracker.saved_to')} ${path}\`)`→`this.toast.success(\`${this.t()('tracker.saved_to')} ${path}\`)` (raw resolved string passes through the service unchanged).
 - Export catch: replace `this.exportMsg.set(String(e))` (or equivalent at line ~197) → `this.toast.error(String(e))`.
 
 Remove the `exportMsg` signal and its template binding if it has no remaining readers. If `exportMsg` also drives non-toast UI, leave it and additionally fire the toast.

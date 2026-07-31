@@ -70,6 +70,10 @@ function splitLines(value) {
     .filter(Boolean);
 }
 
+function untrackedFiles() {
+  return splitLines(git(['ls-files', '--others', '--exclude-standard'], { allowFailure: true }));
+}
+
 function configuredBase() {
   const candidate =
     explicitBase ||
@@ -88,7 +92,7 @@ function localBase() {
     }),
   );
 
-  if (workingTree.length > 0) return 'HEAD';
+  if (workingTree.length > 0 || untrackedFiles().length > 0) return 'HEAD';
   return git(['rev-parse', 'HEAD^'], { allowFailure: true }) || undefined;
 }
 
@@ -107,11 +111,12 @@ function changedFiles(base) {
   if (!base) return [];
 
   if (base === 'HEAD') {
-    return splitLines(
+    const tracked = splitLines(
       git(['diff', 'HEAD', '--name-only', '--diff-filter=ACMR', '--no-renames'], {
         allowFailure: true,
       }),
     );
+    return [...new Set([...tracked, ...untrackedFiles()])];
   }
 
   const mergeBase = git(['merge-base', base, 'HEAD'], { allowFailure: true }) || base;

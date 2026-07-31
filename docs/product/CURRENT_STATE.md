@@ -65,6 +65,15 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   only meaningful check was a `tauri dev` run, and the maintainer confirmed the wizard now completes
   with no errors. That verification is the maintainer's, not an agent's - screen-control permission
   was denied, so no agent saw the screen.
+- **A second gap dialog could strand the first document on "Generating" forever.** Reported from the
+  app: starting a cover letter while a CV was still generating raised a second gap dialog, and one of
+  the two documents then never finished. Both flows awaited a single resolver, so the second
+  overwrote the first and its promise never settled. Fixed in #230 by making ownership explicit -
+  first caller wins, second is answered `null` - and by extending the cover-letter guard to skip
+  while a CV is _preparing_, not only when one is linked. Shipped as `CvGapDialogService` because the
+  new file-size ratchet refused the in-place version, which gave the invariant its first test seam.
+  **Open, and the native re-check is pending**: this is a concurrency bug that unit tests cannot
+  fully settle.
 - **The Tier 1 split of `JobsComponent` is four responsibilities in, of roughly ten.** #222 portal
   answers, #223 final checks and #225 export are **merged**; #229 tailoring is open. Together they
   take `jobs.component.ts` from 2788 to **2121 non-empty lines** by moving those seams into

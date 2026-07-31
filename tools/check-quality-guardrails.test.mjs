@@ -15,11 +15,21 @@ import { fileURLToPath } from 'node:url';
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fileSizeScript = join(repositoryRoot, 'tools', 'check-file-size-budgets.mjs');
 const attributionScript = join(repositoryRoot, 'tools', 'check-attribution.mjs');
+const qualityBaseVariables = [
+  'ATTRIBUTION_BASE',
+  'FILE_SIZE_BASE',
+  'GITHUB_BASE_REF',
+  'NX_BASE',
+  'NX_HEAD',
+];
 
 function run(command, args, { cwd = repositoryRoot, env = {} } = {}) {
+  const childEnvironment = { ...process.env };
+  for (const variable of qualityBaseVariables) delete childEnvironment[variable];
+
   return spawnSync(command, args, {
     cwd,
-    env: { ...process.env, ...env },
+    env: { ...childEnvironment, ...env },
     encoding: 'utf8',
   });
 }

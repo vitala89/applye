@@ -1,0 +1,25 @@
+---
+description: Mandatory Applye workflow, architecture, maintainability, testing, file-size, MCP, and attribution rules.
+alwaysApply: true
+---
+
+Start every non-trivial task at `docs/internal/AGENT_START_HERE.md` and follow `AGENTS.md`.
+
+Before editing code:
+
+1. Read `docs/governance/CODE_QUALITY.md` and the relevant Angular or Rust skill.
+2. Check the responsibility and current non-empty line count of every file you plan to grow.
+3. Existing oversized files may not grow. Extract a cohesive responsibility first.
+4. Identify the test seam before implementation. Bug fixes require regression tests.
+5. Use the configured documentation MCP tools only for minimal versioned API questions. Never send source code, secrets, personal data, CV/job content, credentials, or private prompts.
+
+Before handoff, run the relevant validation matrix checks plus:
+
+```bash
+npm run quality:file-size
+npm run quality:attribution
+npm run format:check
+git diff --check
+```
+
+Never add `Co-authored-by`, sign-off, generated-by, model, or agent attribution to a commit or pull request. Commits are authored only by the configured repository Git user.

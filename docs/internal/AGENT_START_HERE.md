@@ -8,8 +8,9 @@ Before any non-trivial task, read these files in order:
 2. `PROJECT_CONTEXT.md`
 3. `docs/product/CURRENT_STATE.md`
 4. `DUTY_WATCH.md`, starting with the latest entry
-5. `docs/governance/VALIDATION_MATRIX.md`
-6. The smallest relevant roadmap, plan, ADR, design-system, specification, and code files
+5. `docs/governance/CODE_QUALITY.md`
+6. `docs/governance/VALIDATION_MATRIX.md`
+7. The smallest relevant roadmap, plan, ADR, design-system, specification, stack skill, and code files
 
 Do not begin implementation from the user request alone. First verify the current branch, recent commits, open pull requests, repository state, and whether the requested work is already complete.
 
@@ -18,6 +19,8 @@ Do not begin implementation from the user request alone. First verify the curren
 - `PROJECT_CONTEXT.md` contains durable product and architecture context.
 - `docs/product/CURRENT_STATE.md` is the canonical operational state: current focus, blockers, completed work, and next action.
 - `DUTY_WATCH.md` is the chronological handoff log between sessions and agents.
+- `docs/governance/CODE_QUALITY.md` is the mandatory maintainability, decomposition, file-size, test, MCP, and attribution contract.
+- `docs/governance/VALIDATION_MATRIX.md` maps affected layers to required checks.
 - `ROADMAP.md` describes strategic and phased work.
 - `CHANGELOG.md` records shipped changes, not future work.
 
@@ -31,7 +34,10 @@ Before editing, state briefly:
 - what the repository already implements;
 - whether `CURRENT_STATE.md` agrees with Git and the code;
 - what validation is required for the affected layers;
-- whether the task affects privacy, security, data migration, Tauri IPC, AI providers, or external tools.
+- whether the task affects privacy, security, data migration, Tauri IPC, AI providers, or external tools;
+- which touched files are near or above their code-size budgets, what responsibility each file owns, and where the new behavior will be tested.
+
+Before adding framework or library code, use the configured read-only documentation MCP tools or current official docs for the installed version. Do not send source code, secrets, personal data, or private prompts to a documentation MCP.
 
 ## Relieving the watch
 
@@ -39,10 +45,10 @@ A task is not complete until the agent:
 
 - reviews the final diff;
 - runs the relevant checks from `docs/governance/VALIDATION_MATRIX.md`;
-- runs `npm run format:check` and `git diff --check` when available;
+- runs `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` when available;
 - updates `docs/product/CURRENT_STATE.md` if project status changed;
 - appends a truthful entry to `DUTY_WATCH.md`;
-- updates `CHANGELOG.md`, roadmap, ADRs, specs, or design docs when applicable;
-- records incomplete work, blockers, failed checks, and the next first action.
+- updates changelog, roadmap, ADRs, specs, or design docs when applicable;
+- records incomplete work, blockers, failed checks, file-size changes near or above budget, and the next first action.
 
 Never claim a check passed unless it was actually run and its result was observed.

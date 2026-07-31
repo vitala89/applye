@@ -44,7 +44,74 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-31 (latest), the stack was landed in order, and scoring became the sixth seam
+### 2026-07-31 (latest), two reported bugs, one real and one misattributed
+
+- **Status:** one fixed and open as #232; the other diagnosed, not fixed, and deliberately not stacked
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/pipeline-quickview-job-id` (from `main`), PR #232
+- **Note:** this watch ran alongside PR #231 (scoring extraction), which has its own entry below.
+  Both appended here, and #231 merged first, so this branch was rebased onto it and the overlap in
+  `CHANGELOG.md` and `DUTY_WATCH.md` resolved by keeping both entries. No code file conflicted.
+
+**Bug A - Pipeline quick view opened the wrong job. Fixed.** "Open full details" navigated to
+`/jobs/<card().id>`. A `PipelineCard` is an application row: `db_pipeline_cards` selects `a.id` and
+`a.job_id` as separate columns, and `/jobs/:id` is keyed by job. The handler passed the application
+id, so the route loaded whichever unrelated job shared that number - and offered "Mark as Applied"
+for a job never applied to. Not an edge case: the two id spaces collide whenever both tables have a
+row there. `/interview-prep/:id` really is keyed by application, so the sibling link was correct and
+is left alone; a test pins both, which is what stops a future "fix" from breaking the good one.
+
+The regression test was **verified against the old code before the fix was restored** - it failed 2
+of 3 assertions, so it is known to catch the bug rather than merely to pass.
+
+**The ratchet refused the fix in place** - `quick-view-modal.component.ts` was already over budget at
+409 lines and the change took it to 419. Follow-up drafting came out into `FollowupDraftService`
+(component-scoped, aliased onto writable signals, template untouched); the modal is now **306** lines
+against a 167-line service. Second time the size gate has forced an extraction that was overdue, and
+second time it produced the test seam that logic had never had.
+
+**The extraction surfaced an older bug, fixed here.** `draft()` set its `drafting` flag _after_
+`await getSettings()`, so its double-click guard never worked - a second click during that read
+started a second billed AI call that also wrote the cache. Fixed rather than logged, because the
+alternative was committing a test asserting broken behaviour.
+
+**The privacy guard was moved with the code.** `followup-no-transmit.spec.ts` statically scans the
+follow-up sources for send/transmit APIs; the `mailto:` hand-off moved into the service, so the guard
+now scans the service too. A guard that keeps pointing at the old filename is worse than no guard.
+
+**Bug B - "a second CV dialog appears when I click Generate on the cover letter". Diagnosed, not a
+race, not fixed here.** The discriminating fact came from the maintainer, not from the code: the
+second dialog asks about **dates**. That identifies it as the CV flow's own block-before-generate
+step (`jobs.component.ts:794-813`), which necessarily runs _after_ the AI call because the questions
+are built from whichever entries the model returned undated. The cover-letter button is not
+implicated - `!linkedCv() && !preparingCv()` closes that path while a CV is linked or preparing, so
+#230's guard is holding. Correlation in time, not causation.
+
+The real defect is narrower and different from the report: **the card claims "Generating" while the
+flow is actually blocked on user input.** `docGen.begin(job.id, 'cv')` opens `createCvDraft` and
+`end` sits in its `finally`, with the date-dialog await inside - so nothing on screen indicates the
+CV is waiting, which is exactly why the dialog reads as having been triggered by the unrelated click.
+The fix is to give the card a distinct "needs your input" state while `gapSvc.open()` is true;
+`CvGapDialogService` already exposes `open`, so only `documentCardStatus` needs to consider it.
+
+**Not attempted in this watch on purpose.** It edits `jobs.component.ts`, which is over budget (so
+the ratchet forbids growth) and is the file open PR #231 rewrites. Stacking on it would recreate the
+orphaning that has already cost this project two recovery sessions.
+
+**Checks actually run and observed** (on `fix/pipeline-quickview-job-id`):
+
+- `nx run-many --target=lint,type-check,test,build --all` - **Successfully ran for 6 projects**. 825
+  tests, up from 812 (+13).
+- `npm run quality` - file-size budgets **passed** (409 -> 306), attribution passed.
+- `npm run verify:csp` - OK. `npm run format:check` - passed. `git diff --check` - clean.
+- No browser verification: the quick view needs Tauri IPC for its card data, so a browser build
+  cannot exercise it. Not claimed as verified.
+
+**Next first action:** merge #232, then branch from `main` for the "needs your input" card state.
+(#231 merged as `22e5bdd` while this watch was running.) The two native gates (#225 export, PDF only;
+#230 gap dialog) are still outstanding and still the maintainer's.
+
+### 2026-07-31, the stack was landed in order, and scoring became the sixth seam
 
 - **Status:** complete, two native gates outstanding and both belong to the maintainer
 - **Agent/tool:** Claude Code, Opus

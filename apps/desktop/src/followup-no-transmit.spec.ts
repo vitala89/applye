@@ -10,7 +10,16 @@ import * as path from 'path';
 
 const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
 
+// `followup-draft.service.ts` holds the drafting and the mailto: hand-off; the
+// modal component is still listed because it owns the surrounding UI and must
+// not grow a transmit path of its own either.
+const FOLLOWUP_SERVICE = path.join(
+  WORKSPACE_ROOT,
+  'apps/desktop/src/app/pages/pipeline/quick-view-modal/followup-draft.service.ts',
+);
+
 const FOLLOWUP_FILES = [
+  FOLLOWUP_SERVICE,
   path.join(
     WORKSPACE_ROOT,
     'apps/desktop/src/app/pages/pipeline/quick-view-modal/quick-view-modal.component.ts',
@@ -45,8 +54,8 @@ describe('followup drafting never transmits', () => {
     });
   }
 
-  it('quick-view-modal only ever opens a mailto: link, never sends directly', () => {
-    const content = fs.readFileSync(FOLLOWUP_FILES[0], 'utf-8');
+  it('the follow-up service only ever opens a mailto: link, never sends directly', () => {
+    const content = fs.readFileSync(FOLLOWUP_SERVICE, 'utf-8');
     expect(content).toMatch(/openUrl\(`mailto:/);
   });
 });

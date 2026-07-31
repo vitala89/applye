@@ -843,6 +843,7 @@ export const ru: TranslationMap = stub(en, {
         'Эти документы связаны с откликом и отображаются в разделе «Документы».',
       document_status_missing: 'Нет',
       document_status_generating: 'Генерируется',
+      document_status_needs_input: 'Нужен ваш ответ',
       document_status_linked: 'Связан',
       document_status_needs_review: 'Нужна проверка',
       document_status_ready: 'Готов',

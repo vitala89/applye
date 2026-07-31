@@ -846,6 +846,7 @@ export const fr: TranslationMap = stub(en, {
         'Ces documents sont liés à cette candidature et apparaissent dans Documents.',
       document_status_missing: 'Manquant',
       document_status_generating: 'Génération',
+      document_status_needs_input: 'Réponse requise',
       document_status_linked: 'Lié',
       document_status_needs_review: 'À relire',
       document_status_ready: 'Prêt',

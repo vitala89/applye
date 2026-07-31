@@ -100,15 +100,13 @@ import { PortalAnswersService } from '../../shared/portal-answers.service';
 import {
   DocumentRegionTag,
   FinalCheckInputs,
-  FinalCheckStatus,
   FinalChecksService,
 } from '../../shared/final-checks.service';
 import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
 import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
-
-type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
+import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
 
 @Component({
   selector: 'app-jobs',
@@ -448,12 +446,26 @@ export class JobsComponent implements OnInit, OnDestroy {
    * directly, so these stay the same writable signals rather than views of them. */
   readonly finalChecks = this.finalChecksSvc.checks;
   readonly finalChecksOutdated = this.finalChecksSvc.outdated;
+  private readonly finalCheckState = computed(() => ({
+    hasCheckedInput: !!this.finalChecks()?.inputHash,
+    outdated: this.finalChecksOutdated(),
+  }));
 
-  readonly cvReviewStatus = computed<ReviewDocumentStatus>(() =>
-    this.documentCardStatus('cv', this.linkedCv()),
+  readonly cvReviewStatus = computed(() =>
+    documentCardStatus({
+      ...this.finalCheckState(),
+      preparing: this.preparingCv(),
+      awaitingInput: this.gapSvc.open(),
+      linked: !!this.linkedCv(),
+    }),
   );
-  readonly coverLetterReviewStatus = computed<ReviewDocumentStatus>(() =>
-    this.documentCardStatus('cover_letter', this.linkedCoverLetter()),
+  readonly coverLetterReviewStatus = computed(() =>
+    documentCardStatus({
+      ...this.finalCheckState(),
+      preparing: this.preparingCoverLetter(),
+      awaitingInput: false,
+      linked: !!this.linkedCoverLetter(),
+    }),
   );
 
   async openCv(id: number, returnToWizard = false): Promise<void> {
@@ -516,24 +528,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       : 'en';
   }
 
-  private documentCardStatus(
-    kind: ReviewDocumentKind,
-    item: DocumentLibraryItem | null,
-  ): ReviewDocumentStatus {
-    if (this.docGen.isPreparing(this.job()?.id ?? -1, kind)) return 'generating';
-    if (!item) return 'missing';
-    if (this.finalChecks()?.inputHash && !this.finalChecksOutdated()) return 'ready';
-    if (this.finalChecksOutdated()) return 'needs_review';
-    return 'linked';
-  }
+  readonly documentStatusKey = documentStatusKey;
 
-  documentStatusKey(status: ReviewDocumentStatus): string {
-    return `jobs.wizard.document_status_${status}`;
-  }
-
-  finalCheckStatusKey(status: FinalCheckStatus): string {
-    return this.finalChecksSvc.statusKey(status);
-  }
+  readonly finalCheckStatusKey = this.finalChecksSvc.statusKey.bind(this.finalChecksSvc);
 
   async ensureApplicationDraft(): Promise<Application> {
     const existing = this.application();

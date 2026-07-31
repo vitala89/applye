@@ -866,7 +866,9 @@
 .document-review-card__select {
   width: 100%;
 }
-.badge--doc-missing {
+.badge--doc-missing,
+.badge--doc-needs_input,
+.badge--doc-needs_review {
   color: var(--warning);
   border-color: color-mix(in srgb, var(--warning) 40%, transparent);
 }
@@ -877,10 +879,6 @@
 .badge--doc-ready {
   color: var(--success);
   border-color: color-mix(in srgb, var(--success) 40%, transparent);
-}
-.badge--doc-needs_review {
-  color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
 }
 .final-checks {
   display: flex;

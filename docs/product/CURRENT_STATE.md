@@ -65,17 +65,20 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   only meaningful check was a `tauri dev` run, and the maintainer confirmed the wizard now completes
   with no errors. That verification is the maintainer's, not an agent's - screen-control permission
   was denied, so no agent saw the screen.
-- **The Tier 1 split of `JobsComponent` has started, and three of its ten responsibilities are out.**
-  Three stacked pull requests - #222 portal answers (merged), #223 final checks, #225 export - take
-  `jobs.component.ts` from 2788 to 2481 lines by moving those seams into `PortalAnswersService`,
-  `FinalChecksService` and `DocumentExportService` under `apps/desktop/src/app/shared/`. Each is a
-  move, not a redesign: same guards, same cache keys, same thresholds, same status strings, same
-  storage keys, and `jobs.component.html` is untouched across all three because the component exposes
-  the moved signals as aliases onto the services' _writable_ signals. All three are component-scoped
-  via `providers`, not `providedIn: 'root'`, so lifetime matches what the fields had. 48 new tests -
-  the first coverage any of that logic has had. **#222 is merged; #223 and #225 are open**, and the
-  export path is Tauri-only, so `npm run desktop:dev` is a pending gate on #225. Seven responsibilities remain in
-  the file, the largest being tailoring passes and scoring.
+- **The Tier 1 split of `JobsComponent` is four responsibilities in, of roughly ten.** #222 portal
+  answers, #223 final checks and #225 export are **merged**; #229 tailoring is open. Together they
+  take `jobs.component.ts` from 2788 to **2121 non-empty lines** by moving those seams into
+  `PortalAnswersService`, `FinalChecksService`, `DocumentExportService` and `TailoringService` under
+  `apps/desktop/src/app/shared/`. Every one is a move, not a redesign: same guards, same cache keys,
+  same thresholds, same status strings, same storage keys, and `jobs.component.html` is **untouched
+  across all four**, because the component exposes the moved signals as aliases onto the services'
+  _writable_ signals rather than as read-only views. All four are component-scoped via `providers`,
+  not `providedIn: 'root'`, so lifetime matches what the fields had. 70 new tests - the first
+  coverage any of that logic has had. Six responsibilities remain, sized: document drafts (591
+  lines, and really three responsibilities in one coat), scoring (279), wizard navigation (129), job
+  CRUD (119), the CV gap dialog (56), plus the compensation and archetype derivations. **The export
+  path is Tauri-only, so `npm run desktop:dev` remains a pending gate on #225's behaviour** - it is
+  merged but was never exercised natively.
 - **Every desktop page component is on OnPush.** The seven that were still on the default strategy -
   `jobs` (2788 lines at the time), `profile`, `settings`, `pipeline`, `apply-wizard`, `scoring-view`,
   `updated-score-view` - now declare it. Safe because all seven are signal-driven and none injects

@@ -44,7 +44,86 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-31 (latest), onboarding could not pick a model, so it sent an empty one
+### 2026-07-31 (latest), the tailoring pipeline leaves the jobs page, under a file-size budget that now enforces it
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-tailoring-service`
+- **Commits:** `72fc311`, plus this entry
+- **Pull request:** #229
+- **Objective:** continue the Tier 1 split of `jobs.component.ts` with the next seam.
+
+- **Completed:** Seam four of roughly ten. The three most isolated ones were done in the previous
+  watch; from here the choice is by cohesion, so the remaining seams were measured first rather
+  than guessed at: document drafts 591 lines, scoring 279, **tailoring 243**, wizard navigation 129,
+  job CRUD 119, gap dialog 56.
+
+  Tailoring was taken over the larger document-drafts block on purpose. Document drafts is not one
+  responsibility - it is CV generation, cover-letter generation and the link/commit lifecycle
+  sharing a region of the file. Moving it wholesale would produce a service that is oversized on
+  arrival and still needs splitting. Tailoring is genuinely one thing.
+
+  `TailoringService` owns the results, status, error and cancelled signals, the
+  `isTailored`/`allChanges`/`allGaps` derivations, the pass loop, the parsing and the cache restore.
+  `PassResult` moved with it. Whether a run is in flight deliberately stayed in
+  `WizardActivityService`: it is already keyed by job so that an AI call in flight survives this page
+  component being destroyed, and duplicating that into the new service would have created a second
+  answer to the same question.
+
+  The component keeps what tailoring _invalidates but does not own_ - the export status line, the
+  post-tailor rescore, the final checks. Those resets stay in `startTailoring`, ahead of the call.
+
+  **Two invariants were made explicit rather than changed.** Each pass's cache key covers the results
+  of the passes before it, so pass 3 cannot be served stale after pass 1 changes; and
+  `restoreFromCache` recomputes that same chain, which is why it stops at the first miss instead of
+  skipping ahead. Both were true in the original code, neither was stated or tested. They are now
+  both.
+
+- **Not completed:** Six responsibilities remain in the file. Document drafts is the largest and
+  should be split into more than one service rather than moved.
+
+- **Files or packages changed:** new `apps/desktop/src/app/shared/tailoring.service.ts` (298 lines)
+  and its spec (272); `apps/desktop/src/app/pages/jobs/jobs.component.ts` (2299 -> 2121 non-empty);
+  `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file. `jobs.component.html` is unchanged.
+
+- **Validation:** Run and observed:
+  - `nx run-many --target=lint,type-check,test,build --all` - passed, 6 projects, 795 desktop tests
+    (up from 773). The 11 lint warnings are pre-existing `no-non-null-assertion`.
+  - `npm run quality` - passed, all three guards. The new file-size hook reported
+    `jobs.component.ts: 2121/400, base 2299`, which is the ratchet working: still far over budget,
+    but smaller than its base, which is what the rule requires of a refactor.
+  - `npm run verify:csp`, `npm run format:check`, `git diff --check` - all passed.
+  - Browser: the `nx serve` preview could not start, because the `tauri dev` process left running
+    from the previous watch holds the `desktop:serve` lock. Its own frontend on port 4200 had
+    hot-reloaded the change, so that was used instead - `/jobs/1` renders, `app-jobs` instantiates
+    with all four services, no `NullInjectorError`, `NG0201`, `NG0203`, `NG0600` or `NG0950`.
+
+- **Privacy/security impact:** None. Same AI calls with the same inputs to the same provider, same
+  SQLite cache rows with the same keys. No new egress and no new persistence.
+
+- **Decisions and assumptions:** `#228` landed on `main` mid-watch and introduced
+  `docs/governance/CODE_QUALITY.md`, a 400-line TypeScript budget and a ratchet rule. The work was
+  already following that shape, and the four extracted services are 231/168/109/298 lines, all
+  inside budget. Worth recording honestly: **the onboarding fix in #226 grew two already-oversized
+  files** - `onboarding.component.ts` 863 -> 1002 and its spec 589 -> 689. #226 merged minutes before
+  #228, so it broke no rule that existed at the time, but under the ratchet both are now standing
+  debt and neither may grow again.
+
+- **Risks or compatibility impact:** None known. The template is unchanged, so the visual surface
+  cannot have moved; the risk is confined to the pass loop, which is now covered by 22 tests.
+
+- **Open issues or blockers:** None. The two accepted dependency advisories are untouched.
+
+- **Next first action:** Merge #229. Then run the still-outstanding native gate from two watches
+  ago, which no amount of frontend work substitutes for: `npm run desktop:dev`, export a CV to PDF
+  and to DOCX from the apply wizard's final step, and confirm the file is written, the status line
+  reads the saved path, and the document leaves draft state into the Documents library.
+
+- **Evidence:** `npm run quality:file-size` prints
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts: 2121/400 non-empty lines, base 2299`.
+  `git diff main --stat -- apps/desktop/src/app/pages/jobs/jobs.component.html` is empty.
+
+### 2026-07-31, onboarding could not pick a model, so it sent an empty one
 
 - **Status:** complete, merged and verified
 - **Agent/tool:** Claude Code, Opus

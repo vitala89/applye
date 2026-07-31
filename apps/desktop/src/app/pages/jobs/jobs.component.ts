@@ -56,14 +56,11 @@ import {
   Bookmark,
   X,
 } from 'lucide-angular';
-import { AiService, AtsService, DbService, JobsStore } from '@applye/data';
+import { AiService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
-  AtsReport,
   Job,
   Profile,
-  ScoreDimension,
-  ScoringCache,
   Settings,
   SupportedLanguage,
   LANGUAGE_NATIVE_NAMES,
@@ -109,6 +106,7 @@ import {
 import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
 import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
+import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
 
 type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
 
@@ -135,13 +133,13 @@ type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review'
     DocumentExportService,
     TailoringService,
     CvGapDialogService,
+    JobScoringService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
   private readonly jobsStore = inject(JobsStore);
   private readonly ai = inject(AiService);
-  private readonly ats = inject(AtsService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -161,6 +159,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly tailorSvc = inject(TailoringService);
   /** The single CV-gap dialog shared by both document flows. */
   private readonly gapSvc = inject(CvGapDialogService);
+  /** Baseline scoring, the post-tailor rescore, and the ATS check. */
+  private readonly scoreSvc = inject(JobScoringService);
 
   // Previous running activity for this job, so the effect below can detect the
   // moment a background step finished and pull its fresh result into a page
@@ -254,11 +254,12 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly job = signal<Job | null>(null);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
-  readonly cache = signal<ScoringCache | null>(null);
-  readonly fromCache = signal(false);
-  /** The shown score was produced against an OLDER profile version - the
-   * numbers still describe this job, but not the profile the user has now. */
-  readonly scoreStale = signal(false);
+  // Scoring. Aliases onto `JobScoringService`; the template binds these names
+  // and several component methods reset them directly, so they stay the same
+  // writable signals rather than views of them.
+  readonly cache = this.scoreSvc.cache;
+  readonly fromCache = this.scoreSvc.fromCache;
+  readonly scoreStale = this.scoreSvc.stale;
   readonly wizardOpen = signal(false);
   readonly wizardInitialStep = signal(0);
   readonly archetypeMatch = signal<boolean | null>(null);
@@ -319,11 +320,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly updatingScore = computed(() => this.tailorScore.isRunningFor(this.job()?.id ?? -1));
   readonly updateScoreStatus = computed(() => this.tailorScore.statusFor(this.job()?.id ?? -1));
   readonly updateScoreError = computed(() => this.tailorScore.isErrorFor(this.job()?.id ?? -1));
-  private readonly postTailorSaved = signal(false);
-  /** Deterministic ATS report for the tailored CV. Null until the rescore
-   * runs, or if the local check failed - the card then falls back to the
-   * AI's advisory verdict. */
-  readonly atsReport = signal<AtsReport | null>(null);
+  private readonly postTailorSaved = this.scoreSvc.postTailorSaved;
+  readonly atsReport = this.scoreSvc.atsReport;
   /** Non-null while the post-apply/update success card is shown before the
    * redirect fires. */
   readonly applyResult = signal<'updated' | null>(null);
@@ -1317,12 +1315,12 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly lastExport = this.exportSvc.lastExport;
 
   readonly parsing = signal(false);
-  readonly scoring = signal(false);
+  readonly scoring = this.scoreSvc.running;
 
   readonly parseStatus = signal('');
   readonly parseError = signal(false);
-  readonly scoreStatus = signal('');
-  readonly scoreError = signal(false);
+  readonly scoreStatus = this.scoreSvc.status;
+  readonly scoreError = this.scoreSvc.error;
 
   private readonly destroyRef = inject(DestroyRef);
   /** The job id the page currently reflects, so a route param change to a
@@ -1435,30 +1433,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.gapSvc.dispose();
   }
 
-  /**
-   * Restore this job's score on open. A score is cached per profile version, so
-   * editing the profile (adding a target role, rewriting the Markdown) changes
-   * the hash and the exact lookup misses. Rather than let the result disappear
-   * - which reads as "this job was never scored" - fall back to the newest
-   * score on record and flag it stale, so the user sees the old numbers plus an
-   * explicit prompt to re-score against the profile they have now.
-   */
-  private async loadCachedScore(id: number): Promise<void> {
-    const p = this.profile();
-    if (!p?.scoringHash) return;
-    const current = await this.db.scoreCacheGet(id, p.scoringHash);
-    if (current) {
-      this.cache.set(current);
-      this.fromCache.set(true);
-      this.scoreStale.set(false);
-      return;
-    }
-    const previous = await this.db.scoreCacheLatest(id);
-    if (previous) {
-      this.cache.set(previous);
-      this.fromCache.set(true);
-      this.scoreStale.set(true);
-    }
+  /** Restore this job's score on open, falling back to a stale one when the
+   * profile has changed since. See `JobScoringService.loadCached`. */
+  private loadCachedScore(id: number): Promise<void> {
+    return this.scoreSvc.loadCached(id, this.profile()?.scoringHash);
   }
 
   private async loadJob(id: number): Promise<void> {
@@ -1850,238 +1828,34 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async scoreJob(forceRefresh = false): Promise<void> {
-    const j = this.job();
-    const p = this.profile();
-    const s = this.settings();
-    if (!j || !p?.scoringJson || !p.scoringHash || !s) return;
-
-    // Cache check (skip on force refresh)
-    if (!forceRefresh) {
-      const cached = await this.db.scoreCacheGet(j.id!, p.scoringHash);
-      if (cached) {
-        this.cache.set(cached);
-        this.fromCache.set(true);
-        this.scoreStale.set(false);
-        this.scoreStatus.set('Loaded from cache - 0 tokens used.');
-        return;
-      }
-    }
-
-    this.scoring.set(true);
-    this.scoreStatus.set('');
-    this.scoreError.set(false);
-    this.fromCache.set(false);
-    try {
-      const lang = s.defaultDocLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('job-scoring', {
-        profile_json: p.scoringJson,
-        job_description: this.jdText(),
-        language: lang,
-        legitimacy_notes: this.legitimacyNotes().join('\n'),
-        tailored_resume_md: '',
-      });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: lang,
-      });
-
-      // Parse AI JSON response
-      let parsed: {
-        score: number;
-        dimensions: ScoreDimension[];
-        missing_keywords: string[];
-        red_flags: string[];
-        ats_pass: boolean;
-        ats_notes: string;
-        summary: string;
-        before_you_submit?: string[];
-      };
-      try {
-        const raw = res.text
-          .replace(/^```(?:json)?\s*/i, '')
-          .replace(/\s*```\s*$/i, '')
-          .trim();
-        parsed = JSON.parse(raw);
-      } catch {
-        throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
-      }
-
-      const saved = await this.db.scoreCacheSave({
-        jobId: j.id!,
-        profileHash: p.scoringHash,
-        language: lang,
-        score: parsed.score,
-        dimensionsJson: JSON.stringify(parsed.dimensions),
-        missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
-        redFlagsJson: JSON.stringify(parsed.red_flags),
-        atsPass: parsed.ats_pass,
-        atsNotes: parsed.ats_notes,
-        summary: parsed.summary,
-        beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
-        modelUsed: s.economyModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
-      this.cache.set(saved);
-      this.scoreStale.set(false);
-      this.jobsStore.patchOverviewRow(j.id!, { score: saved.score });
-      this.scoreStatus.set(`Scored - ${res.tokensInput} in / ${res.tokensOutput} out`);
-    } catch (e) {
-      this.scoreStatus.set(`Scoring failed: ${String(e)}`);
-      this.scoreError.set(true);
-    } finally {
-      this.scoring.set(false);
-    }
+  scoreJob(forceRefresh = false): Promise<void> {
+    return this.scoreSvc.score(this.scoreContext(''), forceRefresh);
   }
 
-  /**
-   * Post-tailor rescore - user-initiated (opt-in, spends tokens), scores the
-   * PASS-3 tailored resume instead of the generic profile, so the user sees
-   * before (original posting fit) vs after (fit of what they'd actually
-   * submit). Intentionally NOT persisted to `scoring_cache`: that table is
-   * keyed unique on (job_id, profile_hash, jd_hash) - the same key the
-   * original score used - so saving here would overwrite the "before"
-   * baseline instead of keeping both. Kept as in-memory state only.
-   */
-  async updateScoreAfterTailor(): Promise<void> {
-    const j = this.job();
-    const p = this.profile();
-    const s = this.settings();
+  /** Post-tailor rescore - user-initiated and token-spending. See
+   * `JobScoringService.rescoreAfterTailor`. */
+  updateScoreAfterTailor(): Promise<void> {
     const pass3 = this.tailorResults().find((r) => r.pass === 3);
-    if (!j?.id || !p?.scoringJson || !p.scoringHash || !s || !pass3 || this.updatingScore()) {
-      return;
-    }
-
-    this.tailorScore.begin(j.id);
-    this.activity.begin(j.id, 'scoring');
-    this.finalChecksSvc.reset();
-
-    // Deterministic ATS check on the tailored CV, before the AI call and
-    // independent of whether it succeeds: it costs no tokens, cannot fail on a
-    // malformed model reply, and is the number the user is actually shown.
-    void this.runAtsCheck(pass3.resultMd);
-
-    try {
-      const lang = s.defaultDocLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('job-scoring', {
-        profile_json: p.scoringJson,
-        job_description: this.jdText(),
-        language: lang,
-        legitimacy_notes: this.legitimacyNotes().join('\n'),
-        tailored_resume_md: pass3.resultMd,
-      });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: lang,
-      });
-
-      let parsed: {
-        score: number;
-        dimensions: ScoreDimension[];
-        missing_keywords: string[];
-        red_flags: string[];
-        ats_pass: boolean;
-        ats_notes: string;
-        summary: string;
-        before_you_submit?: string[];
-      };
-      try {
-        const raw = res.text
-          .replace(/^```(?:json)?\s*/i, '')
-          .replace(/\s*```\s*$/i, '')
-          .trim();
-        parsed = JSON.parse(raw);
-      } catch {
-        throw new Error(`AI returned invalid JSON: ${res.text.slice(0, 200)}`);
-      }
-
-      this.tailorScore.succeed(
-        j.id,
-        {
-          id: -1,
-          jobId: j.id,
-          profileHash: p.scoringHash,
-          jdHash: j.jdHash ?? '',
-          language: lang,
-          score: parsed.score,
-          dimensionsJson: JSON.stringify(parsed.dimensions),
-          missingKeywordsJson: JSON.stringify(parsed.missing_keywords),
-          redFlagsJson: JSON.stringify(parsed.red_flags),
-          atsPass: parsed.ats_pass,
-          atsNotes: parsed.ats_notes,
-          summary: parsed.summary,
-          beforeYouSubmitJson: JSON.stringify(parsed.before_you_submit ?? []),
-          modelUsed: s.economyModel,
-          tokensInput: res.tokensInput,
-          tokensOutput: res.tokensOutput,
-        },
-        `Updated - ${res.tokensInput} in / ${res.tokensOutput} out`,
-      );
-    } catch (e) {
-      this.tailorScore.fail(j.id, `Update failed: ${String(e)}`);
-    } finally {
-      this.activity.end(j.id, 'scoring');
-    }
+    return this.scoreSvc.rescoreAfterTailor(this.scoreContext(pass3?.resultMd ?? ''));
   }
 
-  /**
-   * Runs the deterministic ATS check against the tailored CV. Failure is
-   * non-fatal and silent in the UI: the report simply stays null and the ATS
-   * card falls back to the AI's advisory verdict, exactly as before.
-   */
-  private async runAtsCheck(cvMarkdown: string): Promise<void> {
-    this.atsReport.set(null);
-    try {
-      this.atsReport.set(
-        await this.ats.check(cvMarkdown, this.jdText(), this.documentReviewRegion()),
-      );
-    } catch (e) {
-      console.warn('ats_check_run failed', e);
-    }
+  /** Everything a scoring run reads, snapshotted at call time. */
+  private scoreContext(tailoredResumeMd: string): ScoreContext {
+    return {
+      job: this.job(),
+      profile: this.profile(),
+      settings: this.settings(),
+      jdText: this.jdText(),
+      legitimacyNotes: this.legitimacyNotes(),
+      tailoredResumeMd,
+      reviewRegion: this.documentReviewRegion(),
+    };
   }
 
-  /**
-   * Persists the post-tailor score to `scoring_cache` so the My Jobs list
-   * reflects the tailored fit. The unique key (job_id, profile_hash, jd_hash)
-   * matches the baseline row, so this overwrites it - the "before" is only
-   * needed for the in-session comparison (held in `cache()`), not on disk.
-   * Idempotent per rescore via `postTailorSaved`.
-   */
-  private async savePostTailorScore(): Promise<void> {
-    const post = this.postTailorScore();
-    const j = this.job();
-    if (!post || !j?.id || this.postTailorSaved()) return;
-    this.postTailorSaved.set(true);
-    try {
-      await this.db.scoreCacheSave({
-        jobId: j.id,
-        profileHash: post.profileHash,
-        language: post.language ?? 'en',
-        score: post.score,
-        dimensionsJson: post.dimensionsJson ?? '[]',
-        missingKeywordsJson: post.missingKeywordsJson ?? '[]',
-        redFlagsJson: post.redFlagsJson ?? '[]',
-        atsPass: post.atsPass ?? false,
-        atsNotes: post.atsNotes ?? '',
-        summary: post.summary ?? '',
-        beforeYouSubmitJson: post.beforeYouSubmitJson ?? '[]',
-        modelUsed: post.modelUsed ?? '',
-        tokensInput: post.tokensInput ?? 0,
-        tokensOutput: post.tokensOutput ?? 0,
-      });
-      this.jobsStore.patchOverviewRow(j.id, { score: post.score });
-    } catch {
-      this.postTailorSaved.set(false); // allow a retry on the next commit
-    }
+  /** Commits the post-tailor score to My Jobs. See
+   * `JobScoringService.savePostTailor`. */
+  private savePostTailorScore(): Promise<void> {
+    return this.scoreSvc.savePostTailor(this.job()?.id);
   }
 
   /**

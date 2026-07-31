@@ -72,22 +72,27 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   first caller wins, second is answered `null` - and by extending the cover-letter guard to skip
   while a CV is _preparing_, not only when one is linked. Shipped as `CvGapDialogService` because the
   new file-size ratchet refused the in-place version, which gave the invariant its first test seam.
-  **Open, and the native re-check is pending**: this is a concurrency bug that unit tests cannot
-  fully settle.
-- **The Tier 1 split of `JobsComponent` is four responsibilities in, of roughly ten.** #222 portal
-  answers, #223 final checks and #225 export are **merged**; #229 tailoring is open. Together they
-  take `jobs.component.ts` from 2788 to **2121 non-empty lines** by moving those seams into
-  `PortalAnswersService`, `FinalChecksService`, `DocumentExportService` and `TailoringService` under
+  **Merged (#230), and the native re-check is still pending**: this is a concurrency bug that unit
+  tests cannot fully settle.
+- **The Tier 1 split of `JobsComponent` is six responsibilities in, of roughly ten.** #222 portal
+  answers, #223 final checks, #225 export, #229 tailoring and #230 the CV gap dialog are **merged**;
+  #231 scoring is open. Together they take `jobs.component.ts` from 2788 to **1882 non-empty lines**
+  by moving those seams into `PortalAnswersService`, `FinalChecksService`, `DocumentExportService`,
+  `TailoringService`, `CvGapDialogService` and `JobScoringService` under
   `apps/desktop/src/app/shared/`. Every one is a move, not a redesign: same guards, same cache keys,
   same thresholds, same status strings, same storage keys, and `jobs.component.html` is **untouched
-  across all four**, because the component exposes the moved signals as aliases onto the services'
-  _writable_ signals rather than as read-only views. All four are component-scoped via `providers`,
-  not `providedIn: 'root'`, so lifetime matches what the fields had. 70 new tests - the first
-  coverage any of that logic has had. Six responsibilities remain, sized: document drafts (591
-  lines, and really three responsibilities in one coat), scoring (279), wizard navigation (129), job
-  CRUD (119), the CV gap dialog (56), plus the compensation and archetype derivations. **The export
-  path is Tauri-only, so `npm run desktop:dev` remains a pending gate on #225's behaviour** - it is
-  merged but was never exercised natively.
+  across all six**, because the component exposes the moved signals as aliases onto the services'
+  _writable_ signals rather than as read-only views. All six are component-scoped via `providers`,
+  not `providedIn: 'root'`, so lifetime matches what the fields had. 104 new tests - the first
+  coverage any of that logic has had. Scoring was the one seam that also removed duplication rather
+  than only relocating it: both scoring paths carried their own copy of the same ` ```json ` fence
+  unwrap, now the exported pure `parseScoreResponse`. Four responsibilities remain, sized: document
+  drafts (591 lines, and really three responsibilities in one coat), wizard navigation (129), job
+  CRUD (119), plus the compensation and archetype derivations. **The export path is Tauri-only, so
+  `npm run desktop:dev` remains a pending gate on #225's behaviour** - it is merged but was never
+  exercised natively. That gate is **PDF only**: the wizard's final step exposes `cv-pdf` and
+  `cover_letter-pdf` and no DOCX control, so DOCX export is reachable only from the Documents list
+  pages and is not part of this gate.
 - **Every desktop page component is on OnPush.** The seven that were still on the default strategy -
   `jobs` (2788 lines at the time), `profile`, `settings`, `pipeline`, `apply-wizard`, `scoring-view`,
   `updated-score-view` - now declare it. Safe because all seven are signal-driven and none injects
@@ -147,9 +152,10 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   `ChangeDetectionStrategy.OnPush` (not Angular 21.2's default, though the framework is moving
   there). Conventions for both stacks live in `.claude/skills/applye-angular` and
   `.claude/skills/applye-rust`; `.mcp.json` wires the first-party Angular CLI MCP server read-only.
-  **Still open (Tier 1):** `JobsComponent` is being decomposed into services - three seams are out in
-  #222 (merged), #223 and #225, seven responsibilities remain - `pages/` wants reorganising into per-feature
-  folders, and `discover.rs`/`tailoring.rs`/`documents.rs` are oversized single modules. The eager
+  **Still open (Tier 1):** `JobsComponent` is being decomposed into services - six seams are out
+  (#222, #223, #225, #229, #230 merged; #231 open), four responsibilities remain - `pages/` wants
+  reorganising into per-feature folders, and `discover.rs`/`tailoring.rs`/`documents.rs` are
+  oversized single modules. The eager
   change-detection item is closed: every page component is on OnPush.
 - **README and repository infrastructure are launch-ready as of 2026-07-29.** All six READMEs
   carry an FAQ, a source table for Discover, a Connect section, and tech-stack badges;

@@ -44,7 +44,78 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-31 (latest), two documents raced for one dialog, and the size budget refused the easy fix
+### 2026-07-31 (latest), the stack was landed in order, and scoring became the sixth seam
+
+- **Status:** complete, two native gates outstanding and both belong to the maintainer
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-scoring-service` (from `main`), PR #231
+
+**What happened, in order.**
+
+1. **#229 was already merged** when the watch opened (squash `da0766e`); nothing to do.
+2. **#230 was rebased past that squash.** Its base was already retargeted to `main` but it read
+   `CONFLICTING`, because the squash orphaned the branch above it - the same failure mode that put
+   #224 into #223's branch a day earlier. `git rebase --onto origin/main a9bccfb` replayed the two
+   commits cleanly. The evidence that the rebase preserved the tree exactly is not an eyeball: the
+   full `nx run-many` gate came back **21/21 cache hit**, which only happens when the inputs hash
+   identically to the pre-rebase run. `jobs.component.html` diffed to **0 lines** against `main`.
+   Merged as `546a6f8` once CI went green and `mergeStateStatus` read `CLEAN`.
+3. **Scoring extracted** into `JobScoringService`, the sixth Tier 1 seam. See below.
+
+**The scoring extraction.** Baseline scoring, the post-tailor rescore, the deterministic ATS check
+and the commit-time write to `scoring_cache` moved out. `jobs.component.ts`: **2099 -> 1882
+non-empty lines**; `job-scoring.service.ts` is 306 lines, under the 400 budget. The file-size gate
+confirmed the ratchet at commit time: `1882/400 non-empty lines, base 2099`.
+
+Three things are worth recording because they are not pure relocation:
+
+- **The duplicated JSON unwrap is gone.** `scoreJob` and `updateScoreAfterTailor` each carried their
+  own verbatim copy of the ` ```json ` fence strip plus `JSON.parse` plus the rethrow with a
+  200-character excerpt. That is now one exported pure `parseScoreResponse`, and it is the only part
+  of scoring testable without an AI call. Four of the 20 new tests cover it directly.
+- **One behaviour changed, deliberately and in the safe direction.** `score()` now guards on
+  `job.id` rather than asserting `j.id!`. Previously an id-less job would have written a
+  `scoring_cache` row keyed on `undefined`; it is now a no-op. This removed three non-null
+  assertions - desktop lint warnings went 19 -> 8.
+- **`AtsService` is no longer injected by the component.** The ATS check was the only thing using it.
+
+The alias pattern held for the sixth time: the component exposes `cache`, `fromCache`, `scoreStale`,
+`scoring`, `scoreStatus`, `scoreError`, `atsReport` and `postTailorSaved` as aliases onto the
+service's **writable** signals, so `jobs.component.html` is byte-identical to `main` again.
+`JobScoringService` is component-scoped via `providers`. It injects `FinalChecksService`, which is
+also component-scoped in the same array - that resolves, and it is what keeps `finalChecks.reset()`
+firing at the start of a rescore exactly as before.
+
+**Checks actually run and observed.**
+
+- `nx run-many --target=lint,type-check,test,build --all` - **Successfully ran for 6 projects**.
+  829 tests across 48 suites, up from 809 (+20).
+- `npm run quality` - file-size budgets passed (with the ratchet line above), attribution passed,
+  quality:test 3/3.
+- `npm run verify:csp` - OK, 1 stylesheet link, no handler-dependent styling.
+- `npm run format:check` - passed after `nx format:write --uncommitted`. Note: that command does
+  **not** touch untracked files, so the new service had to be `git add`-ed before it would format.
+- `git diff --check` - clean.
+- Browser: the `nx serve` on :4200 (held by a running `tauri dev`) hot-rebuilt with the change and
+  boots with **zero console errors**. That is the honest limit of browser verification here - the
+  scoring path needs Tauri IPC and an AI provider, so it cannot be exercised in a browser build.
+
+**Two native gates remain outstanding. Neither was run.** Screen-control permission is denied to
+agents, so these are the maintainer's and must be recorded as theirs:
+
+1. **#225 export.** `npm run desktop:dev`, export a CV from the wizard's final step. **Correction to
+   the previous handoff: this is a PDF-only gate.** The wizard's final step exposes `cv-pdf` and
+   `cover_letter-pdf` and has no DOCX control; DOCX export exists but is reachable only from the
+   Documents list pages, so it is not part of this gate. The maintainer confirmed the same.
+2. **#230 gap dialog.** On step 4, start the CV and click Generate on the cover letter while it
+   runs. Expect one dialog and both documents finishing.
+
+**Next first action:** merge #231 once CI is green, then extract wizard navigation (129 lines) as
+seam seven. Do **not** move document drafts (591 lines) wholesale - it is CV generation,
+cover-letter generation and the link/commit lifecycle sharing one region, and it needs splitting
+into more than one service rather than relocating.
+
+### 2026-07-31, two documents raced for one dialog, and the size budget refused the easy fix
 
 - **Status:** complete, pending the maintainer's native check
 - **Agent/tool:** Claude Code, Opus

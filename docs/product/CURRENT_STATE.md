@@ -65,6 +65,18 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   only meaningful check was a `tauri dev` run, and the maintainer confirmed the wizard now completes
   with no errors. That verification is the maintainer's, not an agent's - screen-control permission
   was denied, so no agent saw the screen.
+- **Discover showed job descriptions as their own HTML source, and the fix has one open consequence.**
+  An ArbeitNow posting rendered `<p>`, `<li>`, `&amp;` and `&nbsp;` as visible text. `strip_html`
+  stripped tags before decoding entities, so an entity-escaped feed had nothing stripped and then had
+  its escaped tags _converted into_ literal text. Stripping and decoding now alternate under a bounded
+  loop, which fixes every source, not just ArbeitNow. The same function also swallowed the rest of any
+  line containing a bare `<` ("latency < 100 ms"), straight into the text used for scoring; a `<` now
+  opens a tag only when a name, `/` or `!` follows. Open as **#233**. **Decision needed before or
+  soon after merging:** the fix applies to newly scanned jobs only, and because `jobs.jd_hash` is the
+  dedupe key, re-scanning an already-stored posting inserts a _second_ row. Either a data repair that
+  recomputes `jd_hash` (which orphans `scoring_cache` rows keyed on the old hash) or an extra dedupe
+  on `source_url`; the latter cannot land in `discover.rs` while it sits at 3245 lines against an 800
+  budget.
 - **A Pipeline card opened the wrong job, and the report about a duplicate CV dialog turned out to be
   something else.** Two bugs came in from the app together. The first is real and fixed in **#232**:
   "Open full details" passed the card's **application** id to `/jobs/:id`, which is keyed by **job**,

@@ -825,18 +825,12 @@ fn json_str(v: &serde_json::Value, key: &str) -> String {
         .to_string()
 }
 
-/// Greenhouse ships `content` HTML-escaped (`&lt;p&gt;`); decode the shell of
-/// escaping first when there are no real tags, then strip to plain text.
+/// Feeds disagree about how many times they escape their markup - Greenhouse
+/// ships `content` escaped (`&lt;p&gt;`), ArbeitNow escapes the entities inside
+/// it as well. `strip_html` handles every layer, so this is now only a name for
+/// what the parsers are doing.
 fn html_to_text(raw: &str) -> String {
-    if raw.contains('<') {
-        strip_html(raw)
-    } else {
-        let decoded = raw
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&amp;", "&");
-        strip_html(&decoded)
-    }
+    strip_html(raw)
 }
 
 /// remotive.com/api/remote-jobs: { jobs: [{ title, company_name, description,

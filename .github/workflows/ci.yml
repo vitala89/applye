@@ -69,11 +69,12 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
-      - name: Enforce code-size and attribution guardrails
+      - name: Test and enforce code-quality guardrails
         env:
           QUALITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           PR_BODY: ${{ github.event.pull_request.body || '' }}
         run: |
+          npm run quality:test
           npm run quality:file-size -- --base "$QUALITY_BASE"
           npm run quality:attribution -- --base "$QUALITY_BASE" --pr-body-env PR_BODY
 

@@ -141,6 +141,10 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   dependency tree. Moving the libraries across immediately failed two `score-gauge` tests that had
   been asserting the opposite of what the gauge does - see the changelog; the spec is fixed and the
   animation now has honest coverage for the first time.
+- **Open pull requests, as of 2026-08-01**: only the bullet-editor frame fix. #233 (Discover HTML)
+  and #234 (the CV waiting state, plus the i18n gate it unblocked) were both merged by the maintainer
+  after confirming the app looked right; `main` is at #234. The duplicate-row consequence of #233 is
+  **deferred by decision, not resolved** - see the entry above.
 - **Open pull requests, as of 2026-07-30**: #218 (the release verification runbook plus a state sync)
   and #219 (a formatting-only sweep of nineteen files), both merged since; the zoneless migration is
   the one currently open.

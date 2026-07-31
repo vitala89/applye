@@ -627,7 +627,6 @@
         <textarea
           #bulletEl
           class="cvpreview__leaf-editor cvpreview__bullet-editor"
-          [class.cvpreview__element-selected]="isElementSelected(leafPath('exp', i, 'bullet', b))"
           [ngStyle]="leafCss(leafPath('exp', i, 'bullet', b))"
           [value]="leafDraft(leafPath('exp', i, 'bullet', b), bullet)"
           (input)="onLeafInput(leafPath('exp', i, 'bullet', b), $any($event.target).value)"

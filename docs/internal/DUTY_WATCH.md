@@ -55,6 +55,18 @@ Before a watch can be marked complete:
   - **#233 merged** (`1f192eb`), then **#234 rebased onto it and merged** (`fa698cf`). The rebase
     conflicted in `CHANGELOG.md` and `DUTY_WATCH.md`, as the trap note predicts; resolved by keeping
     both entries and moving `(latest)` to the newer one. No code file conflicted.
+  - **Second pass on the same report, and it was bigger than the bullet.** The maintainer came back
+    with a black ring and an indigo one on the bullet, and "too thick" lines on the ordinary fields.
+    Three rings were being drawn: the selection `box-shadow`, the editor's own 2px `outline` at a 2px
+    offset, and the app-wide `:focus-visible` box-shadow from `libs/ui/src/styles/global.scss`. On a
+    selected leaf the first two stacked into one 6px frame - that is the "too thick", and it was on
+    every field. The third normally loses to the selection ring on the same element, but on a bullet
+    the ring is on the `<ul>`, so nothing outranked it and it showed as the indigo inner line. A
+    mounted editor is by definition inside the current selection, so it now paints no ring at all:
+    `outline: none`, plus `box-shadow: none` behind a `:not(.cvpreview__element-selected)` guard -
+    without that guard the reset would have killed the selection ring on the editors that are
+    themselves the selected element, since it is the same property on the same class list and the
+    later rule wins. Every field in edit mode is now one 2px `--cv-accent` ring with its chip.
   - Editing a CV bullet drew two frames. The selection highlight is one ring per selected element,
     and a bullet is the only leaf whose editor is **not** the selected element - the chip and ring
     belong to the `<ul>`, the textarea is an `<li>` inside it - so `cvpreview__element-selected` and
@@ -71,7 +83,12 @@ Before a watch can be marked complete:
   desktop suite **52 suites / 856 tests**; `npm run quality`, `npm run verify:csp`,
   `npm run format:check`, `git diff --check` all passed. **Not run:** cargo - no Rust touched.
   **Not verified:** the rendered frame. The CV detail page needs a document out of SQLite over Tauri
-  IPC, so a browser build cannot reach it; the assertion is on the DOM classes, not on pixels.
+  IPC, so a browser build cannot reach it; the assertion is on the DOM classes, not on pixels. The
+  second pass is **CSS only and therefore has no unit test** - the three tests still pin the DOM
+  contract, and the cascade was checked against the emitted bundle rather than reasoned about:
+  `dist/apps/desktop/browser` contains `.cvpreview__leaf-editor[_ngcontent]{...outline:none}`, the
+  `:not(.cvpreview__element-selected){box-shadow:none}` guard, and the untouched
+  `.cvpreview__element-selected` ring. Whether it looks right is the maintainer's gate.
 - **Privacy/security impact:** none.
 - **Decisions and assumptions:** the ring stays on the `<ul>` rather than moving to the textarea,
   because the chip is anchored to the list and the list is what the selection model actually points

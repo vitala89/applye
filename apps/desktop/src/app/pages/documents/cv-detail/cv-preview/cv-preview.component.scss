@@ -192,8 +192,15 @@
 }
 // Native leaf editors: swapped in over the resting text/paragraph while a
 // leaf is selected (page render only - see `selectable()`). Reset to blend
-// with the surrounding typography instead of looking like a form control;
-// `outline` (not `border`) marks focus so no box metrics shift.
+// with the surrounding typography instead of looking like a form control.
+//
+// A mounted editor is by definition inside the current selection, which is
+// already ringed and chipped, so the editor paints NO ring of its own: an
+// `outline` here stacked a second accent ring outside the selection one and
+// read as a single heavy frame, and the app-wide `:focus-visible` box-shadow
+// in `libs/ui/src/styles/global.scss` added a third, indigo, wherever the
+// selection ring was on an ancestor rather than on the editor itself. One
+// element, one ring - see `.cvpreview__element-selected`.
 .cvpreview__leaf-editor {
   font: inherit;
   color: inherit;
@@ -201,8 +208,12 @@
   border: none;
   padding: 0;
   margin: 0;
-  outline: 2px solid var(--cv-accent, var(--accent, var(--border-strong)));
-  outline-offset: 2px;
+  outline: none;
+}
+// The `:not()` matters: an editor that IS the selected element must keep the
+// selection ring, which is a `box-shadow` on the same class list.
+.cvpreview__leaf-editor:not(.cvpreview__element-selected) {
+  box-shadow: none;
 }
 input.cvpreview__leaf-editor {
   width: 100%;
@@ -216,12 +227,6 @@ textarea.cvpreview__leaf-editor {
   width: 100%;
   resize: vertical;
   line-height: var(--cv-section-line-height, var(--leading-normal));
-}
-// A bullet is the one leaf whose editor is NOT the selected element: the chip
-// and the selection ring belong to the `<ul>` around it. So it paints no ring
-// of its own - two rings on two different boxes read as one crooked frame.
-textarea.cvpreview__bullet-editor {
-  outline: none;
 }
 // Wraps a bold-capable textarea (summary/bullet) with its visible Bold
 // button - the button only ever renders alongside an already-selected leaf

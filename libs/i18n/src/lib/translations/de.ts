@@ -835,6 +835,7 @@ export const de: TranslationMap = {
         'Diese Dokumente sind mit der Bewerbung verknüpft und erscheinen unter Dokumente.',
       document_status_missing: 'Fehlt',
       document_status_generating: 'Wird erstellt',
+      document_status_needs_input: 'Eingabe nötig',
       document_status_linked: 'Verknüpft',
       document_status_needs_review: 'Prüfung nötig',
       document_status_ready: 'Bereit',

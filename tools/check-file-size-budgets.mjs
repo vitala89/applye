@@ -48,7 +48,9 @@ const excludedPatterns = [
   /\.snap$/,
   /\.d\.ts$/,
   /\.(?:generated|gen)\.[cm]?[jt]s$/,
-  /^libs\/i18n\/src\/lib\/translations\/translations\.ts$/,
+  // The translation catalogue is data, not design: line count says nothing about
+  // its structure, and a locale file grows every time a string is added.
+  /^libs\/i18n\/src\/lib\/translations\/(?!.*\.spec\.)/,
 ];
 
 function git(args, { allowFailure = false } = {}) {
@@ -126,7 +128,9 @@ function changedFiles(base) {
 }
 
 function isInScope(file) {
-  return /^(?:apps|libs|tools)\//.test(file) && !excludedPatterns.some((pattern) => pattern.test(file));
+  return (
+    /^(?:apps|libs|tools)\//.test(file) && !excludedPatterns.some((pattern) => pattern.test(file))
+  );
 }
 
 function budgetFor(file) {

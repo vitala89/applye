@@ -845,6 +845,7 @@ export const es: TranslationMap = stub(en, {
         'Estos documentos están vinculados a esta candidatura y aparecen en Documentos.',
       document_status_missing: 'Falta',
       document_status_generating: 'Generando',
+      document_status_needs_input: 'Necesita tu respuesta',
       document_status_linked: 'Vinculado',
       document_status_needs_review: 'Necesita revisión',
       document_status_ready: 'Listo',

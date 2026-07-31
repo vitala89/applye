@@ -840,6 +840,7 @@ export const uk: TranslationMap = stub(en, {
         "Ці документи пов'язані з відгуком і відображаються в розділі «Документи».",
       document_status_missing: 'Немає',
       document_status_generating: 'Генерується',
+      document_status_needs_input: 'Потрібна ваша відповідь',
       document_status_linked: "Пов'язано",
       document_status_needs_review: 'Потрібна перевірка',
       document_status_ready: 'Готово',

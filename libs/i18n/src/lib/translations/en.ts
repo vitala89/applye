@@ -823,6 +823,7 @@ export const en: TranslationMap = {
         'These documents are linked to this application and appear in Documents.',
       document_status_missing: 'Missing',
       document_status_generating: 'Generating',
+      document_status_needs_input: 'Needs your input',
       document_status_linked: 'Linked',
       document_status_needs_review: 'Needs review',
       document_status_ready: 'Ready',

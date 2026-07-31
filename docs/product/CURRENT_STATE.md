@@ -90,8 +90,19 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   it as the CV flow's own block-before-generate step; it necessarily runs after the AI call because
   the questions come from what the model left undated. The actual defect is that the card reports
   "Generating" while the flow is blocked on that dialog, so nothing signals that it is waiting.
-  **Diagnosed, not fixed**: the fix edits `jobs.component.ts`, which #231 was rewriting at the time, and stacking
-  on it would repeat an orphaning that has already cost two recovery sessions.
+  **Now fixed in #234**: a preparing card reports `needs_input` while `CvGapDialogService.open` is
+  true, for the CV only. The derivation left the page component to get there - `documentCardStatus`
+  is a pure function in `apps/desktop/src/app/shared/doc-card-status.ts` with nine tests, because the
+  ratchet forbids `jobs.component.ts` (1882) growing and there was no way to test a private method on
+  it. `jobs.component.ts` 1882 -> 1881, `jobs.component.scss` 987 -> 985. The badge itself is a
+  **manual gate**: reaching the state needs Tauri IPC, so no browser build can show it.
+- **The file-size gate silently forbade every new user-facing string, and #234 fixes that too.**
+  `docs/governance/CODE_QUALITY.md` excludes the translation catalogue from the budgets; the checker
+  excluded only `translations/translations.ts`, a 10-line re-export. The six locale files that hold
+  the strings are ~1650 lines each, so the ratchet rejected any added key with no legal remedy -
+  splitting a translation catalogue by line count is not a decomposition. The exclusion now matches
+  the contract. Any earlier session that avoided adding a string was working around this, not around
+  a real design constraint.
 - **A second gap dialog could strand the first document on "Generating" forever.** Reported from the
   app: starting a cover letter while a CV was still generating raised a second gap dialog, and one of
   the two documents then never finished. Both flows awaited a single resolver, so the second

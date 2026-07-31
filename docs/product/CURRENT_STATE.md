@@ -65,6 +65,21 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   only meaningful check was a `tauri dev` run, and the maintainer confirmed the wizard now completes
   with no errors. That verification is the maintainer's, not an agent's - screen-control permission
   was denied, so no agent saw the screen.
+- **A Pipeline card opened the wrong job, and the report about a duplicate CV dialog turned out to be
+  something else.** Two bugs came in from the app together. The first is real and fixed in **#232**:
+  "Open full details" passed the card's **application** id to `/jobs/:id`, which is keyed by **job**,
+  so it loaded an unrelated posting and offered "Mark as Applied" for a job never applied to. The two
+  id spaces collide whenever both tables have a row at that number, so this was the normal path, not
+  an edge case. The ratchet refused the fix in place (409 -> 419 lines), so follow-up drafting came
+  out into `FollowupDraftService` and the modal is now 306 lines; that extraction also exposed a
+  double-click guard that never worked, since `drafting` was claimed after an `await`. The second
+  report - "clicking Generate on the cover letter raises a CV dialog" - is **not** a race and #230's
+  guard is holding. The maintainer confirmed the second dialog asks about **dates**, which identifies
+  it as the CV flow's own block-before-generate step; it necessarily runs after the AI call because
+  the questions come from what the model left undated. The actual defect is that the card reports
+  "Generating" while the flow is blocked on that dialog, so nothing signals that it is waiting.
+  **Diagnosed, not fixed**: the fix edits `jobs.component.ts`, which #231 was rewriting at the time, and stacking
+  on it would repeat an orphaning that has already cost two recovery sessions.
 - **A second gap dialog could strand the first document on "Generating" forever.** Reported from the
   app: starting a cover letter while a CV was still generating raised a second gap dialog, and one of
   the two documents then never finished. Both flows awaited a single resolver, so the second
@@ -75,8 +90,8 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   **Merged (#230), and the native re-check is still pending**: this is a concurrency bug that unit
   tests cannot fully settle.
 - **The Tier 1 split of `JobsComponent` is six responsibilities in, of roughly ten.** #222 portal
-  answers, #223 final checks, #225 export, #229 tailoring and #230 the CV gap dialog are **merged**;
-  #231 scoring is open. Together they take `jobs.component.ts` from 2788 to **1882 non-empty lines**
+  answers, #223 final checks, #225 export, #229 tailoring, #230 the CV gap dialog and #231 scoring
+  are all **merged**. Together they take `jobs.component.ts` from 2788 to **1882 non-empty lines**
   by moving those seams into `PortalAnswersService`, `FinalChecksService`, `DocumentExportService`,
   `TailoringService`, `CvGapDialogService` and `JobScoringService` under
   `apps/desktop/src/app/shared/`. Every one is a move, not a redesign: same guards, same cache keys,
@@ -153,7 +168,7 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   there). Conventions for both stacks live in `.claude/skills/applye-angular` and
   `.claude/skills/applye-rust`; `.mcp.json` wires the first-party Angular CLI MCP server read-only.
   **Still open (Tier 1):** `JobsComponent` is being decomposed into services - six seams are out
-  (#222, #223, #225, #229, #230 merged; #231 open), four responsibilities remain - `pages/` wants
+  (#222, #223, #225, #229, #230, #231 all merged), four responsibilities remain - `pages/` wants
   reorganising into per-feature folders, and `discover.rs`/`tailoring.rs`/`documents.rs` are
   oversized single modules. The eager
   change-detection item is closed: every page component is on OnPush.

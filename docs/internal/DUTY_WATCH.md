@@ -44,7 +44,89 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-31 (latest), the tailoring pipeline leaves the jobs page, under a file-size budget that now enforces it
+### 2026-07-31 (latest), two documents raced for one dialog, and the size budget refused the easy fix
+
+- **Status:** complete, pending the maintainer's native check
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/gap-dialog-single-owner` (stacked on `refactor/jobs-tailoring-service`)
+- **Commits:** `9a5e923`, plus this entry
+- **Pull request:** #230, stacked on #229
+- **Objective:** a user report with a screenshot from step 4 of the wizard. Starting a cover letter
+  while a CV was still generating raised a second gap dialog for the same questions, and afterwards
+  the cover letter sat on "Generating" indefinitely.
+
+- **Completed:** Two defects in one flow, both predating this session's refactoring -
+  `awaitGapDialog` was untouched by all four extraction pull requests.
+
+  **The hang.** Both document flows awaited a single `gapResolver` field. A second caller overwrote
+  it, so the first caller's promise never settled: its `await` never returned, its `finally` never
+  ran, and `docGen.end(...)` for the document it was generating was never called. That is precisely
+  the stuck "Generating" badge in the screenshot. Ownership is now an explicit rule rather than
+  whoever wrote to the field last - first caller wins, a second is answered `null` immediately.
+  `null` is what a cancel already yields and every caller treats gap-fill as optional, so the losing
+  flow continues without it rather than blocking.
+
+  **The duplicate dialog.** The cover-letter flow skips gap analysis when a CV is _linked_, on the
+  stated grounds that the CV flow just ran the same analysis. A CV that is still generating has not
+  linked itself yet, so the guard let a cover letter started alongside one run a second analysis and
+  raise a second dialog. It now also skips while a CV is preparing, which is the condition the
+  comment always described.
+
+  **The fix shipped as an extraction, because the ratchet refused the in-place version.** The first
+  attempt added 15 lines to `jobs.component.ts` and `npm run quality:file-size` rejected it:
+  `already over budget and grew from 2121 to 2136 lines. Extract before adding code.` That was the
+  right call and worth recording as the gate earning its place - the in-place fix would have left
+  this invariant with no home and no test seam. `CvGapDialogService` now owns the analysis, the
+  dialog state and the single resolver, and it has 14 tests, two of which reproduce the collision
+  directly. The file ends at 2099 lines, below its base.
+
+  `dispose()` also replaces the hand-rolled resolver cleanup in `ngOnDestroy`, so the same release
+  path covers leaving the page and any future caller.
+
+- **Not completed:** The maintainer's native re-check of the reported scenario. See below.
+
+- **Files or packages changed:** new `apps/desktop/src/app/shared/cv-gap-dialog.service.ts` (118
+  lines) and its spec (154); `apps/desktop/src/app/pages/jobs/jobs.component.ts` (2121 -> 2099
+  non-empty); `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file. `jobs.component.html` is
+  unchanged.
+
+- **Validation:** Run and observed:
+  - `nx run-many --target=lint,type-check,test,build --all` - passed, 6 projects, 809 desktop tests
+    (up from 795).
+  - `npm run quality` - passed. The budget report reads `2099/400, base 2121`.
+  - `npm run verify:csp`, `npm run format:check`, `git diff --check` - passed.
+  - **Not run: the native check of the reported scenario.** This is a concurrency bug in a flow that
+    needs a real job, a real profile and two AI calls in flight at once. The unit tests prove the
+    resolver can no longer be stranded; they do not prove the wizard behaves correctly end to end.
+    Screen-control permission is denied to this agent, so the maintainer has to run it.
+
+- **Privacy/security impact:** None. No change to what is sent, stored or logged. One fewer AI call
+  in the overlapping case, since the duplicate gap analysis no longer runs.
+
+- **Decisions and assumptions:** Answering the second caller `null` was chosen over queueing it.
+  Queueing would show the user a second dialog immediately after the first, for questions that the
+  first flow's answers may already have covered - which is the behaviour the guard exists to
+  prevent. Every caller already handles `null`.
+
+- **Risks or compatibility impact:** The losing flow now silently skips gap-fill instead of hanging.
+  That is the intended trade: a document generated without the optional extra questions, rather than
+  one that never finishes.
+
+- **Open issues or blockers:** `gapAnalyzing` is still a single shared signal, so two overlapping
+  analyses would clear each other's spinner early. With the new guard the CV/cover-letter pair can no
+  longer overlap, so it is unreachable today. Left alone rather than fixed speculatively; noted here
+  so it is not rediscovered as new.
+
+- **Next first action:** In the running `tauri dev` window, reproduce the report: on step 4, start
+  the CV, and while it is generating click Generate on the cover letter. Confirm only one gap dialog
+  appears, and that after answering or cancelling it **both** documents reach a finished state with
+  neither stuck on "Generating".
+
+- **Evidence:** `npm run quality:file-size` rejected the in-place fix with
+  `already over budget and grew from 2121 to 2136 lines`, and passes on the extraction with
+  `2099/400, base 2121`.
+
+### 2026-07-31, the tailoring pipeline leaves the jobs page, under a file-size budget that now enforces it
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

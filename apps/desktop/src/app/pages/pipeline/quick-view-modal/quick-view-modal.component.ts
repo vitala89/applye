@@ -22,8 +22,7 @@ import {
   Mail,
   X,
 } from 'lucide-angular';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { AiService, DbService } from '@applye/data';
+import { DbService } from '@applye/data';
 import { ToastService } from '../../../core/toast/toast.service';
 import {
   Application,
@@ -36,23 +35,10 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { StageQuickAddComponent } from '../stage-quick-add/stage-quick-add.component';
+import { FOLLOWUP_LANGUAGES, FollowupDraftService } from './followup-draft.service';
 
 const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
 const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
-const FOLLOWUP_LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-// Spelled out for the prompt: a bare 2-letter code (esp. "uk") is ambiguous
-// enough that weaker/economy models sometimes ignore it and default to
-// English. The cache key still stores the short code.
-const FOLLOWUP_LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
-  en: 'English',
-  de: 'German',
-  ru: 'Russian',
-  es: 'Spanish',
-  fr: 'French',
-  uk: 'Ukrainian',
-};
 
 /** Highest stage_order that isn't rejected/cancelled, or the most recent one
  * if all are closed - mirrors the SQL in db_pipeline_cards exactly, so the
@@ -77,11 +63,14 @@ function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
   templateUrl: './quick-view-modal.component.html',
   styleUrl: './quick-view-modal.component.scss',
   host: { '(document:keydown.escape)': 'close()' },
+  // Component-scoped: a follow-up draft belongs to the card this modal shows
+  // and must not outlive it, which is the lifetime it had as component fields.
+  providers: [FollowupDraftService],
 })
 export class QuickViewModalComponent {
   private readonly db = inject(DbService);
-  private readonly ai = inject(AiService);
   private readonly router = inject(Router);
+  private readonly followup = inject(FollowupDraftService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
@@ -132,21 +121,19 @@ export class QuickViewModalComponent {
       !this.promptDismissed(),
   );
 
-  // Draft follow-up - one cached AI call per (application, input). Applye
-  // never sends anything: "Open in mail" hands a pre-filled mailto: link to
-  // the user's own mail client, which is the only thing that can send it.
-  protected readonly followupLanguage = signal<SupportedLanguage>('en');
-  protected readonly followupSubject = signal('');
-  protected readonly followupBody = signal('');
-  protected readonly followupDrafting = signal(false);
-  protected readonly followupFromCache = signal(false);
-  protected readonly followupError = signal('');
-  protected readonly followupCopied = signal(false);
-  protected readonly followupTo = signal('');
-  protected readonly followupCc = signal('');
-  protected readonly followupHasDraft = computed(
-    () => !!this.followupSubject() || !!this.followupBody(),
-  );
+  // Draft follow-up. Aliases onto `FollowupDraftService`; the template binds
+  // these names and writes several of them back via ngModel, so they stay the
+  // same writable signals rather than views of them.
+  protected readonly followupLanguage = this.followup.language;
+  protected readonly followupSubject = this.followup.subject;
+  protected readonly followupBody = this.followup.body;
+  protected readonly followupDrafting = this.followup.drafting;
+  protected readonly followupFromCache = this.followup.fromCache;
+  protected readonly followupError = this.followup.error;
+  protected readonly followupCopied = this.followup.copied;
+  protected readonly followupTo = this.followup.to;
+  protected readonly followupCc = this.followup.cc;
+  protected readonly followupHasDraft = this.followup.hasDraft;
 
   constructor() {
     effect(() => {
@@ -154,138 +141,32 @@ export class QuickViewModalComponent {
       this.promptDismissed.set(false);
       void this.loadComments(card.id);
       void this.refreshStageState(card.id, card.status);
-      this.followupLanguage.set(card.docLanguage ?? 'en');
-      this.followupSubject.set('');
-      this.followupBody.set('');
-      this.followupFromCache.set(false);
-      this.followupError.set('');
-      this.followupCopied.set(false);
-      this.followupTo.set('');
-      this.followupCc.set('');
+      this.followup.resetFor(card);
     });
   }
 
-  private daysSinceApplied(): number {
-    const appliedAt = this.card().appliedAt;
-    if (!appliedAt) return 0;
-    const elapsed = Date.now() - new Date(appliedAt).getTime();
-    return Math.max(0, Math.round(elapsed / MS_PER_DAY));
-  }
-
-  private followupInputHash(model: string): Promise<string> {
-    const card = this.card();
-    return this.db.hashText(
-      JSON.stringify({
-        company: card.company ?? '',
-        role: card.title ?? '',
-        appliedAt: card.appliedAt ?? '',
-        lang: this.followupLanguage(),
-        model,
-      }),
-    );
-  }
-
   protected async draftFollowup(): Promise<void> {
-    if (this.followupDrafting()) return;
-    const card = this.card();
-    const settings = await this.db.getSettings();
-
-    this.followupDrafting.set(true);
-    this.followupError.set('');
     try {
-      const inputHash = await this.followupInputHash(settings.economyModel);
-      const cached = await this.db.followupDraftGet(card.id, inputHash);
-      if (cached) {
-        this.followupSubject.set(cached.subject);
-        this.followupBody.set(cached.body);
-        this.followupFromCache.set(true);
-        return;
-      }
-
-      const daysOverdue = this.daysSinceApplied();
-      const languageName = FOLLOWUP_LANGUAGE_NAMES[this.followupLanguage()];
-      const rendered = await this.ai.renderSkill('followup', {
-        company: card.company ?? '',
-        role: card.title ?? '',
-        days_overdue: String(daysOverdue),
-        language: languageName,
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: this.followupLanguage(),
-      });
-      const parsed = this.parseFollowupDraft(res.text);
-      this.followupSubject.set(parsed.subject);
-      this.followupBody.set(parsed.body);
-      this.followupFromCache.set(false);
-      await this.db.followupDraftSave({
-        applicationId: card.id,
-        inputHash,
-        language: this.followupLanguage(),
-        subject: parsed.subject,
-        body: parsed.body,
-        modelUsed: settings.economyModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-      });
+      await this.followup.draft(this.card());
     } catch (e) {
-      this.followupError.set(String(e));
       this.toast.error(String(e));
-    } finally {
-      this.followupDrafting.set(false);
     }
   }
 
-  // Some models double-escape newlines inside the JSON string value (e.g.
-  // emit `\\n` instead of `\n`), which JSON.parse then turns into a literal
-  // two-character "\n" in the output instead of a real line break. Normalize
-  // that away; a correctly-escaped response is untouched by this regex since
-  // it no longer contains a literal backslash at that point.
-  private parseFollowupDraft(text: string): { subject: string; body: string } {
-    const parsed = JSON.parse(text) as { subject?: string; body?: string };
-    const clean = (s?: string) => (s ?? '').replace(/\\n/g, '\n').trim();
-    return { subject: clean(parsed.subject), body: clean(parsed.body) };
-  }
-
   protected langName(language: SupportedLanguage): string {
-    return FOLLOWUP_LANGUAGE_NAMES[language];
+    return this.followup.langName(language);
   }
 
   protected onFollowupLanguageChange(language: SupportedLanguage): void {
-    this.followupLanguage.set(language);
-    this.followupSubject.set('');
-    this.followupBody.set('');
-    this.followupFromCache.set(false);
+    this.followup.changeLanguage(language);
   }
 
-  protected async copyFollowup(): Promise<void> {
-    const text = `${this.followupSubject()}\n\n${this.followupBody()}`;
-    await navigator.clipboard.writeText(text);
-    this.followupCopied.set(true);
-    setTimeout(() => this.followupCopied.set(false), 1500);
+  protected copyFollowup(): Promise<void> {
+    return this.followup.copy();
   }
 
-  /** Opens the user's own mail client via `mailto:` - Applye never sends this
-   * itself, and there is no other code path that transmits it anywhere.
-   * Built by hand (not URLSearchParams) because mailto: query values use
-   * RFC 3986 percent-encoding, where a space is `%20` - URLSearchParams
-   * encodes spaces as `+`, which most mail clients show literally instead of
-   * decoding. */
-  protected async openFollowupInMail(): Promise<void> {
-    const to = encodeURIComponent(this.followupTo().trim());
-    const params = [
-      ['subject', this.followupSubject()],
-      ['cc', this.followupCc().trim()],
-      ['body', this.followupBody()],
-    ]
-      .filter(([, value]) => value)
-      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-      .join('&');
-    await openUrl(`mailto:${to}?${params}`);
+  protected openFollowupInMail(): Promise<void> {
+    return this.followup.openInMail();
   }
 
   private async loadComments(applicationId: number): Promise<void> {
@@ -426,10 +307,20 @@ export class QuickViewModalComponent {
     }
   }
 
+  /**
+   * `/jobs/:id` is keyed by JOB id, but a `PipelineCard` is an application row -
+   * its `id` is the application's. Passing the application id here opened an
+   * unrelated job (whichever one happened to share that number), which then
+   * offered "Mark as Applied" for a job the user had never applied to.
+   *
+   * `jobId` is nullable in the schema, so a card with no job is a no-op rather
+   * than a navigation to `/jobs/undefined`.
+   */
   protected openFullDetails(): void {
-    const id = this.card().id;
+    const jobId = this.card().jobId;
+    if (jobId == null) return;
     this.close();
-    void this.router.navigate(['/jobs', id]);
+    void this.router.navigate(['/jobs', jobId]);
   }
 
   protected viewAllStages(): void {

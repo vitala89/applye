@@ -44,7 +44,70 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), the CV card that said "Generating" while it was waiting for you
+### 2026-08-01 (latest), both PRs merged, and the bullet editor's doubled frame
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/bullet-editor-double-frame`, from `main` (`fa698cf`)
+- **Objective:** merge #233 and #234 on the maintainer's instruction, then fix the doubled edit
+  frame they reported with a screenshot.
+- **Completed:**
+  - **#233 merged** (`1f192eb`), then **#234 rebased onto it and merged** (`fa698cf`). The rebase
+    conflicted in `CHANGELOG.md` and `DUTY_WATCH.md`, as the trap note predicts; resolved by keeping
+    both entries and moving `(latest)` to the newer one. No code file conflicted.
+  - **Second pass on the same report, and it was bigger than the bullet.** The maintainer came back
+    with a black ring and an indigo one on the bullet, and "too thick" lines on the ordinary fields.
+    Three rings were being drawn: the selection `box-shadow`, the editor's own 2px `outline` at a 2px
+    offset, and the app-wide `:focus-visible` box-shadow from `libs/ui/src/styles/global.scss`. On a
+    selected leaf the first two stacked into one 6px frame - that is the "too thick", and it was on
+    every field. The third normally loses to the selection ring on the same element, but on a bullet
+    the ring is on the `<ul>`, so nothing outranked it and it showed as the indigo inner line. A
+    mounted editor is by definition inside the current selection, so it now paints no ring at all:
+    `outline: none`, plus `box-shadow: none` behind a `:not(.cvpreview__element-selected)` guard -
+    without that guard the reset would have killed the selection ring on the editors that are
+    themselves the selected element, since it is the same property on the same class list and the
+    later rule wins. Every field in edit mode is now one 2px `--cv-accent` ring with its chip.
+  - Editing a CV bullet drew two frames. The selection highlight is one ring per selected element,
+    and a bullet is the only leaf whose editor is **not** the selected element - the chip and ring
+    belong to the `<ul>`, the textarea is an `<li>` inside it - so `cvpreview__element-selected` and
+    the editor's own `outline` were painted on two boxes separated by the list indent. Every other
+    field escaped it because there the editor _is_ the selected element, making the two rings
+    concentric. The textarea now paints neither.
+- **Not completed:** the four native gates (#225, #230, #233, #234) plus this one. Agent-blocked.
+- **Files or packages changed:** `cv-preview.component.html` (896 -> **895**, over budget, shrank),
+  `cv-preview.component.scss` (379 -> **385**, under the 400 budget), new
+  `cv-preview.bullet-editor.spec.ts` (77). The existing `cv-preview.component.spec.ts` is 2263 lines
+  against a 600 budget and may not grow, so the regression test went into a focused new file, which
+  is what the contract asks for anyway.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green;
+  desktop suite **52 suites / 856 tests**; `npm run quality`, `npm run verify:csp`,
+  `npm run format:check`, `git diff --check` all passed. **Not run:** cargo - no Rust touched.
+  **Not verified:** the rendered frame. The CV detail page needs a document out of SQLite over Tauri
+  IPC, so a browser build cannot reach it; the assertion is on the DOM classes, not on pixels. The
+  second pass is **CSS only and therefore has no unit test** - the three tests still pin the DOM
+  contract, and the cascade was checked against the emitted bundle rather than reasoned about:
+  `dist/apps/desktop/browser` contains `.cvpreview__leaf-editor[_ngcontent]{...outline:none}`, the
+  `:not(.cvpreview__element-selected){box-shadow:none}` guard, and the untouched
+  `.cvpreview__element-selected` ring. Whether it looks right is the maintainer's gate.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** the ring stays on the `<ul>` rather than moving to the textarea,
+  because the chip is anchored to the list and the list is what the selection model actually points
+  at. Removing the textarea's `outline` does not cost a focus indicator: the list ring is painted
+  exactly while the editor is mounted, and blurring the editor commits and unmounts it.
+- **Risks or compatibility impact:** the design hook reports a pre-existing `broken-image` finding at
+  `cv-preview.component.html:46` - the optional CV photo, whose `src` is legitimately null when no
+  photo is included. Untouched and not introduced here.
+- **Open issues or blockers:** #233's duplicate rows remain deferred by decision. `discover.rs`
+  (3245), `tailoring.rs`, `documents.rs`, `onboarding.component.ts` (1002), its spec (689) and
+  `cv-preview.component.spec.ts` (2263) remain over budget and frozen.
+- **Next first action:** extract wizard navigation (129 non-empty lines) from `jobs.component.ts`
+  into a `WizardNavService` on a fresh branch off `main`, aliasing writable signals so
+  `jobs.component.html` stays byte-identical.
+- **Evidence:** the three tests were run against the old markup first and two failed on the exact
+  defect - the bullet subtree held **2** elements carrying `cvpreview__element-selected` where the
+  company leaf held 1 - then passed after the fix, suite 856 / 856.
+
+### 2026-08-01, the CV card that said "Generating" while it was waiting for you
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

@@ -44,7 +44,66 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-31 (latest), two reported bugs, one real and one misattributed
+### 2026-07-31 (latest), a job description that rendered as its own source
+
+- **Status:** fixed and open as #233; one consequence deliberately left for a separate change
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/discover-escaped-html` (from `main`), PR #233
+
+**The report.** An ArbeitNow posting opened from Discover showed `<p>`, `<li>`, `&amp;` and `&nbsp;`
+as visible text instead of prose.
+
+**Root cause, and it is an ordering bug.** `strip_html` (`job_url.rs`) removed tags first and decoded
+entities afterwards. For a feed that ships its markup entity-escaped that order does the worst
+available thing: the strip pass finds no real tags to remove, and the decode pass then converts every
+`&lt;p&gt;` **into** a literal `<p>` - after the only code that would have stripped it has already
+run. ArbeitNow escapes the entities inside its markup as well, which is what the screenshot proves:
+`&amp;nbsp;` had exactly one layer peeled off and rendered as literal `&nbsp;`. Nothing was wrong
+with the ArbeitNow parser itself; it already called `html_to_text`.
+
+**Fix.** Strip and decode alternate until a round reveals no further markup, capped by
+`MAX_UNESCAPE_ROUNDS` so a crafted `&amp;amp;lt;` chain cannot buy a round per layer. Within a round
+the ampersand is decoded **last**, so one escaping layer comes off per round rather than several
+collapsing at once and inventing markup the source never wrote. `html_to_text`'s `contains('<')`
+heuristic is deleted - it chose between two half-treatments when the answer was to do both. This is
+shared by every source, so Greenhouse and the RSS paths get it too.
+
+**A second, older defect fell out of the same function.** Every `<` opened a tag, so "latency < 100 ms
+in prod" had no closing `>` and the rest of the line was swallowed - silently, into the text that is
+then fed to scoring and tailoring. A `<` now opens a tag only when a name, `/` or `!` follows it.
+Found because an assertion I wrote about existing behaviour turned out to be false, which is the
+argument for asserting the boundary rather than assuming it.
+
+**Known consequence, stated rather than hidden.** The fix corrects **newly scanned** jobs only. Rows
+already stored keep their mangled text, and `jobs.jd_hash` is the dedupe key for
+`INSERT OR IGNORE`, so re-scanning a previously stored posting now computes a different hash and
+inserts a **second row** for the same job. Two ways out, neither taken here:
+
+1. a data repair that re-runs `strip_html` over stored `discover_scan` rows and recomputes `jd_hash`
+   - which also orphans any `scoring_cache` row keyed on the old `jd_hash`, forcing a rescore;
+2. an additional dedupe on `source_url` in `insert_scanned_job`.
+
+Option 2 cannot land here: `discover.rs` is **3245 lines against an 800 budget**, so the ratchet
+forbids it growing, and there is no data-repair precedent in this repository - migrations are SQL
+only and cannot call `strip_html` or `stable_hash`. This is a maintainer decision, not an agent's.
+
+**Checks actually run and observed:**
+
+- `cargo test` - **293 passed**, 1 ignored, 0 failed. `cargo clippy --all-targets -D warnings` -
+  clean. `cargo fmt` applied.
+- The 7 new tests were **run against the old implementation first**: 4 failed, including both
+  ArbeitNow cases and the bare-`<` case. They catch the bug rather than merely pass.
+- `nx run-many --target=lint,type-check,test,build --all` - **Successfully ran for 6 projects**.
+- `npm run quality` - budgets **passed**: `discover.rs` 3251 -> **3245** (shrank), `job_url.rs` 637 ->
+  **754**, under its 800 budget. Attribution passed.
+- `npm run verify:csp`, `npm run format:check`, `git diff --check` - clean.
+- No browser or native verification: Discover needs Tauri IPC and a live feed. Not claimed.
+
+**Next first action:** decide between the data repair and the `source_url` dedupe above, since
+merging #233 without one means duplicate rows on the next scan. The "needs your input" card state
+from the previous watch is still open, as are the two native gates.
+
+### 2026-07-31, two reported bugs, one real and one misattributed
 
 - **Status:** one fixed and open as #232; the other diagnosed, not fixed, and deliberately not stacked
 - **Agent/tool:** Claude Code, Opus

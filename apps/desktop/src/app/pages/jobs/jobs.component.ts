@@ -91,7 +91,6 @@ import {
   buildCvContent,
   buildAdditionalInfoBlock,
   cleanJsonText,
-  cvContentToMd,
   parseCvGapResponse,
   parseCvSkillResponse,
   parseDateAnswer,
@@ -109,17 +108,7 @@ import {
   FinalChecksService,
 } from '../../shared/final-checks.service';
 import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
-
-interface PassResult {
-  pass: number;
-  resultMd: string;
-  changes: string[];
-  gaps: string[];
-  inputHash: string;
-  fromCache: boolean;
-  tokensIn: number;
-  tokensOut: number;
-}
+import { TailorContext, TailoringService } from '../../shared/tailoring.service';
 
 type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
 
@@ -140,7 +129,7 @@ type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review'
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Component-scoped: portal-answer drafts belong to the job open on this page
   // and must not outlive it, which is the lifetime they had as component fields.
-  providers: [PortalAnswersService, FinalChecksService, DocumentExportService],
+  providers: [PortalAnswersService, FinalChecksService, DocumentExportService, TailoringService],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
@@ -162,6 +151,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly finalChecksSvc = inject(FinalChecksService);
   /** Writing the linked documents to disk. */
   private readonly exportSvc = inject(DocumentExportService);
+  /** The three-pass tailoring pipeline. */
+  private readonly tailorSvc = inject(TailoringService);
 
   // Previous running activity for this job, so the effect below can detect the
   // moment a background step finished and pull its fresh result into a page
@@ -298,15 +289,17 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
-  // Tailoring wizard
-  readonly tailorResults = signal<PassResult[]>([]);
+  // Tailoring wizard. Aliases onto `TailoringService`; the template binds these
+  // names and several component methods reset them directly, so they stay the
+  // same signals rather than views of them.
+  readonly tailorResults = this.tailorSvc.results;
+  /** Set by the Cancel button to stop the tailoring pass loop early. */
+  readonly tailorCancelled = this.tailorSvc.cancelled;
+  readonly tailorStatus = this.tailorSvc.status;
+  readonly tailorError = this.tailorSvc.error;
   // Derived from WizardActivityService so the running state survives leaving
   // the page and a reopened page reflects an in-flight tailor run.
   readonly tailoring = computed(() => this.activity.isRunning(this.job()?.id ?? -1, 'tailoring'));
-  /** Set by the Cancel button to stop the tailoring pass loop early. */
-  readonly tailorCancelled = signal(false);
-  readonly tailorStatus = signal('');
-  readonly tailorError = signal(false);
 
   // Post-tailor rescore (before/after). The before/after pair is transient
   // (in-memory), but the *after* score is persisted to My Jobs once the user
@@ -329,11 +322,11 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** True once all 3 tailoring passes are done (in this session or restored
    * from cache) - drives the immutable Tailored badge and the Retailor CTA. */
-  readonly isTailored = computed(() => this.tailorResults().length === 3);
+  readonly isTailored = this.tailorSvc.isTailored;
 
   /** Flattened change / gap notes across all completed tailoring passes. */
-  readonly allChanges = computed(() => this.tailorResults().flatMap((r) => r.changes));
-  readonly allGaps = computed(() => this.tailorResults().flatMap((r) => r.gaps));
+  readonly allChanges = this.tailorSvc.allChanges;
+  readonly allGaps = this.tailorSvc.allGaps;
   readonly changesOpen = signal(true);
   protected readonly changeType = classifyChangeType;
 
@@ -1434,9 +1427,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private resetJobScopedState(): void {
     this.wizardOpen.set(false);
     this.wizardInitialStep.set(0);
-    this.tailorResults.set([]);
-    this.tailorStatus.set('');
-    this.tailorError.set(false);
+    this.tailorSvc.reset();
     this.tailorCancelled.set(false);
     this.postTailorSaved.set(false);
     this.finalChecksSvc.reset();
@@ -1575,35 +1566,8 @@ export class JobsComponent implements OnInit, OnDestroy {
    * previously-tailored job shows its Tailored state (badge + Retailor)
    * without re-running any AI. Replays the exact per-pass input hashes
    * `runTailorPass` uses; stops at the first pass with no cached row. */
-  private async restoreTailoringFromCache(): Promise<void> {
-    const j = this.job();
-    const p = this.profile();
-    const s = this.settings();
-    if (!j?.id || !p?.fullMd || !s) return;
-
-    const lang = s.defaultDocLanguage ?? 'en';
-    const restored: PassResult[] = [];
-    for (const passNum of [1, 2, 3] as const) {
-      const pass1Md = restored.find((r) => r.pass === 1)?.resultMd ?? '';
-      const pass2Md = restored.find((r) => r.pass === 2)?.resultMd ?? '';
-      const hashInput = [p.fullMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
-        '\x00',
-      );
-      const inputHash = await this.db.hashText(hashInput);
-      const cached = await this.db.tailoringCacheGet(j.id, passNum, inputHash);
-      if (!cached) break;
-      restored.push({
-        pass: passNum,
-        resultMd: cached.resultMd,
-        inputHash,
-        fromCache: true,
-        tokensIn: 0,
-        tokensOut: 0,
-        changes: this.parseJsonArray(cached.changesJson),
-        gaps: this.parseJsonArray(cached.gapsJson),
-      });
-    }
-    if (restored.length) this.tailorResults.set(restored);
+  private restoreTailoringFromCache(): Promise<void> {
+    return this.tailorSvc.restoreFromCache(this.tailorContext());
   }
 
   addPortalQuestion(): void {
@@ -2216,35 +2180,15 @@ export class JobsComponent implements OnInit, OnDestroy {
    * phase cards animate through running/done as each pass lands, no manual
    * Continue between passes. Stops on the first failing pass. */
   async startTailoring(): Promise<void> {
-    this.tailorResults.set([]);
-    this.tailorStatus.set('');
-    this.tailorError.set(false);
+    // State a tailoring run invalidates but does not own: the export status
+    // line, the post-tailor rescore, and the final checks.
     this.exportStatus.set('');
     this.lastExport.set(null);
     this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
     this.finalChecksSvc.reset();
 
-    this.tailorCancelled.set(false);
-    const tailorJobId = this.job()?.id;
-    if (tailorJobId) this.activity.begin(tailorJobId, 'tailoring');
-    try {
-      for (const pass of [1, 2, 3] as const) {
-        if (this.tailorCancelled()) break;
-        await this.runTailorPass(pass);
-      }
-      if (this.tailorCancelled()) {
-        // Discard the partial passes and return to the pre-tailor state.
-        this.tailorResults.set([]);
-        this.tailorStatus.set(this.t()('jobs.wizard.tailor_cancelled'));
-      }
-    } catch (e) {
-      this.tailorStatus.set(String(e));
-      this.tailorError.set(true);
-    } finally {
-      this.tailorCancelled.set(false);
-      if (tailorJobId) this.activity.end(tailorJobId, 'tailoring');
-    }
+    await this.tailorSvc.run(this.tailorContext());
   }
 
   /**
@@ -2254,7 +2198,20 @@ export class JobsComponent implements OnInit, OnDestroy {
    * pre-tailor state so the user can adjust the source and try again.
    */
   cancelTailoring(): void {
-    if (this.tailoring()) this.tailorCancelled.set(true);
+    this.tailorSvc.cancel(this.job()?.id);
+  }
+
+  /** Everything the tailoring passes read, gathered at call time. */
+  private tailorContext(): TailorContext {
+    return {
+      job: this.job(),
+      profile: this.profile(),
+      settings: this.settings(),
+      jdText: this.jdText(),
+      scoring: this.cache(),
+      baseCvId: this.selectedBaseCvId(),
+      matchingCvs: this.matchingCvs(),
+    };
   }
 
   /** Wizard step index: 0 review · 1 tailor · 2 updated score · 3 documents · 4 export.
@@ -2291,9 +2248,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   resetWizard(): void {
-    this.tailorResults.set([]);
-    this.tailorStatus.set('');
-    this.tailorError.set(false);
+    this.tailorSvc.reset();
     this.exportStatus.set('');
     this.exportError.set(false);
     this.tailorScore.clear(this.job()?.id);
@@ -2329,153 +2284,5 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   revealExportedFile(path: string): void {
     this.exportSvc.revealFile(path);
-  }
-
-  private async runTailorPass(passNum: 1 | 2 | 3): Promise<void> {
-    const j = this.job();
-    const p = this.profile();
-    const s = this.settings();
-    const selectedCvId = this.selectedBaseCvId();
-    const matchingCvs = this.matchingCvs();
-
-    if (!j?.id || (!p?.fullMd && !selectedCvId) || !s) return;
-
-    let baselineMd = p?.fullMd ?? '';
-    if (selectedCvId) {
-      const cvItem = matchingCvs.find((c) => c.id === selectedCvId);
-      if (cvItem?.contentJson) {
-        try {
-          const cvContent = JSON.parse(cvItem.contentJson) as CvContent;
-          baselineMd = cvContentToMd(cvContent);
-        } catch {
-          // fallback to profile if parsing fails
-        }
-      }
-    }
-
-    const lang = s.defaultDocLanguage ?? 'en';
-    const pass1Md = this.tailorResults().find((r) => r.pass === 1)?.resultMd ?? '';
-    const pass2Md = this.tailorResults().find((r) => r.pass === 2)?.resultMd ?? '';
-
-    // Input hash includes all inputs for this pass → correct cache invalidation
-    const hashInput = [baselineMd, this.jdText(), String(passNum), lang, pass1Md, pass2Md].join(
-      '\x00',
-    );
-    const inputHash = await this.db.hashText(hashInput);
-
-    const cached = await this.db.tailoringCacheGet(j.id, passNum, inputHash);
-    if (cached) {
-      this.appendPassResult(
-        passNum,
-        cached.resultMd,
-        cached.changesJson,
-        cached.gapsJson,
-        inputHash,
-        true,
-        0,
-        0,
-      );
-      this.tailorStatus.set(`Pass ${passNum} loaded from cache - 0 tokens.`);
-      return;
-    }
-
-    const scoringJson = this.cache() ? JSON.stringify(this.cache()) : '{}';
-    const rendered = await this.ai.renderSkill('resume-tailoring', {
-      profile_md: baselineMd,
-      job_description: this.jdText(),
-      scoring_json: scoringJson,
-      pass: String(passNum),
-      language: lang,
-      pass1_result: pass1Md,
-      pass2_result: pass2Md,
-    });
-
-    const res = await this.ai.run({
-      mode: s.aiMode,
-      provider: s.provider,
-      model: s.defaultModel,
-      systemPrompt: rendered.systemPrompt,
-      userPrompt: rendered.userPrompt,
-      language: lang,
-    });
-
-    const parsed = this.parsePassResult(res.text, passNum);
-
-    await this.db.tailoringCacheSave({
-      jobId: j.id,
-      pass: passNum,
-      inputHash,
-      resultMd: parsed.result_md,
-      changesJson: JSON.stringify(parsed.changes),
-      gapsJson: JSON.stringify(parsed.gaps),
-      modelUsed: s.defaultModel,
-      tokensInput: res.tokensInput,
-      tokensOutput: res.tokensOutput,
-    });
-
-    this.appendPassResult(
-      passNum,
-      parsed.result_md,
-      JSON.stringify(parsed.changes),
-      JSON.stringify(parsed.gaps),
-      inputHash,
-      false,
-      res.tokensInput,
-      res.tokensOutput,
-    );
-    this.tailorStatus.set(`Pass ${passNum} done - ${res.tokensInput} in / ${res.tokensOutput} out`);
-  }
-
-  private appendPassResult(
-    pass: number,
-    resultMd: string,
-    changesJson: string | undefined,
-    gapsJson: string | undefined,
-    inputHash: string,
-    fromCache: boolean,
-    tokensIn: number,
-    tokensOut: number,
-  ): void {
-    this.tailorResults.update((r) => [
-      ...r,
-      {
-        pass,
-        resultMd,
-        inputHash,
-        fromCache,
-        tokensIn,
-        tokensOut,
-        changes: this.parseJsonArray(changesJson),
-        gaps: this.parseJsonArray(gapsJson),
-      },
-    ]);
-  }
-
-  private parsePassResult(
-    text: string,
-    pass: number,
-  ): { result_md: string; changes: string[]; gaps: string[] } {
-    try {
-      const raw = text
-        .replace(/^```(?:json)?\s*/i, '')
-        .replace(/\s*```\s*$/i, '')
-        .trim();
-      const parsed = JSON.parse(raw);
-      return {
-        result_md: String(parsed.result_md ?? ''),
-        changes: Array.isArray(parsed.changes) ? parsed.changes : [],
-        gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
-      };
-    } catch {
-      throw new Error(`Pass ${pass} returned invalid JSON: ${text.slice(0, 200)}`);
-    }
-  }
-
-  private parseJsonArray(json: string | undefined): string[] {
-    try {
-      return JSON.parse(json ?? '[]');
-    } catch {
-      return [];
-    }
   }
 }

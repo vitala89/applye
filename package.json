@@ -22,6 +22,9 @@
     "format": "nx format:write",
     "format:check": "nx format:check",
     "affected:test": "nx affected --target=test",
+    "quality:file-size": "node tools/check-file-size-budgets.mjs",
+    "quality:attribution": "node tools/check-attribution.mjs",
+    "quality": "npm run quality:file-size && npm run quality:attribution",
     "prepare": "husky",
     "verify:csp": "node tools/verify-csp-compat.mjs"
   },

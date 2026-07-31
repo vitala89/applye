@@ -8,11 +8,24 @@ Read, in order:
 2. `docs/internal/PROJECT_CONTEXT.md`
 3. `docs/product/CURRENT_STATE.md`
 4. the latest entry in `docs/internal/DUTY_WATCH.md`
-5. `docs/governance/VALIDATION_MATRIX.md`
+5. `docs/governance/CODE_QUALITY.md`
+6. `docs/governance/VALIDATION_MATRIX.md`
+7. the relevant stack skill and the smallest relevant code files
 
-Run the Plan Check from `AGENTS.md` before implementation or before proposing what to work on next. State where the task sits, what is already shipped, whether current state is stale, which checks apply, and whether the work is privacy-sensitive or security-sensitive.
+Run the Plan Check from `AGENTS.md` before implementation or before proposing what to work on next. State where the task sits, what is already shipped, whether current state is stale, which checks apply, whether the work is privacy-sensitive or security-sensitive, and which touched files are near or above their size budgets.
 
 The main Claude Code session remains the conductor. Skills and subagents are specialists, not independent broad implementers.
+
+## Code quality before implementation
+
+- Read `docs/governance/CODE_QUALITY.md` before every code change.
+- Check file size and responsibility before adding code.
+- Existing oversized files may not grow. Extract a focused responsibility before adding behavior.
+- Apply SOLID pragmatically, keep domain logic pure where practical, and keep I/O at explicit boundaries.
+- Identify the test seam first. Bug fixes require regression tests.
+- Use the `applye-angular` or `applye-rust` skill for stack-specific work.
+- Use the read-only Angular CLI MCP for Angular guidance and Context7 only for minimal versioned documentation queries. Never send source code, secrets, personal data, CV/job content, credentials, or private prompts to an MCP.
+- Community runtime automation MCPs, including Tauri bridge servers that can execute JavaScript or IPC, require explicit maintainer approval and a separate security review.
 
 ## Duty Watch handoff
 
@@ -20,18 +33,19 @@ Before ending a completed, partial, blocked, or rolled-back non-trivial session:
 
 - review the final diff;
 - run and report the relevant checks;
+- run `npm run quality:file-size` and `npm run quality:attribution`;
 - update `docs/product/CURRENT_STATE.md` if project status changed;
 - append a truthful entry to `docs/internal/DUTY_WATCH.md`;
 - update changelog, roadmap, ADRs, specifications, migrations, privacy, security, and design docs when applicable;
-- record the concrete next first action.
+- record before/after sizes for touched files near or above budget and the concrete next first action.
 
 Never claim a check passed unless it was actually run and observed.
 
 ## Commits and pull requests
 
-Commit messages and PR descriptions must not include `Co-authored-by`, `Signed-off-by`, generated-by text, model names, or agent attribution. Commits are authored solely by the repository Git user.
+Commit messages and PR descriptions must not include `Co-authored-by`, `Signed-off-by`, generated-by text, assisted-by text, model names, or agent attribution. Commits are authored solely by the repository Git user. Never add the maintainer or Claude as a co-author.
 
-Before commit, run the relevant validation matrix entries, `npm run format:check`, and `git diff --check` when available. Do not open a PR with a known failing gate unless the PR explicitly documents a blocked state.
+Before commit, run the relevant validation matrix entries, `npm run quality:file-size`, `npm run quality:attribution`, `npm run format:check`, and `git diff --check` when available. Do not open a PR with a known failing gate unless the PR explicitly documents a blocked state.
 
 ## Token and context rules
 

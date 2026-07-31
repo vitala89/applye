@@ -2,14 +2,12 @@ name: CI
 
 # Strict gate: runs on every push to main and on every pull request.
 # Frontend goes through Nx affected (lint -> test -> build); the Rust/Tauri
-# backend gets clippy + unit tests. Any lint error, failing test, or build
-# break fails the job and blocks merge.
+# backend gets clippy + unit tests. Source-size and attribution checks prevent
+# monolithic-file regressions and agent/co-author credit in repository history.
+# Any failure blocks merge.
 #
 # Also here: the marketing site deploys to Cloudflare Pages, but only after the
-# gate above has passed on a push to main. Deploying from a job that `needs` the
-# gate rather than from Cloudflare's own Git integration is the whole point: the
-# Git integration builds on every push regardless of whether tests pass, which
-# would let a red main reach applye.dev.
+# gate above has passed on a push to main.
 #
 # NOT here: the multi-OS Tauri release/packaging build - that is a separate
 # tag-triggered workflow in Phase 4.
@@ -23,7 +21,6 @@ permissions:
   actions: read
   contents: read
 
-# Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -38,7 +35,6 @@ jobs:
           fetch-depth: 0
           filter: tree:0
 
-      # Tauri v2 Linux build prerequisites (needed to compile the Rust crate).
       - name: Install Tauri system dependencies
         run: |
           sudo apt-get update
@@ -71,27 +67,25 @@ jobs:
         with:
           workspaces: apps/desktop/src-tauri
 
-      # Derive base/head SHAs so `nx affected` only runs changed projects.
       - uses: nrwl/nx-set-shas@v5
 
-      # Frontend: lint -> test -> build for affected projects. Blocks on any failure.
+      - name: Enforce code-size and attribution guardrails
+        env:
+          QUALITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+        run: |
+          npm run quality:file-size -- --base "$QUALITY_BASE"
+          npm run quality:attribution -- --base "$QUALITY_BASE" --pr-body-env PR_BODY
+
       - name: Nx affected (lint, test, build)
         run: npx nx affected -t lint test build
 
-      # Guarantee the desktop frontend (frontendDist) exists before the Rust
-      # compile below. Cache hit if the affected build already produced it.
       - name: Build desktop frontend
         run: npx nx build desktop
 
-      # The packaged app runs under a CSP that forbids inline scripts, so any
-      # build output depending on an inline handler renders unstyled - and only
-      # in a packaged build, never in dev and never in a test. Checked here
-      # because the frontend output exists at this point in the job.
       - name: Verify the build is CSP-compatible
         run: npm run verify:csp
 
-      # Rust backend: clippy blocks on errors (warnings allowed, matching the
-      # local hooks); unit tests must pass. Lighter single-OS check for now.
       - name: Clippy (Rust)
         run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml
 
@@ -107,12 +101,6 @@ jobs:
       name: production
       url: https://applye.dev
     steps:
-      # `lfs: true` is not optional here. Every screenshot and video under
-      # apps/web/public/guide/ is stored in Git LFS, and a plain checkout writes
-      # 132-byte pointer files in their place. Nothing downstream would notice:
-      # the Angular build copies public/ without looking inside it, so the gate
-      # stays green and Cloudflare receives stubs instead of the 25 assets the
-      # documentation is made of.
       - uses: actions/checkout@v7
         with:
           lfs: true
@@ -124,20 +112,11 @@ jobs:
 
       - run: npm ci
 
-      # `web:build` generates the analytics config and the sitemap before the
-      # Angular build. GA_MEASUREMENT_ID is a repository *variable*, not a
-      # secret: the ID is visible in the page source of every site that uses GA,
-      # and pretending otherwise would only make it harder to audit. Unset it
-      # and the site deploys with analytics dormant rather than failing.
       - name: Build site
         env:
           GA_MEASUREMENT_ID: ${{ vars.GA_MEASUREMENT_ID }}
         run: npm run web:build
 
-      # Only production deploys from here. Preview deployments are deliberately
-      # not wired: they would publish unlaunched marketing copy on a guessable
-      # URL while the repository is still private, and they must never carry the
-      # measurement ID.
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:

@@ -5,15 +5,32 @@ Use the smallest sufficient validation set for the affected layers. Do not claim
 ## Always before commit
 
 ```bash
+npm run quality:file-size
+npm run quality:attribution
 npm run format:check
 git diff --check
 ```
 
-Review the final diff and confirm that no secrets, local databases, generated outputs, personal data, or unrelated files were added.
+Review the final diff and confirm that no secrets, local databases, generated outputs, personal data, unrelated files, forbidden attribution, or code-size regressions were added.
+
+## Source-size and maintainability gate
+
+The canonical budgets and decomposition rules live in `docs/governance/CODE_QUALITY.md`.
+
+- New TypeScript/JavaScript source files: at most 400 non-empty lines.
+- Angular templates: at most 300 non-empty lines.
+- Stylesheets: at most 400 non-empty lines.
+- Rust source modules: at most 800 non-empty lines.
+- TypeScript tests: at most 600 non-empty lines.
+- Rust tests: at most 800 non-empty lines.
+- Existing files already above budget may not grow. Extract a cohesive responsibility first.
+
+The pre-commit hook checks staged files. CI compares the branch with its base. When a touched file is near or above budget, record its before/after size and the extracted responsibility in the PR and Duty Watch entry.
 
 ## Documentation-only changes
 
 ```bash
+npm run quality:attribution
 npm run format:check
 git diff --check
 ```
@@ -25,6 +42,7 @@ Also verify links, command names, version claims, and current-state claims again
 Run the affected project first, then widen only when the change is shared or cross-cutting:
 
 ```bash
+npm run quality:file-size
 npm run type-check
 npm run lint
 npm test
@@ -33,11 +51,14 @@ npm run desktop:build
 
 For narrow work, Nx project or affected commands are preferred when they give equivalent coverage.
 
+Before writing version-sensitive Angular code, use the configured read-only Angular CLI MCP or current official Angular documentation for the installed version. Context7 may provide a minimal versioned documentation lookup, but it does not replace official verification for security-sensitive or release-sensitive behavior.
+
 ## Rust, SQLite, Tauri command, or migration changes
 
 From `apps/desktop/src-tauri` when appropriate:
 
 ```bash
+npm run quality:file-size
 cargo fmt --check
 cargo test --lib
 cargo clippy -- -D warnings
@@ -45,6 +66,8 @@ cargo check
 ```
 
 Also run the relevant frontend type-check/build when Rust contracts cross Tauri IPC.
+
+Use current official Rust, Cargo, Tauri 2, sqlx, and SQLite documentation for version-sensitive APIs. Community Tauri runtime MCP bridges are not part of the default gate and require explicit maintainer approval plus a separate security review.
 
 ## Dependency changes
 
@@ -111,6 +134,7 @@ Migration changes require:
 When changing `libs/core`, `libs/data`, Tauri command inputs/outputs, or shared models:
 
 ```bash
+npm run quality:file-size
 npm run type-check
 npm test
 npm run desktop:build
@@ -141,7 +165,9 @@ Treat these as security-sensitive. Verify:
 - explicit provider/tool allowlists;
 - least-privilege filesystem and network access;
 - user approval before installation or mutation;
-- failure behavior with missing, broken, or untrusted tools.
+- failure behavior with missing, broken, or untrusted tools;
+- documentation MCP queries contain no source files, secrets, personal data, CV/job content, credentials, or private prompts;
+- runtime automation MCPs that can execute JavaScript, invoke IPC, inspect application state, write files, or launch processes have explicit maintainer approval and a separate threat review.
 
 Run the relevant Rust, Angular, and integration checks. Live provider calls must be opt-in and clearly recorded.
 

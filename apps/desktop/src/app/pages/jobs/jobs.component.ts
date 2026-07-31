@@ -91,7 +91,6 @@ import {
   buildCvContent,
   buildAdditionalInfoBlock,
   cleanJsonText,
-  parseCvGapResponse,
   parseCvSkillResponse,
   parseDateAnswer,
   withCvPhoto,
@@ -109,6 +108,7 @@ import {
 } from '../../shared/final-checks.service';
 import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
+import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 
 type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review' | 'ready';
 
@@ -129,7 +129,13 @@ type ReviewDocumentStatus = 'missing' | 'generating' | 'linked' | 'needs_review'
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Component-scoped: portal-answer drafts belong to the job open on this page
   // and must not outlive it, which is the lifetime they had as component fields.
-  providers: [PortalAnswersService, FinalChecksService, DocumentExportService, TailoringService],
+  providers: [
+    PortalAnswersService,
+    FinalChecksService,
+    DocumentExportService,
+    TailoringService,
+    CvGapDialogService,
+  ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
   private readonly db = inject(DbService);
@@ -153,6 +159,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly exportSvc = inject(DocumentExportService);
   /** The three-pass tailoring pipeline. */
   private readonly tailorSvc = inject(TailoringService);
+  /** The single CV-gap dialog shared by both document flows. */
+  private readonly gapSvc = inject(CvGapDialogService);
 
   // Previous running activity for this job, so the effect below can detect the
   // moment a background step finished and pull its fresh result into a page
@@ -430,11 +438,10 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.docGen.isPreparing(this.job()?.id ?? -1, 'cover_letter'),
   );
   readonly anyDocPreparing = computed(() => this.docGen.anyPreparing(this.job()?.id ?? -1));
-  readonly gapAnalyzing = signal(false);
-  readonly gapDialogOpen = signal(false);
-  readonly gapQuestions = signal<CvGapQuestion[]>([]);
-  private gapResolver:
-    ((result: { answers: CvGapAnswer[]; saveToProfile: boolean } | null) => void) | null = null;
+  // Aliases onto `CvGapDialogService`; the template binds these names.
+  readonly gapAnalyzing = this.gapSvc.analyzing;
+  readonly gapDialogOpen = this.gapSvc.open;
+  readonly gapQuestions = this.gapSvc.questions;
   readonly documentReviewStatus = signal('');
   readonly documentReviewError = signal(false);
   readonly chooseCvOpen = signal(false);
@@ -673,52 +680,23 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Runs the gap-analysis skill for the current job/CV. Fail-open: returns []
    * on any error so a bad analysis never blocks generation. */
-  private async analyzeCvGaps(cvText: string): Promise<CvGapQuestion[]> {
-    const job = this.job();
-    const settings = this.settings();
-    if (!job?.id || !settings) return [];
-    try {
-      const language = this.documentReviewLanguage();
-      const rendered = await this.ai.renderSkill('cv-gap-analysis', {
-        cv_text: cvText,
-        job_description: job.jdText ?? '',
-        language,
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-      });
-      return parseCvGapResponse(res.text);
-    } catch {
-      return [];
-    }
+  private analyzeCvGaps(cvText: string): Promise<CvGapQuestion[]> {
+    return this.gapSvc.analyze(cvText, this.job(), this.settings(), this.documentReviewLanguage());
   }
 
   /** Opens the gap dialog and resolves when the user submits or cancels. */
   private awaitGapDialog(
     questions: CvGapQuestion[],
   ): Promise<{ answers: CvGapAnswer[]; saveToProfile: boolean } | null> {
-    this.gapQuestions.set(questions);
-    this.gapDialogOpen.set(true);
-    return new Promise((resolve) => {
-      this.gapResolver = resolve;
-    });
+    return this.gapSvc.ask(questions);
   }
 
   onGapSubmit(result: { answers: CvGapAnswer[]; saveToProfile: boolean }): void {
-    this.gapDialogOpen.set(false);
-    this.gapResolver?.(result);
-    this.gapResolver = null;
+    this.gapSvc.submit(result);
   }
 
   onGapCancel(): void {
-    this.gapDialogOpen.set(false);
-    this.gapResolver?.(null);
-    this.gapResolver = null;
+    this.gapSvc.cancel();
   }
 
   /** Appends the answered gap items to the profile fullMd. Whole-row-replace
@@ -918,12 +896,16 @@ export class JobsComponent implements OnInit, OnDestroy {
 
       // Agentic gap-fill (mirrors createCvDraft): ask about info the JD wants
       // that the profile lacks, then fold the answers into the profile text the
-      // letter is built from. Skipped when a CV is already linked for this job,
-      // because that flow just ran the same analysis (and may have saved the
-      // answers to the profile) - no point asking the user twice. Fail-open and
-      // skippable; never blocks generation.
+      // letter is built from. Fail-open and skippable; never blocks generation.
+      //
+      // Skipped when a CV is linked for this job, because that flow ran the same
+      // analysis and may already have saved the answers to the profile - no
+      // point asking twice. `preparingCv()` is part of that condition, not an
+      // extra guard: a CV that is still generating has not linked itself yet, so
+      // testing only `linkedCv()` let a cover letter started alongside it run a
+      // second analysis and raise a second dialog for the same questions.
       let additionalInfo = '';
-      if (!this.linkedCv()) {
+      if (!this.linkedCv() && !this.preparingCv()) {
         this.gapAnalyzing.set(true);
         try {
           const questions = await this.analyzeCvGaps(profile.fullMd);
@@ -1450,11 +1432,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     // promise forever (its resolver only fires from the dialog buttons), so
     // resolve it as skipped - generation then continues in the background and
     // its `reviewing` activity ends cleanly instead of sticking on the badge.
-    if (this.gapResolver) {
-      this.gapDialogOpen.set(false);
-      this.gapResolver(null);
-      this.gapResolver = null;
-    }
+    this.gapSvc.dispose();
   }
 
   /**

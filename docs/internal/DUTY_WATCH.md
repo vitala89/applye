@@ -44,7 +44,77 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-07-31 (latest), a job description that rendered as its own source
+### 2026-08-01 (latest), the CV card that said "Generating" while it was waiting for you
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/cv-card-awaiting-input`, branched from `origin/main` (`f91d50c`), PR **#234**
+- **Commits:** `ce09393` (fix), plus a docs commit
+- **Objective:** give the CV card a distinct state while the gap dialog blocks it, and resolve the
+  two decisions the previous watch left open.
+- **Completed:**
+  - A preparing card reports `needs_input` while `CvGapDialogService.open` is true, CV only. The
+    dialog is awaited inside `createCvDraft`, which runs inside `docGen.begin(job.id, 'cv')` with
+    `end()` in the `finally`, so the card really is preparing the whole time - it was reading the
+    right flag for the wrong question.
+  - `documentCardStatus` and `documentStatusKey` extracted to a pure
+    `apps/desktop/src/app/shared/doc-card-status.ts` over an explicit five-field state. That is the
+    test seam; the states could not be asserted while the derivation was a private method on a
+    1882-line component. Nine tests, where the badge derivation had none.
+  - **Second, unplanned fix:** the file-size checker excluded only `translations/translations.ts`
+    (10 lines), not the six locale files (~1650 lines each) that hold the strings, so the ratchet
+    rejected any new i18n key anywhere in the repository. `CODE_QUALITY.md` already documents the
+    catalogue as excluded, so the checker was under-implementing the approved contract. Widened to
+    the catalogue directory minus its spec. Without this the fix could not add its label.
+- **Not completed:** the three outstanding native gates (#225 export, #230 gap dialog, #233 Discover)
+  and the new #234 gate. All are maintainer-only - screen-control permission is denied to agents.
+  PR #233 not merged: merging is not an agent action without an explicit request.
+- **Files or packages changed:** `apps/desktop/src/app/shared/doc-card-status.ts` (new, 38),
+  `doc-card-status.spec.ts` (new, 52), `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  (1882 -> **1881**, over budget, shrank), `jobs.component.scss` (987 -> **985**, over budget,
+  shrank), `tools/check-file-size-budgets.mjs`, six locale files, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green
+  (6 projects); desktop suite **51 suites / 853 tests**, up from 50 / 845; `npm run quality` (three
+  checks) passed; `npm run verify:csp` passed; `npm run format:check` passed after
+  `nx format:write --uncommitted`; `git diff --check` clean. **Not run:** `cargo test` and
+  `cargo clippy` - no Rust file was touched. **Not verified:** the badge itself. Reaching
+  `needs_input` requires generating a CV, which requires Tauri IPC, so a browser build cannot show
+  it; no browser session was started, because it would have proved nothing about this change.
+- **Privacy/security impact:** none. UI status derivation and a build-tool exclusion.
+- **Decisions and assumptions:**
+  - The maintainer deferred both open decisions to the agent's recommendation.
+  - **#233 duplicate rows: merge and defer the dedupe.** The duplicate is a one-time migration
+    artifact per already-stored posting, not a recurring leak - once the clean row exists, later
+    rescans hash the same clean text and `INSERT OR IGNORE` holds. Option (b), the `source_url`
+    dedupe, is the right permanent fix but is gated behind splitting `discover.rs` (3245/800).
+    Option (a), the data repair, orphans `scoring_cache` rows for no user-visible gain and has no
+    precedent - migrations are SQL only. Neither was built.
+  - **The i18n gate: align the tool to the doc**, rather than allowlist six files by name or reuse an
+    unrelated string in the badge.
+  - `needs_input` is CV-only. `CvGapDialogService` belongs to the CV flow; the cover-letter card
+    passes `awaitingInput: false` explicitly rather than reading a signal that cannot apply to it.
+  - `finalCheckStatusKey` became a bound field rather than a delegating method, to pay for the two
+    lines the fix needed. Safe because `statusKey` does not use `this`, and it is bound explicitly
+    rather than passed unbound.
+- **Risks or compatibility impact:** the new status string reaches all six locales; the German,
+  Spanish, French, Russian and Ukrainian labels are machine-written and worth a native reading. The
+  checker change widens what the gate ignores - locale files can now grow without limit, which is the
+  intended trade and is what the contract says.
+- **Open issues or blockers:** #233 awaits an explicit merge instruction. `discover.rs` (3245),
+  `tailoring.rs`, `documents.rs`, `onboarding.component.ts` (1002) and its spec (689) remain over
+  budget and frozen.
+- **Next first action:** extract wizard navigation (129 non-empty lines - `wizardStep`, step guards,
+  `goToStep`) from `jobs.component.ts` into a `WizardNavService`, branched fresh from `main`, using
+  the writable-signal alias pattern so `jobs.component.html` stays byte-identical. Do **not** move
+  the 591-line document-drafts region wholesale: it is three responsibilities (CV generation,
+  cover-letter generation, link/commit lifecycle) and needs splitting, not relocating.
+- **Evidence:** the two `needs_input` tests were run against the old logic first and failed
+  (2 failed / 851 passed), then the fix was restored and the suite went 853 / 853. The file-size
+  report printed both shrinking files with their base counts: `jobs.component.ts` base 1882 -> 1881,
+  `jobs.component.scss` base 987 -> 985, and no longer lists any locale file.
+
+### 2026-07-31, a job description that rendered as its own source
 
 - **Status:** fixed and open as #233; one consequence deliberately left for a separate change
 - **Agent/tool:** Claude Code, Opus

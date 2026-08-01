@@ -672,6 +672,8 @@ export const fr: TranslationMap = stub(en, {
     paste_title: 'Collez la description du poste',
     paste_placeholder: 'Collez ici la description complète du poste…',
     parse_btn: 'Analyser et filtrer',
+    company_unknown: 'Entreprise non identifiee',
+    title_unknown: 'Poste non identifie',
     parsing: 'Analyse…',
     hard_filter_failed: 'Filtre strict non passé',
     hard_filter_msg: 'Formulation disqualifiante détectée (visa / lieu). Aucun jeton IA utilisé.',

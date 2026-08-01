@@ -10,7 +10,7 @@ import {
   LucideAngularModule,
   X,
 } from 'lucide-angular';
-import { DbService } from '@applye/data';
+import { DbService, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
@@ -66,6 +66,7 @@ function looksLikeJobDescription(text: string): boolean {
 })
 export class PasteJobModalComponent {
   private readonly db = inject(DbService);
+  private readonly source = inject(JobSourceService);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
   protected readonly modal = inject(PasteJobModalService);
@@ -147,10 +148,17 @@ export class PasteJobModalComponent {
     this.closedBoardName.set(null);
     this.isUnknownDomain.set(false);
     try {
-      const classification = await this.db.classifyJobUrl(url);
+      const classification = await this.source.classifyJobUrl(url);
       if (classification.kind === 'allowed') {
-        const fetched = await this.db.fetchJobFromUrl(url);
-        const job = await this.db.jobPaste(fetched.jdText, fetched.title, fetched.company);
+        const fetched = await this.source.fetchJobFromUrl(url);
+        // `authoritative` (the default): these came back as structured fields
+        // from the board, which beats anything parsed out of the prose.
+        const job = await this.source.jobPaste(
+          fetched.jdText,
+          fetched.title,
+          fetched.company,
+          'authoritative',
+        );
         this.close();
         void this.router.navigate(['/jobs', job.id]);
         return;
@@ -185,7 +193,7 @@ export class PasteJobModalComponent {
     this.textBusy.set(true);
     this.textError.set('');
     try {
-      const job = await this.db.jobPaste(text);
+      const job = await this.source.jobPaste(text);
       this.close();
       void this.router.navigate(['/jobs', job.id]);
     } catch (e) {

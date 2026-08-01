@@ -666,6 +666,8 @@ export const uk: TranslationMap = stub(en, {
     paste_title: 'Вставте опис вакансії',
     paste_placeholder: 'Вставте сюди повний опис вакансії…',
     parse_btn: 'Розібрати та відфільтрувати',
+    company_unknown: 'Компанію не визначено',
+    title_unknown: 'Посаду не визначено',
     parsing: 'Розбираємо…',
     hard_filter_failed: 'Жорсткий фільтр не пройдено',
     hard_filter_msg:

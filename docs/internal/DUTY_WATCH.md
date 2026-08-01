@@ -44,7 +44,79 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), JD intake comes out, and four of its seven resets stay behind
+### 2026-08-01 (latest), a posting that would not name its company, and two layers of the same staleness
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `feat/job-identity-extraction`, from `main` (`055e498`)
+- **Objective:** a maintainer bug report - a JD headed `Company name - Elbrus` parsed as "No company
+  name found in the posting." and was titled `The Purpose:`, a section heading from the body.
+- **Spec:** `docs/superpowers/specs/2026-08-01-job-identity-extraction-design.md`, agreed before any
+  code. Part A only; the AI-assisted identification is deliberately deferred to part B.
+- **Completed:**
+  - **Three causes, not one.** The company label matched only `company:`/`employer:`/`organization:`
+    and only with a colon. The title fell back to the first line under 80 characters, which in that
+    posting was a heading. And the value was permanent: `job_paste` overrides always won and the page
+    passed the job's own stored values back on every re-parse, so re-extraction never ran again.
+  - `job_identity.rs` (new, with 18 tests): labels widened, six separators accepted, section
+    headings and role-word-free lines rejected as titles. **Returning nothing became a valid
+    answer** - the display placeholder fills the hole, and an honest miss beats a confident wrong
+    answer that then propagates into every generated document.
+  - `IdentityPrecedence` on `job_paste`: `authoritative` for the "From link" fetch, whose values are
+    structured fields off a board, `fallback` for a re-parse. Flipping the default globally was
+    rejected for a reason found by reading the call sites: it would have let a prose guess beat real
+    board metadata, trading one bug for a quieter one.
+  - **The same staleness existed one level down and was found while wiring the first fix.** The
+    upsert's `ON CONFLICT` kept whatever was already stored, so re-parsing _identical_ text could
+    never correct a bad title regardless of precedence. Fixed with a bound flag, and pinned by a test
+    that parses the same text twice.
+  - Display placeholders in the My Jobs row, the job card, the delete confirm and the page header,
+    across six locales. Nothing is written to the database: `duplicate_jd_other_company` and
+    `legitimacy_check` compare companies to each other, so a shared literal would collapse unrelated
+    jobs into "the same company" and raise a false duplicate warning.
+- **Not completed:** part B - the AI `job-identify` skill, the inferred-value flags and their
+  migration. No native `tauri dev` gate was run; the maintainer is verifying by hand.
+- **Files or packages changed:** added `apps/desktop/src-tauri/src/commands/job_identity.rs`,
+  `libs/data/src/lib/services/job-source.service.ts`, `libs/core/src/lib/jobs/job-identity.ts` and
+  its spec, plus the design spec. Changed `scoring.rs`, `commands/mod.rs`, `db.service.ts`,
+  `job.model.ts`, both `index.ts` barrels, `job-intake.service.ts` and its spec,
+  `paste-job-modal.component.ts`, `jobs.component.{ts,html}`, `my-jobs.component.html`,
+  `styles.scss`, six locale files, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Three extractions the budget gate forced, and they were the right call anyway.** The first pass
+  grew three already-oversized files. `CODE_QUALITY.md` rule 63 forbids that, so: the job intake
+  surface (`jobPaste`, `classifyJobUrl`, `fetchJobFromUrl`) left `DbService` for a new
+  `JobSourceService` - **474 to 461 lines**, and those three are the one path where a job's identity
+  is decided rather than read back, which is what makes `precedence` belong there; the placeholder
+  style became one global `.identity-unknown` instead of two near-identical local rules; and the
+  header composition became a pure `jobHeaderTitle` in `libs/core`. `jobs.component.ts` ends at
+  **1532**, exactly its base.
+- **Validation:** run and observed: `npm run type-check` (6 projects, pass), `npm test` (6 projects,
+  **1332 tests**, all pass; desktop 933, core 257), `cargo test --lib` (**311 passed**, 1 ignored),
+  `cargo clippy --all-targets -- -D warnings` (clean), `cargo fmt --check` (clean), `npm run lint`
+  (0 errors; the warnings are the pre-existing non-null assertions), `npx nx build desktop` (pass),
+  `npm run quality:file-size` (passed), `npm run quality:attribution` (passed),
+  `npm run format:check` (pass), `npm run verify:csp` (pass), `git diff --check` (clean).
+  **Not run:** `tauri dev`.
+- **Privacy/security impact:** none. No new I/O, no new stored field, no network or IPC surface
+  beyond one added parameter on an existing command. The extraction is pure string work on text the
+  user pasted themselves.
+- **Decisions and assumptions:** the en and em dash are written in Rust as `'\u{2013}'` and
+  `'\u{2014}'` rather than as characters - the repository forbids them in authored output, but real
+  postings contain them constantly and they have to be matched. The parse status strings stay
+  hardcoded English, unchanged; translating them is a separate change and was not smuggled in here.
+  The role-word list is English-only, which is a real limit: a German or Ukrainian posting with no
+  labelled title will fall through to the placeholder rather than guess. That is the intended
+  failure direction and is what part B is for.
+- **Risks or compatibility impact:** low, with one to watch. Titles are now stricter, so a posting
+  whose real title happens to carry no role word will show the placeholder where it previously showed
+  something. That is the trade the spec accepted deliberately. The `fallback` path only ever replaces
+  a value with one extracted from the same text, so it cannot invent.
+- **Open issues or blockers:** none from this watch. Part B is the natural next piece, and the known
+  deferred items are unchanged.
+- **Next first action:** the maintainer runs the manual gate on the reported posting - re-parse it
+  and confirm the company reads `Elbrus` and the title is no longer `The Purpose:`. Then spec part B.
+
+### 2026-08-01, JD intake comes out, and four of its seven resets stay behind
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

@@ -669,6 +669,8 @@ export const es: TranslationMap = stub(en, {
     paste_title: 'Pega la descripción del puesto',
     paste_placeholder: 'Pega aquí la descripción completa del puesto…',
     parse_btn: 'Analizar y filtrar',
+    company_unknown: 'Empresa no identificada',
+    title_unknown: 'Puesto sin identificar',
     parsing: 'Analizando…',
     hard_filter_failed: 'Filtro estricto no superado',
     hard_filter_msg:

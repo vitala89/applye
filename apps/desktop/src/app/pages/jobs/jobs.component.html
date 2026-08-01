@@ -200,12 +200,12 @@
           <div class="card">
             <div class="job-meta">
               <div class="job-meta__info">
-                @if (j.company) {
-                  <span class="job-meta__company">{{ j.company }}</span>
-                }
-                @if (j.title) {
-                  <span class="job-meta__title">{{ j.title }}</span>
-                }
+                <span class="job-meta__company" [class.identity-unknown]="!j.company">{{
+                  j.company || t()('jobs.company_unknown')
+                }}</span>
+                <span class="job-meta__title" [class.identity-unknown]="!j.title">{{
+                  j.title || t()('jobs.title_unknown')
+                }}</span>
                 <span class="job-meta__hash">{{ (j.jdHash ?? '').slice(0, 12) }}</span>
               </div>
               <div class="job-meta__badges">

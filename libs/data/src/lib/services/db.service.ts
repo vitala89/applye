@@ -1,13 +1,11 @@
 import { Injectable } from '@angular/core';
 import {
   AnalyticsFacts,
-  FetchedJob,
   Job,
   JobOverview,
   ScoringCache,
   TrackerCustomColumn,
   TrackerRow,
-  UrlClassification,
 } from '@applye/core';
 import { ImportPreviewRow, ImportRawRow, ImportResult } from '@applye/core';
 import {
@@ -107,20 +105,6 @@ export class DbService {
 
   async upsertJob(job: Omit<Job, 'id' | 'jdHash' | 'createdAt'>): Promise<Job> {
     return tauriInvoke<Job>('db_upsert_job', { job });
-  }
-
-  async jobPaste(jdText: string, title?: string, company?: string): Promise<Job> {
-    return tauriInvoke<Job>('job_paste', { jdText, title, company });
-  }
-
-  /** 0-token allowlist check: is this URL an open/ATS source, or a closed board? */
-  classifyJobUrl(url: string): Promise<UrlClassification> {
-    return tauriInvoke<UrlClassification>('classify_job_url', { url });
-  }
-
-  /** Fetches title/company/JD text from an Allowed-classified URL only. */
-  fetchJobFromUrl(url: string): Promise<FetchedJob> {
-    return tauriInvoke<FetchedJob>('fetch_job_from_url', { url });
   }
 
   /** My Jobs table rows: job columns + latest score + current status. */

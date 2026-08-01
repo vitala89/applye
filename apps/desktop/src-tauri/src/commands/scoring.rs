@@ -5,6 +5,7 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use crate::commands::job_identity::{extract_company, extract_title};
 use crate::db::{stable_hash, Db};
 
 fn hard_filter(text: &str) -> bool {
@@ -23,204 +24,6 @@ fn hard_filter(text: &str) -> bool {
         "must be currently located in",
     ];
     !disqualifiers.iter().any(|d| t.contains(d))
-}
-
-fn extract_title(text: &str) -> Option<String> {
-    for line in text.lines().take(20) {
-        let lower = line.to_lowercase();
-        if lower.starts_with("position:")
-            || lower.starts_with("job title:")
-            || lower.starts_with("role:")
-            || lower.starts_with("title:")
-        {
-            if let Some(v) = line.split_once(':').map(|x| x.1) {
-                let v = v.trim().to_string();
-                if !v.is_empty() {
-                    return Some(v);
-                }
-            }
-        }
-    }
-    text.lines()
-        .map(|l| l.trim())
-        .find(|l| !l.is_empty() && l.len() < 80)
-        .map(|l| l.to_string())
-}
-
-/// Words that can never be a company name on their own - used to reject
-/// sentence fragments like "We are ..." or "The role is ...".
-const COMPANY_STOPWORDS: &[&str] = &[
-    "we",
-    "our",
-    "the",
-    "this",
-    "that",
-    "you",
-    "your",
-    "they",
-    "it",
-    "as",
-    "at",
-    "in",
-    "for",
-    "with",
-    "position",
-    "role",
-    "job",
-    "about",
-    "who",
-    "what",
-    "here",
-    "join",
-    "description",
-    "responsibilities",
-    "requirements",
-    "overview",
-    "summary",
-    "a",
-    "an",
-];
-
-/// Connector words allowed inside a multi-word company name ("Ben & Jerry's",
-/// "Bank of America") without breaking the proper-noun run.
-fn is_company_connector(word: &str) -> bool {
-    matches!(
-        word.to_ascii_lowercase().as_str(),
-        "and" | "of" | "the" | "&" | "for"
-    )
-}
-
-fn clean_company(raw: &str) -> String {
-    raw.trim()
-        .trim_matches(|c: char| {
-            c == '"'
-                || c == '\''
-                || c == ','
-                || c == '.'
-                || c == ':'
-                || c == '-'
-                || c == '('
-                || c == ')'
-                || c == '|'
-        })
-        .trim()
-        .to_string()
-}
-
-fn is_plausible_company(candidate: &str) -> bool {
-    let c = candidate.trim();
-    if c.len() < 2 || c.len() > 60 {
-        return false;
-    }
-    let words: Vec<&str> = c.split_whitespace().collect();
-    if words.is_empty() || words.len() > 6 {
-        return false;
-    }
-    let first = words[0];
-    let Some(fc) = first.chars().next() else {
-        return false;
-    };
-    if !fc.is_alphabetic() || !fc.is_uppercase() {
-        return false;
-    }
-    if COMPANY_STOPWORDS.contains(&first.to_lowercase().as_str()) {
-        return false;
-    }
-    true
-}
-
-/// Leading run of Capitalized words (with connectors), e.g. from "About Bjak"
-/// or "Join Acme Corp today" -> "Bjak" / "Acme Corp".
-fn leading_proper_noun(s: &str) -> String {
-    let mut out: Vec<&str> = Vec::new();
-    for word in s.split_whitespace() {
-        let fc = word.chars().next().unwrap_or(' ');
-        if fc.is_uppercase() || (is_company_connector(word) && !out.is_empty()) {
-            out.push(word);
-            if out.len() >= 6 {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    clean_company(&out.join(" "))
-}
-
-/// "<Company> is a/an/the/one of ..." - the most common self-description.
-fn company_before_is(sentence: &str) -> Option<String> {
-    let words: Vec<&str> = sentence.split_whitespace().collect();
-    for i in 1..words.len() {
-        if !words[i].eq_ignore_ascii_case("is") {
-            continue;
-        }
-        let next = words.get(i + 1).map(|w| w.to_ascii_lowercase());
-        let marker = matches!(next.as_deref(), Some("a") | Some("an") | Some("the"))
-            || (next.as_deref() == Some("one")
-                && words
-                    .get(i + 2)
-                    .map(|w| w.eq_ignore_ascii_case("of"))
-                    .unwrap_or(false));
-        if marker && i <= 6 {
-            let cand = leading_proper_noun(&words[..i].join(" "));
-            if is_plausible_company(&cand) {
-                return Some(cand);
-            }
-        }
-    }
-    None
-}
-
-/// Deterministic company extraction from the JD body (0 tokens, no AI).
-/// Tries, in order: an "About X" / "Join X" heading, then the classic
-/// "<Company> is a ..." opening sentence. Conservative: a fragment that does
-/// not look like a proper company name is rejected rather than guessed.
-fn extract_company_from_body(text: &str) -> Option<String> {
-    let head: String = text.chars().take(1500).collect();
-
-    for line in head.lines().take(40) {
-        let t = line.trim();
-        if t.len() < 2 {
-            continue;
-        }
-        for prefix in ["about ", "join ", "welcome to "] {
-            if t.len() > prefix.len()
-                && t.get(..prefix.len())
-                    .map(|p| p.eq_ignore_ascii_case(prefix))
-                    .unwrap_or(false)
-            {
-                let cand = leading_proper_noun(&t[prefix.len()..]);
-                if is_plausible_company(&cand) {
-                    return Some(cand);
-                }
-            }
-        }
-    }
-
-    for sentence in head.split(['.', '\n', '!']) {
-        if let Some(company) = company_before_is(sentence.trim()) {
-            return Some(company);
-        }
-    }
-    None
-}
-
-fn extract_company(text: &str) -> Option<String> {
-    for line in text.lines().take(30) {
-        let lower = line.to_lowercase();
-        if lower.starts_with("company:")
-            || lower.starts_with("employer:")
-            || lower.starts_with("organization:")
-        {
-            if let Some(v) = line.split_once(':').map(|x| x.1) {
-                let v = v.trim().to_string();
-                if !v.is_empty() {
-                    return Some(v);
-                }
-            }
-        }
-    }
-    extract_company_from_body(text)
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -265,20 +68,61 @@ pub struct SaveScoreInput {
     pub tokens_output: i64,
 }
 
+/// What the caller's `title`/`company` are worth relative to what the text says.
+///
+/// The distinction is not cosmetic. Two callers pass these fields and they mean
+/// opposite things: the "From link" ATS fetch passes structured metadata lifted
+/// off a job board, which is more reliable than any parse of raw text, while the
+/// re-parse on the jobs page passes the job's own previously stored values,
+/// which may be a bad guess from an earlier parse. Treating both as
+/// authoritative is what made a wrong title permanent - re-extraction could
+/// never run again.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum IdentityPrecedence {
+    /// The passed value wins outright. For callers reading structured fields.
+    #[default]
+    Authoritative,
+    /// Extraction wins; the passed value is used only to fill a gap extraction
+    /// left. For callers passing back what was stored earlier.
+    Fallback,
+}
+
 /// Paste raw JD: compute hash, hard-filter, extract metadata, run the
 /// deterministic legitimacy check (0 tokens, after the hard filter, before
-/// any AI scoring), upsert job row. `title`/`company` are optional overrides
-/// for callers that already know them precisely (e.g. the "From link" ATS
-/// fetch, which reads structured fields instead of guessing from raw text);
-/// the paste-text flow omits them and falls back to text extraction.
+/// any AI scoring), upsert job row. `title`/`company` are optional values the
+/// caller already holds; `precedence` says whether they outrank what the text
+/// says or merely stand in when the text says nothing. Omitted precedence means
+/// authoritative, which is what every pre-existing caller relied on.
 #[tauri::command]
 pub async fn job_paste(
     jd_text: String,
     title: Option<String>,
     company: Option<String>,
+    precedence: Option<IdentityPrecedence>,
     db: State<'_, Db>,
 ) -> Result<crate::commands::jobs::Job, String> {
-    job_paste_core(jd_text, title, company, &db.pool).await
+    job_paste_core(
+        jd_text,
+        title,
+        company,
+        precedence.unwrap_or_default(),
+        &db.pool,
+    )
+    .await
+}
+
+/// Resolve one field against the text according to `precedence`.
+fn resolve_identity(
+    passed: Option<String>,
+    extracted: Option<String>,
+    precedence: IdentityPrecedence,
+) -> Option<String> {
+    let passed = passed.filter(|s| !s.trim().is_empty());
+    match precedence {
+        IdentityPrecedence::Authoritative => passed.or(extracted),
+        IdentityPrecedence::Fallback => extracted.or(passed),
+    }
 }
 
 /// Core of `job_paste`, decoupled from `tauri::State` so it can be exercised
@@ -287,16 +131,14 @@ async fn job_paste_core(
     jd_text: String,
     title_override: Option<String>,
     company_override: Option<String>,
+    precedence: IdentityPrecedence,
     pool: &sqlx::SqlitePool,
 ) -> Result<crate::commands::jobs::Job, String> {
     let jd_hash = stable_hash(&jd_text);
     let hard_pass = hard_filter(&jd_text);
-    let title = title_override
-        .filter(|s| !s.trim().is_empty())
-        .or_else(|| extract_title(&jd_text));
-    let company = company_override
-        .filter(|s| !s.trim().is_empty())
-        .or_else(|| extract_company(&jd_text));
+    let title = resolve_identity(title_override, extract_title(&jd_text), precedence);
+    let company = resolve_identity(company_override, extract_company(&jd_text), precedence);
+    let prefer_fresh = i64::from(precedence == IdentityPrecedence::Fallback);
 
     // Legitimacy is informational only - it never blocks the hard filter or
     // scoring, it just gets recorded alongside the job (augmentation, not a gate).
@@ -337,9 +179,17 @@ async fn job_paste_core(
            (company, title, jd_text, jd_hash, hard_filter_passed, legitimacy_tier, legitimacy_notes, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(jd_hash) DO UPDATE SET
-           -- backfill a missing company/title without clobbering an existing one
-           company            = COALESCE(NULLIF(jobs.company, ''), excluded.company),
-           title              = COALESCE(NULLIF(jobs.title, ''), excluded.title),
+           -- Authoritative: backfill a missing company/title without clobbering
+           -- an existing one. Fallback: the resolved value already prefers fresh
+           -- extraction and falls back to what the caller passed - which is what
+           -- is stored - so letting it win is what makes a bad value correctable
+           -- when the same text is parsed again.
+           company            = CASE WHEN ? = 1 AND excluded.company IS NOT NULL
+                                     THEN excluded.company
+                                     ELSE COALESCE(NULLIF(jobs.company, ''), excluded.company) END,
+           title              = CASE WHEN ? = 1 AND excluded.title IS NOT NULL
+                                     THEN excluded.title
+                                     ELSE COALESCE(NULLIF(jobs.title, ''), excluded.title) END,
            hard_filter_passed = excluded.hard_filter_passed,
            legitimacy_tier    = excluded.legitimacy_tier,
            legitimacy_notes   = excluded.legitimacy_notes",
@@ -351,6 +201,8 @@ async fn job_paste_core(
     .bind(hard_pass as i64)
     .bind(&legitimacy_tier)
     .bind(&legitimacy_notes)
+    .bind(prefer_fresh)
+    .bind(prefer_fresh)
     .execute(pool)
     .await
     .map_err(|e| format!("job_paste: {e}"))?;
@@ -485,47 +337,11 @@ async fn score_cache_save_core(
 }
 
 #[cfg(test)]
-mod extract_tests {
-    use super::extract_company;
-
-    #[test]
-    fn company_from_is_a_sentence() {
-        let jd = "Newfire Global Partners is a leading technology firm that builds software.";
-        assert_eq!(
-            extract_company(jd).as_deref(),
-            Some("Newfire Global Partners")
-        );
-    }
-
-    #[test]
-    fn company_from_about_heading() {
-        let jd = "Senior Engineer\n\nAbout Bjak\n\nWe build insurance tech.";
-        assert_eq!(extract_company(jd).as_deref(), Some("Bjak"));
-    }
-
-    #[test]
-    fn company_from_join_heading() {
-        let jd = "Join Acme Corp today and help us grow.";
-        assert_eq!(extract_company(jd).as_deref(), Some("Acme Corp"));
-    }
-
-    #[test]
-    fn explicit_company_header_still_wins() {
-        let jd = "Company: Contoso GmbH\nRole: Backend Engineer";
-        assert_eq!(extract_company(jd).as_deref(), Some("Contoso GmbH"));
-    }
-
-    #[test]
-    fn sentence_fragment_is_rejected() {
-        // "We are a ..." must not be mistaken for a company name.
-        let jd = "We are a fully funded company founded by serial entrepreneurs.";
-        assert_eq!(extract_company(jd), None);
-    }
-}
-
-#[cfg(test)]
 mod pipeline_tests {
-    use super::{job_paste_core, score_cache_get_core, score_cache_save_core, SaveScoreInput};
+    use super::{
+        job_paste_core, score_cache_get_core, score_cache_save_core, IdentityPrecedence,
+        SaveScoreInput,
+    };
     use sqlx::sqlite::SqlitePoolOptions;
     use sqlx::SqlitePool;
 
@@ -546,9 +362,15 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer\n\
                    We build warehouse robots and need a great engineer.";
-        let job = job_paste_core(jd.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            jd.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("yellow"));
         let notes = job.legitimacy_notes.expect("notes present");
         assert!(notes.contains("Salary"));
@@ -559,9 +381,15 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer\nSalary: €90,000\n\
                    Apply by sending your CV to recruiter88@gmail.com";
-        let job = job_paste_core(jd.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            jd.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("red"));
         let notes = job.legitimacy_notes.expect("notes present");
         assert!(notes.contains("personal email"));
@@ -573,9 +401,15 @@ mod pipeline_tests {
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer\nSalary: €90,000 - €110,000\n\
                    Join our team of 12 engineers building warehouse robots.\n\
                    Apply: jobs@acmerobotics.com";
-        let job = job_paste_core(jd.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            jd.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("green"));
         assert_eq!(job.legitimacy_notes, None);
     }
@@ -585,15 +419,27 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let first = "Company: Acme Robotics\nSalary: €90,000\n\
                       Build great products with a passionate team of 10.";
-        job_paste_core(first.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        job_paste_core(
+            first.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
 
         let second = "Company: Globex Corp\nSalary: €90,000\n\
                        Build great products with a passionate team of 10.";
-        let job = job_paste_core(second.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            second.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("red"));
         let notes = job.legitimacy_notes.expect("notes present");
         assert!(notes.contains("already saved under a different company"));
@@ -607,9 +453,15 @@ mod pipeline_tests {
         let pool = test_pool().await;
         let jd = "Title: Backend Engineer\nSalary: €90,000\n\
                    Apply by sending your CV to recruiter88@gmail.com";
-        let job = job_paste_core(jd.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            jd.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
         assert_eq!(job.legitimacy_tier.as_deref(), Some("red"));
 
         sqlx::query(
@@ -647,9 +499,15 @@ mod pipeline_tests {
     async fn before_you_submit_round_trips_through_cache() {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer";
-        let job = job_paste_core(jd.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            jd.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
 
         let notes = serde_json::to_string(&vec![
             "Salary not listed - research market rate before applying.",
@@ -671,9 +529,15 @@ mod pipeline_tests {
     async fn reopening_cached_score_returns_notes_with_no_ai_call() {
         let pool = test_pool().await;
         let jd = "Company: Acme Robotics\nTitle: Backend Engineer";
-        let job = job_paste_core(jd.to_string(), None, None, &pool)
-            .await
-            .unwrap();
+        let job = job_paste_core(
+            jd.to_string(),
+            None,
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
 
         let notes =
             serde_json::to_string(&vec!["Posting is 95 days old - verify it's still open."])
@@ -693,5 +557,99 @@ mod pipeline_tests {
             reopened.before_you_submit_json.as_deref(),
             Some(notes.as_str())
         );
+    }
+
+    #[tokio::test]
+    async fn authoritative_values_beat_what_the_text_says() {
+        let pool = test_pool().await;
+        // The text names a different company and title. A caller reading
+        // structured fields off a job board is more reliable than any parse, so
+        // its values must survive.
+        let jd = "Company: Text Corp\nPosition: Text Engineer\nWe are hiring.";
+        let job = job_paste_core(
+            jd.to_string(),
+            Some("Board Engineer".to_string()),
+            Some("Board Corp".to_string()),
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(job.company.as_deref(), Some("Board Corp"));
+        assert_eq!(job.title.as_deref(), Some("Board Engineer"));
+    }
+
+    #[tokio::test]
+    async fn fallback_values_lose_to_what_the_text_says() {
+        let pool = test_pool().await;
+        // The page passes back what it already stored. Fresh extraction wins, so
+        // a title captured wrongly by an earlier parse is correctable.
+        let jd = "Company: Text Corp\nPosition: Text Engineer\nWe are hiring.";
+        let job = job_paste_core(
+            jd.to_string(),
+            Some("The Purpose:".to_string()),
+            Some("Stale Corp".to_string()),
+            IdentityPrecedence::Fallback,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(job.company.as_deref(), Some("Text Corp"));
+        assert_eq!(job.title.as_deref(), Some("Text Engineer"));
+    }
+
+    #[tokio::test]
+    async fn fallback_values_fill_a_gap_extraction_left() {
+        let pool = test_pool().await;
+        // A JD trimmed to its body names neither. Losing a title that was once
+        // correct because the user deleted the header would be worse than
+        // keeping it, so the passed value stands in.
+        let jd = "We are hiring.\nYou will do many things.";
+        let job = job_paste_core(
+            jd.to_string(),
+            Some("Senior Engineer".to_string()),
+            Some("Known Corp".to_string()),
+            IdentityPrecedence::Fallback,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(job.company.as_deref(), Some("Known Corp"));
+        assert_eq!(job.title.as_deref(), Some("Senior Engineer"));
+    }
+
+    #[tokio::test]
+    async fn reparsing_identical_text_in_fallback_mode_replaces_a_bad_title() {
+        let pool = test_pool().await;
+        // Same text, so the same jd_hash and the same row. The upsert used to
+        // keep whatever was stored, which made a wrong title permanent even
+        // after the extraction rules learned to reject it.
+        let jd = "Company: Acme Corp\nPosition: Backend Engineer\nWe are hiring.";
+        let first = job_paste_core(
+            jd.to_string(),
+            Some("The Purpose:".to_string()),
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
+        assert_eq!(first.title.as_deref(), Some("The Purpose:"));
+
+        let second = job_paste_core(
+            jd.to_string(),
+            Some("The Purpose:".to_string()),
+            None,
+            IdentityPrecedence::Fallback,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(second.id, first.id, "same text must reuse the same row");
+        assert_eq!(second.title.as_deref(), Some("Backend Engineer"));
     }
 }

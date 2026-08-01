@@ -70,6 +70,7 @@ import {
   CvContent,
   DocumentLibraryItem,
   parseArchetypes,
+  jobHeaderTitle,
   sanitizeSignature,
   parseProfileMd,
   compareCompensation,
@@ -1196,8 +1197,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (!job) return;
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
-      const headerTitle = [job.company, job.title].filter(Boolean).join(' - ');
-      this.pageTitle.set(headerTitle || this.t()('nav.jobs'));
+      this.pageTitle.set(jobHeaderTitle(job.company, job.title, this.t()));
       await this.loadCachedScore(id);
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;

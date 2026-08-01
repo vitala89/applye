@@ -70,7 +70,6 @@ import {
   CvContent,
   DocumentLibraryItem,
   parseArchetypes,
-  archetypeNames,
   sanitizeSignature,
   parseProfileMd,
   compareCompensation,
@@ -105,6 +104,7 @@ import {
 } from '../../shared/cover-letter-draft.service';
 import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
+import { JobIntakeService } from '../../shared/job-intake.service';
 
 @Component({
   selector: 'app-jobs',
@@ -135,6 +135,7 @@ import { JobActionsService } from '../../shared/job-actions.service';
     CoverLetterDraftService,
     LinkedDocumentsService,
     JobActionsService,
+    JobIntakeService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -151,6 +152,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly jobActions = inject(JobActionsService);
+  private readonly intake = inject(JobIntakeService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
@@ -269,7 +271,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * these names and writes through them. */
   readonly wizardOpen = this.wizardNav.open;
   readonly wizardInitialStep = this.wizardNav.initialStep;
-  readonly archetypeMatch = signal<boolean | null>(null);
+  readonly archetypeMatch = this.intake.archetypeMatch;
 
   // Job Detail: the application row (if this job is on the board) + action state.
   readonly application = signal<Application | null>(null);
@@ -1077,11 +1079,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly exportError = this.exportSvc.error;
   readonly lastExport = this.exportSvc.lastExport;
 
-  readonly parsing = signal(false);
+  readonly parsing = this.intake.parsing;
   readonly scoring = this.scoreSvc.running;
 
-  readonly parseStatus = signal('');
-  readonly parseError = signal(false);
+  readonly parseStatus = this.intake.status;
+  readonly parseError = this.intake.error;
   readonly scoreStatus = this.scoreSvc.status;
   readonly scoreError = this.scoreSvc.error;
 
@@ -1445,56 +1447,33 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   async parseAndFilter(): Promise<void> {
-    this.parsing.set(true);
-    this.parseStatus.set('');
-    this.parseError.set(false);
     // Preserve a company/title already known for this job (e.g. from Discover
     // or a prior parse) so re-parsing a header-less JD does not lose it and
     // wrongly report "No company name found".
-    const knownCompany = this.job()?.company ?? undefined;
-    const knownTitle = this.job()?.title ?? undefined;
+    const previous = this.job();
+    const p = this.profile();
     this.job.set(null);
     this.cache.set(null);
     this.scoreStale.set(false);
-    this.archetypeMatch.set(null);
     // Re-parsing means the JD (and therefore the score) changed - any earlier
     // tailoring for this job is now stale. Drop it so the Tailored badge and
     // Retailor state clear and the user re-tailors against the updated JD.
     this.editingLocked.set(false);
     this.resetWizard();
-    try {
-      const j = await this.db.jobPaste(this.jdText(), knownTitle, knownCompany);
-      this.job.set(j);
-      if (!j.hardFilterPassed) {
-        this.parseStatus.set('Hard filter failed - job blocked.');
-      } else {
-        this.parseStatus.set('');
-        // Check cache immediately if profile available
-        const p = this.profile();
-        if (p?.scoringHash && j.id) {
-          const cached = await this.db.scoreCacheGet(j.id, p.scoringHash);
-          if (cached) {
-            this.cache.set(cached);
-            this.fromCache.set(true);
-            this.scoreStale.set(false);
-            this.scoreStatus.set('Loaded from cache - 0 tokens used.');
-          }
-        }
-        // Layer-1 archetype overlap check (0 tokens, deterministic) - warn only, never blocks.
-        const match = await this.db.checkArchetypeMatch(
-          j.title ?? undefined,
-          j.jdText ?? '',
-          p?.targetArchetypes
-            ? JSON.stringify(archetypeNames(parseArchetypes(p.targetArchetypes)))
-            : undefined,
-        );
-        this.archetypeMatch.set(match);
-      }
-    } catch (e) {
-      this.parseStatus.set(`Failed: ${String(e)}`);
-      this.parseError.set(true);
-    } finally {
-      this.parsing.set(false);
+    const result = await this.intake.parse({
+      jdText: this.jdText(),
+      knownTitle: previous?.title ?? undefined,
+      knownCompany: previous?.company ?? undefined,
+      scoringHash: p?.scoringHash ?? undefined,
+      targetArchetypes: p?.targetArchetypes ?? undefined,
+    });
+    if (!result) return;
+    this.job.set(result.job);
+    if (result.cached) {
+      this.cache.set(result.cached);
+      this.fromCache.set(true);
+      this.scoreStale.set(false);
+      this.scoreStatus.set('Loaded from cache - 0 tokens used.');
     }
   }
 

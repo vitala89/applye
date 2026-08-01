@@ -1,0 +1,57 @@
+At PPRO, our mission is to simplify access to local payment methods and our vision is to enable the sale of goods and services to anyone in the world using their preferred way to pay. We empower partners such as Ant Group, PayPal and Stripe to access new markets, connect with more customers, and accelerate their growth.
+
+Our strength lies in our diverse global team with 50+ nationalities and 10+ international locations- all united around one goal - to deliver the best possible products and services to our partners and customers.
+
+The Purpose:
+
+At PPRO, our Frontend Platform team is transforming how our products are built and shipped.
+
+Staff Software Engineers drive PPRO's most significant decisions, leaving a lasting impact on our technical strategies, system landscape, and culture.
+
+What you'll do:
+Help establish company wide technical standards and share best practices for frontend architecture
+Design and evolve our micro frontend platform, including Module Federation setup
+Deliver large, cross-team/cross-domain projects and initiatives
+Own products and services end-to-end, from requirements till deployment
+Collaborate and grow in a dynamic and autonomous environment
+Be the technical lead of a team, and shape its culture and ways of working
+Drive frontend performance, reliability, and developer experience
+Use the latest technologies to solve real problems for our customers at a massive scale
+What we look for in you:
+Mindset & Approach: A results-oriented, collaborative professional.
+Technical Expertise: Deep hands-on experience in frontend engineering.
+Micro Frontend Architecture: A proven track record designing micro frontend systems.
+System Design: Experience designing scalable, high-availability frontend architectures.
+Cloud & Delivery: Strong familiarity with modern frontend build/deploy pipelines.
+Problem-Solving: Excellent analytical skills.
+Communication: Professional working proficiency in English.
+
+Some of the technologies you'll get to work with:
+React (latest versions), TypeScript
+Module Federation (Webpack 5 / Vite)
+Modern build tooling (Vite, Webpack)
+Design systems and shared component libraries
+Cloud-native systems (AWS, Kubernetes, Docker)
+CI/CD for independently deployed micro frontends
+What's in it for you ? :
+
+Hybrid working - We offer a hybrid structure with a 3 days / week on site expectation.
+
+Learning and Development - We offer an annual budget to support your professional growth.
+
+Insurance - Because better safe than sorry.
+
+Our Principles:
+
+We get things done: We are courageous.
+
+We act with trust and integrity: We listen first and challenge respectfully.
+
+We put the customer first: We are laser focused on delivering outstanding outcomes.
+
+We make things better: We boldly explore new ideas.
+
+We work as a team: We collaborate closely and value team success.
+
+Location - Brazil
+Company name - Elbrus

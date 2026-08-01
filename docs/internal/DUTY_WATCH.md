@@ -94,6 +94,13 @@ Before a watch can be marked complete:
 - **Next first action:** move the compensation/archetype derivations (`hasArchetypes`, the
   `compareCompensation`/`extractSalaryFromJd` computed) into `libs/core` as pure functions, or
   decide they are small enough to leave. Either way, say which and why in the next entry.
+- **Resolved in the same session:** they stay. `parseArchetypes`, `parseProfileMd`,
+  `compareCompensation` and `extractSalaryFromJd` are already pure functions in `libs/core` with
+  their own specs - 31 cases for compensation, plus `archetype.spec.ts` and
+  `profile-markdown.spec.ts`. The 19 lines on the page are `computed()` wiring that reads two page
+  signals and feeds the template. There is no logic left to lift, so extracting would add a hop and
+  no test seam. The earlier note that they "probably want to be functions in `libs/core`" was
+  written before anyone checked that they already were. That closes the named Tier 1 seam list.
 
 ### 2026-08-01, the last named seam, and a busy flag that would have split in two
 

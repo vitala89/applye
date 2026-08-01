@@ -157,8 +157,15 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   block. Job save/delete is `JobActionsService`, and the JD intake path - parse, status line, cache
   probe, archetype check - is `JobIntakeService`, which takes a snapshot in and returns a result out
   so the "the JD changed, so this is stale" resets stay with the page that owns them.
-  `jobs.component.ts` is **1532** lines. What is left is the compensation/archetype derivations, which
-  are small and pure and probably want to be functions in `libs/core` rather than a service. The work each
+  `jobs.component.ts` is **1532** lines. **The compensation/archetype derivations were examined and
+  deliberately left in place** - the earlier note that they "probably want to be functions in
+  `libs/core`" was wrong, because they already are: `parseArchetypes`, `parseProfileMd`,
+  `compareCompensation` and `extractSalaryFromJd` are pure and specced there (31 cases for
+  compensation alone), and the 19 lines on the page are signal wiring over them, not logic. Moving
+  wiring buys indirection and no test seam. That closes the list of named Tier 1 seams. What is
+  actually left is the tailoring/photo-prompt cluster - `startTailoringCoverLetter` and
+  `acceptPhotoPrompt` are the two largest bodies still on the page - and it is a different kind of
+  work: orchestration across services rather than a responsibility waiting to be lifted out. The work each
   step triggers stayed on the page deliberately, which is what makes the service testable without an
   AI call or a database: 16 tests where it had none. `jobs.component.html` is still byte-identical to
   `main` across all seven seams.

@@ -1,3 +1,16 @@
+/**
+ * What a caller's title/company are worth against what the job description text
+ * says, when pasting a job.
+ *
+ * `authoritative` - the passed values win. Used when they were read as
+ * structured fields from a job board, which beats parsing prose.
+ *
+ * `fallback` - extraction wins and the passed values only fill a gap it left.
+ * Used when the caller is handing back what was stored earlier, so a value
+ * captured wrongly by a previous parse does not outlive the text it came from.
+ */
+export type IdentityPrecedence = 'authoritative' | 'fallback';
+
 export interface Job {
   id: number;
   company?: string;

@@ -180,3 +180,13 @@
     background: #fff;
   }
 }
+
+/* Stands in for a company or job title the parser could not find. Dimmed and
+   italic, and it wins over the cell/label styles it sits on, so a placeholder
+   never reads as the posting's own words. Global because the same fallback is
+   rendered in the My Jobs table, the job card, and the delete confirm. */
+.identity-unknown {
+  color: var(--text-tertiary);
+  font-style: italic;
+  font-weight: var(--weight-regular, 400);
+}

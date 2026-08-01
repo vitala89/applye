@@ -12,6 +12,7 @@ pub mod followup_drafts;
 pub mod health;
 pub mod import;
 pub mod interview;
+pub mod job_identity;
 pub mod job_url;
 pub mod jobs;
 pub mod legitimacy;

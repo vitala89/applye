@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { DbService } from '@applye/data';
+import { DbService, JobSourceService } from '@applye/data';
 import { JobIntakeService } from './job-intake.service';
 
 describe('JobIntakeService', () => {
   let svc: JobIntakeService;
-  let pasteCalls: { jdText: string; title?: string; company?: string }[];
+  let pasteCalls: { jdText: string; title?: string; company?: string; precedence?: string }[];
   let cacheCalls: { jobId: number; hash: string }[];
   let archetypeCalls: { title?: string; jdText: string; archetypesJson?: string }[];
   let pasteFails: boolean;
@@ -21,10 +21,12 @@ describe('JobIntakeService', () => {
     cachedScore = null;
     archetypeResult = true;
 
-    const db = {
-      jobPaste: (jdText: string, title?: string, company?: string) => {
+    // Two fakes, because the parse itself moved to JobSourceService while the
+    // cache probe and the archetype check stayed on DbService.
+    const source = {
+      jobPaste: (jdText: string, title?: string, company?: string, precedence?: string) => {
         if (pasteFails) return Promise.reject(new Error('parse blew up'));
-        pasteCalls.push({ jdText, title, company });
+        pasteCalls.push({ jdText, title, company, precedence });
         return Promise.resolve({
           id: 7,
           title: title ?? 'Parsed Title',
@@ -33,6 +35,9 @@ describe('JobIntakeService', () => {
           hardFilterPassed,
         });
       },
+    };
+
+    const db = {
       scoreCacheGet: (jobId: number, hash: string) => {
         cacheCalls.push({ jobId, hash });
         return Promise.resolve(cachedScore);
@@ -44,7 +49,11 @@ describe('JobIntakeService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [JobIntakeService, { provide: DbService, useValue: db }],
+      providers: [
+        JobIntakeService,
+        { provide: DbService, useValue: db },
+        { provide: JobSourceService, useValue: source },
+      ],
     });
     svc = TestBed.inject(JobIntakeService);
   });
@@ -54,7 +63,12 @@ describe('JobIntakeService', () => {
 
     expect(result?.job.id).toBe(7);
     expect(pasteCalls).toEqual([
-      { jdText: 'Senior Angular dev', title: undefined, company: undefined },
+      {
+        jdText: 'Senior Angular dev',
+        title: undefined,
+        company: undefined,
+        precedence: 'fallback',
+      },
     ]);
     expect(svc.parsing()).toBe(false);
     expect(svc.status()).toBe('');
@@ -72,6 +86,7 @@ describe('JobIntakeService', () => {
       jdText: 'no header here',
       title: 'Known Title',
       company: 'Known Co',
+      precedence: 'fallback',
     });
   });
 
@@ -142,5 +157,13 @@ describe('JobIntakeService', () => {
 
     expect(svc.error()).toBe(false);
     expect(svc.status()).toBe('');
+  });
+
+  it('parses in fallback mode so a wrongly captured title can be corrected', async () => {
+    // The values it passes are the job's own, from an earlier parse. If they
+    // outranked the text, a bad title would be handed back to itself forever.
+    await svc.parse({ jdText: 'jd', knownTitle: 'The Purpose:' });
+
+    expect(pasteCalls[0].precedence).toBe('fallback');
   });
 });

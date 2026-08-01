@@ -147,6 +147,18 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   / 856 tests. The maintainer confirmed #235 visually in `desktop:dev` - that is the only way those
   rings can be checked, since the CV detail page needs a document over Tauri IPC. The duplicate-row
   consequence of #233 is **deferred by decision, not resolved** - see the entry above.
+- **A pasted job description now names its company and role, or says so plainly.** A posting headed
+  `Company name - Elbrus` used to report "No company name found" and take `The Purpose:` - a section
+  heading - as its title, with no way to correct either. Extraction lives in
+  `apps/desktop/src-tauri/src/commands/job_identity.rs` (18 tests): wider labels, six separators, and
+  a title candidate rejected when it is a section heading or carries no role word. Returning nothing
+  is a valid answer now, because an empty field renders as a dimmed placeholder in six locales rather
+  than a hole - and nothing is written to the database, since the duplicate and legitimacy checks
+  compare companies to each other. `job_paste` takes an `IdentityPrecedence`: `authoritative` for the
+  "From link" fetch, `fallback` for a re-parse, where fresh extraction wins. The same staleness sat
+  one level down in the upsert's `ON CONFLICT` and was fixed with it. AI-assisted identification for
+  postings that name neither is specified but not built, in
+  `docs/superpowers/specs/2026-08-01-job-identity-extraction-design.md`.
 - **The jobs page is down to twelve seams extracted, and the document-drafts region is finished.** Wizard navigation - open/closed, the step
   index, the saved mid-flow progress, the cross-job confirm - is now `WizardNavService`, and
   `jobs.component.ts` is **1612** non-empty lines, from 2788 where the split started. Seams eight

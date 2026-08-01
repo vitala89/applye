@@ -659,6 +659,8 @@ export const de: TranslationMap = {
     paste_title: 'Stellenbeschreibung einfügen',
     paste_placeholder: 'Vollständige Stellenbeschreibung hier einfügen…',
     parse_btn: 'Analysieren & filtern',
+    company_unknown: 'Firma nicht erkannt',
+    title_unknown: 'Position nicht erkannt',
     parsing: 'Analysiere…',
     hard_filter_failed: 'Vorauswahl gescheitert',
     hard_filter_msg: 'Ausschlussmerkmal erkannt (Visum / Standort). Keine KI-Token verwendet.',

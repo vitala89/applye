@@ -650,6 +650,8 @@ export const en: TranslationMap = {
     paste_title: 'Paste job description',
     paste_placeholder: 'Paste the full job description here…',
     parse_btn: 'Parse & filter',
+    company_unknown: 'Company not identified',
+    title_unknown: 'Untitled role',
     parsing: 'Parsing…',
     hard_filter_failed: 'Hard filter failed',
     hard_filter_msg: 'Disqualifying phrase detected (visa / location). No AI tokens used.',

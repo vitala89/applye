@@ -673,6 +673,21 @@ export const uk: TranslationMap = stub(en, {
     unsaved_stay: 'Залишитися',
     unsaved_leave: 'Все одно піти',
     title_unknown: 'Посаду не визначено',
+    identity_title: 'Вкажіть вакансію',
+    identity_ask_both:
+      'У тексті немає ні компанії, ні посади в читабельному вигляді. Впишіть те, що знаєте.',
+    identity_ask_company:
+      'У тексті не названо роботодавця. Можливо, вакансію розмістив майданчик від імені партнера, якого не назвали. Впишіть компанію, якщо знаєте її.',
+    identity_ask_title: 'У тексті немає посади в читабельному вигляді. Впишіть її, якщо знаєте.',
+    identity_company_label: 'Компанія',
+    identity_company_ph: 'Назва роботодавця',
+    identity_title_label: 'Посада',
+    identity_title_ph: 'наприклад, Backend Engineer',
+    identity_skip: 'Пропустити',
+    identity_skip_hint: 'Пропуск залишить заповнювачі і більше не питатиме про цю вакансію.',
+    identity_inferred: 'визначено ШІ',
+    identity_inferred_hint: 'Визначено ШІ за текстом вакансії, а не процитовано з нього.',
+    identity_name_it: 'Вказати вручну',
     parsing: 'Розбираємо…',
     hard_filter_failed: 'Жорсткий фільтр не пройдено',
     hard_filter_msg:

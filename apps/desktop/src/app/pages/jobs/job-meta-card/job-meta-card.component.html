@@ -1,0 +1,51 @@
+<div class="job-meta">
+  <div class="job-meta__info">
+    <span class="job-meta__company" [class.identity-unknown]="!job().company">
+      {{ job().company || t()('jobs.company_unknown') }}
+      @if (companyInferred()) {
+        <span class="job-meta__inferred" [title]="t()('jobs.identity_inferred_hint')">{{
+          t()('jobs.identity_inferred')
+        }}</span>
+      }
+    </span>
+    <span class="job-meta__title" [class.identity-unknown]="!job().title">
+      {{ job().title || t()('jobs.title_unknown') }}
+      @if (titleInferred()) {
+        <span class="job-meta__inferred" [title]="t()('jobs.identity_inferred_hint')">{{
+          t()('jobs.identity_inferred')
+        }}</span>
+      }
+    </span>
+    <span class="job-meta__hash">{{ (job().jdHash ?? '').slice(0, 12) }}</span>
+  </div>
+  <div class="job-meta__badges">
+    <button class="job-meta__name-it" type="button" (click)="nameIt()">
+      {{ t()('jobs.identity_name_it') }}
+    </button>
+    <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
+    @if (hasArchetypes() && archetypeMatch() === false) {
+      <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>
+    }
+    @if (job().legitimacyTier === 'yellow') {
+      <span class="badge badge--warn">{{ t()('jobs.legitimacy_yellow') }}</span>
+    }
+    @if (job().legitimacyTier === 'red') {
+      <span class="badge badge--danger">{{ t()('jobs.legitimacy_red') }}</span>
+    }
+  </div>
+</div>
+@if (hasCompTarget()) {
+  <span class="comp-chip__wrap">
+    <span class="comp-chip__label">{{ t()('profile.section_compensation') }}</span>
+    @if (compVerdict() === 'unknown') {
+      <span class="comp-chip comp-chip--muted">{{ t()('comp.not_stated') }}</span>
+    } @else {
+      <span
+        class="comp-chip"
+        [class.comp-chip--good]="compVerdict() !== 'below'"
+        [class.comp-chip--warn]="compVerdict() === 'below'"
+        >{{ compBadgeLabel() }}</span
+      >
+    }
+  </span>
+}

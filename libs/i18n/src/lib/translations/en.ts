@@ -657,6 +657,22 @@ export const en: TranslationMap = {
     unsaved_stay: 'Stay here',
     unsaved_leave: 'Leave anyway',
     title_unknown: 'Untitled role',
+    identity_title: 'Name this job',
+    identity_ask_both:
+      'This posting does not state the company or the role clearly enough to read them off. Fill in what you know.',
+    identity_ask_company:
+      'This posting does not name the employer. It may be listed by a platform on behalf of an unnamed partner. Fill it in if you know it.',
+    identity_ask_title:
+      'This posting does not state the role clearly enough to read it off. Fill it in if you know it.',
+    identity_company_label: 'Company',
+    identity_company_ph: 'Employer name',
+    identity_title_label: 'Role',
+    identity_title_ph: 'e.g. Backend Engineer',
+    identity_skip: 'Skip',
+    identity_skip_hint: 'Skipping keeps the placeholders and does not ask again for this job.',
+    identity_inferred: 'inferred',
+    identity_inferred_hint: 'Named by AI from the posting, not quoted from it.',
+    identity_name_it: 'Name it yourself',
     parsing: 'Parsing…',
     hard_filter_failed: 'Hard filter failed',
     hard_filter_msg: 'Disqualifying phrase detected (visa / location). No AI tokens used.',

@@ -1,0 +1,51 @@
+@if (request(); as req) {
+  <div
+    class="modal-backdrop"
+    (click)="onBackdropClick($event)"
+    (keydown.escape)="prompt.skip()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="t()('jobs.identity_title')"
+    >
+      <div class="modal-alert">
+        <lucide-icon [img]="askIcon" [size]="16" class="modal-alert__icon" aria-hidden="true" />
+        <div class="modal-alert__body">
+          <h3>{{ t()('jobs.identity_title') }}</h3>
+          <p class="modal__hint">{{ message() }}</p>
+        </div>
+      </div>
+      <label class="modal__field">
+        <span class="modal__label">{{ t()('jobs.identity_company_label') }}</span>
+        <input
+          type="text"
+          [value]="company()"
+          (input)="onCompanyInput($event)"
+          [placeholder]="t()('jobs.identity_company_ph')"
+        />
+      </label>
+      <label class="modal__field">
+        <span class="modal__label">{{ t()('jobs.identity_title_label') }}</span>
+        <input
+          type="text"
+          [value]="title()"
+          (input)="onTitleInput($event)"
+          [placeholder]="t()('jobs.identity_title_ph')"
+        />
+      </label>
+      <p class="modal__hint">{{ t()('jobs.identity_skip_hint') }}</p>
+      <div class="modal__actions">
+        <button class="btn btn--secondary btn--md" type="button" (click)="prompt.skip()">
+          {{ t()('jobs.identity_skip') }}
+        </button>
+        <button class="btn btn--primary btn--md" type="button" (click)="save()">
+          {{ t()('actions.save') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

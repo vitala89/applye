@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DbService, JobSourceService } from '@applye/data';
 import { JobIntakeService } from './job-intake.service';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 describe('JobIntakeService', () => {
   let svc: JobIntakeService;
@@ -17,6 +18,7 @@ describe('JobIntakeService', () => {
   let hardFilterPassed: boolean;
   let cachedScore: Record<string, unknown> | null;
   let archetypeResult: boolean;
+  let resolveCalls: number[];
 
   beforeEach(() => {
     pasteCalls = [];
@@ -26,6 +28,7 @@ describe('JobIntakeService', () => {
     hardFilterPassed = true;
     cachedScore = null;
     archetypeResult = true;
+    resolveCalls = [];
 
     // Two fakes, because the parse itself moved to JobSourceService while the
     // cache probe and the archetype check stayed on DbService.
@@ -60,11 +63,22 @@ describe('JobIntakeService', () => {
       },
     };
 
+    // The identify-then-ask chain is its own service and has its own spec.
+    // Here it only has to be observable: the parse must hand it the job and
+    // return what it hands back.
+    const identity = {
+      resolve: (job: { id: number }) => {
+        resolveCalls.push(job.id);
+        return Promise.resolve({ ...job, company: 'Named By Chain' });
+      },
+    };
+
     TestBed.configureTestingModule({
       providers: [
         JobIntakeService,
         { provide: DbService, useValue: db },
         { provide: JobSourceService, useValue: source },
+        { provide: JobIdentityResolverService, useValue: identity },
       ],
     });
     svc = TestBed.inject(JobIntakeService);
@@ -177,6 +191,24 @@ describe('JobIntakeService', () => {
     await svc.parse({ jdText: 'jd', previous: { id: 1, title: 'The Purpose:' } });
 
     expect(pasteCalls[0].precedence).toBe('fallback');
+  });
+
+  it('runs the identification chain on the same press of Parse and filter', async () => {
+    // The AI step and the dialog are not behind their own buttons: they run
+    // when the rules missed, which is the only time they would be worth
+    // pressing.
+    const result = await svc.parse({ jdText: 'jd' });
+
+    expect(resolveCalls).toEqual([7]);
+    expect(result?.job.company).toBe('Named By Chain');
+  });
+
+  it('does not try to name a job the hard filter blocked', async () => {
+    hardFilterPassed = false;
+
+    await svc.parse({ jdText: 'jd' });
+
+    expect(resolveCalls).toEqual([]);
   });
 
   it('names the job being re-parsed so an edit does not fork it', async () => {

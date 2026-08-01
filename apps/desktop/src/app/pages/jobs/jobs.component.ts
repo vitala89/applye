@@ -72,10 +72,6 @@ import {
   parseArchetypes,
   jobHeaderTitle,
   sanitizeSignature,
-  parseProfileMd,
-  compareCompensation,
-  extractSalaryFromJd,
-  CompensationVerdict,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
@@ -106,6 +102,7 @@ import {
 import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
+import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 
 @Component({
   selector: 'app-jobs',
@@ -118,6 +115,7 @@ import { JobIntakeService } from '../../shared/job-intake.service';
     UpdatedScoreView,
     SkeletonCard,
     CvGapDialog,
+    JobMetaCardComponent,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
@@ -1548,30 +1546,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   hasArchetypes(): boolean {
     return parseArchetypes(this.profile()?.targetArchetypes).length > 0;
-  }
-
-  /** Profile compensation target parsed from the loaded profile markdown. */
-  protected readonly compTarget = computed(() => {
-    const cf = parseProfileMd(this.profile()?.fullMd ?? '');
-    return { min: cf.compMin, max: cf.compMax, currency: cf.compCurrency, period: cf.compPeriod };
-  });
-
-  /** True when the user has a compensation target to compare against. */
-  protected readonly hasCompTarget = computed(
-    () => !!(this.compTarget().min || this.compTarget().max),
-  );
-
-  /** Salary-fit verdict for this job's JD text vs the profile target. */
-  protected readonly compVerdict = computed<CompensationVerdict>(() =>
-    compareCompensation(this.compTarget(), extractSalaryFromJd(this.jdText())),
-  );
-
-  protected compBadgeLabel(): string {
-    const v = this.compVerdict();
-    if (v === 'above') return this.t()('comp.badge_above');
-    if (v === 'within') return this.t()('comp.badge_within');
-    if (v === 'below') return this.t()('comp.badge_below');
-    return this.t()('comp.not_stated');
   }
 
   // ── Tailoring wizard ────────────────────────────────────────────────────────

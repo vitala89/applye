@@ -666,6 +666,23 @@ export const de: TranslationMap = {
     unsaved_stay: 'Hier bleiben',
     unsaved_leave: 'Trotzdem verlassen',
     title_unknown: 'Position nicht erkannt',
+    identity_title: 'Diese Stelle benennen',
+    identity_ask_both:
+      'Die Anzeige nennt weder die Firma noch die Position klar genug, um sie auszulesen. Tragen Sie ein, was Sie wissen.',
+    identity_ask_company:
+      'Die Anzeige nennt den Arbeitgeber nicht. Moeglicherweise wurde sie von einer Plattform im Auftrag eines nicht genannten Partners veroeffentlicht. Tragen Sie sie ein, wenn Sie sie kennen.',
+    identity_ask_title:
+      'Die Anzeige nennt die Position nicht klar genug, um sie auszulesen. Tragen Sie sie ein, wenn Sie sie kennen.',
+    identity_company_label: 'Firma',
+    identity_company_ph: 'Name des Arbeitgebers',
+    identity_title_label: 'Position',
+    identity_title_ph: 'z. B. Backend Engineer',
+    identity_skip: 'Ueberspringen',
+    identity_skip_hint:
+      'Ueberspringen behaelt die Platzhalter und fragt bei dieser Stelle nicht erneut.',
+    identity_inferred: 'abgeleitet',
+    identity_inferred_hint: 'Von der KI aus der Anzeige abgeleitet, nicht daraus zitiert.',
+    identity_name_it: 'Selbst benennen',
     parsing: 'Analysiere…',
     hard_filter_failed: 'Vorauswahl gescheitert',
     hard_filter_msg: 'Ausschlussmerkmal erkannt (Visum / Standort). Keine KI-Token verwendet.',

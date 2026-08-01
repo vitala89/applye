@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
-import { FetchedJob, IdentityPrecedence, Job, UrlClassification } from '@applye/core';
+import {
+  FetchedJob,
+  IdentityPrecedence,
+  IdentitySource,
+  Job,
+  UrlClassification,
+} from '@applye/core';
 import { tauriInvoke } from '../tauri.invoke';
 
 /**
@@ -32,6 +38,36 @@ export class JobSourceService {
     jobId?: number,
   ): Promise<Job> {
     return tauriInvoke<Job>('job_paste', { jdText, title, company, precedence, jobId });
+  }
+
+  /**
+   * Write a job's company and title, and where each came from.
+   *
+   * Used by the AI identification step (`inferred`) and by the dialog that asks
+   * the user (`user`). It updates the job row's identity columns only - the JD
+   * text and its hash are untouched, so naming a company cannot fork the job or
+   * invalidate the score cached against its description.
+   */
+  jobSetIdentity(
+    jobId: number,
+    title: string | undefined,
+    company: string | undefined,
+    titleSource: IdentitySource | undefined,
+    companySource: IdentitySource | undefined,
+  ): Promise<Job> {
+    return tauriInvoke<Job>('job_set_identity', {
+      jobId,
+      title,
+      company,
+      titleSource,
+      companySource,
+    });
+  }
+
+  /** Records that the user declined to name this job, so the dialog does not
+   * come back on the next parse. */
+  jobSkipIdentityPrompt(jobId: number): Promise<void> {
+    return tauriInvoke<void>('job_skip_identity_prompt', { jobId });
   }
 
   /** 0-token allowlist check: is this URL an open/ATS source, or a closed board? */

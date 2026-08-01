@@ -198,44 +198,14 @@
           </div>
         } @else {
           <div class="card">
-            <div class="job-meta">
-              <div class="job-meta__info">
-                <span class="job-meta__company" [class.identity-unknown]="!j.company">{{
-                  j.company || t()('jobs.company_unknown')
-                }}</span>
-                <span class="job-meta__title" [class.identity-unknown]="!j.title">{{
-                  j.title || t()('jobs.title_unknown')
-                }}</span>
-                <span class="job-meta__hash">{{ (j.jdHash ?? '').slice(0, 12) }}</span>
-              </div>
-              <div class="job-meta__badges">
-                <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
-                @if (hasArchetypes() && archetypeMatch() === false) {
-                  <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>
-                }
-                @if (j.legitimacyTier === 'yellow') {
-                  <span class="badge badge--warn">{{ t()('jobs.legitimacy_yellow') }}</span>
-                }
-                @if (j.legitimacyTier === 'red') {
-                  <span class="badge badge--danger">{{ t()('jobs.legitimacy_red') }}</span>
-                }
-              </div>
-            </div>
-            @if (hasCompTarget()) {
-              <span class="comp-chip__wrap">
-                <span class="comp-chip__label">{{ t()('profile.section_compensation') }}</span>
-                @if (compVerdict() === 'unknown') {
-                  <span class="comp-chip comp-chip--muted">{{ t()('comp.not_stated') }}</span>
-                } @else {
-                  <span
-                    class="comp-chip"
-                    [class.comp-chip--good]="compVerdict() !== 'below'"
-                    [class.comp-chip--warn]="compVerdict() === 'below'"
-                    >{{ compBadgeLabel() }}</span
-                  >
-                }
-              </span>
-            }
+            <app-job-meta-card
+              [job]="j"
+              [profileMd]="profile()?.fullMd ?? ''"
+              [jdText]="jdText()"
+              [hasArchetypes]="hasArchetypes()"
+              [archetypeMatch]="archetypeMatch()"
+              (identityChanged)="job.set($event)"
+            />
             @if (!hasArchetypes()) {
               <p class="status">{{ t()('jobs.define_archetype_prompt') }}</p>
             }

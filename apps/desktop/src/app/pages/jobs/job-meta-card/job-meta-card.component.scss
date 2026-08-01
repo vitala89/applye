@@ -1,0 +1,97 @@
+.job-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.job-meta__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.job-meta__company {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+.job-meta__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.job-meta__hash {
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+  color: var(--text-quaternary, var(--text-tertiary));
+}
+.job-meta__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Salary-fit chip */
+.comp-chip__wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.comp-chip__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.comp-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+}
+.comp-chip--good {
+  color: var(--success);
+  background: var(--surface-sunken);
+}
+.comp-chip--warn {
+  color: var(--warning);
+  background: var(--surface-sunken);
+}
+.comp-chip--muted {
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+}
+
+/* The AI named this rather than reading it, so it is marked instead of quoted -
+   the same restraint as the placeholder, which is dimmed and italic. */
+.job-meta__inferred {
+  margin-left: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  cursor: help;
+}
+
+/* The way back after a Skip. Quiet: it is an offer, not an instruction. */
+.job-meta__name-it {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+  }
+}

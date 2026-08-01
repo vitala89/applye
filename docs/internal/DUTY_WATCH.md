@@ -44,7 +44,72 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-02 (latest), five fixes on one screen, two of which my own tests should have caught
+### 2026-08-02, job identity part B: AI names it, then the user does
+
+- **Status:** complete, native gate pending
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `feat/job-identity-part-b`, from `main` (`825fa74`)
+- **Commits:** one
+- **Pull request:** not yet opened
+- **Objective:** implement `docs/superpowers/specs/2026-08-02-job-identity-part-b-design.md` -
+  one press of Parse & filter runs the deterministic rules, then one `job-identify` call if they
+  missed, then a dialog if that missed too.
+- **Completed:**
+  - migration `0028_job_identity_sources.sql`: `title_source`, `company_source`,
+    `identity_prompt_skipped`. Additive, no backfill, checksum pinned in `db.rs`;
+  - `commands/job_identity_source.rs`: `IdentitySource`, the re-parse resolution rules,
+    `job_set_identity` and `job_skip_identity_prompt`. New module rather than growth in
+    `job_identity.rs` (pure text rules) or `job_paste.rs` (the pipeline), because it is the only
+    piece that needs both the stored row and the fresh text;
+  - `job_paste.rs` now loads the stored identity, resolves both fields against it, and writes the
+    sources. The `prefer_fresh` CASE in the upsert went away: the values are already resolved in
+    Rust, so the SQL writes them outright;
+  - `libs/skills/src/job-identify/job-identify.md`, registered in `ai/skills.rs`, economy model,
+    strict JSON, with the platform-is-not-the-employer and unnamed-partner rules pinned by tests;
+  - `JobIdentityResolverService` runs the chain from `JobIntakeService.parse`;
+  - `JobIdentityPromptComponent` mounted at the shell beside `UnsavedJobPromptComponent`;
+  - `JobMetaCardComponent` extracted from the jobs page to host the inferred marker and the
+    "Name it yourself" button - both page files were over budget and could not grow;
+  - 13 keys in all six locales.
+- **Not completed:** the native pass. Migration `0028` applying, the live `job-identify` call, and
+  the dialog on screen all need `tauri dev`, which this watch does not run. The maintainer has a
+  step-by-step scenario in the handover message.
+- **Files or packages changed:** `apps/desktop/src-tauri` (migration, `db.rs`, `lib.rs`,
+  `commands/{mod,jobs,job_paste,job_identity_source}.rs`, `ai/skills.rs`), `libs/skills`,
+  `libs/core` (`job.model.ts`), `libs/data` (`job-source.service.ts`), `libs/i18n` (six locales),
+  `apps/desktop/src/app` (shell layout, jobs page, `job-meta-card`, `job-identity-prompt`,
+  `job-identity-resolver.service.ts`, `job-intake.service.ts`).
+- **Validation, all run and observed:** `npm run type-check`, `npm test` (958 desktop tests, 61
+  suites, all six projects green), `npm run lint` (0 errors, 8 pre-existing warnings, none in new
+  files), `cargo test --lib` (338 pass), `cargo clippy --all-targets -- -D warnings`,
+  `cargo fmt --check`, `npm run quality:file-size` (passed), `npm run quality:attribution`,
+  `npm run format:check`, `npm run verify:csp`, `git diff --check`, `npx nx build desktop`.
+- **Every new rule was checked against a deliberately broken build.** Disabling the `user` rule fails
+  4 tests; disabling the `inferred` arm fails 2; disabling the skip check fails 1; removing the
+  provider-configured guard fails 1. Two fixtures assert the property the test depends on - that the
+  posting extracts no company, and that it extracts no title - because a green test on an
+  unrepresentative fixture has already shipped a bug in this exact code.
+- **Privacy/security impact:** the AI step sends the pasted job description to the configured
+  provider, which is the same text `job-scoring` and the tailoring passes already send, on the same
+  configured provider and key. Nothing new leaves the machine. Skipped entirely when no provider key
+  is stored, so a user who has not set up AI never makes the call.
+- **Decisions and assumptions:**
+  - the "no provider configured" check is `hasProviderKey` in API mode only. In CLI mode the bridge
+    binary is the credential and probing it costs a process spawn per parse, so the call is attempted
+    and its failure falls through to the dialog, which is the same user-visible outcome;
+  - a field the user leaves blank in the dialog keeps whatever source it had. Leaving it empty is not
+    a claim about it;
+  - `askAgain` is `resolve` with the skip cleared, so the button beside the placeholder re-runs the
+    AI step too rather than jumping straight to the dialog.
+- **Risks or compatibility impact:** the upsert's authoritative branch was re-expressed in Rust as
+  `stored.or(passed).or(extracted)`, which is what the old `COALESCE(NULLIF(jobs.company, ''), ...)`
+  did. Existing `job_paste` tests cover both branches and still pass.
+- **Open issues or blockers:** unchanged from the previous watch - unclaimed jobs accumulate as
+  invisible rows, and `dashboard.component.ts:270` still loses the name of an unclaimed job.
+- **Next first action:** open the PR, then run the native scenario in `tauri dev`.
+- **Evidence:** command output above, in this session's transcript.
+
+### 2026-08-02, five fixes on one screen, two of which my own tests should have caught
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

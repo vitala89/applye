@@ -24,6 +24,14 @@ pub struct Job {
     pub discover_shown_at: Option<String>,
     pub tech_stack: Option<String>,
     pub created_at: Option<String>,
+    /// Where `title` / `company` came from: `extracted`, `inferred`, `user`, or
+    /// NULL for a row parsed before those were recorded. See
+    /// `job_identity_source::IdentitySource`.
+    pub title_source: Option<String>,
+    pub company_source: Option<String>,
+    /// The user was asked to name a missing field and chose Skip, so the dialog
+    /// stays closed on every later parse of this job.
+    pub identity_prompt_skipped: Option<bool>,
 }
 
 /// Payload from the frontend. `jd_hash` is intentionally NOT accepted - it is

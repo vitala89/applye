@@ -63,6 +63,9 @@ fn skill_source(name: &str) -> Option<&'static str> {
         "star-r" => Some(include_str!(
             "../../../../../libs/skills/src/star-r/star-r.md"
         )),
+        "job-identify" => Some(include_str!(
+            "../../../../../libs/skills/src/job-identify/job-identify.md"
+        )),
         _ => None,
     }
 }
@@ -230,10 +233,66 @@ mod tests {
         );
     }
 
+    /// The posting that defines the problem: the employer is "a partner
+    /// company", unnamed, while `Jobgether` - the matching platform - appears
+    /// throughout. A model that names it produces a cover letter opening "I am
+    /// excited to apply to Jobgether", confidently and in the user's name.
+    ///
+    /// The verdict itself needs a live model, so what is pinned here is the
+    /// instruction that produces it: the posting reaches the prompt, and the
+    /// prompt tells the model that a platform is not the employer and that a
+    /// posting listed on behalf of an unnamed partner has no company. Without
+    /// those two rules in the text, nothing stops the wrong answer.
+    #[test]
+    fn job_identify_forbids_naming_the_platform_as_the_employer() {
+        let posting = "This position is listed on behalf of a partner company, who \
+manages all applications and next steps. Our partner is looking for an \
+AI-Native Software Developer based in Germany. Jobgether matches you to it.";
+        let r = render("job-identify", &ctx(&[("job_description", posting)])).unwrap();
+        let prompt = format!("{}{}", r.system_prompt, r.user_prompt);
+
+        assert!(
+            prompt.contains("Jobgether"),
+            "the posting must reach the prompt"
+        );
+        for rule in [
+            "not the job board",
+            "not the matching platform",
+            "not the recruiting",
+            "on behalf of a partner",
+            "Not naming a company is a correct answer",
+        ] {
+            assert!(prompt.contains(rule), "the prompt lost the rule: {rule}");
+        }
+    }
+
+    /// The other half of the same skill: a title stated in prose is in scope,
+    /// and the answer is the role as a CV would write it rather than the
+    /// sentence it was lifted from.
+    #[test]
+    fn job_identify_asks_for_a_title_drawn_from_prose() {
+        let r = render("job-identify", &ctx(&[("job_description", "x")])).unwrap();
+        assert!(r.system_prompt.contains("mid-sentence in prose"));
+        assert!(r
+            .system_prompt
+            .contains("as a person would write it on a CV"));
+        // Null is a first-class answer for both fields, or the model fills the
+        // gap with the nearest proper noun it can see.
+        assert!(r.system_prompt.contains("Both may be null."));
+    }
+
+    /// The cheap tier, as `ping` uses: one posting in, two short strings out.
+    #[test]
+    fn job_identify_runs_on_the_economy_model() {
+        let r = render("job-identify", &ctx(&[("job_description", "x")])).unwrap();
+        assert_eq!(r.recommended_model.as_deref(), Some("claude-haiku-4-5"));
+    }
+
     #[test]
     fn every_registered_skill_renders() {
         for name in [
             "cv-import",
+            "job-identify",
             "onboarding-archetypes",
             "cv-generate-baseline",
             "cover-letter-generate",

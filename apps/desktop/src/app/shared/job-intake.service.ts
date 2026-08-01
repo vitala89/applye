@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Job, ScoringCache, archetypeNames, parseArchetypes } from '@applye/core';
 import { DbService, JobSourceService } from '@applye/data';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 /** Everything a parse run reads, snapshotted by the caller at click time. */
 export interface JobIntakeInput {
@@ -48,6 +49,7 @@ export interface JobIntakeResult {
 export class JobIntakeService {
   private readonly db = inject(DbService);
   private readonly source = inject(JobSourceService);
+  private readonly identity = inject(JobIdentityResolverService);
 
   /** Writable so the page can alias them onto the template. */
   readonly parsing = signal(false);
@@ -72,13 +74,18 @@ export class JobIntakeService {
       // fresh extraction wins and the old values only fill a gap it left. The
       // alternative made a title captured wrongly by an earlier parse permanent,
       // because the page handed it straight back on every re-parse.
-      const job = await this.source.jobPaste(
+      const parsed = await this.source.jobPaste(
         input.jdText,
         input.previous?.title,
         input.previous?.company,
         'fallback',
         input.previous?.id,
       );
+      // Same press of Parse & filter: the rules have had their turn, so
+      // anything still unnamed goes to one AI call and then, if needed, to the
+      // user. A blocked job is not worth naming, so this stays after the
+      // hard-filter check for that case only.
+      const job = parsed.hardFilterPassed ? await this.identity.resolve(parsed) : parsed;
       if (!job.hardFilterPassed) {
         this.status.set('Hard filter failed - job blocked.');
         return { job, cached: null };

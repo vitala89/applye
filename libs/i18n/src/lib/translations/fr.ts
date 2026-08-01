@@ -679,6 +679,23 @@ export const fr: TranslationMap = stub(en, {
     unsaved_stay: 'Rester ici',
     unsaved_leave: 'Partir quand meme',
     title_unknown: 'Poste non identifie',
+    identity_title: 'Identifier cette offre',
+    identity_ask_both:
+      'Cette offre ne donne ni la societe ni le poste de maniere assez claire pour les lire. Renseignez ce que vous savez.',
+    identity_ask_company:
+      'Cette offre ne nomme pas employeur. Elle est peut-etre publiee par une plateforme pour le compte un partenaire non nomme. Renseignez-la si vous la connaissez.',
+    identity_ask_title:
+      'Cette offre ne donne pas le poste de maniere assez claire pour le lire. Renseignez-le si vous le connaissez.',
+    identity_company_label: 'Societe',
+    identity_company_ph: 'Nom de employeur',
+    identity_title_label: 'Poste',
+    identity_title_ph: 'ex. Backend Engineer',
+    identity_skip: 'Ignorer',
+    identity_skip_hint:
+      'Ignorer conserve les mentions provisoires et ne repose plus la question pour cette offre.',
+    identity_inferred: 'deduit',
+    identity_inferred_hint: 'Deduit par IA a partir de offre, et non cite de celle-ci.',
+    identity_name_it: 'Le renseigner vous-meme',
     parsing: 'Analyse…',
     hard_filter_failed: 'Filtre strict non passé',
     hard_filter_msg: 'Formulation disqualifiante détectée (visa / lieu). Aucun jeton IA utilisé.',

@@ -155,10 +155,27 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   is a valid answer now, because an empty field renders as a dimmed placeholder in six locales rather
   than a hole - and nothing is written to the database, since the duplicate and legitimacy checks
   compare companies to each other. `job_paste` takes an `IdentityPrecedence`: `authoritative` for the
-  "From link" fetch, `fallback` for a re-parse, where fresh extraction wins. The same staleness sat
-  one level down in the upsert's `ON CONFLICT` and was fixed with it. AI-assisted identification for
-  postings that name neither is specified but not built, in
-  `docs/superpowers/specs/2026-08-01-job-identity-extraction-design.md`.
+  "From link" fetch, `fallback` for a re-parse, where fresh extraction wins. **It took three passes to actually close.**
+  The first shipped with a fixture whose label sat near the top, so it never tested the scan window
+  the real posting needed; the second found that a stored value re-entered through the fallback path
+  the rules leave open, and that the same hole had a copy in the SQL. The labelled scan now reads
+  every line, the fallback validates what it is handed, and the regression fixture asserts its own
+  length so it cannot be trimmed into uselessness. AI-assisted identification for postings that name
+  neither, then a dialog asking the user, is specified but not built, in
+  `docs/superpowers/specs/2026-08-02-job-identity-part-b-design.md`.
+- **A job is a row, not a hash of its text, and My Jobs holds only the ones you claimed.** Editing a
+  saved job's description used to fork it: `job_paste` upserted on `jd_hash`, so an edit matched
+  nothing and inserted a second job every time while the row on screen kept the old text. It now
+  takes an optional job id, and with it the row is the identity; without it the hash still is, which
+  is what a first paste needs. A collision is reported rather than merged. That fix exposed a latent
+  one - `score_cache_get` matched on `(job_id, profile_hash)` only, safe only while an edit always
+  produced a fresh job, so it now also requires the job's current `jd_hash` and an edited
+  description falls through to the stale-score path. Separately, My Jobs listed every analysed job
+  badged **Saved**: the list is now the jobs with an application, `no_status` no longer claims
+  otherwise in any of the six locales, and a `CanDeactivate` guard asks before leaving an analysed
+  but unclaimed job. The abandoned row is kept, so re-pasting the same posting reuses the score
+  already paid for. The paste pipeline lives in
+  `apps/desktop/src-tauri/src/commands/job_paste.rs`, split out of `scoring.rs` at its budget.
 - **The jobs page is down to twelve seams extracted, and the document-drafts region is finished.** Wizard navigation - open/closed, the step
   index, the saved mid-flow progress, the cross-job confirm - is now `WizardNavService`, and
   `jobs.component.ts` is **1612** non-empty lines, from 2788 where the split started. Seams eight

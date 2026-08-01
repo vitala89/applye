@@ -47,7 +47,7 @@ pub fn run() {
             commands::profile::hash_text,
             commands::archetypes::check_archetype_match,
             commands::ats::ats_check_run,
-            commands::scoring::job_paste,
+            commands::job_paste::job_paste,
             commands::scoring::score_cache_get,
             commands::scoring::score_cache_latest,
             commands::scoring::score_cache_save,

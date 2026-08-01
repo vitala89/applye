@@ -7,12 +7,15 @@ export interface JobIntakeInput {
   /** The pasted job description to parse. */
   jdText: string;
   /**
-   * Company/title already known for this job (from Discover, or a prior parse).
-   * Passed back in so re-parsing a header-less JD does not lose them and
-   * wrongly report "No company name found".
+   * The job as it stands, when this is a re-parse rather than a first paste.
+   *
+   * Its company and title are passed back so re-parsing a header-less JD does
+   * not lose them and wrongly report "No company name found", and its id is what
+   * keeps an edited description on this job instead of starting a second one
+   * beside it. One object rather than three fields, because they are three
+   * views of the same thing and every caller reads them together.
    */
-  knownTitle?: string;
-  knownCompany?: string;
+  previous?: Job | null;
   /** The active profile's scoring hash, when there is one, for the cache probe. */
   scoringHash?: string;
   /** The profile's raw target-archetypes JSON, for the overlap check. */
@@ -71,9 +74,10 @@ export class JobIntakeService {
       // because the page handed it straight back on every re-parse.
       const job = await this.source.jobPaste(
         input.jdText,
-        input.knownTitle,
-        input.knownCompany,
+        input.previous?.title,
+        input.previous?.company,
         'fallback',
+        input.previous?.id,
       );
       if (!job.hardFilterPassed) {
         this.status.set('Hard filter failed - job blocked.');

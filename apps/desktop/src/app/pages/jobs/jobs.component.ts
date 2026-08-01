@@ -1462,8 +1462,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.resetWizard();
     const result = await this.intake.parse({
       jdText: this.jdText(),
-      knownTitle: previous?.title ?? undefined,
-      knownCompany: previous?.company ?? undefined,
+      previous,
       scoringHash: p?.scoringHash ?? undefined,
       targetArchetypes: p?.targetArchetypes ?? undefined,
     });

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { HelpCircle, LucideAngularModule } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { JobIdentityPromptService } from './job-identity-prompt.service';
@@ -9,6 +9,10 @@ import { JobIdentityPromptService } from './job-identity-prompt.service';
  * Mounted once at the shell beside `UnsavedJobPromptComponent`, the shape the
  * Paste Job modal and the unsaved-job prompt already use: the jobs page is over
  * its size budget, and the parse chain that raises this has nowhere to render.
+ *
+ * It holds no state of its own. The two drafts live on the service, because
+ * seeding them is part of opening the dialog and doing it from a `computed`
+ * here is what Angular rejects with NG0600.
  */
 @Component({
   selector: 'app-job-identity-prompt',
@@ -24,30 +28,9 @@ export class JobIdentityPromptComponent {
   protected readonly prompt = inject(JobIdentityPromptService);
   protected readonly askIcon = HelpCircle;
 
-  protected readonly company = signal('');
-  protected readonly title = signal('');
-  /** The last request these drafts were seeded from, so a newly opened dialog
-   * starts from what is known rather than from the previous job's answer. */
-  private seeded: unknown = null;
-
-  /**
-   * Seeding on read rather than in an effect: the dialog is created once and
-   * reopened many times, and a computed read from the template is the only
-   * point that is guaranteed to run before the inputs are shown.
-   */
-  protected readonly request = computed(() => {
-    const request = this.prompt.open();
-    if (request && request !== this.seeded) {
-      this.seeded = request;
-      this.company.set(request.company);
-      this.title.set(request.title);
-    }
-    return request;
-  });
-
   /** Only the fields that are actually in question are named in the message. */
   protected readonly message = computed(() => {
-    const request = this.request();
+    const request = this.prompt.open();
     if (!request) return '';
     if (request.missingCompany && request.missingTitle) return this.t()('jobs.identity_ask_both');
     return request.missingCompany
@@ -55,16 +38,27 @@ export class JobIdentityPromptComponent {
       : this.t()('jobs.identity_ask_title');
   });
 
+  /**
+   * Why the AI did not settle it, when that is worth saying. "The posting does
+   * not name an employer" and "nothing read the posting" look identical on
+   * screen and mean opposite things, so the second one is stated.
+   */
+  protected readonly aiNote = computed(() => {
+    const outcome = this.prompt.open()?.aiOutcome;
+    if (outcome === 'no-provider') return this.t()('jobs.identity_ai_off');
+    if (outcome === 'failed') return this.t()('jobs.identity_ai_failed');
+    return '';
+  });
+
+  /** The failure verbatim, when there was one. */
+  protected readonly aiError = computed(() => this.prompt.open()?.aiError ?? '');
+
   protected onCompanyInput(event: Event): void {
-    this.company.set((event.target as HTMLInputElement).value);
+    this.prompt.setCompany((event.target as HTMLInputElement).value);
   }
 
   protected onTitleInput(event: Event): void {
-    this.title.set((event.target as HTMLInputElement).value);
-  }
-
-  protected save(): void {
-    this.prompt.save({ company: this.company().trim(), title: this.title().trim() });
+    this.prompt.setTitle((event.target as HTMLInputElement).value);
   }
 
   /** Escape and a backdrop click both mean "not now" - so, skip. */

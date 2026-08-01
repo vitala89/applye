@@ -86,6 +86,8 @@
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--text-tertiary);
+  align-self: flex-start;
+  margin-top: var(--space-2);
   animation: job-meta-pulse 1.4s ease-in-out infinite;
 }
 
@@ -99,25 +101,11 @@
   }
 }
 
-/* The way back after a Skip. Quiet: it is an offer, not an instruction. */
+/* The way back after a Skip, and the way in for a value the AI guessed. A
+   real button under the two fields it is about: the first cut put it in the
+   badge row as uppercase micro-text, where it read as a label and the
+   maintainer could not find it. */
 .job-meta__name-it {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    color: var(--text-primary);
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
+  align-self: flex-start;
+  margin-top: var(--space-2);
 }

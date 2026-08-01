@@ -695,7 +695,10 @@ export const fr: TranslationMap = stub(en, {
       'Ignorer conserve les mentions provisoires et ne repose plus la question pour cette offre.',
     identity_inferred: 'deduit',
     identity_inferred_hint: 'Deduit par IA a partir de offre, et non cite de celle-ci.',
-    identity_name_it: 'Le renseigner vous-meme',
+    identity_name_it: 'Indiquer societe et poste',
+    identity_ai_off:
+      'identification par IA est pas configuree, donc personne a lu cette offre pour vous.',
+    identity_ai_failed: 'Le passage par IA a echoue, il donc jamais lu cette offre.',
     identity_identifying: 'identification…',
     identity_badge_busy: 'Identification une offre',
     identity_badge_busy_hint: 'Recherche de la societe et du poste en arriere-plan.',

@@ -682,7 +682,10 @@ export const de: TranslationMap = {
       'Ueberspringen behaelt die Platzhalter und fragt bei dieser Stelle nicht erneut.',
     identity_inferred: 'abgeleitet',
     identity_inferred_hint: 'Von der KI aus der Anzeige abgeleitet, nicht daraus zitiert.',
-    identity_name_it: 'Selbst benennen',
+    identity_name_it: 'Firma und Position angeben',
+    identity_ai_off:
+      'Die KI-Erkennung ist nicht eingerichtet, also hat niemand diese Anzeige fuer Sie gelesen.',
+    identity_ai_failed: 'Der KI-Schritt war nicht erreichbar und hat diese Anzeige nie gelesen.',
     identity_identifying: 'wird erkannt…',
     identity_badge_busy: 'Stelle wird erkannt',
     identity_badge_busy_hint: 'Firma und Position werden im Hintergrund ermittelt.',

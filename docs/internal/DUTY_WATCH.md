@@ -125,6 +125,21 @@ Before a watch can be marked complete:
   consume would cancel the dialog it exists to raise. `consumeResolved` and `clear` are separate for
   that reason, and a test pins it. Separately, deleting a job now clears the badge, which was
   otherwise left offering a page that no longer exists.
+- **Third round, from the maintainer running it natively.** Three faults on one screen.
+  (1) **NG0600, "Writing to signals is not allowed in a `computed`"**, twice per open. The dialog
+  seeded its two inputs from a computed, so it threw on every open, never rendered, and the job went
+  unnamed with two error toasts to show for it. Every unit test around it passed - the rule is
+  enforced at render time. The two drafts now live on the prompt service and are seeded in `ask`, an
+  ordinary method call, and there is a component spec that builds and opens the dialog for real. It
+  reproduces NG0600 when the old shape is restored.
+  (2) **The AI step failing invisibly.** `catch {}` swallowed every reason, so "the posting names no
+  employer" and "nothing ever read the posting" looked identical on screen. The dialog now states
+  which of the three it was - answered, no provider configured, or failed - and prints the provider's
+  own error verbatim underneath. Whether the AI actually ran on the reported posting is still unknown
+  from here; the next run will say so on screen instead of requiring another round trip.
+  (3) **"Name it yourself" was unfindable**, rendered as uppercase micro-text in the badge row where
+  it read as a label. It is now a real secondary button under the two fields it is about, labelled
+  "Set company and role", and shown only when a field is missing or holds a value the AI guessed.
 - **Next first action:** open the PR, then run the native scenario in `tauri dev`.
 - **Evidence:** command output above, in this session's transcript.
 

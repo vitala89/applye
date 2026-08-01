@@ -3,6 +3,9 @@ import { Job } from '@applye/core';
 import { AiService, JobSourceService, KeysService, SettingsService } from '@applye/data';
 import { JobIdentityPromptService } from './job-identity-prompt/job-identity-prompt.service';
 
+/** How an identify call ended, for the dialog to report honestly. */
+export type AiOutcome = 'answered' | 'no-provider' | 'failed';
+
 /** What one `job-identify` call came back with. Either field may be null. */
 interface IdentifiedJob {
   company: string | null;
@@ -49,6 +52,15 @@ export class JobIdentityResolverService {
   private readonly identifying = signal<number | null>(null);
   private readonly needsName = signal<number | null>(null);
   private readonly latest = signal<Job | null>(null);
+  /**
+   * How the last identify call went, per job. Carried into the dialog, because
+   * "the posting does not name an employer" and "nothing read the posting" look
+   * identical on screen and mean opposite things - and swallowing the second
+   * one silently is what makes a working feature look like a broken one.
+   */
+  private readonly outcomes = new Map<number, AiOutcome>();
+  /** What the failure said, kept alongside the outcome for the same reason. */
+  private readonly errors = new Map<number, string>();
 
   /** The job an identify call is in flight for, or null. Drives the badge. */
   readonly identifyingJobId = this.identifying.asReadonly();
@@ -84,6 +96,8 @@ export class JobIdentityResolverService {
    * a page that no longer exists. */
   clear(jobId: number): void {
     if (this.needsName() === jobId) this.needsName.set(null);
+    this.outcomes.delete(jobId);
+    this.errors.delete(jobId);
     this.consumeResolved(jobId);
   }
 
@@ -98,6 +112,8 @@ export class JobIdentityResolverService {
       missingTitle: !job.title,
       company: job.company ?? '',
       title: job.title ?? '',
+      aiOutcome: this.outcomes.get(job.id) ?? 'no-provider',
+      aiError: this.errors.get(job.id),
     });
 
     if (!answer) {
@@ -157,11 +173,14 @@ export class JobIdentityResolverService {
    */
   private async callIdentify(job: Job): Promise<Job> {
     const s = this.settings.current();
+    this.outcomes.set(job.id, 'no-provider');
+    this.errors.delete(job.id);
     if (!s || !job.jdText) return job;
     try {
       // In CLI mode the bridge binary is the credential, and probing it costs a
       // process spawn per parse; in API mode the keychain answers instantly.
       if (s.aiMode === 'api' && !(await this.keys.hasProviderKey(s.provider))) return job;
+      this.outcomes.set(job.id, 'failed');
 
       const rendered = await this.ai.renderSkill('job-identify', {
         job_description: job.jdText,
@@ -176,6 +195,7 @@ export class JobIdentityResolverService {
         }),
       );
       const identified = this.parse(res.text);
+      this.outcomes.set(job.id, 'answered');
       const company = job.company || identified.company || undefined;
       const title = job.title || identified.title || undefined;
       if (company === job.company && title === job.title) return job;
@@ -192,9 +212,12 @@ export class JobIdentityResolverService {
           company && company !== job.company ? 'inferred' : job.companySource,
         ),
       );
-    } catch {
-      // A missing key, an offline provider, a refusal, a timeout, malformed
-      // JSON: none of them are worth more than the dialog that follows anyway.
+    } catch (e) {
+      // An offline provider, a refusal, a timeout, malformed JSON: none of them
+      // are worth more than the dialog that follows. But the reason is kept and
+      // shown there, because a step that fails invisibly looks like a step that
+      // was never written.
+      this.errors.set(job.id, String(e));
       return job;
     }
   }

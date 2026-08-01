@@ -53,6 +53,23 @@
   color: var(--text-secondary);
 }
 
+/* Says the AI never got to read the posting, which is a different fact from
+   the posting not naming anyone. Warning tone: something did not work. */
+.modal__note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--warning);
+}
+
+/* The provider's own words. Monospace and small: diagnostic, not prose. */
+.modal__reason {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+  word-break: break-word;
+}
+
 .modal__field {
   display: block;
   margin-top: var(--space-4);

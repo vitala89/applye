@@ -58,6 +58,16 @@ export class JobMetaCardComponent {
     () => !!this.job().title && this.job().titleSource === 'inferred',
   );
 
+  /**
+   * Whether the button is worth showing. A job named out of the posting needs
+   * no offer to rename it; one that is missing a field, or holding a value the
+   * AI guessed, does.
+   */
+  protected readonly canName = computed(
+    () =>
+      !this.job().company || !this.job().title || this.companyInferred() || this.titleInferred(),
+  );
+
   /** True while the AI step is naming this job. Shown on the card so a user who
    * stayed can see the phase is running, without the Parse button pretending
    * the parse itself is still going. */

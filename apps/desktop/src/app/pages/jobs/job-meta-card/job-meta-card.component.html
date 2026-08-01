@@ -17,14 +17,15 @@
       }
     </span>
     <span class="job-meta__hash">{{ (job().jdHash ?? '').slice(0, 12) }}</span>
-  </div>
-  <div class="job-meta__badges">
     @if (identifying()) {
       <span class="job-meta__identifying">{{ t()('jobs.identity_identifying') }}</span>
+    } @else if (canName()) {
+      <button class="btn btn--secondary btn--sm job-meta__name-it" type="button" (click)="nameIt()">
+        {{ t()('jobs.identity_name_it') }}
+      </button>
     }
-    <button class="job-meta__name-it" type="button" (click)="nameIt()" [disabled]="identifying()">
-      {{ t()('jobs.identity_name_it') }}
-    </button>
+  </div>
+  <div class="job-meta__badges">
     <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>
     @if (hasArchetypes() && archetypeMatch() === false) {
       <span class="badge badge--warn">{{ t()('jobs.off_archetype') }}</span>

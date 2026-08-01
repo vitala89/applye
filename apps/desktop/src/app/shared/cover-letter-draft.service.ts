@@ -36,6 +36,21 @@ export interface CoverLetterDraftContext extends GapFillHooks {
   ensureApplication: () => Promise<Application>;
 }
 
+/**
+ * The exact input a cover letter's `inputHash` is computed from. Exported for
+ * the same reason as `cvDraftHashInput`: the staleness check must ask the same
+ * question the draft answered.
+ */
+export function coverLetterHashInput(
+  jobId: number,
+  profileMd: string,
+  jdText: string,
+  language: string,
+  region: string,
+): string {
+  return [jobId, profileMd, jdText, language, region].join('\x00');
+}
+
 export interface CoverLetterDraftResult {
   document: DocumentLibraryItem;
   application: Application;
@@ -113,7 +128,13 @@ export class CoverLetterDraftService {
     // answering the dialog does not make an otherwise identical run look like a
     // different input - the same rule the CV draft follows.
     const inputHash = await this.db.hashText(
-      [ctx.job.id, ctx.profile.fullMd, jdText, ctx.language, ctx.region].join('\x00'),
+      coverLetterHashInput(
+        ctx.job.id as number,
+        ctx.profile.fullMd,
+        jdText,
+        ctx.language,
+        ctx.region,
+      ),
     );
     const document = await this.db.documentLibraryUpsert({
       // One cover letter per application (ADR-0003): reuse the linked row so

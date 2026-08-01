@@ -98,8 +98,12 @@ import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
 import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
 import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
-import { CvDraftService } from '../../shared/cv-draft.service';
-import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
+import { CvDraftService, cvDraftHashInput } from '../../shared/cv-draft.service';
+import {
+  CoverLetterDraftService,
+  coverLetterHashInput,
+} from '../../shared/cover-letter-draft.service';
+import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 
 @Component({
   selector: 'app-jobs',
@@ -128,6 +132,7 @@ import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service
     WizardNavService,
     CvDraftService,
     CoverLetterDraftService,
+    LinkedDocumentsService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -142,6 +147,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly wizardNav = inject(WizardNavService);
   private readonly cvDraftSvc = inject(CvDraftService);
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
+  private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
@@ -424,8 +430,9 @@ export class JobsComponent implements OnInit, OnDestroy {
     }
   }
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
-  readonly linkedCv = signal<DocumentLibraryItem | null>(null);
-  readonly linkedCoverLetter = signal<DocumentLibraryItem | null>(null);
+  /** Aliases onto `LinkedDocumentsService`'s writable signals. */
+  readonly linkedCv = this.linkedDocs.cv;
+  readonly linkedCoverLetter = this.linkedDocs.coverLetter;
   // Which document drafts are generating - read from DocumentGenService (a root
   // singleton) so an in-flight run survives leaving this page and CV + cover
   // letter can generate independently.
@@ -551,65 +558,38 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   private async loadLinkedDocuments(): Promise<void> {
-    const app = this.application();
-    const [cv, letter] = await Promise.all([
-      app?.cvDocumentId ? this.db.documentLibraryGet(app.cvDocumentId) : Promise.resolve(null),
-      app?.coverLetterDocumentId
-        ? this.db.documentLibraryGet(app.coverLetterDocumentId)
-        : Promise.resolve(null),
-    ]);
-    this.linkedCv.set(cv);
-    this.linkedCoverLetter.set(letter);
+    await this.linkedDocs.load(this.application());
     await this.refreshFinalChecksFreshness();
   }
 
-  /** Commits the linked doc of `kind` (if it is still a draft): clears the
-   * apply-wizard draft flag so it graduates into the Documents library, and
-   * mirrors the change into the local signal. Best-effort - a failed commit
-   * never breaks export / apply; the doc stays a draft for the next attempt. */
-  private async commitLinkedDocument(kind: ReviewDocumentKind): Promise<void> {
-    const item = kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter();
-    if (!item || !item.isApplicationDraft) return;
-    try {
-      const committed = await this.db.documentLibraryCommit(item.id);
-      if (!committed) return;
-      if (kind === 'cv') this.linkedCv.set(committed);
-      else this.linkedCoverLetter.set(committed);
-    } catch {
-      // swallow: keep the draft, retry on the next export / mark-applied
-    }
-  }
-
   /** True when the linked CV was generated from a different tailoring than the
-   * one now in hand, so committing the application should refresh it first.
-   * Uses the exact input-hash formula createCvDraft persists. */
+   * one now in hand, so committing the application should refresh it first. */
   private async cvDocStale(tailoredMd: string): Promise<boolean> {
-    const doc = this.linkedCv();
     const job = this.job();
-    if (!doc || !job?.id) return false;
-    const hash = await this.db.hashText(
-      [job.id, tailoredMd, this.documentReviewLanguage(), this.documentReviewRegion()].join('\x00'),
+    if (!job?.id) return false;
+    const input = cvDraftHashInput(
+      job.id,
+      tailoredMd,
+      this.documentReviewLanguage(),
+      this.documentReviewRegion(),
     );
-    return hash !== doc.inputHash;
+    return this.linkedDocs.isStale('cv', input);
   }
 
   /** True when the linked cover letter was built from a different profile / JD
-   * than the current one. Mirrors createCoverLetterDraft's input hash. */
+   * than the current one. */
   private async coverLetterDocStale(): Promise<boolean> {
-    const doc = this.linkedCoverLetter();
     const job = this.job();
     const profile = this.profile();
-    if (!doc || !job?.id || !profile?.fullMd) return false;
-    const hash = await this.db.hashText(
-      [
-        job.id,
-        profile.fullMd,
-        job.jdText ?? '',
-        this.documentReviewLanguage(),
-        this.documentReviewRegion(),
-      ].join('\x00'),
+    if (!job?.id || !profile?.fullMd) return false;
+    const input = coverLetterHashInput(
+      job.id,
+      profile.fullMd,
+      job.jdText ?? '',
+      this.documentReviewLanguage(),
+      this.documentReviewRegion(),
     );
-    return hash !== doc.inputHash;
+    return this.linkedDocs.isStale('cover_letter', input);
   }
 
   /**
@@ -629,14 +609,14 @@ export class JobsComponent implements OnInit, OnDestroy {
     } else if (regenerateStale && tailoredMd && (await this.cvDocStale(tailoredMd))) {
       await this.createCvDraft();
     }
-    await this.commitLinkedDocument('cv');
+    await this.linkedDocs.commit('cv');
 
     if (!this.linkedCoverLetter()) {
       await this.createCoverLetterDraft();
     } else if (regenerateStale && (await this.coverLetterDocStale())) {
       await this.createCoverLetterDraft();
     }
-    await this.commitLinkedDocument('cover_letter');
+    await this.linkedDocs.commit('cover_letter');
   }
 
   async prepareDocumentsStep(): Promise<void> {
@@ -797,22 +777,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.documentReviewError.set(false);
     try {
       const app = await this.ensureApplicationDraft();
-      const item = await this.db.documentLibraryGet(id);
-      if (!item) return;
-      const updated = await this.db.upsertApplication({
-        ...app,
-        cvDocumentId: kind === 'cv' ? id : app.cvDocumentId,
-        coverLetterDocumentId: kind === 'cover_letter' ? id : app.coverLetterDocumentId,
-        docLanguage: item.language ?? this.documentReviewLanguage(),
-      });
-      this.application.set(updated);
-      if (kind === 'cv') {
-        this.linkedCv.set(item);
-        this.chooseCvOpen.set(false);
-      } else {
-        this.linkedCoverLetter.set(item);
-        this.chooseCoverLetterOpen.set(false);
-      }
+      const result = await this.linkedDocs.link(kind, id, app, this.documentReviewLanguage());
+      if (!result) return;
+      this.application.set(result.application);
+      if (kind === 'cv') this.chooseCvOpen.set(false);
+      else this.chooseCoverLetterOpen.set(false);
       this.finalChecksOutdated.set(!!this.finalChecks());
     } catch (e) {
       this.documentReviewError.set(true);
@@ -1453,8 +1422,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       // so no unlink is owed here (the upsert COALESCEs those ids and could
       // not clear them anyway).
       for (const draft of drafts) await this.db.documentLibraryDelete(draft.id as number);
-      this.linkedCv.set(null);
-      this.linkedCoverLetter.set(null);
+      this.linkedDocs.clear();
       const jobId = this.job()?.id;
       if (jobId != null) {
         const apps = await this.db.listApplications();
@@ -1742,7 +1710,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       kind,
       format,
       kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter(),
-      (committed) => this.commitLinkedDocument(committed),
+      (committed) => this.linkedDocs.commit(committed),
     );
   }
 

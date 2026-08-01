@@ -44,7 +44,63 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), the cover letter follows, and the gap-fill stops being two copies
+### 2026-08-01 (latest), the document-drafts region is finished
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/linked-documents-service`, from `main` (`20db990`)
+- **Objective:** the next first action from the watch below - the link/commit lifecycle, the last
+  piece of the 591-line document-drafts region.
+- **Note:** this watch was started against my own recommendation to open a fresh session. The
+  maintainer asked to continue here; recorded because the recommendation still stands for the next
+  task and the reason has not changed.
+- **Completed:**
+  - `LinkedDocumentsService` (105 lines): `load`, `link`, `commit`, `isStale`, `clear`, and the two
+    document signals. `jobs.component.ts` **1608 -> 1577**. The region is now four services.
+  - The decision stayed on the page by design. "Is it stale, do I regenerate, which generator do I
+    call" is orchestration; the service reports and commits. That is why it injects no draft
+    service and needs only a fake database to test.
+  - **The staleness check was the fragile part and is now safe.** It recomputed each document's
+    input hash from a formula copied out of the generator, so the two could drift and a regenerate
+    would simply stop firing - silently, and in the direction that looks fine. Both generators now
+    export the builder for their own hash input (`cvDraftHashInput`, `coverLetterHashInput`) and
+    the check asks with it.
+  - 15 tests where the cluster had none, including all five ways a best-effort commit can decline
+    to do anything - already committed, nothing linked, the database throwing, the commit
+    returning nothing - each of which must leave the draft exactly where it was.
+- **Not completed:** nothing in scope. `jobs.component.ts` still holds job CRUD (~119 lines) and the
+  compensation/archetype derivations.
+- **Files or packages changed:** `apps/desktop/src/app/shared/linked-documents.service.ts`
+  (new, 105), `linked-documents.service.spec.ts` (new, 131), `cv-draft.service.ts` and
+  `cover-letter-draft.service.ts` (hash-input builders exported and used),
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts` (1608 -> **1577**, still over budget, shrank).
+  `jobs.component.html` untouched.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green;
+  desktop suite **914 tests** (899 before); `npm run quality`, `npm run verify:csp`,
+  `npm run format:check`, `git diff --check` all passed. Lint: 8 warnings, all pre-existing non-null
+  assertions in other specs. **Not run:** cargo - no Rust touched. **Not verified natively:** the
+  commit path runs on export and on mark-applied, both Tauri-only.
+- **Privacy/security impact:** none new.
+- **Decisions and assumptions:**
+  - `isStale` takes the already-built hash input rather than the pieces, so the service knows
+    "compare a hash" and the page knows "what the inputs are". That is what let the formula move to
+    the generators instead of being copied a third time.
+  - `link` returns null when the library row has gone, so the caller leaves its picker open rather
+    than closing it over nothing. The old code returned early with the dialog still open, which is
+    the same outcome, now explicit.
+- **Risks or compatibility impact:** `commit` is reached from export and from mark-applied, and it
+  swallows its own failures by design. That was true before and is now covered by tests rather than
+  by a comment. The export path passes it as a callback into `DocumentExportService`, unchanged.
+- **Open issues or blockers:** unchanged - #233's duplicate rows deferred by decision, the
+  free-text date answers filed as a background task, the oversized Rust modules and specs frozen.
+- **Next first action:** extract job CRUD from `jobs.component.ts` - the delete-confirm cluster and
+  the archive/restore path - into a `JobActionsService`. It is the last cohesive seam; what remains
+  after it is the compensation and archetype derivations, which are small and pure and probably want
+  to be functions in `libs/core` rather than a service.
+- **Evidence:** file-size report printed `jobs.component.ts: 1577/400 non-empty lines, base 1608`.
+  Suite 899 -> 914.
+
+### 2026-08-01, the cover letter follows, and the gap-fill stops being two copies
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

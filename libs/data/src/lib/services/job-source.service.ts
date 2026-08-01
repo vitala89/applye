@@ -18,14 +18,20 @@ export class JobSourceService {
    * `precedence` says what `title`/`company` are worth against what the text
    * says; see `IdentityPrecedence`. It defaults to `authoritative`, which is
    * what a caller holding structured fields from a job board needs.
+   *
+   * `jobId` names the job being re-parsed, and passing it is what keeps an
+   * edited description on the job the user is looking at. Without it the text's
+   * hash is the identity, so an edit matches no existing job and starts a new
+   * one - correct for a first paste, wrong for every re-parse.
    */
   jobPaste(
     jdText: string,
     title?: string,
     company?: string,
     precedence: IdentityPrecedence = 'authoritative',
+    jobId?: number,
   ): Promise<Job> {
-    return tauriInvoke<Job>('job_paste', { jdText, title, company, precedence });
+    return tauriInvoke<Job>('job_paste', { jdText, title, company, precedence, jobId });
   }
 
   /** 0-token allowlist check: is this URL an open/ATS source, or a closed board? */

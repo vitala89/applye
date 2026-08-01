@@ -4,7 +4,13 @@ import { JobIntakeService } from './job-intake.service';
 
 describe('JobIntakeService', () => {
   let svc: JobIntakeService;
-  let pasteCalls: { jdText: string; title?: string; company?: string; precedence?: string }[];
+  let pasteCalls: {
+    jdText: string;
+    title?: string;
+    company?: string;
+    precedence?: string;
+    jobId?: number;
+  }[];
   let cacheCalls: { jobId: number; hash: string }[];
   let archetypeCalls: { title?: string; jdText: string; archetypesJson?: string }[];
   let pasteFails: boolean;
@@ -24,9 +30,15 @@ describe('JobIntakeService', () => {
     // Two fakes, because the parse itself moved to JobSourceService while the
     // cache probe and the archetype check stayed on DbService.
     const source = {
-      jobPaste: (jdText: string, title?: string, company?: string, precedence?: string) => {
+      jobPaste: (
+        jdText: string,
+        title?: string,
+        company?: string,
+        precedence?: string,
+        jobId?: number,
+      ) => {
         if (pasteFails) return Promise.reject(new Error('parse blew up'));
-        pasteCalls.push({ jdText, title, company, precedence });
+        pasteCalls.push({ jdText, title, company, precedence, jobId });
         return Promise.resolve({
           id: 7,
           title: title ?? 'Parsed Title',
@@ -78,8 +90,7 @@ describe('JobIntakeService', () => {
   it('passes the known title and company through so a header-less JD keeps them', async () => {
     await svc.parse({
       jdText: 'no header here',
-      knownTitle: 'Known Title',
-      knownCompany: 'Known Co',
+      previous: { id: 3, title: 'Known Title', company: 'Known Co' },
     });
 
     expect(pasteCalls[0]).toEqual({
@@ -87,6 +98,7 @@ describe('JobIntakeService', () => {
       title: 'Known Title',
       company: 'Known Co',
       precedence: 'fallback',
+      jobId: 3,
     });
   });
 
@@ -162,8 +174,16 @@ describe('JobIntakeService', () => {
   it('parses in fallback mode so a wrongly captured title can be corrected', async () => {
     // The values it passes are the job's own, from an earlier parse. If they
     // outranked the text, a bad title would be handed back to itself forever.
-    await svc.parse({ jdText: 'jd', knownTitle: 'The Purpose:' });
+    await svc.parse({ jdText: 'jd', previous: { id: 1, title: 'The Purpose:' } });
 
     expect(pasteCalls[0].precedence).toBe('fallback');
+  });
+
+  it('names the job being re-parsed so an edit does not fork it', async () => {
+    // Without the id the text's hash is the identity, so editing a description
+    // starts a second job beside the one the user is looking at.
+    await svc.parse({ jdText: 'edited text', previous: { id: 42 } });
+
+    expect(pasteCalls[0].jobId).toBe(42);
   });
 });

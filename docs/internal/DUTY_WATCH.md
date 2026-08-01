@@ -44,7 +44,67 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), wizard navigation becomes the seventh seam
+### 2026-08-01 (latest), CV generation comes out of the document-drafts region
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cv-draft-service`, from `main` (`ffc9c21`)
+- **Objective:** the next first action from the watch below - start splitting the 591-line
+  document-drafts region, CV generation first.
+- **Completed:**
+  - `CvDraftService` (216 lines): the gap-fill pass, structuring through the `cv-import` AI skill,
+    the date block-before-generate, and the draft row it all lands in. `jobs.component.ts`
+    **1812 -> 1693**. `createCvDraft` went from ~160 lines to 34.
+  - The four hand-offs the cover-letter flow shares - `ensureApplicationDraft`, `analyzeCvGaps`,
+    `awaitGapDialog`, `appendToProfile` - stay on the page and arrive through the context, so the
+    dependency points one way and the pipeline can be driven in tests with fakes.
+  - Two pure functions came out with it, and they are the parts worth testing alone:
+    `dateGapQuestions` (asks only about undated entries, encodes list + index in the id) and
+    `applyDateAnswers` (routes each answer back by that id).
+  - 14 tests where this had none, including the invariant a careless extraction would have broken:
+    the input hash is computed over the **tailored** markdown, not the gap-augmented text, so
+    answering the dialog does not make an otherwise identical run look like a different input.
+- **Not completed:** the rest of the region - cover-letter generation and the link/commit lifecycle.
+  They are separate responsibilities and want their own services.
+- **Files or packages changed:** `apps/desktop/src/app/shared/cv-draft.service.ts` (new, 216),
+  `cv-draft.service.spec.ts` (new, 211), `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  (1812 -> **1693**, still over budget, shrank). `jobs.component.html` untouched.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green;
+  desktop suite **886 tests** (872 before); `npm run quality`, `npm run verify:csp`,
+  `npm run format:check`, `git diff --check` all passed. Lint: 8 warnings, all pre-existing non-null
+  assertions in other specs. **Not run:** cargo - no Rust touched. **Not verified natively:** CV
+  generation needs an AI provider and SQLite over Tauri IPC. The behaviour is pinned by tests
+  against fakes, which is not the same as a real run.
+- **Privacy/security impact:** none new. The service handles CV text and profile answers, which were
+  already flowing through the same code on the page; nothing new leaves the machine, and the AI call
+  is the same `cv-import` skill with the same inputs.
+- **Decisions and assumptions:**
+  - The service returns `null` rather than throwing when a run is already in flight, so the caller's
+    double-tap guard and the error path stay distinct.
+  - Preconditions (no job, no tailoring, no settings) stay on the page, because their failure is a
+    localized status string rather than an exception.
+  - Two behaviours were pinned as they are, not as they might ideally be. A date the parser cannot
+    read is written verbatim - the alternative is guessing an employment date. A failed profile
+    write is swallowed - the answers are already folded into the text being structured. Both
+    predate this change.
+- **Risks or compatibility impact:** this is the highest-traffic AI path in the app and it has no
+  native verification. The order of operations was preserved exactly: ensure application, gap-fill,
+  hash, structure, dates, persist. A first tailor and every retailor still reuse
+  `app.cvDocumentId`, which is what stops duplicate "<Company> - Tailored CV" rows (ADR-0003), and
+  that is now a test rather than a comment.
+- **Open issues or blockers:** #233's duplicate rows remain deferred by decision. A background task
+  was filed for the free-text date answers described above. `discover.rs` (3245), `tailoring.rs`,
+  `documents.rs`, `onboarding.component.ts` (1002), its spec (689) and `cv-preview.component.spec.ts`
+  (2263) remain over budget and frozen.
+- **Next first action:** extract cover-letter generation from `jobs.component.ts` into a
+  `CoverLetterDraftService`, mirroring `CvDraftService` - `createCoverLetterDraft` is the entry
+  point and it shares `analyzeCvGaps`, `awaitGapDialog`, `appendToProfile` and `jobDocLabel` with
+  the CV path, so pass them in the same way rather than duplicating them. Once both drafts are out,
+  the link/commit lifecycle is what remains of the region.
+- **Evidence:** file-size report printed `jobs.component.ts: 1693/400 non-empty lines, base 1812`.
+  Suite went 872 -> 886 with the new spec.
+
+### 2026-08-01, wizard navigation becomes the seventh seam
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

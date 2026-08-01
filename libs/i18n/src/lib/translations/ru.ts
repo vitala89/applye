@@ -201,7 +201,7 @@ export const ru: TranslationMap = stub(en, {
     filter_legit: 'Любая надёжность',
     empty: 'Вакансий пока нет. Вставьте вакансию, чтобы начать.',
     not_scored: 'Без оценки',
-    no_status: 'Сохранено',
+    no_status: 'Без отклика',
     import_done: 'Импортировано вакансий: {n}.',
   },
   pasteModal: {
@@ -670,6 +670,11 @@ export const ru: TranslationMap = stub(en, {
     paste_placeholder: 'Вставьте сюда полное описание вакансии…',
     parse_btn: 'Разобрать и отфильтровать',
     company_unknown: 'Компания не определена',
+    unsaved_title: 'Проанализировано, но не сохранено',
+    unsaved_msg:
+      'Вы проанализировали вакансию, но не сохранили её. Если уйти, её не будет в My Jobs. Вставите ту же вакансию снова - она вернётся вместе с оценкой.',
+    unsaved_stay: 'Остаться',
+    unsaved_leave: 'Всё равно уйти',
     title_unknown: 'Должность не определена',
     parsing: 'Разбираем…',
     hard_filter_failed: 'Жёсткий фильтр не пройден',

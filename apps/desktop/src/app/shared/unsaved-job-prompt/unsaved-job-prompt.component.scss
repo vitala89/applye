@@ -1,0 +1,61 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 55%, transparent);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  padding: var(--space-6);
+}
+
+.modal {
+  width: min(480px, 100%);
+  background: var(--surface-1);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Warning tone, not danger: leaving loses sight of the analysis, it does not
+   destroy anything - the row survives and re-pasting the same posting finds it. */
+.modal-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  border-radius: var(--radius-card);
+  background: var(--warning-tint);
+  border: 1px solid color-mix(in srgb, var(--warning) 34%, transparent);
+}
+
+.modal-alert__icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--warning);
+}
+
+.modal-alert__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-alert__body h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  color: var(--text-primary);
+}
+
+.modal__hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

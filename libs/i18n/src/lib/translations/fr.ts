@@ -201,7 +201,7 @@ export const fr: TranslationMap = stub(en, {
     filter_legit: 'Toutes fiabilités',
     empty: "Pas encore d'offre. Collez une annonce pour commencer.",
     not_scored: 'Non évaluée',
-    no_status: 'Enregistrée',
+    no_status: 'Sans candidature',
     import_done: '{n} offres importées.',
   },
   pasteModal: {
@@ -673,6 +673,11 @@ export const fr: TranslationMap = stub(en, {
     paste_placeholder: 'Collez ici la description complète du poste…',
     parse_btn: 'Analyser et filtrer',
     company_unknown: 'Entreprise non identifiee',
+    unsaved_title: 'Analysee, mais non enregistree',
+    unsaved_msg:
+      "Vous avez analyse cette offre sans l'enregistrer. En partant, elle ne figurera pas dans My Jobs. Recoller la meme offre la fera revenir avec son score.",
+    unsaved_stay: 'Rester ici',
+    unsaved_leave: 'Partir quand meme',
     title_unknown: 'Poste non identifie',
     parsing: 'Analyse…',
     hard_filter_failed: 'Filtre strict non passé',

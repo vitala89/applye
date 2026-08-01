@@ -200,7 +200,7 @@ export const es: TranslationMap = stub(en, {
     filter_legit: 'Cualquier fiabilidad',
     empty: 'Todavía no hay empleos. Pega una oferta para empezar.',
     not_scored: 'Sin puntuar',
-    no_status: 'Guardado',
+    no_status: 'Sin candidatura',
     import_done: 'Se han importado {n} empleos.',
   },
   pasteModal: {
@@ -670,6 +670,11 @@ export const es: TranslationMap = stub(en, {
     paste_placeholder: 'Pega aquí la descripción completa del puesto…',
     parse_btn: 'Analizar y filtrar',
     company_unknown: 'Empresa no identificada',
+    unsaved_title: 'Analizada, pero sin guardar',
+    unsaved_msg:
+      'Analizaste esta oferta pero no la guardaste. Si sales, no aparecera en My Jobs. Si vuelves a pegar la misma oferta, regresara con su puntuacion.',
+    unsaved_stay: 'Quedarme',
+    unsaved_leave: 'Salir igualmente',
     title_unknown: 'Puesto sin identificar',
     parsing: 'Analizando…',
     hard_filter_failed: 'Filtro estricto no superado',

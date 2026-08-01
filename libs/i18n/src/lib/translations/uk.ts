@@ -199,7 +199,7 @@ export const uk: TranslationMap = stub(en, {
     filter_legit: 'Будь-яка надійність',
     empty: 'Вакансій поки немає. Вставте вакансію, щоб почати.',
     not_scored: 'Без оцінки',
-    no_status: 'Збережено',
+    no_status: 'Без відгуку',
     import_done: 'Імпортовано вакансій: {n}.',
   },
   pasteModal: {
@@ -667,6 +667,11 @@ export const uk: TranslationMap = stub(en, {
     paste_placeholder: 'Вставте сюди повний опис вакансії…',
     parse_btn: 'Розібрати та відфільтрувати',
     company_unknown: 'Компанію не визначено',
+    unsaved_title: 'Проаналізовано, але не збережено',
+    unsaved_msg:
+      'Ви проаналізували вакансію, але не зберегли її. Якщо піти, її не буде в My Jobs. Вставите ту саму вакансію знову - вона повернеться разом з оцінкою.',
+    unsaved_stay: 'Залишитися',
+    unsaved_leave: 'Все одно піти',
     title_unknown: 'Посаду не визначено',
     parsing: 'Розбираємо…',
     hard_filter_failed: 'Жорсткий фільтр не пройдено',

@@ -191,7 +191,7 @@ export const de: TranslationMap = {
     filter_legit: 'Alle',
     empty: 'Noch keine Stellen. Füge eine Stelle ein, um zu starten.',
     not_scored: 'Nicht bewertet',
-    no_status: 'Gespeichert',
+    no_status: 'Keine Bewerbung',
     import_done: '{n} Stellen importiert.',
   },
   pasteModal: {
@@ -660,6 +660,11 @@ export const de: TranslationMap = {
     paste_placeholder: 'Vollständige Stellenbeschreibung hier einfügen…',
     parse_btn: 'Analysieren & filtern',
     company_unknown: 'Firma nicht erkannt',
+    unsaved_title: 'Analysiert, aber nicht gespeichert',
+    unsaved_msg:
+      'Sie haben diese Stelle analysiert, aber nicht gespeichert. Beim Verlassen erscheint sie nicht in My Jobs. Dieselbe Anzeige erneut einzufuegen holt sie samt Bewertung zurueck.',
+    unsaved_stay: 'Hier bleiben',
+    unsaved_leave: 'Trotzdem verlassen',
     title_unknown: 'Position nicht erkannt',
     parsing: 'Analysiere…',
     hard_filter_failed: 'Vorauswahl gescheitert',

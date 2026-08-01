@@ -77,6 +77,14 @@ pub struct JobOverview {
 
 #[tauri::command]
 pub async fn db_list_jobs_overview(db: State<'_, Db>) -> Result<Vec<JobOverview>, String> {
+    db_list_jobs_overview_core(&db.pool).await
+}
+
+/// Core of `db_list_jobs_overview`, decoupled from `tauri::State` so the rule
+/// about what belongs in the list can be exercised against a plain pool.
+pub(crate) async fn db_list_jobs_overview_core(
+    pool: &sqlx::SqlitePool,
+) -> Result<Vec<JobOverview>, String> {
     sqlx::query_as::<_, JobOverview>(
         "SELECT
            j.id, j.company, j.title, j.source, j.location,
@@ -86,11 +94,15 @@ pub async fn db_list_jobs_overview(db: State<'_, Db>) -> Result<Vec<JobOverview>
            (SELECT a.status FROM applications a
               WHERE a.job_id = j.id ORDER BY a.id DESC LIMIT 1) AS status
          FROM jobs j
-         WHERE COALESCE(j.imported_from, '') != 'discover_scan'
-            OR EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id)
+         -- The jobs the user claimed - Save this job, or Mark as Applied.
+         -- Analysing a pasted description writes a job row, because the score
+         -- cache, the tailoring and the generated documents all key on job_id,
+         -- but that row is a working artefact rather than a decision. This
+         -- replaces a rule that said the same thing for Discover alone.
+         WHERE EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id)
          ORDER BY j.created_at DESC, j.id DESC",
     )
-    .fetch_all(&db.pool)
+    .fetch_all(pool)
     .await
     .map_err(|e| format!("db_list_jobs_overview: {e}"))
 }
@@ -418,5 +430,94 @@ mod delete_tests {
             .await
             .unwrap();
         assert!(job.is_none());
+    }
+}
+
+#[cfg(test)]
+mod overview_tests {
+    use super::db_list_jobs_overview_core;
+    use sqlx::sqlite::SqlitePoolOptions;
+    use sqlx::SqlitePool;
+
+    async fn test_pool() -> SqlitePool {
+        let pool = SqlitePoolOptions::new()
+            .connect("sqlite::memory:")
+            .await
+            .expect("open in-memory sqlite");
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("run migrations");
+        pool
+    }
+
+    async fn insert_job(pool: &SqlitePool, hash: &str, imported_from: Option<&str>) -> i64 {
+        sqlx::query_scalar(
+            "INSERT INTO jobs (company, jd_text, jd_hash, imported_from, created_at)
+             VALUES ('Acme', 'jd', ?, ?, datetime('now')) RETURNING id",
+        )
+        .bind(hash)
+        .bind(imported_from)
+        .fetch_one(pool)
+        .await
+        .expect("insert job")
+    }
+
+    async fn claim(pool: &SqlitePool, job_id: i64) {
+        sqlx::query("INSERT INTO applications (job_id, status, updated_at) VALUES (?, 'saved', datetime('now'))")
+            .bind(job_id)
+            .execute(pool)
+            .await
+            .expect("insert application");
+    }
+
+    #[tokio::test]
+    async fn a_job_the_user_claimed_is_listed() {
+        let pool = test_pool().await;
+        let id = insert_job(&pool, "hash-claimed", None).await;
+        claim(&pool, id).await;
+
+        let rows = db_list_jobs_overview_core(&pool).await.unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].id, id);
+    }
+
+    #[tokio::test]
+    async fn a_job_only_analysed_is_not_listed() {
+        let pool = test_pool().await;
+        // The reported bug: pressing Parse & filter writes a job row, because
+        // the score cache and the documents key on job_id. That row is a
+        // working artefact, not a decision, and My Jobs is the decisions.
+        insert_job(&pool, "hash-analysed", None).await;
+
+        let rows = db_list_jobs_overview_core(&pool).await.unwrap();
+
+        assert!(rows.is_empty(), "analysing must not put a job in My Jobs");
+    }
+
+    #[tokio::test]
+    async fn an_imported_job_is_still_listed() {
+        let pool = test_pool().await;
+        // import.rs writes the job and its application together, so tightening
+        // the rule must not hide an imported tracklist.
+        let id = insert_job(&pool, "hash-imported", Some("tracklist")).await;
+        claim(&pool, id).await;
+
+        let rows = db_list_jobs_overview_core(&pool).await.unwrap();
+
+        assert_eq!(rows.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn an_unclaimed_discover_scan_stays_hidden() {
+        let pool = test_pool().await;
+        // Already true before this change, via a rule written for Discover
+        // alone. It has to stay true now that the rule is general.
+        insert_job(&pool, "hash-discover", Some("discover_scan")).await;
+
+        let rows = db_list_jobs_overview_core(&pool).await.unwrap();
+
+        assert!(rows.is_empty());
     }
 }

@@ -1,0 +1,32 @@
+@if (prompt.isOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="onBackdropClick($event)"
+    (keydown.escape)="prompt.stay()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div
+      class="modal"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="t()('jobs.unsaved_title')"
+    >
+      <div class="modal-alert">
+        <lucide-icon [img]="warningIcon" [size]="16" class="modal-alert__icon" aria-hidden="true" />
+        <div class="modal-alert__body">
+          <h3>{{ t()('jobs.unsaved_title') }}</h3>
+          <p class="modal__hint">{{ t()('jobs.unsaved_msg') }}</p>
+        </div>
+      </div>
+      <div class="modal__actions">
+        <button class="btn btn--secondary btn--md" type="button" (click)="prompt.stay()">
+          {{ t()('jobs.unsaved_stay') }}
+        </button>
+        <button class="btn btn--primary btn--md" type="button" (click)="prompt.leave()">
+          {{ t()('jobs.unsaved_leave') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

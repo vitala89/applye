@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { JobsStore } from '@applye/data';
+import { Injectable, inject, signal } from '@angular/core';
+import { DbService, JobsStore } from '@applye/data';
 import { WizardProgressService } from './wizard-progress.service';
 
 /** What the caller still owes once the job has loaded, if anything. */
@@ -25,6 +25,7 @@ const DOCUMENTS_STEP = 3;
 export class WizardNavService {
   private readonly progressSvc = inject(WizardProgressService);
   private readonly jobsStore = inject(JobsStore);
+  private readonly db = inject(DbService);
   private readonly document = inject(DOCUMENT);
 
   /** Writable so the page component can alias it straight onto the template. */
@@ -33,14 +34,25 @@ export class WizardNavService {
   /** Raised when opening the wizard here would abandon another job's session. */
   readonly crossJobConfirmOpen = signal(false);
 
-  /** Company/role of the other job whose tailoring is unfinished, for the
-   * cross-job confirm copy. Empty when none or not in the loaded overview. */
-  readonly crossJobLabel = computed(() => {
-    const prog = this.progressSvc.progress();
-    if (!prog) return '';
-    const row = this.jobsStore.overview().find((r) => r.id === prog.jobId);
-    return [row?.company, row?.title].filter(Boolean).join(' - ');
-  });
+  /**
+   * Company/role of the other job whose tailoring is unfinished, for the
+   * cross-job confirm copy.
+   *
+   * Read from the overview list first, and from the job itself when the list
+   * has no row for it. My Jobs now holds only the jobs the user claimed, so a
+   * session started on an analysed-but-unsaved job is not in that list - and
+   * the confirm would have asked the user to abandon work it could not name.
+   * Filled when the confirm is raised rather than computed, because the second
+   * lookup reaches the database.
+   */
+  readonly crossJobLabel = signal('');
+
+  private async describeOtherJob(jobId: number): Promise<string> {
+    const row = this.jobsStore.overview().find((r) => r.id === jobId);
+    if (row) return [row.company, row.title].filter(Boolean).join(' - ');
+    const job = await this.db.getJob(jobId).catch(() => null);
+    return [job?.company, job?.title].filter(Boolean).join(' - ');
+  }
 
   /**
    * Open the wizard at step 0 for `jobId`. Starting an application here
@@ -51,6 +63,8 @@ export class WizardNavService {
   requestOpen(jobId: number | undefined): boolean {
     const prog = this.progressSvc.progress();
     if (prog && jobId && prog.jobId !== jobId) {
+      this.crossJobLabel.set('');
+      void this.describeOtherJob(prog.jobId).then((label) => this.crossJobLabel.set(label));
       this.crossJobConfirmOpen.set(true);
       return false;
     }

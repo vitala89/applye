@@ -70,7 +70,12 @@ export class JobMetaCardComponent {
     // asynchronously and possibly after a round trip through another page.
     effect(() => {
       const resolved = this.identity.resolved();
-      if (resolved && resolved.id === this.job().id) this.identityChanged.emit(resolved);
+      if (!resolved || resolved.id !== this.job().id) return;
+      this.identityChanged.emit(resolved);
+      // Consumed, so it is dropped. Left in place it would be re-emitted every
+      // time this card is rebuilt for the same job, overwriting a row freshly
+      // read from the database with a snapshot of how it looked last time.
+      this.identity.consumeResolved(resolved.id);
     });
 
     // The dialog is raised here rather than by the service, because being

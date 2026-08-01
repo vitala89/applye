@@ -273,6 +273,22 @@ describe('JobIdentityResolverService', () => {
     expect(svc.needsNameJobId()).toBe(7);
   });
 
+  it('taking the published job does not cancel the dialog it came with', async () => {
+    // The trap. One identify call sets both: the AI named the title, so a job
+    // is published, and it could not name the company, so the same call flags
+    // the job. A page that took the published job with the wider `clear` would
+    // wipe the flag and the dialog would never open.
+    svc.start(JOB);
+    await settled();
+    expect(svc.resolved()?.id).toBe(7);
+    expect(svc.needsNameJobId()).toBe(7);
+
+    svc.consumeResolved(7);
+
+    expect(svc.resolved()).toBeNull();
+    expect(svc.needsNameJobId()).toBe(7);
+  });
+
   it('forgets a job that was named or went away', async () => {
     svc.start(JOB);
     await settled();

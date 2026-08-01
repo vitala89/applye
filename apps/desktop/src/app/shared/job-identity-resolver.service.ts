@@ -68,10 +68,23 @@ export class JobIdentityResolverService {
     void this.identify(job);
   }
 
-  /** Forget a job the badge is offering - it was named, or it went away. */
+  /**
+   * Drop the published job once its page has taken it.
+   *
+   * Deliberately does NOT touch `needsNameJobId`. Both are set by the same
+   * identify call - the AI names the title, publishes, and then flags the
+   * company as still missing - so clearing the flag here would cancel the very
+   * dialog the flag exists to raise.
+   */
+  consumeResolved(jobId: number): void {
+    if (this.latest()?.id === jobId) this.latest.set(null);
+  }
+
+  /** Forget a job entirely - it was deleted, so the badge must stop offering
+   * a page that no longer exists. */
   clear(jobId: number): void {
     if (this.needsName() === jobId) this.needsName.set(null);
-    if (this.latest()?.id === jobId) this.latest.set(null);
+    this.consumeResolved(jobId);
   }
 
   /**

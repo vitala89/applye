@@ -117,6 +117,14 @@ Before a watch can be marked complete:
   job row is written before the phase starts. The dialog is raised by the component rendering the
   job rather than by the service, so it cannot appear over Pipeline. Both regressions have tests
   that hang or fail without the fix.
+- **Two more found by reviewing the diff before the PR, both with tests that fail without them.**
+  The page adopting a named job left the published snapshot in place, so a later rebuild of the same
+  card would re-emit it over a row freshly read from the database; taking it now drops it. Doing that
+  through the wider `clear` would have been the trap: one identify call sets both signals - the AI
+  names the title and publishes, then flags the still-missing company - so clearing the flag on
+  consume would cancel the dialog it exists to raise. `consumeResolved` and `clear` are separate for
+  that reason, and a test pins it. Separately, deleting a job now clears the badge, which was
+  otherwise left offering a page that no longer exists.
 - **Next first action:** open the PR, then run the native scenario in `tauri dev`.
 - **Evidence:** command output above, in this session's transcript.
 

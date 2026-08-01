@@ -44,7 +44,82 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), a posting that would not name its company, and two layers of the same staleness
+### 2026-08-02 (latest), five fixes on one screen, two of which my own tests should have caught
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** six branches, all merged: `fix/job-identity-trailing-label` (#244),
+  `fix/reject-stale-identity-on-reparse` (#245), `fix/reparse-updates-job-in-place` (#246),
+  `fix/paste-modal-stays-on-link-tab` (#247), `feat/my-jobs-claimed-only` (#248),
+  `docs/job-identity-part-b-spec` (#249). From `main` (`055e498`) to `2536dc8`.
+- **Objective:** maintainer bug reports from the running app, taken one at a time.
+- **This entry also corrects the one below it.** That watch recorded the company-extraction bug as
+  fixed. It was not - #243 shipped, the maintainer tested the reported posting, and it still failed.
+  Recorded here rather than edited there, because what the watch believed at the time is part of
+  what happened.
+- **Completed, in order:**
+  - **#244 - the first fix did not work, and my test is why.** `Company name - Elbrus` sits on the
+    last line of that posting; the labelled scan read the first 30 lines. My #243 fixture put the
+    label near the top, so it tested the label and the separator - the parts already fixed - and
+    never the scan window. **A passing test on an unrepresentative fixture is how this shipped.** The
+    regression test now asserts the fixture's own length first, so trimming it later cannot silently
+    stop testing the thing that broke.
+  - **#245 - the stricter rules had no effect on any job parsed before them.** Extraction correctly
+    returned nothing for a heading-only posting, but the page hands the stored value back on every
+    re-parse and the fallback filled the gap with it. `The Purpose:` survived the rule written to
+    reject it, by riding in on the path that rule leaves open. The fallback now validates what it is
+    handed. Third copy of the same hole found in the SQL, where `COALESCE` put the rejected string
+    back into the row.
+  - **#246 - editing a saved job's description forked it.** Identity was the text's hash, so an edit
+    hashed differently, matched nothing, and inserted a second job every time. `job_paste` takes an
+    optional job id; with it the row is the identity. A collision is reported, not merged, because
+    merging discards whichever row the user was not looking at along with its application and its
+    documents. **Fixing this exposed a latent bug**: `score_cache_get` matched on
+    `(job_id, profile_hash)` only, which was safe while an edit always produced a fresh job with no
+    cache. It now also requires the job's current `jd_hash`, so an edited description falls through
+    to `score_cache_latest` and shows its old score marked stale. Shipping the reported fix alone
+    would have produced a worse bug - a score silently attributed to text it was never computed
+    against.
+  - **#247 - the paste modal hid its own explanation.** Fetching an unfetchable URL switched to the
+    "Paste text" tab, where the warning and its "Open in browser" button are not rendered. One line.
+  - **#248 - My Jobs listed every job analysed, badged Saved.** The list selected every row with an
+    exception for Discover; the exception became the rule, and the query got shorter. Separately
+    `no_status` - the label for _no application at all_ - was translated as "Saved" in all six
+    locales. A `CanDeactivate` guard now asks before leaving an analysed but unclaimed job; its whole
+    condition is "a job is loaded and it has no application", which covers Save, Mark as Applied and
+    the wizard's own navigation without a special case.
+  - **#249 - part B specified, not built.** AI identification then an ask-the-user dialog, with
+    `Jobgether` written in as the canonical wrong answer.
+- **Not completed:** part B implementation. No native `tauri dev` gate; the maintainer verified each
+  fix by hand in the running app and confirmed every one.
+- **Three extractions the size budgets forced, each one the code wanted anyway:** the paste pipeline
+  left `scoring.rs` for `job_paste.rs` (698 of 800 lines); the job intake surface left `DbService`
+  for `JobSourceService` (**474 to 461**); the header composition became a pure `jobHeaderTitle` in
+  `libs/core`. `jobs.component.ts` ended at **1531**, one below its base.
+- **Validation:** run and observed on each branch before merge: `npm run type-check` (6 projects),
+  `npm test` (6 projects, ending at **1344 tests**; desktop 945), `cargo test --lib` (**322 passed**,
+  1 ignored; from 311), `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check`,
+  `npm run lint` (0 errors), `npx nx build desktop`, `npm run quality:file-size`,
+  `npm run quality:attribution`, `npm run format:check`, `npm run verify:csp`, `git diff --check`.
+  All pass. CI green on all six PRs. **Not run:** `tauri dev`.
+- **Privacy/security impact:** none. No new I/O, no new stored field, no network or IPC surface
+  beyond parameters on existing commands.
+- **Decisions and assumptions:** an abandoned analysis keeps its row rather than being deleted - a
+  first paste is identified by the text's hash, so re-pasting lands on the same row and reuses the
+  score already paid for in tokens. The `dashboard.component.ts:270` job lookup was left degraded
+  where `wizard-nav` was fixed: an async lookup inside its card-list computed would restructure that
+  component. Stated rather than quietly skipped.
+- **Risks or compatibility impact:** unclaimed job rows now accumulate unreachably. Accepted; a
+  cleanup pass is a separate decision. Titles are stricter, so a posting whose real title carries no
+  role word shows the placeholder - the trade part A took deliberately, and what part B answers.
+- **Open issues or blockers:** none. Part B is specified and ready to build.
+- **Next first action:** implement part B from
+  `docs/superpowers/specs/2026-08-02-job-identity-part-b-design.md`, starting with the migration for
+  `title_source` / `company_source` / `identity_prompt_skipped`.
+- **Evidence:** PRs #244 through #249 and their check output; the maintainer's confirmations in
+  session.
+
+### 2026-08-01, a posting that would not name its company, and two layers of the same staleness
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

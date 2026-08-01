@@ -8,6 +8,7 @@ import {
   type CvGapAnswer,
   type CvGapQuestion,
 } from '../pages/documents/cv-content.util';
+import { GapFillHooks, foldInGapAnswers, saveBlockBestEffort } from './gap-fill';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CvGapDialogService } from './cv-gap-dialog.service';
@@ -15,11 +16,10 @@ import { DocumentGenService } from './document-gen.service';
 import { DocumentRegionTag } from './final-checks.service';
 
 type ParsedCv = ReturnType<typeof parseCvSkillResponse>;
-type GapResult = { answers: CvGapAnswer[]; saveToProfile: boolean } | null;
 
 /** Everything the CV draft is built from, plus the four hand-offs the page
  * still owns because the cover-letter flow shares them. */
-export interface CvDraftContext {
+export interface CvDraftContext extends GapFillHooks {
   job: Job;
   settings: Settings;
   tailoredMd: string;
@@ -28,9 +28,6 @@ export interface CvDraftContext {
   /** Library label, e.g. "Acme - Senior Frontend Engineer - Tailored CV". */
   label: string;
   ensureApplication: () => Promise<Application>;
-  analyzeGaps: (cvText: string) => Promise<CvGapQuestion[]>;
-  askGaps: (questions: CvGapQuestion[]) => Promise<GapResult>;
-  saveToProfile: (block: string) => Promise<void>;
 }
 
 export interface CvDraftResult {
@@ -117,7 +114,7 @@ export class CvDraftService {
     this.docGen.begin(jobId, 'cv');
     try {
       const app = await ctx.ensureApplication();
-      const cvSourceText = await this.foldInGapAnswers(ctx);
+      const cvSourceText = await foldInGapAnswers(ctx.tailoredMd, ctx, this.gapSvc.analyzing);
       const inputHash = await this.db.hashText(
         [jobId, ctx.tailoredMd, ctx.language, ctx.region].join('\x00'),
       );
@@ -126,37 +123,6 @@ export class CvDraftService {
       return await this.persist(ctx, app, parsed, inputHash);
     } finally {
       this.docGen.end(jobId, 'cv');
-    }
-  }
-
-  /** Agentic gap-fill: ask about info the job wants that the CV lacks, then
-   * fold the answers into the text we structure. Fail-open and skippable. */
-  private async foldInGapAnswers(ctx: CvDraftContext): Promise<string> {
-    this.gapSvc.analyzing.set(true);
-    let additionalInfo: string;
-    try {
-      const questions = await ctx.analyzeGaps(ctx.tailoredMd);
-      this.gapSvc.analyzing.set(false);
-      if (!questions.length) return ctx.tailoredMd;
-      const result = await ctx.askGaps(questions);
-      if (!result) return ctx.tailoredMd;
-      additionalInfo = buildAdditionalInfoBlock(result.answers);
-      if (result.saveToProfile) await this.trySaveToProfile(ctx, additionalInfo);
-    } finally {
-      this.gapSvc.analyzing.set(false);
-    }
-    return additionalInfo ? `${ctx.tailoredMd}\n\n${additionalInfo}` : ctx.tailoredMd;
-  }
-
-  /** Saving to the profile is a best-effort extra: the answers are already
-   * folded into the text being structured, so a failed write must never abort
-   * the generation that follows. */
-  private async trySaveToProfile(ctx: CvDraftContext, block: string): Promise<void> {
-    if (!block) return;
-    try {
-      await ctx.saveToProfile(block);
-    } catch {
-      // Intentionally swallowed - see above.
     }
   }
 
@@ -189,7 +155,7 @@ export class CvDraftService {
     if (!result) return;
     applyDateAnswers(parsed, result.answers);
     if (result.saveToProfile) {
-      await this.trySaveToProfile(ctx, buildAdditionalInfoBlock(result.answers));
+      await saveBlockBestEffort(ctx, buildAdditionalInfoBlock(result.answers));
     }
   }
 

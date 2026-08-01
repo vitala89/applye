@@ -163,12 +163,16 @@ export class PasteJobModalComponent {
         void this.router.navigate(['/jobs', job.id]);
         return;
       }
+      // Stay on the link tab. The explanation of why this URL cannot be fetched
+      // - and the "Open in browser" button that is the way forward - are
+      // rendered on this tab, so switching away hid the answer on the tab the
+      // user had just been moved off. They can reach "Paste text" themselves,
+      // and now they can read why they would want to.
       if (classification.kind === 'closed') {
         this.closedBoardName.set(classification.boardName);
       } else {
         this.isUnknownDomain.set(true);
       }
-      this.tab.set('text');
     } catch (e) {
       this.linkError.set(String(e));
     } finally {

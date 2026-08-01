@@ -327,12 +327,19 @@ fn has_role_word(line: &str) -> bool {
         })
 }
 
-/// The job title, or nothing. Tries a labelled line first, then the opening
-/// lines of the body - but only lines that look like a role rather than a
-/// heading. Returning `None` is a valid answer: the caller renders a placeholder
-/// for it, which is better than a section heading presented as the job title.
+/// The job title, or nothing. Tries a labelled line anywhere in the document,
+/// then the opening lines of the body - but only lines that look like a role
+/// rather than a heading. Returning `None` is a valid answer: the caller renders
+/// a placeholder for it, which is better than a section heading presented as the
+/// job title.
+///
+/// The labelled pass reads every line. A label is an explicit statement of what
+/// the value is, and postings routinely put the block carrying it after the
+/// body - the reported one had its company on the last line of the document.
+/// The positional pass below stays near the top, because there position is the
+/// only evidence there is.
 pub fn extract_title(text: &str) -> Option<String> {
-    for line in text.lines().take(20) {
+    for line in text.lines() {
         if let Some(v) = labelled_value(line, TITLE_LABELS) {
             return Some(v);
         }
@@ -378,10 +385,12 @@ fn extract_company_from_body(text: &str) -> Option<String> {
     None
 }
 
-/// The company, or nothing. A labelled line anywhere in the first 30 lines wins
-/// over anything inferred from the body.
+/// The company, or nothing. A labelled line anywhere in the document wins over
+/// anything inferred from the body, for the reason given on `extract_title`:
+/// postings put the "Location - X / Company name - Y" block at the end as often
+/// as at the top, and a label states outright what a heuristic can only guess.
 pub fn extract_company(text: &str) -> Option<String> {
-    for line in text.lines().take(30) {
+    for line in text.lines() {
         if let Some(v) = labelled_value(line, COMPANY_LABELS) {
             return Some(clean_company(&v)).filter(|c| !c.is_empty());
         }
@@ -400,6 +409,24 @@ vision is to enable the sale of goods and services to anyone in the world using 
 their preferred way to pay.\n\n\
 The Purpose:\n\
 You will build payment integrations as a Backend Engineer.";
+
+    /// A real posting, trimmed. Its `Company name - Elbrus` line is the last
+    /// one in the document, which is where the first fix's line window - the
+    /// first 30 lines - could not see it. Kept as a fixture rather than inline
+    /// because its length is the entire point of the test.
+    const TRAILING_LABEL_JD: &str = include_str!("fixtures/trailing-label-jd.txt");
+
+    #[test]
+    fn finds_a_company_labelled_at_the_very_end_of_a_long_posting() {
+        assert!(
+            TRAILING_LABEL_JD.lines().count() > 40,
+            "fixture must be long enough to defeat a short scan window"
+        );
+        assert_eq!(
+            extract_company(TRAILING_LABEL_JD).as_deref(),
+            Some("Elbrus")
+        );
+    }
 
     #[test]
     fn finds_a_company_behind_a_hyphen_label() {

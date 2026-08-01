@@ -65,11 +65,15 @@ describe('JobIntakeService', () => {
 
     // The identify-then-ask chain is its own service and has its own spec.
     // Here it only has to be observable: the parse must hand it the job and
-    // return what it hands back.
+    // must NOT wait for it.
     const identity = {
-      resolve: (job: { id: number }) => {
+      start: (job: { id: number }) => {
         resolveCalls.push(job.id);
-        return Promise.resolve({ ...job, company: 'Named By Chain' });
+        // Stands in for the real phase: an AI call, then a dialog nobody may
+        // ever answer. `start` is void, so a caller cannot legitimately wait on
+        // it - and one that does anyway hangs this test, which is exactly the
+        // failure the user saw as a spinner that never stopped.
+        return new Promise(() => undefined) as unknown as void;
       },
     };
 
@@ -193,14 +197,15 @@ describe('JobIntakeService', () => {
     expect(pasteCalls[0].precedence).toBe('fallback');
   });
 
-  it('runs the identification chain on the same press of Parse and filter', async () => {
-    // The AI step and the dialog are not behind their own buttons: they run
-    // when the rules missed, which is the only time they would be worth
-    // pressing.
+  it('starts the identification phase without waiting for it', async () => {
+    // The phase is an AI round-trip followed by a dialog the user answers in
+    // their own time. Awaiting it here is what left Parse & filter spinning on
+    // work that was not the parse.
     const result = await svc.parse({ jdText: 'jd' });
 
     expect(resolveCalls).toEqual([7]);
-    expect(result?.job.company).toBe('Named By Chain');
+    expect(result?.job.id).toBe(7);
+    expect(svc.parsing()).toBe(false);
   });
 
   it('does not try to name a job the hard filter blocked', async () => {

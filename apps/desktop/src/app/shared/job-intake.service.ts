@@ -74,18 +74,20 @@ export class JobIntakeService {
       // fresh extraction wins and the old values only fill a gap it left. The
       // alternative made a title captured wrongly by an earlier parse permanent,
       // because the page handed it straight back on every re-parse.
-      const parsed = await this.source.jobPaste(
+      const job = await this.source.jobPaste(
         input.jdText,
         input.previous?.title,
         input.previous?.company,
         'fallback',
         input.previous?.id,
       );
-      // Same press of Parse & filter: the rules have had their turn, so
-      // anything still unnamed goes to one AI call and then, if needed, to the
-      // user. A blocked job is not worth naming, so this stays after the
-      // hard-filter check for that case only.
-      const job = parsed.hardFilterPassed ? await this.identity.resolve(parsed) : parsed;
+      // The rules have had their turn. Anything still unnamed goes to one AI
+      // call and then, if needed, to the user - but NOT on this promise. That
+      // phase is an AI round-trip followed by a dialog the user answers in
+      // their own time, and awaiting it here would leave Parse & filter
+      // spinning on work that is not the parse. It is started and left to run.
+      // A blocked job is not worth naming, hence the guard.
+      if (job.hardFilterPassed) this.identity.start(job);
       if (!job.hardFilterPassed) {
         this.status.set('Hard filter failed - job blocked.');
         return { job, cached: null };

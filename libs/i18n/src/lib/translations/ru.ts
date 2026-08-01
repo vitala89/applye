@@ -691,6 +691,11 @@ export const ru: TranslationMap = stub(en, {
     identity_inferred: 'определено ИИ',
     identity_inferred_hint: 'Определено ИИ по тексту вакансии, а не процитировано из него.',
     identity_name_it: 'Указать вручную',
+    identity_identifying: 'определяем…',
+    identity_badge_busy: 'Определяем вакансию',
+    identity_badge_busy_hint: 'Компания и должность определяются в фоне.',
+    identity_badge_ask: 'Назовите вакансию',
+    identity_badge_ask_hint: 'В тексте этого нет. Откройте, чтобы вписать.',
     parsing: 'Разбираем…',
     hard_filter_failed: 'Жёсткий фильтр не пройден',
     hard_filter_msg:

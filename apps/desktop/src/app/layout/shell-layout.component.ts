@@ -34,6 +34,7 @@ import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { UnsavedJobPromptComponent } from '../shared/unsaved-job-prompt/unsaved-job-prompt.component';
 import { JobIdentityPromptComponent } from '../shared/job-identity-prompt/job-identity-prompt.component';
+import { JobIdentityBadgeComponent } from '../shared/job-identity-prompt/job-identity-badge.component';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
@@ -54,6 +55,7 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
     PasteJobModalComponent,
     UnsavedJobPromptComponent,
     JobIdentityPromptComponent,
+    JobIdentityBadgeComponent,
     ButtonDirective,
   ],
   templateUrl: './shell-layout.component.html',

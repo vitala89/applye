@@ -688,6 +688,11 @@ export const uk: TranslationMap = stub(en, {
     identity_inferred: 'визначено ШІ',
     identity_inferred_hint: 'Визначено ШІ за текстом вакансії, а не процитовано з нього.',
     identity_name_it: 'Вказати вручну',
+    identity_identifying: 'визначаємо…',
+    identity_badge_busy: 'Визначаємо вакансію',
+    identity_badge_busy_hint: 'Компанія і посада визначаються у фоні.',
+    identity_badge_ask: 'Назвіть вакансію',
+    identity_badge_ask_hint: 'У тексті цього немає. Відкрийте, щоб вписати.',
     parsing: 'Розбираємо…',
     hard_filter_failed: 'Жорсткий фільтр не пройдено',
     hard_filter_msg:

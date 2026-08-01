@@ -106,6 +106,17 @@ Before a watch can be marked complete:
   did. Existing `job_paste` tests cover both branches and still pass.
 - **Open issues or blockers:** unchanged from the previous watch - unclaimed jobs accumulate as
   invisible rows, and `dashboard.component.ts:270` still loses the name of an unclaimed job.
+- **Corrected within the same watch, by the maintainer testing it.** The first cut awaited the
+  identification phase inside `JobIntakeService.parse`, so Parse & filter stayed disabled across an
+  AI call bounded at ten minutes by `ai_run` and then across a dialog bounded by nothing at all.
+  Reported as "нажали парсинг, и он завис". Leaving the page mid-phase orphaned the promise and the
+  page came back reset. Fixed by making identification a phase that runs _after_ the parse on the
+  root singleton, with its own 45-second bound, an `identifying...` line on the card, and a corner
+  badge for a user who navigated away - the shape `WizardActivityService` and the resume-tailor
+  badge already use. No "you will lose the parse" warning was added, because nothing is lost: the
+  job row is written before the phase starts. The dialog is raised by the component rendering the
+  job rather than by the service, so it cannot appear over Pipeline. Both regressions have tests
+  that hang or fail without the fix.
 - **Next first action:** open the PR, then run the native scenario in `tauri dev`.
 - **Evidence:** command output above, in this session's transcript.
 

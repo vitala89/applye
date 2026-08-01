@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Job } from '@applye/core';
 import { AiService, JobSourceService, KeysService, SettingsService } from '@applye/data';
 import { JobIdentityPromptService } from './job-identity-prompt/job-identity-prompt.service';
@@ -10,18 +10,33 @@ interface IdentifiedJob {
 }
 
 /**
+ * Bound on the identify call, client side.
+ *
+ * `ai_run` allows ten minutes, which is right for a tailoring pass and absurd
+ * for two short strings. Left at that, a provider that accepts the connection
+ * and then says nothing holds the phase for ten minutes. Timing out here costs
+ * the user a dialog they were going to see anyway.
+ */
+const IDENTIFY_TIMEOUT_MS = 45_000;
+
+/**
  * Naming a job the deterministic rules could not name.
  *
- * One press of Parse & filter carries the whole chain: the rules run first and
- * cost nothing, a single `job-identify` call runs only if they missed, and the
- * dialog follows only if that missed too. The AI step is deliberately not
- * behind its own button - it runs exactly when a button would have been worth
- * pressing, and three presses on every badly formatted posting is worse than
- * one.
+ * **This does not run inside the parse.** The parse is over when the row is
+ * written - it is deterministic, costs no tokens, and returns in milliseconds.
+ * Identification is a second phase: an AI round-trip bounded by a network, then
+ * a dialog bounded by nothing at all except the user. Holding the Parse button
+ * disabled across either of those reports a parse that is not happening, and
+ * across both of them reports one that may never end.
  *
- * Everything here is best effort. A job with no company is a job with a
- * placeholder where the company goes, which is what part A already renders; a
- * failure to improve on that must never fail the parse.
+ * So the phase runs here, on the root singleton, and survives the page being
+ * left - the same shape `WizardActivityService` uses for the wizard's long
+ * steps, corner badge and all. Nothing is lost by walking away: the job row
+ * exists before this starts, so there is no work to cancel and no warning owed.
+ *
+ * The dialog is deliberately NOT raised from here. This marks a job as needing
+ * a name; whoever is rendering that job opens it. A user who moved on to
+ * Pipeline does not get a modal about a job they stopped looking at.
  */
 @Injectable({ providedIn: 'root' })
 export class JobIdentityResolverService {
@@ -31,48 +46,95 @@ export class JobIdentityResolverService {
   private readonly source = inject(JobSourceService);
   private readonly prompt = inject(JobIdentityPromptService);
 
+  private readonly identifying = signal<number | null>(null);
+  private readonly needsName = signal<number | null>(null);
+  private readonly latest = signal<Job | null>(null);
+
+  /** The job an identify call is in flight for, or null. Drives the badge. */
+  readonly identifyingJobId = this.identifying.asReadonly();
+  /** A job the chain could not name and has not yet asked about. */
+  readonly needsNameJobId = this.needsName.asReadonly();
+  /** The most recent job this service rewrote, for its page to adopt. */
+  readonly resolved = this.latest.asReadonly();
+  /** True while the corner badge has anything to say. */
+  readonly busy = computed(() => this.identifying() !== null || this.needsName() !== null);
+
   /**
-   * Fill in whatever the parse left missing, and return the job as it now
-   * stands. Returns the job untouched when nothing is missing.
+   * Start the identification phase for a freshly parsed job. Returns at once;
+   * the work continues after the caller, and after the page, are gone.
    */
-  async resolve(job: Job): Promise<Job> {
-    if (!this.isIncomplete(job)) return job;
+  start(job: Job): void {
+    if (!this.isIncomplete(job) || job.identityPromptSkipped) return;
+    void this.identify(job);
+  }
 
-    let current = await this.identifyWithAi(job);
-    if (!this.isIncomplete(current)) return current;
-    if (current.identityPromptSkipped) return current;
+  /** Forget a job the badge is offering - it was named, or it went away. */
+  clear(jobId: number): void {
+    if (this.needsName() === jobId) this.needsName.set(null);
+    if (this.latest()?.id === jobId) this.latest.set(null);
+  }
 
+  /**
+   * Ask the user about `job` and write what they say. Called by whoever has the
+   * job on screen, which is what keeps the dialog off every other page.
+   */
+  async ask(job: Job): Promise<Job> {
+    this.needsName.set(null);
     const answer = await this.prompt.ask({
-      missingCompany: !current.company,
-      missingTitle: !current.title,
-      company: current.company ?? '',
-      title: current.title ?? '',
+      missingCompany: !job.company,
+      missingTitle: !job.title,
+      company: job.company ?? '',
+      title: job.title ?? '',
     });
 
     if (!answer) {
-      await this.source.jobSkipIdentityPrompt(current.id).catch(() => undefined);
-      return { ...current, identityPromptSkipped: true };
+      await this.source.jobSkipIdentityPrompt(job.id).catch(() => undefined);
+      return this.publish({ ...job, identityPromptSkipped: true });
     }
 
     // Only a field the user actually filled becomes theirs. Leaving one blank
     // is not a claim about it, so whatever source it already had is kept.
-    current = await this.source.jobSetIdentity(
-      current.id,
-      answer.title || current.title,
-      answer.company || current.company,
-      answer.title ? 'user' : current.titleSource,
-      answer.company ? 'user' : current.companySource,
+    const named = await this.source.jobSetIdentity(
+      job.id,
+      answer.title || job.title,
+      answer.company || job.company,
+      answer.title ? 'user' : job.titleSource,
+      answer.company ? 'user' : job.companySource,
     );
-    return current;
+    return this.publish(named);
   }
 
-  /** Opens the dialog for a job on demand, after a Skip or from the card. */
-  askAgain(job: Job): Promise<Job> {
-    return this.resolve({ ...job, identityPromptSkipped: false });
+  /**
+   * The whole chain on demand, for the "Name it yourself" button: the AI gets
+   * another turn, then the dialog opens whether or not a skip was recorded.
+   */
+  async askAgain(job: Job): Promise<Job> {
+    const identified = await this.identify({ ...job, identityPromptSkipped: false }, false);
+    return this.ask(identified);
   }
 
   private isIncomplete(job: Job): boolean {
     return !job.company || !job.title;
+  }
+
+  private publish(job: Job): Job {
+    this.latest.set(job);
+    return job;
+  }
+
+  /**
+   * `flag` marks the job as needing a name when the call leaves it incomplete.
+   * The on-demand path passes false, because it is about to ask regardless.
+   */
+  private async identify(job: Job, flag = true): Promise<Job> {
+    this.identifying.set(job.id);
+    try {
+      const named = await this.callIdentify(job);
+      if (flag && this.isIncomplete(named)) this.needsName.set(job.id);
+      return named;
+    } finally {
+      if (this.identifying() === job.id) this.identifying.set(null);
+    }
   }
 
   /**
@@ -80,7 +142,7 @@ export class JobIdentityResolverService {
    * provider is configured, which is also the whole flow for a user who has
    * never set up AI: the dialog follows directly.
    */
-  private async identifyWithAi(job: Job): Promise<Job> {
+  private async callIdentify(job: Job): Promise<Job> {
     const s = this.settings.current();
     if (!s || !job.jdText) return job;
     try {
@@ -91,13 +153,15 @@ export class JobIdentityResolverService {
       const rendered = await this.ai.renderSkill('job-identify', {
         job_description: job.jdText,
       });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-      });
+      const res = await this.withTimeout(
+        this.ai.run({
+          mode: s.aiMode,
+          provider: s.provider,
+          model: s.economyModel,
+          systemPrompt: rendered.systemPrompt,
+          userPrompt: rendered.userPrompt,
+        }),
+      );
       const identified = this.parse(res.text);
       const company = job.company || identified.company || undefined;
       const title = job.title || identified.title || undefined;
@@ -106,18 +170,29 @@ export class JobIdentityResolverService {
       // Both values are stored as `inferred`, so neither is ever presented as a
       // quotation from the posting, and neither outranks a later real
       // extraction. A field the AI did not name keeps the source it had.
-      return await this.source.jobSetIdentity(
-        job.id,
-        title,
-        company,
-        title && title !== job.title ? 'inferred' : job.titleSource,
-        company && company !== job.company ? 'inferred' : job.companySource,
+      return this.publish(
+        await this.source.jobSetIdentity(
+          job.id,
+          title,
+          company,
+          title && title !== job.title ? 'inferred' : job.titleSource,
+          company && company !== job.company ? 'inferred' : job.companySource,
+        ),
       );
     } catch {
-      // A missing key, an offline provider, a refusal, malformed JSON: none of
-      // them are worth failing a parse over. The dialog is the fallback.
+      // A missing key, an offline provider, a refusal, a timeout, malformed
+      // JSON: none of them are worth more than the dialog that follows anyway.
       return job;
     }
+  }
+
+  private withTimeout<T>(work: Promise<T>): Promise<T> {
+    return Promise.race([
+      work,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error('job-identify timed out')), IDENTIFY_TIMEOUT_MS),
+      ),
+    ]);
   }
 
   private parse(text: string): IdentifiedJob {

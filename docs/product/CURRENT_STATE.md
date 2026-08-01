@@ -174,7 +174,11 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   there is none, `extracted` behaves as part A left it. That first rule is load-bearing - without it a
   hand-typed company goes through `is_usable_company` on the next parse and is discarded for not
   looking like a company name. `job_set_identity` writes the identity columns only, so naming a job
-  cannot fork it or invalidate its cached score. Resolution and storage live in
+  cannot fork it or invalidate its cached score. The phase runs off the parse, not inside it: `job_paste` returns and the button
+  frees, then a root singleton names the job in the background under a 45-second bound, reports
+  itself on the card and - once the user leaves - in a corner badge beside the resume-tailor one.
+  Awaiting it inside the parse was the first cut and produced exactly the symptom you would expect:
+  a spinner that never stopped. Resolution and storage live in
   `apps/desktop/src-tauri/src/commands/job_identity_source.rs`; the chain is
   `JobIdentityResolverService`; the dialog is mounted at the shell beside `UnsavedJobPromptComponent`;
   and `job-meta-card` came out of the jobs page to host the inferred marker and the "Name it yourself"

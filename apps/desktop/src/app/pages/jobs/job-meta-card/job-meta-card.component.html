@@ -19,7 +19,10 @@
     <span class="job-meta__hash">{{ (job().jdHash ?? '').slice(0, 12) }}</span>
   </div>
   <div class="job-meta__badges">
-    <button class="job-meta__name-it" type="button" (click)="nameIt()">
+    @if (identifying()) {
+      <span class="job-meta__identifying">{{ t()('jobs.identity_identifying') }}</span>
+    }
+    <button class="job-meta__name-it" type="button" (click)="nameIt()" [disabled]="identifying()">
       {{ t()('jobs.identity_name_it') }}
     </button>
     <span class="badge badge--pass">{{ t()('jobs.filter_passed') }}</span>

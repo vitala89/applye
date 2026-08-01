@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import {
   CompensationVerdict,
   Job,
@@ -50,11 +58,39 @@ export class JobMetaCardComponent {
     () => !!this.job().title && this.job().titleSource === 'inferred',
   );
 
+  /** True while the AI step is naming this job. Shown on the card so a user who
+   * stayed can see the phase is running, without the Parse button pretending
+   * the parse itself is still going. */
+  protected readonly identifying = computed(
+    () => this.identity.identifyingJobId() === this.job().id,
+  );
+
+  constructor() {
+    // The identification phase outlives this component, so its results arrive
+    // asynchronously and possibly after a round trip through another page.
+    effect(() => {
+      const resolved = this.identity.resolved();
+      if (resolved && resolved.id === this.job().id) this.identityChanged.emit(resolved);
+    });
+
+    // The dialog is raised here rather than by the service, because being
+    // rendered is what proves the user is still looking at this job. Someone
+    // who moved on to Pipeline meets the corner badge instead of a modal.
+    effect(() => {
+      if (this.identity.needsNameJobId() === this.job().id) void this.ask();
+    });
+  }
+
+  private async ask(): Promise<void> {
+    this.identityChanged.emit(await this.identity.ask(this.job()));
+  }
+
   /** The way back after a Skip, and the way in for a value the user disagrees
-   * with. Always offered - naming a job is never closed off. */
+   * with. Always offered - naming a job is never closed off. Unlike the
+   * automatic path this gives the AI another turn first, because the posting or
+   * the configured provider may have changed since. */
   protected async nameIt(): Promise<void> {
-    const updated = await this.identity.askAgain(this.job());
-    this.identityChanged.emit(updated);
+    this.identityChanged.emit(await this.identity.askAgain(this.job()));
   }
 
   protected readonly compTarget = computed(() => {

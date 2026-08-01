@@ -693,6 +693,11 @@ export const es: TranslationMap = stub(en, {
     identity_inferred: 'deducido',
     identity_inferred_hint: 'Deducido por la IA a partir de la oferta, no citado de ella.',
     identity_name_it: 'Indicarlo tu mismo',
+    identity_identifying: 'identificando…',
+    identity_badge_busy: 'Identificando una oferta',
+    identity_badge_busy_hint: 'Buscando la empresa y el puesto en segundo plano.',
+    identity_badge_ask: 'Identifica esta oferta',
+    identity_badge_ask_hint: 'La oferta no lo dice. Abrela para rellenarlo.',
     parsing: 'Analizando…',
     hard_filter_failed: 'Filtro estricto no superado',
     hard_filter_msg:

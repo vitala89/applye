@@ -5,7 +5,9 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::commands::job_identity::{extract_company, extract_title};
+use crate::commands::job_identity::{
+    extract_company, extract_title, is_usable_company, is_usable_title,
+};
 use crate::db::{stable_hash, Db};
 
 fn hard_filter(text: &str) -> bool {
@@ -113,15 +115,21 @@ pub async fn job_paste(
 }
 
 /// Resolve one field against the text according to `precedence`.
+/// `usable` is applied only on the fallback path, where `passed` is a value this
+/// job already held. Extraction rejecting a string and storage handing the same
+/// string straight back would leave the rules with no effect on any job parsed
+/// before them. On the authoritative path the caller's value is not a guess and
+/// is not second-guessed.
 fn resolve_identity(
     passed: Option<String>,
     extracted: Option<String>,
     precedence: IdentityPrecedence,
+    usable: fn(&str) -> bool,
 ) -> Option<String> {
     let passed = passed.filter(|s| !s.trim().is_empty());
     match precedence {
         IdentityPrecedence::Authoritative => passed.or(extracted),
-        IdentityPrecedence::Fallback => extracted.or(passed),
+        IdentityPrecedence::Fallback => extracted.or(passed.filter(|s| usable(s))),
     }
 }
 
@@ -136,8 +144,18 @@ async fn job_paste_core(
 ) -> Result<crate::commands::jobs::Job, String> {
     let jd_hash = stable_hash(&jd_text);
     let hard_pass = hard_filter(&jd_text);
-    let title = resolve_identity(title_override, extract_title(&jd_text), precedence);
-    let company = resolve_identity(company_override, extract_company(&jd_text), precedence);
+    let title = resolve_identity(
+        title_override,
+        extract_title(&jd_text),
+        precedence,
+        is_usable_title,
+    );
+    let company = resolve_identity(
+        company_override,
+        extract_company(&jd_text),
+        precedence,
+        is_usable_company,
+    );
     let prefer_fresh = i64::from(precedence == IdentityPrecedence::Fallback);
 
     // Legitimacy is informational only - it never blocks the hard filter or
@@ -180,15 +198,14 @@ async fn job_paste_core(
          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(jd_hash) DO UPDATE SET
            -- Authoritative: backfill a missing company/title without clobbering
-           -- an existing one. Fallback: the resolved value already prefers fresh
-           -- extraction and falls back to what the caller passed - which is what
-           -- is stored - so letting it win is what makes a bad value correctable
-           -- when the same text is parsed again.
-           company            = CASE WHEN ? = 1 AND excluded.company IS NOT NULL
-                                     THEN excluded.company
+           -- an existing one. Fallback: the resolved value is already the whole
+           -- answer for this row - fresh extraction, or a stored value that
+           -- still passes today's rules, or nothing - so it wins outright,
+           -- including when it is NULL. Keeping the stored value on NULL here
+           -- would put back exactly the string the rules just rejected.
+           company            = CASE WHEN ? = 1 THEN excluded.company
                                      ELSE COALESCE(NULLIF(jobs.company, ''), excluded.company) END,
-           title              = CASE WHEN ? = 1 AND excluded.title IS NOT NULL
-                                     THEN excluded.title
+           title              = CASE WHEN ? = 1 THEN excluded.title
                                      ELSE COALESCE(NULLIF(jobs.title, ''), excluded.title) END,
            hard_filter_passed = excluded.hard_filter_passed,
            legitimacy_tier    = excluded.legitimacy_tier,
@@ -651,5 +668,82 @@ mod pipeline_tests {
 
         assert_eq!(second.id, first.id, "same text must reuse the same row");
         assert_eq!(second.title.as_deref(), Some("Backend Engineer"));
+    }
+
+    #[tokio::test]
+    async fn a_reparse_drops_a_stored_title_todays_rules_would_reject() {
+        let pool = test_pool().await;
+        // The reported case, end to end. "The Purpose:" was captured before the
+        // section-heading rule existed. Extraction now returns nothing for this
+        // text, and the page hands the stored value back on every re-parse - so
+        // without validating it on the way in, the string the rules were written
+        // to reject would survive them forever.
+        let jd = "We are hiring.\nYou will do many things here.";
+        let first = job_paste_core(
+            jd.to_string(),
+            Some("The Purpose:".to_string()),
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
+        assert_eq!(first.title.as_deref(), Some("The Purpose:"));
+
+        let second = job_paste_core(
+            jd.to_string(),
+            Some("The Purpose:".to_string()),
+            None,
+            IdentityPrecedence::Fallback,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(second.id, first.id);
+        assert_eq!(
+            second.title, None,
+            "a rejected title must clear, so the UI shows its placeholder"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_reparse_keeps_a_stored_title_that_still_looks_like_a_role() {
+        let pool = test_pool().await;
+        // The other half of the same rule. A header-less JD still extracts
+        // nothing, but "Senior Backend Engineer" is a real title, so dropping it
+        // would lose good data to a stricter parser.
+        let jd = "We are hiring.\nYou will do many things here.";
+        let job = job_paste_core(
+            jd.to_string(),
+            Some("Senior Backend Engineer".to_string()),
+            Some("Known Corp".to_string()),
+            IdentityPrecedence::Fallback,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(job.title.as_deref(), Some("Senior Backend Engineer"));
+        assert_eq!(job.company.as_deref(), Some("Known Corp"));
+    }
+
+    #[tokio::test]
+    async fn the_authoritative_path_does_not_second_guess_its_caller() {
+        let pool = test_pool().await;
+        // A board can legitimately return a title our role-word list has never
+        // heard of. It read a structured field; we did not, so we defer.
+        let jd = "We are hiring.\nYou will do many things here.";
+        let job = job_paste_core(
+            jd.to_string(),
+            Some("Sourdough Whisperer".to_string()),
+            None,
+            IdentityPrecedence::Authoritative,
+            &pool,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(job.title.as_deref(), Some("Sourdough Whisperer"));
     }
 }

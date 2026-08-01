@@ -44,7 +44,58 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), the last named seam, and a busy flag that would have split in two
+### 2026-08-01 (latest), JD intake comes out, and four of its seven resets stay behind
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/job-intake-service`, from `main` (`23c8e51`)
+- **Objective:** the next first action from the watch below - `parseAndFilter` out of
+  `jobs.component.ts` - started in a fresh session, which is what the previous watch asked for.
+- **Completed:**
+  - PR #240 merged first, so this branch starts from a clean `main` with no open pull requests.
+  - `JobIntakeService` (89 lines): the parse itself, its `parsing`/`status`/`error` line, the free
+    score-cache probe, and the 0-token archetype overlap check. `jobs.component.ts`
+    **1553 -> 1532**.
+  - **The seven-signal reset was inventoried before anything moved, which is what kept it small.**
+    `parseAndFilter` opened by clearing signals across four services. Only four of them
+    (`parsing`, `parseStatus`, `parseError`, `archetypeMatch`) are intake's. The other three are the
+    page deciding that a re-parse invalidates the job, the score and the tailoring lock, plus
+    `resetWizard()`. Moving all of them would have made intake write into `JobScoringService` and the
+    wizard to clear state it does not own, so the service takes a snapshot in and returns a result
+    out, and the "the JD changed, so this is stale" decisions stayed with the page.
+  - A cache hit is **returned, not applied**, for the same reason: `cache`, `fromCache`, `stale` and
+    `status` are `JobScoringService`'s signals.
+  - 9 tests where the whole path had none, including the two early exits a mechanical move would
+    lose: a hard-filter failure returns before the cache probe and the archetype call, and a profile
+    with no scoring hash never touches the cache.
+- **Not completed:** the compensation/archetype derivations still on the page. They are small and
+  pure and want to be functions in `libs/core`, not a service. No native `tauri dev` gate was run.
+- **Files or packages changed:** added `apps/desktop/src/app/shared/job-intake.service.ts` and its
+  spec; `apps/desktop/src/app/pages/jobs/jobs.component.ts`; `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file. `jobs.component.html` is untouched.
+- **Validation:** run and observed on this branch: `npx tsc -p apps/desktop/tsconfig.app.json
+--noEmit` (clean), `npm run type-check` (pass), `npx nx test desktop` (58 suites, **932 passed**, up
+  from 923), `npx nx lint desktop` (pass), `npm run quality:file-size` (passed; the ratchet moved
+  1553 -> 1532), `npm run quality:attribution` (passed), `npm run format:check` (pass),
+  `npm run verify:csp` (pass), `git diff --check` (clean). **Not run:** `tauri dev`.
+- **Privacy/security impact:** none. No new I/O, no new stored field, no network or IPC surface
+  changed; the same three `DbService` calls run in the same order.
+- **Decisions and assumptions:** the job is set on the page **after** the service returns, where
+  before it was set between the parse and the cache/archetype awaits. That makes the job card and
+  the archetype warning appear together instead of the card appearing a few milliseconds early -
+  behavioural, visible only as the absence of a flash, and judged an improvement rather than a
+  regression. The parse status strings stay hardcoded English exactly as they were; translating them
+  is a separate change and was not smuggled in here.
+- **Risks or compatibility impact:** low. The template binds the same four signal names through
+  aliases, so `jobs.component.html` is byte-identical to `main`.
+- **Open issues or blockers:** none from this watch. The known deferred items are unchanged: the
+  Discover duplicate-row decision, the CV card reading "Generating" while blocked on the gap dialog,
+  and the native gate.
+- **Next first action:** move the compensation/archetype derivations (`hasArchetypes`, the
+  `compareCompensation`/`extractSalaryFromJd` computed) into `libs/core` as pure functions, or
+  decide they are small enough to leave. Either way, say which and why in the next entry.
+
+### 2026-08-01, the last named seam, and a busy flag that would have split in two
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { JobsStore } from '@applye/data';
+import { DbService, JobsStore } from '@applye/data';
 import { WizardNavService } from './wizard-nav.service';
 import { WizardProgressService } from './wizard-progress.service';
 
@@ -11,9 +11,12 @@ describe('WizardNavService', () => {
   let scrolled: number;
 
   const overview = signal<{ id: number; company?: string; title?: string }[]>([]);
+  /** Jobs the overview does not carry - an analysed job the user never saved. */
+  let unlistedJobs: Record<number, { company?: string; title?: string }>;
 
   beforeEach(() => {
     scrolled = 0;
+    unlistedJobs = {};
     const doc = {
       defaultView: null,
       querySelector: () => ({ scrollTo: () => (scrolled += 1) }),
@@ -26,6 +29,10 @@ describe('WizardNavService', () => {
         WizardNavService,
         WizardProgressService,
         { provide: JobsStore, useValue: { overview } },
+        {
+          provide: DbService,
+          useValue: { getJob: (id: number) => Promise.resolve(unlistedJobs[id] ?? null) },
+        },
         { provide: DOCUMENT, useValue: doc },
       ],
     });
@@ -86,17 +93,42 @@ describe('WizardNavService', () => {
   });
 
   describe('cross-job label', () => {
-    it('names the other job from the loaded overview', () => {
+    /** The label is filled asynchronously when the confirm is raised. */
+    const settle = () => new Promise((r) => setTimeout(r, 0));
+
+    it('names the other job from the loaded overview', async () => {
       overview.set([{ id: 4, company: 'Acme', title: 'Engineer' }]);
       progress.set(4, 1);
+
+      svc.requestOpen(9);
+      await settle();
 
       expect(svc.crossJobLabel()).toBe('Acme - Engineer');
     });
 
-    it('is empty with no session, and with a session the overview has not loaded', () => {
-      expect(svc.crossJobLabel()).toBe('');
-
+    it('names a job the overview does not carry, by reading it directly', async () => {
+      // My Jobs holds only claimed jobs, so a session started on an analysed
+      // but unsaved job has no row there. Without this the confirm would ask
+      // the user to abandon work it could not name.
+      unlistedJobs[404] = { company: 'Unsaved Co', title: 'Designer' };
       progress.set(404, 1);
+
+      svc.requestOpen(9);
+      await settle();
+
+      expect(svc.crossJobLabel()).toBe('Unsaved Co - Designer');
+    });
+
+    it('is empty when the other job cannot be found at all', async () => {
+      progress.set(404, 1);
+
+      svc.requestOpen(9);
+      await settle();
+
+      expect(svc.crossJobLabel()).toBe('');
+    });
+
+    it('is empty when no confirm was raised', () => {
       expect(svc.crossJobLabel()).toBe('');
     });
   });

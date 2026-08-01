@@ -1,3 +1,4 @@
+import { unsavedJobGuard } from './pages/jobs/unsaved-job.guard';
 import { Route } from '@angular/router';
 
 export const appRoutes: Route[] = [
@@ -24,10 +25,12 @@ export const appRoutes: Route[] = [
   {
     path: 'jobs/new',
     loadComponent: () => import('./pages/jobs/jobs.component').then((m) => m.JobsComponent),
+    canDeactivate: [unsavedJobGuard],
   },
   {
     path: 'jobs/:id',
     loadComponent: () => import('./pages/jobs/jobs.component').then((m) => m.JobsComponent),
+    canDeactivate: [unsavedJobGuard],
   },
   {
     path: 'pipeline',

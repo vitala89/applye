@@ -189,7 +189,7 @@ export const en: TranslationMap = {
     filter_legit: 'All legitimacy',
     empty: 'No jobs yet. Paste a job to get started.',
     not_scored: 'Not scored',
-    no_status: 'Saved',
+    no_status: 'No application',
     import_done: 'Imported {n} jobs.',
   },
   pasteModal: {
@@ -651,6 +651,11 @@ export const en: TranslationMap = {
     paste_placeholder: 'Paste the full job description here…',
     parse_btn: 'Parse & filter',
     company_unknown: 'Company not identified',
+    unsaved_title: 'Analysed, but not saved',
+    unsaved_msg:
+      'You analysed this job but never saved it. Leaving takes it out of My Jobs. Pasting the same posting again brings it back with its score.',
+    unsaved_stay: 'Stay here',
+    unsaved_leave: 'Leave anyway',
     title_unknown: 'Untitled role',
     parsing: 'Parsing…',
     hard_filter_failed: 'Hard filter failed',

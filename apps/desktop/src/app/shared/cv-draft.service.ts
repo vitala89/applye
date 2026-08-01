@@ -30,6 +30,20 @@ export interface CvDraftContext extends GapFillHooks {
   ensureApplication: () => Promise<Application>;
 }
 
+/**
+ * The exact input a CV draft's `inputHash` is computed from. Exported because
+ * the staleness check has to ask the same question the draft answered - a
+ * second copy of this formula is how a regenerate silently stops firing.
+ */
+export function cvDraftHashInput(
+  jobId: number,
+  tailoredMd: string,
+  language: string,
+  region: string,
+): string {
+  return [jobId, tailoredMd, language, region].join('\x00');
+}
+
 export interface CvDraftResult {
   document: DocumentLibraryItem;
   application: Application;
@@ -116,7 +130,7 @@ export class CvDraftService {
       const app = await ctx.ensureApplication();
       const cvSourceText = await foldInGapAnswers(ctx.tailoredMd, ctx, this.gapSvc.analyzing);
       const inputHash = await this.db.hashText(
-        [jobId, ctx.tailoredMd, ctx.language, ctx.region].join('\x00'),
+        cvDraftHashInput(jobId, ctx.tailoredMd, ctx.language, ctx.region),
       );
       const parsed = await this.structure(ctx, cvSourceText);
       await this.fillMissingDates(ctx, parsed);

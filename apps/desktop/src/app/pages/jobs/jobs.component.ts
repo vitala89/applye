@@ -84,11 +84,8 @@ import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
 import {
-  buildCvContent,
   buildAdditionalInfoBlock,
   cleanJsonText,
-  parseCvSkillResponse,
-  parseDateAnswer,
   withCvPhoto,
   type CvGapAnswer,
   type CvGapQuestion,
@@ -107,6 +104,7 @@ import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
 import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
 import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
+import { CvDraftService } from '../../shared/cv-draft.service';
 
 @Component({
   selector: 'app-jobs',
@@ -133,6 +131,7 @@ import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service
     CvGapDialogService,
     JobScoringService,
     WizardNavService,
+    CvDraftService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -145,6 +144,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardNav = inject(WizardNavService);
+  private readonly cvDraftSvc = inject(CvDraftService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
@@ -724,153 +724,30 @@ export class JobsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.docGen.begin(job.id, 'cv');
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     try {
-      const app = await this.ensureApplicationDraft();
-      const language = this.documentReviewLanguage();
-
-      // Agentic gap-fill: ask about info the job wants that the CV lacks, then
-      // fold the answers into the text we structure. Fail-open and skippable.
-      this.gapAnalyzing.set(true);
-      let additionalInfo = '';
-      try {
-        const questions = await this.analyzeCvGaps(tailoredMd);
-        this.gapAnalyzing.set(false);
-        if (questions.length) {
-          const result = await this.awaitGapDialog(questions);
-          if (result) {
-            additionalInfo = buildAdditionalInfoBlock(result.answers);
-            if (result.saveToProfile && additionalInfo) {
-              try {
-                await this.appendToProfile(additionalInfo);
-              } catch {
-                // Saving to the profile is a best-effort extra: the answers are
-                // already folded into cvSourceText below, so a failed profile
-                // write must not abort the CV generation that follows.
-              }
-            }
-          }
-        }
-      } finally {
-        this.gapAnalyzing.set(false);
-      }
-      const cvSourceText = additionalInfo ? `${tailoredMd}\n\n${additionalInfo}` : tailoredMd;
-
-      const inputHash = await this.db.hashText(
-        [job.id, tailoredMd, language, this.documentReviewRegion()].join('\x00'),
-      );
-      // Structure the tailored markdown into real CV sections through the
-      // same `cv-import` AI path used by Documents import and onboarding,
-      // instead of dumping the whole blob into the summary section.
-      const rendered = await this.ai.renderSkill('cv-import', {
-        cv_text: cvSourceText,
-        language,
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-        maxTokens: 8192,
-      });
-      const parsed = parseCvSkillResponse(res.text);
-
-      // Block-before-generate: when the structured CV has experience or
-      // education entries the AI could not date, ask the user rather than
-      // shipping a CV that renders "Present" with no start date. Reuses the gap
-      // dialog. Skippable (Skip per entry / Cancel), and never fabricates a
-      // date. Question ids are `expdate:<i>` / `edudate:<i>` so answers route
-      // back to the right list.
-      const undatedExp = parsed.experience
-        .map((e, i) => ({ e, i }))
-        .filter(({ e }) => !e.startDate?.trim());
-      const undatedEdu = parsed.education
-        .map((e, i) => ({ e, i }))
-        .filter(({ e }) => !e.startDate?.trim());
-      if (undatedExp.length || undatedEdu.length) {
-        const questions: CvGapQuestion[] = [
-          ...undatedExp.map(({ e, i }) => ({
-            id: `expdate:${i}`,
-            category: 'experience' as const,
-            question: this.t()('jobs.gap.date_question')
-              .replace('{company}', e.company || '')
-              .replace('{role}', e.role || ''),
-            hint: this.t()('jobs.gap.date_hint'),
-          })),
-          ...undatedEdu.map(({ e, i }) => ({
-            id: `edudate:${i}`,
-            category: 'other' as const,
-            question: this.t()('jobs.gap.edu_date_question')
-              .replace('{degree}', e.degree || '')
-              .replace('{institution}', e.institution || ''),
-            hint: this.t()('jobs.gap.edu_date_hint'),
-          })),
-        ];
-        const result = await this.awaitGapDialog(questions);
-        if (result) {
-          for (const ans of result.answers) {
-            const [kind, idxStr] = ans.id.split(':');
-            const idx = Number(idxStr);
-            if (!ans.answer.trim()) continue;
-            const entry = kind === 'edudate' ? parsed.education[idx] : parsed.experience[idx];
-            if (!entry) continue;
-            const { startDate, endDate } = parseDateAnswer(ans.answer);
-            if (startDate) entry.startDate = startDate;
-            if (endDate) entry.endDate = endDate;
-          }
-          if (result.saveToProfile) {
-            const block = buildAdditionalInfoBlock(result.answers);
-            if (block) {
-              try {
-                await this.appendToProfile(block);
-              } catch {
-                // Best-effort: the dates are already folded into `parsed`
-                // above, so a failed profile write must not abort generation.
-              }
-            }
-          }
-        }
-      }
-
-      const content = buildCvContent(parsed, null);
-      const doc = await this.db.documentLibraryUpsert({
-        // One CV per application (ADR-0003): reuse the already-linked
-        // document whenever there is one, so a first tailor and every
-        // later retailor/regenerate update the same row instead of
-        // creating duplicate "<Company> - Tailored CV" entries. Only a
-        // job with no linked CV yet mints a new row.
-        id: app.cvDocumentId ?? undefined,
-        docType: 'cv',
-        source: 'generated',
+      const result = await this.cvDraftSvc.create({
+        job,
+        settings,
+        tailoredMd,
+        language: this.documentReviewLanguage(),
+        region: this.documentReviewRegion(),
         label: this.jobDocLabel(job, 'Tailored CV'),
-        language,
-        regionTag: this.documentReviewRegion(),
-        contentJson: JSON.stringify(content),
-        inputHash,
-        // Draft until Export & Apply: hidden from the Documents library list
-        // until the user commits it (export / mark applied). Review, inline
-        // edit and export all still reach it by id.
-        isApplicationDraft: true,
+        ensureApplication: () => this.ensureApplicationDraft(),
+        analyzeGaps: (cvText) => this.analyzeCvGaps(cvText),
+        askGaps: (questions) => this.awaitGapDialog(questions),
+        saveToProfile: (block) => this.appendToProfile(block),
       });
-      const updated = await this.db.upsertApplication({
-        ...app,
-        cvDocumentId: doc.id,
-        docLanguage: this.documentReviewLanguage(),
-      });
-      this.application.set(updated);
-      this.linkedCv.set(doc);
+      if (!result) return;
+      this.application.set(result.application);
+      this.linkedCv.set(result.document);
       this.finalChecksOutdated.set(!!this.finalChecks());
       this.documentReviewStatus.set(this.t()('jobs.wizard.document_cv_linked'));
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
       this.toast.error(String(e));
-    } finally {
-      if (job.id) this.docGen.end(job.id, 'cv');
     }
   }
 

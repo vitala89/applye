@@ -44,7 +44,55 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), CV generation comes out of the document-drafts region
+### 2026-08-01 (latest), the cover letter follows, and the gap-fill stops being two copies
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cover-letter-draft-service`, from `main` (`90ab558`)
+- **Objective:** the next first action from the watch below - cover-letter generation out of the
+  document-drafts region.
+- **Completed:**
+  - `CoverLetterDraftService` (138 lines): the `cover-letter-generate` call and the draft row.
+    `jobs.component.ts` **1693 -> 1612**. `createCoverLetterDraft` went from ~125 lines to 40.
+  - **The extraction found real duplication rather than creating a second copy of it.** Both draft
+    flows ran the same gap-fill - analyse, ask, fold the answers back into the source text,
+    best-effort save to the profile - as two copies of the same twenty lines, down to the same
+    `finally` and the same swallowed write. It is now one `foldInGapAnswers` in `gap-fill.ts` (54
+    lines) that both services call, and `CvDraftService` shrank from 216 to 184 going through it.
+  - 13 tests, 5 of them on the shared helper directly. The condition that was a bug once already is
+    now pinned: the letter skips the gap pass when a CV is linked **or still preparing**, because a
+    CV mid-generation has not linked itself yet.
+- **Not completed:** the link/commit lifecycle, which is what remains of the 591-line region.
+- **Files or packages changed:** `apps/desktop/src/app/shared/cover-letter-draft.service.ts`
+  (new, 138), `cover-letter-draft.service.spec.ts` (new, 192), `gap-fill.ts` (new, 54),
+  `cv-draft.service.ts` (216 -> 184), `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  (1693 -> **1612**, still over budget, shrank). `jobs.component.html` untouched.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green;
+  desktop suite **899 tests** (886 before); `npm run quality`, `npm run verify:csp`,
+  `npm run format:check`, `git diff --check` all passed. Lint: 8 warnings, all pre-existing non-null
+  assertions in other specs. **Not run:** cargo - no Rust touched. **Not verified natively:** cover
+  letter generation needs an AI provider and SQLite over Tauri IPC.
+- **Privacy/security impact:** none new. Same profile text, same job description, same skill.
+- **Decisions and assumptions:**
+  - `skipGapFill` is computed by the page and passed in, rather than the service reading
+    `linkedCv`/`preparingCv` itself. Those are the page's signals, and passing a boolean keeps the
+    service free of them.
+  - `foldInGapAnswers` takes the `analyzing` signal as a parameter instead of injecting
+    `CvGapDialogService`, so the helper stays a function and both services keep owning their
+    injection.
+- **Risks or compatibility impact:** the two extracted flows now share one gap-fill implementation,
+  so a change there moves both. That is the point, and it is the reason the helper has its own five
+  tests rather than being covered only through the services.
+- **Open issues or blockers:** unchanged - #233's duplicate rows deferred by decision, the free-text
+  date answers filed as a background task, and the oversized Rust modules and specs still frozen.
+- **Next first action:** extract the link/commit lifecycle from `jobs.component.ts` - the
+  `chooseExistingDocument` / `commitLinkedDocument` / `commitApplicationDocuments` cluster - into a
+  `LinkedDocumentsService`. That is the last of the document-drafts region, and it is the piece the
+  export path calls into, so start by listing its callers before moving anything.
+- **Evidence:** file-size report printed `jobs.component.ts: 1612/400 non-empty lines, base 1693`.
+  Suite 886 -> 899.
+
+### 2026-08-01, CV generation comes out of the document-drafts region
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

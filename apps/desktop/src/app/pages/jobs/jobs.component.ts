@@ -83,13 +83,7 @@ import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from 
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
-import {
-  buildAdditionalInfoBlock,
-  cleanJsonText,
-  withCvPhoto,
-  type CvGapAnswer,
-  type CvGapQuestion,
-} from '../documents/cv-content.util';
+import { withCvPhoto, type CvGapAnswer, type CvGapQuestion } from '../documents/cv-content.util';
 import { CvGapDialog } from './cv-gap-dialog.component';
 import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
@@ -105,6 +99,7 @@ import { JobScoringService, ScoreContext } from '../../shared/job-scoring.servic
 import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
 import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
 import { CvDraftService } from '../../shared/cv-draft.service';
+import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
 
 @Component({
   selector: 'app-jobs',
@@ -132,6 +127,7 @@ import { CvDraftService } from '../../shared/cv-draft.service';
     JobScoringService,
     WizardNavService,
     CvDraftService,
+    CoverLetterDraftService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -145,6 +141,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly pageTitle = inject(PageTitleService);
   private readonly wizardNav = inject(WizardNavService);
   private readonly cvDraftSvc = inject(CvDraftService);
+  private readonly coverLetterSvc = inject(CoverLetterDraftService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
@@ -762,119 +759,35 @@ export class JobsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.docGen.begin(job.id, 'cover_letter');
     this.documentReviewStatus.set('');
     this.documentReviewError.set(false);
     try {
-      const app = await this.ensureApplicationDraft();
-      const language = this.documentReviewLanguage();
-
-      // Agentic gap-fill (mirrors createCvDraft): ask about info the JD wants
-      // that the profile lacks, then fold the answers into the profile text the
-      // letter is built from. Fail-open and skippable; never blocks generation.
-      //
-      // Skipped when a CV is linked for this job, because that flow ran the same
-      // analysis and may already have saved the answers to the profile - no
-      // point asking twice. `preparingCv()` is part of that condition, not an
-      // extra guard: a CV that is still generating has not linked itself yet, so
-      // testing only `linkedCv()` let a cover letter started alongside it run a
-      // second analysis and raise a second dialog for the same questions.
-      let additionalInfo = '';
-      if (!this.linkedCv() && !this.preparingCv()) {
-        this.gapAnalyzing.set(true);
-        try {
-          const questions = await this.analyzeCvGaps(profile.fullMd);
-          this.gapAnalyzing.set(false);
-          if (questions.length) {
-            const result = await this.awaitGapDialog(questions);
-            if (result) {
-              additionalInfo = buildAdditionalInfoBlock(result.answers);
-              if (result.saveToProfile && additionalInfo) {
-                try {
-                  await this.appendToProfile(additionalInfo);
-                } catch {
-                  // Best-effort: answers are already folded into profileText
-                  // below, so a failed profile write must not abort generation.
-                }
-              }
-            }
-          }
-        } finally {
-          this.gapAnalyzing.set(false);
-        }
-      }
-      const profileText = additionalInfo
-        ? `${profile.fullMd}\n\n${additionalInfo}`
-        : profile.fullMd;
-
-      const rendered = await this.ai.renderSkill('cover-letter-generate', {
-        profile_md: profileText,
-        job_description: job.jdText ?? '',
-        language,
-        section: 'all',
-        tone: COVER_LETTER_TONE_DEFAULT,
-        length: COVER_LETTER_LENGTH_DEFAULT,
-        // A first letter has no answers yet; the editor's Availability card is
-        // where they get filled in, and an empty value must stay silent rather
-        // than become "salary negotiable".
-        earliest_start: '',
-        salary_expectation: '',
-        notice_period: '',
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-      });
-      const parsed = JSON.parse(cleanJsonText(res.text)) as CoverLetterContent;
-      const content: CoverLetterContent = {
-        ...parsed,
-        bodyParagraphs: parsed.bodyParagraphs ?? [],
-        jobDescription: job.jdText ?? '',
-        tone: parsed.tone ?? COVER_LETTER_TONE_DEFAULT,
-        length: parsed.length ?? COVER_LETTER_LENGTH_DEFAULT,
-      };
-      const inputHash = await this.db.hashText(
-        [job.id, profile.fullMd, job.jdText ?? '', language, this.documentReviewRegion()].join(
-          '\x00',
-        ),
-      );
-      const doc = await this.db.documentLibraryUpsert({
-        // One cover letter per application (ADR-0003): reuse the linked
-        // row so retailor/regenerate update in place instead of stacking
-        // duplicate "<Company> - Cover Letter" entries.
-        id: app.coverLetterDocumentId ?? undefined,
-        docType: 'cover_letter',
-        source: 'generated',
+      const result = await this.coverLetterSvc.create({
+        job,
+        profile,
+        settings,
+        language: this.documentReviewLanguage(),
+        region: this.documentReviewRegion(),
         label: this.jobDocLabel(job, 'Cover Letter'),
-        language,
-        regionTag: this.documentReviewRegion(),
-        contentJson: JSON.stringify(content),
-        inputHash,
-        modelUsed: settings.defaultModel,
-        tokensInput: res.tokensInput,
-        tokensOutput: res.tokensOutput,
-        // Draft until Export & Apply (see createCvDraft).
-        isApplicationDraft: true,
+        // `preparingCv()` is part of this condition, not an extra guard: a CV
+        // still generating has not linked itself yet, so testing only
+        // `linkedCv()` let a cover letter started alongside it run a second
+        // analysis and raise a second dialog for the same questions.
+        skipGapFill: !!this.linkedCv() || this.preparingCv(),
+        ensureApplication: () => this.ensureApplicationDraft(),
+        analyzeGaps: (text) => this.analyzeCvGaps(text),
+        askGaps: (questions) => this.awaitGapDialog(questions),
+        saveToProfile: (block) => this.appendToProfile(block),
       });
-      const updated = await this.db.upsertApplication({
-        ...app,
-        coverLetterDocumentId: doc.id,
-        docLanguage: language,
-      });
-      this.application.set(updated);
-      this.linkedCoverLetter.set(doc);
+      if (!result) return;
+      this.application.set(result.application);
+      this.linkedCoverLetter.set(result.document);
       this.finalChecksOutdated.set(!!this.finalChecks());
       this.documentReviewStatus.set(this.t()('jobs.wizard.document_cover_letter_linked'));
     } catch (e) {
       this.documentReviewError.set(true);
       this.documentReviewStatus.set(String(e));
       this.toast.error(String(e));
-    } finally {
-      if (job.id) this.docGen.end(job.id, 'cover_letter');
     }
   }
 

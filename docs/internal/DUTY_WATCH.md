@@ -44,7 +44,64 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), both PRs merged, and the bullet editor's doubled frame
+### 2026-08-01 (latest), wizard navigation becomes the seventh seam
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/wizard-nav-service`, from `main` (`27cc863`)
+- **Objective:** the next first action from the watch below - extract wizard navigation out of
+  `jobs.component.ts`.
+- **Completed:**
+  - `WizardNavService` (133 lines) owns open/closed, the step index, the saved progress that
+    survives leaving the page, the cross-job confirm and its label, and `scrollToTop`.
+    `jobs.component.ts` **1881 -> 1812**.
+  - What did **not** move: the work each step triggers - the auto-rescore on the Updated score
+    step, the document preparation on the documents step, the score commit on continuing past it.
+    Those stay the page's, which is exactly what lets the service be tested without an AI call or a
+    database.
+  - 16 tests, where none of this had any. They pin the behaviours that took bug reports to
+    establish: the cross-job confirm leaves the other session **intact** until answered, `close`
+    ends the session while `forget` drops it without closing, an editor return outranks saved
+    progress, and a restore is skipped for another job's session or an already-open wizard.
+  - `jobs.component.html` is byte-identical to `main` - `git diff --name-only` does not list it.
+    Seventh consecutive seam where that holds, by the same writable-signal alias pattern.
+- **Not completed:** nothing in scope. The three remaining seams are unchanged: document drafts
+  (591 lines, three responsibilities), job CRUD (119), the compensation/archetype derivations.
+- **Files or packages changed:** `apps/desktop/src/app/shared/wizard-nav.service.ts` (new, 133),
+  `wizard-nav.service.spec.ts` (new, 148), `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  (1881 -> **1812**, still over budget, shrank), `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green;
+  desktop suite **872 tests** (856 before); `npm run quality`, `npm run verify:csp`,
+  `npm run format:check`, `git diff --check` all passed. Lint reports 8 warnings, all pre-existing
+  non-null assertions in `cv-content.util.spec.ts` and `cv-gap-dialog.component.spec.ts`, none in
+  the changed files. **Not run:** cargo - no Rust touched. **Not verified natively:** the wizard is
+  Tauri-only, so the browser cannot exercise it; the byte-identical template is the structural
+  argument that rendering is unchanged, not a substitute for the gate.
+- **Privacy/security impact:** none. Navigation state; the saved progress already lived in
+  `sessionStorage` via `WizardProgressService` and still does.
+- **Decisions and assumptions:**
+  - The service takes `jobId` as a parameter rather than injecting the page's `job` signal. It keeps
+    the dependency pointing one way and is why the spec needs no component.
+  - `close` and `forget` are separate methods for what used to be one call to
+    `wizardProgress.clear`. They differ in whether the wizard also closes, and three call sites
+    wanted only the forgetting.
+  - `decideWizardView` keeps reading the route in the component and passes a boolean, so the
+    service does not depend on `ActivatedRoute`.
+- **Risks or compatibility impact:** the cross-job confirm and the resume-mid-flow path are the two
+  behaviours here that a unit test can assert but only the app can prove. Both are covered above,
+  and both are worth a look during the next native pass.
+- **Open issues or blockers:** #233's duplicate rows remain deferred by decision. `discover.rs`
+  (3245), `tailoring.rs`, `documents.rs`, `onboarding.component.ts` (1002), its spec (689) and
+  `cv-preview.component.spec.ts` (2263) remain over budget and frozen.
+- **Next first action:** split the 591-line document-drafts region in `jobs.component.ts`, starting
+  with CV generation alone - `createCvDraft` and the gap-dialog call it wraps - into a
+  `CvDraftService`. Do not move the region wholesale: cover-letter generation and the link/commit
+  lifecycle are separate responsibilities sharing the same lines and need their own services.
+- **Evidence:** file-size report printed `jobs.component.ts: 1812/400 non-empty lines, base 1881`.
+  `git diff --stat` for the extraction commit: one file, 23 insertions, 94 deletions, and the
+  template absent from `git diff --name-only`.
+
+### 2026-08-01, both PRs merged, and the bullet editor's doubled frame
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

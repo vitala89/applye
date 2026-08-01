@@ -44,7 +44,61 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-01 (latest), the document-drafts region is finished
+### 2026-08-01 (latest), the last named seam, and a busy flag that would have split in two
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/job-actions-service`, from `main` (`e8c73e0`)
+- **Objective:** the next first action from the watch below - job CRUD out of `jobs.component.ts`.
+- **Note:** third watch started against my own standing recommendation to open a fresh session. The
+  maintainer asked to continue each time. Recorded, not re-litigated; the recommendation still
+  stands and the reason has not changed.
+- **Completed:**
+  - `JobActionsService` (91 lines): saving a job as a tracked lead, deleting it, the delete-confirm
+    state, and the busy/message signals both actions report through. `jobs.component.ts`
+    **1577 -> 1553**.
+  - `markApplied` deliberately stayed on the page: it commits documents, closes the wizard and
+    navigates. That is orchestration, not an action, and the same rule the previous three
+    extractions followed.
+  - **The extraction found a divergence before it shipped.** `saveJob` and `markApplied` share one
+    `actionBusy` flag. Moving only the first would have given them one each, so the button that
+    greys out during an apply would have stopped greying out during a save - a real regression, in
+    the direction nothing would have failed on. The flag moved with the action and the page aliases
+    it, so both stay guarded by the same signal.
+  - 9 tests where neither action had any, including the asymmetry that reads like a bug and is not:
+    a failed delete clears `deleting` and closes the confirm, a successful one leaves both alone,
+    because the caller navigates away and resetting first puts the dialog back on screen for the
+    frame before the route changes.
+- **Not completed:** this is smaller than the "119 lines" the earlier inventory suggested. That
+  figure counted `parseAndFilter` (JD paste, parse, score-cache lookup), which is a different
+  responsibility and wants its own seam. Said plainly rather than padded.
+- **Files or packages changed:** `apps/desktop/src/app/shared/job-actions.service.ts` (new, 91),
+  `job-actions.service.spec.ts` (new, 113), `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  (1577 -> **1553**, still over budget, shrank). `jobs.component.html` untouched.
+- **Validation:** run and observed - `nx run-many --target=lint,type-check,test,build --all` green;
+  desktop suite **923 tests** (914 before); `npm run quality`, `npm run verify:csp`,
+  `npm run format:check`, `git diff --check` all passed. Lint: 8 warnings, all pre-existing non-null
+  assertions in other specs. **Not run:** cargo - no Rust touched. **Not verified natively:** both
+  actions write to SQLite over Tauri IPC and the delete navigates.
+- **Privacy/security impact:** none new.
+- **Decisions and assumptions:**
+  - `save` and `remove` return the row / a boolean rather than navigating or setting page state, so
+    the page keeps the routing decision.
+  - The service owns its own failure handling (message line + toast) because both actions handled
+    failure identically and the page did nothing with it beyond display.
+- **Risks or compatibility impact:** `actionBusy` is now the service's signal, aliased. Any future
+  code that sets it directly on the component still works, because it is the same writable signal -
+  the pattern the previous nine seams used.
+- **Open issues or blockers:** unchanged - #233's duplicate rows deferred by decision, the free-text
+  date answers filed as a background task, the oversized Rust modules and specs frozen.
+- **Next first action:** extract `parseAndFilter` from `jobs.component.ts` into a
+  `JobIntakeService` - pasting a JD, parsing it, and the score-cache lookup that immediately
+  follows. It resets seven signals across four other services before it starts, so list those
+  resets first and decide which belong to intake and which are the page's.
+- **Evidence:** file-size report printed `jobs.component.ts: 1553/400 non-empty lines, base 1577`.
+  Suite 914 -> 923.
+
+### 2026-08-01, the document-drafts region is finished
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

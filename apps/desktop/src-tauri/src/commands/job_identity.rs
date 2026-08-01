@@ -385,6 +385,23 @@ fn extract_company_from_body(text: &str) -> Option<String> {
     None
 }
 
+/// Whether a title held from an earlier parse may still be used.
+///
+/// The rules that reject a candidate coming out of the text have to reject the
+/// same string coming back in from storage. Otherwise a value captured before
+/// those rules existed - `The Purpose:` is the reported one - survives every
+/// re-parse by riding in on the fallback path the rules themselves leave open.
+pub fn is_usable_title(candidate: &str) -> bool {
+    let t = candidate.trim();
+    !t.is_empty() && !is_section_heading(t) && has_role_word(t)
+}
+
+/// Whether a company held from an earlier parse may still be used. Same reason
+/// as `is_usable_title`.
+pub fn is_usable_company(candidate: &str) -> bool {
+    is_plausible_company(candidate)
+}
+
 /// The company, or nothing. A labelled line anywhere in the document wins over
 /// anything inferred from the body, for the reason given on `extract_title`:
 /// postings put the "Location - X / Company name - Y" block at the end as often

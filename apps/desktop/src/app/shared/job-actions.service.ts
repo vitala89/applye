@@ -1,0 +1,98 @@
+import { Injectable, inject, signal } from '@angular/core';
+import { Application } from '@applye/core';
+import { DbService, JobsStore } from '@applye/data';
+import { TranslateService } from '@applye/i18n';
+import { ToastService } from '../core/toast/toast.service';
+
+/**
+ * The job-level actions that write a row and then tell the rest of the app:
+ * saving a job as a tracked lead, and deleting it. Both own their own busy
+ * flag, their own message line, and their own failure handling, because the
+ * page's only remaining job is to decide what to do with the answer.
+ *
+ * Marking a job applied is deliberately NOT here: it commits documents, closes
+ * the wizard and navigates, which makes it orchestration rather than an action.
+ *
+ * Component-scoped via the page's `providers`.
+ */
+@Injectable()
+export class JobActionsService {
+  private readonly db = inject(DbService);
+  private readonly jobsStore = inject(JobsStore);
+  private readonly toast = inject(ToastService);
+  private readonly i18n = inject(TranslateService);
+  private readonly t = this.i18n.t;
+
+  /** Writable so the page can alias them onto the template. */
+  readonly busy = signal(false);
+  readonly message = signal('');
+  readonly deleteConfirmOpen = signal(false);
+  readonly deleting = signal(false);
+
+  openDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(true);
+  }
+
+  cancelDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(false);
+  }
+
+  /**
+   * Track this job as a `saved` lead - My Jobs and the Job Tracker - without
+   * claiming it was applied to. Distinct from Mark as Applied, which records an
+   * actual application and shows on the Pipeline board.
+   *
+   * Returns the application row, or null when the write failed or another
+   * action was already running.
+   */
+  async save(jobId: number, existing: Application | null): Promise<Application | null> {
+    if (this.busy()) return null;
+    this.busy.set(true);
+    this.message.set('');
+    try {
+      const patch: Partial<Application> & { jobId: number; status: 'saved' } = {
+        jobId,
+        status: 'saved',
+      };
+      if (existing?.id) patch.id = existing.id;
+      const app = await this.db.upsertApplication(patch);
+      // Mirror the status the DB actually recorded, not the literal we asked
+      // for - the DB is the single source of truth for the overview row.
+      this.jobsStore.patchOverviewRow(jobId, { status: app.status });
+      this.message.set(this.t()('jobs.saved_ok'));
+      this.toast.success(this.t()('jobs.saved_ok'));
+      return app;
+    } catch (e) {
+      this.fail(e);
+      return null;
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /**
+   * Delete the job. Returns true when it went, and on that path deliberately
+   * leaves `deleting` set and the confirm open: the caller navigates away, and
+   * clearing them first puts the dialog back on screen for the frame before the
+   * route changes. Only failure returns the page to a usable state.
+   */
+  async remove(jobId: number): Promise<boolean> {
+    if (this.deleting()) return false;
+    this.deleting.set(true);
+    try {
+      await this.jobsStore.deleteJob(jobId);
+      this.toast.success(this.t()('jobs.delete_ok'));
+      return true;
+    } catch (e) {
+      this.fail(e);
+      this.deleting.set(false);
+      this.deleteConfirmOpen.set(false);
+      return false;
+    }
+  }
+
+  private fail(e: unknown): void {
+    this.message.set(String(e));
+    this.toast.error(String(e));
+  }
+}

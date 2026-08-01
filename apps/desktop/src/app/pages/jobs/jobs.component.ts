@@ -104,6 +104,7 @@ import {
   coverLetterHashInput,
 } from '../../shared/cover-letter-draft.service';
 import { LinkedDocumentsService } from '../../shared/linked-documents.service';
+import { JobActionsService } from '../../shared/job-actions.service';
 
 @Component({
   selector: 'app-jobs',
@@ -133,6 +134,7 @@ import { LinkedDocumentsService } from '../../shared/linked-documents.service';
     CvDraftService,
     CoverLetterDraftService,
     LinkedDocumentsService,
+    JobActionsService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -148,6 +150,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly cvDraftSvc = inject(CvDraftService);
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
+  private readonly jobActions = inject(JobActionsService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
@@ -270,13 +273,14 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   // Job Detail: the application row (if this job is on the board) + action state.
   readonly application = signal<Application | null>(null);
-  readonly actionBusy = signal(false);
-  readonly actionMsg = signal('');
-  readonly deleteConfirmOpen = signal(false);
+  readonly actionBusy = this.jobActions.busy;
+  /** Aliases onto `JobActionsService`'s writable signals. */
+  readonly actionMsg = this.jobActions.message;
+  readonly deleteConfirmOpen = this.jobActions.deleteConfirmOpen;
   /** Confirm gate for abandoning this job's tailoring, and its in-flight flag. */
   readonly discardConfirmOpen = signal(false);
   readonly discarding = signal(false);
-  readonly deleting = signal(false);
+  readonly deleting = this.jobActions.deleting;
 
   /** Editing override for the scoring view only. The job-detail UI no longer
    * exposes a re-edit affordance once a job leaves Saved (the application is
@@ -1306,27 +1310,9 @@ export class JobsComponent implements OnInit, OnDestroy {
    * actual application ('applied', shown on the Pipeline board). */
   async saveJob(): Promise<void> {
     const j = this.job();
-    if (!j?.id || this.actionBusy()) return;
-    this.actionBusy.set(true);
-    this.actionMsg.set('');
-    try {
-      const existing = this.application();
-      const patch: Partial<Application> & { jobId: number; status: 'saved' } = {
-        jobId: j.id,
-        status: 'saved',
-      };
-      if (existing?.id) patch.id = existing.id;
-      const app = await this.db.upsertApplication(patch);
-      this.application.set(app);
-      this.jobsStore.patchOverviewRow(j.id, { status: app.status });
-      this.actionMsg.set(this.t()('jobs.saved_ok'));
-      this.toast.success(this.t()('jobs.saved_ok'));
-    } catch (e) {
-      this.actionMsg.set(String(e));
-      this.toast.error(String(e));
-    } finally {
-      this.actionBusy.set(false);
-    }
+    if (!j?.id) return;
+    const app = await this.jobActions.save(j.id, this.application());
+    if (app) this.application.set(app);
   }
 
   /**
@@ -1445,27 +1431,17 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   openDeleteConfirm(): void {
-    this.deleteConfirmOpen.set(true);
+    this.jobActions.openDeleteConfirm();
   }
 
   cancelDeleteConfirm(): void {
-    this.deleteConfirmOpen.set(false);
+    this.jobActions.cancelDeleteConfirm();
   }
 
   async confirmDeleteJob(): Promise<void> {
     const j = this.job();
-    if (!j?.id || this.deleting()) return;
-    this.deleting.set(true);
-    try {
-      await this.jobsStore.deleteJob(j.id);
-      this.toast.success(this.t()('jobs.delete_ok'));
-      await this.router.navigate(['/jobs']);
-    } catch (e) {
-      this.actionMsg.set(String(e));
-      this.toast.error(String(e));
-      this.deleting.set(false);
-      this.deleteConfirmOpen.set(false);
-    }
+    if (!j?.id) return;
+    if (await this.jobActions.remove(j.id)) await this.router.navigate(['/jobs']);
   }
 
   async parseAndFilter(): Promise<void> {

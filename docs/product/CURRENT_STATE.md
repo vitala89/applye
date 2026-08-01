@@ -147,15 +147,16 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   / 856 tests. The maintainer confirmed #235 visually in `desktop:dev` - that is the only way those
   rings can be checked, since the CV detail page needs a document over Tauri IPC. The duplicate-row
   consequence of #233 is **deferred by decision, not resolved** - see the entry above.
-- **The jobs page is down to ten seams extracted, and the document-drafts region is finished.** Wizard navigation - open/closed, the step
+- **The jobs page is down to eleven seams extracted, and the document-drafts region is finished.** Wizard navigation - open/closed, the step
   index, the saved mid-flow progress, the cross-job confirm - is now `WizardNavService`, and
   `jobs.component.ts` is **1612** non-empty lines, from 2788 where the split started. Seams eight
   and nine cut _into_ the 591-line document-drafts region rather than moving it: CV generation is
   `CvDraftService` and the cover letter is `CoverLetterDraftService`. The gap-fill both flows ran as
   two copies of the same twenty lines is now one `foldInGapAnswers` they share. The link/commit lifecycle is
   `LinkedDocumentsService`, which finishes the region - four services out of what was one 591-line
-  block. `jobs.component.ts` is **1577** lines; job CRUD and the compensation/archetype derivations
-  are what is left. The work each
+  block. `jobs.component.ts` is **1553** lines. Job save/delete is `JobActionsService`; what is
+  left is the JD intake path (`parseAndFilter`) and the compensation/archetype derivations, which
+  are small and pure and probably want to be functions in `libs/core` rather than a service. The work each
   step triggers stayed on the page deliberately, which is what makes the service testable without an
   AI call or a database: 16 tests where it had none. `jobs.component.html` is still byte-identical to
   `main` across all seven seams.

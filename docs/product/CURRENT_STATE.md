@@ -141,10 +141,18 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   dependency tree. Moving the libraries across immediately failed two `score-gauge` tests that had
   been asserting the opposite of what the gauge does - see the changelog; the spec is fixed and the
   animation now has honest coverage for the first time.
-- **Open pull requests, as of 2026-08-01**: only the bullet-editor frame fix. #233 (Discover HTML)
-  and #234 (the CV waiting state, plus the i18n gate it unblocked) were both merged by the maintainer
-  after confirming the app looked right; `main` is at #234. The duplicate-row consequence of #233 is
-  **deferred by decision, not resolved** - see the entry above.
+- **Open pull requests, as of 2026-08-01**: the wizard-navigation extraction. #233 (Discover HTML),
+  #234 (the CV waiting state, plus the i18n gate it unblocked) and #235 (one selection ring per
+  field in the CV editor, where three were being drawn) are all merged; `main` is at #235, 52 suites
+  / 856 tests. The maintainer confirmed #235 visually in `desktop:dev` - that is the only way those
+  rings can be checked, since the CV detail page needs a document over Tauri IPC. The duplicate-row
+  consequence of #233 is **deferred by decision, not resolved** - see the entry above.
+- **The jobs page is down to seven seams extracted.** Wizard navigation - open/closed, the step
+  index, the saved mid-flow progress, the cross-job confirm - is now `WizardNavService`, and
+  `jobs.component.ts` is **1812** non-empty lines, from 2788 where the split started. The work each
+  step triggers stayed on the page deliberately, which is what makes the service testable without an
+  AI call or a database: 16 tests where it had none. `jobs.component.html` is still byte-identical to
+  `main` across all seven seams.
 - **Open pull requests, as of 2026-07-30**: #218 (the release verification runbook plus a state sync)
   and #219 (a formatting-only sweep of nineteen files), both merged since; the zoneless migration is
   the one currently open.

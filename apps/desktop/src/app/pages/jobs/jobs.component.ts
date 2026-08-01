@@ -14,7 +14,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PageTitleService } from '../../shared/page-title/page-title.service';
-import { WizardProgressService } from '../../shared/wizard-progress.service';
 import { TailorScoreService } from '../../shared/tailor-score.service';
 import { WizardActivity, WizardActivityService } from '../../shared/wizard-activity.service';
 import { DocumentGenService, ReviewDocumentKind } from '../../shared/document-gen.service';
@@ -107,6 +106,7 @@ import { TailorContext, TailoringService } from '../../shared/tailoring.service'
 import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
 import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
+import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
 
 @Component({
   selector: 'app-jobs',
@@ -132,6 +132,7 @@ import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-sta
     TailoringService,
     CvGapDialogService,
     JobScoringService,
+    WizardNavService,
   ],
 })
 export class JobsComponent implements OnInit, OnDestroy {
@@ -143,7 +144,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly pageTitle = inject(PageTitleService);
-  private readonly wizardProgress = inject(WizardProgressService);
+  private readonly wizardNav = inject(WizardNavService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);
@@ -258,8 +259,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly cache = this.scoreSvc.cache;
   readonly fromCache = this.scoreSvc.fromCache;
   readonly scoreStale = this.scoreSvc.stale;
-  readonly wizardOpen = signal(false);
-  readonly wizardInitialStep = signal(0);
+  /** Aliases onto `WizardNavService`'s writable signals; the template binds
+   * these names and writes through them. */
+  readonly wizardOpen = this.wizardNav.open;
+  readonly wizardInitialStep = this.wizardNav.initialStep;
   readonly archetypeMatch = signal<boolean | null>(null);
 
   // Job Detail: the application row (if this job is on the board) + action state.
@@ -280,7 +283,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Confirm dialog when opening the wizard here would abandon an unfinished
    * tailoring session for a different job. */
-  readonly crossJobConfirmOpen = signal(false);
+  readonly crossJobConfirmOpen = this.wizardNav.crossJobConfirmOpen;
 
   /** True with no application yet, one still in 'saved', or the user
    * overrode the lock via "Edit". Anything else (applied/interview/
@@ -1379,31 +1382,17 @@ export class JobsComponent implements OnInit, OnDestroy {
    * The editor-return path wins over a plain progress restore. Returns the
    * async follow-up owed once the job has loaded, if any.
    */
-  private decideWizardView(id: number): 'return' | 'restore-docs' | null {
+  private decideWizardView(id: number): WizardRestore {
     const params = this.route.snapshot.queryParamMap;
     const returningFromEditor =
       params.get('returnTo') === 'applyWizard' || params.get('wizardStep') === 'documents';
-    if (returningFromEditor) {
-      this.wizardOpen.set(true);
-      this.wizardInitialStep.set(3);
-      return 'return';
-    }
-    // Re-open the wizard at the step the user left it on when they navigate
-    // back to this job mid-flow (floating resume button, sidebar nav, browser
-    // back). Restoring is token-free.
-    if (this.wizardOpen()) return null;
-    const prog = this.wizardProgress.progress();
-    if (!prog || prog.jobId !== id) return null;
-    this.wizardInitialStep.set(prog.step);
-    this.wizardOpen.set(true);
-    return prog.step === 3 ? 'restore-docs' : null;
+    return this.wizardNav.restore(id, returningFromEditor);
   }
 
   /** Clear transient wizard/tailor/review state when moving to another job.
    * Background runs are keyed by job in their services, so leave those. */
   private resetJobScopedState(): void {
-    this.wizardOpen.set(false);
-    this.wizardInitialStep.set(0);
+    this.wizardNav.reset();
     this.tailorSvc.reset();
     this.tailorCancelled.set(false);
     this.postTailorSaved.set(false);
@@ -1608,7 +1597,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       // for - the DB is the single source of truth for the overview row.
       this.jobsStore.patchOverviewRow(j.id, { status: updated.status });
       this.editingLocked.set(false);
-      this.wizardProgress.clear(j.id);
+      this.wizardNav.forget(j.id);
       // Applied - send the user back to My Jobs; re-entering the job shows
       // its Applied + Tailored state. The toast is the only feedback that
       // survives the navigation, so it fires before the route change.
@@ -1632,44 +1621,17 @@ export class JobsComponent implements OnInit, OnDestroy {
    * user at the top of the page - the scoring view runs long, so the wizard
    * (or the restored summary) would otherwise open mid-scroll. */
   openWizard(): void {
-    // Starting an application here silently overwrote an unfinished session
-    // for another job. Warn first so the user can decide whether to abandon
-    // that one (or go back and finish it via the floating resume button).
-    const jobId = this.job()?.id;
-    const prog = this.wizardProgress.progress();
-    if (prog && jobId && prog.jobId !== jobId) {
-      this.crossJobConfirmOpen.set(true);
-      return;
-    }
-    this.doOpenWizard();
+    this.wizardNav.requestOpen(this.job()?.id);
   }
 
-  private doOpenWizard(): void {
-    this.wizardInitialStep.set(0);
-    this.wizardOpen.set(true);
-    const jobId = this.job()?.id;
-    if (jobId) this.wizardProgress.set(jobId, 0);
-    this.scrollContentToTop();
-  }
+  readonly crossJobLabel = this.wizardNav.crossJobLabel;
 
-  /** Company/role of the other job whose tailoring is unfinished, for the
-   * cross-job confirm copy. Empty when none or not in the loaded overview. */
-  readonly crossJobLabel = computed(() => {
-    const prog = this.wizardProgress.progress();
-    if (!prog) return '';
-    const row = this.jobsStore.overview().find((r) => r.id === prog.jobId);
-    return [row?.company, row?.title].filter(Boolean).join(' - ');
-  });
-
-  /** Abandon the other job's unfinished session and open the wizard here. */
   confirmCrossJob(): void {
-    this.crossJobConfirmOpen.set(false);
-    this.wizardProgress.clear();
-    this.doOpenWizard();
+    this.wizardNav.confirmCrossJob(this.job()?.id);
   }
 
   cancelCrossJob(): void {
-    this.crossJobConfirmOpen.set(false);
+    this.wizardNav.cancelCrossJob();
   }
 
   /** Opens the confirm for abandoning this job's tailoring. */
@@ -1710,9 +1672,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       }
       this.tailorScore.clear(this.job()?.id ?? -1);
       this.resetJobScopedState();
-      this.wizardProgress.clear(this.job()?.id);
+      this.wizardNav.forget(this.job()?.id);
       this.discardConfirmOpen.set(false);
-      this.scrollContentToTop();
+      this.wizardNav.scrollToTop();
     } catch (e) {
       this.documentReviewStatus.set(String(e));
     } finally {
@@ -1721,30 +1683,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   closeWizard(): void {
-    this.wizardOpen.set(false);
-    // Leaving the wizard for this job's summary ends the in-flight session,
-    // so the floating resume affordance should stop offering it.
-    this.wizardProgress.clear(this.job()?.id);
-    this.scrollContentToTop();
-  }
-
-  private scrollContentToTop(): void {
-    // Defer to the next frame so the step's new (shorter/taller) content has
-    // rendered before we scroll - otherwise the container clamps against the
-    // old scrollHeight and can land mid-page.
-    const view = this.document.defaultView;
-    const doScroll = (): void => {
-      const el =
-        this.document.querySelector('.content') ??
-        this.document.scrollingElement ??
-        this.document.documentElement;
-      el?.scrollTo?.({ top: 0, behavior: 'smooth' });
-    };
-    if (view?.requestAnimationFrame) {
-      view.requestAnimationFrame(doScroll);
-    } else {
-      doScroll();
-    }
+    this.wizardNav.close(this.job()?.id);
   }
 
   openDeleteConfirm(): void {
@@ -1870,7 +1809,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     // so re-tailoring an already-applied job refreshes its saved documents.
     await this.commitApplicationDocuments(true);
     await this.savePostTailorScore();
-    this.wizardProgress.clear(j.id);
+    this.wizardNav.forget(j.id);
     this.applyResult.set('updated');
     // Success card holds briefly, then drop back to this job's detail with the
     // updated score + Tailored badge freshly loaded from cache.
@@ -1882,7 +1821,7 @@ export class JobsComponent implements OnInit, OnDestroy {
         this.applyResult.set(null);
         this.actionBusy.set(false);
         await this.loadJob(jobId);
-        this.scrollContentToTop();
+        this.wizardNav.scrollToTop();
       })();
     }, 2200);
   }
@@ -1967,14 +1906,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    * Entering the Updated score step auto-runs the rescore once (only if the
    * user actually tailored - pass 3 exists - and it hasn't run yet). */
   onWizardStep(step: number): void {
-    this.wizardInitialStep.set(step);
-    // Remember where the user is so leaving the page (sidebar nav, the
-    // document editor) can bring them back to this exact step instead of
-    // the job list.
-    const jobId = this.job()?.id;
-    if (jobId) this.wizardProgress.set(jobId, step);
-    // Every step transition lands the user at the top of the page.
-    this.scrollContentToTop();
+    this.wizardNav.goTo(this.job()?.id, step);
 
     const UPDATED_SCORE_STEP = 2;
     const DOCUMENTS_STEP = 3;
@@ -2012,10 +1944,7 @@ export class JobsComponent implements OnInit, OnDestroy {
    */
   startOver(): void {
     this.resetWizard();
-    this.wizardInitialStep.set(1);
-    const jobId = this.job()?.id;
-    if (jobId) this.wizardProgress.set(jobId, 1);
-    this.scrollContentToTop();
+    this.wizardNav.goTo(this.job()?.id, 1);
   }
 
   doExport(kind: ReviewDocumentKind, format: ExportFormat): Promise<void> {

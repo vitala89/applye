@@ -30,8 +30,8 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **The jobs page is being taken apart, and is eight extractions in.** `jobs.component.ts` is
-  **1119** non-empty lines against a budget of 400, down from 1467 where the work started. Out so far:
+- **The jobs page is being taken apart, and is nine extractions in.** `jobs.component.ts` is
+  **1104** non-empty lines against a budget of 400, down from 1467 where the work started. Out so far:
   `CoverLetterTailorService` (the tailor-an-existing-letter modal, with the base-letter read and the
   content assembly as pure functions) and `job-detail-icons.ts` (the icon table, plus a spec that
   reads the template and asserts every `icons.<name>` it references exists - a class of error
@@ -58,8 +58,10 @@
   document defaults (`job-document-defaults.ts` - which language the Review step opens in, and
   which CV the next tailoring builds on, including the documented exception that keeps a job's own
   CV selectable when the language filter would drop it) and the wizard's three-pass state strip
-  (`tailor-phases.ts`). Largest remaining members are `markApplied` (35), `enterJob` and
-  `parseAndFilter` (30 each). **The page still has no component-level test**, so every extraction
+  (`tailor-phases.ts`), and `markApplied`, which moved to `JobActionsService` beside `save` and
+  `remove` rather than into a new file - it shared their guard, their status line and their rule
+  that the overview row mirrors the database. No member is over 30 lines now; `enterJob` and
+  `parseAndFilter` are the joint largest at 30. **The page still has no component-level test**, so every extraction
   rests on service- and function-level tests plus `nx build desktop` for the template.
 - **The fast gate is now template-aware, and was not before.** `npm run type-check` ran `tsc`, which
   never compiles Angular templates, so a binding to a missing member or a type the template cannot

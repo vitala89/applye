@@ -14,6 +14,9 @@ describe('JobActionsService', () => {
   let toasts: { kind: string; text: string }[];
   let upsertFails: boolean;
   let deleteFails: boolean;
+  let statusFails: boolean;
+  let commitFails: boolean;
+  let order: string[];
 
   beforeEach(() => {
     upserted = [];
@@ -23,6 +26,9 @@ describe('JobActionsService', () => {
     toasts = [];
     upsertFails = false;
     deleteFails = false;
+    statusFails = false;
+    commitFails = false;
+    order = [];
 
     const db = {
       upsertApplication: (a: Record<string, unknown>) => {
@@ -32,6 +38,13 @@ describe('JobActionsService', () => {
         // from what was asked, so a caller mirroring the request instead of the
         // result is visible.
         return Promise.resolve({ ...a, id: 1, status: 'saved' });
+      },
+      setApplicationStatus: (id: number, status: string) => {
+        if (statusFails) return Promise.reject(new Error('status write failed'));
+        order.push(`status:${status}`);
+        // Same trick again: the DB records `interview` where `applied` was
+        // asked for, so mirroring the request rather than the result shows up.
+        return Promise.resolve({ id, jobId: 7, status: 'interview' });
       },
     };
     const store = {
@@ -143,6 +156,75 @@ describe('JobActionsService', () => {
 
       expect(await svc.remove(7)).toBe(false);
       expect(deleted).toEqual([]);
+    });
+  });
+
+  describe('markApplied', () => {
+    const commit = () => {
+      if (commitFails) return Promise.reject(new Error('document commit failed'));
+      order.push('commit');
+      return Promise.resolve();
+    };
+
+    it('creates the application row when the job has none', async () => {
+      await svc.markApplied(7, null, commit);
+
+      expect(upserted[0]).toMatchObject({ jobId: 7, status: 'saved' });
+    });
+
+    it('reuses the application the job already has', async () => {
+      await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+
+      expect(upserted).toEqual([]);
+    });
+
+    it('commits the documents before the status flips to applied', async () => {
+      // Order is the point: a job marked applied must already own its CV and
+      // cover letter, or the user is applied to a job with nothing attached.
+      await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+
+      expect(order).toEqual(['commit', 'status:applied']);
+    });
+
+    it('mirrors the status the database recorded, not the one asked for', async () => {
+      const result = await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+
+      expect(result?.status).toBe('interview');
+      expect(patched).toEqual([{ id: 7, patch: { status: 'interview' } }]);
+    });
+
+    it('leaves busy set on success, because the caller navigates away', async () => {
+      // Same rule as `remove`: clearing it first puts a usable button back on
+      // screen for the frame before the route changes.
+      await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+
+      expect(svc.busy()).toBe(true);
+    });
+
+    it('returns the page to a usable state when the documents fail', async () => {
+      commitFails = true;
+
+      expect(await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit)).toBeNull();
+      expect(svc.busy()).toBe(false);
+      expect(svc.message()).toContain('document commit failed');
+      expect(toasts.at(-1)?.kind).toBe('error');
+    });
+
+    it('does not touch the overview row when the status write fails', async () => {
+      // A row saying applied for an application that is not would outlive the
+      // error message.
+      statusFails = true;
+
+      expect(await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit)).toBeNull();
+      expect(patched).toEqual([]);
+      expect(svc.busy()).toBe(false);
+    });
+
+    it('refuses a second run while one is in flight', async () => {
+      svc.busy.set(true);
+
+      expect(await svc.markApplied(7, null, commit)).toBeNull();
+      expect(order).toEqual([]);
     });
   });
 

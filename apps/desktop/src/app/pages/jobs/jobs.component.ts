@@ -934,35 +934,20 @@ export class JobsComponent implements OnInit, OnDestroy {
    */
   async markApplied(): Promise<void> {
     const j = this.job();
-    if (!j?.id || this.actionBusy()) return;
-    this.actionBusy.set(true);
-    this.actionMsg.set('');
-    try {
-      let app = this.application();
-      if (!app?.id) {
-        app = await this.db.upsertApplication({ jobId: j.id, status: 'saved' });
-      }
-      // Create application: generate any missing CV / cover letter, refresh a
-      // stale one, and commit both into the library (deferred-to-step-5) even
-      // if the user applied via a portal without exporting a PDF first.
-      await this.commitApplicationDocuments(true);
-      const updated = await this.db.setApplicationStatus(app.id, 'applied');
-      this.application.set(updated);
-      // Mirror the status the DB actually recorded, not the literal we asked
-      // for - the DB is the single source of truth for the overview row.
-      this.jobsStore.patchOverviewRow(j.id, { status: updated.status });
-      this.editingLocked.set(false);
-      this.wizardNav.forget(j.id);
-      // Applied - send the user back to My Jobs; re-entering the job shows
-      // its Applied + Tailored state. The toast is the only feedback that
-      // survives the navigation, so it fires before the route change.
-      this.toast.success(this.t()('jobs.applied_ok'));
-      await this.router.navigate(['/jobs']);
-    } catch (e) {
-      this.actionMsg.set(String(e));
-      this.toast.error(String(e));
-      this.actionBusy.set(false);
-    }
+    if (!j?.id) return;
+    const updated = await this.jobActions.markApplied(j.id, this.application(), () =>
+      // Generate any missing CV / cover letter, refresh a stale one, and commit
+      // both into the library, even if the user applied through a portal
+      // without exporting a PDF first.
+      this.commitApplicationDocuments(true),
+    );
+    if (!updated) return;
+    this.application.set(updated);
+    this.editingLocked.set(false);
+    this.wizardNav.forget(j.id);
+    // Applied - send the user back to My Jobs; re-entering the job shows its
+    // Applied + Tailored state.
+    await this.router.navigate(['/jobs']);
   }
 
   /** "Cancel" - drops the override and discards the in-progress description

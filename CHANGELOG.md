@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The CV preview's test file is six files, split by behaviour.** It was 2263 lines against a 600 budget - the worst test file in the repository - and the budget rule names the remedy. Core render and geometry, styling, themes, selection, selection identity, and inline leaf editing, each now under budget. The 20-line TestBed setup became a shared harness, which is what made splitting possible: every spec needs every input set, or a test fails on a missing required input instead of on what it was asserting. 133 tests before and after.
+
 - **Discover's tests moved to sit with what they test.** The scan engine's test module was 1142 lines - over the 800 test budget on its own - and still testing three things after the source had been split into three. Twenty-eight reader tests and three geography tests now live beside the code they exercise, so a reader and its fixtures open in one file. `commands/discover.rs` **2096 -> 1679**; every file in the group is now under budget except the scan engine itself.
 
 - **Discover's feed readers are their own module too.** Twelve readers for the shapes the built-in sources actually serve, plus the detail reader for the one source whose list carries no description. None of them touches the network - each takes already-fetched text or JSON and returns a job - which is what makes them testable against a fixture instead of a server. That boundary was already in the code; it just had no file to be a boundary between. `commands/discover.rs` **2742 -> 2096**, with the readers at 666, under budget. Three files where there was one: the scan engine, its geography, its readers.

@@ -44,6 +44,57 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the CV preview spec splits, and a count catches eleven lost tests
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cv-preview-spec-split`, from `main` (`0e3b94a`), cut before the first edit
+- **Commits:** `42b6f0d`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** with the named targets done and the remainder needing either a design decision or a
+  human, take the one remaining decision-free move: the worst test file in the repository.
+- **Completed:**
+  - **`cv-preview.component.spec.ts` 2263/600 became six files**, each under budget: core render and
+    geometry (329), styling (584), themes (145), selection (362), selection identity (313), inline
+    leaf editing (571).
+  - **A shared harness made it possible.** The 20-line TestBed setup moved to
+    `cv-preview.harness.ts`. Every spec needs every input set, or a test fails on a missing required
+    input rather than on what it was asserting - so duplicating the setup six times was not an
+    option and a shared one was the whole enabling move.
+  - **133 tests before, 133 after**, and the runner agrees at 1183 desktop tests either side.
+- **Not completed:** nothing in scope.
+- **Files or packages changed:** six spec files and a harness under
+  `apps/desktop/src/app/pages/documents/cv-detail/cv-preview/`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `npx nx test desktop` **1183 passed, 84 suites**,
+  `npm run type-check` pass for 6 projects, `npx nx lint desktop` 0 errors / 8 pre-existing
+  warnings, `npx nx build desktop` complete, `npm run quality:file-size` pass,
+  `npm run quality:attribution`, `npm run format:check`, `git diff --check` all pass. **Not run:**
+  the `cargo` gates, no Rust touched.
+- **Privacy/security impact:** none. Tests only.
+- **Decisions and assumptions:** the split is by behaviour, which is what the budget rule prescribes
+  for a test file, rather than by source file or by describe block count.
+- **Risks or compatibility impact:** none to production code. The risk was entirely in losing a test,
+  which is addressed below.
+- **Open issues or blockers:**
+  - **The first attempt silently dropped eleven tests, and every file still passed.** The slice took
+    "everything before the first nested `describe`" as the core, which missed eleven ungrouped tests
+    sitting _between_ describes further down the file. Nothing failed. Six green suites, a green
+    build, and eleven assertions gone. **Only comparing the test count to the baseline caught it** -
+    1172 against 1183. A lost test looks exactly like a passing one, which is why the count is the
+    check and not the colour.
+  - The size gate then refused two intermediate arrangements - 665 for selection, 718 for styling
+    after over-correcting - before every file landed under 600. That is the fourth and fifth refusal
+    this session, and both were right.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session still
+    unseen running, Windows and Linux unverified, the AIF skill set unpruned, three upstream
+    advisories.
+- **Next first action:** the manual pass. Every remaining code target now needs either a design
+  decision (splitting fetch from persistence in `discover.rs`; child components for the two pages)
+  or is a template, which child components would take anyway. There is no decision-free move left
+  of any size.
+- **Evidence:** `npx nx test desktop` printed `1183 passed` before the split and after it, and
+  `1172` in between; `npm run quality:file-size` reports every new file under the 600 test budget.
+
 ### 2026-08-02, the Discover tests move to sit with what they test
 
 - **Status:** partial

@@ -44,6 +44,94 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the silent discard, and a gate that reported success on a broken tree
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/discard-tailoring-silent-failure`, from `main` (`8ed7865`)
+- **Commits:** `c00f5aa`, `91a8676`, plus this documentation commit
+- **Pull request:** not yet opened
+- **Objective:** the previous watch's next first action - decide on the silent `discardTailoring`
+  failure, then continue the jobs page extraction at the drafting flows.
+- **Completed:**
+  - **The silent discard is fixed.** Discarding a tailoring deletes the drafts it produced; when
+    that delete threw, the catch wrote the error text to the status line without setting the error
+    flag and without a toast, so it rendered in the ordinary style. A discard that destroyed nothing
+    was indistinguishable from one that worked. It now reports through `fail()`, and the page resets
+    its own state **only** when something was discarded - a failure leaves the wizard where it was
+    and the confirmation open, rather than tearing the view down around a tailoring that is still
+    there.
+  - **`TailoringDiscardService`**, which is what gave the fix a test seam: the method sat on a
+    component with no test. Which documents a discard may destroy came out as a pure function, and
+    it will never return a document the user committed to their library. 12 tests. Restoring the old
+    silent write turns the regression test red. `1197 -> 1185`.
+  - **`JobGapFillService`.** Both document flows assembled the same four gap-fill callbacks inline.
+    The profile append behind one of them is the part worth owning centrally: `upsertProfile`
+    replaces the whole row, so a payload naming only `fullMd` silently discards the scoring cache,
+    the pitch and the archetypes - the #97 bug - and it had **no test at all**. It has five now, and
+    reintroducing the partial write turns one red. `1185 -> 1162`.
+- **Not completed:**
+  - `jobs.component.ts` is **1162/400**. Template 1148/300 and stylesheet 933/400, still untouched.
+  - **The drafting flows were examined and deliberately left.** `createCvDraft` and
+    `createCoverLetterDraft` are already thin orchestration over their draft services; what remains
+    is context assembly reading eight component signals, so moving them behind another service
+    would be a wrapper over a wrapper and would grow the file - the mistake the ratchet caught in
+    the previous watch. The genuinely duplicated part, the gap-fill bundle, was extracted instead.
+    This is a change of plan from the previous entry's next first action, made after measuring
+    rather than before.
+  - ADR-0004 still `draft`, still unimplemented, still awaiting sign-off.
+  - Dependabot alert 42 (`glib`, medium, runtime) still not investigated.
+- **Files or packages changed:** added `apps/desktop/src/app/shared/tailoring-discard.service.ts`
+  and `job-gap-fill.service.ts` with their specs; modified
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts`; updated `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass (see the caveat below),
+  `npx nx test desktop` **1085 passed, 75 suites** (22 new this watch), `npx nx lint desktop`
+  0 errors / 8 pre-existing warnings, `npx nx build desktop` bundle generation complete, including
+  once with `--skipNxCache`, `npm run quality:file-size` pass with base `1197 -> 1185 -> 1162`,
+  `npm run quality:attribution` pass, `npm run format:check` pass, `git diff --check` clean.
+  **Not run:** the `cargo` gates, no Rust touched; the browser preview, because the jobs page waits
+  on `db_get_settings` and does not render outside Tauri.
+- **Privacy/security impact:** none. The discard's blast radius is unchanged - it still deletes only
+  this application's own draft rows, and the pure function that decides which ones now has a test
+  saying it never returns a committed document.
+- **Decisions and assumptions:**
+  - The bug was fixed **before** continuing the extraction, because the extraction was what would
+    have given it a seam anyway, and leaving a known silent failure in place while refactoring
+    around it is how it gets forgotten.
+  - `discardTailoring` returning a boolean rather than throwing keeps the page's reset decision at
+    the page, where the wizard state lives.
+  - The plan changed after measurement: see "not completed" above. Recorded rather than quietly
+    substituted.
+- **Risks or compatibility impact:** the page still has no component-level test. Nobody exercised
+  Discard tailoring in a running app this watch; the failure path is asserted at the service level
+  only.
+- **Open issues or blockers:**
+  - **A gate reported success on a broken tree, and this is not understood.** `npm run type-check`
+    printed success while `jobs.component.ts` contained `Property 'jobDocLabel' does not exist on
+type 'JobsComponent'`. `npx nx build desktop` failed on that error moments later, and a plain
+    re-run of `npm run type-check` on the same content then reported it correctly. An Nx cache hit
+    is the suspicion. **The reproduction was attempted in this same watch and failed.** A member
+    call to a non-existent method was introduced four times and `npm run type-check` reported the
+    error every time, including once in the exact shape of the original -
+    `npm run type-check >/dev/null 2>&1 && echo pass` immediately after a scripted edit. So: the
+    false green was observed, it is in this session's transcript alongside the `nx build desktop`
+    failure that caught what it missed, and it does not reproduce. The possibility that it was a
+    misreading on the agent's part cannot be excluded either, which is exactly why it is written
+    down rather than resolved. This matters because "type-check passed" appears in every watch entry
+    as evidence. `nx build desktop` remains the only gate not yet observed to miss anything, and it
+    caught this.
+  - Unchanged: `jobs.component.html` 1148/300, `jobs.component.scss` 933/400,
+    `discover.component.scss` 1915/400, the two human release checks on `0.29.2`, Windows and Linux
+    unverified, the AIF skill set unpruned, the two upstream security advisories, Dependabot 42.
+- **Next first action:** continue the extraction at `loadJob`, the largest remaining member at 53
+  lines, and identify its test seam before touching it - it writes most of the page's job-scoped
+  signals, which is why it has been left until last.
+- **Evidence:** `npm run quality:file-size` printed `1162/400 ... base 1185` on `91a8676`;
+  `npx nx test desktop` printed `Tests: 1085 passed`; the type-check discrepancy is in this
+  session's transcript, with the failing `nx build desktop` output immediately after the passing
+  type-check.
+
 ### 2026-08-02, the status line gets an owner, and the ratchet refuses a refactor
 
 - **Status:** partial

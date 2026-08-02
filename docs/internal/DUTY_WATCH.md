@@ -44,6 +44,56 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the CV content util splits, and the gate names the price of splitting
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cv-style-util`, from `main` (`827c127`), cut before the first edit
+- **Commits:** `8aa34af`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the second decision-free move I had named and then wrongly said did not exist -
+  `cv-content.util.ts`, 1245/400.
+- **Completed:**
+  - **Two of its four jobs came out.** `cv-style.util.ts` (336) is immutable edits to a `CvStyle`
+    plus the resolution that reads one back; `cv-entry.util.ts` (118) edits the entries inside a
+    section. What is left builds content and parses AI responses. **1245 -> 829.**
+  - `resolvePageSettings` and `ResolvedPage` stayed behind: they describe the page box rather than a
+    style override, and both previews use them.
+  - 1183 tests before and after; type-check, lint, build all clean.
+- **Not completed:** `cv-content.util.ts` is 829/400. Its remaining two jobs - content building and
+  AI response parsing - are a further split, but see the blocker below before attempting it.
+- **Files or packages changed:** `cv-content.util.ts`, new `cv-style.util.ts` and `cv-entry.util.ts`,
+  `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, `npx nx test desktop`
+  **1183 passed**, `npx nx lint desktop` 0 errors / 8 pre-existing warnings, `npx nx build desktop`
+  complete, `npm run quality:file-size` pass with base `1245 -> 829`,
+  `npm run quality:attribution`, `npm run format:check`, `git diff --check` all pass. **Not run:**
+  the `cargo` gates, no Rust touched.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:**
+  - **The new modules are re-exported from `cv-content.util` rather than imported directly, and that
+    is a concession the size gate forced, not a preference.** The clean version repointed all nine
+    consumers - and the type-checker found every one, which is the argument for moving rather than
+    re-exporting. But splitting a module costs each consumer **one import line**, prettier then
+    wraps the longer lists, and three of those consumers are already over budget. **The gate refused
+    it**, correctly by its own rule: an over-budget file may not grow, whatever the reason. A
+    re-export leaves every consumer untouched and still puts the code where it belongs. The file
+    carries a comment saying to import the specific module in new code.
+- **Risks or compatibility impact:** none to behaviour; every consumer's import path is unchanged.
+- **Open issues or blockers:**
+  - **The ratchet has a corner it cannot see past, and this is it.** Splitting an oversized module
+    is exactly the work the budget exists to encourage, and doing it properly makes every consumer
+    one line longer - which the same budget forbids for any consumer already over. The rule is right
+    in general and produced a barrel here. Worth a maintainer decision at some point: either the
+    gate tolerates a pure import-line delta, or splits keep landing as re-exports.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session still
+    unseen running, Windows and Linux unverified, the AIF skill set unpruned, three upstream
+    advisories.
+- **Next first action:** the manual pass. On the code side there is genuinely nothing left that does
+  not need either a design decision or the maintainer ruling on the corner above.
+- **Evidence:** `npm run quality:file-size` printed `829/400 ... base 1245`; the refused version is
+  in this session's transcript, blocked by the pre-commit hook on three consumers growing.
+
 ### 2026-08-02, the CV preview spec splits, and a count catches eleven lost tests
 
 - **Status:** complete

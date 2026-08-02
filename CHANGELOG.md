@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Style editing and entry editing left the CV content util.** It was 1245 lines against a 400 budget holding four unrelated jobs; two came out. `cv-style.util.ts` is immutable edits to a style plus the resolution that reads one back, sharing the rule that makes them one thing - the persisted override tree stays minimal, so a style set and unset again is identical to one never touched. `cv-entry.util.ts` changes content where the other changes presentation. **1245 -> 829.**
+
 - **The CV preview's test file is six files, split by behaviour.** It was 2263 lines against a 600 budget - the worst test file in the repository - and the budget rule names the remedy. Core render and geometry, styling, themes, selection, selection identity, and inline leaf editing, each now under budget. The 20-line TestBed setup became a shared harness, which is what made splitting possible: every spec needs every input set, or a test fails on a missing required input instead of on what it was asserting. 133 tests before and after.
 
 - **Discover's tests moved to sit with what they test.** The scan engine's test module was 1142 lines - over the 800 test budget on its own - and still testing three things after the source had been split into three. Twenty-eight reader tests and three geography tests now live beside the code they exercise, so a reader and its fixtures open in one file. `commands/discover.rs` **2096 -> 1679**; every file in the group is now under budget except the scan engine itself.

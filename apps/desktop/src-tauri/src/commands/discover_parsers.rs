@@ -693,3 +693,10 @@ pub(super) fn nofluffjobs_salary_line(val: &serde_json::Value) -> Option<String>
         from as i64, to as i64
     ))
 }
+
+// The readers' tests live in a sibling file: together they cross the 800-line
+// budget this module is under, and a fixture-heavy test body is exactly the
+// kind of bulk that budget exists to keep out of the code being read.
+#[cfg(test)]
+#[path = "discover_parsers_tests.rs"]
+mod tests;

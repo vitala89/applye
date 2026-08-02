@@ -538,3 +538,40 @@ pub(super) fn location_signal(s: &str) -> bool {
     ];
     CODES.iter().any(|c| word_hit(c))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_local_markets_reads_json_array_and_drops_unknown_codes() {
+        assert_eq!(
+            parse_local_markets(r#"["de","ua"]"#),
+            vec!["de".to_string(), "ua".to_string()]
+        );
+        assert_eq!(
+            parse_local_markets(r#"["de","atlantis"]"#),
+            vec!["de".to_string()]
+        );
+        assert!(parse_local_markets("").is_empty());
+        assert!(parse_local_markets("[]").is_empty());
+    }
+
+    /// fr is not a pickable market - no built-in source serves it - so it is
+    /// dropped the same as any other unknown code, even though its location
+    /// tokens still exist for the "somewhere else" filter.
+    #[test]
+    fn parse_local_markets_drops_fr_as_not_yet_a_pickable_market() {
+        assert_eq!(
+            parse_local_markets(r#"["de","fr"]"#),
+            vec!["de".to_string()]
+        );
+    }
+
+    #[test]
+    fn parse_local_markets_reads_the_legacy_single_scalar() {
+        // Written by the first cut of the picker, before multi-select.
+        assert_eq!(parse_local_markets("de"), vec!["de".to_string()]);
+        assert!(parse_local_markets("atlantis").is_empty());
+    }
+}

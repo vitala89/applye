@@ -44,6 +44,73 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, loadJob's defaults and the wizard's phase strip, both pinned
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-load-sequence`, from `main` (`39af9bd`)
+- **Commits:** `9a1dfa8`, `15d688e`, plus this documentation commit
+- **Pull request:** not yet opened
+- **Objective:** the previous watch's next first action - continue the jobs page extraction at
+  `loadJob`, identifying its test seam before touching it.
+- **Completed:**
+  - **`job-document-defaults.ts`.** Opening a job picks two things that outlive the visit: which
+    language the Review documents step works in, and which CV the next tailoring builds on. Both
+    were inline in `loadJob`, inside a `try` whose `catch` is deliberately silent, and neither had a
+    test. The base-CV rule is the one that can cost the user: it opens on **null**, the profile,
+    because a CV selected by accident silently makes the next tailoring build on someone else's
+    document; and it pulls this job's own tailored CV into the list even when the language filter
+    would drop it, because without that a CV in another language vanishes from the dropdown and the
+    choice resets to the profile without saying so. 12 tests. `1162 -> 1145`.
+  - **`tailor-phases.ts`.** The wizard's three-pass strip derived its state from a nested if/else and
+    rebuilt its definitions on every read. The distinction worth writing down is `ready` versus
+    `pending`: only the pass after the last finished one can be started, and calling every later
+    pass ready would offer three buttons for a sequence that runs in order. 13 tests.
+    `1145 -> 1119`.
+  - **Every mutation this watch was verified against the file's hash before the result was
+    trusted**, which is the correction the previous watch recorded. Removing the linked-CV exception
+    turns 1 red; dropping the application's language precedence turns 1; erasing the ready/pending
+    distinction turns 5.
+- **Not completed:**
+  - `jobs.component.ts` is **1119/400**. Template 1148/300 and stylesheet 933/400, untouched again.
+  - Largest remaining members: `markApplied` (35), `enterJob` and `parseAndFilter` (30 each).
+  - The page still has no component-level test.
+- **Files or packages changed:** added `apps/desktop/src/app/pages/jobs/job-document-defaults.ts`
+  and `tailor-phases.ts` with their specs; modified
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts`; updated `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass, `npm test` all six projects green
+  with **1119** desktop tests (25 new this watch), `npx nx lint desktop` 0 errors / 8 pre-existing
+  warnings, `npx nx build desktop` bundle generation complete, `npm run quality:file-size` pass with
+  base `1162 -> 1145 -> 1119`, `npm run quality:attribution` pass, `npm run format:check` pass,
+  `npm run verify:csp` pass, `git diff --check` clean. **Not run:** the `cargo` gates, no Rust
+  touched; the browser preview, because the jobs page waits on `db_get_settings`.
+- **Privacy/security impact:** none. Pure functions moved, no behaviour changed.
+- **Decisions and assumptions:**
+  - Both extractions preserve behaviour exactly. The `catch` in `loadJob` that swallows everything
+    is left as it is - it carries a comment saying the detail still renders and the user can
+    re-score, which is a deliberate choice, not the silent-failure bug fixed two watches ago.
+  - `TailorPhase`'s icon type is **derived** from the phase definitions rather than declared.
+    Declaring it as `unknown` compiled fine and broke the template.
+- **Risks or compatibility impact:** the wizard strip and the base-CV dropdown were not exercised in
+  a running app; both rest on function-level tests plus `nx build desktop`.
+- **Open issues or blockers:**
+  - **`nx build desktop` was the only gate to catch a type error for the fourth time this session.**
+    `npm run type-check` passed a `TailorPhase.icon: unknown` that the template could not bind. This
+    is now a pattern rather than an anecdote, and it is worth deciding whether the fast gate should
+    include a template-aware check rather than continuing to rely on the slowest one.
+  - Unchanged: `jobs.component.html` 1148/300, `jobs.component.scss` 933/400,
+    `discover.component.scss` 1915/400, the two human release checks on `0.29.2`, Windows and Linux
+    unverified, the AIF skill set unpruned, three upstream advisories recorded with drop conditions.
+  - The false-green `npm run type-check` from two watches ago is still unexplained and still not
+    reproducible.
+- **Next first action:** decide the template-type-check question above - it has now cost four
+  round-trips in one session and is cheap to answer. Then continue at `markApplied` (35 lines),
+  which writes the application and the store row together and is the last member over 30 lines.
+- **Evidence:** `npm run quality:file-size` printed `1119/400 ... base 1145` on `15d688e`;
+  `npm test` printed `1119` for desktop; each mutation was confirmed by an md5 change before its
+  result was read.
+
 ### 2026-08-02, ADR-0004 shipped, and a shared query that changed a second screen
 
 - **Status:** complete

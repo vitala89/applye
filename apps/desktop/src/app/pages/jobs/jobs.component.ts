@@ -40,7 +40,7 @@ import { applicationStatusBadgeClass, classifyChangeType } from './scoring.utils
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
-import { type CvGapAnswer, type CvGapQuestion } from '../documents/cv-content.util';
+import { type CvGapAnswer } from '../documents/cv-content.util';
 import { CvGapDialog } from './cv-gap-dialog.component';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '../../core/toast/toast.service';
@@ -62,6 +62,8 @@ import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
 import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
+import { JobGapFillService, jobDocLabel } from '../../shared/job-gap-fill.service';
+import { GapFillHooks } from '../../shared/gap-fill';
 import {
   coverLetterStaleInput,
   cvStaleInput,
@@ -105,6 +107,7 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     CoverLetterTailorService,
     DocumentReviewStatusService,
     TailoringDiscardService,
+    JobGapFillService,
     LinkedDocumentsService,
     JobActionsService,
     CvPhotoPromptService,
@@ -126,6 +129,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly coverLetterTailor = inject(CoverLetterTailorService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
   private readonly discardSvc = inject(TailoringDiscardService);
+  private readonly gapFill = inject(JobGapFillService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
@@ -521,25 +525,15 @@ export class JobsComponent implements OnInit, OnDestroy {
     return this.tailorResults().find((r) => r.pass === 3)?.resultMd ?? '';
   }
 
-  /** Library-document label for a generated artifact, naming the company and
-   * role it was tailored for so the Documents list is unambiguous, e.g.
-   * "Acme - Senior Frontend Engineer - Tailored CV". */
-  private jobDocLabel(job: Job, suffix: string): string {
-    const base = [job.company, job.title].filter(Boolean).join(' - ') || 'Job';
-    return `${base} - ${suffix}`;
-  }
-
-  /** Runs the gap-analysis skill for the current job/CV. Fail-open: returns []
-   * on any error so a bad analysis never blocks generation. */
-  private analyzeCvGaps(cvText: string): Promise<CvGapQuestion[]> {
-    return this.gapSvc.analyze(cvText, this.job(), this.settings(), this.documentReviewLanguage());
-  }
-
-  /** Opens the gap dialog and resolves when the user submits or cancels. */
-  private awaitGapDialog(
-    questions: CvGapQuestion[],
-  ): Promise<{ answers: CvGapAnswer[]; saveToProfile: boolean } | null> {
-    return this.gapSvc.ask(questions);
+  /** The gap-fill callbacks both document flows hand to their draft service. */
+  private gapFillHooks(job: Job): GapFillHooks {
+    return this.gapFill.hooks({
+      job,
+      settings: this.settings(),
+      language: this.documentReviewLanguage(),
+      profile: this.profile(),
+      applyProfile: (profile) => this.profile.set(profile),
+    });
   }
 
   onGapSubmit(result: { answers: CvGapAnswer[]; saveToProfile: boolean }): void {
@@ -548,22 +542,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   onGapCancel(): void {
     this.gapSvc.cancel();
-  }
-
-  /** Appends the answered gap items to the profile fullMd. Whole-row-replace
-   * safe: carries every other profile field forward (the #97 lesson). */
-  private async appendToProfile(block: string): Promise<void> {
-    const p = this.profile();
-    if (!p || !block) return;
-    const updated = await this.db.upsertProfile({
-      fullMd: `${p.fullMd}\n\n${block}`,
-      scoringJson: p.scoringJson,
-      scoringHash: p.scoringHash,
-      pitchMd: p.pitchMd,
-      pitchHash: p.pitchHash,
-      targetArchetypes: p.targetArchetypes,
-    });
-    this.profile.set(updated);
   }
 
   async createCvDraft(): Promise<void> {
@@ -583,11 +561,9 @@ export class JobsComponent implements OnInit, OnDestroy {
         tailoredMd,
         language: this.documentReviewLanguage(),
         region: this.documentReviewRegion(),
-        label: this.jobDocLabel(job, 'Tailored CV'),
+        label: jobDocLabel(job, 'Tailored CV'),
         ensureApplication: () => this.ensureApplicationDraft(),
-        analyzeGaps: (cvText) => this.analyzeCvGaps(cvText),
-        askGaps: (questions) => this.awaitGapDialog(questions),
-        saveToProfile: (block) => this.appendToProfile(block),
+        ...this.gapFillHooks(job),
       });
       if (!result) return;
       this.application.set(result.application);
@@ -614,16 +590,14 @@ export class JobsComponent implements OnInit, OnDestroy {
         settings,
         language: this.documentReviewLanguage(),
         region: this.documentReviewRegion(),
-        label: this.jobDocLabel(job, 'Cover Letter'),
+        label: jobDocLabel(job, 'Cover Letter'),
         // `preparingCv()` is part of this condition, not an extra guard: a CV
         // still generating has not linked itself yet, so testing only
         // `linkedCv()` let a cover letter started alongside it run a second
         // analysis and raise a second dialog for the same questions.
         skipGapFill: !!this.linkedCv() || this.preparingCv(),
         ensureApplication: () => this.ensureApplicationDraft(),
-        analyzeGaps: (text) => this.analyzeCvGaps(text),
-        askGaps: (questions) => this.awaitGapDialog(questions),
-        saveToProfile: (block) => this.appendToProfile(block),
+        ...this.gapFillHooks(job),
       });
       if (!result) return;
       this.application.set(result.application);
@@ -702,7 +676,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       settings: this.settings(),
       letters: this.coverLetters(),
       application: this.application(),
-      label: (job) => this.jobDocLabel(job, 'Tailored Cover Letter'),
+      label: (job) => jobDocLabel(job, 'Tailored Cover Letter'),
     });
     if (!result) return;
     if (result.application) this.application.set(result.application);

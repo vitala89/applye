@@ -67,6 +67,16 @@
   matters because "type-check passed" is load-bearing in every watch entry. Until it is understood,
   a green type-check on its own is weaker evidence than the entries have been treating it as, and
   `nx build desktop` remains the only gate that has never been observed to miss.
+- **Dependabot alert 42 (`glib`) is understood and cannot be fixed here.** `glib` 0.18.5 carries an
+  unsoundness advisory in `VariantStrIter`'s iterator impls (RUSTSEC-2024-0429 /
+  GHSA-wrw7-89jp-8q8g), fixed in 0.20. **Not reachable and not ours:** glib arrives through the GTK
+  bindings Tauri uses and exists **only on Linux** - `cargo tree -i glib` is empty for the macOS and
+  Windows targets - and nothing under `src-tauri/src` names glib or that type. **Nowhere to move
+  to:** glib 0.20 needs a gtk major bump Tauri 2.11 has not taken, and `cargo update glib` locks 0
+  packages. `cargo audit` classes it as a warning and exits 0 either way; it is now in
+  `.cargo/audit.toml` with the drop condition, which is Tauri shipping on gtk/glib >= 0.20. The
+  GitHub alert is deliberately **left open rather than dismissed**, so it keeps reappearing until
+  that happens.
 - **Unclaimed jobs: decided, not yet built.** The rows that accumulate invisibly since PR #248 now
   have an answer, reached through `aif-grilling` rather than chosen by the agent, and written up as
   `docs/product/decisions/ADR-0004-unclaimed-jobs-stay-and-become-visible.md`. They stay: the fix is

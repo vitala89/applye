@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **Each user-guide page is its own file, and its own chunk.** `guide-pages.ts` held all eleven at 1122 lines against a 400 budget; each was already a standalone component lazily routed on its own, so splitting them also splits the bundle. Largest file is now 165. All 39 routes still prerender.
+
 - **The PDF renderer is its own module.** `tailoring.rs` was 2538 lines against an 800 budget - the largest Rust file left after the Discover scan engine came apart. The printpdf half moved out: family mapping, glyph measurement, the line wrapper that measures rather than guesses, and the renderer that lays blocks onto pages. It touches no database and no filesystem. The embedded font faces went to a third file, because both exporters need them and leaving them in either would have made the other import its fonts from a module named for a format it does not produce. **2538 -> 2087.**
 
 - **No spec file in the repository is over its budget any more.** The last three - CV detail 940, the live style panel 913, onboarding 689, all against 600 - became seven files. Two needed a shared harness because their setup is knowledge rather than boilerplate: the panel wires a fixture and a change collector, onboarding wires eight mocks whose arrangement is the point, and copying either into a second file would have duplicated the wiring. 1183 tests before and after.

@@ -44,6 +44,54 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the user guide splits, and a split that cost nothing
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/web-guide-pages`, from `main` (`5afd1f2`), cut before the first edit
+- **Commits:** `2718382`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** ran the audit first this time. 51 files over budget, and
+  `apps/web/src/app/docs/guide-pages.ts` at 1122/400 was the largest TypeScript source and a pure
+  data-shaped file - eleven standalone components with inline templates.
+- **Completed:**
+  - **Eleven files, one per guide page**, largest 165. Each was already lazily routed on its own, so
+    a file per page is also a chunk per page.
+  - **It cost nothing anywhere.** The routes reach these through dynamic `import()`, so repointing
+    them changed the path string and not the line count: `app.routes.ts` is **352 before and after**.
+    That is the exact opposite of the CV util split two watches ago, where every consumer needed a
+    second import line and the size gate refused it. **Whether a split is free depends on how its
+    consumers import it**, which is worth knowing before choosing the next target.
+  - All 39 routes still prerender.
+- **Not completed:** the other 50 files.
+- **Files or packages changed:** `guide-pages.ts` removed, eleven files under
+  `apps/web/src/app/docs/guide/`, `app.routes.ts`, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, `npx nx lint web`
+  clean, `npx nx test web` **76 passed**, `npm run web:build` complete with **39 prerendered
+  routes**, `npm run quality:file-size` pass with `app.routes.ts` unchanged at 352,
+  `npm run quality:attribution`, `npm run format:check`, `npm run verify:csp`, `git diff --check`
+  all pass. **Not run:** the desktop and `cargo` gates - nothing outside `apps/web` was touched.
+- **Privacy/security impact:** none. Documentation components moved.
+- **Decisions and assumptions:** one file per page rather than grouping by theme, because the
+  routing already treats them one at a time and grouping would have been an invented category.
+- **Risks or compatibility impact:** none observed. The prerender count is the check that every
+  route still resolves; a broken lazy import would have dropped it below 39.
+- **Open issues or blockers:**
+  - `apps/web/public/sitemap.xml` regenerated with today's date again during the build and was
+    discarded again. Third time this session. It is generated output tracked in git, which means
+    every web build dirties the tree - worth either ignoring or regenerating deliberately, but it is
+    not this branch's business.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session unseen
+    running, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories,
+    the ratchet's import-line corner.
+- **Next first action:** the manual pass. On the code side, `commands/documents.rs` at 1926/800 is
+  the same shape as the two Rust files already split, and `discover-location.ts` at 910/400 is data
+  tables. Both look decision-free - **but run the audit and check how consumers import, rather than
+  trusting this sentence.**
+- **Evidence:** `npm run web:build` printed `Prerendered 39 static routes`;
+  `npm run quality:file-size` printed `app.routes.ts: 352/400 ... base 352`.
+
 ### 2026-08-02, the PDF renderer leaves the tailoring exporter
 
 - **Status:** complete

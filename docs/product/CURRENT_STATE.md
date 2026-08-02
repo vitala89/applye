@@ -126,6 +126,13 @@
   exporters need them). Both remain over the 800 budget: what is left in each is the
   HTTPS/persistence layer and the DOCX exporter respectively - the work those files are actually
   for - plus their test modules, which are over the budget on their own.
+- **51 files are over budget, and the audit is the only trustworthy list.** Breakdown after this
+  session's work: 21 TypeScript sources, 13 stylesheets, 12 templates, 5 Rust. The largest remaining
+  are `discover.component.scss` 1915/400, `commands/tailoring.rs` 2087/800,
+  `commands/documents.rs` 1926/800, `jobs.component.html` 1122/300. **Templates and stylesheets need
+  child components, which is a maintainer decision; several sources and Rust files may not.** Run
+  the audit before planning - three claims in this session's log that "nothing decision-free is
+  left" were each wrong, and each was scoped to whatever category had just been finished.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

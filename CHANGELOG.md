@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The CV content spec follows the modules it tests.** It was 1509 lines against a 600 budget, testing four modules through one file after the source split. Now four files - style, AI response parsing, content building, entry editing - each under budget. 120 tests before and after.
+
 - **Style editing and entry editing left the CV content util.** It was 1245 lines against a 400 budget holding four unrelated jobs; two came out. `cv-style.util.ts` is immutable edits to a style plus the resolution that reads one back, sharing the rule that makes them one thing - the persisted override tree stays minimal, so a style set and unset again is identical to one never touched. `cv-entry.util.ts` changes content where the other changes presentation. **1245 -> 829.**
 
 - **The CV preview's test file is six files, split by behaviour.** It was 2263 lines against a 600 budget - the worst test file in the repository - and the budget rule names the remedy. Core render and geometry, styling, themes, selection, selection identity, and inline leaf editing, each now under budget. The 20-line TestBed setup became a shared harness, which is what made splitting possible: every spec needs every input set, or a test fails on a missing required input instead of on what it was asserting. 133 tests before and after.

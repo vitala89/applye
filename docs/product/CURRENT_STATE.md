@@ -111,6 +111,13 @@
   relaxing it put unclaimed rows into the dashboard's Recent jobs labelled "Saved" and stopped a
   user with one analysed job reading as new - both now guarded by `recentClaimedJobs`, with tests
   that go red if the guard is removed. Two locale keys in all six languages.
+- **The documents area was split into modules that match their tests.** `cv-content.util.ts` held
+  four unrelated jobs at 1245/400; style editing and entry editing moved out (`cv-style.util.ts`
+  336, `cv-entry.util.ts` 118), leaving 829. Its 1509-line spec followed, becoming four files under
+  the 600 budget - style 473, AI parsing 445, content 426, entries 176.
+  `cv-preview.component.spec.ts` split the same way earlier, 2263 into six. **Three spec files
+  remain over budget and are the same decision-free shape**: `cv-detail.component.spec.ts` 940,
+  `cv-live-style-panel.component.spec.ts` 913, `onboarding.component.spec.ts` 689.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

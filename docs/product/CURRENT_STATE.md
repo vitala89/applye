@@ -61,6 +61,14 @@
   (`tailor-phases.ts`). Largest remaining members are `markApplied` (35), `enterJob` and
   `parseAndFilter` (30 each). **The page still has no component-level test**, so every extraction
   rests on service- and function-level tests plus `nx build desktop` for the template.
+- **The fast gate is now template-aware, and was not before.** `npm run type-check` ran `tsc`, which
+  never compiles Angular templates, so a binding to a missing member or a type the template cannot
+  accept passed it and failed only under `nx build`. It now runs `ngc --noEmit` for both Angular
+  apps: measured uncached at **3.48s against tsc's 4.31s**, so it is cheaper as well as stricter.
+  Proven before switching, on both apps and both failure modes - `tsc` exits 0 on all of them, `ngc`
+  exits 1 and names file, line and component. A guardrail in
+  `tools/check-quality-guardrails.test.mjs` fails if either app reverts. **Every watch entry before
+  2026-08-02 that cites a green `type-check` was citing a check that could not see templates.**
 - **A gate reported success on a broken tree, once, and the mechanism is not established.**
   `npm run type-check` printed success while `apps/desktop/src/app/pages/jobs/jobs.component.ts`
   contained `Property 'jobDocLabel' does not exist on type 'JobsComponent'`; `npx nx build desktop`

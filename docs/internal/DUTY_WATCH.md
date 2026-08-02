@@ -44,6 +44,108 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, two responsibilities out of the jobs page, and the invisible jobs decided
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-component-extraction`, from `main` (`e420c7d`)
+- **Commits:** two code commits (`dffb638`, `a0fb36d`), plus this documentation commit
+- **Pull request:** not yet opened
+- **Objective:** start bringing `jobs.component.ts` under its 400-line budget by extraction, one
+  responsibility per commit with tests; and settle the deferred decision about unclaimed job rows
+  through `aif-grilling` rather than choosing for the maintainer.
+- **Completed:**
+  - **`CoverLetterTailorService`.** The tailor-an-existing-cover-letter modal - its five state
+    signals, the base-letter read, the AI pass and the row it writes - moved to
+    `apps/desktop/src/app/shared/cover-letter-tailor.service.ts`, mirroring the
+    `CoverLetterDraftService` it sits beside, and component-scoped through the page providers so its
+    state keeps the lifetime it had as component fields. `readBaseLetter` and `buildTailoredContent`
+    came out as pure functions, so what is worth asserting is asserted without a `TestBed`.
+    14 new tests.
+  - **`job-detail-icons.ts`.** The 37-entry icon table and the 34 lucide imports that fed it left the
+    component. The spec is the reason the move was worth a commit: it reads `jobs.component.html`,
+    collects every `icons.<name>` the template references, and asserts the table defines it. A
+    missing icon passes `npm run type-check` and fails only under `nx build desktop`, so this closes
+    that documented gap in the fast gate. 3 new tests, one of which guards the regex itself against
+    silently matching nothing.
+  - **Both extractions were checked by breaking them.** Making `readBaseLetter` ignore the stored
+    content turned 2 tests red; removing the modal-close on success turned 1 red; deleting one icon
+    from the table turned 1 red. Nothing here is a test that passes with the bug present.
+  - **One real bug was caught by the new tests during the refactor**, not after it: a mid-edit
+    rename left `tokensInput` / `tokensOutput` unbound in the persist call, which threw at runtime
+    and was swallowed by the flow's own catch. It surfaced only because a test asserted the error
+    signal was empty on the success path.
+  - **The unclaimed-jobs decision is settled**, through two rounds of `aif-grilling`. Recorded as
+    `docs/product/decisions/ADR-0004-unclaimed-jobs-stay-and-become-visible.md`, status `draft`
+    pending the maintainer's confirmation of the numbered list.
+- **Not completed:**
+  - `jobs.component.ts` is **1226/400**. Two extractions is not "under budget", and the remaining
+    excess is roughly three budgets' worth.
+  - **The template and the stylesheet were not touched at all**, by design - they follow the `.ts`.
+    `jobs.component.html` 1148/300 and `jobs.component.scss` 933/400 are unchanged.
+  - The third extraction was scoped and **deliberately not attempted**: the document-drafting group
+    (`createCvDraft`, `createCoverLetterDraft`, `chooseExistingDocument`, `prepareDocumentsStep`,
+    `commitApplicationDocuments`, `cvDocStale`, `coverLetterDocStale`), around 180 lines sharing one
+    status-and-error shape. It writes ten component signals, the page has no component-level test,
+    and this is the feature that produced six rounds of falsely green unit tests. Starting it with
+    the budget left in this session would have been the fourth.
+  - ADR-0004 is not implemented. No Rust or `libs/` code changed this watch.
+- **Files or packages changed:** added `apps/desktop/src/app/shared/cover-letter-tailor.service.ts`
+  and its spec, `apps/desktop/src/app/pages/jobs/job-detail-icons.ts` and its spec; modified
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts`; added `ADR-0004`; updated `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass, `npx nx test desktop` **1038 passed,
+  71 suites**, 20 of those tests new this watch, `npx nx lint desktop` 0
+  errors / 8 pre-existing warnings, `npx nx build desktop` **bundle generation complete** (it caught
+  a `CoverLetterTone` / `CoverLetterLength` widening that `type-check` did not - the documented gap,
+  observed again), `npm run quality:file-size` pass with base `1467 -> 1307 -> 1226`,
+  `npm run quality:attribution` pass, `npm run format:check` pass, `npm run verify:csp` pass,
+  `git diff --check` clean. **Not run:** the `cargo` gates, because no Rust file was touched; the
+  browser preview, because the jobs page waits on `db_get_settings` and does not render outside
+  Tauri.
+- **Privacy/security impact:** none from the code. ADR-0004 is a small privacy improvement if
+  implemented - a user cannot delete job description text they cannot see - and adds no new
+  exposure, since it reveals the user's own local rows to the user.
+- **Decisions and assumptions:**
+  1. The complaint about invisible jobs is **lost work**, not database bloat, so the answer is
+     visibility and no automatic deletion.
+  2. Mechanism is a **filter chip in My Jobs, default off** - not a new route, page or command.
+  3. **No migration.** `claimed` is derived as `EXISTS(applications)`; `db_list_jobs_overview_core`
+     relaxes its `WHERE` and `JobOverview` gains one boolean. This is what closes the schema arm of
+     the Grilling gate.
+  4. **Discover-scanned rows stay hidden**, using the rule `db_list_jobs` already applies, so one
+     scan cannot flood the table.
+  5. Unclaimed rows carry **their own status word**, not a blank cell, and it joins the status
+     filter. One new key across six locales.
+  6. They are **deletable through the existing trash control** and `db_delete_job`'s cascade. No bulk
+     clear.
+  7. **Decision now, code next session.** The extraction got this session's budget.
+  - Accepted cost, stated to the maintainer: deleting an analysed row still re-pays the parse tokens
+    on re-paste, because the AI parse runs before the `jd_hash` upsert. Nothing in ADR-0004 changes
+    that.
+  - Two behaviour changes rode along with the first extraction and are deliberate: the inline
+    fence-stripping regex became the shared `cleanJsonText`, which additionally trims to the outer
+    braces, so strictly more AI responses parse and none fewer; and an unparseable base letter now
+    falls back to a from-scratch generation rather than throwing.
+- **Risks or compatibility impact:** the jobs page has no component-level test, so both extractions
+  rest on service-level tests plus `nx build desktop` for the template. The tailor modal's behaviour
+  was preserved by reading, not by an end-to-end run - nobody clicked Tailor cover letter in a
+  running app this watch.
+- **Open issues or blockers:** `jobs.component.ts` 1226/400, `jobs.component.html` 1148/300,
+  `jobs.component.scss` 933/400. ADR-0004 unimplemented and awaiting sign-off. Unchanged from the
+  previous watch: the two human release checks on `0.29.2` (look at the packaged macOS window; take
+  an update from an installed `0.29.1`), Windows and Linux unverified, `discover.component.scss`
+  1915/400, the AIF skill set unpruned against `writing-great-skills`, and the two security
+  advisories waiting on upstream releases.
+- **Next first action:** open the PR for this branch, then extract the document-drafting group into
+  a service that owns `documentReviewStatus` / `documentReviewError` and the two choose-dialog
+  flags, taking `application` and `profile` through an explicit context - the shape
+  `CoverLetterTailorService` uses. Write its test before the extraction, because the shared
+  status-and-error handling is the duplicated knowledge that justifies the move.
+- **Evidence:** `git log --oneline -3` shows `a0fb36d`, `dffb638` on `e420c7d`;
+  `npm run quality:file-size` printed `1226/400 ... base 1307` on the second commit;
+  `npx nx test desktop` printed `Tests: 1038 passed`.
+
 ### 2026-08-02, 0.29.2 published and the download went live
 
 - **Status:** complete

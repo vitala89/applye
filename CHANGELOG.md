@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The PDF renderer is its own module.** `tailoring.rs` was 2538 lines against an 800 budget - the largest Rust file left after the Discover scan engine came apart. The printpdf half moved out: family mapping, glyph measurement, the line wrapper that measures rather than guesses, and the renderer that lays blocks onto pages. It touches no database and no filesystem. The embedded font faces went to a third file, because both exporters need them and leaving them in either would have made the other import its fonts from a module named for a format it does not produce. **2538 -> 2087.**
+
 - **No spec file in the repository is over its budget any more.** The last three - CV detail 940, the live style panel 913, onboarding 689, all against 600 - became seven files. Two needed a shared harness because their setup is knowledge rather than boilerplate: the panel wires a fixture and a change collector, onboarding wires eight mocks whose arrangement is the point, and copying either into a second file would have duplicated the wiring. 1183 tests before and after.
 
 - **The CV content spec follows the modules it tests.** It was 1509 lines against a 600 budget, testing four modules through one file after the source split. Now four files - style, AI response parsing, content building, entry editing - each under budget. 120 tests before and after.

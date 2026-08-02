@@ -44,6 +44,63 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the PDF renderer leaves the tailoring exporter
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/tailoring-rs-split`, from `main` (`306cbfd`), cut before the first edit
+- **Commits:** `528eef4`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** I said the specs were the last decision-free work. Audited instead of asserting -
+  and **51 files are still over budget**, of which `tailoring.rs` at 2538/800 is the same shape as
+  the `discover.rs` split that worked. So the claim was wrong again, in the same way: it was scoped
+  to what I had just been looking at.
+- **Completed:**
+  - **`tailoring_pdf.rs` (462).** Family mapping, glyph measurement, the line wrapper that measures
+    rather than guesses, and the renderer that lays blocks onto pages. No database, no filesystem;
+    `export_pdf` stays with the command layer, which is what leaves the wrapper and the placement
+    assertable against content already in hand.
+  - **`tailoring_fonts.rs` (20).** The embedded faces went to a third file because **both** exporters
+    need them - the PDF side measures and embeds, the DOCX side hands the same bytes to docx-rs.
+    Leaving them in either would have made the other import its fonts from a module named for a
+    format it does not produce.
+  - Gutting the wrapper turns two tests red, hash-verified. `tailoring.rs` **2538 -> 2087**.
+- **Not completed:** `tailoring.rs` is 2087/800. What remains is the DOCX exporter, the cache CRUD
+  and the command layer - the work the file is actually for - plus an 847-line test module over the
+  budget on its own.
+- **Files or packages changed:** `tailoring.rs`, new `tailoring_pdf.rs` and `tailoring_fonts.rs`,
+  `commands/mod.rs`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `cargo build` 0 problems, `cargo test --lib` **339 passed**,
+  `cargo clippy --all-targets -- -D warnings` **0 problems**, `cargo fmt --check` clean,
+  `npm run quality:file-size` pass with base `2538 -> 2087`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` all pass. **Not run:** the frontend gates - no
+  TypeScript, template or stylesheet touched, and no command signature changed.
+- **Privacy/security impact:** none. Rendering code moved; the same bytes go to the same file paths.
+- **Decisions and assumptions:** the fonts went to their own module rather than to the PDF side,
+  because shared assets belong to neither consumer. That is the same judgement that kept
+  `resolvePageSettings` out of `cv-style.util.ts` two watches ago.
+- **Risks or compatibility impact:** low; the compiler carries the references and 339 tests carry
+  the behaviour. No exported PDF was opened and looked at - the tests assert structure, not
+  appearance.
+- **Open issues or blockers:**
+  - **The slice-by-line-number trap fired a third time, in a third form.** Previously it orphaned a
+    doc comment, then a helper declared after the last test. This time it took `#[tauri::command]`
+    away from `export_pdf` and left it dangling at the end of the new module. Cargo caught it
+    immediately. The lesson is now unambiguous: **an extraction bounded by line numbers must be
+    checked at both ends**, because what sits directly above and below an item is part of it.
+  - **I claimed "no decision-free move left" three times now and was wrong each time.** Every claim
+    was scoped to the category I had just finished. The audit that disproves it takes seconds and I
+    keep not running it before speaking.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session unseen
+    running, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories,
+    the ratchet's import-line corner.
+- **Next first action:** the manual pass, still. On the code side the audit says 51 files remain -
+  13 stylesheets, 12 templates, 5 Rust, 21 TypeScript sources. The templates and stylesheets need
+  child components, which is a maintainer decision; several Rust and TypeScript sources may not.
+  **Run the audit before deciding, and do not take my word for what is left.**
+- **Evidence:** `npm run quality:file-size` printed `2087/800 ... base 2538` on `528eef4`;
+  `cargo test --lib` printed `339 passed` before and after, `2 failed` with the wrapper gutted.
+
 ### 2026-08-02, no spec file is over budget any more
 
 - **Status:** complete

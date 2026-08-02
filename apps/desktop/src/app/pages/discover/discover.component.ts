@@ -47,7 +47,6 @@ import {
 } from '@applye/core';
 import type {
   CompensationVerdict,
-  DiscoverFeedItem,
   DiscoverSource,
   ScanSourceResult,
   ArchetypeMatch,
@@ -64,6 +63,7 @@ import {
 } from './discover-location';
 import { narrowBuiltinsByMarkets } from './discover-sources.util';
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
+import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -83,15 +83,6 @@ interface RegionGroup {
 }
 
 /** A titled block of feed rows ("For you" / "More openings"). */
-interface FeedSection {
-  key: 'foryou' | 'more';
-  label: string;
-  /** Rows to render now (windowed by the incremental pager). */
-  rows: FeedRow[];
-  /** Full row count in this section, independent of the render window. */
-  total: number;
-}
-
 /** Feed rows rendered per page; the list grows in these steps as the user scrolls. */
 const FEED_PAGE = 30;
 type ConsoleTone = 'header' | 'ok' | 'err' | 'done' | 'active';
@@ -99,13 +90,6 @@ type ConsoleTone = 'header' | 'ok' | 'err' | 'done' | 'active';
 interface ConsoleLine {
   text: string;
   tone: ConsoleTone;
-}
-
-/** Feed item + client-side triage state (transient until the next reload). */
-interface FeedRow extends DiscoverFeedItem {
-  /** discoverShownAt was NULL when this feed was loaded. */
-  isNew: boolean;
-  dismissed: boolean;
 }
 
 /** One block of the deterministically parsed job description. */
@@ -381,32 +365,19 @@ export class DiscoverComponent {
     return [...names].sort();
   });
 
-  protected readonly visibleRows = computed<FeedRow[]>(() => {
-    const q = this.query().trim().toLowerCase();
-    const sources = this.sourceSel();
-    const works = this.workTypeSel();
-    const countries = this.countrySel();
-    const tab = this.tab();
-    return this.feed().filter((row) => {
-      if (row.dismissed) return true; // transient "Dismissed · Undo" strip
-      if (tab === 'new' && row.saved) return false;
-      if (q) {
-        const hay = `${row.title ?? ''} ${row.company ?? ''}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      if (sources.size > 0 && (row.source === null || !sources.has(row.source))) return false;
-      if (works.size > 0 && !works.has(this.workTypeOf(row.location))) return false;
-      if (countries.size > 0) {
-        const loc = this.classifyLoc(row.location);
-        const countryKey = loc.country || OTHER_COUNTRY;
-        // Pass when the job's country is picked, or its specific city is picked.
-        const byCountry = countries.has(countryKey);
-        const byCity = !!loc.city && countries.has(this.cityKey(loc.country, loc.city));
-        if (!byCountry && !byCity) return false;
-      }
-      return true;
-    });
-  });
+  protected readonly visibleRows = computed<FeedRow[]>(() =>
+    filterFeedRows(
+      this.feed(),
+      {
+        query: this.query(),
+        sources: this.sourceSel(),
+        works: this.workTypeSel(),
+        countries: this.countrySel(),
+        tab: this.tab(),
+      },
+      (location) => this.workTypeOf(location),
+    ),
+  );
 
   /**
    * True when the job's title matches one of the profile's target-role keywords.
@@ -447,43 +418,15 @@ export class DiscoverComponent {
    * With no target roles set, a single unlabelled section holds everything, so
    * the two-tier UI never shows an empty or confusing header.
    */
-  protected readonly feedSections = computed<FeedSection[]>(() => {
-    const rows = this.visibleRows();
-    if (!this.profileKeywords().length) {
-      return [{ key: 'more', label: '', rows, total: rows.length }];
-    }
-    const forYou = rows
-      .filter((r) => this.matchesProfile(r))
-      .sort((a, b) => {
-        const d = this.rowTierRank(b) - this.rowTierRank(a);
-        if (d !== 0) return d;
-        return (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
-      });
-    const more = rows.filter((r) => !this.matchesProfile(r));
-    const out: FeedSection[] = [];
-    if (forYou.length) {
-      out.push({
-        key: 'foryou',
-        label: this.t()('discover.for_you'),
-        rows: forYou,
-        total: forYou.length,
-      });
-    }
-    if (more.length) {
-      out.push({
-        key: 'more',
-        label: this.t()('discover.more_openings'),
-        rows: more,
-        total: more.length,
-      });
-    }
-    // Nothing matched the profile -> drop the "More" header so it reads as a
-    // plain list rather than a lonely second-tier section.
-    if (out.length === 1 && out[0].key === 'more') {
-      out[0] = { ...out[0], label: '' };
-    }
-    return out;
-  });
+  protected readonly feedSections = computed<FeedSection[]>(() =>
+    splitFeedSections(
+      this.visibleRows(),
+      this.profileKeywords().length > 0,
+      (row) => this.matchesProfile(row),
+      (row) => this.rowTierRank(row),
+      { forYou: this.t()('discover.for_you'), more: this.t()('discover.more_openings') },
+    ),
+  );
 
   /** How many feed rows to render right now; grows by FEED_PAGE as the user scrolls. */
   protected readonly displayCount = signal(FEED_PAGE);

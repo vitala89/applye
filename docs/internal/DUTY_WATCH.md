@@ -44,6 +44,58 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, 0.29.2 published and the download went live
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `feat/web-download-live`, then `docs/close-0.29.2-watch`
+- **Commits:** two on the web branch, one here
+- **Pull request:** [#255](https://github.com/vitala89/applye/pull/255) and
+  [#256](https://github.com/vitala89/applye/pull/256), both merged
+- **Objective:** close the release: publish `0.29.2`, flip the website's download, and record what
+  the release was and was not verified against.
+- **Completed:**
+  - `v0.29.2` published and marked Latest, after the mechanical half of the smoke test was run
+    locally - the detail is in the entry below;
+  - **the flip condition was met, so `COMING_SOON` is `false`.** It was written next to the flag
+    yesterday as a checkable sentence: the published latest release lists installers for macOS,
+    Windows and Linux. It does. The hero's primary control is now Download, pointing at the releases
+    page rather than a versioned asset, so it cannot go stale when the version moves;
+  - **verified against the live site rather than the build**: `coming soon` appears zero times in
+    the served HTML, the Download link resolves to the releases page, `/changelog` heads at
+    `[Unreleased]` above `[0.29.2]`, and no console errors. The deploy that served it is the run for
+    `25fb22e`, confirmed by run id rather than assumed from timing - the first read hit a cached
+    copy from the previous deploy and had to be repeated with a cache buster;
+  - `CHANGELOG.md` gained an `[Unreleased]` entry for the site change. The stop hook caught its
+    absence: `apps/web` changed and the changelog had not, which is exactly the case the hook exists
+    for. A site the user visits is user-facing.
+- **Not completed:** the two human checks, unchanged and still owed - nobody has looked at the
+  packaged macOS window, and the download-and-install path has not run once. Windows and Linux are
+  untouched.
+- **Files or packages changed:** `apps/web/src/app/site.ts`, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** `nx test web` pass (76), `npm run web:build` pass (39 prerendered routes),
+  `format:check`, `quality:attribution`, `quality:file-size`, `git diff --check` pass. Browser
+  preview checked before merge; the live site checked after. CI green on both PRs, on their head
+  commits - checked by head SHA, since the first CI read predated the changelog commit.
+- **Privacy/security impact:** none. One boolean and documentation.
+- **Decisions and assumptions:** the flip stayed a separate PR from the documentation, as decided
+  during the grilling, even though publication had already happened by then and one PR would have
+  been fewer steps. The separation's reason - never let the button land before the release does -
+  had already been served, but changing a decision silently because it became convenient is the
+  habit worth not having.
+- **Risks or compatibility impact:** the Download button leads to a release whose Windows and Linux
+  installers no human has run. That risk is on the release, not on the button, and it is recorded in
+  `CURRENT_STATE.md` where it can be closed.
+- **Open issues or blockers:** the two human checks. Beyond the release: `jobs.component.ts` at
+  1610/400 with its template and stylesheet also over, `settings.component.{ts,html}` at 575/400 and
+  580/300, `pipeline.component.scss` 456/400, `dashboard.component.ts` 428/400. Unclaimed jobs still
+  accumulate as invisible rows. The AIF skill set has not been pruned against `writing-great-skills`.
+- **Next first action:** open the packaged `Applye_0.29.2_aarch64.dmg` and confirm the window renders
+  styled; then run an installed `0.29.1` and take the update it offers.
+- **Evidence:** `gh release list` shows `v0.29.2` as Latest; the live site serves a Download link and
+  zero "coming soon"; `gh run list` attributes the deploy to `25fb22e`.
+
 ### 2026-08-02, tag 0.29.2, and the updater error that was telling the truth
 
 - **Status:** complete, publication is the maintainer's

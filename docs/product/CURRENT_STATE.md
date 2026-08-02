@@ -18,8 +18,13 @@
   including `0028` with its three identity columns. **Not verified:** that the window renders
   correctly to a human eye, and anything at all on Windows or Linux. The `.rpm` remains the least
   exercised artifact.
-- **`SOURCE_PUBLIC` is `true`.** `COMING_SOON` flips to `false` in its own change now that the
-  download exists on all three platforms.
+- **applye.dev offers the download.** Both flags are now `true`/`false` respectively and the site is
+  deployed from `25fb22e`: the hero's primary control is **Download**, "coming soon" appears zero
+  times in the served HTML, `/changelog` heads at `[Unreleased]` above `[0.29.2]`, and the GitHub
+  links are live. Verified against the live site, not the build output.
+- **The two checks nobody has run** are both short and both need a human: look at the packaged macOS
+  window and confirm it renders styled, and let an installed `0.29.1` offer the update so the
+  download-and-install path is exercised once. Everything else about the release is verified.
   Three bugs had to be fixed to reach a
   CI-built bundle at all, all invisible for the same reason - Actions was blocked while the repository was private, so
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered

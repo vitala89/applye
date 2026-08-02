@@ -132,7 +132,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly discardSvc = inject(TailoringDiscardService);
   private readonly gapFill = inject(JobGapFillService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
-  private readonly jobActions = inject(JobActionsService);
+  protected readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
   private readonly tailorScore = inject(TailorScoreService);
   private readonly activity = inject(WizardActivityService);
@@ -935,11 +935,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   async markApplied(): Promise<void> {
     const j = this.job();
     if (!j?.id) return;
-    const updated = await this.jobActions.markApplied(j.id, this.application(), () =>
-      // Generate any missing CV / cover letter, refresh a stale one, and commit
-      // both into the library, even if the user applied through a portal
-      // without exporting a PDF first.
-      this.commitApplicationDocuments(true),
+    // The commit generates any missing CV / cover letter, refreshes a stale one
+    // and writes both into the library, even after a portal application.
+    const updated = await this.jobActions.markApplied(
+      () => this.ensureApplicationDraft(),
+      () => this.commitApplicationDocuments(true),
     );
     if (!updated) return;
     this.application.set(updated);

@@ -715,6 +715,7 @@ export const de: TranslationMap = {
     open_cv_document: 'Verknüpften Lebenslauf öffnen',
     open_cover_letter_document: 'Verknüpftes Anschreiben öffnen',
     mark_applied: 'Als beworben markieren',
+    applying: 'Dokumente werden vorbereitet…',
     change_status_action: 'Ändern',
     edit_locked_action: 'Bearbeiten',
     edit_confirm_title: 'Eine laufende Bewerbung bearbeiten?',

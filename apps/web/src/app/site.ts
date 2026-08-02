@@ -22,18 +22,18 @@ export const X_TWITTER = ''; // PLACEHOLDER: X/Twitter profile URL if one is cre
 /**
  * Whether the hero offers a download instead of the "coming soon" status.
  *
- * Still `true`. The published latest release carries exactly one installer, an
- * Apple Silicon `.dmg`; the first release CI built for every platform is still
- * a draft awaiting the smoke test in `docs/RELEASE.md`. A Download button that
- * lands a Windows or Linux visitor on a release page holding nothing for them
- * is worse than a status that says "not yet".
+ * `false` since `v0.29.2`, the first release carrying an installer for every
+ * platform: macOS on both architectures, Windows `.msi` and `.exe`, Linux
+ * `.deb`/`.rpm`/`.AppImage`. That was the flip condition, and it is checkable
+ * in one command - `gh release view --json assets` on the published latest
+ * release. Set it back to `true` if a future release ever ships narrower than
+ * that, because a Download button landing a Windows visitor on a page holding
+ * nothing for them is worse than a status that says "not yet".
  *
- * Flip condition, checkable in one command: `gh release view --json assets`
- * on the published latest release lists installers for macOS, Windows and
- * Linux. Nothing else has to change - the button already points at the
- * releases page rather than at a versioned asset, so it cannot go stale.
+ * The button points at the releases page rather than at a versioned asset, so
+ * it does not go stale when the version moves.
  */
-export const COMING_SOON = true;
+export const COMING_SOON = false;
 
 /**
  * The source repository is public, so every "source: coming soon" pill across

@@ -8,6 +8,7 @@ pub mod archetypes;
 pub mod ats;
 pub mod discover;
 pub mod discover_geo;
+pub mod discover_parsers;
 pub mod documents;
 pub mod followup_drafts;
 pub mod health;

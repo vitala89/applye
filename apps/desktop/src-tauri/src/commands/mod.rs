@@ -10,6 +10,7 @@ pub mod discover;
 pub mod discover_geo;
 pub mod discover_parsers;
 pub mod documents;
+pub mod documents_blocks;
 pub mod followup_drafts;
 pub mod health;
 pub mod import;

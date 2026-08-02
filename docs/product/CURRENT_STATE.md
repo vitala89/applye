@@ -30,19 +30,28 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **The jobs page is being taken apart, and is two extractions in.** `jobs.component.ts` is **1226**
-  non-empty lines against a budget of 400, down from 1467 at the start of the watch. Out so far:
+- **The jobs page is being taken apart, and is four extractions in.** `jobs.component.ts` is **1197**
+  non-empty lines against a budget of 400, down from 1467 where the work started. Out so far:
   `CoverLetterTailorService` (the tailor-an-existing-letter modal, with the base-letter read and the
   content assembly as pure functions) and `job-detail-icons.ts` (the icon table, plus a spec that
   reads the template and asserts every `icons.<name>` it references exists - a class of error
   `npm run type-check` cannot see). Both were verified by breaking the code and watching the tests go
-  red. **The template and stylesheet have not been touched**: `jobs.component.html` is 1148/300 and
-  `jobs.component.scss` 933/400, and they follow the `.ts` rather than lead it. The next seam is the
-  document-drafting group - `createCvDraft`, `createCoverLetterDraft`, `chooseExistingDocument`,
-  `prepareDocumentsStep`, `commitApplicationDocuments` and the two staleness checks, roughly 180
-  lines that share one status-and-error shape. It was scoped and deliberately not attempted this
-  watch: it writes ten component signals, the page has no component-level test, and this is the
-  feature that produced six rounds of falsely green unit tests.
+  red. Then `DocumentReviewStatusService` (the one status line under Review documents, its error
+  flag and the two choose-existing dialogs, with `refuse` and `fail` distinguished - a precondition
+  the user can fix stays silent, a throw also toasts) and `application-document-actions.ts` (the
+  per-document decision that determines whether committing spends AI tokens, plus the staleness
+  inputs it needs, with the check passed as a thunk so the short circuit survives).
+  **The template and stylesheet have not been touched**: `jobs.component.html` is 1148/300 and
+  `jobs.component.scss` 933/400, and they follow the `.ts` rather than lead it.
+  **What the ratchet taught, and it is worth keeping**: the decision extraction first grew the file
+  to 1204 and the gate refused it, correctly - named intermediate values cost more lines than the
+  else-if chain they replace. A testability win is not automatically a decomposition win, and the
+  budget is the thing that tells them apart. Moving the two staleness guards out as well is what
+  paid for it, and that commit is net zero lines: it bought tests, not size.
+  The next seam is the drafting flows themselves - `createCvDraft`, `createCoverLetterDraft`,
+  `chooseExistingDocument`, `prepareDocumentsStep` - now that their shared status handling is out
+  from under them. They remain the entangled part: between them they write eight component signals,
+  and the page still has no component-level test.
 - **Unclaimed jobs: decided, not yet built.** The rows that accumulate invisibly since PR #248 now
   have an answer, reached through `aif-grilling` rather than chosen by the agent, and written up as
   `docs/product/decisions/ADR-0004-unclaimed-jobs-stay-and-become-visible.md`. They stay: the fix is

@@ -44,6 +44,89 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the status line gets an owner, and the ratchet refuses a refactor
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-document-review`, from `main` (`0746b6e`)
+- **Commits:** `eb3fd6d`, `216b265`, plus this documentation commit
+- **Pull request:** not yet opened
+- **Objective:** continue the jobs page extraction at the seam the previous watch named - the
+  document group's shared status-and-error handling - writing the test before the code.
+- **Completed:**
+  - **`DocumentReviewStatusService`.** Nine places repeated the same four moves around the Review
+    documents status line. The service owns the line, the error flag and the two choose-existing
+    dialogs; `run()` clears first, returns the body's value, and turns a throw into a message plus
+    a null. It separates two failures the page had treated alike: `refuse()` for a precondition the
+    user can see and fix, silent because the sentence is already on the step in front of them, and
+    `fail()` for whatever the database or provider threw, which also toasts because the user may
+    have navigated away. **Written test-first** - the spec was red on a missing module before the
+    service existed. 11 tests. `1226 -> 1197`.
+  - **`application-document-actions.ts`.** The per-document decision inside committing an
+    application is what decides whether a regeneration spends AI tokens, and it had no test: four
+    branches in a nested else-if chain inside a method that also did the generating and the
+    committing. Now two pure decision functions plus two pure staleness-input builders that return
+    null when there is nothing to ask about. The staleness check is passed as a **thunk** rather
+    than a boolean so the short circuit survives; one test asserts it is never called when the
+    arguments already decide, because that is the part that regresses silently. 14 tests.
+  - **Both were mutation-checked.** Dropping the clear from `run()` turns 1 red; making `refuse()`
+    toast turns 2 red; removing the tailoring short circuit turns 1 red.
+- **Not completed:**
+  - `jobs.component.ts` is **1197/400**. The second commit is **net zero lines** - it bought tests,
+    not size, and the entry below says why that was still the right trade.
+  - Template and stylesheet untouched again, by design. 1148/300 and 933/400.
+  - The drafting flows themselves (`createCvDraft`, `createCoverLetterDraft`,
+    `chooseExistingDocument`, `prepareDocumentsStep`) are still on the component. Their shared
+    status handling is now out from under them, which is the precondition for moving them, but they
+    still write eight component signals between them.
+  - ADR-0004 still unimplemented and still `draft`, awaiting sign-off.
+- **Files or packages changed:** added `apps/desktop/src/app/shared/document-review-status.service.ts`
+  and `application-document-actions.ts` with their specs; modified
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts`; updated `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass, `npx nx test desktop` **1063 passed,
+  73 suites** (25 new this watch), `npx nx lint desktop` 0 errors / 8 pre-existing warnings,
+  `npx nx build desktop` bundle generation complete, `npm run quality:file-size` pass with base
+  `1226 -> 1197 -> 1197`, `npm run quality:attribution` pass, `npm run format:check` pass,
+  `git diff --check` clean. **Not run:** the `cargo` gates, because no Rust file was touched; the
+  browser preview, because the jobs page waits on `db_get_settings` and does not render outside
+  Tauri.
+- **Privacy/security impact:** none. No data, storage, network or IPC behaviour changed.
+- **Decisions and assumptions:**
+  - **The size ratchet refused this session's own refactor, and it was right.** Extracting the
+    commit decision into named pure functions first took the file from 1197 to **1204**, because
+    named intermediate values cost more lines than the else-if chain they replace. The gate blocked
+    it. The lesson kept: a testability win is not automatically a decomposition win, and the budget
+    is what tells them apart. Moving the two staleness guards out as well paid for it, landing at
+    net zero.
+  - `refuse` versus `fail` is a behaviour distinction the old code did not make explicitly, but it
+    is the behaviour it already had - the two guard paths never toasted and the catch paths always
+    did. The service names the difference rather than introducing it.
+  - Two direct writes to the status signal were deliberately left on the component:
+    `acceptPhotoPrompt` sets the line without touching the error flag, and `discardTailoring`'s
+    catch sets it without marking an error and without a toast. Routing either through the service
+    would change behaviour, which is not this refactor's job.
+- **Risks or compatibility impact:** the page still has no component-level test, so the wiring rests
+  on service-level tests plus `nx build desktop` for the template. Nobody exercised Create/Update
+  application in a running app this watch.
+- **Open issues or blockers:**
+  - **A failed discard reports as if it succeeded.** `discardTailoring`'s catch writes the error
+    text to the status line without setting the error flag and without a toast, so it renders in the
+    normal, non-error style. Broken and working look the same, which is the exact trap this
+    repository keeps writing down. Found while mapping the call sites; **not fixed**, because it is
+    a behaviour bug and this branch is a refactor.
+  - **One open Dependabot alert, number 42**: `glib`, medium, runtime scope. Surfaced by GitHub on
+    push. Not investigated.
+  - Unchanged: `jobs.component.html` 1148/300, `jobs.component.scss` 933/400,
+    `discover.component.scss` 1915/400, the two human release checks on `0.29.2`, Windows and Linux
+    unverified, the AIF skill set unpruned, the two upstream security advisories.
+- **Next first action:** decide whether to fix the silent `discardTailoring` failure as its own
+  small commit before continuing - it is three lines and a regression test - then move
+  `createCvDraft` and `createCoverLetterDraft` behind a service now that their status handling is
+  no longer theirs to own.
+- **Evidence:** `npm run quality:file-size` printed `1197/400 ... base 1197` on `216b265` and refused
+  `1204` on the attempt before it; `npx nx test desktop` printed `Tests: 1063 passed`.
+
 ### 2026-08-02, two responsibilities out of the jobs page, and the invisible jobs decided
 
 - **Status:** partial

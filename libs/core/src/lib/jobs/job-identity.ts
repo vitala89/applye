@@ -21,3 +21,20 @@ export function jobHeaderTitle(
 ): string {
   return `${company || t('jobs.company_unknown')} - ${title || t('jobs.title_unknown')}`;
 }
+
+/**
+ * The legitimacy notes a job carries, as a list.
+ *
+ * They are stored as a JSON array in one TEXT column, and a row written before
+ * the column existed - or by a failed write - holds something that is not one.
+ * Reading them is a parse with a defined answer for bad input, which is a rule,
+ * not page logic.
+ */
+export function parseLegitimacyNotes(raw: string | undefined | null): string[] {
+  try {
+    const parsed: unknown = JSON.parse(raw ?? '[]');
+    return Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : [];
+  } catch {
+    return [];
+  }
+}

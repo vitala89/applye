@@ -691,6 +691,7 @@ export const ru: TranslationMap = stub(en, {
     identity_inferred: 'определено ИИ',
     identity_inferred_hint: 'Определено ИИ по тексту вакансии, а не процитировано из него.',
     identity_name_it: 'Указать компанию и должность',
+    identity_edit_it: 'Изменить компанию и должность',
     identity_ai_off: 'ИИ не настроен, поэтому вакансию никто не прочитал за вас.',
     identity_ai_failed: 'ИИ-шаг не отработал, поэтому вакансию он так и не прочитал.',
     identity_identifying: 'определяем…',

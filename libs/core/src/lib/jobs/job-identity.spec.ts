@@ -1,4 +1,4 @@
-import { jobHeaderTitle } from './job-identity';
+import { jobHeaderTitle, parseLegitimacyNotes } from './job-identity';
 
 describe('jobHeaderTitle', () => {
   const t = (key: string) => `[${key}]`;
@@ -27,5 +27,27 @@ describe('jobHeaderTitle', () => {
 
   it('treats an empty string as missing, not as a value', () => {
     expect(jobHeaderTitle('', '', t)).toBe('[jobs.company_unknown] - [jobs.title_unknown]');
+  });
+});
+
+describe('parseLegitimacyNotes', () => {
+  it('reads the stored array', () => {
+    expect(parseLegitimacyNotes('["Salary not stated"]')).toEqual(['Salary not stated']);
+  });
+
+  it('is empty for a row that has none', () => {
+    expect(parseLegitimacyNotes(undefined)).toEqual([]);
+    expect(parseLegitimacyNotes(null)).toEqual([]);
+  });
+
+  it('does not throw on a column that is not JSON', () => {
+    // A row written before the column existed, or by a failed write. The card
+    // renders these, so a throw here blanks the whole job.
+    expect(parseLegitimacyNotes('not json')).toEqual([]);
+  });
+
+  it('drops anything in the array that is not a note', () => {
+    expect(parseLegitimacyNotes('["ok", 3, null]')).toEqual(['ok']);
+    expect(parseLegitimacyNotes('{"a":1}')).toEqual([]);
   });
 });

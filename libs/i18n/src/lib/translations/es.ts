@@ -693,6 +693,7 @@ export const es: TranslationMap = stub(en, {
     identity_inferred: 'deducido',
     identity_inferred_hint: 'Deducido por la IA a partir de la oferta, no citado de ella.',
     identity_name_it: 'Indicar empresa y puesto',
+    identity_edit_it: 'Editar empresa y puesto',
     identity_ai_off:
       'La identificacion por IA no esta configurada, asi que nadie leyo esta oferta por ti.',
     identity_ai_failed: 'No se pudo ejecutar el paso de IA, asi que nunca leyo esta oferta.',

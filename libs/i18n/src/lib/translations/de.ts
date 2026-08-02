@@ -683,6 +683,7 @@ export const de: TranslationMap = {
     identity_inferred: 'abgeleitet',
     identity_inferred_hint: 'Von der KI aus der Anzeige abgeleitet, nicht daraus zitiert.',
     identity_name_it: 'Firma und Position angeben',
+    identity_edit_it: 'Firma und Position aendern',
     identity_ai_off:
       'Die KI-Erkennung ist nicht eingerichtet, also hat niemand diese Anzeige fuer Sie gelesen.',
     identity_ai_failed: 'Der KI-Schritt war nicht erreichbar und hat diese Anzeige nie gelesen.',

@@ -696,6 +696,7 @@ export const fr: TranslationMap = stub(en, {
     identity_inferred: 'deduit',
     identity_inferred_hint: 'Deduit par IA a partir de offre, et non cite de celle-ci.',
     identity_name_it: 'Indiquer societe et poste',
+    identity_edit_it: 'Modifier societe et poste',
     identity_ai_off:
       'identification par IA est pas configuree, donc personne a lu cette offre pour vous.',
     identity_ai_failed: 'Le passage par IA a echoue, il donc jamais lu cette offre.',

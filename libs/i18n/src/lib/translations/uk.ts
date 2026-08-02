@@ -688,6 +688,7 @@ export const uk: TranslationMap = stub(en, {
     identity_inferred: 'визначено ШІ',
     identity_inferred_hint: 'Визначено ШІ за текстом вакансії, а не процитовано з нього.',
     identity_name_it: 'Вказати компанію і посаду',
+    identity_edit_it: 'Змінити компанію і посаду',
     identity_ai_off: 'ШІ не налаштовано, тому вакансію ніхто не прочитав за вас.',
     identity_ai_failed: 'Крок із ШІ не спрацював, тому вакансію він так і не прочитав.',
     identity_identifying: 'визначаємо…',

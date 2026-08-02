@@ -140,6 +140,27 @@ Before a watch can be marked complete:
   (3) **"Name it yourself" was unfindable**, rendered as uppercase micro-text in the badge row where
   it read as a label. It is now a real secondary button under the two fields it is about, labelled
   "Set company and role", and shown only when a field is missing or holds a value the AI guessed.
+- **Fourth round, again from the maintainer running it.** The dialog worked - a job was named by
+  hand - and four things around it did not.
+  (1) **The empty state flashed on every parse.** `parseAndFilter` clears the job before parsing, and
+  `@if (!job())` rendered "paste a job description" in the gap. It now also waits on `parsing()`.
+  (2) **"Parsing" was drawn twice**, once as the button label and once as an animated indicator
+  beside it. The indicator is gone - the parse is milliseconds now, so it was reporting nothing.
+  (3) **The page header did not follow the job.** `pageTitle.set` was pushed from `loadJob` alone, so
+  every other path had to remember and neither the re-parse nor naming a job by hand did. It is now
+  derived from the `job` signal in an effect, which no future path can forget.
+  (4) **No way to correct a name once given.** The button hid itself as soon as both fields were
+  filled, which is exactly when a typo needs fixing. It is always offered now; only the label changes
+  between "Set company and role" and "Edit company and role".
+- **The header fix needed budget, so the German photo prompt came out.** `jobs.component.ts` was
+  1509/400 and may not grow. `CvPhotoPromptService` (89 lines, 7 tests where it had none) takes the
+  once-per-visit flag, the dialog state and the one document write; the page keeps a 12-line adapter,
+  because deciding what to do with the returned document is the page's. Two more duplications went
+  with it: `portalLanguages` was a hand-kept copy of the `SupportedLanguage` union and is now
+  `SUPPORTED_LANGUAGES` in core beside the type, with `normalizeSupportedLanguage`; and
+  `inferDocumentRegion` moved next to the `DocumentRegionTag` it returns. `parseLegitimacyNotes` went
+  to core with 4 tests, including the malformed column that used to be caught by a bare `try`.
+  **`jobs.component.ts` 1509 -> 1467, template 1126 -> 1122.**
 - **Next first action:** open the PR, then run the native scenario in `tauri dev`.
 - **Evidence:** command output above, in this session's transcript.
 

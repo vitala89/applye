@@ -6,6 +6,19 @@ export type DocType = 'cv' | 'cover_letter' | 'pitch' | 'interview_prep' | 'arbe
 export type SupportedLanguage = 'en' | 'de' | 'ru' | 'es' | 'fr' | 'uk';
 
 /**
+ * The same set as a value, so a template listing the languages and a check
+ * narrowing to them cannot drift apart. The jobs page held its own copy.
+ */
+export const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
+
+/** Anything unrecognised - a stale column, a foreign tag - reads as English. */
+export function normalizeSupportedLanguage(value: string | null | undefined): SupportedLanguage {
+  return SUPPORTED_LANGUAGES.includes(value as SupportedLanguage)
+    ? (value as SupportedLanguage)
+    : 'en';
+}
+
+/**
  * Endonyms (each language's own name) for language pickers. A user who lands in
  * the wrong UI language must still recognise their own language in the list, so
  * the label is written in the language it selects - not translated into the

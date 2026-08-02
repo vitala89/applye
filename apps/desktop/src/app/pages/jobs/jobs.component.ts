@@ -67,10 +67,12 @@ import {
   CoverLetterContent,
   COVER_LETTER_TONE_DEFAULT,
   COVER_LETTER_LENGTH_DEFAULT,
-  CvContent,
   DocumentLibraryItem,
   parseArchetypes,
   jobHeaderTitle,
+  parseLegitimacyNotes,
+  normalizeSupportedLanguage,
+  SUPPORTED_LANGUAGES,
   sanitizeSignature,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -79,14 +81,16 @@ import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from 
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
-import { withCvPhoto, type CvGapAnswer, type CvGapQuestion } from '../documents/cv-content.util';
+import { type CvGapAnswer, type CvGapQuestion } from '../documents/cv-content.util';
 import { CvGapDialog } from './cv-gap-dialog.component';
+import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
 import {
   DocumentRegionTag,
   FinalCheckInputs,
   FinalChecksService,
+  inferDocumentRegion,
 } from '../../shared/final-checks.service';
 import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
@@ -134,6 +138,7 @@ import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
     CoverLetterDraftService,
     LinkedDocumentsService,
     JobActionsService,
+    CvPhotoPromptService,
     JobIntakeService,
   ],
 })
@@ -254,7 +259,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** Supported document languages. Named for the portal-answers language select
    * it was introduced for; the template now also uses it for the CV/cover-letter
    * language dropdowns. */
-  protected readonly portalLanguages: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
+  protected readonly portalLanguages = SUPPORTED_LANGUAGES;
 
   readonly jdText = signal('');
   readonly job = signal<Job | null>(null);
@@ -368,72 +373,28 @@ export class JobsComponent implements OnInit, OnDestroy {
     return LANGUAGE_NATIVE_NAMES[language];
   }
 
-  // ---- German-market photo prompt ----
-  // A photo is conventional on a German CV and unusual (sometimes actively
-  // discouraged) elsewhere, so switching the CV's market to Germany is the one
-  // moment where asking is useful rather than nagging. Asked once per visit to
-  // a job, and never for the other markets.
-  readonly photoPromptOpen = signal(false);
-  readonly photoPromptBusy = signal(false);
-  private photoPrompted = false;
+  /** German-market photo prompt: its own decision, its own service. */
+  protected readonly photoPrompt = inject(CvPhotoPromptService);
   readonly profilePhoto = computed(() => this.profile()?.photoDataUri ?? null);
 
-  /** Region picker handler: keep the final checks honest, then decide whether
-   * the German photo convention is worth raising. */
+  /** Region picker handler: keep the final checks honest, then let the photo
+   * prompt decide whether this market is worth raising it for. */
   onRegionChange(region: DocumentRegionTag): void {
     this.documentReviewRegion.set(region);
     this.finalChecksOutdated.set(!!this.finalChecks());
-    if (region === 'de' && !this.photoPrompted) {
-      this.photoPrompted = true;
-      this.photoPromptOpen.set(true);
-    }
+    this.photoPrompt.onRegionChosen(region);
   }
 
-  dismissPhotoPrompt(): void {
-    this.photoPromptOpen.set(false);
-  }
-
-  /**
-   * "Yes, add my photo". With a photo already on the profile this writes it
-   * into the linked CV; without one it sends the user to the profile's Photo
-   * section, so the photo is cropped once and reused rather than re-uploaded
-   * per application.
-   */
   async acceptPhotoPrompt(): Promise<void> {
-    const photo = this.profilePhoto();
-    if (!photo) {
-      this.photoPromptOpen.set(false);
-      void this.router.navigate(['/profile']);
-      return;
-    }
-    const cv = this.linkedCv();
-    if (!cv?.id) {
-      // No CV generated yet - the photo is on the profile and the region is
-      // set, so the CV picks it up when it is created. Nothing to patch.
-      this.photoPromptOpen.set(false);
-      return;
-    }
-    this.photoPromptBusy.set(true);
-    try {
-      const content = withCvPhoto(
-        JSON.parse(cv.contentJson ?? '{"sections":[]}') as CvContent,
-        photo,
-      );
-      const doc = await this.db.documentLibraryUpsert({
-        ...cv,
-        id: cv.id,
-        contentJson: JSON.stringify(content),
-      });
+    const doc = await this.photoPrompt.accept(this.profilePhoto(), this.linkedCv());
+    if (doc) {
       this.linkedCv.set(doc);
       this.finalChecksOutdated.set(!!this.finalChecks());
-      this.documentReviewStatus.set(this.t()('jobs.wizard.photo_added'));
-      this.photoPromptOpen.set(false);
-    } catch (e) {
-      this.documentReviewStatus.set(String(e));
-    } finally {
-      this.photoPromptBusy.set(false);
     }
+    const status = this.photoPrompt.status();
+    if (status) this.documentReviewStatus.set(status);
   }
+
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
   /** Aliases onto `LinkedDocumentsService`'s writable signals. */
   readonly linkedCv = this.linkedDocs.cv;
@@ -528,16 +489,6 @@ export class JobsComponent implements OnInit, OnDestroy {
         preview: '1',
       },
     });
-  }
-
-  private inferDocumentRegion(job: Job | null): DocumentRegionTag {
-    return job?.language === 'de' ? 'de' : 'generic';
-  }
-
-  private normalizeSupportedLanguage(value: string | null | undefined): SupportedLanguage {
-    return this.portalLanguages.includes(value as SupportedLanguage)
-      ? (value as SupportedLanguage)
-      : 'en';
   }
 
   readonly documentStatusKey = documentStatusKey;
@@ -1091,6 +1042,17 @@ export class JobsComponent implements OnInit, OnDestroy {
    * different job triggers a real reload instead of leaving stale content. */
   private loadedJobId: number | null = null;
 
+  constructor() {
+    // Derived from the job rather than pushed at each site that changes it.
+    // Pushed, it was set once on load and every other path had to remember:
+    // a re-parse did not, and naming a job by hand did not, so the header kept
+    // saying "Company not identified" over a job the user had just named.
+    effect(() => {
+      const j = this.job();
+      this.pageTitle.set(j ? jobHeaderTitle(j.company, j.title, this.t()) : '');
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     try {
       const [p, s] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
@@ -1195,16 +1157,15 @@ export class JobsComponent implements OnInit, OnDestroy {
       if (!job) return;
       this.job.set(job);
       this.jdText.set(job.jdText ?? '');
-      this.pageTitle.set(jobHeaderTitle(job.company, job.title, this.t()));
       await this.loadCachedScore(id);
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;
       this.application.set(app);
       this.documentReviewLanguage.set(
         app?.docLanguage ??
-          this.normalizeSupportedLanguage(job.language ?? this.settings()?.defaultDocLanguage),
+          normalizeSupportedLanguage(job.language ?? this.settings()?.defaultDocLanguage),
       );
-      this.documentReviewRegion.set(this.inferDocumentRegion(job));
+      this.documentReviewRegion.set(inferDocumentRegion(job));
 
       const coverLetters = await this.db.documentLibraryList('cover_letter');
       this.coverLetters.set(coverLetters);
@@ -1537,11 +1498,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   legitimacyNotes(): string[] {
-    try {
-      return JSON.parse(this.job()?.legitimacyNotes ?? '[]');
-    } catch {
-      return [];
-    }
+    return parseLegitimacyNotes(this.job()?.legitimacyNotes);
   }
 
   hasArchetypes(): boolean {

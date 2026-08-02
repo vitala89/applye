@@ -673,6 +673,7 @@ export const en: TranslationMap = {
     identity_inferred: 'inferred',
     identity_inferred_hint: 'Named by AI from the posting, not quoted from it.',
     identity_name_it: 'Set company and role',
+    identity_edit_it: 'Edit company and role',
     identity_ai_off: 'AI identification is not set up, so nothing read this posting for you.',
     identity_ai_failed: 'The AI step could not be reached, so it never read this posting.',
     identity_identifying: 'identifying…',

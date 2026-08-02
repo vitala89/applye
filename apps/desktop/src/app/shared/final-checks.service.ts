@@ -12,6 +12,15 @@ import { cvContentToMd } from '../pages/documents/cv-content.util';
 
 export type DocumentRegionTag = 'de' | 'us' | 'uk' | 'generic';
 
+/**
+ * Which regional document conventions a job implies. German postings get the
+ * German set; everything else gets the neutral one. Pure, and here rather than
+ * on the page because the tag it returns is defined here.
+ */
+export function inferDocumentRegion(job: { language?: string } | null): DocumentRegionTag {
+  return job?.language === 'de' ? 'de' : 'generic';
+}
+
 export type FinalCheckStatus =
   'not_run' | 'pass' | 'needs_review' | 'strong' | 'needs_edits' | 'valid' | 'rescore' | 'outdated';
 

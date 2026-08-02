@@ -19,9 +19,9 @@
     <span class="job-meta__hash">{{ (job().jdHash ?? '').slice(0, 12) }}</span>
     @if (identifying()) {
       <span class="job-meta__identifying">{{ t()('jobs.identity_identifying') }}</span>
-    } @else if (canName()) {
+    } @else {
       <button class="btn btn--secondary btn--sm job-meta__name-it" type="button" (click)="nameIt()">
-        {{ t()('jobs.identity_name_it') }}
+        {{ nameItLabel() }}
       </button>
     }
   </div>

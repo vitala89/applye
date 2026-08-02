@@ -23,12 +23,6 @@
           >
             {{ parsing() ? t()('jobs.parsing') : t()('jobs.parse_btn') }}
           </button>
-          @if (parsing()) {
-            <span class="ai-thinking">
-              <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-              {{ t()('jobs.parsing') }}
-            </span>
-          }
           @if (parseStatus()) {
             <span class="status" [class.status--error]="parseError()">{{ parseStatus() }}</span>
           }
@@ -36,7 +30,9 @@
       }
     </section>
 
-    @if (!job()) {
+    <!-- Not while parsing: a re-parse clears the job first, and the empty state
+         flashing between the two reads as the job having been lost. -->
+    @if (!job() && !parsing()) {
       <div class="state-empty">
         <lucide-icon [img]="icons.empty" [size]="40" class="state-empty__icon" aria-hidden="true" />
         <p class="state-empty__msg">{{ t()('jobs.empty') }}</p>
@@ -1088,7 +1084,7 @@
 <!-- German-market photo prompt. A photo is conventional on a German CV and
      unusual elsewhere, so this is raised only when the CV's market is set
      to Germany, and only once per visit to a job. -->
-@if (photoPromptOpen()) {
+@if (photoPrompt.open()) {
   <div class="photo-prompt" role="dialog" aria-modal="true">
     <div class="photo-prompt__panel">
       <h4 class="photo-prompt__title">{{ t()('jobs.wizard.photo_prompt_title') }}</h4>
@@ -1100,15 +1096,15 @@
         <button
           class="btn btn--secondary btn--md"
           type="button"
-          [disabled]="photoPromptBusy()"
-          (click)="dismissPhotoPrompt()"
+          [disabled]="photoPrompt.busy()"
+          (click)="photoPrompt.dismiss()"
         >
           {{ t()('jobs.wizard.photo_prompt_no') }}
         </button>
         <button
           class="btn btn--primary btn--md"
           type="button"
-          [disabled]="photoPromptBusy()"
+          [disabled]="photoPrompt.busy()"
           (click)="acceptPhotoPrompt()"
         >
           {{

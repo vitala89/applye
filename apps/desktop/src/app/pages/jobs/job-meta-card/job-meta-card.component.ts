@@ -59,13 +59,15 @@ export class JobMetaCardComponent {
   );
 
   /**
-   * Whether the button is worth showing. A job named out of the posting needs
-   * no offer to rename it; one that is missing a field, or holding a value the
-   * AI guessed, does.
+   * The button is always offered. Naming a job is never closed off, and the one
+   * case that most needs a way back is the one where both fields are filled -
+   * because the user typed a name and got it wrong, and nothing else on this
+   * page can correct it. Only the label changes.
    */
-  protected readonly canName = computed(
-    () =>
-      !this.job().company || !this.job().title || this.companyInferred() || this.titleInferred(),
+  protected readonly nameItLabel = computed(() =>
+    !this.job().company || !this.job().title || this.companyInferred() || this.titleInferred()
+      ? this.t()('jobs.identity_name_it')
+      : this.t()('jobs.identity_edit_it'),
   );
 
   /** True while the AI step is naming this job. Shown on the card so a user who

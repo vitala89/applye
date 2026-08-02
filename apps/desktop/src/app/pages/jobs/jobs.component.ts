@@ -18,43 +18,7 @@ import { TailorScoreService } from '../../shared/tailor-score.service';
 import { WizardActivity, WizardActivityService } from '../../shared/wizard-activity.service';
 import { DocumentGenService, ReviewDocumentKind } from '../../shared/document-gen.service';
 import { FormsModule } from '@angular/forms';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Database,
-  ExternalLink,
-  FileDown,
-  FileText,
-  Flag,
-  GitCompare,
-  Hammer,
-  Languages,
-  ListChecks,
-  LucideAngularModule,
-  Minus,
-  Pencil,
-  PencilLine,
-  Plus,
-  RotateCw,
-  ScanLine,
-  ScanSearch,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  CircleX,
-  Star,
-  Tag,
-  Trash2,
-  WandSparkles,
-  Bookmark,
-  X,
-} from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { AiService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
@@ -72,7 +36,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
-import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
+import { applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
@@ -103,6 +67,7 @@ import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
+import { JOB_DETAIL_ICONS } from './job-detail-icons';
 
 @Component({
   selector: 'app-jobs',
@@ -206,53 +171,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons: JobDetailIcons & {
-    empty: typeof Search;
-    copy: typeof Copy;
-    add: typeof Plus;
-    remove: typeof X;
-    another: typeof RotateCw;
-    trash: typeof Trash2;
-    dangerGlyph: typeof CircleX;
-  } = {
-    empty: Search,
-    atsPass: Check,
-    atsFail: X,
-    tag: Tag,
-    flag: Flag,
-    scan: ScanLine,
-    checklist: ListChecks,
-    next: ArrowRight,
-    star: Star,
-    db: Database,
-    bookmark: Bookmark,
-    wand: WandSparkles,
-    back: ArrowLeft,
-    checkCircle: CheckCircle2,
-    languages: Languages,
-    chevronDown: ChevronDown,
-    chevronUp: ChevronUp,
-    shieldCheck: ShieldCheck,
-    sparkles: Sparkles,
-    gitCompare: GitCompare,
-    alertTriangle: AlertTriangle,
-    minus: Minus,
-    plus: Plus,
-    pencil: Pencil,
-    hammer: Hammer,
-    scanSearch: ScanSearch,
-    pencilLine: PencilLine,
-    fileText: FileText,
-    fileDown: FileDown,
-    externalLink: ExternalLink,
-    copy: Copy,
-    check: Check,
-    add: Plus,
-    remove: X,
-    another: RotateCw,
-    trash: Trash2,
-    dangerGlyph: CircleX,
-  };
+  protected readonly icons = JOB_DETAIL_ICONS;
 
   /** Supported document languages. Named for the portal-answers language select
    * it was introduced for; the template now also uses it for the CV/cover-letter

@@ -126,7 +126,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/tour',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideTour),
+        loadComponent: () => import('./docs/guide/tour').then((m) => m.GuideTour),
         title: 'First run & tour · Applye Docs',
         data: {
           description:
@@ -135,7 +135,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/dashboard',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideDashboard),
+        loadComponent: () => import('./docs/guide/dashboard').then((m) => m.GuideDashboard),
         title: 'The Dashboard · Applye Docs',
         data: {
           description:
@@ -144,7 +144,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/profile',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideProfile),
+        loadComponent: () => import('./docs/guide/profile').then((m) => m.GuideProfile),
         title: 'Set up your profile · Applye Docs',
         data: {
           description:
@@ -153,7 +153,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/add-job',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideAddJob),
+        loadComponent: () => import('./docs/guide/add-job').then((m) => m.GuideAddJob),
         title: 'Add your first job · Applye Docs',
         data: {
           description:
@@ -162,7 +162,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/score',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideScore),
+        loadComponent: () => import('./docs/guide/score').then((m) => m.GuideScore),
         title: 'Score a role · Applye Docs',
         data: {
           description:
@@ -171,7 +171,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/tailor',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideTailor),
+        loadComponent: () => import('./docs/guide/tailor').then((m) => m.GuideTailor),
         title: 'Tailor & export PDF · Applye Docs',
         data: {
           description:
@@ -180,7 +180,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/discover',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideDiscover),
+        loadComponent: () => import('./docs/guide/discover').then((m) => m.GuideDiscover),
         title: 'Discover · Applye Docs',
         data: {
           description:
@@ -189,7 +189,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/documents',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideDocuments),
+        loadComponent: () => import('./docs/guide/documents').then((m) => m.GuideDocuments),
         title: 'Documents library · Applye Docs',
         data: {
           description:
@@ -198,7 +198,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/track',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideTrack),
+        loadComponent: () => import('./docs/guide/track').then((m) => m.GuideTrack),
         title: 'Pipeline & Tracker · Applye Docs',
         data: {
           description:
@@ -207,7 +207,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/insights',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideInsights),
+        loadComponent: () => import('./docs/guide/insights').then((m) => m.GuideInsights),
         title: 'Interviews & Analytics · Applye Docs',
         data: {
           description:
@@ -216,7 +216,7 @@ export const appRoutes: Route[] = [
       },
       {
         path: 'guide/settings',
-        loadComponent: () => import('./docs/guide-pages').then((m) => m.GuideSettings),
+        loadComponent: () => import('./docs/guide/settings').then((m) => m.GuideSettings),
         title: 'Settings & AI · Applye Docs',
         data: {
           description:

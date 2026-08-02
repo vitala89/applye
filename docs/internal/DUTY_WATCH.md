@@ -44,6 +44,63 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the Discover tests move to sit with what they test
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-test-split`, from `main` (`236522d`) - **cut before the first
+  edit**, which is the correction the previous entry recorded
+- **Commits:** `a665043`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the seam named in the previous entry - split the scan engine's test module along
+  the same three-way line the source now follows.
+- **Completed:**
+  - **Twenty-eight reader tests and three geography tests moved** beside the code they exercise. A
+    reader and its fixtures now open in one file.
+  - **Only tests that reference nothing left behind moved.** Anything touching `test_pool`,
+    `live_source`, `RawJob` construction or the geo config builders stayed, because those still live
+    with the scan engine. The classification was mechanical - a test moved only if it named a
+    reader or a geo lookup and named nothing that stayed.
+  - **339 tests before and after**, same names, same count.
+  - `discover.rs` **2096 -> 1679**. Across four commits it has gone **3245 -> 1679**, a 48%
+    reduction, and every file in the group is now under the 800 budget except the scan engine
+    itself.
+- **Not completed:** `discover.rs` is 1679/800. What remains is the HTTPS and persistence layer that
+  is the file's actual job, plus the tests that exercise it - which need a database and are
+  therefore a different kind of thing from the two groups that moved. Child components for Jobs and
+  Discover remain untouched.
+- **Files or packages changed:** `discover.rs`, `discover_geo.rs`, `discover_parsers.rs`, new
+  `discover_parsers_tests.rs`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `cargo test --lib` **339 passed**,
+  `cargo clippy --all-targets -- -D warnings` **0 problems**, `cargo fmt --check` clean,
+  `npm run quality:file-size` pass with base `2096 -> 1679`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` all pass. **Not run:** the frontend gates - no
+  TypeScript, template or stylesheet touched.
+- **Privacy/security impact:** none. Tests moved; no production code changed.
+- **Decisions and assumptions:**
+  - The reader tests went to a **sibling file** (`#[path]` + `#[cfg(test)] mod tests`) rather than an
+    inline module. Inline, they took `discover_parsers.rs` from 666 to 1058 and across the budget -
+    and a fixture-heavy test body is exactly the bulk that budget exists to keep out of the code
+    being read.
+  - The three geography tests stayed inline, because `discover_geo.rs` has room for them and a
+    sibling file for three tests would be ceremony.
+- **Risks or compatibility impact:** none beyond the move itself. Test names and count are
+  unchanged, so a test silently lost would have shown as 336.
+- **Open issues or blockers:**
+  - **The size gate refused a change of mine for the third time this session**, and was right each
+    time. Twice on the Angular side and once here. The pattern is consistent: a change that improves
+    where code lives can still make a file worse, and the budget is what tells the two apart.
+  - Unchanged: the two human release checks on `0.29.2`, the paths from this session nobody has seen
+    run, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories.
+- **Next first action:** the manual pass, now six watches overdue. Nothing shipped in this entire
+  session has been seen running, and the desktop app is Tauri-only so no browser preview can
+  substitute. On the code side, `discover.rs` at 1679/800 is down to the layer that is genuinely its
+  job, and further reduction there means splitting fetch from persistence - a design decision rather
+  than a move.
+- **Evidence:** `npm run quality:file-size` printed `1679/800 ... base 2096` on `a665043`;
+  `cargo test --lib` printed `339 passed` before and after the move; the inline version was refused
+  by the gate at `1058` before the sibling file was used.
+
 ### 2026-08-02, the Discover feed readers follow the geography out
 
 - **Status:** partial

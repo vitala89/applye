@@ -39,9 +39,11 @@
   **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio had
   never been named anywhere: `apps/web/src/styles.scss` at 2167/400 - **now split into eleven
   section partials, largest 353/400, with the compiled CSS proven byte-identical** - and
-  `apps/desktop/src-tauri/src/commands/discover.rs`, which was 3245/800 and is now **2742/800**
-  after its geography moved to `discover_geo.rs` (522/800). Both remain over budget; the scan
-  engine's remaining bulk is its 1142-line test module and the per-source feed parsers. Budgets count non-empty lines;
+  `apps/desktop/src-tauri/src/commands/discover.rs`, which was 3245/800 and is now **2096/800**,
+  after its geography moved to `discover_geo.rs` (522) and its feed readers to
+  `discover_parsers.rs` (666, under budget). The scan engine's remaining bulk is its **1142-line
+  test module**, which is over the 800 test budget on its own, and the HTTPS/persistence layer that
+  is the file's actual job. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
   Discover is the page now: `discover.component.ts` **1069/400** (from 1242: the JD parser, the feed
   filter and the For-you split, then the scan console), `discover.component.html` 1070/300,

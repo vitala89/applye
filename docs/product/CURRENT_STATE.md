@@ -120,6 +120,12 @@
   became seven files, two of them behind a shared harness because their setup wires mocks rather
   than repeating boilerplate. `tsconfig.app.json` excludes `*.harness.ts`, which are test-only but
   not spec files.
+- **The two largest Rust files came apart.** `commands/discover.rs` **3245 -> 1679** (geography,
+  feed readers, and their tests each to their own file) and `commands/tailoring.rs`
+  **2538 -> 2087** (the printpdf renderer, with the shared font faces in a third file because both
+  exporters need them). Both remain over the 800 budget: what is left in each is the
+  HTTPS/persistence layer and the DOCX exporter respectively - the work those files are actually
+  for - plus their test modules, which are over the budget on their own.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

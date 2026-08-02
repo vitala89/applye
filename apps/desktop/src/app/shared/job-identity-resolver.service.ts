@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Job } from '@applye/core';
-import { AiService, JobSourceService, KeysService, SettingsService } from '@applye/data';
+import { AiService, DbService, JobSourceService, KeysService } from '@applye/data';
 import { JobIdentityPromptService } from './job-identity-prompt/job-identity-prompt.service';
 
 /** How an identify call ended, for the dialog to report honestly. */
@@ -45,7 +45,7 @@ const IDENTIFY_TIMEOUT_MS = 45_000;
 export class JobIdentityResolverService {
   private readonly ai = inject(AiService);
   private readonly keys = inject(KeysService);
-  private readonly settings = inject(SettingsService);
+  private readonly db = inject(DbService);
   private readonly source = inject(JobSourceService);
   private readonly prompt = inject(JobIdentityPromptService);
 
@@ -172,11 +172,17 @@ export class JobIdentityResolverService {
    * never set up AI: the dialog follows directly.
    */
   private async callIdentify(job: Job): Promise<Job> {
-    const s = this.settings.current();
     this.outcomes.set(job.id, 'no-provider');
     this.errors.delete(job.id);
-    if (!s || !job.jdText) return job;
+    if (!job.jdText) return job;
     try {
+      // Read from the database rather than from `SettingsService`, whose
+      // `current()` is only populated by a `load()` nothing in the app calls -
+      // so it was null on every run and the AI step silently never happened.
+      // A read per identification also means a provider configured a minute ago
+      // is picked up without a reload.
+      const s = await this.db.getSettings();
+      if (!s) return job;
       // In CLI mode the bridge binary is the credential, and probing it costs a
       // process spawn per parse; in API mode the keychain answers instantly.
       if (s.aiMode === 'api' && !(await this.keys.hasProviderKey(s.provider))) return job;

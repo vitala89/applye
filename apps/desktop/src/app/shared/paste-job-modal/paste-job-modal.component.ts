@@ -15,6 +15,7 @@ import { TranslateService } from '@applye/i18n';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { PasteJobModalService } from './paste-job-modal.service';
+import { JobIdentityResolverService } from '../job-identity-resolver.service';
 
 type PasteTab = 'link' | 'text';
 
@@ -68,6 +69,7 @@ export class PasteJobModalComponent {
   private readonly db = inject(DbService);
   private readonly source = inject(JobSourceService);
   private readonly router = inject(Router);
+  private readonly identity = inject(JobIdentityResolverService);
   private readonly i18n = inject(TranslateService);
   protected readonly modal = inject(PasteJobModalService);
   protected readonly t = this.i18n.t;
@@ -159,6 +161,7 @@ export class PasteJobModalComponent {
           fetched.company,
           'authoritative',
         );
+        this.identity.start(job);
         this.close();
         void this.router.navigate(['/jobs', job.id]);
         return;
@@ -198,6 +201,11 @@ export class PasteJobModalComponent {
     this.textError.set('');
     try {
       const job = await this.source.jobPaste(text);
+      // Same chain as Parse & filter, for the same reason: this is the other
+      // way a job is made out of raw text, and a user who pasted a posting the
+      // rules could not read should not have to find a second button and press
+      // it to be asked. The job page they land on raises the dialog.
+      this.identity.start(job);
       this.close();
       void this.router.navigate(['/jobs', job.id]);
     } catch (e) {

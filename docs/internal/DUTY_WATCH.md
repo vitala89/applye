@@ -161,6 +161,20 @@ Before a watch can be marked complete:
   `inferDocumentRegion` moved next to the `DocumentRegionTag` it returns. `parseLegitimacyNotes` went
   to core with 4 tests, including the malformed column that used to be caught by a bare `try`.
   **`jobs.component.ts` 1509 -> 1467, template 1126 -> 1122.**
+- **Fifth round, and the AI step had never run once.** The dialog reported "AI identification is not
+  set up" on a machine with a provider configured, which is what the outcome line was added to
+  surface. Cause: the resolver read settings from `SettingsService.current()`, and **nothing in the
+  application calls `SettingsService.load()`** - a grep for its name returns exactly one consumer,
+  the resolver itself. `current()` was null on every run, so `callIdentify` returned at its first
+  guard and the AI step silently never happened for anyone. It now reads `db.getSettings()`, the way
+  every other consumer in the app does, which also means a provider configured a minute ago is picked
+  up without a reload. Nothing but the outcome line would have found this: the feature failed exactly
+  as a posting with no employer succeeds.
+- **Identification now follows the Paste Job modal as well.** Analyze creates a job out of raw text,
+  which is the same event as Parse & filter, and only the second one ran the chain - so a user who
+  pasted through the modal had to find and press a second button to be asked, which is the work
+  Analyze exists to save. Both the text and the link path start it now; the link path usually no-ops,
+  because a board that returned structured fields has already named the job.
 - **Next first action:** open the PR, then run the native scenario in `tauri dev`.
 - **Evidence:** command output above, in this session's transcript.
 

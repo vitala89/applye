@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Job, Settings } from '@applye/core';
-import { AiService, JobSourceService, KeysService, SettingsService } from '@applye/data';
+import { AiService, DbService, JobSourceService, KeysService } from '@applye/data';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 import {
   JobIdentityPromptService,
@@ -93,7 +93,7 @@ describe('JobIdentityResolverService', () => {
         { provide: JobSourceService, useValue: source },
         { provide: AiService, useValue: ai },
         { provide: KeysService, useValue: { hasProviderKey: () => Promise.resolve(hasKey) } },
-        { provide: SettingsService, useValue: { current: () => settings } },
+        { provide: DbService, useValue: { getSettings: () => Promise.resolve(settings) } },
         { provide: JobIdentityPromptService, useValue: prompt },
       ],
     });
@@ -187,7 +187,7 @@ describe('JobIdentityResolverService', () => {
     expect(svc.needsNameJobId()).toBe(7);
   });
 
-  it('does not call the AI before settings have loaded, and still flags the job', async () => {
+  it('does not call the AI when there are no settings yet, and still flags the job', async () => {
     settings = null;
 
     svc.start(JOB);

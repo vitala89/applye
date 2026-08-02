@@ -60,6 +60,23 @@ Before implementing or proposing what to work on next, read `docs/product/CURREN
 
 A stale state file is a finding. Report and correct it rather than silently working around it.
 
+## Grilling gate, before the plan hardens
+
+Run the `aif-grilling` skill, and do not choose for the maintainer, when any of these holds:
+
+- a decision changes a public API of a library under `libs/`, or a database schema;
+- a decision changes the privacy or security posture;
+- the task has two honest readings that lead to materially different work;
+- the maintainer says grill, stress-test, or challenge me.
+
+Facts are the agent's to find; decisions are the maintainer's. Asking what the repository already
+answers wastes the round. Choosing what the maintainer should have chosen wastes the work. When the
+maintainer answers "as you recommend", that authorizes the recommended option - take it and say
+plainly which one it was.
+
+`docs/internal/AGENT_SKILL_MAP.md` records which skill owns what, and how the AIF set divides from
+the installed `superpowers` and `mattpocock-skills` packs.
+
 ## Before coding
 
 1. Classify the task type.

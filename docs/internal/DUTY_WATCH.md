@@ -44,6 +44,81 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, our own grilling skill, and a written division with superpowers
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `chore/aif-grilling-skill`, from `main` (`a2b22d3`)
+- **Commits:** one
+- **Pull request:** not yet opened
+- **Objective:** the maintainer installed `grill-me` from `mattpocock/skills`, asked for both that
+  pack and `obra/superpowers` to be read, and for the best of them to be adapted into the AIF set
+  rather than left as third-party stubs.
+- **Completed:**
+  - **Inventory, from the local plugin caches rather than the network.** `mattpocock-skills` 1.2.0
+    ships 41 skills across `engineering`, `productivity`, `misc`, `personal`, plus `in-progress` and
+    `deprecated`, which were excluded. `superpowers` 6.1.1 ships 14. The AIF set was 19 skills and
+    8 subagents;
+  - **`aif-grilling`, written from scratch.** The original is two lines that delegate to a plugin
+    skill and carries `disable-model-invocation: true`, so it fires only when the maintainer
+    remembers it exists - which is why it sat unused in this repository for a day while the
+    conductor kept choosing convention decisions on its own. Ours is model-invoked with four hard
+    triggers, asks in rounds of 2 to 4 questions through the interactive question tool rather than
+    one question per turn, resolves facts by reading the repository instead of asking, treats "as
+    you recommend" as authorization the agent must then state, forbids edits during a grilling, and
+    ends in a numbered list of settled decisions awaiting confirmation;
+  - **the two-axis review**, taken from mattpocock's `code-review` and folded into `aif-code-review`:
+    standards and design reported separately, because a diff can satisfy every written rule and
+    still be the wrong shape. One rule of this repository's own was added beside it - a new test
+    that does not fail without its fix is a finding, not coverage. Both of today's fictitiously
+    green tests would have been caught by it;
+  - **`docs/internal/AGENT_SKILL_MAP.md`**, the routing document. It records what each AIF skill
+    owns, and - the part that was missing - that `superpowers` is already load-bearing here
+    (`using-superpowers` is injected into every session and seven plans under
+    `docs/superpowers/plans/` are in its format) with a per-skill division: superpowers owns the
+    general technique, AIF owns the Applye rules it must respect. Five overlaps are named
+    explicitly, including that the validation matrix outranks any general "verify before
+    completion" phrasing;
+  - **the grilling gate is in the rules, not only in a skill.** `AGENTS.md` gained a section between
+    the plan check and Before coding, and `CLAUDE.md` points at it, so an agent that never invokes
+    the skill still meets the rule;
+  - **the originals are gone.** `.claude/skills/grill-me`, `.claude/skills/grill-with-docs`,
+    `skills-lock.json` and the two copies under `.agents/skills/` are deleted, on the maintainer's
+    decision. The `mattpocock-skills` plugin stays installed - other skills of it are in use.
+- **Not completed:** the rest of the mined material. `writing-great-skills` is reference rather than
+  process and was cited rather than copied, and the AIF set has **not** been rewritten against its
+  principles - that is a separate pass the maintainer deferred, and several AIF skills are likely
+  carrying no-ops and duplication it would retire. Nothing from `deprecated/` or `in-progress/` was
+  taken.
+- **Files or packages changed:** `.claude/skills/aif-grilling/SKILL.md` (new),
+  `.claude/skills/{aif-code-review,aif-orchestrator}/SKILL.md`, `AGENTS.md`, `CLAUDE.md`,
+  `docs/internal/AGENT_SKILL_MAP.md` (new), this file. Deleted:
+  `.claude/skills/grill-me`, `.claude/skills/grill-with-docs`, `skills-lock.json`.
+- **Validation:** `npm run format:check` pass, `npm run quality:attribution` pass,
+  `git diff --check` pass. No application code changed, so the matrix requires nothing further and
+  no test count moved; `CHANGELOG.md` is deliberately untouched because it records shipped product
+  changes and nothing here reaches a user.
+- **Privacy/security impact:** none. No source, secret, or user data was sent anywhere - both packs
+  were read from the local plugin cache, not fetched. Removing the symlinks also removes two links
+  that pointed out of the repository into a gitignored directory.
+- **Decisions and assumptions:** four decisions were put to the maintainer and all four came back on
+  the recommendation - adapt narrowly rather than rewrite the AIF set, ask in rounds rather than one
+  question at a time, make the skill model-invoked rather than user-invoked, and keep the plugin
+  while deleting the symlinks. Model-invocation costs context load on every turn, which is the
+  price of the trigger firing without the maintainer remembering it; that trade is stated in the
+  skill map.
+- **Risks or compatibility impact:** two process packs still overlap, and a written division is
+  weaker than one process. The visible failure mode is an agent running superpowers'
+  `brainstorming` where `aif-grilling` was meant, or vice versa; the skill map names which is which,
+  but nothing enforces it. `AGENTS.md` grew by 16 lines, all rules, none of them checkable by a
+  script.
+- **Open issues or blockers:** `v0.29.2` is still untagged - unchanged by this watch, and the next
+  release action. The AIF-wide pruning pass against `writing-great-skills` is unscheduled.
+- **Next first action:** tag `v0.29.2` and run the `docs/RELEASE.md` smoke test, which is also the
+  first live exercise of the updater shipped in `a2b22d3`.
+- **Evidence:** 41 and 14 skills enumerated from the two caches with name, line count and
+  description. `.claude/skills/` now holds 20 Applye-owned skills and no third-party symlink.
+
 ### 2026-08-02, the drag fix that did nothing, and the test that let it through
 
 - **Status:** complete, native pass pending

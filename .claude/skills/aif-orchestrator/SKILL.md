@@ -9,6 +9,7 @@ Use before non-trivial feature, architecture, debug, test, security, privacy, do
 ## Steps
 
 1. Classify the task using `AGENTS.md`. Route non-trivial feature, product, or architecture tasks through the `aif-project-state-sync` skill first to align on state.
+   1a. Before planning further, check the grilling trigger: does a decision here change a public API, a database schema, the privacy or security posture, or does the task have two readings that lead to materially different work? If yes, run `aif-grilling` and do not choose for the maintainer.
 2. Select model tier from `docs/ai/model-policy.md`.
 3. If the user says "classify only", "without reading files", "do not read files", or "do not modify files", classify from the current task text only.
 4. For text-only classification, do not read files, do not call context scouts, do not recommend Graphify, CodeGraph, or graph/context tools, and do not reference previous observations, memory IDs, prior smoke tests, or internal state.

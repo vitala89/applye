@@ -12,6 +12,12 @@ Read, in order:
 6. `docs/governance/VALIDATION_MATRIX.md`
 7. the relevant stack skill and the smallest relevant code files
 
+Then run the Grilling gate from `AGENTS.md`: when a decision changes a `libs/` public API, a database
+schema, or the privacy or security posture, or when the task has two readings that lead to different
+work, invoke the `aif-grilling` skill instead of choosing for the maintainer. Which skill owns what,
+and how the AIF set divides from the installed `superpowers` pack, is in
+`docs/internal/AGENT_SKILL_MAP.md`.
+
 Run the Plan Check from `AGENTS.md` before implementation or before proposing what to work on next. State where the task sits, what is already shipped, whether current state is stale, which checks apply, whether the work is privacy-sensitive or security-sensitive, and which touched files are near or above their size budgets.
 
 The main Claude Code session remains the conductor. Skills and subagents are specialists, not independent broad implementers.

@@ -63,6 +63,7 @@ import {
   coverLetterHashInput,
 } from '../../shared/cover-letter-draft.service';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
+import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
 import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
@@ -98,6 +99,7 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     CvDraftService,
     CoverLetterDraftService,
     CoverLetterTailorService,
+    DocumentReviewStatusService,
     LinkedDocumentsService,
     JobActionsService,
     CvPhotoPromptService,
@@ -117,6 +119,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly cvDraftSvc = inject(CvDraftService);
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
   private readonly coverLetterTailor = inject(CoverLetterTailorService);
+  private readonly reviewStatus = inject(DocumentReviewStatusService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
@@ -330,10 +333,11 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly gapAnalyzing = this.gapSvc.analyzing;
   readonly gapDialogOpen = this.gapSvc.open;
   readonly gapQuestions = this.gapSvc.questions;
-  readonly documentReviewStatus = signal('');
-  readonly documentReviewError = signal(false);
-  readonly chooseCvOpen = signal(false);
-  readonly chooseCoverLetterOpen = signal(false);
+  /** Aliases onto `DocumentReviewStatusService`; the template binds these names. */
+  readonly documentReviewStatus = this.reviewStatus.status;
+  readonly documentReviewError = this.reviewStatus.error;
+  readonly chooseCvOpen = this.reviewStatus.chooseCvOpen;
+  readonly chooseCoverLetterOpen = this.reviewStatus.chooseCoverLetterOpen;
   /** Aliases onto `FinalChecksService`. The template writes `finalChecksOutdated`
    * directly, so these stay the same writable signals rather than views of them. */
   readonly finalChecks = this.finalChecksSvc.checks;
@@ -495,9 +499,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   async prepareDocumentsStep(): Promise<void> {
-    this.documentReviewStatus.set('');
-    this.documentReviewError.set(false);
-    try {
+    await this.reviewStatus.run(async () => {
       const [cvs, letters] = await Promise.all([
         this.db.documentLibraryList('cv'),
         this.db.documentLibraryList('cover_letter'),
@@ -509,11 +511,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       // Do not auto-create the CV on entering this step. The document is
       // written only when the user explicitly clicks Create/Regenerate,
       // so nothing is generated (or spends tokens) behind their back.
-    } catch (e) {
-      this.documentReviewError.set(true);
-      this.documentReviewStatus.set(String(e));
-      this.toast.error(String(e));
-    }
+    });
   }
 
   protected finalTailoredCvMd(): string {
@@ -571,14 +569,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     const settings = this.settings();
     const tailoredMd = this.finalTailoredCvMd();
     if (!job?.id || !tailoredMd || !settings) {
-      this.documentReviewError.set(true);
-      this.documentReviewStatus.set(this.t()('jobs.wizard.document_cv_requires_tailoring'));
+      this.reviewStatus.refuse(this.t()('jobs.wizard.document_cv_requires_tailoring'));
       return;
     }
 
-    this.documentReviewStatus.set('');
-    this.documentReviewError.set(false);
-    try {
+    await this.reviewStatus.run(async () => {
       const result = await this.cvDraftSvc.create({
         job,
         settings,
@@ -595,12 +590,8 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.application.set(result.application);
       this.linkedCv.set(result.document);
       this.finalChecksOutdated.set(!!this.finalChecks());
-      this.documentReviewStatus.set(this.t()('jobs.wizard.document_cv_linked'));
-    } catch (e) {
-      this.documentReviewError.set(true);
-      this.documentReviewStatus.set(String(e));
-      this.toast.error(String(e));
-    }
+      this.reviewStatus.succeed(this.t()('jobs.wizard.document_cv_linked'));
+    });
   }
 
   async createCoverLetterDraft(): Promise<void> {
@@ -609,14 +600,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     const profile = this.profile();
     const settings = this.settings();
     if (!job?.id || !profile?.fullMd || !settings) {
-      this.documentReviewError.set(true);
-      this.documentReviewStatus.set(this.t()('documents.cv_generate_no_profile'));
+      this.reviewStatus.refuse(this.t()('documents.cv_generate_no_profile'));
       return;
     }
 
-    this.documentReviewStatus.set('');
-    this.documentReviewError.set(false);
-    try {
+    await this.reviewStatus.run(async () => {
       const result = await this.coverLetterSvc.create({
         job,
         profile,
@@ -638,31 +626,20 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.application.set(result.application);
       this.linkedCoverLetter.set(result.document);
       this.finalChecksOutdated.set(!!this.finalChecks());
-      this.documentReviewStatus.set(this.t()('jobs.wizard.document_cover_letter_linked'));
-    } catch (e) {
-      this.documentReviewError.set(true);
-      this.documentReviewStatus.set(String(e));
-      this.toast.error(String(e));
-    }
+      this.reviewStatus.succeed(this.t()('jobs.wizard.document_cover_letter_linked'));
+    });
   }
 
   async chooseExistingDocument(kind: ReviewDocumentKind, id: number | null): Promise<void> {
     if (!id) return;
-    this.documentReviewStatus.set('');
-    this.documentReviewError.set(false);
-    try {
+    await this.reviewStatus.run(async () => {
       const app = await this.ensureApplicationDraft();
       const result = await this.linkedDocs.link(kind, id, app, this.documentReviewLanguage());
       if (!result) return;
       this.application.set(result.application);
-      if (kind === 'cv') this.chooseCvOpen.set(false);
-      else this.chooseCoverLetterOpen.set(false);
+      this.reviewStatus.closeChooser(kind);
       this.finalChecksOutdated.set(!!this.finalChecks());
-    } catch (e) {
-      this.documentReviewError.set(true);
-      this.documentReviewStatus.set(String(e));
-      this.toast.error(String(e));
-    }
+    });
   }
 
   runFinalChecks(): Promise<void> {
@@ -675,8 +652,7 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   async retailorFromFinalChecks(): Promise<void> {
     if (this.tailoring()) return;
-    this.documentReviewStatus.set('');
-    this.documentReviewError.set(false);
+    this.reviewStatus.clear();
     this.wizardInitialStep.set(1);
     await this.startTailoring();
     if (this.tailorError()) return;
@@ -867,14 +843,11 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.tailorCancelled.set(false);
     this.postTailorSaved.set(false);
     this.finalChecksSvc.reset();
-    this.documentReviewStatus.set('');
-    this.documentReviewError.set(false);
+    this.reviewStatus.reset();
     this.exportSvc.resetStatus();
     this.editingLocked.set(false);
     this.crossJobConfirmOpen.set(false);
     this.deleteConfirmOpen.set(false);
-    this.chooseCvOpen.set(false);
-    this.chooseCoverLetterOpen.set(false);
     this.cache.set(null);
     this.fromCache.set(false);
     this.scoreStale.set(false);
@@ -962,13 +935,11 @@ export class JobsComponent implements OnInit, OnDestroy {
       const restoredChecks = this.finalChecksSvc.restoreAfterReturn(previousHash);
       if (restoredChecks) this.finalChecks.set(restoredChecks);
       this.finalChecksOutdated.set(false);
-      this.documentReviewError.set(false);
-      this.documentReviewStatus.set(this.t()('jobs.wizard.document_saved_unchanged'));
+      this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_unchanged'));
     } else {
       this.finalChecks.set(null);
       this.finalChecksOutdated.set(true);
-      this.documentReviewError.set(false);
-      this.documentReviewStatus.set(this.t()('jobs.wizard.document_saved_changed'));
+      this.reviewStatus.succeed(this.t()('jobs.wizard.document_saved_changed'));
     }
   }
 

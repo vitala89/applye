@@ -57,13 +57,16 @@ import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
 import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
 import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
-import { CvDraftService, cvDraftHashInput } from '../../shared/cv-draft.service';
-import {
-  CoverLetterDraftService,
-  coverLetterHashInput,
-} from '../../shared/cover-letter-draft.service';
+import { CvDraftService } from '../../shared/cv-draft.service';
+import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
+import {
+  coverLetterStaleInput,
+  cvStaleInput,
+  decideCoverLetterAction,
+  decideCvAction,
+} from '../../shared/application-document-actions';
 import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
@@ -443,32 +446,26 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** True when the linked CV was generated from a different tailoring than the
    * one now in hand, so committing the application should refresh it first. */
-  private async cvDocStale(tailoredMd: string): Promise<boolean> {
-    const job = this.job();
-    if (!job?.id) return false;
-    const input = cvDraftHashInput(
-      job.id,
+  private cvDocStale(tailoredMd: string): Promise<boolean> {
+    const input = cvStaleInput(
+      this.job(),
       tailoredMd,
       this.documentReviewLanguage(),
       this.documentReviewRegion(),
     );
-    return this.linkedDocs.isStale('cv', input);
+    return input ? this.linkedDocs.isStale('cv', input) : Promise.resolve(false);
   }
 
   /** True when the linked cover letter was built from a different profile / JD
    * than the current one. */
-  private async coverLetterDocStale(): Promise<boolean> {
-    const job = this.job();
-    const profile = this.profile();
-    if (!job?.id || !profile?.fullMd) return false;
-    const input = coverLetterHashInput(
-      job.id,
-      profile.fullMd,
-      job.jdText ?? '',
+  private coverLetterDocStale(): Promise<boolean> {
+    const input = coverLetterStaleInput(
+      this.job(),
+      this.profile(),
       this.documentReviewLanguage(),
       this.documentReviewRegion(),
     );
-    return this.linkedDocs.isStale('cover_letter', input);
+    return input ? this.linkedDocs.isStale('cover_letter', input) : Promise.resolve(false);
   }
 
   /**
@@ -483,18 +480,21 @@ export class JobsComponent implements OnInit, OnDestroy {
   private async commitApplicationDocuments(regenerateStale: boolean): Promise<void> {
     const tailoredMd = this.finalTailoredCvMd();
 
-    if (!this.linkedCv()) {
-      if (tailoredMd) await this.createCvDraft();
-    } else if (regenerateStale && tailoredMd && (await this.cvDocStale(tailoredMd))) {
-      await this.createCvDraft();
-    }
+    const cv = await decideCvAction({
+      linked: !!this.linkedCv(),
+      tailoredMd,
+      regenerateStale,
+      isStale: () => this.cvDocStale(tailoredMd),
+    });
+    if (cv !== 'keep') await this.createCvDraft();
     await this.linkedDocs.commit('cv');
 
-    if (!this.linkedCoverLetter()) {
-      await this.createCoverLetterDraft();
-    } else if (regenerateStale && (await this.coverLetterDocStale())) {
-      await this.createCoverLetterDraft();
-    }
+    const coverLetter = await decideCoverLetterAction({
+      linked: !!this.linkedCoverLetter(),
+      regenerateStale,
+      isStale: () => this.coverLetterDocStale(),
+    });
+    if (coverLetter !== 'keep') await this.createCoverLetterDraft();
     await this.linkedDocs.commit('cover_letter');
   }
 

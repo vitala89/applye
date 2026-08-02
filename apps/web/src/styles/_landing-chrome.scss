@@ -1,0 +1,197 @@
+/* ---- Layout primitives ---- */
+.shell {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--space-7);
+}
+.shell--narrow {
+  max-width: 760px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-3);
+  z-index: 100;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--border-default);
+}
+.skip-link:focus {
+  left: var(--space-5);
+}
+
+.accent {
+  color: var(--text-accent);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-card);
+  border: var(--border-width) solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-instant) var(--ease-standard);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.btn--primary:hover {
+  background: var(--accent-hover);
+}
+.btn--primary:disabled,
+.btn--primary[aria-disabled='true'] {
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  border-color: var(--border-default);
+  cursor: not-allowed;
+}
+.btn--ghost {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.btn--ghost:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--text-secondary);
+  border: var(--border-width) solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/* ---- Brand ---- */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-title);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand:hover {
+  text-decoration: none;
+  color: var(--text-primary);
+}
+.brand__mark {
+  display: block;
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+}
+/* ---- Nav ---- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg-app) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+.nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  height: var(--topbar-height);
+}
+.nav__links {
+  display: flex;
+  gap: var(--space-7);
+  margin-left: auto;
+  margin-right: var(--space-7);
+}
+.nav__links a {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.nav__links a:hover {
+  color: var(--text-primary);
+}
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ---- Section scaffolding ---- */
+.band {
+  padding-block: var(--space-13);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+.band--alt {
+  background: var(--surface-1);
+}
+.section-title {
+  font-size: var(--text-h1);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  margin: var(--space-3) 0 var(--space-9);
+  max-width: 22ch;
+  text-wrap: balance;
+}
+/* 22ch is tuned for the short English section titles; longer sentences, and
+   the German and Polish translations of the shorter ones, need the room. */
+.section-title--wide {
+  max-width: 34ch;
+  margin-bottom: var(--space-6);
+}
+.applye-eyebrow {
+  color: var(--text-accent);
+}
+.prose {
+  font-family: var(--font-sans);
+  font-size: var(--text-h3);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  max-width: 68ch;
+}
+.prose strong {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+.prose--center {
+  margin-inline: auto;
+  text-align: center;
+}

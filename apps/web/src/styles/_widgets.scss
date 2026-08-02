@@ -1,0 +1,153 @@
+/* ---- Language switcher (see app/ui/language-switcher.ts) ----
+   A disclosure, not a select: the six links are in the markup either way, so a
+   crawler and a shared URL see all of them while the footer shows one. */
+.langs {
+  position: relative;
+}
+.langs__current {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  list-style: none;
+}
+.langs__current::-webkit-details-marker {
+  display: none;
+}
+.langs__current:hover {
+  color: var(--text-primary);
+}
+.langs__code {
+  letter-spacing: var(--tracking-wide);
+}
+.langs__name {
+  color: var(--text-tertiary);
+}
+.langs__caret {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.langs[open] .langs__caret {
+  transform: rotate(180deg);
+}
+.langs__list {
+  position: absolute;
+  right: 0;
+  /* Opens upward: this sits at the bottom of the page. */
+  bottom: calc(100% + var(--space-2));
+  z-index: 20;
+  min-width: 190px;
+  margin: 0;
+  padding: var(--space-2);
+  list-style: none;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-popover, 0 8px 24px rgb(0 0 0 / 18%));
+}
+.langs__list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-input);
+}
+.langs__list a:hover {
+  color: var(--text-primary);
+  background: var(--surface-2);
+}
+.langs__list a.is-active {
+  color: var(--text-accent);
+  background: var(--surface-2);
+}
+.langs__tag {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+}
+
+/* A translated landing page links into English docs; say so, quietly. */
+.landing__docsnote {
+  margin-top: var(--space-7);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.cookies__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ---- Analytics consent bar (see app/ui/consent-banner.ts) ---- */
+.consent {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--surface-1);
+  border-top: var(--border-width) solid var(--border-strong);
+  box-shadow: var(--shadow-overlay, 0 -8px 24px rgb(0 0 0 / 25%));
+}
+.consent__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+}
+.consent__copy {
+  flex: 1 1 24rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.consent__copy a {
+  color: var(--text-accent);
+}
+.consent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ---- "Source: coming soon" pill (see app/ui/source-link.ts) ---- */
+.soon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+  border: var(--border-width) dashed var(--border-default);
+  border-radius: var(--radius-badge);
+  padding: 1px var(--space-3);
+  cursor: help;
+  white-space: nowrap;
+}
+.soon-pill--btn {
+  font-size: var(--text-body);
+  letter-spacing: normal;
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-sunken);
+}
+.soon-pill--btn:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-default);
+}

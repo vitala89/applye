@@ -64,6 +64,7 @@ import {
 import { narrowBuiltinsByMarkets } from './discover-sources.util';
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
+import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -85,13 +86,6 @@ interface RegionGroup {
 /** A titled block of feed rows ("For you" / "More openings"). */
 /** Feed rows rendered per page; the list grows in these steps as the user scrolls. */
 const FEED_PAGE = 30;
-type ConsoleTone = 'header' | 'ok' | 'err' | 'done' | 'active';
-
-interface ConsoleLine {
-  text: string;
-  tone: ConsoleTone;
-}
-
 /** One block of the deterministically parsed job description. */
 const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
 const ATS_LABEL: Record<string, string> = {
@@ -634,46 +628,18 @@ export class DiscoverComponent {
     const enabled = this.sources().filter((s) => s.isEnabled);
     this.scanning.set(true);
     this.consoleExpanded.set(true);
-    this.consoleLines.set([
-      {
-        text: this.t()('discover.con_started').replace('{n}', String(enabled.length)),
-        tone: 'header',
-      },
-      ...enabled.map<ConsoleLine>((s) => ({
-        text: this.consoleLabel(s.name ?? ''),
-        tone: 'active',
-      })),
-    ]);
+    this.consoleLines.set(
+      startedLines(
+        enabled.map((s) => s.name ?? ''),
+        this.t(),
+      ),
+    );
 
     const started = Date.now();
     try {
       const summary = await this.db.discoverScan();
       const seconds = ((Date.now() - started) / 1000).toFixed(1);
-      const lines: ConsoleLine[] = [
-        {
-          text: this.t()('discover.con_started').replace('{n}', String(summary.sources.length)),
-          tone: 'header',
-        },
-        ...summary.sources.map<ConsoleLine>((r) => ({
-          text:
-            this.consoleLabel(r.sourceName) +
-            ' ' +
-            (r.error
-              ? this.t()('discover.con_line_err').replace('{err}', r.error)
-              : this.t()('discover.con_line_ok')
-                  .replace('{fetched}', String(r.fetched))
-                  .replace('{filtered}', String(r.filteredOut))
-                  .replace('{new}', String(r.newJobs))),
-          tone: r.error ? 'err' : 'ok',
-        })),
-        {
-          text: this.t()('discover.con_done')
-            .replace('{s}', seconds)
-            .replace('{n}', String(summary.totalNew)),
-          tone: 'done',
-        },
-      ];
-      this.consoleLines.set(lines);
+      this.consoleLines.set(resultLines(summary, seconds, this.t()));
       const feed = await this.db.discoverFeed();
       this.feed.set(
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
@@ -685,10 +651,7 @@ export class DiscoverComponent {
     } catch (e) {
       console.error('discover: scan failed', e);
       this.toast.error(String(e));
-      this.consoleLines.update((lines) => [
-        ...lines.map((l) => ({ ...l, tone: l.tone === 'active' ? ('err' as const) : l.tone })),
-        { text: this.t()('discover.con_line_err').replace('{err}', String(e)), tone: 'err' },
-      ]);
+      this.consoleLines.update((lines) => failureLines(lines, String(e), this.t()));
     } finally {
       this.scanning.set(false);
       this.consoleExpanded.set(false);
@@ -1189,11 +1152,6 @@ export class DiscoverComponent {
   protected isRemote(location: string | null): boolean {
     const loc = (location ?? '').toLowerCase();
     return REMOTE_MARKERS.some((m) => loc.includes(m));
-  }
-
-  private consoleLabel(name: string): string {
-    const label = name.toLowerCase().replace(/\s+/g, '');
-    return `  ${label} `.padEnd(22, '.');
   }
 
   private formatTime(sqliteUtc: string): string {

@@ -73,6 +73,47 @@ export class JobActionsService {
   }
 
   /**
+   * Record that the user applied. Distinct from `save`, which tracks a lead:
+   * this one shows on the Pipeline board.
+   *
+   * `commitDocuments` runs **before** the status flips, and its failure aborts
+   * the whole thing. A job marked applied must already own its CV and cover
+   * letter, or the user is applied to a job with nothing attached to it. The
+   * page owns that step because it reads the tailoring on screen.
+   *
+   * Returns the application as the database recorded it, or null when the write
+   * failed or another action was already running. On success `busy` is
+   * deliberately left set, the same rule `remove` follows: the caller navigates
+   * away, and clearing it first puts a live button back on screen for the frame
+   * before the route changes.
+   */
+  async markApplied(
+    jobId: number,
+    existing: Application | null,
+    commitDocuments: () => Promise<void>,
+  ): Promise<Application | null> {
+    if (this.busy()) return null;
+    this.busy.set(true);
+    this.message.set('');
+    try {
+      const app = existing?.id
+        ? existing
+        : await this.db.upsertApplication({ jobId, status: 'saved' });
+      await commitDocuments();
+      const updated = await this.db.setApplicationStatus(app.id as number, 'applied');
+      // Mirror the status the DB actually recorded, not the literal we asked
+      // for - the DB is the single source of truth for the overview row.
+      this.jobsStore.patchOverviewRow(jobId, { status: updated.status });
+      this.toast.success(this.t()('jobs.applied_ok'));
+      return updated;
+    } catch (e) {
+      this.fail(e);
+      this.busy.set(false);
+      return null;
+    }
+  }
+
+  /**
    * Delete the job. Returns true when it went, and on that path deliberately
    * leaves `deleting` set and the confirm open: the caller navigates away, and
    * clearing them first puts the dialog back on screen for the frame before the

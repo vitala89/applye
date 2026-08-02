@@ -1,0 +1,235 @@
+/* ---- Hero ---- */
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: var(--space-12);
+  align-items: center;
+  padding-block: var(--space-13) var(--space-12);
+}
+.hero__title {
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: var(--weight-extra);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tighter);
+  margin: var(--space-5) 0 var(--space-6);
+}
+.hero__sub {
+  font-family: var(--font-sans);
+  font-size: var(--text-h3);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  max-width: 52ch;
+}
+.hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+.hero__meta {
+  margin-top: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+}
+
+/* Pre-release download state. Deliberately a status line under the buttons,
+   not a fourth button: it says what is missing and why, in one row, and never
+   invites a click that cannot happen. */
+.hero__pending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-6);
+}
+.hero__pendingwhy {
+  flex: 1 1 22rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-tertiary);
+  max-width: 48ch;
+}
+
+/* ---- Hero app mock ---- */
+.mock {
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.mock__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-sunken);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+.mock__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+}
+.mock__path {
+  margin-left: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.mock__body {
+  padding: var(--space-7);
+}
+.mock__score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+.mock__ring {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  background: conic-gradient(var(--accent) 72%, var(--surface-sunken) 0);
+}
+.mock__ring span {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--surface-1);
+}
+.mock__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+}
+.mock__verdict {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+  line-height: var(--leading-normal);
+}
+.mock__section {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  margin: var(--space-7) 0 var(--space-4);
+}
+.mock__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.chip {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-badge);
+  border: var(--border-width) solid var(--border-default);
+  color: var(--text-secondary);
+}
+.chip--warn {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+  background: var(--warning-tint);
+}
+.mock__rows {
+  margin-top: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+.mock__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.tick {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-badge);
+  font-size: var(--text-xs);
+}
+.tick--ok {
+  color: var(--success);
+  background: var(--success-tint);
+}
+.tick--warn {
+  color: var(--warning);
+  background: var(--warning-tint);
+}
+
+/* ---- Market comparison ---- */
+.compare {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+.compare__card {
+  position: relative;
+  padding: var(--space-7);
+  border-radius: var(--radius-card);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+}
+.compare__card h3 {
+  font-size: var(--text-h3);
+  margin-bottom: var(--space-2);
+}
+.compare__who {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-5);
+}
+.compare__card p:last-child {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.compare__card--us {
+  border-color: var(--border-accent);
+  box-shadow: var(--glow-accent);
+}
+.compare__tag {
+  position: absolute;
+  top: calc(var(--space-5) * -1);
+  left: var(--space-6);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--accent-fg);
+  background: var(--accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-badge);
+}
+.compare__line {
+  margin-top: var(--space-9);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-medium);
+}

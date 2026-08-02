@@ -1,0 +1,60 @@
+/* ---- Document scroll model (web override) ----
+   global.scss pins html/body to height:100% for the desktop app shell (it
+   scrolls internally). The marketing site uses document scrolling instead:
+   the body box must grow with content, otherwise a `position: sticky` header
+   sticks only within the first viewport and then scrolls away. Override here,
+   web-scoped, so the desktop app is untouched. Single scroll container, no
+   transform/overflow on sticky ancestors. */
+html,
+body {
+  height: auto;
+  min-height: 100%;
+}
+/* Page changes must land at the top instantly. A global `scroll-behavior:
+   smooth` also animates the router's jump to the top, so for a fraction of a
+   second the reader is looking at the middle of a page they did not scroll to
+   and then it slides away. Smooth scrolling belongs to in-page anchor jumps
+   only, and the docs table of contents does that in code (see docs-layout.ts),
+   where it can honour prefers-reduced-motion itself. */
+html {
+  scroll-behavior: auto;
+}
+
+/* ============================================================
+   CONTRAST (web-scoped token overrides)
+
+   These override two token groups for the marketing site only. The desktop
+   app keeps the design-system values; `libs/ui/tokens.css` mirrors the design
+   system and is not hand-edited. The same measurements apply to the app and
+   should be taken back to the design system separately - see the note in
+   docs/design/WEBSITE_PLAN.md.
+   ============================================================ */
+
+/* `--text-tertiary` is a UI-chrome grey pressed into service as body text
+   here: hero meta, footer, captions, card sub-labels, changelog dates, the
+   "coming soon" pill. Measured against this site's own dark surfaces it is
+   3.38:1 on the canvas, 3.13:1 on a card and 2.75:1 on a sunken panel - below
+   the 4.5:1 WCAG AA floor at every size the site uses it. On this canvas no
+   grey is both dimmer than `--text-secondary` and still passing, so the third
+   text tier is retired and the demotion is carried by size, weight and
+   family instead. Light theme is untouched: it already measures 4.87:1. */
+:root,
+[data-theme='dark'] {
+  --text-tertiary: var(--graphite-400); /* 4.73:1 worst case across dark surfaces */
+}
+
+[data-theme='light'] {
+  /* Restated because this file loads after the tokens and the two selectors
+     carry equal specificity: without it the dark value above would leak into
+     the light theme, where #9a968c on #fafaf8 measures 2.24:1. */
+  --text-tertiary: var(--graphite-500); /* 4.87:1 on the light canvas */
+
+  /* Semantic colours are tuned for the dark canvas. On white they fall to
+     2.61:1 (success), 2.23:1 (warning) and 3.73:1 (danger), and the site uses
+     all three as text: methodology bands, honest-expectation markers, docs
+     tables. Darkened for the light theme only, so the dark brand reading of
+     these colours is unchanged. */
+  --success: #16794a; /* 5.43:1 on white */
+  --warning: #8a5f0f; /* 5.64:1 on white */
+  --danger: #c23434; /* 5.48:1 on white */
+}

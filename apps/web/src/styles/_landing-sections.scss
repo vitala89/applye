@@ -1,0 +1,361 @@
+/* ---- Features ---- */
+.features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+.feature {
+  padding: var(--space-8);
+  border-radius: var(--radius-card);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+.feature:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+.feature__title {
+  font-size: var(--text-h3);
+  margin-bottom: var(--space-4);
+}
+.feature__example {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.feature__note {
+  margin-top: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+/* ---- Engines ("bring your own AI") ----
+   Two labelled rows of wordmarks. Not cards: these are names, and boxing each
+   one would claim more than a name deserves. The rule between the groups does
+   the separating. */
+.engines {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-7) var(--space-10);
+  margin-top: var(--space-9);
+  padding-top: var(--space-7);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+.engines__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-5);
+}
+.engines__list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding: 0;
+}
+.engines__item {
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  padding: var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-badge);
+  background: var(--surface-1);
+  white-space: nowrap;
+}
+.engines__note {
+  margin-top: var(--space-7);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-tertiary);
+  max-width: 60ch;
+}
+
+/* ---- German market ---- */
+.german__list {
+  list-style: none;
+  margin-top: var(--space-8);
+  display: grid;
+  gap: var(--space-5);
+}
+/* Leading accent marker rather than a coloured left stripe per item: the same
+   affordance the docs lists already use, so the two read as one system. */
+.german__list li {
+  position: relative;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  padding-left: var(--space-6);
+}
+.german__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+.german__list strong {
+  color: var(--text-primary);
+}
+
+/* ---- Principles strip ---- */
+.principles {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-6);
+}
+.principle__icon {
+  color: var(--accent);
+  display: inline-flex;
+  margin-bottom: var(--space-4);
+}
+.principle__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+.principle__line {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+/* ---- Trust / honest expectations ---- */
+.trust__links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: var(--space-8) 0 var(--space-11);
+}
+.honest {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+.honest__col {
+  padding: var(--space-8);
+  border-radius: var(--radius-card);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--surface-1);
+}
+.honest__col h3 {
+  font-size: var(--text-title);
+  margin-bottom: var(--space-5);
+}
+.honest__col ul {
+  list-style: none;
+  display: grid;
+  gap: var(--space-4);
+}
+.honest__col li {
+  position: relative;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  padding-left: var(--space-6);
+}
+.honest__col li::before {
+  position: absolute;
+  left: 0;
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold);
+}
+.honest__col--use li::before {
+  content: '✓';
+  color: var(--success);
+}
+.honest__col--not li::before {
+  content: '✕';
+  color: var(--danger);
+}
+
+/* ---- FAQ ---- */
+.faq {
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+.faq__item {
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+.faq__q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6) 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+.faq__chev {
+  flex: none;
+  color: var(--text-tertiary);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.faq__item--open .faq__chev {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+.faq__a {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  padding: 0 0 var(--space-7);
+  max-width: 72ch;
+}
+
+/* ---- Footer ---- */
+.footer {
+  padding-block: var(--space-11) var(--space-8);
+  background: var(--surface-1);
+}
+/* A brand column and three named link columns. The columns collapse to a
+   two-up grid on a tablet and to one on a phone: eleven links in a wrapping
+   row used to run 762px wide against a 375px viewport and scrolled the whole
+   document sideways. */
+.footer__inner {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(120px, 0.75fr));
+  gap: var(--space-8) var(--space-7);
+  align-items: start;
+}
+.footer__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.footer__brand p {
+  margin: 0;
+  max-width: 34ch;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-tertiary);
+}
+.footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.footer__coltitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.footer__col a {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.footer__col a:hover {
+  color: var(--text-primary);
+}
+.footer__legal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: var(--border-width) solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.footer__legalend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+.footer__legal a {
+  color: var(--text-secondary);
+}
+/* Sits under the tagline in the brand column: the source pill, and whichever
+   social links have a URL set in site.ts. */
+.footer__social {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 860px) {
+  .footer__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 520px) {
+  .footer__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Manifesto ---- */
+.manifesto__body section + section {
+  margin-top: var(--space-8);
+}
+.manifesto__body h2 {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+.manifesto__sign {
+  margin-top: var(--space-10);
+  padding-top: var(--space-7);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+.manifesto__signname {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.manifesto__signrole {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-6);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+.manifesto__sign .btn + .btn {
+  margin-left: var(--space-4);
+}

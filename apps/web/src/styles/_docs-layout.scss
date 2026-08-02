@@ -1,0 +1,324 @@
+/* ============================================================
+   DOCS three-zone layout (left grouped nav · center · right TOC)
+   Single document scroll. Sidebars are sticky to the viewport,
+   offset by the sticky header height. No transform/overflow on
+   any sticky ancestor.
+   ============================================================ */
+.dx {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr) 216px;
+  gap: var(--space-9);
+  align-items: start;
+  padding-block: var(--space-9) var(--space-13);
+}
+.dx__left,
+.dx__right {
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--space-6));
+  align-self: start;
+  max-height: calc(100vh - var(--topbar-height) - var(--space-8));
+  overflow-y: auto;
+}
+.dx__center {
+  min-width: 0;
+  max-width: 760px;
+  scroll-margin-top: calc(var(--topbar-height) + var(--space-6));
+}
+
+/* Left: grouped collapsible nav */
+.dx__group {
+  margin-bottom: var(--space-5);
+}
+.dx__grouphead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+}
+.dx__grouphead:hover {
+  color: var(--text-secondary);
+}
+.dx__chev {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+/* One landmark per section. Accent-coloured so the eye finds the group it
+   wants without reading five uppercase labels; the chevron beside it stays
+   the affordance. */
+.dx__groupicon {
+  flex: none;
+  color: var(--accent);
+}
+.dx__group.is-collapsed .dx__groupicon {
+  color: var(--text-tertiary);
+}
+.dx__group.is-collapsed .dx__chev {
+  transform: rotate(-90deg);
+}
+.dx__links {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  display: grid;
+  gap: 1px;
+  border-left: var(--border-width) solid var(--border-subtle);
+}
+.dx__links a {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-5);
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  line-height: var(--leading-normal);
+}
+.dx__links a:hover {
+  color: var(--text-primary);
+}
+.dx__links a.is-active {
+  color: var(--text-accent);
+  border-left-color: var(--accent);
+}
+
+/* Right: on-this-page TOC */
+.dx__toctitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-4);
+}
+.dx__right nav {
+  display: grid;
+  gap: 1px;
+  border-left: var(--border-width) solid var(--border-subtle);
+}
+.dx__right a {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-5);
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  line-height: var(--leading-normal);
+}
+.dx__right a.is-sub {
+  padding-left: var(--space-7);
+}
+.dx__right a:hover {
+  color: var(--text-primary);
+}
+.dx__right a.is-active {
+  color: var(--text-accent);
+  border-left-color: var(--accent);
+}
+
+/* Content headings inside a docs page */
+.docs__h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--space-5);
+  scroll-margin-top: calc(var(--topbar-height) + var(--space-6));
+}
+.docs__h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-4);
+  scroll-margin-top: calc(var(--topbar-height) + var(--space-6));
+}
+
+/* Media placeholder blocks in the user guide. Replace the box with a real
+   <img>/<video> when the asset exists; keep the figcaption. */
+.docs__media {
+  position: relative;
+  margin-block: var(--space-6);
+}
+/* The figures are 2880x1800 files in a column a third that wide, so the detail
+   the text points at is in the asset and not on the page. Clicking the picture
+   opens it; this button is the same door for a keyboard, and the only one for
+   the tour video, whose own controls own its clicks. */
+.docs__media img,
+.docs__media video:not([controls]) {
+  cursor: zoom-in;
+}
+.docs__zoom {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.docs__media:hover .docs__zoom,
+.docs__zoom:focus-visible {
+  opacity: 1;
+}
+.docs__zoom:hover {
+  color: var(--text-primary);
+}
+/* Nothing hovers on a touch screen, so there the button is simply always on. */
+@media (hover: none) {
+  .docs__zoom {
+    opacity: 1;
+  }
+}
+
+/* ---- Lightbox ---- */
+body.is-lightboxed {
+  overflow: hidden;
+}
+.lbx {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: color-mix(in srgb, #05060a 88%, transparent);
+  backdrop-filter: blur(2px);
+  animation: lbx-in var(--dur-fast) var(--ease-standard);
+}
+@keyframes lbx-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lbx {
+    animation: none;
+  }
+}
+.lbx__figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  margin: 0;
+  max-width: 100%;
+}
+.lbx__media {
+  display: block;
+  max-width: min(96vw, 1600px);
+  /* Leaves room for the caption and the close button above it. */
+  max-height: 84vh;
+  width: auto;
+  height: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+.lbx__caption {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+.lbx__close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  cursor: pointer;
+}
+.lbx__close:hover {
+  color: var(--text-primary);
+}
+.docs__mediabox {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: var(--border-width) dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+.docs__mediabox p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-tertiary);
+}
+.docs__mediatag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-badge);
+  padding: 1px var(--space-3);
+}
+/* Captured product shots. The intrinsic size is 2x, so the rendered width is
+   capped by the column and the height follows the aspect ratio. */
+.docs__media img,
+.docs__media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+.docs__media figcaption {
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 1080px) {
+  .dx {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .dx__right {
+    display: none;
+  }
+}
+@media (max-width: 860px) {
+  .dx {
+    grid-template-columns: 1fr;
+  }
+  .dx__left {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    border-bottom: var(--border-width) solid var(--border-subtle);
+    padding-bottom: var(--space-5);
+    margin-bottom: var(--space-5);
+  }
+}

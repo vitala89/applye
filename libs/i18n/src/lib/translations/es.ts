@@ -198,6 +198,7 @@ export const es: TranslationMap = stub(en, {
     col_source: 'Fuente',
     filter_status: 'Todos los estados',
     filter_legit: 'Cualquier fiabilidad',
+    show_analysed: 'Mostrar analizados',
     empty: 'Todavía no hay empleos. Pega una oferta para empezar.',
     not_scored: 'Sin puntuar',
     no_status: 'Sin candidatura',
@@ -413,6 +414,7 @@ export const es: TranslationMap = stub(en, {
     offer: 'Oferta',
     rejected: 'Rechazado',
     cancelled: 'Cancelado',
+    analysed: 'Analizado',
   },
   toast: {
     dismiss: 'Descartar',

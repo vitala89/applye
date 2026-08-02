@@ -77,14 +77,14 @@
   `.cargo/audit.toml` with the drop condition, which is Tauri shipping on gtk/glib >= 0.20. The
   GitHub alert is deliberately **left open rather than dismissed**, so it keeps reappearing until
   that happens.
-- **Unclaimed jobs: decided, not yet built.** The rows that accumulate invisibly since PR #248 now
-  have an answer, reached through `aif-grilling` rather than chosen by the agent, and written up as
-  `docs/product/decisions/ADR-0004-unclaimed-jobs-stay-and-become-visible.md`. They stay: the fix is
-  visibility, not deletion. `db_list_jobs_overview_core` relaxes its `WHERE` to the rule
-  `db_list_jobs` already uses, `JobOverview` gains a derived `claimed` boolean, and My Jobs gains one
-  filter chip default-off with its own status word. No migration, because "claimed" is derivable.
-  Discover-scanned rows stay hidden. The ADR is `draft` pending the maintainer's sign-off on the
-  numbered list; the implementation is the next session's work.
+- **Unclaimed jobs: decided and shipped.** ADR-0004 is `accepted` and implemented.
+  `db_list_jobs_overview_core` returns unclaimed rows flagged with a derived `claimed` boolean
+  instead of hiding them; My Jobs has one filter chip, off by default, and shows an **Analysed**
+  status word for them that joins the status filter. Discover-scanned rows stay hidden until
+  claimed. **No migration.** The one thing the ADR did not foresee: `listJobsOverview` is shared, so
+  relaxing it put unclaimed rows into the dashboard's Recent jobs labelled "Saved" and stopped a
+  user with one analysed job reading as new - both now guarded by `recentClaimedJobs`, with tests
+  that go red if the guard is removed. Two locale keys in all six languages.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

@@ -1,4 +1,4 @@
-import type { PipelineCard } from '@applye/core';
+import type { JobOverview, PipelineCard } from '@applye/core';
 
 /**
  * Pure presentation helpers for the dashboard: monograms, day counts and the
@@ -58,4 +58,47 @@ export function whenLabel(iso: string, now: number): string {
 export function scheduledMs(cards: PipelineCard[], applicationId: number): number {
   const c = cards.find((x) => x.id === applicationId);
   return c?.currentStageScheduledAt ? new Date(c.currentStageScheduledAt).getTime() : Infinity;
+}
+
+/** One row of the dashboard's Recent jobs list. */
+export interface RecentRow {
+  jobId: number;
+  monogram: string;
+  role: string;
+  company: string;
+  status: string;
+  statusLabel: string;
+  applied: boolean;
+}
+
+/**
+ * The five most recent jobs the user claimed, newest first.
+ *
+ * `listJobsOverview` returns unclaimed rows too since ADR-0004, so that My Jobs
+ * can offer them behind a filter. The dashboard is not that filter: an
+ * unclaimed row here would appear labelled "Saved", which is the ambiguity that
+ * ADR exists to remove. Claimed-only is enforced here rather than at the call
+ * site, so the rule is in one place and testable without a component.
+ */
+export function recentClaimedJobs(
+  overview: JobOverview[],
+  label: (key: string) => string,
+  limit = 5,
+): RecentRow[] {
+  return overview
+    .filter((j) => j.claimed)
+    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+    .slice(0, limit)
+    .map((j) => {
+      const status = j.status ?? 'saved';
+      return {
+        jobId: j.id,
+        monogram: monogram(j.company),
+        role: j.title ?? '',
+        company: j.company ?? '',
+        status,
+        statusLabel: label(`status.${status}`),
+        applied: status === 'applied',
+      };
+    });
 }

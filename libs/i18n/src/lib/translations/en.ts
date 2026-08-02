@@ -187,6 +187,7 @@ export const en: TranslationMap = {
     col_source: 'Source',
     filter_status: 'All statuses',
     filter_legit: 'All legitimacy',
+    show_analysed: 'Show analysed',
     empty: 'No jobs yet. Paste a job to get started.',
     not_scored: 'Not scored',
     no_status: 'No application',
@@ -398,6 +399,7 @@ export const en: TranslationMap = {
     offer: 'Offer',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
+    analysed: 'Analysed',
   },
   toast: {
     dismiss: 'Dismiss',

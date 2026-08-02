@@ -1,6 +1,6 @@
 # Architecture Decision Record: unclaimed jobs stay in the database and become visible
 
-- **Status**: `draft`
+- **Status**: `accepted`
 - **Date**: 2026-08-02
 
 ---
@@ -92,7 +92,12 @@ data is migrated, transformed, or destroyed by adopting or reverting it.
 - **Links**: PR #248 introduced the claimed-only rule;
   `apps/desktop/src-tauri/src/commands/jobs.rs` holds both list commands and the `jd_hash` upsert.
 - **Follow-up Tasks**:
-  - [ ] Relax `db_list_jobs_overview_core` and add `claimed` to `JobOverview`, with a Rust test
+  - [x] Relax `db_list_jobs_overview_core` and add `claimed` to `JobOverview`, with a Rust test
         asserting an analysed-but-unclaimed row is returned and a `discover_scan` row is not.
-  - [ ] Add the filter chip and the status word to My Jobs, default off, with a component test.
-  - [ ] Add the locale key across all six languages.
+  - [x] Add the filter chip and the status word to My Jobs, default off.
+  - [x] Add the locale keys across all six languages.
+  - [x] **Not foreseen when this was written:** keep the dashboard meaning what it meant.
+        `listJobsOverview` is shared, so relaxing it silently put unclaimed rows into Recent jobs,
+        labelled "Saved" - the exact ambiguity this ADR removes - and stopped a user with one
+        analysed job from reading as new. The claimed-only rule now lives in
+        `recentClaimedJobs`, with tests.

@@ -44,6 +44,94 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, ADR-0004 shipped, and a shared query that changed a second screen
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `feat/unclaimed-jobs-visible`, from `main` (`c988cba`); `docs/glib-advisory-record`
+  before it
+- **Commits:** one on the glib branch, one here plus this documentation commit
+- **Pull request:** [#262](https://github.com/vitala89/applye/pull/262) for glib; this branch's PR
+  opened after the entry
+- **Objective:** the maintainer confirmed ADR-0004's seven decisions and authorised the Dependabot
+  work, so: implement the ADR, and settle alert 42.
+- **Completed:**
+  - **Dependabot alert 42 settled, and it is not fixable here.** `glib` 0.18.5, unsoundness in
+    `VariantStrIter` (RUSTSEC-2024-0429). Not ours - it arrives through the GTK bindings Tauri uses
+    - and **Linux only**: `cargo tree -i glib` is empty for the macOS and Windows targets. Nothing
+      under `src-tauri/src` names glib or that type. Nowhere to move to: the fix is glib >= 0.20,
+      which needs a gtk major bump Tauri 2.11 has not taken, and `cargo update glib` locks 0 packages.
+      `cargo audit` classed it a warning and exited 0 either way, verified before (20 allowed
+      warnings) and after (19). Recorded in `.cargo/audit.toml` with its drop condition. **The GitHub
+      alert is deliberately left open rather than dismissed**, because dismissing it hides the only
+      thing that will tell us Tauri moved.
+  - **ADR-0004 implemented, status `accepted`.** `db_list_jobs_overview_core` returns unclaimed rows
+    flagged instead of hiding them; `JobOverview` gained a derived `claimed` boolean; My Jobs gained
+    one filter chip, off by default, and an **Analysed** status word that joins the status filter.
+    Discover-scanned rows stay hidden until claimed. **No migration**, as the ADR predicted. Two
+    locale keys in all six languages. Five Rust tests on the query and six TypeScript tests on the
+    row rules.
+  - **The existing Rust test that asserted the opposite was rewritten deliberately**, not deleted:
+    `a_job_only_analysed_is_not_listed` became
+    `a_job_only_analysed_is_returned_and_flagged_unclaimed`, with a comment saying ADR-0004 reverses
+    what it used to claim.
+- **Not completed:** nothing in scope. `jobs.component.ts` is untouched this watch and remains
+  1162/400; the extraction continues at `loadJob` next.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/jobs.rs`,
+  `apps/desktop/src-tauri/.cargo/audit.toml`, `libs/core/src/lib/models/job.model.ts`, six files
+  under `libs/i18n/src/lib/translations/`, `my-jobs.component.{ts,html,scss}`, new
+  `pages/jobs/job-overview-rows.ts` and its spec, `dashboard.component.ts`, `dashboard.util.ts` and
+  both specs, ADR-0004, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass, `npm test` all six projects green
+  with **1098** desktop tests, `npm run lint` 0 errors / 8 pre-existing warnings,
+  `npx nx build desktop` bundle generation complete, `cargo test --lib` **339 passed**,
+  `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` pass with `dashboard.component.ts` **428 -> 413**,
+  `npm run quality:attribution` pass, `npm run format:check` pass, `npm run verify:csp` pass,
+  `git diff --check` clean, `cargo audit` exit 0. **Not run:** the browser preview, because My Jobs
+  waits on `db_get_settings` and does not render outside Tauri - the chip and the badge have not
+  been seen by a human on screen, only asserted.
+- **Privacy/security impact:** a small improvement, as the ADR argued. A user cannot delete job
+  description text they cannot see; these rows are now reachable and removable through the trash
+  control that already existed. No new data is collected, stored or sent, and the change reveals the
+  user's own local rows to the user on their own machine.
+- **Decisions and assumptions:**
+  - All seven decisions from the grilling were confirmed by the maintainer and implemented as
+    written. ADR-0004 moved `draft` -> `accepted`.
+  - The glib alert is left open rather than dismissed. Recorded because it is a judgement call, not
+    an obvious one: dismissing would quiet the noise and lose the signal.
+- **Risks or compatibility impact:**
+  - **`claimed` is now a required field on `JobOverview`.** Any consumer constructing one by hand
+    must set it; `type-check` covers the repository, and the three call sites were checked.
+  - The chip and the Analysed badge have never been rendered in the running app.
+- **Open issues or blockers:**
+  - **The lesson of this watch: relaxing a shared query changed a screen nobody asked to change.**
+    `listJobsOverview` feeds My Jobs, the dashboard and `wizard-nav`. Loosening it silently put
+    unclaimed rows into the dashboard's Recent jobs **labelled "Saved"** - precisely the ambiguity
+    ADR-0004 exists to remove - and stopped a user whose only job is analysed from reading as new.
+    Neither was in the ADR, and no test would have caught either, because none existed. The rule now
+    lives in `recentClaimedJobs` with tests that go red when the guard is removed.
+    `wizard-nav.describeOtherJob` was checked too and only benefits: it finds unclaimed rows without
+    a database round-trip. **Widening a shared read is an API change to every caller, and the ADR
+    treated it as a change to one screen.**
+  - **A mutation check that fails to mutate is worthless, and this watch produced two.** The first
+    two attempts to break the SQL reported the tests still green; the edit had silently not been
+    written. Only after checking the file's md5 before and after did the mutation land, and the test
+    went red immediately. Every mutation check from here on verifies the file actually changed
+    first. This is the same trap as a test that passes with the bug present, one level up.
+  - Unchanged: `jobs.component.ts` 1162/400, its template 1148/300 and stylesheet 933/400,
+    `discover.component.scss` 1915/400, the two human release checks on `0.29.2`, Windows and Linux
+    unverified, the AIF skill set unpruned, the two upstream advisories plus glib now recorded.
+  - The false-green `npm run type-check` from the previous watch is still unexplained and still not
+    reproducible.
+- **Next first action:** continue the jobs page extraction at `loadJob`, the largest remaining
+  member at 53 lines, identifying its test seam before touching it. If the packaged app is run for
+  the two release checks still owed, look at My Jobs with the chip on while it is open - it is the
+  only part of this watch a human has not seen.
+- **Evidence:** `cargo test --lib` printed `339 passed`; `npm test` printed `1098` for desktop;
+  `npm run quality:file-size` printed `dashboard.component.ts: 413/400 ... base 428`; the dashboard
+  guard was mutation-checked with md5 verification and turned 2 tests red.
+
 ### 2026-08-02, the silent discard, and a gate that reported success on a broken tree
 
 - **Status:** partial

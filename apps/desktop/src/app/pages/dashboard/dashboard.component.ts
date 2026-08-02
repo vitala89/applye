@@ -41,6 +41,8 @@ import {
   daysSince,
   monogram,
   MS_HOUR,
+  type RecentRow,
+  recentClaimedJobs,
   scheduledMs,
   SOON_HOURS,
   whenLabel,
@@ -76,16 +78,6 @@ interface InterviewRow {
   stage: string;
   when: string;
   soon: boolean;
-}
-
-interface RecentRow {
-  jobId: number;
-  monogram: string;
-  role: string;
-  company: string;
-  status: string;
-  statusLabel: string;
-  applied: boolean;
 }
 
 @Component({
@@ -205,8 +197,12 @@ export class DashboardComponent {
 
   // --- New-user / empty detection --------------------------------------
 
+  // `listJobsOverview` returns unclaimed rows too since ADR-0004, so that My
+  // Jobs can offer them behind a filter. The dashboard is not that filter.
+  private readonly claimedJobs = computed(() => this.overview().filter((j) => j.claimed));
+
   protected readonly isNewUser = computed(
-    () => this.overview().length === 0 && !(this.profile()?.fullMd ?? '').trim(),
+    () => this.claimedJobs().length === 0 && !(this.profile()?.fullMd ?? '').trim(),
   );
 
   // --- KPIs -------------------------------------------------------------
@@ -257,18 +253,7 @@ export class DashboardComponent {
   // --- Recent jobs ------------------------------------------------------
 
   protected readonly recentJobs = computed<RecentRow[]>(() =>
-    [...this.overview()]
-      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
-      .slice(0, 5)
-      .map((j) => ({
-        jobId: j.id,
-        monogram: monogram(j.company),
-        role: j.title ?? '',
-        company: j.company ?? '',
-        status: j.status ?? 'saved',
-        statusLabel: this.t()(`status.${j.status ?? 'saved'}`),
-        applied: (j.status ?? 'saved') === 'applied',
-      })),
+    recentClaimedJobs(this.overview(), this.t()),
   );
 
   // --- Action queue -----------------------------------------------------

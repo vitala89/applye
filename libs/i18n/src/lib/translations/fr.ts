@@ -199,6 +199,7 @@ export const fr: TranslationMap = stub(en, {
     col_source: 'Source',
     filter_status: 'Tous les statuts',
     filter_legit: 'Toutes fiabilités',
+    show_analysed: 'Afficher les analysées',
     empty: "Pas encore d'offre. Collez une annonce pour commencer.",
     not_scored: 'Non évaluée',
     no_status: 'Sans candidature',
@@ -416,6 +417,7 @@ export const fr: TranslationMap = stub(en, {
     offer: 'Offre',
     rejected: 'Refusé',
     cancelled: 'Annulé',
+    analysed: 'Analysée',
   },
   toast: {
     dismiss: 'Fermer',

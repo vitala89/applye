@@ -199,6 +199,7 @@ export const ru: TranslationMap = stub(en, {
     col_source: 'Источник',
     filter_status: 'Все статусы',
     filter_legit: 'Любая надёжность',
+    show_analysed: 'Показать проанализированные',
     empty: 'Вакансий пока нет. Вставьте вакансию, чтобы начать.',
     not_scored: 'Без оценки',
     no_status: 'Без отклика',
@@ -413,6 +414,7 @@ export const ru: TranslationMap = stub(en, {
     offer: 'Оффер',
     rejected: 'Отказ',
     cancelled: 'Отменено',
+    analysed: 'Проанализировано',
   },
   toast: {
     dismiss: 'Скрыть',

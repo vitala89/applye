@@ -22,7 +22,13 @@ describe('DashboardComponent resume card', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let getJob: jest.Mock;
 
-  const CLAIMED = { id: 7, title: 'Backend Engineer', company: 'Acme', status: 'saved' };
+  const CLAIMED = {
+    id: 7,
+    title: 'Backend Engineer',
+    company: 'Acme',
+    status: 'saved',
+    claimed: true,
+  };
 
   async function build(): Promise<void> {
     fixture = TestBed.createComponent(DashboardComponent);
@@ -92,6 +98,31 @@ describe('DashboardComponent resume card', () => {
     await build();
 
     expect(resumeTitle()).toBe('Resume tailoring for #12');
+  });
+
+  // ADR-0004 relaxed `listJobsOverview` so unclaimed rows come back flagged,
+  // for My Jobs to offer behind a filter. The dashboard is not that filter, and
+  // an unclaimed row here would appear in Recent jobs labelled "Saved" - the
+  // exact ambiguity the ADR exists to remove.
+  it('keeps unclaimed jobs out of Recent jobs', async () => {
+    (TestBed.inject(DbService).listJobsOverview as jest.Mock).mockResolvedValue([
+      { ...CLAIMED, claimed: true },
+      { id: 99, title: 'Ghost Role', company: 'Nowhere Inc', status: null, claimed: false },
+    ]);
+    await build();
+
+    expect(fixture.nativeElement.textContent).toContain('Acme');
+    expect(fixture.nativeElement.textContent).not.toContain('Nowhere Inc');
+  });
+
+  it('still reads as a new user when every job is merely analysed', async () => {
+    (TestBed.inject(DbService).listJobsOverview as jest.Mock).mockResolvedValue([
+      { id: 99, title: 'Ghost Role', company: 'Nowhere Inc', status: null, claimed: false },
+    ]);
+    (TestBed.inject(DbService).getProfile as jest.Mock).mockResolvedValue({ id: 1, fullMd: '' });
+    await build();
+
+    expect(fixture.componentInstance['isNewUser']()).toBe(true);
   });
 
   it('shows no resume card when no tailoring session is in flight', async () => {

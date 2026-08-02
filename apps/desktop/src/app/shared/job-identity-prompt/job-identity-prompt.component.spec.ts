@@ -94,6 +94,41 @@ describe('JobIdentityPromptComponent', () => {
     expect(await answer).toEqual({ company: 'Contoso GmbH', title: 'Backend Engineer' });
   });
 
+  it('reports a replaced request as superseded, never as a skip', async () => {
+    // Conflating the two is what made the whole feature look dead: the resolver
+    // reads a skip as the user declining and writes it to the job, and a job
+    // with the skip recorded was then never identified again on any parse.
+    const first = prompt.ask({
+      missingCompany: true,
+      missingTitle: true,
+      company: '',
+      title: '',
+      aiOutcome: 'answered',
+    });
+    void prompt.ask({
+      missingCompany: true,
+      missingTitle: true,
+      company: '',
+      title: '',
+      aiOutcome: 'answered',
+    });
+
+    expect(await first).toBe('superseded');
+  });
+
+  it('reports Skip as a skip', async () => {
+    const answer = prompt.ask({
+      missingCompany: true,
+      missingTitle: true,
+      company: '',
+      title: '',
+      aiOutcome: 'answered',
+    });
+    prompt.skip();
+
+    expect(await answer).toBe('skipped');
+  });
+
   it('says so when nothing read the posting, rather than implying the posting is silent', () => {
     void prompt.ask({
       missingCompany: true,

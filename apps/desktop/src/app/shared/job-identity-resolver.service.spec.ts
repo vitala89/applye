@@ -3,6 +3,7 @@ import { Job, Settings } from '@applye/core';
 import { AiService, DbService, JobSourceService, KeysService } from '@applye/data';
 import { JobIdentityResolverService } from './job-identity-resolver.service';
 import {
+  JobIdentityOutcome,
   JobIdentityPromptService,
   JobIdentityRequest,
 } from './job-identity-prompt/job-identity-prompt.service';
@@ -30,8 +31,8 @@ describe('JobIdentityResolverService', () => {
   let aiHangs: boolean;
   let hasKey: boolean;
   let settings: Partial<Settings> | null;
-  /** What the dialog answers with, or null for a Skip. */
-  let dialogAnswer: { company: string; title: string } | null;
+  /** How the dialog ends: what was typed, a Skip, or replaced by a newer ask. */
+  let dialogAnswer: JobIdentityOutcome;
 
   const JOB: Job = {
     id: 7,
@@ -48,7 +49,7 @@ describe('JobIdentityResolverService', () => {
     aiReply = '{"company": null, "title": "AI-Native Software Developer"}';
     aiHangs = false;
     hasKey = true;
-    dialogAnswer = null;
+    dialogAnswer = 'skipped';
     settings = { aiMode: 'api', provider: 'claude', economyModel: 'haiku' };
 
     const source = {
@@ -109,11 +110,16 @@ describe('JobIdentityResolverService', () => {
     expect(svc.needsNameJobId()).toBeNull();
   });
 
-  it('does nothing for a job whose skip is already recorded', async () => {
+  it('still identifies a job whose skip is recorded, it just does not ask again', async () => {
+    // The skip means "stop asking me", not "stop reading the posting". Bailing
+    // out of the whole phase made every re-parse of a skipped job do nothing,
+    // while the button beside the placeholder still worked - which is exactly
+    // how it was reported.
     svc.start({ ...JOB, identityPromptSkipped: true });
     await settled();
 
-    expect(renderCalls).toEqual([]);
+    expect(renderCalls).toEqual(['job-identify']);
+    expect(setCalls[0].title).toBe('AI-Native Software Developer');
     expect(svc.needsNameJobId()).toBeNull();
   });
 
@@ -228,7 +234,7 @@ describe('JobIdentityResolverService', () => {
   });
 
   it('records a skip and writes no identity', async () => {
-    dialogAnswer = null;
+    dialogAnswer = 'skipped';
 
     const result = await svc.ask(JOB);
 
@@ -271,6 +277,21 @@ describe('JobIdentityResolverService', () => {
 
     expect(svc.identifyingJobId()).toBeNull();
     expect(svc.needsNameJobId()).toBe(7);
+  });
+
+  it('does not record a skip for a dialog replaced by a newer one', async () => {
+    // The fault that made the feature look dead. A second ask resolved the
+    // first with the skip value, the skip was written to the job, and from then
+    // on every parse of that posting did nothing - a first paste dedupes on the
+    // text's hash, so re-pasting landed back on the same flagged row. The user
+    // had never pressed Skip.
+    dialogAnswer = 'superseded';
+
+    const result = await svc.ask(JOB);
+
+    expect(skipCalls).toEqual([]);
+    expect(setCalls).toEqual([]);
+    expect(result.identityPromptSkipped).toBeUndefined();
   });
 
   it('taking the published job does not cancel the dialog it came with', async () => {

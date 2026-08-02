@@ -76,8 +76,13 @@ export class JobIdentityResolverService {
    * the work continues after the caller, and after the page, are gone.
    */
   start(job: Job): void {
-    if (!this.isIncomplete(job) || job.identityPromptSkipped) return;
-    void this.identify(job);
+    if (!this.isIncomplete(job)) return;
+    // A recorded skip silences the DIALOG, not the AI. It means "stop asking
+    // me", and one cheap call that fills in a title without asking anything is
+    // not asking. Bailing out here made every re-parse of a skipped job do
+    // nothing at all, while the button beside the placeholder still worked -
+    // which is precisely how it was reported.
+    void this.identify(job, !job.identityPromptSkipped);
   }
 
   /**
@@ -107,7 +112,7 @@ export class JobIdentityResolverService {
    */
   async ask(job: Job): Promise<Job> {
     this.needsName.set(null);
-    const answer = await this.prompt.ask({
+    const outcome = await this.prompt.ask({
       missingCompany: !job.company,
       missingTitle: !job.title,
       company: job.company ?? '',
@@ -116,7 +121,11 @@ export class JobIdentityResolverService {
       aiError: this.errors.get(job.id),
     });
 
-    if (!answer) {
+    // A request replaced by a newer one is not the user declining anything, so
+    // it records nothing and writes nothing.
+    if (outcome === 'superseded') return job;
+
+    if (outcome === 'skipped') {
       await this.source.jobSkipIdentityPrompt(job.id).catch(() => undefined);
       return this.publish({ ...job, identityPromptSkipped: true });
     }
@@ -125,10 +134,10 @@ export class JobIdentityResolverService {
     // is not a claim about it, so whatever source it already had is kept.
     const named = await this.source.jobSetIdentity(
       job.id,
-      answer.title || job.title,
-      answer.company || job.company,
-      answer.title ? 'user' : job.titleSource,
-      answer.company ? 'user' : job.companySource,
+      outcome.title || job.title,
+      outcome.company || job.company,
+      outcome.title ? 'user' : job.titleSource,
+      outcome.company ? 'user' : job.companySource,
     );
     return this.publish(named);
   }

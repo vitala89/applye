@@ -175,6 +175,21 @@ Before a watch can be marked complete:
   pasted through the modal had to find and press a second button to be asked, which is the work
   Analyze exists to save. Both the text and the link path start it now; the link path usually no-ops,
   because a board that returned structured fields has already named the job.
+- **Sixth round, and the report was diagnostic on its own:** "Set company and role" ran the AI and
+  raised the keychain prompt; Parse & filter and Analyze did nothing. The only difference between
+  those paths is the guards on `start`, and both were wrong.
+  (1) **`start` bailed out entirely on a recorded skip.** The spec says the skip stops the dialog
+  returning; it says nothing about the AI. "Stop asking me" and "stop reading the posting" are not
+  the same instruction, and one cheap call that fills in a title without asking anything is not
+  asking. `start` now always identifies and only suppresses the flag that raises the dialog.
+  (2) **A superseded dialog was recorded as a deliberate skip.** `prompt.ask` answered a pending
+  request with the skip value when a newer one arrived, the resolver wrote
+  `identity_prompt_skipped` to the job, and because a first paste dedupes on the text's hash, every
+  later paste of that posting landed back on the same flagged row and did nothing. The user never
+  pressed Skip once. The outcome is now a three-way `JobIdentityOutcome` - what was typed, `skipped`,
+  `superseded` - and only the middle one writes anything.
+  Both have tests that fail when the fix is backed out, and the second needed a test against the real
+  prompt service: the resolver's own fake short-circuited the supersede path and passed either way.
 - **Next first action:** open the PR, then run the native scenario in `tauri dev`.
 - **Evidence:** command output above, in this session's transcript.
 

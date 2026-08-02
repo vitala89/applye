@@ -17,11 +17,23 @@ export interface JobIdentityRequest {
   aiError?: string;
 }
 
-/** What the user answered, or null when they skipped. */
+/** What the user typed. */
 export interface JobIdentityAnswer {
   company: string;
   title: string;
 }
+
+/**
+ * How one raised dialog ended.
+ *
+ * `superseded` is not `skipped`, and conflating them cost a whole evening: a
+ * second `ask` while one was open resolved the first with the skip value, the
+ * resolver wrote `identity_prompt_skipped` for the job, and from then on every
+ * parse of that posting quietly did nothing - a first paste dedupes on the
+ * text's hash, so re-pasting landed on the same flagged row. The user never
+ * pressed Skip once.
+ */
+export type JobIdentityOutcome = JobIdentityAnswer | 'skipped' | 'superseded';
 
 /**
  * The "we could not name this job" dialog's state.
@@ -33,7 +45,7 @@ export interface JobIdentityAnswer {
 @Injectable({ providedIn: 'root' })
 export class JobIdentityPromptService {
   private readonly request = signal<JobIdentityRequest | null>(null);
-  private decide: ((answer: JobIdentityAnswer | null) => void) | null = null;
+  private decide: ((outcome: JobIdentityOutcome) => void) | null = null;
 
   readonly open = this.request.asReadonly();
 
@@ -57,14 +69,15 @@ export class JobIdentityPromptService {
    * skipped - which Escape and a backdrop click also mean, because they mean
    * "not now".
    */
-  ask(request: JobIdentityRequest): Promise<JobIdentityAnswer | null> {
+  ask(request: JobIdentityRequest): Promise<JobIdentityOutcome> {
     // A second ask while one is open would strand the first caller waiting on a
-    // promise nothing will settle, so the earlier one is answered first.
-    this.decide?.(null);
+    // promise nothing will settle, so the earlier one is answered first - as
+    // superseded, which is emphatically not the user declining.
+    this.decide?.('superseded');
     this.companyDraft.set(request.company);
     this.titleDraft.set(request.title);
     this.request.set(request);
-    return new Promise<JobIdentityAnswer | null>((resolve) => {
+    return new Promise<JobIdentityOutcome>((resolve) => {
       this.decide = resolve;
     });
   }
@@ -82,13 +95,13 @@ export class JobIdentityPromptService {
   }
 
   skip(): void {
-    this.answer(null);
+    this.answer('skipped');
   }
 
-  private answer(answer: JobIdentityAnswer | null): void {
+  private answer(outcome: JobIdentityOutcome): void {
     this.request.set(null);
     const decide = this.decide;
     this.decide = null;
-    decide?.(answer);
+    decide?.(outcome);
   }
 }

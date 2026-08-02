@@ -44,6 +44,73 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, Discover begins, and a measurement I got wrong
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-jd-parsing`, from `main` (`4c4723a`)
+- **Commits:** `321cdc7`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** act on the grilling that closed the previous watch - start Discover at its `.ts`,
+  write the template-binding convention down, and correct the file-size record.
+- **Completed:**
+  - **`jd-blocks.ts`.** `parseJdBlocks` and its two helpers recover structure from a plain-text job
+    description: `strip_html` emits one line per block tag and drops the bullet markers, so bullets,
+    marker-less runs, headings and paragraphs are all inferred. Ninety lines of pure heuristics, no
+    dependency on the component, and no test. 23 tests now. `1242 -> 1163`.
+  - **Two sharp edges pinned rather than smoothed**, because this is a move: a short prose line
+    ending in a colon reads as a heading, since the colon check runs before the word count; and two
+    consecutive lines of ninety characters or less read as a list, which is the price of recovering
+    lists that lost their markers.
+  - The convention from the grilling is in `CODE_QUALITY.md`: a template may bind an injected
+    service directly, and the rule is forward-only.
+- **Not completed:** Discover's template (1070/300) and stylesheet (1915/400) are untouched; the
+  `.ts` is 1163/400. Jobs stays at 1104/400 by decision.
+- **Files or packages changed:** added `apps/desktop/src/app/pages/discover/jd-blocks.ts` and its
+  spec; modified `discover.component.ts`, `docs/governance/CODE_QUALITY.md`, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, `npm test` all six
+  green with **1150** desktop tests, `npm run lint` 6 projects green, `npx nx build desktop`
+  complete, `npm run quality:file-size` pass with base `1242 -> 1163`,
+  `npm run quality:attribution`, `npm run format:check`, `npm run verify:csp`, `git diff --check`
+  all pass. **Not run:** the `cargo` gates, no Rust touched; the browser preview, Tauri-only page.
+- **Privacy/security impact:** none. Pure functions moved.
+- **Decisions and assumptions:** all five from the grilling, confirmed by the maintainer -
+  Discover next and Jobs stopped at 1104; Discover's `.ts` first with styles following; templates
+  may bind services directly; that rule is forward-only; the risky paths get pressed once by hand
+  before more refactoring.
+- **Risks or compatibility impact:** none from this commit. The parser is byte-for-byte the same
+  logic; the tests were written against it, not the other way round.
+- **Open issues or blockers:**
+  - **I reported a file size wrongly to the maintainer during the grilling.** I said
+    `discover.component.scss` was 2215 rather than the recorded 1915, and called the record stale.
+    The record was right: budgets count **non-empty** lines and I had compared a raw `wc -l`. The
+    decisions did not turn on it - Discover's `.ts` is genuinely larger than Jobs' - but the margin
+    is 138 lines, not 256, and a fact offered to settle a decision has to be measured the way the
+    gate measures it.
+  - **A test I wrote was worthless and I nearly kept it.** It checked the heading length cap with a
+    run of `a` characters, which the lexicon rejected anyway, so it passed with the cap deleted.
+    Only mutating the cap exposed it. Every heuristic test needs an input that isolates the rule it
+    claims to test, or it is decoration.
+  - **A latent bug in the parser, found and deliberately not fixed.** The section lexicon holds
+    `responsibilit` and `requirement` followed by `\b`, so neither matches "Responsibilities" or
+    "Requirements" - the exact words they were added for. Those lines are headings only because they
+    usually carry a colon. Fixing it changes parsing on real postings and needs its own commit with
+    a before and after, not a rider on a move.
+  - **The real file-size picture, re-measured**: 57 files over budget, not the 51 on record, and the
+    two worst by ratio have never been named anywhere - `apps/web/src/styles.scss` **2167/400** and
+    `apps/desktop/src-tauri/src/commands/discover.rs` **3245/800**. Neither is in any plan.
+  - Unchanged: the two human release checks on `0.29.2`, plus the three paths from today nobody has
+    seen run (Mark as applied, the My Jobs chip, the Analysed badge). Windows and Linux unverified.
+    The AIF skill set unpruned. Three upstream advisories with drop conditions.
+- **Next first action:** decide whether the `responsibilit` / `requirement` lexicon bug is worth
+  fixing - it is two characters and it changes how real postings render, so it wants a look at a
+  few before and after. Then continue Discover at `scan` (70 lines) or `feedSections` /
+  `visibleRows` / `availableRegions`, which are derivations and testable the same way the parser was.
+- **Evidence:** `npm run quality:file-size` printed `1163/400 ... base 1242` on `321cdc7`;
+  `npm test` printed `1150` for desktop; the heading-cap mutation passed against the first version
+  of its test and failed against the replacement, both confirmed by md5 before reading the result.
+
 ### 2026-08-02, Mark as applied joins the other job actions
 
 - **Status:** partial

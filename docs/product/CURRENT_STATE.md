@@ -30,8 +30,18 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **The jobs page is being taken apart, and is nine extractions in.** `jobs.component.ts` is
-  **1104** non-empty lines against a budget of 400, down from 1467 where the work started. Out so far:
+- **Jobs stops at 1104; Discover is the next target, and the file-size picture was re-measured.**
+  `jobs.component.ts` is **1104** non-empty lines against a budget of 400, down from 1467 where the
+  work started - a deliberate stop, not a failure. Nothing left in it has a single nameable
+  responsibility: 110 declarations, 76 methods, and **48 of those declarations are pure aliases**
+  onto services, which only shrink by binding services in the template (now allowed, see
+  `CODE_QUALITY.md`, forward-only) or by extracting child components.
+  **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio have
+  never been named anywhere: `apps/web/src/styles.scss` at **2167/400** and
+  `apps/desktop/src-tauri/src/commands/discover.rs` at **3245/800**. Budgets count non-empty lines;
+  a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
+  Discover is the page now: `discover.component.ts` **1163/400** (from 1242, after the JD parser
+  came out), `discover.component.html` 1070/300, `discover.component.scss` 1915/400. Out so far:
   `CoverLetterTailorService` (the tailor-an-existing-letter modal, with the base-letter read and the
   content assembly as pure functions) and `job-detail-icons.ts` (the icon table, plus a spec that
   reads the template and asserts every `icons.<name>` it references exists - a class of error

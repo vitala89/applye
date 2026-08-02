@@ -31,6 +31,15 @@ YAGNI, and explicit contracts.
   access, and Tauri commands do not contain large business workflows.
 - **DRY with judgement:** remove duplicated knowledge, not merely repeated syntax. Do not create an
   abstraction before the common responsibility is understood.
+- **A template may bind an injected service directly.** `protected readonly wizard =
+inject(WizardNavService)` and `wizard.open()` in the template is allowed, and preferred over a
+  field that exists only to give the same signal a shorter name. `jobs.component.ts` accumulated 48
+  such aliases - nearly half its declarations - none of which the component itself used. Accepted
+  cost: renaming a service member reaches templates, and the component's surface is wider than what
+  the template strictly needs. Keep an alias when the component genuinely reads the value too, or
+  when the shorter name carries meaning the service's own name does not.
+  **This rule is forward-only.** Existing aliases are not worth a pull request that changes nothing
+  but names; rewrite them when other work already brings you into those lines.
 - **Pure core, imperative shell:** parsing, scoring, mapping, validation, and transformations should
   be pure functions where practical. I/O, Tauri IPC, SQLite, filesystem, keychain, and network access
   stay at explicit boundaries.
@@ -41,14 +50,14 @@ YAGNI, and explicit contracts.
 
 Budgets count non-empty physical lines. They are design alarms, not targets to fill.
 
-| File category | Budget | Required action before exceeding it |
-| --- | ---: | --- |
-| TypeScript / JavaScript source | 400 lines | Extract a focused service, store, pure helper, domain module, or child component |
-| Angular template | 300 lines | Extract a child component or repeated view section |
-| SCSS / CSS | 400 lines | Split by component or responsibility and reuse design tokens |
-| Rust source module | 800 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
-| TypeScript test file | 600 lines | Split by behavior or unit under test |
-| Rust test module/file | 800 lines | Move large inline tests to focused test modules or fixtures |
+| File category                  |    Budget | Required action before exceeding it                                                         |
+| ------------------------------ | --------: | ------------------------------------------------------------------------------------------- |
+| TypeScript / JavaScript source | 400 lines | Extract a focused service, store, pure helper, domain module, or child component            |
+| Angular template               | 300 lines | Extract a child component or repeated view section                                          |
+| SCSS / CSS                     | 400 lines | Split by component or responsibility and reuse design tokens                                |
+| Rust source module             | 800 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
+| TypeScript test file           | 600 lines | Split by behavior or unit under test                                                        |
+| Rust test module/file          | 800 lines | Move large inline tests to focused test modules or fixtures                                 |
 
 The automated gate checks source code under `apps/`, `libs/`, and `tools/`. Generated files,
 lockfiles, snapshots, migrations, fixtures, vendored code, and the central translation catalogue are

@@ -48,6 +48,8 @@ pub fn run() {
             commands::archetypes::check_archetype_match,
             commands::ats::ats_check_run,
             commands::job_paste::job_paste,
+            commands::job_identity_source::job_set_identity,
+            commands::job_identity_source::job_skip_identity_prompt,
             commands::scoring::score_cache_get,
             commands::scoring::score_cache_latest,
             commands::scoring::score_cache_save,

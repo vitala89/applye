@@ -3,6 +3,7 @@ import { Application } from '@applye/core';
 import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../core/toast/toast.service';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 /**
  * The job-level actions that write a row and then tell the rest of the app:
@@ -21,6 +22,7 @@ export class JobActionsService {
   private readonly jobsStore = inject(JobsStore);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly identity = inject(JobIdentityResolverService);
   private readonly t = this.i18n.t;
 
   /** Writable so the page can alias them onto the template. */
@@ -81,6 +83,9 @@ export class JobActionsService {
     this.deleting.set(true);
     try {
       await this.jobsStore.deleteJob(jobId);
+      // The identification badge offers a way back to a job. Deleting one is
+      // the case where that page no longer exists.
+      this.identity.clear(jobId);
       this.toast.success(this.t()('jobs.delete_ok'));
       return true;
     } catch (e) {

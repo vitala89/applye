@@ -13,6 +13,7 @@ pub mod health;
 pub mod import;
 pub mod interview;
 pub mod job_identity;
+pub mod job_identity_source;
 pub mod job_paste;
 pub mod job_url;
 pub mod jobs;

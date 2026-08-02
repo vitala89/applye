@@ -3,12 +3,14 @@ import { DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../core/toast/toast.service';
 import { JobActionsService } from './job-actions.service';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 describe('JobActionsService', () => {
   let svc: JobActionsService;
   let upserted: Record<string, unknown>[];
   let patched: { id: number; patch: Record<string, unknown> }[];
   let deleted: number[];
+  let forgotten: number[];
   let toasts: { kind: string; text: string }[];
   let upsertFails: boolean;
   let deleteFails: boolean;
@@ -17,6 +19,7 @@ describe('JobActionsService', () => {
     upserted = [];
     patched = [];
     deleted = [];
+    forgotten = [];
     toasts = [];
     upsertFails = false;
     deleteFails = false;
@@ -51,6 +54,10 @@ describe('JobActionsService', () => {
         { provide: DbService, useValue: db },
         { provide: JobsStore, useValue: store },
         { provide: ToastService, useValue: toast },
+        {
+          provide: JobIdentityResolverService,
+          useValue: { clear: (id: number) => forgotten.push(id) },
+        },
       ],
     });
     svc = TestBed.inject(JobActionsService);
@@ -97,6 +104,20 @@ describe('JobActionsService', () => {
       expect(await svc.remove(7)).toBe(true);
       expect(deleted).toEqual([7]);
       expect(toasts.at(-1)?.kind).toBe('success');
+    });
+
+    it('stops the identification badge offering a job that no longer exists', async () => {
+      await svc.remove(7);
+
+      expect(forgotten).toEqual([7]);
+    });
+
+    it('keeps the badge when the delete failed', async () => {
+      deleteFails = true;
+
+      await svc.remove(7);
+
+      expect(forgotten).toEqual([]);
     });
 
     it('leaves deleting set on success, because the caller navigates away', async () => {

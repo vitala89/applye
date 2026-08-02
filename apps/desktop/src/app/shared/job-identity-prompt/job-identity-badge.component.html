@@ -1,0 +1,24 @@
+@if (visible()) {
+  <button
+    type="button"
+    class="identity-badge"
+    [class.identity-badge--stacked]="stacked()"
+    [class.identity-badge--busy]="running()"
+    (click)="go()"
+  >
+    <lucide-icon
+      [img]="running() ? icons.loader : icons.ask"
+      [size]="16"
+      [class.identity-badge__spin]="running()"
+      aria-hidden="true"
+    />
+    <span class="identity-badge__text">
+      <strong>{{
+        running() ? t()('jobs.identity_badge_busy') : t()('jobs.identity_badge_ask')
+      }}</strong>
+      <span class="identity-badge__hint">{{
+        running() ? t()('jobs.identity_badge_busy_hint') : t()('jobs.identity_badge_ask_hint')
+      }}</span>
+    </span>
+  </button>
+}

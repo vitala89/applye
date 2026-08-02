@@ -11,6 +11,19 @@
  */
 export type IdentityPrecedence = 'authoritative' | 'fallback';
 
+/**
+ * Where a stored company or title came from.
+ *
+ * `extracted` - read out of the posting by the deterministic rules, or handed
+ * over by a caller that read a structured field off a job board.
+ * `inferred` - named by the AI step, which reads prose the rules cannot. Shown
+ * with a marker, so it never reads as a quotation from the posting.
+ * `user` - typed by hand. Never overwritten by a re-parse.
+ *
+ * Undefined on a job stored before the sources were recorded.
+ */
+export type IdentitySource = 'extracted' | 'inferred' | 'user';
+
 export interface Job {
   id: number;
   company?: string;
@@ -30,6 +43,10 @@ export interface Job {
   discoverShownAt?: string;
   techStack?: string;
   createdAt?: string;
+  titleSource?: IdentitySource;
+  companySource?: IdentitySource;
+  /** The user was asked to name a missing field and chose Skip. */
+  identityPromptSkipped?: boolean;
 }
 
 export interface ScoringCache {

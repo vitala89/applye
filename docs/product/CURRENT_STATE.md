@@ -160,9 +160,36 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   the real posting needed; the second found that a stored value re-entered through the fallback path
   the rules leave open, and that the same hole had a copy in the SQL. The labelled scan now reads
   every line, the fallback validates what it is handed, and the regression fixture asserts its own
-  length so it cannot be trimmed into uselessness. AI-assisted identification for postings that name
-  neither, then a dialog asking the user, is specified but not built, in
-  `docs/superpowers/specs/2026-08-02-job-identity-part-b-design.md`.
+  length so it cannot be trimmed into uselessness. Part B, specified in
+  `docs/superpowers/specs/2026-08-02-job-identity-part-b-design.md`, is now built - see below.
+- **When the rules cannot name a posting, one AI call tries, and then the user is asked.** One press
+  of Parse & filter carries the chain: rules at 0 tokens, then a single `job-identify` call on the
+  economy model only if they missed, then a dialog. Not three buttons - the AI step runs exactly when
+  a button would have been worth pressing. The posting that defined the problem states its role in
+  prose and names no employer at all, because a matching platform listed it on behalf of an unnamed
+  partner; **naming that platform is the canonical wrong answer**, and the prompt says so in as many
+  words. Three new columns on `jobs` (`title_source`, `company_source`, `identity_prompt_skipped`,
+  migration `0028`, additive) record where each half of the identity came from, which is what decides
+  a re-parse: `user` is never overwritten, `inferred` yields to a real extraction and is kept when
+  there is none, `extracted` behaves as part A left it. That first rule is load-bearing - without it a
+  hand-typed company goes through `is_usable_company` on the next parse and is discarded for not
+  looking like a company name. `job_set_identity` writes the identity columns only, so naming a job
+  cannot fork it or invalidate its cached score. The phase runs off the parse, not inside it: `job_paste` returns and the button
+  frees, then a root singleton names the job in the background under a 45-second bound, reports
+  itself on the card and - once the user leaves - in a corner badge beside the resume-tailor one.
+  Awaiting it inside the parse was the first cut and produced exactly the symptom you would expect:
+  a spinner that never stopped. Resolution and storage live in
+  `apps/desktop/src-tauri/src/commands/job_identity_source.rs`; the chain is
+  `JobIdentityResolverService`; the dialog is mounted at the shell beside `UnsavedJobPromptComponent`;
+  and `job-meta-card` came out of the jobs page to host the inferred marker and the "Name it yourself"
+  button. **Verified natively:** the maintainer ran the whole chain in `tauri dev` - migration `0028`
+  applies, the parse returns immediately, the AI names what it can, the dialog asks about the rest,
+  the header follows the job, and the rename button works from both entry points. Six rounds of
+  correction were needed to get there and five of them were found by running the application, not by
+  a test: an NG0600 the dialog threw on every open, a settings source nothing in the app populates so
+  the AI step never ran once, a superseded dialog recorded as a deliberate skip which then silenced
+  every later parse of the same posting, a page header pushed from one call site that every other
+  path forgot, and the parse itself blocking on an AI call and a human dialog.
 - **A job is a row, not a hash of its text, and My Jobs holds only the ones you claimed.** Editing a
   saved job's description used to fork it: `job_paste` upserted on `jd_hash`, so an edit matched
   nothing and inserted a second job every time while the row on screen kept the old text. It now

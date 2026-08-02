@@ -10,6 +10,7 @@ use tauri::State;
 use crate::commands::job_identity::{
     extract_company, extract_title, is_usable_company, is_usable_title,
 };
+use crate::commands::job_identity_source::{load_stored, resolve_field, ResolvedField};
 use crate::db::{stable_hash, Db};
 
 fn hard_filter(text: &str) -> bool {
@@ -82,25 +83,6 @@ pub async fn job_paste(
     .await
 }
 
-/// Resolve one field against the text according to `precedence`.
-/// `usable` is applied only on the fallback path, where `passed` is a value this
-/// job already held. Extraction rejecting a string and storage handing the same
-/// string straight back would leave the rules with no effect on any job parsed
-/// before them. On the authoritative path the caller's value is not a guess and
-/// is not second-guessed.
-fn resolve_identity(
-    passed: Option<String>,
-    extracted: Option<String>,
-    precedence: IdentityPrecedence,
-    usable: fn(&str) -> bool,
-) -> Option<String> {
-    let passed = passed.filter(|s| !s.trim().is_empty());
-    match precedence {
-        IdentityPrecedence::Authoritative => passed.or(extracted),
-        IdentityPrecedence::Fallback => extracted.or(passed.filter(|s| usable(s))),
-    }
-}
-
 /// Core of `job_paste`, decoupled from `tauri::State` so it can be exercised
 /// directly against a plain pool in tests.
 pub(crate) async fn job_paste_core(
@@ -113,19 +95,27 @@ pub(crate) async fn job_paste_core(
 ) -> Result<crate::commands::jobs::Job, String> {
     let jd_hash = stable_hash(&jd_text);
     let hard_pass = hard_filter(&jd_text);
-    let title = resolve_identity(
+    // What this job already holds, and where each half of it came from. The
+    // sources decide what a re-parse is allowed to overwrite; see
+    // `job_identity_source::resolve_field`.
+    let stored = load_stored(pool, job_id, &jd_hash).await?;
+    let fallback = precedence == IdentityPrecedence::Fallback;
+    let title = resolve_field(
         title_override,
         extract_title(&jd_text),
-        precedence,
+        stored.title.clone(),
+        stored.title_source(),
+        fallback,
         is_usable_title,
     );
-    let company = resolve_identity(
+    let company = resolve_field(
         company_override,
         extract_company(&jd_text),
-        precedence,
+        stored.company.clone(),
+        stored.company_source(),
+        fallback,
         is_usable_company,
     );
-    let prefer_fresh = i64::from(precedence == IdentityPrecedence::Fallback);
 
     // Legitimacy is informational only - it never blocks the hard filter or
     // scoring, it just gets recorded alongside the job (augmentation, not a gate).
@@ -133,14 +123,14 @@ pub(crate) async fn job_paste_core(
         let apply_email = crate::commands::legitimacy::extract_apply_email(&jd_text);
         let (mut tier, mut notes) = crate::commands::legitimacy::legitimacy_check(
             &jd_text,
-            company.as_deref(),
+            company.value.as_deref(),
             apply_email.as_deref(),
         );
         let duplicate = crate::commands::legitimacy::duplicate_jd_other_company(
             pool,
             &jd_text,
             &jd_hash,
-            company.as_deref(),
+            company.value.as_deref(),
         )
         .await
         .map_err(|e| format!("job_paste: duplicate check: {e}"))?;
@@ -176,34 +166,35 @@ pub(crate) async fn job_paste_core(
         .await;
     }
 
+    // The resolved values are already the whole answer for this row - the
+    // stored ones were read back and weighed above - so they are written
+    // outright, including when they are NULL. Keeping the stored value on NULL
+    // here would put back exactly the string the rules just rejected.
+    // `identity_prompt_skipped` is deliberately absent: a re-parse is not the
+    // user changing their mind about being asked.
     sqlx::query(
         "INSERT INTO jobs
-           (company, title, jd_text, jd_hash, hard_filter_passed, legitimacy_tier, legitimacy_notes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+           (company, title, company_source, title_source, jd_text, jd_hash,
+            hard_filter_passed, legitimacy_tier, legitimacy_notes, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(jd_hash) DO UPDATE SET
-           -- Authoritative: backfill a missing company/title without clobbering
-           -- an existing one. Fallback: the resolved value is already the whole
-           -- answer for this row - fresh extraction, or a stored value that
-           -- still passes today's rules, or nothing - so it wins outright,
-           -- including when it is NULL. Keeping the stored value on NULL here
-           -- would put back exactly the string the rules just rejected.
-           company            = CASE WHEN ? = 1 THEN excluded.company
-                                     ELSE COALESCE(NULLIF(jobs.company, ''), excluded.company) END,
-           title              = CASE WHEN ? = 1 THEN excluded.title
-                                     ELSE COALESCE(NULLIF(jobs.title, ''), excluded.title) END,
+           company            = excluded.company,
+           title              = excluded.title,
+           company_source     = excluded.company_source,
+           title_source       = excluded.title_source,
            hard_filter_passed = excluded.hard_filter_passed,
            legitimacy_tier    = excluded.legitimacy_tier,
            legitimacy_notes   = excluded.legitimacy_notes",
     )
-    .bind(&company)
-    .bind(&title)
+    .bind(&company.value)
+    .bind(&title.value)
+    .bind(company.source_str())
+    .bind(title.source_str())
     .bind(&jd_text)
     .bind(&jd_hash)
     .bind(hard_pass as i64)
     .bind(&legitimacy_tier)
     .bind(&legitimacy_notes)
-    .bind(prefer_fresh)
-    .bind(prefer_fresh)
     .execute(pool)
     .await
     .map_err(|e| format!("job_paste: {e}"))?;
@@ -231,8 +222,8 @@ async fn update_job_in_place(
     id: i64,
     jd_text: &str,
     jd_hash: &str,
-    company: Option<String>,
-    title: Option<String>,
+    company: ResolvedField,
+    title: ResolvedField,
     hard_pass: bool,
     legitimacy_tier: &str,
     legitimacy_notes: &Option<String>,
@@ -254,12 +245,15 @@ async fn update_job_in_place(
 
     sqlx::query(
         "UPDATE jobs SET
-           company = ?, title = ?, jd_text = ?, jd_hash = ?,
+           company = ?, title = ?, company_source = ?, title_source = ?,
+           jd_text = ?, jd_hash = ?,
            hard_filter_passed = ?, legitimacy_tier = ?, legitimacy_notes = ?
          WHERE id = ?",
     )
-    .bind(&company)
-    .bind(&title)
+    .bind(&company.value)
+    .bind(&title.value)
+    .bind(company.source_str())
+    .bind(title.source_str())
     .bind(jd_text)
     .bind(jd_hash)
     .bind(hard_pass as i64)

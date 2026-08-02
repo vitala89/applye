@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DbService, JobSourceService } from '@applye/data';
 import { JobIntakeService } from './job-intake.service';
+import { JobIdentityResolverService } from './job-identity-resolver.service';
 
 describe('JobIntakeService', () => {
   let svc: JobIntakeService;
@@ -17,6 +18,7 @@ describe('JobIntakeService', () => {
   let hardFilterPassed: boolean;
   let cachedScore: Record<string, unknown> | null;
   let archetypeResult: boolean;
+  let resolveCalls: number[];
 
   beforeEach(() => {
     pasteCalls = [];
@@ -26,6 +28,7 @@ describe('JobIntakeService', () => {
     hardFilterPassed = true;
     cachedScore = null;
     archetypeResult = true;
+    resolveCalls = [];
 
     // Two fakes, because the parse itself moved to JobSourceService while the
     // cache probe and the archetype check stayed on DbService.
@@ -60,11 +63,26 @@ describe('JobIntakeService', () => {
       },
     };
 
+    // The identify-then-ask chain is its own service and has its own spec.
+    // Here it only has to be observable: the parse must hand it the job and
+    // must NOT wait for it.
+    const identity = {
+      start: (job: { id: number }) => {
+        resolveCalls.push(job.id);
+        // Stands in for the real phase: an AI call, then a dialog nobody may
+        // ever answer. `start` is void, so a caller cannot legitimately wait on
+        // it - and one that does anyway hangs this test, which is exactly the
+        // failure the user saw as a spinner that never stopped.
+        return new Promise(() => undefined) as unknown as void;
+      },
+    };
+
     TestBed.configureTestingModule({
       providers: [
         JobIntakeService,
         { provide: DbService, useValue: db },
         { provide: JobSourceService, useValue: source },
+        { provide: JobIdentityResolverService, useValue: identity },
       ],
     });
     svc = TestBed.inject(JobIntakeService);
@@ -177,6 +195,25 @@ describe('JobIntakeService', () => {
     await svc.parse({ jdText: 'jd', previous: { id: 1, title: 'The Purpose:' } });
 
     expect(pasteCalls[0].precedence).toBe('fallback');
+  });
+
+  it('starts the identification phase without waiting for it', async () => {
+    // The phase is an AI round-trip followed by a dialog the user answers in
+    // their own time. Awaiting it here is what left Parse & filter spinning on
+    // work that was not the parse.
+    const result = await svc.parse({ jdText: 'jd' });
+
+    expect(resolveCalls).toEqual([7]);
+    expect(result?.job.id).toBe(7);
+    expect(svc.parsing()).toBe(false);
+  });
+
+  it('does not try to name a job the hard filter blocked', async () => {
+    hardFilterPassed = false;
+
+    await svc.parse({ jdText: 'jd' });
+
+    expect(resolveCalls).toEqual([]);
   });
 
   it('names the job being re-parsed so an edit does not fork it', async () => {

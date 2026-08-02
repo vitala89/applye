@@ -1,0 +1,61 @@
+/* Same corner and shape as the resume-tailor badge, one tone quieter: naming a
+   job is an offer, not an unfinished task the user owes anything to. */
+.identity-badge {
+  position: fixed;
+  right: var(--space-6, 20px);
+  bottom: var(--space-6, 20px);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3, 8px);
+  padding: var(--space-3, 8px) var(--space-5, 16px);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-full, 999px);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgb(0 0 0 / 25%));
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--dur-fast, 140ms) var(--ease-standard);
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  /* Clear of the resume-tailor badge when both are on screen. */
+  &--stacked {
+    bottom: calc(var(--space-6, 20px) + 64px);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+
+    strong {
+      font-size: var(--text-body, 14px);
+      font-weight: var(--weight-semibold, 600);
+    }
+  }
+
+  &__hint {
+    font-size: var(--text-2xs, 11px);
+    color: var(--text-tertiary);
+  }
+
+  &__spin {
+    animation: identity-badge-spin 900ms linear infinite;
+  }
+}
+
+@keyframes identity-badge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .identity-badge__spin {
+    animation: none;
+  }
+}

@@ -676,6 +676,32 @@ export const es: TranslationMap = stub(en, {
     unsaved_stay: 'Quedarme',
     unsaved_leave: 'Salir igualmente',
     title_unknown: 'Puesto sin identificar',
+    identity_title: 'Identifica esta oferta',
+    identity_ask_both:
+      'La oferta no indica la empresa ni el puesto con la claridad suficiente para leerlos. Rellena lo que sepas.',
+    identity_ask_company:
+      'La oferta no nombra al empleador. Puede estar publicada por una plataforma en nombre de un socio sin nombrar. Rellenalo si lo sabes.',
+    identity_ask_title:
+      'La oferta no indica el puesto con la claridad suficiente para leerlo. Rellenalo si lo sabes.',
+    identity_company_label: 'Empresa',
+    identity_company_ph: 'Nombre del empleador',
+    identity_title_label: 'Puesto',
+    identity_title_ph: 'p. ej. Backend Engineer',
+    identity_skip: 'Omitir',
+    identity_skip_hint:
+      'Al omitir se mantienen los marcadores y no se vuelve a preguntar por esta oferta.',
+    identity_inferred: 'deducido',
+    identity_inferred_hint: 'Deducido por la IA a partir de la oferta, no citado de ella.',
+    identity_name_it: 'Indicar empresa y puesto',
+    identity_edit_it: 'Editar empresa y puesto',
+    identity_ai_off:
+      'La identificacion por IA no esta configurada, asi que nadie leyo esta oferta por ti.',
+    identity_ai_failed: 'No se pudo ejecutar el paso de IA, asi que nunca leyo esta oferta.',
+    identity_identifying: 'identificando…',
+    identity_badge_busy: 'Identificando una oferta',
+    identity_badge_busy_hint: 'Buscando la empresa y el puesto en segundo plano.',
+    identity_badge_ask: 'Identifica esta oferta',
+    identity_badge_ask_hint: 'La oferta no lo dice. Abrela para rellenarlo.',
     parsing: 'Analizando…',
     hard_filter_failed: 'Filtro estricto no superado',
     hard_filter_msg:

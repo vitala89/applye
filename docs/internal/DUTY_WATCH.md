@@ -44,7 +44,161 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-02 (latest), five fixes on one screen, two of which my own tests should have caught
+### 2026-08-02, job identity part B: AI names it, then the user does
+
+- **Status:** complete, verified natively
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `feat/job-identity-part-b`, from `main` (`825fa74`)
+- **Commits:** one
+- **Pull request:** not yet opened
+- **Objective:** implement `docs/superpowers/specs/2026-08-02-job-identity-part-b-design.md` -
+  one press of Parse & filter runs the deterministic rules, then one `job-identify` call if they
+  missed, then a dialog if that missed too.
+- **Completed:**
+  - migration `0028_job_identity_sources.sql`: `title_source`, `company_source`,
+    `identity_prompt_skipped`. Additive, no backfill, checksum pinned in `db.rs`;
+  - `commands/job_identity_source.rs`: `IdentitySource`, the re-parse resolution rules,
+    `job_set_identity` and `job_skip_identity_prompt`. New module rather than growth in
+    `job_identity.rs` (pure text rules) or `job_paste.rs` (the pipeline), because it is the only
+    piece that needs both the stored row and the fresh text;
+  - `job_paste.rs` now loads the stored identity, resolves both fields against it, and writes the
+    sources. The `prefer_fresh` CASE in the upsert went away: the values are already resolved in
+    Rust, so the SQL writes them outright;
+  - `libs/skills/src/job-identify/job-identify.md`, registered in `ai/skills.rs`, economy model,
+    strict JSON, with the platform-is-not-the-employer and unnamed-partner rules pinned by tests;
+  - `JobIdentityResolverService` runs the chain from `JobIntakeService.parse`;
+  - `JobIdentityPromptComponent` mounted at the shell beside `UnsavedJobPromptComponent`;
+  - `JobMetaCardComponent` extracted from the jobs page to host the inferred marker and the
+    "Name it yourself" button - both page files were over budget and could not grow;
+  - 13 keys in all six locales.
+- **Not completed:** the native pass. Migration `0028` applying, the live `job-identify` call, and
+  the dialog on screen all need `tauri dev`, which this watch does not run. The maintainer has a
+  step-by-step scenario in the handover message.
+- **Files or packages changed:** `apps/desktop/src-tauri` (migration, `db.rs`, `lib.rs`,
+  `commands/{mod,jobs,job_paste,job_identity_source}.rs`, `ai/skills.rs`), `libs/skills`,
+  `libs/core` (`job.model.ts`), `libs/data` (`job-source.service.ts`), `libs/i18n` (six locales),
+  `apps/desktop/src/app` (shell layout, jobs page, `job-meta-card`, `job-identity-prompt`,
+  `job-identity-resolver.service.ts`, `job-intake.service.ts`).
+- **Validation, all run and observed:** `npm run type-check`, `npm test` (958 desktop tests, 61
+  suites, all six projects green), `npm run lint` (0 errors, 8 pre-existing warnings, none in new
+  files), `cargo test --lib` (338 pass), `cargo clippy --all-targets -- -D warnings`,
+  `cargo fmt --check`, `npm run quality:file-size` (passed), `npm run quality:attribution`,
+  `npm run format:check`, `npm run verify:csp`, `git diff --check`, `npx nx build desktop`.
+- **Every new rule was checked against a deliberately broken build.** Disabling the `user` rule fails
+  4 tests; disabling the `inferred` arm fails 2; disabling the skip check fails 1; removing the
+  provider-configured guard fails 1. Two fixtures assert the property the test depends on - that the
+  posting extracts no company, and that it extracts no title - because a green test on an
+  unrepresentative fixture has already shipped a bug in this exact code.
+- **Privacy/security impact:** the AI step sends the pasted job description to the configured
+  provider, which is the same text `job-scoring` and the tailoring passes already send, on the same
+  configured provider and key. Nothing new leaves the machine. Skipped entirely when no provider key
+  is stored, so a user who has not set up AI never makes the call.
+- **Decisions and assumptions:**
+  - the "no provider configured" check is `hasProviderKey` in API mode only. In CLI mode the bridge
+    binary is the credential and probing it costs a process spawn per parse, so the call is attempted
+    and its failure falls through to the dialog, which is the same user-visible outcome;
+  - a field the user leaves blank in the dialog keeps whatever source it had. Leaving it empty is not
+    a claim about it;
+  - `askAgain` is `resolve` with the skip cleared, so the button beside the placeholder re-runs the
+    AI step too rather than jumping straight to the dialog.
+- **Risks or compatibility impact:** the upsert's authoritative branch was re-expressed in Rust as
+  `stored.or(passed).or(extracted)`, which is what the old `COALESCE(NULLIF(jobs.company, ''), ...)`
+  did. Existing `job_paste` tests cover both branches and still pass.
+- **Open issues or blockers:** unchanged from the previous watch - unclaimed jobs accumulate as
+  invisible rows, and `dashboard.component.ts:270` still loses the name of an unclaimed job.
+- **Corrected within the same watch, by the maintainer testing it.** The first cut awaited the
+  identification phase inside `JobIntakeService.parse`, so Parse & filter stayed disabled across an
+  AI call bounded at ten minutes by `ai_run` and then across a dialog bounded by nothing at all.
+  Reported as "нажали парсинг, и он завис". Leaving the page mid-phase orphaned the promise and the
+  page came back reset. Fixed by making identification a phase that runs _after_ the parse on the
+  root singleton, with its own 45-second bound, an `identifying...` line on the card, and a corner
+  badge for a user who navigated away - the shape `WizardActivityService` and the resume-tailor
+  badge already use. No "you will lose the parse" warning was added, because nothing is lost: the
+  job row is written before the phase starts. The dialog is raised by the component rendering the
+  job rather than by the service, so it cannot appear over Pipeline. Both regressions have tests
+  that hang or fail without the fix.
+- **Two more found by reviewing the diff before the PR, both with tests that fail without them.**
+  The page adopting a named job left the published snapshot in place, so a later rebuild of the same
+  card would re-emit it over a row freshly read from the database; taking it now drops it. Doing that
+  through the wider `clear` would have been the trap: one identify call sets both signals - the AI
+  names the title and publishes, then flags the still-missing company - so clearing the flag on
+  consume would cancel the dialog it exists to raise. `consumeResolved` and `clear` are separate for
+  that reason, and a test pins it. Separately, deleting a job now clears the badge, which was
+  otherwise left offering a page that no longer exists.
+- **Third round, from the maintainer running it natively.** Three faults on one screen.
+  (1) **NG0600, "Writing to signals is not allowed in a `computed`"**, twice per open. The dialog
+  seeded its two inputs from a computed, so it threw on every open, never rendered, and the job went
+  unnamed with two error toasts to show for it. Every unit test around it passed - the rule is
+  enforced at render time. The two drafts now live on the prompt service and are seeded in `ask`, an
+  ordinary method call, and there is a component spec that builds and opens the dialog for real. It
+  reproduces NG0600 when the old shape is restored.
+  (2) **The AI step failing invisibly.** `catch {}` swallowed every reason, so "the posting names no
+  employer" and "nothing ever read the posting" looked identical on screen. The dialog now states
+  which of the three it was - answered, no provider configured, or failed - and prints the provider's
+  own error verbatim underneath. Whether the AI actually ran on the reported posting is still unknown
+  from here; the next run will say so on screen instead of requiring another round trip.
+  (3) **"Name it yourself" was unfindable**, rendered as uppercase micro-text in the badge row where
+  it read as a label. It is now a real secondary button under the two fields it is about, labelled
+  "Set company and role", and shown only when a field is missing or holds a value the AI guessed.
+- **Fourth round, again from the maintainer running it.** The dialog worked - a job was named by
+  hand - and four things around it did not.
+  (1) **The empty state flashed on every parse.** `parseAndFilter` clears the job before parsing, and
+  `@if (!job())` rendered "paste a job description" in the gap. It now also waits on `parsing()`.
+  (2) **"Parsing" was drawn twice**, once as the button label and once as an animated indicator
+  beside it. The indicator is gone - the parse is milliseconds now, so it was reporting nothing.
+  (3) **The page header did not follow the job.** `pageTitle.set` was pushed from `loadJob` alone, so
+  every other path had to remember and neither the re-parse nor naming a job by hand did. It is now
+  derived from the `job` signal in an effect, which no future path can forget.
+  (4) **No way to correct a name once given.** The button hid itself as soon as both fields were
+  filled, which is exactly when a typo needs fixing. It is always offered now; only the label changes
+  between "Set company and role" and "Edit company and role".
+- **The header fix needed budget, so the German photo prompt came out.** `jobs.component.ts` was
+  1509/400 and may not grow. `CvPhotoPromptService` (89 lines, 7 tests where it had none) takes the
+  once-per-visit flag, the dialog state and the one document write; the page keeps a 12-line adapter,
+  because deciding what to do with the returned document is the page's. Two more duplications went
+  with it: `portalLanguages` was a hand-kept copy of the `SupportedLanguage` union and is now
+  `SUPPORTED_LANGUAGES` in core beside the type, with `normalizeSupportedLanguage`; and
+  `inferDocumentRegion` moved next to the `DocumentRegionTag` it returns. `parseLegitimacyNotes` went
+  to core with 4 tests, including the malformed column that used to be caught by a bare `try`.
+  **`jobs.component.ts` 1509 -> 1467, template 1126 -> 1122.**
+- **Fifth round, and the AI step had never run once.** The dialog reported "AI identification is not
+  set up" on a machine with a provider configured, which is what the outcome line was added to
+  surface. Cause: the resolver read settings from `SettingsService.current()`, and **nothing in the
+  application calls `SettingsService.load()`** - a grep for its name returns exactly one consumer,
+  the resolver itself. `current()` was null on every run, so `callIdentify` returned at its first
+  guard and the AI step silently never happened for anyone. It now reads `db.getSettings()`, the way
+  every other consumer in the app does, which also means a provider configured a minute ago is picked
+  up without a reload. Nothing but the outcome line would have found this: the feature failed exactly
+  as a posting with no employer succeeds.
+- **Identification now follows the Paste Job modal as well.** Analyze creates a job out of raw text,
+  which is the same event as Parse & filter, and only the second one ran the chain - so a user who
+  pasted through the modal had to find and press a second button to be asked, which is the work
+  Analyze exists to save. Both the text and the link path start it now; the link path usually no-ops,
+  because a board that returned structured fields has already named the job.
+- **Sixth round, and the report was diagnostic on its own:** "Set company and role" ran the AI and
+  raised the keychain prompt; Parse & filter and Analyze did nothing. The only difference between
+  those paths is the guards on `start`, and both were wrong.
+  (1) **`start` bailed out entirely on a recorded skip.** The spec says the skip stops the dialog
+  returning; it says nothing about the AI. "Stop asking me" and "stop reading the posting" are not
+  the same instruction, and one cheap call that fills in a title without asking anything is not
+  asking. `start` now always identifies and only suppresses the flag that raises the dialog.
+  (2) **A superseded dialog was recorded as a deliberate skip.** `prompt.ask` answered a pending
+  request with the skip value when a newer one arrived, the resolver wrote
+  `identity_prompt_skipped` to the job, and because a first paste dedupes on the text's hash, every
+  later paste of that posting landed back on the same flagged row and did nothing. The user never
+  pressed Skip once. The outcome is now a three-way `JobIdentityOutcome` - what was typed, `skipped`,
+  `superseded` - and only the middle one writes anything.
+  Both have tests that fail when the fix is backed out, and the second needed a test against the real
+  prompt service: the resolver's own fake short-circuited the supersede path and passed either way.
+- **Native gate passed.** The maintainer ran the whole chain in `tauri dev` and confirmed it: the
+  parse returns immediately, the AI step runs and names what it can, the dialog asks about the rest,
+  the header follows the job, and the rename button works from both entry points. Six rounds of
+  correction in one watch, five of them found by running the application rather than by any test -
+  which is the honest summary of what unit tests bought here and what they did not.
+- **Next first action:** the deferred items below, in the order listed.
+- **Evidence:** command output above, in this session's transcript.
+
+### 2026-08-02, five fixes on one screen, two of which my own tests should have caught
 
 - **Status:** complete
 - **Agent/tool:** Claude Code, Opus

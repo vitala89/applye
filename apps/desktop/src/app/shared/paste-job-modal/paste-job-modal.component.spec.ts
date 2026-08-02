@@ -4,6 +4,7 @@ import { UrlClassification } from '@applye/core';
 import { DbService, JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { PasteJobModalComponent } from './paste-job-modal.component';
+import { JobIdentityResolverService } from '../job-identity-resolver.service';
 
 /** The protected signals the tests read. TypeScript's `protected` is a
  * compile-time rule; the component's own behaviour is what is under test. */
@@ -14,6 +15,8 @@ type Internals = {
   isUnknownDomain: () => boolean;
   linkError: () => string;
   submitLink: () => Promise<void>;
+  textValue: { set(v: string): void };
+  submitText: () => Promise<void>;
 };
 
 describe('PasteJobModalComponent', () => {
@@ -22,12 +25,14 @@ describe('PasteJobModalComponent', () => {
   let classifyFails: boolean;
   let pasted: string[];
   let navigated: unknown[][];
+  let identified: number[];
 
   beforeEach(() => {
     classification = { kind: 'allowed', source: 'greenhouse' };
     classifyFails = false;
     pasted = [];
     navigated = [];
+    identified = [];
 
     const source = {
       classifyJobUrl: () =>
@@ -46,6 +51,10 @@ describe('PasteJobModalComponent', () => {
         { provide: DbService, useValue: {} },
         { provide: JobSourceService, useValue: source },
         { provide: Router, useValue: { navigate: (c: unknown[]) => navigated.push(c) } },
+        {
+          provide: JobIdentityResolverService,
+          useValue: { start: (j: { id: number }) => identified.push(j.id) },
+        },
       ],
     });
 
@@ -89,5 +98,23 @@ describe('PasteJobModalComponent', () => {
 
     expect(pasted).toEqual(['jd text']);
     expect(navigated).toEqual([['/jobs', 5]]);
+  });
+
+  it('starts the identification chain on Analyze, not only on Parse and filter', async () => {
+    // Otherwise a user who pasted a posting the rules could not read has to
+    // find a second button and press it to be asked - which is what the
+    // Analyze button was supposed to save them.
+    modal.tab.set('text');
+    modal.textValue.set('a posting that names nobody');
+    await modal.submitText();
+
+    expect(pasted).toEqual(['a posting that names nobody']);
+    expect(identified).toEqual([5]);
+  });
+
+  it('starts it for a job fetched from a link too', async () => {
+    await modal.submitLink();
+
+    expect(identified).toEqual([5]);
   });
 });

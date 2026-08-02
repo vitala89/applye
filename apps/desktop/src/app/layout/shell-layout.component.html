@@ -179,3 +179,8 @@
 
 <app-paste-job-modal />
 <app-unsaved-job-prompt />
+<app-job-identity-prompt />
+
+<!-- Identification runs after the parse and outlives the page, so it reports
+     itself in the corner rather than by holding a button disabled. -->
+<app-job-identity-badge [stacked]="!!resumeProgress()" />

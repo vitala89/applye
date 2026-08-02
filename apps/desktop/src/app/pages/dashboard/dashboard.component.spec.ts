@@ -1,0 +1,103 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { DbService } from '@applye/data';
+import { TranslateService } from '@applye/i18n';
+import { DashboardComponent } from './dashboard.component';
+import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
+import { WizardProgressService } from '../../shared/wizard-progress.service';
+
+/**
+ * The resume card must name the job it reopens.
+ *
+ * `listJobsOverview()` returns only the jobs the user claimed, so a session
+ * started on an analysed-but-unsaved job has no row there and the card rendered
+ * "Resume tailoring for" with nothing after it. These tests build the real
+ * component and read the rendered card, because the bug lives in the wiring
+ * between an async lookup and a synchronous `computed` - the place a stubbed
+ * unit test cannot see.
+ *
+ * `WizardProgressService` is the real service, driven through its own `set()`.
+ */
+describe('DashboardComponent resume card', () => {
+  let fixture: ComponentFixture<DashboardComponent>;
+  let getJob: jest.Mock;
+
+  const CLAIMED = { id: 7, title: 'Backend Engineer', company: 'Acme', status: 'saved' };
+
+  async function build(): Promise<void> {
+    fixture = TestBed.createComponent(DashboardComponent);
+    // The component loads from its constructor, so let that settle before reading the DOM.
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function cardTitles(): string[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.qcard__title')).map((el) =>
+      ((el as HTMLElement).textContent ?? '').trim(),
+    );
+  }
+
+  function resumeTitle(): string {
+    return cardTitles().find((t) => t.startsWith('Resume tailoring for')) ?? '';
+  }
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    getJob = jest.fn().mockResolvedValue({ id: 12, title: 'Platform Engineer', company: 'Globex' });
+
+    const dbStub: Partial<DbService> = {
+      listPipelineCards: jest.fn().mockResolvedValue([]),
+      listJobsOverview: jest.fn().mockResolvedValue([CLAIMED]),
+      getProfile: jest
+        .fn()
+        .mockResolvedValue({ id: 1, fullMd: '# Someone', updatedAt: '2026-08-02' }),
+      hashText: jest.fn().mockResolvedValue('hash'),
+      getJob,
+    };
+
+    TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [
+        provideRouter([]),
+        { provide: DbService, useValue: dbStub },
+        { provide: PasteJobModalService, useValue: { open: jest.fn() } },
+        TranslateService,
+        WizardProgressService,
+      ],
+    });
+  });
+
+  it('names a claimed job from the overview list, without reading the database', async () => {
+    TestBed.inject(WizardProgressService).set(CLAIMED.id, 2);
+    await build();
+
+    expect(resumeTitle()).toBe('Resume tailoring for Acme');
+    expect(getJob).not.toHaveBeenCalled();
+  });
+
+  // The regression: job 12 is analysed but unclaimed, so it is absent from the
+  // overview list and the card used to render a bare caption.
+  it('names an unclaimed job by reading it directly', async () => {
+    TestBed.inject(WizardProgressService).set(12, 1);
+    await build();
+
+    expect(getJob).toHaveBeenCalledWith(12);
+    expect(resumeTitle()).toBe('Resume tailoring for Globex');
+  });
+
+  it('falls back to the job id when the job cannot be read at all', async () => {
+    getJob.mockRejectedValue(new Error('db down'));
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    TestBed.inject(WizardProgressService).set(12, 1);
+    await build();
+
+    expect(resumeTitle()).toBe('Resume tailoring for #12');
+  });
+
+  it('shows no resume card when no tailoring session is in flight', async () => {
+    await build();
+
+    expect(resumeTitle()).toBe('');
+    expect(getJob).not.toHaveBeenCalled();
+  });
+});

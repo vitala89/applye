@@ -44,6 +44,56 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, session closed: Discover's .ts stops at 1069
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `docs/close-session-handoff`, from `main` (`aab6a09`)
+- **Commits:** one, documentation only
+- **Pull request:** opened after this entry
+- **Objective:** answer the previous entry's question - whether Discover's `.ts` is done at 1069 -
+  and hand the work off cleanly.
+- **Completed:** the decision, put to the maintainer with the numbers rather than assumed: **stop
+  here.** No member of `discover.component.ts` is over 40 lines, which is the same floor
+  `jobs.component.ts` reached at 1104. Everything past this point on either page is child
+  components, and that is a materially different piece of work.
+- **What this session did, end to end:** 13 PRs merged. `jobs.component.ts` **1467 -> 1104** across
+  nine extractions plus one bug fix; `discover.component.ts` **1242 -> 1069** across three. Desktop
+  tests **1018 -> 1183**. One shipped feature (ADR-0004, unclaimed jobs made findable), one shipped
+  bug fix (a failed discard no longer reads as a successful one), one gate fixed
+  (`npm run type-check` now sees Angular templates), one advisory settled and documented (glib,
+  Dependabot 42), and one governance rule added (templates may bind services directly, forward
+  only).
+- **Not completed, and left deliberately:**
+  - Child components for either page - the only remaining way to reduce them, and the only thing
+    that touches `jobs.component.html` (1122/300), `discover.component.html` (1070/300) or
+    `discover.component.scss` (1915/400).
+  - `apps/web/src/styles.scss` **2167/400** and `apps/desktop/src-tauri/src/commands/discover.rs`
+    **3245/800** - the two worst files in the repository by ratio, both surfaced by this session's
+    re-audit and neither in any plan.
+  - The Discover heading-lexicon bug, measured and deliberately left; the reasoning is two entries
+    below so nobody re-derives it.
+- **Validation:** `main` is clean, no open pull requests, and the full gate was run and observed on
+  every one of the 13 merges. Nothing in this entry changes code.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** stopping was the maintainer's call, offered against three
+  alternatives with their sizes. The repository's own advice after large work is to start the next
+  watch with clean context, and this conversation is long enough that the advice applies to it.
+- **Risks or compatibility impact:** **nothing shipped this session has been seen running.** The
+  desktop app is Tauri-only, so none of it renders in a browser preview. That covers ADR-0004's
+  filter chip and Analysed badge, Mark as applied end to end, the discard failure path, the Discover
+  feed sections and the scan console - the last of which exists to be read by a human and has never
+  been watched.
+- **Open issues or blockers:** the two human release checks on `0.29.2`, unchanged for five watches.
+  Windows and Linux unverified. The AIF skill set unpruned against `writing-great-skills`. Three
+  upstream advisories with recorded drop conditions. 57 files over budget.
+- **Next first action:** open the packaged app once and press the five paths above, ideally in the
+  same sitting as the two `0.29.2` release checks. Then choose between child components, the web
+  stylesheet, and `commands/discover.rs` - all three are scoped in this entry, none is started.
+- **Evidence:** `git log e420c7d..HEAD` is 13 merge commits; `npx nx test desktop` prints
+  `1183 passed`; `npm run quality:file-size` reports `jobs.component.ts` at 1104 and
+  `discover.component.ts` at 1069, both under their recorded bases.
+
 ### 2026-08-02, the scan console leaves the Discover page
 
 - **Status:** partial

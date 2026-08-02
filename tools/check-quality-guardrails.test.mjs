@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
   appendFileSync,
+  readFileSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -152,4 +153,31 @@ test('attribution guard scans branch commits and pull-request text', (t) => {
   );
   assert.equal(result.status, 1);
   assert.match(result.stderr, /generated-by/i);
+});
+
+/**
+ * Angular templates are compiled by `ngc`, not by `tsc`. A template binding to
+ * a member the component does not have, or a type the template cannot accept,
+ * passes `tsc -p ... --noEmit` with zero errors and fails only under a full
+ * `nx build`. That gap cost four round-trips in one session before it was
+ * measured: `ngc --noEmit` catches both and is no slower.
+ *
+ * This test exists so the gate cannot quietly go back to `tsc`.
+ */
+test('the type-check gate for Angular apps is template-aware', () => {
+  for (const project of ['apps/desktop', 'apps/web']) {
+    const config = JSON.parse(readFileSync(join(repositoryRoot, project, 'project.json'), 'utf8'));
+    const command = config.targets?.['type-check']?.options?.command ?? '';
+
+    assert.match(
+      command,
+      /\bngc\b/,
+      `${project} type-check must run ngc, which checks templates; got: ${command}`,
+    );
+    assert.doesNotMatch(
+      command,
+      /\btsc\b/,
+      `${project} type-check must not fall back to tsc, which does not see templates`,
+    );
+  }
 });

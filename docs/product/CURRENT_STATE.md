@@ -1,12 +1,18 @@
 # Current Operational State
 
-- **Current version**: `0.29.2` in `package.json`, `package-lock.json`, `tauri.conf.json` and
-  `Cargo.toml`, with `CHANGELOG.md` heading `[0.29.2] - 2026-08-02`. **Not tagged yet**: pushing
-  `v0.29.2` is what makes CI build the matrix, and that is the next action. It supersedes the
-  `0.29.1` **draft release with 17 assets**, which was built but never published and never smoke
-  tested; the draft can be deleted once `v0.29.2` produces its own. The published latest release is
-  still `v0.29.0`, carrying **one** installer, an Apple Silicon `.dmg` - which is why
-  `COMING_SOON` on the website stays `true` while `SOURCE_PUBLIC` is now `true`.
+- **Current version**: `0.29.2`, **tagged, built, and waiting as a draft release with 17 assets** -
+  macOS on both architectures, Windows `.msi` and `.exe`, Linux `.deb`/`.rpm`/`.AppImage`, each with
+  its `.sig`, plus `latest.json`. All four matrix jobs passed. The manifest was verified rather than
+  assumed: version `0.29.2`, eleven platform entries, every one signed. **Not published**: it needs
+  the smoke test in `docs/RELEASE.md`, which is the maintainer's step and the only thing between
+  here and a release. The superseded `0.29.1` draft was deleted; its tag remains, because
+  `CHANGELOG.md` links to it.
+- **The published latest release is still `v0.29.0`**, carrying **one** installer, an Apple Silicon
+  `.dmg` and no `latest.json`. Two consequences, both deliberate. `COMING_SOON` on the website stays
+  `true` while `SOURCE_PUBLIC` is now `true`, so the hero offers a status rather than a download.
+  And the in-app updater reports `Could not fetch a valid release JSON from the remote`, which is
+  **correct**: `releases/latest/download/latest.json` is a genuine 404 until a release carrying the
+  manifest is published. Publishing `0.29.2` clears both.
   Three bugs had to be fixed to reach a
   CI-built bundle at all, all invisible for the same reason - Actions was blocked while the repository was private, so
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered

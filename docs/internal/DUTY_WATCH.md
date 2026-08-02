@@ -50,7 +50,8 @@ Before a watch can be marked complete:
 - **Agent/tool:** Claude Code, Opus
 - **Branch:** `refactor/jobs-component-extraction`, from `main` (`e420c7d`)
 - **Commits:** two code commits (`dffb638`, `a0fb36d`), plus this documentation commit
-- **Pull request:** not yet opened
+- **Pull request:** [#258](https://github.com/vitala89/applye/pull/258), merged as `4208198` with
+  all five checks green
 - **Objective:** start bringing `jobs.component.ts` under its 400-line budget by extraction, one
   responsibility per commit with tests; and settle the deferred decision about unclaimed job rows
   through `aif-grilling` rather than choosing for the maintainer.
@@ -137,7 +138,7 @@ Before a watch can be marked complete:
   an update from an installed `0.29.1`), Windows and Linux unverified, `discover.component.scss`
   1915/400, the AIF skill set unpruned against `writing-great-skills`, and the two security
   advisories waiting on upstream releases.
-- **Next first action:** open the PR for this branch, then extract the document-drafting group into
+- **Next first action:** extract the document-drafting group into
   a service that owns `documentReviewStatus` / `documentReviewError` and the two choose-dialog
   flags, taking `application` and `profile` through an explicit context - the shape
   `CoverLetterTailorService` uses. Write its test before the extraction, because the shared

@@ -8,6 +8,11 @@
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
+    // Test harnesses: shared TestBed setup for the specs that were split out of
+    // one oversized file. They are not spec files - jest would reject them for
+    // holding no tests - but they are test-only code and one of them names the
+    // `jest` namespace, which the app build has no types for.
+    "src/**/*.harness.ts",
     "jest.config.ts",
     "jest.config.cts",
     "src/test-setup.ts"

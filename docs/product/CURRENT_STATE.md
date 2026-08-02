@@ -115,9 +115,11 @@
   four unrelated jobs at 1245/400; style editing and entry editing moved out (`cv-style.util.ts`
   336, `cv-entry.util.ts` 118), leaving 829. Its 1509-line spec followed, becoming four files under
   the 600 budget - style 473, AI parsing 445, content 426, entries 176.
-  `cv-preview.component.spec.ts` split the same way earlier, 2263 into six. **Three spec files
-  remain over budget and are the same decision-free shape**: `cv-detail.component.spec.ts` 940,
-  `cv-live-style-panel.component.spec.ts` 913, `onboarding.component.spec.ts` 689.
+  `cv-preview.component.spec.ts` split the same way earlier, 2263 into six. **No spec file in the repository is over its
+  budget any more**: the last three - CV detail 940, the live style panel 913, onboarding 689 -
+  became seven files, two of them behind a shared harness because their setup wires mocks rather
+  than repeating boilerplate. `tsconfig.app.json` excludes `*.harness.ts`, which are test-only but
+  not spec files.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

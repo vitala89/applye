@@ -21,6 +21,20 @@
   gap: var(--space-3);
   align-items: center;
 }
+/* The show-analysed filter. A checkbox rather than a toggle, because it sits in
+ * a row of selects and reads as one more filter. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.chip input {
+  cursor: pointer;
+}
 .search {
   display: inline-flex;
   align-items: center;
@@ -163,6 +177,15 @@
   padding: 1px var(--space-2);
   border-radius: var(--radius-badge);
   border: var(--border-width) solid var(--border-default);
+}
+/* An unclaimed row: present, findable, and visibly not one of the decisions.
+ * Muted rather than coloured - it is a state, not a warning. Placed after
+ * `.badge` and at equal specificity, so it wins on order; anything that must
+ * beat it needs its own class rather than a later rule. */
+.badge--analysed {
+  color: var(--text-secondary);
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--text-secondary) 35%, transparent);
 }
 .badge--legit[data-tier='green'] {
   color: var(--success);

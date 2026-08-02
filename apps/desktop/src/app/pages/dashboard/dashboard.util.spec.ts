@@ -1,5 +1,12 @@
 import type { PipelineCard } from '@applye/core';
-import { daysOverdue, daysSince, monogram, scheduledMs, whenLabel } from './dashboard.util';
+import {
+  daysOverdue,
+  daysSince,
+  monogram,
+  recentClaimedJobs,
+  scheduledMs,
+  whenLabel,
+} from './dashboard.util';
 
 /** These rules were unreachable by any test while they lived inside the component. */
 describe('dashboard helpers', () => {
@@ -71,5 +78,60 @@ describe('dashboard helpers', () => {
       expect(scheduledMs(cards, 2)).toBe(Infinity);
       expect(scheduledMs(cards, 99)).toBe(Infinity);
     });
+  });
+});
+
+describe('recentClaimedJobs', () => {
+  const label = (key: string) => key;
+  const job = (over: Record<string, unknown>) =>
+    ({ id: 1, claimed: true, createdAt: '2026-01-01', ...over }) as never;
+
+  it('drops unclaimed rows, whatever else they carry', () => {
+    const rows = recentClaimedJobs(
+      [job({ id: 1, company: 'Kept' }), job({ id: 2, company: 'Dropped', claimed: false })],
+      label,
+    );
+
+    expect(rows.map((r) => r.company)).toEqual(['Kept']);
+  });
+
+  it('orders newest first and stops at the limit', () => {
+    const rows = recentClaimedJobs(
+      [
+        job({ id: 1, createdAt: '2026-01-01', company: 'Oldest' }),
+        job({ id: 2, createdAt: '2026-03-01', company: 'Newest' }),
+        job({ id: 3, createdAt: '2026-02-01', company: 'Middle' }),
+      ],
+      label,
+      2,
+    );
+
+    expect(rows.map((r) => r.company)).toEqual(['Newest', 'Middle']);
+  });
+
+  it('reads a claimed job with no status as saved, and labels it once', () => {
+    const [row] = recentClaimedJobs([job({ status: undefined })], label);
+
+    expect(row.status).toBe('saved');
+    expect(row.statusLabel).toBe('status.saved');
+    expect(row.applied).toBe(false);
+  });
+
+  it('marks an applied job so the list can style it', () => {
+    const [row] = recentClaimedJobs([job({ status: 'applied' })], label);
+
+    expect(row.applied).toBe(true);
+  });
+
+  it('does not mutate the list it was given', () => {
+    const input = [
+      job({ id: 1, createdAt: '2026-01-01' }),
+      job({ id: 2, createdAt: '2026-03-01' }),
+    ];
+    const order = input.map((j) => j.id);
+
+    recentClaimedJobs(input, label);
+
+    expect(input.map((j) => j.id)).toEqual(order);
   });
 });

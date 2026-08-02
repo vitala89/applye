@@ -16,6 +16,7 @@ import { AiService, DbService, JobsStore } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
+import { ANALYSED_STATUS, isRowVisible, rowStatus } from './job-overview-rows';
 import { ToastService } from '../../core/toast/toast.service';
 
 type SortKey = 'company' | 'title' | 'score' | 'status' | 'legitimacyTier' | 'createdAt' | 'source';
@@ -81,7 +82,13 @@ export class MyJobsComponent {
   readonly sortKey = signal<SortKey>('createdAt');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
 
-  readonly statuses = APPLICATION_STATUSES;
+  /** Real statuses plus the pseudo-status unclaimed rows carry, so the filter
+   * can select them like any other. */
+  readonly statuses = [...APPLICATION_STATUSES, ANALYSED_STATUS];
+  /** Off by default: My Jobs means the jobs the user decided on until they ask
+   * otherwise. See ADR-0004. */
+  readonly showAnalysed = signal(false);
+  protected readonly rowStatus = rowStatus;
   readonly legitimacies = ['green', 'yellow', 'red'];
 
   // Import tracklist flow (Phase 6.4) - pick file -> detect (1 AI call) ->
@@ -119,9 +126,12 @@ export class MyJobsComponent {
     const key = this.sortKey();
     const dir = this.sortDir() === 'asc' ? 1 : -1;
 
+    const showAnalysed = this.showAnalysed();
+
     const filtered = this.jobsStore.overview().filter((r) => {
+      if (!isRowVisible(r, showAnalysed)) return false;
       if (q && !`${r.company ?? ''} ${r.title ?? ''}`.toLowerCase().includes(q)) return false;
-      if (sf && (r.status ?? 'saved') !== sf) return false;
+      if (sf && rowStatus(r) !== sf) return false;
       if (lf && (r.legitimacyTier ?? 'green') !== lf) return false;
       if (ms != null && (r.score ?? -1) < ms) return false;
       return true;

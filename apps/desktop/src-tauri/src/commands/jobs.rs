@@ -81,6 +81,12 @@ pub struct JobOverview {
     pub created_at: Option<String>,
     pub score: Option<f64>,
     pub status: Option<String>,
+    /// Whether the user claimed this job - Save this job, or Mark as applied.
+    /// Derived from the existence of an application row rather than stored, so
+    /// there is nothing to keep in sync and no column to migrate. False means
+    /// the job exists only because analysing a pasted description had to write
+    /// somewhere; see ADR-0004.
+    pub claimed: bool,
 }
 
 #[tauri::command]
@@ -100,14 +106,24 @@ pub(crate) async fn db_list_jobs_overview_core(
            (SELECT sc.score FROM scoring_cache sc
               WHERE sc.job_id = j.id ORDER BY sc.id DESC LIMIT 1) AS score,
            (SELECT a.status FROM applications a
-              WHERE a.job_id = j.id ORDER BY a.id DESC LIMIT 1) AS status
+              WHERE a.job_id = j.id ORDER BY a.id DESC LIMIT 1) AS status,
+           EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id) AS claimed
          FROM jobs j
-         -- The jobs the user claimed - Save this job, or Mark as Applied.
-         -- Analysing a pasted description writes a job row, because the score
-         -- cache, the tailoring and the generated documents all key on job_id,
-         -- but that row is a working artefact rather than a decision. This
-         -- replaces a rule that said the same thing for Discover alone.
-         WHERE EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id)
+         -- Everything the user had a hand in. Claimed means Save this job or
+         -- Mark as applied; unclaimed means analysing a pasted description
+         -- wrote a row, because the score cache, the tailoring and the
+         -- generated documents all key on job_id.
+         --
+         -- Unclaimed rows are returned and flagged rather than hidden. Hiding
+         -- them made a scored job unreachable the moment the user navigated
+         -- away, with no route back and no evidence it existed - the page
+         -- decides what to show, and defaults to claimed only. See ADR-0004.
+         --
+         -- A Discover scan writes many rows at once and none of them are the
+         -- user's doing, so those stay out until claimed. Same rule
+         -- `db_list_jobs` above already applies.
+         WHERE COALESCE(j.imported_from, '') != 'discover_scan'
+            OR EXISTS(SELECT 1 FROM applications a WHERE a.job_id = j.id)
          ORDER BY j.created_at DESC, j.id DESC",
     )
     .fetch_all(pool)
@@ -492,16 +508,30 @@ mod overview_tests {
     }
 
     #[tokio::test]
-    async fn a_job_only_analysed_is_not_listed() {
+    async fn a_claimed_job_is_flagged_as_claimed() {
         let pool = test_pool().await;
-        // The reported bug: pressing Parse & filter writes a job row, because
-        // the score cache and the documents key on job_id. That row is a
-        // working artefact, not a decision, and My Jobs is the decisions.
-        insert_job(&pool, "hash-analysed", None).await;
+        let id = insert_job(&pool, "hash-claimed-flag", None).await;
+        claim(&pool, id).await;
 
         let rows = db_list_jobs_overview_core(&pool).await.unwrap();
 
-        assert!(rows.is_empty(), "analysing must not put a job in My Jobs");
+        assert!(rows[0].claimed);
+    }
+
+    #[tokio::test]
+    async fn a_job_only_analysed_is_returned_and_flagged_unclaimed() {
+        let pool = test_pool().await;
+        // ADR-0004 reverses what this test used to assert. Pressing Parse &
+        // filter writes a job row, and hiding that row from every screen made
+        // work the user paid tokens for unreachable. The row comes back with
+        // `claimed = false`, and the page decides whether to show it.
+        let id = insert_job(&pool, "hash-analysed", None).await;
+
+        let rows = db_list_jobs_overview_core(&pool).await.unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].id, id);
+        assert!(!rows[0].claimed, "analysing is not claiming");
     }
 
     #[tokio::test]
@@ -520,8 +550,9 @@ mod overview_tests {
     #[tokio::test]
     async fn an_unclaimed_discover_scan_stays_hidden() {
         let pool = test_pool().await;
-        // Already true before this change, via a rule written for Discover
-        // alone. It has to stay true now that the rule is general.
+        // The one exclusion ADR-0004 keeps. One scan writes many rows and none
+        // of them are the user's doing, so revealing unclaimed rows must not
+        // reveal these - it would flood the table it is meant to make useful.
         insert_job(&pool, "hash-discover", Some("discover_scan")).await;
 
         let rows = db_list_jobs_overview_core(&pool).await.unwrap();

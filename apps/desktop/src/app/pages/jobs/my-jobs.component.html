@@ -27,6 +27,14 @@
         <option [value]="s">{{ t()('status.' + s) }}</option>
       }
     </select>
+    <label class="chip">
+      <input
+        type="checkbox"
+        [ngModel]="showAnalysed()"
+        (ngModelChange)="showAnalysed.set($event)"
+      />
+      {{ t()('myjobs.show_analysed') }}
+    </label>
     <select [ngModel]="legitFilter()" (ngModelChange)="legitFilter.set($event)">
       <option value="">{{ t()('myjobs.filter_legit') }}</option>
       @for (l of legitimacies; track l) {
@@ -95,8 +103,8 @@
               }
             </td>
             <td>
-              <span class="badge badge--status">{{
-                r.status ? t()('status.' + r.status) : t()('myjobs.no_status')
+              <span class="badge badge--status" [class.badge--analysed]="!r.claimed">{{
+                t()('status.' + rowStatus(r))
               }}</span>
             </td>
             <td>

@@ -81,6 +81,16 @@ export interface JobOverview {
   createdAt?: string;
   score?: number;
   status?: string;
+  /**
+   * Whether the user claimed this job - Save this job, or Mark as applied.
+   * Derived from the existence of an application row, not stored (ADR-0004).
+   *
+   * False means the row exists only because analysing a pasted description had
+   * to write somewhere: the score cache, the tailoring and the generated
+   * documents all key on `job_id`. Those rows are returned so they can be
+   * found again, and My Jobs hides them behind a filter by default.
+   */
+  claimed: boolean;
 }
 
 /** One row of the Job Tracker: applications + jobs + last status change +

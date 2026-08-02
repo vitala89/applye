@@ -197,6 +197,7 @@ export const uk: TranslationMap = stub(en, {
     col_source: 'Джерело',
     filter_status: 'Усі статуси',
     filter_legit: 'Будь-яка надійність',
+    show_analysed: 'Показати проаналізовані',
     empty: 'Вакансій поки немає. Вставте вакансію, щоб почати.',
     not_scored: 'Без оцінки',
     no_status: 'Без відгуку',
@@ -410,6 +411,7 @@ export const uk: TranslationMap = stub(en, {
     offer: 'Оффер',
     rejected: 'Відмова',
     cancelled: 'Скасовано',
+    analysed: 'Проаналізовано',
   },
   toast: {
     dismiss: 'Сховати',

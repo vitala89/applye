@@ -189,6 +189,7 @@ export const de: TranslationMap = {
     col_source: 'Quelle',
     filter_status: 'Alle Status',
     filter_legit: 'Alle',
+    show_analysed: 'Analysierte anzeigen',
     empty: 'Noch keine Stellen. Füge eine Stelle ein, um zu starten.',
     not_scored: 'Nicht bewertet',
     no_status: 'Keine Bewerbung',
@@ -404,6 +405,7 @@ export const de: TranslationMap = {
     offer: 'Angebot',
     rejected: 'Abgelehnt',
     cancelled: 'Storniert',
+    analysed: 'Analysiert',
   },
   toast: {
     dismiss: 'Schließen',

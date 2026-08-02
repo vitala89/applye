@@ -15,9 +15,21 @@
   embedded frontend carries its stylesheet link and **no** `onload=` handler - the exact shape that
   rendered `0.29.0` unstyled - and the app launched against an isolated `HOME`, survived, wrote
   nothing to stderr, and applied **all 28 migrations** on a fresh database with zero failures,
-  including `0028` with its three identity columns. **Not verified:** that the window renders
-  correctly to a human eye, and anything at all on Windows or Linux. The `.rpm` remains the least
+  including `0028` with its three identity columns. **The window has now been seen.** The packaged
+  `0.29.2` was installed from `Applye_0.29.2_aarch64.dmg` and opened on macOS: the Dashboard renders
+  styled, with the sidebar, the four counters and the recent-jobs list populated from the real
+  database. That closes the check that had been open since `0.29.0` shipped unstyled.
+  **Still not verified:** anything at all on Windows or Linux. The `.rpm` remains the least
   exercised artifact.
+- **The macOS bundle is unsigned and Gatekeeper rejects it.** `codesign -dv` reports
+  `flags=0x20002(adhoc,linker-signed)`, the bundle carries **no `_CodeSignature` directory**, and
+  both `codesign --verify --strict` and `spctl -a -t exec` fail with
+  `code has no resources but signature indicates they must be present`. Reproduced on the pristine
+  dmg, on the `0.29.0` dmg and on a local release build, so this is the standing state of macOS
+  packaging rather than a `0.29.2` regression. A user who downloads the dmg gets the quarantine
+  flag, and the app then either shows "Applye quit unexpectedly" or starts with no window; it runs
+  only after `xattr -dr com.apple.quarantine`. **The download the site offers does not open on a
+  clean Mac.** No Developer ID signing or notarisation step exists in the release workflow.
 - **applye.dev offers the download.** Both flags are now `true`/`false` respectively and the site is
   deployed from `25fb22e`: the hero's primary control is **Download**, "coming soon" appears zero
   times in the served HTML, `/changelog` heads at `[Unreleased]` above `[0.29.2]`, and the GitHub

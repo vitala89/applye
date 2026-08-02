@@ -44,6 +44,99 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the manual pass: the window is fine, the signature is not
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus, driving the real macOS desktop
+- **Branch:** none cut - no source file was edited. Only this file and `CURRENT_STATE.md` changed.
+- **Commits:** the documentation commit for this entry
+- **Pull request:** opened after this entry
+- **Objective:** the manual pass the previous five watches deferred, then the file-size audit.
+- **Completed:**
+  - **The packaged window has been seen.** `Applye_0.29.2_aarch64.dmg` was mounted, installed to
+    `/Applications` and opened. The Dashboard renders styled - sidebar, the four counters, the
+    recent-jobs list with real rows. The check open since `0.29.0` shipped unstyled is closed.
+  - **The macOS bundle is unsigned, and Gatekeeper rejects it.** `codesign -dv` prints
+    `flags=0x20002(adhoc,linker-signed)`; the bundle has **no `_CodeSignature` directory**; both
+    `codesign --verify --strict` and `spctl -a -t exec` fail with `code has no resources but
+signature indicates they must be present`. Same result on the pristine dmg, on the `0.29.0` dmg
+    and on the local release build, so it is the standing state of packaging, not a regression.
+    Consequence for a real user: the downloaded app carries the quarantine flag and then either
+    shows "Applye quit unexpectedly" or starts with no window. It runs only after
+    `xattr -dr com.apple.quarantine`. **The download applye.dev offers does not open on a clean Mac.**
+  - **The other crash has a plain cause, and it blocks the update test.** The `0.29.1` and `0.29.0`
+    binaries abort at launch with
+    `initialize database: "run migrations: migration 28 was previously applied but is missing in the
+resolved migrations"`. The panic sits in the Tauri setup hook, so it aborts through
+    `panic_cannot_unwind` in `did_finish_launching` and the crash report shows no message. This is a
+    downgrade against a database already migrated to 28 - expected, but it means the
+    **update-from-`0.29.1` acceptance run cannot be done on this machine** without a throwaway
+    profile.
+  - **The five scenarios are not in `0.29.2`.** The tag was cut at 13:24 and 28 commits landed after
+    it, including `#263` (the analysed chip), `#261` (the failed discard), `#267` and the Discover
+    splits. They were therefore checked on a debug bundle built from `main` at `70cd983`, installed
+    over `/Applications/Applye.app` so the screenshot layer would accept its identity.
+  - **My Jobs - green.** "Show analysed" reveals two hidden rows carrying the **ANALYSED** badge, one
+    of them with the RED legitimacy chip and the `Company not identified / Untitled role`
+    placeholders; the status filter's new `Analysed` entry returns exactly those two rows.
+  - **CV export - green.** Export as PDF wrote a valid 2-page PDF (32,623 bytes, `%PDF-1.3`) and it
+    was rendered and looked at: name, contacts, Summary, Experience with bullets, Education, correct
+    spacing and typography. The renderer's move into its own module in `#280` did not disturb it.
+  - **Discover - renders, but the split was not exercised.** Inbox, counters (76 new, 199 filtered,
+    0 tokens), filters and the scan controls all draw. Nothing in the feed matched the profile, so
+    `discover-feed.ts:116` correctly collapsed the two sections into one unlabeled list -
+    **"For you" / "More openings" was never on screen**, and remains unverified.
+  - **Mark as applied - works, and is unusable while it does.** It completed end to end: the
+    application flipped to `applied`, a cover-letter document was written and linked, the route went
+    back to My Jobs and the row shows APPLIED. It took **about two minutes** (clicked 22:19:0x,
+    recorded 22:21:05 UTC) with **no progress indication at all** - the button simply goes dead, no
+    spinner, no text, no toast until the end. The commit path generates the missing cover letter
+    through the configured DeepSeek API, and nothing on screen says so.
+  - **A duplicate application row.** The first invocation, on a job that was still unclaimed, left
+    **two** `applications` rows for job 111 (ids 5 and 6, both `saved`, both stamped 22:16:14).
+    Only id 6 later became `applied`; id 5 is orphaned. Verified against a copy of the database
+    taken before the pass, whose highest application id was 3.
+  - **The audit was run over every file, not just the changed ones.** 50 over budget: 20 TypeScript,
+    13 stylesheets, 12 templates, 5 Rust. Same count as the previous watch; nothing moved.
+    `npm run quality:file-size` passes, reporting only `documents.rs` at 1645/800 against base 1926.
+- **Not completed:**
+  - **Discard tailoring, neither the success nor the failure path.** Not attempted.
+  - The `0.29.1` update acceptance run - blocked as described above.
+  - "For you" / "More openings" - needs a profile whose target roles match something in the feed.
+  - Windows and Linux, still untouched.
+- **Files or packages changed:** `docs/product/CURRENT_STATE.md`, this file. No source file.
+- **Validation:** the checks that apply to a documentation-only change: `npm run format:check`,
+  `npm run quality:file-size`, `npm run quality:attribution`, `git diff --check`. The test suites
+  were not run, because no code changed.
+- **Privacy/security impact:** the unsigned, unnotarised macOS bundle is a distribution-security
+  finding and is now recorded in `CURRENT_STATE.md`. No user data left the machine beyond the
+  cover-letter generation the app itself performed against the configured provider.
+- **Decisions and assumptions:**
+  - The live `tauri dev` instance was stopped, with the maintainer's agreement, so two processes
+    would not share one database.
+  - **The real profile database was written to**, deliberately: job 111 ("Test") is now `applied`,
+    cover-letter document 6 exists, and application row 5 is the orphan described above. A copy
+    taken before any of it sits at
+    `~/Library/Application Support/dev.applye.app/applye.db.bak_before_manual_pass_20260803`.
+  - `/Applications/Applye.app` was restored to the shipped `0.29.2` afterwards, with the quarantine
+    flag stripped so it opens at all.
+- **Risks or compatibility impact:** none in the repository. The signing gap is a shipping risk that
+  every macOS download already carries.
+- **Open issues or blockers:**
+  - **Signing and notarisation for macOS** - the release workflow has no such step, and until it
+    does the published dmg does not open for anyone who has not been told to strip an attribute.
+  - **Mark as applied has no progress state** for an operation that takes minutes and spends tokens.
+  - **The duplicate `applications` row** on the first claim of an unclaimed job.
+  - Unchanged: the three upstream advisories, the ratchet's import-line corner, the sitemap every
+    web build dirties, and 50 files over budget.
+- **Next first action:** decide the signing question - it outranks every remaining refactor, because
+  it is the difference between a release users can open and one they cannot. If the answer is "not
+  yet", say so on applye.dev next to the Download control.
+- **Evidence:** screenshots of the packaged `0.29.2` Dashboard, of the analysed chip and the
+  `Analysed` filter, and of the exported PDF rendered to an image; `codesign`/`spctl` output quoted
+  above; the panic text captured by running the `0.29.1` binary from a terminal; the
+  before-and-after `applications` rows quoted from the database and its backup.
+
 ### 2026-08-02, documents.rs splits, and the slice trap fires a fourth time
 
 - **Status:** complete

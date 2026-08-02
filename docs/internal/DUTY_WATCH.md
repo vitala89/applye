@@ -46,7 +46,7 @@ Before a watch can be marked complete:
 
 ### 2026-08-02, job identity part B: AI names it, then the user does
 
-- **Status:** complete, native gate pending
+- **Status:** complete, verified natively
 - **Agent/tool:** Claude Code, Opus
 - **Branch:** `feat/job-identity-part-b`, from `main` (`825fa74`)
 - **Commits:** one
@@ -190,7 +190,12 @@ Before a watch can be marked complete:
   `superseded` - and only the middle one writes anything.
   Both have tests that fail when the fix is backed out, and the second needed a test against the real
   prompt service: the resolver's own fake short-circuited the supersede path and passed either way.
-- **Next first action:** open the PR, then run the native scenario in `tauri dev`.
+- **Native gate passed.** The maintainer ran the whole chain in `tauri dev` and confirmed it: the
+  parse returns immediately, the AI step runs and names what it can, the dialog asks about the rest,
+  the header follows the job, and the rename button works from both entry points. Six rounds of
+  correction in one watch, five of them found by running the application rather than by any test -
+  which is the honest summary of what unit tests bought here and what they did not.
+- **Next first action:** the deferred items below, in the order listed.
 - **Evidence:** command output above, in this session's transcript.
 
 ### 2026-08-02, five fixes on one screen, two of which my own tests should have caught

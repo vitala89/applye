@@ -182,8 +182,14 @@ deepseek-v4-pro or deepseek-v4-flash, but you passed .` The step persisted the p
   `apps/desktop/src-tauri/src/commands/job_identity_source.rs`; the chain is
   `JobIdentityResolverService`; the dialog is mounted at the shell beside `UnsavedJobPromptComponent`;
   and `job-meta-card` came out of the jobs page to host the inferred marker and the "Name it yourself"
-  button. **Native-only gate pending:** migration `0028`, the live AI call, and the dialog itself all
-  need a `tauri dev` pass - the browser preview reaches neither the database nor the AI bridge.
+  button. **Verified natively:** the maintainer ran the whole chain in `tauri dev` - migration `0028`
+  applies, the parse returns immediately, the AI names what it can, the dialog asks about the rest,
+  the header follows the job, and the rename button works from both entry points. Six rounds of
+  correction were needed to get there and five of them were found by running the application, not by
+  a test: an NG0600 the dialog threw on every open, a settings source nothing in the app populates so
+  the AI step never ran once, a superseded dialog recorded as a deliberate skip which then silenced
+  every later parse of the same posting, a page header pushed from one call site that every other
+  path forgot, and the parse itself blocking on an AI call and a human dialog.
 - **A job is a row, not a hash of its text, and My Jobs holds only the ones you claimed.** Editing a
   saved job's description used to fork it: `job_paste` upserted on `jd_hash`, so an edit matched
   nothing and inserted a second job every time while the row on screen kept the old text. It now

@@ -3,7 +3,7 @@
 Design for naming a job's company and role when the deterministic rules cannot.
 Follows part A (`2026-08-01-job-identity-extraction-design.md`), which is shipped.
 
-Status: agreed 2026-08-02. Implemented 2026-08-02, native gate pending.
+Status: agreed 2026-08-02. Implemented and verified natively 2026-08-02.
 
 ## The posting that defines the problem
 

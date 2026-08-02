@@ -63,6 +63,7 @@ import {
   type RegionKey,
 } from './discover-location';
 import { narrowBuiltinsByMarkets } from './discover-sources.util';
+import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -108,12 +109,6 @@ interface FeedRow extends DiscoverFeedItem {
 }
 
 /** One block of the deterministically parsed job description. */
-interface JdBlock {
-  kind: 'heading' | 'paragraph' | 'list';
-  text?: string;
-  items?: string[];
-}
-
 const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
 const ATS_LABEL: Record<string, string> = {
   ats_greenhouse: 'GH',
@@ -840,7 +835,7 @@ export class DiscoverComponent {
       if (this.detailId() !== jobId) return; // user moved on meanwhile
       const jd = job?.jdText ?? '';
       this.detailSalary.set(extractSalaryFromJd(jd));
-      this.detailBlocks.set(this.parseJdBlocks(jd));
+      this.detailBlocks.set(parseJdBlocks(jd));
       this.detailSkills.set(this.detectSkills(jd));
       const row = this.detailRow();
       this.detailScore.set(this.computeRawScore(`${row?.title ?? ''}\n${jd}`));
@@ -1070,86 +1065,6 @@ export class DiscoverComponent {
     event.stopPropagation();
     if (!row.saved) await this.saveRow(row, event);
     await this.router.navigate(['/jobs', row.id]);
-  }
-
-  /**
-   * Deterministic structure for a plain-text JD (0 tokens, no AI).
-   * strip_html (Rust) emits one line per block tag with no bullet markers,
-   * so structure is recovered heuristically: explicit "- " bullets and runs
-   * of 2+ short lines become lists, colon-/lexicon-style short lines become
-   * headings, everything else joins into paragraphs.
-   */
-  private parseJdBlocks(text: string): JdBlock[] {
-    const lines = text.split('\n').map((l) => l.trim());
-    const blocks: JdBlock[] = [];
-    let paragraph: string[] = [];
-
-    const flushParagraph = (): void => {
-      if (paragraph.length) {
-        blocks.push({ kind: 'paragraph', text: paragraph.join(' ') });
-        paragraph = [];
-      }
-    };
-
-    let i = 0;
-    while (i < lines.length) {
-      const line = lines[i];
-      if (!line) {
-        flushParagraph();
-        i++;
-        continue;
-      }
-      const bullet = line.match(/^[-•*]\s+(.*)$/u);
-      if (bullet) {
-        flushParagraph();
-        const items: string[] = [];
-        while (i < lines.length) {
-          const m = lines[i].match(/^[-•*]\s+(.*)$/u);
-          if (!m) break;
-          items.push(m[1]);
-          i++;
-        }
-        blocks.push({ kind: 'list', items });
-        continue;
-      }
-      if (this.looksLikeHeading(line)) {
-        flushParagraph();
-        blocks.push({ kind: 'heading', text: line.replace(/:$/, '') });
-        i++;
-        continue;
-      }
-      // Run of 2+ consecutive short lines (typical <li> output) -> list.
-      if (this.isListyLine(line)) {
-        let run = 0;
-        while (i + run < lines.length && this.isListyLine(lines[i + run])) run++;
-        if (run >= 2) {
-          flushParagraph();
-          blocks.push({ kind: 'list', items: lines.slice(i, i + run) });
-          i += run;
-          continue;
-        }
-      }
-      paragraph.push(line);
-      i++;
-    }
-    flushParagraph();
-    return blocks;
-  }
-
-  /** Heading: ends with ':' or a short line matching common JD section words. */
-  private looksLikeHeading(line: string): boolean {
-    if (line.length > 64) return false;
-    if (line.endsWith(':') && !/[.,;!?]$/.test(line.slice(0, -1))) return true;
-    if (/[.,;!?]$/.test(line)) return false;
-    if (line.split(/\s+/).length > 8) return false;
-    return /\b(about|role|responsibilit|requirement|qualification|benefit|offer|stack|skills?|location|language|salary|compensation|team|process|who you|what you|looking for|nice to have|perks|culture|mission)\b/i.test(
-      line,
-    );
-  }
-
-  /** Short line that could be one item of a marker-less <li> run. */
-  private isListyLine(line: string): boolean {
-    return line.length > 0 && line.length <= 90 && !this.looksLikeHeading(line);
   }
 
   protected async saveRow(row: FeedRow, event: Event): Promise<void> {

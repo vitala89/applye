@@ -61,6 +61,7 @@ import { CvDraftService } from '../../shared/cv-draft.service';
 import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
 import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { DocumentReviewStatusService } from '../../shared/document-review-status.service';
+import { TailoringDiscardService } from '../../shared/tailoring-discard.service';
 import {
   coverLetterStaleInput,
   cvStaleInput,
@@ -103,6 +104,7 @@ import { JOB_DETAIL_ICONS } from './job-detail-icons';
     CoverLetterDraftService,
     CoverLetterTailorService,
     DocumentReviewStatusService,
+    TailoringDiscardService,
     LinkedDocumentsService,
     JobActionsService,
     CvPhotoPromptService,
@@ -123,6 +125,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
   private readonly coverLetterTailor = inject(CoverLetterTailorService);
   private readonly reviewStatus = inject(DocumentReviewStatusService);
+  private readonly discardSvc = inject(TailoringDiscardService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
@@ -207,8 +210,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly actionMsg = this.jobActions.message;
   readonly deleteConfirmOpen = this.jobActions.deleteConfirmOpen;
   /** Confirm gate for abandoning this job's tailoring, and its in-flight flag. */
-  readonly discardConfirmOpen = signal(false);
-  readonly discarding = signal(false);
+  readonly discardConfirmOpen = this.discardSvc.confirmOpen;
+  readonly discarding = this.discardSvc.discarding;
   readonly deleting = this.jobActions.deleting;
 
   /** Editing override for the scoring view only. The job-detail UI no longer
@@ -1057,11 +1060,11 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Opens the confirm for abandoning this job's tailoring. */
   askDiscardTailoring(): void {
-    this.discardConfirmOpen.set(true);
+    this.discardSvc.ask();
   }
 
   cancelDiscardTailoring(): void {
-    this.discardConfirmOpen.set(false);
+    this.discardSvc.cancel();
   }
 
   /**
@@ -1074,32 +1077,17 @@ export class JobsComponent implements OnInit, OnDestroy {
    * library, and cancelling a later re-tailor must not take it with it.
    */
   async discardTailoring(): Promise<void> {
-    if (this.discarding()) return;
-    this.discarding.set(true);
-    try {
-      const drafts = [this.linkedCv(), this.linkedCoverLetter()].filter(
-        (d): d is DocumentLibraryItem => !!d?.id && !!d.isApplicationDraft,
-      );
-      // `document_library_delete` clears the application's reference itself,
-      // so no unlink is owed here (the upsert COALESCEs those ids and could
-      // not clear them anyway).
-      for (const draft of drafts) await this.db.documentLibraryDelete(draft.id as number);
-      this.linkedDocs.clear();
-      const jobId = this.job()?.id;
-      if (jobId != null) {
-        const apps = await this.db.listApplications();
-        this.application.set(apps.find((a) => a.jobId === jobId) ?? null);
-      }
-      this.tailorScore.clear(this.job()?.id ?? -1);
-      this.resetJobScopedState();
-      this.wizardNav.forget(this.job()?.id);
-      this.discardConfirmOpen.set(false);
-      this.wizardNav.scrollToTop();
-    } catch (e) {
-      this.documentReviewStatus.set(String(e));
-    } finally {
-      this.discarding.set(false);
-    }
+    const discarded = await this.discardSvc.discard({
+      jobId: this.job()?.id ?? null,
+      documents: [this.linkedCv(), this.linkedCoverLetter()],
+      applyApplication: (application) => this.application.set(application),
+    });
+    // Nothing was destroyed, so nothing on the page should move. The reason is
+    // already on the status line, and the confirmation is still open.
+    if (!discarded) return;
+    this.resetJobScopedState();
+    this.wizardNav.forget(this.job()?.id);
+    this.wizardNav.scrollToTop();
   }
 
   closeWizard(): void {

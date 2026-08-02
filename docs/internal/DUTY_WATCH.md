@@ -44,6 +44,72 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, Mark as applied joins the other job actions
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-mark-applied`, from `main` (`c1c5730`)
+- **Commits:** `6afba7c`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the previous watch's next first action - continue the jobs page extraction at
+  `markApplied`, the last member over 30 lines.
+- **Completed:**
+  - **`markApplied` moved into `JobActionsService`**, beside `save` and `remove`, rather than into a
+    new file. It shared their whole shape already: the busy guard, the message signal, the toast,
+    the `fail` helper, and the rule that the overview row mirrors the status the database recorded
+    rather than the literal that was asked for. A tenth module would have been filing, not
+    decomposition. The page keeps what is genuinely the page's - the wizard state and the
+    navigation.
+  - **Two invariants that had no test now have one each.** Documents are committed **before** the
+    status flips, because a job marked applied must already own its CV and cover letter or the user
+    has applied to a job with nothing attached; and a failed status write leaves the overview row
+    alone, because a row claiming applied for an application that is not would outlive the error
+    message that explained it.
+  - Written against a service that did not have the method yet - the spec failed with
+    `svc.markApplied is not a function` before any implementation existed. 8 tests.
+  - Mutations, each confirmed by an md5 change first: swapping the commit and the status write turns
+    1 red; mirroring the request instead of the database turns 1 red.
+- **Not completed:**
+  - `jobs.component.ts` is **1104/400**. Template 1148/300 and stylesheet 933/400, untouched.
+  - **No member is over 30 lines any more.** `enterJob` and `parseAndFilter` are joint largest at 30. The remaining excess is spread thin, which means the next reduction is a different kind of
+    work from the last nine - the file is now mostly signal declarations and thin delegation, and
+    cutting it further means moving groups of related state, not single responsibilities.
+  - The page still has no component-level test.
+- **Files or packages changed:** `apps/desktop/src/app/shared/job-actions.service.ts` and its spec,
+  `apps/desktop/src/app/pages/jobs/jobs.component.ts`, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, and this is the first
+  watch where that gate could see templates, `npm test` all six projects green with **1127** desktop
+  tests, `npm run lint` 6 projects green, `npx nx build desktop` complete,
+  `npm run quality:file-size` pass with base `1119 -> 1104`, `npm run quality:attribution`,
+  `npm run format:check`, `npm run verify:csp`, `git diff --check` all pass. **Not run:** the
+  `cargo` gates, no Rust touched; the browser preview, because the jobs page waits on
+  `db_get_settings`.
+- **Privacy/security impact:** none. Behaviour preserved exactly; the code moved.
+- **Decisions and assumptions:**
+  - Extracted into the existing service rather than a new module. Nine of the last ten extractions
+    created a file; this one would have created a tenth for behaviour that already had a home.
+  - `busy` stays set on the success path, unchanged from before and matching `remove`: the caller
+    navigates away, and clearing it first puts a live button back on screen for the frame before the
+    route changes. It is now written down in the service rather than implied by the page.
+- **Risks or compatibility impact:** Mark as applied was not exercised in a running app. It is the
+  action that writes the application row, commits documents and navigates, so it is the one most
+  worth a human pressing once.
+- **Open issues or blockers:**
+  - Unchanged: `jobs.component.ts` 1104/400, its template 1148/300, stylesheet 933/400,
+    `discover.component.scss` 1915/400, the two human release checks on `0.29.2`, Windows and Linux
+    unverified, the AIF skill set unpruned, three upstream advisories with drop conditions.
+  - The single false-green `type-check` from four watches ago remains unexplained and unreproducible.
+    It is a separate thing from the template gap fixed in the previous watch.
+- **Next first action:** decide whether to keep cutting `jobs.component.ts` by moving groups of
+  related signals, or to stop at 1104 and spend the next watch on `discover.component.scss`
+  (1915/400), which is the worst file in the repository and has not been touched. The nine
+  extractions so far each had one responsibility to name; what is left does not, and forcing it is
+  how the ratchet got refused twice in this session.
+- **Evidence:** `npm run quality:file-size` printed `1104/400 ... base 1119` on `6afba7c`;
+  `npm test` printed `1127` for desktop; the spec was observed failing with
+  `svc.markApplied is not a function` before the method existed.
+
 ### 2026-08-02, the fast gate could not see templates, and now can
 
 - **Status:** complete

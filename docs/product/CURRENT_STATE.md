@@ -30,7 +30,7 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **The jobs page is being taken apart, and is four extractions in.** `jobs.component.ts` is **1197**
+- **The jobs page is being taken apart, and is six extractions in.** `jobs.component.ts` is **1162**
   non-empty lines against a budget of 400, down from 1467 where the work started. Out so far:
   `CoverLetterTailorService` (the tailor-an-existing-letter modal, with the base-letter read and the
   content assembly as pure functions) and `job-detail-icons.ts` (the icon table, plus a spec that
@@ -48,10 +48,25 @@
   else-if chain they replace. A testability win is not automatically a decomposition win, and the
   budget is the thing that tells them apart. Moving the two staleness guards out as well is what
   paid for it, and that commit is net zero lines: it bought tests, not size.
-  The next seam is the drafting flows themselves - `createCvDraft`, `createCoverLetterDraft`,
-  `chooseExistingDocument`, `prepareDocumentsStep` - now that their shared status handling is out
-  from under them. They remain the entangled part: between them they write eight component signals,
-  and the page still has no component-level test.
+  Then `TailoringDiscardService` and `JobGapFillService`.
+  **The drafting flows were examined and deliberately left where they are.** `createCvDraft` and
+  `createCoverLetterDraft` are already thin orchestration over `CvDraftService` and
+  `CoverLetterDraftService`; what remains in them is context assembly reading eight component
+  signals, so moving them behind another service would be a wrapper over a wrapper and would grow
+  the file, which is the mistake the ratchet caught earlier in the same session. What was extracted
+  instead is the thing genuinely written twice: the gap-fill callback bundle. The largest remaining
+  member is `loadJob` at 53 lines, and the page still has no component-level test.
+- **A gate reported success on a broken tree, once, and the mechanism is not established.**
+  `npm run type-check` printed success while `apps/desktop/src/app/pages/jobs/jobs.component.ts`
+  contained `Property 'jobDocLabel' does not exist on type 'JobsComponent'`; `npx nx build desktop`
+  failed on it moments later, and a plain re-run of `npm run type-check` on the same content then
+  reported the error correctly. Suspected an Nx cache hit. **Reproduction was attempted four times in
+  the same session, including in the exact original shape, and the error was reported correctly
+  every time** - so the false green is in the transcript beside the build failure that caught what
+  it missed, it does not reproduce, and a misreading by the agent cannot be excluded either. It
+  matters because "type-check passed" is load-bearing in every watch entry. Until it is understood,
+  a green type-check on its own is weaker evidence than the entries have been treating it as, and
+  `nx build desktop` remains the only gate that has never been observed to miss.
 - **Unclaimed jobs: decided, not yet built.** The rows that accumulate invisibly since PR #248 now
   have an answer, reached through `aif-grilling` rather than chosen by the agent, and written up as
   `docs/product/decisions/ADR-0004-unclaimed-jobs-stay-and-become-visible.md`. They stay: the fix is

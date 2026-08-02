@@ -26,6 +26,8 @@ pub mod profile;
 pub mod scoring;
 pub mod settings;
 pub mod tailoring;
+pub mod tailoring_fonts;
+pub mod tailoring_pdf;
 pub mod tracker;
 pub mod untrusted;
 

@@ -44,6 +44,58 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, documents.rs splits, and the slice trap fires a fourth time
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/documents-rs-split`, from `main` (`2f384e7`), cut before the first edit
+- **Commits:** `91eb21c`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** audit first, then pick by **how consumers import** - the lesson from the previous
+  watch.
+- **Completed:**
+  - **The choice was made on consumer cost, and it mattered.** Two candidates: `discover-location.ts`
+    910/400 and `commands/documents.rs` 1926/800. The first has three consumers importing named
+    exports, one of them `discover.component.ts` at 1069/400 - **already over budget, so the ratchet
+    would refuse the extra import line**, exactly as it did in the CV util split. The second is
+    consumed by the command registry in `lib.rs`, which names commands; no command moved, so nothing
+    there changes. Picked the free one.
+  - **`documents_blocks.rs` (290).** The pure middle of the export path: stored CV and cover-letter
+    JSON in, `StyledBlock`s out, no database and no filesystem. Both renderers take it from there.
+  - Gutting the CV conversion turns four tests red, hash-verified.
+    `documents.rs` **1926 -> 1645**.
+- **Not completed:** `documents.rs` is 1645/800 - the command layer, the export byte paths, the
+  style model and a 629-line test module.
+- **Files or packages changed:** `documents.rs`, new `documents_blocks.rs`, `commands/mod.rs`,
+  `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `cargo build` 0 problems, `cargo test --lib` **339 passed**,
+  `cargo clippy --all-targets -- -D warnings` **0 problems**, `cargo fmt --check` clean,
+  `npm run quality:file-size` pass with base `1926 -> 1645`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` all pass. **Not run:** the frontend gates - no
+  TypeScript, template or stylesheet touched, no command signature changed.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** picked by consumer cost rather than by size. The larger, more
+  obvious target was the one the gate would have refused.
+- **Risks or compatibility impact:** low; the compiler carries the references, 339 tests carry the
+  behaviour, and no exported document was opened and looked at.
+- **Open issues or blockers:**
+  - **The slice-by-line-number trap fired a fourth time**, again at the closing end: the backward
+    scan for comments stopped at `CvStyle`'s doc comment, so the `#[derive(...)]` and `#[serde(...)]`
+    attributes below it went into the moved file and left `pub struct CvStyle {` bare. The compiler
+    caught it as an unsatisfied `Deserialize` bound, which is a long way from the cause.
+    **Four occurrences, four different forms**: an orphaned doc comment, a helper after the last
+    test, a `#[tauri::command]` separated from its function, and now attributes separated from their
+    struct. The pattern is settled - **anything attached above an item travels with it, and a slice
+    must be checked at both ends** - and writing it down three times has not stopped me. A tool that
+    slices by item rather than by line would.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session unseen
+    running, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories,
+    the ratchet's import-line corner, and the sitemap that every web build dirties.
+- **Next first action:** the manual pass. On the code side, run the audit and check consumer imports
+  before picking; `discover-location.ts` is the example of a target that looks free and is not.
+- **Evidence:** `npm run quality:file-size` printed `1645/800 ... base 1926` on `91eb21c`;
+  `cargo test --lib` printed `339 passed` before and after, `4 failed` with the conversion gutted.
+
 ### 2026-08-02, the user guide splits, and a split that cost nothing
 
 - **Status:** complete

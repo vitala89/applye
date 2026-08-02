@@ -75,11 +75,14 @@ Before a watch can be marked complete:
     the analysed job 110, which had no application row at all, was marked applied: the button read
     "Preparing documents…" and **exactly one** row was written where the old code wrote two.
 - **Not completed:**
-  - **That run never finished.** After more than seven minutes the commit was still going and the
-    row was still `saved`. The label now says the app is working, but **the underlying call has no
-    timeout, no cancel and no failure after any bound** - a job with no description and no company,
-    like 110, appears to make it very slow or endless. That is a third defect, distinct from the two
-    fixed here, and it is not addressed.
+  - **That run never finished, and the first reading of it was wrong.** After about seven and a half
+    minutes the commit was still going and the row was still `saved`, so this entry first called the
+    call unbounded. It is not: `ai/api.rs:29` sets `API_TIMEOUT` to **600 seconds**, `ai/cli.rs:49`
+    matches it for CLI mode, and a test asserts the bound. The comment there says the generosity is
+    deliberate, because a long non-streaming answer legitimately takes minutes. **The app was killed
+    at roughly 450 seconds, inside that budget**, so what the run would have done at 600 - succeed,
+    or fail visibly - was never observed. No third defect is established. What is true is that a
+    single Mark as Applied can sit for ten minutes per generated document with **no way to cancel**.
   - Discard tailoring, the "For you" / "More openings" split, and the `0.29.1` update acceptance run
     are still where the previous entry left them.
 - **Files or packages changed:** `job-actions.service.ts` and its spec, `jobs.component.ts`,
@@ -101,10 +104,12 @@ Before a watch can be marked complete:
     first.
 - **Risks or compatibility impact:** low. `markApplied`'s signature changed, and its single caller
   changed with it; the compiler and the 22 service tests carry the rest.
-- **Open issues or blockers:** the unbounded commit call described above; the unsigned macOS bundle;
-  and everything the previous entry lists.
-- **Next first action:** put a timeout and a visible failure on the document commit, so a job the
-  provider cannot answer for stops instead of preparing documents forever.
+- **Open issues or blockers:** a Mark as Applied that can sit for ten minutes per document with no
+  way to cancel; the unsigned macOS bundle; and everything the previous entry lists.
+- **Next first action:** let that run finish once without being killed, so the 600-second boundary
+  is observed rather than assumed - success or a visible failure. A cancel control is the change
+  that follows, and it needs the child-component decision, because both files it would touch are
+  over budget.
 - **Evidence:** `applications` rows for job 110 polled for seven minutes, staying at exactly one; a
   zoomed screenshot of the button reading "Preparing documents…"; the md5 values on either side of
   each mutation; `npm run quality:file-size` printing `1104/400 ... base 1104`.

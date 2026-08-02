@@ -19,7 +19,6 @@ import {
   TriangleAlert,
   LucideAngularModule,
 } from 'lucide-angular';
-import { getVersion } from '@tauri-apps/api/app';
 import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import {
   AiProvider,
@@ -40,6 +39,7 @@ import {
   providerModelDefaults,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
+import { AboutUpdateComponent } from './about-update.component';
 import { HealthCheckPanelComponent } from '../../core/health-check-panel.component';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ThemeService, Theme } from '../../core/theme.service';
@@ -117,7 +117,7 @@ const CLI_MODELS: Record<string, string[]> = {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, HealthCheckPanelComponent],
+  imports: [FormsModule, LucideAngularModule, HealthCheckPanelComponent, AboutUpdateComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -157,9 +157,6 @@ export class SettingsComponent implements OnInit {
   setTheme(next: Theme): void {
     if (this.theme() !== next) this.theme_.toggle();
   }
-
-  // --- About ---
-  readonly appVersion = signal<string | null>(null);
 
   // --- Danger zone ---
   readonly confirmingReset = signal(false);
@@ -353,13 +350,6 @@ export class SettingsComponent implements OnInit {
       this.toast.error(String(e));
     } finally {
       this.loading.set(false);
-    }
-    // Best-effort: outside a Tauri runtime (web preview) getVersion throws;
-    // the About row simply hides its version chip.
-    try {
-      this.appVersion.set(await getVersion());
-    } catch {
-      this.appVersion.set(null);
     }
   }
 

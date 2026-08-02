@@ -310,9 +310,30 @@
 }
 .sidebar--rail .logo-text,
 .sidebar--rail .nav-item__label,
+.sidebar--rail .nav-item__update-label,
 .sidebar--rail .nav-section,
 .sidebar--rail .profile-card__meta {
   display: none;
+}
+
+/* Update badge: a word beside Settings, reduced to its dot in the rail. */
+.nav-item__update {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.nav-item__update-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-accent);
 }
 .sidebar--rail .sidebar__logo,
 .sidebar--rail .nav-item,

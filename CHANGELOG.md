@@ -8,6 +8,18 @@ number covers new capability and the patch number covers fixes and release
 plumbing. The version in `package.json`, `Cargo.toml`, and `tauri.conf.json`
 is the single source of truth; this file tracks what changed at each tag.
 
+## [Unreleased]
+
+### Added
+
+- **The app tells you when a newer one exists, and installs it on one press.** The updater was already wired - plugin, signing key, `latest.json` endpoint - but it only ever spoke through a native dialog raised at launch, and only when an update happened to exist. So on every ordinary start it was indistinguishable from a feature that was never built, and the one time it did speak, it was a modal from the operating system across a window the user had just opened. The check now writes to signals and the result is shown where it can be acted on: a quiet dot beside Settings in the sidebar - reduced to just the dot when the sidebar is a rail - and an About block that names the running version, offers **Check for updates**, and turns into **Install & restart** when there is something to install. Every state says which one it is, including the two that used to be silent: a failed check prints the reason verbatim rather than reading as "you are up to date", and a failed install returns to the offer instead of stranding the user with no button and no explanation. The plugin sits behind an injected backend, so all seven states are reachable in a test - the previous service called the plugin directly and could only be tested by not calling it, the exact shape that made `SettingsService` a trap. 9 new locale keys in all six languages; the About privacy line stopped being hardcoded English.
+
+### Fixed
+
+- **A dragged pipeline card sits under the pointer instead of chasing it.** `.card` transitions `transform` for its hover lift, and the CDK's drag preview is a clone of that element moved by writing `transform: translate3d(...)` on every pointer move - so the transition interpolated every one of those writes and the card trailed 150ms behind the cursor, visibly dragging itself toward the pointer with the placeholder still showing where it came from. The preview now cancels transitions; the drop animation is declared after it and keeps its own. No unit test can see a dropped frame, so the guard reads the stylesheets and states the rule: given a `.card` that transitions `transform`, the preview must opt out, and `.cdk-drag-animating` must stay after it. Section dragging in the CV editor was never affected, which is what confirmed the cause: `.docedit-section` has no transform transition.
+
+- **The shell had no test, and the update badge proved it.** The first version of the badge referenced a member the component did not have. `tsc --noEmit` does not type-check templates and nothing built `ShellLayoutComponent`, so only `nx build desktop` caught it. It has a spec now.
+
 ## [0.29.2] - 2026-08-02
 
 ### Added

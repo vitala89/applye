@@ -1,0 +1,54 @@
+/* Mirrors the About block this replaced, plus the update row. */
+.about {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.about__name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.about__version {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  padding: 2px var(--space-2);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-input);
+}
+
+/* Pushes the update control to the trailing edge, away from the version. */
+.about__spacer {
+  flex: 1;
+}
+
+.about__status {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+
+  &[data-state='available'],
+  &[data-state='installing'] {
+    color: var(--text-accent);
+  }
+
+  &[data-state='error'] {
+    color: var(--danger);
+  }
+}
+
+.about__error {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--danger);
+  word-break: break-word;
+}
+
+.muted {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}

@@ -434,10 +434,15 @@ export const de: TranslationMap = {
     sidebar_expand: 'Seitenleiste ausklappen',
   },
   updater: {
-    title: 'Update verfügbar',
-    body: 'Eine neue Version von Applye kann installiert werden.',
+    check: 'Nach Updates suchen',
+    checking: 'Suche nach Updates...',
+    current: 'Du hast die neueste Version.',
+    available: 'Update verfügbar:',
+    badge: 'Update',
+    installing: 'Wird installiert, Neustart auf',
     install: 'Installieren & neu starten',
-    later: 'Später',
+    failed: 'Die Update-Suche ist fehlgeschlagen.',
+    unavailable: 'Updates laufen über die Desktop-App.',
   },
   pipeline: {
     loading: 'Pipeline wird geladen…',
@@ -970,6 +975,7 @@ export const de: TranslationMap = {
     },
   },
   settings: {
+    about_privacy: 'Private, lokale Jobsuche. Deine Daten verlassen dieses Gerät nie.',
     title: 'Einstellungen',
     save_btn: 'Einstellungen speichern',
     saving: 'Speichere…',

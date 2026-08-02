@@ -20,6 +20,8 @@ const LOCALES: SupportedLanguage[] = ['de', 'ru', 'es', 'fr', 'uk'];
 
 const SHARED_WITH_ENGLISH: Record<string, SupportedLanguage[]> = {
   'nav.pipeline': ['de', 'fr'],
+  // German took the English loanword: "das Update" is what the badge says.
+  'updater.badge': ['de'],
   'nav.documents': ['fr'],
   'nav.section_system': ['de'],
   'nav.local_badge': ['es', 'fr'],

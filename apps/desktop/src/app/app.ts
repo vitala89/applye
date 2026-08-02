@@ -48,8 +48,10 @@ export class App implements OnInit {
   readonly showOnboarding = computed(() => this.onboarding.open());
 
   async ngOnInit(): Promise<void> {
-    // Fire-and-forget: offer an update if one exists; never blocks startup.
-    void this.updater.checkForUpdates();
+    // Fire-and-forget: the result reaches the user through the Settings badge
+    // and the About block, never through a dialog over a window they just
+    // opened. Never blocks startup.
+    void this.updater.check();
     try {
       const settings = await this.db.getSettings();
       this.showFirstLaunch.set(!settings.healthCheckSeen);

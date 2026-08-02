@@ -1,0 +1,39 @@
+// Drag-and-drop states for the pipeline board.
+//
+// Split out of `pipeline.component.scss`, which is over its size budget. It is
+// also a responsibility of its own: everything here is owned by the Angular CDK
+// rather than by the board's layout, and the classes are written onto elements
+// the template never declares.
+
+.cdk-drag-preview {
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-card);
+  opacity: 0.95;
+
+  // The preview is a clone of `.card`, and the CDK moves it by writing
+  // `transform: translate3d(...)` on every pointer move. `.card` transitions
+  // `transform` for its hover lift, so the clone interpolated every one of
+  // those writes and trailed 150ms behind the cursor - a card visibly dragging
+  // itself toward the pointer instead of sitting under it. Nothing driven
+  // directly by a pointer may transition `transform`.
+  //
+  // `.cdk-drag-animating` below is the deliberate exception and must stay after
+  // this rule: it is the drop animation, which runs once the pointer is gone.
+  transition: none;
+}
+
+.cdk-drag-placeholder,
+.card__placeholder {
+  background: var(--surface-sunken);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  min-height: 84px;
+}
+
+.cdk-drag-animating {
+  transition: transform 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.col__list.cdk-drop-list-dragging .card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}

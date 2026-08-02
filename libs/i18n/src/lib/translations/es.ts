@@ -443,10 +443,15 @@ export const es: TranslationMap = stub(en, {
     sidebar_expand: 'Expandir la barra lateral',
   },
   updater: {
-    title: 'Actualización disponible',
-    body: 'Una nueva versión de Applye está lista para instalarse.',
+    check: 'Buscar actualizaciones',
+    checking: 'Buscando actualizaciones...',
+    current: 'Tienes la última versión.',
+    available: 'Actualización disponible:',
+    badge: 'Actualizar',
+    installing: 'Instalando y reiniciando en',
     install: 'Instalar y reiniciar',
-    later: 'Más tarde',
+    failed: 'No se pudo buscar actualizaciones.',
+    unavailable: 'Las actualizaciones se gestionan en la app de escritorio.',
   },
   pipeline: {
     loading: 'Cargando el embudo…',
@@ -980,6 +985,7 @@ export const es: TranslationMap = stub(en, {
     },
   },
   settings: {
+    about_privacy: 'Búsqueda de empleo privada y local. Tus datos nunca salen de este equipo.',
     title: 'Ajustes',
     save_btn: 'Guardar ajustes',
     saving: 'Guardando…',

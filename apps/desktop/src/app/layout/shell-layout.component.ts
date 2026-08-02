@@ -37,6 +37,7 @@ import { JobIdentityPromptComponent } from '../shared/job-identity-prompt/job-id
 import { JobIdentityBadgeComponent } from '../shared/job-identity-prompt/job-identity-badge.component';
 import { PasteJobModalComponent } from '../shared/paste-job-modal/paste-job-modal.component';
 import { PasteJobModalService } from '../shared/paste-job-modal/paste-job-modal.service';
+import { UpdaterService } from '../core/updater.service';
 import { PageTitleService } from '../shared/page-title/page-title.service';
 import { WizardProgressService } from '../shared/wizard-progress.service';
 import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
@@ -68,6 +69,8 @@ export class ShellLayoutComponent implements OnInit {
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
   protected readonly pageTitle = inject(PageTitleService);
+  /** Drives the update badge beside Settings; the check itself runs at launch. */
+  protected readonly updater = inject(UpdaterService);
   private readonly wizardProgress = inject(WizardProgressService);
   private readonly activity = inject(WizardActivityService);
   private readonly docGen = inject(DocumentGenService);

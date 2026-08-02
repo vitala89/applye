@@ -44,6 +44,86 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, unstick the pipeline drag, and make the updater visible
+
+- **Status:** complete, native pass pending
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/pipeline-drag-lag-and-update-ui`, from `main` (`7e5e06f`)
+- **Commits:** one
+- **Pull request:** not yet opened
+- **Objective:** two things the maintainer found while running the app after #252 - dragging a
+  pipeline card lagged behind the cursor, and there was no way to learn a new version exists.
+- **Completed:**
+  - **The drag.** `.card` transitions `transform` for its hover lift; the CDK drag preview is a
+    clone of that element which the CDK moves by writing `transform: translate3d(...)` on every
+    pointer move. The transition interpolated every write, so the preview trailed 150ms behind the
+    pointer - the "two cards with a shadow between them" the maintainer described. The preview now
+    sets `transition: none`, and `.cdk-drag-animating` stays declared after it so the drop
+    animation survives at equal specificity. Cause confirmed by the surface that does _not_ lag:
+    `.docedit-section` in the CV editor has no transform transition;
+  - `pipeline.component.scss` was over budget (474 non-empty, ceiling 400) and could not take even
+    a comment, so the CDK block moved to `_drag.scss`, `@use`d from the component sheet. **474 -> 456.** Still over the ceiling;
+  - **The updater is now visible.** Everything was already wired - plugin both sides, signing key,
+    `latest.json` endpoint - but it spoke only through a native dialog at launch, and only when an
+    update happened to exist, so on an ordinary start it was indistinguishable from a feature that
+    was never built. The dialog is gone (maintainer's choice). `UpdaterService` was rewritten
+    around `state`/`newVersion`/`error` signals with seven states, and the plugin sits behind an
+    injected `UPDATE_BACKEND`, so every state is reachable in a test - the old service called the
+    plugin directly and could only be tested by not calling it, the same shape that made
+    `SettingsService` a trap;
+  - **Two surfaces.** A dot beside Settings in the sidebar, reduced to just the dot in rail mode,
+    and `AboutUpdateComponent` in Settings: running version, **Check for updates**, or **Install &
+    restart** when there is something to take. A failed check prints its reason verbatim instead of
+    reading as "up to date"; a failed install returns to the offer rather than stranding the user;
+  - **The settings page shrank rather than grew** - it is far over budget, so About became its own
+    component and `getVersion` went with it. `.ts` **584 -> 575**, `.html` **586 -> 580**;
+  - 9 locale keys in all six languages, plus `settings.about_privacy`, which had been hardcoded
+    English in the template. `updater.badge` is on the shared-with-English allowlist for German,
+    which uses the loanword.
+- **Not completed:** the native pass. The drag has to be felt, and the update path can only be
+  exercised end to end once a newer release is published - the maintainer has the steps in the
+  handover. `dashboard.component.ts` and `jobs.component.ts` remain over budget, untouched here.
+- **Files or packages changed:** `apps/desktop/src/app/core/updater.service.ts` (rewritten) + new
+  spec, `apps/desktop/src/app/app.ts`, `apps/desktop/src/app/layout/shell-layout.component.{ts,html,scss}`
+  - new spec, `apps/desktop/src/app/pages/settings/{settings.component.ts,settings.component.html,
+about-update.component.ts,.html,.scss}` + new spec, `apps/desktop/src/app/pages/pipeline/
+{pipeline.component.scss,_drag.scss,drag-styles.spec.ts}`, `libs/i18n` (six locales + the parity
+    spec's allowlist), `CHANGELOG.md`, this file.
+- **Validation:** `npm run type-check` pass (6 projects), `npm test` pass (**1019**, was 998),
+  `npm run lint` pass (0 errors, 8 pre-existing warnings), `cargo test --lib` pass (338 passed,
+  1 ignored), `cargo clippy --all-targets -- -D warnings` pass, `cargo fmt --check` pass,
+  `npm run quality:file-size` pass, `npm run quality:attribution` pass, `npm run format:check` pass,
+  `npm run verify:csp` pass, `git diff --check` pass, `npx nx build desktop` pass. The drag guard
+  was confirmed to fail without the fix, and the shell spec to fail without the injected service.
+  **Not run:** `tauri dev`. The browser preview could not verify either surface: Settings blocks on
+  `db_get_settings` outside Tauri and renders nothing, which is why the About states are proved by
+  a component spec instead.
+- **Privacy/security impact:** none new. The updater already reached
+  `github.com/vitala89/applye/releases/latest/download/latest.json` at every launch and still does,
+  at the same moment; what changed is that its result is now shown rather than swallowed. Update
+  artifacts are signature-checked by the plugin against the public key in `tauri.conf.json`, which
+  this diff does not touch. Nothing is installed without the user pressing Install.
+- **Decisions and assumptions:** the native dialog was removed rather than kept alongside the new
+  UI, on the maintainer's decision - two things announcing the same update is worse than one. The
+  badge watches `available` _and_ `installing` so it does not vanish mid-install, and deliberately
+  stays hidden on `error`: a failed check is worth a line in Settings, not a mark on the sidebar.
+  The CSS regression guard reads the stylesheets, which is unusual here but is the only level at
+  which a dropped frame is expressible - it asserts the rule, not the rendering.
+- **Risks or compatibility impact:** the update path cannot be fully exercised until a release
+  newer than the running build is published, so the `available` and `installing` states are proved
+  by tests and not yet by a live update. `transition: none` on the preview depends on
+  `.cdk-drag-animating` being declared after it; the guard pins that ordering.
+- **Open issues or blockers:** `pipeline.component.scss` 456/400, `settings.component.ts` 575/400,
+  `settings.component.html` 580/300, `dashboard.component.ts` 428/400 - all shrinking but all still
+  over. `v0.29.2` is still untagged.
+- **Next first action:** merge this branch, then tag `v0.29.2` and run the `docs/RELEASE.md` smoke
+  test - which is also the first real exercise of the update path, since the published build will
+  then be older than the tagged one.
+- **Evidence:** `npm test` 998 -> 1019. `quality:file-size` shows pipeline stylesheet 474 -> 456,
+  settings `.ts` 584 -> 575, `.html` 586 -> 580. Removing `transition: none` fails
+  `drag-styles.spec.ts`; renaming the injected `updater` member fails all four shell specs, which is
+  the failure `nx build desktop` caught and no other gate did.
+
 ### 2026-08-02, kill the dead settings cache, name the unclaimed job, cut 0.29.2
 
 - **Status:** complete, except the native pass and the tag push, both the maintainer's

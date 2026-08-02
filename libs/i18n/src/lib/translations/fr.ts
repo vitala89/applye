@@ -446,10 +446,15 @@ export const fr: TranslationMap = stub(en, {
     sidebar_expand: 'Déployer la barre latérale',
   },
   updater: {
-    title: 'Mise à jour disponible',
-    body: "Une nouvelle version d'Applye est prête à être installée.",
+    check: 'Rechercher des mises à jour',
+    checking: 'Recherche de mises à jour...',
+    current: 'Vous avez la dernière version.',
+    available: 'Mise à jour disponible :',
+    badge: 'Mise à jour',
+    installing: 'Installation et redémarrage vers',
     install: 'Installer et redémarrer',
-    later: 'Plus tard',
+    failed: 'La recherche de mises à jour a échoué.',
+    unavailable: "Les mises à jour passent par l'application de bureau.",
   },
   pipeline: {
     loading: 'Chargement du pipeline…',
@@ -980,6 +985,8 @@ export const fr: TranslationMap = stub(en, {
     },
   },
   settings: {
+    about_privacy:
+      "Recherche d'emploi privée et locale. Vos données ne quittent jamais cet appareil.",
     title: 'Paramètres',
     save_btn: 'Enregistrer les paramètres',
     saving: 'Enregistrement…',

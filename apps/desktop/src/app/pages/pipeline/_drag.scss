@@ -1,0 +1,51 @@
+// Drag-and-drop states for the pipeline board.
+//
+// Split out of `pipeline.component.scss`, which is over its size budget. It is
+// also a responsibility of its own: everything here is owned by the Angular CDK
+// rather than by the board's layout, and the classes are written onto elements
+// the template never declares.
+
+.cdk-drag-preview {
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-card);
+  opacity: 0.95;
+  // Its own compositing layer, so moving it repaints nothing beneath it.
+  will-change: transform;
+}
+
+// The preview is a clone of `.card`, and the CDK moves it by writing
+// `transform: translate3d(...)` on every pointer move. `.card` transitions
+// `transform` for its hover lift, so the clone interpolated every one of those
+// writes and trailed 150ms behind the cursor - a card visibly dragging itself
+// toward the pointer, leaving an echo. Nothing driven directly by a pointer may
+// transition `transform`.
+//
+// Written as `.card.cdk-drag-preview`, not `.cdk-drag-preview`, and this is the
+// whole fix: `@use` must come first in a Sass file, so everything in here is
+// emitted *before* `.card`. At equal specificity the later rule wins, so the
+// single-class version lost to `.card` and changed nothing at all. Two classes
+// beat one regardless of order.
+.card.cdk-drag-preview {
+  transition: none;
+}
+
+// The deliberate exception, and it must stay after the rule above: this is the
+// drop animation, which runs once the pointer is gone. Same specificity, later
+// declaration, so it wins while both classes are present.
+.card.cdk-drag-animating {
+  transition: transform 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.cdk-drag-placeholder,
+.card__placeholder {
+  background: var(--surface-sunken);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  min-height: 84px;
+}
+
+// The other cards reflowing around the gap while a drag is in progress. These
+// are not under the pointer, so animating them is the point.
+.col__list.cdk-drop-list-dragging .card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}

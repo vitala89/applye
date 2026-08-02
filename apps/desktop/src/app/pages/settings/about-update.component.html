@@ -1,0 +1,62 @@
+<div class="about">
+  <span class="about__name">Applye</span>
+  @if (appVersion()) {
+    <span class="about__version">v{{ appVersion() }}</span>
+  }
+
+  @if (updater.state() !== 'unavailable') {
+    <span class="about__spacer"></span>
+
+    @if (updater.state() === 'available' || updater.state() === 'installing') {
+      <button
+        class="btn btn--primary btn--sm"
+        type="button"
+        [disabled]="updater.state() === 'installing'"
+        (click)="install()"
+      >
+        {{ t()('updater.install') }}
+      </button>
+    } @else {
+      <button
+        class="btn btn--ghost btn--sm"
+        type="button"
+        [disabled]="updater.state() === 'checking'"
+        (click)="check()"
+      >
+        <lucide-icon [img]="icons.check" [size]="14" aria-hidden="true" />
+        {{ t()('updater.check') }}
+      </button>
+    }
+  }
+</div>
+
+<!-- One line, and it always says which of the states we are in: a check that
+     reports nothing is indistinguishable from one that never ran. -->
+<p class="about__status" [attr.data-state]="updater.state()" aria-live="polite">
+  @switch (updater.state()) {
+    @case ('checking') {
+      {{ t()('updater.checking') }}
+    }
+    @case ('current') {
+      {{ t()('updater.current') }}
+    }
+    @case ('available') {
+      {{ t()('updater.available') }} {{ updater.newVersion() }}
+    }
+    @case ('installing') {
+      {{ t()('updater.installing') }} {{ updater.newVersion() }}
+    }
+    @case ('error') {
+      {{ t()('updater.failed') }}
+    }
+    @case ('unavailable') {
+      {{ t()('updater.unavailable') }}
+    }
+  }
+</p>
+
+@if (updater.error()) {
+  <p class="about__error">{{ updater.error() }}</p>
+}
+
+<p class="muted">{{ t()('settings.about_privacy') }}</p>

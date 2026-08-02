@@ -102,6 +102,14 @@
       <a class="nav-item" routerLink="/settings" routerLinkActive="nav-item--active">
         <lucide-icon [img]="icons.settings" class="nav-item__icon" [size]="18" aria-hidden="true" />
         <span class="nav-item__label">{{ t()('nav.settings') }}</span>
+        <!-- Quiet: a dot in the rail, a word when the sidebar is open. The
+             update lives in Settings, so the badge is on the way to it. -->
+        @if (updater.updateAvailable()) {
+          <span class="nav-item__update" [title]="t()('updater.available')">
+            <span class="nav-item__update-dot" aria-hidden="true"></span>
+            <span class="nav-item__update-label">{{ t()('updater.badge') }}</span>
+          </span>
+        }
       </a>
     </nav>
 

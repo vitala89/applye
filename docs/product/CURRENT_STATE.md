@@ -36,9 +36,11 @@
   responsibility: 110 declarations, 76 methods, and **48 of those declarations are pure aliases**
   onto services, which only shrink by binding services in the template (now allowed, see
   `CODE_QUALITY.md`, forward-only) or by extracting child components.
-  **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio have
-  never been named anywhere: `apps/web/src/styles.scss` at **2167/400** and
-  `apps/desktop/src-tauri/src/commands/discover.rs` at **3245/800**. Budgets count non-empty lines;
+  **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio had
+  never been named anywhere: `apps/web/src/styles.scss` at 2167/400 - **now split into eleven
+  section partials, largest 353/400, with the compiled CSS proven byte-identical** - and
+  `apps/desktop/src-tauri/src/commands/discover.rs` at **3245/800**, still untouched and now the
+  worst file in the repository. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
   Discover is the page now: `discover.component.ts` **1069/400** (from 1242: the JD parser, the feed
   filter and the For-you split, then the scan console), `discover.component.html` 1070/300,

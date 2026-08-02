@@ -44,6 +44,65 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the site stylesheet splits, and the split is proven rather than claimed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/web-styles-split`, from `main` (`4dccd0b`)
+- **Commits:** `0fa3f96`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the session was closed one entry ago; the maintainer said continue without naming
+  a target, so the lowest-risk of the three scoped options was taken - `apps/web/src/styles.scss`,
+  2167/400, the worst ratio in the repository.
+- **Completed:**
+  - **Eleven section partials, largest 353/400.** The file already carried its own section banners,
+    so the seams were written in and nothing had to be invented.
+  - **`styles.scss` is now the `@use` list and nothing else**, deliberately. Sass emits each used
+    module before the file that uses it, in `@use` order, so that list **is** the cascade; a rule
+    left in the file would land after every partial rather than where it was written. The comment
+    in the file says so, because the next person to add a rule there is the one who needs to know.
+  - **The no-op claim is checked, not asserted.** The compiled stylesheet is byte-identical: same
+    md5, and Angular's content hash in the emitted filename (`styles-E4MXUTHN.css`) is unchanged
+    too, which is independent of my own comparison.
+  - **And the check is meaningful.** Swapping two partials in the `@use` list produces a different
+    md5 and a different filename hash, so the identical result is evidence rather than a comparison
+    that could not have failed. This is the stylesheet equivalent of the mutation discipline.
+  - **Re-verified after the commit hook.** Prettier reformats staged files, which could have moved
+    a byte and quietly falsified the claim. Rebuilt afterwards: still identical. The claim is about
+    what landed, not about what was written.
+- **Not completed:** nothing in scope. No desktop code touched.
+- **Files or packages changed:** `apps/web/src/styles.scss` and eleven new files under
+  `apps/web/src/styles/`; `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run web:build` complete with 39 prerendered routes and the
+  identical CSS hash, `npx nx test web` 76 pass, `npx nx lint web` clean, `npm run type-check` pass
+  for 6 projects, `npm test` all six green (1183 desktop), `npm run quality:file-size` pass with
+  `styles.scss` gone from the report entirely, `npm run quality:attribution`,
+  `npm run format:check`, `npm run verify:csp`, `git diff --check` all pass. **Not run:** the
+  `cargo` gates, no Rust touched.
+- **Privacy/security impact:** none. No selector, declaration or byte of output changed.
+- **Decisions and assumptions:**
+  - The target was chosen, not asked, because the maintainer had already seen all three options
+    with their sizes one message earlier and said continue. The lowest-risk one was taken and named
+    plainly rather than assumed silently.
+  - No partial carries its own `@use`. The file uses CSS custom properties throughout - no Sass
+    variables, mixins or functions - so there is nothing for them to import, and the shared
+    `libs/ui` global stays where it was, first.
+- **Risks or compatibility impact:** the strongest available evidence says none: identical output,
+  and the negative control shows the check can fail. What it does not prove is that the site _looked_
+  right beforehand - only that it looks exactly as it did.
+- **Open issues or blockers:**
+  - `apps/desktop/src-tauri/src/commands/discover.rs` at **3245/800** is now the worst file in the
+    repository, still untouched and still in no plan.
+  - Unchanged: the two human release checks on `0.29.2`, the paths from this session nobody has seen
+    run, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories with
+    drop conditions, child components for Jobs and Discover.
+- **Next first action:** unchanged from the closing entry - open the packaged app once and press the
+  five paths listed there, in the same sitting as the two `0.29.2` release checks. The stylesheet
+  split needs no manual check of its own; its output is provably the same bytes.
+- **Evidence:** `md5` of `dist/apps/web/browser/styles-E4MXUTHN.css` is
+  `8ca537ee5f52eac4ea53f96847e5e447` before and after; the deliberate partial swap produced
+  `styles-3GMSWPDP.css` with md5 `a4eaa5003d0114d217ae18a2bea7d4ad`.
+
 ### 2026-08-02, session closed: Discover's .ts stops at 1069
 
 - **Status:** complete

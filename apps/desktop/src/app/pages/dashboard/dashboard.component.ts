@@ -36,6 +36,15 @@ import {
 import { OnboardingBannerComponent } from '../../core/onboarding/onboarding-banner.component';
 import { WizardProgressService } from '../../shared/wizard-progress.service';
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
+import {
+  daysOverdue,
+  daysSince,
+  monogram,
+  MS_HOUR,
+  scheduledMs,
+  SOON_HOURS,
+  whenLabel,
+} from './dashboard.util';
 
 type Tone = 'warning' | 'accent' | 'neutral';
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -78,11 +87,6 @@ interface RecentRow {
   statusLabel: string;
   applied: boolean;
 }
-
-const MS_HOUR = 3_600_000;
-const MS_DAY = 86_400_000;
-/** An interview inside this window becomes an action-queue "Prep" card. */
-const SOON_HOURS = 48;
 
 @Component({
   selector: 'app-dashboard',
@@ -131,6 +135,13 @@ export class DashboardComponent {
   private readonly profile = signal<Profile | null>(null);
   /** hashText is an IPC call, so freshness is resolved once at load, not in a computed. */
   private readonly savedMdHash = signal<string | null>(null);
+  /**
+   * Name of the job the unfinished tailoring session belongs to.
+   *
+   * Resolved at load for the same reason as `savedMdHash`: naming the job can
+   * reach the database, and the `queue` computed must stay synchronous.
+   */
+  private readonly resumeJobLabel = signal('');
   private readonly now = signal(Date.now());
 
   constructor() {
@@ -148,6 +159,7 @@ export class DashboardComponent {
       this.cards.set(cards);
       this.overview.set(overview);
       this.profile.set(profile);
+      this.resumeJobLabel.set(await this.describeProgressJob(overview));
       const text = (profile?.fullMd ?? '').trim();
       this.savedMdHash.set(text ? await this.db.hashText(text) : null);
       this.now.set(Date.now());
@@ -158,6 +170,29 @@ export class DashboardComponent {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /**
+   * Name the job whose tailoring session is unfinished, for the resume card.
+   *
+   * `listJobsOverview()` returns only the jobs the user claimed, so a session
+   * started on an analysed-but-unsaved job has no row there - and the card used
+   * to render its caption with an empty tail. Falls back to the job row itself,
+   * the same two-step lookup `WizardNavService.crossJobLabel` makes, and to
+   * `#id` when even that read fails, so the card always says which job it
+   * reopens instead of naming nothing.
+   */
+  private async describeProgressJob(rows: JobOverview[]): Promise<string> {
+    const jobId = this.wizard.progress()?.jobId;
+    if (jobId == null) return '';
+    const row = rows.find((j) => j.id === jobId);
+    const fromRow = row?.company ?? row?.title ?? '';
+    if (fromRow) return fromRow;
+    const job = await this.db.getJob(jobId).catch((err) => {
+      console.error('Dashboard could not name the job with unfinished tailoring', err);
+      return null;
+    });
+    return job?.company ?? job?.title ?? `#${jobId}`;
   }
 
   // --- Greeting ---------------------------------------------------------
@@ -267,12 +302,11 @@ export class DashboardComponent {
     // 2. Unfinished tailoring session.
     const wp = this.wizard.progress();
     if (wp) {
-      const job = this.overview().find((j) => j.id === wp.jobId);
       items.push({
         id: `resume-${wp.jobId}`,
         icon: this.icons.cResume,
         iconTone: 'neutral',
-        title: `${this.t()('dashboard.card_resume')} ${job?.company ?? job?.title ?? ''}`.trim(),
+        title: `${this.t()('dashboard.card_resume')} ${this.resumeJobLabel()}`.trim(),
         context: this.t()('dashboard.card_resume_ctx'),
         actionLabel: this.t()('dashboard.card_resume_action'),
         actionVariant: 'secondary',
@@ -427,48 +461,4 @@ export class DashboardComponent {
   protected pasteJob(): void {
     this.pasteModal.open();
   }
-}
-
-/** Two-letter uppercase monogram from a company name; "?" when unknown. */
-function monogram(name?: string): string {
-  const s = (name ?? '').trim();
-  if (!s) return '?';
-  const parts = s.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return s.slice(0, 2).toUpperCase();
-}
-
-/** Whole days a follow-up is past due, clamped at 0. */
-function daysOverdue(followUpAt: string | undefined, now: number): number {
-  if (!followUpAt) return 0;
-  const due = new Date(followUpAt).getTime();
-  if (Number.isNaN(due) || due >= now) return 0;
-  return Math.floor((now - due) / MS_DAY);
-}
-
-/** Whole days since an ISO timestamp, clamped at 0. */
-function daysSince(iso: string | undefined, now: number): number {
-  if (!iso) return 0;
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then) || then >= now) return 0;
-  return Math.floor((now - then) / MS_DAY);
-}
-
-/** Compact relative label for an interview: "3h" / "41h" / "Thu 3:00pm". */
-function whenLabel(iso: string, now: number): string {
-  const at = new Date(iso).getTime();
-  const diff = at - now;
-  if (diff <= SOON_HOURS * MS_HOUR && diff >= 0) {
-    const hours = Math.max(1, Math.round(diff / MS_HOUR));
-    return `${hours}h`;
-  }
-  const d = new Date(iso);
-  const day = d.toLocaleDateString(undefined, { weekday: 'short' });
-  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  return `${day} ${time}`;
-}
-
-function scheduledMs(cards: PipelineCard[], applicationId: number): number {
-  const c = cards.find((x) => x.id === applicationId);
-  return c?.currentStageScheduledAt ? new Date(c.currentStageScheduledAt).getTime() : Infinity;
 }

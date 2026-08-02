@@ -19,16 +19,29 @@ export const DISCORD = ''; // PLACEHOLDER: Discord invite URL once a server exis
 export const LINKEDIN = ''; // PLACEHOLDER: LinkedIn profile URL - icon appears in the footer once set
 export const X_TWITTER = ''; // PLACEHOLDER: X/Twitter profile URL if one is created
 
-/** Download is not yet public; the repo ships installable builds after launch. */
+/**
+ * Whether the hero offers a download instead of the "coming soon" status.
+ *
+ * Still `true`. The published latest release carries exactly one installer, an
+ * Apple Silicon `.dmg`; the first release CI built for every platform is still
+ * a draft awaiting the smoke test in `docs/RELEASE.md`. A Download button that
+ * lands a Windows or Linux visitor on a release page holding nothing for them
+ * is worse than a status that says "not yet".
+ *
+ * Flip condition, checkable in one command: `gh release view --json assets`
+ * on the published latest release lists installers for macOS, Windows and
+ * Linux. Nothing else has to change - the button already points at the
+ * releases page rather than at a versioned asset, so it cannot go stale.
+ */
 export const COMING_SOON = true;
 
 /**
- * The source repository is still private while the pre-release audit runs.
- * Flip to `true` once the repo is public and every "source: coming soon"
- * pill across the site turns back into a real GitHub link. Single switch -
- * do not hardcode repo links in templates.
+ * The source repository is public, so every "source: coming soon" pill across
+ * the site is a real GitHub link. Single switch - do not hardcode repo links
+ * in templates. It was `false` while the pre-release audit ran on a private
+ * repository; that reason expired when the repository was made public.
  */
-export const SOURCE_PUBLIC = false;
+export const SOURCE_PUBLIC = true;
 
 /** Google Analytics 4 measurement ID. PLACEHOLDER: replace with the real `G-XXXXXXXXXX`. */
 export const GA_MEASUREMENT_ID = 'G-PLACEHOLDER';

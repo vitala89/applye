@@ -1,10 +1,14 @@
 # Current Operational State
 
-- **Current version**: `0.29.1`, built and waiting as a **draft release with 17 assets** - macOS on
-  both architectures, Windows `.msi` and `.exe`, Linux `.deb`/`.rpm`/`.AppImage`, each signed with a
-  `.sig`, plus `latest.json` so auto-update works. It is the first release CI has ever produced.
-  **Not published**: it needs the smoke test in `docs/RELEASE.md`. Three bugs had to be fixed to get
-  here, all invisible for the same reason - Actions was blocked while the repository was private, so
+- **Current version**: `0.29.2` in `package.json`, `package-lock.json`, `tauri.conf.json` and
+  `Cargo.toml`, with `CHANGELOG.md` heading `[0.29.2] - 2026-08-02`. **Not tagged yet**: pushing
+  `v0.29.2` is what makes CI build the matrix, and that is the next action. It supersedes the
+  `0.29.1` **draft release with 17 assets**, which was built but never published and never smoke
+  tested; the draft can be deleted once `v0.29.2` produces its own. The published latest release is
+  still `v0.29.0`, carrying **one** installer, an Apple Silicon `.dmg` - which is why
+  `COMING_SOON` on the website stays `true` while `SOURCE_PUBLIC` is now `true`.
+  Three bugs had to be fixed to reach a
+  CI-built bundle at all, all invisible for the same reason - Actions was blocked while the repository was private, so
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.

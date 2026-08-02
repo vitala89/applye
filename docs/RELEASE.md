@@ -113,13 +113,13 @@ Which asset belongs to which platform:
 
 | Platform         | Asset                                             | Arch   |
 | ---------------- | ------------------------------------------------- | ------ |
-| macOS, M-series  | `Applye_0.29.1_aarch64.dmg`                       | native |
-| macOS, Intel     | `Applye_0.29.1_x64.dmg`                           | native |
-| Windows, MSI     | `Applye_0.29.1_x64_en-US.msi`                     | x86_64 |
-| Windows, NSIS    | `Applye_0.29.1_x64-setup.exe`                     | x86_64 |
-| Debian / Ubuntu  | `Applye_0.29.1_amd64.deb`                         | x86_64 |
-| Fedora / RHEL    | `Applye-0.29.1-1.x86_64.rpm`                      | x86_64 |
-| Any Linux        | `Applye_0.29.1_amd64.AppImage`                    | x86_64 |
+| macOS, M-series  | `Applye_0.29.2_aarch64.dmg`                       | native |
+| macOS, Intel     | `Applye_0.29.2_x64.dmg`                           | native |
+| Windows, MSI     | `Applye_0.29.2_x64_en-US.msi`                     | x86_64 |
+| Windows, NSIS    | `Applye_0.29.2_x64-setup.exe`                     | x86_64 |
+| Debian / Ubuntu  | `Applye_0.29.2_amd64.deb`                         | x86_64 |
+| Fedora / RHEL    | `Applye-0.29.2-1.x86_64.rpm`                      | x86_64 |
+| Any Linux        | `Applye_0.29.2_amd64.AppImage`                    | x86_64 |
 | Updater manifest | `latest.json` plus the `.sig` beside every bundle | -      |
 
 Where the app keeps its data, which the uninstall check needs. The identifier is `dev.applye.app`:
@@ -136,7 +136,7 @@ The database is `applye.db` inside that directory.
 
 Do this first. It is the cheapest way to find a bug that would also affect the other platforms.
 
-1. On the draft release page, download `Applye_0.29.1_aarch64.dmg`.
+1. On the draft release page, download `Applye_0.29.2_aarch64.dmg`.
 2. Open it, drag **Applye** to Applications.
 3. The build is unsigned and not notarized, so Gatekeeper refuses the first launch. Right-click the
    app in Applications and choose **Open**, then confirm. Once only. Or:
@@ -170,13 +170,13 @@ the route that behaves best on Apple Silicon.
    work.
 4. Complete Windows setup. Setup may insist on a network connection and a Microsoft account - that is
    Windows, not Applye.
-5. Inside the VM, open the draft release page and download `Applye_0.29.1_x64_en-US.msi`.
+5. Inside the VM, open the draft release page and download `Applye_0.29.2_x64_en-US.msi`.
 6. Run it. SmartScreen shows **"Windows protected your PC"** because the installer has no
    code-signing certificate: **More info → Run anyway**. This is the exact path a real user takes,
    so it is worth seeing rather than skipping.
 7. WebView2 ships with Windows 11, so nothing else needs installing.
 8. Run the checklist below.
-9. Then repeat steps 5-8 with `Applye_0.29.1_x64-setup.exe`. **Do not skip this**: MSI and NSIS are
+9. Then repeat steps 5-8 with `Applye_0.29.2_x64-setup.exe`. **Do not skip this**: MSI and NSIS are
    two different installers with two different failure modes, and both are published.
 
 Paid alternative: Parallels Desktop downloads and installs Windows 11 ARM for you in one step. If
@@ -201,16 +201,16 @@ Connect from the Mac with Microsoft Remote Desktop, then:
 
 ```bash
 # from the Mac, push the artifacts up
-scp Applye_0.29.1_amd64.deb Applye_0.29.1_amd64.AppImage <user>@<host>:~
+scp Applye_0.29.2_amd64.deb Applye_0.29.2_amd64.AppImage <user>@<host>:~
 
 # on the VM - the .deb
-sudo apt install ./Applye_0.29.1_amd64.deb
+sudo apt install ./Applye_0.29.2_amd64.deb
 applye
 
 # on the VM - the AppImage, which needs FUSE 2 on 24.04
 sudo apt install -y libfuse2t64
-chmod +x Applye_0.29.1_amd64.AppImage
-./Applye_0.29.1_amd64.AppImage
+chmod +x Applye_0.29.2_amd64.AppImage
+./Applye_0.29.2_amd64.AppImage
 ```
 
 Run the checklist for both, then destroy the instance.

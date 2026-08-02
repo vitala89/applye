@@ -44,6 +44,104 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, kill the dead settings cache, name the unclaimed job, cut 0.29.2
+
+- **Status:** complete, except the native pass and the tag push, both the maintainer's
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/settings-service-and-dashboard-job-name`, from `main` (`6b6f716`)
+- **Commits:** one
+- **Pull request:** not yet opened
+- **Objective:** the two defects part B left behind - a service that was a trap rather than a cache,
+  and a dashboard card that could not name the job it reopens - then the version bump and the
+  website flags the maintainer asked for in the same session.
+- **Completed:**
+  - **`SettingsService` deleted, by maintainer decision** (delete versus initialize was put to them
+    because one removes a `libs/data` public export and the other changes how the whole app reads
+    settings; they chose delete). It held `signal<Settings | null>(null)` filled only by `load()`,
+    and `load()` was called nowhere, so `current()` was `null` on every run - which is how the AI
+    identification step silently never executed for a whole release. Its only remaining mention in
+    `apps/` was the comment in `job-identity-resolver.service.ts` explaining why it was avoided; the
+    27 real call sites already went through `DbService.getSettings()` and were untouched;
+  - **the guard that stops the shape coming back:** `libs/data/.../cache-signal.guard.spec.ts`
+    fails any service in that directory that declares a null-initialized cache signal _and_ hands
+    its population to a separate `async load()`. A pattern check, not a name check, because the
+    trap is the shape. Verified non-fictitious: restoring the deleted file from `main` makes it
+    fail, deleting it again makes it pass;
+  - **the dashboard names the job with the unfinished tailoring session.** Resolved once at load
+    (`describeProgressJob`), not inside the `queue` computed - the fallback reaches the database,
+    and an await in a computed is what raised `NG0600` on this feature last week. Same two-step
+    lookup as `WizardNavService.crossJobLabel`, plus a third step it does not have: a failed read
+    renders `#12`, so the card can always say which job it reopens;
+  - **`dashboard.component.ts` had to shrink before it could grow.** It was already over budget at
+    433 non-empty lines (ceiling 400) - the script was run before the edit, per rule 63, and caught
+    the growth to 462. `dashboard.util.ts` now owns the pure helpers (`monogram`, `daysOverdue`,
+    `daysSince`, `whenLabel`, `scheduledMs` and their constants), which no test could reach while
+    they were file-scope functions inside the component. **433 -> 428.** Still over the ceiling;
+  - **version `0.29.1` -> `0.29.2`** in `package.json`, `package-lock.json`, `tauri.conf.json`,
+    `Cargo.toml` (and `Cargo.lock`), the six README badges with their alt text, and the asset names
+    throughout the `docs/RELEASE.md` runbook. `CHANGELOG.md`'s `[Unreleased]` became
+    `[0.29.2] - 2026-08-02` with a compare link, which is what turns the heading on the website's
+    changelog page into a link. The two historical sentences in `RELEASE.md` - `v0.29.1` as the
+    first release CI built, `0.29.0` as the unstyled bundle - were deliberately left alone;
+  - **website: `SOURCE_PUBLIC` `false` -> `true`.** The repository is public (`gh repo view`
+    reports `PUBLIC`), so the reason for the flag expired and every "source: coming soon" pill is a
+    real GitHub link again. **`COMING_SOON` stays `true`**, and its comment now states a checkable
+    flip condition instead of a vague one: the published latest release is still `v0.29.0` and
+    carries exactly **one** installer, an Apple Silicon `.dmg`, so a Download button would land
+    Windows and Linux visitors on a page holding nothing for them. No new download page was built -
+    the hero already switches to a Download button pointing at the releases page, not at a
+    versioned asset, so it cannot go stale.
+- **Not completed:** the native `tauri dev` pass on the dashboard card, and the `v0.29.2` tag push
+  plus the `docs/RELEASE.md` smoke test - both the maintainer's, both in the handover message. The
+  `0.29.1` draft release was left in place rather than deleted; it is superseded, and deleting a
+  release is not a call to make unasked.
+- **Files or packages changed:** `libs/data` (`index.ts`, `settings.service.ts` deleted,
+  `cache-signal.guard.spec.ts` new), `apps/desktop/src/app/pages/dashboard` (`dashboard.component.ts`,
+  `dashboard.util.ts` + spec new, `dashboard.component.spec.ts` new), `apps/web/src/app/site.ts`,
+  `package.json`, `package-lock.json`, `apps/desktop/src-tauri/{tauri.conf.json,Cargo.toml,Cargo.lock}`,
+  six `README*.md`, `docs/RELEASE.md`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** all run and observed from the repository root unless noted. `npm run type-check`
+  pass (6 projects), `npm test` pass (**998**, was 983: +4 dashboard component, +11 helpers and the
+  data guard), `npm run lint` pass (0 errors, 8 pre-existing non-null-assertion warnings),
+  `cargo test --lib` pass (338 passed, 1 ignored), `cargo clippy --all-targets -- -D warnings` pass,
+  `cargo fmt --check` pass (from `apps/desktop/src-tauri`), `npm run quality:file-size` pass,
+  `npm run quality:attribution` pass, `npm run format:check` pass, `npm run verify:csp` pass,
+  `git diff --check` pass, `npx nx build desktop` pass, `npm run web:build` pass (39 static routes).
+  **Both new behaviours were confirmed to fail without their fix**, which is the check this codebase
+  has needed twice: restoring the old dashboard line fails 2 of the 4 new tests (the claimed-job
+  case still passes, correctly - it never depended on the fix), and restoring `settings.service.ts`
+  fails the data guard. Website verified in the browser preview: the hero renders "View source on
+  GitHub" as a link to the repository, the download remains a "coming soon" status, `/changelog`
+  heads at `0.29.2` dated 2026-08-02 linking to the compare view, no console errors.
+  `apps/web/public/sitemap.xml` was regenerated by `web:build` and reverted - only `lastmod` moved.
+  **Not run:** `tauri dev`.
+- **Privacy/security impact:** none. No data is read, stored or sent that was not before; deleting
+  an unused service removes a read path rather than adding one. `SOURCE_PUBLIC` exposes no new
+  information - it links to a repository that is already public.
+- **Decisions and assumptions:** the dashboard fix took the "resolve into a signal beside
+  `overview()`" option and rejected caching company/title in `WizardProgress`, which is cheaper but
+  wrong now: part B made the job name change by hand _and_ by AI, so a cache written when the wizard
+  opened would go stale the moment either happened. Naming the job at load is safe because the
+  wizard lives on the jobs page - progress cannot change while the dashboard is on screen, and
+  arriving back at the dashboard reconstructs the component. The extraction taken was the pure
+  helpers rather than the ~120-line `queue` computed: the helpers are a real responsibility with no
+  dependencies, and splitting `queue` is a design change, not a size fix.
+- **Risks or compatibility impact:** `SettingsService` was exported from `libs/data`, so anything
+  outside this repository importing it breaks; nothing inside does. `desktop:build` reports the
+  pre-existing bundle warning (initial 1.31 MB against a 1.30 MB warning budget, error budget
+  1.50 MB not reached), unchanged in kind by this diff, which removes desktop TypeScript rather than
+  adding any.
+- **Open issues or blockers:** `dashboard.component.ts` is 428 of 400 and cannot grow again without
+  another extraction. `jobs.component.ts` remains far over at 1610 lines with its template and
+  stylesheet also over - separate work. Unclaimed jobs still accumulate as invisible rows.
+- **Next first action:** push the tag - `git tag -a v0.29.2 -m "Applye 0.29.2" && git push origin
+v0.29.2` once this branch is on `main` - then run the smoke test in `docs/RELEASE.md` against the
+  draft it produces, publish it, and flip `COMING_SOON` to `false` in the same breath.
+- **Evidence:** `npm test` 983 -> 998. `quality:file-size` reported the violation at 462 and passed
+  at 428 after the extraction. `gh release list` shows `v0.29.1` as `Draft` and `v0.29.0` as
+  `Latest`; `gh release view v0.29.0 --json assets` returns a single asset,
+  `Applye_0.29.0_aarch64.dmg`, which is the whole argument for leaving `COMING_SOON` alone.
+
 ### 2026-08-02, job identity part B: AI names it, then the user does
 
 - **Status:** complete, verified natively

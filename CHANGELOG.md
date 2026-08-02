@@ -8,6 +8,12 @@ number covers new capability and the patch number covers fixes and release
 plumbing. The version in `package.json`, `Cargo.toml`, and `tauri.conf.json`
 is the single source of truth; this file tracks what changed at each tag.
 
+## [Unreleased]
+
+### Changed
+
+- **applye.dev offers the download instead of announcing one.** The hero's primary control was a link to the documentation with a "Download: coming soon" status beside it, because the published latest release carried a single Apple Silicon `.dmg` and a Download button would have landed a Windows or Linux visitor on a page holding nothing for them. `0.29.2` is the first release with an installer for every platform, which was the flip condition written next to the flag, so the button is live. It points at the releases page rather than a versioned asset, so it does not go stale when the version moves, and the comment now records what would send the flag back: a release shipping narrower than all three platforms.
+
 ## [0.29.2] - 2026-08-02
 
 ### Added

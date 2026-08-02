@@ -50,6 +50,26 @@ ignore = [
   "RUSTSEC-2026-0195",
   "RUSTSEC-2026-0194",
 
+  # glib 0.18.5 via gtk 0.18 via tauri 2.11 - unsoundness in the Iterator and
+  # DoubleEndedIterator impls for `glib::VariantStrIter`.
+  #
+  # Listed here for visibility rather than to silence anything: `cargo audit`
+  # classes it as a warning and already exits 0 without this entry. Dependabot
+  # reports it as alert 42 because it reads the GitHub advisory instead.
+  #
+  # Not reachable. `glib` is not a dependency of ours - it arrives through the
+  # GTK bindings Tauri uses, and only on Linux: `cargo tree -i glib` is empty
+  # for the macOS and Windows targets. Nothing in `src/` names glib or
+  # `VariantStrIter`, and the type is a GVariant string iterator used inside the
+  # windowing layer, not on any path Applye drives.
+  #
+  # Nowhere to move to. The fix is glib >= 0.20, which needs a gtk major bump
+  # that Tauri 2.11 has not taken; `cargo update glib` locks 0 packages.
+  #
+  # Drop when: Tauri ships on gtk/glib >= 0.20. The alert is deliberately left
+  # open on GitHub rather than dismissed, so it reappears until that happens.
+  "RUSTSEC-2024-0429",
+
   # rsa 0.9.10 - Marvin attack, key recovery through timing side channels.
   # No patched release exists.
   #

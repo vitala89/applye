@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **No spec file in the repository is over its budget any more.** The last three - CV detail 940, the live style panel 913, onboarding 689, all against 600 - became seven files. Two needed a shared harness because their setup is knowledge rather than boilerplate: the panel wires a fixture and a change collector, onboarding wires eight mocks whose arrangement is the point, and copying either into a second file would have duplicated the wiring. 1183 tests before and after.
+
 - **The CV content spec follows the modules it tests.** It was 1509 lines against a 600 budget, testing four modules through one file after the source split. Now four files - style, AI response parsing, content building, entry editing - each under budget. 120 tests before and after.
 
 - **Style editing and entry editing left the CV content util.** It was 1245 lines against a 400 budget holding four unrelated jobs; two came out. `cv-style.util.ts` is immutable edits to a style plus the resolution that reads one back, sharing the rule that makes them one thing - the persisted override tree stays minimal, so a style set and unset again is identical to one never touched. `cv-entry.util.ts` changes content where the other changes presentation. **1245 -> 829.**

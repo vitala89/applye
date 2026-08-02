@@ -44,6 +44,62 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, no spec file is over budget any more
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/remaining-spec-splits`, from `main` (`f1a059b`), cut before the first edit
+- **Commits:** `e44bb5c`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the maintainer said to do as recommended - the three remaining decision-free spec
+  splits.
+- **Completed:**
+  - **All three, and the repository now has no over-budget spec file.** `cv-detail` 940 -> two files
+    (422, 518); `cv-live-style-panel` 913 -> two (295, 598) plus a harness; `onboarding` 689 -> two
+    plus a harness.
+  - **Two needed a shared harness, one did not**, and the difference is the useful part. The panel
+    wires a fixture and a change collector; onboarding wires **eight mocks** whose arrangement is
+    the point - copying either into a second file duplicates the wiring, not just the lines.
+    `cv-detail`'s top-level describes each stand alone, so it needed nothing.
+  - `tsconfig.app.json` excludes `*.harness.ts`. They are test-only but **not** spec files, so jest
+    would reject them for holding no tests while the app build tried to compile onboarding's
+    reference to the `jest` namespace.
+  - 1183 tests before and after, 92 suites.
+- **Not completed:** nothing in scope.
+- **Files or packages changed:** three spec files split into seven, two new harnesses,
+  `tsconfig.app.json`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npx nx test desktop` **1183 passed, 92 suites**,
+  `npm run type-check` pass for 6 projects, `npx nx lint desktop` 0 errors / 8 pre-existing
+  warnings, `npx nx build desktop` complete, `npm run quality:file-size` pass with no violation,
+  `npm run quality:attribution`, `npm run format:check`, `git diff --check` all pass. **Not run:**
+  the `cargo` gates, no Rust touched.
+- **Privacy/security impact:** none. Tests and one tsconfig exclude.
+- **Decisions and assumptions:** a harness where the setup is knowledge, none where it is not. The
+  rule that decided each case was whether a second copy would duplicate a decision or only some
+  lines.
+- **Risks or compatibility impact:** none to production code. `*.harness.ts` is now excluded from
+  the app build, which is correct for test-only code but means a harness can never be imported by
+  shipping code - deliberate, and worth knowing before someone tries.
+- **Open issues or blockers:**
+  - **Three mistakes on the way, every one a repeat of a shape already recorded this session.**
+    Destructuring only `component` when the tests also used `fixture`. Aliasing a one-argument
+    harness function to a zero-argument call site. And balancing braces by truncating from the end,
+    which **deleted a helper declared after the last test** - the same orphan-helper trap as the
+    previous spec split. All three failed loudly, which is the only reason they cost minutes rather
+    than a silent regression. Recording the trap did not stop me repeating it; only the tests did.
+  - **`nx build desktop` caught the harness/jest-namespace problem** that neither `type-check` nor
+    the test run saw, because only the app build compiles with the app's tsconfig. That gate has now
+    earned its place in every checklist this session.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session still
+    unseen running, Windows and Linux unverified, the AIF skill set unpruned, three upstream
+    advisories, the ratchet's import-line corner.
+- **Next first action:** the manual pass. Every remaining code target needs a maintainer decision -
+  child components for the two big pages, splitting fetch from persistence in `discover.rs`, and the
+  ratchet corner. There is no decision-free move left, and this time that was measured rather than
+  asserted: the audit reports zero over-budget spec files and the rest is templates and design.
+- **Evidence:** `npx nx test desktop` printed `1183 passed, 92 suites`; `npm run quality:file-size`
+  reports no violation across the repository's spec files.
+
 ### 2026-08-02, the CV content spec follows the modules it tests
 
 - **Status:** complete

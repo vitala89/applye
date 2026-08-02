@@ -40,8 +40,14 @@
   never been named anywhere: `apps/web/src/styles.scss` at **2167/400** and
   `apps/desktop/src-tauri/src/commands/discover.rs` at **3245/800**. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
-  Discover is the page now: `discover.component.ts` **1163/400** (from 1242, after the JD parser
-  came out), `discover.component.html` 1070/300, `discover.component.scss` 1915/400. Out so far:
+  Discover is the page now: `discover.component.ts` **1108/400** (from 1242: the JD parser, then the
+  feed filter and the For-you split), `discover.component.html` 1070/300,
+  `discover.component.scss` 1915/400.
+  **The Discover heading-lexicon bug stays unfixed, by decision.** The stems `responsibilit` and
+  `requirement` never match their own plurals, so seven real section titles read as paragraphs. No
+  fix measured strictly better - the obvious one adds two false headings on unpunctuated prose, and
+  anchoring the match loses "What we offer" - and a missed heading still renders readably in a
+  detail pane. Pinned by a test that states exactly what it does. Out so far:
   `CoverLetterTailorService` (the tailor-an-existing-letter modal, with the base-letter read and the
   content assembly as pure functions) and `job-detail-icons.ts` (the icon table, plus a spec that
   reads the template and asserts every `icons.<name>` it references exists - a class of error

@@ -44,6 +44,73 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the Discover feed's rules stop being comments
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-feed-derivations`, from `main` (`bf3e56e`)
+- **Commits:** `7c318be`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the previous watch's next first action - settle the heading-lexicon bug, then
+  continue Discover at its derivations.
+- **Completed:**
+  - **The lexicon bug is settled: leave it.** Measured through the real `looksLikeHeading` rather
+    than the regex alone, and **no fix is strictly better**. The obvious `\w*` fix recovers seven
+    real section titles - Responsibilities, Requirements, Qualifications, Benefits, and three
+    qualified forms - and adds two false headings on unpunctuated prose fragments, which
+    `strip_html` does emit. Anchoring the match near the start of the line removes those two, and
+    one the current code already has, but loses "What we offer", which works today. Put to the
+    maintainer with the measurement; the answer was to leave it. A missed heading still renders as
+    a readable paragraph, and the behaviour is pinned by a test that states it.
+  - **`discover-feed.ts`.** `filterFeedRows` and `splitFeedSections` came out with the `FeedRow` and
+    `FeedSection` types they own. 21 tests. `1163 -> 1108`.
+  - **Three rules that were comments are now assertions.** A dismissed row survives every filter,
+    because it renders as the transient Dismissed-Undo strip and a filter that could drop it would
+    take the undo with it. A lone More section loses its header so it reads as a plain list, while a
+    lone For you keeps its label, because the label is the only thing saying why those rows come
+    first. And every active filter applies together, not only the last one.
+  - `matchesProfile`, `rowTierRank` and `workTypeOf` stay with the component and are passed in -
+    the first two read the archetype cache it owns, and what counts as remote is more than the
+    location string.
+- **Not completed:** Discover's template (1070/300) and stylesheet (1915/400) untouched; its `.ts`
+  is 1108/400. `scan` (70 lines) is the largest member left.
+- **Files or packages changed:** added `apps/desktop/src/app/pages/discover/discover-feed.ts` and
+  its spec; modified `discover.component.ts`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`,
+  this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, `npm test` all six
+  green with **1167** desktop tests, `npm run lint` 6 projects green, `npx nx build desktop`
+  complete, `npm run quality:file-size` pass with base `1163 -> 1108`,
+  `npm run quality:attribution`, `npm run format:check`, `npm run verify:csp`, `git diff --check`
+  all pass. **Not run:** the `cargo` gates, no Rust touched; the browser preview, Tauri-only page.
+- **Privacy/security impact:** none. Pure functions moved.
+- **Decisions and assumptions:**
+  - The lexicon bug is left unfixed, with the measurement recorded rather than the conclusion alone,
+    so the next agent does not re-derive it.
+  - `FeedFilter` takes `ReadonlySet`, not `Set`. The filter never edits the selections, and typing
+    it honestly is what the type-check caught - **the first time this session that the fast gate,
+    not `nx build`, was the one to catch a type error.** The gate change from two watches ago paid
+    for itself here.
+- **Risks or compatibility impact:** none from this commit; the logic moved unchanged and the tests
+  were written against it. Discover's feed has still never been exercised in a running app during
+  this session.
+- **Open issues or blockers:**
+  - Two of the tests in this branch had to be corrected against reality before they passed: an
+    invented city-key format (`Germany::Berlin` rather than `cityKey`'s `"Germany Berlin"`), and a
+    `Set` where the signals hold `ReadonlySet`. Both were my assumptions about code I had just
+    read. Reading the helper is cheaper than guessing its contract.
+  - Unchanged: `jobs.component.ts` 1104/400 and stopped by decision, `discover.component.html`
+    1070/300, `discover.component.scss` 1915/400, `apps/web/src/styles.scss` 2167/400,
+    `commands/discover.rs` 3245/800, 57 files over budget in total. The two human release checks on
+    `0.29.2`. The three paths from earlier today nobody has seen run. Windows and Linux unverified.
+    The AIF skill set unpruned. Three upstream advisories with drop conditions.
+- **Next first action:** continue Discover at `scan` (70 lines), the largest member left. It is
+  orchestration rather than derivation - it drives the console lines, the source loop and the
+  persisted results - so identify what part of it is a decision and what part is I/O before
+  touching it, the way `markApplied` was split.
+- **Evidence:** `npm run quality:file-size` printed `1108/400 ... base 1163` on `7c318be`;
+  `npm test` printed `1167` for desktop; both mutations were confirmed by md5 before their result
+  was read.
+
 ### 2026-08-02, Discover begins, and a measurement I got wrong
 
 - **Status:** partial

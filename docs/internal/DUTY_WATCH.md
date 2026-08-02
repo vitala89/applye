@@ -44,6 +44,84 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, tag 0.29.2, and the updater error that was telling the truth
+
+- **Status:** complete, publication is the maintainer's
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `docs/release-0.29.2-state`, from `main` (`8f59533`)
+- **Commits:** one, documentation only
+- **Pull request:** not yet opened
+- **Objective:** merge the two open branches, cut `v0.29.2`, and diagnose the red error the
+  maintainer photographed in Settings: `The update check failed. Could not fetch a valid release
+JSON from the remote`.
+- **Completed:**
+  - **`v0.29.2` tagged and built.** All four version sources were checked to agree before tagging -
+    the release workflow verifies `package.json`, `package-lock.json`, `tauri.conf.json` and
+    `Cargo.toml`, and refuses a tag that disagrees. All four matrix jobs passed: macOS aarch64,
+    macOS x86_64, Windows, Linux. The draft carries **17 assets**;
+  - **the manifest was verified, not assumed.** `latest.json` downloaded and read: version
+    `0.29.2`, eleven platform entries (`darwin-aarch64`, `darwin-x86_64`, `linux-x86_64` in four
+    packaging flavours, `windows-x86_64` in three), every entry carrying a signature. Asset URLs are
+    the `api.github.com/repos/.../releases/assets/<id>` form the action emits for a draft; they
+    resolve for a public repository once published, since the updater requests them with
+    `Accept: application/octet-stream`;
+  - **the updater error is correct behaviour, and no code was changed.** Verified by request rather
+    than by reading: `releases/latest/download/latest.json` returns **404**, `releases/latest`
+    resolves to `v0.29.0`, and `v0.29.0/latest.json` is also 404 - that release carries a single
+    `.dmg` and no manifest. The updater asks an endpoint that genuinely has nothing, and the About
+    block prints the reason verbatim, which is exactly the behaviour built yesterday to replace
+    silence. Publishing `0.29.2` clears it;
+  - **the superseded `0.29.1` draft was deleted**, once `0.29.2` was confirmed to carry all 17
+    assets. Its tag remains, because `CHANGELOG.md` links to it;
+  - **PRs #253 and #254 merged**, taking the drag fix, the visible updater, and the new agent skill
+    set to `main`.
+  - **published, after the mechanical half of the smoke test was run here.** The maintainer asked
+    the agent to run and check itself, then to proceed on its own recommendation. What could be
+    verified without a human at the screen was: all **seven** `.sig` files against the public key in
+    `tauri.conf.json` (minisign `ED`, BLAKE2b-512 prehash, key id `38239e44c1408967` - a mismatch
+    would fail after the download, on the user's machine); the packaged Apple Silicon bundle's
+    `Info.plist` (`0.29.2`, `dev.applye.app`), its `arm64` binary, and its embedded frontend
+    carrying a stylesheet link with **no** `onload=` handler, which is the exact shape that rendered
+    `0.29.0` unstyled; and a real launch of the packaged app against an isolated `HOME`, which
+    survived, printed nothing to stderr, and applied **all 28 migrations** on a fresh database with
+    zero failures, including `0028` and its three identity columns - the migration the previous
+    watch listed as unverified in a packaged build;
+  - **the update channel was then verified live**, which a draft cannot prove: the endpoint returns
+    the manifest, and the bundle URL inside it streams 16,448,597 bytes unauthenticated - the same
+    file whose signature had been checked.
+- **Not completed:** the human half of the smoke test. Nobody has looked at the packaged window, and
+  nothing was exercised on Windows or Linux; the `.rpm` remains the least tested artifact. Those
+  gaps are real and are recorded here rather than implied away by the word "published". The
+  `COMING_SOON` flip on the website follows in its own change, per the decision below.
+- **Files or packages changed:** `docs/product/CURRENT_STATE.md`, this file. No code.
+- **Validation:** `npm run format:check` pass, `npm run quality:attribution` pass, `git diff --check`
+  pass. Documentation only, so the matrix requires nothing further. The release itself was validated
+  by its own workflow - four jobs, all success - and by reading the manifest. **Not run:**
+  `tauri dev`; the maintainer confirmed the pipeline drag and the About block on the running app.
+- **Privacy/security impact:** none. The manifest was fetched from the project's own release, and
+  the three requests made to diagnose the 404 were HEAD-equivalent checks against public GitHub URLs
+  carrying no data.
+- **Decisions and assumptions:** the first use of the new `aif-grilling` skill, and it changed the
+  outcome - the maintainer's instruction was "if there is an error, branch and fix it", and the
+  grilling established there is no error to fix before any branch was cut. Three decisions, all
+  taken on the recommendation: leave the updater's behaviour alone (cost: someone building from a
+  fork with no releases sees a red error rather than a calm explanation); flip `COMING_SOON` only
+  after publication, in its own one-line PR; delete the `0.29.1` draft but keep its tag.
+- **Risks or compatibility impact:** the manifest's asset URLs are unverifiable until the release is
+  published - a draft's assets are not publicly reachable, so the updater's download path is proved
+  only by the publish. That is the first thing the smoke test exercises.
+- **Open issues or blockers:** the visual and cross-platform halves of the smoke test are still
+  owed on a shipped release, which is the wrong order and is stated as such.
+  `dashboard.component.ts` 428/400, `pipeline.component.scss` 456/400, `settings.component.ts`
+  575/400, `settings.component.html` 580/300 and `jobs.component.ts` 1610/400 all remain over budget.
+- **Next first action:** open the `COMING_SOON = false` change so applye.dev offers the download,
+  then have a human look at the packaged window on macOS and run the Windows and Linux halves of
+  `docs/RELEASE.md`.
+- **Evidence:** `gh run view` reports four successful matrix jobs; `gh release view v0.29.2` lists 17
+  assets with `draft: true`; `curl` returns 404 for the updater endpoint and 200 for
+  `releases/latest` resolving to `v0.29.0`; `gh release list` no longer shows a `0.29.1` draft while
+  `git ls-remote --tags` still carries `v0.29.1`.
+
 ### 2026-08-02, our own grilling skill, and a written division with superpowers
 
 - **Status:** complete

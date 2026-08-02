@@ -1,12 +1,25 @@
 # Current Operational State
 
-- **Current version**: `0.29.2` in `package.json`, `package-lock.json`, `tauri.conf.json` and
-  `Cargo.toml`, with `CHANGELOG.md` heading `[0.29.2] - 2026-08-02`. **Not tagged yet**: pushing
-  `v0.29.2` is what makes CI build the matrix, and that is the next action. It supersedes the
-  `0.29.1` **draft release with 17 assets**, which was built but never published and never smoke
-  tested; the draft can be deleted once `v0.29.2` produces its own. The published latest release is
-  still `v0.29.0`, carrying **one** installer, an Apple Silicon `.dmg` - which is why
-  `COMING_SOON` on the website stays `true` while `SOURCE_PUBLIC` is now `true`.
+- **Current version**: `0.29.2`, **published**, and the first Applye release that ships an installer
+  for every platform: macOS on both architectures, Windows `.msi` and `.exe`, Linux
+  `.deb`/`.rpm`/`.AppImage`, each with its `.sig`, plus `latest.json`. All four matrix jobs passed.
+  The superseded `0.29.1` draft was deleted; its tag remains, because `CHANGELOG.md` links to it.
+- **The auto-update channel is live and was verified end to end after publication.**
+  `releases/latest/download/latest.json` returns the manifest (version `0.29.2`, eleven platform
+  entries), and the bundle URL inside it streams 16,448,597 bytes without authentication - the same
+  file whose signature was checked. Every one of the seven `.sig` files verifies against the public
+  key in `tauri.conf.json`: minisign `ED`, BLAKE2b-512 prehash, key id `38239e44c1408967`. That
+  check matters because a key mismatch fails **after** the download, on the user's machine.
+- **What the smoke test covered, and what it did not.** Mechanically verified on the packaged
+  Apple Silicon build: `Info.plist` reads `0.29.2` and `dev.applye.app`, the binary is `arm64`, the
+  embedded frontend carries its stylesheet link and **no** `onload=` handler - the exact shape that
+  rendered `0.29.0` unstyled - and the app launched against an isolated `HOME`, survived, wrote
+  nothing to stderr, and applied **all 28 migrations** on a fresh database with zero failures,
+  including `0028` with its three identity columns. **Not verified:** that the window renders
+  correctly to a human eye, and anything at all on Windows or Linux. The `.rpm` remains the least
+  exercised artifact.
+- **`SOURCE_PUBLIC` is `true`.** `COMING_SOON` flips to `false` in its own change now that the
+  download exists on all three platforms.
   Three bugs had to be fixed to reach a
   CI-built bundle at all, all invisible for the same reason - Actions was blocked while the repository was private, so
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered

@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the scan console leaves the Discover page
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-scan`, from `main` (`931269c`)
+- **Commits:** `d0de21c`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the previous watch's next first action - continue Discover at `scan`, separating
+  what is a decision from what is I/O before touching it.
+- **Completed:**
+  - **The separation held up.** `scan()` was 70 lines and **45 of them were building console text**:
+    a started banner, a line per source result with its ok/error formatting, a done line, and the
+    rewrite that happens when the scan itself dies. All pure, none tested, and wrapped around the
+    I/O. `discover-console.ts` takes the three shapes and the line types they own; `scan()` keeps
+    the guard, the two database calls, the clock and the signals.
+  - **Three implicit rules now have tests.** A source whose `error` is an empty string reports as
+    **success** - a failure with nothing to say is worse than saying it worked. The result header
+    counts the sources the **summary** reported, not the ones requested, because a source can drop
+    out in between. And when the scan dies, every line still marked `active` becomes an error,
+    because a spinner claims work that is not happening.
+  - `consoleLabel` came with them and no longer pads by a bare `22`: the width is named, and a
+    source name too long to pad is left whole rather than truncated, which a test now states.
+  - 16 tests. `1108 -> 1069`.
+- **Not completed:** Discover's template (1070/300) and stylesheet (1915/400) untouched; its `.ts`
+  is 1069/400. `parseJdBlocks` aside, no member is over 40 lines now - `availableRegions` (38) and
+  `load` (33) are the largest.
+- **Files or packages changed:** added `apps/desktop/src/app/pages/discover/discover-console.ts` and
+  its spec; modified `discover.component.ts`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`,
+  this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, `npm test` all six
+  green with **1183** desktop tests, `npm run lint` 6 projects green, `npx nx build desktop`
+  complete, `npm run quality:file-size` pass with base `1108 -> 1069`,
+  `npm run quality:attribution`, `npm run format:check`, `npm run verify:csp`, `git diff --check`
+  all pass. **Not run:** the `cargo` gates, no Rust touched; the browser preview, Tauri-only page.
+- **Privacy/security impact:** none. Pure functions moved.
+- **Decisions and assumptions:**
+  - `Date.now()` stays in `scan()` and the elapsed seconds are passed in as a string. The clock is
+    I/O, and a function that reads it cannot be asserted without faking time.
+  - The empty-error-string case is **preserved, not corrected**. The original used a truthiness
+    check, so `''` already meant success; the test states it rather than changing it.
+- **Risks or compatibility impact:** none from this commit - the text-building moved unchanged, and
+  the tests were written against it. The scan console has still never been watched running during
+  this session, and it is the one piece of Discover whose whole purpose is to be read by a human.
+- **Open issues or blockers:**
+  - The import I added did not land on the first attempt: prettier had collapsed the anchor line
+    into one, and my patch matched the multi-line form. `type-check` caught it immediately. Cheap
+    here, but the pattern is worth naming - **an anchored patch against a formatted file should be
+    verified, not assumed**, the same discipline as the mutation checks.
+  - Unchanged: `jobs.component.ts` 1104/400 and stopped by decision, `discover.component.html`
+    1070/300, `discover.component.scss` 1915/400, `apps/web/src/styles.scss` 2167/400,
+    `commands/discover.rs` 3245/800, 57 files over budget in total. The two human release checks on
+    `0.29.2`. The paths from this session nobody has seen run. Windows and Linux unverified. The
+    AIF skill set unpruned. Three upstream advisories with drop conditions.
+- **Next first action:** decide whether Discover's `.ts` is done at 1069. No member is over 40 lines
+  and what remains is the same thin-delegation shape that ended the Jobs work at 1104 - which means
+  the next real reduction on this page is child components, taking the 1070-line template and the
+  1915-line stylesheet with them. That is a bigger change than anything in this session and wants
+  its own decision.
+- **Evidence:** `npm run quality:file-size` printed `1069/400 ... base 1108` on `d0de21c`;
+  `npm test` printed `1183` for desktop; both mutations were confirmed by md5 before their result
+  was read.
+
 ### 2026-08-02, the Discover feed's rules stop being comments
 
 - **Status:** partial

@@ -74,7 +74,7 @@
       "cache": true,
       "inputs": ["default", "^default"],
       "options": {
-        "command": "tsc -p apps/web/tsconfig.app.json --noEmit"
+        "command": "ngc -p apps/web/tsconfig.app.json --noEmit"
       }
     },
     "test": {

@@ -51,6 +51,13 @@ npm run desktop:build
 
 For narrow work, Nx project or affected commands are preferred when they give equivalent coverage.
 
+`npm run type-check` runs `ngc --noEmit` for both Angular apps, so it **does** see templates: a
+binding to a member the component does not have, or a type the template cannot accept, fails here
+rather than only under a full build. It ran `tsc` until 2026-08-02 and was blind to all of that;
+`tools/check-quality-guardrails.test.mjs` now fails if either app goes back to `tsc`. A build is
+still required for anything about bundling, budgets or the produced output - it is no longer
+required merely to find out whether the templates compile.
+
 Before writing version-sensitive Angular code, use the configured read-only Angular CLI MCP or current official Angular documentation for the installed version. Context7 may provide a minimal versioned documentation lookup, but it does not replace official verification for security-sensitive or release-sensitive behavior.
 
 ## Rust, SQLite, Tauri command, or migration changes

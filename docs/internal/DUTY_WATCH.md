@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the fast gate could not see templates, and now can
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/type-check-sees-templates`, from `main` (`6dc5158`)
+- **Commits:** `aba1eac`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the previous watch's next first action - decide the template-type-check question,
+  which had cost four round-trips in one session.
+- **Completed:**
+  - **Measured instead of argued.** `npm run type-check` ran `tsc -p ... --noEmit`, and `tsc` never
+    compiles Angular templates. `ngc`, the Angular compiler, takes the same `--noEmit`. Uncached on
+    this repository: **tsc 4.31s and blind to templates, ngc 3.48s and not**. Cheaper _and_ stricter,
+    so there was no trade-off to put to the maintainer - the Grilling gate does not fire on a
+    decision with one honest reading.
+  - **Proven, not assumed, before switching.** Both Angular apps and both failure modes: a template
+    calling a member the component does not have, and the widened `TailorPhase.icon` that broke the
+    wizard strip earlier today. `tsc` exits **0** on every one of them; `ngc` exits **1** and names
+    the file, the line and the component. Each injection was confirmed by an md5 change first.
+  - **A guardrail so it cannot silently revert.** `tools/check-quality-guardrails.test.mjs` asserts
+    both apps run `ngc` and neither falls back to `tsc`. Putting `tsc` back turns it red, verified.
+  - `apps/web` had the same gap and was switched with the same proof.
+  - `VALIDATION_MATRIX.md` now says what the gate does and does not cover, and when a build is still
+    required: for bundling, budgets and the produced output - no longer merely to learn whether the
+    templates compile.
+- **Not completed:** nothing in scope. `jobs.component.ts` untouched this watch, still 1119/400.
+- **Files or packages changed:** `apps/desktop/project.json`, `apps/web/project.json`,
+  `tools/check-quality-guardrails.test.mjs`, `docs/governance/VALIDATION_MATRIX.md`,
+  `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `npm run type-check` (now `ngc`) pass for 6 projects,
+  `npm test` all six projects green with 1119 desktop tests, `npm run lint` 6 projects green,
+  `npx nx build desktop` complete, `npm run web:build` complete with 39 prerendered routes,
+  `node --test tools/check-quality-guardrails.test.mjs` 4 pass, `npm run quality:file-size`,
+  `quality:attribution`, `format:check`, `git diff --check` all pass. **Not run:** the `cargo`
+  gates, no Rust touched.
+- **Privacy/security impact:** none. Build tooling only.
+- **Decisions and assumptions:**
+  - Switched without grilling the maintainer, because the measurement removed the trade-off: the new
+    command is faster and catches strictly more. Had `ngc` been slower, this would have been a
+    maintainer call about gate cost.
+  - `web`'s sitemap regenerated as a side effect of `npm run web:build` and was **discarded rather
+    than committed** - it is generated output with a date in it, and this branch did not change the
+    site.
+- **Risks or compatibility impact:** `ngc` is stricter, so it can surface pre-existing template
+  problems in code nobody has touched. None appeared - all six projects pass - but a future branch
+  that suddenly fails `type-check` in a file it did not edit should suspect this first.
+- **Open issues or blockers:**
+  - **Every watch entry before today that cites a green `type-check` was citing a check that could
+    not see templates.** Those entries are not being rewritten, but the claim they make is weaker
+    than it reads, and this entry is the correction.
+  - Unchanged: `jobs.component.ts` 1119/400, its template 1148/300, stylesheet 933/400,
+    `discover.component.scss` 1915/400, the two human release checks on `0.29.2`, Windows and Linux
+    unverified, the AIF skill set unpruned, three upstream advisories with drop conditions.
+  - The single false-green `type-check` from three watches ago remains unexplained. It is a
+    different thing from this gap - that one was a plain `.ts` error, which `tsc` should have caught
+    - and it still does not reproduce.
+- **Next first action:** continue the jobs page extraction at `markApplied` (35 lines), the last
+  member over 30, which writes the application row and the store row together.
+- **Evidence:** `tsc -p apps/desktop/tsconfig.app.json --noEmit` exited 0 with
+  `Property 'thisMemberDoesNotExist' does not exist` present in the template; `ngc` on the same tree
+  exited 1 and printed it. Timings from `/usr/bin/time -p` after `npx nx reset`.
+
 ### 2026-08-02, loadJob's defaults and the wizard's phase strip, both pinned
 
 - **Status:** partial

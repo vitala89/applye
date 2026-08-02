@@ -44,6 +44,66 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the Discover feed readers follow the geography out
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-rs-split` continued as `refactor/discover-rs-split`
+- **Commits:** `f2d31d0`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the seam named in the previous entry - the per-source feed parsers.
+- **Completed:**
+  - **`discover_parsers.rs`.** Twelve readers for the shapes the built-in sources serve, plus the
+    detail reader for the one source whose list carries no description, and the small helpers only
+    they use.
+  - **The boundary was already in the code.** None of the readers touches the network: each takes
+    already-fetched text or JSON and returns `RawJob`, which is what makes them testable against a
+    fixture instead of a server. The HTTPS layer stays in `discover.rs`. The split gave that
+    boundary a file to be a boundary between rather than inventing one.
+  - `RawJob` and `json_str` widen to `pub(super)`; nothing else needed to.
+  - Gutting the Arbeitsagentur reader turns **three tests red**, hash-verified before the result was
+    read.
+  - `discover.rs` **2742 -> 2096**; `discover_parsers.rs` **666, under the 800 budget**.
+- **Not completed:**
+  - `discover.rs` is still 2096/800. Its remaining bulk is the **1142-line test module**, which is
+    over the 800 test budget on its own, and the HTTPS/persistence layer that is the file's actual
+    job. Splitting the tests would follow the source split - geography tests to
+    `discover_geo`, reader tests to `discover_parsers` - and is the obvious next move.
+  - Child components for Jobs and Discover, still untouched and still the only thing that reaches
+    either template or the Discover stylesheet.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover.rs`, new
+  `discover_parsers.rs`, `commands/mod.rs`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this
+  file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed**,
+  `cargo clippy --all-targets -- -D warnings` **0 problems**, `cargo fmt --check` clean,
+  `npm run quality:file-size` pass with base `2742 -> 2096`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` all pass. **Not run:** the frontend gates - no
+  TypeScript, template or stylesheet touched, and no Tauri command signature changed.
+- **Privacy/security impact:** none. The readers parse text that was already being fetched, in the
+  same way, from the same sources.
+- **Decisions and assumptions:** the readers went into one module rather than one per source. They
+  share `RawJob`, the helpers and the same shape, and twelve files of fifty lines each would be
+  filing rather than decomposition - the same judgement that put `markApplied` into an existing
+  service instead of a tenth new one.
+- **Risks or compatibility impact:** low; the compiler carries the references and 339 tests carry
+  the behaviour. The residual risk is a table or literal altered during the move rather than copied,
+  which the mutation addresses only for the reader it targeted.
+- **Open issues or blockers:**
+  - **Clippy caught something the build did not**: the doc comment for `html_to_text` was left
+    behind when the function moved, because the extracted range started at the `fn` line rather than
+    at its documentation. `empty lines after doc comment` is a lint, not a compile error, so only
+    `clippy -D warnings` saw it. **An extraction that slices by line number can orphan the
+    documentation above the first item** - worth checking explicitly next time rather than relying
+    on a lint to notice.
+  - Unchanged: the two human release checks on `0.29.2`, the paths from this session nobody has seen
+    run, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories.
+- **Next first action:** split `discover.rs`'s test module along the same three-way line the source
+  now follows, which takes it under its own budget as a side effect. Before more refactoring though:
+  the manual pass is now five watches overdue and nothing shipped today has been seen running.
+- **Evidence:** `npm run quality:file-size` printed `2096/800 ... base 2742` on `f2d31d0`;
+  `cargo test --lib` printed `339 passed` before and after, and `3 failed` with the Arbeitsagentur
+  reader gutted.
+
 ### 2026-08-02, Discover's geography leaves the scan engine
 
 - **Status:** partial

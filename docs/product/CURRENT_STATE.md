@@ -67,16 +67,6 @@
   matters because "type-check passed" is load-bearing in every watch entry. Until it is understood,
   a green type-check on its own is weaker evidence than the entries have been treating it as, and
   `nx build desktop` remains the only gate that has never been observed to miss.
-- **Dependabot alert 42 (`glib`) is understood and cannot be fixed here.** `glib` 0.18.5 carries an
-  unsoundness advisory in `VariantStrIter`'s iterator impls (RUSTSEC-2024-0429 /
-  GHSA-wrw7-89jp-8q8g), fixed in 0.20. **Not reachable and not ours:** glib arrives through the GTK
-  bindings Tauri uses and exists **only on Linux** - `cargo tree -i glib` is empty for the macOS and
-  Windows targets - and nothing under `src-tauri/src` names glib or that type. **Nowhere to move
-  to:** glib 0.20 needs a gtk major bump Tauri 2.11 has not taken, and `cargo update glib` locks 0
-  packages. `cargo audit` classes it as a warning and exits 0 either way; it is now in
-  `.cargo/audit.toml` with the drop condition, which is Tauri shipping on gtk/glib >= 0.20. The
-  GitHub alert is deliberately **left open rather than dismissed**, so it keeps reappearing until
-  that happens.
 - **Unclaimed jobs: decided and shipped.** ADR-0004 is `accepted` and implemented.
   `db_list_jobs_overview_core` returns unclaimed rows flagged with a derived `claimed` boolean
   instead of hiding them; My Jobs has one filter chip, off by default, and shows an **Analysed**
@@ -97,6 +87,10 @@
   `glib` RUSTSEC-2024-0429 is the only one with runtime scope and is not fixable here: the gtk-rs 0.18
   stack reaches it through `gtk` 0.18.2, which `tauri` 2.11.5 pins, so `cargo update -p glib` moves
   nothing; Linux-only, never called directly, and `cargo audit` already tolerates it at exit 0.
+  It is also **Dependabot alert 42**, which reads the GitHub advisory rather than `cargo audit` and
+  so reports it as open. It now carries an entry in `.cargo/audit.toml` with its drop condition -
+  Tauri shipping on gtk/glib >= 0.20 - and the GitHub alert is deliberately **left open rather than
+  dismissed**, because dismissing it hides the only thing that will say Tauri moved.
   `brace-expansion` GHSA-mh99-v99m-4gvg was refused rather than merely deferred: forcing every copy to
   5.x does take `npm audit` to zero, and it breaks the `minimatch` 3.1.5 copies under `test-exclude`
   and `fork-ts-checker-webpack-plugin`, which call the module as a function while version 5 exports an

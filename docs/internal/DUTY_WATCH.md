@@ -56,6 +56,15 @@ Before a watch can be marked complete:
 - **Objective:** the maintainer confirmed ADR-0004's seven decisions and authorised the Dependabot
   work, so: implement the ADR, and settle alert 42.
 - **Completed:**
+  - **Correction to the entry below, made in the same watch.** The glib analysis was **already in
+    `CURRENT_STATE.md`** before any of this - `cargo tree`, the `gtk` 0.18.2 pin, Linux-only, and
+    `cargo audit` tolerating it at exit 0 were all recorded. It was reported to the maintainer as an
+    open unknown across several turns and then re-derived from scratch, when reading would have
+    answered it. The repository's own rule is that facts are the agent's to find; re-deriving a
+    written-down fact and presenting it as a finding is the same failure as asking for it. What #262
+    genuinely added is the `.cargo/audit.toml` entry, which did not exist, and the decision to leave
+    the GitHub alert open rather than dismiss it. The duplicate bullet it also added has been folded
+    back into the original.
   - **Dependabot alert 42 settled, and it is not fixable here.** `glib` 0.18.5, unsoundness in
     `VariantStrIter` (RUSTSEC-2024-0429). Not ours - it arrives through the GTK bindings Tauri uses
     - and **Linux only**: `cargo tree -i glib` is empty for the macOS and Windows targets. Nothing

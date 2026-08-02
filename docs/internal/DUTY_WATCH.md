@@ -48,7 +48,8 @@ Before a watch can be marked complete:
 
 - **Status:** partial
 - **Agent/tool:** Claude Code, Opus
-- **Branch:** `refactor/discover-rs-split` continued as `refactor/discover-rs-split`
+- **Branch:** `refactor/discover-feed-readers`, from `main` (`e8e3a41`) - see the process note
+  below, the commits were first made on `main` by mistake and moved
 - **Commits:** `f2d31d0`, plus this documentation commit
 - **Pull request:** opened after this entry
 - **Objective:** the seam named in the previous entry - the per-source feed parsers.
@@ -95,6 +96,13 @@ Before a watch can be marked complete:
     `clippy -D warnings` saw it. **An extraction that slices by line number can orphan the
     documentation above the first item** - worth checking explicitly next time rather than relying
     on a lint to notice.
+  - **I committed application code to `main` directly, which `AGENTS.md` forbids.** After the
+    previous pull request merged I synced `main` and started editing without cutting a branch. Two
+    commits landed on local `main`; the push appeared to succeed only because `-u` named a remote
+    branch, and it did not land. Caught by checking what the remote actually held rather than
+    trusting the push output. Recovered without loss: the commits were branched off to
+    `refactor/discover-feed-readers` and local `main` was reset to `origin/main`. Nothing reached
+    the shared branch. **Cut the branch before the first edit, not before the first commit.**
   - Unchanged: the two human release checks on `0.29.2`, the paths from this session nobody has seen
     run, Windows and Linux unverified, the AIF skill set unpruned, three upstream advisories.
 - **Next first action:** split `discover.rs`'s test module along the same three-way line the source

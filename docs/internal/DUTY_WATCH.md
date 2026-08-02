@@ -44,6 +44,67 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, Discover's geography leaves the scan engine
+
+- **Status:** partial
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-rs-split`, from `main` (`9903a88`)
+- **Commits:** `b66f7d7`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the maintainer said continue without naming a target again, so the remaining
+  scoped item was taken: `commands/discover.rs`, 3245/800, the largest file in the repository once
+  the site stylesheet was split.
+- **Completed:**
+  - **`discover_geo.rs`.** The half that came out is pure lookup - freetext names for each region,
+    the tokens a country code also answers to, the US state tables behind them, the market parser
+    and the location matcher. No database, no network, no state. It changes when a market is added
+    rather than when the scan does.
+  - **Sibling file, not a subdirectory**, following `job_identity.rs` / `job_identity_source.rs`.
+    Every item `pub(super)`: the scan is the only caller, and widening it further would invite the
+    tables to grow a second home.
+  - `KNOWN_LOCAL_MARKETS` is imported **inside the test module** rather than at file scope. Only
+    the tests read it, and a module-scope import would be dead in a release build and fail
+    `clippy -D warnings` - which is exactly what happened on the first attempt.
+  - **Exercised, not merely compiled.** The compiler proves most of a Rust move, but not that the
+    moved code matters. Gutting the German country tokens turns **five tests red**; restored and
+    re-verified at 339 passing.
+  - `discover.rs` **3245 -> 2742**, `discover_geo.rs` 522.
+- **Not completed:**
+  - Both files are still over the 800 budget. `discover.rs`'s remaining bulk is its **1142-line
+    test module** and the per-source feed parsers (`parse_nofluffjobs` 90, `parse_arbeitsagentur`
+    74, `parse_nofluffjobs_detail` 65, `parse_himalayas` 57, `parse_trudvsem` 52) - the obvious
+    next seam, and a second one in the tests, which have their own 800 budget.
+  - Child components for Jobs and Discover, still the only thing that touches either template or
+    the Discover stylesheet.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover.rs`, new
+  `discover_geo.rs`, `commands/mod.rs`, `CHANGELOG.md`, `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed**,
+  `cargo clippy --all-targets -- -D warnings` **0 problems**, `cargo fmt --check` clean,
+  `npm run quality:file-size` pass with base `3245 -> 2742`, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` all pass. **Not run:** the frontend gates - no
+  TypeScript, template or stylesheet was touched, and the Tauri command signatures are unchanged.
+- **Privacy/security impact:** none. No command signature, query, or network call changed; the
+  moved code is string lookup.
+- **Decisions and assumptions:**
+  - Target chosen rather than asked, and named plainly: the maintainer had seen all remaining
+    options with their sizes and said continue.
+  - The geography went out before the parsers, though the parsers are the more obvious grouping,
+    because the geography is **pure** and the parsers each touch the fetch path. Pure first is the
+    same order every extraction in this session followed.
+- **Risks or compatibility impact:** low, and the compiler carries most of it. The residual risk is
+  that a table was moved with a subtle edit rather than verbatim - which the five-test mutation
+  addresses only for the German tokens. The rest rests on `cargo test` and on the move being
+  mechanical.
+- **Open issues or blockers:** unchanged - the two human release checks on `0.29.2`, the paths from
+  this session nobody has seen run, Windows and Linux unverified, the AIF skill set unpruned, three
+  upstream advisories with drop conditions.
+- **Next first action:** unchanged and now overdue - open the packaged app once and press the five
+  paths from the closing entry, in the same sitting as the two `0.29.2` release checks. On the code
+  side, `discover.rs`'s per-source parsers are the next seam, and its 1142-line test module is over
+  its own budget independently.
+- **Evidence:** `npm run quality:file-size` printed `2742/800 ... base 3245` on `b66f7d7`;
+  `cargo test --lib` printed `339 passed` before and after, and `5 failed` with the tokens gutted.
+
 ### 2026-08-02, the site stylesheet splits, and the split is proven rather than claimed
 
 - **Status:** complete

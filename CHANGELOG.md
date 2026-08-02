@@ -12,6 +12,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The content-to-blocks conversion is its own module.** `documents.rs` was 1926 lines against an 800 budget; the pure middle of the export path came out - stored CV and cover-letter JSON in, styled blocks out, no database and no filesystem. Both renderers take it from there, so section headings and block tagging can be asserted without producing a file. **1926 -> 1645.**
+
 - **Each user-guide page is its own file, and its own chunk.** `guide-pages.ts` held all eleven at 1122 lines against a 400 budget; each was already a standalone component lazily routed on its own, so splitting them also splits the bundle. Largest file is now 165. All 39 routes still prerender.
 
 - **The PDF renderer is its own module.** `tailoring.rs` was 2538 lines against an 800 budget - the largest Rust file left after the Discover scan engine came apart. The printpdf half moved out: family mapping, glyph measurement, the line wrapper that measures rather than guesses, and the renderer that lays blocks onto pages. It touches no database and no filesystem. The embedded font faces went to a third file, because both exporters need them and leaving them in either would have made the other import its fonts from a module named for a format it does not produce. **2538 -> 2087.**

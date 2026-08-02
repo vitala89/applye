@@ -120,6 +120,8 @@
   became seven files, two of them behind a shared harness because their setup wires mocks rather
   than repeating boilerplate. `tsconfig.app.json` excludes `*.harness.ts`, which are test-only but
   not spec files.
+- **Three of the largest Rust files came apart.** `commands/documents.rs` **1926 -> 1645**, its
+  content-to-blocks conversion now a module of its own.
 - **The two largest Rust files came apart.** `commands/discover.rs` **3245 -> 1679** (geography,
   feed readers, and their tests each to their own file) and `commands/tailoring.rs`
   **2538 -> 2087** (the printpdf renderer, with the shared font faces in a third file because both

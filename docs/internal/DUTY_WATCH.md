@@ -75,9 +75,24 @@ JSON from the remote`.
     assets. Its tag remains, because `CHANGELOG.md` links to it;
   - **PRs #253 and #254 merged**, taking the drag fix, the visible updater, and the new agent skill
     set to `main`.
-- **Not completed:** the smoke test in `docs/RELEASE.md` and the publication, both the maintainer's.
-  Until then the download on applye.dev stays a status, and the updater keeps reporting the 404 -
-  honestly.
+  - **published, after the mechanical half of the smoke test was run here.** The maintainer asked
+    the agent to run and check itself, then to proceed on its own recommendation. What could be
+    verified without a human at the screen was: all **seven** `.sig` files against the public key in
+    `tauri.conf.json` (minisign `ED`, BLAKE2b-512 prehash, key id `38239e44c1408967` - a mismatch
+    would fail after the download, on the user's machine); the packaged Apple Silicon bundle's
+    `Info.plist` (`0.29.2`, `dev.applye.app`), its `arm64` binary, and its embedded frontend
+    carrying a stylesheet link with **no** `onload=` handler, which is the exact shape that rendered
+    `0.29.0` unstyled; and a real launch of the packaged app against an isolated `HOME`, which
+    survived, printed nothing to stderr, and applied **all 28 migrations** on a fresh database with
+    zero failures, including `0028` and its three identity columns - the migration the previous
+    watch listed as unverified in a packaged build;
+  - **the update channel was then verified live**, which a draft cannot prove: the endpoint returns
+    the manifest, and the bundle URL inside it streams 16,448,597 bytes unauthenticated - the same
+    file whose signature had been checked.
+- **Not completed:** the human half of the smoke test. Nobody has looked at the packaged window, and
+  nothing was exercised on Windows or Linux; the `.rpm` remains the least tested artifact. Those
+  gaps are real and are recorded here rather than implied away by the word "published". The
+  `COMING_SOON` flip on the website follows in its own change, per the decision below.
 - **Files or packages changed:** `docs/product/CURRENT_STATE.md`, this file. No code.
 - **Validation:** `npm run format:check` pass, `npm run quality:attribution` pass, `git diff --check`
   pass. Documentation only, so the matrix requires nothing further. The release itself was validated
@@ -95,11 +110,13 @@ JSON from the remote`.
 - **Risks or compatibility impact:** the manifest's asset URLs are unverifiable until the release is
   published - a draft's assets are not publicly reachable, so the updater's download path is proved
   only by the publish. That is the first thing the smoke test exercises.
-- **Open issues or blockers:** publication is the only blocker, and it is a manual gate by design.
+- **Open issues or blockers:** the visual and cross-platform halves of the smoke test are still
+  owed on a shipped release, which is the wrong order and is stated as such.
   `dashboard.component.ts` 428/400, `pipeline.component.scss` 456/400, `settings.component.ts`
   575/400, `settings.component.html` 580/300 and `jobs.component.ts` 1610/400 all remain over budget.
-- **Next first action:** the maintainer runs step 0 of `docs/RELEASE.md` against
-  `Applye_0.29.2_aarch64.dmg`, then publishes; the agent then opens the `COMING_SOON = false` PR.
+- **Next first action:** open the `COMING_SOON = false` change so applye.dev offers the download,
+  then have a human look at the packaged window on macOS and run the Windows and Linux halves of
+  `docs/RELEASE.md`.
 - **Evidence:** `gh run view` reports four successful matrix jobs; `gh release view v0.29.2` lists 17
   assets with `draft: true`; `curl` returns 404 for the updater endpoint and 200 for
   `releases/latest` resolving to `v0.29.0`; `gh release list` no longer shows a `0.29.1` draft while

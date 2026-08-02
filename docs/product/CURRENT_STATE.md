@@ -1,18 +1,25 @@
 # Current Operational State
 
-- **Current version**: `0.29.2`, **tagged, built, and waiting as a draft release with 17 assets** -
-  macOS on both architectures, Windows `.msi` and `.exe`, Linux `.deb`/`.rpm`/`.AppImage`, each with
-  its `.sig`, plus `latest.json`. All four matrix jobs passed. The manifest was verified rather than
-  assumed: version `0.29.2`, eleven platform entries, every one signed. **Not published**: it needs
-  the smoke test in `docs/RELEASE.md`, which is the maintainer's step and the only thing between
-  here and a release. The superseded `0.29.1` draft was deleted; its tag remains, because
-  `CHANGELOG.md` links to it.
-- **The published latest release is still `v0.29.0`**, carrying **one** installer, an Apple Silicon
-  `.dmg` and no `latest.json`. Two consequences, both deliberate. `COMING_SOON` on the website stays
-  `true` while `SOURCE_PUBLIC` is now `true`, so the hero offers a status rather than a download.
-  And the in-app updater reports `Could not fetch a valid release JSON from the remote`, which is
-  **correct**: `releases/latest/download/latest.json` is a genuine 404 until a release carrying the
-  manifest is published. Publishing `0.29.2` clears both.
+- **Current version**: `0.29.2`, **published**, and the first Applye release that ships an installer
+  for every platform: macOS on both architectures, Windows `.msi` and `.exe`, Linux
+  `.deb`/`.rpm`/`.AppImage`, each with its `.sig`, plus `latest.json`. All four matrix jobs passed.
+  The superseded `0.29.1` draft was deleted; its tag remains, because `CHANGELOG.md` links to it.
+- **The auto-update channel is live and was verified end to end after publication.**
+  `releases/latest/download/latest.json` returns the manifest (version `0.29.2`, eleven platform
+  entries), and the bundle URL inside it streams 16,448,597 bytes without authentication - the same
+  file whose signature was checked. Every one of the seven `.sig` files verifies against the public
+  key in `tauri.conf.json`: minisign `ED`, BLAKE2b-512 prehash, key id `38239e44c1408967`. That
+  check matters because a key mismatch fails **after** the download, on the user's machine.
+- **What the smoke test covered, and what it did not.** Mechanically verified on the packaged
+  Apple Silicon build: `Info.plist` reads `0.29.2` and `dev.applye.app`, the binary is `arm64`, the
+  embedded frontend carries its stylesheet link and **no** `onload=` handler - the exact shape that
+  rendered `0.29.0` unstyled - and the app launched against an isolated `HOME`, survived, wrote
+  nothing to stderr, and applied **all 28 migrations** on a fresh database with zero failures,
+  including `0028` with its three identity columns. **Not verified:** that the window renders
+  correctly to a human eye, and anything at all on Windows or Linux. The `.rpm` remains the least
+  exercised artifact.
+- **`SOURCE_PUBLIC` is `true`.** `COMING_SOON` flips to `false` in its own change now that the
+  download exists on all three platforms.
   Three bugs had to be fixed to reach a
   CI-built bundle at all, all invisible for the same reason - Actions was blocked while the repository was private, so
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered

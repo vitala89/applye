@@ -44,6 +44,55 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the drag fix that did nothing, and the test that let it through
+
+- **Status:** complete, native pass pending
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/pipeline-drag-lag-and-update-ui` (same branch, second commit)
+- **Commits:** one, on top of `f581141`
+- **Pull request:** [#253](https://github.com/vitala89/applye/pull/253), open
+- **Objective:** the maintainer ran the app and the pipeline card still lagged behind the pointer.
+  This entry corrects the previous one, which reported the drag as fixed. **It was not.**
+- **Completed:**
+  - **What was wrong with the fix.** `.cdk-drag-preview { transition: none }` and
+    `.card { transition: ... transform 0.15s }` are both one class, so the cascade is decided by
+    source order - and `@use` must be the first statement in a Sass file, which puts every rule of
+    the extracted `_drag.scss` _before_ `.card` in the emitted stylesheet. The preview therefore
+    kept `.card`'s transform transition and behaved exactly as before. Proved by compiling the sheet
+    and reading the output, not by inspection: `.cdk-drag-preview` was rule 1, `.card` was rule 283;
+  - the rule is now `.card.cdk-drag-preview`, which wins on two classes whatever the order, with
+    `.card.cdk-drag-animating` declared after it so the drop animation still runs. The now-redundant
+    single-class `.cdk-drag-animating` rule was removed, and the preview gained
+    `will-change: transform` so moving it repaints nothing beneath it. Every transition in the
+    compiled sheet was listed to confirm nothing else reaches the preview;
+  - **what was wrong with the test, which matters more.** It asserted that `_drag.scss` _contains_
+    `transition: none` under `.cdk-drag-preview`. That was true while the bug was fully present: a
+    text search cannot see a cascade, so the guard was green for a fix that did nothing. It now
+    compiles the stylesheet with `sass` and resolves which `transition` declaration actually wins
+    for an element carrying `card` + `cdk-drag-preview`, by specificity then source order.
+    **Verified against the broken version:** restoring the single-class rule fails it.
+- **Not completed:** the native pass. A dropped frame cannot be seen from here - the browser preview
+  cannot render the pipeline board, which needs the database - so the maintainer confirms the feel.
+- **Files or packages changed:** `apps/desktop/src/app/pages/pipeline/{_drag.scss,drag-styles.spec.ts}`,
+  `CHANGELOG.md`, this file.
+- **Validation:** `npm run type-check` pass, `npm test` pass (1019), `npm run lint` pass (0 errors,
+  8 pre-existing warnings), `npm run quality:file-size` pass, `npm run verify:csp` pass,
+  `git diff --check` pass, `npm run format:check` pass. **Not run:** `tauri dev`.
+- **Privacy/security impact:** none. Two CSS rules and a test.
+- **Decisions and assumptions:** specificity was chosen over `!important` and over reordering,
+  because `@use` cannot be moved and `!important` would also defeat the drop animation. The guard
+  parses class-only selectors and skips anything with a combinator - correct here, since the CDK
+  moves the preview out to the body, so no descendant rule can reach it.
+- **Risks or compatibility impact:** the guard's parser is deliberately narrow. A future rule
+  written as a descendant selector, or with `!important`, would not be weighed by it - the failure
+  mode is a silent pass, which is exactly what this entry is about. Stated here rather than assumed
+  away.
+- **Open issues or blockers:** unchanged from the entry below. `v0.29.2` is still untagged.
+- **Next first action:** merge #253, then tag `v0.29.2`.
+- **Evidence:** the compiled stylesheet before the fix put `.cdk-drag-preview` at rule 1 and `.card`
+  at rule 283; after it, the winner for `card cdk-drag-preview` is `transition: none`. Reverting to
+  the single-class rule fails `drag-styles.spec.ts`, which the previous version of that spec passed.
+
 ### 2026-08-02, unstick the pipeline drag, and make the updater visible
 
 - **Status:** complete, native pass pending

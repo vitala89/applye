@@ -75,6 +75,7 @@ import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
 import { baseCvChoices, documentReviewLanguageFor } from './job-document-defaults';
+import { currentPhaseKey, tailorPhases } from './tailor-phases';
 
 @Component({
   selector: 'app-jobs',
@@ -684,40 +685,13 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /** Three tailoring phases (XYZ → dual critique → build) with derived state. */
-  readonly tailorPhases = computed(() => {
-    const done = this.tailorResults().length;
-    const running = this.tailoring();
-    const defs = [
-      { n: 1, icon: this.icons.pencilLine, nameKey: 'jobs.wizard.phase_xyz' },
-      { n: 2, icon: this.icons.scanSearch, nameKey: 'jobs.wizard.phase_critique' },
-      { n: 3, icon: this.icons.hammer, nameKey: 'jobs.wizard.phase_build' },
-    ];
-    return defs.map((d) => {
-      let state: 'done' | 'running' | 'ready' | 'pending';
-      let statusKey: string;
-      if (done >= d.n) {
-        state = 'done';
-        statusKey = 'jobs.wizard.phase_done';
-      } else if (running && done === d.n - 1) {
-        state = 'running';
-        statusKey = 'jobs.wizard.phase_running';
-      } else if (!running && done === d.n - 1) {
-        state = 'ready';
-        statusKey = 'jobs.wizard.phase_ready';
-      } else {
-        state = 'pending';
-        statusKey = 'jobs.wizard.phase_pending';
-      }
-      return { ...d, state, statusKey };
-    });
-  });
+  readonly tailorPhases = computed(() =>
+    tailorPhases(this.tailorResults().length, this.tailoring()),
+  );
 
   /** i18n key of the phase currently being generated - drives the animated
    * "AI thinking" line while tailoring auto-runs through all three passes. */
-  readonly currentPhaseKey = computed(() => {
-    const keys = ['jobs.wizard.phase_xyz', 'jobs.wizard.phase_critique', 'jobs.wizard.phase_build'];
-    return keys[Math.min(this.tailorResults().length, 2)];
-  });
+  readonly currentPhaseKey = computed(() => currentPhaseKey(this.tailorResults().length));
 
   /** Aliases onto `DocumentExportService`. Several component methods reset the
    * status line directly, so these stay the same writable signals. */

@@ -31,7 +31,6 @@ import {
   parseArchetypes,
   jobHeaderTitle,
   parseLegitimacyNotes,
-  normalizeSupportedLanguage,
   SUPPORTED_LANGUAGES,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
@@ -75,6 +74,8 @@ import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
+import { baseCvChoices, documentReviewLanguageFor } from './job-document-defaults';
+import { currentPhaseKey, tailorPhases } from './tailor-phases';
 
 @Component({
   selector: 'app-jobs',
@@ -684,40 +685,13 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   /** Three tailoring phases (XYZ → dual critique → build) with derived state. */
-  readonly tailorPhases = computed(() => {
-    const done = this.tailorResults().length;
-    const running = this.tailoring();
-    const defs = [
-      { n: 1, icon: this.icons.pencilLine, nameKey: 'jobs.wizard.phase_xyz' },
-      { n: 2, icon: this.icons.scanSearch, nameKey: 'jobs.wizard.phase_critique' },
-      { n: 3, icon: this.icons.hammer, nameKey: 'jobs.wizard.phase_build' },
-    ];
-    return defs.map((d) => {
-      let state: 'done' | 'running' | 'ready' | 'pending';
-      let statusKey: string;
-      if (done >= d.n) {
-        state = 'done';
-        statusKey = 'jobs.wizard.phase_done';
-      } else if (running && done === d.n - 1) {
-        state = 'running';
-        statusKey = 'jobs.wizard.phase_running';
-      } else if (!running && done === d.n - 1) {
-        state = 'ready';
-        statusKey = 'jobs.wizard.phase_ready';
-      } else {
-        state = 'pending';
-        statusKey = 'jobs.wizard.phase_pending';
-      }
-      return { ...d, state, statusKey };
-    });
-  });
+  readonly tailorPhases = computed(() =>
+    tailorPhases(this.tailorResults().length, this.tailoring()),
+  );
 
   /** i18n key of the phase currently being generated - drives the animated
    * "AI thinking" line while tailoring auto-runs through all three passes. */
-  readonly currentPhaseKey = computed(() => {
-    const keys = ['jobs.wizard.phase_xyz', 'jobs.wizard.phase_critique', 'jobs.wizard.phase_build'];
-    return keys[Math.min(this.tailorResults().length, 2)];
-  });
+  readonly currentPhaseKey = computed(() => currentPhaseKey(this.tailorResults().length));
 
   /** Aliases onto `DocumentExportService`. Several component methods reset the
    * status line directly, so these stay the same writable signals. */
@@ -855,33 +829,16 @@ export class JobsComponent implements OnInit, OnDestroy {
       const apps = await this.db.listApplications();
       const app = apps.find((a) => a.jobId === id) ?? null;
       this.application.set(app);
-      this.documentReviewLanguage.set(
-        app?.docLanguage ??
-          normalizeSupportedLanguage(job.language ?? this.settings()?.defaultDocLanguage),
-      );
+      this.documentReviewLanguage.set(documentReviewLanguageFor(app, job, this.settings()));
       this.documentReviewRegion.set(inferDocumentRegion(job));
 
       const coverLetters = await this.db.documentLibraryList('cover_letter');
       this.coverLetters.set(coverLetters);
 
       const cvs = await this.db.documentLibraryList('cv');
-      const s = this.settings();
-      const lang = job.language ?? s?.defaultDocLanguage ?? 'en';
-      const matches = cvs.filter((c) => c.language === lang || c.isDefault);
-      // Default the base CV to the profile ("from scratch", null). The one
-      // exception: if this job already has its own tailored CV, default to
-      // that so a retailor builds on the job's own document rather than a
-      // generic one. Make sure that CV is selectable even if the language
-      // filter would have excluded it.
-      const linkedCvId = this.application()?.cvDocumentId ?? null;
-      if (linkedCvId != null && !matches.some((c) => c.id === linkedCvId)) {
-        const linked = cvs.find((c) => c.id === linkedCvId);
-        if (linked) matches.unshift(linked);
-      }
-      this.matchingCvs.set(matches);
-      this.selectedBaseCvId.set(
-        linkedCvId != null && matches.some((c) => c.id === linkedCvId) ? linkedCvId : null,
-      );
+      const choices = baseCvChoices(cvs, job, this.settings(), app?.cvDocumentId ?? null);
+      this.matchingCvs.set(choices.matches);
+      this.selectedBaseCvId.set(choices.selectedId);
       await this.loadLinkedDocuments();
 
       this.portal.reset(app?.docLanguage ?? this.settings()?.defaultDocLanguage ?? 'en');

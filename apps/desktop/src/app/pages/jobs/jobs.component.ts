@@ -18,43 +18,7 @@ import { TailorScoreService } from '../../shared/tailor-score.service';
 import { WizardActivity, WizardActivityService } from '../../shared/wizard-activity.service';
 import { DocumentGenService, ReviewDocumentKind } from '../../shared/document-gen.service';
 import { FormsModule } from '@angular/forms';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Database,
-  ExternalLink,
-  FileDown,
-  FileText,
-  Flag,
-  GitCompare,
-  Hammer,
-  Languages,
-  ListChecks,
-  LucideAngularModule,
-  Minus,
-  Pencil,
-  PencilLine,
-  Plus,
-  RotateCw,
-  ScanLine,
-  ScanSearch,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  CircleX,
-  Star,
-  Tag,
-  Trash2,
-  WandSparkles,
-  Bookmark,
-  X,
-} from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
 import { AiService, DbService, JobsStore } from '@applye/data';
 import {
   Application,
@@ -63,21 +27,16 @@ import {
   Settings,
   SupportedLanguage,
   LANGUAGE_NATIVE_NAMES,
-  CoverLetterAddress,
-  CoverLetterContent,
-  COVER_LETTER_TONE_DEFAULT,
-  COVER_LETTER_LENGTH_DEFAULT,
   DocumentLibraryItem,
   parseArchetypes,
   jobHeaderTitle,
   parseLegitimacyNotes,
   normalizeSupportedLanguage,
   SUPPORTED_LANGUAGES,
-  sanitizeSignature,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
-import { JobDetailIcons, applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
+import { applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
@@ -103,10 +62,12 @@ import {
   CoverLetterDraftService,
   coverLetterHashInput,
 } from '../../shared/cover-letter-draft.service';
+import { CoverLetterTailorService } from '../../shared/cover-letter-tailor.service';
 import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
+import { JOB_DETAIL_ICONS } from './job-detail-icons';
 
 @Component({
   selector: 'app-jobs',
@@ -136,6 +97,7 @@ import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
     WizardNavService,
     CvDraftService,
     CoverLetterDraftService,
+    CoverLetterTailorService,
     LinkedDocumentsService,
     JobActionsService,
     CvPhotoPromptService,
@@ -154,6 +116,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly wizardNav = inject(WizardNavService);
   private readonly cvDraftSvc = inject(CvDraftService);
   private readonly coverLetterSvc = inject(CoverLetterDraftService);
+  private readonly coverLetterTailor = inject(CoverLetterTailorService);
   private readonly linkedDocs = inject(LinkedDocumentsService);
   private readonly jobActions = inject(JobActionsService);
   private readonly intake = inject(JobIntakeService);
@@ -208,53 +171,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   protected readonly t = this.i18n.t;
 
-  protected readonly icons: JobDetailIcons & {
-    empty: typeof Search;
-    copy: typeof Copy;
-    add: typeof Plus;
-    remove: typeof X;
-    another: typeof RotateCw;
-    trash: typeof Trash2;
-    dangerGlyph: typeof CircleX;
-  } = {
-    empty: Search,
-    atsPass: Check,
-    atsFail: X,
-    tag: Tag,
-    flag: Flag,
-    scan: ScanLine,
-    checklist: ListChecks,
-    next: ArrowRight,
-    star: Star,
-    db: Database,
-    bookmark: Bookmark,
-    wand: WandSparkles,
-    back: ArrowLeft,
-    checkCircle: CheckCircle2,
-    languages: Languages,
-    chevronDown: ChevronDown,
-    chevronUp: ChevronUp,
-    shieldCheck: ShieldCheck,
-    sparkles: Sparkles,
-    gitCompare: GitCompare,
-    alertTriangle: AlertTriangle,
-    minus: Minus,
-    plus: Plus,
-    pencil: Pencil,
-    hammer: Hammer,
-    scanSearch: ScanSearch,
-    pencilLine: PencilLine,
-    fileText: FileText,
-    fileDown: FileDown,
-    externalLink: ExternalLink,
-    copy: Copy,
-    check: Check,
-    add: Plus,
-    remove: X,
-    another: RotateCw,
-    trash: Trash2,
-    dangerGlyph: CircleX,
-  };
+  protected readonly icons = JOB_DETAIL_ICONS;
 
   /** Supported document languages. Named for the portal-answers language select
    * it was introduced for; the template now also uses it for the CV/cover-letter
@@ -350,15 +267,17 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly changesOpen = signal(true);
   protected readonly changeType = classifyChangeType;
 
-  // Cover Letter tailoring (Phase 1c)
+  // Cover Letter tailoring (Phase 1c). The library list stays here because the
+  // choose-existing dropdown reads the same rows; the modal's own state lives
+  // in `CoverLetterTailorService` and is aliased in below.
   readonly coverLetters = signal<DocumentLibraryItem[]>([]);
   readonly matchingCvs = signal<DocumentLibraryItem[]>([]);
   readonly selectedBaseCvId = signal<number | null>(null);
-  readonly selectedCoverLetterId = signal<number | null>(null);
-  readonly tailorCoverLetterLanguage = signal<SupportedLanguage>('en');
-  readonly tailorCoverLetterOpen = signal(false);
-  readonly tailoringCoverLetter = signal(false);
-  readonly tailorCoverLetterError = signal('');
+  readonly selectedCoverLetterId = this.coverLetterTailor.selectedId;
+  readonly tailorCoverLetterLanguage = this.coverLetterTailor.language;
+  readonly tailorCoverLetterOpen = this.coverLetterTailor.modalOpen;
+  readonly tailoringCoverLetter = this.coverLetterTailor.running;
+  readonly tailorCoverLetterError = this.coverLetterTailor.error;
 
   readonly documentRegionTags: DocumentRegionTag[] = ['de', 'us', 'uk', 'generic'];
   readonly documentReviewRegion = signal<DocumentRegionTag>('generic');
@@ -792,198 +711,23 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   async openTailorCoverLetterModal(): Promise<void> {
-    this.tailorCoverLetterError.set('');
-    this.selectedCoverLetterId.set(null);
-    this.tailoringCoverLetter.set(false);
-    this.tailorCoverLetterOpen.set(true);
-
-    try {
-      const letters = await this.db.documentLibraryList('cover_letter');
-      this.coverLetters.set(letters);
-      const settings = this.settings();
-      this.tailorCoverLetterLanguage.set(settings?.defaultDocLanguage ?? 'en');
-      const defaultDoc =
-        letters.find((c) => c.isDefault && c.language === this.tailorCoverLetterLanguage()) ??
-        letters.find((c) => c.language === this.tailorCoverLetterLanguage()) ??
-        letters[0] ??
-        null;
-      if (defaultDoc) {
-        this.selectedCoverLetterId.set(defaultDoc.id);
-      }
-    } catch {
-      // Non-fatal
-    }
+    const letters = await this.coverLetterTailor.prepare(this.settings());
+    // Null means the list could not be read - non-fatal, keep what we had.
+    if (letters) this.coverLetters.set(letters);
   }
 
   async startTailoringCoverLetter(): Promise<void> {
-    if (this.tailoringCoverLetter()) return;
-    this.tailoringCoverLetter.set(true);
-    this.tailorCoverLetterError.set('');
-
-    try {
-      const job = this.job();
-      const profile = this.profile();
-      const settings = this.settings();
-      if (!job || !job.id) throw new Error('No active job selected.');
-      if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
-
-      const lang = this.tailorCoverLetterLanguage();
-      const jd = job.jdText ?? '';
-
-      let baseParagraphs: string[] = [];
-      let baseAddress: CoverLetterAddress = {};
-      let baseSubject = '';
-      let baseGreeting = '';
-      let baseClosing = '';
-      let baseSignature = '';
-      let baseRegionTag = 'generic';
-      // Honor the base letter's chosen voice/length; fall back to defaults.
-      let tone = COVER_LETTER_TONE_DEFAULT;
-      let length = COVER_LETTER_LENGTH_DEFAULT;
-      // Availability and salary belong to the applicant, not to one letter, so
-      // they carry over from the base letter into every tailored copy.
-      let earliestStart = '';
-      let salaryExpectation = '';
-      let noticePeriod = '';
-
-      const selectedId = this.selectedCoverLetterId();
-      if (selectedId) {
-        const baseDoc = this.coverLetters().find((c) => c.id === selectedId);
-        if (baseDoc && baseDoc.contentJson) {
-          const content = JSON.parse(baseDoc.contentJson) as CoverLetterContent;
-          baseParagraphs = content.bodyParagraphs || [];
-          baseAddress = content.address || {};
-          baseSubject = content.subject || '';
-          baseGreeting = content.greeting || '';
-          baseClosing = content.closing || '';
-          baseSignature = content.signature || '';
-          baseRegionTag = baseDoc.regionTag || 'generic';
-          tone = content.tone ?? tone;
-          length = content.length ?? length;
-          earliestStart = content.earliestStart ?? '';
-          salaryExpectation = content.salaryExpectation ?? '';
-          noticePeriod = content.noticePeriod ?? '';
-        }
-      }
-
-      let tailoredParagraphs: string[] = [];
-      const modelUsed = settings?.defaultModel ?? 'quality';
-      let tokensInput = 0;
-      let tokensOutput = 0;
-
-      if (baseParagraphs.length > 0) {
-        const rendered = await this.ai.renderSkill('cover-letter-tailor', {
-          profile_md: profile.fullMd,
-          job_description: jd,
-          body_paragraphs: JSON.stringify(baseParagraphs),
-          language: lang,
-          tone,
-          length,
-        });
-        const res = await this.ai.run({
-          mode: settings?.aiMode ?? 'api',
-          provider: settings?.provider ?? 'openai',
-          model: settings?.defaultModel ?? 'quality',
-          systemPrompt: rendered.systemPrompt,
-          userPrompt: rendered.userPrompt,
-          language: lang,
-        });
-
-        const rawText = res.text
-          .replace(/^```(?:json)?\s*/i, '')
-          .replace(/\s*```\s*$/i, '')
-          .trim();
-
-        const parsed = JSON.parse(rawText);
-        tailoredParagraphs = parsed.bodyParagraphs || [];
-        tokensInput = res.tokensInput;
-        tokensOutput = res.tokensOutput;
-      } else {
-        const rendered = await this.ai.renderSkill('cover-letter-generate', {
-          profile_md: profile.fullMd,
-          job_description: jd,
-          language: lang,
-          section: 'all',
-          tone,
-          length,
-          earliest_start: earliestStart,
-          salary_expectation: salaryExpectation,
-          notice_period: noticePeriod,
-        });
-        const res = await this.ai.run({
-          mode: settings?.aiMode ?? 'api',
-          provider: settings?.provider ?? 'openai',
-          model: settings?.defaultModel ?? 'quality',
-          systemPrompt: rendered.systemPrompt,
-          userPrompt: rendered.userPrompt,
-          language: lang,
-        });
-
-        const rawText = res.text
-          .replace(/^```(?:json)?\s*/i, '')
-          .replace(/\s*```\s*$/i, '')
-          .trim();
-
-        const parsed = JSON.parse(rawText) as CoverLetterContent;
-        baseAddress = parsed.address || {};
-        baseSubject = parsed.subject || '';
-        baseGreeting = parsed.greeting || '';
-        baseClosing = parsed.closing || '';
-        baseSignature = parsed.signature || '';
-        tailoredParagraphs = parsed.bodyParagraphs || [];
-        tokensInput = res.tokensInput;
-        tokensOutput = res.tokensOutput;
-      }
-
-      const contentJsonObj: CoverLetterContent = {
-        address: baseAddress,
-        date: new Date().toISOString().split('T')[0],
-        subject: baseSubject,
-        greeting: baseGreeting,
-        bodyParagraphs: tailoredParagraphs,
-        closing: baseClosing,
-        // The signature is the sender's name only. The AI is prompted never to
-        // append contact detail, but does not obey reliably, so strip any
-        // phone / email / URL deterministically before persisting.
-        signature: sanitizeSignature(baseSignature),
-        jobDescription: jd,
-        tone,
-        length,
-        earliestStart,
-        salaryExpectation,
-        noticePeriod,
-      };
-
-      const label = this.jobDocLabel(job, 'Tailored Cover Letter');
-      const created = await this.db.documentLibraryUpsert({
-        docType: 'cover_letter',
-        source: 'generated',
-        label,
-        contentJson: JSON.stringify(contentJsonObj),
-        regionTag: baseRegionTag,
-        language: lang,
-        modelUsed,
-        tokensInput,
-        tokensOutput,
-      });
-
-      const app = this.application();
-      if (app && app.id) {
-        const updatedApp = await this.db.upsertApplication({
-          ...app,
-          coverLetterDocumentId: created.id,
-        });
-        this.application.set(updatedApp);
-      }
-
-      this.tailorCoverLetterOpen.set(false);
-      void this.router.navigate(['/documents/cover-letter', created.id]);
-    } catch (e) {
-      this.tailorCoverLetterError.set(String(e));
-      this.toast.error(String(e));
-    } finally {
-      this.tailoringCoverLetter.set(false);
-    }
+    const result = await this.coverLetterTailor.run({
+      job: this.job(),
+      profile: this.profile(),
+      settings: this.settings(),
+      letters: this.coverLetters(),
+      application: this.application(),
+      label: (job) => this.jobDocLabel(job, 'Tailored Cover Letter'),
+    });
+    if (!result) return;
+    if (result.application) this.application.set(result.application);
+    void this.router.navigate(['/documents/cover-letter', result.document.id]);
   }
 
   /** Three tailoring phases (XYZ → dual critique → build) with derived state. */

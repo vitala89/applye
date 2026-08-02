@@ -30,6 +30,27 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **The jobs page is being taken apart, and is two extractions in.** `jobs.component.ts` is **1226**
+  non-empty lines against a budget of 400, down from 1467 at the start of the watch. Out so far:
+  `CoverLetterTailorService` (the tailor-an-existing-letter modal, with the base-letter read and the
+  content assembly as pure functions) and `job-detail-icons.ts` (the icon table, plus a spec that
+  reads the template and asserts every `icons.<name>` it references exists - a class of error
+  `npm run type-check` cannot see). Both were verified by breaking the code and watching the tests go
+  red. **The template and stylesheet have not been touched**: `jobs.component.html` is 1148/300 and
+  `jobs.component.scss` 933/400, and they follow the `.ts` rather than lead it. The next seam is the
+  document-drafting group - `createCvDraft`, `createCoverLetterDraft`, `chooseExistingDocument`,
+  `prepareDocumentsStep`, `commitApplicationDocuments` and the two staleness checks, roughly 180
+  lines that share one status-and-error shape. It was scoped and deliberately not attempted this
+  watch: it writes ten component signals, the page has no component-level test, and this is the
+  feature that produced six rounds of falsely green unit tests.
+- **Unclaimed jobs: decided, not yet built.** The rows that accumulate invisibly since PR #248 now
+  have an answer, reached through `aif-grilling` rather than chosen by the agent, and written up as
+  `docs/product/decisions/ADR-0004-unclaimed-jobs-stay-and-become-visible.md`. They stay: the fix is
+  visibility, not deletion. `db_list_jobs_overview_core` relaxes its `WHERE` to the rule
+  `db_list_jobs` already uses, `JobOverview` gains a derived `claimed` boolean, and My Jobs gains one
+  filter chip default-off with its own status word. No migration, because "claimed" is derivable.
+  Discover-scanned rows stay hidden. The ADR is `draft` pending the maintainer's sign-off on the
+  numbered list; the implementation is the next session's work.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

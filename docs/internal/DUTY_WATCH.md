@@ -44,6 +44,52 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-02, the CV content spec follows the modules it tests
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cv-content-spec-split`, from `main` (`1ceaf0c`), cut before the first edit
+- **Commits:** `5c166e4`, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** I claimed twice that no decision-free move was left. Both times I checked by
+  asserting rather than measuring. This time I measured: **four spec files were over the 600
+  budget**, and splitting a spec touches no consumer at all, so all four are decision-free. Took
+  the largest.
+- **Completed:**
+  - `cv-content.util.spec.ts` **1509/600 became four files**, following the source split from the
+    previous watch: style (473), entry editing (176), AI response parsing (445), content building
+    (426). Every one under budget where one was at 1509.
+  - 120 tests before, 120 after; 1183 across the app either side; 89 suites.
+- **Not completed:** three spec files remain over budget - `cv-detail.component.spec.ts` 940,
+  `cv-live-style-panel.component.spec.ts` 913, `onboarding.component.spec.ts` 689. All the same
+  decision-free shape.
+- **Files or packages changed:** `cv-content.util.spec.ts`, new `cv-style.util.spec.ts`,
+  `cv-entry.util.spec.ts`, `cv-parse.util.spec.ts`, this file.
+- **Validation:** run and observed - `npm run type-check` pass for 6 projects, `npx nx test desktop`
+  **1183 passed, 89 suites**, `npx nx lint desktop` 0 errors / 8 pre-existing warnings,
+  `npx nx build desktop` complete, `npm run quality:file-size` pass, `npm run quality:attribution`,
+  `npm run format:check`, `git diff --check` all pass. **Not run:** the `cargo` gates.
+- **Privacy/security impact:** none. Tests only.
+- **Decisions and assumptions:** the split follows the modules rather than the describe count, which
+  is why it landed at four files and not three.
+- **Risks or compatibility impact:** none to production code.
+- **Open issues or blockers:**
+  - **Splitting by adjacency sweeps module-level helpers into the wrong file.** Each describe was
+    taken as running to the next one, which put a fixture into the file whose describe happened to
+    precede it while its only callers stayed behind. **The tests caught it** - two failures, named
+    and immediate - which is the difference from the previous spec split, where eleven lost tests
+    produced no failure at all and only the count exposed them. Orphan helpers between describes
+    need the same explicit check orphan tests do.
+  - **I asserted "nothing decision-free left" twice and was wrong both times.** Both claims were
+    made from memory of what I had looked at, not from a fresh measurement. The audit takes seconds.
+  - Unchanged: the two human release checks on `0.29.2`, everything shipped this session still
+    unseen running, Windows and Linux unverified, the AIF skill set unpruned, three upstream
+    advisories, and the ratchet corner from the previous watch.
+- **Next first action:** the manual pass. Failing that, three more spec files are over budget and
+  are the same mechanical shape as this one.
+- **Evidence:** `npx nx test desktop` printed `1183 passed, 89 suites`; `npm run quality:file-size`
+  reports no violation and every new file under 600.
+
 ### 2026-08-02, the CV content util splits, and the gate names the price of splitting
 
 - **Status:** complete

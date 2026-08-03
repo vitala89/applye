@@ -59,7 +59,7 @@
               [disabled]="actionBusy()"
               (click)="markApplied()"
             >
-              {{ t()('jobs.mark_applied') }}
+              {{ t()(jobActions.applying() ? 'jobs.applying' : 'jobs.mark_applied') }}
             </button>
           } @else if (application(); as app) {
             <!-- Status is read-only here; it is set on the Pipeline board

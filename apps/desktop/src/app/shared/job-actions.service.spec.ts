@@ -160,43 +160,79 @@ describe('JobActionsService', () => {
   });
 
   describe('markApplied', () => {
+    let ensured: number;
+
     const commit = () => {
       if (commitFails) return Promise.reject(new Error('document commit failed'));
       order.push('commit');
       return Promise.resolve();
     };
 
-    it('creates the application row when the job has none', async () => {
-      await svc.markApplied(7, null, commit);
+    const ensure = () => {
+      ensured += 1;
+      order.push('ensure');
+      return Promise.resolve({ id: 5, jobId: 7 } as never);
+    };
 
-      expect(upserted[0]).toMatchObject({ jobId: 7, status: 'saved' });
+    beforeEach(() => {
+      ensured = 0;
     });
 
-    it('reuses the application the job already has', async () => {
-      await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+    it('never writes an application row of its own', async () => {
+      // The page owns creation, because it also holds the signal every later
+      // step reads. A row written here would be invisible to that signal, and
+      // the next step to ask for a draft would write a second one.
+      await svc.markApplied(ensure, commit);
 
       expect(upserted).toEqual([]);
     });
 
-    it('commits the documents before the status flips to applied', async () => {
-      // Order is the point: a job marked applied must already own its CV and
-      // cover letter, or the user is applied to a job with nothing attached.
-      await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+    it('asks the caller for the application exactly once', async () => {
+      await svc.markApplied(ensure, commit);
 
-      expect(order).toEqual(['commit', 'status:applied']);
+      expect(ensured).toBe(1);
+    });
+
+    it('has the application in hand before the documents are committed', async () => {
+      // Reversed, the commit would create its own row and the status would
+      // land on a different one.
+      await svc.markApplied(ensure, commit);
+
+      expect(order).toEqual(['ensure', 'commit', 'status:applied']);
     });
 
     it('mirrors the status the database recorded, not the one asked for', async () => {
-      const result = await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+      const result = await svc.markApplied(ensure, commit);
 
       expect(result?.status).toBe('interview');
       expect(patched).toEqual([{ id: 7, patch: { status: 'interview' } }]);
     });
 
+    it('flags the long step while the documents are being prepared', async () => {
+      // The commit generates whatever the application is missing and can run
+      // for minutes. Without this the button is simply dead, which reads as a
+      // hang - `busy` cannot say it, because saving a lead raises that too.
+      let duringCommit: boolean | undefined;
+      await svc.markApplied(ensure, () => {
+        duringCommit = svc.applying();
+        return Promise.resolve();
+      });
+
+      expect(duringCommit).toBe(true);
+    });
+
+    it('drops the flag when the documents fail, with the button live again', async () => {
+      commitFails = true;
+
+      await svc.markApplied(ensure, commit);
+
+      expect(svc.applying()).toBe(false);
+    });
+
     it('leaves busy set on success, because the caller navigates away', async () => {
       // Same rule as `remove`: clearing it first puts a usable button back on
       // screen for the frame before the route changes.
-      await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit);
+      await svc.markApplied(ensure, commit);
 
       expect(svc.busy()).toBe(true);
     });
@@ -204,10 +240,19 @@ describe('JobActionsService', () => {
     it('returns the page to a usable state when the documents fail', async () => {
       commitFails = true;
 
-      expect(await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit)).toBeNull();
+      expect(await svc.markApplied(ensure, commit)).toBeNull();
       expect(svc.busy()).toBe(false);
       expect(svc.message()).toContain('document commit failed');
       expect(toasts.at(-1)?.kind).toBe('error');
+    });
+
+    it('returns the page to a usable state when the application cannot be created', async () => {
+      const failing = () => Promise.reject(new Error('draft failed'));
+
+      expect(await svc.markApplied(failing, commit)).toBeNull();
+      expect(order).toEqual([]);
+      expect(svc.busy()).toBe(false);
+      expect(svc.message()).toContain('draft failed');
     });
 
     it('does not touch the overview row when the status write fails', async () => {
@@ -215,7 +260,7 @@ describe('JobActionsService', () => {
       // error message.
       statusFails = true;
 
-      expect(await svc.markApplied(7, { id: 5, jobId: 7 } as never, commit)).toBeNull();
+      expect(await svc.markApplied(ensure, commit)).toBeNull();
       expect(patched).toEqual([]);
       expect(svc.busy()).toBe(false);
     });
@@ -223,8 +268,9 @@ describe('JobActionsService', () => {
     it('refuses a second run while one is in flight', async () => {
       svc.busy.set(true);
 
-      expect(await svc.markApplied(7, null, commit)).toBeNull();
+      expect(await svc.markApplied(ensure, commit)).toBeNull();
       expect(order).toEqual([]);
+      expect(ensured).toBe(0);
     });
   });
 

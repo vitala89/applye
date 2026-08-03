@@ -723,6 +723,7 @@ export const uk: TranslationMap = stub(en, {
     open_cv_document: "Відкрити пов'язане резюме",
     open_cover_letter_document: "Відкрити пов'язаний супровідний лист",
     mark_applied: 'Позначити як «відгук надіслано»',
+    applying: 'Готуємо документи…',
     change_status_action: 'Змінити',
     edit_locked_action: 'Редагувати',
     edit_confirm_title: 'Редагувати відгук, який уже в роботі?',

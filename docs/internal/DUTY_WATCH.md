@@ -44,6 +44,76 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the two defects the manual pass found, fixed and seen fixed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/mark-applied-duplicate-row`, from `docs/manual-pass-0292`
+- **Commits:** the fix commit, plus this documentation commit
+- **Pull request:** opened after this entry. `#283` carries the pass that found these.
+- **Objective:** fix the two defects the manual pass produced evidence for. The third finding, the
+  unsigned macOS bundle, is a release-workflow decision and was deliberately left alone.
+- **Completed:**
+  - **The duplicate application row.** `markApplied` wrote its own `saved` row through
+    `db_upsert_application`, whose id-less branch is a plain `INSERT` and not an upsert on `job_id`.
+    That row never reached the signal the page holds, so the first step of `commitDocuments` to call
+    `ensureApplicationDraft()` found none and inserted a **second** row for the same job. The status
+    then flipped one of the two and orphaned the other - exactly the pair the pass found for job 111.
+    The service now takes the page's draft hook and writes no application row of its own, which
+    leaves one owner of both the row and the signal.
+  - **The silent two-minute button.** Committing the documents generates whatever the application is
+    missing against the configured provider. `busy` cannot describe that, because saving a lead
+    raises the same flag for an operation that takes a moment, so a new `applying` signal carries it
+    and the button reads "Preparing documents…" while the step runs. The key was added to all six
+    catalogues.
+  - **Both were fixed against a failing test first.** The service spec went from 20 tests to 22.
+    **Both were then checked by mutation**, with the file's md5 compared before and after so a
+    mutation that failed to write could not pass as a green run: swapping the ensure/commit order
+    failed 2 tests, dropping `applying.set(true)` failed 1, and the md5 returned to its original
+    value both times.
+  - **Seen working in the app, not only in tests.** A debug bundle of this branch was installed and
+    the analysed job 110, which had no application row at all, was marked applied: the button read
+    "Preparing documents…" and **exactly one** row was written where the old code wrote two.
+- **Not completed:**
+  - **That run never finished, and the first reading of it was wrong.** After about seven and a half
+    minutes the commit was still going and the row was still `saved`, so this entry first called the
+    call unbounded. It is not: `ai/api.rs:29` sets `API_TIMEOUT` to **600 seconds**, `ai/cli.rs:49`
+    matches it for CLI mode, and a test asserts the bound. The comment there says the generosity is
+    deliberate, because a long non-streaming answer legitimately takes minutes. **The app was killed
+    at roughly 450 seconds, inside that budget**, so what the run would have done at 600 - succeed,
+    or fail visibly - was never observed. No third defect is established. What is true is that a
+    single Mark as Applied can sit for ten minutes per generated document with **no way to cancel**.
+  - Discard tailoring, the "For you" / "More openings" split, and the `0.29.1` update acceptance run
+    are still where the previous entry left them.
+- **Files or packages changed:** `job-actions.service.ts` and its spec, `jobs.component.ts`,
+  `jobs.component.html`, the six translation catalogues, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `npm run type-check` (templates included) clean, `npm test`
+  **1186 passed**, `npm run lint` clean, `npm run quality:file-size` **passed**,
+  `npm run quality:attribution`, `npm run format:check`, `npm run verify:csp`, `git diff --check`
+  and `npx nx build desktop` all pass. Rust was not touched, so the cargo gates were not run.
+- **Privacy/security impact:** none. No new data is read, written or sent.
+- **Decisions and assumptions:**
+  - The fix was put at the wiring, not in SQL. Making `db_upsert_application` reuse the row for a
+    `job_id` would decide that a job may only ever have one application, which is a schema-level
+    question for the maintainer rather than a bug fix.
+  - **The size ratchet refused this change twice, and was right both times.** `jobs.component.ts`
+    is 1104/400: prettier expanded the new call across three lines, then a three-line comment put it
+    one over. The comment was tightened until the block matched the six lines it replaced. Final
+    sizes are unchanged - `jobs.component.ts` **1104 -> 1104**, `jobs.component.html`
+    **1122 -> 1122** - which is the only reason this could land without extracting a child component
+    first.
+- **Risks or compatibility impact:** low. `markApplied`'s signature changed, and its single caller
+  changed with it; the compiler and the 22 service tests carry the rest.
+- **Open issues or blockers:** a Mark as Applied that can sit for ten minutes per document with no
+  way to cancel; the unsigned macOS bundle; and everything the previous entry lists.
+- **Next first action:** let that run finish once without being killed, so the 600-second boundary
+  is observed rather than assumed - success or a visible failure. A cancel control is the change
+  that follows, and it needs the child-component decision, because both files it would touch are
+  over budget.
+- **Evidence:** `applications` rows for job 110 polled for seven minutes, staying at exactly one; a
+  zoomed screenshot of the button reading "Preparing documents…"; the md5 values on either side of
+  each mutation; `npm run quality:file-size` printing `1104/400 ... base 1104`.
+
 ### 2026-08-03, the manual pass: the window is fine, the signature is not
 
 - **Status:** partial

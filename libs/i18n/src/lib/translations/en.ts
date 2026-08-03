@@ -707,6 +707,7 @@ export const en: TranslationMap = {
     open_cv_document: 'Open linked CV',
     open_cover_letter_document: 'Open linked cover letter',
     mark_applied: 'Mark as Applied',
+    applying: 'Preparing documents…',
     change_status_action: 'Change',
     edit_locked_action: 'Edit',
     edit_confirm_title: 'Edit an application already in progress?',

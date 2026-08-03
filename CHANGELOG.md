@@ -10,6 +10,12 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Mark as Applied no longer leaves a second application row behind.** The action wrote its own `saved` row before committing the documents, and that row never reached the signal the job page holds, so the first commit step to ask for a draft found none and wrote a second row for the same job. The status then landed on one of the two and the other was orphaned. Creation now goes through the page's draft hook, which is the single owner of that row and of the signal. Confirmed in the running app: a job marked applied straight from its analysed state now ends up with exactly one row where it previously had two.
+
+- **Mark as Applied says what it is doing.** Committing the documents generates whatever the application is missing, which runs against the configured AI provider and can take minutes. The button simply went dead for the whole time, with no spinner, no text and no toast, which reads as a hang. It now reads "Preparing documents…" while that step runs. `busy` alone could not say it, because saving a lead raises the same flag for an operation that takes a moment.
+
 ### Changed
 
 - **The content-to-blocks conversion is its own module.** `documents.rs` was 1926 lines against an 800 budget; the pure middle of the export path came out - stored CV and cover-letter JSON in, styled blocks out, no database and no filesystem. Both renderers take it from there, so section headings and block tagging can be asserted without producing a file. **1926 -> 1645.**

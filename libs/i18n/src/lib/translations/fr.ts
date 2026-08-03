@@ -731,6 +731,7 @@ export const fr: TranslationMap = stub(en, {
     open_cv_document: 'Ouvrir le CV lié',
     open_cover_letter_document: 'Ouvrir la lettre de motivation liée',
     mark_applied: 'Marquer comme candidature envoyée',
+    applying: 'Préparation des documents…',
     change_status_action: 'Modifier',
     edit_locked_action: 'Modifier',
     edit_confirm_title: 'Modifier une candidature déjà engagée ?',

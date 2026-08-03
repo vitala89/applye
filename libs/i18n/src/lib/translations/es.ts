@@ -729,6 +729,7 @@ export const es: TranslationMap = stub(en, {
     open_cv_document: 'Abrir el CV vinculado',
     open_cover_letter_document: 'Abrir la carta de presentación vinculada',
     mark_applied: 'Marcar como postulado',
+    applying: 'Preparando documentos…',
     change_status_action: 'Cambiar',
     edit_locked_action: 'Editar',
     edit_confirm_title: '¿Editar una candidatura que ya está en marcha?',

@@ -27,6 +27,14 @@ export class JobActionsService {
 
   /** Writable so the page can alias them onto the template. */
   readonly busy = signal(false);
+  /**
+   * Set only while Mark as Applied runs, so the button can say what is
+   * happening. `busy` alone cannot: saving a lead raises it too, and the two
+   * take very different amounts of time - committing the documents generates
+   * whatever the application is missing, which can run for minutes against the
+   * configured provider. A dead button for that long reads as a hang.
+   */
+  readonly applying = signal(false);
   readonly message = signal('');
   readonly deleteConfirmOpen = signal(false);
   readonly deleting = signal(false);
@@ -81,6 +89,12 @@ export class JobActionsService {
    * letter, or the user is applied to a job with nothing attached to it. The
    * page owns that step because it reads the tailoring on screen.
    *
+   * `ensureApplication` is the page's draft hook, and this service deliberately
+   * writes no application row of its own. A row written here would not reach
+   * the signal the page holds, so the first step of `commitDocuments` to ask
+   * for a draft would find none and write a **second** row for the same job -
+   * the status then lands on one of them and the other is orphaned.
+   *
    * Returns the application as the database recorded it, or null when the write
    * failed or another action was already running. On success `busy` is
    * deliberately left set, the same rule `remove` follows: the caller navigates
@@ -88,27 +102,26 @@ export class JobActionsService {
    * before the route changes.
    */
   async markApplied(
-    jobId: number,
-    existing: Application | null,
+    ensureApplication: () => Promise<Application>,
     commitDocuments: () => Promise<void>,
   ): Promise<Application | null> {
     if (this.busy()) return null;
     this.busy.set(true);
+    this.applying.set(true);
     this.message.set('');
     try {
-      const app = existing?.id
-        ? existing
-        : await this.db.upsertApplication({ jobId, status: 'saved' });
+      const app = await ensureApplication();
       await commitDocuments();
       const updated = await this.db.setApplicationStatus(app.id as number, 'applied');
       // Mirror the status the DB actually recorded, not the literal we asked
       // for - the DB is the single source of truth for the overview row.
-      this.jobsStore.patchOverviewRow(jobId, { status: updated.status });
+      this.jobsStore.patchOverviewRow(app.jobId, { status: updated.status });
       this.toast.success(this.t()('jobs.applied_ok'));
       return updated;
     } catch (e) {
       this.fail(e);
       this.busy.set(false);
+      this.applying.set(false);
       return null;
     }
   }

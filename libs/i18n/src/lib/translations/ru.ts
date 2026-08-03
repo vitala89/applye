@@ -726,6 +726,7 @@ export const ru: TranslationMap = stub(en, {
     open_cv_document: 'Открыть связанное резюме',
     open_cover_letter_document: 'Открыть связанное сопроводительное письмо',
     mark_applied: 'Отметить как «отклик отправлен»',
+    applying: 'Готовим документы…',
     change_status_action: 'Изменить',
     edit_locked_action: 'Редактировать',
     edit_confirm_title: 'Редактировать отклик, который уже в работе?',

@@ -12,6 +12,7 @@ pub mod discover_geo;
 pub mod discover_parsers;
 pub mod documents;
 pub mod documents_blocks;
+pub mod documents_export;
 pub mod documents_import;
 pub mod documents_style;
 pub mod followup_drafts;

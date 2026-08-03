@@ -53,7 +53,8 @@ pub async fn cv_document_export_pdf_wysiwyg(
     {
         let _ = (&app, &ready); // silence unused warnings on the fallback path
         let bytes =
-            crate::commands::documents::cv_document_export_bytes_core(id, "pdf", &db.pool).await?;
+            crate::commands::documents_export::cv_document_export_bytes_core(id, "pdf", &db.pool)
+                .await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
         Ok(save_path)
     }
@@ -78,7 +79,7 @@ pub async fn cover_letter_document_export_pdf_wysiwyg(
     #[cfg(not(target_os = "macos"))]
     {
         let _ = (&app, &ready); // silence unused warnings on the fallback path
-        let bytes = crate::commands::documents::cover_letter_document_export_bytes_core(
+        let bytes = crate::commands::documents_export::cover_letter_document_export_bytes_core(
             id, "pdf", &db.pool,
         )
         .await?;

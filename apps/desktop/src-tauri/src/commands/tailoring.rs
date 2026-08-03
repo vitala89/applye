@@ -246,7 +246,7 @@ fn cv_filename(title: &str, company: &str, hash: &str, ext: &str) -> String {
 // user font (Calibri, Lato, …) is mapped to the nearest base family in PDF
 // (sans→Helvetica, serif→Times, mono→Courier). DOCX carries the real font name.
 
-use crate::commands::documents::CvStyle;
+use crate::commands::documents_style::CvStyle;
 
 /// Logical role of a block - drives relative size scale and spacing so both
 /// renderers agree on hierarchy without hardcoding absolute sizes.
@@ -354,7 +354,7 @@ fn hex_to_rgb(hex: &str) -> (u8, u8, u8) {
 pub(crate) struct PageConfig {
     pub width_mm: f32,
     pub height_mm: f32,
-    pub margin: crate::commands::documents::PageMargins,
+    pub margin: crate::commands::documents_style::PageMargins,
 }
 
 fn clamp_mm(v: f32) -> f32 {
@@ -363,8 +363,8 @@ fn clamp_mm(v: f32) -> f32 {
 
 /// Mirrors the TS `resolvePageSettings`. Accepts legacy presets and 4-side mm;
 /// unknown size falls back to A4 so a malformed `style_json` never breaks export.
-pub(crate) fn resolve_page(p: &crate::commands::documents::PageSettings) -> PageConfig {
-    use crate::commands::documents::{MarginSpec, PageMargins};
+pub(crate) fn resolve_page(p: &crate::commands::documents_style::PageSettings) -> PageConfig {
+    use crate::commands::documents_style::{MarginSpec, PageMargins};
     let (width_mm, height_mm) = match p.size.as_str() {
         "letter" => (215.9, 279.4),
         _ => (210.0, 297.0),
@@ -799,13 +799,13 @@ pub(crate) fn parse_inline_runs(s: &str) -> Vec<InlineRun> {
 pub(crate) fn md_to_docx_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    let page = resolve_page(&crate::commands::documents::PageSettings::default());
+    let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
     // Journal exports have no section tags; a photo (when present) sits at the
     // top of the document - AboveCenter mirrors that top placement.
     render_blocks_docx(
         &resolved,
         photo,
-        crate::commands::documents::PhotoPlacement::AboveCenter,
+        crate::commands::documents_style::PhotoPlacement::AboveCenter,
         &page,
     )
 }
@@ -1138,10 +1138,10 @@ fn embed_fonts_in_docx(docx: Vec<u8>, faces: &[EmbedFace]) -> Result<Vec<u8>, St
 pub(crate) fn render_blocks_docx(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
-    placement: crate::commands::documents::PhotoPlacement,
+    placement: crate::commands::documents_style::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
-    use crate::commands::documents::PhotoPlacement;
+    use crate::commands::documents_style::PhotoPlacement;
     use docx_rs::*;
 
     // Page size + margins. docx-rs takes twips (1 mm ≈ 56.6929 twips / DXA).
@@ -1377,7 +1377,7 @@ mod tests {
     // The PDF renderer moved to its own module; its tests moved with it except
     // these, which measure text against the embedded faces the DOCX side also
     // uses.
-    use crate::commands::documents::{CvSectionStyle, CvStyle, PhotoPlacement};
+    use crate::commands::documents_style::{CvSectionStyle, CvStyle, PhotoPlacement};
     use crate::commands::tailoring_fonts::FONT_CARLITO_R;
     use crate::commands::tailoring_pdf::{
         pdf_font_bytes, pick_pdf_family, text_width_pt, wrap_measured, PdfFamily, EMBEDDED_FACES,
@@ -1697,7 +1697,7 @@ mod tests {
 
     #[test]
     fn resolve_page_maps_presets_to_mm() {
-        use crate::commands::documents::{MarginSpec, PageSettings};
+        use crate::commands::documents_style::{MarginSpec, PageSettings};
         let a4_normal = resolve_page(&PageSettings {
             size: "a4".into(),
             margin: MarginSpec::Preset("normal".into()),
@@ -1732,7 +1732,7 @@ mod tests {
 
     #[test]
     fn resolve_page_maps_legacy_preset_and_four_side_mm() {
-        use crate::commands::documents::{MarginSpec, PageMargins, PageSettings};
+        use crate::commands::documents_style::{MarginSpec, PageMargins, PageSettings};
         // legacy preset
         let legacy = PageSettings {
             size: "a4".into(),
@@ -1896,7 +1896,7 @@ mod tests {
                 sb(BlockLevel::Body, Some("summary"), "Hello world", false),
             ],
         );
-        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
         let bytes =
             render_blocks_docx(&blocks, None, PhotoPlacement::AboveCenter, &page).expect("docx");
 
@@ -1940,7 +1940,7 @@ mod tests {
         // AboveLeft: the personal_details header must render in the column to the
         // RIGHT of the photo (x well past the left margin), while body sections
         // sit full-width at the margin - the editor's photo-beside layout.
-        let style = crate::commands::documents::CvStyle::default();
+        let style = crate::commands::documents_style::CvStyle::default();
         let blocks = resolve_blocks(
             &style,
             &[
@@ -1961,7 +1961,7 @@ mod tests {
             ],
             false,
         );
-        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
         let photo: &[u8] = include_bytes!("../../test-assets/1x1.png");
         let out =
             render_blocks_pdf(&blocks, Some(photo), PhotoPlacement::AboveLeft, &page).unwrap();
@@ -2068,7 +2068,7 @@ mod tests {
             &theme,
             &[sb(BlockLevel::Body, Some("summary"), "Hi", false)],
         );
-        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
         let bytes =
             render_blocks_docx(&blocks, None, PhotoPlacement::AboveCenter, &page).expect("docx");
         let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).expect("zip");
@@ -2085,9 +2085,9 @@ mod tests {
         // object streams, so we assert on the embedded-font footprint rather
         // than grepping for the font name.
         let render = |family: &str| {
-            let style = crate::commands::documents::CvStyle {
+            let style = crate::commands::documents_style::CvStyle {
                 font_family: family.into(),
-                ..crate::commands::documents::CvStyle::default()
+                ..crate::commands::documents_style::CvStyle::default()
             };
             let blocks = resolve_blocks(
                 &style,
@@ -2099,7 +2099,7 @@ mod tests {
                 }],
                 false,
             );
-            let page = resolve_page(&crate::commands::documents::PageSettings::default());
+            let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
             render_blocks_pdf(&blocks, None, PhotoPlacement::AboveCenter, &page).expect("pdf")
         };
         let embedded = render("Calibri"); // → Carlito, embedded TTF
@@ -2121,7 +2121,7 @@ mod tests {
 
     #[test]
     fn render_blocks_letter_wide_produce_bytes() {
-        let style = crate::commands::documents::CvStyle::default();
+        let style = crate::commands::documents_style::CvStyle::default();
         let blocks = resolve_blocks(
             &style,
             &[StyledBlock {
@@ -2132,9 +2132,9 @@ mod tests {
             }],
             false,
         );
-        let page = resolve_page(&crate::commands::documents::PageSettings {
+        let page = resolve_page(&crate::commands::documents_style::PageSettings {
             size: "letter".into(),
-            margin: crate::commands::documents::MarginSpec::Preset("wide".into()),
+            margin: crate::commands::documents_style::MarginSpec::Preset("wide".into()),
         });
         assert!(
             !render_blocks_pdf(&blocks, None, PhotoPlacement::AboveLeft, &page)
@@ -2150,7 +2150,7 @@ mod tests {
 
     #[test]
     fn docx_photo_center_and_side_placements_render() {
-        let style = crate::commands::documents::CvStyle::default();
+        let style = crate::commands::documents_style::CvStyle::default();
         let blocks = vec![
             StyledBlock {
                 level: BlockLevel::H1,
@@ -2172,7 +2172,7 @@ mod tests {
             },
         ];
         let resolved = resolve_blocks(&style, &blocks, false);
-        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
         let photo: &[u8] = include_bytes!("../../test-assets/1x1.png"); // tiny valid PNG
 
         // All three placements produce a non-empty valid .docx byte stream.
@@ -2188,7 +2188,7 @@ mod tests {
 
     #[test]
     fn pdf_photo_center_and_side_placements_render() {
-        let style = crate::commands::documents::CvStyle::default();
+        let style = crate::commands::documents_style::CvStyle::default();
         let blocks = vec![
             StyledBlock {
                 level: BlockLevel::H1,
@@ -2210,7 +2210,7 @@ mod tests {
             },
         ];
         let resolved = resolve_blocks(&style, &blocks, false);
-        let page = resolve_page(&crate::commands::documents::PageSettings::default());
+        let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
         let photo: &[u8] = include_bytes!("../../test-assets/1x1.png"); // tiny valid PNG
 
         // Center centers the x-origin; left/right approximate as top-of-document.

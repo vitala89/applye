@@ -44,6 +44,69 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the document's style leaves the module that stores documents
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/documents-style-split`, from `main` (`1a3e9dd`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** PR #285 was already merged when this watch started, so `main` carried it and the
+  next target was the one the last entry named: `documents.rs` at 1645/800. Unlike the three splits
+  before it, this one is **not** free by consumers - `tailoring.rs` and `tailoring_pdf.rs` name
+  `CvStyle`, `PageSettings`, `PageMargins`, `MarginSpec`, `CvSectionStyle` and `PhotoPlacement` by
+  fully qualified path, and `print.rs` names `PageSettings`. Those paths were repointed rather than
+  papered over with a re-export, so the module that owns the types is the module consumers name.
+  The edit is line-for-line: `tailoring.rs` 2227 raw lines before and after, and its non-empty count
+  stayed at 2087, so the file that is over budget did not grow.
+- **Completed:**
+  - **`documents_style.rs` (461).** The presentation contract and the deterministic judgements on
+    it: `CvStyle` with its per-section overrides and page geometry, `PhotoPlacement`, `StyleNote`,
+    `check_style_safety` and `validate_theme` with their private cores and helpers. Nothing in it
+    reads the database or the filesystem, and nothing in it renders - which is the seam.
+    `documents.rs` keeps the library rows, the file import, and the export path that resolves a
+    style out of a row's `style_json`.
+  - **`documents.rs` 1645 -> 1196.** Still over 800; see the next first action.
+  - **Sliced by element, and the count carried.** 19 `#[test]` before, **9 + 10 after**, and 13
+    `#[tokio::test]` untouched - 32 tests before and after, and `cargo test --lib` reported
+    **339 passed** on both sides. Both ends of every cut were read before cutting: the style block
+    starts at its doc comment and ends at the closing brace before the export doc comment, and each
+    moved test starts at its `#[test]` attribute.
+  - **Mutation-checked with md5 on either side.** Widening `is_low_print_contrast`'s luminance
+    threshold to a value it can never reach failed 2 tests in the new module, and the file's md5
+    returned to `9a66d80b...` after the revert, so the mutation demonstrably reached disk.
+- **Not completed:** `documents.rs` is not yet under budget, and `tailoring.rs` 2087 and
+  `discover.rs` 1679 are untouched.
+- **Files or packages changed:** `documents.rs`, new `documents_style.rs`, `commands/mod.rs`,
+  `tailoring.rs`, `tailoring_pdf.rs`, `print.rs`, `lib.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `documents.rs 1196/800 ... base 1645` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched, and no Tauri command name
+  changed (only the Rust path in the `invoke_handler` list), so the frontend `invoke()` surface is
+  identical.
+- **Privacy/security impact:** none. Pure types and pure functions moved; no I/O, no new data.
+- **Decisions and assumptions:** `PhotoPlacement` moved with the style rather than staying with the
+  library rows, because every consumer of it is a renderer and it is a presentation choice, not a
+  stored-row shape. A `pub use` re-export in `documents.rs` would have kept consumers untouched, but
+  it would have left the facade pretending to own types it no longer defines.
+- **Risks or compatibility impact:** low. No serialized shape changed - the wire format of
+  `PhotoPlacement`, `CvStyle` and the page settings is byte-identical, so stored `style_json` and
+  stored templates read back the same. Command names are unchanged.
+- **Open issues or blockers:** unchanged and older than any refactor - the macOS bundle is still
+  unsigned and un-notarised, so the Download button on applye.dev still serves a file that a clean
+  Mac refuses to open. That is a maintainer decision, not an agent one.
+- **Next first action:** the next seam in `documents.rs` is the file-import half - `cv_import_read_file`,
+  `cv_photo_read_file`, `read_docx_text`, `read_pdf_text`, `image_mime`, `bytes_to_data_uri`,
+  `data_uri_to_bytes` and the three tests that cover them, roughly 190 lines. It has no consumers
+  outside the module, so it costs nothing. That lands `documents.rs` near 1005; the export path
+  (`cv_document_export`, `cover_letter_document_export`, `resolve_export_style` and the `*_bytes_core`
+  pair, which `print.rs` does consume) is the third cut that would bring it under 800.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `9a66d80bd64bab54c292b3260628ca66` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `1196/800 ... base 1645`.
+
 ### 2026-08-03, the ATS check splits along the question each half answers
 
 - **Status:** complete

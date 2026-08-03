@@ -9,7 +9,7 @@
 // command layer. Everything here turns content already in hand into bytes,
 // which is why the wrapper and the placement can be asserted in tests.
 
-use crate::commands::documents::CvStyle;
+use crate::commands::documents_style::CvStyle;
 
 use super::tailoring::{
     md_to_blocks, resolve_blocks, resolve_page, BlockLevel, PageConfig, RenderBlock,
@@ -20,11 +20,11 @@ use super::tailoring_fonts::*;
 pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let blocks = md_to_blocks(content_md);
     let resolved = resolve_blocks(&CvStyle::default(), &blocks, false);
-    let page = resolve_page(&crate::commands::documents::PageSettings::default());
+    let page = resolve_page(&crate::commands::documents_style::PageSettings::default());
     render_blocks_pdf(
         &resolved,
         photo,
-        crate::commands::documents::PhotoPlacement::default(),
+        crate::commands::documents_style::PhotoPlacement::default(),
         &page,
     )
 }
@@ -202,10 +202,10 @@ pub(super) fn wrap_measured(
 pub(crate) fn render_blocks_pdf(
     blocks: &[RenderBlock],
     photo: Option<&[u8]>,
-    placement: crate::commands::documents::PhotoPlacement,
+    placement: crate::commands::documents_style::PhotoPlacement,
     page: &PageConfig,
 ) -> Result<Vec<u8>, String> {
-    use crate::commands::documents::PhotoPlacement;
+    use crate::commands::documents_style::PhotoPlacement;
     use printpdf::*;
 
     let (doc, page1, layer1) =

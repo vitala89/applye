@@ -15,7 +15,7 @@ use super::discover_parsers_ats::{
     parse_ashby_board, parse_greenhouse_board, parse_lever_postings, parse_personio_xml,
 };
 use super::discover_parsers_nofluffjobs::{parse_nofluffjobs, parse_nofluffjobs_detail};
-use super::job_url::{extract_host, path_segments, titleize_slug};
+use super::url_parts::{extract_host, path_segments, titleize_slug};
 
 /// One enabled source, as the scan read it out of `discover_sources`.
 pub(super) struct SourceRow {

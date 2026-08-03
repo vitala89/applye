@@ -13,7 +13,7 @@ use sqlx::{Row, SqlitePool};
 use tauri::State;
 
 use super::discover_fetch::require_https;
-use super::job_url::extract_host;
+use super::url_parts::extract_host;
 use crate::db::Db;
 
 #[derive(Debug, Serialize)]

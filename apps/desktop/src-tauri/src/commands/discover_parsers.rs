@@ -14,7 +14,7 @@
 // built.
 
 use super::discover_geo::{location_signal, REMOTE_MARKERS};
-use super::job_url::{strip_html, xml_tag};
+use super::web_text::{strip_html, xml_tag};
 
 /// One job as it comes out of a source feed, before filtering.
 #[derive(Debug, Clone)]

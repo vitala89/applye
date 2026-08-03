@@ -46,6 +46,8 @@ pub mod tailoring_pdf;
 pub mod tailoring_theme;
 pub mod tracker;
 pub mod untrusted;
+pub mod url_parts;
+pub mod web_text;
 
 use tauri::State;
 

@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the from-link flow gives up the helpers it never owned
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/job-url-web-helpers`, from `main` (`3f66918`)
+- **Commits:** one refactor commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Bring `apps/desktop/src-tauri/src/commands/job_url.rs` under the 500-line Rust source budget by moving out the shared web-payload helpers, without changing any behaviour.
+- **Completed:** Two new modules. `web_text.rs` holds `strip_html` with its entity-decoding and tag-stripping internals plus `xml_tag`, and takes the eight markup tests and the Personio XML test with it. `url_parts.rs` holds `extract_host`, `path_segments` and `titleize_slug`. Four discover modules (`discover_fetch`, `discover_parsers`, `discover_parsers_ats`, `discover_sources`) had been importing these back out of `job_url`, an inversion the split corrects: they now name the module that defines what they use. `host_matches` stayed with the allowlist it serves. `extract_host`, `path_segments` and `titleize_slug` had no tests at all; each now has one, which matters most for `extract_host`, since the string it returns is what the closed-board allowlist is matched against.
+- **Not completed:** The second remaining over-budget Rust file, `commands/discover_geo.rs` at 522/500, is untouched. No Angular work was started; the handoff requires a maintainer decision on how UI changes get verified before any of it begins.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/job_url.rs`, new `web_text.rs`, new `url_parts.rs`, `commands/mod.rs`, `discover_fetch.rs`, `discover_parsers.rs`, `discover_parsers_ats.rs`, `discover_sources.rs`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch: `cargo clippy --all-targets` (clean, no warnings), `cargo test --lib` (345 passed, 0 failed, 1 ignored), `cargo fmt` (applied), `npm run quality:file-size` (passed), `npm run quality:file-size:all` (Rust source now 1/59 over budget, down from 2), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `tauri dev`. No Angular, IPC-surface or database behaviour changed, and the two Tauri commands in `job_url.rs` keep their names and registry entries.
+- **Losslessness evidence:** Every moved block was extracted to a scratch file by line range before deletion and diffed against the same region of the new module afterwards. All four regions - the `strip_html` family, `xml_tag`, `extract_host`, and `path_segments`/`titleize_slug` - are byte-identical.
+- **Mutation testing:** Two mutations, each applied by absolute path with an applied/not-applied assertion before the run. M1: decode `&amp;` first in `decode_entities`, which collapses two escaping layers in one pass - killed by `web_text::tests::decodes_one_escaping_layer_per_round`. M2: drop the port-stripping line in `extract_host` - killed by `url_parts::tests::extracts_the_bare_lowercase_host`, a test that did not exist before this watch. Both files were restored from a backup copy and diffed to prove the restore was byte-exact, and the suite returned to 345 passing.
+- **Privacy/security impact:** None intended, and the security-relevant surface was checked deliberately. The host allowlist, the closed-board list and the safe default of `Unknown` are unchanged; `extract_host` moved without a character changed and is now covered by tests for the port, `user@` prefix, whitespace and case that could otherwise let a crafted URL read as an allowed host. No new network call, file write or permission.
+- **Decisions and assumptions:** Two modules rather than one. Parsing markup and parsing a URL's shape are separate reasons to change, and a single `web_payload.rs` would have bundled them for no benefit beyond one fewer file. Only one seam was taken - the per-board readers and the HTTP client are still in `job_url.rs`, which at 399 has room, and splitting them would have been a second seam in one PR.
+- **Risks or compatibility impact:** Low. Pure code movement plus new tests; no call site changed except the module path in five `use` statements.
+- **Open issues or blockers:** Two documentation files still state the superseded Rust budget: `AGENTS.md` ("Rust modules at 800") and the `applye-rust` skill ("Hard budget: 800 non-empty lines per Rust source or test file"). Both predate the 2026-08-03 change to 500 source / 600 tests and will mislead the next agent. Not fixed here to keep this diff to one seam. Separately, the `cli_probe` status-mapping coverage gap filed in the previous watch is still open.
+- **Next first action:** Split `apps/desktop/src-tauri/src/commands/discover_geo.rs` (522/500), which closes Rust entirely, then correct the two stale 800-line budget statements in `AGENTS.md` and the `applye-rust` skill.
+- **Evidence:** Branch diff; check output quoted above; before/after source line counts `job_url.rs` 580 -> 399, new `web_text.rs` 146 source / 97 tests, new `url_parts.rs` 51 source / 47 tests.
+
 ### 2026-08-04, the ATS check's vocabulary separates from its scoring
 
 - **Status:** complete

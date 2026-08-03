@@ -51,19 +51,18 @@
   inside its template inherits that injector and can inject them directly - which deletes the alias
   and the template block in one move. The first cut, `app-job-document-cards`, retired nine aliases
   that way. The wizard's remaining steps are the same shape.
-  **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio had
-  never been named anywhere: `apps/web/src/styles.scss` at 2167/400 - **now split into eleven
-  section partials, largest 353/400, with the compiled CSS proven byte-identical** - and
-  `apps/desktop/src-tauri/src/commands/discover.rs`, which was 3245/800 and is now **599/800**,
-  an 82% reduction across seven commits: geography to `discover_geo.rs` (555), feed readers to
-  `discover_parsers.rs` (697), their tests to `discover_parsers_tests.rs` (393), the local filters
-  to `discover_filter.rs`, the HTTPS layer to `discover_fetch.rs`, and the source registry to
-  `discover_sources.rs`. **One Rust file is still over budget: `ai/cli.rs` at 879/800.** An earlier
-  version of this entry claimed none were, on the strength of `npm run quality:file-size` printing
-  an empty report - but that tool only checks files changed against a base, so a clean report means
-  "nothing I touched is near budget", never "the repository is clean". A repo-wide count is the only
-  thing that answers that question, and it puts 20 TypeScript files, 12 templates, 13 stylesheets
-  and 1 Rust file over. Budgets count non-empty lines;
+- **The Rust side is nearly done; Angular is now the whole remaining problem.** Measure the
+  repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
+  from it means only "nothing I touched is near budget". The audit currently reports **47 files over
+  budget**: 20 TypeScript, 13 stylesheets, 12 templates, and **2 Rust**
+  (`commands/job_url.rs` 580/500 and `commands/discover_geo.rs` 522/500).
+  Rust budgets changed on 2026-08-03: source and inline `#[cfg(test)]` items are now counted
+  separately, at **500** and **600**, replacing a combined 800 that scored a well-tested module the
+  same as a dense one. The Rust campaign since then: `commands/discover.rs` 3245 -> 599 across seven
+  modules, `discover_parsers.rs` 697 -> 406 into ATS boards and No Fluff Jobs, `ai/cli.rs` 668 -> 420
+  into run/probe/install, and `ats.rs` 619 -> 289 with its vocabulary in `ats_tokens.rs`.
+  `apps/web/src/styles.scss`, once 2167/400, is eleven section partials with the compiled CSS proven
+  byte-identical. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
   Discover is the page now: `discover.component.ts` **1069/400** (from 1242: the JD parser, the feed
   filter and the For-you split, then the scan console), `discover.component.html` 1070/300,

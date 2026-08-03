@@ -7,7 +7,7 @@
 //! name its own employer. Pure - already-fetched text or JSON in, `RawJob`s out.
 
 use super::discover_parsers::{html_to_text, json_str, RawJob};
-use super::job_url::xml_tag;
+use super::web_text::xml_tag;
 
 /// boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true:
 /// { jobs: [{ title, content, absolute_url, location: { name } }] }

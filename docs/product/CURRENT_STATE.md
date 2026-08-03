@@ -51,11 +51,13 @@
   **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio had
   never been named anywhere: `apps/web/src/styles.scss` at 2167/400 - **now split into eleven
   section partials, largest 353/400, with the compiled CSS proven byte-identical** - and
-  `apps/desktop/src-tauri/src/commands/discover.rs`, which was 3245/800 and is now **1679/800**,
-  a 48% reduction across four commits: geography to `discover_geo.rs` (555), feed readers to
-  `discover_parsers.rs` (672), and their tests to `discover_parsers_tests.rs` (393). **Every file in
-  the group is under the 800 budget except the scan engine itself**, whose remaining bulk is the
-  HTTPS and persistence layer that is its actual job, plus the tests that exercise it. Budgets count non-empty lines;
+  `apps/desktop/src-tauri/src/commands/discover.rs`, which was 3245/800 and is now **599/800**,
+  an 82% reduction across seven commits: geography to `discover_geo.rs` (555), feed readers to
+  `discover_parsers.rs` (697), their tests to `discover_parsers_tests.rs` (393), the local filters
+  to `discover_filter.rs`, the HTTPS layer to `discover_fetch.rs`, and the source registry to
+  `discover_sources.rs`. **No Rust file in the repository is over its size budget any more** -
+  `npm run quality:file-size` prints an empty report. The remaining budget work is entirely
+  Angular. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
   Discover is the page now: `discover.component.ts` **1069/400** (from 1242: the JD parser, the feed
   filter and the For-you split, then the scan console), `discover.component.html` 1070/300,
@@ -137,9 +139,9 @@
 - **The two largest Rust files came apart.** `commands/discover.rs` **3245 -> 1679** (geography,
   feed readers, and their tests each to their own file) and `commands/tailoring.rs`
   **2538 -> 2087** (the printpdf renderer, with the shared font faces in a third file because both
-  exporters need them). Both remain over the 800 budget: what is left in each is the
-  HTTPS/persistence layer and the DOCX exporter respectively - the work those files are actually
-  for - plus their test modules, which are over the budget on their own.
+  exporters need them). Both were still over the 800 budget at that point: what was left in each was
+  the HTTPS/persistence layer and the DOCX exporter respectively, plus their test modules. Both are
+  under budget now - see the Rust campaign entry above, which supersedes this line.
 - **51 files are over budget, and the audit is the only trustworthy list.** Breakdown after this
   session's work: 21 TypeScript sources, 13 stylesheets, 12 templates, 5 Rust. The largest remaining
   are `discover.component.scss` 1915/400, `commands/tailoring.rs` 2087/800,

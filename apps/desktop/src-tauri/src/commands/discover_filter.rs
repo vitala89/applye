@@ -6,9 +6,8 @@
 // AI, no network - so the rules that decide whether a job is silently dropped
 // stay directly unit-testable.
 
-use super::discover_geo::{
-    country_tokens, loc_matches, region_countries, KNOWN_COUNTRY_CODES, REMOTE_MARKERS,
-};
+use super::discover_geo::{loc_matches, region_countries, REMOTE_MARKERS};
+use super::discover_geo_countries::{country_tokens, KNOWN_COUNTRY_CODES};
 
 pub(super) struct TitleFilter {
     pub(super) positive: Vec<String>,

@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, discover geography splits, and a silent market-widening gap is closed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-geo-countries`, from `main` (`3f66918`)
+- **Commits:** one refactor commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Bring `apps/desktop/src-tauri/src/commands/discover_geo.rs` under the 500-line Rust source budget, which closes the Rust half of the file-size campaign.
+- **Completed:** `discover_geo_countries.rs` takes `US_STATE_NAMES`, `US_STATE_CODES`, `country_tokens` and `KNOWN_COUNTRY_CODES`. What stays is the region scopes, the pickable local markets, `parse_local_markets`, `loc_matches` and `location_signal`. `discover_filter.rs` now imports the two country symbols from the module that defines them. Three tests were added to the new module, one of them closing a real gap found by mutation testing.
+- **Not completed:** No Angular work. The handoff requires a maintainer decision on how UI changes get verified before any of it starts, and that decision has not been made.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover_geo.rs`, new `discover_geo_countries.rs`, `discover_filter.rs`, `commands/mod.rs`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch: `cargo clippy --all-targets -- -D warnings` (clean), `cargo test --lib` (345 passed, 0 failed, 1 ignored), `cargo fmt` (applied), `npm run quality:file-size` (passed), `npm run quality:file-size:all` (`discover_geo.rs` no longer listed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `tauri dev`. No Angular, IPC surface, migration or provider behaviour changed.
+- **Losslessness evidence:** Both moved regions were extracted by line range to scratch files before deletion and diffed against the same regions of the new module. Byte-identical. One deliberate deviation, diffed separately and confirmed identical in content: the doc paragraph explaining `country_tokens` and the German city lists sat above `US_STATE_NAMES`, one item away from the function it describes. It now sits on `country_tokens`. No code moved with it.
+- **Mutation testing:** Applied by absolute path with an applied/not-applied assertion before each run, and restored from a backup copy with a byte-exact diff afterwards. M1: return the bare `ca` token to Canada - killed by `canada_gives_up_the_bare_ca_token_to_california`. M2: drop `gb` from `KNOWN_COUNTRY_CODES` - **survived**, and was verified to be a real behaviour change rather than a no-op by reading `elsewhere_tokens`: it skips any region whose list overlaps the selected market, so for a `de` market the European names come only from each country's own entry, and without `gb` a "Remote - London" posting stops matching `elsewhere` and passes on the word "Remote". A test was added; re-running M2 against it now fails, and the suite is back to 345 passing.
+- **Privacy/security impact:** None. No network, storage, permission or IPC change. The geo tables decide which already-fetched postings the user is shown, and nothing here changes what is fetched.
+- **Decisions and assumptions:** The seam was drawn at "which names belong to a code" versus "which names belong to a scope", because those change on different occasions - one when a market or board is added, the other when a continent bucket is redefined. `loc_matches` stayed with the scopes even though the country tables' docs reference it, since it is a matching rule rather than vocabulary.
+- **Risks or compatibility impact:** Low. Pure movement plus three new tests; the only call-site change is one `use` statement in `discover_filter.rs`.
+- **Open issues or blockers:** `AGENTS.md` and the `applye-rust` skill both still state the superseded 800-line Rust budget, replaced on 2026-08-03 by 500 source / 600 tests. Not corrected here, to keep this diff to one seam. The `cli_probe` status-mapping coverage gap from an earlier watch is still open.
+- **Next first action:** Correct the two stale 800-line Rust budget statements in `AGENTS.md` and `.claude/skills/applye-rust/SKILL.md`, then ask the maintainer how Angular UI changes will be verified before opening the Angular half of the campaign.
+- **Evidence:** Branch diff; check output quoted above; before/after source line counts `discover_geo.rs` 522 -> 246, new `discover_geo_countries.rs` 293 source / 68 tests.
+
 ### 2026-08-04, the from-link flow gives up the helpers it never owned
 
 - **Status:** complete

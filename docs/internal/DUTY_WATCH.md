@@ -44,6 +44,58 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the file-size budgets are audited and the Rust one is corrected
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `chore/file-size-budget-rust-split`, from `main` (`85c0ae6`)
+- **Pull request:** to open against `main`
+- **Objective:** answer whether the budgets are set correctly before spending more watches on them.
+- **Completed:**
+  - **Checked the numbers against the only external anchors that exist.** ESLint `max-lines`
+    defaults to 300 and counts comments; the Angular 400-line rule the TypeScript budget inherits
+    was **removed** from the current angular.dev style guide and survives only in v17 and earlier;
+    SonarQube S104 defaults to 1000. There is no file-length lint for Rust at all. Conclusion:
+    400 / 600 / 300 / 400 are defensible and were left alone. Re-tuning them changes little while
+    the ratchet, not the absolute number, is what actually blocks a change.
+  - **Fixed the one budget that measured the wrong thing.** 33% of this repository's Rust lines are
+    inline `#[cfg(test)]` items, so the single 800-line rule scored source and tests together:
+    `tailoring.rs` passed at 699 with only 266 lines of source, while `discover_parsers.rs` passed
+    on nearly the same score with 694 source lines and 3 test lines. Rust is now measured in two
+    parts, **source 500** and **inline tests 600**. The new source budget is stricter than the 800
+    it replaces and no longer penalises a module for being well tested.
+  - **Added `npm run quality:file-size:all`.** Repository-wide audit listing everything over budget
+    or within 20% of it. Always exits zero - a report, not a gate.
+  - Updated `docs/governance/CODE_QUALITY.md`, whose table already claimed a separate Rust test
+    budget that the checker had never implemented.
+- **Findings recorded rather than acted on:** comments are 13% of counted TypeScript and Rust lines
+  and the budget counts them. ESLint's default does the same, so this is not unusual, but it taxes
+  the thing this codebase does most deliberately. Left as is, and flagged so it is a choice rather
+  than an inherited default.
+- **Validation:**
+  - `npm run quality:test` - **7 passed**, up from 4. Three new tests cover the Rust split, the
+    literal masking, and the audit mode.
+  - **Mutation battery on the masker, six mutations, all six caught:** unhandled raw strings,
+    unhandled plain strings, a lifetime that swallows to the next quote, unhandled line comments,
+    unhandled block comments, and no masking at all. The first version of that test caught only two
+    of the six - its decoys sat _before_ the test module, where brace balance is never consulted,
+    and two were unbalanced in the insensitive direction. Rewritten to put the decoys inside the
+    `#[cfg(test)]` block and to assert exact line counts rather than budget status.
+  - `npm run quality:file-size` on the repository - passed; the checker itself is 364/400.
+  - `format:check`, `git diff --check` - passed.
+- **Privacy/security impact:** none. Build tooling only.
+- **Decisions and assumptions:**
+  - The audit mode exits zero deliberately. Failing on 46 pre-existing over-budget files would block
+    every unrelated change, and the ratchet already prevents growth.
+  - Rust source 500 was chosen from the measured distribution: it puts 5 files over, which is an
+    actionable backlog rather than a wall.
+- **Risks or compatibility impact:** the stricter Rust budget cannot break existing work, because
+  the ratchet only fails a file that **grew**. The five newly-over files are frozen, not broken.
+- **Open issues or blockers:** none.
+- **Next first action:** `discover_parsers.rs` at 697/500 is now the largest Rust offender and the
+  honest next Rust target - it was invisible under the old rule because its 697 lines scored the
+  same as a file that was two-thirds tests.
+
 ### 2026-08-03, the first Angular split - the wizard document cards
 
 - **Status:** partial - the change is complete and green, but the agreed UI walkthrough did not happen

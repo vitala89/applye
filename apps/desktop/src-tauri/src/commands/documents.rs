@@ -162,28 +162,6 @@ async fn cv_template_upsert_core(
     }
 }
 
-/// Localized section heading, mirroring the preview's
-/// `t(sectionLabelKey(key))`. Only `en` and `de` define `cv_section_*` in the
-/// i18n table (`translations.ts`); every other locale renders the English
-/// label, so this table does the same: `de` → German, otherwise English.
-pub(super) fn section_heading(key: &str, lang: Option<&str>) -> String {
-    let de = lang == Some("de");
-    match (key, de) {
-        ("summary", true) => "Zusammenfassung",
-        ("summary", _) => "Summary",
-        ("experience", true) => "Berufserfahrung",
-        ("experience", _) => "Experience",
-        ("education", true) => "Ausbildung",
-        ("education", _) => "Education",
-        ("skills", true) => "Fähigkeiten",
-        ("skills", _) => "Skills",
-        ("languages", true) => "Sprachen",
-        ("languages", _) => "Languages",
-        (other, _) => other,
-    }
-    .to_string()
-}
-
 #[tauri::command]
 pub async fn document_library_list(
     doc_type: Option<String>,
@@ -392,7 +370,6 @@ async fn document_library_delete_core(id: i64, pool: &sqlx::SqlitePool) -> Resul
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::super::documents_blocks::cv_content_to_blocks;
     use super::*;
     use sqlx::sqlite::SqlitePoolOptions;
     use sqlx::SqlitePool;
@@ -750,106 +727,5 @@ pub(crate) mod tests {
 
         let result = cv_template_upsert_core(custom_template_input(Some(builtin_id)), &pool).await;
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn cv_content_to_blocks_orders_sections_tags_keys_and_hides_invisible() {
-        use crate::commands::tailoring::BlockLevel;
-        let content_json = r#"{"sections":[
-            {"key":"summary","order":1,"visible":true,"text":"Backend engineer."},
-            {"key":"personal_details","order":0,"visible":true,"fullName":"Jane Doe","email":"jane@example.com"},
-            {"key":"experience","order":2,"visible":true,"entries":[{"company":"Acme","role":"Engineer","startDate":"2020","endDate":"2023","bullets":["Built things"]}]},
-            {"key":"skills","order":3,"visible":false,"items":["Rust"]}
-        ]}"#;
-        let blocks = cv_content_to_blocks(content_json, None).expect("render");
-        let pos = |needle: &str| {
-            blocks
-                .iter()
-                .position(|b| b.text.contains(needle))
-                .unwrap_or_else(|| panic!("missing {needle}"))
-        };
-        assert!(pos("Jane Doe") < pos("Backend engineer."));
-        assert!(pos("Backend engineer.") < pos("Acme"));
-        assert!(
-            !blocks.iter().any(|b| b.text.contains("Rust")),
-            "hidden section must not render"
-        );
-        // Name is the H1, tagged to its owning section for style resolution.
-        assert_eq!(blocks[0].level, BlockLevel::H1);
-        assert_eq!(blocks[0].section_key.as_deref(), Some("personal_details"));
-        // The experience bullet keeps the section tag so overrides resolve.
-        let bullet = blocks
-            .iter()
-            .find(|b| b.text.contains("Built things"))
-            .unwrap();
-        assert_eq!(bullet.level, BlockLevel::Bullet);
-        assert_eq!(bullet.section_key.as_deref(), Some("experience"));
-    }
-
-    #[test]
-    fn cv_content_to_blocks_splits_experience_into_accent_head_and_role() {
-        use crate::commands::tailoring::BlockLevel;
-        let content_json = r#"{"sections":[
-            {"key":"experience","order":0,"visible":true,"entries":[
-                {"company":"Acme","industry":"SaaS","role":"Engineer","location":"Berlin","startDate":"2020","endDate":"2023","bullets":["Shipped"]}
-            ]}
-        ]}"#;
-        let blocks = cv_content_to_blocks(content_json, None).expect("render");
-        let head = blocks
-            .iter()
-            .find(|b| b.level == BlockLevel::EntryHead)
-            .expect("entry head");
-        // Two-column: company+industry left, location right (tab-separated).
-        assert_eq!(
-            head.text, "Acme - SaaS\tBerlin",
-            "company + industry, accent lead"
-        );
-        let role = blocks
-            .iter()
-            .find(|b| b.level == BlockLevel::EntryRole)
-            .expect("entry role");
-        // Two-column: role left, dates right.
-        assert_eq!(role.text, "Engineer\t2020 - 2023");
-    }
-
-    #[test]
-    fn cv_content_to_blocks_localizes_section_headings_for_german() {
-        use crate::commands::tailoring::BlockLevel;
-        let content_json = r#"{"sections":[
-            {"key":"summary","order":0,"visible":true,"text":"Backend."},
-            {"key":"experience","order":1,"visible":true,"entries":[{"company":"Acme","role":"Dev","startDate":"2020","endDate":"2023","bullets":["x"]}]}
-        ]}"#;
-        let heads = |lang| {
-            cv_content_to_blocks(content_json, lang)
-                .expect("render")
-                .into_iter()
-                .filter(|b| b.level == BlockLevel::H2)
-                .map(|b| b.text)
-                .collect::<Vec<_>>()
-        };
-        assert_eq!(
-            heads(Some("de")),
-            vec!["Zusammenfassung", "Berufserfahrung"]
-        );
-        // English for the default and any locale without cv_section_* keys.
-        assert_eq!(heads(Some("uk")), vec!["Summary", "Experience"]);
-        assert_eq!(heads(None), vec!["Summary", "Experience"]);
-    }
-
-    #[test]
-    fn cv_content_to_blocks_renders_grouped_skills_when_items_absent() {
-        use crate::commands::tailoring::BlockLevel;
-        let content_json = r#"{"sections":[
-            {"key":"skills","order":0,"visible":true,"groups":[
-                {"label":"Languages","values":["TypeScript","Angular"]}
-            ]}
-        ]}"#;
-        let blocks = cv_content_to_blocks(content_json, None).expect("render");
-        assert!(blocks
-            .iter()
-            .any(|b| b.level == BlockLevel::H2 && b.text == "Skills"));
-        assert!(blocks
-            .iter()
-            .any(|b| b.text == "Languages: TypeScript, Angular"));
     }
 }

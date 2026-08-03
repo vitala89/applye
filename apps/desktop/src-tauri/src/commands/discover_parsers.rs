@@ -8,12 +8,39 @@
 // description - and the small helpers only they use.
 //
 // Every reader takes already-fetched text or JSON and returns `RawJob`s. None
-// of them touches the network: the HTTPS layer stays in `discover.rs`, which is
-// what makes all of this testable against a fixture instead of a server.
+// of them touches the network: the HTTPS layer stays in `discover_fetch.rs`,
+// which is what makes all of this testable against a fixture instead of a
+// server. `RawJob` is defined here because this is where every one of them is
+// built.
 
-use super::discover::{json_str, RawJob};
 use super::discover_geo::{location_signal, REMOTE_MARKERS};
 use super::job_url::{strip_html, xml_tag};
+
+/// One job as it comes out of a source feed, before filtering.
+#[derive(Debug, Clone)]
+pub(super) struct RawJob {
+    pub(super) title: String,
+    pub(super) company: String,
+    pub(super) jd_text: String,
+    pub(super) location: String,
+    pub(super) url: String,
+    /// Set by sources whose list endpoint carries no job description, holding
+    /// the id the detail endpoint needs. Resolved after the local filters have
+    /// run, so one detail request is spent per job the user could actually
+    /// see - never per job in the feed.
+    pub(super) detail_ref: Option<String>,
+}
+
+/// Read a string field out of a feed's JSON object, treating a missing key and
+/// a non-string value alike as an empty string. Feeds are inconsistent about
+/// which optional fields they send at all, and a job is never worth dropping
+/// over one.
+pub(super) fn json_str(v: &serde_json::Value, key: &str) -> String {
+    v.get(key)
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string()
+}
 
 /// Feeds disagree about how many times they escape their markup - Greenhouse
 /// ships `content` escaped (`&lt;p&gt;`), ArbeitNow escapes the entities inside

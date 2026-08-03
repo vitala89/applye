@@ -44,6 +44,69 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the discover fetch layer splits out, and an untested HTTPS guard is found
+
+- **Status:** partial - `discover.rs` is 876/800, closer but still over budget
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-fetch-split`, from `main` (`39c3f25`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** to open against `main`
+- **Objective:** take the fetch seam out of `discover.rs`, and resolve the `RawJob`/`json_str`
+  inversion the previous watch flagged before it spread into a third module.
+- **Completed:**
+  - **`discover_fetch.rs` (245 + tests).** `SourceRow`, `http_client`, `require_https`, `get_json`,
+    `get_json_keyed`, `get_text`, the three `ARBEITSAGENTUR_*` constants,
+    `fetch_arbeitsagentur_detail`, `fetch_nofluffjobs_detail`, `ats_slug` and `fetch_source_jobs`.
+    The only module in the discover group that opens a socket. `get_json`, `get_json_keyed`,
+    `get_text` and `ats_slug` stayed private - only the seven symbols `discover.rs` actually names
+    are `pub(super)`.
+  - **The inversion is undone in both directions.** `RawJob` and `json_str` moved from `discover.rs`
+    into `discover_parsers.rs`. All eleven readers build `RawJob`s, and `json_str` is called 60
+    times in the parsers against once outside them, so the parsers had been importing their own
+    vocabulary back across the module line. `discover.rs` now names `discover_parsers` for `RawJob`
+    rather than owning it.
+  - The two geo tests that call a parser (`arbeitsagentur_geo_passes_a_germany_scope`,
+    `german_city_alone_passes_a_germany_scope`) moved to `discover_filter.rs`, which is what they
+    actually assert. Four empty section headers left stranded by earlier parser splits
+    (`-- TrudVsem --`, `-- Arbeitnow --`, `-- No Fluff Jobs --`, `-- Personio --`, with no tests
+    under any of them) went with the same pass. `discover.rs` no longer mentions a parser at all.
+  - **`discover.rs` 1139 -> 876 non-empty lines.** `discover_parsers.rs` 672 -> 697, still under.
+- **Not completed:** `discover.rs` is 876/800, 76 over. The remaining seam is the source registry.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover.rs`,
+  `discover_fetch.rs` (new), `discover_parsers.rs`, `discover_filter.rs`, `commands/mod.rs`,
+  `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**. The count rose by one: the new
+    `require_https` test below. No existing test was lost.
+  - `npm run quality:file-size` - passed; `discover.rs: 876/800, base 1139`.
+  - `npm run quality:attribution`, `npm run format:check`, `git diff --check` - all passed.
+  - Pre-deletion line-range check: all four moved blocks were extracted to scratch files and diffed
+    against their new homes. `SourceRow`, `RawJob` and `json_str` were byte-identical; the fetch
+    block differed only in the seven `pub(super)` additions and one rustfmt line-wrap.
+- **Privacy/security impact:** **a real gap was found and closed.** Mutating `require_https` to
+  `Ok(())` unconditionally left all 339 tests green - the guard that keeps every discover request
+  on HTTPS had no coverage at all, in either its old or its new home. A test was added covering
+  plain `http://`, a missing scheme, an uppercase `HTTPS://` that the check does not match, and the
+  `file:` and `data:` schemes a hand-edited source row could otherwise smuggle in. Re-running the
+  same mutation now fails that test. No behaviour changed - the guard was correct, just unasserted.
+- **Decisions and assumptions:**
+  - `SourceRow` lives in `discover_fetch.rs` rather than staying behind, because it is the fetch
+    layer's input contract. `discover.rs` constructs it from the query to call in, which is the
+    normal direction - a caller building the callee's input type is not an inversion.
+  - `commands/archetypes.rs` still has an unrelated `derive_title_keywords` with a different
+    signature. Left alone again; it is a separate concern, not a duplicate to merge here.
+- **Risks or compatibility impact:** none. No command moved, so the `lib.rs` registry is untouched.
+- **Open issues or blockers:** none.
+- **Next first action:** cut the source registry out of `discover.rs` into `discover_sources.rs`:
+  `MarketSourceItem`, `MarketSourcePlan`, `market_source_plan`, `apply_market_source_plan`, and the
+  six commands `db_list_sources`, `db_set_source_enabled`, `db_market_source_plan`,
+  `db_apply_market_source_plan`, `db_add_source` and `db_remove_source`. That is managing which
+  sources exist, which is a different question from running a scan, and it is enough to take
+  `discover.rs` under 800 and close the Rust side of the campaign. Note that this is the first split
+  in the campaign that **moves commands**, so `lib.rs` must be updated - every previous one could
+  leave the registry alone.
+
 ### 2026-08-03, the discover filters get their own module
 
 - **Status:** partial - `discover.rs` is smaller but still over budget

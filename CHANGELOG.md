@@ -16,7 +16,13 @@ is the single source of truth; this file tracks what changed at each tag.
 
 - **Mark as Applied says what it is doing.** Committing the documents generates whatever the application is missing, which runs against the configured AI provider and can take minutes. The button simply went dead for the whole time, with no spinner, no text and no toast, which reads as a hang. It now reads "Preparing documents…" while that step runs. `busy` alone could not say it, because saving a lead raises the same flag for an operation that takes a moment.
 
+### Fixed
+
+- **The rule that keeps discover off plaintext HTTP is now tested.** `require_https` is the only thing standing between a source row edited to `http://` and a request sent in the clear, and every fetch in the discover group passes through it - but nothing asserted it. Removing the check entirely left all 339 tests green. It now has a test covering plain HTTP, a missing scheme, an uppercase `HTTPS://` that does not match the check, and the `file:` and `data:` schemes a hand-edited row could otherwise smuggle in. No behaviour changed; the guard simply cannot be weakened silently any more.
+
 ### Changed
+
+- **The network half of a scan is its own module, and the parsers stop importing out of it.** `discover.rs` still held the HTTPS layer - the shared client, `require_https`, the JSON and text getters, the Bundesagentur key and its page and detail caps, the two detail fetchers, and the per-source-type dispatch - alongside the database work that consumes it. That layer moves to `discover_fetch.rs`, and `SourceRow` goes with it as the input it reads. `RawJob` and `json_str` moved the other way, into `discover_parsers.rs`: every one of the eleven readers builds `RawJob`s and `json_str` is called sixty times there against once elsewhere, so the parsers had been importing their own vocabulary back out of `discover.rs`. Both directions of that inversion are undone. **1139 -> 876.**
 
 - **The local discover filters are their own module.** `discover.rs` was 1679 lines against an 800 budget and mixed the network half of a scan with the rule that decides whether a fetched job is ever seen. The 0-token half came out whole: the title keyword lists and their archetype fallback, the region and market geo configs, and `geo_passes` with the ordering that makes "somewhere else" beat the word "Remote" - the rule that keeps a "Remote - US only" posting out of a Ukraine market. It is the code that silently drops jobs, so it moves with all 26 of its tests, and it now has a file where nothing around it touches the network or the database. **1679 -> 1139.**
 

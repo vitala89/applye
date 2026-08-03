@@ -42,12 +42,15 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **Jobs stops at 1104; Discover is the next target, and the file-size picture was re-measured.**
-  `jobs.component.ts` is **1104** non-empty lines against a budget of 400, down from 1467 where the
-  work started - a deliberate stop, not a failure. Nothing left in it has a single nameable
-  responsibility: 110 declarations, 76 methods, and **48 of those declarations are pure aliases**
-  onto services, which only shrink by binding services in the template (now allowed, see
-  `CODE_QUALITY.md`, forward-only) or by extracting child components.
+- **Jobs is moving again by extracting child components, and that is what works on the aliases.**
+  `jobs.component.ts` is **1080** non-empty lines against a budget of 400, down from 1467 where the
+  work started, with the template at **941/300** and the stylesheet at **860/400**. The earlier stop
+  at 1104 held because nothing left had a single nameable responsibility: 110 declarations, 76
+  methods, and **48 of those declarations are pure aliases** onto services. The unblocking
+  observation is that the page provides seventeen services component-scoped, so a child rendered
+  inside its template inherits that injector and can inject them directly - which deletes the alias
+  and the template block in one move. The first cut, `app-job-document-cards`, retired nine aliases
+  that way. The wizard's remaining steps are the same shape.
   **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio had
   never been named anywhere: `apps/web/src/styles.scss` at 2167/400 - **now split into eleven
   section partials, largest 353/400, with the compiled CSS proven byte-identical** - and
@@ -55,9 +58,12 @@
   an 82% reduction across seven commits: geography to `discover_geo.rs` (555), feed readers to
   `discover_parsers.rs` (697), their tests to `discover_parsers_tests.rs` (393), the local filters
   to `discover_filter.rs`, the HTTPS layer to `discover_fetch.rs`, and the source registry to
-  `discover_sources.rs`. **No Rust file in the repository is over its size budget any more** -
-  `npm run quality:file-size` prints an empty report. The remaining budget work is entirely
-  Angular. Budgets count non-empty lines;
+  `discover_sources.rs`. **One Rust file is still over budget: `ai/cli.rs` at 879/800.** An earlier
+  version of this entry claimed none were, on the strength of `npm run quality:file-size` printing
+  an empty report - but that tool only checks files changed against a base, so a clean report means
+  "nothing I touched is near budget", never "the repository is clean". A repo-wide count is the only
+  thing that answers that question, and it puts 20 TypeScript files, 12 templates, 13 stylesheets
+  and 1 Rust file over. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
   Discover is the page now: `discover.component.ts` **1069/400** (from 1242: the JD parser, the feed
   filter and the For-you split, then the scan console), `discover.component.html` 1070/300,

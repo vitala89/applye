@@ -1,0 +1,94 @@
+.document-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.document-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+.document-review-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.document-review-card__head h5 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+.document-review-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+  color: var(--accent);
+}
+.document-review-card__label {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+.document-review-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.document-review-card__select {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  width: 100%;
+}
+
+// `badge` itself is global (libs/ui); only the per-status colouring is local to
+// the document cards.
+.badge--doc-missing,
+.badge--doc-needs_input,
+.badge--doc-needs_review {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+.badge--doc-generating {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.badge--doc-ready {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+// `muted` and `status` are page-local utilities on the jobs page, not global
+// ones, so the cards carry their own copy rather than inheriting them - style
+// encapsulation stops the page's rules at this component's boundary.
+.muted {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+.status {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.status--error {
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  .document-review-grid {
+    grid-template-columns: 1fr;
+  }
+}

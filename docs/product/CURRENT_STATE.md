@@ -51,16 +51,20 @@
   inside its template inherits that injector and can inject them directly - which deletes the alias
   and the template block in one move. The first cut, `app-job-document-cards`, retired nine aliases
   that way. The wizard's remaining steps are the same shape.
-- **The Rust side is nearly done; Angular is now the whole remaining problem.** Measure the
+- **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
-  from it means only "nothing I touched is near budget". The audit currently reports **47 files over
-  budget**: 20 TypeScript, 13 stylesheets, 12 templates, and **2 Rust**
-  (`commands/job_url.rs` 580/500 and `commands/discover_geo.rs` 522/500).
+  from it means only "nothing I touched is near budget". The audit reports **45 files over
+  budget**: 20 TypeScript, 13 stylesheets, 12 templates, and **zero Rust, source or tests**.
   Rust budgets changed on 2026-08-03: source and inline `#[cfg(test)]` items are now counted
   separately, at **500** and **600**, replacing a combined 800 that scored a well-tested module the
   same as a dense one. The Rust campaign since then: `commands/discover.rs` 3245 -> 599 across seven
   modules, `discover_parsers.rs` 697 -> 406 into ATS boards and No Fluff Jobs, `ai/cli.rs` 668 -> 420
-  into run/probe/install, and `ats.rs` 619 -> 289 with its vocabulary in `ats_tokens.rs`.
+  into run/probe/install, `ats.rs` 619 -> 289 with its vocabulary in `ats_tokens.rs`,
+  `job_url.rs` 580 -> 399 with its shared web helpers in `web_text.rs` and `url_parts.rs`, and
+  `discover_geo.rs` 522 -> 246 with its per-country vocabulary in `discover_geo_countries.rs`.
+  Two of those splits found real coverage gaps rather than only moving code: `extract_host`, whose
+  result the closed-board allowlist is matched against, had no tests at all, and `KNOWN_COUNTRY_CODES`
+  could lose an entry with every test still green while silently widening what a market scan returns.
   `apps/web/src/styles.scss`, once 2167/400, is eleven section partials with the compiled CSS proven
   byte-identical. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
@@ -153,7 +157,8 @@
   `commands/documents.rs` 1926/800, `jobs.component.html` 1122/300. **Templates and stylesheets need
   child components, which is a maintainer decision; several sources and Rust files may not.** Run
   the audit before planning - three claims in this session's log that "nothing decision-free is
-  left" were each wrong, and each was scoped to whatever category had just been finished.
+  left" were each wrong, and each was scoped to whatever category had just been finished. The counts
+  and the 800 Rust budget in this line are historical; the campaign entry above supersedes them.
 - **CodeQL is clean.** All five `js/polynomial-redos` alerts in `libs/core` report `state: fixed`,
   `fixed_at 2026-07-30T08:34:00Z`, confirmed by the API after the rescan rather than assumed from the
   merge. Zero open code-scanning alerts. The fix was measured, not guessed: on a 40 000-character

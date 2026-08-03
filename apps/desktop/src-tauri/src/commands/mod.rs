@@ -31,6 +31,7 @@ pub mod profile;
 pub mod scoring;
 pub mod settings;
 pub mod tailoring;
+pub mod tailoring_docx;
 pub mod tailoring_fonts;
 pub mod tailoring_pdf;
 pub mod tracker;

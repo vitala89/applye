@@ -44,6 +44,79 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the file readers leave the module that stores documents
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/documents-import-split`. Cut from `refactor/documents-style-split` because
+  both edit `documents.rs`, and **first opened as a stacked PR against that branch - which broke
+  CI.** See "Risks" below. #286 merged mid-watch, so the branch was rebased onto the new `main`
+  (`1147a8a`) and the PR retargeted; it now carries exactly one commit over `main`.
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #287, based on `main`
+- **Objective:** the second of the three seams the previous entry named. `documents.rs` at 1196/800
+  still held the file-reading half, which has no consumer outside the module and therefore costs
+  nothing to move.
+- **Completed:**
+  - **`documents_import.rs` (162).** `cv_import_read_file`, `cv_photo_read_file`, the DOCX and PDF
+    text readers, the image magic-byte sniff and the data-URI codec, with the four tests that cover
+    them. This is the module where untrusted, user-picked files arrive, so both third-party parser
+    calls and their `catch_parser_panic` guard now sit together rather than beside the library rows.
+  - **`documents.rs` 1196 -> 1035.** Only `data_uri_to_bytes` is still needed by the export path, so
+    it is `pub(super)` and imported; everything else stayed private to the new module.
+  - **Three stranded doc comments removed.** The earlier blocks split left the comments for
+    `cv_content_to_markdown` and `cv_content_to_blocks` stacked on top of `section_heading`, so a
+    reader of that function was handed two paragraphs describing functions in another file. They went
+    with this pass because they document the code that moved, not the code that stayed.
+  - **The count carried.** 9 `#[test]` before, **5 + 4** after; 13 `#[tokio::test]` untouched.
+    `cargo test --lib` reported **339 passed** on both sides, and the repository total across the
+    three `documents*` modules is 32, the same as before either split.
+  - **Mutation-checked with md5 on either side.** Changing the PNG magic-byte branch of `image_mime`
+    to report `image/gif` failed `detects_png_mime_and_encodes`, and the file's md5 returned to
+    `bafea2ad...` after the revert.
+- **Not completed:** `documents.rs` is still over budget at 1035/800. The third seam is named below.
+- **Files or packages changed:** `documents.rs`, new `documents_import.rs`, `commands/mod.rs`,
+  `lib.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean
+  (after `cargo fmt` removed one double blank line the extraction introduced),
+  `npm run quality:file-size` printing `documents.rs 1035/800 ... base 1196` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched, and both moved commands keep
+  their names, so the frontend `invoke()` surface is identical.
+- **Privacy/security impact:** none by change, but worth stating plainly: this module is the one that
+  reads arbitrary user-picked DOCX and PDF files through `docx-rs` and `pdf_extract`. The
+  `catch_parser_panic` wrapper moved with them and is unchanged, so a malformed file still returns an
+  error instead of taking the process down.
+- **Decisions and assumptions:** the export path was left for a third pass rather than folded in
+  here, because it is the one seam of the three that consumers reach across - `print.rs` calls three
+  of its functions by full path - and mixing a free move with a consumer-visible one in a single
+  diff hides which half a regression came from.
+- **Risks or compatibility impact:** low for the code. No serialized shape changed and no command
+  name changed - only the Rust path in the `invoke_handler` list.
+  **A new trap for the log: this repository's CI cannot run on a stacked pull request.** #287 was
+  first opened against `refactor/documents-style-split`, and the affected-graph step failed with
+  `fatal: ambiguous argument 'main': unknown revision or path not in the working tree` - the
+  workflow derives its Nx base from `main`, which the checkout does not fetch when the PR base is
+  another branch. Nothing was wrong with the code; the run had no test failure in it. **Open PRs
+  against `main`, and rebase instead of stacking.**
+  A second, smaller trap on top of it: local `main` held both `d87b886` and its squash-merge
+  `d0dedf3`, so every branch cut from it dragged a duplicate commit that GitHub reported as
+  `CONFLICTING` while `git merge-tree` found zero conflicts. `git rebase --onto origin/main` dropped
+  it with "patch contents already upstream".
+- **Open issues or blockers:** unchanged - the macOS bundle is still unsigned and un-notarised, which
+  outranks every refactor in this log. Maintainer decision.
+- **Next first action:** the third and last seam in `documents.rs` is the export path -
+  `cv_document_export`, `cover_letter_document_export`, `resolve_export_style` and the two
+  `*_bytes_core` functions, with the export test, roughly 250 lines. Unlike the two before it, it is
+  **not** free: `print.rs` calls `cv_document_export_bytes_core`,
+  `cover_letter_document_export_bytes_core` and `document_library_get_core` by full path, so those
+  paths move with it. That lands `documents.rs` near 800 and leaves it holding what it is named for -
+  the library rows. After that, `tailoring.rs` 2087 and `discover.rs` 1679 are the Rust files left.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `bafea2addc121e5a24c2b3288c93fc3c` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `1035/800 ... base 1196`.
+
 ### 2026-08-03, the document's style leaves the module that stores documents
 
 - **Status:** complete

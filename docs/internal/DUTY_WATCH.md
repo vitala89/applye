@@ -44,6 +44,56 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the CLI bridge splits into run, probe and install
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/ai-cli-split`, from `main` (`983a33c`)
+- **Pull request:** to open against `main`
+- **Objective:** `ai/cli.rs`, the largest remaining Rust file and one the campaign had never touched.
+- **Completed:**
+  - **`cli_probe.rs` (170).** `CliStatus`, `probe_version`, `cli_health`, `cli_probe`, and the short
+    `VERSION_TIMEOUT` that keeps a `--version` call from hanging Settings. Answers only "what is on
+    this machine"; never runs a prompt.
+  - **`cli_install.rs` (200).** `NPM_PACKAGES`, `npm_package_for`, `CliInstallResult`, `cli_install`
+    and `INSTALL_TIMEOUT`. The only part of the bridge that changes the machine rather than reading
+    it, which is why its safety rules are now the first thing in the file.
+  - **`ai/cli.rs` 668 -> 420 source lines, under budget.** What stays is the inference path: the two
+    adapters, the shared helpers and `run`.
+  - Two commands moved, so `lib.rs` was repointed (`cli_probe`, `cli_install`), and
+    `commands/health.rs` called `crate::ai::cli::cli_health` directly - also repointed.
+  - Rust files over budget: **4 -> 3**.
+- **Files or packages changed:** `ai/cli.rs`, `ai/mod.rs`, `lib.rs`, `commands/health.rs`, two new
+  files, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**, unchanged.
+  - `npm run quality:file-size` - passed, 668 -> 420.
+  - Line-range check on all four moved blocks - byte-identical.
+  - Mutation check on the security-relevant rule: making `cli_install` fall back to the caller's own
+    provider string as the package name - the allowlist bypass - fails
+    `install_refuses_a_provider_that_is_not_on_the_list`.
+  - **A surviving mutation was found and is a real gap, though a pre-existing one.** Changing
+    `cli_probe`'s error arm to report a broken CLI as working leaves all 340 tests green: the test
+    named for that case exercises `probe_version` directly, and the mapping inside `cli_probe`
+    cannot be reached without the real machine. Not fixed here - making it testable means extracting
+    a pure `status_for`, which is a design change and does not belong in a relocation. Raised as its
+    own task. Worst case is cosmetic: Settings showing a broken CLI as working.
+- **Privacy/security impact:** none intended, and none found. The install path's guarantees are
+  unchanged and were re-read line by line during the move: allowlist-only packages, no
+  interpolation of the frontend's provider string into a command, `npm` resolved to an absolute path
+  and run without a shell, stderr truncated before it reaches the UI. The visibility widened during
+  the split (`CliAdapter`, `CliReply`, `resolve_binary`, `truncate_stderr`, `adapter_for`,
+  `not_installed_error`) is `pub(super)` throughout - reachable inside `crate::ai` only, not
+  exported from the crate.
+- **Decisions and assumptions:** two modules in one watch again, for the same reason as the parsers:
+  either cut alone leaves the file over budget, and both express one idea - the file was answering
+  three questions and now answers one.
+- **Risks or compatibility impact:** two commands moved. No name, signature or payload changed, and
+  `tauri::generate_handler!` would not compile against a wrong path.
+- **Open issues or blockers:** none.
+- **Next first action:** `ats.rs` at 619/500, then `job_url.rs` 580 and `discover_geo.rs` 522.
+
 ### 2026-08-04, the feed readers split by source family
 
 - **Status:** complete

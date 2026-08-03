@@ -36,7 +36,7 @@
 // binary, so it is a new adapter if it is ever wanted, not a rename.
 
 use super::{AiRequest, AiResponse};
-use serde::Serialize;
+
 use serde_json::Value;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -52,14 +52,14 @@ const STDERR_LIMIT: usize = 2000;
 
 /// One CLI's reply, normalised to the same shape the API path returns.
 #[derive(Debug)]
-struct CliReply {
+pub(super) struct CliReply {
     text: String,
     tokens_input: u32,
     tokens_output: u32,
     cached_tokens: u32,
 }
 
-trait CliAdapter {
+pub(super) trait CliAdapter {
     /// The executable name (e.g. "claude").
     fn command(&self) -> &str;
     /// Human-readable name for error messages.
@@ -233,7 +233,7 @@ fn usage_u32(usage: Option<&Value>, key: &str) -> u32 {
         .unwrap_or(0) as u32
 }
 
-fn adapter_for(provider: &str) -> Result<Box<dyn CliAdapter + Send + Sync>, String> {
+pub(super) fn adapter_for(provider: &str) -> Result<Box<dyn CliAdapter + Send + Sync>, String> {
     match provider {
         // Provider ids are this app's ids (see AiProvider), not vendor names.
         "claude" => Ok(Box::new(ClaudeCli)),
@@ -288,7 +288,7 @@ fn extra_bin_dirs() -> Vec<PathBuf> {
 
 /// Resolves an executable name to an absolute path, searching PATH first and
 /// then the GUI-launch fallbacks. Returns None when the CLI is not installed.
-fn resolve_binary(name: &str) -> Option<PathBuf> {
+pub(super) fn resolve_binary(name: &str) -> Option<PathBuf> {
     let exe_names: Vec<String> = if cfg!(windows) {
         vec![
             format!("{name}.cmd"),
@@ -312,7 +312,7 @@ fn resolve_binary(name: &str) -> Option<PathBuf> {
     None
 }
 
-fn truncate_stderr(raw: &str) -> String {
+pub(super) fn truncate_stderr(raw: &str) -> String {
     let trimmed = raw.trim();
     if trimmed.len() <= STDERR_LIMIT {
         return trimmed.to_string();
@@ -370,7 +370,7 @@ fn exit_status_message(adapter: &dyn CliAdapter, code: Option<i32>) -> String {
     }
 }
 
-fn not_installed_error(adapter: &dyn CliAdapter) -> String {
+pub(super) fn not_installed_error(adapter: &dyn CliAdapter) -> String {
     format!(
         "{} is not installed, or Applye cannot see it. Install `{}` and make sure it runs in a terminal, then try again. If it works in a terminal but not here, it is installed somewhere Applye does not look - reinstall it to a standard location such as /usr/local/bin.",
         adapter.label(),
@@ -450,276 +450,10 @@ pub async fn run(req: &AiRequest) -> Result<AiResponse, String> {
     })
 }
 
-// ---------------------------------------------------------------------------
-// Detection, for Settings
-// ---------------------------------------------------------------------------
-
-/// A `--version` probe must not hang Settings; these CLIs answer in well under
-/// a second when healthy.
-const VERSION_TIMEOUT: Duration = Duration::from_secs(15);
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CliStatus {
-    /// The app's provider id ("claude" | "openai").
-    pub provider: String,
-    /// Executable name the app looks for.
-    pub command: String,
-    /// Human-readable CLI name.
-    pub label: String,
-    /// A file with this name exists on the search path.
-    pub installed: bool,
-    /// Absolute path when found - shown so a user can tell which install won.
-    pub path: Option<String>,
-    /// The file exists **and** actually ran. `installed` alone is not enough:
-    /// the npm wrappers for these CLIs are small scripts that spawn a
-    /// platform-specific binary, and if that binary is missing (a partial or
-    /// interrupted `npm install`) the wrapper is still on the path and still
-    /// looks perfectly healthy to a file-existence check. That exact case -
-    /// `spawn .../codex-darwin-arm64/vendor/.../codex ENOENT` - showed a green
-    /// tick in Settings and then failed on the first real scoring run.
-    pub working: bool,
-    /// Version string the CLI printed, when it ran.
-    pub version: Option<String>,
-    /// Why it did not run, when it did not.
-    pub error: Option<String>,
-}
-
-/// Runs `<binary> --version` and reports what happened. This executes only a
-/// binary the user installed and named themselves, with a fixed argument list
-/// and no shell, in a scratch directory.
-async fn probe_version(binary: &std::path::Path) -> Result<String, String> {
-    let child = Command::new(binary)
-        .arg("--version")
-        .current_dir(std::env::temp_dir())
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|e| format!("could not be started: {e}"))?;
-
-    let output = match tokio::time::timeout(VERSION_TIMEOUT, child.wait_with_output()).await {
-        Ok(result) => result.map_err(|e| format!("failed while running: {e}"))?,
-        Err(_) => {
-            return Err(format!(
-                "did not answer `--version` within {} seconds",
-                VERSION_TIMEOUT.as_secs()
-            ))
-        }
-    };
-
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let stderr = truncate_stderr(&String::from_utf8_lossy(&output.stderr));
-
-    if !output.status.success() {
-        return Err(if stderr.is_empty() {
-            "exited with an error and printed nothing".to_string()
-        } else {
-            stderr
-        });
-    }
-    // Some CLIs print a banner before the version; the first non-empty line is
-    // the useful part.
-    Ok(stdout
-        .lines()
-        .find(|l| !l.trim().is_empty())
-        .unwrap_or("unknown version")
-        .trim()
-        .to_string())
-}
-
-/// Whether the CLI for one provider is present and actually runs. Returns the
-/// version on success and the reason on failure, so the health check can say
-/// something useful rather than just "not ready".
-pub async fn cli_health(provider: &str) -> Result<String, String> {
-    let adapter = adapter_for(provider)?;
-    let binary = resolve_binary(adapter.command()).ok_or_else(|| not_installed_error(&*adapter))?;
-    probe_version(&binary)
-        .await
-        .map_err(|e| format!("{} {e}", adapter.label()))
-}
-
-/// Reports which of the supported CLIs are present **and runnable**, so Settings
-/// can tell the user before they switch to CLI mode rather than letting them
-/// discover it mid-task.
-#[tauri::command]
-pub async fn cli_probe() -> Vec<CliStatus> {
-    let mut out = Vec::new();
-    for (provider, command, label) in [
-        ("claude", "claude", "Claude Code"),
-        ("openai", "codex", "Codex CLI"),
-    ] {
-        let path = resolve_binary(command);
-        let (working, version, error) = match &path {
-            None => (false, None, None),
-            Some(p) => match probe_version(p).await {
-                Ok(v) => (true, Some(v), None),
-                Err(e) => (false, None, Some(e)),
-            },
-        };
-        out.push(CliStatus {
-            provider: provider.to_string(),
-            command: command.to_string(),
-            label: label.to_string(),
-            installed: path.is_some(),
-            path: path.map(|p| p.display().to_string()),
-            working,
-            version,
-            error,
-        });
-    }
-    out
-}
-
-// ---------------------------------------------------------------------------
-// Assisted install
-// ---------------------------------------------------------------------------
-
-/// An install downloads and compiles packages; be generous but still bounded.
-const INSTALL_TIMEOUT: Duration = Duration::from_secs(600);
-
-/// The npm package that provides each CLI.
-///
-/// This mapping is the security boundary for the install command: the package
-/// name is chosen here from a fixed list keyed on the app's own provider id,
-/// and is **never** taken from the caller. There is no code path that can make
-/// Applye install an arbitrary package, and nothing is ever passed to a shell.
-const NPM_PACKAGES: &[(&str, &str)] = &[
-    ("claude", "@anthropic-ai/claude-code"),
-    ("openai", "@openai/codex"),
-];
-
-fn npm_package_for(provider: &str) -> Option<&'static str> {
-    NPM_PACKAGES
-        .iter()
-        .find(|(id, _)| *id == provider)
-        .map(|(_, pkg)| *pkg)
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CliInstallResult {
-    pub ok: bool,
-    /// The exact command that was run, so the UI never has to describe it
-    /// second-hand and the user can repeat it in a terminal.
-    pub command: String,
-    /// Human-readable outcome or failure reason.
-    pub message: String,
-    /// npm itself is missing, so the user needs Node.js before anything else.
-    /// Worth distinguishing: it is the one failure the user cannot fix from
-    /// inside Applye, and it is the *likeliest* failure for the non-technical
-    /// user this button exists for.
-    pub needs_node: bool,
-}
-
-/// Installs the CLI for `provider` with npm.
-///
-/// This is a real, system-modifying action, so it is only ever reached from an
-/// explicit click, it reports the exact command it runs, and it never guesses:
-/// an unknown provider is refused rather than passed through to npm.
-///
-/// Installing does **not** sign the user in. The CLIs authenticate against the
-/// user's own account interactively, which cannot be done from here; the UI
-/// says so on success rather than letting the user discover it at the first
-/// failed task.
-#[tauri::command]
-pub async fn cli_install(provider: String) -> CliInstallResult {
-    let Some(package) = npm_package_for(&provider) else {
-        return CliInstallResult {
-            ok: false,
-            command: String::new(),
-            message: format!("'{provider}' is not a CLI Applye can install."),
-            needs_node: false,
-        };
-    };
-    let command = format!("npm install -g {package}");
-
-    let Some(npm) = resolve_binary("npm") else {
-        return CliInstallResult {
-            ok: false,
-            command,
-            message: "npm was not found. These CLIs are installed with npm, which comes with Node.js - install Node.js from nodejs.org, then try again.".to_string(),
-            needs_node: true,
-        };
-    };
-
-    let child = match Command::new(&npm)
-        .args(["install", "-g", package])
-        .current_dir(std::env::temp_dir())
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-    {
-        Ok(c) => c,
-        Err(e) => {
-            return CliInstallResult {
-                ok: false,
-                command,
-                message: format!("Could not start npm: {e}"),
-                needs_node: false,
-            }
-        }
-    };
-
-    let output = match tokio::time::timeout(INSTALL_TIMEOUT, child.wait_with_output()).await {
-        Ok(Ok(o)) => o,
-        Ok(Err(e)) => {
-            return CliInstallResult {
-                ok: false,
-                command,
-                message: format!("npm failed to run: {e}"),
-                needs_node: false,
-            }
-        }
-        Err(_) => {
-            return CliInstallResult {
-                ok: false,
-                command,
-                message: format!(
-                    "The install did not finish within {} minutes and was stopped.",
-                    INSTALL_TIMEOUT.as_secs() / 60
-                ),
-                needs_node: false,
-            }
-        }
-    };
-
-    if output.status.success() {
-        return CliInstallResult {
-            ok: true,
-            command,
-            message: String::new(),
-            needs_node: false,
-        };
-    }
-
-    let stderr = truncate_stderr(&String::from_utf8_lossy(&output.stderr));
-    // A global install into a system Node needs write access the app does not
-    // have. Naming the cause is the difference between a user fixing it and a
-    // user giving up on a wall of npm output.
-    let message = if stderr.contains("EACCES") || stderr.contains("permission denied") {
-        format!(
-            "npm does not have permission to install globally on this machine. Run `{command}` yourself in a terminal (it may need administrator rights)."
-        )
-    } else if stderr.is_empty() {
-        "npm exited with an error and printed nothing.".to_string()
-    } else {
-        stderr
-    };
-    CliInstallResult {
-        ok: false,
-        command,
-        message,
-        needs_node: false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ai::cli_install::npm_package_for;
     use crate::ai::AiMode;
 
     fn req(provider: &str, model: &str) -> AiRequest {
@@ -866,39 +600,6 @@ mod tests {
         assert!(resolve_binary("applye-definitely-not-a-real-binary").is_none());
     }
 
-    #[tokio::test]
-    async fn probe_reports_all_three_supported_clis() {
-        let statuses = cli_probe().await;
-        assert_eq!(statuses.len(), 2);
-        let providers: Vec<&str> = statuses.iter().map(|s| s.provider.as_str()).collect();
-        assert_eq!(providers, vec!["claude", "openai"]);
-        for s in &statuses {
-            // Installed or not depends on the machine; the path must agree.
-            assert_eq!(s.installed, s.path.is_some());
-            // A CLI cannot be runnable without being present at all.
-            assert!(!s.working || s.installed, "{s:?}");
-            // Whichever way the probe went, it must say which: a working CLI
-            // reports a version, a broken one reports why.
-            if s.installed {
-                assert_eq!(s.working, s.version.is_some(), "{s:?}");
-                assert_eq!(!s.working, s.error.is_some(), "{s:?}");
-            }
-        }
-    }
-
-    #[test]
-    fn every_supported_provider_has_an_install_package() {
-        for (provider, _, _) in [
-            ("claude", "claude", "Claude Code"),
-            ("openai", "codex", "Codex CLI"),
-        ] {
-            assert!(
-                npm_package_for(provider).is_some(),
-                "no install package for {provider}"
-            );
-        }
-    }
-
     #[test]
     fn gemini_is_refused_with_the_reason_rather_than_a_generic_message() {
         // Google stopped Gemini CLI serving personal accounts on 2026-06-18.
@@ -912,38 +613,6 @@ mod tests {
         assert!(err.contains("Codex CLI"), "{err}");
         // And it must not be offered for install either.
         assert_eq!(npm_package_for("gemini"), None);
-    }
-
-    #[tokio::test]
-    async fn install_refuses_a_provider_that_is_not_on_the_list() {
-        // The package name must never come from the caller. Anything not in
-        // NPM_PACKAGES is refused before npm is reached at all.
-        for attempt in ["deepseek", "left-pad", "../evil", "claude; rm -rf /"] {
-            let result = cli_install(attempt.to_string()).await;
-            assert!(!result.ok, "{attempt} should be refused");
-            assert!(
-                result.command.is_empty(),
-                "{attempt} must not produce a command"
-            );
-        }
-    }
-
-    #[test]
-    fn install_packages_are_the_official_vendor_ones() {
-        assert_eq!(npm_package_for("claude"), Some("@anthropic-ai/claude-code"));
-        assert_eq!(npm_package_for("openai"), Some("@openai/codex"));
-    }
-
-    #[tokio::test]
-    async fn a_present_but_unrunnable_binary_reports_an_error_not_success() {
-        // Stands in for the real failure this replaced: an npm wrapper that is
-        // on the path but whose vendored binary is missing. A directory is
-        // present on disk and cannot be executed, which is the same shape.
-        let dir = std::env::temp_dir().join(format!("applye-probe-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).expect("create dir");
-        let err = probe_version(&dir).await.unwrap_err();
-        assert!(!err.is_empty(), "a failure must explain itself");
-        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -154,7 +154,11 @@ Before a watch can be marked complete:
     which is a different question from running a scan.
   - **`discover.rs` 876 -> 599 non-empty lines, under 800** - from **1679** at the start, across
     four modules: the local filters, the fetch layer, the source registry, and the scan itself.
-  - **No Rust file in the repository is over its size budget.** `npm run quality:file-size` now
+  - **Correction, added later the same day:** the claim below is wrong. `ai/cli.rs` is 879/800 and
+    was never touched by this campaign. `quality:file-size` only checks files changed against a
+    base, so an empty report means "nothing I touched is near budget", not "the repository is
+    clean". The original text is left as written rather than edited away:
+  - ~~**No Rust file in the repository is over its size budget.**~~ `npm run quality:file-size` now
     prints no report lines at all.
   - The three moved tests borrow `test_pool` from `discover::tests` rather than growing a second
     copy, following the same pattern `documents_export.rs` already uses. `discover::tests` and

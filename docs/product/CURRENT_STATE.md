@@ -58,9 +58,12 @@
   an 82% reduction across seven commits: geography to `discover_geo.rs` (555), feed readers to
   `discover_parsers.rs` (697), their tests to `discover_parsers_tests.rs` (393), the local filters
   to `discover_filter.rs`, the HTTPS layer to `discover_fetch.rs`, and the source registry to
-  `discover_sources.rs`. **No Rust file in the repository is over its size budget any more** -
-  `npm run quality:file-size` prints an empty report. The remaining budget work is entirely
-  Angular. Budgets count non-empty lines;
+  `discover_sources.rs`. **One Rust file is still over budget: `ai/cli.rs` at 879/800.** An earlier
+  version of this entry claimed none were, on the strength of `npm run quality:file-size` printing
+  an empty report - but that tool only checks files changed against a base, so a clean report means
+  "nothing I touched is near budget", never "the repository is clean". A repo-wide count is the only
+  thing that answers that question, and it puts 20 TypeScript files, 12 templates, 13 stylesheets
+  and 1 Rust file over. Budgets count non-empty lines;
   a raw `wc -l` overstates every file and has caused at least one wrong "correction" in this log.
   Discover is the page now: `discover.component.ts` **1069/400** (from 1242: the JD parser, the feed
   filter and the For-you split, then the scan console), `discover.component.html` 1070/300,

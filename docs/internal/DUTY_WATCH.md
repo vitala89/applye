@@ -44,6 +44,60 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the tests follow the module they test
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/blocks-tests-follow-their-module`, cut from `main` (`77ac593`) after #286,
+  #287 and #288 were merged in this watch. No stacking this time - `main` already carried everything.
+- **Commits:** the move, plus this documentation commit
+- **Pull request:** #289
+- **Objective:** the finding the previous entry recorded rather than fixed. `section_heading` was
+  defined in `documents.rs` as `pub(super)` and called from nowhere but `documents_blocks.rs`, which
+  imported it back across the module line, and the four `cv_content_to_blocks_*` tests were still in
+  `documents.rs` asserting a function defined in `documents_blocks.rs`. Both directions of the same
+  inversion.
+- **Completed:**
+  - **`section_heading` moved to `documents_blocks.rs` and became private.** Its only caller now
+    defines it, so `use super::documents::section_heading;` disappeared - the split paid for itself
+    in import lines rather than costing them.
+  - **The four block tests moved with it**, into a `mod tests` that `documents_blocks.rs` did not
+    have before. The stale `use super::super::documents_blocks::cv_content_to_blocks;` that the
+    export split had added to `documents.rs`'s test module for exactly these tests went too; clippy
+    named it as an error the moment they left, which is how it was caught rather than left behind.
+  - **`documents.rs` 788 -> 669**, `documents_blocks.rs` 290 -> 411, both under 800.
+  - **The count carried.** 16 tests before (4 `#[test]` + 12 `#[tokio::test]`), **12 + 4** after.
+    `cargo test --lib` reported **339 passed** on both sides.
+  - **Mutation-checked with md5 on either side.** Making the German summary heading return the
+    English string failed `cv_content_to_blocks_localizes_section_headings_for_german` in its new
+    home, and the file's md5 returned to `e763bb11...` after the revert.
+- **Not completed:** `tailoring.rs` 2087 and `discover.rs` 1679 are the Rust files still over budget.
+- **Files or packages changed:** `documents.rs`, `documents_blocks.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean **after** the stale test import
+  was removed (it failed first, which is the point), `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `documents.rs 669/800 ... base 788` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched and no command changed at all.
+- **Privacy/security impact:** none. A translation table and four tests moved between files.
+- **Decisions and assumptions:** `section_heading` became private rather than staying `pub(super)`,
+  because after the move it has exactly one caller and that caller is in the same file. Anything that
+  needs it later can widen it then.
+- **Risks or compatibility impact:** none identifiable. No public surface, no serialized shape and no
+  command was touched.
+- **Open issues or blockers:** unchanged - the macOS bundle is unsigned and un-notarised, and it
+  outranks every entry in this log.
+- **Next first action:** `tailoring.rs` at 2087/800 is the largest Rust file left, and the two splits
+  before it took the PDF renderer and the fonts out, so the next seam has to be chosen the way these
+  four were: by reading how consumers import it first. **It is not free** - `commands::tailoring` is
+  named by `documents_export.rs`, `print.rs`, `tailoring_pdf.rs` and others for `resolve_page`,
+  `resolve_blocks`, `resolve_cv_blocks`, `render_blocks_docx`, `render_blocks_pdf`, `builtin_theme`
+  and `CvTheme`, so any split has to move consumer paths line for line, as #286 did. Read the
+  consumer list before choosing the seam, not after.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `e763bb11a125c22d5d40577d929284c1` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `669/800 ... base 788`.
+
 ### 2026-08-03, the documents library goes under budget
 
 - **Status:** complete

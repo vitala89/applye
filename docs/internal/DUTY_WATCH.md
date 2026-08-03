@@ -44,6 +44,45 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the ATS check's vocabulary separates from its scoring
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/ats-tokenizer-split`, from `main` (`ed69962`)
+- **Pull request:** to open against `main`
+- **Objective:** `ats.rs` at 619/500.
+- **Completed:**
+  - **`ats_tokens.rs` (353).** `tokenize`, `is_stopword` with its English/German table,
+    `is_technical_shape` and `mixed_case_terms`. Most of the file's excess was the stopword list
+    itself, which is data rather than logic and reads as noise inside the scorer.
+  - **`ats.rs` 619 -> 289 source lines, under budget.** What stays is the scoring: term extraction,
+    weighting, coverage and the verdict.
+  - **An inversion undone.** `ats_format.rs` imported `tokenize` back out of `ats.rs`; it now names
+    the module that defines it.
+  - Rust files over budget: **3 -> 2**.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **341 passed, 0 failed, 1 ignored**, up one by the new test below.
+  - `npm run quality:file-size` - passed; `ats.rs` no longer appears in the report.
+  - Line-range check on both moved blocks - byte-identical.
+  - Mutation checks. Dropping the punctuation the tokenizer preserves fails
+    `tokenizer_keeps_technology_names_intact`.
+  - **A second mutation survived and was fixed rather than reported.** Removing the
+    `mixed_case.contains(term)` arm from `is_technical_shape` left all 340 tests green, yet it is a
+    real behaviour change: `postgresql` and `javascript` carry no digit and no symbol, so internal
+    capitals in the posting are the only thing marking them technical. Without that they lose their
+    weight bonus and can drop out of the term list entirely - a silent loss of exactly the keywords
+    a recruiter filter is likeliest to use. Unlike the `cli_probe` gap in the previous watch this
+    one was cheap to close, because the extraction had just made it a pure function in a module with
+    its own tests, so a test was added and the same mutation now fails.
+  - One mutation was left uncovered deliberately: removing the `len() < 2` guard in
+    `mixed_case_terms` changes nothing observable in any fixture and is not worth a test.
+- **Privacy/security impact:** none. Pure string handling, no I/O.
+- **Risks or compatibility impact:** none. No command moved; the `lib.rs` registry is untouched.
+- **Open issues or blockers:** none.
+- **Next first action:** `job_url.rs` at 580/500, then `discover_geo.rs` at 522/500 - the last two
+  Rust files over budget.
+
 ### 2026-08-04, the CLI bridge splits into run, probe and install
 
 - **Status:** complete

@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the DOCX renderer gets the file the PDF one already had
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/tailoring-docx-split`, from `main` (`0dd70e7`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #290
+- **Objective:** `tailoring.rs` at 2087/800, the largest Rust file left. The previous entry recorded
+  the rule this watch had to follow - read the consumers first - and the consumer list said the same
+  thing the file's own section banner did: `// ── DOCX rendering ──` at line 796, with
+  `tailoring_pdf.rs` already existing as its mirror. The seam was drawn by the previous split and
+  simply never cut.
+- **Completed:**
+  - **`tailoring_docx.rs` (527).** `md_to_docx_bytes`, `block_paragraph`, `finish_docx`, and the
+    whole font-embedding pass - `EmbedFace`, `faces_to_embed`, `font_guid`, `obfuscate_font`,
+    `embed_fonts_in_docx` - plus `render_blocks_docx`, with three tests.
+  - **`tailoring.rs` 2087 -> 1578.** Still over budget; the next seam is named below.
+  - **What deliberately stayed.** The block model, `CvTheme`, `builtin_theme`, `resolve_page`,
+    `resolve_cv_blocks`, `resolve_blocks`, `md_to_blocks` and `parse_inline_runs` are read by _both_
+    renderers, so neither owns them and they stay in `tailoring`. The new module imports them with a
+    glob, the same shape `tailoring_pdf.rs` uses.
+  - **One test stayed on purpose.** `block_paragraph_bold_merge_rule_on_inline_runs` is named for a
+    DOCX function but executes only `parse_inline_runs`; it documents the merge rule rather than
+    calling the renderer, so it stays beside the code it actually runs. Likewise the smoke test that
+    asserts both renderers emit bytes stays in `tailoring` and imports the DOCX one, because its
+    whole point is that the two agree.
+  - **The count carried.** 36 `#[test]` before, **33 + 3** after; `cargo test --lib` reported
+    **339 passed** on both sides.
+  - **Mutation-checked with md5 on either side.** Passing an empty face list to
+    `embed_fonts_in_docx` - the exact regression the embedding pass exists to prevent - failed
+    `docx_embeds_lato_face_when_used`, and the file's md5 returned to `fab83d35...` after the revert.
+- **Not completed:** `tailoring.rs` 1578 and `discover.rs` 1679 are still over budget.
+- **Files or packages changed:** `tailoring.rs`, new `tailoring_docx.rs`, `commands/mod.rs`,
+  `documents_export.rs`, `CHANGELOG.md`, this file. `print.rs` turned out not to name either moved
+  function - it reaches the DOCX path through `documents_export`, so it needed no edit.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `tailoring.rs 1578/800 ... base 2087` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched and no command name changed.
+- **Privacy/security impact:** none. Pure rendering code moved; the font bytes it embeds are the same
+  bundled faces, from the same `tailoring_fonts` module.
+- **Decisions and assumptions:** `sb()`, the block fixture, is lent from `tailoring::tests` as
+  `pub(crate)` rather than copied - the third time this watch made that call, and for the same
+  reason: a duplicated fixture lets two modules drift apart on the shape that proves either works.
+- **Risks or compatibility impact:** low. `render_blocks_docx` and `md_to_docx_bytes` changed module
+  path only; `documents_export.rs` follows them line for line, and `export_docx` inside `tailoring`
+  now qualifies the one call it makes. No command name and no serialized shape changed.
+- **Open issues or blockers:** unchanged - the unsigned, un-notarised macOS bundle still outranks
+  everything in this log.
+- **Next first action:** `tailoring.rs` at 1578 now holds three things, and the seam between them is
+  clean: the **journal database layer** (`TailoringCache`, `SaveTailoringInput`, `GeneratedDoc`,
+  `tailoring_cache_get`/`_save`, `generated_doc_get`, `fetch_generated_doc`, `upsert_generated_doc`,
+  plus `readable_slug`/`cv_dir`/`cv_filename` and the `export_docx`/`export_pdf`/`open_file`/
+  `reveal_in_folder` commands) is roughly 400 lines that touch SQLite and the filesystem and nothing
+  else does; what remains after it is the pure block model both renderers read. Check the consumers
+  first as always: `lib.rs` registers six of those commands and `print.rs` names `generated_doc_get`.
+  After that, `discover.rs` 1679.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `fab83d356c68a7fb55a3c712689f1b38` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `1578/800 ... base 2087`.
+
 ### 2026-08-03, the tests follow the module they test
 
 - **Status:** complete

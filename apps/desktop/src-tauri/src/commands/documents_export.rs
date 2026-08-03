@@ -141,7 +141,7 @@ pub(crate) async fn cv_document_export_bytes_core(
         "docx" | "pdf" => {
             let blocks = cv_content_to_blocks(&content_json, lang.as_deref())?;
             let resolved = crate::commands::tailoring::resolve_cv_blocks(&style, &theme, &blocks);
-            let page = crate::commands::tailoring::resolve_page(&style.page);
+            let page = crate::commands::tailoring_page::resolve_page(&style.page);
             if format == "docx" {
                 crate::commands::tailoring_docx::render_blocks_docx(
                     &resolved,
@@ -195,7 +195,7 @@ pub(crate) async fn cover_letter_document_export_bytes_core(
         "docx" | "pdf" => {
             let blocks = cover_letter_content_to_blocks(&content_json)?;
             let resolved = crate::commands::tailoring::resolve_blocks(&style, &blocks, true);
-            let page = crate::commands::tailoring::resolve_page(&style.page);
+            let page = crate::commands::tailoring_page::resolve_page(&style.page);
             if format == "docx" {
                 crate::commands::tailoring_docx::render_blocks_docx(
                     &resolved,

@@ -18,6 +18,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The tailoring group is under its size budget, and page geometry is its own module.** Millimetres and margins were the last thing in `tailoring.rs` that was not block styling: nothing in the page resolver reads a font, a colour or a block, and it is deliberately forgiving so a malformed `style_json` degrades to A4 with clamped margins instead of breaking the export. **814 -> 699** - from 2538 at the start, across seven modules that each answer one question.
+
 - **The markdown reader is its own module.** Turning tailored markdown into an untagged block list is the journal export path's front door, and it has nothing to do with resolving an already-built block list against a style. It moves out with the inline `**bold**` splitter both renderers call, and with its four tests. **956 -> 814.**
 
 - **The look a document resolves to is its own module.** The built-in theme table - the hand-maintained Rust mirror of the TS theme descriptor, with its parity test - and the two style cascades that decide what font, size, weight and colour each block actually gets, came out of `tailoring.rs`. What stays is the block list that reads the answer. **1179 -> 956.**

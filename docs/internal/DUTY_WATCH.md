@@ -44,6 +44,60 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the discover filters get their own module
+
+- **Status:** partial - `discover.rs` is smaller but still over budget
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-filter-split`, from `main` (`514d92f`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** to open against `main`
+- **Objective:** start on `discover.rs`, the last Rust file over budget, by taking the seam that is
+  furthest from I/O.
+- **Completed:**
+  - **`discover_filter.rs` (607).** `TitleFilter` and `GeoCfg`, `parse_keyword_list`,
+    `derive_title_keywords`, `title_passes`, `parse_geo_scopes`, `build_geo_cfg`,
+    `elsewhere_tokens`, `build_market_cfg`, `source_serves_markets` and `geo_passes`, with the 27
+    tests that cover them. Pure string rules - no network, no SQLite, no AI - which is the whole
+    reason this is the right first cut: it is the code that decides which fetched jobs the user
+    never sees.
+  - **`discover.rs` 1679 -> 1139 non-empty lines.** Still over 800; the ratchet moved and now holds
+    at the lower number.
+  - The consumer audit found no inversion: every one of these symbols was used only inside
+    `discover.rs`, so the move is a pure relocation and `pub(super)` is the widest visibility
+    needed. `discover.rs` keeps `parse_local_markets` from `discover_geo`; the other five
+    `discover_geo` imports went with the filters.
+- **Not completed:** `discover.rs` is 1139/800. The next seam is the fetch layer.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover.rs`,
+  `discover_filter.rs` (new), `commands/mod.rs`, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean, no warnings.
+  - `cargo test --lib` - **339 passed, 0 failed, 1 ignored**, the same count as before the split.
+  - `npm run quality:file-size` - passed; report line
+    `discover.rs: 1139/800 non-empty lines (Rust source), base 1679`.
+  - Pre-deletion line-range check: lines `118-349`, `1204-1301` and `1336-1591` were extracted to a
+    scratch file and diffed against the new module. The only differences were the ten `pub(super)`
+    additions, so nothing was silently dropped.
+  - Mutation check: removing the `market_mode && cfg.elsewhere` early return from `geo_passes`
+    failed `market_mode_drops_somewhere_else_before_the_remote_marker` and
+    `a_region_wide_remote_job_reaches_a_market_inside_that_region`. The restore was diffed against
+    `HEAD` and is byte-exact.
+- **Privacy/security impact:** none. No behaviour change, no new I/O, no new dependency. The
+  `require_https` guard and the fetch layer were not touched.
+- **Decisions and assumptions:**
+  - The two `arbeitsagentur_*`/`german_city_*` geo tests stayed in `discover.rs` because they call a
+    feed parser as well as `geo_passes`; only tests that read filter symbols alone moved.
+  - `commands/archetypes.rs` has an unrelated `derive_title_keywords` with a different signature.
+    Left alone - it is a separate concern, not a duplicate to merge in a refactor commit.
+- **Risks or compatibility impact:** none. No command moved, so the `lib.rs` registry is untouched.
+- **Open issues or blockers:** none.
+- **Next first action:** cut the fetch layer out of `discover.rs` into `discover_fetch.rs`:
+  `http_client`, `require_https`, `get_json`, `get_json_keyed`, the three `ARBEITSAGENTUR_*`
+  constants, `fetch_arbeitsagentur_detail`, `fetch_nofluffjobs_detail`, `get_text`, `ats_slug` and
+  `fetch_source_jobs` (roughly 220 lines). Check first where `RawJob` and `json_str` should live -
+  `discover_parsers.rs` imports both back out of `discover.rs`, which is the same inversion that
+  `section_heading` had in `documents.rs`.
+- **Evidence:** the commits on `refactor/discover-filter-split`.
+
 ### 2026-08-03, the tailoring group goes under budget
 
 - **Status:** complete

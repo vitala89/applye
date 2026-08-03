@@ -18,6 +18,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The local discover filters are their own module.** `discover.rs` was 1679 lines against an 800 budget and mixed the network half of a scan with the rule that decides whether a fetched job is ever seen. The 0-token half came out whole: the title keyword lists and their archetype fallback, the region and market geo configs, and `geo_passes` with the ordering that makes "somewhere else" beat the word "Remote" - the rule that keeps a "Remote - US only" posting out of a Ukraine market. It is the code that silently drops jobs, so it moves with all 26 of its tests, and it now has a file where nothing around it touches the network or the database. **1679 -> 1139.**
+
 - **The tailoring group is under its size budget, and page geometry is its own module.** Millimetres and margins were the last thing in `tailoring.rs` that was not block styling: nothing in the page resolver reads a font, a colour or a block, and it is deliberately forgiving so a malformed `style_json` degrades to A4 with clamped margins instead of breaking the export. **814 -> 699** - from 2538 at the start, across seven modules that each answer one question.
 
 - **The markdown reader is its own module.** Turning tailored markdown into an untagged block list is the journal export path's front door, and it has nothing to do with resolving an already-built block list against a style. It moves out with the inline `**bold**` splitter both renderers call, and with its four tests. **956 -> 814.**

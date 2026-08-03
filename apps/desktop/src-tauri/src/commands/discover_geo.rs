@@ -1,11 +1,14 @@
 // Geography for the Discover scan: what counts as which place.
 //
 // Split out of `discover.rs`, which was the largest file in the repository at
-// 3245 lines against an 800 budget. This half is pure lookup - freetext names
-// for a region, the tokens a country code also answers to, and the tests that
-// say a location matches - with no database, no network and no state. It is
-// the half worth reading on its own, and the half that changes when a market
-// is added rather than when the scan does.
+// 3245 lines against an 800 budget. This half is pure lookup - which freetext
+// names belong to a region scope, which local markets are pickable, and the
+// rules that say a location string matches a token - with no database, no
+// network and no state.
+//
+// The per-country vocabulary that was here too now lives in
+// `discover_geo_countries.rs`: it is the long half, it grows on a different
+// occasion, and keeping both here put the file over its size budget.
 //
 // Every item is `pub(super)`: the scan is the only caller, and widening it
 // further would invite the tables to grow a second home.
@@ -162,16 +165,10 @@ pub(super) fn region_countries(scope: &str) -> &'static [&'static str] {
 // A market appears here only when a built-in source serves it. gb, es and fr
 // are omitted until one does, because otherwise picking them enables nothing
 // and leaves the previous market's sources scanning. Their location tokens
-// stay in `country_tokens` / `KNOWN_COUNTRY_CODES` below, since they are still
-// needed to recognise "somewhere else" for the markets that remain.
+// stay in `country_tokens` / `KNOWN_COUNTRY_CODES` in
+// `discover_geo_countries.rs`, since they are still needed to recognise
+// "somewhere else" for the markets that remain.
 pub(super) const KNOWN_LOCAL_MARKETS: &[&str] = &["de", "us", "ru", "ua", "pl"];
-
-/// Every country code `country_tokens` knows about, used to build the
-/// "somewhere else" set. Kept beside that function so the two stay in step.
-pub(super) const KNOWN_COUNTRY_CODES: &[&str] = &[
-    "de", "at", "ch", "fr", "nl", "es", "it", "pl", "pt", "se", "dk", "fi", "no", "ie", "be", "cz",
-    "gb", "us", "ca", "ru", "ua",
-];
 
 /// Parses the `market` settings column: a JSON array of market codes
 /// (`["de","fr"]`) going forward. An install saved between the single-market
@@ -194,283 +191,6 @@ pub(super) fn parse_local_markets(raw: &str) -> Vec<String> {
         vec![text.to_string()]
     } else {
         Vec::new()
-    }
-}
-
-/// Names a 2-letter country code also answers to in freetext locations.
-///
-/// German boards - the federal agency's feed, and the company boards on
-/// Personio - routinely give the city alone ("Berlin", "Muenchen"), with no
-/// country anywhere in the string, so a Germany scope would silently drop its
-/// own market. The largest German cities are therefore country tokens too, in
-/// both the German and the English spelling. The trade is deliberate: a
-/// same-named city elsewhere (Frankfort, KY) slips through, which the user can
-/// see and dismiss, where a dropped job is invisible.
-/// Full names of every US state, matched as substrings. `"georgia"` is
-/// knowingly ambiguous with the country of the same name, so a US market can
-/// surface an occasional posting from Georgia the country - that is the
-/// deliberate direction of this file's trade, since a visible wrong result
-/// can be dismissed while a dropped job cannot, and the state's own code
-/// `"ga"` is unavailable because it collides with Gabon.
-pub(super) const US_STATE_NAMES: &[&str] = &[
-    "alabama",
-    "alaska",
-    "arizona",
-    "arkansas",
-    "california",
-    "colorado",
-    "connecticut",
-    "delaware",
-    "florida",
-    "georgia",
-    "hawaii",
-    "idaho",
-    "illinois",
-    "indiana",
-    "iowa",
-    "kansas",
-    "kentucky",
-    "louisiana",
-    "maine",
-    "maryland",
-    "massachusetts",
-    "michigan",
-    "minnesota",
-    "mississippi",
-    "missouri",
-    "montana",
-    "nebraska",
-    "nevada",
-    "new hampshire",
-    "new jersey",
-    "new mexico",
-    "new york",
-    "north carolina",
-    "north dakota",
-    "ohio",
-    "oklahoma",
-    "oregon",
-    "pennsylvania",
-    "rhode island",
-    "south carolina",
-    "south dakota",
-    "tennessee",
-    "texas",
-    "utah",
-    "vermont",
-    "virginia",
-    "washington",
-    "west virginia",
-    "wisconsin",
-    "wyoming",
-    "district of columbia",
-];
-
-/// State codes safe to match as bare words. Deliberately partial: `loc_matches`
-/// is case-insensitive, so it cannot tell "Berlin, DE" (Germany) from
-/// "Dover, DE" (Delaware), "Tel Aviv, IL" (Israel) from "Chicago, IL"
-/// (Illinois), "Baku, AZ" (Azerbaijan) from "Phoenix, AZ" (Arizona),
-/// "Ulaanbaatar, MN" (Mongolia) from "Minneapolis, MN" (Minnesota), or
-/// "Tunis, TN" (Tunisia) from "Nashville, TN" (Tennessee). This list holds
-/// only codes that are neither an assigned ISO 3166-1 alpha-2 country code
-/// nor an ordinary English word; every other state is still reachable
-/// through its full name above. `ca` is the one deliberate exception: it is
-/// Canada's ISO code, but in a job location it means California far more
-/// often, so the bare `ca` token is dropped from Canada's own token list
-/// below in exchange for keeping it here.
-pub(super) const US_STATE_CODES: &[&str] = &[
-    "tx", "ca", "ny", "wa", "fl", "nj", "mi", "ut", "nv", "wi", "ct",
-];
-
-pub(super) fn country_tokens(code: &str) -> Vec<&'static str> {
-    match code {
-        "de" => vec![
-            "de",
-            "germany",
-            "deutschland",
-            "berlin",
-            "hamburg",
-            "muenchen",
-            "münchen",
-            "munich",
-            "köln",
-            "koeln",
-            "cologne",
-            "frankfurt",
-            "stuttgart",
-            "düsseldorf",
-            "duesseldorf",
-            "dusseldorf",
-            "leipzig",
-            "dortmund",
-            "nürnberg",
-            "nuernberg",
-            "nuremberg",
-            "hannover",
-            "bremen",
-            "dresden",
-            "karlsruhe",
-            "mannheim",
-        ],
-        "at" => vec!["at", "austria"],
-        "ch" => vec!["ch", "switzerland"],
-        "fr" => vec![
-            "fr",
-            "france",
-            "paris",
-            "lyon",
-            "marseille",
-            "toulouse",
-            "lille",
-            "bordeaux",
-            "nantes",
-        ],
-        "nl" => vec!["nl", "netherlands"],
-        "es" => vec![
-            "es",
-            "spain",
-            "españa",
-            "espana",
-            "madrid",
-            "barcelona",
-            "valencia",
-            "seville",
-            "sevilla",
-            "bilbao",
-            "malaga",
-            "málaga",
-        ],
-        "it" => vec!["it", "italy"],
-        "pl" => vec![
-            "pl", "poland", "polska", "warsaw", "warszawa", "krakow", "kraków", "cracow",
-            "wroclaw", "wrocław", "gdansk", "gdańsk", "poznan", "poznań", "lodz", "łódź",
-        ],
-        "pt" => vec!["pt", "portugal"],
-        "se" => vec!["se", "sweden"],
-        "dk" => vec!["dk", "denmark"],
-        "fi" => vec!["fi", "finland"],
-        "no" => vec!["no", "norway"],
-        "ie" => vec!["ie", "ireland"],
-        "be" => vec!["be", "belgium"],
-        "cz" => vec!["cz", "czech"],
-        "uk" | "gb" => vec![
-            "uk",
-            "gb",
-            "united kingdom",
-            "britain",
-            "great britain",
-            "england",
-            "scotland",
-            "cardiff",
-            "swansea",
-            "london",
-            "manchester",
-            "edinburgh",
-            "birmingham",
-            "glasgow",
-            "bristol",
-            "leeds",
-            "cambridge",
-            "oxford",
-        ],
-        "us" => {
-            let mut out = vec![
-                "us",
-                "usa",
-                "u.s.",
-                "united states",
-                "america",
-                "san francisco",
-                "new york city",
-                "nyc",
-                "seattle",
-                "austin",
-                "boston",
-                "chicago",
-                "denver",
-                "atlanta",
-                "savannah",
-                "los angeles",
-                "san diego",
-                "portland",
-            ];
-            out.extend_from_slice(US_STATE_NAMES);
-            out.extend_from_slice(US_STATE_CODES);
-            out
-        }
-        // No bare "ca": in a job location it means California far more often
-        // than Canada, and a US market that silently loses San Francisco is a
-        // worse failure than a Canada scope that needs the country spelled out.
-        "ca" => vec![
-            "canada",
-            "toronto",
-            "vancouver",
-            "montreal",
-            "montréal",
-            "ottawa",
-            "calgary",
-            "ontario",
-            "quebec",
-            "québec",
-            "british columbia",
-            "alberta",
-        ],
-        // Russian and Ukrainian sources write the place in Cyrillic - TrudVsem
-        // returns `region.name` as "Москва", Habr Career puts the city in the
-        // posting title - so both scripts are listed, same reasoning as the
-        // German city list above: a dropped job is invisible, a false positive
-        // is not.
-        "ru" => vec![
-            "ru",
-            "russia",
-            "russian federation",
-            "россия",
-            "москва",
-            "moscow",
-            "санкт-петербург",
-            "saint petersburg",
-            "st petersburg",
-            "новосибирск",
-            "novosibirsk",
-            "екатеринбург",
-            "yekaterinburg",
-            "казань",
-            "kazan",
-            "нижний новгород",
-            "челябинск",
-            "самара",
-            "омск",
-            "ростов-на-дону",
-            "уфа",
-            "красноярск",
-            "воронеж",
-            "пермь",
-            "волгоград",
-        ],
-        "ua" => vec![
-            "ua",
-            "ukraine",
-            "україна",
-            "украина",
-            "київ",
-            "киев",
-            "kyiv",
-            "kiev",
-            "львів",
-            "львов",
-            "lviv",
-            "харків",
-            "харьков",
-            "kharkiv",
-            "одеса",
-            "одесса",
-            "odesa",
-            "odessa",
-            "дніпро",
-            "днепр",
-            "dnipro",
-        ],
-        _ => vec![],
     }
 }
 

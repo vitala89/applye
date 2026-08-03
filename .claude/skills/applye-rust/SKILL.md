@@ -30,10 +30,14 @@ src/
 ```
 
 - A new capability belongs in a focused module, registered from `lib.rs`.
-- **Hard budget: 800 non-empty lines per Rust source or test file.** The ratchet is enforced by
-  `npm run quality:file-size`.
-- `discover.rs`, `tailoring.rs`, and `documents.rs` are legacy oversized modules. They are technical
-  debt, not examples. Do not add behavior to them without first extracting a cohesive responsibility.
+- **Hard budget: 500 non-empty lines of Rust source per file, counted separately from 600 for the
+  file's inline `#[cfg(test)]` items.** Rust keeps its tests in the same file by convention, so one
+  combined number said little about either half; see `docs/governance/CODE_QUALITY.md`. The ratchet
+  is enforced by `npm run quality:file-size`, which is diff-scoped - use
+  `npm run quality:file-size:all` for a repository-wide picture.
+- No Rust file is currently over either budget. `discover.rs`, `tailoring.rs`, and `documents.rs`
+  were the legacy oversized modules and have been split; they are still the largest domains, so
+  extract a cohesive responsibility rather than growing them again.
 - Split by responsibility, for example transport/command, validation, parsing, domain logic,
   persistence, provider integration, formatting, or export. Do not create arbitrary `part1.rs` files.
 - Large inline `#[cfg(test)] mod tests` blocks move to focused test modules before the file reaches

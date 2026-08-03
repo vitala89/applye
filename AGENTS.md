@@ -95,7 +95,7 @@ the installed `superpowers` and `mattpocock-skills` packs.
 `docs/governance/CODE_QUALITY.md` is mandatory for every code change.
 
 - Apply SOLID pragmatically together with separation of concerns, high cohesion, low coupling, KISS, YAGNI, and explicit typed contracts.
-- New TypeScript/JavaScript source files stay at or below 400 non-empty lines; Angular templates at 300; stylesheets at 400; Rust modules at 800. Test-file budgets are defined in the quality contract.
+- New TypeScript/JavaScript source files stay at or below 400 non-empty lines; Angular templates at 300; stylesheets at 400; Rust source modules at 500. Test-file budgets are defined in the quality contract: 600 for a TypeScript test file, and 600 for a Rust file's inline `#[cfg(test)]` items, counted separately from its source.
 - Existing oversized files are technical debt, not precedent. They may not grow. Extract a focused responsibility before adding behavior.
 - Components render and coordinate UI state. Domain logic goes to `libs/core`, Tauri/data access to `libs/data`, shared UI to `libs/ui`, and user-facing text to `libs/i18n`.
 - Tauri commands stay thin. Rust domains split into command, validation, parsing, domain, persistence, and provider modules where those responsibilities exist.

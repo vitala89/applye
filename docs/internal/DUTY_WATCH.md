@@ -44,6 +44,70 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the documents library goes under budget
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/documents-export-split`, cut from `refactor/documents-import-split` because
+  both edit `documents.rs`. **The pull request is opened against `main`, not against that branch** -
+  the previous entry's trap. It therefore carries two commits until #287 merges, after which it
+  reduces to one on its own.
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #288, based on `main`
+- **Objective:** the third and last seam named in the previous entry, and the one that ends the
+  campaign: `documents.rs` from 1926 at the start to **788/800**, under its budget for the first
+  time.
+- **Completed:**
+  - **`documents_export.rs` (267).** `cv_document_export`, `cover_letter_document_export`,
+    `resolve_export_style` and the two `*_bytes_core` functions. This is the only place a library
+    document becomes a file: it reads one row, resolves the persisted `style_json` over the chosen
+    theme, lifts the photo and its placement out of the content, and hands blocks to the renderers.
+  - **`documents.rs` 1035 -> 788.** It now holds what it is named for - the `cv_templates` and
+    `document_library` rows and the commands that read and write them.
+  - **The database fixture is lent, not copied.** The export test needs a migrated pool and the same
+    valid CV input every other row test uses, so `mod tests`, `test_pool` and `cv_input` became
+    `pub(crate)` and `cv_templates_list_core` / `document_library_upsert_core` became `pub(super)`,
+    the same choice the ATS split made for `good_cv()`. A second copy of the fixture would let the
+    two modules drift apart on the row shape that proves either of them works.
+  - **The count carried.** 18 tests before (5 `#[test]` + 13 `#[tokio::test]`), **16 + 2** after.
+    `cargo test --lib` reported **339 passed** on both sides.
+  - **Mutation-checked with md5 on either side.** Replacing `resolve_export_style`'s theme-seeded
+    base size with a hard-coded 11pt - the exact shape of the wrong-font regression the test was
+    written for - failed `resolve_export_style_seeds_from_theme_then_overrides`, and the file's md5
+    returned to `d37a45fd...` after the revert.
+- **Not completed:** `tailoring.rs` 2087 and `discover.rs` 1679 are the Rust files still over
+  budget, plus the frontend files the previous watches recorded.
+- **Files or packages changed:** `documents.rs`, new `documents_export.rs`, `commands/mod.rs`,
+  `print.rs`, `lib.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `documents.rs 788/800 ... base 1035` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched, and both moved commands keep
+  their names.
+- **Privacy/security impact:** none. The export path writes only to the path the user chose in the
+  save dialog, exactly as before, and still never touches `applications.cv_path`.
+- **Decisions and assumptions:** the export test moved with the code rather than staying behind,
+  even though it is the one test in the group that needs a database. Leaving it would have left
+  `documents.rs` asserting the behaviour of a function it no longer defines, which is the arrangement
+  this same watch found and flagged below.
+- **Risks or compatibility impact:** low. No serialized shape and no command name changed; `print.rs`
+  follows the two `*_bytes_core` functions to their new module, line for line.
+- **Open issues or blockers:** unchanged and still first in line - the macOS bundle is unsigned and
+  un-notarised.
+- **Next first action:** **found while splitting, not fixed: `documents.rs` still owns four tests and
+  one function that belong to `documents_blocks.rs`.** `section_heading` is defined in `documents.rs`
+  as `pub(super)` and called from nowhere but `documents_blocks.rs` (which imports it back), and the
+  four `cv_content_to_blocks_*` tests sit in `documents.rs` asserting a function defined in
+  `documents_blocks.rs` - the compiler said so out loud when the export split removed the module-level
+  import and only the tests still needed it. Moving both directions of that inversion is roughly 145
+  lines out of `documents.rs` and into the module they describe, and it costs nothing: the import line
+  in `documents_blocks.rs` disappears with it. After that, `tailoring.rs` 2087 is the largest Rust
+  file left.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `d37a45fdbefac8653c11bc94913973b2` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `788/800 ... base 1035`.
+
 ### 2026-08-03, the file readers leave the module that stores documents
 
 - **Status:** complete

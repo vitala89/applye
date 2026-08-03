@@ -246,6 +246,9 @@ pub(super) fn geo_passes(location: &str, cfg: &GeoCfg, source_serves_market: boo
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Only these two tests read a parser; a module-scope import would be dead in
+    // a non-test build and fail clippy -D warnings.
+    use crate::commands::discover_parsers::parse_arbeitsagentur;
     // Only the tests read this one; importing it at module scope would be dead
     // in a non-test build and fail clippy -D warnings.
     use crate::commands::discover_geo::KNOWN_LOCAL_MARKETS;
@@ -603,5 +606,29 @@ mod tests {
         assert_eq!(parse_geo_scopes("asia"), vec!["asia".to_string()]);
         assert!(parse_geo_scopes("worldwide").is_empty());
         assert!(parse_geo_scopes("custom").is_empty());
+    }
+
+    // -- geo filter against a real parser's output ---------------------------
+
+    #[test]
+    fn arbeitsagentur_geo_passes_a_germany_scope() {
+        let cfg = build_geo_cfg(&["europe".to_string()], &["de".to_string()]);
+        let val: serde_json::Value = serde_json::from_str(
+            r#"{"stellenangebote":[{"titel":"X","refnr":"r","arbeitsort":{"ort":"Muenchen"}}]}"#,
+        )
+        .unwrap();
+        let jobs = parse_arbeitsagentur(&val);
+        assert!(geo_passes(&jobs[0].location, &cfg, false));
+    }
+    #[test]
+    fn german_city_alone_passes_a_germany_scope() {
+        let cfg = build_geo_cfg(&[], &["de".to_string()]);
+        for city in ["Berlin", "München", "Koeln", "Frankfurt am Main"] {
+            assert!(
+                geo_passes(city, &cfg, false),
+                "{city} should pass a DE scope"
+            );
+        }
+        assert!(!geo_passes("Warsaw", &cfg, false));
     }
 }

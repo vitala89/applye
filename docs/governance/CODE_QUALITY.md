@@ -55,13 +55,31 @@ Budgets count non-empty physical lines. They are design alarms, not targets to f
 | TypeScript / JavaScript source | 400 lines | Extract a focused service, store, pure helper, domain module, or child component            |
 | Angular template               | 300 lines | Extract a child component or repeated view section                                          |
 | SCSS / CSS                     | 400 lines | Split by component or responsibility and reuse design tokens                                |
-| Rust source module             | 800 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
+| Rust source module             | 500 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
 | TypeScript test file           | 600 lines | Split by behavior or unit under test                                                        |
-| Rust test module/file          | 800 lines | Move large inline tests to focused test modules or fixtures                                 |
+| Rust inline tests              | 600 lines | Move large inline tests to focused test modules or fixtures                                 |
+
+Rust is measured in two parts, because its tests live in the same file by convention. A single
+number covering both said little about either: under the previous combined 800-line rule,
+`tailoring.rs` passed at 699 lines of which only 266 were source, while `discover_parsers.rs` passed
+on nearly the same score with 694 lines of source and 3 of tests. The counter now finds each
+`#[cfg(test)]` item and bills it to the test budget, so a well-tested module is not punished for its
+tests and a dense one is not excused by them. 500 is therefore stricter than the 800 it replaces.
 
 The automated gate checks source code under `apps/`, `libs/`, and `tools/`. Generated files,
 lockfiles, snapshots, migrations, fixtures, vendored code, and the central translation catalogue are
 excluded because line count is not a useful design signal for them.
+
+### The gate is diff-scoped; the audit is not
+
+`npm run quality:file-size` only measures files changed against a base. A clean report means
+"nothing in this change is near budget" and **never** "the repository is within budget" - a
+distinction that has already been misread once, producing a false all-clear in
+`docs/product/CURRENT_STATE.md`.
+
+Use `npm run quality:file-size:all` for the repository-wide picture. It lists every file over budget
+or within 20% of it and always exits zero: it is a report, not a gate, because failing on debt that
+predates the rule would only block unrelated work.
 
 ### Ratchet rule for existing oversized files
 

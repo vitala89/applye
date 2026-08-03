@@ -270,7 +270,7 @@ async fn export_pdf_wysiwyg_core(
         let doc = crate::commands::documents::document_library_get_core(id, &db.pool)
             .await?
             .ok_or_else(|| "document_export: document not found".to_string())?;
-        let page_settings: crate::commands::documents::PageSettings = doc
+        let page_settings: crate::commands::documents_style::PageSettings = doc
             .style_json
             .as_deref()
             .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())

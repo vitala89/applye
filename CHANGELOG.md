@@ -18,6 +18,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **A document's style is its own module.** `documents.rs` was still 1645 lines against an 800 budget after the blocks split, and the style contract was the part of it that touches neither the database nor the filesystem: the persisted `CvStyle` with its per-section overrides and page geometry, the photo placement, and the two deterministic checks that judge them - the ATS-safety notes and the theme validator. The renderers in `tailoring` already consumed those types across a module line, so they now name the module that owns them instead of the one that stores rows. **1645 -> 1196.**
+
 - **The ATS check's two halves are two modules.** `ats.rs` was 1042 lines against an 800 budget and answered two questions at once: whether the CV says what the posting asked for, and whether a parser can read the CV at all. The second is answered without looking at the posting, so it came out whole - heading recognition, the photo rule per market, and every parsability finding, with the six tests that cover them. The keyword half keeps the shared CV fixture and lends it to the new module rather than copying it, because a CV that is both well-covered and cleanly parseable is the one thing both halves must agree on. **1042 -> 743.**
 
 - **The content-to-blocks conversion is its own module.** `documents.rs` was 1926 lines against an 800 budget; the pure middle of the export path came out - stored CV and cover-letter JSON in, styled blocks out, no database and no filesystem. Both renderers take it from there, so section headings and block tagging can be asserted without producing a file. **1926 -> 1645.**

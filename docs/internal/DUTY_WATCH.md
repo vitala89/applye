@@ -44,6 +44,65 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the theme and the cascades leave the block list
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/tailoring-theme-split`, from `main` (`5edafe7`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #292
+- **Objective:** the seam the previous entry named, inside what was left of `tailoring.rs` at
+  1179/800: the look a document resolves to, versus the block list that reads the answer.
+- **Completed:**
+  - **`tailoring_theme.rs` (243).** `CvTheme` with its `TEXT_RGB` constant, `rule_spec`,
+    `builtin_theme`, `EffStyle`, `hex_to_rgb`, and the two cascades `effective_cv` and
+    `effective_cl` - the built-in side and the user-override side of one question: what font, size,
+    weight and colour does this block get? Five tests moved with them, along with the `section()`
+    fixture that only they used.
+  - **`tailoring.rs` 1179 -> 956.** Still over budget; the last seam is named below.
+  - **The count carried, and this time it mattered.** 28 `#[test]` before, **23 + 5** after;
+    `cargo test --lib` **339 passed** on both sides.
+  - **Mutation-checked with md5 on either side.** Forcing `effective_cv` to see no per-section
+    override failed `effective_cv_section_override_wins_field_by_field` and, through the
+    `body`-block fallback, `effective_cl_paragraph_cascades_through_body_block` - which is exactly
+    the coupling between the two cascades that keeps them in one module. The file's md5 returned to
+    `a33f3d0c...` after the revert.
+- **A cut went wrong, and how it was caught.** The assembly step that built the new module from line
+  ranges **omitted `effective_cl`** while the deletion step removed it - 22 lines dropped on the
+  floor. `cargo build` named it immediately (`unresolved import ... no effective_cl in
+tailoring_theme`) and it was restored verbatim from `git show HEAD:...`. Worth recording plainly:
+  four disjoint ranges is where this technique starts to fail, and the only reason nothing was lost
+  is that the deleted function was still referenced. **A dead function cut this way would have
+  vanished silently.** For the next multi-range split, diff the concatenated ranges against the
+  deleted ones before deleting.
+- **Not completed:** `tailoring.rs` 956 and `discover.rs` 1679 are still over budget.
+- **Files or packages changed:** `tailoring.rs`, new `tailoring_theme.rs`, `commands/mod.rs`,
+  `tailoring_docx.rs`, `documents_export.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean **after** two stale test
+  imports it named were removed, `cargo fmt --check` clean, `npm run quality:file-size` printing
+  `tailoring.rs 956/800 ... base 1179` and passing, `npm run quality:attribution`,
+  `npm run format:check` and `git diff --check` pass. **Not run:** the frontend gates - no
+  TypeScript, template or stylesheet was touched and no command exists in either module.
+- **Privacy/security impact:** none. Pure functions and a constant table moved.
+- **Decisions and assumptions:** `hex_to_rgb` went with the cascades rather than staying as a util,
+  because both cascades and the theme table are its only callers besides two lines in the block
+  resolver, which now imports it. `CvTheme::TEXT_RGB` widened from private to `pub(super)` for the
+  same reason - the no-accent-leak rule that reads it lives in the block resolver.
+- **Risks or compatibility impact:** low. `CvTheme` and `builtin_theme` changed module path;
+  `documents_export.rs` follows them line for line and two test modules gained an import line each.
+- **Open issues or blockers:** unchanged - the unsigned, un-notarised macOS bundle.
+- **Next first action:** the last seam in `tailoring.rs` (956) is the **markdown reader** -
+  `md_to_blocks`, `strip_bold_wrap`, `InlineRun` and `parse_inline_runs`, roughly 90 lines plus three
+  or four tests. It turns tailored markdown into the block list; everything else left in the file
+  resolves an already-built block list against a style. It is free by consumers: `parse_inline_runs`
+  is named by `tailoring_docx` and `md_to_blocks` by `tailoring_docx`'s `md_to_docx_bytes`, both of
+  which already import from `tailoring` explicitly. That should land the file at roughly 800. After
+  that, `discover.rs` 1679.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `a33f3d0ce502c4508081938a801fd09e` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `956/800 ... base 1179`.
+
 ### 2026-08-03, the journal separates from the model it journals
 
 - **Status:** complete

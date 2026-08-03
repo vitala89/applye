@@ -38,7 +38,7 @@ pub async fn cv_document_export(
 /// wrong-font bug), so this reads the raw JSON and overlays only present keys.
 fn resolve_export_style(
     style_json: Option<&str>,
-    theme: &crate::commands::tailoring::CvTheme,
+    theme: &crate::commands::tailoring_theme::CvTheme,
 ) -> CvStyle {
     let v: Option<serde_json::Value> = style_json.and_then(|s| serde_json::from_str(s).ok());
     let field = |k: &str| v.as_ref().and_then(|o| o.get(k));
@@ -81,7 +81,7 @@ pub(crate) async fn cv_document_export_bytes_core(
     // The user's style choices live in `style_json`, over the selected theme's
     // seed - resolved together so the export matches the live preview's
     // effective style. Read before moving `content_json` out of `doc`.
-    let theme = crate::commands::tailoring::builtin_theme(doc.theme_id);
+    let theme = crate::commands::tailoring_theme::builtin_theme(doc.theme_id);
     let style = resolve_export_style(doc.style_json.as_deref(), &theme);
     // Section headings follow the document's language, like the preview.
     let lang = doc.language.clone();
@@ -226,7 +226,7 @@ mod tests {
 
     #[test]
     fn resolve_export_style_seeds_from_theme_then_overrides() {
-        use crate::commands::tailoring::builtin_theme;
+        use crate::commands::tailoring_theme::builtin_theme;
         let aurora = builtin_theme(Some(2));
         // No style_json → pure theme seed (Lato 10pt, accent green) - the
         // wrong-font regression guard.

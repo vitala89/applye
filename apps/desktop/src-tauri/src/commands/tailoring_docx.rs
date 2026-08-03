@@ -446,6 +446,7 @@ mod tests {
     use super::super::tailoring::tests::sb;
     use super::*;
     use crate::commands::documents_style::{CvStyle, PhotoPlacement};
+    use crate::commands::tailoring_theme::builtin_theme;
 
     #[test]
     fn docx_embeds_lato_face_when_used() {

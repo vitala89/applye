@@ -18,6 +18,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The look a document resolves to is its own module.** The built-in theme table - the hand-maintained Rust mirror of the TS theme descriptor, with its parity test - and the two style cascades that decide what font, size, weight and colour each block actually gets, came out of `tailoring.rs`. What stays is the block list that reads the answer. **1179 -> 956.**
+
 - **The tailoring journal separates from the model it journals.** What the 3-pass run produced, where it was written and how the user opens it - the cache rows, the `generated_docs` rows, the export commands and the containment check behind Open and Reveal - is everything in the tailoring group that touches SQLite, the filesystem or the shell, and nothing else there touches any of them. It moves out, and `tailoring.rs` is left holding only the block model, the theme and the style cascade both renderers read. **1578 -> 1179.**
 
 - **The DOCX renderer is its own module, like the PDF one already was.** `tailoring.rs` was 2087 lines against an 800 budget and still held both exporters around the block model they share. The Office Open XML half came out: paragraph construction, the page section, and the font-embedding pass that makes a Lato CV render as Lato in Word instead of quietly substituting. The model, the theme and the style resolution stay where they were, because both renderers read them and neither owns them. **2087 -> 1578.**

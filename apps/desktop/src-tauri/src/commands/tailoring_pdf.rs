@@ -11,10 +11,9 @@
 
 use crate::commands::documents_style::CvStyle;
 
-use super::tailoring::{
-    md_to_blocks, resolve_blocks, resolve_page, BlockLevel, PageConfig, RenderBlock,
-};
+use super::tailoring::{resolve_blocks, resolve_page, BlockLevel, PageConfig, RenderBlock};
 use super::tailoring_fonts::*;
+use super::tailoring_markdown::md_to_blocks;
 
 /// Tailored-CV journal export (markdown in, document-wide default style).
 pub(crate) fn md_to_pdf_bytes(content_md: &str, photo: Option<&[u8]>) -> Result<Vec<u8>, String> {

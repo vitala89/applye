@@ -44,6 +44,57 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the markdown reader leaves, and the new rule gets used
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/tailoring-markdown-split`, from `main` (`6ec6f91`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #293
+- **Objective:** the seam the previous entry named, and the first chance to use the rule that entry
+  wrote after nearly losing 22 lines.
+- **Completed:**
+  - **`tailoring_markdown.rs` (155).** `md_to_blocks`, `strip_bold_wrap`, `InlineRun` and
+    `parse_inline_runs` - tailored markdown in, an untagged block list out, plus the inline
+    `**bold**` splitter both renderers call. Four tests moved with it.
+  - **`tailoring.rs` 956 -> 814.** Fourteen lines over budget; see the next first action.
+  - **The new rule was applied before deleting anything.** The concatenated source ranges were
+    diffed against the assembled module line for line - **142 non-empty lines on both sides, equal
+    in order** - and only then were the ranges cut. That is the check the previous watch invented
+    after `effective_cl` was dropped on the floor, and it turned "the compiler will probably notice"
+    into an actual verification. Recommended as standing practice for any multi-range extraction.
+  - **The count carried.** 23 `#[test]` before, **19 + 4** after; `cargo test --lib` **339 passed**
+    on both sides.
+  - **Mutation-checked with md5 on either side.** Disabling the `**…**` detection in
+    `strip_bold_wrap` failed `md_to_blocks_maps_prefixes_and_strips_bold`, and the file's md5
+    returned to `4b0b07b2...` after the revert.
+- **Not completed:** `tailoring.rs` is 814/800, and `discover.rs` 1679 is untouched.
+- **Files or packages changed:** `tailoring.rs`, new `tailoring_markdown.rs`, `commands/mod.rs`,
+  `tailoring_docx.rs`, `tailoring_pdf.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `tailoring.rs 814/800 ... base 956` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched and neither module holds a
+  command.
+- **Privacy/security impact:** none. A text parser moved.
+- **Decisions and assumptions:** `parse_inline_runs` went with the reader rather than staying with
+  the renderers, even though the DOCX renderer is its heaviest caller, because it is text splitting
+  and not styling - the same reason `md_to_blocks` moved.
+- **Risks or compatibility impact:** low. Both renderers gained one import line each; no command, no
+  serialized shape and no public surface changed.
+- **Open issues or blockers:** unchanged - the unsigned, un-notarised macOS bundle.
+- **Next first action:** **`tailoring.rs` is 14 lines over budget, and the cut that closes it is
+  page geometry** - `PageConfig`, `clamp_mm` and `resolve_page`, roughly 60 lines, plus the two
+  `resolve_page_maps_*` tests, which are about 75 lines between them. It resolves millimetres and
+  margins, not fonts and colours, so it is a different question from everything else left in the
+  file. Not free by consumers: `resolve_page` is named by `tailoring_pdf.rs`, `tailoring_docx.rs`,
+  `documents_export.rs` and `print.rs`, so four paths move line for line. That should land
+  `tailoring.rs` near 680 and finish the tailoring campaign. After that, `discover.rs` 1679.
+- **Evidence:** the 142-vs-142 range diff before deletion, `cargo test --lib` output on both sides
+  of the mutation, the md5 pair `4b0b07b20fe65e4cd712bce3cefa1396` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `814/800 ... base 956`.
+
 ### 2026-08-03, the theme and the cascades leave the block list
 
 - **Status:** complete

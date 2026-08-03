@@ -8,11 +8,13 @@
 // `RawJob`s, not rows: nothing here reads or writes the database.
 
 use super::discover_parsers::{
-    html_to_text, json_str, parse_arbeitnow, parse_arbeitsagentur, parse_ashby_board,
-    parse_greenhouse_board, parse_himalayas, parse_lever_postings, parse_nofluffjobs,
-    parse_nofluffjobs_detail, parse_personio_xml, parse_remotive, parse_rss_items, parse_trudvsem,
-    percent_encode_segment, RawJob,
+    html_to_text, json_str, parse_arbeitnow, parse_arbeitsagentur, parse_himalayas, parse_remotive,
+    parse_rss_items, parse_trudvsem, percent_encode_segment, RawJob,
 };
+use super::discover_parsers_ats::{
+    parse_ashby_board, parse_greenhouse_board, parse_lever_postings, parse_personio_xml,
+};
+use super::discover_parsers_nofluffjobs::{parse_nofluffjobs, parse_nofluffjobs_detail};
 use super::job_url::{extract_host, path_segments, titleize_slug};
 
 /// One enabled source, as the scan read it out of `discover_sources`.

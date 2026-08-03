@@ -44,6 +44,53 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the feed readers split by source family
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-parsers-families`, from `main` (`557dd99`)
+- **Pull request:** to open against `main`
+- **Objective:** take the first target the corrected Rust budget exposed.
+- **Completed:**
+  - **`discover_parsers_ats.rs` (158) plus its tests (91).** Greenhouse, Lever, Ashby and Personio.
+    They share a shape the public feeds do not: a slug-scoped endpoint for one company, so the
+    employer is known before the request is made and each reader takes it as an argument and falls
+    back to it when a posting does not name its own.
+  - **`discover_parsers_nofluffjobs.rs` (194) plus its tests (110).** The only source in the group
+    that needs two requests - its list endpoint carries no description at all - so the list reader,
+    the detail reader and the salary formatter belong together and away from the single-request
+    feeds.
+  - **`discover_parsers.rs` 697 -> 406 source lines, under the 500 budget.** What stays is the
+    shared vocabulary (`RawJob`, `json_str`, `html_to_text`, the RSS helpers, percent-encoding) and
+    the feeds that need one request.
+  - Rust files over budget: **5 -> 4**.
+- **Not completed:** nothing in scope.
+- **Files or packages changed:** `discover_parsers.rs`, `discover_parsers_tests.rs`,
+  `discover_fetch.rs`, `commands/mod.rs`, four new files, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**, unchanged.
+  - `npm run quality:file-size` - passed; `discover_parsers.rs` no longer appears in the report at
+    all, not even as a near-budget notice.
+  - Line-range check on all four moved blocks - byte-identical.
+  - Mutation checks, both caught: reading the Personio title from the descriptions half instead of
+    the block above them fails two Personio tests; dropping the `{ postings: [...] }` wrapper shape
+    from No Fluff Jobs fails `nofluffjobs_reads_postings_wrapper_shape_and_remote`.
+  - A third mutation was discarded rather than reported as a pass: rewriting the Personio title
+    lookup to read the whole block left every test green, but the title tag precedes
+    `<jobDescriptions>` in the fixture either way, so the mutation changed nothing. A surviving
+    mutation is only evidence when it actually alters behaviour.
+- **Privacy/security impact:** none. Pure relocation; no new I/O, no new dependency, no parser
+  behaviour changed.
+- **Decisions and assumptions:** two modules in one watch rather than the usual one, because either
+  cut alone leaves the file over budget and both express the same idea - grouping readers by what
+  kind of source they read.
+- **Risks or compatibility impact:** none. No command moved, so the `lib.rs` registry is untouched.
+- **Open issues or blockers:** none.
+- **Next first action:** `ai/cli.rs` at 668/500 is the largest remaining Rust file, and unlike the
+  discover group it has never been split. Audit it first with
+  `npm run quality:file-size:all` and a consumer check before choosing a seam.
+
 ### 2026-08-03, the file-size budgets are audited and the Rust one is corrected
 
 - **Status:** complete

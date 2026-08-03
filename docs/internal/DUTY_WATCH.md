@@ -44,6 +44,64 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the first Angular split - the wizard document cards
+
+- **Status:** partial - the change is complete and green, but the agreed UI walkthrough did not happen
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-document-cards`, from `main` (`85c0ae6`)
+- **Pull request:** #299, **open and deliberately not merged**
+- **Objective:** start on the jobs page, the largest Angular offender, using child components.
+- **Completed:**
+  - **`app-job-document-cards`.** The CV and cover-letter review cards: status badges, the
+    create/regenerate/review buttons, and the choose-an-existing selects. Injects the six services
+    it reads; emits five events for everything that does work.
+  - **The finding that unblocks this page.** The jobs page provides seventeen services
+    component-scoped, so a child rendered inside its template inherits that injector. That is why a
+    child component removes alias declarations rather than merely relocating them - it is the lever
+    for the 48 aliases the earlier stop at 1104 could not touch. Nine went with this one cut.
+  - Card styles moved with the markup, because style encapsulation stops the page's rules at the
+    component boundary. `.muted` and `.status` look like global utilities but are page-local and had
+    to be carried; `.btn`, `.badge` and `.ai-thinking__dots` are genuinely global and were not.
+  - Sizes: template **1122 -> 941**, class **1104 -> 1080**, stylesheet **919 -> 860**. All three
+    still over budget.
+- **Not completed:** the manual walkthrough of the documents step. See below.
+- **Files or packages changed:** `jobs.component.{ts,html,scss}`, new
+  `job-document-cards/` (component, template, styles, spec), `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:**
+  - `nx run desktop:type-check` - clean. ngc checks template bindings, so the rewired inputs and
+    outputs are verified, not just the class.
+  - `nx run desktop:lint` - 0 errors, 8 pre-existing warnings in unrelated spec files.
+  - `nx run desktop:test` - **1191 passed across 93 suites**, up from 1186 by exactly the 5 new specs.
+  - `npm run quality:file-size` - passed; the ratchet moved on all three files.
+  - `quality:attribution`, `format:check`, `git diff --check` - passed.
+  - Mutation check: letting the cover-letter card read `gapSvc.open()` for `awaitingInput` - the
+    leak that would make a cover letter claim it is waiting on the CV's gap dialog - fails
+    `never marks the cover letter as needs_input`. Restored and re-run green.
+  - **Not run: the UI walkthrough.** The plan agreed with the maintainer was to walk the flow in the
+    running app. `npm run desktop:dev` launched and the Angular bundle rebuilt with the change, but
+    the request for automated control of the window was declined, so the click-through did not
+    happen. Type-check catches broken bindings and the specs cover the badge states and emitted
+    events, but neither proves the documents step looks and behaves right end to end. The PR records
+    this gap in its own body rather than only here.
+- **Privacy/security impact:** none. Presentational extraction; no new I/O, no new dependency.
+- **Decisions and assumptions:**
+  - The final-checks section stayed in the page on purpose. `retailorFromFinalChecks()` orchestrates
+    back into tailoring and scoring, which does not belong in a presentational child - and it is the
+    code path the #284 duplicate-row bug lived on.
+  - The region and language selects stayed too, because `finalCheckInputs()` reads them and three
+    page-side callers depend on it.
+  - A single child for the whole documents step was rejected on measurement: at ~330 template lines
+    it would have been born over the 300 budget.
+- **Risks or compatibility impact:** no behaviour intended to change. Residual risk is visual or
+  binding-level inside the documents step, which is exactly what the missing walkthrough would cover.
+- **Open issues or blockers:** #299 waits on a maintainer click-through, or on app-control access
+  being granted so the walkthrough can be done here.
+- **Next first action:** after #299 is settled, take the wizard's export/apply step
+  (`wizardExportApplyStep`, template ~120 lines) the same way, then the tailor step. Measure the
+  template block first - any child that would exceed 300 lines has to be split before it is written,
+  which is the mistake the documents step nearly made.
+
 ### 2026-08-03, the two leftovers from the Rust campaign
 
 - **Status:** complete

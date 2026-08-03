@@ -42,12 +42,15 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
-- **Jobs stops at 1104; Discover is the next target, and the file-size picture was re-measured.**
-  `jobs.component.ts` is **1104** non-empty lines against a budget of 400, down from 1467 where the
-  work started - a deliberate stop, not a failure. Nothing left in it has a single nameable
-  responsibility: 110 declarations, 76 methods, and **48 of those declarations are pure aliases**
-  onto services, which only shrink by binding services in the template (now allowed, see
-  `CODE_QUALITY.md`, forward-only) or by extracting child components.
+- **Jobs is moving again by extracting child components, and that is what works on the aliases.**
+  `jobs.component.ts` is **1080** non-empty lines against a budget of 400, down from 1467 where the
+  work started, with the template at **941/300** and the stylesheet at **860/400**. The earlier stop
+  at 1104 held because nothing left had a single nameable responsibility: 110 declarations, 76
+  methods, and **48 of those declarations are pure aliases** onto services. The unblocking
+  observation is that the page provides seventeen services component-scoped, so a child rendered
+  inside its template inherits that injector and can inject them directly - which deletes the alias
+  and the template block in one move. The first cut, `app-job-document-cards`, retired nine aliases
+  that way. The wizard's remaining steps are the same shape.
   **57 files are over budget**, not the 51 an older audit recorded, and the two worst by ratio had
   never been named anywhere: `apps/web/src/styles.scss` at 2167/400 - **now split into eleven
   section partials, largest 353/400, with the compiled CSS proven byte-identical** - and

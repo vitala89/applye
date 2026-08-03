@@ -132,7 +132,7 @@ async fn check_api_key(ai_mode: &str, provider: &str) -> HealthCheckItem {
         // "No key needed" was true but useless: it reported ok even when the
         // configured CLI was missing or broken, so health said fine and the
         // first real task failed. Check that the CLI actually runs.
-        return match crate::ai::cli::cli_health(provider).await {
+        return match crate::ai::cli_probe::cli_health(provider).await {
             Ok(version) => item(
                 "api_key",
                 "AI provider CLI",

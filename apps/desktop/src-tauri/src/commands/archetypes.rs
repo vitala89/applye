@@ -25,6 +25,13 @@ const SENIORITY_TERMS: &[&str] = &[
 
 /// Extracts positive title-filter keywords (role/seniority terms) from target archetype
 /// sentences. Pure, deterministic, 0 tokens. Not yet wired to any scan UI (Phase 6 stub).
+///
+/// Not the same function as `discover_filter::derive_title_keywords`, despite the name.
+/// This one judges whether a job is on-archetype, so it drops anything with a digit and
+/// keeps seniority words that are otherwise stopwords. That one builds a scan's fallback
+/// title filter, so it keeps `+` and `#` as word characters - `c++` and `c#` have to
+/// survive as keywords there, and would be split into `c` here. Merging them would change
+/// what a scan matches on. They stay separate deliberately.
 pub fn derive_title_keywords(archetypes: &[String]) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
     let mut keywords = Vec::new();

@@ -44,6 +44,42 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the two leftovers from the Rust campaign
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-leftovers`, from `main` (`605707c`)
+- **Pull request:** to open against `main`
+- **Objective:** clear the two items the closing entry left open, so the Rust side is genuinely done.
+- **Completed:**
+  - The two `#[ignore]`d live-network tests moved from `discover.rs` to `discover_fetch.rs`. They
+    build a `SourceRow` and call `http_client` and `fetch_source_jobs` - all of which now live
+    there, none of which is in `discover.rs` any more. **599 -> 537.**
+  - **The `derive_title_keywords` name collision is resolved as a deliberate no-change, and
+    documented as one.** The two functions are not duplicates: `discover_filter`'s keeps `+` and `#`
+    as word characters, so `c++` and `c#` survive as scan keywords, while `archetypes`' splits on
+    them and drops any word containing a digit, because it judges whether a job is on-archetype
+    rather than building a filter. Merging them would change what a scan matches on. Each doc
+    comment now names the other and says why they stay apart.
+  - Checked while there: `archetypes.rs` is not dead. `check_archetype_match` is registered in
+    `lib.rs` and invoked from `libs/data/src/lib/services/db.service.ts:79`.
+- **Not completed:** nothing in scope.
+- **Files or packages changed:** `discover.rs`, `discover_fetch.rs`, `discover_filter.rs`,
+  `archetypes.rs`, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**, unchanged.
+  - `cargo test --lib -- --ignored --list` confirms `live_tier2_sources_fetch_and_parse` is still
+    discoverable under its new path, so the manual check did not silently disappear.
+  - Line-range check on the moved test block: byte-identical.
+  - `npm run quality:file-size`, `quality:attribution`, `format:check`, `git diff --check` - passed.
+- **Privacy/security impact:** none. Comments and a test relocation only.
+- **Risks or compatibility impact:** none. No behaviour change, no signature change.
+- **Open issues or blockers:** none on the Rust side.
+- **Next first action:** Angular, and it needs a maintainer decision before any code is written -
+  `jobs.component` (1069/400) and `discover.component` both need child components, and how far to
+  break them up is a design call, not a mechanical one. Ask which file first and how granular.
+
 ### 2026-08-03, the Rust side of the file-size campaign closes
 
 - **Status:** complete

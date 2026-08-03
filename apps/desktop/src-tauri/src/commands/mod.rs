@@ -12,6 +12,8 @@ pub mod discover_fetch;
 pub mod discover_filter;
 pub mod discover_geo;
 pub mod discover_parsers;
+pub mod discover_parsers_ats;
+pub mod discover_parsers_nofluffjobs;
 pub mod discover_sources;
 pub mod documents;
 pub mod documents_blocks;

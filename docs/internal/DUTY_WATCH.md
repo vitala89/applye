@@ -44,6 +44,66 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the Rust side of the file-size campaign closes
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-sources-split`, from `main` (`7cedc5d`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** to open against `main`
+- **Objective:** take `discover.rs` under budget and end the Rust campaign.
+- **Completed:**
+  - **`discover_sources.rs` (380).** `SourceListItem`, `MarketSourceItem`, `MarketSourcePlan`,
+    `market_source_plan`, `apply_market_source_plan`, and the six commands `db_list_sources`,
+    `db_set_source_enabled`, `db_market_source_plan`, `db_apply_market_source_plan`,
+    `db_add_source`, `db_remove_source`, with their three tests. Managing which sources exist,
+    which is a different question from running a scan.
+  - **`discover.rs` 876 -> 599 non-empty lines, under 800** - from **1679** at the start, across
+    four modules: the local filters, the fetch layer, the source registry, and the scan itself.
+  - **No Rust file in the repository is over its size budget.** `npm run quality:file-size` now
+    prints no report lines at all.
+  - The three moved tests borrow `test_pool` from `discover::tests` rather than growing a second
+    copy, following the same pattern `documents_export.rs` already uses. `discover::tests` and
+    `test_pool` became `pub(crate)` for it.
+- **Not completed:** nothing in scope. Two leftovers are recorded under next action.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover.rs`,
+  `discover_sources.rs` (new), `commands/mod.rs`, `src/lib.rs`, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**, the same count as before the split.
+  - `npm run quality:file-size` - **passed with an empty report**.
+  - `npm run quality:attribution`, `npm run format:check`, `git diff --check` - all passed.
+  - Pre-deletion line-range check: `SourceListItem`, the 241-line registry block and the 97-line
+    test block were extracted to scratch files and diffed against the new module. All three
+    byte-identical - this split needed no visibility changes, because the moved items were already
+    `pub` commands.
+  - Mutation check: dropping `AND is_builtin = 1` from the update in `apply_market_source_plan`
+    failed `applying_the_plan_touches_only_builtin_rows`. The restore was diffed and is byte-exact.
+  - **Command registry, checked directly because this is the first split to move commands:** all
+    six entries in `lib.rs` were repointed and each appears exactly once; no
+    `commands::discover::db_{list,set,market,apply,add,remove}` reference survives anywhere.
+    `tauri::generate_handler!` is a macro over those paths, so a wrong path would not have compiled.
+    The frontend calls these by string name from `libs/data/src/lib/services/db.service.ts`, and all
+    six names are unchanged, so no frontend edit was needed. **Not verified by launching the app** -
+    the argument above is a compile-time and name-level one, not a runtime observation.
+- **Privacy/security impact:** none. `db_add_source` still runs its `require_https` guard, which now
+  crosses a module line to `discover_fetch` and is covered by the test added in the previous watch.
+- **Decisions and assumptions:** the `#[ignore]`d live-network tests (`live_source`,
+  `live_tier2_sources_fetch_and_parse`) stayed in `discover.rs` although they exercise
+  `discover_fetch`. Moving them is not needed for the budget and would have mixed a second
+  relocation into the closing PR.
+- **Risks or compatibility impact:** the six moved commands are the only real risk, addressed above.
+  No command name, signature or payload changed.
+- **Open issues or blockers:** none.
+- **Next first action:** the Rust side is done; the remaining budget work is Angular. Both files are
+  blocked on a maintainer decision about child components: `jobs.component` (1069/400) and
+  `discover.component`. Ask which one to split first and how far to break it up before writing any
+  code. Two small Rust leftovers, neither urgent: move the two `#[ignore]`d live-network tests from
+  `discover.rs` to `discover_fetch.rs`, and decide whether `commands/archetypes.rs`'s
+  `derive_title_keywords` and `discover_filter.rs`'s same-named function should be one function -
+  they have different signatures and were deliberately left alone during the campaign.
+- **Evidence:** the commits on `refactor/discover-sources-split`.
+
 ### 2026-08-03, the discover fetch layer splits out, and an untested HTTPS guard is found
 
 - **Status:** partial - `discover.rs` is 876/800, closer but still over budget

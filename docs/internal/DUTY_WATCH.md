@@ -44,6 +44,62 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the journal separates from the model it journals
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/tailoring-journal-split`, from `main` (`13b6d99`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #291
+- **Objective:** the seam the previous entry named. `tailoring.rs` at 1578/800 held two things with
+  nothing in common: rows and files on one side, a pure block model on the other.
+- **Completed:**
+  - **`tailoring_journal.rs` (416).** `TailoringCache`, `SaveTailoringInput`, `GeneratedDoc`, the
+    four cache/journal queries, the path naming (`readable_slug`, `cv_dir`, `cv_filename`), the
+    `export_docx` / `export_pdf` commands, and `open_file` / `reveal_in_folder` with the containment
+    check that refuses anything resolving outside Applye's own document folder - with the five tests
+    that cover that check.
+  - **`tailoring.rs` 1578 -> 1179**, and its header comment now says what it actually is: the shared
+    export model. Nothing left in it touches the database, the filesystem or the shell.
+  - **The count carried.** 33 `#[test]` before, **28 + 5** after; `cargo test --lib` reported
+    **339 passed** on both sides.
+  - **Mutation-checked with md5 on either side.** Replacing the containment condition in
+    `resolve_within` with `if false` - the exact hole the check exists to close - failed
+    `refuses_a_file_outside_the_app_data_dir` and `refuses_a_traversal_that_climbs_out`, and the
+    file's md5 returned to `85e3b622...` after the revert. This is the one mutation in this watch
+    that was aimed at a security boundary rather than a formatting rule.
+- **Not completed:** `tailoring.rs` 1179 and `discover.rs` 1679 are still over budget.
+- **Files or packages changed:** `tailoring.rs`, new `tailoring_journal.rs`, `commands/mod.rs`,
+  `lib.rs`, `CHANGELOG.md`, this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `tailoring.rs 1179/800 ... base 1578` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched. Seven command names moved
+  module but kept their names, so the frontend `invoke()` surface is identical.
+- **Privacy/security impact:** the containment check for `open_file` and `reveal_in_folder` moved
+  unchanged, and its five tests moved with it rather than being left behind - deliberately, because a
+  security check whose tests live in another file is a check waiting to be edited without them. No
+  behaviour changed: the same canonicalize-then-`starts_with` guard, the same regular-file
+  requirement, the same refusal messages.
+- **Decisions and assumptions:** `open_file` and `reveal_in_folder` went with the journal rather than
+  staying, because the only files they are allowed to open are the ones this module writes. The
+  containment root and the write path are now defined in one file.
+- **Risks or compatibility impact:** low. Seven Tauri commands changed their Rust path in the
+  `invoke_handler` list only.
+- **Open issues or blockers:** unchanged - the unsigned, un-notarised macOS bundle.
+- **Next first action:** `tailoring.rs` at 1179 is now one thing - the block model - so the next cut
+  has to be inside it, and the honest seam is the **theme**: `CvTheme`, `builtin_theme`, `rule_spec`
+  and the two `effective_*` cascades are what a document's chosen look resolves to, while
+  `BlockLevel`, `StyledBlock`, `RenderBlock`, `resolve_cv_blocks`, `resolve_blocks`, `md_to_blocks`
+  and `parse_inline_runs` are the block list itself. Roughly 250 lines plus the theme tests. Check
+  consumers first as always: `builtin_theme` and `CvTheme` are named by `documents_export.rs`, and
+  `tailoring_docx`/`tailoring_pdf` reach the model through a glob import, which a split would need to
+  widen to two globs. After that, `discover.rs` 1679.
+- **Evidence:** `cargo test --lib` output on both sides of the mutation, the md5 pair
+  `85e3b6229723c17e2460ed07ceb23dee` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `1179/800 ... base 1578`.
+
 ### 2026-08-03, the DOCX renderer gets the file the PDF one already had
 
 - **Status:** complete

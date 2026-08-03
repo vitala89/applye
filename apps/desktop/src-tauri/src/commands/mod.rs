@@ -7,6 +7,7 @@ pub mod applications;
 pub mod archetypes;
 pub mod ats;
 pub mod ats_format;
+pub mod ats_tokens;
 pub mod discover;
 pub mod discover_fetch;
 pub mod discover_filter;

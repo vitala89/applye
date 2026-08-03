@@ -34,6 +34,7 @@ pub mod tailoring;
 pub mod tailoring_docx;
 pub mod tailoring_fonts;
 pub mod tailoring_journal;
+pub mod tailoring_markdown;
 pub mod tailoring_pdf;
 pub mod tailoring_theme;
 pub mod tracker;

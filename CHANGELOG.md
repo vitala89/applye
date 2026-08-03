@@ -18,6 +18,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The markdown reader is its own module.** Turning tailored markdown into an untagged block list is the journal export path's front door, and it has nothing to do with resolving an already-built block list against a style. It moves out with the inline `**bold**` splitter both renderers call, and with its four tests. **956 -> 814.**
+
 - **The look a document resolves to is its own module.** The built-in theme table - the hand-maintained Rust mirror of the TS theme descriptor, with its parity test - and the two style cascades that decide what font, size, weight and colour each block actually gets, came out of `tailoring.rs`. What stays is the block list that reads the answer. **1179 -> 956.**
 
 - **The tailoring journal separates from the model it journals.** What the 3-pass run produced, where it was written and how the user opens it - the cache rows, the `generated_docs` rows, the export commands and the containment check behind Open and Reveal - is everything in the tailoring group that touches SQLite, the filesystem or the shell, and nothing else there touches any of them. It moves out, and `tailoring.rs` is left holding only the block model, the theme and the style cascade both renderers read. **1578 -> 1179.**

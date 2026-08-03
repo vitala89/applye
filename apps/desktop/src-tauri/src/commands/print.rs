@@ -278,7 +278,7 @@ async fn export_pdf_wysiwyg_core(
             .and_then(|v| v.get("page").cloned())
             .and_then(|p| serde_json::from_value(p).ok())
             .unwrap_or_default();
-        let page = crate::commands::tailoring::resolve_page(&page_settings);
+        let page = crate::commands::tailoring_page::resolve_page(&page_settings);
 
         // Unique label per export so parallel/repeated exports never collide.
         let label = format!(

@@ -12,6 +12,7 @@
 use super::tailoring::*;
 use super::tailoring_fonts::{FONT_LATO_B, FONT_LATO_R, FONT_OPENSANS_B, FONT_OPENSANS_R};
 use super::tailoring_markdown::{md_to_blocks, parse_inline_runs};
+use super::tailoring_page::{resolve_page, PageConfig};
 use crate::commands::documents_style::CvStyle;
 
 /// Tailored-CV journal export (markdown in, document-wide default style).

@@ -44,6 +44,67 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the tailoring group goes under budget
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/tailoring-page-split`, from `main` (`00c4896`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** #294
+- **Objective:** close the fourteen lines the previous entry left, and end the campaign.
+- **Completed:**
+  - **`tailoring_page.rs` (130).** `PageConfig`, `clamp_mm` and `resolve_page`, with both
+    `resolve_page_maps_*` tests. Millimetres and margins - nothing here reads a font, a colour or a
+    block, which is what made it the last honest seam.
+  - **`tailoring.rs` 814 -> 699, under 800.** From **2538** at the start of the campaign, across
+    seven modules: the block model, the theme and cascades, the markdown reader, page geometry, the
+    DOCX renderer, the PDF renderer, the fonts, and the journal.
+  - **Not free by consumers, and paid line for line.** `resolve_page` is named by `tailoring_pdf`,
+    `tailoring_docx`, `documents_export` and `print`; all four moved to the new path, and
+    `resolve_page`'s own signature shortened from
+    `&crate::commands::documents_style::PageSettings` to `&PageSettings` now that the module imports
+    the type. That was the only line in the extraction that is not byte-identical to its source, and
+    the pre-delete diff named it explicitly.
+  - **The pre-delete diff again, and it earned its keep.** 116 non-empty lines on both sides, one
+    intentional difference, nothing else. Second use of the rule #292 wrote; it is now the way this
+    repository extracts modules.
+  - **The count carried.** 19 `#[test]` before, **17 + 2** after; `cargo test --lib` **339 passed**
+    on both sides.
+  - **Mutation-checked with md5 on either side.** Removing the margin clamp failed
+    `resolve_page_maps_legacy_preset_and_four_side_mm`, and the file's md5 returned to
+    `b47f7a60...` after the revert.
+- **Not completed:** `discover.rs` at 1679/800 is the last Rust file over budget.
+- **Files or packages changed:** `tailoring.rs`, new `tailoring_page.rs`, `commands/mod.rs`,
+  `tailoring_pdf.rs`, `tailoring_docx.rs`, `documents_export.rs`, `print.rs`, `CHANGELOG.md`, this
+  file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed / 0 failed**
+  before and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `npm run quality:file-size` printing `tailoring.rs 699/800 ... base 814` and passing,
+  `npm run quality:attribution`, `npm run format:check` and `git diff --check` pass. **Not run:** the
+  frontend gates - no TypeScript, template or stylesheet was touched and neither module holds a
+  command.
+- **Privacy/security impact:** none. A geometry resolver moved.
+- **Decisions and assumptions:** `PageConfig` went with `resolve_page` rather than staying with the
+  block types, because it is the resolver's return value and both renderers take it as a parameter -
+  a type and its only constructor belong in one file.
+- **Risks or compatibility impact:** low. Four consumer paths changed, no command, no serialized
+  shape, no public surface.
+- **Open issues or blockers:** unchanged, and now the oldest thing in this log by a wide margin - the
+  macOS bundle is unsigned and un-notarised, so the Download button on applye.dev still serves a file
+  a clean Mac refuses to open. **Maintainer decision, not an agent one.** No amount of further
+  refactoring moves it.
+- **Next first action:** `discover.rs` at **1679/800**, the last Rust file over budget and the one
+  the previous splits left alone. It has been split twice already - the feed readers and the
+  geography came out - so the remaining seam is inside the scan engine itself. Read the consumers
+  first, as every entry in this run did: `commands::discover` is reached through the command registry
+  and by `discover_geo`/`discover_parsers`, so check which direction those imports run before
+  choosing. After that the Rust side is clean and the remaining budget work is the Angular templates
+  and stylesheets, which are **blocked on the child-component decision** recorded further down this
+  log.
+- **Evidence:** the 116-vs-116 range diff before deletion, `cargo test --lib` output on both sides of
+  the mutation, the md5 pair `b47f7a60301d1b5d7ccf128c82b2dc09` before and after, and
+  `node tools/check-file-size-budgets.mjs` reporting `699/800 ... base 814`.
+
 ### 2026-08-03, the markdown reader leaves, and the new rule gets used
 
 - **Status:** complete

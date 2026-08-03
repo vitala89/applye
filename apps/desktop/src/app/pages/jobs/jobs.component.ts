@@ -54,7 +54,6 @@ import { DocumentExportService, ExportFormat } from '../../shared/document-expor
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
 import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
-import { documentCardStatus, documentStatusKey } from '../../shared/doc-card-status';
 import { WizardNavService, WizardRestore } from '../../shared/wizard-nav.service';
 import { CvDraftService } from '../../shared/cv-draft.service';
 import { CoverLetterDraftService } from '../../shared/cover-letter-draft.service';
@@ -73,6 +72,7 @@ import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
+import { JobDocumentCardsComponent } from './job-document-cards/job-document-cards.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
 import { baseCvChoices, documentReviewLanguageFor } from './job-document-defaults';
 import { currentPhaseKey, tailorPhases } from './tailor-phases';
@@ -89,6 +89,7 @@ import { currentPhaseKey, tailorPhases } from './tailor-phases';
     SkeletonCard,
     CvGapDialog,
     JobMetaCardComponent,
+    JobDocumentCardsComponent,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
@@ -325,7 +326,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       this.finalChecksOutdated.set(!!this.finalChecks());
     }
     const status = this.photoPrompt.status();
-    if (status) this.documentReviewStatus.set(status);
+    if (status) this.reviewStatus.status.set(status);
   }
 
   readonly documentReviewLanguage = signal<SupportedLanguage>('en');
@@ -345,36 +346,10 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly gapDialogOpen = this.gapSvc.open;
   readonly gapQuestions = this.gapSvc.questions;
   /** Aliases onto `DocumentReviewStatusService`; the template binds these names. */
-  readonly documentReviewStatus = this.reviewStatus.status;
-  readonly documentReviewError = this.reviewStatus.error;
-  readonly chooseCvOpen = this.reviewStatus.chooseCvOpen;
-  readonly chooseCoverLetterOpen = this.reviewStatus.chooseCoverLetterOpen;
   /** Aliases onto `FinalChecksService`. The template writes `finalChecksOutdated`
    * directly, so these stay the same writable signals rather than views of them. */
   readonly finalChecks = this.finalChecksSvc.checks;
   readonly finalChecksOutdated = this.finalChecksSvc.outdated;
-  private readonly finalCheckState = computed(() => ({
-    hasCheckedInput: !!this.finalChecks()?.inputHash,
-    outdated: this.finalChecksOutdated(),
-  }));
-
-  readonly cvReviewStatus = computed(() =>
-    documentCardStatus({
-      ...this.finalCheckState(),
-      preparing: this.preparingCv(),
-      awaitingInput: this.gapSvc.open(),
-      linked: !!this.linkedCv(),
-    }),
-  );
-  readonly coverLetterReviewStatus = computed(() =>
-    documentCardStatus({
-      ...this.finalCheckState(),
-      preparing: this.preparingCoverLetter(),
-      awaitingInput: false,
-      linked: !!this.linkedCoverLetter(),
-    }),
-  );
-
   async openCv(id: number, returnToWizard = false): Promise<void> {
     if (!returnToWizard) {
       await this.openDocumentEditorWithReturnToJob('cv', id);
@@ -424,8 +399,6 @@ export class JobsComponent implements OnInit, OnDestroy {
       },
     });
   }
-
-  readonly documentStatusKey = documentStatusKey;
 
   readonly finalCheckStatusKey = this.finalChecksSvc.statusKey.bind(this.finalChecksSvc);
 

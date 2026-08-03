@@ -44,6 +44,59 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-03, the ATS check splits along the question each half answers
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/ats-format-split`, from `main` (`6ce56b3`), cut before the first edit
+- **Commits:** the split, plus this documentation commit
+- **Pull request:** opened after this entry
+- **Objective:** the next file-size target, chosen the way the last three were - by what the split
+  costs its consumers. `ats.rs` at 1042/800 has exactly one entry point outside itself,
+  `ats_check_run` in the command registry, and no other module names `ats::`. Moving code inside it
+  costs nobody a line.
+- **Completed:**
+  - **`ats_format.rs` (306).** The half that never reads the posting: heading recognition, the
+    per-market photo rule, and every parsability finding - contact details, tables, images,
+    headings, dates, length, decorative bullets, links. `ats.rs` keeps the half that compares the CV
+    against the posting's vocabulary. The seam is the question each answers, not the line count.
+  - **`ats.rs` 1042 -> 743**, under its 800 budget for the first time.
+  - **Sliced by element, and the count carried.** 16 `#[test]` before, **10 + 6 after** - the check
+    the previous watches learned to run, because a lost test looks exactly like a passing one. Both
+    ends of every slice were read before cutting: the moved block starts at its section banner and
+    ends at the closing brace before "The check", and the moved tests start at their `#[test]`
+    attribute rather than at the `fn`.
+  - **The shared fixture is lent, not copied.** `good_cv()` is the one CV both halves must agree on:
+    well covered and cleanly parseable. It stays with the keyword tests as `pub(crate)`, and the new
+    module's tests import it. Copying it would have let the two halves drift apart on the fixture
+    that proves neither is broken.
+  - **Mutation-checked with md5 on either side.** Making `photo_is_expected` return `true` for every
+    region failed 2 tests, one in each module, and the file's md5 returned to its original value
+    after the revert - so the mutation demonstrably reached disk.
+- **Not completed:** the other 47 files over budget. `tailoring.rs` 2087, `discover.rs` 1679 and
+  `documents.rs` 1645 are the Rust ones left, all still consumed only through the command registry.
+- **Files or packages changed:** `ats.rs`, new `ats_format.rs`, `commands/mod.rs`, `CHANGELOG.md`,
+  this file.
+- **Validation:** run and observed - `cargo build` clean, `cargo test --lib` **339 passed** before
+  and after, `cargo clippy --all-targets -- -D warnings` clean, `cargo fmt --check` clean,
+  `node tools/check-file-size-budgets.mjs --staged` printing `743/800 ... base 1042`,
+  `npm run quality:attribution` and `npm run format:check` pass. **Not run:** the frontend gates -
+  no TypeScript, template or stylesheet was touched and no command signature changed.
+- **Privacy/security impact:** none. Pure functions moved; no I/O, no new data.
+- **Decisions and assumptions:** `tokenize` became `pub(super)` because the date finding needs it,
+  which is the one thread still running between the halves. Duplicating a tokenizer to sever it
+  would have been worse than the coupling.
+- **Risks or compatibility impact:** low. The public surface is unchanged: `ats_check` and
+  `ats_check_run` keep their signatures, and `parsability_findings` is `pub(super)`.
+- **Open issues or blockers:** unchanged - the unsigned macOS bundle, the Mark as Applied run that
+  can sit for ten minutes per document with no cancel, and the child-component decision that blocks
+  the 12 templates and 13 stylesheets over budget.
+- **Next first action:** `documents.rs` at 1645/800 is the next free one by the same test - the
+  command registry names its commands and no other module imports from it.
+- **Evidence:** `#[test]` counted 16 before and 10 + 6 after; `cargo test --lib` printed
+  `339 passed` on both sides of the move and `2 failed` under the mutation; the budget script
+  printed `743/800 ... base 1042`.
+
 ### 2026-08-03, the two defects the manual pass found, fixed and seen fixed
 
 - **Status:** complete

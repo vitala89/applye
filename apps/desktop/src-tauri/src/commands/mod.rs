@@ -6,6 +6,7 @@ pub mod analytics;
 pub mod applications;
 pub mod archetypes;
 pub mod ats;
+pub mod ats_format;
 pub mod discover;
 pub mod discover_geo;
 pub mod discover_parsers;

@@ -18,6 +18,8 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Changed
 
+- **The ATS check's two halves are two modules.** `ats.rs` was 1042 lines against an 800 budget and answered two questions at once: whether the CV says what the posting asked for, and whether a parser can read the CV at all. The second is answered without looking at the posting, so it came out whole - heading recognition, the photo rule per market, and every parsability finding, with the six tests that cover them. The keyword half keeps the shared CV fixture and lends it to the new module rather than copying it, because a CV that is both well-covered and cleanly parseable is the one thing both halves must agree on. **1042 -> 743.**
+
 - **The content-to-blocks conversion is its own module.** `documents.rs` was 1926 lines against an 800 budget; the pure middle of the export path came out - stored CV and cover-letter JSON in, styled blocks out, no database and no filesystem. Both renderers take it from there, so section headings and block tagging can be asserted without producing a file. **1926 -> 1645.**
 
 - **Each user-guide page is its own file, and its own chunk.** `guide-pages.ts` held all eleven at 1122 lines against a 400 budget; each was already a standalone component lazily routed on its own, so splitting them also splits the bundle. Largest file is now 165. All 39 routes still prerender.

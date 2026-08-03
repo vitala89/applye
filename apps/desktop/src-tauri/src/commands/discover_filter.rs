@@ -52,6 +52,12 @@ const ARCHETYPE_STOPWORDS: &[&str] = &["and", "or", "the", "with", "for", "of", 
 /// the significant words of the profile's Target Archetypes ("Senior Frontend
 /// Engineer" -> ["senior", "frontend", "engineer"]). Empty archetypes -> no
 /// filter (pass everything).
+///
+/// Not the same function as `archetypes::derive_title_keywords`, despite the
+/// name. `+` and `#` count as word characters here, so `c++` and `c#` survive
+/// as keywords; that one splits on them and drops anything with a digit,
+/// because it is judging whether a job is on-archetype rather than building a
+/// filter. Merging them would change what a scan matches on.
 pub(super) fn derive_title_keywords(archetypes: Option<&str>) -> Vec<String> {
     let mut words: Vec<String> = Vec::new();
     for phrase in parse_keyword_list(archetypes) {

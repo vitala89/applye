@@ -263,4 +263,66 @@ mod tests {
         assert!(require_https("data:text/xml,<rss/>").is_err());
         assert!(require_https("").is_err());
     }
+
+    // -- live network checks (run manually: cargo test -- --ignored) ---------
+
+    fn live_source(id: i64, name: &str, source_type: &str, url: &str) -> SourceRow {
+        SourceRow {
+            id,
+            name: name.to_string(),
+            source_type: source_type.to_string(),
+            url: url.to_string(),
+            slug: None,
+            positive_json: None,
+            negative_json: None,
+            geo_tags_json: None,
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "hits real Tier-2 endpoints; run manually"]
+    async fn live_tier2_sources_fetch_and_parse() {
+        let client = http_client().expect("client");
+        let sources = [
+            live_source(1, "Remotive", "api", "https://remotive.com/api/remote-jobs"),
+            live_source(
+                2,
+                "WWR",
+                "rss",
+                "https://weworkremotely.com/remote-jobs.rss",
+            ),
+            live_source(3, "Himalayas", "api", "https://himalayas.app/jobs/api"),
+            live_source(5, "DOU.ua", "rss", "https://jobs.dou.ua/vacancies/feeds/"),
+            live_source(6, "Djinni.co", "rss", "https://djinni.co/jobs/rss/"),
+            live_source(7, "Habr Career", "rss", "https://career.habr.com/vacancies/rss"),
+            live_source(8, "Jobicy", "rss", "https://jobicy.com/?feed=job_feed"),
+            live_source(
+                9,
+                "TrudVsem",
+                "api_trudvsem",
+                "https://opendata.trudvsem.ru/api/v1/vacancies?limit=100",
+            ),
+            live_source(
+                10,
+                "Arbeitnow",
+                "api_arbeitnow",
+                "https://www.arbeitnow.com/api/job-board-api",
+            ),
+            live_source(
+                11,
+                "No Fluff Jobs",
+                "api_nofluffjobs",
+                "https://nofluffjobs.com/api/joboffers/main?salaryCurrency=PLN&salaryPeriod=month&region=pl",
+            ),
+        ];
+        for src in &sources {
+            let jobs = fetch_source_jobs(&client, src)
+                .await
+                .unwrap_or_else(|e| panic!("{}: {e}", src.name));
+            assert!(!jobs.is_empty(), "{}: no jobs parsed", src.name);
+            let j = &jobs[0];
+            assert!(!j.title.is_empty(), "{}: empty title", src.name);
+            assert!(!j.jd_text.is_empty(), "{}: empty jd", src.name);
+        }
+    }
 }

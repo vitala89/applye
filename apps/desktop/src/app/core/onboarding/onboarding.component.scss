@@ -143,124 +143,6 @@
   animation: ob-in var(--dur-base) var(--ease-standard);
 }
 
-.ob__eyebrow {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-wider);
-  text-transform: uppercase;
-  color: var(--text-accent);
-}
-.ob__h1 {
-  font-family: var(--font-mono);
-  font-size: var(--text-h1);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-tight);
-  margin: var(--space-3) 0 0;
-}
-.ob__h1--lg {
-  font-size: 32px;
-}
-.ob__subtitle {
-  margin: var(--space-3) 0 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-title);
-  line-height: var(--leading-relaxed);
-  color: var(--text-secondary);
-  max-width: 520px;
-}
-.ob__subtitle--sm {
-  font-size: var(--text-body);
-}
-
-// ---- Reusable card / badge / field primitives ----
-.ob__card {
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--surface-1);
-}
-
-.ob__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 18px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-badge);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  white-space: nowrap;
-}
-.ob__badge--success {
-  background: var(--success-tint);
-  color: var(--success);
-}
-.ob__badge--accent {
-  background: var(--accent-tint);
-  color: var(--text-accent);
-}
-.ob__badge--muted {
-  background: var(--surface-sunken);
-  color: var(--text-tertiary);
-}
-.ob__badge-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.ob__field-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.ob__field-label--warn {
-  color: var(--warning);
-}
-
-.ob__input {
-  height: 40px;
-  padding: 0 var(--space-4);
-  border: var(--border-width) solid var(--border-default);
-  border-radius: var(--radius-input);
-  background: var(--surface-sunken);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: var(--text-body);
-  outline: none;
-  width: 100%;
-}
-.ob__input--warn {
-  border-color: var(--warning);
-  background: var(--warning-tint);
-}
-.ob__input:focus-visible {
-  box-shadow: var(--shadow-ring);
-}
-.ob__input--confirm {
-  border-color: var(--warning);
-}
-
-.ob__field-hint {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-}
-.ob__field-hint--confirm {
-  grid-column: 1 / -1;
-  margin: calc(var(--space-1) * -1) 0 0;
-  color: var(--warning);
-}
-
 // ---- Step 0: welcome ----
 .ob__privacy-card {
   padding: var(--space-6);
@@ -546,12 +428,6 @@
   padding-top: 1px;
 }
 
-.ob__field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 // ---- Step 1: API model pickers ----
 .ob__models {
   display: flex;
@@ -607,32 +483,6 @@
   padding-left: 34px;
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-}
-
-.ob__spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--accent-fg);
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: ob-spin 0.7s linear infinite;
-}
-
-.ob__key-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-.ob__key-status--valid {
-  color: var(--success);
-}
-.ob__key-status--invalid {
-  color: var(--danger);
-}
-.ob__key-status--muted {
-  color: var(--text-tertiary);
 }
 
 .ob__link-btn {
@@ -889,18 +739,7 @@
   font-size: var(--text-xs);
 }
 
-.ob__muted-note {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
 // ---- Step 4: targeting ----
-.ob__section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
 .ob__label-row {
   display: flex;
   align-items: center;

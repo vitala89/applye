@@ -65,6 +65,28 @@ Before a watch can be marked complete:
 - **Open issues or blockers:** None blocking. The `test_pool` gap is fixed only for the new test's pool; every other test still runs with foreign keys off, which is worth a separate sweep.
 - **Next first action:** Confirm the reproduction - edit a CV, press Save, expect no error. Then the two other defects reported in the same session: `Open file` on a wizard export is refused by the path guard, and the export filename renders `-` as `_-_`.
 - **Evidence:** Branch diff; the reproduction and repair runs against a copy of the real database, quoted above; the mutation run's `code: 787`.
+### 2026-08-04, exported documents get a name a person would write
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/export-filename-readable`, from `main` (`024a6c8`)
+- **Commits:** one commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Maintainer reported the exported filename `jetbrains_-_senior_software_developer_-_tailored_cv.pdf` and asked for the `_-_` runs to go.
+- **Cause:** `DocumentExportService.filename` lower-cased the label, kept `-` in its allowed set and mapped every other run to `_`. A label of "JetBrains - Senior Software Developer - Tailored CV" therefore rendered each " - " as `_-_`. Cosmetic, but it is the name a recruiter sees on an attachment.
+- **The rule the maintainer chose,** from four options put to them (spaces / hyphens / CamelCase / underscores): **words separated by single spaces, original case**. `JetBrains Senior Software Developer Tailored CV.pdf`.
+- **Completed:** New `export-filename.ts` holds the rule as two pure functions with a spec; the service is three lines that call it. Extracted rather than fixed in place because the old rule was a private method with no seam - the two tests it had asserted the old output through the save dialog mock, which is a slow way to test a string transform.
+- **Details worth keeping:** case and non-ASCII letters survive, so "Zürich" no longer becomes `z_rich`; characters a filesystem refuses are **dropped**, not substituted, so removing a colon does not widen the gap between two words; a name can no longer begin or end with a dot or space, which macOS and Linux write and Windows silently trims; the length is capped at 120 with the cut re-trimmed so it cannot end in a space.
+- **Files or packages changed:** new `apps/desktop/src/app/shared/export-filename.ts` (64) and `export-filename.spec.ts` (57), `document-export.service.ts` (120 -> 115), `document-export.service.spec.ts` (two tests rewritten), `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **The two rewritten tests are an intended behaviour change, not a fix to make a suite pass.** They pinned the old slug (`my_cv_2026.pdf`); they now pin that the dialog is offered what the new rule produced, and the rule itself is tested directly in its own spec.
+- **Validation:** Run and observed on this branch: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings - the pre-existing baseline), `nx test desktop` (**1208 passed, 96 suites** - 1202/95 before, plus six new), `npm run quality:file-size` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `npm run desktop:dev`; the observable change is one string, covered directly.
+- **Mutation testing:** M1 dropped `_` and `-` from the separator class, so a hyphenated label would keep its punctuation. Five of the six new assertions failed and the rest of the suite stayed green. Restored from a backup copy, `diff` byte-exact.
+- **Privacy/security impact:** None. This only affects the name suggested in the save dialog; the user can still type anything, and nothing here is a trust boundary.
+- **Decisions and assumptions:** The Windows launcher's comment in `commands/tailoring_journal.rs` claims "every name Applye writes goes through `readable_slug` (alphanumeric plus hyphen)" as part of why `cmd /C start` is safe. That was already untrue - the save dialog has always let the user type any name - and this makes it visibly untrue. The comment is **not** corrected here because the same claim is load-bearing for the path-guard change in the next PR, and splitting one argument across two branches would be worse than fixing it where it is decided.
+- **Risks or compatibility impact:** None to existing files. Only newly suggested names change; nothing reads these names back.
+- **Open issues or blockers:** None.
+- **Next first action:** The third defect from the same report - `Open file` on a wizard export is refused, because `open_file` only admits paths under `app_data_dir` while the wizard writes wherever the save dialog pointed. The maintainer chose the fix: remember the paths the export commands actually wrote and admit those.
+- **Evidence:** Branch diff; check output quoted above; the mutation run.
 
 ### 2026-08-04, the attribution gate stops rejecting Dependabot's own sign-off
 

@@ -90,15 +90,17 @@ describe('DocumentExportService', () => {
     expect(db.coverLetterDocumentExport).toHaveBeenCalledWith(22, 'docx', '/tmp/out.pdf');
   });
 
-  it('suggests a filesystem-safe name derived from the label', async () => {
+  // The naming rule itself lives in `export-filename.spec.ts`; these two only
+  // check that the dialog is offered what that rule produced.
+  it('suggests the label as a readable name, not a slug', async () => {
     const s = make();
     await s.run('cv', 'pdf', { ...cv, label: '  My CV (2026)! ' } as never, noop);
-    expect(save).toHaveBeenCalledWith({ defaultPath: 'my_cv_2026.pdf' });
+    expect(save).toHaveBeenCalledWith({ defaultPath: 'My CV (2026)!.pdf' });
   });
 
-  it('falls back to the document type when the label slugs away to nothing', async () => {
+  it('falls back to the document type when nothing of the label survives', async () => {
     const s = make();
-    await s.run('cv', 'docx', { ...cv, label: '!!!' } as never, noop);
+    await s.run('cv', 'docx', { ...cv, label: '///' } as never, noop);
     expect(save).toHaveBeenCalledWith({ defaultPath: 'cv.docx' });
   });
 

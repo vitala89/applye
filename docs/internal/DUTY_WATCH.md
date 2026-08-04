@@ -44,6 +44,51 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, the second wave of dependency advisories is closed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `chore/security-dev-dep-advisories`
+
+**What was reported and what was actually there.** Nine Dependabot alerts (one high, eight moderate),
+eight of them `undici` and one the long-standing `glib`. `npm audit` found **16** - it also flagged
+`hono` and a fresh `brace-expansion` advisory that moved the repository's own existing pins into
+range. The audit is the longer list; Dependabot's count is not the whole picture.
+
+**Scope, checked rather than assumed.** Every npm advisory is development-only. `undici` reaches the
+tree twice, through `@angular/build` and through `node-gyp` under `@angular/cli`; `hono` and
+`brace-expansion` the same way. `npm audit --omit=dev` read 0 before the change and 0 after it.
+Nothing vulnerable was in the Tauri bundle or the web build at any point.
+
+**Why overrides rather than an upgrade.** `@angular/build` pins `undici` to the exact string
+`7.28.0`, so nothing moves without forcing it, and npm's own `fixAvailable` was a **semver-major
+downgrade** of `@angular/build` to 20.3.32. Forced instead: `undici@^6 -> ^6.28.0`,
+`undici@^7 -> ^7.29.0`, `hono -> ^4.13.0`, `brace-expansion` 1.1.16/2.1.2/5.0.8 -> 1.1.18/2.1.4/5.0.9.
+All patch-level.
+
+**The trap this walked past.** `CURRENT_STATE.md` records a refusal: forcing every `brace-expansion`
+copy to 5.x breaks the `minimatch` 3.1.5 callers under `test-exclude` and
+`fork-ts-checker-webpack-plugin`, because 5.x exports an object where 1.x exports a function - and
+**no gate catches it**: audit reads 0, the full gate goes green, coverage passes. The overrides here
+are keyed by major, so those copies stayed on 1.1.18. Verified by hand for exactly that reason: both
+1.x copies still `typeof === 'function'`, and `minimatch` 3.1.5 was called through both and returned.
+
+**Verification.** `npm audit`: **0 vulnerabilities** (was 16). `nx run-many --target=type-check --all`
+and `--target=lint --all` (0 errors, pre-existing warnings only) across 6 projects.
+`nx run-many --target=test --all --skip-nx-cache`: **1659 tests across 6 projects, all passing**.
+`nx build desktop --skip-nx-cache` and `nx build web --skip-nx-cache` both succeed - the builds
+matter here specifically because `undici` is now off the version `@angular/build` pins.
+`npm run quality`, `npx nx format:check` (exit 0), `git diff --check` clean. `nx build web` was used
+directly rather than `npm run web:build`, so `sitemap.xml` was not regenerated.
+
+**Left open on purpose.** `glib` RUSTSEC-2024-0429 / Dependabot alert 42. Re-checked, not
+re-litigated: `cargo update -p glib` moves nothing, and `cargo tree -i glib --target all` confirms it
+arrives through the entire gtk-rs 0.18 stack under `wry`/`webkit2gtk`, which Tauri pins. Linux-only.
+The existing `.cargo/audit.toml` entry and its drop condition - Tauri on gtk/glib >= 0.20 - stand.
+
+**Next first action.** Nothing outstanding here. Watch for Dependabot re-opening `undici` if
+`@angular/build` bumps its pin, in which case the override should be dropped rather than raised.
+
 ### 2026-08-05, the campaign's handoff is rewritten around what the session learned
 
 - **Status:** complete - documentation only

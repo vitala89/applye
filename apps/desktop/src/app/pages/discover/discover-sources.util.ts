@@ -43,3 +43,26 @@ export function narrowBuiltinsByMarkets<T extends MarketFilterable>(
   if (!markets.length) return [...builtins];
   return builtins.filter((s) => s.isEnabled || sourceServesMarkets(s, markets));
 }
+
+/**
+ * A set with `key` added when it was absent and removed when it was present,
+ * as a new set - the shape every collapsible and multi-select filter on this
+ * page wants from a click.
+ *
+ * Pure and shared rather than a private method, because the Sources drawer and
+ * the filter row both toggle sets and the two now live in different files.
+ */
+export function toggled<T>(set: ReadonlySet<T>, key: T): ReadonlySet<T> {
+  const next = new Set(set);
+  if (!next.delete(key)) next.add(key);
+  return next;
+}
+
+/**
+ * The host of a URL, used to name an RSS source the user did not name. Kept
+ * deliberately naive: this labels a row, it never decides what is fetched.
+ */
+export function hostOf(url: string): string {
+  const withoutScheme = url.split('://')[1] ?? url;
+  return withoutScheme.split('/')[0] ?? '';
+}

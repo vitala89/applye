@@ -11,6 +11,7 @@
 // component's encapsulated SCSS, which duplicated ~11.5 kB per component and
 // blew the per-component style budget.
 @use './app/pages/documents/editor-shell' as *;
+@use './app/pages/discover/discover-controls' as *;
 
 // CV theme fonts. The preview/editor sets `font-family` to the theme font by
 // name (e.g. "Lato"); without these @font-face rules the browser can't find it

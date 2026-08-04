@@ -36,10 +36,8 @@ import {
   parseArchetypes,
   serializeCompensation,
   splitDisplayName,
-  apiModelsFor,
-  resolveApiModels,
 } from '@applye/core';
-import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
+import { AiService, CliStatus, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -60,15 +58,12 @@ import {
   type ParsedCv,
 } from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
+import { OnboardingAiKeyService } from './onboarding-ai-key.service';
+import { OnboardingApiKeyCardComponent } from './onboarding-api-key-card/onboarding-api-key-card.component';
 import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
 type ResumePath = 'upload' | 'paste' | 'skip';
-/** Feedback for the key INPUT only - never a claim about the keyring. Whether a
- * key exists is `keyStored`, which a failed paste must not disturb. Neither
- * means the provider accepted the key: nothing here calls the API. */
-type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
-
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
  * a single centered column with a horizontal step stepper up top, the
@@ -76,14 +71,14 @@ type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [ButtonDirective, FormsModule, LucideAngularModule],
+  imports: [ButtonDirective, FormsModule, LucideAngularModule, OnboardingApiKeyCardComponent],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.scss',
+  providers: [OnboardingAiKeyService],
 })
 export class OnboardingComponent {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
-  private readonly keys = inject(KeysService);
   private readonly i18n = inject(TranslateService);
   private readonly themeService = inject(ThemeService);
   private readonly toast = inject(ToastService);
@@ -159,14 +154,13 @@ export class OnboardingComponent {
   ]);
 
   // ---- AI setup ----
-  readonly selectedProvider = signal<AiProvider>('claude');
-  readonly guide = computed(() => guideForProvider(this.selectedProvider()));
-  readonly keyInput = signal('');
-  readonly keyStatus = signal<KeyStatus>('idle');
-  /** Whether the selected provider has a key in the OS keyring - from the
-   * keyring itself, so it survives a re-run and an input the user fumbles. */
-  readonly keyStored = signal(false);
-  readonly keySaveError = signal(false);
+  /** The API-key card owns this state and mutates it; the wizard reads it back
+   * for the Continue gate, the Ready summary and the settings it persists.
+   * These are read-through aliases onto the same signals, not copies. */
+  protected readonly aiKey = inject(OnboardingAiKeyService);
+  readonly selectedProvider = this.aiKey.provider;
+  readonly guide = this.aiKey.guide;
+  readonly keyStored = this.aiKey.keyStored;
   /** Providers that API mode can actually dispatch to. `ai/api.rs` handles
    * `claude` and `deepseek` and answers anything else with "not supported in
    * API mode yet", so offering OpenAI here sent the user to buy a key that
@@ -174,35 +168,10 @@ export class OnboardingComponent {
    * CLI mode - see `cliProviders`. */
   readonly v1Providers: AiProvider[] = ['claude', 'deepseek'];
 
-  /**
-   * The quality and economy model ids for API mode.
-   *
-   * These exist here because the wizard's own AI calls need a model the chosen
-   * provider accepts, and nothing else in the wizard supplied one. The step
-   * persisted `provider` but never the model ids, so picking DeepSeek left the
-   * Claude defaults in the settings row - or, after a CLI-mode run blanked them,
-   * an empty string - and every wizard call came back as
-   * `The supported API model names are deepseek-v4-pro or deepseek-v4-flash,
-   * but you passed .`
-   *
-   * Seeded from the stored settings so a re-run shows what the user already has,
-   * and reconciled against the selected provider's catalogue so a stale or blank
-   * value can never survive into a request.
-   */
-  readonly qualityModel = signal('');
-  readonly economyModel = signal('');
-
-  /** Set once the user changes anything on the AI step, so the async seed from
-   * settings can tell "still showing defaults" from "the user has chosen". */
-  private aiChoiceTouched = false;
-
-  /** Models offered for the selected provider. Empty in CLI mode, where the
-   * model string is free text the CLI interprets. */
-  readonly providerModels = computed(() => apiModelsFor(this.selectedProvider()));
-
-  readonly providerSteps = computed(() =>
-    this.guide().stepKeys.map((key, i) => ({ n: i + 1, text: this.t()(key) })),
-  );
+  /** The model pair the AI step persists alongside the provider. Owned by the
+   * API-key card's service; the wizard reads it in `apiModelPatch()`. */
+  readonly qualityModel = this.aiKey.qualityModel;
+  readonly economyModel = this.aiKey.economyModel;
 
   guideFor(p: AiProvider) {
     return guideForProvider(p);
@@ -297,7 +266,7 @@ export class OnboardingComponent {
 
   async chooseAiMode(mode: AiMode): Promise<void> {
     if (this.aiMode() === mode) return;
-    this.aiChoiceTouched = true;
+    this.aiKey.touched.set(true);
     this.aiMode.set(mode);
     this.installError.set(null);
     if (mode === 'cli') {
@@ -315,7 +284,7 @@ export class OnboardingComponent {
     if (!this.v1Providers.includes(this.selectedProvider())) {
       this.selectedProvider.set('claude');
     }
-    this.reconcileModels();
+    this.aiKey.reconcileModels();
   }
 
   async refreshCliProbe(): Promise<void> {
@@ -366,7 +335,7 @@ export class OnboardingComponent {
   constructor() {
     // Kicked off independently of the settings read, so "does this provider have
     // a key?" resolves in one turn rather than waiting behind it.
-    void this.refreshKeyStored();
+    void this.aiKey.refreshKeyStored();
     void this.seedAiChoiceFromSettings();
     void this.seedFromExistingProfile();
   }
@@ -385,7 +354,7 @@ export class OnboardingComponent {
       const settings = await this.db.getSettings();
       // The read is async and the step is interactive from the first frame, so
       // a fast click must win over the seed rather than be overwritten by it.
-      if (this.aiChoiceTouched) return;
+      if (this.aiKey.touched()) return;
       if (settings.aiMode === 'cli' || settings.aiMode === 'api') {
         this.aiMode.set(settings.aiMode);
       }
@@ -396,7 +365,7 @@ export class OnboardingComponent {
         // The constructor already asked about the provider it opened on; a
         // different one has to be asked about too, or Ready reports "not
         // connected" for a provider that does have a key.
-        void this.refreshKeyStored();
+        void this.aiKey.refreshKeyStored();
       }
       this.qualityModel.set(settings.defaultModel ?? '');
       this.economyModel.set(settings.economyModel ?? '');
@@ -404,10 +373,10 @@ export class OnboardingComponent {
         await this.refreshCliProbe();
         return;
       }
-      this.reconcileModels();
+      this.aiKey.reconcileModels();
     } catch {
       // No settings row yet, or no Tauri runtime - the defaults above stand.
-      this.reconcileModels();
+      this.aiKey.reconcileModels();
     }
   }
 
@@ -425,92 +394,6 @@ export class OnboardingComponent {
     // Marks the selection as authored, so the resume-driven suggestion that
     // follows adds to these roles rather than replacing them.
     this.selectionSeeded.set(true);
-  }
-
-  selectProvider(id: AiProvider): void {
-    this.aiChoiceTouched = true;
-    this.selectedProvider.set(id);
-    this.keyStatus.set('idle');
-    this.keyStored.set(false);
-    this.keySaveError.set(false);
-    this.reconcileModels();
-    void this.refreshKeyStored();
-  }
-
-  /** Puts the model pair back on the selected provider's catalogue. A value
-   * that is blank, or belongs to the provider the user just switched away from,
-   * is replaced by that provider's default; a valid non-default pick is kept. */
-  private reconcileModels(): void {
-    const models = resolveApiModels(this.selectedProvider(), {
-      defaultModel: this.qualityModel(),
-      economyModel: this.economyModel(),
-    });
-    if (!models) return;
-    this.qualityModel.set(models.defaultModel);
-    this.economyModel.set(models.economyModel);
-  }
-
-  setQualityModel(model: string): void {
-    this.aiChoiceTouched = true;
-    this.qualityModel.set(model);
-  }
-
-  setEconomyModel(model: string): void {
-    this.aiChoiceTouched = true;
-    this.economyModel.set(model);
-  }
-
-  /** A key saved by an earlier run lives in the keyring, not in this component,
-   * so without this a re-run shows "not connected" on the Ready step for a
-   * provider that is in fact connected. */
-  private async refreshKeyStored(): Promise<void> {
-    const provider = this.selectedProvider();
-    try {
-      const has = await this.keys.hasProviderKey(provider);
-      // A provider switch mid-await must not land its answer on the new one.
-      if (this.selectedProvider() !== provider) return;
-      this.keyStored.set(has);
-    } catch {
-      // Keyring unreadable - leave it as "no key" and let the user paste one.
-    }
-  }
-
-  async openConsole(): Promise<void> {
-    await openUrl(this.guide().consoleUrl);
-  }
-
-  async openVideo(): Promise<void> {
-    const url = this.guide().helpVideoUrl;
-    if (url) await openUrl(url);
-  }
-
-  /** Lightweight format sanity-check (length + provider prefix hint) before
-   * touching the keyring - this is NOT a live validation against the
-   * provider's API (no such check exists), just a copy-paste sanity guard.
-   * The button and status copy say "save", never "valid", for that reason. */
-  async saveKey(): Promise<void> {
-    const key = this.keyInput().trim();
-    if (!key) return;
-    const prefix = this.guide().keyPrefix;
-    const looksValid = key.length >= 15 && (!prefix || key.toLowerCase().startsWith('sk'));
-    if (!looksValid) {
-      this.keyStatus.set('invalid');
-      return;
-    }
-    this.keyStatus.set('checking');
-    this.keySaveError.set(false);
-    try {
-      await this.keys.setProviderKey(this.selectedProvider(), key);
-      const saved = await this.keys.hasProviderKey(this.selectedProvider());
-      this.keyStatus.set(saved ? 'valid' : 'invalid');
-      this.keyStored.set(saved);
-    } catch {
-      // A write that fails leaves whatever was already in the keyring intact,
-      // so `keyStored` is deliberately untouched here - reporting "no key" for
-      // a provider that still has a working one is the worse lie.
-      this.keyStatus.set('idle');
-      this.keySaveError.set(true);
-    }
   }
 
   // ---- Resume ----

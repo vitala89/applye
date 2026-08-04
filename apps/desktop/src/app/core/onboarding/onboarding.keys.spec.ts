@@ -1,9 +1,11 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
+import { OnboardingAiKeyService } from './onboarding-ai-key.service';
 import { createOnboarding, parsedCv } from './onboarding.harness';
 
 describe('OnboardingComponent keys, profile and AI wiring', () => {
   let component: OnboardingComponent;
+  let aiKey: OnboardingAiKeyService;
   let fixture: ComponentFixture<OnboardingComponent>;
   let upsertProfile: jest.Mock;
   let documentLibraryUpsert: jest.Mock;
@@ -16,6 +18,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     ({
       component,
       fixture,
+      aiKey,
       upsertProfile,
       documentLibraryUpsert,
       updateSettings,
@@ -47,7 +50,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     });
 
     it('parses the resume with the chosen provider, not the stored one', async () => {
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.parseResume();
 
@@ -67,7 +70,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
     it('suggests archetypes with the chosen provider too', async () => {
       run.mockResolvedValue({ text: '{"archetypes":["Staff FE"],"compRange":"EUR 90-120K"}' });
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.suggestArchetypes();
 
@@ -76,7 +79,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
     it('commits the choice to settings when the AI step is left', async () => {
       component.step.set(1);
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.goNext();
 
@@ -119,22 +122,22 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     });
 
     it('remaps both models when the provider changes', () => {
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       expect(component.qualityModel()).toBe('deepseek-v4-pro');
       expect(component.economyModel()).toBe('deepseek-v4-flash');
     });
 
     it('offers only the selected provider models', () => {
-      component.selectProvider('deepseek');
-      expect(component.providerModels()).toEqual(['deepseek-v4-pro', 'deepseek-v4-flash']);
+      aiKey.selectProvider('deepseek');
+      expect(aiKey.providerModels()).toEqual(['deepseek-v4-pro', 'deepseek-v4-flash']);
 
-      component.selectProvider('claude');
-      expect(component.providerModels()).toContain('claude-opus-4-8');
+      aiKey.selectProvider('claude');
+      expect(aiKey.providerModels()).toContain('claude-opus-4-8');
     });
 
     it('sends the chosen economy model, never an empty one', async () => {
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.parseResume();
 
@@ -144,7 +147,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     });
 
     it('keeps a hand-picked economy model and dispatches with it', async () => {
-      component.setEconomyModel('claude-sonnet-4-6');
+      aiKey.setEconomyModel('claude-sonnet-4-6');
 
       await component.parseResume();
 
@@ -166,7 +169,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     });
 
     it('persists both models with the provider on finish', async () => {
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.finish();
 
@@ -217,7 +220,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     // any provider other than the default was silently discarded - the user
     // saved an OpenAI key and every task still went to Claude, which had none.
     it('persists the provider the user actually picked', async () => {
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.finish();
 
@@ -243,7 +246,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     });
 
     it('moves a CLI-less provider off DeepSeek when switching to CLI mode', async () => {
-      component.selectProvider('deepseek');
+      aiKey.selectProvider('deepseek');
 
       await component.chooseAiMode('cli');
 

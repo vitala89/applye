@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the drawer cut lost an input rule and the losslessness check did not see it
+
+- **Status:** partial - the defect is fixed and gated, the data half of the click-through is still owed
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-sources-drawer`, continuing the watch below
+- **Commits:** one fixup commit on the branch
+- **Pull request:** the same PR, still open against `main`
+- **Objective:** Do the click-through the previous watch left open, before merging.
+- **It failed the walk.** `.dv-input` and `.dv-select` shared one rule on `main`. The move gave the drawer's stylesheet a copy carrying **only `.dv-select`**, and left `.dv-input,` in the page's stylesheet as a selector with no body. Sass does not warn about that: the dangling selector attached to the rule that followed it, `.dv-first`. Two live defects. The drawer's three inputs rendered with browser defaults - measured in the running app at `background: rgb(59,59,59)`, `border: 2px`, `border-radius: 0`, against 30px / `--surface-sunken` / `--radius-input` on `main`. And the page's filter query field (`discover.component.html:389`, `class="dv-input dv-filters__query"`) inherited the empty-state layout, because the compiled sheet read `.dv-input, .dv-first { min-height: 60vh; display: flex; ... }`. The nesting propagated too, inventing `.dv-input__icon`, `.dv-input__title` and `.dv-input__hint`.
+- **The previous entry's losslessness claim was wrong, and this is why.** It states every selector present before the watch still exists in one of the four files, none lost. The check compared **selector names**, and `.dv-input` was still present as a name - as the orphan. A rule can lose its entire body and still pass a name-level comparison. The check must compare declarations, not selectors.
+- **Nothing else was damaged.** After the fix, the set of class selectors defined across the page stylesheet, the drawer stylesheet and the partial was compared against `main`'s page stylesheet in both directions: nothing lost, nothing invented.
+- **Completed:** `.dv-input, .dv-select` restored into `_discover-controls.scss`, **byte-identical to the rule on `main`** (`diff` clean), which is where the partial's own header comment already said it belonged - it names the text input among the four primitives the file exists to de-duplicate. The orphan removed from the page, the duplicated `.dv-select` block removed from the drawer. Page scss **1466 -> 1464**, drawer scss **318 -> 298**, partial **142 -> 162**.
+- **Not completed:** The data half of the walk. The dev server at `:4200` has no Tauri IPC, so `db_list_sources` throws and every source group renders empty. Source toggles, "show all sources", adding a company board, adding an RSS feed, removing a user source and the failing count could not be exercised.
+- **Validation:** Run and observed on this branch after the fix: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (pass), `nx test desktop` (pass), `nx build desktop` (pass), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). In the running app: the restored rule resolves to `height: 30px`, `border-radius: 6px`, `background: rgb(46,44,38)` on the drawer's inputs, and no stylesheet rule mentions `dv-input` alongside `dv-first` any more.
+- **What the browser walk did cover:** the drawer opens from the page's own button; the summary line, its scope label and the three group headers with their counts render; a click inside the panel does not close it (the inner `keydown`/`click` stop works); a click on the overlay closes it; Escape on the overlay closes it.
+- **None of the four gates saw either defect.** Type-check, lint, 1224 unit tests and `nx build desktop` all passed on the broken tree. The previous watch recorded the build as the gate that reads templates; it does not read whether a stylesheet still means what it meant. Only looking at the page caught this.
+- **Privacy/security impact:** None. Stylesheet only.
+- **Decisions and assumptions:** The rule went to the global partial rather than being copied into both stylesheets, because `.dv-input` is genuinely used on both sides of the boundary - the page's filter field and the drawer's three fields - which is the case the partial was created for. `.dv-select` rides along in the same rule as it does on `main` even though only the drawer uses it, because splitting them is what caused this.
+- **Risks or compatibility impact:** `.dv-input` and `.dv-select` are now global and unencapsulated. Any other page using those class names now picks up Discover's styling. Only Discover uses them today.
+- **Open issues or blockers:** The data half of the click-through, which needs the packaged or `desktop:dev` Tauri window rather than a browser.
+- **Next first action:** Run `npm run desktop:dev`, open Discover and the Sources drawer, and walk what the browser could not: switching a source on and off, "show all sources" against the market narrowing, adding a company board, adding an RSS feed, removing a user source, and the failing count in the summary line. On pass, merge and take the job-detail screen (254 template lines, 22 symbols) next.
+- **Evidence:** Branch diff; `diff` of the restored rule against `main` (empty); selector-set comparison against `main` (empty in both directions); computed styles and compiled selector list read from the running app; check output quoted above.
+
 ### 2026-08-04, the Discover page loses its Sources drawer
 
 - **Status:** partial - code complete and gated, awaiting the maintainer's click-through

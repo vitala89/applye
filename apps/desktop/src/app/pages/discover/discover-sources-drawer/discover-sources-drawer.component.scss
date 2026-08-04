@@ -1,25 +1,5 @@
 /* Moved from the Discover page with the markup that uses it. */
 
-.dv-select {
-  height: 30px;
-  padding: 0 var(--space-2);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-input);
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-ring);
-  }
-
-  &::placeholder {
-    color: var(--text-tertiary);
-  }
-}
-
 .dv-drawer {
   width: 420px;
   max-width: 92vw;

@@ -38,6 +38,16 @@ export class CvGapDialogService {
 
   private resolver: ((result: CvGapResult | null) => void) | null = null;
 
+  /**
+   * Set once the page that owns this instance is gone. This service is
+   * component-scoped, so its signals are only ever read by that one page's
+   * template; a generation outliving the page keeps a reference to it and asks
+   * again later, for the undated entries. Opening then would raise a dialog on
+   * a service nothing renders - invisible, unanswerable, and holding the
+   * generation's promise forever.
+   */
+  private disposed = false;
+
   /** True while the dialog is on screen or its questions are being worked out. */
   readonly busy = computed(() => this.open() || this.analyzing());
 
@@ -81,9 +91,10 @@ export class CvGapDialogService {
   /**
    * Opens the dialog and resolves when the user submits or cancels.
    * First caller wins; a second is answered `null` without disturbing the first.
+   * A caller arriving after `dispose` is answered `null` too - see `disposed`.
    */
   ask(questions: CvGapQuestion[]): Promise<CvGapResult | null> {
-    if (this.resolver) return Promise.resolve(null);
+    if (this.disposed || this.resolver) return Promise.resolve(null);
     this.questions.set(questions);
     this.open.set(true);
     return new Promise((resolve) => {
@@ -105,8 +116,13 @@ export class CvGapDialogService {
    * Releases a waiting caller when the dialog goes away without an answer -
    * leaving this job, or resetting the page. Without it the caller's `finally`
    * never runs and its in-flight marker never clears.
+   *
+   * Also retires the instance: a generation that outlives the page must not be
+   * able to reopen a dialog here later. Gap-fill is optional on every path, so
+   * being answered `null` skips it and the document is still produced.
    */
   dispose(): void {
+    this.disposed = true;
     this.open.set(false);
     this.analyzing.set(false);
     this.questions.set([]);

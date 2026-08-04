@@ -12,6 +12,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ### Fixed
 
+- **Dependency-bump pull requests can pass CI again.** The attribution gate landed on 2026-07-31 and rejects any `Signed-off-by` trailer, but Dependabot signs every commit it opens, so every automated bump has failed the gate since - starting with the `ip-address` bump, whose lint, tests, build and file-size checks were all green. The gate exists to keep human and agent attribution off commits written by the maintainer; a bot signing its own dependency bump is not that. Commits are now skipped only when the author name carries the `[bot]` suffix a human GitHub account cannot have **and** the address is the matching GitHub noreply or support address. Either one alone is not enough, so setting a bot name locally does not buy an exemption, and the pull-request body is still inspected in every case.
+
+### Fixed
+
 - **Mark as Applied no longer leaves a second application row behind.** The action wrote its own `saved` row before committing the documents, and that row never reached the signal the job page holds, so the first commit step to ask for a draft found none and wrote a second row for the same job. The status then landed on one of the two and the other was orphaned. Creation now goes through the page's draft hook, which is the single owner of that row and of the signal. Confirmed in the running app: a job marked applied straight from its analysed state now ends up with exactly one row where it previously had two.
 
 - **Mark as Applied says what it is doing.** Committing the documents generates whatever the application is missing, which runs against the configured AI provider and can take minutes. The button simply went dead for the whole time, with no spinner, no text and no toast, which reads as a hang. It now reads "Preparing documents…" while that step runs. `busy` alone could not say it, because saving a lead raises the same flag for an operation that takes a moment.

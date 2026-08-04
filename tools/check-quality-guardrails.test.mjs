@@ -192,6 +192,49 @@ test('attribution guard scans branch commits and pull-request text', (t) => {
   assert.match(result.stderr, /generated-by/i);
 });
 
+test('attribution guard skips bot-authored commits but not humans borrowing a bot name', (t) => {
+  const directory = createRepository(t);
+  writeFileSync(join(directory, 'README.md'), '# Fixture\n');
+  commitAll(directory);
+  const base = git(directory, ['rev-parse', 'HEAD']);
+
+  const trailers = ['-m', 'Signed-off-by: dependabot[bot] <support@github.com>'];
+  appendFileSync(join(directory, 'README.md'), '\nBumped.\n');
+  git(directory, ['add', 'README.md']);
+  git(directory, [
+    'commit',
+    '--no-verify',
+    '--quiet',
+    '--author',
+    'dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>',
+    '-m',
+    'chore(deps): bump a dependency',
+    ...trailers,
+  ]);
+
+  let result = run(process.execPath, [attributionScript, '--base', base], { cwd: directory });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+
+  // The bot username alone is not enough: the address has to match as well.
+  git(directory, ['reset', '--hard', base]);
+  appendFileSync(join(directory, 'README.md'), '\nBumped.\n');
+  git(directory, ['add', 'README.md']);
+  git(directory, [
+    'commit',
+    '--no-verify',
+    '--quiet',
+    '--author',
+    'dependabot[bot] <helper@example.com>',
+    '-m',
+    'chore(deps): bump a dependency',
+    ...trailers,
+  ]);
+
+  result = run(process.execPath, [attributionScript, '--base', base], { cwd: directory });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /signed-off-by/i);
+});
+
 /**
  * Angular templates are compiled by `ngc`, not by `tsc`. A template binding to
  * a member the component does not have, or a type the template cannot accept,

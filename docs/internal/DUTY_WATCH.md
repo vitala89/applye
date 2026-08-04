@@ -44,6 +44,252 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the attribution gate stops rejecting Dependabot's own sign-off
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/attribution-bot-commits`, from `main` (`e24079a`)
+- **Commits:** one commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Unblock PR #301 (`ip-address` 10.2.0 -> 10.4.0), reported red by the maintainer, and every dependency bump behind it.
+- **What was actually wrong:** Not the dependency and not the code. Lint, tests, build and `quality:file-size` were all green on #301; `quality:attribution` failed on one line - `commit 5c44f6644382:14: Signed-off-by: dependabot[bot] <support@github.com>`. Dependabot signs every commit it opens, and the attribution gate rejects any `Signed-off-by`. The gate landed 2026-07-31 in #228, so **every** automated bump has been unmergeable since that date; #301 is the first one to come up, not a one-off. Nine such trailers are already in `main`'s history from bumps merged before the gate existed (`3fbf693`, `051e15a` and others), which is the evidence the gate was never meant to cover them.
+- **Completed:** `tools/check-attribution.mjs` now skips a commit body when the author is an automation account, and only then. The test file gained a case for it.
+- **The exemption is deliberately narrow.** Both halves of the identity must match: the author name ends in `[bot]`, a suffix a human GitHub account cannot register, **and** the address is a `[bot]@users.noreply.github.com` or `support@github.com` address. Setting a bot-looking name on a local commit therefore buys nothing. The pull-request body is inspected in every case, bot or not, and the `--message-file` path used by the commit hook is untouched, so a maintainer's own commit is gated exactly as before.
+- **Files or packages changed:** `tools/check-attribution.mjs` (84 -> 102), `tools/check-quality-guardrails.test.mjs` (360 -> 403), `CHANGELOG.md`, `DUTY_WATCH.md`. Both scripts are well inside budget (400 source, 600 test).
+- **Validation:** Run and observed: `npm run quality:test` (9 passed, 0 failed - 8 before this watch, plus the new case), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** the Angular and Rust targets - nothing here is shipped code; the change is confined to `tools/`.
+- **End-to-end proof against the real commit:** The Dependabot branch was fetched and checked out in a detached worktree, and both versions of the script were run against it from that directory. The pre-change script (`git show main:tools/check-attribution.mjs`) exits 1 with the sign-off violation quoted above; the patched script exits 0. The failure and the fix are demonstrated on the actual commit, not on a fixture resembling it.
+- **Mutation testing:** M1 changed `&&` to `||` in `isBotAuthor`, weakening the exemption to either half of the identity. The script printed its own `MUTATED` confirmation, and `attribution guard skips bot-authored commits but not humans borrowing a bot name` failed while the other eight stayed green. Restored from a backup copy and `diff`ed byte-exact; the suite returned to 9 passing.
+- **Privacy/security impact:** None to user data. The governance surface narrows by exactly one case: an automation account's own trailer on its own commit. A human or agent commit cannot reach the exemption without deliberately forging both a `[bot]` name and a GitHub noreply address, which is a decision to evade the rule rather than an accident.
+- **Decisions and assumptions:** The maintainer chose the commit-level exemption over three alternatives that were put to them - guarding the CI step on `github.actor`, rewriting #301's commit message by hand, or closing #301 and bumping manually. The commit-level version was recommended because the CI-step guard keys the gate to who triggered the run rather than who wrote the commit, and the rewrite fixes one PR while Dependabot force-pushes over it on the next rebase.
+- **Risks or compatibility impact:** Low. If another automation account ever needs the same treatment, it qualifies automatically when it uses a GitHub app identity, and does not otherwise.
+- **Open issues or blockers:** PR #301 stays red until this merges and it is rebased or re-run. PR #309 still needs the maintainer's click-through; PR #312 (handoff doc) is green and docs-only.
+- **Next first action:** Merge this, then re-run #301's checks and merge it. After that the file-size campaign resumes: `wizardExportApplyStep` (~120 template lines) out of the jobs page once #309 clears.
+- **Evidence:** Branch diff; the two script runs in the detached worktree quoted above; CI log for run 30859140306 on PR #301.
+
+### 2026-08-04, reading a skill response leaves the CV content model, and stops accepting an apology as a CV
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cv-parse-util`, from `main` (`ec3cded`)
+- **Commits:** one commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Continue the Angular half of the campaign on a file needing no click-through, since PR #309 is still parked awaiting one.
+- **Completed:** `cv-content.util.ts` **829 -> 622**. `cleanJsonText`, `closeOpenStructures`, `repairTruncatedJson`, `tryParseParsed`, `parseCvSkillResponse`, the gap-question types with `parseCvGapResponse`, `buildAdditionalInfoBlock` and `parseDateAnswer` moved to `cv-parse.util.ts`. Their tests already lived in `cv-parse.util.spec.ts` - a spec named for a module that did not exist - and now import from it. **A real bug was found and fixed** (below).
+- **Not completed:** `cv-content.util.ts` is still 622/400. The remaining seam is the CV content model itself (`buildCvContent`, `cvContentToMd`, `markdownToCvContentFallback`, `normalizeCvContent`), left for its own PR. PR #309 still needs the maintainer's click-through.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-content.util.ts`, new `cv-parse.util.ts`, `cv-parse.util.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **The bug, and how it surfaced.** Mutation testing the moved code: deleting the `throw` in `parseCvSkillResponse` so invalid JSON returned an empty draft left **all 1195 tests green**. The function's own doc promises the opposite - "throws with the raw text so the caller can surface a real error instead of a silent empty draft" - and nothing tested it. Writing that test then exposed the wider hole: the guard only checked that `JSON.parse` succeeded, so a bare JSON string, a number or `null` all passed as a `Partial<CvParsedContent>` with no keys. The one that happens in practice is the string: a model answering `"I could not read this CV"` in the JSON the prompt asked for. The user saw a blank editor and no reason for it. `tryParseParsed` now accepts only a plain object. An empty object is still accepted, deliberately - a CV with no recognised fields is a real answer and the review step is what asks about it.
+- **Left alone, and said so in the spec:** a JSON _array_ still gets through, because the repair pass recovers the first object inside it. That is the same recovery a truncated response depends on, so tightening it would be a change to repair behaviour rather than to this guard, and no caller passes an array.
+- **Validation:** Run and observed on this branch: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings, all pre-existing; the warning-line count matches the same command on a stashed tree), `nx test desktop` (1198 passed, 94 suites - 1195 before this watch, plus three new), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `npm run desktop:dev`. Nothing here renders; the behaviour change is in a pure function with unit tests either side of it.
+- **Losslessness evidence:** The moved block was extracted by line range before deletion and diffed against the new module - byte-identical. The two later edits to it (the `tryParseParsed` guard and its doc comment) were made after that diff and are visible as such in the branch diff.
+- **Mutation testing:** M1 remove the `throw` - now killed by the new test, having survived before it. M2 remove the plain-object check - killed by the new test. Both applied by absolute path with an applied/not-applied assertion, restored from backup with a byte-exact diff; the suite returned to 1198 passing after each.
+- **Privacy/security impact:** None directly. Worth noting the direction: the fix makes the app **refuse** malformed model output rather than persist a hollow document, which is the safer of the two for a file the user will send to an employer.
+- **Decisions and assumptions:** The new module is re-exported from `cv-content.util.ts` rather than repointing every consumer, following the note that file already carries: splitting costs each consumer one import line and three of the importers are themselves over budget, so the size gate refuses that version. Only the spec was repointed, since a test file has room. This is the one place in the campaign where consumers do **not** name the defining module, and the reason is written down at the re-export.
+- **Risks or compatibility impact:** The parse guard is a behaviour change, not a pure move: input that previously produced an empty draft now throws. That is the documented contract and the error path the callers already handle, but it is the line to look at if a CV import starts reporting failures it did not report before.
+- **Open issues or blockers:** PR #309 needs the maintainer's walkthrough before it can merge.
+- **Next first action:** After PR #309's click-through, take `wizardExportApplyStep` (~120 template lines) out of the jobs page. Without it, split the CV content model out of `cv-content.util.ts` (622/400) - `cvContentToMd` and `markdownToCvContentFallback` are the cohesive pair.
+- **Evidence:** Branch diff; check output quoted above; before/after non-empty line counts `cv-content.util.ts` 829 -> 622, new `cv-parse.util.ts` 237, spec 445 -> 482.
+
+### 2026-08-04, Discover's location rules separate from their vocabulary
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-location-tables`, from `main` (`096159d`)
+- **Commits:** one refactor commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Continue the Angular half of the campaign on a file that needs no click-through, since the tailor-step branch (PR #309) is parked awaiting one.
+- **Completed:** `discover-location.ts` **910 -> 128**. The vocabulary - `COUNTRY_DEFS`, `US_STATES`, `CA_PROVINCES` and the three table interfaces - moved to `discover-location-tables.ts`; the matching rules stayed. The tables file imports `RegionKey` with `import type`, so the cycle between the two modules is erased at compile time. Four new tests assert rules the table had only stated in comments.
+- **Not completed:** Nothing in this task. Separately, PR #309 (`refactor/jobs-tailor-step`) is still unmerged and still waiting on the maintainer's click-through; CI on it is green.
+- **Files or packages changed:** `apps/desktop/src/app/pages/discover/discover-location.ts`, new `discover-location-tables.ts`, new `discover-location-tables.spec.ts`, `tools/check-file-size-budgets.mjs`, `tools/check-quality-guardrails.test.mjs`, `docs/governance/CODE_QUALITY.md`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings, all pre-existing; the warning-line count is identical to the same command on a stashed tree), `nx test desktop` (1195 passed, 94 suites), `node --test tools/check-quality-guardrails.test.mjs` (8 passed, including the new exclusion test), `npm run quality:file-size` (passed), `npm run quality:file-size:all` (TypeScript source 19 over budget, down from 20), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `npm run desktop:dev` - nothing here renders; the change is a pure module move behind `classifyLoc`, which has its own unit tests.
+- **Losslessness evidence:** Both moved regions were extracted by line range to scratch files before deletion and diffed against the new module. The interfaces are byte-identical; the tables differ only by the `export` keyword added to five declarations, and nothing else.
+- **Mutation testing:** Applied by absolute path with an applied/not-applied assertion, restored from backup with a byte-exact diff. M1: give Qatar Saudi Arabia's `sa` code - killed by the duplicate-code test. M2: hoist the region-generic `Europe` entry to the front of `COUNTRY_DEFS` - killed by the ordering test. Suite returned to 1195 passing after each.
+- **Governance decision, and it was the maintainer's:** the extracted vocabulary is 811 lines, and the gate rejects a **new** file over budget - so the split as designed could not land. The choice was between splitting the list by continent into seven files, excluding it as data, or abandoning the split. Asked, and the maintainer answered "as you recommend", which authorised the recommended option: exclude it, beside the translation catalogue that is excluded for the same reason. `CODE_QUALITY.md` now states the condition under which a vocabulary earns that - a flat table, no branching, no functions, every rule that reads it in another module - and the reasoning: splitting a rules module away from its table is the refactor the budget should be pushing for, and a budget that then rejects the table punishes exactly that move.
+- **The exclusion is tested, because an exclusion that leaks stops measuring the code it exists to protect.** The new guardrail test asserts the vocabulary passes at 900 lines while the rules module beside it fails at 401, the table's own spec file fails at 700, and a same-named file in another folder fails at 401. The pattern is anchored to the exact path; `*-tables.ts` buys nothing.
+- **Privacy/security impact:** None. No storage, network, IPC or permission change. `classifyLoc` is pure and runs on text the app already holds.
+- **Decisions and assumptions:** The tables file imports `RegionKey` as a type-only import rather than moving the type across, because `RegionKey` is the vocabulary the Discover page and its filters speak, not a detail of the table. The interfaces `CityDef`, `CountryDef` and `RegionCode` describe the table's own shape and went with it.
+- **Risks or compatibility impact:** Low for the move - one list, no rule touched, and `classifyLoc`'s existing spec still passes. The governance change is the part worth watching: it is the first non-i18n exclusion, and the test above is what keeps it from widening by accident.
+- **Open issues or blockers:** PR #309 needs the maintainer's walkthrough before it can merge. `tools/check-file-size-budgets.mjs` is now 377/400 and near its own budget.
+- **Next first action:** After PR #309's click-through, take `wizardExportApplyStep` (~120 template lines) out of the jobs page. If the click-through has not happened, `apps/desktop/src/app/pages/documents/cv-content.util.ts` (829/400) is the next file that needs no UI verification.
+- **Evidence:** Branch diff; check output quoted above; before/after non-empty line counts `discover-location.ts` 910 -> 128, new `discover-location-tables.ts` 811 (excluded), new spec 72.
+
+### 2026-08-04, discover geography splits, and a silent market-widening gap is closed
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-geo-countries`, from `main` (`3f66918`)
+- **Commits:** one refactor commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Bring `apps/desktop/src-tauri/src/commands/discover_geo.rs` under the 500-line Rust source budget, which closes the Rust half of the file-size campaign.
+- **Completed:** `discover_geo_countries.rs` takes `US_STATE_NAMES`, `US_STATE_CODES`, `country_tokens` and `KNOWN_COUNTRY_CODES`. What stays is the region scopes, the pickable local markets, `parse_local_markets`, `loc_matches` and `location_signal`. `discover_filter.rs` now imports the two country symbols from the module that defines them. Three tests were added to the new module, one of them closing a real gap found by mutation testing.
+- **Not completed:** No Angular work. The handoff requires a maintainer decision on how UI changes get verified before any of it starts, and that decision has not been made.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/discover_geo.rs`, new `discover_geo_countries.rs`, `discover_filter.rs`, `commands/mod.rs`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch: `cargo clippy --all-targets -- -D warnings` (clean), `cargo test --lib` (345 passed, 0 failed, 1 ignored), `cargo fmt` (applied), `npm run quality:file-size` (passed), `npm run quality:file-size:all` (`discover_geo.rs` no longer listed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `tauri dev`. No Angular, IPC surface, migration or provider behaviour changed.
+- **Losslessness evidence:** Both moved regions were extracted by line range to scratch files before deletion and diffed against the same regions of the new module. Byte-identical. One deliberate deviation, diffed separately and confirmed identical in content: the doc paragraph explaining `country_tokens` and the German city lists sat above `US_STATE_NAMES`, one item away from the function it describes. It now sits on `country_tokens`. No code moved with it.
+- **Mutation testing:** Applied by absolute path with an applied/not-applied assertion before each run, and restored from a backup copy with a byte-exact diff afterwards. M1: return the bare `ca` token to Canada - killed by `canada_gives_up_the_bare_ca_token_to_california`. M2: drop `gb` from `KNOWN_COUNTRY_CODES` - **survived**, and was verified to be a real behaviour change rather than a no-op by reading `elsewhere_tokens`: it skips any region whose list overlaps the selected market, so for a `de` market the European names come only from each country's own entry, and without `gb` a "Remote - London" posting stops matching `elsewhere` and passes on the word "Remote". A test was added; re-running M2 against it now fails, and the suite is back to 345 passing.
+- **Privacy/security impact:** None. No network, storage, permission or IPC change. The geo tables decide which already-fetched postings the user is shown, and nothing here changes what is fetched.
+- **Decisions and assumptions:** The seam was drawn at "which names belong to a code" versus "which names belong to a scope", because those change on different occasions - one when a market or board is added, the other when a continent bucket is redefined. `loc_matches` stayed with the scopes even though the country tables' docs reference it, since it is a matching rule rather than vocabulary.
+- **Risks or compatibility impact:** Low. Pure movement plus three new tests; the only call-site change is one `use` statement in `discover_filter.rs`.
+- **Open issues or blockers:** `AGENTS.md` and the `applye-rust` skill both still state the superseded 800-line Rust budget, replaced on 2026-08-03 by 500 source / 600 tests. Not corrected here, to keep this diff to one seam. The `cli_probe` status-mapping coverage gap from an earlier watch is still open.
+- **Next first action:** Correct the two stale 800-line Rust budget statements in `AGENTS.md` and `.claude/skills/applye-rust/SKILL.md`, then ask the maintainer how Angular UI changes will be verified before opening the Angular half of the campaign.
+- **Evidence:** Branch diff; check output quoted above; before/after source line counts `discover_geo.rs` 522 -> 246, new `discover_geo_countries.rs` 293 source / 68 tests.
+
+### 2026-08-04, the from-link flow gives up the helpers it never owned
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/job-url-web-helpers`, from `main` (`3f66918`)
+- **Commits:** one refactor commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Bring `apps/desktop/src-tauri/src/commands/job_url.rs` under the 500-line Rust source budget by moving out the shared web-payload helpers, without changing any behaviour.
+- **Completed:** Two new modules. `web_text.rs` holds `strip_html` with its entity-decoding and tag-stripping internals plus `xml_tag`, and takes the eight markup tests and the Personio XML test with it. `url_parts.rs` holds `extract_host`, `path_segments` and `titleize_slug`. Four discover modules (`discover_fetch`, `discover_parsers`, `discover_parsers_ats`, `discover_sources`) had been importing these back out of `job_url`, an inversion the split corrects: they now name the module that defines what they use. `host_matches` stayed with the allowlist it serves. `extract_host`, `path_segments` and `titleize_slug` had no tests at all; each now has one, which matters most for `extract_host`, since the string it returns is what the closed-board allowlist is matched against.
+- **Not completed:** The second remaining over-budget Rust file, `commands/discover_geo.rs` at 522/500, is untouched. No Angular work was started; the handoff requires a maintainer decision on how UI changes get verified before any of it begins.
+- **Files or packages changed:** `apps/desktop/src-tauri/src/commands/job_url.rs`, new `web_text.rs`, new `url_parts.rs`, `commands/mod.rs`, `discover_fetch.rs`, `discover_parsers.rs`, `discover_parsers_ats.rs`, `discover_sources.rs`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch: `cargo clippy --all-targets` (clean, no warnings), `cargo test --lib` (345 passed, 0 failed, 1 ignored), `cargo fmt` (applied), `npm run quality:file-size` (passed), `npm run quality:file-size:all` (Rust source now 1/59 over budget, down from 2), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `tauri dev`. No Angular, IPC-surface or database behaviour changed, and the two Tauri commands in `job_url.rs` keep their names and registry entries.
+- **Losslessness evidence:** Every moved block was extracted to a scratch file by line range before deletion and diffed against the same region of the new module afterwards. All four regions - the `strip_html` family, `xml_tag`, `extract_host`, and `path_segments`/`titleize_slug` - are byte-identical.
+- **Mutation testing:** Two mutations, each applied by absolute path with an applied/not-applied assertion before the run. M1: decode `&amp;` first in `decode_entities`, which collapses two escaping layers in one pass - killed by `web_text::tests::decodes_one_escaping_layer_per_round`. M2: drop the port-stripping line in `extract_host` - killed by `url_parts::tests::extracts_the_bare_lowercase_host`, a test that did not exist before this watch. Both files were restored from a backup copy and diffed to prove the restore was byte-exact, and the suite returned to 345 passing.
+- **Privacy/security impact:** None intended, and the security-relevant surface was checked deliberately. The host allowlist, the closed-board list and the safe default of `Unknown` are unchanged; `extract_host` moved without a character changed and is now covered by tests for the port, `user@` prefix, whitespace and case that could otherwise let a crafted URL read as an allowed host. No new network call, file write or permission.
+- **Decisions and assumptions:** Two modules rather than one. Parsing markup and parsing a URL's shape are separate reasons to change, and a single `web_payload.rs` would have bundled them for no benefit beyond one fewer file. Only one seam was taken - the per-board readers and the HTTP client are still in `job_url.rs`, which at 399 has room, and splitting them would have been a second seam in one PR.
+- **Risks or compatibility impact:** Low. Pure code movement plus new tests; no call site changed except the module path in five `use` statements.
+- **Open issues or blockers:** Two documentation files still state the superseded Rust budget: `AGENTS.md` ("Rust modules at 800") and the `applye-rust` skill ("Hard budget: 800 non-empty lines per Rust source or test file"). Both predate the 2026-08-03 change to 500 source / 600 tests and will mislead the next agent. Not fixed here to keep this diff to one seam. Separately, the `cli_probe` status-mapping coverage gap filed in the previous watch is still open.
+- **Next first action:** Split `apps/desktop/src-tauri/src/commands/discover_geo.rs` (522/500), which closes Rust entirely, then correct the two stale 800-line budget statements in `AGENTS.md` and the `applye-rust` skill.
+- **Evidence:** Branch diff; check output quoted above; before/after source line counts `job_url.rs` 580 -> 399, new `web_text.rs` 146 source / 97 tests, new `url_parts.rs` 51 source / 47 tests.
+
+### 2026-08-04, the ATS check's vocabulary separates from its scoring
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/ats-tokenizer-split`, from `main` (`ed69962`)
+- **Pull request:** to open against `main`
+- **Objective:** `ats.rs` at 619/500.
+- **Completed:**
+  - **`ats_tokens.rs` (353).** `tokenize`, `is_stopword` with its English/German table,
+    `is_technical_shape` and `mixed_case_terms`. Most of the file's excess was the stopword list
+    itself, which is data rather than logic and reads as noise inside the scorer.
+  - **`ats.rs` 619 -> 289 source lines, under budget.** What stays is the scoring: term extraction,
+    weighting, coverage and the verdict.
+  - **An inversion undone.** `ats_format.rs` imported `tokenize` back out of `ats.rs`; it now names
+    the module that defines it.
+  - Rust files over budget: **3 -> 2**.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **341 passed, 0 failed, 1 ignored**, up one by the new test below.
+  - `npm run quality:file-size` - passed; `ats.rs` no longer appears in the report.
+  - Line-range check on both moved blocks - byte-identical.
+  - Mutation checks. Dropping the punctuation the tokenizer preserves fails
+    `tokenizer_keeps_technology_names_intact`.
+  - **A second mutation survived and was fixed rather than reported.** Removing the
+    `mixed_case.contains(term)` arm from `is_technical_shape` left all 340 tests green, yet it is a
+    real behaviour change: `postgresql` and `javascript` carry no digit and no symbol, so internal
+    capitals in the posting are the only thing marking them technical. Without that they lose their
+    weight bonus and can drop out of the term list entirely - a silent loss of exactly the keywords
+    a recruiter filter is likeliest to use. Unlike the `cli_probe` gap in the previous watch this
+    one was cheap to close, because the extraction had just made it a pure function in a module with
+    its own tests, so a test was added and the same mutation now fails.
+  - One mutation was left uncovered deliberately: removing the `len() < 2` guard in
+    `mixed_case_terms` changes nothing observable in any fixture and is not worth a test.
+- **Privacy/security impact:** none. Pure string handling, no I/O.
+- **Risks or compatibility impact:** none. No command moved; the `lib.rs` registry is untouched.
+- **Open issues or blockers:** none.
+- **Next first action:** `job_url.rs` at 580/500, then `discover_geo.rs` at 522/500 - the last two
+  Rust files over budget.
+
+### 2026-08-04, the CLI bridge splits into run, probe and install
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/ai-cli-split`, from `main` (`983a33c`)
+- **Pull request:** to open against `main`
+- **Objective:** `ai/cli.rs`, the largest remaining Rust file and one the campaign had never touched.
+- **Completed:**
+  - **`cli_probe.rs` (170).** `CliStatus`, `probe_version`, `cli_health`, `cli_probe`, and the short
+    `VERSION_TIMEOUT` that keeps a `--version` call from hanging Settings. Answers only "what is on
+    this machine"; never runs a prompt.
+  - **`cli_install.rs` (200).** `NPM_PACKAGES`, `npm_package_for`, `CliInstallResult`, `cli_install`
+    and `INSTALL_TIMEOUT`. The only part of the bridge that changes the machine rather than reading
+    it, which is why its safety rules are now the first thing in the file.
+  - **`ai/cli.rs` 668 -> 420 source lines, under budget.** What stays is the inference path: the two
+    adapters, the shared helpers and `run`.
+  - Two commands moved, so `lib.rs` was repointed (`cli_probe`, `cli_install`), and
+    `commands/health.rs` called `crate::ai::cli::cli_health` directly - also repointed.
+  - Rust files over budget: **4 -> 3**.
+- **Files or packages changed:** `ai/cli.rs`, `ai/mod.rs`, `lib.rs`, `commands/health.rs`, two new
+  files, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**, unchanged.
+  - `npm run quality:file-size` - passed, 668 -> 420.
+  - Line-range check on all four moved blocks - byte-identical.
+  - Mutation check on the security-relevant rule: making `cli_install` fall back to the caller's own
+    provider string as the package name - the allowlist bypass - fails
+    `install_refuses_a_provider_that_is_not_on_the_list`.
+  - **A surviving mutation was found and is a real gap, though a pre-existing one.** Changing
+    `cli_probe`'s error arm to report a broken CLI as working leaves all 340 tests green: the test
+    named for that case exercises `probe_version` directly, and the mapping inside `cli_probe`
+    cannot be reached without the real machine. Not fixed here - making it testable means extracting
+    a pure `status_for`, which is a design change and does not belong in a relocation. Raised as its
+    own task. Worst case is cosmetic: Settings showing a broken CLI as working.
+- **Privacy/security impact:** none intended, and none found. The install path's guarantees are
+  unchanged and were re-read line by line during the move: allowlist-only packages, no
+  interpolation of the frontend's provider string into a command, `npm` resolved to an absolute path
+  and run without a shell, stderr truncated before it reaches the UI. The visibility widened during
+  the split (`CliAdapter`, `CliReply`, `resolve_binary`, `truncate_stderr`, `adapter_for`,
+  `not_installed_error`) is `pub(super)` throughout - reachable inside `crate::ai` only, not
+  exported from the crate.
+- **Decisions and assumptions:** two modules in one watch again, for the same reason as the parsers:
+  either cut alone leaves the file over budget, and both express one idea - the file was answering
+  three questions and now answers one.
+- **Risks or compatibility impact:** two commands moved. No name, signature or payload changed, and
+  `tauri::generate_handler!` would not compile against a wrong path.
+- **Open issues or blockers:** none.
+- **Next first action:** `ats.rs` at 619/500, then `job_url.rs` 580 and `discover_geo.rs` 522.
+
+### 2026-08-04, the feed readers split by source family
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-parsers-families`, from `main` (`557dd99`)
+- **Pull request:** to open against `main`
+- **Objective:** take the first target the corrected Rust budget exposed.
+- **Completed:**
+  - **`discover_parsers_ats.rs` (158) plus its tests (91).** Greenhouse, Lever, Ashby and Personio.
+    They share a shape the public feeds do not: a slug-scoped endpoint for one company, so the
+    employer is known before the request is made and each reader takes it as an argument and falls
+    back to it when a posting does not name its own.
+  - **`discover_parsers_nofluffjobs.rs` (194) plus its tests (110).** The only source in the group
+    that needs two requests - its list endpoint carries no description at all - so the list reader,
+    the detail reader and the salary formatter belong together and away from the single-request
+    feeds.
+  - **`discover_parsers.rs` 697 -> 406 source lines, under the 500 budget.** What stays is the
+    shared vocabulary (`RawJob`, `json_str`, `html_to_text`, the RSS helpers, percent-encoding) and
+    the feeds that need one request.
+  - Rust files over budget: **5 -> 4**.
+- **Not completed:** nothing in scope.
+- **Files or packages changed:** `discover_parsers.rs`, `discover_parsers_tests.rs`,
+  `discover_fetch.rs`, `commands/mod.rs`, four new files, `CHANGELOG.md`, this file.
+- **Validation:**
+  - `cargo clippy --all-targets` - clean.
+  - `cargo test --lib` - **340 passed, 0 failed, 1 ignored**, unchanged.
+  - `npm run quality:file-size` - passed; `discover_parsers.rs` no longer appears in the report at
+    all, not even as a near-budget notice.
+  - Line-range check on all four moved blocks - byte-identical.
+  - Mutation checks, both caught: reading the Personio title from the descriptions half instead of
+    the block above them fails two Personio tests; dropping the `{ postings: [...] }` wrapper shape
+    from No Fluff Jobs fails `nofluffjobs_reads_postings_wrapper_shape_and_remote`.
+  - A third mutation was discarded rather than reported as a pass: rewriting the Personio title
+    lookup to read the whole block left every test green, but the title tag precedes
+    `<jobDescriptions>` in the fixture either way, so the mutation changed nothing. A surviving
+    mutation is only evidence when it actually alters behaviour.
+- **Privacy/security impact:** none. Pure relocation; no new I/O, no new dependency, no parser
+  behaviour changed.
+- **Decisions and assumptions:** two modules in one watch rather than the usual one, because either
+  cut alone leaves the file over budget and both express the same idea - grouping readers by what
+  kind of source they read.
+- **Risks or compatibility impact:** none. No command moved, so the `lib.rs` registry is untouched.
+- **Open issues or blockers:** none.
+- **Next first action:** `ai/cli.rs` at 668/500 is the largest remaining Rust file, and unlike the
+  discover group it has never been split. Audit it first with
+  `npm run quality:file-size:all` and a consumer check before choosing a seam.
+
 ### 2026-08-03, the file-size budgets are audited and the Rust one is corrected
 
 - **Status:** complete

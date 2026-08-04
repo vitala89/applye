@@ -101,6 +101,43 @@ test('file-size guard enforces new-file and legacy-file ratchets', (t) => {
   assert.match(result.stderr, /new typescript\/javascript source has 401 lines/i);
 });
 
+/// The excluded paths are the one way a file can be over budget and still pass,
+/// so each one has to be exact. A pattern that leaked - matching any
+/// `*-tables.ts`, or the whole discover folder - would silently stop measuring
+/// the rules module the exclusion exists to keep measurable.
+test('file-size guard excludes the location vocabulary and nothing beside it', (t) => {
+  const directory = createRepository(t);
+  const discover = join(directory, 'apps', 'desktop', 'src', 'app', 'pages', 'discover');
+  mkdirSync(discover, { recursive: true });
+  writeLines(join(discover, 'discover-location-tables.ts'), 900, 'const country');
+  commitAll(directory);
+
+  let result = run(process.execPath, [fileSizeScript], { cwd: directory });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+
+  // Its spec is ordinary source and still measured.
+  writeLines(join(discover, 'discover-location-tables.spec.ts'), 700, 'const check');
+  result = run(process.execPath, [fileSizeScript], { cwd: directory });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /new typescript\/javascript test has 700 lines/i);
+  rmSync(join(discover, 'discover-location-tables.spec.ts'));
+
+  // The rules module beside it is measured, which is the point of the split.
+  writeLines(join(discover, 'discover-location.ts'), 401, 'const rule');
+  result = run(process.execPath, [fileSizeScript], { cwd: directory });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /new typescript\/javascript source has 401 lines/i);
+  rmSync(join(discover, 'discover-location.ts'));
+
+  // And the name alone buys nothing anywhere else.
+  const elsewhere = join(directory, 'apps', 'desktop', 'src', 'app', 'pages', 'jobs');
+  mkdirSync(elsewhere, { recursive: true });
+  writeLines(join(elsewhere, 'discover-location-tables.ts'), 401, 'const copycat');
+  result = run(process.execPath, [fileSizeScript], { cwd: directory });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /new typescript\/javascript source has 401 lines/i);
+});
+
 test('attribution guard accepts a normal commit message and rejects forbidden trailers', (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'applye-attribution-message-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
@@ -153,6 +190,49 @@ test('attribution guard scans branch commits and pull-request text', (t) => {
   );
   assert.equal(result.status, 1);
   assert.match(result.stderr, /generated-by/i);
+});
+
+test('attribution guard skips bot-authored commits but not humans borrowing a bot name', (t) => {
+  const directory = createRepository(t);
+  writeFileSync(join(directory, 'README.md'), '# Fixture\n');
+  commitAll(directory);
+  const base = git(directory, ['rev-parse', 'HEAD']);
+
+  const trailers = ['-m', 'Signed-off-by: dependabot[bot] <support@github.com>'];
+  appendFileSync(join(directory, 'README.md'), '\nBumped.\n');
+  git(directory, ['add', 'README.md']);
+  git(directory, [
+    'commit',
+    '--no-verify',
+    '--quiet',
+    '--author',
+    'dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>',
+    '-m',
+    'chore(deps): bump a dependency',
+    ...trailers,
+  ]);
+
+  let result = run(process.execPath, [attributionScript, '--base', base], { cwd: directory });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+
+  // The bot username alone is not enough: the address has to match as well.
+  git(directory, ['reset', '--hard', base]);
+  appendFileSync(join(directory, 'README.md'), '\nBumped.\n');
+  git(directory, ['add', 'README.md']);
+  git(directory, [
+    'commit',
+    '--no-verify',
+    '--quiet',
+    '--author',
+    'dependabot[bot] <helper@example.com>',
+    '-m',
+    'chore(deps): bump a dependency',
+    ...trailers,
+  ]);
+
+  result = run(process.execPath, [attributionScript, '--base', base], { cwd: directory });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /signed-off-by/i);
 });
 
 /**

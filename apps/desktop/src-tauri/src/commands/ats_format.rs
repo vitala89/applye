@@ -8,7 +8,8 @@
 //!
 //! Everything here is pure and deterministic: same CV, same findings, always.
 
-use super::ats::{tokenize, AtsFinding, Severity};
+use super::ats::{AtsFinding, Severity};
+use super::ats_tokens::tokenize;
 
 /// Section headings a parser recognises, per language. A CV whose headings are
 /// all creative ("What I've been up to") parses into one undifferentiated blob.

@@ -7,11 +7,15 @@ pub mod applications;
 pub mod archetypes;
 pub mod ats;
 pub mod ats_format;
+pub mod ats_tokens;
 pub mod discover;
 pub mod discover_fetch;
 pub mod discover_filter;
 pub mod discover_geo;
+pub mod discover_geo_countries;
 pub mod discover_parsers;
+pub mod discover_parsers_ats;
+pub mod discover_parsers_nofluffjobs;
 pub mod discover_sources;
 pub mod documents;
 pub mod documents_blocks;
@@ -43,6 +47,8 @@ pub mod tailoring_pdf;
 pub mod tailoring_theme;
 pub mod tracker;
 pub mod untrusted;
+pub mod url_parts;
+pub mod web_text;
 
 use tauri::State;
 

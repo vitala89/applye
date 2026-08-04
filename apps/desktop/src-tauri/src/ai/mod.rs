@@ -5,6 +5,8 @@
 
 pub mod api;
 pub mod cli;
+pub mod cli_install;
+pub mod cli_probe;
 pub mod skills;
 
 use serde::{Deserialize, Serialize};

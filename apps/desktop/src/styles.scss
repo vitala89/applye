@@ -13,6 +13,12 @@
 @use './app/pages/documents/editor-shell' as *;
 @use './app/pages/discover/discover-controls' as *;
 
+// Shared onboarding-wizard vocabulary (headings, card/badge and form
+// primitives, status pieces). Emitted once here for the same reason: the
+// wizard's six steps are being extracted into their own components, and a
+// class defined on the page does not reach a child extracted out of it.
+@use './app/core/onboarding/onboarding-shell' as *;
+
 // CV theme fonts. The preview/editor sets `font-family` to the theme font by
 // name (e.g. "Lato"); without these @font-face rules the browser can't find it
 // and falls back to its default serif, so the editor looked nothing like the

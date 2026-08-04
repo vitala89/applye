@@ -150,6 +150,22 @@ extracted out of it. Every page split has to decide what happens to the classes 
   is the cost being accepted in exchange for a single definition.
 - Doing the hoist **before** the first cut is usually cheaper than during it, because it shrinks the
   page's stylesheet on its own and makes every later cut of the same page mechanical.
+- **Check the names for collisions before emitting the partial unwrapped.** "Global and
+  unencapsulated" is only a safe trade when the page's vocabulary is distinctive. `_editor-shell.scss`,
+  `_discover-controls.scss` and `_onboarding-shell.scss` all carry prefixes (`dv-`, `ob__`), so
+  nothing else can match them. Profile's vocabulary is generic, and seven of its shared names -
+  `eyebrow`, `muted`, `status`, `status--error`, `section`, `btn-ghost`, `field` - are already defined
+  with different values by eight other stylesheets. Emitted unwrapped, the partial hands those pages
+  every property they do not set themselves, and no gate here catches it.
+- **A page whose names are generic nests the whole partial under the page's own root selector**
+  instead. `_profile-shell.scss` is `.profile { ... }` around everything it owns: no other page can
+  match it, and a child extracted out of the page still renders inside `.profile`, so it still
+  inherits. Prefixing is still preferable where the names are already distinctive - the wrapper costs
+  a specificity level and only works for pages with a single root element.
+- **When a class moves, its modifiers move with it.** A base and its modifier that both set the same
+  property are decided by source order while they share a file; split them across a global partial and
+  a component stylesheet and the winner is decided by style-injection order instead. Profile's
+  `.status` and `.status--warn` both set `color`, so both were hoisted.
 
 ### Prove a stylesheet move was lossless
 
@@ -160,6 +176,11 @@ wearing an empty-state layout. Compare declarations instead:
 ```bash
 npm run quality:style-move -- --base main <page.scss> <child.scss> <partial.scss>
 ```
+
+For a partial nested under a page root, add `--page-scope '.page-root'`. Every hoisted rule gains an
+ancestor, so without it the check reports the whole vocabulary as lost and an identical set as
+gained. The flag strips exactly one leading ancestor, so a declaration genuinely dropped inside the
+wrapper is still reported - that case has its own test.
 
 Pass every file the rules could have moved between. On a move-only change it must report nothing
 lost and nothing gained; anything it prints is either a real loss or a deliberate change that

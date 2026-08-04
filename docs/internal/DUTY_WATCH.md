@@ -44,6 +44,71 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's shared styles are hoisted, and the hoist turned out to be a decision
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-shell-styles`
+
+**The handoff said this was no longer a decision. It was.** `CODE_QUALITY.md` says shared page styles
+go into a global partial, and the three existing partials do exactly that. What none of them had to
+face is that **Profile's vocabulary is unprefixed**. Measured, not assumed: of the 95 classes the
+template uses, 30 appear in more than one block, and **7 of those 30 are already defined with
+different values by 8 other stylesheets** - `eyebrow` (8 files), `muted` (7), `status--error` (4),
+`status` (3), `section` (2), `btn-ghost` (2), `field` (1). They are not interchangeable: Profile's
+`.eyebrow` sets `font-weight`, Settings' sets `margin` and no weight, Dashboard's uses literal `11px`.
+Emitted unwrapped, the partial would have handed Settings a font-weight it never set. Component styles
+still win on specificity, so only the properties a page leaves unset would have changed - which is
+precisely the class of regression that ships green.
+
+**Decisions taken (Grilling gate, one round, one question):**
+
+1. **The partial nests under `.profile`** rather than prefixing the classes or hoisting only the safe
+   ones. Nothing outside the page can match, and a child extracted later still renders inside
+   `.profile`. Cost accepted: a new convention, so `CODE_QUALITY.md` was amended in the same PR.
+   The rejected options are recorded there too - a full `pf-` rename was judged a larger and riskier
+   diff, and hoisting only the 23 safe names would have meant copying the other 7, which is the thing
+   that lost `.dv-input` its body.
+2. **A modifier moves with its base.** `.status` and `.status--warn` both set `color`. While they
+   share a file, source order decides; split across a global partial and a component stylesheet, the
+   winner is style-injection order. Found by inspection, not by a gate.
+3. `.eyebrow, .eyebrow-row` was **moved whole rather than split**. Splitting a grouped selector is the
+   exact shape that produced the `.dv-input` incident, and `.eyebrow-row` is Profile vocabulary the
+   archetypes child will need anyway.
+
+**Tooling.** `quality:style-move` could not read this move at all: every hoisted rule gains an
+ancestor, so it reported the whole vocabulary lost and an identical set gained. Added
+`--page-scope <selector>`, which strips exactly one leading ancestor from the after side. Two tests
+were added: one proving it sees the hoist as a move (and that the bare run does not), and one proving
+a declaration genuinely dropped **inside** the wrapper is still reported, so the flag cannot become a
+blanket excuse. `quality:test` goes 12 -> 14.
+
+**Verification, including the click-through the last three cuts did not have.**
+
+- `quality:style-move --base main --page-scope '.profile'`: **lossless**.
+- **Walked in the running app.** Profile at `localhost:4200` renders fully styled - collapse cards,
+  eyebrows, `btn-dashed`, info glyphs, section cards. Computed styles checked directly: `.eyebrow`
+  weight 500 / 11px / uppercase, `.collapse-card` its border and radius, `.section--card` its padding,
+  and **`.status--warn` computes to the warning colour, not the base colour** - decision 2 verified
+  live rather than argued.
+- **Collision proof:** all **36** hoisted rules compile to `.profile`-scoped selectors, and `/settings`
+  has no `.profile` ancestor, so none can match. This is structural. Settings' own content did not
+  render (no Tauri IPC in the browser), so this is not a computed-style comparison on that page.
+- Gates: `nx run desktop:type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1250 passed**), `nx build desktop`, `npm run quality:test` (**14 passed**),
+  `npm run quality:file-size` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean).
+
+**Sizes.** `profile.component.scss` **733 -> 482** (budget 400, still over). `_profile-shell.scss` is
+313 (within budget). 36 rules, 251 lines moved.
+
+**Housekeeping.** The long-running `npm run desktop:dev` (PID 43739) is still up and holds the
+`desktop:serve` nx lock, so a second dev server cannot start - `preview_start` on port 4201 blocks
+behind it. It serves whatever branch the tree is on, which is how the walk above was possible.
+
+**Next first action.** The five Profile section cuts are now mechanical. Take **target roles** first
+(113 template lines): it was audited and discarded once because 23 of its 29 classes were still used
+by the page, and every one of those is now in the partial.
+
 ### 2026-08-05, the onboarding wizard's Review step becomes a component
 
 - **Status:** complete

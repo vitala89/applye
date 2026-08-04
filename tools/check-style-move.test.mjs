@@ -27,8 +27,8 @@ function createRepository(t) {
   return directory;
 }
 
-function runCheck(directory, paths) {
-  return spawnSync(process.execPath, [styleMoveScript, '--base', 'main', ...paths], {
+function runCheck(directory, paths, extra = []) {
+  return spawnSync(process.execPath, [styleMoveScript, '--base', 'main', ...extra, ...paths], {
     cwd: directory,
     encoding: 'utf8',
     // Node resolves `sass` from this repository's install, not the fixture's.
@@ -166,6 +166,91 @@ test('does not treat a declaration moved behind a media query as unchanged', (t)
   );
 
   const result = runCheck(directory, ['styles/page.scss']);
+  assert.equal(result.status, 1, result.stdout);
+  assert.match(result.stdout, /LOST\s+\.card/);
+  assert.match(result.stdout, /- color: red/);
+});
+
+/// A page whose vocabulary is generic cannot hoist into an unwrapped global
+/// partial without restyling every other component that happens to use the same
+/// class name, so its partial nests under the page's own root selector. Every
+/// hoisted rule then gains an ancestor, and without `--page-scope` the check
+/// sees that as the whole vocabulary being lost and something else gained.
+test('--page-scope sees a hoist into a page-wrapped partial as a move', (t) => {
+  const directory = createRepository(t);
+  seed(directory);
+
+  writeFileSync(
+    join(directory, 'styles', 'page.scss'),
+    `.first {
+  min-height: 60vh;
+  display: flex;
+}
+`,
+  );
+  writeFileSync(
+    join(directory, 'styles', 'shell.scss'),
+    `.page {
+  .card {
+    padding: 10px;
+    color: red;
+  }
+
+  .field,
+  .select {
+    height: 30px;
+    border: 1px solid grey;
+  }
+}
+`,
+  );
+
+  const paths = ['styles/page.scss', 'styles/shell.scss'];
+  // Without the flag the ancestor makes every hoisted selector look new.
+  const bare = runCheck(directory, paths);
+  assert.equal(bare.status, 1, bare.stdout);
+  assert.match(bare.stdout, /LOST\s+\.card/);
+  assert.match(bare.stdout, /GAINED\s+\.page \.card/);
+
+  const scoped = runCheck(directory, paths, ['--page-scope', '.page']);
+  assert.equal(scoped.status, 0, scoped.stdout);
+  assert.match(scoped.stdout, /Lossless/);
+  assert.match(scoped.stdout, /one leading `\.page` ancestor ignored/);
+});
+
+/// The flag must not become a blanket excuse: it strips one ancestor, so a
+/// declaration genuinely dropped during a page-scoped hoist is still reported.
+test('--page-scope still reports a declaration lost inside the wrapper', (t) => {
+  const directory = createRepository(t);
+  seed(directory);
+
+  writeFileSync(join(directory, 'styles', 'page.scss'), '');
+  writeFileSync(
+    join(directory, 'styles', 'shell.scss'),
+    `.page {
+  .card {
+    padding: 10px;
+  }
+
+  .field,
+  .select {
+    height: 30px;
+    border: 1px solid grey;
+  }
+
+  .first {
+    min-height: 60vh;
+    display: flex;
+  }
+}
+`,
+  );
+
+  const result = runCheck(
+    directory,
+    ['styles/page.scss', 'styles/shell.scss'],
+    ['--page-scope', '.page'],
+  );
   assert.equal(result.status, 1, result.stdout);
   assert.match(result.stdout, /LOST\s+\.card/);
   assert.match(result.stdout, /- color: red/);

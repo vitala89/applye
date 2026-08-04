@@ -14,10 +14,22 @@
 //
 // Usage:
 //   node tools/check-style-move.mjs --base main <stylesheet> [<stylesheet> ...]
+//   node tools/check-style-move.mjs --base main --page-scope '.profile' <stylesheet> ...
 //
 // Pass every file the rules may have moved between: the page, each new child,
 // and any shared partial. Files that do not exist on one side are skipped, so
 // a child created by the split is handled without extra flags.
+//
+// `--page-scope <selector>` is for the case where a page's shared vocabulary is
+// generic enough that a global partial would collide with another component's
+// identically named class - Profile's `.eyebrow` and `.muted`, against the eight
+// other stylesheets that define their own. Those partials nest under the page's
+// root selector, so every hoisted rule gains an ancestor and no longer compares
+// equal by name. The flag strips exactly that one leading ancestor from the
+// after side before comparing, which lets the declaration check still see the
+// move. It deliberately narrows what the rule matches, so it is an assertion
+// that the narrowing was intended - only pass it when the partial really is
+// page-scoped on purpose.
 
 import { execFileSync } from 'node:child_process';
 import { dirname, relative, resolve } from 'node:path';
@@ -32,15 +44,42 @@ const REPO_ROOT = process.cwd();
 function parseArgs(argv) {
   const paths = [];
   let base = 'main';
+  let pageScope = null;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--base') {
       base = argv[i + 1];
+      i += 1;
+    } else if (argv[i] === '--page-scope') {
+      pageScope = argv[i + 1];
       i += 1;
     } else {
       paths.push(argv[i]);
     }
   }
-  return { base, paths };
+  return { base, paths, pageScope };
+}
+
+/**
+ * Drops one leading ancestor from every selector that gained it, so a rule
+ * hoisted into a page-scoped partial still compares against the rule it came
+ * from. Only the outermost ancestor is removed, and only when it is exactly the
+ * scope - `.profile .eyebrow` becomes `.eyebrow`, while `.profile-head` and an
+ * already-nested `.profile .card .eyebrow` are left alone.
+ */
+function unscope(map, scope) {
+  if (!scope) return map;
+  const out = new Map();
+  for (const [key, decls] of map) {
+    // Keys carry any qualifying at-rule ahead of a ` | `; the selector is last.
+    const cut = key.lastIndexOf(' | ');
+    const prefix = cut === -1 ? '' : key.slice(0, cut + 3);
+    const selector = cut === -1 ? key : key.slice(cut + 3);
+    const stripped = selector.startsWith(`${scope} `) ? selector.slice(scope.length + 1) : selector;
+    const next = prefix + stripped;
+    if (!out.has(next)) out.set(next, new Set());
+    for (const d of decls) out.get(next).add(d);
+  }
+  return out;
 }
 
 function atRef(ref, path) {
@@ -130,7 +169,7 @@ function collect(paths, read) {
 }
 
 function main() {
-  const { base, paths } = parseArgs(process.argv.slice(2));
+  const { base, paths, pageScope } = parseArgs(process.argv.slice(2));
   if (paths.length === 0) {
     console.error('Usage: node tools/check-style-move.mjs --base <ref> <stylesheet> ...');
     process.exit(2);
@@ -138,13 +177,16 @@ function main() {
 
   const rel = paths.map((p) => relative(REPO_ROOT, resolve(p)));
   const before = collect(rel, (p) => atRef(base, p));
-  const after = collect(rel, (p) => {
-    try {
-      return readFileSync(resolve(REPO_ROOT, p), 'utf8');
-    } catch {
-      return null;
-    }
-  });
+  const after = unscope(
+    collect(rel, (p) => {
+      try {
+        return readFileSync(resolve(REPO_ROOT, p), 'utf8');
+      } catch {
+        return null;
+      }
+    }),
+    pageScope,
+  );
 
   const lost = [];
   const gained = [];
@@ -161,6 +203,9 @@ function main() {
 
   console.log(`Style move check against \`${base}\`, across ${rel.length} stylesheet(s):`);
   for (const p of rel) console.log(`  - ${p}`);
+  if (pageScope) {
+    console.log(`  (one leading \`${pageScope}\` ancestor ignored on the after side)`);
+  }
 
   if (lost.length === 0 && gained.length === 0) {
     console.log('Every selector carries the same declarations it did before. Lossless.');

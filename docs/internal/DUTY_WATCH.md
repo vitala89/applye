@@ -44,6 +44,26 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the last two campaign targets are audited, and one of them is not a split at all
+
+- **Status:** complete - audit only, no code changed
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `docs/campaign-audits`, from `main` (`030dd6c`)
+- **Commits:** one commit
+- **Pull request:** opened against `main`
+- **Objective:** Audit `cover-letter-detail` and `cv-preview`, the last two file-size targets never examined, so the campaign is planned end to end rather than one file ahead.
+- **Cover letter: the biggest single win in the campaign, and it is deduplication rather than relocation.** `cover-letter-detail.component.html` is 911/300. Its edit mode divides into a header (92 lines), a region card (51), an availability card (54), a style card (131), the blocks region (530), a per-block style popover (56) and preview mode (98). The blocks region is **seven copies of one structure**: recipient (95), date (50), subject (67), greeting (67), body (113), closing (67), signature (69). Normalising the block key out of the markup, **greeting and closing differ by two lines out of 67**, and that difference is `content().greeting` against `content().closing` - which an index or an input erases entirely. Date differs from greeting by 21 lines, and every one of them is the regenerate button date does not have, so a `regeneratable` input covers it. Five of the seven blocks - date, subject, greeting, closing, signature, about **320 lines** - collapse into one child of roughly 70 lines used five times. Recipient and body are genuinely different shapes (address fields, repeatable paragraphs) and want their own treatment. This is the only target where the cut removes duplication instead of moving it, and it takes the template to roughly 440.
+- **CV preview: do not split it.** `cv-preview.component.html` is 895/300 and looks like nine `ng-template` atoms - header (137), summary (72), section title (19), skills (113), experience head (228), experience bullet (63), education (161), languages (78). The symbol audit says the opposite of what the shape suggests: **every atom shares 20 to 25 symbols with the rest of the template and owns between 3 and 10.** They all speak one inline-editing protocol - `isEditingLeaf`, `leafPath`, `leafDraft`, `leafCss`, `onLeafInput`, `onLeafEscape`, `finishLeafEdit`, `leafChipLabel`, `leafAriaLabel`, `selectLeaf`, `onSelectKey`, `selectAriaLabel`, `selectable` - repeated per field. Extracting an atom would mean threading about twenty members through an input boundary, which is worse than the file being long. The actual repetition is **17 near-identical `@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs of 25 to 40 lines each**, well over half the file. The seam here is one editable-leaf component or directive that owns the protocol, not nine atom components. That is a design change rather than a move, so it does not belong in this campaign without being decided on its own terms.
+- **Not completed:** No code changed. The onboarding CLI cut named as the next action in the previous watch is blocked until `refactor/onboarding-shell-styles` merges - the child consumes the partial that branch adds, and stacked pull requests break CI here with `fatal: ambiguous argument 'main'`.
+- **Validation:** `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). Documentation only, so no build or test target was run.
+- **Files or packages changed:** this log.
+- **Privacy/security impact:** None.
+- **Decisions and assumptions:** The block-similarity measurement erases the block key and the section comment before diffing. That is the right normalisation for "would one parameterised component serve both", and it would hide a difference that happens to be spelled with the block name - none was found in the two lines that remained.
+- **Risks or compatibility impact:** None. Nothing was changed.
+- **Open issues or blockers:** Four pull requests are open and unmerged: #320 (Discover drawer, awaiting the data half of its click-through), #321 (handoff refresh), #322 (the style-move check and the shared-style rule), #323 (the onboarding hoist). The campaign's next code step waits on #323.
+- **Next first action:** Merge #323, then take the onboarding CLI block (template lines 157-420, 260 non-empty). After that, the cover-letter block component, which is the largest remaining win.
+- **Evidence:** Seam-audit and style-audit output over both templates; normalised block diffs; occurrence counts for the leaf-editing protocol (`isEditingLeaf` 17, `onLeafInput` 17, `onLeafEscape` 17, `leafChipLabel` 17, `finishLeafEdit` 15, `selectLeaf` 40).
+
 ### 2026-08-04, the onboarding wizard's shared styles are defined once
 
 - **Status:** complete

@@ -10,6 +10,10 @@ is the single source of truth; this file tracks what changed at each tag.
 
 ## [Unreleased]
 
+### Changed
+
+- **Exported documents are named in words, not in slug.** The save dialog offered `jetbrains_-_senior_software_developer_-_tailored_cv.pdf` for a document labelled "JetBrains - Senior Software Developer - Tailored CV": the old rule lower-cased everything, kept hyphens and turned spaces into underscores, so every separator came out as the unreadable `_-_`. The same document is now offered as **`JetBrains Senior Software Developer Tailored CV.pdf`** - the label's own words, single spaces between them, no hyphens and no underscores. Case is kept, because "JetBrains" is a name and "jetbrains" is not, and letters outside ASCII survive for the same reason: a company called Zürich no longer exports as `z_rich`. Characters a filesystem refuses are dropped rather than replaced, so removing one does not widen the gap between two words, and a name can no longer begin or end with a dot or a space - legal to write on macOS and Linux, silently trimmed by Windows. This is only the suggested name; the save dialog still lets you type anything.
+
 ### Fixed
 
 - **Saving an edited CV no longer fails with `FOREIGN KEY constraint failed`.** `document_library.theme_id` is a real foreign key into `cv_themes`, and the CV editor always writes a theme - its picker defaults to Classic, id 1. On a database whose `cv_themes` row is missing, that made **every** CV save fail, permanently, with a raw SQLite error (`code: 787`) the user could do nothing about. `cv_templates` and `template_id` have the same shape. Both tables are pure lookup mirrors of constants that also live in `libs/core`, so a migration now puts the built-in rows back where they are absent; it is a no-op on a database that already has them. What emptied them in the first place is not established and is worth watching - this makes the app able to recover instead of bricking its own save path. Found on a real install whose `cv_themes` and `cv_templates` were both empty while both seed migrations were recorded as applied, with checksums matching their files byte for byte.

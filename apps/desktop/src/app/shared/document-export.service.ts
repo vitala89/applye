@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DbService } from '@applye/data';
 import { DocumentLibraryItem } from '@applye/core';
+import { exportFileName } from './export-filename';
 import { TranslateService } from '@applye/i18n';
 import { ReviewDocumentKind } from './document-gen.service';
 
@@ -108,13 +109,8 @@ export class DocumentExportService {
     void this.db.revealInFolder(path);
   }
 
-  /** Suggested save name: the document label reduced to a filesystem-safe slug,
-   * falling back to the document type when nothing survives. */
+  /** Suggested save name - see `export-filename.ts` for the rule and why. */
   private filename(item: DocumentLibraryItem, format: ExportFormat): string {
-    const base = (item.label || item.docType)
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    return `${base || item.docType}.${format}`;
+    return exportFileName(item.label ?? '', item.docType, format);
   }
 }

@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, the campaign's handoff is rewritten around what the session learned
+
+- **Status:** complete - documentation only
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `docs/next-session-handoff-2`, from `main` (`664d8f2`)
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** Leave the next watch a handoff that reflects the rules this session added, not the ones it started with.
+- **What the session actually changed, and why the old handoff is now misleading.** It opened with 44 files over budget, one open PR and two open questions - how to verify a stylesheet move, and where a split page's shared styles go. Both are now settled and enforced in the repository rather than carried in a prompt: `npm run quality:style-move` compares declarations rather than selector names, and `CODE_QUALITY.md` says shared classes go to a page-scoped partial emitted once from `styles.scss`. The old handoff still described the profile hoist as a decision to put to the maintainer; it is not one any more, and a fresh agent reading it would stop for no reason.
+- **Eight pull requests merged:** #320 (Discover's Sources drawer, plus the fix for the rule it dropped), #321, #322 (the style-move check and the shared-style rule), #323 (onboarding's shared styles hoisted), #324 (the last two seam audits), #325 (onboarding's API-key card), #326 (the cover letter's five blocks as one component), #327 (onboarding's CLI panel).
+- **Result:** `discover.component` 1915/1070/1069 -> **1464/808/890**. `onboarding.component` 878/1002/1045 -> **628/797/718**. `cover-letter-detail` 911/653/410 -> **669/644/332**, the first file taken from over budget to **under** rather than merely down. Repository total 44 -> **43 files over budget**, which understates it: the count falls slowly because these cuts create new files, all within budget.
+- **Completed:** `docs/internal/NEXT_SESSION_PROMPT.md` rewritten. It now records the two enforced rules, the class-side audit step the method was missing, the backwards-diff technique, what is ready to cut with numbers, what is blocked and no longer blocked, the one target that should **not** be split, and - stated plainly - the three cuts that shipped without a click-through.
+- **The honest part.** Three merged cuts have never been walked in a running app: Discover's drawer (the maintainer accepted that risk explicitly), onboarding's two AI panels (gated in `app.ts`, so a browser cannot reach them), and the cover letter's blocks (routed, but the browser has no database). The handoff says so, says why the browser cannot substitute, and says walking them is worth more than the next cut.
+- **Validation:** `npm run quality:file-size` (no changed source files), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). Documentation only, so no build or test target was run.
+- **Files or packages changed:** `docs/internal/NEXT_SESSION_PROMPT.md`, this log.
+- **Privacy/security impact:** None.
+- **Decisions and assumptions:** None taken. The handoff records decisions already made rather than proposing new ones.
+- **Risks or compatibility impact:** None.
+- **Open issues or blockers:** The three un-walked cuts. The two follow-up bugs found earlier and left out of their PRs (the stale CV view after its page is replaced, and the abort on a database newer than the app). Nine GitHub advisories on the default branch, 1 high.
+- **Next first action:** Onboarding's resume step (128 template lines, 11 symbols, 7 exclusive) - its shared styles are already hoisted, so it should be mechanical. Audit its class side first; both AI panels needed services because the wizard read their state back.
+- **Evidence:** `npm run quality:file-size:all` (43 over budget); the merge list above; before/after counts from each cut's own watch entry.
+
 ### 2026-08-04, the onboarding wizard stops containing its AI panels
 
 - **Status:** complete - code complete and gated, without a click-through

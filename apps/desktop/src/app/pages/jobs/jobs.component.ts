@@ -50,7 +50,7 @@ import {
   FinalChecksService,
   inferDocumentRegion,
 } from '../../shared/final-checks.service';
-import { DocumentExportService, ExportFormat } from '../../shared/document-export.service';
+import { DocumentExportService } from '../../shared/document-export.service';
 import { TailorContext, TailoringService } from '../../shared/tailoring.service';
 import { CvGapDialogService } from '../../shared/cv-gap-dialog.service';
 import { JobScoringService, ScoreContext } from '../../shared/job-scoring.service';
@@ -72,6 +72,7 @@ import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
+import { JobExportApplyStepComponent } from './job-export-apply-step/job-export-apply-step.component';
 import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';
 import { JobDocumentCardsComponent } from './job-document-cards/job-document-cards.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
@@ -91,6 +92,7 @@ import { baseCvChoices, documentReviewLanguageFor } from './job-document-default
     JobMetaCardComponent,
     JobDocumentCardsComponent,
     JobTailorStepComponent,
+    JobExportApplyStepComponent,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
@@ -651,13 +653,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     void this.router.navigate(['/documents/cover-letter', result.document.id]);
   }
 
-  /** Aliases onto `DocumentExportService`. Several component methods reset the
-   * status line directly, so these stay the same writable signals. */
-  readonly exporting = this.exportSvc.exporting;
-  readonly exportStatus = this.exportSvc.status;
-  readonly exportError = this.exportSvc.error;
-  readonly lastExport = this.exportSvc.lastExport;
-
   readonly parsing = this.intake.parsing;
   readonly scoring = this.scoreSvc.running;
 
@@ -1090,8 +1085,8 @@ export class JobsComponent implements OnInit, OnDestroy {
   async startTailoring(): Promise<void> {
     // State a tailoring run invalidates but does not own: the export status
     // line, the post-tailor rescore, and the final checks.
-    this.exportStatus.set('');
-    this.lastExport.set(null);
+    this.exportSvc.status.set('');
+    this.exportSvc.lastExport.set(null);
     this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
     this.finalChecksSvc.reset();
@@ -1150,8 +1145,8 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   resetWizard(): void {
     this.tailorSvc.reset();
-    this.exportStatus.set('');
-    this.exportError.set(false);
+    this.exportSvc.status.set('');
+    this.exportSvc.error.set(false);
     this.tailorScore.clear(this.job()?.id);
     this.postTailorSaved.set(false);
   }
@@ -1165,22 +1160,5 @@ export class JobsComponent implements OnInit, OnDestroy {
   startOver(): void {
     this.resetWizard();
     this.wizardNav.goTo(this.job()?.id, 1);
-  }
-
-  doExport(kind: ReviewDocumentKind, format: ExportFormat): Promise<void> {
-    return this.exportSvc.run(
-      kind,
-      format,
-      kind === 'cv' ? this.linkedCv() : this.linkedCoverLetter(),
-      (committed) => this.linkedDocs.commit(committed),
-    );
-  }
-
-  openExportedFile(path: string): void {
-    this.exportSvc.openFile(path);
-  }
-
-  revealExportedFile(path: string): void {
-    this.exportSvc.revealFile(path);
   }
 }

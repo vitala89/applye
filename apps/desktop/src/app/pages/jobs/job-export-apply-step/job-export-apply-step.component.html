@@ -1,0 +1,97 @@
+<div class="apply-fields-header">
+  <span class="eyebrow">{{ t()('jobs.wizard.export_apply_eyebrow') }}</span>
+  <h4 class="apply-fields-title">{{ t()('jobs.wizard.export_title') }}</h4>
+</div>
+<!-- Export linked library documents. -->
+@if (!tailoring()) {
+  @if (!linkedCv()) {
+    <div class="alert alert--warn">
+      <lucide-icon [img]="icons.alertTriangle" [size]="15" aria-hidden="true" />
+      <span>{{ t()('jobs.wizard.export_missing_cv_warning') }}</span>
+    </div>
+  }
+  @if (!linkedCoverLetter()) {
+    <p class="muted">
+      {{ t()('jobs.wizard.export_missing_cover_letter_warning') }}
+    </p>
+  }
+  <div class="export-options">
+    <button
+      class="export-option export-option--primary"
+      type="button"
+      [disabled]="!!exporting() || !linkedCv()"
+      (click)="doExport('cv', 'pdf')"
+    >
+      <span class="export-option__badge">{{ t()('jobs.export_recommended') }}</span>
+      <span class="export-option__icon export-option__icon--accent">
+        <lucide-icon [img]="icons.fileDown" [size]="20" aria-hidden="true" />
+      </span>
+      <span class="export-option__title">{{
+        exporting() === 'cv-pdf' ? t()('jobs.exporting') : t()('jobs.export_pdf')
+      }}</span>
+      <span class="export-option__desc">{{ t()('jobs.export_pdf_desc') }}</span>
+    </button>
+    @if (linkedCoverLetter()) {
+      <button
+        class="export-option"
+        type="button"
+        [disabled]="!!exporting()"
+        (click)="doExport('cover_letter', 'pdf')"
+      >
+        <span class="export-option__icon">
+          <lucide-icon [img]="icons.pencilLine" [size]="20" aria-hidden="true" />
+        </span>
+        <span class="export-option__title">{{
+          exporting() === 'cover_letter-pdf'
+            ? t()('jobs.exporting')
+            : t()('jobs.wizard.export_cover_letter_pdf')
+        }}</span>
+        <span class="export-option__desc">{{ t()('jobs.wizard.export_cover_letter_desc') }}</span>
+      </button>
+    }
+  </div>
+  @if (exportStatus()) {
+    <p class="export-path" [class.status--error]="exportError()">
+      {{ exportStatus() }}
+    </p>
+  }
+  @if (lastExport(); as exp) {
+    <div class="export-actions">
+      <button class="btn btn--secondary btn--sm" (click)="openExportedFile(exp.filePath)">
+        {{ t()('jobs.open_file') }}
+      </button>
+      <button class="btn btn--secondary btn--sm" (click)="revealExportedFile(exp.filePath)">
+        {{ t()('jobs.show_folder') }}
+      </button>
+    </div>
+  }
+  <button class="btn btn--ghost btn--sm export-startover" (click)="startOver.emit()">
+    {{ t()('jobs.start_over') }}
+  </button>
+}
+
+<div class="apply-fields-header apply-fields-header--sub">
+  <span class="eyebrow">{{ t()('jobs.wizard.apply_title') }}</span>
+  <p class="muted">{{ t()('jobs.wizard.apply_subtitle') }}</p>
+</div>
+@if (lastExport(); as exp) {
+  <div class="card apply-fields">
+    <div class="apply-field-row">
+      <span class="apply-field-row__label">{{ t()('jobs.export_section') }}</span>
+      <span class="apply-field-row__value">{{ exp.filePath }}</span>
+      <button
+        class="btn btn--secondary btn--sm"
+        type="button"
+        (click)="openExportedFile(exp.filePath)"
+      >
+        <lucide-icon [img]="icons.fileText" [size]="12" aria-hidden="true" />
+        {{ t()('jobs.open_file') }}
+      </button>
+    </div>
+  </div>
+} @else {
+  <p class="muted">{{ t()('jobs.wizard.apply_no_export') }}</p>
+}
+@if (actionMsg()) {
+  <p class="muted">{{ actionMsg() }}</p>
+}

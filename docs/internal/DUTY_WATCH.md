@@ -65,6 +65,7 @@ Before a watch can be marked complete:
 - **Open issues or blockers:** None blocking. The `test_pool` gap is fixed only for the new test's pool; every other test still runs with foreign keys off, which is worth a separate sweep.
 - **Next first action:** Confirm the reproduction - edit a CV, press Save, expect no error. Then the two other defects reported in the same session: `Open file` on a wizard export is refused by the path guard, and the export filename renders `-` as `_-_`.
 - **Evidence:** Branch diff; the reproduction and repair runs against a copy of the real database, quoted above; the mutation run's `code: 787`.
+
 ### 2026-08-04, exported documents get a name a person would write
 
 - **Status:** complete
@@ -87,6 +88,7 @@ Before a watch can be marked complete:
 - **Open issues or blockers:** None.
 - **Next first action:** The third defect from the same report - `Open file` on a wizard export is refused, because `open_file` only admits paths under `app_data_dir` while the wizard writes wherever the save dialog pointed. The maintainer chose the fix: remember the paths the export commands actually wrote and admit those.
 - **Evidence:** Branch diff; check output quoted above; the mutation run.
+
 ### 2026-08-04, Applye stops refusing to open the file it just wrote
 
 - **Status:** complete
@@ -108,6 +110,29 @@ Before a watch can be marked complete:
 - **Open issues or blockers:** None. The Windows `cmd /C start` question above is the follow-up.
 - **Next first action:** Confirm the reproduction - export a PDF from wizard step 5, press Open file and Show in folder. All three defects from this report now have PRs open; after confirmation the file-size campaign resumes at PR #315.
 - **Evidence:** Branch diff; check output quoted above; the mutation run naming both killed tests.
+
+### 2026-08-04, the wizard's export step leaves the jobs page, and the icon guardrail stops shrinking with it
+
+- **Status:** partial - code complete and gated, awaiting the maintainer's click-through
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/jobs-export-apply-step`, from `main` (`024a6c8`)
+- **Commits:** one commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** The next cut named in the previous watch: take `wizardExportApplyStep` out of the jobs page, which is over budget in its template, its class and its stylesheet at once.
+- **Completed:** New `JobExportApplyStepComponent` (class 81, template 97, stylesheet 185, spec 150). Page: template **786 -> 686**, class **1068 -> 1050**, stylesheet **624 -> 493**. Four `DocumentExportService` aliases and the three forwarding methods `doExport`, `openExportedFile` and `revealExportedFile` are gone from the page; the two class-side resets that used those aliases now name the service. **A real gap in a guardrail was found and closed** (below).
+- **Not completed:** All three page files are still over budget. The click-through has not been done.
+- **Files or packages changed:** `apps/desktop/src/app/pages/jobs/jobs.component.{ts,html,scss}`, new `job-export-apply-step/` (four files), `job-detail-icons.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **The guardrail gap, and how it surfaced.** `job-detail-icons.spec.ts` exists because a template asking for `icons.doesNotExist` type-checks and only fails under a full `nx build desktop`. It read exactly one file, `jobs.component.html` - so every component split off this page since has taken its icon references somewhere the guard could not see. Nobody noticed, because the guard kept passing on a shrinking input. This split dropped the page to nine references and tripped the spec's own "did the regex match anything at all" assertion, which is the only reason it came to light. The template list is now discovered by asking which components read `JOB_DETAIL_ICONS`, so future splits stay covered without anyone remembering to come back. Coverage 9 -> 26 references across four templates.
+- **Validation:** Run and observed on this branch: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings - all pre-existing non-null assertions, count identical to `main`), `nx test desktop` (**1205 passed, 96 suites** - 1201/95 on `main`, plus four new), `nx build desktop` (pass), `npm run quality:file-size` (passed - all three touched files moved down), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `npm run desktop:dev`. That is the outstanding gate and the reason this entry is partial.
+- **The build gate earned its place.** A stylesheet range was moved one line short, so `.apply-fields-header--sub` lost its closing brace and the page kept an orphan one. Type-check, lint and all 1205 unit tests passed on that tree; only `nx build desktop` caught it, with `unmatched "}"`. Worth remembering the next time the Angular targets look redundant on a move-only change.
+- **Losslessness evidence:** The template block was extracted by line range before deletion and compared against the new component's template - identical modulo Prettier's whitespace, with exactly one content change, `startOver()` becoming `startOver.emit()`. The stylesheet was checked in both directions: the moved ranges match the new stylesheet's first 134 non-empty lines exactly, and the page after deletion equals the page before minus exactly those ranges and nothing else.
+- **Mutation testing:** M1 flipped the kind selection in `doExport` so the cover-letter button would export the CV - killed by `exports the linked document that matches the requested kind`. M2 narrowed the icon guard's discovery back to the page template alone - killed by `looks at every component that reads the table, not just the page`. Both applied by absolute path with a printed `MUTATED` confirmation, restored from a backup copy and `diff`ed byte-exact; the suite returned to 1205 passing after each.
+- **Privacy/security impact:** None. No new data reaches the component that the page did not already hold, and nothing new is written or sent.
+- **Decisions and assumptions:** The step injects `DocumentExportService`, `LinkedDocumentsService`, `JobActionsService` and `WizardActivityService` rather than taking their state as inputs, which is the lever the page's component-scoped `providers` array makes available and the same one PRs #299 and #309 used. `Start over` is the one thing it does not do itself: it resets tailoring, the score and the export state and then navigates, which is page orchestration. `linkedCv` and `linkedCoverLetter` stay declared on the page as well, because the page reads them in nine other places - the child reaches the same signals through the service, not through the page.
+- **Risks or compatibility impact:** Style encapsulation is the live risk on this kind of move. `alert`, `eyebrow`, `card`, `apply-fields-header`, `apply-fields-title`, `muted` and `status--error` read like global utilities but are page-local, so they were **copied** into the child's stylesheet, not moved, and the copy is commented as such. `btn` genuinely is global and was not repeated. If a surface looks unstyled in the click-through, that list is the first place to look.
+- **Open issues or blockers:** The click-through. Until it is done, this branch must not merge.
+- **Next first action:** Run `npm run desktop:dev`, open a job and reach the export step: the CV export button and its recommended badge, the cover-letter button when one is linked, the warning when no CV is linked, the status line, Open file and Show folder after an export, Start over returning to step 1, and the apply summary underneath with the exported path. Report pass or fail per surface; on pass, merge. After that the jobs page still has 686 template lines and no single block that large left - the remaining cuts are smaller, or the next target is `discover.component` (scss 1915/400, html 1070/300, ts 1069/400), which has had no seam audit yet.
+- **Evidence:** Branch diff; check output quoted above; before/after non-empty line counts page ts 1068 -> 1050, html 786 -> 686, scss 624 -> 493, new component 81/97/185 plus a 150-line spec.
 
 ### 2026-08-04, the attribution gate stops rejecting Dependabot's own sign-off
 

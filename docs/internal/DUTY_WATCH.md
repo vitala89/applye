@@ -44,6 +44,28 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the attribution gate stops rejecting Dependabot's own sign-off
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `fix/attribution-bot-commits`, from `main` (`e24079a`)
+- **Commits:** one commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Unblock PR #301 (`ip-address` 10.2.0 -> 10.4.0), reported red by the maintainer, and every dependency bump behind it.
+- **What was actually wrong:** Not the dependency and not the code. Lint, tests, build and `quality:file-size` were all green on #301; `quality:attribution` failed on one line - `commit 5c44f6644382:14: Signed-off-by: dependabot[bot] <support@github.com>`. Dependabot signs every commit it opens, and the attribution gate rejects any `Signed-off-by`. The gate landed 2026-07-31 in #228, so **every** automated bump has been unmergeable since that date; #301 is the first one to come up, not a one-off. Nine such trailers are already in `main`'s history from bumps merged before the gate existed (`3fbf693`, `051e15a` and others), which is the evidence the gate was never meant to cover them.
+- **Completed:** `tools/check-attribution.mjs` now skips a commit body when the author is an automation account, and only then. The test file gained a case for it.
+- **The exemption is deliberately narrow.** Both halves of the identity must match: the author name ends in `[bot]`, a suffix a human GitHub account cannot register, **and** the address is a `[bot]@users.noreply.github.com` or `support@github.com` address. Setting a bot-looking name on a local commit therefore buys nothing. The pull-request body is inspected in every case, bot or not, and the `--message-file` path used by the commit hook is untouched, so a maintainer's own commit is gated exactly as before.
+- **Files or packages changed:** `tools/check-attribution.mjs` (84 -> 102), `tools/check-quality-guardrails.test.mjs` (360 -> 403), `CHANGELOG.md`, `DUTY_WATCH.md`. Both scripts are well inside budget (400 source, 600 test).
+- **Validation:** Run and observed: `npm run quality:test` (9 passed, 0 failed - 8 before this watch, plus the new case), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** the Angular and Rust targets - nothing here is shipped code; the change is confined to `tools/`.
+- **End-to-end proof against the real commit:** The Dependabot branch was fetched and checked out in a detached worktree, and both versions of the script were run against it from that directory. The pre-change script (`git show main:tools/check-attribution.mjs`) exits 1 with the sign-off violation quoted above; the patched script exits 0. The failure and the fix are demonstrated on the actual commit, not on a fixture resembling it.
+- **Mutation testing:** M1 changed `&&` to `||` in `isBotAuthor`, weakening the exemption to either half of the identity. The script printed its own `MUTATED` confirmation, and `attribution guard skips bot-authored commits but not humans borrowing a bot name` failed while the other eight stayed green. Restored from a backup copy and `diff`ed byte-exact; the suite returned to 9 passing.
+- **Privacy/security impact:** None to user data. The governance surface narrows by exactly one case: an automation account's own trailer on its own commit. A human or agent commit cannot reach the exemption without deliberately forging both a `[bot]` name and a GitHub noreply address, which is a decision to evade the rule rather than an accident.
+- **Decisions and assumptions:** The maintainer chose the commit-level exemption over three alternatives that were put to them - guarding the CI step on `github.actor`, rewriting #301's commit message by hand, or closing #301 and bumping manually. The commit-level version was recommended because the CI-step guard keys the gate to who triggered the run rather than who wrote the commit, and the rewrite fixes one PR while Dependabot force-pushes over it on the next rebase.
+- **Risks or compatibility impact:** Low. If another automation account ever needs the same treatment, it qualifies automatically when it uses a GitHub app identity, and does not otherwise.
+- **Open issues or blockers:** PR #301 stays red until this merges and it is rebased or re-run. PR #309 still needs the maintainer's click-through; PR #312 (handoff doc) is green and docs-only.
+- **Next first action:** Merge this, then re-run #301's checks and merge it. After that the file-size campaign resumes: `wizardExportApplyStep` (~120 template lines) out of the jobs page once #309 clears.
+- **Evidence:** Branch diff; the two script runs in the detached worktree quoted above; CI log for run 30859140306 on PR #301.
+
 ### 2026-08-04, reading a skill response leaves the CV content model, and stops accepting an apology as a CV
 
 - **Status:** complete

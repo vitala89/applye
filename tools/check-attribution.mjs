@@ -30,6 +30,20 @@ const forbidden = [
   /^\s*🤖/u,
 ];
 
+/**
+ * Automation accounts sign their own commits, and that sign-off is not the
+ * human or agent attribution this guard exists to keep out. GitHub app
+ * identities always carry a `[bot]` username suffix, which a human account
+ * cannot have, and a matching noreply address. Both must line up before a
+ * commit body is skipped; the pull-request body is always inspected.
+ */
+const botNamePattern = /\[bot\]$/;
+const botEmailPattern = /(?:\[bot\]@users\.noreply\.github\.com|^support@github\.com)$/i;
+
+function isBotAuthor(name, email) {
+  return botNamePattern.test(name.trim()) && botEmailPattern.test(email.trim());
+}
+
 function inspect(text, source, violations) {
   const lines = text.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
@@ -52,16 +66,20 @@ if (messageFile) {
     process.env.ATTRIBUTION_BASE ||
     process.env.NX_BASE ||
     (process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : undefined);
-  const base = candidate && !/^0+$/.test(candidate) ? candidate : git(['rev-parse', 'HEAD^'], { allowFailure: true }).trim();
+  const base =
+    candidate && !/^0+$/.test(candidate)
+      ? candidate
+      : git(['rev-parse', 'HEAD^'], { allowFailure: true }).trim();
 
   if (base) {
     const mergeBase = git(['merge-base', base, 'HEAD'], { allowFailure: true }).trim() || base;
-    const log = git(['log', '--format=%H%x1f%B%x1e', `${mergeBase}..HEAD`], {
+    const log = git(['log', '--format=%H%x1f%an%x1f%ae%x1f%B%x1e', `${mergeBase}..HEAD`], {
       allowFailure: true,
     });
 
     for (const record of log.split('\x1e').filter(Boolean)) {
-      const [sha, body = ''] = record.split('\x1f');
+      const [sha, authorName = '', authorEmail = '', body = ''] = record.split('\x1f');
+      if (isBotAuthor(authorName, authorEmail)) continue;
       inspect(body, `commit ${sha.trim().slice(0, 12)}`, violations);
     }
   }

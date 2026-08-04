@@ -180,6 +180,21 @@
   and `fork-ts-checker-webpack-plugin`, which call the module as a function while version 5 exports an
   object. **Nothing here catches that** - with the pin in place `npm audit` read 0, the full gate went
   green, and coverage passed. Do not re-attempt it expecting a different result.
+- **A second wave of advisories landed on 2026-08-04 and is closed: `npm audit` reads 0 again.** Nine
+  Dependabot alerts (one high, eight moderate) plus seven more that only `npm audit` saw - the audit
+  found **16**, Dependabot **9**, and the audit is the longer list. Every one of them is
+  **development scope**: `undici` reaches the tree only through `@angular/build` and through
+  `node-gyp` under `@angular/cli`, `hono` and `brace-expansion` likewise. `npm audit --omit=dev` was
+  0 before the fix and is 0 after it, so nothing vulnerable ever reached the Tauri bundle or the web
+  build. All four are patch-level bumps behind `overrides`, because `@angular/build` pins `undici` to
+  the exact string `7.28.0` and npm's own suggested fix was a **semver-major downgrade** of
+  `@angular/build` to 20.3.32. Forced instead: `undici@^6 -> ^6.28.0`, `undici@^7 -> ^7.29.0`,
+  `hono -> ^4.13.0`, and the three existing `brace-expansion` pins moved up within their own majors
+  to 1.1.18 / 2.1.4 / 5.0.9. **The keyed-by-major form is what makes this safe**: the refusal recorded
+  directly above is about forcing _every_ copy to 5.x, and it still stands. The 1.x copies under
+  `test-exclude` and `fork-ts-checker-webpack-plugin` stayed on 1.1.18 and were checked by hand to
+  still export a callable, and `minimatch` 3.1.5 was called through both - because, as that entry
+  says, nothing in the gates catches it.
 - **Superseded note, kept for the record**: `0.29.1` was previously the first run of the release matrix
   failed on all four platforms because `beforeBuildCommand` called `nx` without `npx`, and
   `tauri-action` does not go through the npm script that puts it on `PATH`. Fixed on

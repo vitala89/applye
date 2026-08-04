@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, Discover's location rules separate from their vocabulary
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/discover-location-tables`, from `main` (`096159d`)
+- **Commits:** one refactor commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Continue the Angular half of the campaign on a file that needs no click-through, since the tailor-step branch (PR #309) is parked awaiting one.
+- **Completed:** `discover-location.ts` **910 -> 128**. The vocabulary - `COUNTRY_DEFS`, `US_STATES`, `CA_PROVINCES` and the three table interfaces - moved to `discover-location-tables.ts`; the matching rules stayed. The tables file imports `RegionKey` with `import type`, so the cycle between the two modules is erased at compile time. Four new tests assert rules the table had only stated in comments.
+- **Not completed:** Nothing in this task. Separately, PR #309 (`refactor/jobs-tailor-step`) is still unmerged and still waiting on the maintainer's click-through; CI on it is green.
+- **Files or packages changed:** `apps/desktop/src/app/pages/discover/discover-location.ts`, new `discover-location-tables.ts`, new `discover-location-tables.spec.ts`, `tools/check-file-size-budgets.mjs`, `tools/check-quality-guardrails.test.mjs`, `docs/governance/CODE_QUALITY.md`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** Run and observed on this branch: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings, all pre-existing; the warning-line count is identical to the same command on a stashed tree), `nx test desktop` (1195 passed, 94 suites), `node --test tools/check-quality-guardrails.test.mjs` (8 passed, including the new exclusion test), `npm run quality:file-size` (passed), `npm run quality:file-size:all` (TypeScript source 19 over budget, down from 20), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `npm run desktop:dev` - nothing here renders; the change is a pure module move behind `classifyLoc`, which has its own unit tests.
+- **Losslessness evidence:** Both moved regions were extracted by line range to scratch files before deletion and diffed against the new module. The interfaces are byte-identical; the tables differ only by the `export` keyword added to five declarations, and nothing else.
+- **Mutation testing:** Applied by absolute path with an applied/not-applied assertion, restored from backup with a byte-exact diff. M1: give Qatar Saudi Arabia's `sa` code - killed by the duplicate-code test. M2: hoist the region-generic `Europe` entry to the front of `COUNTRY_DEFS` - killed by the ordering test. Suite returned to 1195 passing after each.
+- **Governance decision, and it was the maintainer's:** the extracted vocabulary is 811 lines, and the gate rejects a **new** file over budget - so the split as designed could not land. The choice was between splitting the list by continent into seven files, excluding it as data, or abandoning the split. Asked, and the maintainer answered "as you recommend", which authorised the recommended option: exclude it, beside the translation catalogue that is excluded for the same reason. `CODE_QUALITY.md` now states the condition under which a vocabulary earns that - a flat table, no branching, no functions, every rule that reads it in another module - and the reasoning: splitting a rules module away from its table is the refactor the budget should be pushing for, and a budget that then rejects the table punishes exactly that move.
+- **The exclusion is tested, because an exclusion that leaks stops measuring the code it exists to protect.** The new guardrail test asserts the vocabulary passes at 900 lines while the rules module beside it fails at 401, the table's own spec file fails at 700, and a same-named file in another folder fails at 401. The pattern is anchored to the exact path; `*-tables.ts` buys nothing.
+- **Privacy/security impact:** None. No storage, network, IPC or permission change. `classifyLoc` is pure and runs on text the app already holds.
+- **Decisions and assumptions:** The tables file imports `RegionKey` as a type-only import rather than moving the type across, because `RegionKey` is the vocabulary the Discover page and its filters speak, not a detail of the table. The interfaces `CityDef`, `CountryDef` and `RegionCode` describe the table's own shape and went with it.
+- **Risks or compatibility impact:** Low for the move - one list, no rule touched, and `classifyLoc`'s existing spec still passes. The governance change is the part worth watching: it is the first non-i18n exclusion, and the test above is what keeps it from widening by accident.
+- **Open issues or blockers:** PR #309 needs the maintainer's walkthrough before it can merge. `tools/check-file-size-budgets.mjs` is now 377/400 and near its own budget.
+- **Next first action:** After PR #309's click-through, take `wizardExportApplyStep` (~120 template lines) out of the jobs page. If the click-through has not happened, `apps/desktop/src/app/pages/documents/cv-content.util.ts` (829/400) is the next file that needs no UI verification.
+- **Evidence:** Branch diff; check output quoted above; before/after non-empty line counts `discover-location.ts` 910 -> 128, new `discover-location-tables.ts` 811 (excluded), new spec 72.
+
 ### 2026-08-04, discover geography splits, and a silent market-widening gap is closed
 
 - **Status:** complete

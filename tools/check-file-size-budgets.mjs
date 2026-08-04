@@ -67,6 +67,13 @@ const excludedPatterns = [
   // The translation catalogue is data, not design: line count says nothing about
   // its structure, and a locale file grows every time a string is added.
   /^libs\/i18n\/src\/lib\/translations\/(?!.*\.spec\.)/,
+  // Same argument, same shape: the Discover location vocabulary is a flat table
+  // of countries, cities, states and provinces that grows when a job board names
+  // a place a new way. The rules that read it are ordinary source and stay on
+  // budget in `discover-location.ts`; splitting the table further would only
+  // spread one list across files that differ by continent. Listed by path on
+  // purpose - `*-tables.ts` is not a category anyone can opt into.
+  /^apps\/desktop\/src\/app\/pages\/discover\/discover-location-tables\.ts$/,
 ];
 
 function git(args, { allowFailure = false } = {}) {

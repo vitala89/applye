@@ -67,8 +67,18 @@ on nearly the same score with 694 lines of source and 3 of tests. The counter no
 tests and a dense one is not excused by them. 500 is therefore stricter than the 800 it replaces.
 
 The automated gate checks source code under `apps/`, `libs/`, and `tools/`. Generated files,
-lockfiles, snapshots, migrations, fixtures, vendored code, and the central translation catalogue are
-excluded because line count is not a useful design signal for them.
+lockfiles, snapshots, migrations, fixtures, vendored code, the central translation catalogue, and
+the Discover location vocabulary are excluded because line count is not a useful design signal for
+them.
+
+A vocabulary file earns that exclusion only when it is a flat table and nothing else: no branching,
+no functions, one entry per line-group, and every rule that reads it living in another module. Under
+that condition its length says nothing about its structure - it grows when a job board names a city
+a new way - and splitting it further only distributes the same list across files that differ by
+which continent they happen to hold. The rules that consume such a table are ordinary source and
+stay on budget; splitting a rules module away from its table is the refactor the budget should be
+pushing for, and a budget that then rejects the table punishes exactly that move. The exclusion is
+per-path and deliberate, not a category anyone can opt into by naming a file `*-tables.ts`.
 
 ### The gate is diff-scoped; the audit is not
 

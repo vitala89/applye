@@ -135,6 +135,37 @@ The pre-commit hook checks staged files. CI compares the branch with its base an
 - Extract child components around meaningful UI responsibilities, not arbitrary line ranges.
 - New behavior requires focused tests. Bug fixes require a regression test.
 
+### Splitting a page: where its shared styles go
+
+Angular scopes a component's compiled CSS, so a class defined on a page does not reach a child
+extracted out of it. Every page split has to decide what happens to the classes both sides use.
+
+- Classes used **only** by the extracted markup move into the child's own stylesheet.
+- Classes the page and one or more of its children both use go into a **page-scoped partial emitted
+  once from `apps/desktop/src/styles.scss`**, not copied into each stylesheet. `_editor-shell.scss`
+  and `_discover-controls.scss` are the existing examples. Copying is what loses rules: it invites
+  a half-finished split where one side keeps the selector and the other keeps the body.
+- Name the partial after the page, keep it to that page's vocabulary, and say in its header comment
+  which classes it owns and why they are shared. These partials are global and unencapsulated, which
+  is the cost being accepted in exchange for a single definition.
+- Doing the hoist **before** the first cut is usually cheaper than during it, because it shrinks the
+  page's stylesheet on its own and makes every later cut of the same page mechanical.
+
+### Prove a stylesheet move was lossless
+
+Comparing which selectors exist before and after does not prove anything: a selector can survive
+with its declarations gone, which is how a page shipped three unstyled inputs and a filter field
+wearing an empty-state layout. Compare declarations instead:
+
+```bash
+npm run quality:style-move -- --base main <page.scss> <child.scss> <partial.scss>
+```
+
+Pass every file the rules could have moved between. On a move-only change it must report nothing
+lost and nothing gained; anything it prints is either a real loss or a deliberate change that
+belongs in the pull request description. It is not part of `npm run quality`, because it needs the
+specific files of the split being reviewed.
+
 ## Rust and Tauri decomposition
 
 - Tauri commands stay thin: validate, call a focused function or service, persist, return.

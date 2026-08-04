@@ -22,10 +22,11 @@
     "format": "nx format:write",
     "format:check": "nx format:check",
     "affected:test": "nx affected --target=test",
-    "quality:test": "node --test tools/check-quality-guardrails.test.mjs",
+    "quality:test": "node --test tools/check-quality-guardrails.test.mjs tools/check-style-move.test.mjs",
     "quality:file-size": "node tools/check-file-size-budgets.mjs",
     "quality:file-size:all": "node tools/check-file-size-budgets.mjs --all",
     "quality:attribution": "node tools/check-attribution.mjs",
+    "quality:style-move": "node tools/check-style-move.mjs",
     "quality": "npm run quality:test && npm run quality:file-size && npm run quality:attribution",
     "prepare": "husky",
     "verify:csp": "node tools/verify-csp-compat.mjs"

@@ -1,13 +1,13 @@
 import type { CvTemplate } from '@applye/core';
+import { buildCvContent } from './cv-content.util';
 import {
-  buildCvContent,
-  cleanJsonText,
   buildAdditionalInfoBlock,
+  cleanJsonText,
   parseCvGapResponse,
   parseCvSkillResponse,
   parseDateAnswer,
   repairTruncatedJson,
-} from './cv-content.util';
+} from './cv-parse.util';
 
 describe('cleanJsonText', () => {
   it('extracts a fenced JSON object unchanged', () => {
@@ -182,6 +182,47 @@ describe('parseCvSkillResponse repair fallback', () => {
     const out = parseCvSkillResponse(truncated);
     expect(out.personalDetails.fullName).toBe('VITALII KASAP');
     expect(out.personalDetails.address).toBe('Nuremberg');
+  });
+
+  /// The failure this must never take: returning an empty draft. The user
+  /// cannot tell that apart from a model that found nothing in their CV, so
+  /// they see a blank editor and no reason for it. Throwing is what lets the
+  /// caller show what actually came back. Removing the throw entirely left
+  /// every test green before this one existed.
+  it('throws with the raw response rather than returning an empty draft', () => {
+    expect(() => parseCvSkillResponse('the model apologised instead')).toThrow(
+      /AI returned invalid JSON/,
+    );
+    expect(() => parseCvSkillResponse('')).toThrow(/AI returned invalid JSON/);
+    try {
+      parseCvSkillResponse('sorry, I cannot help with that');
+      throw new Error('expected parseCvSkillResponse to throw');
+    } catch (error) {
+      expect((error as Error).message).toContain('sorry, I cannot help with that');
+    }
+  });
+
+  /// `JSON.parse` succeeds on more than objects, and each of these used to
+  /// become an empty draft instead of an error. The bare string is the one seen
+  /// in practice: a model answering "I could not read this CV" in the JSON the
+  /// prompt asked for.
+  it('rejects valid JSON that is not a CV object', () => {
+    expect(() => parseCvSkillResponse('"I could not read this CV"')).toThrow(
+      /AI returned invalid JSON/,
+    );
+    expect(() => parseCvSkillResponse('null')).toThrow(/AI returned invalid JSON/);
+    expect(() => parseCvSkillResponse('42')).toThrow(/AI returned invalid JSON/);
+  });
+
+  /// Not asserted here, and left as it is: a JSON *array* still gets through,
+  /// because the repair pass recovers the first object inside it. That is the
+  /// same recovery a truncated response relies on, so tightening it is a change
+  /// to repair behaviour rather than to this guard.
+
+  /// The empty object is deliberately still accepted: a CV with no recognised
+  /// fields is a real answer, and the review step is what asks about it.
+  it('still accepts an empty CV object', () => {
+    expect(parseCvSkillResponse('{}').personalDetails.fullName).toBeNull();
   });
 });
 

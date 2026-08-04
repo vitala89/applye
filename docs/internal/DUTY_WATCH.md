@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, reading a skill response leaves the CV content model, and stops accepting an apology as a CV
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/cv-parse-util`, from `main` (`ec3cded`)
+- **Commits:** one commit on the branch
+- **Pull request:** opened against `main`
+- **Objective:** Continue the Angular half of the campaign on a file needing no click-through, since PR #309 is still parked awaiting one.
+- **Completed:** `cv-content.util.ts` **829 -> 622**. `cleanJsonText`, `closeOpenStructures`, `repairTruncatedJson`, `tryParseParsed`, `parseCvSkillResponse`, the gap-question types with `parseCvGapResponse`, `buildAdditionalInfoBlock` and `parseDateAnswer` moved to `cv-parse.util.ts`. Their tests already lived in `cv-parse.util.spec.ts` - a spec named for a module that did not exist - and now import from it. **A real bug was found and fixed** (below).
+- **Not completed:** `cv-content.util.ts` is still 622/400. The remaining seam is the CV content model itself (`buildCvContent`, `cvContentToMd`, `markdownToCvContentFallback`, `normalizeCvContent`), left for its own PR. PR #309 still needs the maintainer's click-through.
+- **Files or packages changed:** `apps/desktop/src/app/pages/documents/cv-content.util.ts`, new `cv-parse.util.ts`, `cv-parse.util.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **The bug, and how it surfaced.** Mutation testing the moved code: deleting the `throw` in `parseCvSkillResponse` so invalid JSON returned an empty draft left **all 1195 tests green**. The function's own doc promises the opposite - "throws with the raw text so the caller can surface a real error instead of a silent empty draft" - and nothing tested it. Writing that test then exposed the wider hole: the guard only checked that `JSON.parse` succeeded, so a bare JSON string, a number or `null` all passed as a `Partial<CvParsedContent>` with no keys. The one that happens in practice is the string: a model answering `"I could not read this CV"` in the JSON the prompt asked for. The user saw a blank editor and no reason for it. `tryParseParsed` now accepts only a plain object. An empty object is still accepted, deliberately - a CV with no recognised fields is a real answer and the review step is what asks about it.
+- **Left alone, and said so in the spec:** a JSON _array_ still gets through, because the repair pass recovers the first object inside it. That is the same recovery a truncated response depends on, so tightening it would be a change to repair behaviour rather than to this guard, and no caller passes an array.
+- **Validation:** Run and observed on this branch: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings, all pre-existing; the warning-line count matches the same command on a stashed tree), `nx test desktop` (1198 passed, 94 suites - 1195 before this watch, plus three new), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** `npm run desktop:dev`. Nothing here renders; the behaviour change is in a pure function with unit tests either side of it.
+- **Losslessness evidence:** The moved block was extracted by line range before deletion and diffed against the new module - byte-identical. The two later edits to it (the `tryParseParsed` guard and its doc comment) were made after that diff and are visible as such in the branch diff.
+- **Mutation testing:** M1 remove the `throw` - now killed by the new test, having survived before it. M2 remove the plain-object check - killed by the new test. Both applied by absolute path with an applied/not-applied assertion, restored from backup with a byte-exact diff; the suite returned to 1198 passing after each.
+- **Privacy/security impact:** None directly. Worth noting the direction: the fix makes the app **refuse** malformed model output rather than persist a hollow document, which is the safer of the two for a file the user will send to an employer.
+- **Decisions and assumptions:** The new module is re-exported from `cv-content.util.ts` rather than repointing every consumer, following the note that file already carries: splitting costs each consumer one import line and three of the importers are themselves over budget, so the size gate refuses that version. Only the spec was repointed, since a test file has room. This is the one place in the campaign where consumers do **not** name the defining module, and the reason is written down at the re-export.
+- **Risks or compatibility impact:** The parse guard is a behaviour change, not a pure move: input that previously produced an empty draft now throws. That is the documented contract and the error path the callers already handle, but it is the line to look at if a CV import starts reporting failures it did not report before.
+- **Open issues or blockers:** PR #309 needs the maintainer's walkthrough before it can merge.
+- **Next first action:** After PR #309's click-through, take `wizardExportApplyStep` (~120 template lines) out of the jobs page. Without it, split the CV content model out of `cv-content.util.ts` (622/400) - `cvContentToMd` and `markdownToCvContentFallback` are the cohesive pair.
+- **Evidence:** Branch diff; check output quoted above; before/after non-empty line counts `cv-content.util.ts` 829 -> 622, new `cv-parse.util.ts` 237, spec 445 -> 482.
+
 ### 2026-08-04, Discover's location rules separate from their vocabulary
 
 - **Status:** complete

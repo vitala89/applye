@@ -1,0 +1,113 @@
+<div>
+  <span class="ob__eyebrow">{{ t()('onboarding.preview.eyebrow') }}</span>
+  <h1 class="ob__h1">{{ t()('onboarding.preview.title') }}</h1>
+  <p class="ob__subtitle ob__subtitle--sm">{{ t()('onboarding.preview.help') }}</p>
+</div>
+@if (review.lowConfidenceCount() > 0) {
+  <div class="ob__warning-card">
+    <lucide-icon [img]="icons.triangleAlert" [size]="16" aria-hidden="true" />
+    <div>
+      <div class="ob__warning-card-title">
+        {{ review.lowConfidenceCount() }} {{ t()('onboarding.preview.warning_suffix') }}
+      </div>
+      <div class="ob__warning-card-help">
+        {{ t()('onboarding.preview.warning_help') }}
+      </div>
+    </div>
+  </div>
+}
+<div class="ob__grid-2">
+  <div class="ob__field">
+    <label class="ob__field-label" for="ob-review-first-name">{{
+      t()('onboarding.preview.field_first_name')
+    }}</label>
+    <input
+      id="ob-review-first-name"
+      class="ob__input"
+      [class.ob__input--confirm]="review.needsNameConfirm()"
+      [attr.aria-describedby]="review.needsNameConfirm() ? 'ob-name-confirm-hint' : null"
+      [ngModel]="review.reviewFirstName()"
+      (ngModelChange)="review.reviewFirstName.set($event); review.onNameEdited()"
+    />
+  </div>
+  <div class="ob__field">
+    <label class="ob__field-label" for="ob-review-last-name">{{
+      t()('onboarding.preview.field_last_name')
+    }}</label>
+    <input
+      id="ob-review-last-name"
+      class="ob__input"
+      [class.ob__input--confirm]="review.needsNameConfirm()"
+      [attr.aria-describedby]="review.needsNameConfirm() ? 'ob-name-confirm-hint' : null"
+      [ngModel]="review.reviewLastName()"
+      (ngModelChange)="review.reviewLastName.set($event); review.onNameEdited()"
+    />
+  </div>
+  @if (review.needsNameConfirm()) {
+    <p id="ob-name-confirm-hint" class="ob__field-hint ob__field-hint--confirm">
+      {{ t()('onboarding.preview.name_confirm_hint') }}
+    </p>
+  }
+  <div class="ob__field">
+    <label class="ob__field-label" for="ob-review-email">{{
+      t()('onboarding.preview.field_email')
+    }}</label>
+    <input
+      id="ob-review-email"
+      class="ob__input"
+      [ngModel]="review.reviewEmail()"
+      (ngModelChange)="review.reviewEmail.set($event)"
+    />
+  </div>
+  <div class="ob__field">
+    <label class="ob__field-label" for="ob-review-phone">{{
+      t()('onboarding.preview.field_phone')
+    }}</label>
+    <input
+      id="ob-review-phone"
+      class="ob__input"
+      [ngModel]="review.reviewPhone()"
+      (ngModelChange)="review.reviewPhone.set($event)"
+    />
+  </div>
+  <div class="ob__field">
+    <label class="ob__field-label" for="ob-review-address">{{
+      t()('onboarding.preview.field_address')
+    }}</label>
+    <input
+      id="ob-review-address"
+      class="ob__input"
+      [ngModel]="review.reviewAddress()"
+      (ngModelChange)="review.reviewAddress.set($event)"
+    />
+  </div>
+</div>
+<div class="ob__section">
+  <span class="ob__field-label">{{ t()('onboarding.preview.experience_label') }}</span>
+  @if (review.experience().length) {
+    <div class="ob__exp-list">
+      @for (e of review.experience(); track e.role + e.company) {
+        <div class="ob__exp-row">
+          <div class="ob__exp-body">
+            <div class="ob__exp-role">{{ e.role }}</div>
+            <div class="ob__exp-meta">{{ e.company }}</div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="ob__muted-note">{{ t()('onboarding.preview.no_experience') }}</p>
+  }
+</div>
+<div class="ob__section">
+  <span class="ob__field-label">{{ t()('onboarding.preview.skills_label') }}</span>
+  @if (review.skills().length) {
+    <div class="ob__skill-list">
+      @for (sk of review.skills(); track sk) {
+        <span class="ob__skill-chip">{{ sk }}</span>
+      }
+    </div>
+  } @else {
+    <p class="ob__muted-note">{{ t()('onboarding.preview.no_skills') }}</p>
+  }
+</div>

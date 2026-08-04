@@ -196,9 +196,9 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
   describe('finishing the last step', () => {
     it('saves the profile and the CV, marks onboarding seen, and closes', async () => {
-      component.parsedCv.set(parsedCv());
-      component.reviewFirstName.set('Vitalii');
-      component.reviewLastName.set('Kasap');
+      component.review.parsedCv.set(parsedCv());
+      component.review.reviewFirstName.set('Vitalii');
+      component.review.reviewLastName.set('Kasap');
       const closed = jest.fn();
       component.completed.subscribe(closed);
 
@@ -258,7 +258,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     // run, the page a re-run was opened from - instead of picking a
     // destination, which is why it must not navigate.
     it('navigates nowhere itself', async () => {
-      component.parsedCv.set(parsedCv());
+      component.review.parsedCv.set(parsedCv());
 
       await component.finish();
 
@@ -293,7 +293,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
   describe('name confirm nudge', () => {
     it('seeds both fields from a confident parse and does not nudge', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({
           fullName: 'Anna Kowalska',
           firstName: 'Anna',
@@ -302,15 +302,15 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
         }),
       );
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      expect(component.reviewFirstName()).toBe('Anna');
-      expect(component.reviewLastName()).toBe('Kowalska');
-      expect(component.needsNameConfirm()).toBe(false);
+      expect(component.review.reviewFirstName()).toBe('Anna');
+      expect(component.review.reviewLastName()).toBe('Kowalska');
+      expect(component.review.needsNameConfirm()).toBe(false);
     });
 
     it('nudges when the parse was not confident', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({
           fullName: 'Anna Maria Kowalska',
           firstName: 'Anna Maria',
@@ -319,47 +319,47 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
         }),
       );
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      expect(component.needsNameConfirm()).toBe(true);
+      expect(component.review.needsNameConfirm()).toBe(true);
     });
 
     it('nudges when the last name is missing', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
       );
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      expect(component.reviewFirstName()).toBe('Prince');
-      expect(component.reviewLastName()).toBe('');
-      expect(component.needsNameConfirm()).toBe(true);
+      expect(component.review.reviewFirstName()).toBe('Prince');
+      expect(component.review.reviewLastName()).toBe('');
+      expect(component.review.needsNameConfirm()).toBe(true);
     });
 
     it('derives the split when the parse omitted it', () => {
-      component.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
+      component.review.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      expect(component.reviewFirstName()).toBe('Anna');
-      expect(component.reviewLastName()).toBe('Kowalska');
-      expect(component.needsNameConfirm()).toBe(true);
+      expect(component.review.reviewFirstName()).toBe('Anna');
+      expect(component.review.reviewLastName()).toBe('Kowalska');
+      expect(component.review.needsNameConfirm()).toBe(true);
     });
 
     it('stops nudging once the user edits either field', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
       );
-      component.seedReviewFields();
-      expect(component.needsNameConfirm()).toBe(true);
+      component.review.seedReviewFields();
+      expect(component.review.needsNameConfirm()).toBe(true);
 
-      component.onNameEdited();
+      component.review.onNameEdited();
 
-      expect(component.needsNameConfirm()).toBe(false);
+      expect(component.review.needsNameConfirm()).toBe(false);
     });
 
     it('seeds from the display name when the parse carried empty strings', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({
           fullName: 'Anna Kowalska',
           firstName: '',
@@ -368,14 +368,14 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
         }),
       );
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      expect(component.reviewFirstName()).toBe('Anna');
-      expect(component.reviewLastName()).toBe('Kowalska');
+      expect(component.review.reviewFirstName()).toBe('Anna');
+      expect(component.review.reviewLastName()).toBe('Kowalska');
     });
 
     it('nudges when only the last name survived the parse', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({
           fullName: 'Anna Kowalska',
           firstName: null,
@@ -383,34 +383,34 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
           nameSplitConfident: true,
         }),
       );
-      component.reviewLastName.set('Kowalska');
+      component.review.reviewLastName.set('Kowalska');
 
-      expect(component.needsNameConfirm()).toBe(true);
+      expect(component.review.needsNameConfirm()).toBe(true);
     });
 
     it('leaves a hand-edited field alone when a re-parse seeds again', () => {
-      component.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
-      component.seedReviewFields();
-      component.reviewFirstName.set('Ania');
+      component.review.parsedCv.set(makeParsed({ fullName: 'Anna Kowalska' }));
+      component.review.seedReviewFields();
+      component.review.reviewFirstName.set('Ania');
 
-      component.parsedCv.set(makeParsed({ fullName: 'Jane Smith' }));
-      component.seedReviewFields();
+      component.review.parsedCv.set(makeParsed({ fullName: 'Jane Smith' }));
+      component.review.seedReviewFields();
 
-      expect(component.reviewFirstName()).toBe('Ania');
-      expect(component.reviewLastName()).toBe('Kowalska');
+      expect(component.review.reviewFirstName()).toBe('Ania');
+      expect(component.review.reviewLastName()).toBe('Kowalska');
     });
 
     it('keeps Continue enabled and describes the inputs while the nudge is up', async () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({ fullName: 'Prince', firstName: 'Prince', lastName: null }),
       );
-      component.seedReviewFields();
+      component.review.seedReviewFields();
       component.step.set(3);
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(component.needsNameConfirm()).toBe(true);
+      expect(component.review.needsNameConfirm()).toBe(true);
       const el = fixture.nativeElement as HTMLElement;
       const hint = el.querySelector('.ob__field-hint--confirm');
       expect(hint?.id).toBeTruthy();
@@ -425,7 +425,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     });
 
     it('recaps the resume name the artifacts got, not a reordered composition', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({
           fullName: 'Kim Minjun',
           firstName: 'Minjun',
@@ -434,30 +434,30 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
         }),
       );
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
       expect(component.resumeSummary()).toContain('Kim Minjun');
       expect(component.resumeSummary()).not.toContain('Minjun Kim');
     });
 
     it('recaps the composed name once the user edits a part', () => {
-      component.parsedCv.set(
+      component.review.parsedCv.set(
         makeParsed({ fullName: 'Kim Minjun', firstName: 'Minjun', lastName: 'Kim' }),
       );
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      component.reviewLastName.set('Park');
-      component.onNameEdited();
+      component.review.reviewLastName.set('Park');
+      component.review.onNameEdited();
 
       expect(component.resumeSummary()).toContain('Minjun Park');
     });
 
     it('does not nudge when there is no name at all', () => {
-      component.parsedCv.set(makeParsed({ fullName: null }));
+      component.review.parsedCv.set(makeParsed({ fullName: null }));
 
-      component.seedReviewFields();
+      component.review.seedReviewFields();
 
-      expect(component.needsNameConfirm()).toBe(false);
+      expect(component.review.needsNameConfirm()).toBe(false);
     });
   });
 

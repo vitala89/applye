@@ -67,7 +67,7 @@ describe('OnboardingComponent flow', () => {
     });
 
     it('stays reachable once a resume was parsed', () => {
-      component.parsedCv.set(parsedCv());
+      component.review.parsedCv.set(parsedCv());
       component.step.set(4);
       expect(component.railSteps()[3].clickable).toBe(true);
 
@@ -268,20 +268,20 @@ describe('OnboardingComponent flow', () => {
 
   describe('a resume the user walked away from', () => {
     it('is not written to the profile when the skip tile is chosen after a parse', () => {
-      component.parsedCv.set(parsedCv());
+      component.review.parsedCv.set(parsedCv());
 
       component.chooseResume('skip');
 
-      expect(component.parsedCv()).toBeNull();
-      expect(component.hasReview()).toBe(false);
+      expect(component.review.parsedCv()).toBeNull();
+      expect(component.review.hasReview()).toBe(false);
     });
 
     it('is dropped when the pasted text changes', () => {
-      component.parsedCv.set(parsedCv());
+      component.review.parsedCv.set(parsedCv());
 
       component.setPastedResume('a different resume');
 
-      expect(component.parsedCv()).toBeNull();
+      expect(component.review.parsedCv()).toBeNull();
     });
   });
 
@@ -304,7 +304,7 @@ describe('OnboardingComponent flow', () => {
     });
 
     it('keeps the scoring and pitch the user already paid for', async () => {
-      component.parsedCv.set(parsedCv());
+      component.review.parsedCv.set(parsedCv());
 
       await component.saveProfile();
 
@@ -319,9 +319,9 @@ describe('OnboardingComponent flow', () => {
     });
 
     it('writes the new resume over the old profile markdown', async () => {
-      component.parsedCv.set(parsedCv());
-      component.reviewFirstName.set('Vitalii');
-      component.reviewLastName.set('Kasap');
+      component.review.parsedCv.set(parsedCv());
+      component.review.reviewFirstName.set('Vitalii');
+      component.review.reviewLastName.set('Kasap');
 
       await component.saveProfile();
 

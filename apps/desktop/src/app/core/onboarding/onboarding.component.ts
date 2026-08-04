@@ -29,13 +29,11 @@ import {
 import {
   AiMode,
   AiProvider,
-  CvParsedContent,
   Profile,
   archetypeNames,
   serializeArchetypes,
   parseArchetypes,
   serializeCompensation,
-  splitDisplayName,
 } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -53,7 +51,6 @@ import {
   parseArchetypesSkillResponse,
   parseCompRange,
   regionTagForUiLanguage,
-  type OnboardingCvOverrides,
   type ParsedCv,
 } from './onboarding-content.util';
 import { guideForProvider } from './provider-guides';
@@ -62,6 +59,8 @@ import { OnboardingCliBridgeService } from './onboarding-cli-bridge.service';
 import { CLI_PROVIDERS, cardNameKey } from './onboarding-cli.util';
 import { OnboardingApiKeyCardComponent } from './onboarding-api-key-card/onboarding-api-key-card.component';
 import { OnboardingCliCardComponent } from './onboarding-cli-card/onboarding-cli-card.component';
+import { OnboardingReviewService } from './onboarding-review.service';
+import { OnboardingReviewStepComponent } from './onboarding-review-step/onboarding-review-step.component';
 import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
@@ -79,10 +78,11 @@ type ResumePath = 'upload' | 'paste' | 'skip';
     LucideAngularModule,
     OnboardingApiKeyCardComponent,
     OnboardingCliCardComponent,
+    OnboardingReviewStepComponent,
   ],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.scss',
-  providers: [OnboardingAiKeyService, OnboardingCliBridgeService],
+  providers: [OnboardingAiKeyService, OnboardingCliBridgeService, OnboardingReviewService],
 })
 export class OnboardingComponent {
   private readonly db = inject(DbService);
@@ -138,13 +138,14 @@ export class OnboardingComponent {
     'onboarding.step_names.ready',
   ];
 
-  /** The Review step only exists to check a parsed resume. Without one it is an
-   * empty form, so it is skipped forward AND unreachable backwards. */
-  readonly hasReview = computed(() => this.parsedCv() !== null);
+  /** The parsed resume and the Review step's edits to it. Owned by the Review
+   * step child; the wizard reads the same signals back for navigation, the
+   * Ready summary, the profile it saves and the CV document it writes. */
+  readonly review = inject(OnboardingReviewService);
 
   readonly railSteps = computed(() => {
     const current = this.step();
-    const hasReview = this.hasReview();
+    const hasReview = this.review.hasReview();
     return this.stepNameKeys.map((key, index) => ({
       index,
       n: String(index + 1).padStart(2, '0'),
@@ -299,40 +300,6 @@ export class OnboardingComponent {
   readonly resumeError = signal(false);
   /** The raw failure behind `resumeError`, shown under the friendly line. */
   readonly resumeErrorDetail = signal<string | null>(null);
-  readonly parsedCv = signal<CvParsedContent | null>(null);
-
-  readonly experience = computed(() => this.parsedCv()?.experience ?? []);
-  readonly skills = computed(() => this.parsedCv()?.skills ?? []);
-  readonly lowConfidenceCount = computed(() => this.parsedCv()?.lowConfidenceNotes?.length ?? 0);
-
-  // ---- Review (editable overrides seeded once from the parsed CV) ----
-  readonly reviewFirstName = signal('');
-  readonly reviewLastName = signal('');
-  /** Set the first time the user touches either name field. The nudge is a
-   * question, and a question stops being worth asking once it is answered -
-   * including when the answer is "what you parsed was already right". */
-  readonly nameEdited = signal(false);
-
-  /** True when the parse could not confirm the split, so the review step should
-   * ask. Never gates Continue: Applye augments, it does not block. */
-  readonly needsNameConfirm = computed(() => {
-    if (this.nameEdited()) return false;
-    const first = this.reviewFirstName().trim();
-    const last = this.reviewLastName().trim();
-    // Nothing parsed at all, nothing to confirm. But one part alone is exactly
-    // the case worth asking about, whichever of the two it is.
-    if (!first && !last) return false;
-    if (!first || !last) return true;
-    return this.parsedCv()?.personalDetails.nameSplitConfident !== true;
-  });
-
-  onNameEdited(): void {
-    this.nameEdited.set(true);
-  }
-
-  readonly reviewEmail = signal('');
-  readonly reviewPhone = signal('');
-  readonly reviewAddress = signal('');
 
   chooseResume(path: ResumePath): void {
     this.resumePath.set(path);
@@ -340,7 +307,7 @@ export class OnboardingComponent {
     // Choosing "skip" after a parse must actually drop the parse. Otherwise the
     // profile still gets written from the resume the user just walked away from
     // while the Ready step tells them it was skipped.
-    if (path === 'skip') this.discardParse();
+    if (path === 'skip') this.review.discardParse();
     if (path === 'upload' && !this.resumeFileName()) {
       void this.pickResumeFile();
     }
@@ -352,14 +319,7 @@ export class OnboardingComponent {
   setPastedResume(text: string): void {
     this.resumeText.set(text);
     this.resumeInputHash.set(undefined);
-    this.discardParse();
-  }
-
-  /** Any change to the resume source invalidates what was parsed from the old
-   * one - a stale parse would otherwise reach the profile and the CV document,
-   * and keep the Review step reachable for text that is no longer there. */
-  private discardParse(): void {
-    this.parsedCv.set(null);
+    this.review.discardParse();
   }
 
   async pickResumeFile(): Promise<void> {
@@ -373,7 +333,7 @@ export class OnboardingComponent {
     this.resumeText.set(file.text);
     this.resumeInputHash.set(file.inputHash);
     this.resumeFileName.set(path.split(/[/\\]/).pop() ?? path);
-    this.discardParse();
+    this.review.discardParse();
   }
 
   /**
@@ -430,8 +390,8 @@ export class OnboardingComponent {
         maxTokens: 8192,
       });
       const cv = parseCvSkillResponse(res.text);
-      this.parsedCv.set(cv);
-      this.seedReviewFields();
+      this.review.parsedCv.set(cv);
+      this.review.seedReviewFields();
       this.next();
     } catch (e) {
       this.resumeError.set(true);
@@ -442,24 +402,6 @@ export class OnboardingComponent {
     } finally {
       this.parsing.set(false);
     }
-  }
-
-  /** Seed each review field only if still empty - a Back + re-parse must never
-   * silently clobber the user's manual edits. Extracted so tests can drive
-   * seeding without running a full parse. */
-  seedReviewFields(): void {
-    const cv = this.parsedCv();
-    if (!cv) return;
-    const split = splitDisplayName(cv.personalDetails.fullName ?? '');
-    // `||` rather than `??`: a part the parse left as an empty string carries no
-    // more information than a missing one, so both fall back to the derived split.
-    if (!this.reviewFirstName().trim())
-      this.reviewFirstName.set(cv.personalDetails.firstName || split.firstName);
-    if (!this.reviewLastName().trim())
-      this.reviewLastName.set(cv.personalDetails.lastName || split.lastName);
-    if (!this.reviewEmail().trim()) this.reviewEmail.set(cv.personalDetails.email ?? '');
-    if (!this.reviewPhone().trim()) this.reviewPhone.set(cv.personalDetails.phone ?? '');
-    if (!this.reviewAddress().trim()) this.reviewAddress.set(cv.personalDetails.address ?? '');
   }
 
   // ---- Targeting (archetypes + compensation) ----
@@ -645,7 +587,7 @@ export class OnboardingComponent {
     // Resolve the name through the same rule the artifacts are written with, so
     // the recap cannot claim a different name from the one on the profile and
     // the CV - notably for a family-name-first name the user did not reorder.
-    const name = applyContactOverrides(this.reviewOverrides()).fullName;
+    const name = applyContactOverrides(this.review.overrides()).fullName;
     return `${this.t()('onboarding.done.imported_prefix')}${name ? ' · ' + name : ''}`;
   });
   readonly rolesSummary = computed(
@@ -662,33 +604,24 @@ export class OnboardingComponent {
 
   back(): void {
     // Step 4 → 2 when Review was skipped, mirroring the forward jump.
-    this.step.update((s) => (s === 4 && !this.hasReview() ? 2 : Math.max(s - 1, 0)));
+    this.step.update((s) => (s === 4 && !this.review.hasReview() ? 2 : Math.max(s - 1, 0)));
   }
 
   goTo(i: number): void {
-    if (i === 3 && !this.hasReview()) return;
+    if (i === 3 && !this.review.hasReview()) return;
     if (i <= this.step()) this.step.set(i);
   }
 
-  private reviewOverrides(): OnboardingCvOverrides {
-    return {
-      firstName: this.reviewFirstName(),
-      lastName: this.reviewLastName(),
-      email: this.reviewEmail(),
-      phone: this.reviewPhone(),
-      address: this.reviewAddress(),
-      parsedFullName: this.parsedCv()?.personalDetails.fullName ?? '',
-      nameEdited: this.nameEdited(),
-    };
-  }
-
   private buildProfileCv(): ParsedCv {
-    const cv = this.parsedCv();
+    const cv = this.review.parsedCv();
     return {
       // Spread the parsed contact first so website, LinkedIn and title survive;
       // the review overrides then replace only the four fields the user edited
       // (name/email/phone/address), mirroring buildOnboardingCvInput.
-      personalDetails: { ...cv?.personalDetails, ...applyContactOverrides(this.reviewOverrides()) },
+      personalDetails: {
+        ...cv?.personalDetails,
+        ...applyContactOverrides(this.review.overrides()),
+      },
       summary: cv?.summary ?? null,
       experience: cv?.experience ?? [],
       skills: cv?.skills ?? [],
@@ -751,7 +684,7 @@ export class OnboardingComponent {
    * must never trap the user in onboarding or lose the profile - the Documents
    * import stays available either way. */
   async saveCvDocument(): Promise<void> {
-    const parsed = this.parsedCv();
+    const parsed = this.review.parsedCv();
     if (!parsed || this.resumePath() === 'skip') return;
     try {
       const settings = await this.db.getSettings();
@@ -763,7 +696,7 @@ export class OnboardingComponent {
       await this.db.documentLibraryUpsert(
         buildOnboardingCvInput({
           parsed,
-          overrides: this.reviewOverrides(),
+          overrides: this.review.overrides(),
           templates: await this.db.cvTemplatesList(),
           regionTag: regionTagForUiLanguage(settings.uiLanguage),
           language: settings.defaultDocLanguage ?? 'en',

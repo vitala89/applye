@@ -31,7 +31,6 @@ import {
   parseLanguageEntries,
   serializeLanguageEntries,
   Archetype,
-  hasDistinctiveWord,
   parseArchetypes,
   serializeArchetypes,
   profileCompleteness,
@@ -47,7 +46,6 @@ import {
   Save,
   Check,
   RotateCcw,
-  Target,
   X,
   Plus,
   Sparkles,
@@ -62,6 +60,7 @@ import { ToastService } from '../../core/toast/toast.service';
 import { ScoringSummaryComponent } from './scoring-summary.component';
 import { CompletenessHeroComponent } from './completeness-hero.component';
 import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
+import { ProfileArchetypesComponent } from './profile-archetypes/profile-archetypes.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
  * optional/nullable since the AI omits or nulls anything it did not find in
@@ -108,6 +107,7 @@ interface ParsedProfile {
     CompletenessHeroComponent,
     LucideAngularModule,
     CvPhotoCropComponent,
+    ProfileArchetypesComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -124,7 +124,6 @@ export class ProfileComponent implements OnInit {
   protected readonly saveIcon = Save;
   protected readonly checkIcon = Check;
   protected readonly rerunIcon = RotateCcw;
-  protected readonly targetIcon = Target;
   protected readonly removeIcon = X;
   protected readonly plusIcon = Plus;
   protected readonly scoringIcon = Sparkles;
@@ -460,30 +459,6 @@ export class ProfileComponent implements OnInit {
     const el = document.getElementById('field-' + key);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     (el as HTMLElement | null)?.focus?.();
-  }
-
-  addArchetype(): void {
-    if (this.archetypes().length >= 5) return;
-    this.archetypes.update((a) => [...a, { name: '', fit: 'primary', sellWhen: '' }]);
-  }
-
-  removeArchetype(index: number): void {
-    this.archetypes.update((a) => a.filter((_, i) => i !== index));
-  }
-
-  updateArchetype(index: number, patch: Partial<Archetype>): void {
-    this.archetypes.update((a) => a.map((v, i) => (i === index ? { ...v, ...patch } : v)));
-  }
-
-  /**
-   * Whether this role name can match any job at all. A name built only from
-   * seniority and role-family words ("Senior Engineer") never anchors a match,
-   * so Discover shows no badge, For-you does not group it and scoring prompts
-   * ignore it. Warn while the user types instead of leaving them with a feed
-   * that quietly never reacts.
-   */
-  isMatchable(name: string): boolean {
-    return hasDistinctiveWord(name);
   }
 
   addEducation(): void {

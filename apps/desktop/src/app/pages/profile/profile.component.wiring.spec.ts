@@ -140,7 +140,9 @@ describe('ProfileComponent scoring freshness wiring', () => {
   });
 
   it('leaves the scoring profile alone when only archetypes changed', async () => {
-    component.addArchetype();
+    // What the target-roles section emits back to the page; the page owns the
+    // list, so this is the same state change adding a role produces.
+    component.archetypes.set([{ name: '', fit: 'primary', sellWhen: '' }]);
     expect(component.scoringState()).toBe('fresh');
 
     await component.save();

@@ -44,6 +44,27 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the onboarding wizard stops containing its AI panels
+
+- **Status:** complete - code complete and gated, without a click-through
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/onboarding-cli-panel`, from `main` (`de7000f`)
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** Take the CLI-bridge panel, the second half of the AI step, now that the API-key half has merged.
+- **Completed:** `onboarding-cli-bridge.service.ts` (123), `onboarding-cli-card/` (class 49, template 114, stylesheet 51) and `onboarding-cli.util.ts` (24). Wizard: html **742 -> 628**, ts **897 -> 797**, scss **766 -> 718**. Across both cuts the wizard is down from **878 / 1002 / 1045**. Its AI step is now the provider grid and an `@if (isCliMode())` choosing between two components.
+- **Pure exports rather than a third service.** `cliProviders`, the npm package table and `cardNameKey` are shared between the CLI panel and the provider grid the wizard keeps. None of them is state, so they became module constants and a pure function. `cardNameKey` takes the mode as a parameter instead of reading a signal - the panel already knows the answer is CLI mode, and the grid does not. The wizard re-exposes both as protected fields, because a template cannot name an imported function directly; that is the one alias this cut adds and it is there for the template rule, not for brevity.
+- **Losslessness evidence:** All six moved class members - `cliStatusFor`, `selectedCliWorks`, `selectedCliSetup`, `refreshCliProbe`, `installCli`, `openNodeSite` - were extracted by brace matching and compared against the service member by member, normalising the intended renames: **identical, all six**. Every one of the child template's 20 classes was checked to resolve either in the child's own stylesheet or in the global partial before the split was applied - none was left behind on the page. `tools/check-style-move.mjs` across all four stylesheets: nothing lost, nothing gained.
+- **Mutation testing:** M1 removed the concurrent-install guard, so a second click would run `npm install -g` twice against the user's machine at once; `refuses a second install while one is running` failed. M2 made the probe rethrow instead of reading a missing Tauri runtime as "none found", which is what keeps the wizard alive in a browser; `reads a failed probe as "none found" rather than propagating` failed, and six other tests fell over with it - which is itself the point, since that failure path is what stops the whole step from breaking. Both restores byte-exact by `diff`.
+- **Validation:** Run and observed: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings - the pre-existing baseline), `nx test desktop` (**1250 passed, 102 suites** - 1240/101 before, plus 10 new), `nx build desktop` (pass), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** a click-through. Onboarding is gated in `app.ts` rather than routed and the browser dev server has no Tauri IPC, so the gate does not open there. This cut moves behaviour, and the CLI probe and install paths are the part of the wizard that touches the user's machine, so the gap is real - the service specs are what stands in for it.
+- **Files or packages changed:** the wizard's three files, the new util, service, component and service spec, `CHANGELOG.md`, this log.
+- **Privacy/security impact:** None by intent. `installCli` still runs only on an explicit click, still shows the exact command, and its concurrency guard is now covered by a test that did not exist before.
+- **Decisions and assumptions:** The CLI service injects `OnboardingAiKeyService` for the selected provider rather than owning a second copy. The provider grid sits above both panels and sets it, and two sources of truth for "which provider" is the bug this arrangement exists to avoid.
+- **Risks or compatibility impact:** None known. No public API, schema, privacy or security surface changed.
+- **Open issues or blockers:** The click-through, for both AI panels.
+- **Next first action:** The onboarding wizard still has three files over budget and four untouched steps - welcome (31 template lines), resume (128), review (118), targeting (104), ready (68) - each nearly self-contained per the audit two watches ago. Take resume or review next. Alternatively finish the cover letter: its recipient block (93 lines) and body block (111) are what remain of that region.
+- **Evidence:** Branch diff; the six member comparisons; the class-resolution check; `check-style-move` output; the two mutation runs and their restores; check output quoted above.
+
 ### 2026-08-04, onboarding's API-key panel becomes a component
 
 - **Status:** complete - code complete and gated, without a click-through

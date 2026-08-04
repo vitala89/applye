@@ -1,0 +1,107 @@
+<div class="ob__card">
+  <div class="ob__panel-intro">
+    <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
+    <p class="ob__panel-intro-text">{{ t()('onboarding.ai.cli.panel_intro') }}</p>
+  </div>
+  <div class="ob__panel-body">
+    @if (cli.probing()) {
+      <div class="ob__key-status ob__key-status--muted">
+        <span class="ob__spinner" aria-hidden="true"></span>
+        {{ t()('onboarding.ai.cli.checking') }}
+      </div>
+    } @else {
+      @for (p of cliProviders; track p) {
+        @if (cli.statusFor(p); as st) {
+          <div class="ob__cli-row">
+            <lucide-icon
+              [img]="st.working ? icons.badgeCheck : icons.triangleAlert"
+              [size]="15"
+              [class.ob__cli-icon--ok]="st.working"
+              [class.ob__cli-icon--warn]="!st.working"
+              aria-hidden="true"
+            />
+            <span class="ob__cli-name">{{ t()(cardNameKey(p)) }}</span>
+            @if (st.working) {
+              <span class="ob__cli-detail">{{ st.version }}</span>
+            } @else {
+              <span class="ob__cli-detail">
+                {{
+                  st.installed ? t()('onboarding.ai.cli.broken') : t()('onboarding.ai.cli.missing')
+                }}
+              </span>
+              <button
+                appButton
+                variant="secondary"
+                size="sm"
+                type="button"
+                [disabled]="cli.installing() !== null"
+                (click)="cli.install(p)"
+              >
+                @if (cli.installing() === p) {
+                  <span class="ob__spinner" aria-hidden="true"></span>
+                  {{ t()('onboarding.ai.cli.installing') }}
+                } @else {
+                  <lucide-icon [img]="icons.download" [size]="14" aria-hidden="true" />
+                  {{
+                    st.installed
+                      ? t()('onboarding.ai.cli.reinstall_btn')
+                      : t()('onboarding.ai.cli.install_btn')
+                  }}
+                }
+              </button>
+            }
+          </div>
+        }
+      }
+
+      @if (cli.installError(); as err) {
+        <div class="ob__key-status ob__key-status--invalid">
+          <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+          <span>{{ err.message }}</span>
+        </div>
+        @if (err.needsNode) {
+          <button type="button" class="ob__link-btn" (click)="cli.openNodeSite()">
+            <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
+            {{ t()('onboarding.ai.cli.get_node') }}
+          </button>
+        }
+      }
+
+      <button type="button" class="ob__link-btn" (click)="cli.refreshProbe()">
+        <lucide-icon [img]="icons.refresh" [size]="15" aria-hidden="true" />
+        {{ t()('onboarding.ai.cli.recheck') }}
+      </button>
+
+      <!-- Setup guidance for the CLI the user actually picked.
+           Installing is not connecting: these CLIs sign in
+           interactively against the user's own account, which
+           Applye cannot do for them. -->
+      @if (cli.selectedSetup(); as setup) {
+        <div class="ob__cli-setup">
+          @if (setup.working) {
+            <p class="ob__cli-setup-text">
+              {{ t()('onboarding.ai.cli.ready_prefix') }} {{ setup.name }}.
+              {{ t()('onboarding.ai.cli.ready_auth_hint') }}
+              <code class="ob__cmd">{{ setup.signInCommand }}</code>
+            </p>
+          } @else {
+            <p class="ob__cli-setup-title">
+              {{ t()('onboarding.ai.cli.setup_prefix') }} {{ setup.name }}
+            </p>
+            <ol class="ob__steplist">
+              @for (st of setup.steps; track st.n) {
+                <li class="ob__stepitem">
+                  <span class="ob__stepitem-num">{{ st.n }}</span>
+                  <span class="ob__stepitem-text">
+                    {{ st.text }}
+                    <code class="ob__cmd">{{ st.command }}</code>
+                  </span>
+                </li>
+              }
+            </ol>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

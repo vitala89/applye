@@ -1,0 +1,53 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  BadgeCheck,
+  Download,
+  ExternalLink,
+  Info,
+  LucideAngularModule,
+  RefreshCw,
+  TriangleAlert,
+} from 'lucide-angular';
+import { AiProvider } from '@applye/core';
+import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
+import { OnboardingCliBridgeService } from '../onboarding-cli-bridge.service';
+import { CLI_PROVIDERS, cardNameKey } from '../onboarding-cli.util';
+
+/**
+ * The CLI-bridge panel of the onboarding AI step: which CLIs this machine has,
+ * installing one, and what is still left to do to the one the user picked.
+ *
+ * The sibling of `OnboardingApiKeyCardComponent`, and built the same way: it
+ * reads and mutates `OnboardingCliBridgeService` directly rather than taking
+ * inputs and emitting outputs, because the wizard provides that service and
+ * reads the same signals back for its Continue gate.
+ */
+@Component({
+  selector: 'app-onboarding-cli-card',
+  standalone: true,
+  imports: [ButtonDirective, LucideAngularModule],
+  templateUrl: './onboarding-cli-card.component.html',
+  styleUrl: './onboarding-cli-card.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class OnboardingCliCardComponent {
+  protected readonly cli = inject(OnboardingCliBridgeService);
+  protected readonly t = inject(TranslateService).t;
+
+  protected readonly cliProviders = CLI_PROVIDERS;
+
+  /** This panel only ever renders in CLI mode, so it never has to ask. */
+  protected cardNameKey(provider: AiProvider): string {
+    return cardNameKey(provider, true);
+  }
+
+  protected readonly icons = {
+    badgeCheck: BadgeCheck,
+    download: Download,
+    externalLink: ExternalLink,
+    info: Info,
+    refresh: RefreshCw,
+    triangleAlert: TriangleAlert,
+  };
+}

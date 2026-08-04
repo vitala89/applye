@@ -11,6 +11,7 @@
 // component's encapsulated SCSS, which duplicated ~11.5 kB per component and
 // blew the per-component style budget.
 @use './app/pages/documents/editor-shell' as *;
+@use './app/pages/discover/discover-controls' as *;
 
 // Shared onboarding-wizard vocabulary (headings, card/badge and form
 // primitives, status pieces). Emitted once here for the same reason: the

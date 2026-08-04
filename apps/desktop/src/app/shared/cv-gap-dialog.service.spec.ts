@@ -117,6 +117,24 @@ describe('CvGapDialogService', () => {
     expect(s.taken).toBe(false);
   });
 
+  /**
+   * The second reported hang. This service is component-scoped, so leaving the
+   * job page destroys it - but the generation it was serving keeps running and
+   * asks again later, for the undated entries. That later `ask` reached a
+   * service whose signals no page is reading any more: the dialog was "open"
+   * where nothing renders it, so nobody could ever answer, the promise never
+   * settled, and the CV card sat on "Generating" with no dialog on screen and
+   * nothing happening.
+   */
+  it('answers null instead of opening a dialog nobody can see, once disposed', async () => {
+    const s = make();
+    s.dispose();
+
+    await expect(s.ask(questions)).resolves.toBeNull();
+    expect(s.open()).toBe(false);
+    expect(s.taken).toBe(false);
+  });
+
   it('dispose is safe with nothing waiting', () => {
     const s = make();
     expect(() => s.dispose()).not.toThrow();

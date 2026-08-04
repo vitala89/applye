@@ -44,6 +44,29 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-04, the onboarding wizard's shared styles are defined once
+
+- **Status:** complete
+- **Agent/tool:** Claude Code, Opus
+- **Branch:** `refactor/onboarding-shell-styles`, from `main` (`030dd6c`)
+- **Commits:** one commit
+- **Pull request:** opened against `main`
+- **Objective:** Do the preparatory hoist for the onboarding wizard before cutting any of its six steps, per the rule written this same day into `docs/governance/CODE_QUALITY.md`.
+- **Why preparatory and not part of the first cut.** The wizard's six steps are each going to become a component. Every one of those cuts has to decide what happens to the classes the steps share, and the last cut that made that decision inside the cut lost a rule. Doing it once, first, means the five later cuts have nothing to decide - and it shrinks the stylesheet on its own, which is the file that is furthest over budget.
+- **The shared set was measured, not chosen.** Of the 130 classes the template uses, **exactly 14 appear in more than one step block**: `ob__eyebrow`, `ob__h1`, `ob__subtitle` (all six blocks), `ob__card` (welcome, AI setup, ready), `ob__badge` and `ob__badge-dot` (welcome, targeting), `ob__field`, `ob__field-label`, `ob__field-hint`, `ob__input`, `ob__key-status`, `ob__muted-note`, `ob__section`, `ob__spinner`. The other 115 belong to one block each and stay where they are, to travel with that block when it is cut. Four of the shared rules were sitting under a step banner (`ob__field` and `ob__spinner`/`ob__key-status` under "Step 1", `ob__muted-note` under "Step 3", `ob__section` under "Step 4"), which is what drift from step-local to shared looks like.
+- **Completed:** `_onboarding-shell.scss` (172 lines) carrying 27 rules and the stylesheet's own `Reusable card / badge / field primitives` banner, emitted once from `apps/desktop/src/styles.scss`. Page stylesheet **1045 -> 894** non-empty lines. No template, class or behaviour change.
+- **Losslessness evidence:** Rules were extracted by line range to a scratch file before deletion, and the result verified with `tools/check-style-move.mjs` from `chore/style-move-check`: every selector carries the same declarations it did on `main`, nothing lost and nothing gained, across both files. Run again after `nx format:write`, in case formatting moved anything - still lossless.
+- **The specificity risk was closed rather than argued about.** Moving a rule from a component stylesheet to a global one drops its `[_ngcontent]` attribute, so it becomes less specific and could start losing to a rule it used to beat. The page's stylesheet now contains **zero** references to any hoisted class, so there is no rule left for the cascade to reorder. `ob__` appears in no other stylesheet or template in `apps/` or `libs/`.
+- **Validation:** Run and observed: `nx run desktop:type-check` (pass), `nx run-many --target=lint --projects=desktop` (0 errors, 8 warnings - the pre-existing baseline), `nx test desktop` (pass), `nx build desktop` (pass), `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check` (exit 0), `git diff --check` (clean). **Not run:** a click-through. Onboarding is gated in `app.ts` rather than routed, and the browser dev server has no Tauri IPC, so the gate does not open there. The compiled-CSS comparison above is what stands in for it, and it is a stronger check for a move-only stylesheet change than looking at one screen would be.
+- **The bundle budget was checked against `main`, not assumed.** `nx build desktop` prints `bundle initial exceeded maximum budget` on both sides: `main` is over by 21.58 kB, this branch by 21.05 kB. The warning is pre-existing and the branch is **0.5 kB smaller**, because rules emitted once are no longer scoped per component.
+- **Files or packages changed:** `apps/desktop/src/app/core/onboarding/_onboarding-shell.scss` (new, 172), `onboarding.component.scss` (1045 -> 894), `apps/desktop/src/styles.scss`, `CHANGELOG.md`, this log.
+- **Privacy/security impact:** None. Stylesheet organisation only.
+- **Decisions and assumptions:** `ob__badge-dot` is hoisted although only the welcome step uses it, because it is a sub-element of a shared primitive and splitting a BEM block from its element across two files is the shape that already went wrong once. Everything else in the partial is shared on the measurement.
+- **Risks or compatibility impact:** These rules are now global and unencapsulated. The `ob__` prefix is the wizard's alone, which is what makes that acceptable, and the partial's header comment says so.
+- **Open issues or blockers:** None for this watch. PR #320 still awaits the data half of its click-through; PR #322 carries the check used above and the rule this watch follows.
+- **Next first action:** Take the Onboarding CLI block - template lines 157-420, 260 non-empty, ~193 exclusive stylesheet lines, ~162 exclusive class lines. Confirm the exact boundaries against element nesting rather than the comment banners before extracting; the symbol counts moved when the split point moved. Expect html 878 -> ~618, ts 1002 -> ~840.
+- **Evidence:** Branch diff; `check-style-move` output before and after formatting; the class-frequency count over the template; both bundle-budget lines; check output quoted above.
+
 ### 2026-08-04, every CV save was failing on a foreign key into an empty table
 
 - **Status:** complete

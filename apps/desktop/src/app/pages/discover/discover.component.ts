@@ -35,7 +35,6 @@ import {
 import { TranslateService } from '@applye/i18n';
 import { DbService } from '@applye/data';
 import {
-  parseGeoScopes,
   parseLocalMarkets,
   parseProfileMd,
   compareCompensation,
@@ -47,7 +46,6 @@ import {
 } from '@applye/core';
 import type {
   CompensationVerdict,
-  DiscoverSource,
   ScanSourceResult,
   ArchetypeMatch,
   ArchetypeFit,
@@ -61,7 +59,9 @@ import {
   type LocClass,
   type RegionKey,
 } from './discover-location';
-import { narrowBuiltinsByMarkets } from './discover-sources.util';
+import { toggled } from './discover-sources.util';
+import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
+import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
@@ -88,12 +88,6 @@ interface RegionGroup {
 const FEED_PAGE = 30;
 /** One block of the deterministically parsed job description. */
 const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
-const ATS_LABEL: Record<string, string> = {
-  ats_greenhouse: 'GH',
-  ats_lever: 'LEVER',
-  ats_ashby: 'ASHBY',
-  ats_personio: 'PERSONIO',
-};
 
 /** Static tech dictionary for the deterministic "skills found in posting" chips. */
 const SKILL_DICT = [
@@ -147,7 +141,8 @@ const SKILL_DICT = [
 @Component({
   selector: 'app-discover',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, RouterLink],
+  imports: [FormsModule, LucideAngularModule, RouterLink, DiscoverSourcesDrawerComponent],
+  providers: [DiscoverSourcesService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './discover.component.html',
   styleUrl: './discover.component.scss',
@@ -180,10 +175,17 @@ export class DiscoverComponent {
     shield: ShieldCheck,
   };
 
+  private readonly sourcesSvc = inject(DiscoverSourcesService);
+
+  /** Read-through onto the service that owns the list: the scan runs over the
+   * enabled sources and the header counts them. Editing them is the drawer's. */
+  protected readonly sources = this.sourcesSvc.all;
+  protected readonly everScanned = this.sourcesSvc.everScanned;
+  protected readonly enabledCount = this.sourcesSvc.enabledCount;
+
   // ------------------------------------------------------------------ state
   protected readonly loading = signal(true);
   protected readonly scanning = signal(false);
-  protected readonly sources = signal<DiscoverSource[]>([]);
   protected readonly feed = signal<FeedRow[]>([]);
   protected readonly consoleLines = signal<ConsoleLine[]>([]);
   protected readonly consoleExpanded = signal(false);
@@ -205,8 +207,6 @@ export class DiscoverComponent {
   private readonly lastScanMarket = signal<string[]>([]);
   /** Session-only dismissal of the "market changed" banner. */
   private readonly rescanBannerDismissed = signal(false);
-  /** "Show all sources" override for the market narrowing. */
-  protected readonly showAllSources = signal(false);
   /** In flight for the whole refresh (clear + scan), so a double-click on the
    * market-changed banner cannot fire two clears. `scanning()` alone does not
    * cover the clear that runs before the scan starts. */
@@ -255,15 +255,6 @@ export class DiscoverComponent {
 
   protected readonly allWorkTypes: readonly WorkType[] = ['remote', 'hybrid', 'onsite'];
 
-  // sources drawer forms
-  protected readonly boardFormOpen = signal(false);
-  protected readonly boardType = signal<
-    'ats_greenhouse' | 'ats_lever' | 'ats_ashby' | 'ats_personio'
-  >('ats_greenhouse');
-  protected readonly boardSlug = signal('');
-  protected readonly rssUrl = signal('');
-  protected readonly rssName = signal('');
-
   constructor() {
     void this.load();
     // Infinite scroll: when the end-of-feed sentinel enters the viewport, render
@@ -298,30 +289,6 @@ export class DiscoverComponent {
     return 'feed';
   });
 
-  protected readonly everScanned = computed(() => this.sources().some((s) => s.lastScanAt));
-  protected readonly enabledCount = computed(
-    () => this.sources().filter((s) => s.isEnabled).length,
-  );
-
-  // ---- Sources drawer: summary + collapsible groups ----
-  protected readonly sourcesTotal = computed(() => this.sources().length);
-  protected readonly sourcesFailing = computed(
-    () => this.sources().filter((s) => this.resultLine(s).error).length,
-  );
-
-  /** Collapsed source groups in the drawer ('builtin' | 'boards' | 'yours'). */
-  protected readonly collapsedGroups = signal<ReadonlySet<string>>(new Set());
-  protected groupCollapsed(key: string): boolean {
-    return this.collapsedGroups().has(key);
-  }
-  protected toggleSourceGroup(key: string): void {
-    this.collapsedGroups.update((set) => this.toggled(set, key));
-  }
-  /** Enabled count within one source group, for its header badge. */
-  protected activeCount(list: DiscoverSource[]): number {
-    return list.filter((s) => s.isEnabled).length;
-  }
-
   /** Per-source results of the last scan, parsed from sources.lastScanJson. */
   private readonly lastResults = computed<ScanSourceResult[]>(() =>
     this.sources()
@@ -349,7 +316,7 @@ export class DiscoverComponent {
       .filter((v): v is string => !!v)
       .sort();
     const latest = times[times.length - 1];
-    return latest ? this.formatTime(latest) : '';
+    return latest ? formatScanTime(latest) : '';
   });
 
   /** Distinct source names present in the feed, for the source select. */
@@ -545,34 +512,6 @@ export class DiscoverComponent {
     () => this.view() === 'scanning' || (this.consoleExpanded() && this.showStrip()),
   );
 
-  // drawer sections
-  protected readonly builtinSources = computed(() => this.sources().filter((s) => s.isBuiltin));
-  protected readonly companyBoards = computed(() =>
-    this.sources().filter((s) => !s.isBuiltin && (s.type ?? '').startsWith('ats_')),
-  );
-  protected readonly userSources = computed(() =>
-    this.sources().filter((s) => !s.isBuiltin && !(s.type ?? '').startsWith('ats_')),
-  );
-
-  /** Built-in sources for the selected markets (rules in discover-sources.util).
-   *
-   * Computed independently of `showAllSources` so `hiddenBuiltinCount` stays
-   * stable while the override is on - otherwise switching it on would drive
-   * the count to zero and unmount the very checkbox that switches it back.
-   *
-   * User-added sources (userSources/companyBoards) are never narrowed. */
-  private readonly marketNarrowedBuiltins = computed(() =>
-    narrowBuiltinsByMarkets(this.builtinSources(), this.markets()),
-  );
-
-  protected readonly visibleBuiltinSources = computed(() =>
-    this.showAllSources() ? this.builtinSources() : this.marketNarrowedBuiltins(),
-  );
-
-  protected readonly hiddenBuiltinCount = computed(
-    () => this.builtinSources().length - this.marketNarrowedBuiltins().length,
-  );
-
   /** True when the selected market no longer matches the feed on screen, so the
    * results shown are for a market the user has moved away from. */
   protected readonly marketChangedSinceScan = computed(() => {
@@ -614,14 +553,6 @@ export class DiscoverComponent {
     }
   }
 
-  private async reloadSources(): Promise<void> {
-    try {
-      this.sources.set(await this.db.listSources());
-    } catch (e) {
-      console.error('discover: sources reload failed', e);
-    }
-  }
-
   // ------------------------------------------------------------------ scan
   protected async scan(): Promise<void> {
     if (this.scanning()) return;
@@ -645,7 +576,7 @@ export class DiscoverComponent {
         feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
       );
       this.displayCount.set(FEED_PAGE);
-      await this.reloadSources();
+      await this.sourcesSvc.reload();
       this.lastScanMarket.set(this.markets());
       this.rescanBannerDismissed.set(false);
     } catch (e) {
@@ -838,7 +769,7 @@ export class DiscoverComponent {
   }
 
   protected toggleWork(w: WorkType): void {
-    this.workTypeSel.update((set) => this.toggled(set, w));
+    this.workTypeSel.update((set) => toggled(set, w));
   }
 
   protected clearWork(): void {
@@ -851,7 +782,7 @@ export class DiscoverComponent {
   }
 
   protected toggleSourceFilter(name: string): void {
-    this.sourceSel.update((set) => this.toggled(set, name));
+    this.sourceSel.update((set) => toggled(set, name));
   }
 
   protected clearSources(): void {
@@ -869,7 +800,7 @@ export class DiscoverComponent {
 
   protected toggleRegionExpand(key: RegionKey, event: Event): void {
     event.stopPropagation();
-    this.expandedRegions.update((set) => this.toggled(set, key));
+    this.expandedRegions.update((set) => toggled(set, key));
   }
 
   protected countryExpanded(name: string): boolean {
@@ -878,7 +809,7 @@ export class DiscoverComponent {
 
   protected toggleCountryExpand(name: string, event: Event): void {
     event.stopPropagation();
-    this.expandedCountries.update((set) => this.toggled(set, name));
+    this.expandedCountries.update((set) => toggled(set, name));
   }
 
   protected cityChecked(country: string, city: string): boolean {
@@ -886,7 +817,7 @@ export class DiscoverComponent {
   }
 
   protected toggleCity(country: string, city: string): void {
-    this.countrySel.update((set) => this.toggled(set, this.cityKey(country, city)));
+    this.countrySel.update((set) => toggled(set, this.cityKey(country, city)));
   }
 
   /** Country tri-state against its cities present in the feed (own check + cities). */
@@ -942,14 +873,6 @@ export class DiscoverComponent {
 
   protected clearLocations(): void {
     this.countrySel.set(new Set());
-  }
-
-  /** Immutable Set toggle shared by every checkbox helper. */
-  private toggled<T>(set: ReadonlySet<T>, value: T): Set<T> {
-    const next = new Set(set);
-    if (next.has(value)) next.delete(value);
-    else next.add(value);
-    return next;
   }
 
   // ------------------------------------------------------------ detail misc
@@ -1015,103 +938,12 @@ export class DiscoverComponent {
     if (row.sourceUrl) await openUrl(row.sourceUrl);
   }
 
-  // --------------------------------------------------------------- sources
-  protected async toggleSource(source: DiscoverSource): Promise<void> {
-    const enabled = !source.isEnabled;
-    this.sources.update((list) =>
-      list.map((s) => (s.id === source.id ? { ...s, isEnabled: enabled } : s)),
-    );
-    try {
-      await this.db.setSourceEnabled(source.id, enabled);
-    } catch (e) {
-      console.error('discover: toggle source failed', e);
-      this.toast.error(String(e));
-      await this.reloadSources();
-    }
-  }
-
-  protected async addBoard(): Promise<void> {
-    const slug = this.boardSlug().trim().toLowerCase();
-    if (!slug) return;
-    const label = ATS_LABEL[this.boardType()] ?? 'ATS';
-    try {
-      await this.db.addSource({
-        name: `${label}:${slug.toUpperCase()}`,
-        sourceType: this.boardType(),
-        slug,
-      });
-      this.boardSlug.set('');
-      this.boardFormOpen.set(false);
-      await this.reloadSources();
-      this.toast.success(this.t()('discover.source_added'));
-    } catch (e) {
-      console.error('discover: add board failed', e);
-      this.toast.error(String(e));
-    }
-  }
-
-  protected async addRss(): Promise<void> {
-    const url = this.rssUrl().trim();
-    const name = this.rssName().trim() || this.hostOf(url);
-    if (!url || !name) return;
-    try {
-      await this.db.addSource({ name, sourceType: 'rss', url });
-      this.rssUrl.set('');
-      this.rssName.set('');
-      await this.reloadSources();
-      this.toast.success(this.t()('discover.source_added'));
-    } catch (e) {
-      console.error('discover: add source failed', e);
-      this.toast.error(String(e));
-    }
-  }
-
-  protected async removeSource(source: DiscoverSource, event: Event): Promise<void> {
-    event.stopPropagation();
-    try {
-      await this.db.removeSource(source.id);
-      await this.reloadSources();
-      this.toast.success(this.t()('discover.source_removed'));
-    } catch (e) {
-      console.error('discover: remove source failed', e);
-      this.toast.error(String(e));
-    }
-  }
-
   // --------------------------------------------------------------- helpers
   /** Short mono badge label for a source name ("We Work Remotely" -> WWR). */
   protected srcLabel(name: string | null): string {
     if (!name) return '';
     if (/^we work remotely$/i.test(name)) return 'WWR';
     return name.toUpperCase();
-  }
-
-  protected typeBadge(source: DiscoverSource): string {
-    const type = source.type ?? '';
-    if (type.startsWith('ats_')) return 'ATS';
-    return type.toUpperCase();
-  }
-
-  /** Last-scan line for a source row in the drawer. */
-  protected resultLine(source: DiscoverSource): { text: string; error: boolean } {
-    if (!source.isEnabled) return { text: this.t()('discover.idle_off'), error: false };
-    if (!source.lastScanAt || !source.lastScanJson) {
-      return { text: this.t()('discover.never_scanned_short'), error: false };
-    }
-    try {
-      const result = JSON.parse(source.lastScanJson) as ScanSourceResult;
-      if (result.error) {
-        return { text: `${this.t()('discover.error_short')} · ${result.error}`, error: true };
-      }
-      return {
-        text: this.t()('discover.result_line')
-          .replace('{n}', String(result.newJobs))
-          .replace('{time}', this.formatTime(source.lastScanAt)),
-        error: false,
-      };
-    } catch {
-      return { text: this.t()('discover.never_scanned_short'), error: false };
-    }
   }
 
   protected matchedKeywords(row: FeedRow): string[] {
@@ -1132,37 +964,9 @@ export class DiscoverComponent {
     return this.t()('discover.ago_d').replace('{n}', String(Math.floor(hours / 24)));
   }
 
-  /** Joins every selected scope region ("Europe, Asia"); Worldwide when none are. */
-  /** Mirrors the two geo modes: local markets win when set, exactly as the
-   * scan engine reads them, so this label always names what is really used. */
-  protected scopeLabel(): string {
-    const markets = this.markets();
-    const keys = parseGeoScopes(this.geoScope());
-    let label: string;
-    if (markets.length) {
-      label = markets.map((m) => this.t()('settings.local_market_' + m)).join(', ');
-    } else if (keys.length) {
-      label = keys.map((k) => this.t()('discover.region_' + k)).join(', ');
-    } else {
-      label = this.t()('settings.geo_worldwide');
-    }
-    return this.t()('discover.scope_label').replace('{scope}', label);
-  }
-
   protected isRemote(location: string | null): boolean {
     const loc = (location ?? '').toLowerCase();
     return REMOTE_MARKERS.some((m) => loc.includes(m));
-  }
-
-  private formatTime(sqliteUtc: string): string {
-    const date = new Date(sqliteUtc.replace(' ', 'T') + 'Z');
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-
-  private hostOf(url: string): string {
-    const withoutScheme = url.split('://')[1] ?? url;
-    return withoutScheme.split('/')[0] ?? '';
   }
 
   protected readonly skeletonRows = [

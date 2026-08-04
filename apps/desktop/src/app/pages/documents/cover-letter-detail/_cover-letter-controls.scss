@@ -1,0 +1,92 @@
+// The cover-letter editor's section-action controls: the Style button, the
+// Regenerate/Add buttons and the spinner they share.
+//
+// The editor's five text blocks became one component rendered five times
+// (`cover-letter-block/`), and these classes are used by that component *and*
+// by the recipient and body blocks the page still renders itself. Angular
+// scopes a component's compiled CSS, so a class defined on the page does not
+// reach a child extracted out of it - see `CODE_QUALITY.md`, "Splitting a page:
+// where its shared styles go".
+//
+// Emitted once from `apps/desktop/src/styles.scss`, as `_editor-shell.scss`
+// already is for the `docedit-*` vocabulary these blocks sit inside.
+//
+// `.coverdetail__add` rides along because it shares one rule with
+// `.coverdetail__regen`. Splitting a grouped selector so that one half keeps
+// the name and the other keeps the body is exactly how a rule was lost once
+// before; `npm run quality:style-move` exists because of it.
+.coverdetail__style-btn--custom {
+  color: var(--accent);
+}
+.coverdetail__style-btn--custom::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.coverdetail__style-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid transparent;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.coverdetail__style-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+.coverdetail__style-btn--active {
+  background: var(--accent-tint, var(--surface-hover));
+  color: var(--accent);
+}
+.coverdetail__regen,
+.coverdetail__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  width: auto;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.coverdetail__regen:hover:not(:disabled),
+.coverdetail__add:hover {
+  background: var(--surface-hover);
+}
+.coverdetail__regen:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.coverdetail__add {
+  align-self: flex-start;
+  margin-top: var(--space-3);
+  color: var(--text-primary);
+}
+.spin {
+  animation: cl-spin 0.9s linear infinite;
+}
+@keyframes cl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

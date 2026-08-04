@@ -31,7 +31,6 @@ import type {
 import {
   COVER_LETTER_BLOCK_KEYS,
   COVER_LETTER_LENGTH_DEFAULT,
-  COVER_LETTER_LENGTH_TARGET,
   COVER_LETTER_LENGTHS,
   COVER_LETTER_STYLE_DEFAULT,
   COVER_LETTER_TONE_DEFAULT,
@@ -46,6 +45,8 @@ import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
+import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
+import { bodyLengthStatus, countBodyWords } from './cover-letter-length.util';
 
 @Component({
   selector: 'app-cover-letter-detail',
@@ -57,6 +58,7 @@ import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
     ButtonDirective,
     NgTemplateOutlet,
     CoverLetterPreviewComponent,
+    CoverLetterBlockComponent,
   ],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
@@ -152,20 +154,8 @@ export class CoverLetterDetailComponent {
   }
 
   /** Live body word count (paragraphs only - the target is a body budget). */
-  readonly wordCount = computed(
-    () =>
-      (this.content().bodyParagraphs ?? []).join(' ').trim().split(/\s+/).filter(Boolean).length,
-  );
-
-  /** 'under' | 'ok' | 'over' vs the selected length's word budget - drives the
-   * badge colour so the user sees at a glance whether the draft fits. */
-  readonly wordStatus = computed<'under' | 'ok' | 'over'>(() => {
-    const target = COVER_LETTER_LENGTH_TARGET[this.length()];
-    const n = this.wordCount();
-    if (n < target.min) return 'under';
-    if (n > target.max) return 'over';
-    return 'ok';
-  });
+  readonly wordCount = computed(() => countBodyWords(this.content().bodyParagraphs));
+  readonly wordStatus = computed(() => bodyLengthStatus(this.wordCount(), this.length()));
 
   private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
     font_ats_risk: 'documents.cv_style_note_font',

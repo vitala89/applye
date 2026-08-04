@@ -427,188 +427,50 @@
             </section>
 
             <!-- Date -->
-            <section class="docedit-section">
-              <div class="docedit-section__head">
-                <button
-                  type="button"
-                  class="docedit-section__toggle"
-                  [attr.aria-expanded]="isBlockOpen('date')"
-                  (click)="toggleBlockCollapse('date')"
-                >
-                  <lucide-icon
-                    [img]="icons.chevron"
-                    [size]="15"
-                    aria-hidden="true"
-                    class="docedit-chevron"
-                    [class.docedit-chevron--closed]="!isBlockOpen('date')"
-                  />
-                  <span class="docedit-section__title">{{
-                    t()('documents.cover_letter_field_date')
-                  }}</span>
-                </button>
-                <div class="docedit-section__actions">
-                  <button
-                    type="button"
-                    class="coverdetail__style-btn"
-                    [class.coverdetail__style-btn--active]="openStyleKey() === 'date'"
-                    [class.coverdetail__style-btn--custom]="hasCustomStyle('date')"
-                    (click)="toggleStylePopover('date')"
-                  >
-                    {{ t()('documents.cv_section_style') }}
-                  </button>
-                </div>
-              </div>
-              @if (openStyleKey() === 'date') {
-                <ng-container
-                  [ngTemplateOutlet]="stylePopover"
-                  [ngTemplateOutletContext]="{ $implicit: 'date' }"
-                ></ng-container>
-              }
-              <div class="docedit-collapse" [class.docedit-collapse--closed]="!isBlockOpen('date')">
-                <div>
-                  <input
-                    type="text"
-                    class="coverdetail__full"
-                    [ngModel]="content().date"
-                    (ngModelChange)="updateField('date', $event)"
-                  />
-                </div>
-              </div>
-            </section>
+            <app-cover-letter-block
+              [key]="'date'"
+              [value]="content().date"
+              [open]="isBlockOpen('date')"
+              [styleOpen]="openStyleKey() === 'date'"
+              [customStyle]="hasCustomStyle('date')"
+              [regenerating]="regeneratingBlock() === 'date'"
+              [stylePopover]="stylePopover"
+              [regeneratable]="false"
+              (toggled)="toggleBlockCollapse('date')"
+              (styleToggled)="toggleStylePopover('date')"
+              (regenerated)="regenerateBlock('date')"
+              (valueChanged)="updateField('date', $event)"
+            />
 
             <!-- Subject -->
-            <section class="docedit-section">
-              <div class="docedit-section__head">
-                <button
-                  type="button"
-                  class="docedit-section__toggle"
-                  [attr.aria-expanded]="isBlockOpen('subject')"
-                  (click)="toggleBlockCollapse('subject')"
-                >
-                  <lucide-icon
-                    [img]="icons.chevron"
-                    [size]="15"
-                    aria-hidden="true"
-                    class="docedit-chevron"
-                    [class.docedit-chevron--closed]="!isBlockOpen('subject')"
-                  />
-                  <span class="docedit-section__title">{{
-                    t()('documents.cover_letter_field_subject')
-                  }}</span>
-                </button>
-                <div class="docedit-section__actions">
-                  <button
-                    type="button"
-                    class="coverdetail__style-btn"
-                    [class.coverdetail__style-btn--active]="openStyleKey() === 'subject'"
-                    [class.coverdetail__style-btn--custom]="hasCustomStyle('subject')"
-                    (click)="toggleStylePopover('subject')"
-                  >
-                    {{ t()('documents.cv_section_style') }}
-                  </button>
-                  <button
-                    class="coverdetail__regen"
-                    type="button"
-                    [disabled]="regeneratingBlock() === 'subject'"
-                    (click)="regenerateBlock('subject')"
-                  >
-                    <lucide-icon
-                      [img]="icons.regenerate"
-                      [size]="13"
-                      [class.spin]="regeneratingBlock() === 'subject'"
-                      aria-hidden="true"
-                    />
-                    {{ t()('documents.cover_letter_regenerate') }}
-                  </button>
-                </div>
-              </div>
-              @if (openStyleKey() === 'subject') {
-                <ng-container
-                  [ngTemplateOutlet]="stylePopover"
-                  [ngTemplateOutletContext]="{ $implicit: 'subject' }"
-                ></ng-container>
-              }
-              <div
-                class="docedit-collapse"
-                [class.docedit-collapse--closed]="!isBlockOpen('subject')"
-              >
-                <div>
-                  <input
-                    type="text"
-                    class="coverdetail__full"
-                    [ngModel]="content().subject"
-                    (ngModelChange)="updateField('subject', $event)"
-                  />
-                </div>
-              </div>
-            </section>
+            <app-cover-letter-block
+              [key]="'subject'"
+              [value]="content().subject"
+              [open]="isBlockOpen('subject')"
+              [styleOpen]="openStyleKey() === 'subject'"
+              [customStyle]="hasCustomStyle('subject')"
+              [regenerating]="regeneratingBlock() === 'subject'"
+              [stylePopover]="stylePopover"
+              (toggled)="toggleBlockCollapse('subject')"
+              (styleToggled)="toggleStylePopover('subject')"
+              (regenerated)="regenerateBlock('subject')"
+              (valueChanged)="updateField('subject', $event)"
+            />
 
             <!-- Greeting -->
-            <section class="docedit-section">
-              <div class="docedit-section__head">
-                <button
-                  type="button"
-                  class="docedit-section__toggle"
-                  [attr.aria-expanded]="isBlockOpen('greeting')"
-                  (click)="toggleBlockCollapse('greeting')"
-                >
-                  <lucide-icon
-                    [img]="icons.chevron"
-                    [size]="15"
-                    aria-hidden="true"
-                    class="docedit-chevron"
-                    [class.docedit-chevron--closed]="!isBlockOpen('greeting')"
-                  />
-                  <span class="docedit-section__title">{{
-                    t()('documents.cover_letter_field_greeting')
-                  }}</span>
-                </button>
-                <div class="docedit-section__actions">
-                  <button
-                    type="button"
-                    class="coverdetail__style-btn"
-                    [class.coverdetail__style-btn--active]="openStyleKey() === 'greeting'"
-                    [class.coverdetail__style-btn--custom]="hasCustomStyle('greeting')"
-                    (click)="toggleStylePopover('greeting')"
-                  >
-                    {{ t()('documents.cv_section_style') }}
-                  </button>
-                  <button
-                    class="coverdetail__regen"
-                    type="button"
-                    [disabled]="regeneratingBlock() === 'greeting'"
-                    (click)="regenerateBlock('greeting')"
-                  >
-                    <lucide-icon
-                      [img]="icons.regenerate"
-                      [size]="13"
-                      [class.spin]="regeneratingBlock() === 'greeting'"
-                      aria-hidden="true"
-                    />
-                    {{ t()('documents.cover_letter_regenerate') }}
-                  </button>
-                </div>
-              </div>
-              @if (openStyleKey() === 'greeting') {
-                <ng-container
-                  [ngTemplateOutlet]="stylePopover"
-                  [ngTemplateOutletContext]="{ $implicit: 'greeting' }"
-                ></ng-container>
-              }
-              <div
-                class="docedit-collapse"
-                [class.docedit-collapse--closed]="!isBlockOpen('greeting')"
-              >
-                <div>
-                  <input
-                    type="text"
-                    class="coverdetail__full"
-                    [ngModel]="content().greeting"
-                    (ngModelChange)="updateField('greeting', $event)"
-                  />
-                </div>
-              </div>
-            </section>
+            <app-cover-letter-block
+              [key]="'greeting'"
+              [value]="content().greeting"
+              [open]="isBlockOpen('greeting')"
+              [styleOpen]="openStyleKey() === 'greeting'"
+              [customStyle]="hasCustomStyle('greeting')"
+              [regenerating]="regeneratingBlock() === 'greeting'"
+              [stylePopover]="stylePopover"
+              (toggled)="toggleBlockCollapse('greeting')"
+              (styleToggled)="toggleStylePopover('greeting')"
+              (regenerated)="regenerateBlock('greeting')"
+              (valueChanged)="updateField('greeting', $event)"
+            />
 
             <!-- Body paragraphs -->
             <section class="docedit-section">
@@ -724,138 +586,34 @@
             </section>
 
             <!-- Closing -->
-            <section class="docedit-section">
-              <div class="docedit-section__head">
-                <button
-                  type="button"
-                  class="docedit-section__toggle"
-                  [attr.aria-expanded]="isBlockOpen('closing')"
-                  (click)="toggleBlockCollapse('closing')"
-                >
-                  <lucide-icon
-                    [img]="icons.chevron"
-                    [size]="15"
-                    aria-hidden="true"
-                    class="docedit-chevron"
-                    [class.docedit-chevron--closed]="!isBlockOpen('closing')"
-                  />
-                  <span class="docedit-section__title">{{
-                    t()('documents.cover_letter_field_closing')
-                  }}</span>
-                </button>
-                <div class="docedit-section__actions">
-                  <button
-                    type="button"
-                    class="coverdetail__style-btn"
-                    [class.coverdetail__style-btn--active]="openStyleKey() === 'closing'"
-                    [class.coverdetail__style-btn--custom]="hasCustomStyle('closing')"
-                    (click)="toggleStylePopover('closing')"
-                  >
-                    {{ t()('documents.cv_section_style') }}
-                  </button>
-                  <button
-                    class="coverdetail__regen"
-                    type="button"
-                    [disabled]="regeneratingBlock() === 'closing'"
-                    (click)="regenerateBlock('closing')"
-                  >
-                    <lucide-icon
-                      [img]="icons.regenerate"
-                      [size]="13"
-                      [class.spin]="regeneratingBlock() === 'closing'"
-                      aria-hidden="true"
-                    />
-                    {{ t()('documents.cover_letter_regenerate') }}
-                  </button>
-                </div>
-              </div>
-              @if (openStyleKey() === 'closing') {
-                <ng-container
-                  [ngTemplateOutlet]="stylePopover"
-                  [ngTemplateOutletContext]="{ $implicit: 'closing' }"
-                ></ng-container>
-              }
-              <div
-                class="docedit-collapse"
-                [class.docedit-collapse--closed]="!isBlockOpen('closing')"
-              >
-                <div>
-                  <input
-                    type="text"
-                    class="coverdetail__full"
-                    [ngModel]="content().closing"
-                    (ngModelChange)="updateField('closing', $event)"
-                  />
-                </div>
-              </div>
-            </section>
+            <app-cover-letter-block
+              [key]="'closing'"
+              [value]="content().closing"
+              [open]="isBlockOpen('closing')"
+              [styleOpen]="openStyleKey() === 'closing'"
+              [customStyle]="hasCustomStyle('closing')"
+              [regenerating]="regeneratingBlock() === 'closing'"
+              [stylePopover]="stylePopover"
+              (toggled)="toggleBlockCollapse('closing')"
+              (styleToggled)="toggleStylePopover('closing')"
+              (regenerated)="regenerateBlock('closing')"
+              (valueChanged)="updateField('closing', $event)"
+            />
 
             <!-- Signature -->
-            <section class="docedit-section">
-              <div class="docedit-section__head">
-                <button
-                  type="button"
-                  class="docedit-section__toggle"
-                  [attr.aria-expanded]="isBlockOpen('signature')"
-                  (click)="toggleBlockCollapse('signature')"
-                >
-                  <lucide-icon
-                    [img]="icons.chevron"
-                    [size]="15"
-                    aria-hidden="true"
-                    class="docedit-chevron"
-                    [class.docedit-chevron--closed]="!isBlockOpen('signature')"
-                  />
-                  <span class="docedit-section__title">{{
-                    t()('documents.cover_letter_field_signature')
-                  }}</span>
-                </button>
-                <div class="docedit-section__actions">
-                  <button
-                    type="button"
-                    class="coverdetail__style-btn"
-                    [class.coverdetail__style-btn--active]="openStyleKey() === 'signature'"
-                    [class.coverdetail__style-btn--custom]="hasCustomStyle('signature')"
-                    (click)="toggleStylePopover('signature')"
-                  >
-                    {{ t()('documents.cv_section_style') }}
-                  </button>
-                  <button
-                    class="coverdetail__regen"
-                    type="button"
-                    [disabled]="regeneratingBlock() === 'signature'"
-                    (click)="regenerateBlock('signature')"
-                  >
-                    <lucide-icon
-                      [img]="icons.regenerate"
-                      [size]="13"
-                      [class.spin]="regeneratingBlock() === 'signature'"
-                      aria-hidden="true"
-                    />
-                    {{ t()('documents.cover_letter_regenerate') }}
-                  </button>
-                </div>
-              </div>
-              @if (openStyleKey() === 'signature') {
-                <ng-container
-                  [ngTemplateOutlet]="stylePopover"
-                  [ngTemplateOutletContext]="{ $implicit: 'signature' }"
-                ></ng-container>
-              }
-              <div
-                class="docedit-collapse"
-                [class.docedit-collapse--closed]="!isBlockOpen('signature')"
-              >
-                <div>
-                  <input
-                    type="text"
-                    class="coverdetail__full"
-                    [ngModel]="content().signature"
-                    (ngModelChange)="updateField('signature', $event)"
-                  />
-                </div>
-              </div>
-            </section>
+            <app-cover-letter-block
+              [key]="'signature'"
+              [value]="content().signature"
+              [open]="isBlockOpen('signature')"
+              [styleOpen]="openStyleKey() === 'signature'"
+              [customStyle]="hasCustomStyle('signature')"
+              [regenerating]="regeneratingBlock() === 'signature'"
+              [stylePopover]="stylePopover"
+              (toggled)="toggleBlockCollapse('signature')"
+              (styleToggled)="toggleStylePopover('signature')"
+              (regenerated)="regenerateBlock('signature')"
+              (valueChanged)="updateField('signature', $event)"
+            />
           </div>
         </div>
 

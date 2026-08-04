@@ -386,6 +386,126 @@ pub(crate) mod tests {
         pool
     }
 
+    /// Like `test_pool`, but with foreign keys actually enforced.
+    ///
+    /// `test_pool` does not turn them on, and SQLite defaults them **off**, so
+    /// no test using it can observe a foreign-key violation - while the real
+    /// pool is built with `.foreign_keys(true)`. That gap is why the bug below
+    /// reached a user: the tests could not see the constraint that broke.
+    async fn test_pool_with_foreign_keys() -> SqlitePool {
+        use sqlx::sqlite::SqliteConnectOptions;
+        use std::str::FromStr;
+
+        // Built the same way the real pool is, in `db.rs`.
+        let options = SqliteConnectOptions::from_str("sqlite::memory:")
+            .expect("parse connection url")
+            .foreign_keys(true);
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(options)
+            .await
+            .expect("open in-memory sqlite");
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("run migrations");
+        pool
+    }
+
+    /// Runs the repair migration's own SQL, verbatim.
+    async fn run_repair(pool: &SqlitePool) {
+        sqlx::raw_sql(include_str!(
+            "../../migrations/0029_reseed_builtin_cv_lookups.sql"
+        ))
+        .execute(pool)
+        .await
+        .expect("run the repair migration");
+    }
+
+    /// Both lookup counts in one read. Literal SQL on purpose: a `format!`ed
+    /// table name trips sqlx's dynamic-query lint, and there is nothing dynamic
+    /// worth expressing here.
+    async fn lookup_counts(pool: &SqlitePool) -> (i64, i64) {
+        sqlx::query_as::<_, (i64, i64)>(
+            "SELECT (SELECT count(*) FROM cv_themes), (SELECT count(*) FROM cv_templates)",
+        )
+        .fetch_one(pool)
+        .await
+        .expect("lookup counts")
+    }
+
+    /// Reported by a user as `document_library_upsert (update): error returned
+    /// from database: (code: 787) FOREIGN KEY constraint failed`, on every
+    /// attempt to save an edited CV.
+    ///
+    /// `document_library.theme_id` is a foreign key into `cv_themes`, and the
+    /// CV editor always saves a theme - its picker defaults to Classic, id 1.
+    /// On a database whose `cv_themes` is empty, that makes **every** CV save
+    /// fail, permanently, with a raw SQLite error the user cannot act on. The
+    /// same shape applies to `template_id` and `cv_templates`.
+    ///
+    /// This drives the real failure first, then the repair migration's own SQL,
+    /// which is what an affected install runs on next launch.
+    #[tokio::test]
+    async fn an_emptied_theme_table_breaks_every_cv_save_until_the_repair_runs() {
+        let pool = test_pool_with_foreign_keys().await;
+        let template_id = cv_templates_list_core(&pool).await.expect("list")[0].id;
+
+        let created = document_library_upsert_core(cv_input(template_id), &pool)
+            .await
+            .expect("insert");
+
+        // The state a user reported from: the built-in lookup rows are gone.
+        sqlx::query("DELETE FROM document_library WHERE id <> ?")
+            .bind(created.id)
+            .execute(&pool)
+            .await
+            .expect("clear siblings");
+        sqlx::query("UPDATE document_library SET template_id = NULL, theme_id = NULL")
+            .execute(&pool)
+            .await
+            .expect("detach lookups");
+        sqlx::query("DELETE FROM cv_themes")
+            .execute(&pool)
+            .await
+            .expect("empty themes");
+        sqlx::query("DELETE FROM cv_templates")
+            .execute(&pool)
+            .await
+            .expect("empty templates");
+
+        // What the editor's save does: write the default theme, id 1.
+        let save = || {
+            sqlx::query("UPDATE document_library SET theme_id = 1 WHERE id = ?").bind(created.id)
+        };
+        let before = save().execute(&pool).await;
+        assert!(
+            before.is_err(),
+            "the save has to fail here, or this test is not exercising the constraint"
+        );
+
+        // The repair migration, run as a whole script - the way the migrator
+        // runs it, rather than a hand-split approximation of it.
+        run_repair(&pool).await;
+
+        assert_eq!(lookup_counts(&pool).await, (2, 5));
+        save().execute(&pool).await.expect("the save now succeeds");
+    }
+
+    /// The repair must be a no-op on a healthy database - it ships to every
+    /// install, not only broken ones, and duplicated built-ins would show up as
+    /// duplicate entries in the template picker.
+    #[tokio::test]
+    async fn the_repair_adds_nothing_to_a_database_that_is_already_seeded() {
+        let pool = test_pool_with_foreign_keys().await;
+
+        for _ in 0..3 {
+            run_repair(&pool).await;
+        }
+
+        assert_eq!(lookup_counts(&pool).await, (2, 5));
+    }
+
     /// The five built-in templates seeded by the migration round-trip through
     /// the list command.
     #[tokio::test]

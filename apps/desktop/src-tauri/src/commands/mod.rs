@@ -22,6 +22,7 @@ pub mod documents_blocks;
 pub mod documents_export;
 pub mod documents_import;
 pub mod documents_style;
+pub mod exported_paths;
 pub mod followup_drafts;
 pub mod health;
 pub mod import;

@@ -37,6 +37,7 @@ pub fn run() {
             app.manage(db);
             // Handshake channels for the silent WYSIWYG print windows.
             app.manage(commands::print::PrintReady::default());
+            app.manage(commands::exported_paths::ExportedPaths::default());
 
             Ok(())
         })

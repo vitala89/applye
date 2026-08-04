@@ -10,6 +10,7 @@
 // `<app_data>/companies/<company>/cv/<hash12>.<ext>`, and `open_file` /
 // `reveal_in_folder` refuse anything that does not resolve inside that root.
 
+use super::exported_paths::ExportedPaths;
 use super::tailoring_docx::md_to_docx_bytes;
 use super::tailoring_pdf::md_to_pdf_bytes;
 use serde::{Deserialize, Serialize};
@@ -300,22 +301,51 @@ pub async fn export_pdf(
 /// app's own data directory.
 ///
 /// Both commands below hand the path to the OS launcher, which will happily
-/// run an application bundle or a script. The only paths these commands are
-/// meant to receive are `generated_docs.file_path` rows - exports Applye wrote
-/// itself under `app_data_dir/companies/<slug>/`. Nothing validated that, so a
-/// bug or a compromised renderer could ask the backend to launch any file on
-/// disk. Containment is cheap here and the callers already satisfy it.
+/// run an application bundle or a script, so a bug or a compromised renderer
+/// must not be able to name an arbitrary file on disk.
+///
+/// A path qualifies one of two ways: it sits under the app's own data
+/// directory - the `generated_docs.file_path` rows this guard was written for -
+/// or Applye wrote it during this run, which is how the apply wizard's exports
+/// qualify. Those go wherever the save dialog pointed, usually Downloads, and
+/// used to be refused by the very app that had just written them. See
+/// `commands::exported_paths` for what is allowed to be remembered and why the
+/// extension matters.
 ///
 /// `canonicalize` on both sides is what makes the check meaningful: it
 /// resolves `..` segments and follows symlinks, so a link inside the data
 /// directory pointing at `/Applications/Something.app` fails the prefix test
 /// rather than passing it.
-fn resolve_app_owned_file(app: &AppHandle, path: &str) -> Result<std::path::PathBuf, String> {
+fn resolve_app_owned_file(
+    app: &AppHandle,
+    exported: &ExportedPaths,
+    path: &str,
+) -> Result<std::path::PathBuf, String> {
     let base = app
         .path()
         .app_data_dir()
         .map_err(|e| format!("app_data_dir: {e}"))?;
-    resolve_within(&base, path)
+    match resolve_within(&base, path) {
+        Ok(inside) => Ok(inside),
+        // Not under the data directory. It still qualifies if this run wrote
+        // it; `resolve_exported` repeats the canonicalize and regular-file
+        // checks rather than trusting the string it was handed.
+        Err(outside) => resolve_exported(exported, path).map_err(|_| outside),
+    }
+}
+
+/// The provenance half of the rule: a file Applye wrote during this run.
+fn resolve_exported(exported: &ExportedPaths, path: &str) -> Result<std::path::PathBuf, String> {
+    let target = std::path::Path::new(path)
+        .canonicalize()
+        .map_err(|e| format!("no such file: {e}"))?;
+    if !target.is_file() {
+        return Err("refused: not a regular file".to_string());
+    }
+    if !exported.contains(&target) {
+        return Err("refused: that file is outside Applye's own document folder".to_string());
+    }
+    Ok(target)
 }
 
 /// The containment rule on its own, so it can be tested without an `AppHandle`.
@@ -336,8 +366,12 @@ fn resolve_within(base: &std::path::Path, path: &str) -> Result<std::path::PathB
 }
 
 #[tauri::command]
-pub fn open_file(app: AppHandle, path: String) -> Result<(), String> {
-    let path = resolve_app_owned_file(&app, &path)?;
+pub fn open_file(
+    app: AppHandle,
+    exported: State<'_, ExportedPaths>,
+    path: String,
+) -> Result<(), String> {
+    let path = resolve_app_owned_file(&app, &exported, &path)?;
     #[cfg(target_os = "macos")]
     std::process::Command::new("open")
         .arg(&path)
@@ -364,8 +398,12 @@ pub fn open_file(app: AppHandle, path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn reveal_in_folder(app: AppHandle, path: String) -> Result<(), String> {
-    let path = resolve_app_owned_file(&app, &path)?;
+pub fn reveal_in_folder(
+    app: AppHandle,
+    exported: State<'_, ExportedPaths>,
+    path: String,
+) -> Result<(), String> {
+    let path = resolve_app_owned_file(&app, &exported, &path)?;
     #[cfg(target_os = "macos")]
     std::process::Command::new("open")
         .args([std::ffi::OsStr::new("-R"), path.as_os_str()])
@@ -402,6 +440,57 @@ mod tests {
         std::fs::write(inside.join("cv.pdf"), b"%PDF-1.4").unwrap();
         std::fs::write(outside.join("payload.sh"), b"#!/bin/sh\n").unwrap();
         (root.join("app-data"), outside)
+    }
+
+    /// The reported bug: the apply wizard writes wherever the save dialog
+    /// pointed - Downloads, in the report - and "Open file" then refused the
+    /// file Applye had itself just written, saying it was "outside Applye's own
+    /// document folder" directly beneath the path it had printed.
+    #[test]
+    fn allows_a_file_this_run_exported_outside_the_data_dir() {
+        let (_, outside) = containment_fixture();
+        let export = outside.join("tailored cv.pdf");
+        std::fs::write(&export, b"%PDF-1.4").unwrap();
+        let exported = ExportedPaths::default();
+
+        let refused = resolve_exported(&exported, export.to_str().unwrap());
+        assert!(refused.is_err(), "not written by us yet: {refused:?}");
+
+        exported.remember(&export);
+        let allowed = resolve_exported(&exported, export.to_str().unwrap());
+        assert!(allowed.is_ok(), "got: {allowed:?}");
+    }
+
+    /// Provenance is the whole rule. Sitting next to a file we did write earns
+    /// nothing, or the guard would be a directory allowance in disguise.
+    #[test]
+    fn refuses_a_neighbour_of_a_file_we_exported() {
+        let (_, outside) = containment_fixture();
+        let export = outside.join("tailored cv.pdf");
+        std::fs::write(&export, b"%PDF-1.4").unwrap();
+        let exported = ExportedPaths::default();
+        exported.remember(&export);
+
+        let neighbour = outside.join("payload.sh");
+        let out = resolve_exported(&exported, neighbour.to_str().unwrap());
+        assert!(out.is_err(), "got: {out:?}");
+    }
+
+    /// The export commands are callable by the renderer, so a compromised one
+    /// could ask for a write to any path and then ask to open it. Only the
+    /// extensions Applye exports are ever remembered, which keeps the OS
+    /// launcher on documents rather than on anything it would run.
+    #[test]
+    fn refuses_an_executable_extension_even_after_writing_it() {
+        let (_, outside) = containment_fixture();
+        let script = outside.join("payload.command");
+        std::fs::write(&script, b"#!/bin/sh\n").unwrap();
+        let exported = ExportedPaths::default();
+
+        exported.remember(&script);
+
+        let out = resolve_exported(&exported, script.to_str().unwrap());
+        assert!(out.is_err(), "got: {out:?}");
     }
 
     #[test]

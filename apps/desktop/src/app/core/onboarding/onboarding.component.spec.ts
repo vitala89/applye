@@ -1,9 +1,11 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
+import { OnboardingAiKeyService } from './onboarding-ai-key.service';
 import { createOnboarding, parsedCv } from './onboarding.harness';
 
 describe('OnboardingComponent flow', () => {
   let component: OnboardingComponent;
+  let aiKey: OnboardingAiKeyService;
   let fixture: ComponentFixture<OnboardingComponent>;
   let hasProviderKey: jest.Mock;
   let setProviderKey: jest.Mock;
@@ -14,9 +16,10 @@ describe('OnboardingComponent flow', () => {
 
   beforeEach(async () => {
     const h = await createOnboarding();
-    ({ component, fixture, hasProviderKey, setProviderKey, getProfile, upsertProfile, run } = h);
+    ({ component, fixture, aiKey, hasProviderKey, setProviderKey, getProfile, upsertProfile, run } =
+      h);
     recreate = () => {
-      ({ component, fixture } = h.create());
+      ({ component, fixture, aiKey } = h.create());
     };
   });
 
@@ -202,7 +205,7 @@ describe('OnboardingComponent flow', () => {
 
       expect(component.keyStored()).toBe(true);
       expect(component.keyPresent()).toBe(true);
-      expect(component.keyStatus()).toBe('idle');
+      expect(aiKey.keyStatus()).toBe('idle');
     });
 
     it('reports nothing when the keyring is empty', async () => {
@@ -215,7 +218,7 @@ describe('OnboardingComponent flow', () => {
     it('is re-checked per provider on switch', async () => {
       hasProviderKey.mockResolvedValue(true);
 
-      component.selectProvider('openai');
+      aiKey.selectProvider('openai');
       await fixture.whenStable();
 
       expect(hasProviderKey).toHaveBeenLastCalledWith('openai');
@@ -228,10 +231,10 @@ describe('OnboardingComponent flow', () => {
       create();
       await fixture.whenStable();
 
-      component.keyInput.set('sk-ant-averylongkeyvalue');
-      await component.saveKey();
+      aiKey.keyInput.set('sk-ant-averylongkeyvalue');
+      await aiKey.saveKey();
 
-      expect(component.keySaveError()).toBe(true);
+      expect(aiKey.keySaveError()).toBe(true);
       expect(component.keyPresent()).toBe(true);
     });
 
@@ -240,10 +243,10 @@ describe('OnboardingComponent flow', () => {
       create();
       await fixture.whenStable();
 
-      component.keyInput.set('too-short');
-      await component.saveKey();
+      aiKey.keyInput.set('too-short');
+      await aiKey.saveKey();
 
-      expect(component.keyStatus()).toBe('invalid');
+      expect(aiKey.keyStatus()).toBe('invalid');
       expect(component.keyPresent()).toBe(true);
     });
   });
@@ -255,10 +258,10 @@ describe('OnboardingComponent flow', () => {
       await fixture.whenStable();
       expect(component.keyPresent()).toBe(false);
 
-      component.keyInput.set('sk-ant-averylongkeyvalue');
-      await component.saveKey();
+      aiKey.keyInput.set('sk-ant-averylongkeyvalue');
+      await aiKey.saveKey();
 
-      expect(component.keyStatus()).toBe('valid');
+      expect(aiKey.keyStatus()).toBe('valid');
       expect(component.keyPresent()).toBe(true);
     });
   });

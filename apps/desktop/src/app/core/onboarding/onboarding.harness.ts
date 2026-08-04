@@ -6,6 +6,7 @@ import { TranslateService } from '@applye/i18n';
 import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 import { OnboardingComponent } from './onboarding.component';
+import { OnboardingAiKeyService } from './onboarding-ai-key.service';
 
 /** A parsed CV good enough for every step the wizard runs. */
 export function parsedCv(): CvParsedContent {
@@ -29,6 +30,9 @@ export function parsedCv(): CvParsedContent {
 export interface OnboardingHarness {
   component: OnboardingComponent;
   fixture: ComponentFixture<OnboardingComponent>;
+  /** The AI step's key/model state. The wizard provides it, so it is reached
+   * through the component's own injector rather than the TestBed's. */
+  aiKey: OnboardingAiKeyService;
   hasProviderKey: jest.Mock;
   setProviderKey: jest.Mock;
   getProfile: jest.Mock;
@@ -38,7 +42,11 @@ export interface OnboardingHarness {
   navigateByUrl: jest.Mock;
   run: jest.Mock;
   /** Re-create the component after arming a mock the constructor reads. */
-  create: () => { component: OnboardingComponent; fixture: ComponentFixture<OnboardingComponent> };
+  create: () => {
+    component: OnboardingComponent;
+    fixture: ComponentFixture<OnboardingComponent>;
+    aiKey: OnboardingAiKeyService;
+  };
 }
 
 export async function createOnboarding(): Promise<OnboardingHarness> {
@@ -84,7 +92,11 @@ export async function createOnboarding(): Promise<OnboardingHarness> {
 
   const create = () => {
     const fixture = TestBed.createComponent(OnboardingComponent);
-    return { component: fixture.componentInstance, fixture };
+    return {
+      component: fixture.componentInstance,
+      fixture,
+      aiKey: fixture.debugElement.injector.get(OnboardingAiKeyService),
+    };
   };
   const first = create();
 

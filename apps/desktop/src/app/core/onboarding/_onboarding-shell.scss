@@ -170,3 +170,83 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+
+// The AI-setup step renders one of two panels - the CLI bridge or the API key
+// form - and they share their panel shell and numbered step list. Both panels
+// are becoming their own components, so these belong here for the same reason
+// the rules above do. Measured the same way: each of these eight classes is
+// used by both panels and by nothing else in the wizard.
+.ob__panel-intro {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.ob__panel-intro lucide-icon {
+  color: var(--text-accent);
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+.ob__panel-intro-text {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.ob__panel-body {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.ob__steplist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ob__stepitem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.ob__stepitem-num {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-input);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ob__stepitem-text {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  padding-top: 1px;
+}
+.ob__link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-accent);
+}
+.ob__link-btn:hover {
+  text-decoration: underline;
+}

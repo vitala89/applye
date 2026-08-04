@@ -1,0 +1,131 @@
+<div class="ob__card">
+  <div class="ob__panel-intro">
+    <lucide-icon [img]="icons.info" [size]="16" aria-hidden="true" />
+    <p class="ob__panel-intro-text">{{ t()('onboarding.ai.panel_intro') }}</p>
+  </div>
+  <div class="ob__panel-body">
+    <button appButton variant="secondary" size="md" type="button" (click)="aiKey.openConsole()">
+      <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
+      {{ t()('onboarding.ai.open_console') }} · {{ t()(aiKey.guide().consoleLabelKey) }}
+    </button>
+    <ol class="ob__steplist">
+      @for (st of aiKey.providerSteps(); track st.n) {
+        <li class="ob__stepitem">
+          <span class="ob__stepitem-num">{{ st.n }}</span>
+          <span class="ob__stepitem-text">{{ st.text }}</span>
+        </li>
+      }
+    </ol>
+    <div class="ob__field">
+      <label class="ob__field-label" for="ob-api-key">{{
+        t()('onboarding.ai.api_key_label')
+      }}</label>
+      <div class="ob__key-row">
+        <div class="ob__key-input-wrap">
+          <lucide-icon [img]="icons.key" [size]="15" aria-hidden="true" />
+          <input
+            id="ob-api-key"
+            type="password"
+            class="ob__input ob__key-input"
+            [value]="aiKey.keyInput()"
+            (input)="aiKey.keyInput.set($any($event.target).value)"
+            [placeholder]="aiKey.guide().keyPrefix + '…'"
+            spellcheck="false"
+          />
+        </div>
+        <button
+          appButton
+          variant="primary"
+          size="md"
+          type="button"
+          [disabled]="aiKey.keyStatus() === 'checking'"
+          (click)="aiKey.saveKey()"
+        >
+          @if (aiKey.keyStatus() === 'checking') {
+            <span class="ob__spinner" aria-hidden="true"></span>
+            {{ t()('onboarding.ai.checking') }}
+          } @else {
+            <lucide-icon [img]="icons.checkCheck" [size]="15" aria-hidden="true" />
+            {{ t()('onboarding.ai.save_check') }}
+          }
+        </button>
+      </div>
+      @if (aiKey.keyStatus() === 'valid') {
+        <div class="ob__key-status ob__key-status--valid">
+          <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
+          {{ t()('onboarding.ai.valid_note') }}
+        </div>
+      } @else if (aiKey.keyStatus() === 'idle' && aiKey.keyStored()) {
+        <div class="ob__key-status ob__key-status--valid">
+          <lucide-icon [img]="icons.badgeCheck" [size]="15" aria-hidden="true" />
+          {{ t()('onboarding.ai.already_saved_note') }}
+        </div>
+      } @else if (aiKey.keyStatus() === 'invalid') {
+        <div class="ob__key-status ob__key-status--invalid">
+          <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+          {{ t()('onboarding.ai.invalid_note') }}
+        </div>
+      } @else {
+        <div class="ob__key-status ob__key-status--muted">
+          <lucide-icon [img]="icons.lock" [size]="14" aria-hidden="true" />
+          {{ t()('onboarding.ai.keyring_note') }}
+        </div>
+      }
+      @if (aiKey.keySaveError()) {
+        <div class="ob__key-status ob__key-status--invalid">
+          <lucide-icon [img]="icons.triangleAlert" [size]="15" aria-hidden="true" />
+          {{ t()('onboarding.ai.error') }}
+        </div>
+      }
+    </div>
+    @if (aiKey.providerModels().length) {
+      <div class="ob__models">
+        <p class="ob__models-intro">{{ t()('onboarding.ai.models_intro') }}</p>
+        <div class="ob__models-grid">
+          <label class="ob__field">
+            <span class="ob__field-label">
+              {{ t()('onboarding.ai.model_quality_label') }}
+            </span>
+            <select
+              class="ob__select"
+              [ngModel]="aiKey.qualityModel()"
+              (ngModelChange)="aiKey.setQualityModel($event)"
+              [ngModelOptions]="{ standalone: true }"
+            >
+              @for (m of aiKey.providerModels(); track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+            <span class="ob__field-hint">
+              {{ t()('onboarding.ai.model_quality_hint') }}
+            </span>
+          </label>
+          <label class="ob__field">
+            <span class="ob__field-label">
+              {{ t()('onboarding.ai.model_economy_label') }}
+            </span>
+            <select
+              class="ob__select"
+              [ngModel]="aiKey.economyModel()"
+              (ngModelChange)="aiKey.setEconomyModel($event)"
+              [ngModelOptions]="{ standalone: true }"
+            >
+              @for (m of aiKey.providerModels(); track m) {
+                <option [value]="m">{{ m }}</option>
+              }
+            </select>
+            <span class="ob__field-hint">
+              {{ t()('onboarding.ai.model_economy_hint') }}
+            </span>
+          </label>
+        </div>
+      </div>
+    }
+    @if (aiKey.guide().helpVideoUrl) {
+      <button type="button" class="ob__link-btn" (click)="aiKey.openVideo()">
+        <lucide-icon [img]="icons.playCircle" [size]="15" aria-hidden="true" />
+        {{ t()('onboarding.ai.watch_video') }}
+      </button>
+    }
+  </div>
+</div>

@@ -59,117 +59,12 @@
     />
 
     <!-- Target roles (archetypes) -->
-    <section class="section section--card">
-      <h3 class="eyebrow-row">
-        <span class="eyebrow">{{ t()('profile.section_archetypes') }}</span>
-        <span class="info info--below" tabindex="0" [attr.aria-label]="t()('profile.info_aria')">
-          <lucide-icon [img]="infoIcon" [size]="14" class="info__glyph" aria-hidden="true" />
-          <span class="info__tip" role="tooltip">{{ t()('profile.info_archetypes') }}</span>
-        </span>
-      </h3>
-      <div class="collapse-card">
-        <div
-          class="collapse-card__head"
-          role="button"
-          tabindex="0"
-          [attr.aria-expanded]="sectionOpen().archetypes"
-          (click)="toggleSection('archetypes')"
-          (keydown.enter)="toggleSection('archetypes')"
-          (keydown.space)="toggleSection('archetypes'); $event.preventDefault()"
-        >
-          <span class="collapse-card__title">{{ t()('profile.section_archetypes') }}</span>
-          <span class="collapse-card__summary">
-            {{
-              archetypes().length
-                ? t()('profile.summary_archetypes').replace('{count}', archetypes().length + '')
-                : t()('profile.summary_empty')
-            }}
-          </span>
-          <lucide-icon
-            [img]="chevronIcon"
-            [size]="17"
-            class="chevron"
-            [class.chevron--open]="sectionOpen().archetypes"
-            aria-hidden="true"
-          />
-        </div>
-        @if (sectionOpen().archetypes) {
-          <div class="collapse-card__body">
-            <p class="muted">{{ t()('profile.archetypes_hint') }}</p>
-            @if (archetypes().length === 0) {
-              <p class="status status--warn">{{ t()('profile.archetypes_empty_warning') }}</p>
-            }
-            @if (archetypes().length > 0) {
-              <div class="archetype-list">
-                @for (a of archetypes(); track $index) {
-                  <div class="archetype-card">
-                    <div class="archetype-card__top">
-                      <lucide-icon
-                        [img]="targetIcon"
-                        [size]="16"
-                        class="archetype-card__icon"
-                        aria-hidden="true"
-                      />
-                      <input
-                        class="archetype-input"
-                        type="text"
-                        [ngModel]="a.name"
-                        (ngModelChange)="updateArchetype($index, { name: $event })"
-                        [placeholder]="t()('profile.archetype_placeholder')"
-                        [attr.aria-label]="t()('profile.archetype_name')"
-                      />
-                      <select
-                        class="archetype-fit"
-                        [ngModel]="a.fit"
-                        (ngModelChange)="updateArchetype($index, { fit: $event })"
-                        [attr.aria-label]="t()('profile.archetype_fit')"
-                      >
-                        <option value="primary">{{ t()('profile.fit_primary') }}</option>
-                        <option value="secondary">{{ t()('profile.fit_secondary') }}</option>
-                        <option value="adjacent">{{ t()('profile.fit_adjacent') }}</option>
-                      </select>
-                      <button
-                        class="btn-ghost"
-                        type="button"
-                        (click)="removeArchetype($index)"
-                        [attr.aria-label]="t()('profile.remove_archetype')"
-                      >
-                        <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                      </button>
-                    </div>
-                    @if (a.name.trim() && !isMatchable(a.name)) {
-                      <p class="status status--warn archetype-card__warn" role="status">
-                        {{ t()('profile.archetype_not_matchable') }}
-                      </p>
-                    }
-                    <div class="archetype-card__sell">
-                      <label
-                        class="archetype-card__label"
-                        [attr.for]="'archetype-sell-' + $index"
-                        >{{ t()('profile.archetype_sell_when') }}</label
-                      >
-                      <textarea
-                        [id]="'archetype-sell-' + $index"
-                        class="archetype-sell"
-                        [ngModel]="a.sellWhen"
-                        (ngModelChange)="updateArchetype($index, { sellWhen: $event })"
-                        [placeholder]="t()('profile.archetype_sell_when_hint')"
-                      ></textarea>
-                    </div>
-                  </div>
-                }
-              </div>
-            }
-            @if (archetypes().length < 5) {
-              <button class="btn-dashed" type="button" (click)="addArchetype()">
-                <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                {{ t()('profile.add_archetype') }}
-              </button>
-            }
-          </div>
-        }
-      </div>
-    </section>
+    <app-profile-archetypes
+      [archetypes]="archetypes()"
+      [open]="sectionOpen().archetypes"
+      (toggled)="toggleSection('archetypes')"
+      (changed)="archetypes.set($event)"
+    />
 
     <!-- Photo: one cropped headshot, reused by any CV that wants one. -->
     <section class="section section--card">

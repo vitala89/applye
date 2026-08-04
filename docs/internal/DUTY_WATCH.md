@@ -44,6 +44,58 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's target-roles section is extracted, and the hoist pays off
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-archetypes-section`
+- **Depends on:** the `_profile-shell.scss` hoist. Developed on top of that branch and rebased, rather
+  than opened as a stacked PR - stacking breaks CI here with `fatal: ambiguous argument 'main'`.
+
+**The hoist did what it was bought for.** This section was audited and discarded once, because 23 of
+the 29 classes its markup names were still used by the rest of the page. All 23 are now in the
+partial, so the stylesheet side of this cut was five classes - `archetype-card__icon`, `__warn`,
+`__sell`, `__label` and `archetype-sell` - and nothing had to be decided.
+
+**Inputs and outputs, not a service, and the repository already answered which.** Both patterns exist
+here and they are distinguished by ownership: `cover-letter-block` takes inputs and emits outputs
+because the _page_ owns the content; the onboarding panels and the Review step use services because
+the _child_ owns state the page reads back. Profile owns `archetypes` - it seeds them from the
+profile row, `archetypesDirty` compares them against it, and `saveAll` writes them - so this is the
+cover-letter-block shape. The add/remove/patch logic moved into the child, which emits the whole new
+list; the page keeps `archetypes.set($event)`. `isMatchable` did not move at all: it was a one-line
+wrapper over `hasDistinctiveWord`, so the child calls the library and the page loses the method, the
+import and the `Target` icon.
+
+**Verification.**
+
+- `quality:style-move --base main --page-scope '.profile'` across page, partial and child: **lossless**.
+- **Walked in the running app**, and this one could be driven rather than only looked at. Clicking
+  "Add target role" produced a card - which means the child's `changed` output reached
+  `archetypes.set($event)` and flowed back down the input. The empty-state warning disappeared on the
+  same click. Typing "Senior Engineer" raised the not-matchable warning; changing it to "Senior
+  Angular Engineer" cleared it and the typed name survived the round trip. Clicking the head
+  collapsed the body and dropped `chevron--open`. All five moved styles computed correctly, including
+  the warning's `padding-left: 24px` alignment and the accent-coloured target icon.
+- Mutation M1: the five-role cap removed -> **1 test fails**. Mutation M2: `update()` replaces the
+  role instead of patching it -> **1 test fails**. Both restored from a backup and `diff`ed byte-exact.
+- New spec, 8 tests: no in-place mutation of the input array, the cap, add, remove by index, patching
+  only the named field of only the edited role, both warning cases, and the collapsed/toggle contract.
+- One existing test had to change: `profile.component.wiring.spec.ts` called `component.addArchetype()`
+  to make an archetype-only edit. It now sets `archetypes` directly, which is the same state change
+  the section's output produces.
+- Gates: `type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1258 passed**, was 1250), `nx build desktop`, `quality:file-size` (passed), `format:check`,
+  `git diff --check`.
+
+**Sizes.** `profile.component.html` **1037 -> 932** (budget 300), `.ts` **772 -> 751** (400), `.scss`
+**482 -> 444** (400). All three still over. The three new files are within budget.
+
+**Next first action.** The remaining four Profile sections, in descending size: experience (133
+template lines), languages (126), education (93), skills (59). Each should follow this exact shape -
+the page owns the entries signal, the child renders and emits. Photo (65) and AI Tools (162) are
+separate and have not been audited.
+
 ### 2026-08-05, Profile's shared styles are hoisted, and the hoist turned out to be a decision
 
 - **Status:** complete

@@ -11,6 +11,7 @@ use super::documents::document_library_get_core;
 use super::documents_blocks::{cover_letter_content_to_blocks, cv_content_to_blocks};
 use super::documents_import::data_uri_to_bytes;
 use super::documents_style::{CvStyle, PhotoPlacement};
+use super::exported_paths::ExportedPaths;
 use crate::db::Db;
 use tauri::State;
 
@@ -24,9 +25,13 @@ pub async fn cv_document_export(
     format: String,
     save_path: String,
     db: State<'_, Db>,
+    exported: State<'_, ExportedPaths>,
 ) -> Result<String, String> {
     let bytes = cv_document_export_bytes_core(id, &format, &db.pool).await?;
     std::fs::write(&save_path, bytes).map_err(|e| format!("cv_document_export: write: {e}"))?;
+    // So the open/reveal buttons can reach a file the user asked us to put
+    // outside the app's own folder. See `commands::exported_paths`.
+    exported.remember(std::path::Path::new(&save_path));
     Ok(save_path)
 }
 
@@ -168,10 +173,12 @@ pub async fn cover_letter_document_export(
     format: String,
     save_path: String,
     db: State<'_, Db>,
+    exported: State<'_, ExportedPaths>,
 ) -> Result<String, String> {
     let bytes = cover_letter_document_export_bytes_core(id, &format, &db.pool).await?;
     std::fs::write(&save_path, bytes)
         .map_err(|e| format!("cover_letter_document_export: write: {e}"))?;
+    exported.remember(std::path::Path::new(&save_path));
     Ok(save_path)
 }
 

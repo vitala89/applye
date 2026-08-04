@@ -21,6 +21,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
 
+use super::exported_paths::ExportedPaths;
 use crate::db::Db;
 
 /// One-shot "the print route finished rendering" signals, keyed by the hidden
@@ -48,6 +49,7 @@ pub async fn cv_document_export_pdf_wysiwyg(
     app: AppHandle,
     db: State<'_, Db>,
     ready: State<'_, PrintReady>,
+    exported: State<'_, ExportedPaths>,
 ) -> Result<String, String> {
     #[cfg(not(target_os = "macos"))]
     {
@@ -56,12 +58,17 @@ pub async fn cv_document_export_pdf_wysiwyg(
             crate::commands::documents_export::cv_document_export_bytes_core(id, "pdf", &db.pool)
                 .await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
+        // So the open/reveal buttons can reach a file the user asked us to put
+        // outside the app's own folder. See `commands::exported_paths`.
+        exported.remember(std::path::Path::new(&save_path));
         Ok(save_path)
     }
 
     #[cfg(target_os = "macos")]
     {
-        export_pdf_wysiwyg_core(id, "cv", save_path, app, db, ready).await
+        let written = export_pdf_wysiwyg_core(id, "cv", save_path, app, db, ready).await?;
+        exported.remember(std::path::Path::new(&written));
+        Ok(written)
     }
 }
 
@@ -75,6 +82,7 @@ pub async fn cover_letter_document_export_pdf_wysiwyg(
     app: AppHandle,
     db: State<'_, Db>,
     ready: State<'_, PrintReady>,
+    exported: State<'_, ExportedPaths>,
 ) -> Result<String, String> {
     #[cfg(not(target_os = "macos"))]
     {
@@ -84,12 +92,18 @@ pub async fn cover_letter_document_export_pdf_wysiwyg(
         )
         .await?;
         std::fs::write(&save_path, bytes).map_err(|e| format!("export pdf: write: {e}"))?;
+        // So the open/reveal buttons can reach a file the user asked us to put
+        // outside the app's own folder. See `commands::exported_paths`.
+        exported.remember(std::path::Path::new(&save_path));
         Ok(save_path)
     }
 
     #[cfg(target_os = "macos")]
     {
-        export_pdf_wysiwyg_core(id, "cover-letter", save_path, app, db, ready).await
+        let written =
+            export_pdf_wysiwyg_core(id, "cover-letter", save_path, app, db, ready).await?;
+        exported.remember(std::path::Path::new(&written));
+        Ok(written)
     }
 }
 

@@ -89,6 +89,61 @@ The existing `.cargo/audit.toml` entry and its drop condition - Tauri on gtk/gli
 **Next first action.** Nothing outstanding here. Watch for Dependabot re-opening `undici` if
 `@angular/build` bumps its pin, in which case the override should be dropped rather than raised.
 
+### 2026-08-05, the onboarding wizard's Review step becomes a component
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/onboarding-review-step`
+- **Scope:** the Angular file-size campaign, continuing from the handoff merged as #328.
+
+**What the audit found before anything was written.** The Review step names 12 symbols in its
+markup and 10 of them are exclusive to it. The class side told a different story from the template,
+which is the step this campaign added after being wrong-footed twice: `parsedCv` is read by the
+resume step, by both navigation guards, by `buildProfileCv` and by `saveCvDocument`, and the five
+contact fields feed `reviewOverrides()`, which the Ready summary, the saved profile and the written
+CV document all depend on. So this is a service cut, not an input boundary - the same conclusion the
+two AI panels reached, for the same reason.
+
+The stylesheet side was the cleanest seam the wizard has offered. `.ob__warning-card*`,
+`.ob__grid-2`, `.ob__exp-*` and `.ob__skill-*` are used by no other step and by nothing else in the
+repository, and everything else the step renders was already hoisted into `_onboarding-shell.scss`
+by the earlier PR. Nothing new had to be shared, which is the payoff that hoist was bought for.
+
+**What moved.** `OnboardingReviewService` (component-provided) now owns `parsedCv`, the derived
+`experience`/`skills`/`lowConfidenceCount`/`hasReview`, the five editable contact fields,
+`nameEdited`, `needsNameConfirm`, `seedReviewFields()`, `discardParse()` and `overrides()`.
+`OnboardingReviewStepComponent` renders the step against it.
+
+**Verification.**
+
+- The child template was diffed **backwards** against `git show HEAD` lines 297-411: whitespace
+  normalised and the `review.` prefix stripped, the two are identical.
+- `npm run quality:style-move -- --base main` on both stylesheets: lossless. Re-run after
+  `nx format:write`: still lossless.
+- Mutation M1: `needsNameConfirm`'s one-part-name branch returns `false` instead of `true` ->
+  **4 tests fail** against a 1250-pass baseline. Restored from a backup copy and `diff`ed byte-exact.
+- Mutation M2: `seedReviewFields`'s "only if still empty" guard forced open -> **1 test fails**.
+  Restored and `diff`ed byte-exact.
+- Gates: `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop` (0 errors,
+  8 pre-existing warnings), `nx test desktop` (**1250 passed**), `nx build desktop`,
+  `npm run quality:file-size` (passed), `npm run quality:attribution` (passed), `npx nx format:check`
+  (exit 0), `git diff --check` (clean).
+
+**Sizes.** `onboarding.component.html` **628 -> 514** (budget 300), `.ts` **797 -> 738** (400),
+`.scss` **718 -> 642** (400). All three remain over budget. The three new files are within budget.
+
+**Not walked in a running app, and this is the third cut carrying that.** Onboarding is gated in
+`app.ts` rather than routed, so the browser dev server at `:4200` never opens it, and the packaged
+app only opens the wizard when `onboardingSeen` is false. The risk is the same shape as the two AI
+panels: a template binding that type-checks, lints, builds and unit-tests clean can still be wrong
+on screen. What is untested by hand here is the rendered Review step - the low-confidence warning
+card, the name-confirm hint and its `aria-describedby`, and the experience/skill lists.
+
+**Next first action.** Continue the wizard: the Targeting step (104 template lines, 18 symbols, 16
+exclusive) is the next-largest, but its `suggestArchetypes()` needs `aiDispatch()`, which reads the
+AI step's mode and provider - decide whether that call stays in the wizard with only the state
+moving, before writing anything.
+
 ### 2026-08-05, the campaign's handoff is rewritten around what the session learned
 
 - **Status:** complete - documentation only

@@ -35,7 +35,7 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
-import { applicationStatusBadgeClass, classifyChangeType } from './scoring.utils';
+import { applicationStatusBadgeClass } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
@@ -72,10 +72,10 @@ import { LinkedDocumentsService } from '../../shared/linked-documents.service';
 import { JobActionsService } from '../../shared/job-actions.service';
 import { JobIntakeService } from '../../shared/job-intake.service';
 import { JobMetaCardComponent } from './job-meta-card/job-meta-card.component';
+import { JobTailorStepComponent } from './job-tailor-step/job-tailor-step.component';
 import { JobDocumentCardsComponent } from './job-document-cards/job-document-cards.component';
 import { JOB_DETAIL_ICONS } from './job-detail-icons';
 import { baseCvChoices, documentReviewLanguageFor } from './job-document-defaults';
-import { currentPhaseKey, tailorPhases } from './tailor-phases';
 
 @Component({
   selector: 'app-jobs',
@@ -90,6 +90,7 @@ import { currentPhaseKey, tailorPhases } from './tailor-phases';
     CvGapDialog,
     JobMetaCardComponent,
     JobDocumentCardsComponent,
+    JobTailorStepComponent,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
@@ -250,7 +251,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly tailorResults = this.tailorSvc.results;
   /** Set by the Cancel button to stop the tailoring pass loop early. */
   readonly tailorCancelled = this.tailorSvc.cancelled;
-  readonly tailorStatus = this.tailorSvc.status;
   readonly tailorError = this.tailorSvc.error;
   // Derived from WizardActivityService so the running state survives leaving
   // the page and a reopened page reflects an in-flight tailor run.
@@ -275,12 +275,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   /** True once all 3 tailoring passes are done (in this session or restored
    * from cache) - drives the immutable Tailored badge and the Retailor CTA. */
   readonly isTailored = this.tailorSvc.isTailored;
-
-  /** Flattened change / gap notes across all completed tailoring passes. */
-  readonly allChanges = this.tailorSvc.allChanges;
-  readonly allGaps = this.tailorSvc.allGaps;
-  readonly changesOpen = signal(true);
-  protected readonly changeType = classifyChangeType;
 
   // Cover Letter tailoring (Phase 1c). The library list stays here because the
   // choose-existing dropdown reads the same rows; the modal's own state lives
@@ -656,15 +650,6 @@ export class JobsComponent implements OnInit, OnDestroy {
     if (result.application) this.application.set(result.application);
     void this.router.navigate(['/documents/cover-letter', result.document.id]);
   }
-
-  /** Three tailoring phases (XYZ → dual critique → build) with derived state. */
-  readonly tailorPhases = computed(() =>
-    tailorPhases(this.tailorResults().length, this.tailoring()),
-  );
-
-  /** i18n key of the phase currently being generated - drives the animated
-   * "AI thinking" line while tailoring auto-runs through all three passes. */
-  readonly currentPhaseKey = computed(() => currentPhaseKey(this.tailorResults().length));
 
   /** Aliases onto `DocumentExportService`. Several component methods reset the
    * status line directly, so these stay the same writable signals. */

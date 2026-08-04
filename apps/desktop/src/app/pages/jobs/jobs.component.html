@@ -316,177 +316,18 @@
           (cancelEdit)="cancelEditingLocked()"
           (stepChange)="onWizardStep($event)"
         >
-          <div wizardTailorStep class="wizard-step-content">
-            <div class="apply-fields-header">
-              <span class="eyebrow">{{ t()('jobs.wizard.tailor_eyebrow') }}</span>
-              <h4 class="apply-fields-title">{{ t()('jobs.wizard.tailor_title') }}</h4>
-            </div>
-            <!-- Phase cards -->
-            <div class="tailor-phases">
-              @for (p of tailorPhases(); track p.n) {
-                <div class="tailor-phase" [class]="'tailor-phase--' + p.state">
-                  <div class="tailor-phase__head">
-                    <span class="tailor-phase__icon">
-                      <lucide-icon [img]="p.icon" [size]="13" aria-hidden="true" />
-                    </span>
-                    <span class="tailor-phase__name">{{ t()(p.nameKey) }}</span>
-                  </div>
-                  <span class="tailor-phase__status">{{ t()(p.statusKey) }}</span>
-                </div>
-              }
-            </div>
-
-            <!-- Actions -->
-            @if (tailorResults().length === 0 && !tailoring()) {
-              <div class="base-cv-picker">
-                <span class="base-cv-picker__icon" aria-hidden="true">
-                  <lucide-icon [img]="icons.fileText" [size]="16" />
-                </span>
-                <div class="base-cv-picker__body">
-                  <label class="base-cv-picker__label" for="wizard-base-cv">
-                    {{ t()('jobs.wizard.tailor_base_cv_label') }}
-                  </label>
-                  <p class="base-cv-picker__hint">
-                    {{ t()('jobs.wizard.tailor_base_cv_hint') }}
-                  </p>
-                </div>
-                <div class="base-cv-picker__control">
-                  <select
-                    id="wizard-base-cv"
-                    [ngModel]="selectedBaseCvId()"
-                    (ngModelChange)="
-                      selectedBaseCvId.set($event === null || $event === '' ? null : +$event)
-                    "
-                  >
-                    <option [ngValue]="null">
-                      {{ t()('jobs.wizard.tailor_profile_from_scratch') }}
-                    </option>
-                    @for (cv of matchingCvs(); track cv.id) {
-                      <option [value]="cv.id">
-                        {{ cv.label }} · {{ cv.regionTag?.toUpperCase() || 'GENERIC' }}
-                      </option>
-                    }
-                  </select>
-                  <lucide-icon
-                    class="base-cv-picker__chevron"
-                    [img]="icons.chevronDown"
-                    [size]="16"
-                    aria-hidden="true"
-                  />
-                </div>
-              </div>
-              <div class="row">
-                <button
-                  class="btn btn--primary btn--md"
-                  [disabled]="!selectedBaseCvId() && !profile()?.fullMd"
-                  (click)="startTailoring()"
-                >
-                  <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
-                  {{ t()('jobs.tailor_btn') }}
-                </button>
-                @if (!selectedBaseCvId() && !profile()?.fullMd) {
-                  <span class="status status--error">{{ t()('jobs.profile_needed_full') }}</span>
-                }
-              </div>
-              <p class="muted">{{ t()('jobs.wizard.tailor_skip_hint') }}</p>
-            } @else if (tailoring()) {
-              <div class="row">
-                <div class="ai-thinking">
-                  <span class="ai-thinking__dots"><span></span><span></span><span></span></span>
-                  {{ t()(currentPhaseKey()) }}
-                </div>
-                <button
-                  class="btn btn--ghost btn--sm"
-                  type="button"
-                  [disabled]="tailorCancelled()"
-                  (click)="cancelTailoring()"
-                >
-                  {{
-                    tailorCancelled()
-                      ? t()('jobs.wizard.tailor_cancelling')
-                      : t()('jobs.wizard.tailor_cancel')
-                  }}
-                </button>
-              </div>
-            } @else if (tailorResults().length === 3) {
-              <div class="row">
-                <span class="badge badge--pass">
-                  <lucide-icon [img]="icons.checkCircle" [size]="12" aria-hidden="true" />
-                  {{ t()('jobs.wizard.tailored_badge') }}
-                </span>
-                <button class="btn btn--secondary btn--md" (click)="resetWizard()">
-                  <lucide-icon [img]="icons.another" [size]="15" aria-hidden="true" />
-                  {{ t()('jobs.wizard.retailor_btn') }}
-                </button>
-              </div>
-            }
-
-            @if (tailorStatus() && tailorError()) {
-              <span class="status status--error">{{ tailorStatus() }}</span>
-            }
-
-            <!-- Changes (shown here, after the tailoring pass completes) -->
-            @if (!tailoring() && allChanges().length) {
-              <details
-                class="card tailor-changes"
-                open
-                (toggle)="changesOpen.set($any($event.target).open)"
-              >
-                <summary class="tailor-changes__summary">
-                  <lucide-icon
-                    [img]="icons.gitCompare"
-                    [size]="15"
-                    class="scoring-view__accent-icon"
-                    aria-hidden="true"
-                  />
-                  <span class="tailor-changes__title"
-                    >{{ t()('jobs.wizard.changes_title') }} ({{ allChanges().length }})</span
-                  >
-                  <span class="tailor-changes__toggle">
-                    {{
-                      changesOpen() ? t()('jobs.wizard.hide_label') : t()('jobs.wizard.show_label')
-                    }}
-                    <lucide-icon
-                      [img]="changesOpen() ? icons.chevronUp : icons.chevronDown"
-                      [size]="14"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </summary>
-                <div class="tailor-changes__list">
-                  @for (ch of allChanges(); track ch) {
-                    <div class="tailor-change-row">
-                      <lucide-icon
-                        [img]="changeType(ch) === 'added' ? icons.plus : icons.pencil"
-                        [size]="13"
-                        [class]="
-                          'tailor-change-row__icon tailor-change-row__icon--' + changeType(ch)
-                        "
-                        aria-hidden="true"
-                      />
-                      <span>{{ ch }}</span>
-                    </div>
-                  }
-                </div>
-              </details>
-            }
-
-            <!-- Gaps -->
-            @if (!tailoring() && allGaps().length) {
-              <div class="tailor-gaps">
-                <div class="tailor-gaps__head">
-                  <lucide-icon [img]="icons.alertTriangle" [size]="14" aria-hidden="true" />
-                  <span class="eyebrow">{{ t()('jobs.wizard.gaps_title') }}</span>
-                </div>
-                @for (g of allGaps(); track g) {
-                  <div class="tailor-gap-row">
-                    <lucide-icon [img]="icons.minus" [size]="13" aria-hidden="true" />
-                    <span>{{ g }}</span>
-                  </div>
-                }
-              </div>
-            }
-          </div>
+          <app-job-tailor-step
+            wizardTailorStep
+            class="wizard-step-content"
+            [job]="job()"
+            [matchingCvs]="matchingCvs()"
+            [hasProfileText]="!!profile()?.fullMd"
+            [selectedBaseCvId]="selectedBaseCvId()"
+            (baseCvChange)="selectedBaseCvId.set($event)"
+            (startTailoring)="startTailoring()"
+            (cancelTailoring)="cancelTailoring()"
+            (retailor)="resetWizard()"
+          />
 
           <!-- Step 3: Updated score - auto-rescores the tailored resume -->
           <div wizardUpdateScoreStep class="wizard-step-content">

@@ -187,17 +187,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.coverdetail__style-btn--custom {
-  color: var(--accent);
-}
-.coverdetail__style-btn--custom::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  margin-left: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-}
 
 /* ---- Per-block style-popover fields (unchanged, popover-only now) ---- */
 .coverdetail__style-field {
@@ -265,33 +254,6 @@
   color: var(--text-tertiary);
 }
 
-.coverdetail__style-btn {
-  display: inline-flex;
-  align-items: center;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: var(--radius-input);
-  border: var(--border-width) solid transparent;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    background 120ms ease,
-    color 120ms ease;
-}
-.coverdetail__style-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-secondary);
-}
-.coverdetail__style-btn--active {
-  background: var(--accent-tint, var(--surface-hover));
-  color: var(--accent);
-}
-
 .coverdetail__style-pop {
   display: flex;
   flex-wrap: wrap;
@@ -342,9 +304,6 @@
   letter-spacing: 0.06em;
   color: var(--text-tertiary);
 }
-.coverdetail__full {
-  width: 100%;
-}
 
 .coverdetail__paragraphs {
   display: flex;
@@ -381,48 +340,8 @@
   background: var(--surface-1) !important;
 }
 
-.coverdetail__regen,
-.coverdetail__add {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  width: auto;
-  border-radius: var(--radius-input);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-1);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-standard);
-}
-.coverdetail__regen:hover:not(:disabled),
-.coverdetail__add:hover {
-  background: var(--surface-hover);
-}
-.coverdetail__regen:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-.coverdetail__add {
-  align-self: flex-start;
-  margin-top: var(--space-3);
-  color: var(--text-primary);
-}
-
 /* The preview sheet's own styles live with the render itself, in
    `cover-letter-preview.component.scss`. */
-
-.spin {
-  animation: cl-spin 0.9s linear infinite;
-}
-@keyframes cl-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 // NOTE: the WYSIWYG print rules live in the GLOBAL stylesheet
 // (apps/desktop/src/styles.scss), not here. Component styles are view-

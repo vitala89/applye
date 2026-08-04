@@ -11,6 +11,10 @@
 // component's encapsulated SCSS, which duplicated ~11.5 kB per component and
 // blew the per-component style budget.
 @use './app/pages/documents/editor-shell' as *;
+
+// The cover-letter editor's section-action controls, shared between the page
+// and the block component extracted out of it.
+@use './app/pages/documents/cover-letter-detail/cover-letter-controls' as *;
 @use './app/pages/discover/discover-controls' as *;
 
 // Shared onboarding-wizard vocabulary (headings, card/badge and form

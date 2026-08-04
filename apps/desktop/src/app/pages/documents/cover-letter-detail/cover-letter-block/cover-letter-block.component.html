@@ -1,0 +1,62 @@
+<section class="docedit-section">
+  <div class="docedit-section__head">
+    <button
+      type="button"
+      class="docedit-section__toggle"
+      [attr.aria-expanded]="open()"
+      (click)="toggled.emit()"
+    >
+      <lucide-icon
+        [img]="icons.chevron"
+        [size]="15"
+        aria-hidden="true"
+        class="docedit-chevron"
+        [class.docedit-chevron--closed]="!open()"
+      />
+      <span class="docedit-section__title">{{ t()(labelKey()) }}</span>
+    </button>
+    <div class="docedit-section__actions">
+      <button
+        type="button"
+        class="coverdetail__style-btn"
+        [class.coverdetail__style-btn--active]="styleOpen()"
+        [class.coverdetail__style-btn--custom]="customStyle()"
+        (click)="styleToggled.emit()"
+      >
+        {{ t()('documents.cv_section_style') }}
+      </button>
+      @if (regeneratable()) {
+        <button
+          class="coverdetail__regen"
+          type="button"
+          [disabled]="regenerating()"
+          (click)="regenerated.emit()"
+        >
+          <lucide-icon
+            [img]="icons.regenerate"
+            [size]="13"
+            [class.spin]="regenerating()"
+            aria-hidden="true"
+          />
+          {{ t()('documents.cover_letter_regenerate') }}
+        </button>
+      }
+    </div>
+  </div>
+  @if (styleOpen()) {
+    <ng-container
+      [ngTemplateOutlet]="stylePopover()"
+      [ngTemplateOutletContext]="{ $implicit: key() }"
+    ></ng-container>
+  }
+  <div class="docedit-collapse" [class.docedit-collapse--closed]="!open()">
+    <div>
+      <input
+        type="text"
+        class="coverdetail__full"
+        [ngModel]="value()"
+        (ngModelChange)="valueChanged.emit($event)"
+      />
+    </div>
+  </div>
+</section>

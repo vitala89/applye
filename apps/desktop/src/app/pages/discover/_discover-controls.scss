@@ -340,3 +340,13 @@
     cursor: default;
   }
 }
+
+// The menu's small print. Rendered by the page in each panel's empty state and
+// by the filter-menu shell in the Locations foot, so it cannot be scoped to
+// either one.
+.dv-geomenu__hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+}

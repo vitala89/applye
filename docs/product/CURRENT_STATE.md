@@ -55,13 +55,24 @@
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped
   report means "not changed", not "now under budget"; that misread nearly reached a changelog entry
-  on 2026-08-05. The audit reports **42 files over budget**: 19 TypeScript, 12 templates,
+  on 2026-08-05. The audit reports **41 files over budget**: 19 TypeScript, 11 templates,
   11 stylesheets, and **zero Rust, source or tests**.
-- **Profile is the campaign's most complete page, and its stylesheet is under budget.** Across ten
-  merged PRs on 2026-08-05 (#329-#338) the page went from **1037 / 772 / 733** to
-  **409 / 628 / 379**, and `profile.component.scss` became the second file the campaign has taken
-  from over budget to under, after `cover-letter-detail.component.scss`. It now has nine child
-  components and two util files. Three decisions came out of it and are written into
+- **Profile is finished, by decision.** Across fifteen merged PRs on 2026-08-05 (#329-#344) the page
+  went from **1037 / 772 / 733** to **270 / 445 / 124**. Its **template and stylesheet are both under
+  budget** - two of the three files the campaign has taken from over to under, alongside
+  `cover-letter-detail.component.scss`. It has eleven child components and four util files.
+  **The class stops at 445/400 and that is a settled decision, not an omission**: the remaining lines
+  are one coherent lump of page state (`ngOnInit`, `save`, `persistProfile`, `refreshSavedMdHash`,
+  the form and its three section mirrors) that no further pure-function extraction reaches. The
+  maintainer chose this over building a `ProfileFormStore`, through the grilling gate, on
+  2026-08-05. No ratchet exclusion was added: the file stays listed OVER and can never grow, which
+  is the enforcement that matters. Two seams were audited and rejected with it - the compensation
+  block (template already under budget, so the move would only grow the class) and the section-mirror
+  collapse (a shared `syncSections()` would re-serialize all three on any one edit, and
+  `serialize(parse(x))` is not identity for hand-typed raw markdown).
+- **Discover is the current target**, its stylesheet being the largest file in the project at
+  1464 before the first cut. Unlike Profile it needs **no page-scoped wrapper**: 33 of its 34
+  top-level selectors already carry the `dv-` prefix. Three decisions came out of it and are written into
   `CODE_QUALITY.md`: a page whose class names are generic **wraps its partial in the page root**
   rather than prefixing (seven of Profile's shared names were already defined with different values
   by eight other stylesheets); a class's **modifiers move with it**, because a base and its modifier

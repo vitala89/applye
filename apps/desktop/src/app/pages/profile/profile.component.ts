@@ -37,15 +37,7 @@ import {
   pitchState as computePitchState,
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import {
-  LucideAngularModule,
-  Info,
-  Save,
-  Check,
-  RotateCcw,
-  Sparkles,
-  CircleDot,
-} from 'lucide-angular';
+import { LucideAngularModule, Info, Save, Check, RotateCcw, CircleDot } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { CompletenessHeroComponent } from './completeness-hero.component';
@@ -57,6 +49,7 @@ import { ProfileLanguagesComponent } from './profile-languages/profile-languages
 import { ProfileSkillsComponent } from './profile-skills/profile-skills.component';
 import { ProfileAiToolsComponent } from './profile-ai-tools/profile-ai-tools.component';
 import { ProfileTextFieldComponent } from './profile-text-field/profile-text-field.component';
+import { ProfileRawEditorComponent } from './profile-raw-editor/profile-raw-editor.component';
 import {
   ParsedProfile,
   parsedContactPatch,
@@ -86,6 +79,7 @@ type ProfileSectionKey =
     ProfileSkillsComponent,
     ProfileAiToolsComponent,
     ProfileTextFieldComponent,
+    ProfileRawEditorComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -103,7 +97,6 @@ export class ProfileComponent implements OnInit {
   protected readonly checkIcon = Check;
   protected readonly rerunIcon = RotateCcw;
   protected readonly unsavedIcon = CircleDot;
-  protected readonly sparklesIcon = Sparkles;
 
   readonly fullMd = signal('');
   readonly rawMode = signal(false);
@@ -126,7 +119,6 @@ export class ProfileComponent implements OnInit {
   readonly saving = signal(false);
   readonly scoring = signal(false);
   readonly pitching = signal(false);
-  readonly parsing = signal(false);
 
   readonly saveStatus = signal('');
   readonly saveError = signal(false);
@@ -134,9 +126,6 @@ export class ProfileComponent implements OnInit {
   readonly scoreError = signal(false);
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
-  readonly parsePreview = signal<ParsedProfile | null>(null);
-  readonly parseStatus = signal('');
-  readonly parseError = signal(false);
   readonly scoringOpen = signal(true);
   readonly sectionOpen = signal<Record<ProfileSectionKey, boolean>>({
     archetypes: true,
@@ -521,74 +510,11 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  /** Runs the `profile-import` skill against the raw markdown and stashes the
-   * tolerant result in `parsePreview` for the user to review - never applies
-   * automatically. */
-  async parseRawText(): Promise<void> {
-    const text = this.fullMd().trim();
-    if (!text) {
-      this.parseStatus.set(this.t()('profile.parse_empty_hint'));
-      return;
-    }
-    const s = this.settings();
-    if (!s) return;
-    this.parsing.set(true);
-    this.parseStatus.set('');
-    this.parseError.set(false);
-    try {
-      const lang = s.defaultDocLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('profile-import', {
-        profile_text: text,
-        language: lang,
-      });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: lang,
-      });
-      const parsed = this.extractParsed(res.text);
-      if (!parsed) {
-        this.parseStatus.set(this.t()('profile.parse_failed'));
-        this.parseError.set(true);
-        return;
-      }
-      this.parsePreview.set(parsed);
-    } catch (e) {
-      this.parseStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
-      this.parseError.set(true);
-      this.toast.error(this.t()('profile.parse_failed'));
-    } finally {
-      this.parsing.set(false);
-    }
-  }
-
-  /** Same tolerant fence-stripping as `parseScoringJson`: strips ```json fences,
-   * parses, and returns null on anything that is not a JSON object - never
-   * throws, so a bad AI response just fails the parse instead of clearing the form. */
-  private extractParsed(raw: string): ParsedProfile | null {
-    const cleaned = raw
-      .replace(/^\s*```(?:json)?\s*/i, '')
-      .replace(/\s*```\s*$/, '')
-      .trim();
-    try {
-      const obj = JSON.parse(cleaned);
-      return obj && typeof obj === 'object' && !Array.isArray(obj) ? (obj as ParsedProfile) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Folds the previewed parse into `ProfileForm` + the section signals, then
-   * resyncs `fullMd` and switches to the Form tab. Nulls from the AI (e.g.
-   * `endDate: null` for an ongoing role) become '' via `str`, matching what
-   * every section entry type already expects. */
-  applyParsedProfile(): void {
-    const p = this.parsePreview();
-    if (!p) return;
-
+  /** Folds the parse the raw editor emitted into `ProfileForm` + the section
+   * signals, then resyncs `fullMd` and switches to the Form tab. Nulls from the
+   * AI (e.g. `endDate: null` for an ongoing role) become '' via `str`, matching
+   * what every section entry type already expects. */
+  applyParsedProfile(p: ParsedProfile): void {
     this.form.update((f) => ({ ...f, ...parsedContactPatch(p, f) }));
     this.experienceEntries.set(parsedExperienceEntries(p));
     this.languageEntries.set(parsedLanguageEntries(p));
@@ -601,13 +527,7 @@ export class ProfileComponent implements OnInit {
     this.syncEducation();
     this.syncMdFromForm();
 
-    this.parsePreview.set(null);
     this.seedSectionOpen();
     this.rawMode.set(false); // switch to Form tab
-  }
-
-  discardParse(): void {
-    this.parsePreview.set(null);
-    this.parseStatus.set('');
   }
 }

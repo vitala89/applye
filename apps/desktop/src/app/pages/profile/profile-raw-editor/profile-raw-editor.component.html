@@ -1,0 +1,76 @@
+<div class="editor-panel">
+  <textarea
+    class="editor"
+    [ngModel]="markdown()"
+    (ngModelChange)="markdownChanged.emit($event)"
+    spellcheck="false"
+  ></textarea>
+  <div class="scaffold">
+    <span class="scaffold__label">{{ t()('profile.scaffold_label') }}</span>
+    <span class="scaffold__line"># Name · Title · Location</span>
+    <span class="scaffold__line">## Contact</span>
+    <span class="scaffold__line">## Experience &nbsp;&nbsp;### Role, Company</span>
+    <span class="scaffold__line">## Skills · Education · Languages</span>
+  </div>
+  <div class="raw-parse">
+    <button
+      appButton
+      variant="secondary"
+      size="md"
+      [disabled]="parsing() || !markdown().trim()"
+      (click)="parse()"
+    >
+      <lucide-icon [img]="icons.sparkles" [size]="15" aria-hidden="true" />
+      {{ parsing() ? t()('profile.raw_parsing') : t()('profile.raw_parse_btn') }}
+    </button>
+    <span class="field__hint">{{ t()('profile.raw_parse_desc') }}</span>
+    @if (status()) {
+      <span class="status" [class.status--error]="error()">{{ status() }}</span>
+    }
+  </div>
+  @if (preview(); as pv) {
+    <div class="parse-preview">
+      <p class="parse-preview__title">{{ t()('profile.parse_preview_title') }}</p>
+      <div class="parse-preview__grid">
+        @if (pv.name) {
+          <span>{{ pv.name }}</span>
+        }
+        @if (pv.title) {
+          <span>{{ pv.title }}</span>
+        }
+        @if (pv.location) {
+          <span>{{ pv.location }}</span>
+        }
+        @if (pv.email) {
+          <span>{{ pv.email }}</span>
+        }
+        @if (pv.phone) {
+          <span>{{ pv.phone }}</span>
+        }
+        @if (pv.linkedin) {
+          <span>{{ pv.linkedin }}</span>
+        }
+      </div>
+      <p class="muted">
+        {{ pv.experience?.length || 0 }} · {{ pv.skills?.length || 0 }} ·
+        {{ pv.languages?.length || 0 }} · {{ pv.education?.length || 0 }}
+      </p>
+      @if (pv.lowConfidenceNotes?.length) {
+        <div class="parse-preview__notes">
+          <span class="parse-preview__notes-title">{{ t()('profile.parse_notes_title') }}</span>
+          @for (n of pv.lowConfidenceNotes; track $index) {
+            <span>{{ n }}</span>
+          }
+        </div>
+      }
+      <div class="parse-preview__actions">
+        <button appButton variant="primary" size="sm" (click)="apply()">
+          {{ t()('profile.parse_apply_btn') }}
+        </button>
+        <button appButton variant="secondary" size="sm" (click)="discard()">
+          {{ t()('profile.parse_discard_btn') }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

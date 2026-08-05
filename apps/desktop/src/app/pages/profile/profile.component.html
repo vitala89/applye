@@ -400,99 +400,12 @@
           </div>
 
           <div class="field field--full" id="field-education">
-            <div class="collapse-card">
-              <div
-                class="collapse-card__head"
-                role="button"
-                tabindex="0"
-                [attr.aria-expanded]="sectionOpen().education"
-                (click)="toggleSection('education')"
-                (keydown.enter)="toggleSection('education')"
-                (keydown.space)="toggleSection('education'); $event.preventDefault()"
-              >
-                <span class="collapse-card__title">{{ t()('profile.section_education') }}</span>
-                <span class="collapse-card__summary">
-                  {{
-                    educationEntries().length
-                      ? t()('profile.summary_education').replace(
-                          '{count}',
-                          educationEntries().length + ''
-                        )
-                      : t()('profile.summary_empty')
-                  }}
-                </span>
-                <lucide-icon
-                  [img]="chevronIcon"
-                  [size]="17"
-                  class="chevron"
-                  [class.chevron--open]="sectionOpen().education"
-                  aria-hidden="true"
-                />
-              </div>
-              @if (sectionOpen().education) {
-                <div class="collapse-card__body">
-                  <p class="muted">{{ t()('profile.education_hint') }}</p>
-                  @if (educationEntries().length > 0) {
-                    <div class="archetype-list">
-                      @for (e of educationEntries(); track $index) {
-                        <div class="archetype-card">
-                          <div class="archetype-card__top">
-                            <input
-                              class="archetype-input"
-                              type="text"
-                              [ngModel]="e.title"
-                              (ngModelChange)="updateEducation($index, 'title', $event)"
-                              [placeholder]="t()('profile.education_title_hint')"
-                              [attr.aria-label]="t()('profile.education_title')"
-                            />
-                            <button
-                              class="btn-ghost"
-                              type="button"
-                              (click)="removeEducation($index)"
-                              [attr.aria-label]="t()('profile.remove_education')"
-                            >
-                              <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                            </button>
-                          </div>
-                          <div class="archetype-card__top">
-                            <input
-                              class="archetype-input"
-                              type="text"
-                              [ngModel]="e.institution"
-                              (ngModelChange)="updateEducation($index, 'institution', $event)"
-                              [placeholder]="t()('profile.education_institution_hint')"
-                              [attr.aria-label]="t()('profile.education_institution')"
-                            />
-                          </div>
-                          <div class="archetype-card__top">
-                            <input
-                              class="archetype-input"
-                              type="text"
-                              [ngModel]="e.startDate"
-                              (ngModelChange)="updateEducation($index, 'startDate', $event)"
-                              [placeholder]="t()('profile.education_start_hint')"
-                              [attr.aria-label]="t()('profile.education_start')"
-                            />
-                            <input
-                              class="archetype-input"
-                              type="text"
-                              [ngModel]="e.endDate"
-                              (ngModelChange)="updateEducation($index, 'endDate', $event)"
-                              [placeholder]="t()('profile.education_end_hint')"
-                              [attr.aria-label]="t()('profile.education_end')"
-                            />
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  }
-                  <button class="btn-dashed" type="button" (click)="addEducation()">
-                    <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                    {{ t()('profile.add_education') }}
-                  </button>
-                </div>
-              }
-            </div>
+            <app-profile-education
+              [entries]="educationEntries()"
+              [open]="sectionOpen().education"
+              (toggled)="toggleSection('education')"
+              (changed)="onEducationChanged($event)"
+            />
           </div>
         </div>
       } @else {

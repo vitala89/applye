@@ -1,0 +1,90 @@
+<div class="collapse-card">
+  <div
+    class="collapse-card__head"
+    role="button"
+    tabindex="0"
+    [attr.aria-expanded]="open()"
+    (click)="toggled.emit()"
+    (keydown.enter)="toggled.emit()"
+    (keydown.space)="toggled.emit(); $event.preventDefault()"
+  >
+    <span class="collapse-card__title">{{ t()('profile.section_education') }}</span>
+    <span class="collapse-card__summary">
+      {{
+        entries().length
+          ? t()('profile.summary_education').replace('{count}', entries().length + '')
+          : t()('profile.summary_empty')
+      }}
+    </span>
+    <lucide-icon
+      [img]="icons.chevron"
+      [size]="17"
+      class="chevron"
+      [class.chevron--open]="open()"
+      aria-hidden="true"
+    />
+  </div>
+  @if (open()) {
+    <div class="collapse-card__body">
+      <p class="muted">{{ t()('profile.education_hint') }}</p>
+      @if (entries().length > 0) {
+        <div class="archetype-list">
+          @for (e of entries(); track $index) {
+            <div class="archetype-card">
+              <div class="archetype-card__top">
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.title"
+                  (ngModelChange)="updateField($index, 'title', $event)"
+                  [placeholder]="t()('profile.education_title_hint')"
+                  [attr.aria-label]="t()('profile.education_title')"
+                />
+                <button
+                  class="btn-ghost"
+                  type="button"
+                  (click)="remove($index)"
+                  [attr.aria-label]="t()('profile.remove_education')"
+                >
+                  <lucide-icon [img]="icons.remove" [size]="15" aria-hidden="true" />
+                </button>
+              </div>
+              <div class="archetype-card__top">
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.institution"
+                  (ngModelChange)="updateField($index, 'institution', $event)"
+                  [placeholder]="t()('profile.education_institution_hint')"
+                  [attr.aria-label]="t()('profile.education_institution')"
+                />
+              </div>
+              <div class="archetype-card__top">
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.startDate"
+                  (ngModelChange)="updateField($index, 'startDate', $event)"
+                  [placeholder]="t()('profile.education_start_hint')"
+                  [attr.aria-label]="t()('profile.education_start')"
+                />
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.endDate"
+                  (ngModelChange)="updateField($index, 'endDate', $event)"
+                  [placeholder]="t()('profile.education_end_hint')"
+                  [attr.aria-label]="t()('profile.education_end')"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      }
+      <button class="btn-dashed" type="button" (click)="add()">
+        <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+        {{ t()('profile.add_education') }}
+      </button>
+    </div>
+  }
+</div>

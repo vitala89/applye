@@ -44,6 +44,54 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, session close: ten PRs merged, handoff rewritten
+
+- **Status:** complete - documentation only
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/next-session-handoff-3`
+
+**What shipped.** Ten PRs, #329-#338, all squash-merged. `main` is at `d98c214`, clean, no open PRs.
+One onboarding cut (the Review step), one dependency-security PR, and eight on Profile: the shared
+style hoist, five editor sections, AI Tools, and the contact field component. The individual entries
+below carry the detail.
+
+**Profile: 1037 / 772 / 733 -> 409 / 628 / 379.** The stylesheet is under budget - the second file
+the campaign has taken from over to under. Nine child components and two util files now exist beside
+the page. Repository total **43 -> 42**, which understates the work for the usual reason: new
+components are within budget and never appear.
+
+**Three things this session added to the governance docs**, each because it cost something to learn:
+
+1. A page whose class names are generic **wraps its partial in the page root**. Profile's `eyebrow`,
+   `muted`, `status`, `status--error`, `section`, `field` and `btn-ghost` are defined with different
+   values by eight other stylesheets, so an unwrapped global partial would have restyled Settings,
+   Dashboard and Jobs in ways no gate here catches.
+2. **A class's modifiers move with it.** `.status` and `.status--warn` both set `color`; source order
+   decides while they share a file, style-injection order once they do not.
+3. **Three ways to run `quality:style-move` wrongly** - an incomplete file list, `--base main` using
+   a local ref that `git fetch` never moves, and `--page-scope` against a base that already has the
+   wrapper. The tool's own header now says all three, and it gained the `--page-scope` flag itself,
+   without which a page-scoped hoist cannot be verified at all.
+
+**What improved most: verification.** The handoff this session inherited had three cuts shipped
+without a click-through. Profile is routed, so every cut here was walked in the running app, and two
+walks caught things no gate would have - a `stopPropagation` guard still working after a move, and a
+component with no stylesheet still rendering from the page partial. The strongest available check is
+the round trip through the raw markdown view, which exercises the child's output, the page's handler
+and the serializer in one action, and parses back on the way out.
+
+**What is still owed.** Discover's Sources drawer, onboarding's two AI panels and its Review step,
+and the cover letter's five blocks remain unwalked; onboarding is gated in `app.ts` rather than
+routed, so the browser cannot reach it at all. Each says so in its own entry.
+
+**Local `main` was synced to `origin/main` at session end**, which removes the stale-ref trap for the
+next agent.
+
+**Next first action.** `docs/internal/NEXT_SESSION_PROMPT.md` is rewritten for a fresh session. Its
+recommendation: Profile's photo card, the only remaining block that is class-side as well as
+template-side, since the page's class at 628/400 is now the harder number and no template cut will
+move it.
+
 ### 2026-08-05, Profile's contact block becomes one field rendered nine times
 
 - **Status:** complete

@@ -44,6 +44,22 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, three dead Discover row rules removed, and the `.dv-row` seam turns out not to need a hoist
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `chore/discover-drop-dead-row-rules`
+- **Objective:** open the Discover stylesheet phase by auditing `.dv-row`, the largest family left in `discover.component.scss` (938/400).
+- **Completed:** removed `.dv-row__preview`, `.dv-row__detailactions` and `.dv-row__original`. Forty lines; stylesheet **938 -> 903**.
+- **Files changed:** `apps/desktop/src/app/pages/discover/discover.component.scss`, `CHANGELOG.md`, this file.
+- **Validation:** `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop`, `nx test desktop` (117 suites, **1397 tests**, all passing), `nx build desktop`, `npm run quality:file-size` (passes; reports 903 against base 938), `npm run quality:attribution`, `npx nx format:check` (failed first on the edited stylesheet, fixed with `npx prettier --write`, then clean), `git diff --check`.
+- **`quality:style-move` deliberately not run.** This deletes declarations on purpose. The check reports lost declarations, so running it here would report exactly what the commit intends and prove nothing - the same category as the contrast fix noted in the previous handoff.
+- **Privacy/security impact:** none. Styles only.
+- **Correction to the previous handoff's read of `.dv-row`.** It said the family "is not the clean seam it looks like" because its classes are rendered by both the detail body and the feed, so it needs a hoist-then-cut like the hero. **That is no longer true, and the hoist is already done.** The classes the two screens genuinely share - `__new`, `__savedbadge`, `__keywords`, `__matchedlbl`, `__kw`, plus `.dv-arch-badge` - moved into `_discover-controls.scss` in PR #346. What remains inside the `.dv-row` block splits into two **disjoint** sets: feed chrome (`.dv-row`, `--saved`, `__main`, `__body`, `__titleline`, `__title`, `__companyline`, `__company`, `__meta`, `__srcbadge`, `__metaitem`, `__actions`, `__inmyjobs`), rendered only by the feed; and detail-body typography (`__detailloading`, `__detail`, `__dh`, `__dp`, `__dul`), rendered only by the detail screen's main column. Neither set needs hoisting before the other moves.
+- **The dead rules are residue of an earlier redesign.** `__preview` carried a `dv-fade` animation for an inline expanding row preview; `__detailactions` and `__original` were its footer and its "view original" link. That interaction became the full-page detail screen, whose equivalents are `.dv-detail__actions` and a `.dv-btn--primary`. The rules survived because deleting markup does not fail any gate. `dv-fade` itself is still used three times and stays.
+- **Risks:** none identified. Verified repo-wide across `apps`, `libs` and `tools` for every template, class and stylesheet, including a search for class names assembled from strings.
+- **Next first action:** extract `DiscoverFeedRowComponent` from `discover.component.html` lines 520-600, taking the 13 feed-chrome rules with it. **Watch the host-element trap**: `.dv-feed > :last-child { border-bottom: none }` currently strips the separator from the final row, and a component host inserted between `.dv-feed` and `.dv-row` will absorb that match while the border stays on `.dv-row` inside the child - the same shape as the PR #341 `flex: 1` regression, and equally invisible to every gate. The separator has to move to the child's `:host`.
+
 ### 2026-08-05, session close: eight PRs merged, Profile finished, Discover's largest file down a third
 
 - **Status:** complete - documentation only

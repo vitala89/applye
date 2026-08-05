@@ -655,14 +655,6 @@
     white-space: nowrap;
   }
 
-  &__preview {
-    padding: 0 var(--space-4) var(--space-4);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    animation: dv-fade var(--dur-fast) var(--ease-standard);
-  }
-
   &__detailloading {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
@@ -715,38 +707,6 @@
       &::marker {
         color: var(--text-tertiary);
       }
-    }
-  }
-
-  &__detailactions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-5);
-    padding-top: var(--space-2);
-  }
-
-  &__original {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-wide);
-    color: var(--text-accent);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    width: max-content;
-    padding: 0;
-
-    &:hover {
-      color: var(--accent-hover);
-    }
-
-    &:focus-visible {
-      outline: none;
-      box-shadow: var(--shadow-ring);
-      border-radius: var(--radius-badge);
     }
   }
 }

@@ -44,6 +44,55 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's two AI generators become one, and the crossing mutation survives
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-ai-generate`
+- **Objective:** reduce the Profile class. The page template went under budget in the previous cut, so the 496-line class is what is left.
+
+**The compensation block was the handoff's next item and was deliberately skipped.** With the
+template already at 270/300, a template-only move buys nothing measurable and still adds the import
+and the `imports:` entry to an over-budget class - which is exactly the ratchet refusal the handoff
+warns about. It stays available as a tidiness cut once the class is under budget.
+
+**What was done instead.** `generateScoringProfile` and `generatePitch` were 117 lines of the same
+sequence written twice, and they had already drifted - the pitch's comment referred the reader to
+the scoring copy for the rule they share. They are now one `generateArtifact(kind)`, with the three
+things that genuinely differ extracted as pure functions in `profile-artifact.util.ts`:
+`artifactCached` (how the cache is keyed), `artifactPrompt` (what to render, in which language) and
+`artifactPatch` (which columns the write owns).
+
+`artifactPatch` is the one worth naming: it is a **whole-row-replace guard**. `db_upsert_profile`
+overwrites every column it names, so an artefact write must carry the other artefact across or
+generating a pitch wipes the scoring profile. The rule was correct in both copies; it is now stated
+once and tested. `artifactPrompt` records the other decision that was previously invisible - scoring
+is pinned to English because it is machine-read when matching a job, while the pitch follows the
+document language because the user reads it aloud.
+
+Placed beside the page as a util rather than in `libs/core`, following `profile-parse.util.ts`. A
+`libs/` public API change would have triggered the Grilling gate, and nothing outside this page
+needs these rules.
+
+**One of six mutations survived, and it is the characteristic failure of this kind of collapse.**
+Addressing `artifactUi['scoring']` instead of `artifactUi[kind]` makes a pitch run spin the scoring
+card and put its token count on the scoring status line. The row is still written correctly, so
+every freshness test in the wiring spec - all of which assert on `scoringState`, `pitchState` and
+the persisted columns - passed on it. The wiring spec had only ever called `generateScoringProfile`
+for the UI path, so the pitch's signals were untested. Four tests now pin each artefact to its own
+three signals, including the failure and cached branches; the mutation fails three of them.
+
+The other five died first pass: crossing the two cache hashes, dropping the carried pitch columns,
+letting scoring follow the document language, accepting a hash match with no artefact behind it,
+and persisting the editor's current text rather than the text that was analysed.
+
+- **Files changed:** `profile-artifact.util.ts` + spec (new), `profile.component.ts`, `profile.component.wiring.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `nx run desktop:type-check` clean (the one warning is the pre-existing `RouterLink` in `discover.component.ts`). `nx run-many --target=lint --projects=desktop` passed, 8 warnings, same count as before. `nx test desktop` **1350 passed**, up from 1332. `nx build desktop` succeeded. `quality:file-size` passed with the class ratcheted 496 -> 466. `quality:attribution`, `npx nx format:check`, `git diff --check` all clean.
+- **Not run:** `quality:style-move` - no stylesheet was touched. No browser walk: both buttons require AI credentials and Tauri IPC, so the browser cannot reach either path. That gap is unchanged from before this cut and is why the wiring spec carries the weight.
+- **Honest number:** the class saved 30 lines, not the ~50 estimated - the `artifactUi` record and the two thin public callers cost some back. The duplication removal is the real result; the line count is secondary.
+- **Privacy/security impact:** none. Same skills, same model, same text, same columns.
+- **Next first action:** the class is 466/400. The load/save path (`ngOnInit`, `save`, `persistProfile`, `refreshSavedMdHash`) is the next coherent unit, and it is the one that maintains `savedMdHash` - the invariant the wiring spec exists to protect, so it needs the same care this cut got. The compensation block remains available as a template tidy-up afterwards.
+
 ### 2026-08-05, Profile's raw editor leaves, and the page template goes under budget
 
 - **Status:** complete

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateService } from '@applye/i18n';
-import { type FeedRow } from '../discover-feed';
+import { type FeedRow, type RowArchetype } from '../discover-feed';
 import { DetailVerdict } from '../discover-detail-score/discover-detail-score.component';
-import { DiscoverDetailHeroComponent, HeroArchetype } from './discover-detail-hero.component';
+import { DiscoverDetailHeroComponent } from './discover-detail-hero.component';
 
 function row(over: Partial<FeedRow> = {}): FeedRow {
   return {
@@ -24,7 +24,7 @@ interface Inputs {
   posted?: string;
   score?: number | null;
   verdict?: DetailVerdict;
-  archetype?: HeroArchetype | null;
+  archetype?: RowArchetype | null;
   matchedKeywords?: string[];
 }
 

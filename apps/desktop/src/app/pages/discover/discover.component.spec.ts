@@ -134,20 +134,20 @@ describe('Discover: the sources drawer is always reachable', () => {
 });
 
 /**
- * `heroArchetype` pairs the two calls the detail hero's markup used to make
- * before it became a component: the match, and the label for its tier. The
- * hero renders `label` as the badge text and `fit` as its modifier class, so
- * returning the tier in both fields still produces a correctly-tinted badge
+ * `rowArchetype` pairs the two calls the markup used to make before the detail
+ * hero and the feed row became components: the match, and the label for its
+ * tier. Both render `label` as the badge text and `fit` as its modifier class,
+ * so returning the tier in both fields still produces a correctly-tinted badge
  * reading "primary" instead of "Primary match".
  */
-describe('Discover: the archetype badge the detail hero is handed', () => {
+describe('Discover: the archetype badge a row is handed', () => {
   function hero(fixture: ComponentFixture<DiscoverComponent>, row: unknown) {
     return (
       fixture.componentInstance as unknown as {
-        heroArchetype: (r: unknown) => { fit: string; label: string } | null;
+        rowArchetype: (r: unknown) => { fit: string; label: string } | null;
         archetypes: { set: (a: unknown[]) => void };
       }
-    ).heroArchetype(row);
+    ).rowArchetype(row);
   }
 
   function archetypesOf(fixture: ComponentFixture<DiscoverComponent>) {

@@ -8,6 +8,17 @@ export interface FeedRow extends DiscoverFeedItem {
   dismissed: boolean;
 }
 
+/**
+ * The archetype badge as the page resolved it: the tier and its label.
+ *
+ * Lives here rather than on a component because the feed row and the detail
+ * hero both render it, and neither owns the other.
+ */
+export interface RowArchetype {
+  fit: string;
+  label: string;
+}
+
 export interface FeedSection {
   key: 'foryou' | 'more';
   label: string;

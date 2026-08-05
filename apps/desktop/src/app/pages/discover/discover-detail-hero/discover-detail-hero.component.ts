@@ -9,14 +9,8 @@ import {
   Rss,
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
-import { type FeedRow } from '../discover-feed';
+import { type FeedRow, type RowArchetype } from '../discover-feed';
 import { DetailVerdict } from '../discover-detail-score/discover-detail-score.component';
-
-/** The archetype badge as the page resolved it: the tier and its label. */
-export interface HeroArchetype {
-  fit: string;
-  label: string;
-}
 
 /**
  * The header of Discover's job-detail screen: the back link, the company mark,
@@ -49,7 +43,7 @@ export class DiscoverDetailHeroComponent {
 
   readonly score = input.required<number | null>();
   readonly verdict = input.required<DetailVerdict>();
-  readonly archetype = input.required<HeroArchetype | null>();
+  readonly archetype = input.required<RowArchetype | null>();
   readonly matchedKeywords = input.required<string[]>();
 
   readonly backRequested = output<void>();

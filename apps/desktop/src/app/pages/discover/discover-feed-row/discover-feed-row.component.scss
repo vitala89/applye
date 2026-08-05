@@ -1,0 +1,129 @@
+/* One row of Discover's triage feed.
+   The separator between rows sits on the host, not on `.dv-row`: the page's
+   `.dv-feed > :last-child { border-bottom: none }` matches this host element,
+   and a border left on `.dv-row` inside it would survive that rule and draw a
+   line under the last row. */
+
+:host {
+  display: block;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dv-row {
+  transition: opacity var(--dur-fast) var(--ease-standard);
+
+  &--saved {
+    opacity: 0.5;
+  }
+
+  &__main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 15px var(--space-4);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surface-hover);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: inset var(--shadow-ring);
+    }
+  }
+
+  &__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  &__titleline {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: var(--weight-semibold);
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  &__companyline {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-tertiary);
+  }
+
+  &__company {
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    font-weight: var(--weight-medium);
+    color: var(--text-secondary);
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wide);
+    color: var(--text-tertiary);
+  }
+
+  &__srcbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 8px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-badge);
+    color: var(--text-secondary);
+
+    lucide-icon {
+      color: var(--text-tertiary);
+    }
+  }
+
+  &__metaitem {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-secondary);
+
+    lucide-icon {
+      color: var(--text-tertiary);
+    }
+
+    &--dim {
+      color: var(--text-tertiary);
+    }
+  }
+
+  &__actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  &__inmyjobs {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wide);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+}

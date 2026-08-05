@@ -30,6 +30,12 @@
 // move. It deliberately narrows what the rule matches, so it is an assertion
 // that the narrowing was intended - only pass it when the partial really is
 // page-scoped on purpose.
+//
+// It strips the ancestor from the **after** side only, so pass it only when the
+// base predates the wrapper. Once the wrapper exists on both sides - any base
+// after the hoist landed - the flag makes the two sides disagree about every
+// hoisted selector and reports an equal number lost and gained. Symmetric
+// counts like that mean the flag is wrong for this base, not that rules moved.
 
 import { execFileSync } from 'node:child_process';
 import { dirname, relative, resolve } from 'node:path';

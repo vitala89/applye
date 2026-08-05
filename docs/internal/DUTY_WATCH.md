@@ -44,6 +44,80 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's contact block becomes one field rendered nine times
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-contact-fields`
+
+**The best-shaped cut left, and the same find as the cover letter's five blocks.** Nine copies of the
+same eight lines - `field` wrapper, `field__label` bound by id, `field__input` bound to one property
+of the form - differing only in key, value, input type and whether they carried a placeholder.
+`profile-text-field` renders all nine.
+
+**One `key` input drives both the id and the translation key**, dash form for one and underscore form
+for the other (`first-name` -> `field-first-name` and `profile.field_first_name`). That is
+load-bearing, not tidy: `focusField` scrolls to `field-<key>` when the completeness hero reports a
+field missing. `ProfileFieldKey` is only `title | location | experience | skills | education |
+languages`, so of the nine only `field-title` and `field-location` are ever targeted - but the id
+shape is now derived rather than written out, which is exactly the kind of thing that drifts. There
+is a test pinning the id, and another pinning `for=` to the same id.
+
+**No stylesheet:** `field`, `field__label` and `field__input` are already in `_profile-shell.scss`.
+`.field-row .field` is a descendant rule in that same global partial and still matches with the
+`.field` now inside a child component - confirmed in the browser, the rows still lay out as flex.
+
+**The ratchet refused this cut too, and the answer was a second real extraction.** A template-only
+change still adds two lines to an over-budget class (the import and the `imports:` entry): 682 -> 684,
+refused. So `applyParsedProfile`'s mapping came out as `profile-parse.util.ts` - five pure functions
+plus the tolerant `ParsedProfile` type - and the component method is now nine lines of signal writes.
+**628** after. That extraction is worth more than the two lines it bought: it puts a test on a rule
+that had none, and the rule is subtle - blank scalars keep what the form already has (the AI omitting
+a phone number is not the user saying they have none), while structured sections are replaced
+wholesale (applying a preview the user has just read). Those two opposite behaviours sat in one
+method with only a comment.
+
+**Verification.**
+
+- **Walked in the running app.** All nine fields render with the right ids, every `for=` matches its
+  own input, the label text is unchanged, the types are still `text`/`email`/`tel` in the right
+  places, and only website and LinkedIn carry a placeholder. Styling comes from the partial.
+  `document.getElementById('field-title')` and `field-location` still resolve. Typing into
+  `#field-title` reached the markdown.
+- Mutation M1: a blank parse wipes the existing name and title instead of keeping them -> 2 tests
+  fail. Mutation M2: a field with no hint renders an empty `placeholder` attribute instead of none ->
+  1 test fails. Both restored from a backup copy and `diff`ed byte-exact.
+- One test needed fixing rather than the code: `[ngModel]` writes the value in a microtask, so the
+  first version asserted on the rendered input before it had been written. It now awaits
+  `whenStable()`, and says why.
+- `quality:style-move`: **lossless**, and getting there exposed two ways to run this check wrongly,
+  both now written into `CODE_QUALITY.md` and the tool's own header.
+  1. Run with only two of the eight profile stylesheets listed, it reported **39 lost selectors** -
+     the same invocation mistake recorded two entries ago. List every stylesheet, including the ones
+     earlier cuts created.
+  2. **`--base main` uses the local `main` ref, which `git fetch` does not move.** Local `main` had
+     been sitting at `3e5f1ae` - the session-start commit - for every run today, so each check was
+     comparing against the state before any of this session's PRs. That turned out to be _stronger_
+     rather than wrong: with all stylesheets listed it verified the whole chain of cuts cumulatively
+     against the pre-campaign page, and every run was lossless. But it is not what the command
+     appeared to say. Against `origin/main` the same tree is lossless too - **without**
+     `--page-scope`, because that flag strips the ancestor from the after side only and the wrapper
+     now exists on both sides. Equal numbers lost and gained is the signature of passing the flag
+     against a base that already has the wrapper.
+- Gates: `type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1311 passed**, was 1297), `nx build desktop`, `quality:file-size` (passed after the extraction),
+  `format:check`, `git diff --check`.
+
+**Sizes.** `profile.component.html` **464 -> 409** (budget 300), `.ts` **682 -> 628** (400).
+
+**Next first action.** The template's remaining blocks are the raw-mode editor with its parse preview
+(~90 lines), the photo card (~65) and the compensation block (~52, owning `comp-row`, `comp-sep`,
+`comp-select`, `field__label-row`, `field__hint--inline` and the `.comp-row .field__input` override
+still on the page stylesheet). The class at 628 is the harder number and is no longer a template
+problem: what remains on it is the two AI call methods, the load/save path and the parse pipeline's
+orchestration. The next class-side win is probably the photo card, which owns its own upload, crop
+and persist flow and could take a service with it.
+
 ### 2026-08-05, Profile's AI Tools section is extracted, and the file-size ratchet does its job
 
 - **Status:** complete

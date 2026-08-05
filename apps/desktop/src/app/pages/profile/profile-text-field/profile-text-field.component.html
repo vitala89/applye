@@ -1,0 +1,11 @@
+<div class="field">
+  <label class="field__label" [attr.for]="fieldId()">{{ t()(labelKey()) }}</label>
+  <input
+    [id]="fieldId()"
+    class="field__input"
+    [type]="type()"
+    [ngModel]="value()"
+    (ngModelChange)="changed.emit($event)"
+    [attr.placeholder]="placeholder()"
+  />
+</div>

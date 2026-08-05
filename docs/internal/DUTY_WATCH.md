@@ -44,6 +44,55 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's skills section is extracted - all five done, and the stylesheet is under budget
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-skills-section`
+
+**The last of the five editor sections.** It is the odd one of the set: skills are a plain `string[]`
+living directly in `form().skills`, with no structured mirror and no `sync*` helper, so the section
+takes that array and emits a new one straight into `updateField`. The chip field carries
+`id="field-skills"` **into** the child, because that is the anchor `focusField` scrolls to when the
+completeness hero reports skills missing - the only one of the five ids that sits on the control
+itself rather than on a wrapper the page kept.
+
+**`profile.component.scss` is now under budget: 423 -> 379 against 400.** That is the second file the
+campaign has taken from over to under, after `cover-letter-detail.component.scss`. Confirmed with
+`quality:file-size:all`, not the diff-scoped gate - the previous entry records why that distinction
+matters.
+
+**Profile across the whole run** (hoist + five cuts): template **1037 -> 603**, class **772 -> 689**,
+stylesheet **733 -> 379**. Repository total over budget: **43 -> 42**, which as ever understates the
+work, because every new component is within budget and so never appears.
+
+**Verification.**
+
+- `quality:style-move --base main --page-scope '.profile'` across the page, the partial and all four
+  children with stylesheets: lossless.
+- **Walked in the running app.** Typing "Angular" made a chip; typing "Angular" again made none and
+  still cleared the field; typing `"  Rust  "` made a `Rust` chip - so the trim and the duplicate
+  guard both survived the move and both behave as before. Removing the first chip left `Rust`, and the
+  raw markdown then read `## Skills` / `Rust`. `chip-input` computed its 38px min-height and border,
+  `skill-chip` its radius and background. `document.getElementById('field-skills')` still resolves,
+  now from inside the child.
+- Mutation M1: the duplicate guard removed -> 1 test fails. Mutation M2: the typed text no longer
+  trimmed -> 2 tests fail. Both restored from a backup copy and `diff`ed byte-exact.
+- Gates: `type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1285 passed**, was 1277), `nx build desktop`, `quality:file-size` (passed), `format:check`,
+  `git diff --check`.
+
+**What is left on Profile.** The five sections are done. The template's remaining bulk is **AI Tools**
+(~162 lines), the **raw-mode editor and parse preview**, the **photo card**, the **contact field grid**
+and the **compensation block** (~52 lines, owning `comp-row`, `comp-sep`, `comp-select`,
+`field__label-row`, `field__hint--inline` plus the `.comp-row .field__input` override still on the
+page). None of those has had a seam audit, and the class is still 689 against 400, so the page is not
+finished - only its five list sections are.
+
+**Next first action.** Audit the AI Tools card: it is the largest remaining block and it owns 17
+classes no other part of the page uses, which suggests a clean seam - but it also drives two AI calls
+whose status the page reads back, so check the class side before assuming inputs and outputs.
+
 ### 2026-08-05, Profile's education section is extracted, with no stylesheet of its own
 
 - **Status:** complete

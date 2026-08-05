@@ -61,6 +61,7 @@ import { ProfileArchetypesComponent } from './profile-archetypes/profile-archety
 import { ProfileExperienceComponent } from './profile-experience/profile-experience.component';
 import { ProfileEducationComponent } from './profile-education/profile-education.component';
 import { ProfileLanguagesComponent } from './profile-languages/profile-languages.component';
+import { ProfileSkillsComponent } from './profile-skills/profile-skills.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
  * optional/nullable since the AI omits or nulls anything it did not find in
@@ -111,6 +112,7 @@ interface ParsedProfile {
     ProfileExperienceComponent,
     ProfileEducationComponent,
     ProfileLanguagesComponent,
+    ProfileSkillsComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -403,23 +405,6 @@ export class ProfileComponent implements OnInit {
       return next;
     });
     this.syncMdFromForm();
-  }
-
-  addSkillChip(event: Event): void {
-    event.preventDefault();
-    const input = event.target as HTMLInputElement;
-    const value = input.value.trim();
-    if (!value) return;
-    input.value = '';
-    if (this.form().skills.includes(value)) return;
-    this.updateField('skills', [...this.form().skills, value]);
-  }
-
-  removeSkillChip(index: number): void {
-    this.updateField(
-      'skills',
-      this.form().skills.filter((_, i) => i !== index),
-    );
   }
 
   /** What the languages section emits after any edit. The section transforms

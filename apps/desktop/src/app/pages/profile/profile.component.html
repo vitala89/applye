@@ -283,63 +283,12 @@
 
           <div class="field-row">
             <div class="field">
-              <div class="collapse-card">
-                <div
-                  class="collapse-card__head"
-                  role="button"
-                  tabindex="0"
-                  [attr.aria-expanded]="sectionOpen().skills"
-                  (click)="toggleSection('skills')"
-                  (keydown.enter)="toggleSection('skills')"
-                  (keydown.space)="toggleSection('skills'); $event.preventDefault()"
-                >
-                  <span class="collapse-card__title">{{ t()('profile.section_skills') }}</span>
-                  <span class="collapse-card__summary">
-                    {{
-                      form().skills.length
-                        ? t()('profile.summary_skills').replace(
-                            '{count}',
-                            form().skills.length + ''
-                          )
-                        : t()('profile.summary_empty')
-                    }}
-                  </span>
-                  <lucide-icon
-                    [img]="chevronIcon"
-                    [size]="17"
-                    class="chevron"
-                    [class.chevron--open]="sectionOpen().skills"
-                    aria-hidden="true"
-                  />
-                </div>
-                @if (sectionOpen().skills) {
-                  <div class="collapse-card__body">
-                    <div class="chip-input">
-                      @for (s of form().skills; track $index) {
-                        <span class="skill-chip">
-                          {{ s }}
-                          <button
-                            type="button"
-                            class="skill-chip__x"
-                            (click)="removeSkillChip($index)"
-                            [attr.aria-label]="t()('profile.remove_skill')"
-                          >
-                            <lucide-icon [img]="removeIcon" [size]="12" aria-hidden="true" />
-                          </button>
-                        </span>
-                      }
-                      <input
-                        id="field-skills"
-                        class="chip-input__field"
-                        type="text"
-                        (keydown.enter)="addSkillChip($event)"
-                        [placeholder]="t()('profile.skills_add_hint')"
-                        [attr.aria-label]="t()('profile.field_skills')"
-                      />
-                    </div>
-                  </div>
-                }
-              </div>
+              <app-profile-skills
+                [skills]="form().skills"
+                [open]="sectionOpen().skills"
+                (toggled)="toggleSection('skills')"
+                (changed)="updateField('skills', $event)"
+              />
             </div>
             <div class="field" id="field-languages">
               <app-profile-languages

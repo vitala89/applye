@@ -44,6 +44,51 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's raw editor leaves, and the page template goes under budget
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-raw-editor`
+- **Objective:** cut the raw-markdown editor and its parse preview out of `profile.component.html`.
+
+**The ownership audit picked a narrower boundary than the block's size suggested.** Two things sit
+in that markup and they belong on opposite sides. `fullMd` is page state - the save path, the dirty
+check, `savedMdHash` and both AI calls read it - so it goes in as an input and every keystroke comes
+back out. The parse is not: `parsing`, `parseStatus`, `parseError`, `parsePreview`, `parseRawText`
+and `extractParsed` were confirmed by grep to be used nowhere but inside that block, and the page
+needs only the _result_. `applyParsedProfile` reads the preview once, folds it into the form and the
+four section signals and switches to the Form tab.
+
+So the whole pipeline moved and emits once, on apply. **Two inputs, two outputs** - against the
+eleven inputs AI Tools shipped with, which is still the campaign's widest accepted boundary. The one
+signature change that made it possible: `applyParsedProfile` takes the parsed object as an argument
+instead of reading a signal.
+
+**Numbers.** Template **342 -> 270 against a 300 budget** - under, and the third file the campaign
+has taken from over to under after `cover-letter-detail.component.scss` and `profile.component.scss`.
+Class **572 -> 496**, stylesheet **211 -> 124**. Profile's page template is done; the class is what
+is left.
+
+**The moved logic had no tests.** `profile-parse.util.spec.ts` covers the pure mapping, not the call
+that produces it - no spec anywhere referenced `parseRawText`, `applyParsedProfile`, `parsePreview`
+or `discardParse`. Eleven tests now cover the child, and all five mutations died on the first pass,
+unlike the photo cut:
+
+- `apply()` hands the preview over without clearing it (it would reappear next time raw mode opens);
+- the `!Array.isArray` guard dropped, so `[1,2,3]` counts as a profile and blanks the form;
+- the markdown sent untrimmed;
+- `defaultDocLanguage` ignored, so a German user gets an English parse;
+- the `!parsed` guard dropped, so a failed parse reports nothing.
+
+- **Files changed:** `profile-raw-editor/{component.ts,html,scss,spec.ts}` (new), `profile.component.{ts,html,scss}`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `nx run desktop:type-check` clean (the one warning is `RouterLink` in `discover.component.ts`, pre-existing and unrelated). `nx run-many --target=lint --projects=desktop` passed, 8 warnings, same count as before. `nx test desktop` **1332 passed**, up from 1321. `nx build desktop` succeeded. `quality:file-size`, `quality:attribution`, `npx nx format:check`, `git diff --check` all clean.
+- **Losslessness:** `quality:style-move --base origin/main` across all ten Profile stylesheets - "Every selector carries the same declarations it did before. Lossless."
+- **Diffed backwards:** substituting the parameterisation back into the child reproduces the original block token-for-token.
+- **Walked in the browser, both directions across the new boundary:** typing "Mira" / "Halvorsen" into the form put `# Mira Halvorsen` and `- First name: Mira` in the child's textarea (page -> child); typing a whole document into the textarea and leaving raw mode parsed `Nadia Berg` and `Hamburg, Germany` back into the form fields (child -> page). The parse button disables on whitespace-only markdown and re-enables on text. The child's own stylesheet computes (mono 300px textarea, dashed scaffold, flex `raw-parse`) and `field__hint` still reaches it from `_profile-shell.scss`. No console errors. The Parse button itself cannot be exercised - it needs both AI credentials and Tauri IPC.
+- **One deletion:** a `/* Info-icon tooltip */` comment in `profile.component.scss` that had been orphaned since the shell hoist and now sat above an unrelated rule.
+- **Privacy/security impact:** none. The same skill, the same model, the same text; only the component that calls it changed.
+- **Next first action:** the compensation block (~52 lines of template, and the contextual override `.comp-row .field__input` must travel with it). After that Profile's template work is finished and the remaining 496-line class is the target - the two AI call methods, the load/save path and the parse orchestration.
+
 ### 2026-08-05, the contact-field extraction had broken the row layout, and nothing had caught it
 
 - **Status:** complete

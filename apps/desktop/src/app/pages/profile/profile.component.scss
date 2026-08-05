@@ -39,48 +39,6 @@ button[appButton] {
   gap: var(--space-2);
 }
 
-/* Info-icon tooltip: hover/focus reveals plain-language help. */
-
-.editor-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: 72ch;
-}
-.scaffold {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  line-height: 1.7;
-  color: var(--text-disabled);
-  background: transparent;
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-input);
-}
-.scaffold__label {
-  font-family: var(--font-sans);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-wider);
-  text-transform: uppercase;
-  margin-bottom: var(--space-1);
-}
-.editor {
-  width: 100%;
-  min-height: 300px;
-  padding: var(--space-5) var(--space-5);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: 1.7;
-  color: var(--text-primary);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-input);
-  resize: vertical;
-  outline: none;
-}
 .unsaved-hint {
   display: inline-flex;
   align-items: center;
@@ -89,51 +47,6 @@ button[appButton] {
   font-size: var(--text-xs);
   color: var(--warning);
   margin: 0;
-}
-
-.raw-parse {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-.parse-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--surface-2);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-card);
-}
-.parse-preview__title {
-  font-weight: var(--weight-medium);
-  color: var(--text-primary);
-  margin: 0;
-}
-.parse-preview__grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-.parse-preview__notes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  font-size: var(--text-xs);
-  color: var(--warning);
-  background: var(--warning-tint);
-  border-radius: var(--radius-input);
-}
-.parse-preview__notes-title {
-  font-weight: var(--weight-medium);
-}
-.parse-preview__actions {
-  display: flex;
-  gap: var(--space-3);
 }
 
 .editor-head {

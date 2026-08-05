@@ -44,6 +44,74 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's AI Tools section is extracted, and the file-size ratchet does its job
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-ai-tools-section`
+
+**The largest block left on Profile, and the first one where the boundary was a real question.** The
+audit found 159 template lines, 17 exclusive classes, and a class side that is _not_ self-contained:
+both AI calls read `fullMd`, write the profile row and refresh `savedMdHash`, which is the page's own
+save path. So the section displays and asks; the page still runs the calls.
+
+**The duplication was the good part.** The two cards are different shapes - the scoring card
+collapses and renders `app-scoring-summary`, the pitch card has its button in the head and renders
+prose - but both **ended with the same eighteen lines**: three mutually exclusive freshness chips and
+a status line, differing only in which hint they show. That is `profile-freshness-chips`, rendered
+twice, and it is the same find as the cover letter's five blocks at smaller scale.
+
+**The boundary is wider than the five section cuts, and that was weighed rather than assumed.**
+Eleven inputs and three outputs, against two inputs for the editor sections. The recorded reason not
+to split `cv-preview` is that extracting an atom means threading ~20 members of an inline-editing
+_protocol_ through the boundary, repeated per field. These eleven are flat scalars read once each,
+and the shared `disabled` expression collapsed into a single `canGenerate` input rather than four.
+It is on the right side of that line, but it is the widest boundary this campaign has accepted and
+worth remembering as the precedent.
+
+**The file-size ratchet refused the first attempt, correctly.** Adding the import and the
+`imports:` entry grew `profile.component.ts` **689 -> 691** while removing nothing, and the gate
+failed with "already over budget and grew - extract before adding code". The fix was to extract
+something real rather than argue: five icon fields (`removeIcon`, `scoringIcon`, `pitchIcon`,
+`regenIcon`, `staleIcon`) and four `lucide-angular` imports were dead on the page once the markup
+that used them had left - some of them since earlier cuts. **682** after.
+
+**One deliberate deletion, named rather than hidden.** `.output-block, .json-block` was a grouped
+selector, and `.json-block` is used **nowhere in the repository** - dead CSS. Carrying it into a new
+component file would have been worse than removing it, so it was removed;
+`quality:style-move` reports exactly `LOST .json-block` and nothing else, which is the tool doing its
+job rather than a check being ignored.
+
+**Verification.**
+
+- `quality:style-move --base main --page-scope '.profile'` across the page, the partial and all six
+  child stylesheets: one reported loss, `.json-block`, as above. Everything else lossless.
+- **Walked in the running app.** Both cards render with their border, shadow and 30px accent icon.
+  The scoring head collapses and reopens and drives `chevron--open`. **Clicking the info tip inside
+  the toggle head does not collapse the card** - the `stopPropagation` guard survived the move, which
+  is the sort of thing a copy loses silently. Two `app-profile-freshness-chips` render when the card
+  is open, and no chips are visible while both artefacts are `none`, which is the intended empty case.
+  Both Generate buttons are disabled, correctly: without Tauri there is no `fullMd`, so `canGenerate`
+  is false.
+- Mutation M1: the unsaved chip shows the stale hint -> 1 test fails. Mutation M2: the pitch card is
+  wired to the scoring freshness state -> 1 test fails. Both are _crossing_ mistakes, invisible to the
+  eye because the two chip blocks are identical, which is why they were the ones chosen. Both restored
+  from a backup copy and `diff`ed byte-exact.
+- Gates: `type-check`, `lint` (0 errors, 8 warnings - back to the pre-existing count after a
+  non-null assertion in a new spec was replaced), `nx test desktop` (**1297 passed**, was 1285),
+  `nx build desktop`, `quality:file-size` (passed on the second attempt, see above), `format:check`,
+  `git diff --check`.
+
+**Sizes.** `profile.component.html` **603 -> 464** (budget 300), `.ts` **689 -> 682** (400). The
+stylesheet drops 156 lines and stays under budget.
+
+**Next first action.** Profile's template is now 464 against 300. What remains is the contact field
+grid (~110 lines of repeated `field`/`label`/`input` triples - the most repetitive block left and
+probably one small component rendered many times), the raw-mode editor with its parse preview
+(~90), the photo card (~65) and the compensation block (~52). The class is 682 against 400 and is
+now the harder number: the AI call methods, the parse/import pipeline and the save path are all
+still on it, and none of those is a template seam.
+
 ### 2026-08-05, Profile's skills section is extracted - all five done, and the stylesheet is under budget
 
 - **Status:** complete

@@ -1,0 +1,125 @@
+<section class="section">
+  <h3 class="eyebrow">{{ t()('profile.section_ai_tools') }}</h3>
+  <p class="muted">{{ t()('profile.ai_hint') }}</p>
+
+  <div class="ai-tools">
+    <div class="tool-card">
+      <div
+        class="tool-card__head tool-card__head--toggle"
+        role="button"
+        tabindex="0"
+        [attr.aria-expanded]="scoringOpen()"
+        (click)="scoringToggled.emit()"
+        (keydown.enter)="scoringToggled.emit()"
+        (keydown.space)="scoringToggled.emit(); $event.preventDefault()"
+      >
+        <span class="tool-card__icon" aria-hidden="true">
+          <lucide-icon [img]="icons.scoring" [size]="16" />
+        </span>
+        <div class="tool-card__body">
+          <p class="tool-card__title">
+            {{ t()('profile.scoring_card_title') }}
+            <span
+              class="info info--below"
+              tabindex="0"
+              (click)="$event.stopPropagation()"
+              (keydown)="$event.stopPropagation()"
+              [attr.aria-label]="t()('profile.info_aria')"
+            >
+              <lucide-icon [img]="icons.info" [size]="14" class="info__glyph" aria-hidden="true" />
+              <span class="info__tip" role="tooltip">{{ t()('profile.info_scoring') }}</span>
+            </span>
+          </p>
+          <p class="tool-card__desc">{{ t()('profile.scoring_desc') }}</p>
+        </div>
+        <lucide-icon
+          [img]="icons.chevron"
+          [size]="17"
+          class="chevron"
+          [class.chevron--open]="scoringOpen()"
+          aria-hidden="true"
+        />
+      </div>
+      @if (scoringOpen()) {
+        @if (scoring()) {
+          <div class="ai-loading">
+            <span class="ai-loading__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="ai-loading__label">{{ t()('profile.scoring_loading') }}</span>
+          </div>
+        } @else if (scoringJson()) {
+          <app-scoring-summary [scoringJson]="scoringJson()" />
+        }
+        <div class="tool-card__foot">
+          <button
+            appButton
+            variant="secondary"
+            size="sm"
+            [disabled]="!canGenerate()"
+            (click)="scoringRequested.emit()"
+          >
+            <lucide-icon [img]="icons.regen" [size]="13" aria-hidden="true" />
+            {{
+              scoring()
+                ? t()('profile.generating')
+                : scoringJson()
+                  ? t()('profile.regenerate')
+                  : t()('profile.generate')
+            }}
+          </button>
+          <app-profile-freshness-chips
+            [state]="scoringState()"
+            staleHintKey="profile.stale_hint"
+            unsavedHintKey="profile.unsaved_scoring_hint"
+            [status]="scoreStatus()"
+            [error]="scoreError()"
+          />
+        </div>
+      }
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-card__head">
+        <span class="tool-card__icon" aria-hidden="true">
+          <lucide-icon [img]="icons.pitch" [size]="16" />
+        </span>
+        <div class="tool-card__body">
+          <p class="tool-card__title">{{ t()('profile.pitch_title') }}</p>
+          <p class="tool-card__desc">{{ t()('profile.pitch_desc') }}</p>
+        </div>
+        <button
+          appButton
+          variant="secondary"
+          size="sm"
+          [disabled]="!canGenerate()"
+          (click)="pitchRequested.emit()"
+        >
+          <lucide-icon [img]="icons.regen" [size]="13" aria-hidden="true" />
+          {{
+            pitching()
+              ? t()('profile.generating')
+              : pitchMd()
+                ? t()('profile.regenerate')
+                : t()('profile.generate')
+          }}
+        </button>
+      </div>
+      @if (pitching()) {
+        <div class="ai-loading">
+          <span class="ai-loading__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="ai-loading__label">{{ t()('profile.pitch_loading') }}</span>
+        </div>
+      } @else if (pitchMd()) {
+        <div class="output-block output-block--prose">{{ pitchMd() }}</div>
+      }
+      <div class="tool-card__foot">
+        <app-profile-freshness-chips
+          [state]="pitchState()"
+          staleHintKey="profile.pitch_stale_hint"
+          unsavedHintKey="profile.unsaved_pitch_hint"
+          [status]="pitchStatus()"
+          [error]="pitchError()"
+        />
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,122 @@
+<div class="collapse-card">
+  <div
+    class="collapse-card__head"
+    role="button"
+    tabindex="0"
+    [attr.aria-expanded]="open()"
+    (click)="toggled.emit()"
+    (keydown.enter)="toggled.emit()"
+    (keydown.space)="toggled.emit(); $event.preventDefault()"
+  >
+    <span class="collapse-card__title">{{ t()('profile.section_experience') }}</span>
+    <span class="collapse-card__summary">
+      {{
+        entries().length
+          ? t()('profile.summary_positions').replace('{count}', entries().length + '')
+          : t()('profile.summary_empty')
+      }}
+    </span>
+    <lucide-icon
+      [img]="icons.chevron"
+      [size]="17"
+      class="chevron"
+      [class.chevron--open]="open()"
+      aria-hidden="true"
+    />
+  </div>
+  @if (open()) {
+    <div class="collapse-card__body">
+      <p class="field__hint">{{ t()('profile.experience_hint') }}</p>
+      @if (entries().length > 0) {
+        <div class="archetype-list">
+          @for (e of entries(); track ei; let ei = $index) {
+            <div class="archetype-card">
+              <div class="archetype-card__top">
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.role"
+                  (ngModelChange)="updateField(ei, 'role', $event)"
+                  [placeholder]="t()('profile.exp_role')"
+                  [attr.aria-label]="t()('profile.exp_role')"
+                />
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.company"
+                  (ngModelChange)="updateField(ei, 'company', $event)"
+                  [placeholder]="t()('profile.exp_company')"
+                  [attr.aria-label]="t()('profile.exp_company')"
+                />
+                <button
+                  class="btn-ghost"
+                  type="button"
+                  (click)="remove(ei)"
+                  [attr.aria-label]="t()('profile.remove_experience')"
+                >
+                  <lucide-icon [img]="icons.remove" [size]="15" aria-hidden="true" />
+                </button>
+              </div>
+              <div class="archetype-card__top">
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.location"
+                  (ngModelChange)="updateField(ei, 'location', $event)"
+                  [placeholder]="t()('profile.exp_location')"
+                  [attr.aria-label]="t()('profile.exp_location')"
+                />
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.startDate"
+                  (ngModelChange)="updateField(ei, 'startDate', $event)"
+                  [placeholder]="t()('profile.exp_start')"
+                  [attr.aria-label]="t()('profile.exp_start')"
+                />
+                <input
+                  class="archetype-input"
+                  type="text"
+                  [ngModel]="e.endDate"
+                  (ngModelChange)="updateField(ei, 'endDate', $event)"
+                  [placeholder]="t()('profile.exp_end')"
+                  [attr.aria-label]="t()('profile.exp_end')"
+                />
+              </div>
+              <div class="exp-bullets">
+                @for (b of e.bullets; track bi; let bi = $index) {
+                  <div class="exp-bullet-row">
+                    <input
+                      class="archetype-input"
+                      type="text"
+                      [ngModel]="b"
+                      (ngModelChange)="updateBullet(ei, bi, $event)"
+                      [placeholder]="t()('profile.exp_bullet_hint')"
+                      [attr.aria-label]="t()('profile.exp_bullet_hint')"
+                    />
+                    <button
+                      class="btn-ghost"
+                      type="button"
+                      (click)="removeBullet(ei, bi)"
+                      [attr.aria-label]="t()('profile.exp_remove_bullet')"
+                    >
+                      <lucide-icon [img]="icons.remove" [size]="15" aria-hidden="true" />
+                    </button>
+                  </div>
+                }
+                <button class="btn-dashed" type="button" (click)="addBullet(ei)">
+                  <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+                  {{ t()('profile.exp_add_bullet') }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      <button class="btn-dashed" type="button" (click)="add()">
+        <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+        {{ t()('profile.add_experience') }}
+      </button>
+    </div>
+  }
+</div>

@@ -23,7 +23,6 @@ import {
   parseEducationEntries,
   serializeEducationEntries,
   ExperienceEntry,
-  EMPTY_EXPERIENCE_ENTRY,
   parseExperienceEntries,
   serializeExperienceEntries,
   LanguageEntry,
@@ -61,6 +60,7 @@ import { ScoringSummaryComponent } from './scoring-summary.component';
 import { CompletenessHeroComponent } from './completeness-hero.component';
 import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
 import { ProfileArchetypesComponent } from './profile-archetypes/profile-archetypes.component';
+import { ProfileExperienceComponent } from './profile-experience/profile-experience.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
  * optional/nullable since the AI omits or nulls anything it did not find in
@@ -108,6 +108,7 @@ interface ParsedProfile {
     LucideAngularModule,
     CvPhotoCropComponent,
     ProfileArchetypesComponent,
+    ProfileExperienceComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -484,51 +485,11 @@ export class ProfileComponent implements OnInit {
     this.updateField('education', serializeEducationEntries(this.educationEntries()));
   }
 
-  addExperience(): void {
-    this.experienceEntries.update((list) => [...list, { ...EMPTY_EXPERIENCE_ENTRY, bullets: [] }]);
-    this.syncExperience();
-  }
-
-  removeExperience(index: number): void {
-    this.experienceEntries.update((list) => list.filter((_, i) => i !== index));
-    this.syncExperience();
-  }
-
-  updateExperienceField(
-    index: number,
-    field: Exclude<keyof ExperienceEntry, 'bullets'>,
-    value: string,
-  ): void {
-    this.experienceEntries.update((list) =>
-      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
-    );
-    this.syncExperience();
-  }
-
-  addExperienceBullet(index: number): void {
-    this.experienceEntries.update((list) =>
-      list.map((e, i) => (i === index ? { ...e, bullets: [...e.bullets, ''] } : e)),
-    );
-    this.syncExperience();
-  }
-
-  removeExperienceBullet(index: number, bulletIndex: number): void {
-    this.experienceEntries.update((list) =>
-      list.map((e, i) =>
-        i === index ? { ...e, bullets: e.bullets.filter((_, bi) => bi !== bulletIndex) } : e,
-      ),
-    );
-    this.syncExperience();
-  }
-
-  updateExperienceBullet(index: number, bulletIndex: number, value: string): void {
-    this.experienceEntries.update((list) =>
-      list.map((e, i) =>
-        i === index
-          ? { ...e, bullets: e.bullets.map((b, bi) => (bi === bulletIndex ? value : b)) }
-          : e,
-      ),
-    );
+  /** What the experience section emits after any edit. The section transforms
+   * the list; folding it back into `experienceText` stays here, because that is
+   * where `updateField` and the rest of the form live. */
+  onExperienceChanged(entries: ExperienceEntry[]): void {
+    this.experienceEntries.set(entries);
     this.syncExperience();
   }
 

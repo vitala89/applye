@@ -1,0 +1,17 @@
+/* Moved from the Profile page with the markup that uses it. Everything else
+   this section renders - the collapse-card shell, the archetype card, list and
+   input, the hint and the buttons - is shared with Profile's other sections and
+   lives in `_profile-shell.scss`, emitted once from `styles.scss` under
+   `.profile`. */
+
+.exp-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+}
+.exp-bullet-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

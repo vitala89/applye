@@ -44,6 +44,65 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's work-experience section is extracted, and a mutation finds a real gap
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-experience`
+
+**The second of the five section cuts, and the first with real logic in it.** Six list transforms,
+three of which address a bullet inside a position by two indices. Two classes were left exclusive
+after the hoist - `exp-bullets` and `exp-bullet-row` - and nothing else about styles had to be decided.
+
+**One difference from target roles decided the shape.** Every experience edit also calls
+`syncExperience()`, which serializes the entries into `form().experienceText` - the string that
+actually reaches `fullMd`. That fold uses `updateField` and the rest of the form, so it stays on the
+page: the section emits the whole new list, the page sets and syncs once. Splitting the fold across
+the boundary would have put half the save path in a child that knows nothing about the form.
+
+**A mutation found a genuine coverage gap, not a confirmation.** M1 replaced
+`bullets.map((b, bi) => bi === bulletIndex ? value : b)` with `bullets.map(() => value)` - write
+_every_ bullet of the entry - and **all 1265 tests still passed**. The reason: the test drove entries
+carrying a single bullet each, where "write the addressed bullet" and "write every bullet" produce
+the same result. The test now uses entries with two and three bullets, the mutation fails it, and the
+spec says why, so the next person does not weaken it back. M2 (`updateField` writing every position
+rather than the edited one) failed as expected. Both restored from a backup copy and `diff`ed
+byte-exact.
+
+**Verification.**
+
+- `quality:style-move --base main --page-scope '.profile'` across page, partial and **both** children:
+  lossless. Worth recording: run with the archetypes child left off the file list it reported five
+  lost selectors, because that file is where they now live on `main`. The tool was right and the
+  invocation was wrong - list every stylesheet the rules may have moved between, including ones
+  earlier cuts created.
+- **Walked in the running app, end to end through the fold** - the strongest check this campaign has
+  run. Adding a position produced a card; typing "Staff Engineer" into the role survived the round
+  trip; adding a bullet produced a row. The raw markdown view then showed `## Experience` followed by
+  `### Staff Engineer`, and the unsaved-changes hint appeared. That hint is driven by `mdDirty`, so it
+  can only be true if the child's output reached `onExperienceChanged`, `syncExperience` and
+  `serializeExperienceEntries`. `exp-bullets` and `exp-bullet-row` computed their padding and gap.
+- **The `#field-experience` anchor still resolves and still contains the section.** `focusField`
+  scrolls to that id when the completeness hero asks for a missing field, so the wrapper `div` stays
+  on the page and only the collapse-card moved.
+- Gates: `type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1265 passed**, was 1258), `nx build desktop`, `quality:file-size` (passed), `format:check`,
+  `git diff --check`.
+
+**A process mistake worth not repeating.** This cut was developed on an uncommitted working tree and
+then `git checkout -B <branch> origin/main` was run to rebase it onto the freshly merged `main`. The
+page edits and both doc entries were discarded silently - only the untracked new component directory
+survived, because untracked files are carried across. Nothing was lost permanently, but it cost a
+full redo. **Commit before switching branches**, even for work that is not ready to push.
+
+**Sizes.** `profile.component.html` **932 -> 809** (budget 300), `.ts` **751 -> 717** (400), `.scss`
+**444 -> 433** (400). All three still over.
+
+**Next first action.** Languages (126 template lines) - the same list shape plus a compensation row.
+Its exclusive classes are `lang-list`, `lang-row`, `field__label-row`, `field__hint--inline`,
+`comp-row`, `comp-sep`, `comp-select`. Note `.comp-row .field__input` is a contextual override still
+living on the page stylesheet; it must travel with that cut. Then education (93) and skills (59).
+
 ### 2026-08-05, Profile's target-roles section is extracted, and the hoist pays off
 
 - **Status:** complete

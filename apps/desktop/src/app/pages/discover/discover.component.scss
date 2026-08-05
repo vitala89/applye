@@ -63,54 +63,6 @@
   padding: 0 0 120px;
 }
 
-/* ---------------- buttons ---------------- */
-
-.dv-linkbtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-wide);
-  color: var(--text-tertiary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-
-  &:hover {
-    color: var(--text-primary);
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-ring);
-    border-radius: var(--radius-badge);
-  }
-
-  &--accent {
-    color: var(--text-accent);
-
-    &:hover {
-      color: var(--accent-hover);
-    }
-  }
-
-  &--danger {
-    color: var(--danger, #ef4444);
-
-    &:hover {
-      color: var(--danger, #ef4444);
-      filter: brightness(1.1);
-    }
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-}
-
 /* ---------------- first run ---------------- */
 
 .dv-first {
@@ -387,21 +339,6 @@
   flex-wrap: wrap;
   background: var(--bg-app);
   border-bottom: 1px solid var(--border-subtle);
-
-  // One toolbar, one control vocabulary. The query input sets the baseline
-  // (30px tall, --border-default, --radius-input); every trigger and action in
-  // the bar matches it so the row reads as a finished toolbar instead of a mix
-  // of three heights and three border weights.
-  .dv-btn {
-    height: 30px;
-    padding: 0 var(--space-3);
-    font-size: var(--text-xs);
-    border-radius: var(--radius-input);
-  }
-
-  .dv-btn--ghost {
-    border-color: var(--border-default);
-  }
 
   &__query {
     width: 240px;

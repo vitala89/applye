@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  WritableSignal,
   computed,
   inject,
   signal,
@@ -58,6 +59,13 @@ import {
   parsedLanguageEntries,
   parsedSkills,
 } from './profile-parse.util';
+import {
+  ARTIFACT_CACHED_KEY,
+  ProfileArtifact,
+  artifactCached,
+  artifactPatch,
+  artifactPrompt,
+} from './profile-artifact.util';
 
 /** Every collapsible section on the profile page. */
 type ProfileSectionKey =
@@ -126,6 +134,21 @@ export class ProfileComponent implements OnInit {
   readonly scoreError = signal(false);
   readonly pitchStatus = signal('');
   readonly pitchError = signal(false);
+
+  /** The three signals each artefact drives, so `generateArtifact` can address
+   * one set by kind instead of taking them apart as parameters. */
+  private readonly artifactUi: Record<
+    ProfileArtifact,
+    {
+      busy: WritableSignal<boolean>;
+      status: WritableSignal<string>;
+      error: WritableSignal<boolean>;
+    }
+  > = {
+    scoring: { busy: this.scoring, status: this.scoreStatus, error: this.scoreError },
+    pitch: { busy: this.pitching, status: this.pitchStatus, error: this.pitchError },
+  };
+
   readonly scoringOpen = signal(true);
   readonly sectionOpen = signal<Record<ProfileSectionKey, boolean>>({
     archetypes: true,
@@ -391,70 +414,32 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  async generateScoringProfile(): Promise<void> {
-    // Captured before any await: this is the text the artefact is generated from, so it is also
-    // the text the row and scoringHash must describe. Reading fullMd() again after the AI call
-    // would persist markdown nothing analysed.
-    const mdAtStart = this.fullMd();
-    const md = mdAtStart.trim();
-    if (!md) {
-      this.scoreStatus.set(this.t()('profile.empty_hint'));
-      return;
-    }
-    const p = this.profile();
-    const s = this.settings();
-    if (!s) return;
-
-    const hash = await this.db.hashText(md);
-    if (hash === p?.scoringHash && p?.scoringJson) {
-      this.scoreStatus.set(this.t()('profile.scoring_cached'));
-      return;
-    }
-
-    this.scoring.set(true);
-    this.scoreStatus.set('');
-    this.scoreError.set(false);
-    try {
-      const rendered = await this.ai.renderSkill('profile-compress', { profile_md: md });
-      const res = await this.ai.run({
-        mode: s.aiMode,
-        provider: s.provider,
-        model: s.economyModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language: 'en',
-      });
-      await this.persistProfile(
-        {
-          fullMd: mdAtStart,
-          scoringJson: res.text,
-          scoringHash: hash,
-          pitchMd: p?.pitchMd,
-          pitchHash: p?.pitchHash,
-          targetArchetypes: p?.targetArchetypes,
-        },
-        hash,
-      );
-      this.scoreStatus.set(
-        this.t()('profile.generated_tokens')
-          .replace('{in}', String(res.tokensInput))
-          .replace('{out}', String(res.tokensOutput)),
-      );
-    } catch (e) {
-      this.scoreStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
-      this.scoreError.set(true);
-      this.toast.error(this.t()('profile.generate_failed').replace('{error}', String(e)));
-    } finally {
-      this.scoring.set(false);
-    }
+  generateScoringProfile(): Promise<void> {
+    return this.generateArtifact('scoring');
   }
 
-  async generatePitch(): Promise<void> {
-    // See generateScoringProfile: the row must describe the text that was actually pitched.
+  generatePitch(): Promise<void> {
+    return this.generateArtifact('pitch');
+  }
+
+  /**
+   * Generates one artefact from the saved markdown and writes it to the row.
+   *
+   * Scoring and the pitch ran as two copies of this until they started to
+   * drift. What differs between them - the skill and its language, how the
+   * cache is keyed, and which columns the write owns - is in
+   * `profile-artifact.util.ts` as pure functions; what is left here is the
+   * sequence, which is identical for both.
+   */
+  private async generateArtifact(kind: ProfileArtifact): Promise<void> {
+    const ui = this.artifactUi[kind];
+    // Captured before any await: this is the text the artefact is generated from, so it is also
+    // the text the row and the artefact's hash must describe. Reading fullMd() again after the AI
+    // call would persist markdown nothing analysed.
     const mdAtStart = this.fullMd();
     const md = mdAtStart.trim();
     if (!md) {
-      this.pitchStatus.set(this.t()('profile.empty_hint'));
+      ui.status.set(this.t()('profile.empty_hint'));
       return;
     }
     const p = this.profile();
@@ -462,51 +447,37 @@ export class ProfileComponent implements OnInit {
     if (!s) return;
 
     const hash = await this.db.hashText(md);
-    if (hash === p?.pitchHash && p?.pitchMd) {
-      this.pitchStatus.set(this.t()('profile.pitch_cached'));
+    if (artifactCached(kind, p, hash)) {
+      ui.status.set(this.t()(ARTIFACT_CACHED_KEY[kind]));
       return;
     }
 
-    this.pitching.set(true);
-    this.pitchStatus.set('');
-    this.pitchError.set(false);
+    ui.busy.set(true);
+    ui.status.set('');
+    ui.error.set(false);
     try {
-      const lang = s.defaultDocLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('pitch', {
-        profile_md: md,
-        duration: '60s',
-        language: lang,
-      });
+      const prompt = artifactPrompt(kind, md, s);
+      const rendered = await this.ai.renderSkill(prompt.skill, prompt.vars);
       const res = await this.ai.run({
         mode: s.aiMode,
         provider: s.provider,
         model: s.economyModel,
         systemPrompt: rendered.systemPrompt,
         userPrompt: rendered.userPrompt,
-        language: lang,
+        language: prompt.language,
       });
-      await this.persistProfile(
-        {
-          fullMd: mdAtStart,
-          scoringJson: p?.scoringJson,
-          scoringHash: p?.scoringHash,
-          pitchMd: res.text,
-          pitchHash: hash,
-          targetArchetypes: p?.targetArchetypes,
-        },
-        hash,
-      );
-      this.pitchStatus.set(
+      await this.persistProfile(artifactPatch(kind, p, mdAtStart, res.text, hash), hash);
+      ui.status.set(
         this.t()('profile.generated_tokens')
           .replace('{in}', String(res.tokensInput))
           .replace('{out}', String(res.tokensOutput)),
       );
     } catch (e) {
-      this.pitchStatus.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
-      this.pitchError.set(true);
+      ui.status.set(this.t()('profile.generate_failed').replace('{error}', String(e)));
+      ui.error.set(true);
       this.toast.error(this.t()('profile.generate_failed').replace('{error}', String(e)));
     } finally {
-      this.pitching.set(false);
+      ui.busy.set(false);
     }
   }
 

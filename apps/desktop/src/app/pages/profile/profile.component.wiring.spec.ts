@@ -201,4 +201,52 @@ describe('ProfileComponent scoring freshness wiring', () => {
       expect.objectContaining({ pitchHash: fakeHash(OLD_MD.trim()) }),
     );
   });
+
+  // Scoring and the pitch run through one `generateArtifact` now. The failure that collapse
+  // introduces is crossing them: addressing the scoring signals from a pitch run spins the wrong
+  // card and puts the token count on the wrong status line, while the row is written correctly and
+  // every freshness test above still passes. Each artefact must drive its own three signals and
+  // leave the other's untouched.
+  it('drives only the pitch signals during a pitch run', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+
+    await component.generatePitch();
+
+    expect(component.pitchStatus()).not.toBe('');
+    expect(component.pitching()).toBe(false);
+    expect(component.scoreStatus()).toBe('');
+    expect(component.scoreError()).toBe(false);
+  });
+
+  it('drives only the scoring signals during a scoring run', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+
+    await component.generateScoringProfile();
+
+    expect(component.scoreStatus()).not.toBe('');
+    expect(component.scoring()).toBe(false);
+    expect(component.pitchStatus()).toBe('');
+    expect(component.pitchError()).toBe(false);
+  });
+
+  it('reports a failed pitch on the pitch status line, not the scoring one', async () => {
+    component.fullMd.set(NEW_MD);
+    await component.save();
+    run.mockRejectedValueOnce(new Error('no key'));
+
+    await component.generatePitch();
+
+    expect(component.pitchError()).toBe(true);
+    expect(component.pitchStatus()).toContain('no key');
+    expect(component.scoreError()).toBe(false);
+    expect(component.scoreStatus()).toBe('');
+  });
+
+  it('reports the cached pitch on the pitch status line', async () => {
+    await component.generatePitch(); // OLD_MD is already pitched on the loaded row
+    expect(component.pitchStatus()).not.toBe('');
+    expect(component.scoreStatus()).toBe('');
+  });
 });

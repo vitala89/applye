@@ -53,8 +53,24 @@
   that way. The wizard's remaining steps are the same shape.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
-  from it means only "nothing I touched is near budget". The audit reports **45 files over
-  budget**: 20 TypeScript, 13 stylesheets, 12 templates, and **zero Rust, source or tests**.
+  from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped
+  report means "not changed", not "now under budget"; that misread nearly reached a changelog entry
+  on 2026-08-05. The audit reports **42 files over budget**: 19 TypeScript, 12 templates,
+  11 stylesheets, and **zero Rust, source or tests**.
+- **Profile is the campaign's most complete page, and its stylesheet is under budget.** Across ten
+  merged PRs on 2026-08-05 (#329-#338) the page went from **1037 / 772 / 733** to
+  **409 / 628 / 379**, and `profile.component.scss` became the second file the campaign has taken
+  from over budget to under, after `cover-letter-detail.component.scss`. It now has nine child
+  components and two util files. Three decisions came out of it and are written into
+  `CODE_QUALITY.md`: a page whose class names are generic **wraps its partial in the page root**
+  rather than prefixing (seven of Profile's shared names were already defined with different values
+  by eight other stylesheets); a class's **modifiers move with it**, because a base and its modifier
+  that both set one property stop being decided by source order once they are split across files;
+  and the boundary is chosen by **ownership** - inputs and outputs when the page owns the state, a
+  component-provided service when the child owns state the page reads back.
+  `quality:style-move` gained `--page-scope` so a page-scoped hoist is verifiable at all.
+  **The repository count moved only 43 -> 42 across those ten PRs**, because every new component is
+  within budget and so never appears. Judge the campaign by the files touched, not by the total.
   Rust budgets changed on 2026-08-03: source and inline `#[cfg(test)]` items are now counted
   separately, at **500** and **600**, replacing a combined 800 that scored a well-tested module the
   same as a dense one. The Rust campaign since then: `commands/discover.rs` 3245 -> 599 across seven

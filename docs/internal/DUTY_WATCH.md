@@ -44,6 +44,51 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, the display-name rules leave the Profile class, and the next step needs a decision
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-section-mirrors` (named before the seam was chosen; the cut is the name rules)
+- **Objective:** continue reducing the Profile class, now 466/400.
+
+**What moved.** Two pure rules, inverses of each other, both inline in the page: the load-time
+backfill that derives first/last from the display name for profiles that predate those fields, and
+the edit-time rule that keeps the display name following the parts until the user takes it over.
+Both partner `splitDisplayName`, which has always been in `libs/core` - a component was the odd
+place for its two companions. They are now `withBackfilledNameParts` and `withComposedName` in
+`profile-name.util.ts`. Class **466 -> 445**.
+
+**Placed beside the page rather than in `libs/core`**, matching `profile-parse.util.ts` and
+`profile-artifact.util.ts`. `libs/core` is arguably the more correct home given `splitDisplayName`
+is there, but that is a `libs/` public API change, which `CLAUDE.md` puts behind the Grilling gate.
+Not a call to make inside a refactor.
+
+**Coverage improved rather than moved.** Seven tests already exercised these rules through the
+component. Those stay - they now prove the wiring - and fourteen new ones test the rules directly.
+All five mutations died first pass, including the one worth naming: judging "was the name still
+following the parts" against the _new_ parts instead of the previous ones, which quietly stops the
+display name updating at all (six tests catch it).
+
+**Two candidate seams were audited and rejected, which is the useful part of this entry.**
+
+1. _The compensation block_ (the handoff's stated next item). The template is at 270/300 since the
+   raw-editor cut, so a template-only move buys nothing measurable and still adds two lines to an
+   over-budget class - the ratchet refusal the campaign already knows. It is a tidy-up for after the
+   class is under budget, not a cut.
+2. _The section mirrors_ - `educationEntries` / `experienceEntries` / `languageEntries` with their
+   six `onXChanged`/`syncX` methods. This looks like the same collapse that worked for the AI
+   generators, and it is not safe in the same way. The three `syncX` methods must stay **per
+   section**: a shared `syncSections()` called from any one change handler would re-serialize the
+   other two, and `serialize(parse(x))` is not identity for text the user typed by hand in raw mode.
+   Collapsing only the reseed triple saves about six lines. Left alone; the duplication is real but
+   the shape that removes it is a hazard.
+
+- **Files changed:** `profile-name.util.ts` + spec (new), `profile.component.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `nx run desktop:type-check` clean. `nx run-many --target=lint --projects=desktop` passed, 8 warnings, same count as before. `nx test desktop` **1364 passed**, up from 1350. `nx build desktop` succeeded. `quality:file-size` passed with the class ratcheted 466 -> 445. `quality:attribution`, `npx nx format:check`, `git diff --check` all clean.
+- **Not run:** `quality:style-move` - no stylesheet touched. No browser walk: the rules are covered directly and through the component, and the behaviour is unchanged by construction.
+- **Privacy/security impact:** none.
+- **Next first action, and it is a decision rather than a task.** The class is 445/400 and the easy pure rules are gone. What is left - `ngOnInit`, `save`, `persistProfile`, `refreshSavedMdHash`, the form and section signals, `updateField`, the section-open state - is one coherent lump of page state, and the remaining ~45 lines cannot come out of it by extracting another pure function. The fork: either the page keeps owning this and the budget is granted an explicit exception, or a `ProfileFormStore` owns the form plus the three mirrors and the page becomes a thin consumer. The second is the real architectural change, and `applye-angular` warns in the same breath that such a store must not become a second monolithic component. **Invoke the `aif-grilling` skill on that choice before writing any of it** - it is exactly the "two readings that lead to different work" case `CLAUDE.md` reserves the gate for.
+
 ### 2026-08-05, Profile's two AI generators become one, and the crossing mutation survives
 
 - **Status:** complete

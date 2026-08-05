@@ -136,28 +136,6 @@ button[appButton] {
   gap: var(--space-3);
 }
 
-/* Photo: the thumb shows the exact 3:4 frame a CV will print, so what
-   the user approves in the crop modal is what they get on the page. */
-.photo-editor {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin-top: var(--space-3);
-}
-.photo-editor__thumb {
-  width: 90px;
-  height: 120px;
-  object-fit: cover;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-}
-.photo-editor__actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .editor-head {
   display: flex;
   align-items: center;

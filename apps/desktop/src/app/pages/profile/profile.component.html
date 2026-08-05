@@ -67,69 +67,11 @@
     />
 
     <!-- Photo: one cropped headshot, reused by any CV that wants one. -->
-    <section class="section section--card">
-      <div class="collapse-card">
-        <div
-          class="collapse-card__head"
-          role="button"
-          tabindex="0"
-          [attr.aria-expanded]="sectionOpen().photo"
-          (click)="toggleSection('photo')"
-          (keydown.enter)="toggleSection('photo')"
-          (keydown.space)="toggleSection('photo'); $event.preventDefault()"
-        >
-          <span class="collapse-card__title">{{ t()('profile.section_photo') }}</span>
-          <span class="collapse-card__summary">
-            {{ t()(photoDataUri() ? 'profile.summary_photo_set' : 'profile.summary_empty') }}
-          </span>
-          <lucide-icon
-            [img]="chevronIcon"
-            [size]="17"
-            class="chevron"
-            [class.chevron--open]="sectionOpen().photo"
-            aria-hidden="true"
-          />
-        </div>
-        @if (sectionOpen().photo) {
-          <div class="collapse-card__body">
-            <p class="field__hint">{{ t()('profile.photo_hint') }}</p>
-            <div class="photo-editor">
-              @if (photoDataUri(); as uri) {
-                <img class="photo-editor__thumb" [src]="uri" alt="" />
-                <div class="photo-editor__actions">
-                  <button
-                    class="btn-dashed"
-                    type="button"
-                    [disabled]="photoSaving()"
-                    (click)="pickPhoto()"
-                  >
-                    {{ t()('documents.cv_photo_replace') }}
-                  </button>
-                  <button
-                    class="btn-dashed"
-                    type="button"
-                    [disabled]="photoSaving()"
-                    (click)="removePhoto()"
-                  >
-                    {{ t()('documents.cv_photo_remove') }}
-                  </button>
-                </div>
-              } @else {
-                <button
-                  class="btn-dashed"
-                  type="button"
-                  [disabled]="photoSaving()"
-                  (click)="pickPhoto()"
-                >
-                  <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                  {{ t()('documents.cv_photo_upload') }}
-                </button>
-              }
-            </div>
-          </div>
-        }
-      </div>
-    </section>
+    <app-profile-photo
+      [photo]="profile()?.photoDataUri ?? null"
+      [open]="sectionOpen().photo"
+      (toggled)="toggleSection('photo')"
+    />
 
     <!-- Editor -->
     <section class="section section--card">
@@ -409,14 +351,4 @@
       (pitchRequested)="generatePitch()"
     />
   </div>
-}
-
-<!-- Same crop modal the CV editor uses, so a profile photo lands in the
-     exact frame a CV expects and never needs re-cropping per document. -->
-@if (cropSourceUri(); as src) {
-  <app-cv-photo-crop
-    [sourceDataUri]="src"
-    (confirmed)="onCropConfirmed($event)"
-    (cancelled)="onCropCancelled()"
-  />
 }

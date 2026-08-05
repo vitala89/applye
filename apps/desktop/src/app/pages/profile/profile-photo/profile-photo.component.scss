@@ -1,0 +1,27 @@
+/* Moved from the Profile page with the markup that uses it. The section and
+   collapse-card shells, the dashed button and the field hint are shared with
+   Profile's other sections and live in `_profile-shell.scss`, which is emitted
+   once from `styles.scss` nested under `.profile`.
+
+   Photo: the thumb shows the exact 3:4 frame a CV will print, so what the user
+   approves in the crop modal is what they get on the page. */
+
+.photo-editor {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+.photo-editor__thumb {
+  width: 90px;
+  height: 120px;
+  object-fit: cover;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+}
+.photo-editor__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

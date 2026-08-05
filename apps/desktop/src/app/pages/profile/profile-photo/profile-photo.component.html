@@ -1,0 +1,58 @@
+<section class="section section--card">
+  <div class="collapse-card">
+    <div
+      class="collapse-card__head"
+      role="button"
+      tabindex="0"
+      [attr.aria-expanded]="open()"
+      (click)="toggled.emit()"
+      (keydown.enter)="toggled.emit()"
+      (keydown.space)="toggled.emit(); $event.preventDefault()"
+    >
+      <span class="collapse-card__title">{{ t()('profile.section_photo') }}</span>
+      <span class="collapse-card__summary">
+        {{ t()(uri() ? 'profile.summary_photo_set' : 'profile.summary_empty') }}
+      </span>
+      <lucide-icon
+        [img]="icons.chevron"
+        [size]="17"
+        class="chevron"
+        [class.chevron--open]="open()"
+        aria-hidden="true"
+      />
+    </div>
+    @if (open()) {
+      <div class="collapse-card__body">
+        <p class="field__hint">{{ t()('profile.photo_hint') }}</p>
+        <div class="photo-editor">
+          @if (uri(); as current) {
+            <img class="photo-editor__thumb" [src]="current" alt="" />
+            <div class="photo-editor__actions">
+              <button class="btn-dashed" type="button" [disabled]="saving()" (click)="pick()">
+                {{ t()('documents.cv_photo_replace') }}
+              </button>
+              <button class="btn-dashed" type="button" [disabled]="saving()" (click)="remove()">
+                {{ t()('documents.cv_photo_remove') }}
+              </button>
+            </div>
+          } @else {
+            <button class="btn-dashed" type="button" [disabled]="saving()" (click)="pick()">
+              <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
+              {{ t()('documents.cv_photo_upload') }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- Same crop modal the CV editor uses, so a profile photo lands in the
+     exact frame a CV expects and never needs re-cropping per document. -->
+@if (cropSourceUri(); as src) {
+  <app-cv-photo-crop
+    [sourceDataUri]="src"
+    (confirmed)="onCropConfirmed($event)"
+    (cancelled)="onCropCancelled()"
+  />
+}

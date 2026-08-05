@@ -44,6 +44,54 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's photo card leaves with its own save path, and two tests were proved hollow
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-photo-component`
+- **Objective:** cut Profile's photo card out of the page - the one remaining block that is class-side as well as template-side.
+
+**Why this one moved differently from the eight before it.** Every earlier Profile cut left the save
+path on the page, because every one of them edits `form()` and ends up in `fullMd`. The photo does
+not. It is not part of the profile form, it has its own backend command, and that command exists
+precisely because `db_upsert_profile` names every column it writes and would otherwise wipe the
+photo (the comment on `db_set_profile_photo` says so). So the whole flow moved - pick, crop,
+persist, toast, optimistic write and rollback - and the page lost three signals and five methods
+rather than just markup. That is why the class number finally moved by something: **628 -> 572**,
+against **409 -> 342** for the template and **231 -> 211** for the stylesheet.
+
+**What deliberately did not move: the collapse state.** The child could own `open` and drop an
+input. It must not. `seedSectionOpen()` re-collapses every section when the user leaves raw mode,
+and a child owning its own state would have silently stopped doing that - no gate would have said a
+word. Kept as `[open]` + `(toggled)`, matching the other eight sections, and then checked in the
+running page: expand the photo card, switch to Raw, switch back, `aria-expanded` returns to `false`.
+
+**`photo` is a seed, not a binding.** A `linkedSignal` off `profile()?.photoDataUri`, so a local
+edit survives an unchanged input and a profile reload re-seeds it. This is only sound because
+`db_upsert_profile` leaves `photo_data_uri` alone and returns the fresh row - checked in
+`profile.rs` rather than assumed, since the whole arrangement inverts if that upsert ever names the
+column.
+
+**Two of five mutations survived the first pass, and both were real.** Not noise, and not the code:
+
+- **M4**, crop-confirm no longer closes the modal. The test asserted `cropSourceUri()` was null
+  after the call - but it had never been set, so the assertion was true before the call ran. Same
+  shape as last session's single-bullet finding: a fixture that cannot distinguish the two answers.
+- **M5**, rollback restores the seed instead of what was on screen. The rollback test started from
+  the seeded value, where the two are equal by construction. After a local removal they differ, and
+  the mutation would put an already-deleted photo back.
+
+Both tests were rewritten to make the two states diverge first. All five mutations now die. The
+harness printed `MUTATED` from its own diff and restored byte-exactly after each run.
+
+- **Files changed:** `profile-photo/{component.ts,html,scss,spec.ts}` (new), `profile.component.{ts,html,scss}`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `nx run desktop:type-check` clean (the `ScoringSummaryComponent` unused-import warning it had been printing is gone - that entry was left behind by the AI Tools cut and was deleted here). `nx run-many --target=lint --projects=desktop` passed, 8 warnings, identical count to the base tree, none in the new files. `nx test desktop` **1320 passed**, up from 1319 baseline plus this component's suite. `nx build desktop` succeeded. `npm run quality:file-size` passed with both Profile files ratcheted down. `npm run quality:attribution`, `npm run format:check` and `git diff --check` all clean.
+- **Losslessness:** `npm run quality:style-move -- --base origin/main` across **all nine** Profile stylesheets: "Every selector carries the same declarations it did before. Lossless." No `--page-scope`, which is correct - `origin/main` already carries the wrapper.
+- **Diffed backwards:** substituting the parameterisation back into the child (`uri()` -> `photoDataUri()`, `open()` -> `sectionOpen().photo`, `toggled.emit()` -> `toggleSection('photo')`, and the icon fields) reproduces the original block token-for-token, comments and Prettier bracket wrapping aside.
+- **Walked in the browser:** card renders collapsed with the "Empty" summary, expands on click, the child's own `.photo-editor` rules compute (`flex`, gap 12px, margin-top 8px) and the shared `_profile-shell.scss` rules still reach it (`btn-dashed` dashed border, `field__hint` 11px). No console errors. The upload button itself cannot be exercised: it opens the Tauri dialog plugin, and the browser has no IPC.
+- **Privacy/security impact:** none. The photo stays local, in the same column, written by the same command.
+- **Next first action:** the raw-mode editor and parse preview (~90 lines of `profile.component.html`), whose mapping already left as `profile-parse.util.ts`, so what remains is markup plus `parseRawText`.
+
 ### 2026-08-05, session close: ten PRs merged, handoff rewritten
 
 - **Status:** complete - documentation only

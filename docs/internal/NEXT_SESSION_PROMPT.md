@@ -5,42 +5,59 @@ Paste everything below the line into a fresh Claude Code session.
 ---
 
 Continue the Applye file-size budget campaign. Rust is finished and stays at zero. Angular is what
-remains: **42 files over budget** - 19 TypeScript, 12 templates, 11 stylesheets.
+remains: **41 files over budget** - 19 TypeScript, 11 templates, 11 stylesheets.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
-`docs/product/CURRENT_STATE.md`, and the recent `docs/internal/DUTY_WATCH.md` entries. The 2026-08-05
-entries are this campaign's own history. Four are worth reading in full before touching anything:
+`docs/product/CURRENT_STATE.md`, and the recent `docs/internal/DUTY_WATCH.md` entries. The
+2026-08-05 entries are this campaign's history. Five are worth reading in full before touching
+anything, because each records something that cost real time to learn:
 
-- **"Profile's shared styles are hoisted, and the hoist turned out to be a decision"** - the previous
-  handoff said it was mechanical; it was not, and why.
-- **"Profile's education section is extracted, with no stylesheet of its own"** - what the hoist
-  bought, demonstrated.
-- **"Profile's work-experience section is extracted, and a mutation finds a real gap"** - a mutation
-  that survived, and what was wrong with the test.
-- **"Profile's contact block becomes one field rendered nine times"** - the best-shaped cut of the
-  session, plus two ways the losslessness check can be run wrongly.
+- **"the contact-field extraction had broken the row layout, and nothing had caught it"** - the
+  failure mode component extraction has that no gate here sees.
+- **"Profile's two AI generators become one, and the crossing mutation survives"** - what survives
+  when you collapse two near-identical methods.
+- **"the display-name rules leave the Profile class, and the next step needs a decision"** - two
+  candidate seams audited and _rejected_, with reasons.
+- **"Discover's shared row vocabulary is hoisted"** - why the hoist has to come before the cut, and
+  an extraction script caught corrupting CSS.
+- **"Discover's detail hero leaves, and the ratchet refuses the first attempt"** - icons written
+  from memory, and a helper added during an extraction that had no test.
 
 ## Where things stand
 
-`main` is at `d98c214`, clean, **no open PRs.** Ten merged in the previous session (#329-#338).
+`main` is at `52e59e9`, clean, **no open PRs.** Eight merged last session (#340-#347).
 
 Measure with `npm run quality:file-size:all` - **not** the plain `quality:file-size`, which is
 diff-scoped. A file missing from the diff-scoped report means "not changed", **not** "now under
-budget"; that misread nearly reached a changelog entry.
+budget".
 
-### What the previous session moved
+### What the last session moved
 
-| file set               |                        before |                                      after |
-| ---------------------- | ----------------------------: | -----------------------------------------: |
-| `profile.component`    | html 1037 / ts 772 / scss 733 | **409 / 628 / 379** (stylesheet now under) |
-| `onboarding.component` |  html 628 / ts 797 / scss 718 |                        **514 / 738 / 642** |
+| file set   |                        before |                                   after |
+| ---------- | ----------------------------: | --------------------------------------: |
+| `profile`  |  html 409 / ts 628 / scss 231 | **270 / 445 / 124** (html + scss under) |
+| `discover` | html 808 / ts 890 / scss 1464 |                     **636 / 884 / 938** |
 
-`profile.component.scss` is the second file the campaign has taken from over budget to under, after
-`cover-letter-detail.component.scss`. Profile now has **nine** child components and two util files.
+Tests 1311 -> 1397. Repository count 42 -> 41, which as always understates the work: every new child
+component is within budget and never appears.
 
-The repository count went 43 -> 42, which badly understates ten merged PRs: every new component is
-within budget and so never appears in the report. Judge progress by the files you touched, not by the
-total.
+## Profile is finished. Do not reopen it.
+
+The class stops at **445/400** and that is a **settled decision through the grilling gate**, not an
+omission. The remaining lines are one coherent lump of page state - `ngOnInit`, `save`,
+`persistProfile`, `refreshSavedMdHash`, the form and its three section mirrors - that no further
+pure-function extraction reaches. The maintainer chose this over building a `ProfileFormStore`.
+
+No ratchet exclusion was added: the file stays listed OVER and can never grow, which is the
+enforcement that matters.
+
+Two seams were audited and **rejected**, with reasons that still hold:
+
+- **The compensation block.** Template is under budget at 270/300, so a template-only move buys
+  nothing and still adds two lines to an over-budget class.
+- **The section-mirror collapse.** A shared `syncSections()` called from any one change handler
+  would re-serialize the other two, and `serialize(parse(x))` is **not identity** for text the user
+  typed by hand in raw mode.
 
 ## Rules that are enforced, not optional
 
@@ -50,129 +67,133 @@ total.
 npm run quality:style-move -- --base origin/main <every stylesheet the rules may have moved between>
 ```
 
-Three ways to run this wrongly, all hit last session:
+Four ways to run this wrongly, all hit for real:
 
-- **Leaving a stylesheet off the list.** Run with two of Profile's eight, it reported 39 lost
-  selectors. They were only missing from the arguments. List the page, the partial, and every child
-  created by every earlier cut.
-- **`--base main` uses the _local_ `main` ref, which `git fetch` does not move.** It sat at the
-  session-start commit for a whole session. Use `origin/main`, or sync local `main` first. (It is
-  currently synced.)
-- **`--page-scope` is for a base that predates the wrapper.** It strips the ancestor from the after
-  side only. Equal numbers lost and gained is the signature of passing it against a base that already
-  has the wrapper - which `origin/main` now does for Profile.
+- **Leaving a stylesheet off the list.** List the page, the partial, and every child from every
+  earlier cut.
+- **`--base main` uses the _local_ ref, which `git fetch` does not move.** Use `origin/main`.
+- **`--page-scope` is for a base that predates a wrapper.** It strips an ancestor from the **after**
+  side only. Equal numbers lost and gained is the signature of passing it wrongly.
+- **It does not apply at all when you deliberately change declarations.** A contrast fix or a new
+  `min-width` is not a move; say so rather than running it and explaining the noise.
 
 **2. Shared page styles go to a page-scoped partial, emitted once from `styles.scss`.** Five exist:
 `_editor-shell.scss`, `_discover-controls.scss`, `_onboarding-shell.scss`,
 `_cover-letter-controls.scss`, `_profile-shell.scss`.
 
-**3. A page whose class names are generic wraps its partial in the page root.** `_profile-shell.scss`
-is `.profile { ... }` around everything it owns, because seven of Profile's shared names (`eyebrow`,
-`muted`, `status`, `status--error`, `section`, `field`, `btn-ghost`) are already defined with
-different values by eight other stylesheets. Prefixing is still preferable where the names are already
-distinctive. Both rules are in `CODE_QUALITY.md`.
+**3. A page whose class names are generic wraps its partial in the page root; a page whose names are
+already distinctive does not.** Profile needed `.profile { ... }` because seven of its shared names
+collide with eight other stylesheets. **Discover needs no wrapper** - 33 of its 34 top-level
+selectors already carry `dv-`. Count before assuming.
 
-**4. When a class moves, its modifiers move with it.** `.status` and `.status--warn` both set `color`;
-while they share a file source order decides, split across a global partial and a component stylesheet
-the winner becomes style-injection order.
+**4. When a class moves, its modifiers move with it** - but know why. The rule bites on
+**same-specificity** modifiers, where source order decides while they share a file and
+style-injection order decides once they do not. A **contextual descendant** like
+`.dv-detail__heromain .dv-arch-badge` at (0,2,0) against a base at (0,1,0) is decided by specificity
+and is safe either way. Check the specificity rather than applying the rule blindly.
 
 ## The method, which has held for every cut
 
-1. **Consumer audit before choosing a seam.** For each candidate block, list the symbols its markup
-   names and count their uses elsewhere.
-2. **Then audit the _class_ side, and let ownership pick the boundary.** This is the step that decides
-   everything, and the repository already answers it:
-   - The **page** owns the state and the child only edits it -> **inputs and outputs**
-     (`cover-letter-block`, all of Profile's sections).
-   - The **child** owns state the page reads back -> **a component-provided service** (the onboarding
-     panels, the Review step, the Discover drawer).
-
-   Getting this backwards splits a save path across the boundary.
-
-3. **Measure the block before writing the child - template _and_ stylesheet.**
-4. **Diff backwards.** Where the child is parameterised, substitute each key back in and check it
-   reproduces the original. That tests the parameterisation, not the copy.
-5. **Mutation-test the moved logic**, and pick mutations that are _invisible to the eye_: crossing two
-   near-identical blocks, writing every item instead of the addressed one. Print a `MUTATED`
-   confirmation from the script itself, restore from a backup copy, and `diff` to prove byte-exactness.
-   One mutation last session **survived** and exposed a real gap: the test drove entries carrying a
-   single bullet each, where "write the addressed bullet" and "write every bullet" are the same result.
+1. **Consumer audit before choosing a seam.** For each candidate block, list the symbols and classes
+   its markup names and count their uses elsewhere. Zero elsewhere means it can move.
+2. **Then audit the _class_ side, and let ownership pick the boundary.**
+   - The **page** owns state the child only edits -> **inputs and outputs**.
+   - The **child** owns state nothing else reads -> **the child owns the whole pipeline** (Profile's
+     raw editor took `parsing`, the status pair, the preview and the AI call, and emits once).
+3. **Measure the block before writing the child - template _and_ stylesheet.** A new file born over
+   budget is refused: Discover's whole detail screen was 458 stylesheet lines and had to be cut in
+   two (sidebar, then hero).
+4. **Diff backwards.** Substitute each input back and check it reproduces the original
+   token-for-token. Normalise whitespace and comments; **BSD `sed` on macOS has no `\b`**, which
+   silently makes half your substitutions no-ops.
+5. **Mutation-test the moved logic**, choosing mutations invisible to the eye: crossing two
+   near-identical branches, addressing the wrong one of a pair, keeping four labels distinct while
+   swapping two of them. Print `MUTATED` from the script, restore from a backup, `diff` to prove
+   byte-exactness. **A mutation that fails to apply proves nothing** - one perl replacement mangled
+   itself into `-e -e`, the tests failed on garbage, and it was nearly counted as a kill.
 6. Gates before commit: `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop`,
    `nx test desktop`, **`nx build desktop`**, `npm run quality:file-size`,
    `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
-7. Branch from `main`, one seam per PR, update `CHANGELOG.md` and `DUTY_WATCH.md`, open against `main`.
+7. Branch from `main`, one seam per PR, update `CHANGELOG.md` and `DUTY_WATCH.md`, open against
+   `main`.
 
 ## Traps that have actually fired
 
-- **Commit before switching branches.** A cut developed on an uncommitted tree was destroyed by
-  `git checkout -B <branch> origin/main` - page edits and both doc entries gone, only the untracked new
-  component directory survived. Cost a full redo.
-- **The file-size ratchet will refuse a template-only cut**, because adding the import and the
-  `imports:` entry still grows an over-budget class by two lines. That is correct. Extract something
-  real: last session it produced five dead icon fields in one PR and `profile-parse.util.ts` in
-  another - and that util put tests on a rule that had none.
-- **`[ngModel]` writes the value in a microtask.** A spec asserting on `input.value` right after
-  `detectChanges()` fails; `await fixture.whenStable()` first.
-- **Dead CSS inside a grouped selector.** `.output-block, .json-block` - `json-block` was used nowhere.
-  Deleting it is right; carrying it into a new file is not. `quality:style-move` reports it, and that
-  report belongs in the PR body rather than being suppressed.
-- A long-running branch always conflicts in `CHANGELOG.md` and `DUTY_WATCH.md`. Pure additions on both
-  sides: keep both, newest on top. Watch for two `### Changed` headings in one release section.
-- `npm run web:build` regenerates `apps/web/public/sitemap.xml`. Use `nx build web` directly.
-- The correct format command is `npx nx format:write`.
-- Open PRs against `main` only. Develop the next cut locally on top of the open branch, then rebuild it
-  from `main` after the merge: `git checkout -B <new> origin/main && git checkout <old-branch> -- <paths>`
-  works cleanly **if the old branch is committed**.
-- **A new migration that lives only on a branch bricks the dev app when you switch away from it.**
+- **The ratchet refuses a template-only cut** on an over-budget class, because the import and the
+  `imports:` entry still add lines. Extract something real alongside it - or find that the import
+  block itself is the problem: `type X` pushed one import past the print width into four lines, and
+  letting the helper type its own return (TypeScript is structural) collapsed it back to one.
+- **Never write a lucide icon identity from memory.** The page states it. Two were wrong last
+  session (`Rss` not `Radio`, `ChevronLeft` not `ArrowLeft`) and one nearly was (`Check` not
+  `CheckCircle2`). Nothing fails - the wrong glyph just renders.
+- **A helper you add to the page while extracting a child is as untested as anything else new.**
+  `heroArchetype` survived its mutation because it had no test at all.
+- **A component's compiled styles never reach another component's template.** Check what shared
+  classes a candidate child renders **before** cutting; hoist them first, as its own PR.
+- **Commit before switching branches.** `git checkout -B <branch> origin/main` destroyed a full cut
+  once.
+- **`[ngModel]` writes in a microtask.** `await fixture.whenStable()` before asserting on
+  `input.value`. Separately, an async `ngOnInit` is not tracked under zoneless: `whenStable()` can
+  resolve while the page is still on its loading branch. Flush a macrotask
+  (`await new Promise(r => setTimeout(r, 0))`).
+- **Calling a TestBed fixture factory twice in one test** reconfigures an already-created TestBed and
+  throws. One fixture per test, or `TestBed.resetTestingModule()` between.
+- **A CSS extraction script can corrupt silently.** One scanner reset its skip flag at `depth === 1`
+  - true immediately after a rule's opening brace - and captured each rule's opening line while
+    leaving the body behind. Verify brace balance before writing, and let `quality:style-move` be the
+    proof.
+- `npm run web:build` regenerates `apps/web/public/sitemap.xml`. Use `nx build web`.
+- The correct format command is `npx nx format:write`. New untracked files sometimes need
+  `npx prettier --write <path>` directly.
+- A long-running branch always conflicts in `CHANGELOG.md` and `DUTY_WATCH.md`. Pure additions both
+  sides: keep both, newest on top, and check for two `### Changed` headings in one release section.
 
-## Verification - this improved a lot, use it
+## Verification - know what it can and cannot reach
 
-**Profile is routed, so the browser dev server can drive it.** That is a real change from the previous
-handoff, which had only unwalked cuts to report. Every Profile cut last session was walked, and two of
-them caught things no gate would have:
+**Profile is routed and can be driven.** `preview_start` with
+`{url: "http://localhost:4200/profile"}`, then `javascript_tool` to click, type
+(`dispatchEvent(new Event('input', {bubbles: true}))`) and read `getComputedStyle`. The strongest
+check is the **round trip through the markdown**: edit a field, switch to raw mode, read the
+`<textarea>`; leaving raw mode parses it back. Both directions were verified this way last session.
 
-- the `stopPropagation` guard on an info tip inside a clickable card head still working after a move;
-- a component with **no stylesheet at all** still rendering correctly from the page partial.
+**The browser has no Tauri IPC**, and that is a hard limit, not a gap to apologise for:
 
-How: `preview_start` with `{url: "http://localhost:4200/profile"}`, then `javascript_tool` to click,
-type (`dispatchEvent(new Event('input', {bubbles: true}))`) and read `getComputedStyle`. The strongest
-check available is the **round trip through the markdown**: edit a field, click the raw/markdown mode
-button, and read the `<textarea>` - if the edit reached `fullMd` then the child's output, the page's
-handler and the serializer all ran. Leaving raw mode parses it back, which checks the other direction.
+- Profile never loads, so `fullMd` starts empty and both AI buttons are correctly disabled.
+- **Discover has no sources, so the feed is empty and the detail screen cannot be reached at all.**
+  All three Discover cuts were therefore verified by the declaration check and the backwards diff
+  rather than by walking. For a pure move those are the stronger evidence anyway - say that plainly
+  instead of implying a walk happened.
+- Onboarding is gated in `app.ts` rather than routed, so the browser never opens it.
 
-Caveats: the browser has **no Tauri IPC**, so the profile never loads and `fullMd` starts empty (both
-AI Generate buttons are correctly disabled for that reason). Measure computed styles on a fresh
-element query - reading one captured before a re-render silently returns empty strings.
-
-**Still unwalked, and each says so in its own entry:** Discover's Sources drawer, onboarding's two AI
-panels and its Review step, the cover letter's five blocks. Onboarding is gated in `app.ts` rather than
-routed, so the browser never opens it at all.
+Measure computed styles on a **fresh element query**; one captured before a re-render silently
+returns empty strings. And if `window.innerWidth` is 0, the pane is backgrounded - take a screenshot
+to force it visible before trusting any geometry.
 
 ## What to take next
 
-### Profile, what is left
+### Discover, what is left
 
-The class at **628/400** is now the harder number and is no longer a template problem: what remains on
-it is the two AI call methods, the load/save path and the parse pipeline's orchestration. The template
-at **409/300** has three blocks left:
+`discover.component.scss` is **938/400**, down from 1464. `.dv-detail` is now only the grid, main,
+loading and actions shells. The largest families left:
 
-- **the photo card** (~65 lines) - probably the best next cut, and the only remaining one that is
-  class-side as well as template-side: it owns its own upload, crop and persist flow and could take a
-  service with it, which is the shape that will move the class meaningfully;
-- **the raw-mode editor and parse preview** (~90 lines) - the parse mapping already moved out to
-  `profile-parse.util.ts`, so what is left is markup plus `parseRawText`;
-- **the compensation block** (~52 lines) - owns `comp-row`, `comp-sep`, `comp-select`,
-  `field__label-row`, `field__hint--inline`, plus the contextual override `.comp-row .field__input`
-  which is **still on the page stylesheet and must travel with it**.
+- **`.dv-row` (233 lines) is not the clean seam it looks like.** Its classes are rendered by the
+  detail screen's main body **and** the feed. It needs the same hoist-then-cut treatment the hero
+  did: hoist the shared vocabulary as its own PR, then extract.
+- **`.dv-geomenu` (107 lines)** is the location filter menu. Its markup surface measured **35
+  symbols** - far wider than any boundary this campaign has accepted (the record is eleven, Profile's
+  AI Tools). It needs a real ownership audit, and a service-owned boundary is the likely answer.
+
+`discover.component.ts` at 884 and `discover.component.html` at 636 both still need work; the class
+has barely moved all campaign (890 -> 884) because every Discover cut so far has been markup and
+styles.
 
 ### Elsewhere, unaudited and ranked by size
 
-`discover.component.scss` (1464/400) is the largest file in the project; its template (808) and class
-(890) were cut once already, the stylesheet never. `jobs.component.ts` (1050),
-`cv-detail.component.ts` (1019), `tracker.component` (scss 893, ts 667, html 557),
-`settings.component` (html 580, ts 575), `cv-live-style-panel.component.ts` (704).
-`onboarding.component.ts` is 738 with four wizard steps still inline - welcome, resume, targeting and
-ready - and its shared styles are already hoisted, so those stay cheap.
+`jobs.component.ts` (1050) with its template (686), `cv-detail.component.ts` (1019),
+`tracker.component` (scss 893, ts 667, html 557), `onboarding.component.ts` (738, four wizard steps
+still inline, shared styles already hoisted so those stay cheap),
+`cv-live-style-panel.component.ts` (704), `libs/core/.../analytics.ts` (665 - the only `libs/` file
+on the list, so changing its shape is a **public API decision** and goes through the grilling gate).
 
 ### Do NOT split this one
 
@@ -183,29 +204,45 @@ twenty members through a boundary. The real seam is **17 near-identical
 `@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs** - one editable-leaf component or
 directive owning the protocol. That is a design change, not a move, and it needs its own decision.
 
-For calibration on boundary width: Profile's AI Tools shipped with **eleven** inputs and was judged
-acceptable because they are flat scalars read once each, not a protocol threaded per field. That is
-the widest boundary the campaign has accepted, and it is now the precedent.
+For calibration: Profile's AI Tools shipped with **eleven** inputs and was judged acceptable because
+they are flat scalars read once each, not a protocol threaded per field. That is the widest boundary
+the campaign has accepted.
+
+## When to stop and ask
+
+`CLAUDE.md` puts a decision behind the `aif-grilling` skill when it changes a `libs/` public API, a
+database schema, the privacy or security posture, or when the task has two readings leading to
+different work. That gate fired once last session and was worth it: looking up the facts first
+produced an option nobody had listed (Profile was no longer among the worst files, so "stop here and
+go where the lines actually are" beat both "build a store" and "grant an exception").
+
+Settle **facts** yourself before asking - the ratchet's exclusion mechanism, existing store
+precedents and Discover's prefix count were all lookups, not questions.
 
 ## Open follow-ups, not part of the campaign
 
-- **A CV that finishes generating after its page was replaced does not appear until the page is
-  reopened.** `LinkedDocumentsService` is component-scoped, so the result lands on the destroyed page's
-  signals. The document is written correctly; only the view is stale.
+- **The same host-element trap may exist in other extractions.** PR #341 fixed a live layout
+  regression: a `flex: 1` rule kept matching `.field` after extraction put a component host between
+  it and the flex container, so paired fields collapsed to content width (173.5px each in an 846px
+  row). Type-check, lint, tests, build, `quality:file-size` and `quality:style-move` all passed on it
+  - correctly, since no declaration was lost and no selector changed. Only Profile's rows were
+    audited. Every other cut this campaign has made deserves the same check: any rule setting `flex`,
+    `grid-column`, `align-self` or a direct-child width whose target is now inside a component host.
+- **A CV that finishes generating after its page was replaced does not appear until reopened.**
+  `LinkedDocumentsService` is component-scoped, so the result lands on the destroyed page's signals.
+  The document is written correctly; only the view is stale.
 - **A database newer than the running app aborts instead of explaining itself.** The unwrap in
-  `lib.rs:36` runs inside tao's `did_finish_launching`, a non-unwinding context, so it becomes an abort
-  with a macOS crash dialog. Real for a user who reinstalls an older release.
+  `lib.rs:36` runs inside tao's `did_finish_launching`, a non-unwinding context, so it becomes an
+  abort with a macOS crash dialog. Real for a user who reinstalls an older release.
 - **Dependabot: 1 open alert** (moderate), `glib` RUSTSEC-2024-0429. Not fixable here - it arrives
-  through the whole gtk-rs 0.18 stack under `wry`/`webkit2gtk`, which Tauri pins, and it is Linux-only.
-  It has an entry in `.cargo/audit.toml` with its drop condition and is **deliberately left open rather
-  than dismissed**, because it is the thing that will tell us Tauri moved. The other sixteen (nine
-  Dependabot alerts plus seven only `npm audit` saw) were closed in #330; all were development scope,
-  and `npm audit` now reports zero.
+  through the gtk-rs 0.18 stack under `wry`/`webkit2gtk`, which Tauri pins, and it is Linux-only. It
+  has an entry in `.cargo/audit.toml` and is **deliberately left open rather than dismissed**,
+  because it is the thing that will tell us Tauri moved.
 
 ## Housekeeping
 
-A `npm run desktop:dev` process has been running across several sessions (PID 43739 at last check). It
-holds the nx `desktop:serve` lock, so `preview_start` on another port blocks behind it - but it also
-serves `localhost:4200` from whatever branch the working tree is on, which is what made every
-walk-through above possible. Check with `pgrep -fl "tauri dev"`. If you stop it, start your own server
+A `npm run desktop:dev` process has been running across several sessions (PID 43739 at last check).
+It holds the nx `desktop:serve` lock, so `preview_start` on another port blocks behind it - but it
+also serves `localhost:4200` from whatever branch the working tree is on, which is what makes every
+walk-through possible. Check with `pgrep -fl "tauri dev"`. If you stop it, start your own server
 before trying to verify anything in the browser.

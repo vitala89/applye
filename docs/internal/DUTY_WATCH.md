@@ -44,6 +44,58 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, session close: eight PRs merged, Profile finished, Discover's largest file down a third
+
+- **Status:** complete - documentation only
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/next-session-handoff-4`
+
+**What shipped.** Eight PRs, #340-#347, all squash-merged. `main` is at `52e59e9`, clean, no open
+PRs. Six on Profile (photo card, raw editor, AI-generator collapse, display-name util, plus a layout
+regression fix), three on Discover (detail sidebar, vocabulary hoist, detail hero). The individual
+entries below carry the detail.
+
+| file set   |                        before |                                   after |
+| ---------- | ----------------------------: | --------------------------------------: |
+| `profile`  |  html 409 / ts 628 / scss 231 | **270 / 445 / 124** (html + scss under) |
+| `discover` | html 808 / ts 890 / scss 1464 |                     **636 / 884 / 938** |
+
+Tests **1311 -> 1397**. Repository count **42 -> 41**, which understates eight PRs for the usual
+reason: every new child component is within budget and never appears.
+
+**Profile is finished by decision, through the grilling gate.** The class stops at 445/400 - the
+remaining lines are one lump of page state no pure-function extraction reaches. The maintainer chose
+this over a `ProfileFormStore`; no ratchet exclusion was added, so the file stays listed OVER and can
+never grow. The grilling paid for itself by producing an option nobody had listed: settling the facts
+first showed Profile was no longer among the worst files, which turned "store or exception" into
+"stop here and go where the lines actually are".
+
+**Four things this session added to the campaign's knowledge**, each because it cost something:
+
+1. **Component extraction has a failure mode no gate here sees.** A `flex: 1` rule kept matching
+   `.field` after a host element was inserted between it and the flex container; paired fields
+   collapsed to 173.5px in an 846px row. Every gate passed, correctly - no declaration was lost and
+   no selector changed. What changed was which element the selector lands on. Fixed in #341; a
+   sweep of the campaign's other extractions is filed as an open follow-up.
+2. **A component's compiled styles never reach another component's template**, so shared vocabulary
+   must be hoisted _before_ the cut that needs it, as its own PR (#346). Checked rather than assumed:
+   neither existing Discover child was already broken this way.
+3. **Never write a lucide icon identity from memory.** Two were wrong (`Rss` not `Radio`,
+   `ChevronLeft` not `ArrowLeft`) and one nearly was. Nothing fails - the wrong glyph just renders.
+4. **A mutation that fails to apply proves nothing.** One perl replacement mangled itself into
+   `-e -e`; the tests failed on garbage and it was nearly counted as a kill. Redone properly.
+
+**Mutation testing found a real gap in five of the six cuts it was run on**, and the survivors were
+never random - each was the specific failure mode of the transformation being done. Extracting a
+component surfaced tests asserting a state true _before_ the call that sets it. Collapsing two
+near-identical methods surfaced crossing them, which writes the database correctly and only lights
+the wrong card. Extracting markup surfaced a helper added to the page during the extraction that had
+no test at all.
+
+- **Files changed:** `docs/internal/NEXT_SESSION_PROMPT.md` (rewritten), `docs/product/CURRENT_STATE.md`, `DUTY_WATCH.md`.
+- **Validation:** documentation only; `npx nx format:check` and `git diff --check` clean. All code gates were run and recorded on the eight merged PRs.
+- **Next first action:** `discover.component.scss` at 938. `.dv-row` (233 lines) is the largest family left but **is not a clean seam** - its classes are rendered by the detail body as well as the feed, so it needs hoist-then-cut like the hero did. `.dv-geomenu` (107) has a 35-symbol markup surface, far wider than any boundary this campaign has accepted, and needs an ownership audit first.
+
 ### 2026-08-05, Discover's detail hero leaves, and the ratchet refuses the first attempt
 
 - **Status:** complete

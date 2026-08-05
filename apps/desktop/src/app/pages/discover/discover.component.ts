@@ -48,19 +48,22 @@ import type {
   ArchetypeFit,
   Archetype,
 } from '@applye/core';
-import {
-  classifyLoc,
-  cityKey,
-  OTHER_COUNTRY,
-  REGION_ORDER,
-  type LocClass,
-  type RegionKey,
-} from './discover-location';
+import { classifyLoc, cityKey, type LocClass, type RegionKey } from './discover-location';
 import { toggled } from './discover-sources.util';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
 import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
+import {
+  type CountryNode,
+  type RegionGroup,
+  type SelectionState,
+  buildRegionGroups,
+  countrySelectionState,
+  regionSelectionState,
+  withCountryToggled,
+  withRegionToggled,
+} from './discover-location-selection';
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
@@ -70,18 +73,6 @@ import { ToastService } from '../../core/toast/toast.service';
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
 type WorkType = 'remote' | 'hybrid' | 'onsite';
 type Tab = 'new' | 'all';
-
-/** One country row in the Locations popover, with the cities actually seen. */
-interface CountryNode {
-  name: string;
-  cities: string[];
-}
-
-/** One region row in the Locations popover, with the countries actually seen. */
-interface RegionGroup {
-  key: RegionKey;
-  countries: CountryNode[];
-}
 
 /** A titled block of feed rows ("For you" / "More openings"). */
 /** Feed rows rendered per page; the list grows in these steps as the user scrolls. */
@@ -443,42 +434,9 @@ export class DiscoverComponent {
    * regions, countries and cities that appear in scanned jobs are offered; an
    * "Other" bucket collects unknown and remote-anywhere locations.
    */
-  protected readonly availableRegions = computed<RegionGroup[]>(() => {
-    // region -> (country -> set of cities)
-    const byRegion = new Map<RegionKey, Map<string, Set<string>>>();
-    let hasOther = false;
-    for (const row of this.feed()) {
-      if (row.dismissed) continue;
-      const loc = this.classifyLoc(row.location);
-      if (!loc.country) {
-        hasOther = true;
-        continue;
-      }
-      let countries = byRegion.get(loc.region);
-      if (!countries) {
-        countries = new Map();
-        byRegion.set(loc.region, countries);
-      }
-      let cities = countries.get(loc.country);
-      if (!cities) {
-        cities = new Set();
-        countries.set(loc.country, cities);
-      }
-      if (loc.city) cities.add(loc.city);
-    }
-    const groups: RegionGroup[] = [];
-    for (const key of REGION_ORDER) {
-      if (key === 'other') continue;
-      const countries = byRegion.get(key);
-      if (!countries || !countries.size) continue;
-      const nodes: CountryNode[] = [...countries.entries()]
-        .map(([name, cities]) => ({ name, cities: [...cities].sort() }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-      groups.push({ key, countries: nodes });
-    }
-    if (hasOther) groups.push({ key: 'other', countries: [{ name: OTHER_COUNTRY, cities: [] }] });
-    return groups;
-  });
+  protected readonly availableRegions = computed<RegionGroup[]>(() =>
+    buildRegionGroups(this.feed()),
+  );
 
   /** Row currently open in the detail screen. */
   protected readonly detailRow = computed<FeedRow | null>(() => {
@@ -811,55 +769,20 @@ export class DiscoverComponent {
     this.countrySel.update((set) => toggled(set, this.cityKey(country, city)));
   }
 
-  /** Country tri-state against its cities present in the feed (own check + cities). */
-  protected countryState(node: CountryNode): 'none' | 'some' | 'all' {
-    const sel = this.countrySel();
-    const self = sel.has(node.name);
-    if (!node.cities.length) return self ? 'all' : 'none';
-    const on = node.cities.filter((c) => sel.has(this.cityKey(node.name, c))).length;
-    if (self && on === node.cities.length) return 'all';
-    if (self || on > 0) return 'some';
-    return 'none';
+  protected countryState(node: CountryNode): SelectionState {
+    return countrySelectionState(this.countrySel(), node);
   }
 
-  /** Country checkbox toggles the country key and all its cities together. */
   protected toggleCountryTree(node: CountryNode): void {
-    const turnOn = this.countryState(node) !== 'all';
-    this.countrySel.update((set) => {
-      const next = new Set(set);
-      const apply = (key: string): void => {
-        if (turnOn) next.add(key);
-        else next.delete(key);
-      };
-      apply(node.name);
-      for (const c of node.cities) apply(this.cityKey(node.name, c));
-      return next;
-    });
+    this.countrySel.update((set) => withCountryToggled(set, node));
   }
 
-  /** Region tri-state against the countries actually present in the feed. */
-  protected regionState(group: RegionGroup): 'none' | 'some' | 'all' {
-    const states = group.countries.map((n) => this.countryState(n));
-    if (states.every((s) => s === 'all')) return 'all';
-    if (states.every((s) => s === 'none')) return 'none';
-    return 'some';
+  protected regionState(group: RegionGroup): SelectionState {
+    return regionSelectionState(this.countrySel(), group);
   }
 
-  /** Region checkbox toggles every country (and its cities) in that region. */
   protected toggleRegion(group: RegionGroup): void {
-    const turnOn = this.regionState(group) !== 'all';
-    this.countrySel.update((set) => {
-      const next = new Set(set);
-      for (const node of group.countries) {
-        const apply = (key: string): void => {
-          if (turnOn) next.add(key);
-          else next.delete(key);
-        };
-        apply(node.name);
-        for (const c of node.cities) apply(this.cityKey(node.name, c));
-      }
-      return next;
-    });
+    this.countrySel.update((set) => withRegionToggled(set, group));
   }
 
   protected clearLocations(): void {

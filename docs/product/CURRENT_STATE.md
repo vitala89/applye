@@ -87,8 +87,9 @@
   three panel bodies, not one boundary. The bodies are projected content, which compiles in the
   page's own template scope, so the shell takes a label, a count, an optional foot note and emits
   `cleared`. Seven PRs now: **808 / 890 / 1464 -> 484 / 877 / 704**.
-  Next: the stylesheet has no large family left; **`discover.component.ts` at 877/400 is the target**,
-  and the location-filter machinery is its obvious first seam now that the markup is gone. Three decisions came out of it and are written into
+  The class has now taken its first cut too: the Locations tri-state tree is `discover-location-selection.ts`,
+  **877 -> 802**, with 19 tests over logic that previously had none. Eight PRs: **808 / 890 / 1464 -> 484 / 802 / 704**.
+  Next in it: the scan pipeline, or the detail-screen loading path. Neither audited. Three decisions came out of it and are written into
   `CODE_QUALITY.md`: a page whose class names are generic **wraps its partial in the page root**
   rather than prefixing (seven of Profile's shared names were already defined with different values
   by eight other stylesheets); a class's **modifiers move with it**, because a base and its modifier

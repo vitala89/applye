@@ -44,6 +44,22 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's location filter tree leaves the page and gets its first tests
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-location-selection`
+- **Objective:** the first cut into `discover.component.ts`, which had moved 890 -> 877 across the whole campaign because every Discover PR so far was markup and styles.
+- **Completed:** `discover-location-selection.ts` (156 lines, within budget) owns `buildRegionGroups`, `countrySelectionState`, `regionSelectionState`, `withCountryToggled`, `withRegionToggled`, and the `CountryNode` / `RegionGroup` / `SelectionState` types. Class **877 -> 802**. Suite **1423 -> 1442**.
+- **Why this seam.** The Locations popover keeps one flat set of keys behind three levels of checkbox - a country name and a city key - and derives every level's state rather than storing it. It is the only place in Discover where one click reasons about what its children already are, and **it had no tests**: the page spec never touched `countryState`, `regionState`, `toggleCountryTree` or `toggleRegion`. The markup leaving in #352 is what made the logic visible as its own thing.
+- **Not in `libs/`.** Nothing outside this page needs any of it, and a `libs/` public API change goes through the grilling gate rather than riding a refactor. Same call as `profile-name.util.ts`.
+- **Validation:** `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop` (0 errors; 8 pre-existing warnings elsewhere), `nx test desktop` (**1442 passing**), `nx build desktop`, `npm run quality:file-size` (802 against base 877), `npm run quality:attribution`, `npx nx format:check`, `git diff --check`. `quality:style-move` does not apply: no stylesheet changed.
+- **Backwards diff, with one deliberate exception.** `buildRegionGroups`, `countrySelectionState` and `regionSelectionState` reconstruct token-for-token once `this.countrySel()` becomes the `selected` argument and `this.cityKey` the imported `cityKey`. **The two toggles do not**: the identical seven-line `apply` closure was written out twice, once per level, and is one `applied` helper now. That is a dedup, not a move, and the tests are what cover it.
+- **Mutation testing: eight written, eight killed.** A country reading as fully selected on its own key alone (the key means "including places not listed", so that is exactly what it must not mean); a cityless country never reaching "all"; a region reading as all when any one country is; a partial country clearing instead of completing; the country key never moving with its cities; the region checkbox inverting; dismissed rows still offering their location as a filter option; and "Other" pinned first instead of last. Each asserts its pattern matched exactly once before applying; restore verified byte-identical.
+- **Two unused imports fell out** (`OTHER_COUNTRY`, `REGION_ORDER`) and lint caught them, which is the check that catches this class of leftover.
+- **Privacy/security impact:** none.
+- **Next first action:** `discover.component.ts` is 802/400. The next candidates in it are the scan pipeline (`scan`, the console lines, the per-source results) and the detail-screen loading path (`openDetail`, `detailBlocks`, `detectSkills`, `tipText`). The scan is the larger and the more I/O-shaped; the detail path is the more self-contained. Neither has been audited.
+
 ### 2026-08-06, three Discover filter menus become one component, and projection keeps the boundary small
 
 - **Status:** complete

@@ -43,16 +43,13 @@ import {
   Save,
   Check,
   RotateCcw,
-  Plus,
   Sparkles,
-  ChevronDown,
   CircleDot,
 } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
-import { ScoringSummaryComponent } from './scoring-summary.component';
 import { CompletenessHeroComponent } from './completeness-hero.component';
-import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
+import { ProfilePhotoComponent } from './profile-photo/profile-photo.component';
 import { ProfileArchetypesComponent } from './profile-archetypes/profile-archetypes.component';
 import { ProfileExperienceComponent } from './profile-experience/profile-experience.component';
 import { ProfileEducationComponent } from './profile-education/profile-education.component';
@@ -79,10 +76,9 @@ type ProfileSectionKey =
   imports: [
     FormsModule,
     ButtonDirective,
-    ScoringSummaryComponent,
     CompletenessHeroComponent,
     LucideAngularModule,
-    CvPhotoCropComponent,
+    ProfilePhotoComponent,
     ProfileArchetypesComponent,
     ProfileExperienceComponent,
     ProfileEducationComponent,
@@ -106,8 +102,6 @@ export class ProfileComponent implements OnInit {
   protected readonly saveIcon = Save;
   protected readonly checkIcon = Check;
   protected readonly rerunIcon = RotateCcw;
-  protected readonly plusIcon = Plus;
-  protected readonly chevronIcon = ChevronDown;
   protected readonly unsavedIcon = CircleDot;
   protected readonly sparklesIcon = Sparkles;
 
@@ -131,12 +125,6 @@ export class ProfileComponent implements OnInit {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly scoring = signal(false);
-  /** The reusable applicant photo, already cropped to the CV frame. Persisted
-   * on its own (not with the profile form) so it survives every other save. */
-  readonly photoDataUri = signal<string | null>(null);
-  readonly photoSaving = signal(false);
-  /** Source image awaiting a crop; non-null opens the crop modal. */
-  readonly cropSourceUri = signal<string | null>(null);
   readonly pitching = signal(false);
   readonly parsing = signal(false);
 
@@ -211,7 +199,6 @@ export class ProfileComponent implements OnInit {
       this.experienceEntries.set(parseExperienceEntries(this.form().experienceText));
       this.languageEntries.set(parseLanguageEntries(this.form().languages));
       this.archetypes.set(parseArchetypes(p?.targetArchetypes));
-      this.photoDataUri.set(p?.photoDataUri ?? null);
       await this.refreshSavedMdHash(p?.fullMd ?? '');
       if (p?.updatedAt) {
         this.saveStatus.set(this.t()('profile.last_saved').replace('{date}', p.updatedAt));
@@ -228,54 +215,6 @@ export class ProfileComponent implements OnInit {
 
   toggleScoring(): void {
     this.scoringOpen.update((v) => !v);
-  }
-
-  /** Native image picker -> backend read -> crop modal. Mirrors the CV editor's
-   * flow so both places produce a photo in the identical frame. */
-  async pickPhoto(): Promise<void> {
-    const { open } = await import('@tauri-apps/plugin-dialog');
-    const selected = await open({
-      multiple: false,
-      filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
-    });
-    if (typeof selected !== 'string') return;
-    try {
-      this.cropSourceUri.set(await this.db.cvPhotoReadFile(selected));
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
-
-  async onCropConfirmed(uri: string): Promise<void> {
-    this.cropSourceUri.set(null);
-    await this.savePhoto(uri);
-  }
-
-  onCropCancelled(): void {
-    this.cropSourceUri.set(null);
-  }
-
-  async removePhoto(): Promise<void> {
-    await this.savePhoto(null);
-  }
-
-  /** Persists immediately rather than waiting for the page's Save button: the
-   * photo is not part of the profile form, and a cropped photo left unsaved
-   * would be silently lost on navigation. */
-  private async savePhoto(uri: string | null): Promise<void> {
-    if (this.photoSaving()) return;
-    this.photoSaving.set(true);
-    const previous = this.photoDataUri();
-    this.photoDataUri.set(uri);
-    try {
-      await this.db.setProfilePhoto(uri);
-      this.toast.success(this.t()(uri ? 'profile.photo_saved' : 'profile.photo_removed'));
-    } catch (e) {
-      this.photoDataUri.set(previous);
-      this.toast.error(String(e));
-    } finally {
-      this.photoSaving.set(false);
-    }
   }
 
   toggleSection(key: ProfileSectionKey): void {

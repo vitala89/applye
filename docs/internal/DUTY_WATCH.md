@@ -44,6 +44,52 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Discover's shared row vocabulary is hoisted, and an extraction script is caught corrupting CSS
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-shared-badges`
+- **Objective:** prepare the detail-hero cut by hoisting the vocabulary that cut would otherwise leave unstyled.
+
+**Why this is its own PR.** The detail hero renders four classes the feed owns - `dv-row__new`,
+`dv-row__savedbadge`, `dv-row__keywords` (with `__matchedlbl` and `__kw`) and `dv-arch-badge` - all
+defined in `discover.component.scss`. A component's compiled styles never reach another component's
+template, so the moment the hero becomes a child those render unstyled. Same failure that made
+`_profile-shell.scss` necessary, found before it shipped this time rather than after. Stylesheet
+**1169 -> 1091**.
+
+**No page-root wrapper**, and that was settled by counting rather than by analogy: 33 of Discover's
+34 top-level selectors already carry the `dv-` prefix, which is exactly the case `CODE_QUALITY.md`
+says prefixing is preferable for. `_discover-controls.scss` already existed and already held
+`.dv-btn`, so the badges joined it rather than starting a sixth partial.
+
+**Checked before the extraction, and it came back clean:** neither existing child
+(`discover-sources-drawer`, `discover-detail-score`) renders any page-defined class. The sidebar cut
+earlier today did not leave this bug behind.
+
+**An extraction script silently corrupted the CSS and the checks caught it.** The first scanner reset
+its `skip` flag at `depth === 1`, which is true immediately after a top-level rule's opening brace -
+so it captured the opening line of each `.dv-arch-badge` rule and left the body behind. That
+produces four selectors with no declarations and four orphaned bodies: exactly the shape
+`quality:style-move` was written for after the `.dv-input` incident. Rewritten with a proper
+block scanner that finds each rule's matching brace, then verified balanced before writing.
+**The lesson is not "be careful with regex" but that a mechanical CSS move must be proved by the
+declaration check every time, including when the move looks trivial.**
+
+**One override was checked rather than assumed.** `.dv-detail__heromain .dv-arch-badge` stays on the
+page while its base rule leaves for the global partial. The campaign's co-movement rule exists
+because a base and its modifier at the _same_ specificity stop being decided by source order once
+split across files - but this is a contextual descendant at (0,2,0) against the base's (0,1,0), so
+specificity decides and it wins regardless of injection order. It does mean the override must travel
+with the hero markup when that cut happens.
+
+- **Files changed:** `discover.component.scss`, `_discover-controls.scss`, `CHANGELOG.md`, `DUTY_WATCH.md`. **No template or class change at all.**
+- **Validation:** `nx run desktop:type-check` clean, `nx build desktop` succeeded, `nx test desktop` **1378 passed** (unchanged - this PR moves no behaviour), `quality:file-size` passed with the stylesheet ratcheted 1169 -> 1091, `quality:attribution`, `npx nx format:check`, `git diff --check` all clean.
+- **Losslessness:** `quality:style-move --base origin/main` across all four Discover stylesheets - "Every selector carries the same declarations it did before. Lossless." 78 lines hoisted.
+- **Not walked in the browser.** With no Tauri IPC, Discover has no sources and renders its empty state, so none of the hoisted classes appear on screen. The declaration check plus the specificity analysis above are the evidence; a walk would have shown an empty page and proved nothing.
+- **Privacy/security impact:** none, presentation only.
+- **Next first action:** the detail hero, now unblocked - `dv-detail__{back,hero,logo,heromain,metarow,srcitem,dot,matchchip,matchdot,title,corow,co,loc,heroactions}`, all confirmed exclusive to template lines 4-73, about 160 stylesheet lines. Take `.dv-detail__heromain .dv-arch-badge` with it. That leaves `.dv-detail` holding only the grid, main, loading and actions shells.
+
 ### 2026-08-05, Discover's detail sidebar leaves, and the project's largest file takes its first cut
 
 - **Status:** complete

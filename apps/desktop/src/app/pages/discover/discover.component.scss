@@ -598,36 +598,6 @@
     color: var(--text-secondary);
   }
 
-  &__new {
-    display: inline-flex;
-    align-items: center;
-    height: 18px;
-    padding: 0 6px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-wider);
-    border-radius: var(--radius-badge);
-    background: var(--accent-tint);
-    border: 1px solid var(--indigo-a40);
-    color: var(--text-accent);
-  }
-
-  &__savedbadge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    height: 20px;
-    padding: 0 7px;
-    font-family: var(--font-mono);
-    font-size: var(--text-2xs);
-    font-weight: var(--weight-medium);
-    letter-spacing: var(--tracking-wide);
-    border-radius: var(--radius-badge);
-    background: var(--success-tint);
-    color: var(--success);
-  }
-
   &__meta {
     display: flex;
     align-items: center;
@@ -668,30 +638,6 @@
     &--dim {
       color: var(--text-tertiary);
     }
-  }
-
-  &__keywords {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-  }
-
-  &__matchedlbl {
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-    letter-spacing: var(--tracking-wider);
-    color: var(--text-tertiary);
-  }
-
-  &__kw {
-    font-family: var(--font-mono);
-    font-size: var(--text-2xs);
-    letter-spacing: var(--tracking-wide);
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-badge);
-    background: var(--accent-tint);
-    color: var(--text-accent);
   }
 
   &__actions {
@@ -1298,36 +1244,6 @@
 }
 
 /* ---------------- sources: summary + collapsible groups ---------------- */
-
-.dv-arch-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px var(--space-2);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-medium);
-  border-radius: var(--radius-badge);
-  white-space: nowrap;
-  // A 1px ring keeps the badge legible on any surface. The old fill used
-  // --surface-sunken, which is the exact value of the row's --surface-hover, so
-  // the badge dissolved into the row on hover. Surface-1 + a border holds the
-  // shape regardless of what's behind it.
-  border: 1px solid var(--border-default);
-  background: var(--surface-1);
-}
-.dv-arch-badge--primary {
-  // The one accent-tinted tier: the primary match is the state worth signalling.
-  color: var(--accent);
-  background: var(--accent-tint);
-  border-color: color-mix(in oklch, var(--accent) 28%, transparent);
-}
-.dv-arch-badge--secondary {
-  color: var(--text-secondary);
-  border-color: var(--border-default);
-}
-.dv-arch-badge--adjacent {
-  color: var(--text-tertiary);
-  border-color: var(--border-subtle);
-}
 
 /* ---------------- market-changed banner ---------------- */
 

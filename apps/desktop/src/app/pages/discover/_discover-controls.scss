@@ -184,3 +184,91 @@
     padding: var(--space-4);
   }
 }
+
+// The row vocabulary the page and its children share: the "new" marker, the
+// saved badge, the matched-keyword strip and the archetype badge. The detail
+// screen renders all four beside the feed that owns them, so once any part of
+// that screen becomes a component they have to live where both can see them -
+// a component's compiled styles never reach another component's template.
+//
+// No page-root wrapper, unlike `_profile-shell.scss`: 33 of Discover's 34
+// top-level selectors already carry the `dv-` prefix, which is the case
+// `CODE_QUALITY.md` says prefixing is preferable for.
+.dv-row__new {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
+  border-radius: var(--radius-badge);
+  background: var(--accent-tint);
+  border: 1px solid var(--indigo-a40);
+  color: var(--text-accent);
+}
+.dv-row__savedbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 20px;
+  padding: 0 7px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-badge);
+  background: var(--success-tint);
+  color: var(--success);
+}
+.dv-row__keywords {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.dv-row__matchedlbl {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-tertiary);
+}
+.dv-row__kw {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-badge);
+  background: var(--accent-tint);
+  color: var(--text-accent);
+}
+.dv-arch-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+  // A 1px ring keeps the badge legible on any surface. The old fill used
+  // --surface-sunken, which is the exact value of the row's --surface-hover, so
+  // the badge dissolved into the row on hover. Surface-1 + a border holds the
+  // shape regardless of what's behind it.
+  border: 1px solid var(--border-default);
+  background: var(--surface-1);
+}
+.dv-arch-badge--primary {
+  // The one accent-tinted tier: the primary match is the state worth signalling.
+  color: var(--accent);
+  background: var(--accent-tint);
+  border-color: color-mix(in oklch, var(--accent) 28%, transparent);
+}
+.dv-arch-badge--secondary {
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+.dv-arch-badge--adjacent {
+  color: var(--text-tertiary);
+  border-color: var(--border-subtle);
+}

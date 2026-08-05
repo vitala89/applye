@@ -157,119 +157,64 @@
 
       @if (!rawMode()) {
         <div class="form-cards">
-          <div class="field">
-            <label class="field__label" for="field-document-name">{{
-              t()('profile.field_document_name')
-            }}</label>
-            <input
-              id="field-document-name"
-              class="field__input"
-              type="text"
-              [ngModel]="form().name"
-              (ngModelChange)="updateField('name', $event)"
+          <app-profile-text-field
+            key="document-name"
+            [value]="form().name"
+            (changed)="updateField('name', $event)"
+          />
+          <div class="field-row">
+            <app-profile-text-field
+              key="first-name"
+              [value]="form().firstName"
+              (changed)="updateField('firstName', $event)"
+            />
+            <app-profile-text-field
+              key="last-name"
+              [value]="form().lastName"
+              (changed)="updateField('lastName', $event)"
             />
           </div>
           <div class="field-row">
-            <div class="field">
-              <label class="field__label" for="field-first-name">{{
-                t()('profile.field_first_name')
-              }}</label>
-              <input
-                id="field-first-name"
-                class="field__input"
-                type="text"
-                [ngModel]="form().firstName"
-                (ngModelChange)="updateField('firstName', $event)"
-              />
-            </div>
-            <div class="field">
-              <label class="field__label" for="field-last-name">{{
-                t()('profile.field_last_name')
-              }}</label>
-              <input
-                id="field-last-name"
-                class="field__input"
-                type="text"
-                [ngModel]="form().lastName"
-                (ngModelChange)="updateField('lastName', $event)"
-              />
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label class="field__label" for="field-title">{{ t()('profile.field_title') }}</label>
-              <input
-                id="field-title"
-                class="field__input"
-                type="text"
-                [ngModel]="form().title"
-                (ngModelChange)="updateField('title', $event)"
-              />
-            </div>
-            <div class="field">
-              <label class="field__label" for="field-location">{{
-                t()('profile.field_location')
-              }}</label>
-              <input
-                id="field-location"
-                class="field__input"
-                type="text"
-                [ngModel]="form().location"
-                (ngModelChange)="updateField('location', $event)"
-              />
-            </div>
+            <app-profile-text-field
+              key="title"
+              [value]="form().title"
+              (changed)="updateField('title', $event)"
+            />
+            <app-profile-text-field
+              key="location"
+              [value]="form().location"
+              (changed)="updateField('location', $event)"
+            />
           </div>
 
           <div class="field-row">
-            <div class="field">
-              <label class="field__label" for="field-email">{{ t()('profile.field_email') }}</label>
-              <input
-                id="field-email"
-                class="field__input"
-                type="email"
-                [ngModel]="form().email"
-                (ngModelChange)="updateField('email', $event)"
-              />
-            </div>
-            <div class="field">
-              <label class="field__label" for="field-phone">{{ t()('profile.field_phone') }}</label>
-              <input
-                id="field-phone"
-                class="field__input"
-                type="tel"
-                [ngModel]="form().phone"
-                (ngModelChange)="updateField('phone', $event)"
-              />
-            </div>
+            <app-profile-text-field
+              key="email"
+              type="email"
+              [value]="form().email"
+              (changed)="updateField('email', $event)"
+            />
+            <app-profile-text-field
+              key="phone"
+              type="tel"
+              [value]="form().phone"
+              (changed)="updateField('phone', $event)"
+            />
           </div>
 
           <div class="field-row">
-            <div class="field">
-              <label class="field__label" for="field-website">{{
-                t()('profile.field_website')
-              }}</label>
-              <input
-                id="field-website"
-                class="field__input"
-                type="text"
-                [ngModel]="form().website"
-                (ngModelChange)="updateField('website', $event)"
-                [placeholder]="t()('profile.website_hint')"
-              />
-            </div>
-            <div class="field">
-              <label class="field__label" for="field-linkedin">{{
-                t()('profile.field_linkedin')
-              }}</label>
-              <input
-                id="field-linkedin"
-                class="field__input"
-                type="text"
-                [ngModel]="form().linkedin"
-                (ngModelChange)="updateField('linkedin', $event)"
-                [placeholder]="t()('profile.linkedin_hint')"
-              />
-            </div>
+            <app-profile-text-field
+              key="website"
+              [value]="form().website"
+              placeholderKey="profile.website_hint"
+              (changed)="updateField('website', $event)"
+            />
+            <app-profile-text-field
+              key="linkedin"
+              [value]="form().linkedin"
+              placeholderKey="profile.linkedin_hint"
+              (changed)="updateField('linkedin', $event)"
+            />
           </div>
 
           <div class="field field--full" id="field-experience">

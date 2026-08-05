@@ -182,6 +182,16 @@ ancestor, so without it the check reports the whole vocabulary as lost and an id
 gained. The flag strips exactly one leading ancestor, so a declaration genuinely dropped inside the
 wrapper is still reported - that case has its own test.
 
+Two things to get right when running it:
+
+- **List every stylesheet the rules may have moved between**, including ones earlier cuts created.
+  Leaving one out reports its selectors as lost, and they are only missing from the file list.
+- **`--page-scope` is for a base that predates the wrapper.** It strips the ancestor from the after
+  side only, so once the wrapper exists on both sides the flag makes them disagree about every
+  hoisted selector. Equal numbers lost and gained mean the flag is wrong for that base.
+- `--base main` uses the **local** `main` ref, which a `git fetch` does not move. On a long session
+  that can be many merges behind; `--base origin/main` compares against what is actually shipped.
+
 Pass every file the rules could have moved between. On a move-only change it must report nothing
 lost and nothing gained; anything it prints is either a real loss or a deliberate change that
 belongs in the pull request description. It is not part of `npm run quality`, because it needs the

@@ -59,41 +59,19 @@ import { ProfileEducationComponent } from './profile-education/profile-education
 import { ProfileLanguagesComponent } from './profile-languages/profile-languages.component';
 import { ProfileSkillsComponent } from './profile-skills/profile-skills.component';
 import { ProfileAiToolsComponent } from './profile-ai-tools/profile-ai-tools.component';
+import { ProfileTextFieldComponent } from './profile-text-field/profile-text-field.component';
+import {
+  ParsedProfile,
+  parsedContactPatch,
+  parsedEducationEntries,
+  parsedExperienceEntries,
+  parsedLanguageEntries,
+  parsedSkills,
+} from './profile-parse.util';
 
-/** Tolerant shape of the `profile-import` skill's JSON output. Every field is
- * optional/nullable since the AI omits or nulls anything it did not find in
- * the raw text - `applyParsedProfile` is responsible for turning that into
- * the non-nullable strings `ProfileForm` and the section entries expect. */
 /** Every collapsible section on the profile page. */
 type ProfileSectionKey =
   'archetypes' | 'photo' | 'experience' | 'skills' | 'languages' | 'education';
-
-interface ParsedProfile {
-  name?: string | null;
-  title?: string | null;
-  location?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  website?: string | null;
-  linkedin?: string | null;
-  experience?: {
-    role?: string;
-    company?: string;
-    location?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
-    bullets?: string[];
-  }[];
-  skills?: string[];
-  languages?: { language?: string; level?: string | null }[];
-  education?: {
-    title?: string;
-    institution?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
-  }[];
-  lowConfidenceNotes?: string[];
-}
 
 @Component({
   selector: 'app-profile',
@@ -111,6 +89,7 @@ interface ParsedProfile {
     ProfileLanguagesComponent,
     ProfileSkillsComponent,
     ProfileAiToolsComponent,
+    ProfileTextFieldComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -670,49 +649,14 @@ export class ProfileComponent implements OnInit {
   applyParsedProfile(): void {
     const p = this.parsePreview();
     if (!p) return;
-    const str = (v: string | null | undefined) => (v ?? '').trim();
 
-    this.form.update((f) => ({
-      ...f,
-      name: str(p.name) || f.name,
-      title: str(p.title) || f.title,
-      location: str(p.location) || f.location,
-      email: str(p.email) || f.email,
-      phone: str(p.phone) || f.phone,
-      website: str(p.website) || f.website,
-      linkedin: str(p.linkedin) || f.linkedin,
-    }));
-
-    /* Scalars keep the existing value when the parse is blank; the structured
-     * sections (experience/skills/languages/education) are replaced wholesale -
-     * this is an explicit "apply what the preview shows" action, and the user
-     * reviewed the preview before clicking Apply. */
-    this.experienceEntries.set(
-      (p.experience ?? []).map((e) => ({
-        role: str(e.role),
-        company: str(e.company),
-        location: str(e.location),
-        startDate: str(e.startDate),
-        endDate: str(e.endDate),
-        bullets: (e.bullets ?? []).map((b) => b.trim()).filter(Boolean),
-      })),
-    );
-    this.languageEntries.set(
-      (p.languages ?? [])
-        .map((l) => ({ language: str(l.language), level: str(l.level) }))
-        .filter((l) => l.language),
-    );
-    this.educationEntries.set(
-      (p.education ?? []).map((e) => ({
-        title: str(e.title),
-        institution: str(e.institution),
-        startDate: str(e.startDate),
-        endDate: str(e.endDate),
-      })),
-    );
+    this.form.update((f) => ({ ...f, ...parsedContactPatch(p, f) }));
+    this.experienceEntries.set(parsedExperienceEntries(p));
+    this.languageEntries.set(parsedLanguageEntries(p));
+    this.educationEntries.set(parsedEducationEntries(p));
 
     // Fold section signals + scalar fields back into fullMd via updateField.
-    this.updateField('skills', (p.skills ?? []).map((sk) => sk.trim()).filter(Boolean));
+    this.updateField('skills', parsedSkills(p));
     this.syncExperience();
     this.syncLanguages();
     this.syncEducation();

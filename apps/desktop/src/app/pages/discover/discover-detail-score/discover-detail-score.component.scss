@@ -1,0 +1,318 @@
+/* Moved from the Discover page with the markup that uses it: the raw-score
+   ring, the salary comparison card, the job facts and the local-only note.
+
+   The names keep their `dv-detail__` and `dv-comp-` prefixes. In the page these
+   were written as `&__x` nested under `.dv-detail`, which Sass concatenates
+   rather than nesting - the compiled selector was always the flat single class
+   it is here, so nothing about specificity or order changed. */
+
+.dv-detail__side {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.dv-detail__card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-1);
+  padding: 18px;
+}
+.dv-detail__scorehead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+.dv-detail__ringwrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 92px;
+  height: 92px;
+
+  svg {
+    transform: rotate(-90deg);
+  }
+}
+.dv-detail__ringtrack {
+  fill: none;
+  stroke: var(--surface-sunken);
+  stroke-width: 7;
+}
+.dv-detail__ringfill {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--dur-base) var(--ease-standard);
+
+  &--strong {
+    stroke: var(--success);
+  }
+
+  &--good {
+    stroke: var(--accent);
+  }
+
+  &--partial {
+    stroke: var(--warning);
+  }
+}
+.dv-detail__ringnum {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+
+  b {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: var(--weight-semibold);
+    color: var(--text-primary);
+  }
+
+  span {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: var(--tracking-wider);
+    color: var(--text-tertiary);
+  }
+}
+.dv-detail__scoretext {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dv-detail__verdict {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.dv-detail__scoresub {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+.dv-detail__scorenote {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  margin-top: var(--space-4);
+}
+.dv-detail__tip {
+  display: flex;
+  gap: 9px;
+  margin-top: var(--space-4);
+  padding: 11px 12px;
+  border: 1px solid var(--indigo-a40);
+  border-radius: var(--radius-card);
+  background: var(--accent-tint);
+
+  lucide-icon {
+    flex: 0 0 auto;
+    color: var(--text-accent);
+    margin-top: 1px;
+  }
+}
+.dv-detail__tipbody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  p {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+}
+.dv-detail__tiplabel {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-accent);
+}
+.dv-detail__rescore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 36px;
+  margin-top: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--indigo-a40);
+  background: var(--accent-tint);
+  color: var(--text-accent);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-ring);
+  }
+}
+.dv-detail__norescore {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  height: 36px;
+  margin-top: var(--space-4);
+  padding: 0 12px;
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-card);
+  background: var(--success-tint);
+  color: var(--success);
+}
+.dv-detail__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 14px;
+
+  &--tight {
+    margin-bottom: 10px;
+    text-transform: none;
+  }
+}
+.dv-detail__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.dv-detail__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  span {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: var(--tracking-wider);
+    color: var(--text-tertiary);
+  }
+
+  b {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: var(--weight-regular);
+    color: var(--text-primary);
+  }
+}
+.dv-detail__divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--space-5) 0;
+}
+.dv-detail__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.dv-detail__skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.02em;
+  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+.dv-detail__skilldot {
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+.dv-detail__note {
+  display: flex;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+
+  lucide-icon {
+    flex: 0 0 auto;
+    margin-top: 1px;
+    color: var(--success);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+}
+.dv-detail__notetitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-primary);
+}
+.dv-detail__notebody {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+.dv-comp-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.dv-comp-card__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.dv-comp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+}
+.dv-comp-badge--good {
+  color: var(--success);
+  background: var(--surface-sunken);
+}
+.dv-comp-badge--warn {
+  color: var(--warning);
+  background: var(--surface-sunken);
+}
+.dv-comp-badge--muted {
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+}

@@ -33,6 +33,7 @@ import {
   X,
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
+import { DiscoverDetailScoreComponent } from './discover-detail-score/discover-detail-score.component';
 import { DbService } from '@applye/data';
 import {
   parseLocalMarkets,
@@ -141,7 +142,13 @@ const SKILL_DICT = [
 @Component({
   selector: 'app-discover',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, RouterLink, DiscoverSourcesDrawerComponent],
+  imports: [
+    FormsModule,
+    LucideAngularModule,
+    RouterLink,
+    DiscoverSourcesDrawerComponent,
+    DiscoverDetailScoreComponent,
+  ],
   providers: [DiscoverSourcesService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './discover.component.html',
@@ -682,15 +689,6 @@ export class DiscoverComponent {
     }
   }
 
-  /** i18n label for the current comp verdict; 'unknown' -> "not stated". */
-  protected compBadgeLabel(): string {
-    const v = this.compVerdict();
-    if (v === 'above') return this.t()('comp.badge_above');
-    if (v === 'within') return this.t()('comp.badge_within');
-    if (v === 'below') return this.t()('comp.badge_below');
-    return this.t()('comp.not_stated');
-  }
-
   /** i18n label for an archetype tier badge. */
   protected archBadgeLabel(fit: ArchetypeFit): string {
     return this.t()('discover.arch_' + fit);
@@ -876,12 +874,6 @@ export class DiscoverComponent {
   }
 
   // ------------------------------------------------------------ detail misc
-  /** stroke-dasharray for the raw-score ring (r=40 -> C~251.3). */
-  protected ringDash(score: number): string {
-    const circumference = 2 * Math.PI * 40;
-    return `${(score / 100) * circumference} ${circumference}`;
-  }
-
   /** Deterministic tip line under the raw score. */
   protected tipText(row: FeedRow): string {
     if (this.detailVerdict() === 'strong') return this.t()('discover.tip_strong');

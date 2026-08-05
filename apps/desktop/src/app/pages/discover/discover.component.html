@@ -121,136 +121,18 @@
         </div>
 
         <!-- SIDEBAR -->
-        <aside class="dv-detail__side">
-          @if (detailScore() !== null) {
-            <div class="dv-detail__card">
-              <div class="dv-detail__scorehead">
-                <div class="dv-detail__ringwrap">
-                  <svg viewBox="0 0 92 92" width="92" height="92" aria-hidden="true">
-                    <circle class="dv-detail__ringtrack" cx="46" cy="46" r="40"></circle>
-                    <circle
-                      class="dv-detail__ringfill"
-                      [class]="'dv-detail__ringfill--' + detailVerdict()"
-                      cx="46"
-                      cy="46"
-                      r="40"
-                      [style.stroke-dasharray]="ringDash(detailScore()!)"
-                    ></circle>
-                  </svg>
-                  <div class="dv-detail__ringnum">
-                    <b>{{ detailScore() }}</b>
-                    <span>{{ t()('discover.score_raw_label') }}</span>
-                  </div>
-                </div>
-                <div class="dv-detail__scoretext">
-                  <span class="dv-detail__verdict">
-                    @switch (detailVerdict()) {
-                      @case ('strong') {
-                        {{ t()('discover.verdict_strong') }}
-                      }
-                      @case ('good') {
-                        {{ t()('discover.verdict_good') }}
-                      }
-                      @default {
-                        {{ t()('discover.verdict_partial') }}
-                      }
-                    }
-                  </span>
-                  <span class="dv-detail__scoresub">
-                    @switch (detailVerdict()) {
-                      @case ('strong') {
-                        {{ t()('discover.verdict_sub_strong') }}
-                      }
-                      @case ('good') {
-                        {{ t()('discover.verdict_sub_good') }}
-                      }
-                      @default {
-                        {{ t()('discover.verdict_sub_partial') }}
-                      }
-                    }
-                  </span>
-                </div>
-              </div>
-              <div class="dv-detail__scorenote">{{ t()('discover.score_note') }}</div>
-              <div class="dv-detail__tip">
-                <lucide-icon [img]="icons.sparkles" [size]="13" aria-hidden="true" />
-                <div class="dv-detail__tipbody">
-                  <span class="dv-detail__tiplabel">{{ t()('discover.tip_label') }}</span>
-                  <p>{{ tipText(drow) }}</p>
-                </div>
-              </div>
-              @if (detailVerdict() === 'strong') {
-                <div class="dv-detail__norescore">
-                  <lucide-icon [img]="icons.check" [size]="13" aria-hidden="true" />
-                  {{ t()('discover.no_rescore') }}
-                </div>
-              } @else {
-                <button type="button" class="dv-detail__rescore" (click)="rescore(drow, $event)">
-                  <lucide-icon [img]="icons.sparkles" [size]="14" aria-hidden="true" />
-                  {{ t()('discover.rescore') }}
-                </button>
-              }
-            </div>
-          }
-
-          @if (hasCompTarget()) {
-            <div class="dv-detail__card dv-comp-card">
-              <span class="dv-comp-card__label">{{ t()('profile.section_compensation') }}</span>
-              @if (compVerdict() === 'unknown') {
-                <span class="dv-comp-badge dv-comp-badge--muted">{{ t()('comp.not_stated') }}</span>
-              } @else {
-                <span
-                  class="dv-comp-badge"
-                  [class.dv-comp-badge--good]="compVerdict() !== 'below'"
-                  [class.dv-comp-badge--warn]="compVerdict() === 'below'"
-                  >{{ compBadgeLabel() }}</span
-                >
-              }
-            </div>
-          }
-
-          <div class="dv-detail__card">
-            <div class="dv-detail__eyebrow">{{ t()('discover.about_job') }}</div>
-            <div class="dv-detail__facts">
-              <div class="dv-detail__fact">
-                <span>{{ t()('discover.fact_source') }}</span>
-                <b>{{ srcLabel(drow.source) }}</b>
-              </div>
-              @if (drow.location) {
-                <div class="dv-detail__fact">
-                  <span>{{ t()('discover.fact_location') }}</span>
-                  <b>{{ drow.location }}</b>
-                </div>
-              }
-              <div class="dv-detail__fact">
-                <span>{{ t()('discover.fact_posted') }}</span>
-                <b>{{ ago(drow.createdAt) }}</b>
-              </div>
-            </div>
-            @if (detailSkills().length) {
-              <div class="dv-detail__divider" aria-hidden="true"></div>
-              <div class="dv-detail__eyebrow dv-detail__eyebrow--tight">
-                {{ t()('discover.skills_found') }}
-              </div>
-              <div class="dv-detail__skills">
-                @for (skill of detailSkills(); track skill) {
-                  <span class="dv-detail__skill">
-                    <span class="dv-detail__skilldot" aria-hidden="true"></span>
-                    {{ skill }}
-                  </span>
-                }
-              </div>
-            }
-          </div>
-
-          <div class="dv-detail__note">
-            <lucide-icon [img]="icons.shield" [size]="15" aria-hidden="true" />
-            <div>
-              <span class="dv-detail__notetitle">{{ t()('discover.local_note_title') }}</span>
-              <span class="dv-detail__notebody">{{ t()('discover.local_note_body') }}</span>
-            </div>
-          </div>
-        </aside>
+        <app-discover-detail-score
+          [score]="detailScore()"
+          [verdict]="detailVerdict()"
+          [tip]="tipText(drow)"
+          [hasCompTarget]="hasCompTarget()"
+          [compVerdict]="compVerdict()"
+          [sourceLabel]="srcLabel(drow.source)"
+          [location]="drow.location"
+          [posted]="ago(drow.createdAt)"
+          [skills]="detailSkills()"
+          (rescoreRequested)="rescore(drow, $event)"
+        />
       </div>
     </div>
   }

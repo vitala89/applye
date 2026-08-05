@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Discover's detail sidebar leaves, and the project's largest file takes its first cut
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-detail-score`
+- **Objective:** first cut at `discover.component.scss`, 1464/400 - the largest file in Applye - chosen by the maintainer through the grilling gate in this session.
+
+**Decisions settled by grilling before any of this was written** (recorded here because they govern
+what the campaign does next):
+
+1. **Profile stops at 445/400.** No `ProfileFormStore`, no ratchet exclusion entry. It stays listed
+   OVER and can never grow, which the ratchet already enforces. The maintainer chose this over
+   building the store; the cost accepted is a permanent over-budget class.
+2. **Next target is `discover.component.scss`**, not `jobs.component.ts` or `tracker`.
+
+**What was settled by looking rather than asking**, and is worth keeping:
+
+- The ratchet **does** have an exception route - a path exclusion list, precedent
+  `discover-location-tables.ts`. Its written rationale is "data, not design: line count says nothing
+  about its structure", which does not transfer to a component. That is why option 3 was presented
+  with an argument against it.
+- Page-local store precedent exists (`discover-sources.service.ts` 173 lines,
+  `followup-draft.service.ts` 187), so a `ProfileFormStore` was a real option, not a hypothetical.
+- **Discover needs no page-scoped wrapper.** 33 of its 34 top-level selectors already carry the
+  `dv-` prefix, which is exactly the case `CODE_QUALITY.md` says prefixing is preferable for. That
+  pruned the whole `_profile-shell.scss`-style branch before it was asked about.
+
+**The seam.** The job-detail screen is a full screen, not a panel: `@if (detailRow(); as drow)`
+wraps 252 lines and every other block on the page is guarded by `detailId() === null`. Its `<aside>`
+is the self-contained part - score ring, salary card, facts, local-only note - and **every class it
+renders is used nowhere else on the page** (checked, all zero). The detail as a whole could not go
+out in one piece: its styles are 458 non-empty lines, over the 400 stylesheet budget, and the
+ratchet rejects a new file born over budget.
+
+**Boundary: inputs and outputs.** `detailScore` and `detailVerdict` are also read by the detail
+hero, and the tip line needs the page's `matchedKeywords` and `profileKeywords`, which the feed uses
+too. So the page keeps the state; nine values go in, one action comes out. Only the two helpers
+nothing else named came along: `ringDash` and `compBadgeLabel`.
+
+**One nesting fact made the losslessness check trivial.** The page wrote these as `&__x` under
+`.dv-detail`, and Sass _concatenates_ rather than nesting, so the compiled selector was always the
+flat single class. A flat child stylesheet therefore compiles identically - no `--page-scope`, which
+would have been wrong here anyway: it strips an ancestor from the after side, and this cut removes
+one rather than adding one.
+
+**One of five mutations survived.** Swapping the "above" and "within" compensation labels left all
+four distinct, which was all the test asserted, while telling a user their salary target was beaten
+when it was only met. The test now pins each verdict to its own label. Separately, the first D1 run
+was **not a valid mutation** - the perl replacement mangled itself into `-e -e` - so it was redone
+with the intended change (ring gap as the remainder rather than the full circumference) and killed
+properly. A mutation that fails to apply proves nothing and must not be counted.
+
+- **Files changed:** `discover-detail-score/{component.ts,html,scss,spec.ts}` (new), `discover.component.{ts,html,scss}`, `CHANGELOG.md`, `DUTY_WATCH.md`, `CURRENT_STATE.md`.
+- **Sizes:** stylesheet **1464 -> 1169**, template **808 -> 693**, class **890 -> 884**. New component stylesheet 301, template 129, class 68 - all within budget.
+- **Validation:** `nx run desktop:type-check` clean (the `RouterLink` warning is pre-existing). `nx run-many --target=lint --projects=desktop` passed, 8 warnings, same count. `nx test desktop` **1378 passed**, up from 1364. `nx build desktop` succeeded. `quality:file-size` passed with all three Discover files ratcheted down. `quality:attribution`, `npx nx format:check`, `git diff --check` clean.
+- **Losslessness:** `quality:style-move --base origin/main` across all four Discover stylesheets - "Every selector carries the same declarations it did before. Lossless." 295 lines of CSS moved.
+- **Diffed backwards:** substituting the nine inputs back into the child reproduces the original `<aside>` token-for-token.
+- **Not walked in the browser, and it cannot be.** Discover is routed, but the detail screen needs a job row, and with no Tauri IPC the page has no sources and renders its empty state. Verified that far and no further. For a move of this shape the declaration check and the backwards diff are the stronger evidence anyway.
+- **Repository count: 42 -> 41 over budget.** The only change is Profile's template crossing under earlier in the session; all three Discover files are still over. Judge by the files touched, not the total.
+- **Privacy/security impact:** none, presentation only.
+- **Next first action:** the detail **hero** is the matching half of this cut - back button, logo, meta row, match chip, title, company/location row, hero actions, tip - roughly 230 stylesheet lines and 120 template lines, and its classes are as exclusive as the sidebar's were. That leaves `.dv-detail` holding only the grid, main and loading shells. After that the next largest families in `discover.component.scss` are `dv-row` (268) and `dv-geomenu` (122).
+
 ### 2026-08-05, the display-name rules leave the Profile class, and the next step needs a decision
 
 - **Status:** complete

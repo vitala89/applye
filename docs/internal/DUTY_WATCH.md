@@ -44,6 +44,50 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, the contact-field extraction had broken the row layout, and nothing had caught it
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `fix/profile-field-row-layout`
+- **Objective:** reported as a design problem - Profile's form fields used only the left half of a wide card. It was a regression, not taste.
+
+**What actually happened.** `_profile-shell.scss` had `.field-row .field { flex: 1 }`, which is what
+makes a pair of fields share a row. PR #338 extracted the nine contact fields into
+`profile-text-field`, which put a host element between the row and the `.field`. The flex item
+became `<app-profile-text-field>`; the `flex: 1` stayed on the `.field` inside it, where it is inert
+because its parent is no longer a flex container. The fields fell back to content-based sizing -
+measured in the running page at **173.5px each in an 846px row**.
+
+This is the failure mode component extraction has that no gate here sees. Type-check, lint, 1311
+tests, the build, `quality:file-size` and `quality:style-move` all passed on it, and they were all
+correct to: no declaration was lost and no selector changed. The stylesheet still said exactly what
+it said before. What changed was which element the selector lands on.
+
+**Fixes, both in `_profile-shell.scss`:**
+
+1. The rule names the two shapes a row's children actually take - `.field-row > .field` and
+   `.field-row > app-profile-text-field` - with `min-width: 0` so a long value shrinks in place
+   rather than pushing the row past the card. Child combinator rather than descendant, which is
+   safe: `.field-row` exists only in `profile.component.html` and every child is one of those two.
+2. `.field__label` was `--text-tertiary`, computing to **3.13:1** on the card at 12px regular, under
+   the 4.5:1 that size needs. Now `--text-secondary`, **5.4:1**. Scoped to Profile, because
+   `.field__label` here is defined inside the page partial - other pages have their own and were not
+   audited.
+
+**The regression test, and its honest limit.** jsdom performs no layout, so the widths cannot be
+asserted. The shape can, and that is the invariant the selector depends on: a test walks every
+`.field-row` child and fails if it is anything other than `.field` or `app-profile-text-field`. It
+also asserts both shapes really occur, so neither half of the rule goes untested. Proved by
+mutation: renaming one wrapper to `field-box` fails the test with a message naming `div.field-box`.
+An unbalanced first attempt (wrapping a field in an unclosed div) broke the template parse and
+failed 23 tests instead - not a proof of anything, so it was replaced with the balanced one.
+
+- **Files changed:** `_profile-shell.scss`, `profile.component.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `nx build desktop` succeeded. `nx test desktop` **1312 passed**. `npm run quality:file-size`, `quality:attribution`, `npx nx format:check` and `git diff --check` all clean. `quality:style-move` was **not** run and does not apply: this deliberately changes declarations rather than moving them, which is the one thing that check is built to fail.
+- **Measured in the running page, before and after:** pair 173.5 / 173.5 -> **419 / 419** in an 846px row; label contrast 3.13 -> **5.40**; an 84-character email now truncates inside its box with `scrollWidth - clientWidth` of 0 on both the card and the document.
+- **Privacy/security impact:** none, presentation only.
+- **Next first action:** back to the campaign - the raw-mode editor and parse preview in `profile.component.html`. Worth a separate pass at some point: the same host-element trap applies to every other extraction this campaign has done, and only Profile's rows were checked here.
+
 ### 2026-08-05, Profile's photo card leaves with its own save path, and two tests were proved hollow
 
 - **Status:** complete

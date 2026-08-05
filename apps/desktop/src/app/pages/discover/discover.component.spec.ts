@@ -132,3 +132,43 @@ describe('Discover: the sources drawer is always reachable', () => {
     expect(fixture.componentInstance['drawerOpen']()).toBe(true);
   });
 });
+
+/**
+ * `heroArchetype` pairs the two calls the detail hero's markup used to make
+ * before it became a component: the match, and the label for its tier. The
+ * hero renders `label` as the badge text and `fit` as its modifier class, so
+ * returning the tier in both fields still produces a correctly-tinted badge
+ * reading "primary" instead of "Primary match".
+ */
+describe('Discover: the archetype badge the detail hero is handed', () => {
+  function hero(fixture: ComponentFixture<DiscoverComponent>, row: unknown) {
+    return (
+      fixture.componentInstance as unknown as {
+        heroArchetype: (r: unknown) => { fit: string; label: string } | null;
+        archetypes: { set: (a: unknown[]) => void };
+      }
+    ).heroArchetype(row);
+  }
+
+  function archetypesOf(fixture: ComponentFixture<DiscoverComponent>) {
+    return (fixture.componentInstance as unknown as { archetypes: { set: (a: unknown[]) => void } })
+      .archetypes;
+  }
+
+  it('is null when the row matches no archetype', async () => {
+    const fixture = await createFixture([source()], []);
+    expect(hero(fixture, { id: 1, title: 'Pastry Chef' })).toBeNull();
+  });
+
+  it('labels the tier rather than repeating it', async () => {
+    const fixture = await createFixture([source()], []);
+    archetypesOf(fixture).set([{ name: 'Frontend Engineer', fit: 'primary', sellWhen: '' }]);
+
+    const badge = hero(fixture, { id: 1, title: 'Senior Frontend Engineer' });
+
+    expect(badge).toEqual({ fit: 'primary', label: expect.any(String) });
+    // The label is translated copy, not the tier key repeated.
+    expect(badge?.label).not.toBe('primary');
+    expect((badge?.label ?? '').length).toBeGreaterThan('primary'.length);
+  });
+});

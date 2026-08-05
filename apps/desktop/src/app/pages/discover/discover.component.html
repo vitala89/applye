@@ -2,75 +2,17 @@
   <!-- ============ FULL JOB DETAIL SCREEN ============ -->
   @if (detailRow(); as drow) {
     <div class="dv-detail">
-      <button type="button" class="dv-detail__back" (click)="closeDetail()">
-        <lucide-icon [img]="icons.back" [size]="14" aria-hidden="true" />
-        {{ t()('discover.back_to_discover') }}
-      </button>
-
-      <div class="dv-detail__hero">
-        <div class="dv-detail__logo" aria-hidden="true">{{ initials(drow.company) }}</div>
-        <div class="dv-detail__heromain">
-          <div class="dv-detail__metarow">
-            <span class="dv-detail__srcitem">
-              <lucide-icon [img]="icons.source" [size]="12" aria-hidden="true" />
-              {{ srcLabel(drow.source) }}
-            </span>
-            <span class="dv-detail__dot" aria-hidden="true">·</span>
-            <span>{{ ago(drow.createdAt) }}</span>
-            @if (drow.isNew && !drow.saved) {
-              <span class="dv-row__new">{{ t()('discover.new_marker') }}</span>
-            }
-            @if (detailScore() !== null) {
-              <span
-                class="dv-detail__matchchip"
-                [class]="'dv-detail__matchchip--' + detailVerdict()"
-              >
-                <span class="dv-detail__matchdot" aria-hidden="true"></span>
-                {{ t()('discover.match_chip').replace('{n}', '' + detailScore()) }}
-              </span>
-            }
-          </div>
-          <h2 class="dv-detail__title">{{ drow.title }}</h2>
-          @if (archetypeBadge(drow); as m) {
-            <span class="dv-arch-badge dv-arch-badge--{{ m.fit }}">
-              {{ archBadgeLabel(m.fit) }}
-            </span>
-          }
-          <div class="dv-detail__corow">
-            <span class="dv-detail__co">
-              <lucide-icon [img]="icons.company" [size]="15" aria-hidden="true" />
-              {{ drow.company }}
-            </span>
-            @if (drow.location) {
-              <span class="dv-detail__loc">
-                <lucide-icon [img]="icons.location" [size]="13" aria-hidden="true" />
-                {{ drow.location }}
-              </span>
-            }
-          </div>
-          @if (matchedKeywords(drow).length) {
-            <div class="dv-row__keywords">
-              <span class="dv-row__matchedlbl">{{ t()('discover.matched_label') }}</span>
-              @for (kw of matchedKeywords(drow); track kw) {
-                <span class="dv-row__kw">{{ kw }}</span>
-              }
-            </div>
-          }
-        </div>
-        <div class="dv-detail__heroactions">
-          @if (!drow.saved) {
-            <button type="button" class="dv-btn dv-btn--secondary" (click)="saveRow(drow, $event)">
-              <lucide-icon [img]="icons.save" [size]="13" aria-hidden="true" />
-              {{ t()('discover.save') }}
-            </button>
-          } @else {
-            <span class="dv-row__savedbadge">
-              <lucide-icon [img]="icons.check" [size]="10" aria-hidden="true" />
-              {{ t()('discover.saved_badge') }}
-            </span>
-          }
-        </div>
-      </div>
+      <app-discover-detail-hero
+        [row]="drow"
+        [sourceLabel]="srcLabel(drow.source)"
+        [posted]="ago(drow.createdAt)"
+        [score]="detailScore()"
+        [verdict]="detailVerdict()"
+        [archetype]="heroArchetype(drow)"
+        [matchedKeywords]="matchedKeywords(drow)"
+        (backRequested)="closeDetail()"
+        (saveRequested)="saveRow(drow, $event)"
+      />
 
       <div class="dv-detail__grid">
         <!-- MAIN: parsed description -->

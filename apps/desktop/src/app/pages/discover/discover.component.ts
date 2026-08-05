@@ -65,6 +65,7 @@ import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discov
 import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
+import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
 import { ToastService } from '../../core/toast/toast.service';
 
@@ -148,6 +149,7 @@ const SKILL_DICT = [
     RouterLink,
     DiscoverSourcesDrawerComponent,
     DiscoverDetailScoreComponent,
+    DiscoverDetailHeroComponent,
   ],
   providers: [DiscoverSourcesService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -730,13 +732,11 @@ export class DiscoverComponent {
   }
 
   /** Company monogram for the detail hero tile ("Northwind Labs" -> "NL"). */
-  protected initials(company: string | null): string {
-    const words = (company ?? '').trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return '?';
-    return words
-      .slice(0, 2)
-      .map((w) => w.charAt(0).toUpperCase())
-      .join('');
+  /** The archetype badge as the hero renders it: tier plus its label. Pairs the
+   * two calls the markup used to make, so the hero takes one input, not two. */
+  protected heroArchetype(row: FeedRow): { fit: ArchetypeFit; label: string } | null {
+    const m = this.archetypeBadge(row);
+    return m ? { fit: m.fit, label: this.archBadgeLabel(m.fit) } : null;
   }
 
   // ------------------------------------------------------- location filters

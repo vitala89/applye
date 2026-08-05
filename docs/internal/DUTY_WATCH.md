@@ -44,6 +44,62 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Discover's detail hero leaves, and the ratchet refuses the first attempt
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-detail-hero`
+- **Objective:** the matching half of the sidebar cut, unblocked by the vocabulary hoist that preceded it.
+
+**What moved.** The back link, company mark, source/age meta row, match chip, title, archetype
+badge, company and location row, matched keywords and Save. Fourteen `dv-detail__*` classes,
+confirmed exclusive to template lines 5-73 before anything was written. Stylesheet **1091 -> 938**,
+template **693 -> 636**. Across the three Discover PRs today the largest file in the project went
+**1464 -> 938**. With the sidebar already gone, `.dv-detail` now holds only the grid, main, loading
+and actions shells.
+
+**The hoist paid off exactly as predicted.** `.dv-detail__heromain .dv-arch-badge` travelled with
+the hero markup, and the four shared row classes it renders - `dv-row__new`, `dv-row__savedbadge`,
+`dv-row__keywords`, `dv-row__kw` - resolve from `_discover-controls.scss` rather than rendering
+unstyled, which is what would have happened had this cut gone first.
+
+**Icons were verified rather than assumed, and two were wrong.** The page maps `source` to `Rss`
+and `back` to `ChevronLeft`; I had written `Radio` and `ArrowLeft` from memory. Nothing would have
+failed - a lucide icon renders either way - so this is a class of error only a lookup catches. Same
+check caught `Check` vs `CheckCircle2` on the sidebar cut earlier today. **Never write an icon
+identity from memory when the page already states it.**
+
+**The ratchet refused the first attempt, correctly.** The class went 884 -> 887: removing `initials`
+(8 lines) did not pay for the new `heroArchetype` helper plus a four-line import block, and the
+import was four lines only because `type HeroArchetype` pushed it past the print width. The fix was
+to let the helper type its own return - TypeScript is structural, so the child's interface still
+matches - which collapsed the import to one line and brought the class back to **884, its base**.
+The honest reading: **this cut did not shrink the class at all**. It is a template and stylesheet
+cut. Nothing was trimmed to satisfy the gate.
+
+**Two of six mutations survived, both real:**
+
+- The match chip pinned to `--strong`. The test only exercised the strong verdict, so a chip that
+  tints every score as a strong match passed. Now checked across all three verdicts.
+- `heroArchetype` returning the tier key as its own label, so the badge reads "primary" instead of
+  "Primary match". **The helper was new in this PR and had no test at all** - a reminder that a
+  helper added to the page while extracting a child is as untested as anything else new.
+
+The other four died first pass: initials taking three words, the "new" marker surviving a save, the
+Save button and saved badge swapped, and the badge tier keyed on the label.
+
+**Five lint warnings were introduced and removed before commit.** The page-level test used `!`
+non-null assertions, which the repository flags; rewritten with `toEqual` and optional chaining.
+Lint is back to its usual 8.
+
+- **Files changed:** `discover-detail-hero/{component.ts,html,scss,spec.ts}` (new), `discover.component.{ts,html,scss}`, `discover.component.spec.ts`, `CHANGELOG.md`, `DUTY_WATCH.md`.
+- **Validation:** `nx run desktop:type-check` clean. Lint passed, 8 warnings, same as before. `nx test desktop` **1397 passed**, up from 1378. `nx build desktop` succeeded. `quality:file-size` passed with the class at its base and both other files ratcheted down. `quality:attribution`, `npx nx format:check`, `git diff --check` clean.
+- **Losslessness:** `quality:style-move --base origin/main` across all five Discover stylesheets - lossless.
+- **Diffed backwards:** substituting the seven inputs back reproduces the original hero token-for-token.
+- **Not walked in the browser**, same reason as the previous two Discover cuts: no Tauri IPC means no sources, so the detail screen cannot be reached and the page renders its empty state.
+- **Privacy/security impact:** none.
+- **Next first action:** `discover.component.scss` is 938. The largest families left are `.dv-row` (233) and `.dv-geomenu` (107). **`.dv-row` is not the clean seam it looks like** - its classes are rendered by the detail screen's main body as well as the feed, so it needs the same hoist-then-cut treatment the hero did. `.dv-geomenu` is the location filter menu and its markup surface was measured at 35 symbols, which is far wider than any boundary the campaign has accepted; it needs an ownership audit before anything else.
+
 ### 2026-08-05, Discover's shared row vocabulary is hoisted, and an extraction script is caught corrupting CSS
 
 - **Status:** complete

@@ -216,192 +216,109 @@
         (ngModelChange)="query.set($event)"
       />
       <!-- Sources filter (checkboxes; empty = all) -->
-      <div class="dv-geomenu">
-        <button
-          type="button"
-          class="dv-btn dv-btn--ghost"
-          [class.dv-btn--active]="sourceCount() > 0"
-          (click)="sourceMenuOpen.set(!sourceMenuOpen())"
-        >
-          {{ t()('discover.all_sources') }}
-          @if (sourceCount() > 0) {
-            <span class="dv-geomenu__count">{{ sourceCount() }}</span>
-          }
-          <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
-        </button>
-        @if (sourceMenuOpen()) {
-          <div
-            class="dv-geomenu__backdrop"
-            (click)="sourceMenuOpen.set(false)"
-            (keydown.escape)="sourceMenuOpen.set(false)"
-            tabindex="-1"
-          ></div>
-          <div
-            class="dv-geomenu__panel"
-            role="group"
-            [attr.aria-label]="t()('discover.all_sources')"
-          >
-            @for (name of availableSources(); track name) {
-              <label class="dv-geomenu__item">
-                <input
-                  type="checkbox"
-                  [checked]="sourceChecked(name)"
-                  (change)="toggleSourceFilter(name)"
-                />
-                <span>{{ srcLabel(name) }}</span>
-              </label>
-            } @empty {
-              <span class="dv-geomenu__hint">{{ t()('discover.no_sources_yet') }}</span>
-            }
-            @if (sourceCount() > 0) {
-              <div class="dv-geomenu__foot">
-                <button type="button" class="dv-linkbtn" (click)="clearSources()">
-                  {{ t()('discover.loc_clear') }}
-                </button>
-              </div>
-            }
-          </div>
+      <app-discover-filter-menu
+        [label]="t()('discover.all_sources')"
+        [count]="sourceCount()"
+        (cleared)="clearSources()"
+      >
+        @for (name of availableSources(); track name) {
+          <label class="dv-geomenu__item">
+            <input
+              type="checkbox"
+              [checked]="sourceChecked(name)"
+              (change)="toggleSourceFilter(name)"
+            />
+            <span>{{ srcLabel(name) }}</span>
+          </label>
+        } @empty {
+          <span class="dv-geomenu__hint">{{ t()('discover.no_sources_yet') }}</span>
         }
-      </div>
+      </app-discover-filter-menu>
 
       <!-- Work type filter (checkboxes; empty = all) -->
-      <div class="dv-geomenu">
-        <button
-          type="button"
-          class="dv-btn dv-btn--ghost"
-          [class.dv-btn--active]="typeCount() > 0"
-          (click)="typeMenuOpen.set(!typeMenuOpen())"
-        >
-          {{ t()('discover.type_all') }}
-          @if (typeCount() > 0) {
-            <span class="dv-geomenu__count">{{ typeCount() }}</span>
-          }
-          <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
-        </button>
-        @if (typeMenuOpen()) {
-          <div
-            class="dv-geomenu__backdrop"
-            (click)="typeMenuOpen.set(false)"
-            (keydown.escape)="typeMenuOpen.set(false)"
-            tabindex="-1"
-          ></div>
-          <div class="dv-geomenu__panel" role="group" [attr.aria-label]="t()('discover.type_all')">
-            @for (w of allWorkTypes; track w) {
-              <label class="dv-geomenu__item">
-                <input type="checkbox" [checked]="workChecked(w)" (change)="toggleWork(w)" />
-                <span>{{ t()('discover.type_' + w) }}</span>
-              </label>
-            }
-            @if (typeCount() > 0) {
-              <div class="dv-geomenu__foot">
-                <button type="button" class="dv-linkbtn" (click)="clearWork()">
-                  {{ t()('discover.loc_clear') }}
-                </button>
-              </div>
-            }
-          </div>
+      <app-discover-filter-menu
+        [label]="t()('discover.type_all')"
+        [count]="typeCount()"
+        (cleared)="clearWork()"
+      >
+        @for (w of allWorkTypes; track w) {
+          <label class="dv-geomenu__item">
+            <input type="checkbox" [checked]="workChecked(w)" (change)="toggleWork(w)" />
+            <span>{{ t()('discover.type_' + w) }}</span>
+          </label>
         }
-      </div>
+      </app-discover-filter-menu>
 
       <!-- Locations filter (regions expand to real countries from the feed) -->
-      <div class="dv-geomenu">
-        <button
-          type="button"
-          class="dv-btn dv-btn--ghost"
-          [class.dv-btn--active]="countryCount() > 0"
-          (click)="geoMenuOpen.set(!geoMenuOpen())"
-        >
-          {{ t()('discover.locations_btn') }}
-          @if (countryCount() > 0) {
-            <span class="dv-geomenu__count">{{ countryCount() }}</span>
-          }
-          <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
-        </button>
-        @if (geoMenuOpen()) {
-          <div
-            class="dv-geomenu__backdrop"
-            (click)="geoMenuOpen.set(false)"
-            (keydown.escape)="geoMenuOpen.set(false)"
-            tabindex="-1"
-          ></div>
-          <div
-            class="dv-geomenu__panel"
-            role="group"
-            [attr.aria-label]="t()('discover.locations_btn')"
-          >
-            @for (group of availableRegions(); track group.key) {
-              <div class="dv-geomenu__region">
-                <label class="dv-geomenu__item">
+      <app-discover-filter-menu
+        [label]="t()('discover.locations_btn')"
+        [count]="countryCount()"
+        [footNote]="t()('discover.loc_other_hint')"
+        (cleared)="clearLocations()"
+      >
+        @for (group of availableRegions(); track group.key) {
+          <div class="dv-geomenu__region">
+            <label class="dv-geomenu__item">
+              <input
+                type="checkbox"
+                [checked]="regionState(group) === 'all'"
+                [indeterminate]="regionState(group) === 'some'"
+                (change)="toggleRegion(group)"
+              />
+              <span>{{ regionLabel(group.key) }}</span>
+              @if (group.countries.length > 1) {
+                <button
+                  type="button"
+                  class="dv-geomenu__expand"
+                  [class.dv-geomenu__expand--open]="regionExpanded(group.key)"
+                  [attr.aria-expanded]="regionExpanded(group.key)"
+                  (click)="toggleRegionExpand(group.key, $event)"
+                >
+                  <lucide-icon [img]="icons.chevron" [size]="13" aria-hidden="true" />
+                </button>
+              }
+            </label>
+            @if (regionExpanded(group.key) && group.countries.length > 1) {
+              @for (country of group.countries; track country.name) {
+                <label class="dv-geomenu__item dv-geomenu__item--child">
                   <input
                     type="checkbox"
-                    [checked]="regionState(group) === 'all'"
-                    [indeterminate]="regionState(group) === 'some'"
-                    (change)="toggleRegion(group)"
+                    [checked]="countryState(country) === 'all'"
+                    [indeterminate]="countryState(country) === 'some'"
+                    (change)="toggleCountryTree(country)"
                   />
-                  <span>{{ regionLabel(group.key) }}</span>
-                  @if (group.countries.length > 1) {
+                  <span>{{ country.name }}</span>
+                  @if (country.cities.length) {
                     <button
                       type="button"
                       class="dv-geomenu__expand"
-                      [class.dv-geomenu__expand--open]="regionExpanded(group.key)"
-                      [attr.aria-expanded]="regionExpanded(group.key)"
-                      (click)="toggleRegionExpand(group.key, $event)"
+                      [class.dv-geomenu__expand--open]="countryExpanded(country.name)"
+                      [attr.aria-expanded]="countryExpanded(country.name)"
+                      (click)="toggleCountryExpand(country.name, $event)"
                     >
-                      <lucide-icon [img]="icons.chevron" [size]="13" aria-hidden="true" />
+                      <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
                     </button>
                   }
                 </label>
-                @if (regionExpanded(group.key) && group.countries.length > 1) {
-                  @for (country of group.countries; track country.name) {
-                    <label class="dv-geomenu__item dv-geomenu__item--child">
+                @if (countryExpanded(country.name)) {
+                  @for (city of country.cities; track city) {
+                    <label class="dv-geomenu__item dv-geomenu__item--grandchild">
                       <input
                         type="checkbox"
-                        [checked]="countryState(country) === 'all'"
-                        [indeterminate]="countryState(country) === 'some'"
-                        (change)="toggleCountryTree(country)"
+                        [checked]="cityChecked(country.name, city)"
+                        (change)="toggleCity(country.name, city)"
                       />
-                      <span>{{ country.name }}</span>
-                      @if (country.cities.length) {
-                        <button
-                          type="button"
-                          class="dv-geomenu__expand"
-                          [class.dv-geomenu__expand--open]="countryExpanded(country.name)"
-                          [attr.aria-expanded]="countryExpanded(country.name)"
-                          (click)="toggleCountryExpand(country.name, $event)"
-                        >
-                          <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
-                        </button>
-                      }
+                      <span>{{ city }}</span>
                     </label>
-                    @if (countryExpanded(country.name)) {
-                      @for (city of country.cities; track city) {
-                        <label class="dv-geomenu__item dv-geomenu__item--grandchild">
-                          <input
-                            type="checkbox"
-                            [checked]="cityChecked(country.name, city)"
-                            (change)="toggleCity(country.name, city)"
-                          />
-                          <span>{{ city }}</span>
-                        </label>
-                      }
-                    }
                   }
                 }
-              </div>
-            } @empty {
-              <span class="dv-geomenu__hint">{{ t()('discover.no_locations_yet') }}</span>
-            }
-            <div class="dv-geomenu__foot">
-              <span class="dv-geomenu__hint">{{ t()('discover.loc_other_hint') }}</span>
-              @if (countryCount() > 0) {
-                <button type="button" class="dv-linkbtn" (click)="clearLocations()">
-                  {{ t()('discover.loc_clear') }}
-                </button>
               }
-            </div>
+            }
           </div>
+        } @empty {
+          <span class="dv-geomenu__hint">{{ t()('discover.no_locations_yet') }}</span>
         }
-      </div>
+      </app-discover-filter-menu>
       <div class="dv-tabs" role="tablist">
         <button
           type="button"

@@ -82,9 +82,13 @@
   `.dv-feed > :last-child { border-bottom: none }` matches the component host and a border left
   inside would have drawn a line under the last row - the PR #341 host-element shape again, and
   again invisible to every gate.
-  Next: `.dv-geomenu` (107 lines) is the largest family left. Its 35-symbol markup surface is far
-  wider than any boundary this campaign has accepted, so it needs an ownership audit first - and the
-  location-filter state behind it is where the untouched class and the remaining styles meet. Three decisions came out of it and are written into
+  **`.dv-geomenu` was filed as needing a service-owned boundary and did not.** It is one dropdown
+  rendered three times - Sources, Type, Locations - and its 35-symbol markup surface was the sum of
+  three panel bodies, not one boundary. The bodies are projected content, which compiles in the
+  page's own template scope, so the shell takes a label, a count, an optional foot note and emits
+  `cleared`. Seven PRs now: **808 / 890 / 1464 -> 484 / 877 / 704**.
+  Next: the stylesheet has no large family left; **`discover.component.ts` at 877/400 is the target**,
+  and the location-filter machinery is its obvious first seam now that the markup is gone. Three decisions came out of it and are written into
   `CODE_QUALITY.md`: a page whose class names are generic **wraps its partial in the page root**
   rather than prefixing (seven of Profile's shared names were already defined with different values
   by eight other stylesheets); a class's **modifiers move with it**, because a base and its modifier

@@ -44,6 +44,23 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, three Discover filter menus become one component, and projection keeps the boundary small
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-filter-menu`
+- **Completed:** `DiscoverFilterMenuComponent`, used three times. Page **template 567 -> 484, stylesheet 748 -> 704, class 878 -> 877**. Child files: template 35, stylesheet 47, both within budget. 12 new tests; suite **1411 -> 1423**.
+- **The boundary, and why it is two inputs and not thirty-five.** The body arrives as `<ng-content>`, and projected markup compiles in the **page's** template scope. So `sourceChecked`, `toggleWork`, `regionState`, `toggleCity` and the whole region/country/city tree stay bound in `discover.component.html` and never cross. The shell takes `label`, `count` and an optional `footNote`, and emits `cleared`. **Three open signals left the page class**, since nothing outside each menu's own markup read them - the Profile raw-editor rule, that the child owns state nothing else reads.
+- **Validation:** `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop` (0 errors; 8 warnings, all pre-existing non-null assertions elsewhere), `nx test desktop` (**1423 passing**), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
+- **`quality:style-move --base origin/main`** across the page, the child and the partial: one deliberate difference, the wrapper becoming the host. `.dv-geomenu` LOST `position: relative`; `:host` GAINED it plus `display: block`. Everything else preserved.
+- **Which rules stayed behind, and why.** `__item`, `__expand`, `__region` and `__hint` are in the **page's** stylesheet still, because the page renders them into the panel as projected content and they keep the page's encapsulation attribute. Only the host, `__count`, `__backdrop`, `__panel` and `__foot` moved. This is the mirror image of the hoist in the previous entry: markup that moves needs its rules global, markup that is projected needs them to stay.
+- **Backwards diff, with one honest exception.** Substituting each usage's inputs back into the shell reproduces all three original blocks token-for-token, modulo Prettier moving a `>` onto the previous line where the shorter binding now fits. **The foot is the exception, because it is a generalisation rather than a move**: Sources and Type rendered one only to hold Clear, Locations always rendered one for its hint. Both now fall out of `footNote() || count() > 0` and an inner `count() > 0`, so the reconstruction had to constant-fold `footNote()` per usage - and all four combinations have a test instead.
+- **Mutation testing: six written, six killed.** Trigger always active; backdrop click opening instead of closing; the panel losing the `aria-label` that names the group; the foot ignoring the note, which costs Locations its hint at zero; Clear offered when nothing is selected; Escape no longer closing. Each asserts its pattern matched exactly once before applying; restore verified byte-identical.
+- **One real behaviour change, measured rather than assumed.** Projected content is created with the page's view even while the menu is closed: a probe shows zero `.dv-geomenu__item` elements in the DOM but the body's bindings evaluating anyway. So `availableSources()`, `regionState()` and the rest now run while closed, where the old `@if` skipped them. Every one is a pure read over a list bounded by what the feed contains.
+- **Not verified in the browser, for the standing reason**: the filter row is inside `view() === 'feed'`, and without Tauri IPC Discover has no sources.
+- **Privacy/security impact:** none.
+- **Next first action:** `discover.component.scss` is 704/400 and has no single large family left - the biggest remaining are `.dv-console` (60), `.dv-detail` (51) and `.dv-skel`. The better target is **`discover.component.ts` at 877/400**, which has moved 890 -> 877 across the whole campaign. The location-filter machinery is the obvious first seam now that its markup is gone: `availableRegions`, `regionState`, `countryState`, `toggleRegion`, `toggleCountryTree`, `toggleCity`, the expand sets and `workTypeOf`, against `discover-location.ts` and `discover-location-tables.ts` which already exist beside it.
+
 ### 2026-08-06, Discover's filter-toolbar controls are hoisted, and `.dv-geomenu` turns out to be three menus
 
 - **Status:** complete

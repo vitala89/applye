@@ -63,6 +63,7 @@ import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
+import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
 import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
 import { ToastService } from '../../core/toast/toast.service';
 
@@ -148,6 +149,7 @@ const SKILL_DICT = [
     DiscoverDetailScoreComponent,
     DiscoverDetailHeroComponent,
     DiscoverFeedRowComponent,
+    DiscoverFilterMenuComponent,
   ],
   providers: [DiscoverSourcesService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -248,9 +250,6 @@ export class DiscoverComponent {
   protected readonly countrySel = signal<ReadonlySet<string>>(new Set());
   protected readonly expandedRegions = signal<ReadonlySet<RegionKey>>(new Set());
   protected readonly expandedCountries = signal<ReadonlySet<string>>(new Set());
-  protected readonly typeMenuOpen = signal(false);
-  protected readonly geoMenuOpen = signal(false);
-  protected readonly sourceMenuOpen = signal(false);
   protected readonly tab = signal<Tab>('new');
   /** Two-step inline confirm for "Clear list" (no modal, per product register). */
   protected readonly clearConfirm = signal(false);

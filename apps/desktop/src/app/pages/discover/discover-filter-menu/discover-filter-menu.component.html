@@ -1,0 +1,35 @@
+<button
+  type="button"
+  class="dv-btn dv-btn--ghost"
+  [class.dv-btn--active]="count() > 0"
+  (click)="open.set(!open())"
+>
+  {{ label() }}
+  @if (count() > 0) {
+    <span class="dv-geomenu__count">{{ count() }}</span>
+  }
+  <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
+</button>
+@if (open()) {
+  <div
+    class="dv-geomenu__backdrop"
+    (click)="open.set(false)"
+    (keydown.escape)="open.set(false)"
+    tabindex="-1"
+  ></div>
+  <div class="dv-geomenu__panel" role="group" [attr.aria-label]="label()">
+    <ng-content />
+    @if (footNote() || count() > 0) {
+      <div class="dv-geomenu__foot">
+        @if (footNote()) {
+          <span class="dv-geomenu__hint">{{ footNote() }}</span>
+        }
+        @if (count() > 0) {
+          <button type="button" class="dv-linkbtn" (click)="cleared.emit()">
+            {{ t()('discover.loc_clear') }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+}

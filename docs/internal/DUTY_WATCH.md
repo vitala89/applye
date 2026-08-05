@@ -44,6 +44,51 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's languages section is extracted
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-languages-section`
+
+**The third section cut, and the most mechanical yet.** Same shape as work experience and simpler:
+three list transforms, folded back into `form().languages` by the page. The CEFR level list moved
+into the section as a module constant, because nothing else on the page offered it. `lang-list` and
+`lang-row` were the only classes left exclusive after the hoist.
+
+**A correction to the previous entry's estimate.** The handoff and the last entry called languages
+"126 template lines". It is **74**. The other 52 are the compensation block, which sits in its own
+`field--full` with `id="field-compensation"` and is not part of the languages collapse-card at all.
+It owns `comp-row`, `comp-sep`, `comp-select`, `field__label-row` and `field__hint--inline`, plus the
+contextual override `.comp-row .field__input` still on the page stylesheet, and it is its own cut.
+
+**Verification.**
+
+- `quality:style-move --base main --page-scope '.profile'` across the page, the partial and all three
+  children: lossless.
+- Mutation M1: `updateField` writes every language rather than the edited one -> 1 test fails.
+  Mutation M2: `Native` dropped from the CEFR list -> 1 test fails. Both restored from a backup copy
+  and `diff`ed byte-exact.
+- **Walked in the running app, and this one round-trips in both directions.** Adding a language,
+  typing "Ukrainian" and picking "Native" produced `Ukrainian (Native)` under `## Languages` in the
+  raw markdown view - so the output reached `onLanguagesChanged`, `syncLanguages` and
+  `serializeLanguageEntries`. Leaving raw mode then parsed it **back out** of the markdown into the
+  section, with both the name and the level intact. `lang-list` and `lang-row` computed their flex
+  direction, alignment and gap. `#field-languages` still resolves and still contains the section.
+- Noted while walking, not a defect: leaving raw mode auto-collapses the section, because
+  `seedSectionOpen` collapses any section that has content. Reopening it from the head confirmed the
+  `toggled` output works.
+- Gates: `type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1271 passed**, was 1265), `nx build desktop`, `quality:file-size` (passed), `format:check`,
+  `git diff --check`.
+
+**Sizes.** `profile.component.html` **809 -> 741** (budget 300), `.ts` **717 -> 709** (400), `.scss`
+**433 -> 423** (400). The stylesheet is now within 6% of budget; education and skills should take it
+under.
+
+**Next first action.** Education (93 template lines) - same list shape, exclusive classes
+`editor-panel`, `scaffold`, `scaffold__label`, `scaffold__line`. Then skills (59, with `chip-input`,
+`skill-chip`, `skill-chip__x`, `chip-input__field`), then the compensation block described above.
+
 ### 2026-08-05, Profile's work-experience section is extracted, and a mutation finds a real gap
 
 - **Status:** complete

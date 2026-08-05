@@ -26,7 +26,6 @@ import {
   parseExperienceEntries,
   serializeExperienceEntries,
   LanguageEntry,
-  EMPTY_LANGUAGE_ENTRY,
   parseLanguageEntries,
   serializeLanguageEntries,
   Archetype,
@@ -61,6 +60,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
 import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
 import { ProfileArchetypesComponent } from './profile-archetypes/profile-archetypes.component';
 import { ProfileExperienceComponent } from './profile-experience/profile-experience.component';
+import { ProfileLanguagesComponent } from './profile-languages/profile-languages.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
  * optional/nullable since the AI omits or nulls anything it did not find in
@@ -109,6 +109,7 @@ interface ParsedProfile {
     CvPhotoCropComponent,
     ProfileArchetypesComponent,
     ProfileExperienceComponent,
+    ProfileLanguagesComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -148,7 +149,6 @@ export class ProfileComponent implements OnInit {
   readonly experienceEntries = signal<ExperienceEntry[]>([]);
   /** Structured mirror of `form().languages`, same rationale as `educationEntries`. */
   readonly languageEntries = signal<LanguageEntry[]>([]);
-  protected readonly languageLevels = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'];
   readonly archetypes = signal<Archetype[]>([]);
   readonly profile = signal<Profile | null>(null);
   readonly settings = signal<Settings | null>(null);
@@ -421,20 +421,10 @@ export class ProfileComponent implements OnInit {
     );
   }
 
-  addLanguage(): void {
-    this.languageEntries.update((list) => [...list, { ...EMPTY_LANGUAGE_ENTRY }]);
-    this.syncLanguages();
-  }
-
-  removeLanguage(index: number): void {
-    this.languageEntries.update((list) => list.filter((_, i) => i !== index));
-    this.syncLanguages();
-  }
-
-  updateLanguageField(index: number, field: keyof LanguageEntry, value: string): void {
-    this.languageEntries.update((list) =>
-      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
-    );
+  /** What the languages section emits after any edit. The section transforms
+   * the list; folding it back into `languages` stays here, with the form. */
+  onLanguagesChanged(entries: LanguageEntry[]): void {
+    this.languageEntries.set(entries);
     this.syncLanguages();
   }
 

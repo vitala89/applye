@@ -342,80 +342,12 @@
               </div>
             </div>
             <div class="field" id="field-languages">
-              <div class="collapse-card">
-                <div
-                  class="collapse-card__head"
-                  role="button"
-                  tabindex="0"
-                  [attr.aria-expanded]="sectionOpen().languages"
-                  (click)="toggleSection('languages')"
-                  (keydown.enter)="toggleSection('languages')"
-                  (keydown.space)="toggleSection('languages'); $event.preventDefault()"
-                >
-                  <span class="collapse-card__title">{{ t()('profile.section_languages') }}</span>
-                  <span class="collapse-card__summary">
-                    {{
-                      languageEntries().length
-                        ? t()('profile.summary_languages').replace(
-                            '{count}',
-                            languageEntries().length + ''
-                          )
-                        : t()('profile.summary_empty')
-                    }}
-                  </span>
-                  <lucide-icon
-                    [img]="chevronIcon"
-                    [size]="17"
-                    class="chevron"
-                    [class.chevron--open]="sectionOpen().languages"
-                    aria-hidden="true"
-                  />
-                </div>
-                @if (sectionOpen().languages) {
-                  <div class="collapse-card__body">
-                    @if (languageEntries().length > 0) {
-                      <div class="lang-list">
-                        @for (l of languageEntries(); track $index) {
-                          <div class="lang-row">
-                            <input
-                              class="archetype-input"
-                              type="text"
-                              [ngModel]="l.language"
-                              (ngModelChange)="updateLanguageField($index, 'language', $event)"
-                              [placeholder]="t()('profile.lang_name')"
-                              [attr.aria-label]="t()('profile.lang_name')"
-                            />
-                            <select
-                              class="archetype-fit"
-                              [ngModel]="l.level"
-                              (ngModelChange)="updateLanguageField($index, 'level', $event)"
-                              [attr.aria-label]="t()('profile.lang_level')"
-                            >
-                              @for (lvl of languageLevels; track lvl) {
-                                <option [value]="lvl">
-                                  {{ lvl || t()('profile.lang_level_none') }}
-                                </option>
-                              }
-                            </select>
-                            <button
-                              class="btn-ghost"
-                              type="button"
-                              (click)="removeLanguage($index)"
-                              [attr.aria-label]="t()('profile.remove_language')"
-                            >
-                              <lucide-icon [img]="removeIcon" [size]="15" aria-hidden="true" />
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    }
-                    <button class="btn-dashed" type="button" (click)="addLanguage()">
-                      <lucide-icon [img]="plusIcon" [size]="14" aria-hidden="true" />
-                      {{ t()('profile.add_language') }}
-                    </button>
-                  </div>
-                }
-              </div>
+              <app-profile-languages
+                [entries]="languageEntries()"
+                [open]="sectionOpen().languages"
+                (toggled)="toggleSection('languages')"
+                (changed)="onLanguagesChanged($event)"
+              />
             </div>
           </div>
 

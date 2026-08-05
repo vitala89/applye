@@ -44,6 +44,21 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's filter-toolbar controls are hoisted, and `.dv-geomenu` turns out to be three menus
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-hoist-filter-controls`
+- **Objective:** the ownership audit of `.dv-geomenu` the previous entry called for, and the hoist it turned out to need.
+- **The audit's finding, which changes the answer.** `.dv-geomenu` is not "the location filter menu". It is **one dropdown rendered three times** - Sources, Type and Locations - and the 35-symbol markup surface that made it look impossible is the sum of three different panel bodies, not one boundary. The shell is identical in all three: a `.dv-btn--ghost` trigger carrying a count badge and a chevron, an open signal, a fixed backdrop that closes on click and on Escape, a `role="group"` panel, and a foot holding a Clear link when the count is non-zero. Only the body differs, and the Locations foot additionally carries a permanent hint. **So the seam is a shell with `<ng-content>`, not a service.** Projected content is compiled in the _page's_ template scope, so all thirty-odd body symbols - `sourceChecked`, `toggleWork`, `regionState`, `toggleCity` and the rest - never cross the boundary at all. Two inputs and one output.
+- **What the hoist is for.** Two page rules would stop matching the moment the trigger and the Clear link render inside a child. `.dv-filters .dv-btn` pins every trigger to the query input's 30px height, padding, font size and radius - and it is a **descendant** selector, where emulated encapsulation stamps the page's `_ngcontent` attribute on the subject, so a child-rendered button falls back to `.dv-btn`'s defaults and the toolbar silently splits into three heights. `.dv-linkbtn` is the same for the Clear action; three of its five uses are the ones that move. `.dv-geomenu__hint` is a third, rendered by the page in each panel's empty state and by the shell in the Locations foot, so it can be scoped to neither. All three now live in `_discover-controls.scss`.
+- **Completed:** stylesheet **806 -> 748**, partial 274 -> 316 (within budget).
+- **Validation:** `nx run desktop:type-check`, `nx build desktop`, `nx test desktop` (1411 passing), `npm run quality:file-size` (748 against base 806), `npm run quality:attribution`, `npx nx format:check`, `git diff --check`. `npm run quality:style-move --base origin/main` across the page and the partial: **lossless**.
+- **Two checks made rather than assumed.** `.dv-filters .dv-btn` at (0,2,0) still beats `.dv-btn` at (0,1,0) whatever the injection order, which is the same specificity argument that cleared `.dv-arch-badge` in #346. And both hoisted names are Discover-only across every template in `apps` and `libs`, so making them global cannot start matching anything else.
+- **Not verified in the browser, for the standing reason.** The filter row is inside `view() === 'feed'`, and without Tauri IPC Discover has no sources, so the feed never renders. The declaration check is the evidence.
+- **Privacy/security impact:** none.
+- **Next first action:** extract `DiscoverFilterMenuComponent` - host `position: relative`, plus `__count`, `__backdrop`, `__panel` and `__foot`. `__item`, `__expand` and `__region` **stay on the page**: they are rendered by projected content, which keeps the page's encapsulation attribute. Inputs `label` and `count`, output `cleared`, a default `<ng-content>` for the body and a second slot for the Locations foot note.
+
 ### 2026-08-06, Discover's feed row becomes a component, and the separator moves to the host
 
 - **Status:** complete

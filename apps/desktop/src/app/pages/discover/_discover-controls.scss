@@ -272,3 +272,81 @@
   color: var(--text-tertiary);
   border-color: var(--border-subtle);
 }
+
+// The filter toolbar's control vocabulary, and the link button.
+//
+// Both are here for the same reason the badges above are: the filter menus are
+// their own component now, and a page stylesheet's compiled rules never match
+// markup a child renders. `.dv-filters .dv-btn` sizes the three menu triggers,
+// and `.dv-linkbtn` is the Clear action inside each menu's foot.
+//
+// One toolbar, one control vocabulary. The query input sets the baseline (30px
+// tall, --border-default, --radius-input); every trigger and action in the bar
+// matches it so the row reads as a finished toolbar instead of a mix of three
+// heights and three border weights.
+.dv-filters .dv-btn {
+  height: 30px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-input);
+}
+
+.dv-filters .dv-btn--ghost {
+  border-color: var(--border-default);
+}
+
+.dv-linkbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-ring);
+    border-radius: var(--radius-badge);
+  }
+
+  &--accent {
+    color: var(--text-accent);
+
+    &:hover {
+      color: var(--accent-hover);
+    }
+  }
+
+  &--danger {
+    color: var(--danger, #ef4444);
+
+    &:hover {
+      color: var(--danger, #ef4444);
+      filter: brightness(1.1);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+// The menu's small print. Rendered by the page in each panel's empty state and
+// by the filter-menu shell in the Locations foot, so it cannot be scoped to
+// either one.
+.dv-geomenu__hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+}

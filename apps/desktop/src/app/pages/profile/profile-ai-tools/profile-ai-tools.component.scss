@@ -1,0 +1,136 @@
+/* Moved from the Profile page with the markup that uses it. The section,
+   eyebrow, muted, chevron and info pieces this also renders are shared with the
+   rest of the page and live in `_profile-shell.scss`, emitted once from
+   `styles.scss` under `.profile`. The freshness chips have their own
+   stylesheet, next to their own component. */
+
+.ai-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+.tool-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.tool-card__head--toggle {
+  cursor: pointer;
+}
+.tool-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: var(--text-accent);
+  background: var(--accent-tint);
+  border-radius: var(--radius-input);
+}
+.tool-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+.tool-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+.tool-card__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+/* The page defined this twice, the second time only to add the wrap. Merged. */
+.tool-card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+.ai-loading__dots {
+  display: flex;
+  gap: 5px;
+}
+.ai-loading__dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  animation: applye-ai-pulse var(--dur-ai-pulse) var(--ease-standard) infinite;
+}
+.ai-loading__dots i:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.ai-loading__dots i:nth-child(3) {
+  animation-delay: 0.6s;
+}
+.ai-loading__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+}
+@keyframes applye-ai-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-loading__dots i {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.output-block {
+  margin: 0;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.output-block--prose {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  white-space: pre-line;
+}

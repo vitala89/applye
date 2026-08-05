@@ -1,0 +1,21 @@
+@if (state() === 'fresh') {
+  <span class="chip">
+    <lucide-icon [img]="icons.check" [size]="12" aria-hidden="true" />
+    {{ t()('profile.cached_chip') }}
+  </span>
+} @else if (state() === 'stale') {
+  <span class="chip chip--stale">
+    <lucide-icon [img]="icons.stale" [size]="12" aria-hidden="true" />
+    {{ t()('profile.stale_chip') }}
+  </span>
+  <span class="chip-hint">{{ t()(staleHintKey()) }}</span>
+} @else if (state() === 'unsaved') {
+  <span class="chip chip--stale">
+    <lucide-icon [img]="icons.unsaved" [size]="12" aria-hidden="true" />
+    {{ t()('profile.unsaved_chip') }}
+  </span>
+  <span class="chip-hint">{{ t()(unsavedHintKey()) }}</span>
+}
+@if (status()) {
+  <span class="status" [class.status--error]="error()">{{ status() }}</span>
+}

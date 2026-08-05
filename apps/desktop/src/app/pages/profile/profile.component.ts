@@ -43,14 +43,10 @@ import {
   Save,
   Check,
   RotateCcw,
-  X,
   Plus,
   Sparkles,
-  Mic,
-  RefreshCw,
   ChevronDown,
   CircleDot,
-  TriangleAlert,
 } from 'lucide-angular';
 import { OnboardingService } from '../../core/onboarding/onboarding.service';
 import { ToastService } from '../../core/toast/toast.service';
@@ -62,6 +58,7 @@ import { ProfileExperienceComponent } from './profile-experience/profile-experie
 import { ProfileEducationComponent } from './profile-education/profile-education.component';
 import { ProfileLanguagesComponent } from './profile-languages/profile-languages.component';
 import { ProfileSkillsComponent } from './profile-skills/profile-skills.component';
+import { ProfileAiToolsComponent } from './profile-ai-tools/profile-ai-tools.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
  * optional/nullable since the AI omits or nulls anything it did not find in
@@ -113,6 +110,7 @@ interface ParsedProfile {
     ProfileEducationComponent,
     ProfileLanguagesComponent,
     ProfileSkillsComponent,
+    ProfileAiToolsComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -129,14 +127,9 @@ export class ProfileComponent implements OnInit {
   protected readonly saveIcon = Save;
   protected readonly checkIcon = Check;
   protected readonly rerunIcon = RotateCcw;
-  protected readonly removeIcon = X;
   protected readonly plusIcon = Plus;
-  protected readonly scoringIcon = Sparkles;
-  protected readonly pitchIcon = Mic;
-  protected readonly regenIcon = RefreshCw;
   protected readonly chevronIcon = ChevronDown;
   protected readonly unsavedIcon = CircleDot;
-  protected readonly staleIcon = TriangleAlert;
   protected readonly sparklesIcon = Sparkles;
 
   readonly fullMd = signal('');

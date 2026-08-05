@@ -1,0 +1,28 @@
+/* Moved from the Profile page with the markup that uses it. `.status` and
+   `.status--error`, which this also renders, are shared with the rest of the
+   page and live in `_profile-shell.scss`. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+}
+.chip--stale {
+  color: var(--warning);
+  background: var(--warning-tint);
+  border-color: transparent;
+}
+.chip-hint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}

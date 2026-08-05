@@ -44,6 +44,48 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-05, Profile's education section is extracted, with no stylesheet of its own
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-education-section`
+
+**The fourth section cut, and the one that demonstrates the hoist.** Every class the education markup
+renders - `collapse-card` and its parts, `chevron`, `muted`, `archetype-list`, `archetype-card`,
+`archetype-card__top`, `archetype-input`, `btn-ghost`, `btn-dashed` - was already in
+`_profile-shell.scss`. **Nothing was left exclusive**, so the new component has a template and a class
+and no `styleUrl`. Otherwise identical in shape to languages: three list transforms, folded back into
+`form().education` by the page.
+
+**Verification.**
+
+- `quality:style-move --base main --page-scope '.profile'`: lossless. The page stylesheet is untouched
+  by this cut, which is the point.
+- **Walked in the running app, with the styling checked rather than assumed** - a component with no
+  stylesheet is exactly where a hoist could turn out not to reach. Inside `app-profile-education`:
+  `.archetype-card` computes `1px solid` with a 6px radius and a surface background,
+  `.archetype-input` computes 36px high with its border, `.btn-dashed` computes its dashed border, and
+  `.collapse-card__title` gets its font. All of that comes from the partial reaching in.
+- Adding a qualification, typing "MSc Computer Science" and "KPI" produced
+  `## Education` / `- MSc Computer Science, KPI` in the raw markdown, and leaving raw mode parsed both
+  values back out into the section. `#field-education` still resolves and still contains it.
+- Mutation M1: `updateField` replaces the entry rather than patching it -> 1 test fails.
+  Mutation M2: `remove` drops the last entry rather than the clicked one -> 1 test fails. Both
+  restored from a backup copy and `diff`ed byte-exact.
+- Gates: `type-check`, `lint` (0 errors, 8 pre-existing warnings), `nx test desktop`
+  (**1277 passed**, was 1271), `nx build desktop`, `quality:file-size` (passed), `format:check`,
+  `git diff --check`.
+
+**Sizes.** `profile.component.html` **741 -> 654** (budget 300), `.ts` **709 -> 702** (400). The
+stylesheet is unchanged at 423, because this cut moved no styles. Note the gate's report only lists
+files the diff touched, so a stylesheet missing from it means "not changed", not "now under budget" -
+use `quality:file-size:all` for the standing picture.
+
+**Next first action.** Skills (59 template lines, exclusive classes `chip-input`, `skill-chip`,
+`skill-chip__x`, `chip-input__field`) is the last of the five sections and should take the stylesheet
+under budget. Then the compensation block, and after that Profile's remaining bulk is AI Tools (162)
+and the raw/parse-preview area, neither audited.
+
 ### 2026-08-05, Profile's languages section is extracted
 
 - **Status:** complete

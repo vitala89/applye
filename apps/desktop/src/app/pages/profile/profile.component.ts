@@ -19,7 +19,6 @@ import {
   splitDisplayName,
   serializeProfileForm,
   EducationEntry,
-  EMPTY_EDUCATION_ENTRY,
   parseEducationEntries,
   serializeEducationEntries,
   ExperienceEntry,
@@ -60,6 +59,7 @@ import { CompletenessHeroComponent } from './completeness-hero.component';
 import { CvPhotoCropComponent } from '../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
 import { ProfileArchetypesComponent } from './profile-archetypes/profile-archetypes.component';
 import { ProfileExperienceComponent } from './profile-experience/profile-experience.component';
+import { ProfileEducationComponent } from './profile-education/profile-education.component';
 import { ProfileLanguagesComponent } from './profile-languages/profile-languages.component';
 
 /** Tolerant shape of the `profile-import` skill's JSON output. Every field is
@@ -109,6 +109,7 @@ interface ParsedProfile {
     CvPhotoCropComponent,
     ProfileArchetypesComponent,
     ProfileExperienceComponent,
+    ProfileEducationComponent,
     ProfileLanguagesComponent,
   ],
   templateUrl: './profile.component.html',
@@ -452,20 +453,10 @@ export class ProfileComponent implements OnInit {
     (el as HTMLElement | null)?.focus?.();
   }
 
-  addEducation(): void {
-    this.educationEntries.update((list) => [...list, { ...EMPTY_EDUCATION_ENTRY }]);
-    this.syncEducation();
-  }
-
-  removeEducation(index: number): void {
-    this.educationEntries.update((list) => list.filter((_, i) => i !== index));
-    this.syncEducation();
-  }
-
-  updateEducation(index: number, field: keyof EducationEntry, value: string): void {
-    this.educationEntries.update((list) =>
-      list.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
-    );
+  /** What the education section emits after any edit. The section transforms
+   * the list; folding it back into `education` stays here, with the form. */
+  onEducationChanged(entries: EducationEntry[]): void {
+    this.educationEntries.set(entries);
     this.syncEducation();
   }
 

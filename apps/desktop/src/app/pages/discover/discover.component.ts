@@ -13,16 +13,12 @@ import { Router, RouterLink } from '@angular/router';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   ArrowUpRight,
-  Bookmark,
-  Building2,
   Check,
   ChevronDown,
   ChevronLeft,
-  Clock,
   Compass,
   Info,
   LucideAngularModule,
-  MapPin,
   Plus,
   RefreshCw,
   Rss,
@@ -66,6 +62,7 @@ import { DiscoverSourcesService, formatScanTime } from './discover-sources.servi
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
+import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
 import { ToastService } from '../../core/toast/toast.service';
 
@@ -150,6 +147,7 @@ const SKILL_DICT = [
     DiscoverSourcesDrawerComponent,
     DiscoverDetailScoreComponent,
     DiscoverDetailHeroComponent,
+    DiscoverFeedRowComponent,
   ],
   providers: [DiscoverSourcesService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -169,15 +167,11 @@ export class DiscoverComponent {
     rescan: RefreshCw,
     check: Check,
     close: X,
-    save: Bookmark,
     plus: Plus,
     chevron: ChevronDown,
     external: ArrowUpRight,
     info: Info,
     remove: Trash2,
-    company: Building2,
-    location: MapPin,
-    time: Clock,
     source: Rss,
     back: ChevronLeft,
     sparkles: Sparkles,
@@ -731,10 +725,10 @@ export class DiscoverComponent {
     return Math.max(20, Math.min(97, score));
   }
 
-  /** Company monogram for the detail hero tile ("Northwind Labs" -> "NL"). */
-  /** The archetype badge as the hero renders it: tier plus its label. Pairs the
-   * two calls the markup used to make, so the hero takes one input, not two. */
-  protected heroArchetype(row: FeedRow): { fit: ArchetypeFit; label: string } | null {
+  /** The archetype badge as a row renders it: tier plus its label. Pairs the
+   * two calls the markup used to make, so the feed row and the detail hero each
+   * take one input rather than two. */
+  protected rowArchetype(row: FeedRow): { fit: ArchetypeFit; label: string } | null {
     const m = this.archetypeBadge(row);
     return m ? { fit: m.fit, label: this.archBadgeLabel(m.fit) } : null;
   }

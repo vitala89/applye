@@ -8,7 +8,7 @@
         [posted]="ago(drow.createdAt)"
         [score]="detailScore()"
         [verdict]="detailVerdict()"
-        [archetype]="heroArchetype(drow)"
+        [archetype]="rowArchetype(drow)"
         [matchedKeywords]="matchedKeywords(drow)"
         (backRequested)="closeDetail()"
         (saveRequested)="saveRow(drow, $event)"
@@ -518,85 +518,16 @@
               </button>
             </div>
           } @else {
-            <div class="dv-row" [class.dv-row--saved]="row.saved">
-              <div
-                class="dv-row__main"
-                role="button"
-                tabindex="0"
-                (click)="openDetail(row)"
-                (keydown.enter)="openDetail(row)"
-              >
-                <div class="dv-row__body">
-                  <div class="dv-row__titleline">
-                    <span class="dv-row__title">{{ row.title }}</span>
-                    @if (row.isNew && !row.saved) {
-                      <span class="dv-row__new">{{ t()('discover.new_marker') }}</span>
-                    }
-                    @if (row.saved) {
-                      <span class="dv-row__savedbadge">
-                        <lucide-icon [img]="icons.check" [size]="10" aria-hidden="true" />
-                        {{ t()('discover.saved_badge') }}
-                      </span>
-                    }
-                    @if (archetypeBadge(row); as m) {
-                      <span class="dv-arch-badge dv-arch-badge--{{ m.fit }}">
-                        {{ archBadgeLabel(m.fit) }}
-                      </span>
-                    }
-                  </div>
-                  <div class="dv-row__companyline">
-                    <lucide-icon [img]="icons.company" [size]="14" aria-hidden="true" />
-                    <span class="dv-row__company">{{ row.company }}</span>
-                  </div>
-                  <div class="dv-row__meta">
-                    <span class="dv-row__srcbadge">
-                      <lucide-icon [img]="icons.source" [size]="11" aria-hidden="true" />
-                      {{ srcLabel(row.source) }}
-                    </span>
-                    @if (row.location) {
-                      <span class="dv-row__metaitem">
-                        <lucide-icon [img]="icons.location" [size]="12" aria-hidden="true" />
-                        {{ row.location }}
-                      </span>
-                    }
-                    <span class="dv-row__metaitem dv-row__metaitem--dim">
-                      <lucide-icon [img]="icons.time" [size]="12" aria-hidden="true" />
-                      {{ ago(row.createdAt) }}
-                    </span>
-                  </div>
-                  @if (matchedKeywords(row).length) {
-                    <div class="dv-row__keywords">
-                      <span class="dv-row__matchedlbl">{{ t()('discover.matched_label') }}</span>
-                      @for (kw of matchedKeywords(row); track kw) {
-                        <span class="dv-row__kw">{{ kw }}</span>
-                      }
-                    </div>
-                  }
-                </div>
-                <div class="dv-row__actions">
-                  @if (!row.saved) {
-                    <button
-                      type="button"
-                      class="dv-btn dv-btn--secondary"
-                      (click)="saveRow(row, $event)"
-                    >
-                      <lucide-icon [img]="icons.save" [size]="13" aria-hidden="true" />
-                      {{ t()('discover.save') }}
-                    </button>
-                    <button
-                      type="button"
-                      class="dv-iconbtn"
-                      [title]="t()('discover.dismiss')"
-                      (click)="dismissRow(row, $event)"
-                    >
-                      <lucide-icon [img]="icons.close" [size]="14" aria-hidden="true" />
-                    </button>
-                  } @else {
-                    <span class="dv-row__inmyjobs">{{ t()('discover.in_my_jobs') }}</span>
-                  }
-                </div>
-              </div>
-            </div>
+            <app-discover-feed-row
+              [row]="row"
+              [sourceLabel]="srcLabel(row.source)"
+              [posted]="ago(row.createdAt)"
+              [archetype]="rowArchetype(row)"
+              [matchedKeywords]="matchedKeywords(row)"
+              (openRequested)="openDetail(row)"
+              (saveRequested)="saveRow(row, $event)"
+              (dismissRequested)="dismissRow(row, $event)"
+            />
           }
         }
       }

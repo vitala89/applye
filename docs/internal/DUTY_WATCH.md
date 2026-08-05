@@ -44,6 +44,24 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's feed row becomes a component, and the separator moves to the host
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-feed-row`
+- **Objective:** cut the feed-chrome half of `.dv-row` out of the Discover page.
+- **Completed:** `DiscoverFeedRowComponent` (template 74, stylesheet 130, both within budget, 14 tests). Page **template 636 -> 567, stylesheet 903 -> 806, class 884 -> 878**. `heroArchetype` renamed `rowArchetype` and `HeroArchetype` moved to `discover-feed.ts` as `RowArchetype`, since the feed row and the detail hero now take the same value.
+- **Validation:** `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop` (8 warnings, all pre-existing non-null assertions in `cv-parse.util.spec.ts`, `cv-style.util.spec.ts` and `cv-gap-dialog.component.spec.ts`, none in touched files), `nx test desktop` (118 suites, **1411 tests**, all passing), `nx build desktop`, `npm run quality:file-size`, `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
+- **`quality:style-move --base origin/main` across the page, the new child and `_discover-controls.scss`:** one deliberate difference and nothing else. `.dv-row` LOST `border-bottom`, `:host` GAINED `display: block` and `border-bottom`. Every other declaration in the split is preserved.
+- **The host-element trap fired, and was headed off rather than hit.** `.dv-feed > :last-child { border-bottom: none }` strips the separator from the final row. Inserting `<app-discover-feed-row>` between `.dv-feed` and `.dv-row` makes the **host** the last child, so the rule would have landed on an element with no border while the border stayed on `.dv-row` inside the child - a stray line under the last row, passing type-check, lint, tests, build, `quality:file-size` and (had the border not moved) `quality:style-move` too, since no declaration would have been lost. Same shape as the PR #341 `flex: 1` regression. The fix is to put the separator on the host.
+- **What could not be verified, and why that is a limit rather than an omission.** jsdom resolves `display` from a `:host` rule but returns empty strings for every border longhand, so no unit test can assert the separator; there is one asserting the host is `display: block`, which is the half that can be pinned. The browser cannot reach it either - Discover has no sources without Tauri IPC, so the feed is empty and no row renders. The evidence for this cut is the declaration check and the backwards diff, which for a pure move are the stronger evidence anyway.
+- **Backwards diff:** substituting all eight inputs and outputs back into the child template reproduces the original 79-line block token-for-token. The single delta is Prettier moving a `>` onto the previous line, because the shorter binding now fits the print width.
+- **Mutation testing: five written, five killed.** New marker ignoring `saved`; the tier key rendered as the badge label (tints correctly, reads "primary"); Save and Dismiss emitting each other's output; the source label and the age addressed to each other's slot; Enter no longer opening the row. Each mutation asserts its pattern matched exactly once before applying, so a mutation that fails to apply aborts rather than being counted as a kill; the file was restored from a backup and `diff` proves it byte-identical.
+- **The ratchet refused the first attempt** at 886/884: the import and the `imports:` entry cost two lines. Paid for by deleting the four page icons the row took with it (`save`, `company`, `location`, `time`) and their now-unused lucide imports. **Five more page icons are dead and were left alone** - `plus`, `info`, `back`, `sparkles`, `shield`, orphaned by earlier cuts - because they are not this seam's.
+- **A test-only note worth keeping.** `createFixture` calls `TestBed.resetTestingModule()` before `configureTestingModule`, rather than making each caller remember. Five of these cases build two or three rows, and without the reset every one of them throws "Cannot configure the test module when the test module has already been instantiated".
+- **Privacy/security impact:** none.
+- **Next first action:** `.dv-geomenu` (107 lines) is the largest family left in `discover.component.scss` (806/400). Its markup surface measured 35 symbols last session, far wider than any boundary this campaign has accepted, so it needs an ownership audit before any extraction - a service-owned boundary is the likely answer. The alternative, and probably the better one, is that `discover.component.ts` at 878 has barely moved all campaign because every Discover cut so far has been markup and styles; the location-filter state behind `.dv-geomenu` is where those two meet.
+
 ### 2026-08-06, three dead Discover row rules removed, and the `.dv-row` seam turns out not to need a hoist
 
 - **Status:** complete

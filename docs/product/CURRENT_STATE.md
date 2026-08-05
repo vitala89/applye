@@ -70,16 +70,21 @@
   block (template already under budget, so the move would only grow the class) and the section-mirror
   collapse (a shared `syncSections()` would re-serialize all three on any one edit, and
   `serialize(parse(x))` is not identity for hand-typed raw markdown).
-- **Discover is the current target.** Three PRs on 2026-08-05 (#345-#347) took it from
-  **808 / 890 / 1464** to **636 / 884 / 938**; its stylesheet was the largest file in the project.
-  Unlike Profile it needs **no page-scoped wrapper**: 33 of its 34 top-level selectors already carry
-  the `dv-` prefix. The detail screen is now a shell holding only the grid, main, loading and
-  actions; its hero and sidebar are components. **The class has barely moved all campaign
-  (890 -> 884)** because every Discover cut so far has been markup and styles.
-  Next: `.dv-row` (233 lines) is the largest family left but is **not a clean seam** - its classes
-  are rendered by the detail body as well as the feed, so it needs the same hoist-then-cut treatment
-  the hero did. `.dv-geomenu` (107) has a 35-symbol markup surface, far wider than any boundary this
-  campaign has accepted, and needs an ownership audit first. Three decisions came out of it and are written into
+- **Discover is the current target.** Five PRs (#345-#347 on 2026-08-05, #349-#350 on 2026-08-06)
+  took it from **808 / 890 / 1464** to **567 / 878 / 806**; its stylesheet was the largest file in
+  the project. Unlike Profile it needs **no page-scoped wrapper**: 33 of its 34 top-level selectors
+  already carry the `dv-` prefix. The detail screen is now a shell holding only the grid, main,
+  loading and actions; its hero, sidebar and feed row are components. **The class has barely moved
+  all campaign (890 -> 878)** because every Discover cut so far has been markup and styles.
+  **`.dv-row` was read as the hard case and was not**: the classes the feed and the detail body
+  genuinely share were hoisted in #346, and what remained split into two disjoint sets, so the feed
+  row cut out with no hoist. Its separator moved to the child's `:host`, because
+  `.dv-feed > :last-child { border-bottom: none }` matches the component host and a border left
+  inside would have drawn a line under the last row - the PR #341 host-element shape again, and
+  again invisible to every gate.
+  Next: `.dv-geomenu` (107 lines) is the largest family left. Its 35-symbol markup surface is far
+  wider than any boundary this campaign has accepted, so it needs an ownership audit first - and the
+  location-filter state behind it is where the untouched class and the remaining styles meet. Three decisions came out of it and are written into
   `CODE_QUALITY.md`: a page whose class names are generic **wraps its partial in the page root**
   rather than prefixing (seven of Profile's shared names were already defined with different values
   by eight other stylesheets); a class's **modifiers move with it**, because a base and its modifier

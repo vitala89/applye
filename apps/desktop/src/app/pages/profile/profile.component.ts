@@ -17,7 +17,6 @@ import {
   ProfileFieldKey,
   EMPTY_FORM,
   parseProfileMd,
-  splitDisplayName,
   serializeProfileForm,
   EducationEntry,
   parseEducationEntries,
@@ -66,6 +65,7 @@ import {
   artifactPatch,
   artifactPrompt,
 } from './profile-artifact.util';
+import { withBackfilledNameParts, withComposedName } from './profile-name.util';
 
 /** Every collapsible section on the profile page. */
 type ProfileSectionKey =
@@ -298,34 +298,13 @@ export class ProfileComponent implements OnInit {
    * identity test keeps its meaning. Nothing is written back on read alone: the
    * backfilled values reach disk on the user's next save. */
   applyLoadedMarkdown(md: string): void {
-    const form = parseProfileMd(md);
-    if (!form.firstName.trim() && !form.lastName.trim() && form.name.trim()) {
-      const split = splitDisplayName(form.name);
-      form.firstName = split.firstName;
-      form.lastName = split.lastName;
-    }
-    this.form.set(form);
+    this.form.set(withBackfilledNameParts(parseProfileMd(md)));
   }
 
   updateField<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]): void {
     this.form.update((f) => {
       const next = { ...f, [key]: value };
-      // The display name follows the parts until the user touches it. On a part
-      // edit it is recomposed only while it still reads exactly as the previous
-      // parts composed - a name typed by hand (in the display name field or in
-      // raw markdown) is deliberate and must survive later part edits. Only when
-      // the parts produce something: clearing both must not wipe the name. An
-      // emptied display name counts as untouched too, so a display name cleared
-      // by the user (rather than hand-set to something else) still re-adopts the
-      // parts on the next part edit instead of freezing on a blank name.
-      if (key === 'firstName' || key === 'lastName') {
-        const previous = [f.firstName.trim(), f.lastName.trim()].filter(Boolean).join(' ');
-        const composed = [next.firstName.trim(), next.lastName.trim()].filter(Boolean).join(' ');
-        if (composed && (f.name.trim() === previous || f.name.trim() === '')) {
-          next.name = composed;
-        }
-      }
-      return next;
+      return key === 'firstName' || key === 'lastName' ? withComposedName(f, next) : next;
     });
     this.syncMdFromForm();
   }

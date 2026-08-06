@@ -47,6 +47,27 @@ The main agent session is the conductor. It owns task framing, context selection
 
 Do not create a duplicate `PROJECT_STATE.md`.
 
+## Triage gate, before anything else
+
+Run the `task-triage` skill **first on every task**, ahead of the entry sequence above, and print its
+verdict block. It scores the work on five axes - blast radius, ambiguity, risk, verification and
+unknowns, 0-2 each - and the sum selects the model, the reasoning effort, the subagent plan and the
+token budget from `docs/ai/model-policy.md`.
+
+Three rules that make it worth running:
+
+- **Escalate context before escalating the model.** A cheap model with the right three files beats a
+  frontier model with none, and repeated failure means the diagnosis is wrong rather than the model too
+  small.
+- **Ambiguity scored 2 sends the task to `aif-grilling` before any edit**, at any total score. That is
+  the same gate the section below already requires.
+- **Delegation is opt-in.** Triage always prints; it spawns nothing unless the maintainer says so.
+  Autonomous fan-out is how a 3/10 task becomes a 200k-token session, and the spend is invisible until
+  it has happened.
+
+Triage from the request text and what is already in context. Reading files to produce an estimate is
+the work, not the estimate.
+
 ## Plan check, mandatory for every non-trivial task
 
 Before implementing or proposing what to work on next, read `docs/product/CURRENT_STATE.md` and state briefly:

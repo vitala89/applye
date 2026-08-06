@@ -44,6 +44,79 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, session close: thirteen PRs, an architecture decision, and Discover's state fully in the layer
+
+- **Status:** complete - documentation only
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/handoff-after-discover-stores`
+
+**What shipped.** Thirteen PRs, #349-#361, all squash-merged. `main` is at `3f6232b`, clean, no open
+PRs. The session started as a continuation of the file-size campaign and changed course halfway,
+because the campaign hit the same wall twice and the second time it was visible.
+
+| file                      | start |     end |
+| ------------------------- | ----: | ------: |
+| `discover.component.ts`   |   884 | **618** |
+| `discover.component.html` |   636 | **484** |
+| `discover.component.scss` |   938 | **704** |
+
+Tests **1311 -> 1798** across the repository (desktop 1403, core 301, application 78, data 16).
+
+**The turn.** Five PRs of component and pure-function extraction took Discover from 938/884/636 to
+704/730/484, and then ran out of pure logic - exactly as Profile had. The maintainer asked whether
+the architecture was clean, extensible and maintainable; the audit found the layering real and
+enforced (`libs/core` holds zero Angular and Tauri imports, `invoke` confined to `libs/data`) with
+one ring missing: **46 components injected `DbService` against exactly one store**, and no lint rule
+was being violated, because `type:app -> data` was in the allowlist.
+
+**`ADR-0005`** went through the grilling gate in two rounds and now has **two amendments**, both
+found by building rather than by planning:
+
+1. A library cannot import from an app, so page state moving into `libs/application` **drags the
+   pure modules it calls with it**. Domain modules go to `libs/core` through the gate.
+2. Only **domain** goes there. A pure module that formats for one store goes beside that store -
+   `scan-console.ts` builds dot-padded labels and CSS tone names, and `libs/core` is not where that
+   belongs. The test is what a module is _about_, not whether it is pure.
+
+That is twice in two days that the "a store does not calculate" rule needed qualifying, and it is
+recorded as such rather than filed quietly.
+
+**Four stores, all of Discover's state**, all component-scoped and all under the 250 budget:
+`DiscoverDetailStore` (110), `DiscoverScanStore` (81), `DiscoverFeedStore` (109),
+`DiscoverProfileContextStore` (97). 78 tests. `discover.component.ts` no longer injects `DbService`.
+
+**What is honestly not done.** The count of components injecting the gateway went **46 -> 45**.
+`DiscoverSourcesService` still uses it and **cannot move, because it raises seven toasts** while
+every store returns its failure for the page to report. That is the last mile on every page, and the
+`type:data` allowlist flip is unreachable until it is settled. It is the next session's first item,
+through the grilling gate, with the facts already gathered in the handoff.
+
+**Process findings recorded in the rules, not just the log.**
+
+- **The lint gate passed on a stale Nx cache** and the pre-commit hook caught what it missed.
+  `AGENTS.md` now requires `--skip-nx-cache` for lint and tests. The "0 errors" reported in one PR
+  description was wrong for exactly this reason and was corrected.
+- **Three fixtures in a row were wrong from assuming a parser's shape.** `ScanSummary`,
+  `parseLocalMarkets`, `parseCompensation`. The last one also meant a test asserted a state the
+  parser cannot produce, which was rewritten to say so.
+- **A mutation killed by an unhandled rejection is not a kill** - same category as one that fails to
+  apply. The assertion was added and verified against that mutation in isolation.
+
+**Mutation testing across the session: 48 written, 6 survived a first pass, all closed.**
+
+**Validation at close:** type-check across desktop, core, data and application clean; lint with
+`--skip-nx-cache` 0 errors (8 pre-existing warnings elsewhere); tests 1403 / 301 / 16 / 78;
+`nx build desktop`; `quality:file-size`; `quality:attribution`; `nx format:check`; `git diff --check`.
+
+**Not verified in the browser, consistently and by necessity.** Without Tauri IPC Discover has no
+sources, so the feed is empty and neither the detail screen nor the filter row can be reached. Every
+cut was verified by `quality:style-move`, backwards diffs and mutation testing instead - and the
+stores' tests reach the in-flight and failure paths a walk-through could not.
+
+**Next first action.** The `DiscoverSourcesService` toast decision, through `aif-grilling`. After it,
+`jobs` - the worst class in the repository at 1050, and the first page whose state will need several
+stores rather than one.
+
 ### 2026-08-06, Discover's page class stops touching the database, and the last mile turns out to have a gate in it
 
 - **Status:** complete

@@ -38,7 +38,7 @@ Four Duty Watch entries are still worth reading, because each records something 
 
 ## Where things stand
 
-`main` is at `a08c318`, clean, **no open PRs.** Seven merged last session (#349-#355).
+`main` is at `3f6232b`, clean, **no open PRs.** Thirteen merged last session (#349-#361).
 
 Measure with `npm run quality:file-size:all` - **not** the plain `quality:file-size`, which is
 diff-scoped. A file missing from the diff-scoped report means "not changed", **not** "now under
@@ -48,7 +48,7 @@ budget".
 
 | file set   |                       before |           after |
 | ---------- | ---------------------------: | --------------: |
-| `discover` | html 636 / ts 884 / scss 938 | **484/730/704** |
+| `discover` | html 636 / ts 884 / scss 938 | **484/618/704** |
 
 Across the whole Discover phase, eight PRs: **808 / 890 / 1464 -> 484 / 802 / 704**. Tests 1397 -> 1442. Repository count 41 -> 41, which as always understates the work: every new child component and
 util is within budget and never appears.
@@ -159,6 +159,28 @@ markup that is projected needs them to stay.
 setting `flex`, `grid-column`, `align-self`, a direct-child width, or matching by descendant or by
 `>`.
 
+## Traps from the store migration specifically
+
+- **The lint gate can pass on a stale cache.** `nx run-many --target=lint` reported "0 errors" while
+  an unused parameter sat in a spec written minutes earlier; Nx had cached that project's lint from
+  **before the file existed**, and the pre-commit hook caught what the gate missed. **Run lint and
+  tests with `--skip-nx-cache`** - `AGENTS.md` now requires it.
+- **A new export needs its barrel entry, and the failure names neither.** Forgetting
+  `export * from './lib/.../x.store'` in `libs/application/src/index.ts` makes the class resolve to
+  `undefined` inside a component's `providers`, which fails as
+  `Cannot read properties of undefined (reading 'provide')` in seven unrelated tests.
+- **Open the parser before writing the fixture.** Three fixtures in a row were wrong from assuming a
+  shape: `ScanSummary` (per-source fields are `sourceName`/`fetched`/`filteredOut`/`newJobs`),
+  `parseLocalMarkets` (a JSON array of five known codes, not a comma list), `parseCompensation`
+  (**positional** - it takes the first two numbers and ignores the labels). Each cost a failing run,
+  and the last one also meant a test was asserting a state the parser cannot produce.
+- **Renaming a page member to a store path can grow the template past the ratchet.**
+  `feedStore.displayCount()` pushed one binding past the print width and Prettier wrapped it into
+  five lines. Alias on the page, as `jobs.component.ts` already does.
+- **A mutation killed by an unhandled rejection is not a kill.** It shows the suite is unhappy, not
+  that a test caught it - the same category as a mutation that fails to apply. Add the assertion and
+  verify it against that mutation in isolation.
+
 ## Other traps that have actually fired
 
 - **The ratchet refuses a template-only cut** on an over-budget class, because the import and the
@@ -235,34 +257,41 @@ to force it visible before trusting any geometry.
   add a new direct `DbService` injection because lint stayed quiet.
 - **Changing the shape of the layer goes through `aif-grilling`.** The layer is a `libs/` public API.
 
-### Step 1 - create `libs/application` with its first real store
+### Step 1 is done. `libs/application` exists, with four stores.
 
-`libs/application` **does not exist yet**, deliberately: an empty library is a claim without a
-payload. Create it in the same pull request as the first store that has something to hold.
+All of Discover, in four pull requests:
 
-- `nx g @nx/angular:library` under `libs/application`, tags **`type:application`** and
-  **`scope:desktop`**. The scope is forced, not chosen: `scope:shared` may only depend on
-  `scope:shared`, and this layer depends on `libs/data`, which is `scope:desktop`.
-- The `depConstraints` entry for `type:application` is already in `eslint.config.mjs`. Confirm the
-  tags land by running lint - a wrong tag fails there and nowhere else.
-- Path alias `@applye/application` in `tsconfig.base.json`, matching the others.
+| store                         | owns                                                             | lines |
+| ----------------------------- | ---------------------------------------------------------------- | ----: |
+| `DiscoverDetailStore`         | the open job: blocks, skills, score, salary, verdict             |   110 |
+| `DiscoverScanStore`           | the scan and the console that narrates it                        |    81 |
+| `DiscoverFeedStore`           | the rows, the render window, and the four writes                 |   109 |
+| `DiscoverProfileContextStore` | target roles, pay and geography - what a posting is read against |    97 |
 
-**The first store is Discover's**, and it is the recommended start for three reasons: the page is
-already half-decomposed so the diff stays readable, both remaining seams in it are stateful and
-therefore exactly what the layer is for, and its pure logic is already out and tested, so nothing
-needs to move twice.
+All component-scoped, all under the 250 budget, 78 tests between them.
+**`discover.component.ts` no longer injects `DbService`.**
 
-`discover.component.ts` is 730/400. Two candidates inside it, and **neither has been audited**:
+### Step 1b - the decision that blocks every page, and it is first
 
-- **The detail loading path** - `openDetail`, `loadDetail`, `detailBlocks`, `detailSalary`,
-  `detailSkills`, `detailScore`, `detailRow`. Self-contained, and it already calls the pure
-  `discover-detail-scoring.ts`. **Recommended first**: smallest surface, clearest ownership.
-- **The scan pipeline** - `scan`, the console lines, the per-source results. Larger and more
-  I/O-shaped. `discover-console.ts` and `discover-sources.service.ts` already exist beside it.
+**Discover still is not free of the gateway, and neither can any page be until this is settled.**
+The count went 46 -> 45, not to 44, because `DiscoverSourcesService` still injects `DbService`.
 
-**Before choosing the detail path, read the standing follow-up below about component-scoped services
-outliving their page.** A `LinkedDocumentsService` result already lands on a destroyed page's signals
-today; a component-scoped store would inherit that failure mode exactly.
+It **cannot move to `libs/application` as it stands: it raises seven toasts.** Every store written so
+far returns its failure and lets the page decide, because telling the user is the app's job. This
+service does not.
+
+This is not a Discover quirk - it is the shape of the last mile on every page, and the `type:data`
+allowlist flip is unreachable until it has an answer. **Take it through `aif-grilling` before writing
+anything.** The facts are already gathered:
+
+- `discover-sources.service.ts` is 173 lines, component-scoped, provided by the page.
+- Seven `this.toast` calls: three successes (source added twice, source removed) and four errors.
+- It also injects `TranslateService`, which is `type:util` and therefore fine for the layer.
+- `ToastService` lives in `apps/desktop/src/app/core/toast/`, so it is app-level by construction.
+
+Readings that lead to different work: the service returns failures like every other store and the
+page toasts; or the toast concern moves somewhere the layer may depend on; or services that notify
+stay in the app by rule and the allowlist flip is abandoned as a goal. Do not choose.
 
 ### Step 2 onwards - one page per pull request, in this order
 
@@ -285,17 +314,15 @@ the same pull request or its own.
 ### Step 3 - close the boundary
 
 When **no component injects `DbService`**, remove `type:data` from `type:app`'s allowlist in
-`eslint.config.mjs`. From that point the rule fails the build instead of the review. Until then it is
-held by review, and that interval is the known weak point of `ADR-0005` - say so rather than assuming
-the rule is already enforced.
-
-Check progress with:
+`eslint.config.mjs`. From that point the rule fails the build instead of the review.
 
 ```bash
 grep -rln "inject(DbService)" apps/desktop/src --include="*.ts" | grep -v spec | wc -l
 ```
 
-**46 at the time of writing.**
+**45 at the time of writing**, down from 46. That number is a poor per-pull-request metric and a fine
+end-state one: it only falls when a page's data access moves **in full**, and Discover's four stores
+moved everything except the one service Step 1b is about.
 
 ### What is explicitly not in the plan
 

@@ -7,3 +7,5 @@ export * from './lib/discover/discover-scan.store';
 export * from './lib/discover/discover-sources.store';
 export * from './lib/discover/discover-sources.util';
 export * from './lib/discover/scan-console';
+export * from './lib/documents/cv-photo-sections';
+export * from './lib/documents/cv-photo.store';

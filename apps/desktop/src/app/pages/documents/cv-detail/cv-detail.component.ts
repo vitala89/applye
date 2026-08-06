@@ -57,6 +57,7 @@ import {
   themeStyleSeed,
   themeTitleRule,
 } from '@applye/core';
+import { CvPhotoStore } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -122,6 +123,7 @@ export function mergePersonalField<T extends string | undefined>(
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
+  providers: [CvPhotoStore],
 })
 export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -169,43 +171,24 @@ export class CvDetailComponent {
   readonly label = signal('');
   readonly regionTag = signal('generic');
   readonly isDefault = signal(false);
-  readonly includePhoto = signal(false);
-  /** Photo bytes stored on THIS document. Kept only so CVs created before the
-   * photo moved to the profile keep rendering; new photos are never written
-   * here. `effectivePhoto` is what the preview and export actually use. */
-  private readonly legacyPhotoDataUri = signal<string | null>(null);
-  /** The one reusable photo from the profile, loaded alongside the document. */
-  readonly profilePhoto = signal<string | null>(null);
-  /**
-   * The photo this CV shows: the profile's, falling back to bytes an older
-   * document already carried. Whether to show it at all, and where, stay
-   * per-document decisions - only the image itself is now shared.
-   */
-  readonly photoDataUri = computed(() => this.profilePhoto() ?? this.legacyPhotoDataUri());
-  readonly photoPlacement = signal<PhotoPlacement>('above_left');
-  readonly photoPlacementOptions: { value: PhotoPlacement; labelKey: string }[] = [
-    { value: 'above_left', labelKey: 'documents.cv_photo_placement_left' },
-    { value: 'above_center', labelKey: 'documents.cv_photo_placement_center' },
-    { value: 'above_right', labelKey: 'documents.cv_photo_placement_right' },
-  ];
-  readonly includeBirthdate = signal(false);
-  readonly includeMaritalStatus = signal(false);
+  /** Whether this CV shows a photo, where, and the two personal-detail fields
+   * that are excluded by default. Component-scoped; the image itself is the
+   * profile's. Aliased for the template, which names each of these once. */
+  private readonly photo = inject(CvPhotoStore);
+  readonly includePhoto = this.photo.includePhoto;
+  readonly profilePhoto = this.photo.profilePhoto;
+  readonly photoDataUri = this.photo.dataUri;
+  readonly photoPlacement = this.photo.placement;
+  readonly photoPlacementOptions = this.photo.placements;
+  readonly includeBirthdate = this.photo.includeBirthdate;
+  readonly includeMaritalStatus = this.photo.includeMaritalStatus;
 
   readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingKey = signal<CvSectionKey | null>(null);
   readonly pullingProfile = signal(false);
 
-  readonly atsNoteKeys = computed(() =>
-    cvFieldAtsNoteKeys(
-      {
-        includePhoto: this.includePhoto(),
-        includeBirthdate: this.includeBirthdate(),
-        includeMaritalStatus: this.includeMaritalStatus(),
-      },
-      this.regionTag(),
-    ),
-  );
+  readonly atsNoteKeys = computed(() => cvFieldAtsNoteKeys(this.photo.flags(), this.regionTag()));
 
   readonly saveTemplateOpen = signal(false);
   readonly saveTemplateName = signal('');
@@ -711,14 +694,13 @@ export class CvDetailComponent {
     this.loading.set(true);
     this.loadError.set(false);
     try {
-      const [item, templates, profile] = await Promise.all([
+      // The photo itself lives on the profile now, and its store reads it: this
+      // document only decides whether to show it and where.
+      const [item, templates] = await Promise.all([
         this.db.documentLibraryGet(id),
         this.db.cvTemplatesList(),
-        this.db.getProfile(),
+        this.photo.loadProfilePhoto(),
       ]);
-      // The photo itself lives on the profile now; this document only decides
-      // whether to show it and where.
-      this.profilePhoto.set(profile?.photoDataUri ?? null);
       if (!item) {
         this.loadError.set(true);
         return;
@@ -739,16 +721,7 @@ export class CvDetailComponent {
       const ordered = [...content.sections].sort((a, b) => a.order - b.order);
       this.sections.set(ordered);
 
-      const photo = ordered.find((s) => s.key === 'photo') as
-        Extract<CvSection, { key: 'photo' }> | undefined;
-      this.includePhoto.set(photo?.visible ?? false);
-      this.legacyPhotoDataUri.set(photo?.dataUri ?? null);
-      this.photoPlacement.set(photo?.placement ?? 'above_left');
-      const personal = ordered.find(
-        (s): s is Extract<CvSection, { key: 'personal_details' }> => s.key === 'personal_details',
-      );
-      this.includeBirthdate.set(!!personal?.birthDate);
-      this.includeMaritalStatus.set(!!personal?.maritalStatus);
+      this.photo.hydrate(ordered);
 
       const themeId = item.themeId ?? 1;
       this.themeId.set(themeId);
@@ -970,26 +943,13 @@ export class CvDetailComponent {
   }
 
   setPhotoPlacement(placement: PhotoPlacement): void {
-    this.photoPlacement.set(placement);
+    this.photo.setPlacement(placement);
   }
 
-  /**
-   * Toggle the "Include photo" chip. Turning it ON guarantees a `photo`
-   * section exists in the editor (most templates don't seed one), so the
-   * upload card actually appears; turning it OFF just hides the photo in the
-   * preview while keeping the stored bytes.
-   */
+  /** Toggles the "Include photo" chip. The store decides what the section list
+   * must become, because switching the photo on has to create one. */
   toggleIncludePhoto(): void {
-    const next = !this.includePhoto();
-    this.includePhoto.set(next);
-    if (!next || this.sections().some((s) => s.key === 'photo')) return;
-    const photo: Extract<CvSection, { key: 'photo' }> = {
-      key: 'photo',
-      order: 0,
-      visible: true,
-      dataUri: this.legacyPhotoDataUri() ?? undefined,
-    };
-    this.sections.set([photo, ...this.sections()].map((s, i) => ({ ...s, order: i })));
+    this.sections.set(this.photo.toggleIncludePhoto(this.sections()));
   }
 
   async save(): Promise<void> {
@@ -997,24 +957,7 @@ export class CvDetailComponent {
     if (!doc || this.saving()) return;
     this.saving.set(true);
     try {
-      const sections = this.sections().map((s) => {
-        if (s.key === 'photo') {
-          return {
-            ...s,
-            visible: this.includePhoto(),
-            dataUri: this.legacyPhotoDataUri() ?? undefined,
-            placement: this.photoPlacement(),
-          };
-        }
-        if (s.key === 'personal_details') {
-          return {
-            ...s,
-            birthDate: this.includeBirthdate() ? s.birthDate : undefined,
-            maritalStatus: this.includeMaritalStatus() ? s.maritalStatus : undefined,
-          };
-        }
-        return s;
-      });
+      const sections = this.photo.sectionsForSave(this.sections());
       this.sections.set(sections);
 
       if (this.isDefault()) {
@@ -1084,9 +1027,9 @@ export class CvDetailComponent {
         name: this.saveTemplateName().trim(),
         regionTag: this.regionTag(),
         sectionsJson: JSON.stringify(orderedKeys),
-        includePhoto: this.includePhoto(),
-        includeBirthdate: this.includeBirthdate(),
-        includeMaritalStatus: this.includeMaritalStatus(),
+        includePhoto: this.photo.includePhoto(),
+        includeBirthdate: this.photo.includeBirthdate(),
+        includeMaritalStatus: this.photo.includeMaritalStatus(),
       });
       this.templates.set(await this.db.cvTemplatesList());
       this.saveTemplateOpen.set(false);

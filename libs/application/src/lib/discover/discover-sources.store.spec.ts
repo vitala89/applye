@@ -2,8 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DiscoverSource } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../core/toast/toast.service';
-import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
+import { DiscoverSourcesStore, formatScanTime } from './discover-sources.store';
 
 function source(over: Partial<DiscoverSource> = {}): DiscoverSource {
   return {
@@ -25,20 +24,20 @@ function setup(rows: DiscoverSource[] = []) {
     addSource: jest.fn(async () => undefined),
     removeSource: jest.fn(async () => undefined),
   };
-  const toast = { success: jest.fn(), error: jest.fn() };
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
-      DiscoverSourcesService,
+      DiscoverSourcesStore,
       { provide: DbService, useValue: db },
-      { provide: ToastService, useValue: toast },
       { provide: TranslateService, useValue: { t: () => (k: string) => k } },
     ],
   });
-  return { svc: TestBed.inject(DiscoverSourcesService), db, toast };
+  return { svc: TestBed.inject(DiscoverSourcesStore), db };
 }
 
-describe('DiscoverSourcesService', () => {
+describe('DiscoverSourcesStore', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
   it('groups sources the three ways the drawer lists them', async () => {
     const { svc } = setup([
       { ...source(), id: 1, isBuiltin: true },
@@ -54,7 +53,7 @@ describe('DiscoverSourcesService', () => {
   });
 
   /// The checkbox must not lag the click, so the row flips before the write
-  /// lands. That optimism is the reason this list is owned by a service rather
+  /// lands. That optimism is the reason this list is owned by a store rather
   /// than passed down and evented back up.
   it('flips a source before the write lands', async () => {
     const { svc, db } = setup([source({ id: 1, isEnabled: true })]);
@@ -70,28 +69,32 @@ describe('DiscoverSourcesService', () => {
     expect(svc.enabledCount()).toBe(0);
 
     resolveWrite();
-    await pending;
+    await expect(pending).resolves.toEqual({ ok: true });
     expect(svc.all()[0].isEnabled).toBe(false);
   });
 
   /// A failed write must put the row back rather than leave the user looking at
-  /// a switch that says something the database does not.
+  /// a switch that says something the database does not. The error text is
+  /// returned, never toasted: telling the user is the drawer's job.
   it('reloads when the write fails, so the row cannot lie', async () => {
-    const { svc, db, toast } = setup([source({ id: 1, isEnabled: true })]);
+    const { svc, db } = setup([source({ id: 1, isEnabled: true })]);
     await svc.reload();
     db.setSourceEnabled.mockRejectedValue(new Error('locked'));
 
-    await svc.setEnabled(svc.all()[0]);
+    const result = await svc.setEnabled(svc.all()[0]);
 
     expect(db.listSources).toHaveBeenCalledTimes(2);
     expect(svc.all()[0].isEnabled).toBe(true);
-    expect(toast.error).toHaveBeenCalled();
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('locked');
   });
 
   it('names an unnamed RSS feed after its host, and refuses one with no url', async () => {
     const { svc, db } = setup();
 
-    await expect(svc.addRss('https://jobs.example.com/feed.xml', '  ')).resolves.toBe(true);
+    await expect(svc.addRss('https://jobs.example.com/feed.xml', '  ')).resolves.toEqual({
+      ok: true,
+    });
     expect(db.addSource).toHaveBeenCalledWith({
       name: 'jobs.example.com',
       sourceType: 'rss',
@@ -99,14 +102,14 @@ describe('DiscoverSourcesService', () => {
     });
 
     db.addSource.mockClear();
-    await expect(svc.addRss('   ', 'Named')).resolves.toBe(false);
+    await expect(svc.addRss('   ', 'Named')).resolves.toEqual({ ok: false });
     expect(db.addSource).not.toHaveBeenCalled();
   });
 
   it('builds a board row from its provider and slug', async () => {
     const { svc, db } = setup();
 
-    await expect(svc.addBoard('ats_lever', '  Acme  ')).resolves.toBe(true);
+    await expect(svc.addBoard('ats_lever', '  Acme  ')).resolves.toEqual({ ok: true });
     expect(db.addSource).toHaveBeenCalledWith({
       name: 'LEVER:ACME',
       sourceType: 'ats_lever',
@@ -117,11 +120,36 @@ describe('DiscoverSourcesService', () => {
   /// The caller clears its form only on a real success, so a failed write must
   /// not read as one.
   it('reports a failed add rather than swallowing it', async () => {
-    const { svc, db, toast } = setup();
+    const { svc, db } = setup();
     db.addSource.mockRejectedValue(new Error('offline'));
 
-    await expect(svc.addBoard('ats_ashby', 'acme')).resolves.toBe(false);
-    expect(toast.error).toHaveBeenCalled();
+    const result = await svc.addBoard('ats_ashby', 'acme');
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('offline');
+  });
+
+  /// Refused-for-empty-input and failed are different outcomes, and the drawer
+  /// tells them apart by whether there is an error to show: an empty form is not
+  /// something to announce.
+  it('distinguishes a refused write from a failed one', async () => {
+    const { svc } = setup();
+
+    expect(await svc.addBoard('ats_lever', '   ')).toEqual({ ok: false });
+    expect(await svc.addRss('  ', '  ')).toEqual({ ok: false });
+  });
+
+  it('reports removal, and reads the list back after it', async () => {
+    const { svc, db } = setup([source({ id: 7 })]);
+    await svc.reload();
+
+    await expect(svc.remove(svc.all()[0])).resolves.toEqual({ ok: true });
+    expect(db.removeSource).toHaveBeenCalledWith(7);
+    expect(db.listSources).toHaveBeenCalledTimes(2);
+
+    db.removeSource.mockRejectedValue(new Error('busy'));
+    const failed = await svc.remove(source({ id: 7 }));
+    expect(failed.ok).toBe(false);
+    expect(failed.error).toContain('busy');
   });
 
   describe('resultLine', () => {

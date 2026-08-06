@@ -182,6 +182,50 @@ The cost accepted: "domain or format" is a judgement, and it is now made per mod
 rule. That is the second time in two days this ADR's calculation rule needed qualifying, which is
 itself worth noticing.
 
+## Amendment, 2026-08-06 (third): the layer never notifies the user
+
+The first two amendments settled where a store's pure modules live. This one settles the other
+direction: what a store does when the user needs to be told something.
+
+`DiscoverSourcesService` was the last file under `pages/discover/` still injecting `DbService`, and it
+**raises seven toasts**. `ToastService` lives in `apps/desktop/src/app/core/toast/`, so it is app-level
+by construction, and `type:application` deliberately cannot depend on `type:ui` either. A store that
+notified would make the whole layer depend on the app.
+
+**Decision: nothing in `libs/application` notifies. A member returns its outcome and the component
+decides whether and how to say it.** This is what all four Discover stores already did; it is now the
+rule rather than four coincidences. The `type:data` allowlist flip stays the end state.
+
+**Three outcomes, not two.** `string | null` - the convention `feed.save`, `feed.setDismissed` and
+`scan.run` use - is not enough for a write that can refuse its own input: `null` would mean both
+"created" and "nothing to do", and the caller would clear a form the user was still filling in. Writes
+with that shape return `{ ok: boolean; error?: string }`, joining `clear()`'s existing
+`{ removed } | { error }`. Two shapes in the layer, chosen by whether refusal is possible.
+
+Options rejected:
+
+- **A notification port in `libs/application`** - an injection token the app implements. It would have
+  let a moved service keep its behaviour byte-for-byte, at the cost of a new public API on the layer
+  and a second way to tell the user things.
+- **Moving `ToastService` into a library.** Technically clean: its only dependency is
+  `TranslateService`, which is `type:util`. Rejected because "the app owns telling the user" would stop
+  being true, for a service the layer should not need.
+- **A rule that notifying services stay in the app**, abandoning the allowlist flip. Rejected: it
+  would leave ADR-0005's enforcement follow-up permanently open.
+
+**What the audit found, which changed the size of the problem.** The handoff assumed this was the shape
+of the last mile on every page. It is not: of the 19 non-component services that inject `DbService`,
+**four notify** - `discover-sources` (7 calls), `job-actions` (4), `portal-answers` (2),
+`cover-letter-tailor` (1) - and the other 15 raise nothing. The three remaining convert when their own
+pages are migrated.
+
+**And a planning fact worth recording, because it decides the shape of the next pages.** The 250-line
+budget matches `/^libs\/application\/.*\.ts$/`, not only `*.store.ts`. Five services that must
+eventually move are 251 to 326 lines - `cover-letter-tailor` 326, `tailoring` 326, `job-scoring` 319,
+`job-identity-resolver` 268, `portal-answers` 251 - so they **decompose by responsibility when they
+move** and do not relocate intact. That is the rule already stated for `jobs.component.ts`, confirmed
+to apply to services too rather than only to stores.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

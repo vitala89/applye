@@ -44,6 +44,40 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, the layer never notifies, and Discover leaves the gateway
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `feat/discover-sources-store`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** answer Step 1b - what happens to a service that both reaches the gateway and toasts - and apply the answer to `DiscoverSourcesService`, the last file under `pages/discover/` injecting `DbService`.
+- **Completed:**
+  - **Grilling gate, two rounds, six questions.** ADR-0005 has a third amendment: **nothing in `libs/application` notifies the user.** A member returns its outcome; the component decides whether and how to say it. Rejected: a notification port on the layer, moving `ToastService` into a library, and a rule that notifying services stay in the app (which would leave the allowlist flip permanently open).
+  - `discover-sources.service.ts` (173) -> `libs/application/.../discover-sources.store.ts` (**168** non-empty, budget 250), with `resultLine` and `formatScanTime` on the `scan-console.ts` precedent. `discover-sources.util.ts` (68) moved whole; the page and drawer import `toggled` and `narrowBuiltinsByMarkets` back through the barrel.
+  - The four writes return `{ ok: boolean; error?: string }`. The drawer raises all seven notifications, because it already owned all four call sites - the page needed no change beyond its imports.
+  - **`grep inject(DbService)`: 45 -> 44.** No file under `pages/discover/` reaches the gateway.
+  - `discover.component.ts` **618 -> 618**; see the ratchet note below for why that number is not an accident.
+  - Tests: store spec 13 (was 11 as a service spec), new drawer spec 7, **1392 desktop + 98 application, all passing**. Six mutations, six killed.
+- **Not completed:** the three other notifying services (`job-actions` 4 toasts, `portal-answers` 2, `cover-letter-tailor` 1) convert with their own pages, by the scope decision.
+- **Files or packages changed:** `libs/application` (store, util, two specs, barrel), `apps/desktop` Discover page and Sources drawer (+ new drawer spec), `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this log.
+- **Validation:** `nx run desktop:type-check`; `nx run-many --target=lint --projects=desktop,application --skip-nx-cache`; `nx run-many --target=test --projects=desktop,application --skip-nx-cache`; `nx build desktop`; `npm run quality:file-size`; `npm run quality:attribution`; `npx nx format:check`; `git diff --check`. **`quality:style-move` was deliberately not run:** no stylesheet changed in this branch, so there was no move to prove.
+- **Privacy/security impact:** none. Orchestration moved between files in the same process; no storage, network or `invoke` behaviour changed.
+- **Decisions and assumptions:**
+  - **The layer never notifies** (ADR-0005 amendment three). The `type:data` allowlist flip stays the end goal.
+  - **Two failure shapes, chosen by whether refusal is possible.** `string | null` stays right for a write that either works or fails; a write that can refuse its own empty input needs three outcomes, because `null` would mean both "created" and "nothing to do" and the drawer would clear a form the user was still filling in.
+  - **The 250-line budget matches every file in `libs/application`, not only `*.store.ts`.** Five services that must eventually move are 251-326 lines, so they decompose when they move. This is a planning fact for `jobs` and the CV pages.
+  - Scope: rule decided now, applied to Discover only.
+- **Risks or compatibility impact:** none functional. The seven messages are raised from one component instead of one service, with the same keys and the same conditions.
+- **Open issues or blockers:** none for this branch.
+- **Lessons, each of which cost something:**
+  - **A directive left behind is the host-element trap one layer up, and it is completely silent.** The drawer's markup carries `<a routerLink="/settings">`, but `RouterLink` stayed in the **page's** `imports` when that markup moved into the child. Without the directive the attribute is literal - no `href`, no navigation - and `routerLink` is a valid attribute name, so type-check, lint, the build and 1391 tests all passed on a dead link. The only hint was a compiler **warning** about the page's now-unused import, which says nothing about the drawer. It was found by chasing the ratchet, not by looking for it. **Every past extraction should be re-checked for directives, not only for CSS rules**: `RouterLink`, `FormsModule`/`ngModel`, and any structural directive whose markup crossed a component boundary.
+  - **The handoff's framing was wrong, and it was cheap to check.** "The shape of the last mile on every page" was **4 of 19** services: 15 of the gateway-using services notify nothing. One `grep -c` per file, before the interview, and it changed which options were worth asking about.
+  - **The ratchet paid for itself again.** Replacing two single-line imports with three entries in a braced block is **+1 line**, and the ratchet refused the branch at 619/618. The fix was not cosmetic: the dead `RouterLink` entry was the line to remove, and removing it is what surfaced the bug above.
+  - **A real `TranslateService` in a spec resolves keys to English copy.** Asserting `'discover.source_added'` against `'Source added.'` fails; the store spec's stub (`{ t: () => (k) => k }`) is what keeps the assertion about _which_ message is raised rather than about the wording.
+  - **`grep -cF` on a multiline pattern counts matching lines, not matches.** A mutation asserting "exactly one" saw 5 and refused to apply - correctly, and only because the assertion was there. Re-run with `perl -0777` and a substitution count, which is the thing actually being asserted.
+- **Next first action:** the `jobs` page - 1050/686/493, the worst class in the repository, and the first page needing several stores rather than one. Its services are inside the 250-line rule above: `job-actions` (157, 4 toasts) and `job-scoring` (319) both migrate with it, and the second decomposes.
+
 ### 2026-08-06, session close: thirteen PRs, an architecture decision, and Discover's state fully in the layer
 
 - **Status:** complete - documentation only

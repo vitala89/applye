@@ -2,11 +2,10 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { DiscoverSource } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { ToastService } from '../../core/toast/toast.service';
 import { hostOf } from './discover-sources.util';
 
 /** The board providers Applye can add. Narrower than a bare string on
- * purpose: `addSource` accepts only these, and the drawer's picker offers
+ * purpose: `addBoard` accepts only these, and the drawer's picker offers
  * exactly this list. */
 export type AtsBoardType = 'ats_greenhouse' | 'ats_lever' | 'ats_ashby' | 'ats_personio';
 
@@ -25,22 +24,37 @@ interface ScanSourceResult {
 }
 
 /**
+ * What a write to the sources list did.
+ *
+ * Three outcomes rather than two, because a form that refuses its own empty
+ * input is neither a success to announce nor a failure to explain: `ok` false
+ * with no `error` means nothing was attempted, so the caller must neither clear
+ * the form nor say anything.
+ */
+export interface SourceWriteResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
  * The Discover sources a scan runs against, and every change the user can make
  * to that list.
  *
- * Owned by a service rather than by the page because two components now read
- * it: the page runs the scan over the enabled sources and shows how many there
- * are, and the Sources drawer adds, removes and switches them. Passing the list
- * down and events back up would have left the drawer's optimistic toggle -
+ * **Component-scoped**, provided by the Discover page, because two components
+ * read it: the page runs the scan over the enabled sources and shows how many
+ * there are, and the Sources drawer adds, removes and switches them. Passing the
+ * list down and events back up would have left the drawer's optimistic toggle -
  * flipping the row before the write lands - stranded on the wrong side of the
  * boundary.
  *
- * Provided by the Discover page, so its lifetime is the page's.
+ * **Nothing here notifies the user.** Every write reports its outcome and the
+ * drawer decides what to say. That is the layer's rule rather than this store's
+ * preference: `ToastService` is app-level by construction, and a store reaching
+ * for it would make the whole layer depend on the app.
  */
 @Injectable()
-export class DiscoverSourcesService {
+export class DiscoverSourcesStore {
   private readonly db = inject(DbService);
-  private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly t = this.i18n.t;
 
@@ -73,25 +87,25 @@ export class DiscoverSourcesService {
    * checkbox does not lag the click. A failed write reloads, which is what puts
    * the row back rather than leaving the user looking at a lie.
    */
-  async setEnabled(source: DiscoverSource): Promise<void> {
+  async setEnabled(source: DiscoverSource): Promise<SourceWriteResult> {
     const enabled = !source.isEnabled;
     this.all.update((list) =>
       list.map((s) => (s.id === source.id ? { ...s, isEnabled: enabled } : s)),
     );
     try {
       await this.db.setSourceEnabled(source.id, enabled);
+      return { ok: true };
     } catch (e) {
       console.error('discover: toggle source failed', e);
-      this.toast.error(String(e));
       await this.reload();
+      return { ok: false, error: String(e) };
     }
   }
 
-  /** Adds a company board. Returns whether the row was created, so the form
-   * knows whether to clear itself. */
-  async addBoard(type: AtsBoardType, slug: string): Promise<boolean> {
+  /** Adds a company board. */
+  async addBoard(type: AtsBoardType, slug: string): Promise<SourceWriteResult> {
     const cleaned = slug.trim().toLowerCase();
-    if (!cleaned) return false;
+    if (!cleaned) return { ok: false };
     const label = ATS_LABEL[type];
     try {
       await this.db.addSource({
@@ -100,40 +114,36 @@ export class DiscoverSourcesService {
         slug: cleaned,
       });
       await this.reload();
-      this.toast.success(this.t()('discover.source_added'));
-      return true;
+      return { ok: true };
     } catch (e) {
       console.error('discover: add board failed', e);
-      this.toast.error(String(e));
-      return false;
+      return { ok: false, error: String(e) };
     }
   }
 
   /** Adds an RSS feed, naming it after its host when the user did not name it. */
-  async addRss(rawUrl: string, rawName: string): Promise<boolean> {
+  async addRss(rawUrl: string, rawName: string): Promise<SourceWriteResult> {
     const url = rawUrl.trim();
     const name = rawName.trim() || hostOf(url);
-    if (!url || !name) return false;
+    if (!url || !name) return { ok: false };
     try {
       await this.db.addSource({ name, sourceType: 'rss', url });
       await this.reload();
-      this.toast.success(this.t()('discover.source_added'));
-      return true;
+      return { ok: true };
     } catch (e) {
       console.error('discover: add source failed', e);
-      this.toast.error(String(e));
-      return false;
+      return { ok: false, error: String(e) };
     }
   }
 
-  async remove(source: DiscoverSource): Promise<void> {
+  async remove(source: DiscoverSource): Promise<SourceWriteResult> {
     try {
       await this.db.removeSource(source.id);
       await this.reload();
-      this.toast.success(this.t()('discover.source_removed'));
+      return { ok: true };
     } catch (e) {
       console.error('discover: remove source failed', e);
-      this.toast.error(String(e));
+      return { ok: false, error: String(e) };
     }
   }
 

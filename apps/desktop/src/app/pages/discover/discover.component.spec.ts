@@ -45,6 +45,7 @@ function feedItem(): DiscoverFeedItem {
 async function createFixture(
   sources: DiscoverSource[],
   feed: DiscoverFeedItem[],
+  profile: { targetArchetypes?: string; fullMd?: string } | null = null,
 ): Promise<ComponentFixture<DiscoverComponent>> {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -56,7 +57,7 @@ async function createFixture(
         useValue: {
           listSources: jest.fn().mockResolvedValue(sources),
           discoverFeed: jest.fn().mockResolvedValue(feed),
-          getProfile: jest.fn().mockResolvedValue(null),
+          getProfile: jest.fn().mockResolvedValue(profile),
           getSettings: jest.fn().mockResolvedValue({
             uiLanguage: 'en',
             geoScope: 'worldwide',
@@ -150,19 +151,19 @@ describe('Discover: the archetype badge a row is handed', () => {
     ).rowArchetype(row);
   }
 
-  function archetypesOf(fixture: ComponentFixture<DiscoverComponent>) {
-    return (fixture.componentInstance as unknown as { archetypes: { set: (a: unknown[]) => void } })
-      .archetypes;
-  }
-
   it('is null when the row matches no archetype', async () => {
     const fixture = await createFixture([source()], []);
     expect(hero(fixture, { id: 1, title: 'Pastry Chef' })).toBeNull();
   });
 
   it('labels the tier rather than repeating it', async () => {
-    const fixture = await createFixture([source()], []);
-    archetypesOf(fixture).set([{ name: 'Frontend Engineer', fit: 'primary', sellWhen: '' }]);
+    // Driven through the real path: the archetypes come from the profile the
+    // context store reads at load, not from reaching into a page signal.
+    const fixture = await createFixture([source()], [], {
+      targetArchetypes: JSON.stringify([
+        { name: 'Frontend Engineer', fit: 'primary', sellWhen: '' },
+      ]),
+    });
 
     const badge = hero(fixture, { id: 1, title: 'Senior Frontend Engineer' });
 

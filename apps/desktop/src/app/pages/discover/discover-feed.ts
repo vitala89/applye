@@ -1,12 +1,12 @@
-import type { DiscoverFeedItem } from '@applye/core';
+import { type FeedRow } from '@applye/application';
 import { OTHER_COUNTRY, cityKey, classifyLoc } from './discover-location';
 
-/** Feed item + client-side triage state (transient until the next reload). */
-export interface FeedRow extends DiscoverFeedItem {
-  /** discoverShownAt was NULL when this feed was loaded. */
-  isNew: boolean;
-  dismissed: boolean;
-}
+/**
+ * The row shape is the feed store's - it owns the rows and the triage state.
+ * Re-exported because this module and its consumers are the page's vocabulary
+ * for one, and importing it from two places would read as two types.
+ */
+export type { FeedRow };
 
 /**
  * The archetype badge as the page resolved it: the tier and its label.

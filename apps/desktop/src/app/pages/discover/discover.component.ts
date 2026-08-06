@@ -67,7 +67,7 @@ import {
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
-import { DiscoverDetailStore, DiscoverScanStore } from '@applye/application';
+import { DiscoverDetailStore, DiscoverFeedStore, DiscoverScanStore } from '@applye/application';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -75,8 +75,6 @@ type WorkType = 'remote' | 'hybrid' | 'onsite';
 type Tab = 'new' | 'all';
 
 /** A titled block of feed rows ("For you" / "More openings"). */
-/** Feed rows rendered per page; the list grows in these steps as the user scrolls. */
-const FEED_PAGE = 30;
 /** One block of the deterministically parsed job description. */
 const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
 
@@ -93,7 +91,7 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverFeedRowComponent,
     DiscoverFilterMenuComponent,
   ],
-  providers: [DiscoverSourcesService, DiscoverDetailStore, DiscoverScanStore],
+  providers: [DiscoverSourcesService, DiscoverDetailStore, DiscoverScanStore, DiscoverFeedStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './discover.component.html',
   styleUrl: './discover.component.scss',
@@ -132,7 +130,16 @@ export class DiscoverComponent {
 
   // ------------------------------------------------------------------ state
   protected readonly loading = signal(true);
-  protected readonly feed = signal<FeedRow[]>([]);
+  /** The scanned jobs and every write that changes one. Component-scoped. */
+  protected readonly feedStore = inject(DiscoverFeedStore);
+  /**
+   * Aliases onto the feed store, following `jobs.component.ts`: the template
+   * keeps one short name per idea, and the longer path in a binding pushes the
+   * expression past the print width, which is five wrapped lines the ratchet
+   * counts.
+   */
+  protected readonly displayCount = this.feedStore.displayCount;
+  protected readonly hasClearableJobs = this.feedStore.hasClearableJobs;
   /** The scan and the console that narrates it. Component-scoped. */
   protected readonly scan = inject(DiscoverScanStore);
   protected readonly drawerOpen = signal(false);
@@ -214,7 +221,7 @@ export class DiscoverComponent {
   protected readonly view = computed<View>(() => {
     if (this.loading()) return 'skeleton';
     if (this.scan.scanning()) return 'scanning';
-    const active = this.feed().filter((r) => !r.dismissed).length;
+    const active = this.feedStore.rows().filter((r) => !r.dismissed).length;
     const anyEnabled = this.sources().some((s) => s.isEnabled);
     const everScanned = this.sources().some((s) => s.lastScanAt);
     if (active === 0 && !anyEnabled) return 'first';
@@ -256,13 +263,13 @@ export class DiscoverComponent {
   /** Distinct source names present in the feed, for the source select. */
   protected readonly sourceOptions = computed(() => {
     const names = new Set<string>();
-    for (const row of this.feed()) if (row.source) names.add(row.source);
+    for (const row of this.feedStore.rows()) if (row.source) names.add(row.source);
     return [...names].sort();
   });
 
   protected readonly visibleRows = computed<FeedRow[]>(() =>
     filterFeedRows(
-      this.feed(),
+      this.feedStore.rows(),
       {
         query: this.query(),
         sources: this.sourceSel(),
@@ -291,7 +298,8 @@ export class DiscoverComponent {
   private readonly badgeByRow = computed<Map<number, ArchetypeMatch | null>>(() => {
     const list = this.archetypes();
     const cache = new Map<number, ArchetypeMatch | null>();
-    for (const row of this.feed()) cache.set(row.id, matchArchetype(row.title ?? '', list));
+    for (const row of this.feedStore.rows())
+      cache.set(row.id, matchArchetype(row.title ?? '', list));
     return cache;
   });
 
@@ -323,9 +331,6 @@ export class DiscoverComponent {
     ),
   );
 
-  /** How many feed rows to render right now; grows by FEED_PAGE as the user scrolls. */
-  protected readonly displayCount = signal(FEED_PAGE);
-
   /** Sentinel element at the end of the feed; when it scrolls into view, load more. */
   private readonly loadMoreSentinel = viewChild<ElementRef<HTMLElement>>('loadMore');
 
@@ -335,7 +340,9 @@ export class DiscoverComponent {
   );
 
   /** More rows exist than are currently rendered. */
-  protected readonly hasMoreFeed = computed(() => this.totalFeedRows() > this.displayCount());
+  protected readonly hasMoreFeed = computed(
+    () => this.totalFeedRows() > this.feedStore.displayCount(),
+  );
 
   /**
    * Any unsaved scanned job exists at all - independent of the current filters
@@ -343,7 +350,6 @@ export class DiscoverComponent {
    * visible slice. Drives disabling the Clear list button when there is
    * nothing for it to do.
    */
-  protected readonly hasClearableJobs = computed(() => this.feed().some((r) => !r.saved));
 
   /**
    * The feed windowed to `displayCount`: rows are handed out across sections in
@@ -351,7 +357,7 @@ export class DiscoverComponent {
    * headers still report their full `total`.
    */
   protected readonly renderedSections = computed<FeedSection[]>(() => {
-    let budget = this.displayCount();
+    let budget = this.feedStore.displayCount();
     const out: FeedSection[] = [];
     for (const s of this.feedSections()) {
       if (budget <= 0) break;
@@ -364,7 +370,7 @@ export class DiscoverComponent {
 
   /** Render one more page. Called by the scroll sentinel and the manual button. */
   protected loadMoreFeed(): void {
-    this.displayCount.update((n) => n + FEED_PAGE);
+    this.feedStore.showMore();
   }
 
   /** Distinct source names present in the feed (for the Sources checkboxes). */
@@ -376,14 +382,14 @@ export class DiscoverComponent {
    * "Other" bucket collects unknown and remote-anywhere locations.
    */
   protected readonly availableRegions = computed<RegionGroup[]>(() =>
-    buildRegionGroups(this.feed()),
+    buildRegionGroups(this.feedStore.rows()),
   );
 
   /** Row currently open in the detail screen. */
   protected readonly detailRow = computed<FeedRow | null>(() => {
     const id = this.detail.id();
     if (id === null) return null;
-    return this.feed().find((r) => r.id === id) ?? null;
+    return this.feedStore.rows().find((r) => r.id === id) ?? null;
   });
 
   /** Count badges for the filter buttons (0 = "all"). */
@@ -415,17 +421,13 @@ export class DiscoverComponent {
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {
     try {
-      const [sources, feed, profile, settings] = await Promise.all([
+      const [sources, profile, settings] = await Promise.all([
         this.db.listSources(),
-        this.db.discoverFeed(),
         this.db.getProfile(),
         this.db.getSettings(),
+        this.feedStore.load(),
       ]);
       this.sources.set(sources);
-      this.feed.set(
-        feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
-      );
-      this.displayCount.set(FEED_PAGE);
       const arch = parseArchetypes(profile?.targetArchetypes);
       this.archetypes.set(arch);
       this.profileKeywords.set(archetypeKeywordBag(arch));
@@ -458,22 +460,13 @@ export class DiscoverComponent {
         .filter((s) => s.isEnabled)
         .map((s) => s.name ?? ''),
       async () => {
-        await this.reloadFeed();
+        await this.feedStore.load();
         await this.sourcesSvc.reload();
         this.lastScanMarket.set(this.markets());
         this.rescanBannerDismissed.set(false);
       },
     );
     if (error) this.toast.error(error);
-  }
-
-  /** Reads the feed back and resets the render window to the first page. */
-  private async reloadFeed(): Promise<void> {
-    const feed = await this.db.discoverFeed();
-    this.feed.set(
-      feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
-    );
-    this.displayCount.set(FEED_PAGE);
   }
 
   // -------------------------------------------------------- market-changed
@@ -485,7 +478,7 @@ export class DiscoverComponent {
     this.refreshingForMarket.set(true);
     try {
       try {
-        await this.db.discoverClear();
+        await this.feedStore.discardUnsaved();
       } catch (e) {
         console.error('discover: clear before refresh failed', e);
       }
@@ -502,7 +495,7 @@ export class DiscoverComponent {
   // ----------------------------------------------------------- clear inbox
   /** Open the confirm modal. No-op when there is nothing unsaved to clear. */
   protected askClearFeed(): void {
-    if (!this.hasClearableJobs()) return;
+    if (!this.feedStore.hasClearableJobs()) return;
     this.clearConfirm.set(true);
   }
 
@@ -519,17 +512,13 @@ export class DiscoverComponent {
     if (this.clearing()) return;
     this.clearing.set(true);
     try {
-      const removed = await this.db.discoverClear();
-      const feed = await this.db.discoverFeed();
-      this.feed.set(
-        feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
-      );
-      this.displayCount.set(FEED_PAGE);
+      const result = await this.feedStore.clear();
+      if ('error' in result) {
+        this.toast.error(result.error);
+        return;
+      }
       this.clearConfirm.set(false);
-      this.toast.success(this.t()('discover.clear_done').replace('{n}', String(removed)));
-    } catch (e) {
-      console.error('discover: clear failed', e);
-      this.toast.error(String(e));
+      this.toast.success(this.t()('discover.clear_done').replace('{n}', String(result.removed)));
     } finally {
       this.clearing.set(false);
     }
@@ -679,39 +668,22 @@ export class DiscoverComponent {
 
   protected async saveRow(row: FeedRow, event: Event): Promise<void> {
     event.stopPropagation();
-    try {
-      await this.db.upsertApplication({ jobId: row.id, status: 'saved' });
-      this.feed.update((rows) =>
-        rows.map((r) => (r.id === row.id ? { ...r, saved: true, isNew: false } : r)),
-      );
-      this.toast.success(this.t()('discover.saved_ok'));
-    } catch (e) {
-      console.error('discover: save failed', e);
-      this.toast.error(String(e));
-    }
+    const error = await this.feedStore.save(row.id);
+    if (error) this.toast.error(error);
+    else this.toast.success(this.t()('discover.saved_ok'));
   }
 
   protected async dismissRow(row: FeedRow, event: Event): Promise<void> {
     event.stopPropagation();
-    this.feed.update((rows) => rows.map((r) => (r.id === row.id ? { ...r, dismissed: true } : r)));
     this.detail.closeIfOpen(row.id);
-    try {
-      await this.db.discoverDismiss(row.id, true);
-    } catch (e) {
-      console.error('discover: dismiss failed', e);
-      this.toast.error(String(e));
-    }
+    const error = await this.feedStore.setDismissed(row.id, true);
+    if (error) this.toast.error(error);
   }
 
   protected async undoDismiss(row: FeedRow, event: Event): Promise<void> {
     event.stopPropagation();
-    this.feed.update((rows) => rows.map((r) => (r.id === row.id ? { ...r, dismissed: false } : r)));
-    try {
-      await this.db.discoverDismiss(row.id, false);
-    } catch (e) {
-      console.error('discover: undo failed', e);
-      this.toast.error(String(e));
-    }
+    const error = await this.feedStore.setDismissed(row.id, false);
+    if (error) this.toast.error(error);
   }
 
   protected async openOriginal(row: FeedRow, event: Event): Promise<void> {

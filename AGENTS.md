@@ -108,6 +108,8 @@ the installed `superpowers` and `mattpocock-skills` packs.
 
 The pre-commit hook and CI enforce the source-file size ratchet. Run `npm run quality:file-size` before handoff.
 
+**Run lint and tests with `--skip-nx-cache`.** Nx caches a target against its inputs, and a gate run that reports "0 errors" from a cache taken before the file you just wrote is indistinguishable in the output from a real pass. This has already hidden a lint error that the pre-commit hook then caught.
+
 ## After coding and before commit
 
 1. Review the final diff.

@@ -6,8 +6,8 @@
         [row]="drow"
         [sourceLabel]="srcLabel(drow.source)"
         [posted]="ago(drow.createdAt)"
-        [score]="detailScore()"
-        [verdict]="detailVerdict()"
+        [score]="detail.score()"
+        [verdict]="detail.verdict()"
         [archetype]="rowArchetype(drow)"
         [matchedKeywords]="matchedKeywords(drow)"
         (backRequested)="closeDetail()"
@@ -17,7 +17,7 @@
       <div class="dv-detail__grid">
         <!-- MAIN: parsed description -->
         <div class="dv-detail__main">
-          @if (detailBlocks() === null) {
+          @if (detail.blocks() === null) {
             <div class="dv-detail__loading">
               <span class="dv-row__detailloading">{{ t()('discover.detail_loading') }}</span>
               <div class="dv-skel__bar" style="width: 90%; height: 12px"></div>
@@ -27,7 +27,7 @@
             </div>
           } @else {
             <div class="dv-row__detail">
-              @for (block of detailBlocks(); track $index) {
+              @for (block of detail.blocks(); track $index) {
                 @switch (block.kind) {
                   @case ('heading') {
                     <div class="dv-row__dh">{{ block.text }}</div>
@@ -64,15 +64,15 @@
 
         <!-- SIDEBAR -->
         <app-discover-detail-score
-          [score]="detailScore()"
-          [verdict]="detailVerdict()"
+          [score]="detail.score()"
+          [verdict]="detail.verdict()"
           [tip]="tipText(drow)"
           [hasCompTarget]="hasCompTarget()"
           [compVerdict]="compVerdict()"
           [sourceLabel]="srcLabel(drow.source)"
           [location]="drow.location"
           [posted]="ago(drow.createdAt)"
-          [skills]="detailSkills()"
+          [skills]="detail.skills()"
           (rescoreRequested)="rescore(drow, $event)"
         />
       </div>
@@ -80,7 +80,7 @@
   }
 
   <!-- ============ FIRST RUN (no chrome) ============ -->
-  @if (detailId() === null && view() === 'first') {
+  @if (detail.id() === null && view() === 'first') {
     <div class="dv-first">
       <div class="dv-first__icon">
         <lucide-icon [img]="icons.compass" [size]="30" aria-hidden="true" />
@@ -94,7 +94,7 @@
   }
 
   <!-- ============ HEADER ROW ============ -->
-  @if (detailId() === null && showHeader()) {
+  @if (detail.id() === null && showHeader()) {
     <div class="dv-head">
       <div class="dv-head__left">
         <span class="dv-head__label">{{ t()('discover.inbox_label') }}</span>
@@ -128,7 +128,7 @@
   }
 
   <!-- ============ SCAN CONSOLE ============ -->
-  @if (detailId() === null && showConsole()) {
+  @if (detail.id() === null && showConsole()) {
     <div class="dv-console">
       <div class="dv-console__head">
         <span class="dv-console__title">{{ t()('discover.console_title') }}</span>
@@ -150,7 +150,7 @@
   }
 
   <!-- ============ SUMMARY STRIP ============ -->
-  @if (detailId() === null && showStrip()) {
+  @if (detail.id() === null && showStrip()) {
     <div class="dv-strip">
       <div class="dv-strip__stats">
         <span class="dv-strip__muted">
@@ -175,7 +175,7 @@
   }
 
   <!-- ============ NEVER SCANNED ============ -->
-  @if (detailId() === null && view() === 'never') {
+  @if (detail.id() === null && view() === 'never') {
     <div class="dv-never">
       <div class="dv-never__line">
         {{ t()('discover.never_line').replace('{n}', '' + enabledCount()) }}
@@ -189,7 +189,7 @@
   }
 
   <!-- ============ CAUGHT UP ============ -->
-  @if (detailId() === null && view() === 'caughtup') {
+  @if (detail.id() === null && view() === 'caughtup') {
     <div class="dv-caught">
       <div class="dv-caught__icon">
         <lucide-icon [img]="icons.check" [size]="24" aria-hidden="true" />
@@ -206,7 +206,7 @@
   }
 
   <!-- ============ FILTER ROW ============ -->
-  @if (detailId() === null && view() === 'feed') {
+  @if (detail.id() === null && view() === 'feed') {
     <div class="dv-filters">
       <input
         type="text"
@@ -392,7 +392,7 @@
   }
 
   <!-- ============ FEED LIST ============ -->
-  @if (detailId() === null && (view() === 'feed' || view() === 'scanning')) {
+  @if (detail.id() === null && (view() === 'feed' || view() === 'scanning')) {
     <div class="dv-feed" [class.dv-feed--dim]="scanning()">
       @if (marketChangedSinceScan()) {
         <div class="dv-rescan" role="status">
@@ -471,7 +471,7 @@
   }
 
   <!-- ============ SKELETON ============ -->
-  @if (detailId() === null && view() === 'skeleton') {
+  @if (detail.id() === null && view() === 'skeleton') {
     <div class="dv-feed">
       @for (sk of skeletonRows; track $index) {
         <div class="dv-skel">

@@ -18,7 +18,8 @@
       "@applye/core": ["libs/core/src/index.ts"],
       "@applye/data": ["libs/data/src/index.ts"],
       "@applye/ui": ["libs/ui/src/index.ts"],
-      "@applye/i18n": ["libs/i18n/src/index.ts"]
+      "@applye/i18n": ["libs/i18n/src/index.ts"],
+      "@applye/application": ["libs/application/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

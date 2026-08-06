@@ -1,4 +1,4 @@
-import { SKILL_DICT, computeRawScore, detectSkills } from './discover-detail-scoring';
+import { SKILL_DICT, computeRawScore, detectSkills } from './job-scoring';
 
 describe('detectSkills', () => {
   it('finds the technologies a posting names', () => {

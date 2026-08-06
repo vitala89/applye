@@ -35,7 +35,6 @@ import {
   parseLocalMarkets,
   parseProfileMd,
   compareCompensation,
-  extractSalaryFromJd,
   parseArchetypes,
   archetypeKeywordBag,
   matchArchetype,
@@ -52,9 +51,9 @@ import { classifyLoc, cityKey, type LocClass, type RegionKey } from './discover-
 import { toggled } from './discover-sources.util';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
 import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
-import { type JdBlock, parseJdBlocks } from './jd-blocks';
+
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
-import { computeRawScore, detectSkills } from './discover-detail-scoring';
+
 import {
   type CountryNode,
   type RegionGroup,
@@ -69,6 +68,7 @@ import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-det
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
 import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
+import { DiscoverDetailStore } from '@applye/application';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -94,7 +94,7 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverFeedRowComponent,
     DiscoverFilterMenuComponent,
   ],
-  providers: [DiscoverSourcesService],
+  providers: [DiscoverSourcesService, DiscoverDetailStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './discover.component.html',
   styleUrl: './discover.component.scss',
@@ -138,14 +138,8 @@ export class DiscoverComponent {
   protected readonly consoleLines = signal<ConsoleLine[]>([]);
   protected readonly consoleExpanded = signal(false);
   protected readonly drawerOpen = signal(false);
-  /** Job open in the full-screen detail view (null = feed). */
-  protected readonly detailId = signal<number | null>(null);
-  /** Parsed full-JD blocks for the open detail; null while loading. */
-  protected readonly detailBlocks = signal<JdBlock[] | null>(null);
-  /** Skills detected in the full JD (deterministic dictionary match). */
-  protected readonly detailSkills = signal<string[]>([]);
-  /** Raw keyword-fit score 0-100; null when the profile has no keywords. */
-  protected readonly detailScore = signal<number | null>(null);
+  /** The open job's detail screen. Component-scoped: one page, one open job. */
+  protected readonly detail = inject(DiscoverDetailStore);
   private readonly profileKeywords = signal<string[]>([]);
   private readonly archetypes = signal<Archetype[]>([]);
   protected readonly geoScope = signal('worldwide');
@@ -172,9 +166,6 @@ export class DiscoverComponent {
     currency: '',
     period: '',
   });
-  /** Salary text extracted from the open detail job's JD, or null. */
-  protected readonly detailSalary = signal<string | null>(null);
-
   /** True when the user has a compensation target to compare against. */
   protected readonly hasCompTarget = computed(
     () => !!(this.compTarget().min || this.compTarget().max),
@@ -182,7 +173,7 @@ export class DiscoverComponent {
 
   /** Salary-fit verdict for the open detail job vs the profile target. */
   protected readonly compVerdict = computed<CompensationVerdict>(() =>
-    compareCompensation(this.compTarget(), this.detailSalary()),
+    compareCompensation(this.compTarget(), this.detail.salary()),
   );
 
   // filters (empty selection set = "all")
@@ -392,17 +383,9 @@ export class DiscoverComponent {
 
   /** Row currently open in the detail screen. */
   protected readonly detailRow = computed<FeedRow | null>(() => {
-    const id = this.detailId();
+    const id = this.detail.id();
     if (id === null) return null;
     return this.feed().find((r) => r.id === id) ?? null;
-  });
-
-  protected readonly detailVerdict = computed<'strong' | 'good' | 'partial' | null>(() => {
-    const score = this.detailScore();
-    if (score === null) return null;
-    if (score >= 80) return 'strong';
-    if (score >= 55) return 'good';
-    return 'partial';
   });
 
   /** Count badges for the filter buttons (0 = "all"). */
@@ -564,42 +547,15 @@ export class DiscoverComponent {
   /** Row click: open the full-screen job detail. */
   protected openDetail(row: FeedRow): void {
     if (row.dismissed) return;
-    this.detailId.set(row.id);
-    this.detailBlocks.set(null);
-    this.detailSkills.set([]);
-    this.detailScore.set(null);
-    this.detailSalary.set(null);
-    void this.loadDetail(row.id);
+    this.detail.open(row.id, {
+      keywords: this.profileKeywords(),
+      fit: this.archetypeBadge(row)?.fit ?? null,
+      title: row.title ?? '',
+    });
   }
 
   protected closeDetail(): void {
-    this.detailId.set(null);
-    this.detailBlocks.set(null);
-  }
-
-  /** Lazy-load the full JD, parse blocks, detect skills, compute raw score. */
-  private async loadDetail(jobId: number): Promise<void> {
-    try {
-      const job = await this.db.getJob(jobId);
-      if (this.detailId() !== jobId) return; // user moved on meanwhile
-      const jd = job?.jdText ?? '';
-      this.detailSalary.set(extractSalaryFromJd(jd));
-      this.detailBlocks.set(parseJdBlocks(jd));
-      const skills = detectSkills(jd);
-      this.detailSkills.set(skills);
-      const row = this.detailRow();
-      this.detailScore.set(
-        computeRawScore(
-          `${row?.title ?? ''}\n${jd}`,
-          this.profileKeywords(),
-          skills,
-          row ? (this.archetypeBadge(row)?.fit ?? null) : null,
-        ),
-      );
-    } catch (e) {
-      console.error('discover: load detail failed', e);
-      if (this.detailId() === jobId) this.detailBlocks.set([]);
-    }
+    this.detail.close();
   }
 
   /** i18n label for an archetype tier badge. */
@@ -717,7 +673,7 @@ export class DiscoverComponent {
   // ------------------------------------------------------------ detail misc
   /** Deterministic tip line under the raw score. */
   protected tipText(row: FeedRow): string {
-    if (this.detailVerdict() === 'strong') return this.t()('discover.tip_strong');
+    if (this.detail.verdict() === 'strong') return this.t()('discover.tip_strong');
     const kw = this.matchedKeywords(row)[0] ?? this.profileKeywords()[0]?.toUpperCase() ?? '';
     return this.t()('discover.tip_other').replace('{kw}', kw);
   }
@@ -746,7 +702,7 @@ export class DiscoverComponent {
   protected async dismissRow(row: FeedRow, event: Event): Promise<void> {
     event.stopPropagation();
     this.feed.update((rows) => rows.map((r) => (r.id === row.id ? { ...r, dismissed: true } : r)));
-    if (this.detailId() === row.id) this.closeDetail();
+    this.detail.closeIfOpen(row.id);
     try {
       await this.db.discoverDismiss(row.id, true);
     } catch (e) {

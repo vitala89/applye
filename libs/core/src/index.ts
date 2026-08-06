@@ -19,6 +19,8 @@ export * from './lib/profile/split-display-name';
 export * from './lib/profile/compensation';
 export * from './lib/profile/archetype';
 export * from './lib/profile/scoring-state';
+export * from './lib/jobs/job-scoring';
+export * from './lib/jobs/jd-blocks';
 export * from './lib/text/inline-emphasis';
 export * from './lib/text/signature';
 export * from './lib/text/letter-format';

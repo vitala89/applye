@@ -4,4 +4,6 @@ export * from './lib/discover/discover-detail.store';
 export * from './lib/discover/discover-feed.store';
 export * from './lib/discover/discover-profile-context.store';
 export * from './lib/discover/discover-scan.store';
+export * from './lib/discover/discover-sources.store';
+export * from './lib/discover/discover-sources.util';
 export * from './lib/discover/scan-console';

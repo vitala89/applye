@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   ArrowUpRight,
@@ -38,9 +38,7 @@ import type {
   ArchetypeFit,
 } from '@applye/core';
 import { classifyLoc, cityKey, type LocClass, type RegionKey } from './discover-location';
-import { toggled } from './discover-sources.util';
 import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discover-sources-drawer.component';
-import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
 
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
 
@@ -62,6 +60,9 @@ import {
   DiscoverFeedStore,
   DiscoverProfileContextStore,
   DiscoverScanStore,
+  DiscoverSourcesStore,
+  formatScanTime,
+  toggled,
 } from '@applye/application';
 import { ToastService } from '../../core/toast/toast.service';
 
@@ -79,7 +80,6 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
   imports: [
     FormsModule,
     LucideAngularModule,
-    RouterLink,
     DiscoverSourcesDrawerComponent,
     DiscoverDetailScoreComponent,
     DiscoverDetailHeroComponent,
@@ -87,7 +87,7 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverFilterMenuComponent,
   ],
   providers: [
-    DiscoverSourcesService,
+    DiscoverSourcesStore,
     DiscoverDetailStore,
     DiscoverScanStore,
     DiscoverFeedStore,
@@ -120,9 +120,9 @@ export class DiscoverComponent {
     shield: ShieldCheck,
   };
 
-  private readonly sourcesSvc = inject(DiscoverSourcesService);
+  private readonly sourcesSvc = inject(DiscoverSourcesStore);
 
-  /** Read-through onto the service that owns the list: the scan runs over the
+  /** Read-through onto the store that owns the list: the scan runs over the
    * enabled sources and the header counts them. Editing them is the drawer's. */
   protected readonly sources = this.sourcesSvc.all;
   protected readonly everScanned = this.sourcesSvc.everScanned;

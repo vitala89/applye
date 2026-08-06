@@ -67,11 +67,14 @@
   two amendments to `ADR-0005`: page-local pure modules a store needs move to `libs/core` when they
   are domain (`job-scoring.ts`, `jd-blocks.ts`) and beside the store when they format for it
   (`scan-console.ts`).
-- **The migration is blocked on one decision, and it blocks every page.** The count of components
-  injecting `DbService` went **46 -> 45**, not to 44: `DiscoverSourcesService` still uses the gateway
-  and **cannot move, because it raises seven toasts** while every store returns its failure for the
-  page to report. Until that is settled the `type:data` allowlist flip is unreachable. It goes
-  through the grilling gate first.
+- **That decision is settled, and Discover is out of the gateway.** ADR-0005's third amendment:
+  **nothing in `libs/application` notifies the user** - a member returns its outcome and the component
+  decides whether and how to say it. `DiscoverSourcesService` became `DiscoverSourcesStore`, its four
+  writes return `{ ok, error? }`, and the Sources drawer raises all seven notifications because it
+  already owned all four call sites. Components injecting `DbService`: **46 -> 45 -> 44**, and nothing
+  under `pages/discover/` reaches the gateway. The `type:data` allowlist flip is now blocked only by
+  the remaining pages, not by an open question. The audit that settled it also corrected the scale of
+  the problem: **4 of the 19** gateway-using services notify at all.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

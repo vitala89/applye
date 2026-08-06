@@ -8,12 +8,19 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DiscoverSource } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { parseGeoScopes } from '@applye/core';
-import { AtsBoardType, DiscoverSourcesService } from '../discover-sources.service';
-import { narrowBuiltinsByMarkets, toggled } from '../discover-sources.util';
+import {
+  AtsBoardType,
+  DiscoverSourcesStore,
+  SourceWriteResult,
+  narrowBuiltinsByMarkets,
+  toggled,
+} from '@applye/application';
+import { ToastService } from '../../../core/toast/toast.service';
 import { ChevronDown, Info, Plus, Trash2, X } from 'lucide-angular';
 
 /**
@@ -26,23 +33,32 @@ import { ChevronDown, Info, Plus, Trash2, X } from 'lucide-angular';
  * symbols the drawer's markup names, twenty-three are used nowhere else on the
  * page.
  *
- * The list itself belongs to `DiscoverSourcesService`, which the page provides,
+ * The list itself belongs to `DiscoverSourcesStore`, which the page provides,
  * because both sides read it - the page scans over the enabled sources and
  * counts them, this drawer edits them. Everything left here is drawer-local
  * view state: which groups are collapsed, whether the add forms are open, and
  * whether the market narrowing is being overridden.
+ *
+ * **This drawer is where every sources notification is raised**, because it owns
+ * all four call sites. The store reports what a write did and says nothing
+ * itself - it lives in `libs/application`, which may not reach the app's
+ * `ToastService` (ADR-0005).
  */
 @Component({
   selector: 'app-discover-sources-drawer',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  // `RouterLink` is here because the scope label links to Settings. It was left
+  // behind on the page when this drawer was extracted, so the anchor rendered a
+  // literal attribute and navigated nowhere; the spec now pins its `href`.
+  imports: [FormsModule, LucideAngularModule, RouterLink],
   templateUrl: './discover-sources-drawer.component.html',
   styleUrl: './discover-sources-drawer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DiscoverSourcesDrawerComponent {
   private readonly i18n = inject(TranslateService);
-  private readonly sourcesSvc = inject(DiscoverSourcesService);
+  private readonly sourcesSvc = inject(DiscoverSourcesStore);
+  private readonly toast = inject(ToastService);
 
   protected readonly t = this.i18n.t;
   /** Only what this drawer's markup names. */
@@ -128,26 +144,43 @@ export class DiscoverSourcesDrawerComponent {
     return this.t()('discover.scope_label').replace('{scope}', label);
   }
 
-  protected toggleSource(source: DiscoverSource): Promise<void> {
-    return this.sourcesSvc.setEnabled(source);
+  protected async toggleSource(source: DiscoverSource): Promise<void> {
+    this.announce(await this.sourcesSvc.setEnabled(source));
   }
 
   protected async addBoard(): Promise<void> {
-    if (await this.sourcesSvc.addBoard(this.boardType(), this.boardSlug())) {
+    if (
+      this.announce(await this.sourcesSvc.addBoard(this.boardType(), this.boardSlug()), 'added')
+    ) {
       this.boardSlug.set('');
       this.boardFormOpen.set(false);
     }
   }
 
   protected async addRss(): Promise<void> {
-    if (await this.sourcesSvc.addRss(this.rssUrl(), this.rssName())) {
+    if (this.announce(await this.sourcesSvc.addRss(this.rssUrl(), this.rssName()), 'added')) {
       this.rssUrl.set('');
       this.rssName.set('');
     }
   }
 
-  protected removeSource(source: DiscoverSource, event: Event): Promise<void> {
+  protected async removeSource(source: DiscoverSource, event: Event): Promise<void> {
     event.stopPropagation();
-    return this.sourcesSvc.remove(source);
+    this.announce(await this.sourcesSvc.remove(source), 'removed');
+  }
+
+  /**
+   * Says what a write did, and reports whether it succeeded so a form knows
+   * whether to clear itself.
+   *
+   * A refused write with no error is the empty-input case: nothing was
+   * attempted, so there is nothing to announce either way. Only the two writes
+   * the user initiates deliberately get a success message; a toggle that worked
+   * is visible in the checkbox it flipped.
+   */
+  private announce(result: SourceWriteResult, success?: 'added' | 'removed'): boolean {
+    if (result.error) this.toast.error(result.error);
+    else if (result.ok && success) this.toast.success(this.t()(`discover.source_${success}`));
+    return result.ok;
   }
 }

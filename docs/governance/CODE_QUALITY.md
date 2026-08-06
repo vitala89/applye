@@ -161,10 +161,15 @@ shrank only while pure logic remained.
 - **A store is testable without a `TestBed`.** If it is not, the dependencies are wrong.
 - Pure rules still belong in `libs/core` or in a page-local pure module. A store orchestrates; it does
   not calculate.
-- **A pure module a store needs moves to `libs/core`.** A library cannot import from an app, so page
-  state moving into `libs/application` drags the pure modules it calls with it. Each such move is a
-  `libs/core` public API change and goes through the grilling gate (`ADR-0005`, amendment). The first
-  two were `job-scoring.ts` and `jd-blocks.ts`.
+- **A pure module a store needs leaves the page, and where it lands depends on what it is.** A library
+  cannot import from an app, so page state moving into `libs/application` drags the pure modules it
+  calls with it.
+  - **A domain rule goes to `libs/core`**, and each such move is a `libs/core` public API change
+    through the grilling gate. `job-scoring.ts` and `jd-blocks.ts` went that way.
+  - **A pure module that formats for one store goes beside that store in `libs/application`.**
+    `scan-console.ts` builds dot-padded labels and CSS tone names for a terminal widget; putting that
+    in `libs/core` would give the domain library a module about how something looks. The test is what
+    the module is _about_, not whether it is pure - see `ADR-0005`, second amendment.
 
 **Binding scope.** New code follows this from now on. An existing page migrates **when it is touched
 for another reason** - the same trigger the file-size budgets use, and one stream of work with them:

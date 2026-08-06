@@ -10,7 +10,7 @@
  * dependency is visible in the call.
  */
 
-import { type ArchetypeFit } from '@applye/core';
+import { type ArchetypeFit } from '../profile/archetype';
 
 /**
  * The dictionary the "skills found in posting" chips are matched against.

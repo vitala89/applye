@@ -60,6 +60,12 @@
   trigger the budgets already use, so the two are **one stream of work**. The boundary is not yet
   enforced by lint: `type:data` leaves `type:app`'s allowlist only once **no component injects
   `DbService`** (46 do today), and that interval is the known weak point.
+- **The layer has its first tenant.** `libs/application` exists with `DiscoverDetailStore`, and
+  `discover.component.ts` is **730 -> 687**. Building it surfaced a consequence `ADR-0005` had missed
+  and now carries as an amendment: a library cannot import from an app, so page state moving out
+  drags its page-local pure modules to `libs/core` - `job-scoring.ts` and `jd-blocks.ts` went first,
+  with their 40 tests intact. The **46 direct `DbService` injections are still 46**: that count only
+  falls when a page's data access moves in full, so it measures the end state rather than progress.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

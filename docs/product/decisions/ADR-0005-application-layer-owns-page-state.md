@@ -137,6 +137,27 @@ and even that is a two-line revert in `eslint.config.mjs`.
 
 ---
 
+## Amendment, 2026-08-06: page-local pure modules move to `libs/core`
+
+Discovered while building the first store, and general rather than specific to it.
+
+**A library cannot import from an app.** So moving page state into `libs/application` drags the
+page-local pure modules that state calls along with it - and the rule this ADR introduced ("a store
+orchestrates, it does not calculate; pure rules live in `libs/core` or in a page-local pure module")
+leaves those modules with nowhere to go.
+
+**Decision: they move to `libs/core`, each as its own maintainer decision through the grilling gate.**
+The alternative considered was letting `libs/application` hold pure modules beside its stores, which
+would have meant amending the calculation rule on its second day; and a per-module "is it domain?"
+judgement, which relitigates the same argument every time.
+
+First application: `discover-detail-scoring.ts` became `libs/core/src/lib/jobs/job-scoring.ts` and
+`jd-blocks.ts` became `jobs/jd-blocks.ts`, both beside `job-identity.ts`. Their 40 tests moved intact.
+
+The cost is real and accepted: `libs/core`'s public API grows with each page migrated, and each
+growth is a gate. The benefit is that the calculation rule stays true and `libs/core` keeps meaning
+"the domain", rather than the layer accumulating a second, quieter domain of its own.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -144,9 +165,9 @@ and even that is a two-line revert in `eslint.config.mjs`.
   the 2026-08-05 Duty Watch entry stopping Profile at 445/400; the 2026-08-06 entries for
   `discover-location-selection.ts` and `discover-detail-scoring.ts`.
 - **Follow-up Tasks**:
-  - [ ] Add `type:application` and its constraint to `eslint.config.mjs`
-  - [ ] Add the 250-line store budget category to `tools/check-file-size-budgets.mjs`
-  - [ ] Create `libs/application` together with its first real store, not empty
+  - [x] Add `type:application` and its constraint to `eslint.config.mjs`
+  - [x] Add the 250-line store budget category to `tools/check-file-size-budgets.mjs`
+  - [x] Create `libs/application` together with its first real store, not empty - `DiscoverDetailStore`
   - [ ] Migrate pages as they are touched, one page per pull request
   - [ ] Remove `type:data` from `type:app`'s allowlist once no component injects `DbService`
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

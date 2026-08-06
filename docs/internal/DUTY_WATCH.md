@@ -72,6 +72,37 @@ Before a watch can be marked complete:
   - **A mutation that both branches make true is not covered by either.** Both survivors were of that shape: two flags always set the same way, and a switch-off case that already had the section the mutation would have created. Symmetric fixtures hide crossed branches.
 - **Next first action:** `CvStyleStore` plus the `CvStyle` cascade rules as a new `libs/core/src/lib/cv/` module - the biggest slice, ~380 lines in the page today, and the reason the style store cannot be written without the pure module first.
 
+### 2026-08-06, the boundary gets a lint rule, and the migration order turns out to be inverted
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `feat/component-gateway-lint-rule`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** pick the next page after Discover. The answer was that the ranking was wrong and the enforcement mechanism did not exist.
+- **Completed:**
+  - **`eslint.config.mjs` gains a `no-restricted-syntax` error over `*.component.ts`** for `inject(DbService)`, with `COMPONENTS_STILL_USING_THE_GATEWAY` listing the 26 components that still do. The list only shrinks. Verified both directions, under `nx lint` and directly.
+  - **ADR-0005 amendment four**, recording three corrections: the enforcement mechanism, the deferral of `jobs`, and the migration order by dependency shape rather than line count. Plus `cv-detail`'s three-store decomposition and the `libs/core` `cv/` gate for the `CvStyle` cascade rules.
+  - Propagated to `CLAUDE.md`, `AGENTS.md`, `AGENT_START_HERE.md`, `CODE_QUALITY.md` - all four said "lint does not enforce it yet", which is now false.
+- **Not completed:** no page migrated in this branch; it is governance only. `cv-detail`'s three stores are next, one per PR.
+- **Files or packages changed:** `eslint.config.mjs`, `ADR-0005`, `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `docs/governance/CODE_QUALITY.md`, `CHANGELOG.md`, `CURRENT_STATE.md`, this log.
+- **Validation:** `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` (clean, and failing as designed on an injected violation); `nx run desktop:type-check`; `nx run-many --target=test`; `nx build desktop`; `npm run quality:file-size`; `npm run quality:attribution`; `npx nx format:check`; `git diff --check`.
+- **Privacy/security impact:** none. Lint configuration and documentation.
+- **Decisions and assumptions:**
+  - **The allowlist flip was never the rule the ADR described.** `depConstraints` is per project tag, so it cannot say "components only". The component rule is separate, is an error now, and the flip stays as a later goal that also requires moving the app's `shared/*` services.
+  - **`jobs` is deferred, and the reason is written down.** 1050 lines, but **9** gateway calls against **22** app-service injections across 150-odd use sites. A store in `libs/application` cannot inject an app service, so the page cannot move until those services do - and five of them are 251-326 lines and must decompose first.
+  - **`cv-detail` is next** (1019 lines, 14 gateway calls, 1 app service), then `tracker` and `cover-letter-detail` which share its shape.
+  - **`cv-preview` (1049) and `cv-live-style-panel` (704) reach the gateway zero times**, so this campaign does not touch them at all. Their size is view state.
+  - `cv-detail` becomes `CvDocumentStore`, `CvStyleStore`, `CvPhotoStore`; preview/live-selection and return-to-wizard routing stay page state; the `CvStyle` cascade rules become `libs/core/.../cv/`.
+- **Risks or compatibility impact:** none at runtime. The risk was a rule that silently matches nothing, which is why it was tested from both sides.
+- **Open issues or blockers:** none.
+- **Lessons, each of which cost something:**
+  - **A `files` pattern in a spread config resolves against the config that was loaded, not the file that declares it.** `nx lint` loads `apps/desktop/eslint.config.mjs`, which spreads the root config, so `apps/desktop/src/...` in the allowlist matched **nothing** - meaning the rule would have errored on all 26 files under nx while looking correct at the root. Double-star globs match under both base paths. Found by testing the allowlist rather than trusting a green run.
+  - **A green lint run is not proof the rule works.** The first "all 26 silent" check returned zero matches because **ESLint had crashed**, and `grep -c` on a stack trace is also zero. Assert the mechanism, not the absence of output.
+  - **`**/` inside a `/** */` block comment ends the comment.** A sentence explaining the glob form broke the whole config, and node reported it as `Unexpected identifier 'nx'` on line 1 - pointing at the import, 20 lines from the actual cause. If a config suddenly fails to parse at line 1, look for a comment that closed itself.
+  - **Ranking work by the number the ratchet reports can invert the real order.** `jobs` is the worst class in the repository and the worst candidate for this migration; two of the biggest files in the campaign (`cv-preview`, `cv-live-style-panel`) touch the gateway zero times and are outside it entirely. One `grep -c` per page settled all of it, and it should have been run eight sessions ago.
+- **Next first action:** `CvDocumentStore` - the document itself (load, save, sections, reorder, lock, regenerate, pull-from-profile) out of `cv-detail.component.ts` (1019/400), and its line deleted from `COMPONENTS_STILL_USING_THE_GATEWAY` only when the file no longer injects `DbService` at all, which will take all three stores.
+
 ### 2026-08-06, the layer never notifies, and Discover leaves the gateway
 
 - **Status:** complete

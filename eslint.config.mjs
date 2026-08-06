@@ -2,6 +2,65 @@ import nx from '@nx/eslint-plugin';
 import angular from 'angular-eslint';
 import tseslint from 'typescript-eslint';
 
+/**
+ * The components that still inject `DbService`, and the only ones allowed to.
+ *
+ * ADR-0005 says a page component renders and delegates: screen state belongs to
+ * a signal store in `libs/application`, and the gateway is the layer's to call.
+ * The ADR planned to enforce that by removing `type:data` from `type:app`'s
+ * allowlist once no component injected `DbService` - but `depConstraints` keys on
+ * the **project** tag, so that flip also bans the gateway from the 18 `shared/*`
+ * services, which is a different and much larger change. The rule below is what
+ * the ADR actually meant, and it can be an error today.
+ *
+ * **This list only ever shrinks.** A component that is not on it fails the build
+ * for injecting `DbService`, so the 27th cannot be added; each migrated page
+ * deletes its own line. When the list is empty, the rule and the list go with it.
+ *
+ * The entries start with a double-star glob on purpose, and it is not decoration.
+ * `nx lint` loads `apps/desktop/eslint.config.mjs`, which spreads this file, so a
+ * `files` pattern resolves against **that** directory rather than the repository
+ * root - a repo-relative path silently matches nothing, and a silent allowlist
+ * entry means a rule that never fires where it should. Verified both ways: the
+ * rule errors on a component not listed here, and stays quiet on every one that
+ * is.
+ */
+const COMPONENTS_STILL_USING_THE_GATEWAY = [
+  '**/core/first-launch.component.ts',
+  '**/core/health-check-panel.component.ts',
+  '**/core/onboarding/onboarding-banner.component.ts',
+  '**/core/onboarding/onboarding.component.ts',
+  '**/layout/shell-layout.component.ts',
+  '**/pages/analytics/analytics.component.ts',
+  '**/pages/dashboard/dashboard.component.ts',
+  '**/pages/documents/cover-letter-detail/cover-letter-detail.component.ts',
+  '**/pages/documents/cover-letter-list/cover-letter-list.component.ts',
+  '**/pages/documents/cover-letter-print/cover-letter-print.component.ts',
+  '**/pages/documents/cv-detail/cv-detail.component.ts',
+  '**/pages/documents/cv-list/cv-list.component.ts',
+  '**/pages/documents/cv-print/cv-print.component.ts',
+  '**/pages/interview-prep/interview-prep-detail/interview-prep-detail.component.ts',
+  '**/pages/interview-prep/interview-prep.component.ts',
+  '**/pages/jobs/jobs.component.ts',
+  '**/pages/jobs/my-jobs.component.ts',
+  '**/pages/pipeline/pipeline.component.ts',
+  '**/pages/pipeline/quick-view-modal/quick-view-modal.component.ts',
+  '**/pages/pipeline/stage-quick-add/stage-quick-add.component.ts',
+  '**/pages/profile/profile-photo/profile-photo.component.ts',
+  '**/pages/profile/profile.component.ts',
+  '**/pages/settings/settings.component.ts',
+  '**/pages/tracker/tracker-report-print.component.ts',
+  '**/pages/tracker/tracker.component.ts',
+  '**/shared/paste-job-modal/paste-job-modal.component.ts',
+];
+
+/** Matches `inject(DbService)` however it is written, including a type argument. */
+const GATEWAY_INJECTION =
+  'CallExpression[callee.name="inject"] > Identifier.arguments[name="DbService"]';
+
+const GATEWAY_INJECTION_MESSAGE =
+  'A component may not inject DbService (ADR-0005). Screen state and data access belong to a signal store in libs/application; the component renders and delegates. If this component is being migrated, remove its entry from COMPONENTS_STILL_USING_THE_GATEWAY in eslint.config.mjs.';
+
 export default tseslint.config(
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
@@ -25,11 +84,13 @@ export default tseslint.config(
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              // `type:data` is still here, and leaves only when no component
-              // injects `DbService` any more (ADR-0005). Removing it earlier
-              // would fail lint in 46 places at once. Until then the "a page
-              // does not reach the gateway" rule is held by review, not by this
-              // file - which is the known weak point of that decision.
+              // `type:data` stays here, and it is **not** the rule that keeps a
+              // component away from the gateway - see
+              // `COMPONENTS_STILL_USING_THE_GATEWAY` above, which is. This
+              // constraint keys on the project tag, so removing `type:data`
+              // would also ban the gateway from the app's own `shared/*`
+              // services; it leaves only when those have moved into
+              // `libs/application` too (ADR-0005, amendment four).
               sourceTag: 'type:app',
               onlyDependOnLibsWithTags: [
                 'type:application',
@@ -75,6 +136,23 @@ export default tseslint.config(
         { type: 'element', prefix: ['app', 'lib'], style: 'kebab-case' },
       ],
     },
+  },
+  {
+    // ADR-0005, enforced: a component does not reach the data gateway. The
+    // allowlist below it is the ratchet - a component not named there fails the
+    // build for injecting `DbService`.
+    files: ['**/*.component.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        { selector: GATEWAY_INJECTION, message: GATEWAY_INJECTION_MESSAGE },
+      ],
+    },
+  },
+  {
+    files: COMPONENTS_STILL_USING_THE_GATEWAY,
+    rules: { 'no-restricted-syntax': 'off' },
   },
   {
     files: ['**/*.html'],

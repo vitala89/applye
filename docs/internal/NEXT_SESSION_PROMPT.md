@@ -21,10 +21,12 @@ worth reading in full, because each records something that cost real time to lea
   boundary to two inputs.
 - **"Discover's location filter tree leaves the page and gets its first tests"** - the first cut into
   a class that had not moved all campaign.
+- **"Discover's deterministic scoring leaves the page, and two of its own comments turn out to be
+  wrong"** - what writing tests for untested logic actually turns up.
 
 ## Where things stand
 
-`main` is at `2558822`, clean, **no open PRs.** Five merged last session (#349-#353).
+`main` is at `a08c318`, clean, **no open PRs.** Seven merged last session (#349-#355).
 
 Measure with `npm run quality:file-size:all` - **not** the plain `quality:file-size`, which is
 diff-scoped. A file missing from the diff-scoped report means "not changed", **not** "now under
@@ -34,7 +36,7 @@ budget".
 
 | file set   |                       before |           after |
 | ---------- | ---------------------------: | --------------: |
-| `discover` | html 636 / ts 884 / scss 938 | **484/802/704** |
+| `discover` | html 636 / ts 884 / scss 938 | **484/730/704** |
 
 Across the whole Discover phase, eight PRs: **808 / 890 / 1464 -> 484 / 802 / 704**. Tests 1397 -> 1442. Repository count 41 -> 41, which as always understates the work: every new child component and
 util is within budget and never appears.
@@ -205,42 +207,37 @@ to force it visible before trusting any geometry.
 
 ## What to take next
 
-### `discover.component.ts`, 802/400 - audited, not implemented
+### `discover.component.ts`, 730/400
 
-The class finally started moving last session (877 -> 802) after four PRs of markup and styles. Its
-sections, by size:
+The class moved 890 -> 730 in two cuts, both the same shape: pure logic that had **no tests** because
+it was only ever exercised through a page. `discover-location-selection.ts` took the Locations
+tri-state tree; `discover-detail-scoring.ts` took `SKILL_DICT`, `detectSkills` and `computeRawScore`.
+Its sections now:
 
-| lines | section                                                               |
-| ----: | --------------------------------------------------------------------- |
-|   210 | `derived` - computed signals                                          |
-|    90 | `state` - signals and the constructor effect                          |
-|    82 | `triage` - `openDetail`, `loadDetail`, `detectSkills`, `rowArchetype` |
-|    57 | `detail misc` - `tipText`, `rescore`, `saveRow`, `dismissRow`         |
-|    36 | `scan`, and 36 more in `clear inbox`                                  |
+| lines | section                                                       |
+| ----: | ------------------------------------------------------------- |
+|   210 | `derived` - computed signals                                  |
+|    90 | `state` - signals and the constructor effect                  |
+|    57 | `detail misc` - `tipText`, `rescore`, `saveRow`, `dismissRow` |
+|    36 | `scan`, and 36 more in `clear inbox`                          |
 
-**The recommended next cut is `discover-detail-scoring.ts`,** and it is the same shape as the
-location-tree cut that just worked:
+**Both remaining candidates are unaudited**, and neither is a pure-function seam - this is where the
+easy half of the class runs out:
 
-- `SKILL_DICT` (**47 lines** of module constant), `detectSkills` (11) and `computeRawScore` (12) -
-  about **72 lines**, all deterministic, all pure.
-- **None of it has a single test.** A grep over every spec in the page's directory finds no reference
-  to either function.
-- `detectSkills(jd)` is already pure. `computeRawScore(hay)` reads three signals - `profileKeywords`,
-  `detailSkills`, and `detailRow` through `archetypeBadge` - so as a pure function it takes
-  `(hay, keywords, skillCount, fit)`. The tier boost table (`primary +12, secondary +6, adjacent +0`)
-  and the `Math.max(20, Math.min(97, …))` clamp are exactly the kind of rule a mutation test earns
-  its keep on. So is `detectSkills`'s two-branch matcher: short or symbol-carrying tokens (`go`,
-  `c#`, `.net`) match whole-word against the **raw** JD, everything else substring-matches the
-  lowercased copy.
-- **Not in `libs/`**, for the same reason `profile-name.util.ts` and `discover-location-selection.ts`
-  are not: nothing outside this page needs it, and a `libs/` public API change is a maintainer
-  decision that goes through the grilling gate rather than riding a refactor.
+- **The scan pipeline** (`scan`, the console lines, the per-source results). The more I/O-shaped, and
+  the larger. `discover-console.ts` and `discover-sources.service.ts` already exist beside it.
+- **The detail loading path** (`openDetail`, `loadDetail`, `detailBlocks`, `detailSalary`,
+  `detailSkills`, `detailScore`). The more self-contained, and a candidate for a component-scoped
+  service now that the scoring it called is pure and importable. **Read the standing follow-up below
+  about component-scoped services outliving their page before choosing that shape.**
 
-After that, the two larger candidates, neither audited: the **scan pipeline** (`scan`, the console
-lines, the per-source results - the more I/O-shaped) and the **detail loading path** (`openDetail`,
-`loadDetail`, `detailBlocks`, `detailSalary` - the more self-contained, and a candidate for a
-component-scoped service; note the open follow-up below about component-scoped services outliving
-their page).
+**A worked lesson from the scoring cut, worth repeating on either of these:** writing the tests found
+**two comments that did not describe the code**. "Coverage saturates at ten keywords" - only the
+denominator does, so matching more than ten pushes coverage above 1. And the clamp reads
+`Math.max(20, ...)` where the floor is **unreachable**, because the formula starts at 30. A test
+asserting the documented bound would have been vacuous. **Assert the value that actually occurs, not
+the one the comment claims**, and when the two disagree, correct the comment against the code rather
+than the reverse - two of the first test expectations written were wrong and the code was right.
 
 `discover.component.scss` at 704/400 has **no large family left** - the biggest are `.dv-console`
 (60), `.dv-detail` (51) and `.dv-skel`. `discover.component.html` is 484/300.

@@ -44,6 +44,60 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, session close: five PRs merged, Discover's page files down a third across the board
+
+- **Status:** complete - documentation only
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/next-session-handoff-5`
+
+**What shipped.** Five PRs, #349-#353, all squash-merged. `main` is at `2558822`, clean, no open PRs.
+One dead-code removal, two component extractions, one hoist and one logic move, all on Discover. The
+individual entries below carry the detail.
+
+| file                      | before |   after |
+| ------------------------- | -----: | ------: |
+| `discover.component.html` |    636 | **484** |
+| `discover.component.ts`   |    884 | **802** |
+| `discover.component.scss` |    938 | **704** |
+
+Tests **1397 -> 1442**. Repository count **41 -> 41**, which understates five PRs for the usual
+reason: every new child component and util is within budget and never appears.
+
+**Three inherited readings were wrong, and looking settled all three.**
+
+- `.dv-row` was filed as needing hoist-then-cut because the feed and the detail body share its
+  classes. The genuinely shared ones had been hoisted in #346 already; what remained was two disjoint
+  sets, and three rules nothing rendered at all.
+- `.dv-geomenu` was filed as "the location filter menu" with a 35-symbol markup surface and a likely
+  service-owned boundary. It is one dropdown rendered three times, and the answer was a shell with
+  `<ng-content>` taking two inputs and one output.
+- `discover.component.ts` was filed as barely movable. Once #352 took the Locations markup away, the
+  tri-state tree underneath was visible as its own module - and had no tests.
+
+**The host-element trap fired twice more and was headed off both times**, in a new shape each time:
+`.dv-feed > :last-child` losing its target to a component host, and `.dv-filters .dv-btn` being a
+**descendant** selector that stops matching child-rendered markup. Neither is caught by any gate,
+including `quality:style-move`, because no declaration is lost in either. PR #352 then showed the
+mirror image: **projected** markup keeps the page's encapsulation attribute, so its rules must stay
+on the page. All four shapes are now written into the handoff as one section.
+
+**Validation.** Every PR ran the full gate set and reported it in its own entry. The final state on
+`main`: `nx test desktop` 118 suites / 1442 tests passing, `nx build desktop` clean,
+`npm run quality:file-size` passing, `npm run quality:attribution` passing, `npx nx format:check`
+clean, `git diff --check` clean.
+
+**What was not verified, consistently.** No Discover change this session was walked in a browser.
+Without Tauri IPC the feed is empty, which puts both the detail screen and the filter row (inside
+`view() === 'feed'`) out of reach. Every cut was verified instead by `quality:style-move`, a
+backwards diff, and mutation testing - which for pure moves are the stronger evidence. The one thing
+neither reaches is the separator now on the feed row's `:host`: jsdom returns empty strings for every
+border longhand, so only the block-level host is asserted.
+
+**Next first action.** `discover-detail-scoring.ts`: `SKILL_DICT` (47 lines), `detectSkills` (11) and
+`computeRawScore` (12) out of the page class - about 72 lines, all deterministic, all pure, and
+**none of it tested**. Audited, not implemented; the handoff carries the shape the pure functions
+should take.
+
 ### 2026-08-06, Discover's location filter tree leaves the page and gets its first tests
 
 - **Status:** complete

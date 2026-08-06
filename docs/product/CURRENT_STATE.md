@@ -89,6 +89,8 @@
   `cleared`. Seven PRs now: **808 / 890 / 1464 -> 484 / 877 / 704**.
   The class has now taken its first cut too: the Locations tri-state tree is `discover-location-selection.ts`,
   **877 -> 802**, with 19 tests over logic that previously had none. Eight PRs: **808 / 890 / 1464 -> 484 / 802 / 704**.
+  The deterministic scoring followed it out (`discover-detail-scoring.ts`, **802 -> 730**, 17 tests over
+  rules that had none, and two wrong comments corrected). Nine PRs: **808 / 890 / 1464 -> 484 / 730 / 704**.
   Next in it: the scan pipeline, or the detail-screen loading path. Neither audited. Three decisions came out of it and are written into
   `CODE_QUALITY.md`: a page whose class names are generic **wraps its partial in the page root**
   rather than prefixing (seven of Profile's shared names were already defined with different values

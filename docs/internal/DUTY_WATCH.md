@@ -44,6 +44,24 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's deterministic scoring leaves the page, and two of its own comments turn out to be wrong
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/discover-detail-scoring`
+- **Completed:** `discover-detail-scoring.ts` owns `SKILL_DICT` (45 names), `detectSkills` and `computeRawScore`. Class **802 -> 730**. Suite **1442 -> 1459**.
+- **Why this seam.** It is the zero-token half of the detail screen - what the user sees before asking for anything - and it had **no tests at all**. Same shape as the location-tree cut: pure logic that was only ever exercised through a page.
+- **Not in `libs/`**, for the third time and the same reason: nothing outside this page needs it, and a `libs/` public API change goes through the grilling gate rather than riding a refactor.
+- **Validation:** `nx run desktop:type-check`, `nx run-many --target=lint --projects=desktop` (0 errors; 8 pre-existing warnings elsewhere), `nx test desktop` (**1459 passing**), `nx build desktop`, `npm run quality:file-size` (730 against base 802), `npm run quality:attribution`, `npx nx format:check`, `git diff --check`. `quality:style-move` does not apply: no stylesheet changed.
+- **Backwards diff.** `detectSkills` reproduces token-for-token, and all 45 `SKILL_DICT` entries are byte-identical. **`computeRawScore` does not, deliberately**: its three signal reads (`profileKeywords`, `detailSkills`, and the open row's archetype through `archetypeBadge`) became arguments, and its inline tier table is a named `TIER_BOOST`. That makes visible an ordering dependency the method hid - the skills must be detected before the score is computed, or the bonus is taken from the previous job. The call site now passes `skills` as a local, so the order is in the code rather than in the reader's head.
+- **Mutation testing: eight written, eight killed.** The whole-word cutoff moving by one character; eleven skills where the chips fit ten; ordinary names matching case-sensitively; coverage dividing by every keyword rather than the first ten; a detected skill worth four rather than three; a secondary archetype boosted like a primary one; an empty profile scoring zero instead of declining to score; coverage worth 50 points rather than 55. Each asserts its pattern matched exactly once before applying; restore verified byte-identical.
+- **Two of the code's own comments were wrong, and writing the tests is what found them.**
+  - "Coverage saturates at ten keywords" - the **denominator** saturates, the numerator does not. With twenty keywords, matching all twenty gives a coverage of 2.0 and a formula score of 140. Only the ceiling bounds it. Harmless, and arguably right (matching twenty of your keywords _is_ a strong match), but it is not what the comment said.
+  - The clamp is written `Math.max(20, Math.min(97, score))`, and **the floor is unreachable**: the formula starts at 30 and every other term is non-negative. A test asserting `>= 20` would have been vacuous, so the test pins **30** - the floor that actually occurs - and fails if the base or any term changes such that it could drop.
+- **Two of my own test expectations were wrong first, and the code was right.** Dictionary order put `Go` before `C#`, and the coverage assertion assumed the saturation the comment claimed. Both were corrected against the code rather than the code against them.
+- **Privacy/security impact:** none.
+- **Next first action:** `discover.component.ts` is 730/400. The two remaining candidates are unaudited: the **scan pipeline** (`scan`, the console lines, the per-source results - the more I/O-shaped) and the **detail loading path** (`openDetail`, `loadDetail`, `detailBlocks`, `detailSalary` - the more self-contained, and a candidate for a component-scoped service; see the standing follow-up about component-scoped services outliving their page).
+
 ### 2026-08-06, session close: five PRs merged, Discover's page files down a third across the board
 
 - **Status:** complete - documentation only

@@ -112,8 +112,8 @@
           <lucide-icon [img]="icons.source" [size]="13" aria-hidden="true" />
           {{ t()('discover.sources') }}
         </button>
-        @if (!scanning()) {
-          <button type="button" class="dv-btn dv-btn--primary" (click)="scan()">
+        @if (!scan.scanning()) {
+          <button type="button" class="dv-btn dv-btn--primary" (click)="runScan()">
             <lucide-icon [img]="icons.scan" [size]="15" aria-hidden="true" />
             {{ t()('discover.scan') }}
           </button>
@@ -132,13 +132,13 @@
     <div class="dv-console">
       <div class="dv-console__head">
         <span class="dv-console__title">{{ t()('discover.console_title') }}</span>
-        @if (consoleExpanded() && !scanning()) {
-          <button type="button" class="dv-linkbtn" (click)="consoleExpanded.set(false)">
+        @if (scan.expanded() && !scan.scanning()) {
+          <button type="button" class="dv-linkbtn" (click)="scan.collapse()">
             {{ t()('discover.collapse') }}
           </button>
         }
       </div>
-      @for (line of consoleLines(); track $index) {
+      @for (line of scan.lines(); track $index) {
         <div class="dv-console__line" [class]="'dv-console__line--' + line.tone">
           {{ line.text }}
           @if (line.tone === 'active') {
@@ -165,8 +165,8 @@
         <span class="dv-strip__dot" aria-hidden="true">·</span>
         <span class="dv-strip__tokens">{{ t()('discover.strip_tokens') }}</span>
       </div>
-      @if (!consoleExpanded()) {
-        <button type="button" class="dv-linkbtn" (click)="consoleExpanded.set(true)">
+      @if (!scan.expanded()) {
+        <button type="button" class="dv-linkbtn" (click)="scan.expand()">
           {{ t()('discover.view_log') }}
           <lucide-icon [img]="icons.chevron" [size]="12" aria-hidden="true" />
         </button>
@@ -181,7 +181,7 @@
         {{ t()('discover.never_line').replace('{n}', '' + enabledCount()) }}
       </div>
       <p class="dv-never__hint">{{ t()('discover.never_hint') }}</p>
-      <button type="button" class="dv-btn dv-btn--primary dv-btn--lg" (click)="scan()">
+      <button type="button" class="dv-btn dv-btn--primary dv-btn--lg" (click)="runScan()">
         <lucide-icon [img]="icons.scan" [size]="16" aria-hidden="true" />
         {{ t()('discover.first_scan') }}
       </button>
@@ -198,7 +198,7 @@
       <div class="dv-caught__meta">
         {{ t()('discover.caught_meta').replace('{time}', lastScanLabel()) }}
       </div>
-      <button type="button" class="dv-btn dv-btn--ghost" (click)="scan()">
+      <button type="button" class="dv-btn dv-btn--ghost" (click)="runScan()">
         <lucide-icon [img]="icons.rescan" [size]="14" aria-hidden="true" />
         {{ t()('discover.scan_again') }}
       </button>
@@ -393,7 +393,7 @@
 
   <!-- ============ FEED LIST ============ -->
   @if (detail.id() === null && (view() === 'feed' || view() === 'scanning')) {
-    <div class="dv-feed" [class.dv-feed--dim]="scanning()">
+    <div class="dv-feed" [class.dv-feed--dim]="scan.scanning()">
       @if (marketChangedSinceScan()) {
         <div class="dv-rescan" role="status">
           <span class="dv-rescan__text">{{ t()('discover.market_changed') }}</span>
@@ -401,7 +401,7 @@
             <button
               type="button"
               class="dv-btn dv-btn--secondary"
-              [disabled]="scanning() || refreshingForMarket()"
+              [disabled]="scan.scanning() || refreshingForMarket()"
               (click)="refreshForMarket()"
             >
               {{ t()('discover.market_changed_refresh') }}

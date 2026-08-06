@@ -44,6 +44,22 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's scan becomes a store, and the pure-module policy needs qualifying already
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5), one round of `aif-grilling`
+- **Branch:** `feat/discover-scan-store`
+- **Completed:** `DiscoverScanStore` (81 lines against its 250 budget, 13 tests) owns `scanning`, the console lines and the console's open state. `discover-console.ts` moved to `libs/application` as `scan-console.ts`. Class **687 -> 679**.
+- **The small number is honest and worth explaining.** The `scan()` method that left was replaced by an orchestration of nearly the same length; what actually moved is three signals and a module. The structural win is that the page no longer holds the console's state, not that the class shrank.
+- **The policy from the last session needed qualifying on its first real test.** The first amendment sent every page-local pure module a store needs to `libs/core`. `discover-console.ts` is pure and the store needs it - but it lowercases source names, dot-pads them to a 22-character column and hands out tone names that become CSS classes. It is **about how a widget looks**. The maintainer chose: destination depends on what the module is _about_, not on whether it is pure. Domain to `libs/core` through the gate; a formatter for one store beside that store. Recorded as `ADR-0005`'s second amendment, with what was rejected and why.
+- **That is twice in two days that this ADR's calculation rule needed qualifying**, which is itself worth noticing rather than filing quietly.
+- **One design decision inside the store, and it preserves behaviour rather than style.** The follow-up work is a **continuation** passed to `run`, not something the page does after `run` returns. In the version this replaces the feed reload sat inside the same `try`: the console stayed open across it, and a failure there narrated as a failed scan. `view()` reads `scanning`, so releasing it early would show the old feed for a frame. Both are behaviour. The store also never raises a toast - telling the user is the app's job, so `run` returns the error text and the page decides.
+- **Validation:** type-check across desktop, core, data, application (clean), lint across the same four (**0 errors**, 8 pre-existing warnings elsewhere), tests **1403 / 301 / 16 / 45**, `nx build desktop`, `npm run quality:file-size` (679 against base 687), `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
+- **Mutation testing: eight written, one survived the first pass, and one more was a kill not worth counting.** `collapse()` also stopping the scan survived, because the toggle test collapsed when no scan was running - closed with a test that collapses mid-scan. Separately, the mutation that runs the continuation after releasing the scan was "killed" by an **unhandled rejection crashing the runner**, which is the same category as a mutation that fails to apply: it proves the suite is unhappy, not that a test caught it. An assertion was added - `run` does not resolve until the continuation has finished - and verified against that mutation in isolation, where it fails cleanly.
+- **A test fixture was wrong and cost five failures.** `ScanSummary` is `{sources, totalFetched, totalNew, durationMs}` with `sourceName`/`fetched`/`filteredOut`/`newJobs` per source; the invented fixture made `resultLines` throw, so the continuation never ran and five tests failed for one reason. Checked against the real type rather than guessed the second time.
+- **Privacy/security impact:** none.
+- **Next first action:** Discover's **feed store** - `feed`, `displayCount`, the load path, and `saveRow` / `dismissRow` / `undoDismiss`. It is the last of Discover's `DbService` use, so finishing it makes Discover **the first page to stop injecting the gateway entirely** - and the first real data point for whether the allowlist flip is reachable page by page.
+
 ### 2026-08-06, the application layer gets its first tenant, and ADR-0005 gains a consequence it had missed
 
 - **Status:** complete

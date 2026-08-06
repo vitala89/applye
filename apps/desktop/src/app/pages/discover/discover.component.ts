@@ -67,8 +67,7 @@ import {
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
-import { type ConsoleLine, failureLines, resultLines, startedLines } from './discover-console';
-import { DiscoverDetailStore } from '@applye/application';
+import { DiscoverDetailStore, DiscoverScanStore } from '@applye/application';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -94,7 +93,7 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverFeedRowComponent,
     DiscoverFilterMenuComponent,
   ],
-  providers: [DiscoverSourcesService, DiscoverDetailStore],
+  providers: [DiscoverSourcesService, DiscoverDetailStore, DiscoverScanStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './discover.component.html',
   styleUrl: './discover.component.scss',
@@ -133,10 +132,9 @@ export class DiscoverComponent {
 
   // ------------------------------------------------------------------ state
   protected readonly loading = signal(true);
-  protected readonly scanning = signal(false);
   protected readonly feed = signal<FeedRow[]>([]);
-  protected readonly consoleLines = signal<ConsoleLine[]>([]);
-  protected readonly consoleExpanded = signal(false);
+  /** The scan and the console that narrates it. Component-scoped. */
+  protected readonly scan = inject(DiscoverScanStore);
   protected readonly drawerOpen = signal(false);
   /** The open job's detail screen. Component-scoped: one page, one open job. */
   protected readonly detail = inject(DiscoverDetailStore);
@@ -215,7 +213,7 @@ export class DiscoverComponent {
   // --------------------------------------------------------------- derived
   protected readonly view = computed<View>(() => {
     if (this.loading()) return 'skeleton';
-    if (this.scanning()) return 'scanning';
+    if (this.scan.scanning()) return 'scanning';
     const active = this.feed().filter((r) => !r.dismissed).length;
     const anyEnabled = this.sources().some((s) => s.isEnabled);
     const everScanned = this.sources().some((s) => s.lastScanAt);
@@ -404,7 +402,7 @@ export class DiscoverComponent {
     () => (this.view() === 'feed' || this.view() === 'caughtup') && this.everScanned(),
   );
   protected readonly showConsole = computed(
-    () => this.view() === 'scanning' || (this.consoleExpanded() && this.showStrip()),
+    () => this.view() === 'scanning' || (this.scan.expanded() && this.showStrip()),
   );
 
   /** True when the selected market no longer matches the feed on screen, so the
@@ -449,39 +447,33 @@ export class DiscoverComponent {
   }
 
   // ------------------------------------------------------------------ scan
-  protected async scan(): Promise<void> {
-    if (this.scanning()) return;
-    const enabled = this.sources().filter((s) => s.isEnabled);
-    this.scanning.set(true);
-    this.consoleExpanded.set(true);
-    this.consoleLines.set(
-      startedLines(
-        enabled.map((s) => s.name ?? ''),
-        this.t(),
-      ),
+  /**
+   * The store runs the scan and narrates it; everything the fresh results mean
+   * for this page happens in the continuation, while the console is still open
+   * and where a failure still narrates as a failed scan.
+   */
+  protected async runScan(): Promise<void> {
+    const error = await this.scan.run(
+      this.sources()
+        .filter((s) => s.isEnabled)
+        .map((s) => s.name ?? ''),
+      async () => {
+        await this.reloadFeed();
+        await this.sourcesSvc.reload();
+        this.lastScanMarket.set(this.markets());
+        this.rescanBannerDismissed.set(false);
+      },
     );
+    if (error) this.toast.error(error);
+  }
 
-    const started = Date.now();
-    try {
-      const summary = await this.db.discoverScan();
-      const seconds = ((Date.now() - started) / 1000).toFixed(1);
-      this.consoleLines.set(resultLines(summary, seconds, this.t()));
-      const feed = await this.db.discoverFeed();
-      this.feed.set(
-        feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
-      );
-      this.displayCount.set(FEED_PAGE);
-      await this.sourcesSvc.reload();
-      this.lastScanMarket.set(this.markets());
-      this.rescanBannerDismissed.set(false);
-    } catch (e) {
-      console.error('discover: scan failed', e);
-      this.toast.error(String(e));
-      this.consoleLines.update((lines) => failureLines(lines, String(e), this.t()));
-    } finally {
-      this.scanning.set(false);
-      this.consoleExpanded.set(false);
-    }
+  /** Reads the feed back and resets the render window to the first page. */
+  private async reloadFeed(): Promise<void> {
+    const feed = await this.db.discoverFeed();
+    this.feed.set(
+      feed.map((item) => ({ ...item, isNew: item.discoverShownAt === null, dismissed: false })),
+    );
+    this.displayCount.set(FEED_PAGE);
   }
 
   // -------------------------------------------------------- market-changed
@@ -489,7 +481,7 @@ export class DiscoverComponent {
    * for the current market. Saved and dismissed jobs are untouched (see
    * db_discover_clear). Then scan(), which realigns lastScanMarket. */
   protected async refreshForMarket(): Promise<void> {
-    if (this.refreshingForMarket() || this.scanning()) return;
+    if (this.refreshingForMarket() || this.scan.scanning()) return;
     this.refreshingForMarket.set(true);
     try {
       try {
@@ -497,7 +489,7 @@ export class DiscoverComponent {
       } catch (e) {
         console.error('discover: clear before refresh failed', e);
       }
-      await this.scan();
+      await this.runScan();
     } finally {
       this.refreshingForMarket.set(false);
     }

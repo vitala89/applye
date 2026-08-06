@@ -158,6 +158,30 @@ The cost is real and accepted: `libs/core`'s public API grows with each page mig
 growth is a gate. The benefit is that the calculation rule stays true and `libs/core` keeps meaning
 "the domain", rather than the layer accumulating a second, quieter domain of its own.
 
+## Amendment, 2026-08-06 (second): only domain goes to `libs/core`
+
+The first amendment sent every page-local pure module a store needs to `libs/core`. The second store
+found the case where that is wrong.
+
+`discover-console.ts` builds the scan console's lines: source names lowercased and dot-padded to a
+22-character column, plus tone names that become CSS classes. It is pure, and a store needs it - but
+it is **about how a widget looks**, and `libs/core` is the domain.
+
+**Decision: the destination depends on what the module is about, not on whether it is pure.** A
+domain rule goes to `libs/core` through the gate. A pure module that formats for one store goes
+beside that store in `libs/application`. `discover-console.ts` became
+`libs/application/src/lib/discover/scan-console.ts`.
+
+Rejected: sending it to `libs/core` anyway, for the sake of one rule with no exceptions. The cost was
+concrete - the domain library would gain a module about column alignment, and precedent would send
+every similar module after it. Also rejected: leaving it in the app and having the page build the
+lines, which would have kept `consoleLines` and `consoleExpanded` as page state, which is the thing
+this ADR removes.
+
+The cost accepted: "domain or format" is a judgement, and it is now made per module rather than by
+rule. That is the second time in two days this ADR's calculation rule needed qualifying, which is
+itself worth noticing.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

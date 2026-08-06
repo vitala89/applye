@@ -1,5 +1,5 @@
 import type { ScanSummary } from '@applye/core';
-import { consoleLabel, failureLines, resultLines, startedLines } from './discover-console';
+import { consoleLabel, failureLines, resultLines, startedLines } from './scan-console';
 
 /** Echoes the key with its placeholders substituted, so both are visible. */
 const t = (key: string) => key;

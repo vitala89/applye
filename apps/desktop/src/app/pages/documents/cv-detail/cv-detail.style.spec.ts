@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CvPhotoStore } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -412,9 +413,16 @@ describe('CvDetailComponent per-section style', () => {
   });
 
   it("falls back to the document's own bytes when the profile has no photo", () => {
-    // CVs created before the photo moved to the profile keep rendering.
+    // CVs created before the photo moved to the profile keep rendering. The bytes
+    // now arrive the way a real load delivers them - through the store, from the
+    // document's own photo section - rather than by reaching into a private field.
+    // Component-scoped, so it comes from the component's injector, not TestBed's.
+    fixture.debugElement.injector
+      .get(CvPhotoStore)
+      .hydrate([
+        { key: 'photo', order: 0, visible: true, dataUri: 'data:image/jpeg;base64,LEGACY' },
+      ]);
     component.profilePhoto.set(null);
-    component['legacyPhotoDataUri'].set('data:image/jpeg;base64,LEGACY');
     expect(component.photoDataUri()).toBe('data:image/jpeg;base64,LEGACY');
   });
 

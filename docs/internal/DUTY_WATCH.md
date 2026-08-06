@@ -44,6 +44,34 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, cv-detail begins with its photo toggles, and load/save reshape the remaining three stores
+
+- **Status:** complete - first of four pull requests on `cv-detail`
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `feat/cv-photo-store`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** start `cv-detail` (1019/400) on the smallest slice, and prove the hydrate/contribute protocol the other stores will use.
+- **Completed:**
+  - `CvPhotoStore` (~100 lines, budget 250) in `libs/application/src/lib/documents/`: `includePhoto`, `placement`, `includeBirthdate`, `includeMaritalStatus`, the profile-photo read, and the legacy-bytes fallback as a `computed`.
+  - `cv-photo-sections.ts` beside it, pure: `readPhotoFlags`, `withPhotoSection`, `applyPhotoFlags`. Beside the store rather than in `libs/core` - these are how four editor toggles are read out of a section list and written back, not rules about what a CV means (amendment two's test).
+  - `cv-detail.component.ts` **1019 -> 962**. Seven signals and three methods gone; the template is untouched because the page aliases each name it already used.
+  - 24 tests, 7 mutations, all killed after two survivors were closed.
+- **Not completed:** the page still injects `DbService` and still owns sections, style, themes, regeneration and preview. Three PRs to go, so its line stays in `COMPONENTS_STILL_USING_THE_GATEWAY` (which arrives with the lint-rule PR, currently open).
+- **Files or packages changed:** `libs/application` (store, pure module, two specs, barrel), `cv-detail.component.ts`, `cv-detail.style.spec.ts`, `CHANGELOG.md`, this log.
+- **Validation:** `nx run desktop:type-check`; `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` (0 errors, 8 pre-existing warnings); `nx run-many --target=test` (**1392 desktop + 122 application**); `nx build desktop`; `npm run quality:file-size`; `npm run quality:attribution`; `npx nx format:check`; `git diff --check`. `quality:style-move` not run: no stylesheet changed. No browser walk: `cv-detail` needs a document in the database, and the browser has no Tauri IPC.
+- **Privacy/security impact:** none. The photo stays local; the same profile read moved into the store that uses it. Excluding a birth date or marital status still **clears** the value on save rather than hiding it, which is now covered by a test that did not exist.
+- **Decisions and assumptions, all through the grilling gate:**
+  - **`documentLibraryUpsert` takes a whole record**, so three stores cannot save independently. `CvDocumentStore` will own the row and inject the slice stores when it assembles the upsert; the page will call one `save()`.
+  - **`load()` splits.** The document store reads the row and templates; each slice hydrates from the loaded item, and `CvPhotoStore` owns the profile read because the profile photo is its concern.
+  - **A fourth store**, `CvRegenerationStore`: `regenerateSection` and `pullFromProfile` are ~90 lines of AI orchestration, and the document cluster measured ~310 against a 250 budget before them.
+- **Risks or compatibility impact:** none observed. Behaviour is preserved method by method; the one visible change is that the profile photo now loads in parallel with the document rather than inside the same `Promise.all`.
+- **Open issues or blockers:** none.
+- **Lessons:**
+  - **A page spec reaching into a private field breaks when that field moves, and it is the right kind of break.** `cv-detail.style.spec.ts` set `component['legacyPhotoDataUri']` directly; the fallback it tested now arrives the way a real load delivers it, through `hydrate` with a photo section. **A component-scoped store comes from `fixture.debugElement.injector`, not `TestBed.inject`** - the latter looks in the root injector and returns nothing.
+  - **A mutation that both branches make true is not covered by either.** Both survivors were of that shape: two flags always set the same way, and a switch-off case that already had the section the mutation would have created. Symmetric fixtures hide crossed branches.
+- **Next first action:** `CvStyleStore` plus the `CvStyle` cascade rules as a new `libs/core/src/lib/cv/` module - the biggest slice, ~380 lines in the page today, and the reason the style store cannot be written without the pure module first.
+
 ### 2026-08-06, the boundary gets a lint rule, and the migration order turns out to be inverted
 
 - **Status:** complete

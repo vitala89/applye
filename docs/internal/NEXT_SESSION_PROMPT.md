@@ -1,16 +1,30 @@
-# Next session prompt - Applye file-size campaign
+# Next session prompt - Applye architecture migration
 
 Paste everything below the line into a fresh Claude Code session.
 
 ---
 
-Continue the Applye file-size budget campaign. Rust is finished and stays at zero. Angular is what
-remains: **41 files over budget** - 19 TypeScript, 11 templates, 11 stylesheets.
+Continue the Applye architecture migration. **The plan changed on 2026-08-06** - read `ADR-0005`
+first, because it supersedes how the previous eight sessions worked.
+
+Short version: the file-size campaign was treating a symptom. Page classes reach 700 to 1000 lines
+because a page is view, state and orchestration at once, and extracting pure helpers does not bring
+them back - Profile stopped at 445/400 by decision, Discover shrank only while pure logic remained
+and then stopped too. So there is now an **application layer**: `libs/application`, page state in
+signal stores, budget 250. The size campaign and the migration are **one stream of work** - take a
+page, move its state into stores, and the budgets converge as a consequence.
 
 Start where `CLAUDE.md` says: `docs/internal/AGENT_START_HERE.md`, then `AGENTS.md`,
-`docs/product/CURRENT_STATE.md`, and the recent `docs/internal/DUTY_WATCH.md` entries. The
-2026-08-06 entries are the last session; the 2026-08-05 ones are the session before it. Four are
-worth reading in full, because each records something that cost real time to learn:
+`docs/product/CURRENT_STATE.md`, and the recent `docs/internal/DUTY_WATCH.md` entries. Then read, in
+this order and in full:
+
+1. **`docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`** - the decision, the four
+   rejected options and the reasons. Everything below is downstream of it.
+2. **`docs/governance/CODE_QUALITY.md`**, section "Layers, and which one owns what".
+3. **`libs/data/src/lib/stores/jobs.store.ts`** - 66 lines, the only existing store, and the shape to
+   copy. Its header records why this is not an NgRx SignalStore; that reasoning is now layer-wide.
+
+Four Duty Watch entries are still worth reading, because each records something that cost real time:
 
 - **"three dead Discover row rules removed, and the `.dv-row` seam turns out not to need a hoist"** -
   how an inherited plan was wrong, and how that was settled by looking rather than by asking.
@@ -19,8 +33,6 @@ worth reading in full, because each records something that cost real time to lea
 - **"Discover's filter-toolbar controls are hoisted, and `.dv-geomenu` turns out to be three
   menus"** - the descendant-selector form of the same trap, and the audit that shrank a 35-symbol
   boundary to two inputs.
-- **"Discover's location filter tree leaves the page and gets its first tests"** - the first cut into
-  a class that had not moved all campaign.
 - **"Discover's deterministic scoring leaves the page, and two of its own comments turn out to be
   wrong"** - what writing tests for untested logic actually turns up.
 
@@ -205,66 +217,115 @@ Measure computed styles on a **fresh element query**; one captured before a re-r
 returns empty strings. And if `window.innerWidth` is 0, the pane is backgrounded - take a screenshot
 to force it visible before trusting any geometry.
 
-## What to take next
+## The plan
 
-### `discover.component.ts`, 730/400
+### The rules you are working to
 
-The class moved 890 -> 730 in two cuts, both the same shape: pure logic that had **no tests** because
-it was only ever exercised through a page. `discover-location-selection.ts` took the Locations
-tri-state tree; `discover-detail-scoring.ts` took `SKILL_DICT`, `detectSkills` and `computeRawScore`.
-Its sections now:
+- **A page component renders and delegates.** It does not hold the state of its own screen and does
+  not inject `DbService`. Screen state goes to a signal store in `libs/application`.
+- **Plain `signal()` and `computed()`.** Never NgRx - `jobs.store.ts` records why.
+- **A store's budget is 250 lines**, its own category in `tools/check-file-size-budgets.mjs`, and the
+  ratchet **refuses a new file born over budget**. This is the single most important planning fact:
+  `jobs.component.ts` at 1050 lines cannot move into one store. It decomposes into several, by
+  responsibility. That is the goal, not a side effect.
+- **A store must be testable without a `TestBed`.** If it is not, its dependencies are wrong.
+- **A store orchestrates; it does not calculate.** Pure rules stay in `libs/core` or in a page-local
+  pure module - `discover-location-selection.ts` and `discover-detail-scoring.ts` are the pattern.
+- **Lint does not enforce the boundary yet.** `type:data` is still in `type:app`'s allowlist. Do not
+  add a new direct `DbService` injection because lint stayed quiet.
+- **Changing the shape of the layer goes through `aif-grilling`.** The layer is a `libs/` public API.
 
-| lines | section                                                       |
-| ----: | ------------------------------------------------------------- |
-|   210 | `derived` - computed signals                                  |
-|    90 | `state` - signals and the constructor effect                  |
-|    57 | `detail misc` - `tipText`, `rescore`, `saveRow`, `dismissRow` |
-|    36 | `scan`, and 36 more in `clear inbox`                          |
+### Step 1 - create `libs/application` with its first real store
 
-**Both remaining candidates are unaudited**, and neither is a pure-function seam - this is where the
-easy half of the class runs out:
+`libs/application` **does not exist yet**, deliberately: an empty library is a claim without a
+payload. Create it in the same pull request as the first store that has something to hold.
 
-- **The scan pipeline** (`scan`, the console lines, the per-source results). The more I/O-shaped, and
-  the larger. `discover-console.ts` and `discover-sources.service.ts` already exist beside it.
-- **The detail loading path** (`openDetail`, `loadDetail`, `detailBlocks`, `detailSalary`,
-  `detailSkills`, `detailScore`). The more self-contained, and a candidate for a component-scoped
-  service now that the scoring it called is pure and importable. **Read the standing follow-up below
-  about component-scoped services outliving their page before choosing that shape.**
+- `nx g @nx/angular:library` under `libs/application`, tags **`type:application`** and
+  **`scope:desktop`**. The scope is forced, not chosen: `scope:shared` may only depend on
+  `scope:shared`, and this layer depends on `libs/data`, which is `scope:desktop`.
+- The `depConstraints` entry for `type:application` is already in `eslint.config.mjs`. Confirm the
+  tags land by running lint - a wrong tag fails there and nowhere else.
+- Path alias `@applye/application` in `tsconfig.base.json`, matching the others.
 
-**A worked lesson from the scoring cut, worth repeating on either of these:** writing the tests found
-**two comments that did not describe the code**. "Coverage saturates at ten keywords" - only the
-denominator does, so matching more than ten pushes coverage above 1. And the clamp reads
-`Math.max(20, ...)` where the floor is **unreachable**, because the formula starts at 30. A test
-asserting the documented bound would have been vacuous. **Assert the value that actually occurs, not
-the one the comment claims**, and when the two disagree, correct the comment against the code rather
-than the reverse - two of the first test expectations written were wrong and the code was right.
+**The first store is Discover's**, and it is the recommended start for three reasons: the page is
+already half-decomposed so the diff stays readable, both remaining seams in it are stateful and
+therefore exactly what the layer is for, and its pure logic is already out and tested, so nothing
+needs to move twice.
 
-`discover.component.scss` at 704/400 has **no large family left** - the biggest are `.dv-console`
-(60), `.dv-detail` (51) and `.dv-skel`. `discover.component.html` is 484/300.
+`discover.component.ts` is 730/400. Two candidates inside it, and **neither has been audited**:
 
-### Elsewhere, unaudited and ranked by size
+- **The detail loading path** - `openDetail`, `loadDetail`, `detailBlocks`, `detailSalary`,
+  `detailSkills`, `detailScore`, `detailRow`. Self-contained, and it already calls the pure
+  `discover-detail-scoring.ts`. **Recommended first**: smallest surface, clearest ownership.
+- **The scan pipeline** - `scan`, the console lines, the per-source results. Larger and more
+  I/O-shaped. `discover-console.ts` and `discover-sources.service.ts` already exist beside it.
 
-`jobs.component.ts` (1050) with its template (686), `cv-detail.component.ts` (1019),
-`tracker.component` (scss 893, ts 667, html 557), `onboarding.component.ts` (738, four wizard steps
-still inline, shared styles already hoisted so those stay cheap),
-`cv-live-style-panel.component.ts` (704), `libs/core/.../analytics.ts` (665 - the only `libs/` file
-on the list, so changing its shape is a **public API decision** and goes through the grilling gate).
+**Before choosing the detail path, read the standing follow-up below about component-scoped services
+outliving their page.** A `LinkedDocumentsService` result already lands on a destroyed page's signals
+today; a component-scoped store would inherit that failure mode exactly.
 
-### Do NOT split this one
+### Step 2 onwards - one page per pull request, in this order
 
-**`cv-preview.component.html`** (895/300) looks like nine `ng-template` atoms and is not. They all
-speak one inline-editing protocol (`isEditingLeaf`, `leafPath`, `leafDraft`, `onLeafInput`,
-`finishLeafEdit`, `selectLeaf`, …) repeated per field, so extracting an atom means threading about
-twenty members through a boundary. The real seam is **17 near-identical
-`@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs** - one editable-leaf component or
-directive owning the protocol. That is a design change, not a move, and it needs its own decision.
+Ranked by what the migration buys, not by raw line count:
 
-For calibration on boundary width: Profile's AI Tools shipped with **eleven** inputs and was judged
-acceptable because they are flat scalars read once each. **Content projection changes this
-calculation entirely** - the Discover filter menu replaced three dropdowns whose combined markup
-named 35 symbols with a component taking **two inputs and one output**, because projected markup
-compiles in the page's own template scope and its symbols never cross the boundary. Before declaring
-a boundary too wide, ask whether the wide part can be projected.
+| page                  |   ts | html | scss | why here                                         |
+| --------------------- | ---: | ---: | ---: | ------------------------------------------------ |
+| `discover`            |  730 |  484 |  704 | half-migrated, pure logic already out            |
+| `jobs`                | 1050 |  686 |  493 | worst class in the repo; needs several stores    |
+| `cv-detail`           | 1019 |  492 |  665 | pairs with `cv-preview` below                    |
+| `tracker`             |  667 |  557 |  893 | stylesheet is the worst part, cut it the old way |
+| `onboarding`          |  738 |  514 |  642 | four wizard steps still inline                   |
+| `cv-live-style-panel` |  704 |  467 |  336 |                                                  |
+| `settings`            |  575 |  580 |  362 |                                                  |
+
+Each pull request: **one page, its stores, its tests, and the budgets it moves.** Stylesheets and
+templates keep being cut by the existing method, which is unrelated to the layer and can travel in
+the same pull request or its own.
+
+### Step 3 - close the boundary
+
+When **no component injects `DbService`**, remove `type:data` from `type:app`'s allowlist in
+`eslint.config.mjs`. From that point the rule fails the build instead of the review. Until then it is
+held by review, and that interval is the known weak point of `ADR-0005` - say so rather than assuming
+the rule is already enforced.
+
+Check progress with:
+
+```bash
+grep -rln "inject(DbService)" apps/desktop/src --include="*.ts" | grep -v spec | wc -l
+```
+
+**46 at the time of writing.**
+
+### What is explicitly not in the plan
+
+- **`db.service.ts` (461/400, ~79 methods) stays as it is** and becomes internal to the layer. Six
+  lines per method is a mechanical mapping onto IPC, not complexity, and splitting it would touch
+  imports in 46 files the migration will rewrite anyway. It cannot grow. It is cut into per-domain
+  gateways **when the ratchet refuses the next method added to it**, and not before.
+- **`libs/core/.../analytics.ts` (665/400)** is the only `libs/` file over budget. Changing its shape
+  is a public API decision and goes through the grilling gate.
+- **`cv-preview.component.html` (895/300) is blocked by decision.** It looks like nine `ng-template`
+  atoms and is not: all of them speak one inline-editing protocol (`isEditingLeaf`, `leafPath`,
+  `leafDraft`, `onLeafInput`, `finishLeafEdit`, `selectLeaf`, …) repeated per field. The real seam is
+  **17 near-identical `@if (isEditingLeaf(...)) { <input> } @else { <element> }` pairs** - one
+  editable-leaf component or directive owning the protocol. That is a design change needing its own
+  decision, and it is **not** what the application layer solves.
+- **Profile is finished at 445/400.** Settled through the grilling gate; the remaining lines are one
+  lump of page state. **It is now a migration candidate rather than a closed file** - a
+  `ProfileFormStore` is exactly what `ADR-0005` sanctions - but it is not urgent and it is not first.
+  Two seams inside it stay rejected on their own merits: the compensation block (template already
+  under budget, so a move only grows the class) and the section-mirror collapse (a shared
+  `syncSections()` re-serializes the other two, and `serialize(parse(x))` is not identity for
+  hand-typed raw markdown).
+
+### Calibration carried over from the component work
+
+Profile's AI Tools shipped with **eleven** inputs, accepted because they are flat scalars read once
+each. **Content projection changes that arithmetic entirely** - Discover's filter menu replaced three
+dropdowns whose combined markup named 35 symbols with a component taking **two inputs and one
+output**, because projected markup compiles in the page's own template scope and its symbols never
+cross the boundary. Before declaring a boundary too wide, ask whether the wide part can be projected.
 
 ## When to stop and ask
 

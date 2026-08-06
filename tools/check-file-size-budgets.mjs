@@ -19,6 +19,16 @@ const budgets = [
     matches: (file) => /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(file),
   },
   {
+    // Tighter than an ordinary source file on purpose (ADR-0005). Once a page
+    // component stops being the god-object, its store is the next candidate,
+    // and 250 is what forces a large page to decompose into several stores by
+    // responsibility rather than into one relocated lump.
+    label: 'Application-layer store',
+    max: 250,
+    matches: (file) =>
+      /\.store\.[cm]?ts$/.test(file) || /^libs\/application\/.*\.[cm]?ts$/.test(file),
+  },
+  {
     label: 'TypeScript/JavaScript source',
     max: 400,
     matches: (file) => /\.[cm]?[jt]sx?$/.test(file),

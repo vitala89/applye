@@ -22,6 +22,36 @@ Run the Plan Check from `AGENTS.md` before implementation or before proposing wh
 
 The main Claude Code session remains the conductor. Skills and subagents are specialists, not independent broad implementers.
 
+## Architecture, non-negotiable
+
+Applye is layered, and the direction of every dependency is enforced by
+`@nx/enforce-module-boundaries` in `eslint.config.mjs`, not by convention:
+
+```
+apps/desktop  ->  libs/application  ->  libs/data  ->  libs/core
+                  libs/ui, libs/i18n                   (pure domain, no Angular, no Tauri)
+```
+
+**A page component renders and delegates. It does not hold the state of its own screen, and it does
+not inject `DbService`.** Screen state - what is loaded, what is in flight, what the user selected -
+belongs in a **signal store in `libs/application`**, budget **250 lines**. Plain `signal()` and
+`computed()`, never NgRx: `jobs.store.ts` records why, and the reason has not changed.
+
+This is `ADR-0005`, and it was measured rather than assumed. Page classes that are view, state and
+orchestration at once reach 700 to 1000 lines, and extracting pure helpers does not bring them back -
+Profile stopped at 445/400 by decision, Discover shrank only while pure logic remained.
+
+Three things a new session must know before writing code:
+
+1. **The rule binds new code now.** An existing page migrates when it is touched for another reason -
+   the same trigger as the file-size budgets, and one stream of work with them.
+2. **Lint does not enforce it yet.** `type:data` is still in `type:app`'s allowlist and leaves it only
+   once no component injects `DbService`. Do not add a direct injection because lint stayed quiet.
+3. **Changing the shape of the layer goes through the `aif-grilling` skill**, like any other `libs/`
+   public API.
+
+`docs/governance/CODE_QUALITY.md` holds the full table and the reasoning.
+
 ## Code quality before implementation
 
 - Read `docs/governance/CODE_QUALITY.md` before every code change.

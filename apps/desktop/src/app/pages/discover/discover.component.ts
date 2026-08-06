@@ -54,6 +54,7 @@ import { DiscoverSourcesDrawerComponent } from './discover-sources-drawer/discov
 import { DiscoverSourcesService, formatScanTime } from './discover-sources.service';
 import { type JdBlock, parseJdBlocks } from './jd-blocks';
 import { type FeedRow, type FeedSection, filterFeedRows, splitFeedSections } from './discover-feed';
+import { computeRawScore, detectSkills } from './discover-detail-scoring';
 import {
   type CountryNode,
   type RegionGroup,
@@ -79,55 +80,6 @@ type Tab = 'new' | 'all';
 const FEED_PAGE = 30;
 /** One block of the deterministically parsed job description. */
 const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distributed'];
-
-/** Static tech dictionary for the deterministic "skills found in posting" chips. */
-const SKILL_DICT = [
-  'Angular',
-  'React',
-  'Vue',
-  'Svelte',
-  'TypeScript',
-  'JavaScript',
-  'Node.js',
-  'Python',
-  'Rust',
-  'Go',
-  'Java',
-  'Kotlin',
-  'Swift',
-  'C#',
-  '.NET',
-  'PHP',
-  'Ruby',
-  'SQL',
-  'PostgreSQL',
-  'MySQL',
-  'SQLite',
-  'MongoDB',
-  'Redis',
-  'GraphQL',
-  'REST',
-  'Docker',
-  'Kubernetes',
-  'AWS',
-  'Azure',
-  'GCP',
-  'Terraform',
-  'CI/CD',
-  'Git',
-  'RxJS',
-  'NgRx',
-  'Nx',
-  'Tauri',
-  'Electron',
-  'Tailwind',
-  'SCSS',
-  'HTML',
-  'CSS',
-  'Jest',
-  'Cypress',
-  'Playwright',
-];
 
 @Component({
   selector: 'app-discover',
@@ -633,9 +585,17 @@ export class DiscoverComponent {
       const jd = job?.jdText ?? '';
       this.detailSalary.set(extractSalaryFromJd(jd));
       this.detailBlocks.set(parseJdBlocks(jd));
-      this.detailSkills.set(this.detectSkills(jd));
+      const skills = detectSkills(jd);
+      this.detailSkills.set(skills);
       const row = this.detailRow();
-      this.detailScore.set(this.computeRawScore(`${row?.title ?? ''}\n${jd}`));
+      this.detailScore.set(
+        computeRawScore(
+          `${row?.title ?? ''}\n${jd}`,
+          this.profileKeywords(),
+          skills,
+          row ? (this.archetypeBadge(row)?.fit ?? null) : null,
+        ),
+      );
     } catch (e) {
       console.error('discover: load detail failed', e);
       if (this.detailId() === jobId) this.detailBlocks.set([]);
@@ -645,41 +605,6 @@ export class DiscoverComponent {
   /** i18n label for an archetype tier badge. */
   protected archBadgeLabel(fit: ArchetypeFit): string {
     return this.t()('discover.arch_' + fit);
-  }
-
-  /** Deterministic dictionary match over the full JD text (0 tokens). */
-  private detectSkills(jd: string): string[] {
-    const hay = jd.toLowerCase();
-    return SKILL_DICT.filter((skill) => {
-      const needle = skill.toLowerCase();
-      if (needle.length <= 3 || /[^a-z]/.test(needle)) {
-        // short or symbol-carrying tokens ("go", "c#", ".net") match whole-word
-        const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(jd);
-      }
-      return hay.includes(needle);
-    }).slice(0, 10);
-  }
-
-  /**
-   * Raw keyword-fit score, deterministic and explainable (no AI, 0 tokens):
-   * coverage of the profile's derived keywords over title+JD, a small bonus per
-   * detected skill, plus a tier boost from the open job's best-fit archetype
-   * (primary +12, secondary +6, adjacent +0). Null when the profile has no
-   * keywords yet.
-   */
-  private computeRawScore(hayRaw: string): number | null {
-    const keywords = this.profileKeywords();
-    if (!keywords.length) return null;
-    const hay = hayRaw.toLowerCase();
-    const matched = keywords.filter((kw) => hay.includes(kw)).length;
-    const coverage = matched / Math.min(keywords.length, 10);
-    const skillBonus = Math.min(this.detailSkills().length, 6) * 3;
-    const detail = this.detailRow();
-    const badge = detail ? this.archetypeBadge(detail) : null;
-    const tierBoost = badge ? { primary: 12, secondary: 6, adjacent: 0 }[badge.fit] : 0;
-    const score = Math.round(30 + coverage * 55 + skillBonus + tierBoost);
-    return Math.max(20, Math.min(97, score));
   }
 
   /** The archetype badge as a row renders it: tier plus its label. Pairs the

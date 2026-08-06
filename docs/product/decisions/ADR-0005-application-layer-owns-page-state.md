@@ -226,6 +226,77 @@ eventually move are 251 to 326 lines - `cover-letter-tailor` 326, `tailoring` 32
 move** and do not relocate intact. That is the rule already stated for `jobs.component.ts`, confirmed
 to apply to services too rather than only to stores.
 
+## Amendment, 2026-08-06 (fourth): the allowlist flip was the wrong mechanism, and the migration order was wrong
+
+Three corrections, all found by measuring rather than by reasoning, and all of them change what happens
+next.
+
+### The enforcement mechanism
+
+This ADR said the boundary would be enforced by removing `type:data` from `type:app`'s allowlist "once
+no component injects `DbService`". **Those two things are not the same rule.** `depConstraints` keys on
+the **project** tag, so the flip bans the gateway from every file in `apps/desktop` - including the 18
+`shared/*` services, which are not components and which the ADR never proposed to move. The flip was
+therefore unreachable for a reason that had nothing to do with pages.
+
+**Decision: a `no-restricted-syntax` rule scoped to `*.component.ts` files says what this ADR meant, and
+it is an error as of now.** `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs` lists the 26
+components that still inject `DbService`; a component not on that list fails the build. The list only
+shrinks - each migrated page deletes its own line - and when it is empty the rule goes with it. This
+closes the window this ADR called its own known weak point, years before the full flip could have.
+
+The `type:data` allowlist entry stays, and now leaves only when the app's `shared/*` services have moved
+too. That is a real remaining goal, but it is no longer what gates the page rule.
+
+Rejected: a warning instead of an error - which is what `CODE_QUALITY.md` already was when it lost 46 to
+1; and scoping the rule to already-migrated directories, which says nothing about a brand-new page
+created somewhere else, the case the rule most needs to catch.
+
+### The migration order
+
+The handoff ranked the remaining pages by line count. Ranked instead by **dependency shape** - what the
+migration can actually move - the order inverts:
+
+| page                  | lines | `db.` calls | app services |
+| --------------------- | ----: | ----------: | -----------: |
+| `jobs`                |  1050 |           9 |       **22** |
+| `cv-detail`           |  1019 |      **14** |            1 |
+| `onboarding`          |   738 |          12 |            5 |
+| `tracker`             |   667 |          11 |            1 |
+| `cover-letter-detail` |   644 |          10 |            1 |
+| `settings`            |   575 |           6 |            3 |
+| `cv-preview`          |  1049 |       **0** |            0 |
+| `cv-live-style-panel` |   704 |       **0** |            0 |
+
+**`jobs` is the worst candidate, not the best.** Its 1050 lines are orchestration over 21 app-level
+`shared/*` services across 150-odd use sites, against 9 gateway calls. A store in `libs/application`
+**cannot inject any of them** - a library cannot import from an app - so the page's state cannot move
+until the services do, and five of those are 251 to 326 lines and must decompose on the way
+(`cover-letter-tailor` 326, `tailoring` 326, `job-scoring` 319, `job-identity-resolver` 268,
+`portal-answers` 251). **Decision: `jobs` is deferred until its services migrate**, and this paragraph
+is the reason, so the next session does not read the line count and start there.
+
+**`cv-preview` and `cv-live-style-panel` reach the gateway zero times.** Their size is view and
+interaction state, so this ADR does not reach them at all; `cv-preview`'s real seam is the
+inline-editing protocol already recorded as blocked by decision.
+
+**Decision: `cv-detail` is next** - 1019 lines, 14 gateway calls, one app service. Discover's exact
+shape, so the method that just worked four times applies unchanged.
+
+### How `cv-detail` decomposes
+
+Three stores, one per pull request: **`CvDocumentStore`** (load, save, sections, reorder, lock,
+regenerate, pull-from-profile), **`CvStyleStore`** (style, themes, templates), **`CvPhotoStore`** (photo
+source and placement, the birthdate and marital-status toggles). Preview mode, live selection and the
+return-to-wizard routing **stay page state**: they are view concerns, and the live-selection protocol is
+what `cv-preview`'s blocked redesign will have to settle - migrating it now would prejudge that.
+
+The style cluster is about 380 lines on its own, over a store's budget before it is written. **The
+`CvStyle` cascade rules - how a scope change propagates through titles and entries - become a pure
+module in `libs/core` as a new `cv/` directory**, beside `jobs/` and `profile/`. They are the semantics
+of a `libs/core` model rather than formatting for one widget, which is the "domain or format" test from
+amendment two; this paragraph is the `libs/core` public-API gate that amendment one requires.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -236,6 +307,10 @@ to apply to services too rather than only to stores.
   - [x] Add `type:application` and its constraint to `eslint.config.mjs`
   - [x] Add the 250-line store budget category to `tools/check-file-size-budgets.mjs`
   - [x] Create `libs/application` together with its first real store, not empty - `DiscoverDetailStore`
-  - [ ] Migrate pages as they are touched, one page per pull request
-  - [ ] Remove `type:data` from `type:app`'s allowlist once no component injects `DbService`
+  - [x] Enforce "a component does not reach the gateway" by lint - `no-restricted-syntax` on
+        `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
+  - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` next, `jobs` deferred
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (26 entries), then delete the rule with it
+  - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
+  - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

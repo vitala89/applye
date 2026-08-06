@@ -57,9 +57,11 @@
   is view, state and orchestration at once, and that was measured twice: Profile stopped at 445/400
   by decision rather than technique, and Discover shrank only while pure logic remained. The rule
   binds new code now; existing pages migrate **when touched for another reason**, which is the same
-  trigger the budgets already use, so the two are **one stream of work**. The boundary is not yet
-  enforced by lint: `type:data` leaves `type:app`'s allowlist only once **no component injects
-  `DbService`** (46 do today), and that interval is the known weak point.
+  trigger the budgets already use, so the two are **one stream of work**. **The boundary is enforced by
+  lint as of ADR-0005 amendment four**: a `*.component.ts` injecting `DbService` is an error unless it
+  is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs`, a list of **26** that only
+  ever shrinks. The `type:data` allowlist flip is a separate, later goal - it keys on the project tag,
+  so it also bans the gateway from the app's 18 `shared/*` services.
 - **All of Discover's state is in the application layer: four stores, and the page class no longer
   injects `DbService`.** `DiscoverDetailStore`, `DiscoverScanStore`, `DiscoverFeedStore` and
   `DiscoverProfileContextStore`, all component-scoped, all under the 250 budget, 78 tests between
@@ -75,6 +77,14 @@
   under `pages/discover/` reaches the gateway. The `type:data` allowlist flip is now blocked only by
   the remaining pages, not by an open question. The audit that settled it also corrected the scale of
   the problem: **4 of the 19** gateway-using services notify at all.
+- **The migration order was wrong, and `jobs` is deferred.** Ranked by dependency shape rather than line
+  count: `jobs` (1050) makes **9** gateway calls against **22** app-service injections, so its state
+  cannot move until those services do - and five of them are 251-326 lines and must decompose first.
+  `cv-preview` (1049) and `cv-live-style-panel` (704) reach the gateway **zero** times, so this campaign
+  does not touch them; their size is view state. **`cv-detail` is next** (1019 lines, 14 gateway calls,
+  one app service - Discover's exact shape), as `CvDocumentStore`, `CvStyleStore` and `CvPhotoStore`,
+  one per pull request, with the `CvStyle` cascade rules going to a new `libs/core/.../cv/` module. Then
+  `tracker` and `cover-letter-detail`, which share that shape.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

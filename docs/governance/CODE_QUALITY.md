@@ -175,10 +175,17 @@ shrank only while pure logic remained.
 for another reason** - the same trigger the file-size budgets use, and one stream of work with them:
 take the page, move its state into stores, and the budgets converge as a consequence.
 
-**The enforcement is not yet switched on.** `type:data` is still in `type:app`'s allowlist, so lint
-still permits a component to inject `DbService`. It is removed once no component does, and from that
-point the boundary fails the build instead of the review. Until then this rule is held by review, and
-that is the known weak point - do not add a new direct injection because lint stayed quiet.
+**The enforcement is switched on for components.** `eslint.config.mjs` carries a `no-restricted-syntax`
+rule over `*.component.ts`: injecting `DbService` is an **error** unless the file is named in
+`COMPONENTS_STILL_USING_THE_GATEWAY`, which lists the 26 that still do and **only ever shrinks**. A new
+component cannot join it, and each migrated page deletes its own line; when the list empties, the rule
+goes with it.
+
+`type:data` is still in `type:app`'s allowlist, and that is **not** the rule that keeps a component away
+from the gateway. `depConstraints` keys on the project tag, so removing it would also ban the gateway
+from the app's 18 `shared/*` services - a different and much larger change, and the reason the flip was
+never reachable on its own terms. It leaves once those services have moved into `libs/application` too
+(ADR-0005, amendment four).
 
 **`db.service.ts` is internal to this layer.** It is over budget, it may not grow, and it is cut into
 per-domain gateways when the ratchet refuses the next method added to it. Do not inject it into a

@@ -39,9 +39,9 @@ Before editing, state briefly:
 - **where the work sits in the layering, and what owns its state.** A page component renders and
   delegates; screen state belongs in a signal store in `libs/application`, budget 250, and a page
   does not inject `DbService` (`ADR-0005`). The rule binds new code now; an existing page migrates
-  when it is touched for another reason. Lint does not enforce it yet - `type:data` leaves
-  `type:app`'s allowlist only once no component injects `DbService` - so do not read a quiet lint as
-  permission;
+  when it is touched for another reason. Lint enforces it for components: injecting `DbService` in a
+  `*.component.ts` is an error unless the file is in `COMPONENTS_STILL_USING_THE_GATEWAY` in
+  `eslint.config.mjs`, a 26-entry list that only shrinks - never add to it;
 - which touched files are near or above their code-size budgets, what responsibility each file owns, and where the new behavior will be tested.
 
 Before adding framework or library code, use the configured read-only documentation MCP tools or current official docs for the installed version. Do not send source code, secrets, personal data, or private prompts to a documentation MCP.

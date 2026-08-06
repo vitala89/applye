@@ -67,7 +67,7 @@
           [score]="detail.score()"
           [verdict]="detail.verdict()"
           [tip]="tipText(drow)"
-          [hasCompTarget]="hasCompTarget()"
+          [hasCompTarget]="context.hasCompTarget()"
           [compVerdict]="compVerdict()"
           [sourceLabel]="srcLabel(drow.source)"
           [location]="drow.location"
@@ -493,8 +493,8 @@
 <!-- ============ SOURCES DRAWER ============ -->
 @if (drawerOpen()) {
   <app-discover-sources-drawer
-    [markets]="markets()"
-    [geoScope]="geoScope()"
+    [markets]="context.markets()"
+    [geoScope]="context.geoScope()"
     (closed)="drawerOpen.set(false)"
   />
 }

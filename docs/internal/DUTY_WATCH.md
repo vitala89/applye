@@ -44,6 +44,22 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's page class stops touching the database, and the last mile turns out to have a gate in it
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `feat/discover-profile-context-store`
+- **Completed:** `DiscoverProfileContextStore` (97 lines against its 250 budget, 16 tests) owns the target roles and keywords, the compensation target, and the geography. **`discover.component.ts` no longer injects `DbService`.** Class **653 -> 618**.
+- **A duplicate read was found by moving the code, not by looking for it.** The page called `db.listSources()` and then wrote the result into `DiscoverSourcesService`'s own `all` signal from outside - while that service already has `reload()` doing exactly that. Two identical queries per load, and a write across a boundary. The bootstrap is now three parallel loads that each own what they read.
+- **The banner's rule split along the right seam.** Whether the market changed since the scan is a fact about the context and moved with the data it compares; whether the user dismissed the banner is page state and stayed. The page combines them. The comparison is by JSON rather than set membership deliberately - order is part of what the settings stored.
+- **Discover is NOT free of the gateway, and the number says so.** 46 components became **45**. `DiscoverSourcesService` still injects `DbService`, and it **cannot move to `libs/application` as it stands**: it raises seven toasts, and telling the user is the app's job. Every store written this session returns its failure instead. That is a real decision for the next session - either the service returns failures too and the page toasts, or the toast concern gets a different home - and it is the shape of the last mile on every page, not a Discover quirk.
+- **Validation:** type-check across four projects (clean), lint across the same four **with `--skip-nx-cache`** (0 errors, 8 pre-existing warnings elsewhere), tests **1403 / 301 / 16 / 78**, `nx build desktop`, `npm run quality:file-size` (618 against base 653), `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
+- **Mutation testing: eight written, one survived the first pass.** Requiring **both** ends of a compensation range to count as a target survived, because every existing case set both or neither. Closed with the floor-only case - **and only that one**, because `parseCompensation` is positional: it takes the first two numbers it finds and ignores the labels, so a ceiling stated without a floor is read as a floor. There is no markdown that produces a `max` without a `min`, and the test says so rather than asserting an unreachable state.
+- **Three fixtures in a row were wrong because I assumed a parser's shape instead of reading it.** `ScanSummary` last time; `parseLocalMarkets` (a JSON array of five known codes, not a comma list) and `parseCompensation` (positional) this time. Each cost a failing run. **The rule that keeps working: open the function before writing the fixture.**
+- **Two page tests reached into signals that no longer exist**, and the fix was to drive them through the real path - the archetypes now arrive from the profile the context store reads, so `createFixture` takes a profile. That is a better test than the one it replaced.
+- **Privacy/security impact:** none.
+- **Next first action:** decide what happens to `DiscoverSourcesService` - the toast question above. Until it is answered, no page can reach zero, and the `type:data` allowlist flip stays out of reach. After that, `jobs` is the next page and the worst class in the repository at 1050.
+
 ### 2026-08-06, Discover's feed becomes a store, and the page is three calls from leaving the gateway
 
 - **Status:** complete

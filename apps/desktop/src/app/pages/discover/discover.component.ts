@@ -30,22 +30,12 @@ import {
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { DiscoverDetailScoreComponent } from './discover-detail-score/discover-detail-score.component';
-import { DbService } from '@applye/data';
-import {
-  parseLocalMarkets,
-  parseProfileMd,
-  compareCompensation,
-  parseArchetypes,
-  archetypeKeywordBag,
-  matchArchetype,
-  tierRank,
-} from '@applye/core';
+import { compareCompensation, matchArchetype, tierRank } from '@applye/core';
 import type {
   CompensationVerdict,
   ScanSourceResult,
   ArchetypeMatch,
   ArchetypeFit,
-  Archetype,
 } from '@applye/core';
 import { classifyLoc, cityKey, type LocClass, type RegionKey } from './discover-location';
 import { toggled } from './discover-sources.util';
@@ -67,7 +57,12 @@ import {
 import { DiscoverDetailHeroComponent } from './discover-detail-hero/discover-detail-hero.component';
 import { DiscoverFeedRowComponent } from './discover-feed-row/discover-feed-row.component';
 import { DiscoverFilterMenuComponent } from './discover-filter-menu/discover-filter-menu.component';
-import { DiscoverDetailStore, DiscoverFeedStore, DiscoverScanStore } from '@applye/application';
+import {
+  DiscoverDetailStore,
+  DiscoverFeedStore,
+  DiscoverProfileContextStore,
+  DiscoverScanStore,
+} from '@applye/application';
 import { ToastService } from '../../core/toast/toast.service';
 
 type View = 'skeleton' | 'first' | 'never' | 'scanning' | 'feed' | 'caughtup';
@@ -91,14 +86,19 @@ const REMOTE_MARKERS = ['remote', 'anywhere', 'worldwide', 'global', 'distribute
     DiscoverFeedRowComponent,
     DiscoverFilterMenuComponent,
   ],
-  providers: [DiscoverSourcesService, DiscoverDetailStore, DiscoverScanStore, DiscoverFeedStore],
+  providers: [
+    DiscoverSourcesService,
+    DiscoverDetailStore,
+    DiscoverScanStore,
+    DiscoverFeedStore,
+    DiscoverProfileContextStore,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './discover.component.html',
   styleUrl: './discover.component.scss',
 })
 export class DiscoverComponent {
   private readonly i18n = inject(TranslateService);
-  private readonly db = inject(DbService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
@@ -145,40 +145,18 @@ export class DiscoverComponent {
   protected readonly drawerOpen = signal(false);
   /** The open job's detail screen. Component-scoped: one page, one open job. */
   protected readonly detail = inject(DiscoverDetailStore);
-  private readonly profileKeywords = signal<string[]>([]);
-  private readonly archetypes = signal<Archetype[]>([]);
-  protected readonly geoScope = signal('worldwide');
-  /** Settings.market - the country codes narrowing the builtin sources list. */
-  protected readonly markets = signal<string[]>([]);
-  /** The market the feed on screen was last scanned under, from settings. */
-  private readonly lastScanMarket = signal<string[]>([]);
+  /** What a posting is read against: target roles, pay and geography. */
+  protected readonly context = inject(DiscoverProfileContextStore);
   /** Session-only dismissal of the "market changed" banner. */
   private readonly rescanBannerDismissed = signal(false);
   /** In flight for the whole refresh (clear + scan), so a double-click on the
    * market-changed banner cannot fire two clears. `scanning()` alone does not
    * cover the clear that runs before the scan starts. */
   protected readonly refreshingForMarket = signal(false);
-  /** Profile compensation target (min/max/currency/period), parsed from the saved
-   * profile markdown; empty strings when the user set no target. */
-  private readonly compTarget = signal<{
-    min: string;
-    max: string;
-    currency: string;
-    period: string;
-  }>({
-    min: '',
-    max: '',
-    currency: '',
-    period: '',
-  });
-  /** True when the user has a compensation target to compare against. */
-  protected readonly hasCompTarget = computed(
-    () => !!(this.compTarget().min || this.compTarget().max),
-  );
 
   /** Salary-fit verdict for the open detail job vs the profile target. */
   protected readonly compVerdict = computed<CompensationVerdict>(() =>
-    compareCompensation(this.compTarget(), this.detail.salary()),
+    compareCompensation(this.context.compTarget(), this.detail.salary()),
   );
 
   // filters (empty selection set = "all")
@@ -296,7 +274,7 @@ export class DiscoverComponent {
    * row id avoids re-tokenizing every archetype on each change-detection pass.
    */
   private readonly badgeByRow = computed<Map<number, ArchetypeMatch | null>>(() => {
-    const list = this.archetypes();
+    const list = this.context.archetypes();
     const cache = new Map<number, ArchetypeMatch | null>();
     for (const row of this.feedStore.rows())
       cache.set(row.id, matchArchetype(row.title ?? '', list));
@@ -308,7 +286,7 @@ export class DiscoverComponent {
     const cache = this.badgeByRow();
     if (cache.has(row.id)) return cache.get(row.id) ?? null;
     // Row not in the current feed snapshot (defensive): match directly.
-    return matchArchetype(row.title ?? '', this.archetypes());
+    return matchArchetype(row.title ?? '', this.context.archetypes());
   }
 
   private rowTierRank(row: FeedRow): number {
@@ -324,7 +302,7 @@ export class DiscoverComponent {
   protected readonly feedSections = computed<FeedSection[]>(() =>
     splitFeedSections(
       this.visibleRows(),
-      this.profileKeywords().length > 0,
+      this.context.keywords().length > 0,
       (row) => this.matchesProfile(row),
       (row) => this.rowTierRank(row),
       { forYou: this.t()('discover.for_you'), more: this.t()('discover.more_openings') },
@@ -413,34 +391,20 @@ export class DiscoverComponent {
 
   /** True when the selected market no longer matches the feed on screen, so the
    * results shown are for a market the user has moved away from. */
-  protected readonly marketChangedSinceScan = computed(() => {
-    if (this.rescanBannerDismissed()) return false;
-    return JSON.stringify(this.markets()) !== JSON.stringify(this.lastScanMarket());
-  });
+  protected readonly marketChangedSinceScan = computed(
+    () => !this.rescanBannerDismissed() && this.context.marketChangedSinceScan(),
+  );
 
   // ------------------------------------------------------------------ load
   private async load(): Promise<void> {
     try {
-      const [sources, profile, settings] = await Promise.all([
-        this.db.listSources(),
-        this.db.getProfile(),
-        this.db.getSettings(),
+      await Promise.all([
+        // The service owns the list; the page used to read it and write into
+        // the service's signal from outside, which was the same query twice.
+        this.sourcesSvc.reload(),
+        this.context.load(),
         this.feedStore.load(),
       ]);
-      this.sources.set(sources);
-      const arch = parseArchetypes(profile?.targetArchetypes);
-      this.archetypes.set(arch);
-      this.profileKeywords.set(archetypeKeywordBag(arch));
-      const cf = parseProfileMd(profile?.fullMd ?? '');
-      this.compTarget.set({
-        min: cf.compMin,
-        max: cf.compMax,
-        currency: cf.compCurrency,
-        period: cf.compPeriod,
-      });
-      this.geoScope.set(settings.geoScope || 'worldwide');
-      this.markets.set(parseLocalMarkets(settings.market));
-      this.lastScanMarket.set(parseLocalMarkets(settings.lastScanMarket));
     } catch (e) {
       console.error('discover: load failed', e);
     } finally {
@@ -462,7 +426,7 @@ export class DiscoverComponent {
       async () => {
         await this.feedStore.load();
         await this.sourcesSvc.reload();
-        this.lastScanMarket.set(this.markets());
+        this.context.markScanned();
         this.rescanBannerDismissed.set(false);
       },
     );
@@ -529,7 +493,7 @@ export class DiscoverComponent {
   protected openDetail(row: FeedRow): void {
     if (row.dismissed) return;
     this.detail.open(row.id, {
-      keywords: this.profileKeywords(),
+      keywords: this.context.keywords(),
       fit: this.archetypeBadge(row)?.fit ?? null,
       title: row.title ?? '',
     });
@@ -655,7 +619,7 @@ export class DiscoverComponent {
   /** Deterministic tip line under the raw score. */
   protected tipText(row: FeedRow): string {
     if (this.detail.verdict() === 'strong') return this.t()('discover.tip_strong');
-    const kw = this.matchedKeywords(row)[0] ?? this.profileKeywords()[0]?.toUpperCase() ?? '';
+    const kw = this.matchedKeywords(row)[0] ?? this.context.keywords()[0]?.toUpperCase() ?? '';
     return this.t()('discover.tip_other').replace('{kw}', kw);
   }
 
@@ -701,7 +665,8 @@ export class DiscoverComponent {
 
   protected matchedKeywords(row: FeedRow): string[] {
     const title = (row.title ?? '').toLowerCase();
-    return this.profileKeywords()
+    return this.context
+      .keywords()
       .filter((kw) => title.includes(kw))
       .slice(0, 4)
       .map((kw) => kw.toUpperCase());

@@ -2,5 +2,6 @@
 // `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`.
 export * from './lib/discover/discover-detail.store';
 export * from './lib/discover/discover-feed.store';
+export * from './lib/discover/discover-profile-context.store';
 export * from './lib/discover/discover-scan.store';
 export * from './lib/discover/scan-console';

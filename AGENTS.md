@@ -65,6 +65,8 @@ A stale state file is a finding. Report and correct it rather than silently work
 Run the `aif-grilling` skill, and do not choose for the maintainer, when any of these holds:
 
 - a decision changes a public API of a library under `libs/`, or a database schema;
+- a decision changes the shape of the application layer - what a store owns, where a boundary sits,
+  or what `libs/application` exports (`ADR-0005`);
 - a decision changes the privacy or security posture;
 - the task has two honest readings that lead to materially different work;
 - the maintainer says grill, stress-test, or challenge me.
@@ -95,9 +97,10 @@ the installed `superpowers` and `mattpocock-skills` packs.
 `docs/governance/CODE_QUALITY.md` is mandatory for every code change.
 
 - Apply SOLID pragmatically together with separation of concerns, high cohesion, low coupling, KISS, YAGNI, and explicit typed contracts.
-- New TypeScript/JavaScript source files stay at or below 400 non-empty lines; Angular templates at 300; stylesheets at 400; Rust source modules at 500. Test-file budgets are defined in the quality contract: 600 for a TypeScript test file, and 600 for a Rust file's inline `#[cfg(test)]` items, counted separately from its source.
+- New TypeScript/JavaScript source files stay at or below 400 non-empty lines; **application-layer stores at 250**; Angular templates at 300; stylesheets at 400; Rust source modules at 500. Test-file budgets are defined in the quality contract: 600 for a TypeScript test file, and 600 for a Rust file's inline `#[cfg(test)]` items, counted separately from its source.
 - Existing oversized files are technical debt, not precedent. They may not grow. Extract a focused responsibility before adding behavior.
-- Components render and coordinate UI state. Domain logic goes to `libs/core`, Tauri/data access to `libs/data`, shared UI to `libs/ui`, and user-facing text to `libs/i18n`.
+- **Components render and delegate. A page does not hold the state of its own screen and does not inject `DbService`** - that state belongs in a signal store in `libs/application` (`ADR-0005`). Domain logic goes to `libs/core`, Tauri/data access to `libs/data`, shared UI to `libs/ui`, and user-facing text to `libs/i18n`.
+- The layer rule binds new code now. An existing page migrates when it is touched for another reason - the same trigger as the size budgets, and one stream of work with them. **Lint does not enforce it yet**: `type:data` leaves `type:app`'s allowlist only once no component injects `DbService`, so until then do not add a direct injection because lint stayed quiet.
 - Tauri commands stay thin. Rust domains split into command, validation, parsing, domain, persistence, and provider modules where those responsibilities exist.
 - Prefer pure functions for business rules and explicit I/O boundaries for SQLite, network, filesystem, keychain, and IPC.
 - Bug fixes require regression tests. New domain behavior requires focused tests. Moved logic keeps equivalent coverage.

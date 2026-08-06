@@ -51,6 +51,15 @@
   inside its template inherits that injector and can inject them directly - which deletes the alias
   and the template block in one move. The first cut, `app-job-document-cards`, retired nine aliases
   that way. The wizard's remaining steps are the same shape.
+- **The plan changed on 2026-08-06: an application layer, and the size campaign folded into it.**
+  `ADR-0005` introduces `libs/application` - page state in signal stores, budget 250 - because
+  the file-size campaign was treating a symptom. Page classes reach 700 to 1000 lines because a page
+  is view, state and orchestration at once, and that was measured twice: Profile stopped at 445/400
+  by decision rather than technique, and Discover shrank only while pure logic remained. The rule
+  binds new code now; existing pages migrate **when touched for another reason**, which is the same
+  trigger the budgets already use, so the two are **one stream of work**. The boundary is not yet
+  enforced by lint: `type:data` leaves `type:app`'s allowlist only once **no component injects
+  `DbService`** (46 do today), and that interval is the known weak point.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

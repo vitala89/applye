@@ -53,6 +53,7 @@ Budgets count non-empty physical lines. They are design alarms, not targets to f
 | File category                  |    Budget | Required action before exceeding it                                                         |
 | ------------------------------ | --------: | ------------------------------------------------------------------------------------------- |
 | TypeScript / JavaScript source | 400 lines | Extract a focused service, store, pure helper, domain module, or child component            |
+| Application-layer store        | 250 lines | Split by responsibility into a second store or a pure use-case module                       |
 | Angular template               | 300 lines | Extract a child component or repeated view section                                          |
 | SCSS / CSS                     | 400 lines | Split by component or responsibility and reuse design tokens                                |
 | Rust source module             | 500 lines | Split into domain submodules such as command, validation, parsing, persistence, or provider |
@@ -124,14 +125,64 @@ The pre-commit hook checks staged files. CI compares the branch with its base an
 - Do not expose `any`, loose JSON, raw SQL rows, or unvalidated external payloads across application
   boundaries.
 
+## Layers, and which one owns what
+
+The dependency direction is enforced by `@nx/enforce-module-boundaries` in `eslint.config.mjs`, not
+by convention. Read it there before arguing with it here.
+
+| Layer           | Library            | Owns                                                           | May depend on                 |
+| --------------- | ------------------ | -------------------------------------------------------------- | ----------------------------- |
+| Domain          | `libs/core`        | Rules, calculations, models. Pure functions over plain types.  | `libs/core` only              |
+| Data            | `libs/data`        | The Tauri IPC gateway, keychain and provider access.           | domain, util                  |
+| **Application** | `libs/application` | **Page state and orchestration.** Signal stores and use cases. | data, domain, util            |
+| UI              | `libs/ui`          | Shared visual building blocks and tokens.                      | domain, util                  |
+| App             | `apps/desktop`     | Routing, page components, templates, styles.                   | application, ui, util, domain |
+
+`libs/core` contains **no** Angular and **no** Tauri import, and that is checkable in one grep. It is
+the sink: everything may depend on it, it depends on nothing.
+
+### The application layer owns page state
+
+**A page component renders and delegates. It does not hold the state of its own screen, and it does
+not reach the data gateway.** State that a screen owns - what is loaded, what is in flight, what the
+user has selected, what the last write returned - belongs in a store in `libs/application`.
+
+This is `ADR-0005`, and it exists because the alternative was measured: page classes that are view,
+state and orchestration at once reach 700 to 1000 lines, and no amount of extracting pure helpers
+brings them back. Profile was stopped at 445/400 by decision rather than by technique, and Discover
+shrank only while pure logic remained.
+
+- **The unit is a page store on plain Angular signals.** `signal()`, `computed()`, and methods that
+  orchestrate. **Not** an NgRx SignalStore - `jobs.store.ts` records why, and the reason is unchanged:
+  a peer range on `@angular/core` would gate every Angular major on someone else's release.
+- **Budget 250 lines**, tighter than an ordinary source file, because a store is the most likely thing
+  to become the second god-object once the component stops being the first. A page whose state does
+  not fit decomposes into several stores by responsibility. It does not get one bigger store.
+- **A store is testable without a `TestBed`.** If it is not, the dependencies are wrong.
+- Pure rules still belong in `libs/core` or in a page-local pure module. A store orchestrates; it does
+  not calculate.
+
+**Binding scope.** New code follows this from now on. An existing page migrates **when it is touched
+for another reason** - the same trigger the file-size budgets use, and one stream of work with them:
+take the page, move its state into stores, and the budgets converge as a consequence.
+
+**The enforcement is not yet switched on.** `type:data` is still in `type:app`'s allowlist, so lint
+still permits a component to inject `DbService`. It is removed once no component does, and from that
+point the boundary fails the build instead of the review. Until then this rule is held by review, and
+that is the known weak point - do not add a new direct injection because lint stayed quiet.
+
+**`db.service.ts` is internal to this layer.** It is over budget, it may not grow, and it is cut into
+per-domain gateways when the ratchet refuses the next method added to it. Do not inject it into a
+component.
+
 ## Angular and frontend decomposition
 
-- Components render and coordinate UI state. They do not call Tauri directly, parse external data,
-  build documents, or contain persistence workflows.
+- Components render. They do not call Tauri directly, parse external data, build documents, contain
+  persistence workflows, or hold the state of their own screen - see the application layer above.
 - Reusable domain logic belongs in `libs/core`.
 - Tauri wrappers and desktop data access belong in `libs/data`.
 - Shared visual building blocks and tokens belong in `libs/ui`.
-- Long workflows belong in focused services or stores with explicit inputs and outputs.
+- Long workflows belong in an application-layer store or use case with explicit inputs and outputs.
 - Extract child components around meaningful UI responsibilities, not arbitrary line ranges.
 - New behavior requires focused tests. Bug fixes require a regression test.
 

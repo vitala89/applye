@@ -8,9 +8,10 @@ Before any non-trivial task, read these files in order:
 2. `PROJECT_CONTEXT.md`
 3. `docs/product/CURRENT_STATE.md`
 4. `DUTY_WATCH.md`, starting with the latest entry
-5. `docs/governance/CODE_QUALITY.md`
-6. `docs/governance/VALIDATION_MATRIX.md`
-7. The smallest relevant roadmap, plan, ADR, design-system, specification, stack skill, and code files
+5. `docs/governance/CODE_QUALITY.md`, including the section "Layers, and which one owns what"
+6. `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`
+7. `docs/governance/VALIDATION_MATRIX.md`
+8. The smallest relevant roadmap, plan, ADR, design-system, specification, stack skill, and code files
 
 Do not begin implementation from the user request alone. First verify the current branch, recent commits, open pull requests, repository state, and whether the requested work is already complete.
 
@@ -35,6 +36,12 @@ Before editing, state briefly:
 - whether `CURRENT_STATE.md` agrees with Git and the code;
 - what validation is required for the affected layers;
 - whether the task affects privacy, security, data migration, Tauri IPC, AI providers, or external tools;
+- **where the work sits in the layering, and what owns its state.** A page component renders and
+  delegates; screen state belongs in a signal store in `libs/application`, budget 250, and a page
+  does not inject `DbService` (`ADR-0005`). The rule binds new code now; an existing page migrates
+  when it is touched for another reason. Lint does not enforce it yet - `type:data` leaves
+  `type:app`'s allowlist only once no component injects `DbService` - so do not read a quiet lint as
+  permission;
 - which touched files are near or above their code-size budgets, what responsibility each file owns, and where the new behavior will be tested.
 
 Before adding framework or library code, use the configured read-only documentation MCP tools or current official docs for the installed version. Do not send source code, secrets, personal data, or private prompts to a documentation MCP.

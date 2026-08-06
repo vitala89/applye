@@ -25,8 +25,26 @@ export default tseslint.config(
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
+              // `type:data` is still here, and leaves only when no component
+              // injects `DbService` any more (ADR-0005). Removing it earlier
+              // would fail lint in 46 places at once. Until then the "a page
+              // does not reach the gateway" rule is held by review, not by this
+              // file - which is the known weak point of that decision.
               sourceTag: 'type:app',
-              onlyDependOnLibsWithTags: ['type:data', 'type:ui', 'type:util', 'type:domain'],
+              onlyDependOnLibsWithTags: [
+                'type:application',
+                'type:data',
+                'type:ui',
+                'type:util',
+                'type:domain',
+              ],
+            },
+            {
+              // Page state and orchestration. Depends on the gateway and the
+              // domain; deliberately cannot depend on `type:ui`, so a store can
+              // never start reaching for a component.
+              sourceTag: 'type:application',
+              onlyDependOnLibsWithTags: ['type:data', 'type:domain', 'type:util'],
             },
             { sourceTag: 'type:data', onlyDependOnLibsWithTags: ['type:domain', 'type:util'] },
             { sourceTag: 'type:ui', onlyDependOnLibsWithTags: ['type:domain', 'type:util'] },

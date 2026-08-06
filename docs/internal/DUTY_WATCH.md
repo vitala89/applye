@@ -44,6 +44,24 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-06, Discover's feed becomes a store, and the page is three calls from leaving the gateway
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `feat/discover-feed-store`
+- **Completed:** `DiscoverFeedStore` (109 lines against its 250 budget, 17 tests) owns the rows, the render window and the four writes. Class **679 -> 653**. `FeedRow` and `FEED_PAGE` moved to the store; the page's `discover-feed.ts` re-exports the type so the page keeps one name for one thing.
+- **Discover's gateway calls are down to three**, all in the bootstrap: `listSources`, `getProfile`, `getSettings`. That is the profile-and-settings context the page scores against, not the feed - one more store and Discover stops injecting `DbService` entirely.
+- **What deliberately stayed on the page.** Filtering and sectioning read the filter controls, which the page owns, and they produce **what to render** rather than **what is true**. The store answers what the feed contains; the page decides what of it to show. Keeping them together would have dragged five filter signals into the store for no gain.
+- **Two writes mirror in opposite orders, and it is worth stating why rather than letting it read as an inconsistency.** Saving mirrors **after** the write - saving is what the user asked for, a failure means it did not happen, and showing it saved first would be a lie the toast then contradicts. Dismissal mirrors **before** - it is a triage gesture over a long list with an undo in reach, and waiting for the database would make the list feel stuck. Both orders now have a test that fails if they swap; `M3` and `M4` in the mutation run are exactly those swaps.
+- **`discardUnsaved` is separate from `clear` for one caller.** `refreshForMarket` clears and then scans, so reading the feed back is a round trip for rows about to be replaced. It also continues past a failure on purpose - a stale row surviving into the next scan beats not scanning - so that method raises rather than reports, unlike every other write here.
+- **Validation:** type-check across four projects (clean), lint across the same four **with `--skip-nx-cache`** (0 errors, 8 pre-existing warnings elsewhere), tests **1403 / 301 / 16 / 62**, `nx build desktop`, `npm run quality:file-size` (653 against base 679), `npm run quality:attribution`, `npx nx format:check`, `git diff --check`.
+- **Mutation testing: eight written, eight killed on the first pass.** Every row reading as new; the render window surviving a fresh read; the two mirror orders swapped; saving keeping the new marker; a patch touching every row; clearable counting saved rows; `discardUnsaved` reading the feed back after all.
+- **The lint gate passed on a cached result, and that is worth more than the bug it hid.** `nx run-many --target=lint` reported "0 errors" while an unused parameter sat in a spec written minutes earlier; the pre-commit hook then failed on it. Nx had cached `application:lint` from **before** the file existed. Confirmed by re-introducing the parameter and running `nx run application:lint --skip-nx-cache`, which reports it. **The gate list should use `--skip-nx-cache` for lint the way it already does for tests** - a cached pass on a target whose inputs changed is indistinguishable from a real one in the output. The "0 errors" reported in the previous message was wrong for exactly this reason.
+- **The ratchet then caught the template growing 484 -> 489**, from the same rename: `feedStore.displayCount()` pushed one binding past the print width and Prettier wrapped it into five lines. Fixed the way `jobs.component.ts` already does it - two aliases on the page, so the template keeps one short name per idea. Class 645 -> 653 to pay for them, still well under its 679 base.
+- **One self-inflicted failure worth recording.** Seven desktop tests failed with `Cannot read properties of undefined (reading 'provide')`, which reads like a DI bug and was not: the new store was never added to `libs/application/src/index.ts`, so the barrel resolved it to `undefined` inside the component's `providers`. A probe printing `Object.keys` of the barrel found it in one run. **A new export in a library needs its barrel entry, and the failure it causes names neither the library nor the export.**
+- **Privacy/security impact:** none.
+- **Next first action:** the bootstrap context - `listSources`, `getProfile`, `getSettings` and what the page derives from them (`archetypes`, `profileKeywords`, `compTarget`, `geoScope`, `markets`, `lastScanMarket`). It is the last of Discover's `DbService` use, so finishing it makes Discover **the first page to stop injecting the gateway**, and the first real evidence about whether the allowlist flip is reachable page by page.
+
 ### 2026-08-06, Discover's scan becomes a store, and the pure-module policy needs qualifying already
 
 - **Status:** complete

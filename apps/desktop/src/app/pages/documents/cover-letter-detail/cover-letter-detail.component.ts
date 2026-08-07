@@ -37,6 +37,7 @@ import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
+import { CoverLetterRecipientBlockComponent } from './cover-letter-recipient-block/cover-letter-recipient-block.component';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
 import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/cover-letter-style-popover.component';
 
@@ -51,6 +52,7 @@ import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/c
     NgTemplateOutlet,
     CoverLetterPreviewComponent,
     CoverLetterBlockComponent,
+    CoverLetterRecipientBlockComponent,
     CoverLetterStyleCardComponent,
     CoverLetterStylePopoverComponent,
   ],

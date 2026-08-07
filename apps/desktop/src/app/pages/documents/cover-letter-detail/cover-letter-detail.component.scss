@@ -192,25 +192,6 @@
 }
 
 /* ---- Fields inside blocks ---- */
-.coverdetail__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.coverdetail__field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.coverdetail__field--wide {
-  grid-column: span 2;
-}
-.coverdetail__field > span {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-}
 
 .coverdetail__paragraphs {
   display: flex;

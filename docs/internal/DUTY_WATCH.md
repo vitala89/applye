@@ -44,6 +44,41 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `tracker` PR 4 of 4: the export moves, and the page finishes under budget
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 0, **risk 2**, verify 2, unknowns 1. Risk 2 for the first time in this phase: this cluster produces the document the user submits to the Agentur fuer Arbeit, so a wrong column, period or total is a real-world consequence.)
+- **Branch:** `feat/tracker-report-store`, off `main` at `ac205d3`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `TrackerReportStore`, last of four, and the deletion of `tracker.component.ts` from the gateway allowlist.
+- **Completed:**
+  - **`tracker-report.ts`, 59/250** - `ReportColumn`, `ReportMarket`, `ReportMode` and `reportFit`, moved out of `tracker-report.component.ts` because a store cannot import from the app.
+  - **`tracker-report-content.ts`, 143/250** - `buildTrackerCsv`, `buildTrackerReportText`, `trackerCsvCell`, `trackerContactDisplay`, `trackerReportBaseName`. Every function takes its translator as a parameter.
+  - **`tracker-report.store.ts`, 138/250** - the export options, the report's own column list, the fit result, the period label, and the two writes. **The only store in the layer that injects `TranslateService`.**
+  - **`tracker.component.ts`: 487 -> 304/400.** It injects no `DbService` at all, so **`COMPONENTS_STILL_USING_THE_GATEWAY`: 24 -> 23**.
+  - **`tracker` is finished: 667 -> 304 across four pull requests**, and the **first page in this campaign to finish under its budget** rather than by maintainer decision.
+  - **51 more tests** (201 across the tracker suites) and **28 of 28 mutants dead**.
+  - **ADR-0005 amendment eleven**, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** `tracker.component.html` 557/300 and `tracker.component.scss` 907 remain **untouched, by decision** - out of this phase's scope, and now the only tracker files over budget.
+- **Files or packages changed:** `libs/application` (6 new files + barrel), `apps/desktop/src/app/pages/tracker/{tracker.component.ts,tracker.component.html,tracker-report.component.ts,tracker-report-print.component.ts}`, `eslint.config.mjs`, ADR-0005, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects. `nx build desktop` **passed**. `npm run quality:file-size` **passed** - and `tracker.component.ts` no longer appears in the report at all, because it is under budget. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`; the suite was re-run after formatting. `git diff --check` **clean**.
+  - **The allowlist deletion was verified from the other side**: re-adding `inject(DbService)` to `tracker.component.ts` fails `nx lint` with the rule's own message, and the file was restored byte-exact.
+  - **Not run:** any UI walkthrough, and **no end-to-end check of the produced PDF**. Tauri IPC is required for both. What is covered is the content: the CSV byte for byte and the text fallback as a whole sheet. The WYSIWYG render path itself still has no automated coverage.
+- **Privacy/security impact:** none. The same two gateway methods, called from a different file. The exported document's content is unchanged - which is the thing the exact-output tests exist to prove.
+- **Decisions and assumptions:**
+  - **`TrackerReportStore` injects `TranslateService`**, spending ADR-0005 amendment eight for the first time. The sheet is a document whose language follows the chosen market, not the UI. The **fit note stays on the page**, because it is dialog chrome and names its columns in the UI language.
+  - **The report types moved to `libs/application` rather than `libs/core`** - formatting for one screen, not domain vocabulary (amendment two). Consequence: `TrackerReportComponent` now imports from `@applye/application`, the first purely presentational component to depend on the layer. Allowed, and stated because it is new.
+  - **`exportPdf` takes the native Save dialog as a callback.** The Tauri dialog plugin is a shell action and belongs to the app, and `exporting` must stay true while the dialog is open. Amendment six's third shape, used for the second time in two pull requests, each time because a flag had to span a call the app owns.
+  - **`generatedOn` became a parameter rather than a clock read.** It makes byte-for-byte comparison possible, and the same inputs producing the same document is worth having in a document that gets regenerated and re-submitted.
+- **Risks or compatibility impact:** the template's eleven export bindings were rewired by scripted substitution with an asserted match count per pattern, then verified by `ngc`. **The alias device was needed a second time** - `report.` re-wrapped four bindings and pushed the template 557 -> 562, so five more read-only aliases keep it byte-neutral. No markup moved between components.
+- **Open issues or blockers:** none for `tracker`.
+- **Next first action:** `cover-letter-detail` (**714/400**, 8 gateway calls: `documentLibraryGet`, `documentLibraryUpsert`, `documentLibraryList`, `checkStyleSafety`, `getProfile`, `getSettings`, `hashText`). Its method list is nearly `cv-detail`'s, so the four-store decomposition should transfer - but **read both before copying anything**: the shapes rhyme and the types do not, and `cv-style.util.ts` already carries the `CoverLetterStyle` helpers alongside the CV ones. Re-measure first; every handover in this phase that quoted a remembered number quoted a stale one.
+- **Evidence:**
+  - **Risk 2 changed the shape of the tests, not only their number.** The CSV is asserted byte for byte - metadata block, blank separator line, RFC 4180 quote doubling, one-based numbering - and the text fallback as a whole sheet including padding and truncation. That is what killed mutants a shape assertion cannot reach: quotes not doubled, fields not wrapped, rows numbered from zero, the summary's total and response rate crossed.
+  - **One mutant survived the first pass and was a real gap.** The PDF's fallback content was asserted with no archived row in the fixture, so building it from the grid's rows instead of the report's would have **silently dropped an application from the evidence submitted to the office**. The grid hides archived rows and the sheet must not; the fixture now carries one. Two more were reported `SKIP` rather than surviving, because the pattern matched twice - `String(i + 1)` appears in both builders, and the eight-space `rows:` line is a substring of the twelve-space one. **A `SKIP` is not a pass**; both were re-run with unique context and both died.
+  - Sizes: `tracker-report.ts` 59/250, `tracker-report-content.ts` 143/250, `tracker-report.store.ts` 138/250, `tracker.component.ts` **304/400** from 487, `tracker-report.component.ts` 210/400 from 256, `tracker-report-print.component.ts` 103/400, template unchanged at 557/300.
+
 ### 2026-08-07, `tracker` PR 3 of 4: the inline row editor moves, and two rules get names
 
 - **Status:** complete

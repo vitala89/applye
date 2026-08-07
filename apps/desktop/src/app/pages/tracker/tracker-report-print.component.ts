@@ -1,12 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { TrackerPrintStore } from '@applye/application';
-import {
-  ReportColumn,
-  ReportMarket,
-  ReportMode,
-  TrackerReportComponent,
-} from './tracker-report.component';
+import { ReportColumn, ReportMarket, ReportMode, TrackerPrintStore } from '@applye/application';
+import { TrackerReportComponent } from './tracker-report.component';
 
 /**
  * Print-only report route (`print/tracker-report`), loaded by a HIDDEN Tauri

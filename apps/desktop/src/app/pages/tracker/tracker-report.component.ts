@@ -1,46 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { TrackerRow } from '@applye/core';
-
-export type ReportMarket = 'de' | 'intl';
-export type ReportMode = 'fit' | 'all';
-
-/** A resolved report column: the user's chosen tracker columns, each with an
- * estimated print width (mm) used to decide how many fit an A4 row. */
-export interface ReportColumn {
-  id: string;
-  label: string;
-  type: string; // text | date | status | yesno | stage | link | number | select
-  width: number; // estimated mm
-  custom?: boolean;
-}
-
-// A4 printable width minus 2×16mm margins minus the '#' index column, per
-// orientation. Used to greedily pack columns into one row.
-const BUDGET_PORTRAIT_MM = 170;
-const BUDGET_LANDSCAPE_MM = 257;
-
-/** Greedily pack columns (in order) into one A4 row; the rest overflow. Company
- * + at least one column always kept so a row is never empty. */
-export function reportFit(
-  columns: ReportColumn[],
-  landscape: boolean,
-): { fit: ReportColumn[]; overflow: ReportColumn[] } {
-  const budget = landscape ? BUDGET_LANDSCAPE_MM : BUDGET_PORTRAIT_MM;
-  const fit: ReportColumn[] = [];
-  const overflow: ReportColumn[] = [];
-  let used = 0;
-  let stopped = false;
-  for (const c of columns) {
-    if (!stopped && (fit.length === 0 || used + c.width <= budget)) {
-      fit.push(c);
-      used += c.width;
-    } else {
-      stopped = true;
-      overflow.push(c);
-    }
-  }
-  return { fit, overflow };
-}
+import { ReportColumn, ReportMarket, ReportMode, reportFit } from '@applye/application';
 
 /**
  * The printable Eigenbemuehungen / job-application report sheet. Renders the

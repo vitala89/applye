@@ -585,6 +585,67 @@ The other 18 mutants die, including the four that matter most: sending an emptie
 than clearing it, writing a blank status over a real one, comparing the status against the draft
 instead of the stored row, and dropping the re-entry guard.
 
+## Amendment, 2026-08-07 (eleventh): `tracker` is done, under budget, and amendment eight is spent
+
+Four pull requests, **667 -> 304 against a 400 budget**, and `tracker.component.ts` is the **first page
+in this campaign to finish under its budget rather than by decision**. `cv-detail` stopped at 517/400
+with preview mode and live selection left on it; `tracker` had no equivalent residue, because
+everything it held was either state or a document rule.
+
+`COMPONENTS_STILL_USING_THE_GATEWAY` is **23**: `tracker-report-print.component.ts` came off at PR 2
+and `tracker.component.ts` at PR 4, both verified in both directions.
+
+### This is the pull request amendment eight was written for
+
+`TrackerReportStore` injects `TranslateService`, and it is the only store in the layer that does. The
+Eigenbemuehungen sheet is a **document**, and its language follows the chosen market rather than the
+UI - `tFor('de')` prints a German sheet out of an English app. Without amendment eight, `buildCsv`,
+`buildReportText`, `csvCell`, `periodLabel` and the report's column labels - about 150 lines - either
+stayed on the page or reached the layer through a codec for a dependency lint already allowed.
+
+The **fit note beside them stays on the page**, and that is the boundary drawn sharply: it names the
+overflowing columns in the **UI** language, because it is dialog chrome rather than part of the sheet.
+One column list, labelled twice, in two languages, by two callers.
+
+### Risk changed the shape of the tests, not just their number
+
+This cluster produces a document the user submits to the Agentur fuer Arbeit. A wrong column, period
+or total is a real-world consequence, so the triage scored risk 2 for the first time in the phase and
+the tests assert **exact output** rather than shape: the CSV is compared byte for byte, including its
+metadata block, its blank separator line, RFC 4180 quote doubling and one-based row numbering; the
+plain-text fallback is compared as a whole sheet, padding included. **28 of 28 mutants die**, among
+them quotes not doubled, fields not wrapped, rows numbered from zero, the two orientation budgets
+swapped, and the summary's total and response rate crossed.
+
+`generatedOn` is a parameter rather than a clock read, which is what makes byte-for-byte comparison
+possible at all. That was not a testability concession: the same inputs producing the same document is
+a property worth having in a document that gets regenerated and re-submitted.
+
+### A presentational component may depend on the layer
+
+`ReportColumn`, `ReportMarket`, `ReportMode` and `reportFit` moved out of `tracker-report.component.ts`
+into `libs/application/src/lib/tracker/tracker-report.ts`, because a store cannot import from the app.
+They are formatting for one screen rather than domain vocabulary, so amendment two's test keeps them
+out of `libs/core`.
+
+The consequence is new and worth stating: **`TrackerReportComponent` now imports from
+`@applye/application`**, which is the first time a purely presentational component depends on the
+layer. It is allowed - `type:app -> type:application` - and it is the natural home for a wire format
+that a store produces and a component renders.
+
+### The Save dialog is passed in, for the same reason the reload was
+
+`exportPdf(chooseSavePath)` takes the native dialog as a callback. The Tauri dialog plugin is a shell
+action and belongs to the app, and `exporting` has to stay true **while the dialog is open** or the
+buttons re-enable underneath it. That is amendment six's third shape used twice in two pull requests,
+each time because a flag had to span a call the app owns.
+
+### The template alias device, used a second time
+
+Prefixing eleven export bindings with `report.` re-wrapped four of them and pushed the template from
+557 to 562. Five more read-only aliases keep it byte-neutral. Recorded in amendment nine as something
+that would recur on every over-budget template; it recurred in the next pull request but one.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -598,9 +659,9 @@ instead of the stored row, and dropping the re-entry guard.
   - [x] Enforce "a component does not reach the gateway" by lint - `no-restricted-syntax` on
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
-        1019 -> 517), `tracker` **in progress** (four PRs: columns, rows + print and the row editor done, 667 -> 444;
-        then the report), `cover-letter-detail` next, `jobs` deferred
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**24** entries; first deleted 2026-08-07,
+        1019 -> 517), `tracker` **done** (four PRs, 667 -> 304, the first page to finish **under**
+        budget), `cover-letter-detail` next, `jobs` deferred
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**23** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too

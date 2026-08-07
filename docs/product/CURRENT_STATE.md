@@ -92,15 +92,15 @@
   beside them (ADR-0005, amendment five). **Nothing in `libs/core` changed in this whole campaign.**
   Amendments six and seven record the three shapes a store has for code it may not import, in the order
   to prefer them, and that a store raises typed errors rather than phrasing them.
-- **`tracker` is in progress, four pull requests, three done.** Measured rather than remembered - the
-  handoff into this phase said 667 and the file was **708 raw / 667 non-empty**, which is the same
-  number counted two ways, so re-measure before planning. **PR 1 `TrackerColumnsStore` (667 -> 536) and
-  PR 2 `TrackerRowsStore` + `TrackerPrintStore` (536 -> 487) and PR 3 `TrackerRowEditorStore` (487 -> 444)** are done.
-  `tracker-report-print.component.ts` came off the allowlist in PR 2 - **25 -> 24**, verified from the
-  other side. Remaining: the report and export cluster, which deletes
-  `tracker.component.ts`'s own entry (**24 -> 23**). The template (557/300) and stylesheet (907) are
-  **untouched and out of scope** for this phase by decision - ADR-0005 reaches neither, and moving 557
-  lines of markup is where Discover silently lost a `routerLink` for a whole extraction.
+- **`tracker` is done: 667 -> 304**, four pull requests, and the **first page in this campaign to
+  finish under its 400 budget** rather than by decision. `TrackerColumnsStore` (667 -> 536),
+  `TrackerRowsStore` + `TrackerPrintStore` (536 -> 487), `TrackerRowEditorStore` (487 -> 444) and
+  `TrackerReportStore` (444 -> 304). The page injects no `DbService` at all, so both it and
+  `tracker-report-print.component.ts` came off `COMPONENTS_STILL_USING_THE_GATEWAY`: **25 -> 23**,
+  each verified from the other side. It had **no test file at all** before this and now has 201, with
+  every mutant in four harnesses dead except two kept deliberately and documented in place. The
+  template (557/300) and stylesheet (907) are **untouched and out of scope** for this phase by
+  decision - ADR-0005 reaches neither.
 - **Amendment eight corrected two of the campaign's own rules**, both found by reading `tracker` rather
   than by reasoning. **A store may inject `TranslateService`** - `libs/i18n` is `type:util` and the
   boundary always allowed it; what the layer may not do is _notify_ or _phrase an error_, and a document

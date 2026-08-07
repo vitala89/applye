@@ -1,0 +1,32 @@
+// This card owns no classes of its own: `docedit-card`, `docedit-card__hint`,
+// `docedit-field` and `docedit-field__label` all come from `_editor-shell.scss`,
+// which `styles.scss` emits globally.
+//
+// The rule below is a deliberate COPY, and it is the whole reason this file
+// exists. `_editor-shell.scss` styles `.docedit-style-grid input` but **not**
+// `.docedit-field input`, and these four fields sit in a plain `.docedit-field`
+// rather than a style grid. On the page they were styled by
+// `.coverdetail input:not([type='checkbox']):not([type='color'])` - a descendant
+// selector rooted at the page's own element, which Angular's emulated
+// encapsulation stops at a component boundary. Moved without this, all four
+// would render as browser defaults, and every gate would still pass:
+// `quality:style-move` compares the declarations a selector carries, and
+// `.coverdetail input` still exists carrying all of them (ADR-0005, amendment
+// sixteen).
+//
+// A copy rather than a move, because the page still needs its own rule for the
+// controls it kept.
+.docedit-field input {
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+}
+.docedit-field input:focus {
+  border-color: var(--accent);
+}

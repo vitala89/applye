@@ -17,7 +17,7 @@ For non-trivial work:
 6. Apply the context gate only when implementation is actually starting or broad context is explicitly needed.
 7. Do not recommend subagents for simple or bounded feature tasks by default.
 8. For bounded feature tasks with clear scope, local mock data only, and no storage, sync, privacy, security, architecture, plugin, notification, Tauri/Angular boundary, large-refactor, or 8+ file signal, set `Subagents needed: no` and `Graph/context tool needed: no`.
-9. For bounded feature tasks, use this baseline skill list: `aif-model-router`, `aif-token-guard`, `aif-feature-builder`, and `aif-testing-strategy`.
+9. For bounded feature tasks, use this baseline rule list: `100-task-triage`, `aif-token-guard`, `aif-feature-builder`, and `aif-testing-strategy`. Take the score, model role, effort and budget from the triage verdict; do not re-derive them here.
 10. Do not recommend graph/context tools just because they exist.
 11. Identify security, privacy, testing, and docs triggers.
 12. Make scoped changes.

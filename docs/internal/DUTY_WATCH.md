@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, the triage canon stops being Claude-shaped
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 4/10, so `sonnet` would have been the right tier - noted rather than switched)
+- **Branch:** `docs/task-triage-across-harnesses`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** the triage system shipped in #366 was written from inside Claude Code and assumed it. This repository is worked on from five tools. Separate the canon from the tool.
+- **Completed:**
+  - **`docs/ai/model-policy.md` is now the tool-independent canon.** Routing table by **role** (cheapest / mid / frontier) rather than by name, since names differ per tool. Rubric, adjustments and gate commands unchanged in substance.
+  - **A per-tool mapping table** with three columns that were previously implicit: the carrier for the pointer, the "always" mechanism, and role → name - each cell marked **verified** or **unverified**.
+  - **Pointers written per tool**, carrying nothing but the pointer and that tool's names: `AGENTS.md` (Codex), `.cursor/rules/100-task-triage.mdc` (Cursor, `alwaysApply: true`), `.github/copilot-instructions.md` (Copilot, marked advisory in its own text), `CLAUDE.md` (already present, corrected to say the canon is tool-independent).
+  - **`.cursor/rules/100-aif-model-router.mdc` renamed and rewritten** as `100-task-triage.mdc`. It still described `fast`/`standard`/`deep` for a skill deleted the previous day, and its `alwaysApply` was `false`, so it was neither current nor enforced.
+  - **`.cursor/rules/150-aif-orchestrator.mdc`** no longer references the deleted skill.
+  - `AGENT_SKILL_MAP.md` gained the pointer table, so the division is discoverable from the routing document.
+- **Not completed:** Antigravity has no rules file - only `.antigravity/mcp.json` - so it has no pointer. Recorded as unverified rather than invented, because its path and mechanism are unknown to me.
+- **Files or packages changed:** `docs/ai/model-policy.md`, `.cursor/rules/100-task-triage.mdc` (renamed from `100-aif-model-router.mdc`), `.cursor/rules/150-aif-orchestrator.mdc`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `docs/internal/AGENT_SKILL_MAP.md`, `CHANGELOG.md`, this log.
+- **Validation:** `npx nx format:check`, `git diff --check`, `npm run quality:attribution`, and a repo-wide grep confirming no live reference to `aif-model-router` survives outside history documents and the generated `graphify-out/` cache. **Not run:** `quality:file-size` has no source files in this diff, and no lint, test or build target covers `.cursor/`, `.codex/`, `.github/` or `docs/`.
+- **Privacy/security impact:** none. Documentation and tool-rule files.
+- **Decisions and assumptions:**
+  - **One canon, thin pointers**, rather than the rubric copied per tool. Five copies drift, and the drift is invisible until two agents score the same task differently.
+  - **Model names belong in the pointer, not the canon** - they are the only genuinely tool-specific part.
+  - **Unverified is written as "unverified".** Only Claude Code's names and effort levels are verified, from the `Agent` tool's own parameters. Cursor's `alwaysApply: true` is verified from `000-aif-core.mdc` in this repository, not from memory.
+- **Risks or compatibility impact:** none functional. A Cursor rule changed from `alwaysApply: false` to `true`, so it now loads on every request - deliberate, and the reason the old rule never fired.
+- **Open issues or blockers:** whether Codex supports a per-prompt hook event is unresolved. `.codex/hooks.json` exists here with `PreToolUse` and `SessionStart` (written by the `headroom` tool, not by this repository), which shows hooks work but says nothing about a per-prompt event. Until that is read from Codex's own documentation, Codex enforcement is session-scoped.
+- **Lessons:**
+  - **A handover written from inside one tool assumes that tool, and the leak is in the vocabulary.** Four words carried it: skill, subagent, hook, scout. The rubric was portable; the words around it were not. Worth checking any cross-tool document for terms that only one tool has.
+  - **A stale rule file is worse than a missing one**, because it looks like coverage. `100-aif-model-router.mdc` pointed at a deleted skill _and_ had `alwaysApply: false`, so it was both wrong and silent.
+  - **Auditing one tool's config surfaced drift in another.** The Copilot instructions carried an 800-line Rust budget against the current 500, and never mentioned the store budget or the gateway rule. Nothing enforces documentation agreement, so it only shows up when someone reads across files.
+- **Next first action:** unchanged - `CvStyleStore` plus the `CvStyle` cascade rules as a new `libs/core/src/lib/cv/` module, second of four PRs on `cv-detail` (962/400).
+
 ### 2026-08-07, tasks get scored before they get a model
 
 - **Status:** complete

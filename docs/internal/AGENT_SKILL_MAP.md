@@ -34,6 +34,22 @@ repository's gates, its size budgets, its privacy posture, its Duty Watch handof
 | `applye-rust`              | Rust, Tauri commands, sqlx                                                 |
 | `applye-code-quality`      | The mandatory quality gate before writing or reviewing code                |
 
+## The triage canon is tool-independent, and only its pointers are not
+
+`task-triage` is a global skill rather than one of the files above, because this repository is worked on
+from five tools. The rubric, thresholds, adjustments and gate commands live in one place -
+`docs/ai/model-policy.md` - and each tool's instruction file carries a pointer plus that tool's own
+model names. Copying the rubric into five files is how five files come to disagree, and the
+disagreement is invisible until two agents score the same task differently.
+
+| Tool        | Pointer                             | Enforcement                                 |
+| ----------- | ----------------------------------- | ------------------------------------------- |
+| Claude Code | `CLAUDE.md` + the global skill      | `UserPromptSubmit` hook - deterministic     |
+| Codex       | `AGENTS.md`, first section          | session-scoped; per-prompt event unverified |
+| Cursor      | `.cursor/rules/100-task-triage.mdc` | `alwaysApply: true` - deterministic         |
+| Copilot     | `.github/copilot-instructions.md`   | advisory                                    |
+| Antigravity | none yet                            | unverified                                  |
+
 ## superpowers, and it is already load-bearing
 
 The `superpowers` plugin injects `using-superpowers` into every session, so its skills are in play

@@ -68,6 +68,22 @@ Three rules that make it worth running:
 Triage from the request text and what is already in context. Reading files to produce an estimate is
 the work, not the estimate.
 
+**This repository is worked on from several tools, and the canon is tool-independent.** The rubric,
+thresholds, adjustments and gate commands live only in `docs/ai/model-policy.md`; each tool's own
+instruction file carries a pointer and that tool's model names, nothing more. Copying the rubric into
+five files is how five files come to disagree.
+
+- **Claude Code** - the global `task-triage` skill plus a `UserPromptSubmit` hook. Deterministic.
+- **Codex** - this file, read once per session, so its placement above is the gate. A per-prompt event
+  is unverified here, so treat enforcement as session-scoped rather than per-prompt.
+- **Cursor** - `.cursor/rules/100-task-triage.mdc` with `alwaysApply: true`. Deterministic.
+- **Copilot** - `.github/copilot-instructions.md`. Advisory; no enforcement mechanism is known.
+- **Antigravity** - no rules file exists yet; only `.antigravity/mcp.json`. Unverified.
+
+**Model names are per tool and must be read from that tool, never written from memory.** Only Claude
+Code's are verified today; everywhere else the verdict reports the role - cheapest, mid, frontier - and
+the maintainer maps it. Nothing fails when a model name is wrong; the wrong model is simply selected.
+
 ## Plan check, mandatory for every non-trivial task
 
 Before implementing or proposing what to work on next, read `docs/product/CURRENT_STATE.md` and state briefly:

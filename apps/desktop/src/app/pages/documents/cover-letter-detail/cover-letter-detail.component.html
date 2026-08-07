@@ -38,9 +38,8 @@
 
       <button
         appButton
-        variant="secondary"
+        [variant]="previewMode() ? 'primary' : 'secondary'"
         size="sm"
-        [class.icon-btn--active]="previewMode()"
         (click)="previewMode.set(!previewMode())"
       >
         <lucide-icon
@@ -161,117 +160,16 @@
             />
 
             <!-- Body paragraphs -->
-            <section class="docedit-section">
-              <div class="docedit-section__head">
-                <button
-                  type="button"
-                  class="docedit-section__toggle"
-                  [attr.aria-expanded]="isBlockOpen('body')"
-                  (click)="toggleBlockCollapse('body')"
-                >
-                  <lucide-icon
-                    [img]="icons.chevron"
-                    [size]="15"
-                    aria-hidden="true"
-                    class="docedit-chevron"
-                    [class.docedit-chevron--closed]="!isBlockOpen('body')"
-                  />
-                  <span class="docedit-section__title">{{
-                    t()('documents.cover_letter_body_paragraphs')
-                  }}</span>
-                </button>
-                <div class="docedit-section__actions">
-                  <span class="coverdetail__count">{{
-                    (content().bodyParagraphs || []).length
-                  }}</span>
-                  <button
-                    type="button"
-                    class="coverdetail__style-btn"
-                    [class.coverdetail__style-btn--active]="openStyleKey() === 'body'"
-                    [class.coverdetail__style-btn--custom]="hasCustomStyle('body')"
-                    (click)="toggleStylePopover('body')"
-                  >
-                    {{ t()('documents.cv_section_style') }}
-                  </button>
-                </div>
-              </div>
-              @if (openStyleKey() === 'body') {
-                <ng-container
-                  [ngTemplateOutlet]="stylePopover"
-                  [ngTemplateOutletContext]="{ $implicit: 'body' }"
-                ></ng-container>
-              }
-              <div class="docedit-collapse" [class.docedit-collapse--closed]="!isBlockOpen('body')">
-                <div>
-                  <div class="coverdetail__paragraphs">
-                    @for (para of content().bodyParagraphs || []; track $index) {
-                      <div class="coverdetail__paragraph">
-                        <div class="coverdetail__paragraph-head">
-                          <span>{{
-                            t()('documents.cover_letter_field_paragraph').replace(
-                              '{index}',
-                              '' + ($index + 1)
-                            )
-                          }}</span>
-                          <div class="coverdetail__paragraph-actions">
-                            <button
-                              type="button"
-                              class="coverdetail__style-btn"
-                              [class.coverdetail__style-btn--active]="
-                                openStyleKey() === paragraphStyleKey($index)
-                              "
-                              [class.coverdetail__style-btn--custom]="
-                                hasCustomStyle(paragraphStyleKey($index))
-                              "
-                              (click)="toggleStylePopover(paragraphStyleKey($index))"
-                            >
-                              {{ t()('documents.cv_section_style') }}
-                            </button>
-                            <button
-                              class="coverdetail__regen"
-                              type="button"
-                              [disabled]="regeneratingBlock() === 'body_' + $index"
-                              (click)="regenerateBlock('body', $index)"
-                            >
-                              <lucide-icon
-                                [img]="icons.regenerate"
-                                [size]="13"
-                                [class.spin]="regeneratingBlock() === 'body_' + $index"
-                                aria-hidden="true"
-                              />
-                              {{ t()('documents.cover_letter_regen') }}
-                            </button>
-                            <button
-                              class="icon-btn icon-btn--danger"
-                              type="button"
-                              (click)="removeParagraph($index)"
-                              [attr.aria-label]="t()('actions.delete')"
-                            >
-                              <lucide-icon [img]="icons.trash" [size]="13" aria-hidden="true" />
-                            </button>
-                          </div>
-                        </div>
-                        @if (openStyleKey() === paragraphStyleKey($index)) {
-                          <ng-container
-                            [ngTemplateOutlet]="stylePopover"
-                            [ngTemplateOutletContext]="{ $implicit: paragraphStyleKey($index) }"
-                          ></ng-container>
-                        }
-                        <textarea
-                          class="coverdetail__textarea"
-                          [ngModel]="para"
-                          (ngModelChange)="updateParagraph($index, $event)"
-                        ></textarea>
-                      </div>
-                    }
-                  </div>
-                  <button class="coverdetail__add" type="button" (click)="addParagraph()">
-                    <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
-                    {{ t()('documents.cover_letter_add_paragraph') }}
-                  </button>
-                </div>
-              </div>
-            </section>
+            <app-cover-letter-body-paragraphs
+              [open]="isBlockOpen('body')"
+              [openStyleKey]="openStyleKey()"
+              [regeneratingBlock]="regeneratingBlock()"
+              [stylePopover]="stylePopover"
+              (toggled)="toggleBlockCollapse('body')"
+              (styleToggled)="toggleStylePopover($event)"
+              (regenerated)="regenerateBlock('body', $event)"
+              (paragraphRemoved)="removeParagraph($event)"
+            />
 
             <!-- Closing -->
             <app-cover-letter-block

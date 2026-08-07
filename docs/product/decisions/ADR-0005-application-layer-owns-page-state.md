@@ -860,6 +860,66 @@ moved into the global partial.
 
 **A visual check is still owed on all of it**, and cannot be run without Tauri IPC.
 
+## Amendment, 2026-08-08 (seventeenth): the shared class that was never one rule
+
+The body-paragraphs cut was blocked for two pull requests on `.icon-btn`, recorded twice as
+"generic vocabulary already duplicated across four component stylesheets". **The count was right and
+the word "duplicated" was wrong**, and the difference decided the outcome:
+
+| stylesheet            | box                  | border                | colour             | modifiers                                   |
+| --------------------- | -------------------- | --------------------- | ------------------ | ------------------------------------------- |
+| `cv-list`, `my-jobs`  | 28px, `padding: 0`   | `var(--border-width)` | `--text-tertiary`  | `--danger` + a border colour                |
+| `cv-detail`           | 28px, `padding: 0`   | `var(--border-width)` | `--text-tertiary`  | `:disabled`, `--active`                     |
+| `cover-letter-detail` | **32px**, no padding | **`1px`**             | `--text-secondary` | `--danger` colour only, plus a `transition` |
+
+Four files define the **name**; three define different **rules**. So "extract it into a global
+partial" was never a deduplication - it was a three-way reconciliation in which two other pages
+change size or colour. That is a visible change to two screens, arriving inside a template refactor,
+and `quality:style-move` would have reported it as lossless because each selector keeps its own
+declarations in its own file.
+
+**The decision, taken through the grilling gate:** the block carries a locally-named
+`.clb__icon-btn`, the way `interview-prep-detail` already carries `.ipd__icon-btn`. It is not a fifth
+copy of a shared name - it is a scoped rule that cannot collide with the other four or drift into
+them, and the page keeps its own `.icon-btn` for the header button that still uses it.
+
+**And the correction that outlives the decision:** `libs/ui` already ships this primitive.
+`ButtonSize` includes `'icon'` and `ButtonVariant` includes `'danger'`; `global.scss` emits
+`.btn--icon` and `.btn--danger`, and `.btn--ghost` is near-identical to every `.icon-btn` above. Four
+page stylesheets reimplemented a design-system component, and nobody noticed while writing the
+fourth. Folding them onto `appButton size="icon"` is the real fix, is **its own change**, and needs a
+rendered check - which is exactly why it was not smuggled into a template cut.
+
+### Two dead classes, found by the same audit
+
+`.icon-btn--active` was bound on the page's Edit/Preview button, which is an `appButton`; no rule of
+that name is reachable there, so the toggle never showed an active state. Fixed here, by switching
+the button's own `variant`. A bare `.spin` on the regenerate icons is defined **nowhere** in the app -
+every other spinner is namespaced (`resume-tailor__spin`, `ob__spinner`, `identity-badge__spin`) -
+and it is left recorded rather than fixed, because `cover-letter-block/` uses it too.
+
+Both were found by running amendment sixteen's checklist rather than reading the markup. **A class
+audit finds classes that are missing a rule as readily as rules that are missing a class**, and that
+second direction is worth keeping: nothing in the build reports a class that resolves to nothing.
+
+### The carry, for the third time - and the first hard evidence it works
+
+The moved region contained a `<textarea>`, reached by `.coverdetail textarea` and its `:focus`. Nine
+declarations, and **nothing global styles a bare `textarea`** anywhere in this app - unlike the
+settings card, which needed nothing because `_editor-shell.scss` already covered its controls. So the
+copy was mandatory, and the paragraphs would otherwise have rendered as browser defaults with every
+gate green.
+
+`quality:style-move` reports 2 lost and 5 gained, and all seven are named in the pull request. The new
+evidence is below the check: the compiled bundle carries
+`.coverdetail__textarea[_ngcontent-%COMP%]` and `.clb__icon-btn[_ngcontent-%COMP%]` in the **child's**
+chunk, which is the first time this campaign has confirmed at the compiled-CSS level that a carried
+rule actually reaches the element it was carried for. It is still not a rendered check.
+
+**The visual debt is now six extractions deep and remains unpaid.** A `tauri dev` build was started
+twice this session; the binary ran and stayed alive, but no window could be captured, so nothing was
+seen. The check is owed to the maintainer as a written walkthrough rather than claimed.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -874,8 +934,14 @@ moved into the global partial.
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
         1019 -> 517), `tracker` **done** (four PRs, 667 -> 304, the first page to finish **under**
-        budget), `cover-letter-detail` **done** (four PRs, 644 -> 405; the residue is 21 template
-        aliases, amendment fourteen), `jobs` deferred
+        budget), `cover-letter-detail` **done** (eight PRs, class 644 -> 333 and template 669 -> 222,
+        both under budget; six components out, amendments fourteen to seventeen), `jobs` deferred
+  - [ ] Fold the four `.icon-btn` copies onto `libs/ui`'s `appButton size="icon"`, which already
+        exists - a visible change, so it needs a rendered check (amendment seventeen)
+  - [ ] Remove or define the bare `.spin` class used by `cover-letter-block/` and the body-paragraphs
+        block; it resolves to nothing (amendment seventeen)
+  - [ ] **Pay the visual debt**: six `cover-letter-detail` extractions have shipped on
+        `quality:style-move`, jsdom shape tests and hand audits, with nothing ever rendered
   - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**22** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines

@@ -44,6 +44,41 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, `cover-letter-detail` template cut 4: the block that was blocked, and a shared class that was never one rule
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 8/10 - radius 2, **ambiguity 2**, risk 1, verify 2, unknowns 1. Ambiguity 2 because the `.icon-btn` question had three readings leading to different work, which sends it to `aif-grilling` before any edit whatever the total.)
+- **Branch:** `feat/cover-letter-body-paragraphs`, off `main` at `1c375b9`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** answer the `.icon-btn` question the last two entries left to the maintainer, then - only if it unblocked - cut the body-paragraphs block. **The decision came first and the code waited for it.**
+- **Completed:**
+  - **The grilling gate ran and the maintainer chose**, three questions in one round, all three answers as recommended: a locally-named class, body-paragraphs only, and fix the dead binding rather than merely delete it.
+  - **`cover-letter-body-paragraphs/`** - the collapsible section, the paragraph count, the per-paragraph Style/Regenerate/Delete row and the Add button. Paragraph text writes straight into `CoverLetterContentStore`; **removal and regeneration stay outputs**, because removal touches three owners and regeneration runs through the page's AI error handling.
+  - **`cover-letter-detail.component.html`: 324 -> 222** against 300. **The campaign's goal is met** - it started at 669.
+  - `.ts` 352 -> **333/400**, `.scss` 207 -> **162**.
+  - **14 tests** across the new block.
+- **Not completed:** the header bar (~85 lines) stays, by decision - the template is under budget without it. The four-copy `.icon-btn` duplication is **recorded, not fixed**; so is the dead `.spin` class.
+- **Files or packages changed:** 4 new files under `cover-letter-detail/`, the page's `.ts`/`.html`/`.scss`, `CHANGELOG.md`, `ADR-0005` (amendment seventeen), this file.
+- **Validation:** `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. Full `jest` **passed - 194 suites / 2483 tests**, up from 193/2469. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**.
+  - **`quality:style-move` reports 2 lost and 5 gained**, and all seven are deliberate: `.icon-btn--danger:hover` left with the only markup that used it and lives in the child as `.clb__icon-btn--danger:hover`; `.coverdetail__textarea` lost its `!important` because inside the child nothing competes with it; it gained the nine declarations carried from `.coverdetail textarea` plus `resize`; and `.coverdetail__textarea:focus` and the three `.clb__icon-btn` rules are new by decision.
+  - **A warning that no gate reported.** The dev server printed `NG8113: NgTemplateOutlet is not used within the template of CoverLetterDetailComponent` - the page defines the popover template but no longer stamps it, so the import was dead. Lint reported 0 errors and the production build's own verdict line said success. **It surfaced only because the app was run.** Fixed, and the rebuild is clean.
+  - **Not run: any UI walkthrough.** `tauri dev` was started twice; `target/debug/applye-desktop` ran and stayed alive both times, but no window could be captured, so **nothing was seen**. The maintainer asked for a written checklist instead and it is in the pull request.
+- **Privacy/security impact:** none. Markup and CSS moved; one binding corrected.
+- **Decisions and assumptions:**
+  - **`.icon-btn` is four names and three rules, not one duplicated rule.** `cv-list` and `my-jobs` are an identical 28px pair; `cv-detail` is that box with `:disabled` and `--active`; the cover letter's is 32px with a transition and different colour tokens. A global partial was therefore a **three-way reconciliation that visibly changes two other pages**, not an extraction - and `quality:style-move` would have called it lossless. The block carries `.clb__icon-btn`, following `interview-prep-detail`'s `.ipd__icon-btn`.
+  - **`libs/ui` already ships this primitive.** `appButton` has `size="icon"` and `variant="danger"`; `.btn--ghost` is near-identical to every `.icon-btn`. Four stylesheets reimplemented a design-system component. Folding them onto it is the real fix, is its own change, and needs a rendered check - which is why it was not smuggled in here.
+  - **The dead binding was fixed rather than deleted.** `[class.icon-btn--active]` sat on an `appButton` and resolved to nothing; the button now switches its own `variant`.
+- **Risks or compatibility impact:** the paragraph textareas are the plausible regression - `.coverdetail textarea` reached them and **nothing global styles a bare `textarea`**, so the child carries its own copy. The Edit/Preview button now visibly changes appearance when active, which it never did before; that is the intended fix, not a regression, and it is the one user-visible difference in this PR.
+- **Open issues or blockers:** **the visual debt is six extractions deep and unpaid.** It is now a numbered walkthrough in the PR body for the maintainer to run.
+- **Next first action:** the maintainer runs the eight-step walkthrough. If it is clean, the next code change is folding the four `.icon-btn` copies onto `appButton size="icon"` - and that one must be checked on screen before it merges, because it is deliberately a visible change.
+- **Evidence:**
+  - **The checklist discriminated for the third consecutive cut**, and this time the carry was unavoidable: unlike the settings card, which needed nothing because `_editor-shell.scss` already styled its controls, `grep` found **no rule for a bare `textarea` anywhere** in `apps/desktop` or `libs/ui`.
+  - **First compiled-CSS proof in this campaign.** `dist/apps/desktop/browser/chunk-4BU62BOE.js` carries `.coverdetail__textarea[_ngcontent-%COMP%]` with all nine declarations and `.clb__icon-btn[_ngcontent-%COMP%]` in the **child's** chunk - so the carried rules do reach the elements they were carried for. Still not a rendered check, but it is the first evidence below the level `quality:style-move` operates at.
+  - **The gate-verdict rule paid again, from the opposite direction.** The previous near-miss was a grep that matched neither error nor success. This one was a real warning that every gate's verdict line was silent about, and only running the app exposed it.
+  - Sizes: `cover-letter-body-paragraphs.component.ts` 89/400 + template 106/300 + stylesheet 109 + spec 195, `cover-letter-detail.component.html` **222/300** from 324, `.ts` **333/400** from 352, `.scss` **162** from 207.
+  - Campaign arc for this page, eight pull requests: markup **669 -> 222**, code **644 -> 333**, both under budget; gateway allowlist 26 -> 22.
+
 ### 2026-08-08, `cover-letter-detail` template cut 3: both cards leave, and the checklist earns its place
 
 - **Status:** complete

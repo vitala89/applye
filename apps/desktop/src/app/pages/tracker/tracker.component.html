@@ -476,7 +476,7 @@
           </button>
         </div>
 
-        @if (reportFitInfo().overflow.length) {
+        @if (report.fitInfo().overflow.length) {
           <div class="jt-modal__note">
             <lucide-icon [img]="icons.info" [size]="13" />
             {{ fitNoteText() }}
@@ -486,9 +486,9 @@
         <div class="jt-modal__scroll" [class.is-landscape]="landscape()">
           <app-tracker-report
             [rows]="rows.reportRows()"
-            [columns]="reportColumns()"
+            [columns]="report.columns()"
             [applicant]="applicantName()"
-            [periodLabel]="periodLabelPublic()"
+            [periodLabel]="report.periodLabel()"
             [market]="reportMarket()"
             [mode]="reportMode()"
             [landscape]="landscape()"

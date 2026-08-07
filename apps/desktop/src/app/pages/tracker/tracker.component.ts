@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -24,27 +24,19 @@ import {
   Trash2,
   X,
 } from 'lucide-angular';
-import type { ApplicationStatus, SupportedLanguage, TrackerRow } from '@applye/core';
+import type { ApplicationStatus, TrackerRow } from '@applye/core';
 import {
   TrackerColumnDef,
   TrackerColumnsStore,
+  TrackerReportStore,
   TrackerRowEditorStore,
   TrackerRowsStore,
   formatTrackerDate,
   trackerCellValue,
-  trackerColumnWidth,
-  trackerCustomValues,
 } from '@applye/application';
-import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
-import {
-  ReportColumn,
-  ReportMarket,
-  ReportMode,
-  reportFit,
-  TrackerReportComponent,
-} from './tracker-report.component';
+import { TrackerReportComponent } from './tracker-report.component';
 
 // Job Tracker: 1:1 with the user's real xlsx tracker. Export IS the Agentur
 // fuer Arbeit "Eigenbemuehungen" report (ROADMAP §9). 0 tokens. This screen is
@@ -56,10 +48,9 @@ import {
   imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
-  providers: [TrackerColumnsStore, TrackerRowsStore, TrackerRowEditorStore],
+  providers: [TrackerColumnsStore, TrackerRowsStore, TrackerRowEditorStore, TrackerReportStore],
 })
 export class TrackerComponent {
-  private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -94,6 +85,20 @@ export class TrackerComponent {
    * from here; the store only knows which row is open. */
   protected readonly editor = inject(TrackerRowEditorStore);
 
+  /** The export dialog's options and its two writes. **This one holds a
+   * `TranslateService`** - the sheet is a document whose language follows the
+   * chosen market, not the UI (ADR-0005, amendment eight). */
+  protected readonly report = inject(TrackerReportStore);
+
+  // Export-dialog aliases, for the same reason as the toolbar ones above: the
+  // template is at its budget and `report.` in front of eleven bindings
+  // re-wraps four of them.
+  protected readonly applicantName = this.report.applicant;
+  protected readonly reportMarket = this.report.market;
+  protected readonly landscape = this.report.landscape;
+  protected readonly reportMode = this.report.mode;
+  protected readonly exporting = this.report.exporting;
+
   readonly icons = {
     fileDown: FileDown,
     columns: Columns3,
@@ -124,36 +129,6 @@ export class TrackerComponent {
   readonly menuRow = signal<TrackerRow | null>(null);
   readonly menuPos = signal<{ top: number; left: number } | null>(null);
   readonly confirmId = signal<number | null>(null);
-  readonly exporting = signal(false);
-
-  // ---- export options ----
-  readonly applicantName = signal('');
-  readonly reportMarket = signal<ReportMarket>('de');
-  readonly landscape = signal(false);
-  readonly reportMode = signal<ReportMode>('fit');
-
-  /** The report is a document in its own language, not app chrome: the German
-   * Eigenbemuehungen sheet must read German even when the UI runs in English.
-   * The chosen market therefore drives every string ON the sheet - headings,
-   * column labels and the period - while the surrounding export dialog stays
-   * in the UI language. */
-  readonly reportLang = computed<SupportedLanguage>(() =>
-    this.reportMarket() === 'de' ? 'de' : 'en',
-  );
-  private readonly reportT = computed(() => this.i18n.tFor(this.reportLang()));
-
-  /** The report mirrors the user's visible tracker columns (built-in + custom
-   * + Next Interview), each with an estimated print width for A4 fit. */
-  readonly reportColumns = computed<ReportColumn[]>(() =>
-    this.columns.visibleColumns().map((c) => ({
-      id: c.key,
-      label: this.reportColLabel(c),
-      type: c.type ?? 'text',
-      width: trackerColumnWidth(c),
-      custom: !!c.custom,
-    })),
-  );
-  readonly reportFitInfo = computed(() => reportFit(this.reportColumns(), this.landscape()));
 
   readonly statuses: ApplicationStatus[] = [
     'saved',
@@ -175,7 +150,7 @@ export class TrackerComponent {
     // read leaves the market alone rather than defaulting it from nothing,
     // which is why the store separates that from a database with no settings.
     if (this.rows.loadError()) return;
-    this.reportMarket.set(this.rows.settings()?.uiLanguage === 'de' ? 'de' : 'intl');
+    this.report.market.set(this.rows.settings()?.uiLanguage === 'de' ? 'de' : 'intl');
   }
 
   /** Column labels stay on the page: the grid names a column in the UI language
@@ -183,12 +158,6 @@ export class TrackerComponent {
    * column and the caller supplies the words (ADR-0005, amendment eight). */
   colLabel(col: TrackerColumnDef): string {
     return col.custom ? (col.label ?? '') : this.t()(col.labelKey ?? '');
-  }
-
-  /** Same column, labelled in the REPORT's language. Custom columns keep the
-   * user's own wording - we have no translation for those. */
-  private reportColLabel(col: TrackerColumnDef): string {
-    return col.custom ? (col.label ?? '') : this.reportT()(col.labelKey ?? '');
   }
 
   // Template-side delegates to the pure column module, which a template cannot
@@ -311,165 +280,51 @@ export class TrackerComponent {
   }
 
   /** Human note about A4 fit: which columns are hidden (fit mode) or wrap to a
-   * second line (all mode), for the current orientation. */
+   * second line (all mode), for the current orientation. Stays on the page
+   * because it is dialog chrome rather than part of the sheet, so it names the
+   * columns in the **UI** language even when the sheet itself is German. */
   fitNoteText(): string {
-    const overflow = this.reportFitInfo().overflow;
+    const overflow = this.report.fitInfo().overflow;
     if (!overflow.length) return '';
-    // The note is dialog chrome, not part of the sheet, so it names the columns
-    // in the UI language even when the sheet itself is German.
     const uiLabels = new Map(this.columns.visibleColumns().map((c) => [c.key, this.colLabel(c)]));
     const cols = overflow.map((c) => uiLabels.get(c.id) ?? c.label).join(', ');
-    const orient = this.t()(this.landscape() ? 'tracker.landscape' : 'tracker.portrait');
-    const key = this.reportMode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';
+    const orient = this.t()(this.report.landscape() ? 'tracker.landscape' : 'tracker.portrait');
+    const key = this.report.mode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';
     return this.t()(key)
       .replace('{n}', String(overflow.length))
       .replace('{orient}', orient)
       .replace('{cols}', cols);
   }
-  periodLabelPublic(): string {
-    return this.periodLabel();
-  }
-  /** Printed ON the sheet, so it follows the report language, not the UI. */
-  private periodLabel(): string {
-    const rt = this.reportT();
-    return this.rows.range() === 'all'
-      ? rt('tracker.range_all')
-      : this.rows.range() === 'month'
-        ? rt('tracker.range_month')
-        : rt('tracker.range_3months');
-  }
 
-  private reportBase(): string {
-    const stamp = new Date().toISOString().slice(0, 10);
-    return this.reportMarket() === 'de'
-      ? `eigenbemuehungen-${stamp}`
-      : `job-application-report-${stamp}`;
-  }
-
-  /** CSV stays the plain deterministic export (spreadsheet-friendly). */
+  // The store writes and reports; the page closes the dialog and picks the
+  // wording (ADR-0005, amendment three).
   async exportCsv(): Promise<void> {
-    if (this.exporting()) return;
-    this.exporting.set(true);
     try {
-      const path = await this.db.exportReport(this.buildCsv(), 'csv', this.reportBase());
+      const path = await this.report.exportCsv();
       this.showExport.set(false);
       if (path) this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
     } catch (e) {
       this.toast.error(String(e));
-    } finally {
-      this.exporting.set(false);
     }
   }
 
-  /** PDF renders the preview's own DOM (hidden print window) so the file
-   * matches the preview exactly. Path chosen via the native Save dialog. */
+  /**
+   * PDF renders the preview's own DOM (hidden print window) so the file matches
+   * the preview exactly. The native Save dialog is a Tauri shell action and so
+   * belongs to the app; it is handed to the store rather than called after it,
+   * which is what keeps `exporting` true while the dialog is open.
+   */
   async exportPdf(): Promise<void> {
-    if (this.exporting()) return;
-    this.exporting.set(true);
     try {
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const path = await save({
-        defaultPath: `${this.reportBase()}.pdf`,
-        filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      const path = await this.report.exportPdf(async (defaultPath) => {
+        const { save } = await import('@tauri-apps/plugin-dialog');
+        return save({ defaultPath, filters: [{ name: 'PDF', extensions: ['pdf'] }] });
       });
       if (!path) return; // cancelled
-      await this.db.trackerReportExportPdfWysiwyg({
-        savePath: path,
-        applicant: this.applicantName(),
-        period: this.rows.range(),
-        periodLabel: this.periodLabel(),
-        market: this.reportMarket(),
-        landscape: this.landscape(),
-        mode: this.reportMode(),
-        columns: JSON.stringify(this.reportColumns()),
-        fallbackContent: this.buildReportText(),
-      });
       this.showExport.set(false);
       this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
     } catch (e) {
       this.toast.error(String(e));
-    } finally {
-      this.exporting.set(false);
     }
-  }
-
-  private contactDisplay(r: TrackerRow): string {
-    return [r.contactName, r.contactChannel].filter(Boolean).join(' - ');
-  }
-  /** CSV cell value for a report column - a spreadsheet has no width limit, so
-   * CSV always includes every visible column (no A4 fit dropping). */
-  private csvCell(r: TrackerRow, col: ReportColumn): string {
-    const rec = r as unknown as Record<string, unknown>;
-    if (col.custom) {
-      const v = trackerCustomValues(r)[col.id] ?? '';
-      return col.type === 'date' && v ? v.slice(0, 10) : v;
-    }
-    switch (col.type) {
-      case 'status':
-        return r.status ? this.reportT()('status.' + r.status) : '';
-      case 'stage':
-        return r.nextStageLabel
-          ? `${r.nextStageLabel}${r.nextStageAt ? ' ' + r.nextStageAt.slice(0, 10) : ''}`
-          : '';
-      case 'link':
-        return r.sourceUrl ?? '';
-      case 'yesno':
-        return rec[col.id] == null ? '' : rec[col.id] ? 'yes' : 'no';
-      case 'date':
-        return rec[col.id] ? String(rec[col.id]).slice(0, 10) : '';
-      default:
-        return rec[col.id] != null ? String(rec[col.id]).replace(/\n/g, ' ') : '';
-    }
-  }
-  private buildCsv(): string {
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const cols = this.reportColumns();
-    const rt = this.reportT();
-    const meta = [
-      [rt('tracker.report_period'), this.periodLabel()],
-      [rt('tracker.report_name'), this.applicantName()],
-      [rt('tracker.report_generated'), new Date().toISOString().slice(0, 10)],
-    ].map((row) => row.map((c) => esc(String(c))).join(','));
-    const head = ['#', ...cols.map((c) => c.label)];
-    const lines = this.rows
-      .reportRows()
-      .map((r, i) => [String(i + 1), ...cols.map((c) => this.csvCell(r, c))].map(esc).join(','));
-    return [...meta, '', head.map(esc).join(','), ...lines].join('\n');
-  }
-  private buildReportText(): string {
-    const rows = this.rows.reportRows();
-    const s = this.rows.summary();
-    const col = (v: string, w: number) => (v.length > w ? v.slice(0, w - 1) + '…' : v).padEnd(w);
-    const rt = this.reportT();
-    const header =
-      col('#', 4) +
-      col(rt('tracker.col_date'), 12) +
-      col(rt('tracker.col_company'), 20) +
-      col(rt('tracker.col_role'), 20) +
-      col(rt('tracker.col_method'), 12) +
-      col(rt('tracker.col_status'), 11) +
-      col(rt('tracker.col_contact'), 24);
-    const body = rows.map(
-      (r, i) =>
-        col(String(i + 1), 4) +
-        col(r.appliedAt ?? '', 12) +
-        col(r.company ?? '', 20) +
-        col(r.title ?? '', 20) +
-        col(r.method ?? '', 12) +
-        col(r.status ?? '', 11) +
-        col(this.contactDisplay(r), 24),
-    );
-    return [
-      `# ${rt('tracker.report_title')}`,
-      `${rt('tracker.report_period')}: ${this.periodLabel()}`,
-      `${rt('tracker.report_name')}: ${this.applicantName()}`,
-      `${rt('tracker.report_generated')}: ${new Date().toISOString().slice(0, 10)}`,
-      '',
-      '## ' + rt('tracker.title'),
-      header,
-      ...body,
-      '',
-      `${rt('tracker.total')}: ${s.total}   ${rt('tracker.response_rate')}: ${s.rate}%   ${rt('tracker.avg_days')}: ${s.avg}`,
-    ].join('\n');
   }
 }

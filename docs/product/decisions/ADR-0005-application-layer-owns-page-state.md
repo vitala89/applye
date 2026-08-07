@@ -344,6 +344,40 @@ Two further corrections to amendment four's decomposition:
 
 `cv-detail.component.ts` is **709/400** after this PR, from 962.
 
+## Amendment, 2026-08-07 (sixth): what a store does with the app-local code it cannot import
+
+Amendment five said a store owns state, not necessarily the code that edits it, and left open what to
+do when the store genuinely needs that code rather than merely the result. `CvDocumentStore` hit it
+immediately: its `load` must run `normalizeCvContent`, which lives in `apps/desktop`.
+
+**The store takes it as a parameter.** `load(id, normalize: CvContentNormalizer)` - a named function
+type on the store's own public surface. The page supplies the app-local implementation. This is the
+third shape the campaign now has for the same constraint, and they are not interchangeable:
+
+| The store needs                         | Shape                                 | Example                               |
+| --------------------------------------- | ------------------------------------- | ------------------------------------- |
+| a value the app computed                | the page computes and calls a setter  | `applyStyle(routeCvStyleChange(...))` |
+| to be told what a sibling store decided | the sibling returns, the owner writes | `photo.sectionsForSave(sections)`     |
+| to call app code mid-operation          | the caller passes the function in     | `load(id, normalizeCvContent)`        |
+
+Prefer them in that order. A parameter is the most powerful and the least visible: it makes the store
+depend on behaviour it cannot see, so it is worth reaching for only when the call has to happen inside
+an operation the store owns.
+
+**Amendment three, restated as it applies to a write:** `save` and `confirmSaveTemplate` return their
+result and let a gateway failure throw. The toast, the transient "Saved" tick and the apply-wizard
+hand-back stay on the page. A store that both writes and notifies would put the user-facing string in
+the layer that has no `TranslateService`, which is how the rule earns its keep rather than being style.
+
+### Correction to amendment five's follow-on
+
+Amendment five's Duty Watch entry said `CvDocumentStore` would empty `cv-detail`'s entry in
+`COMPONENTS_STILL_USING_THE_GATEWAY`. **It does not.** `regenerateSection` and `pullFromProfile` still
+call `getProfile`, `getSettings` and `hashText` directly, so the page keeps `inject(DbService)` until
+`CvRegenerationStore` lands. The allowlist shrinks at PR 4, not PR 3.
+
+`cv-detail.component.ts` is **589/400** after this PR, from 709.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

@@ -82,13 +82,15 @@
   cannot move until those services do - and five of them are 251-326 lines and must decompose first.
   `cv-preview` (1049) and `cv-live-style-panel` (704) reach the gateway **zero** times, so this campaign
   does not touch them; their size is view state. **`cv-detail` is in progress**, four pull requests
-  rather than three: `CvPhotoStore` (done, #365) and `CvStyleStore` (done) have taken it **1019 -> 962
-  -> 709** against 400; `CvDocumentStore` is next and `CvRegenerationStore` follows, because the
-  document cluster measures ~310 lines before regeneration is counted. **The `CvStyle` cascade did not
-  go to `libs/core`** - its only input is one widget's wire format, and the helpers it delegates to were
-  already a pure module in the app, so it is `cv-style-scope.util.ts` beside them (ADR-0005, amendment
-  five). Nothing in `libs/core` changed. The page keeps its gateway injection, and its allowlist entry,
-  until `CvDocumentStore` lands. Then `tracker` and `cover-letter-detail`, which share that shape.
+  rather than three: `CvPhotoStore` (#365), `CvStyleStore` (#368) and `CvDocumentStore` have taken it
+  **1019 -> 962 -> 709 -> 589** against 400. **`CvRegenerationStore` is the last one**, and it is what
+  removes the page's final `inject(DbService)` - `regenerateSection` and `pullFromProfile` still call
+  `getProfile`, `getSettings` and `hashText`, so the allowlist goes 26 -> 25 at PR 4, not before.
+  **The `CvStyle` cascade did not go to `libs/core`** - its only input is one widget's wire format, and
+  the helpers it delegates to were already a pure module in the app, so it is `cv-style-scope.util.ts`
+  beside them (ADR-0005, amendment five). Nothing in `libs/core` changed in this campaign. Amendment six
+  records the three shapes a store now has for code it may not import, in the order to prefer them.
+  Then `tracker` and `cover-letter-detail`, which share that shape.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

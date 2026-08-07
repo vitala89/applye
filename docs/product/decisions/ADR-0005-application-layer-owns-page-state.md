@@ -646,6 +646,59 @@ Prefixing eleven export bindings with `report.` re-wrapped four of them and push
 557 to 562. Five more read-only aliases keep it byte-neutral. Recorded in amendment nine as something
 that would recur on every over-budget template; it recurred in the next pull request but one.
 
+## Amendment, 2026-08-07 (twelfth): `cover-letter-detail` shares almost nothing with `cv-detail`
+
+The handoff into this phase warned "resist copying the CV stores - the shapes rhyme, the types do not".
+Measured before planning, the overlap is smaller still, and the grilling gate settled it on evidence
+rather than on the warning:
+
+- **`CoverLetterStyle` and `CvStyle` are different types.** The cover letter has five fields and a
+  `page`; the CV has those plus `titleStyle`, `titleBorder`, `titleRuleWidthPt` and `bodyColorHex`, all
+  driven by a theme. **Cover letters have no themes at all**, and `CvStyleStore`'s 166 lines are mostly
+  theme machinery - `activeTheme`, `themeBaseStyle`, `themeTitleRule`, `themeEntryRule`, `selectTheme`.
+- Their `sectionStyles` differ **structurally**: the CV's is a closed `Partial<Record<CvSectionKey, …>>`,
+  the cover letter's an open `Record<string, …>` because it must key `body_<i>`. Generalizing would
+  widen the CV's type and cost it the exhaustiveness it has now.
+- **The genuinely shared code is about fifteen lines**: the debounced `checkStyleSafety` and the dedupe
+  of `(kind, detail)` pairs.
+
+**Decision: only that is extracted**, as `document-style-safety.ts`, in this phase's style pull request.
+Four cover-letter stores are built fresh against the cover-letter types. Recorded because "these two
+pages look alike" is a claim that survives right up until someone reads both, and this ADR should carry
+the reading rather than the impression.
+
+### Removing a dead branch can make a live mutant unobservable
+
+`reindexParagraphStyleKeys` - thirteen lines lifted off the page, keeping `body_<i>` style overrides
+pointing at the right paragraph after one is deleted - carried an `else { delete next[to] }`.
+
+Mutation testing said it never fires, and the invariant says why: before the first iteration
+`body_<removedAt>` has just been deleted, and every iteration leaves `body_<i>` absent, either by moving
+it down or because it was already absent. **The destination is vacant by construction.** The branch was
+removed and the invariant written into the doc comment, where it is more use than the branch was.
+
+**Then a previously-lethal mutant survived.** Starting the loop at `removedAt` rather than
+`removedAt + 1` used to destroy the override _below_ the removal, through that very `else`. Without it
+the extra iteration is a no-op, so the mutation is genuinely unobservable - **the code lost a way to be
+wrong, and the mutant retired with it.** A fifth reading of a surviving mutant, and the only cheerful
+one: sometimes the score drops because the code got better.
+
+### The empty-fixture trap, for the third time
+
+`hydrate` was first written to swallow a `JSON.parse` failure and open an empty letter. The page threw,
+and its `load` caught that into `loadError`. The difference matters: an empty editor over a letter that
+is still on disk is **one Save away from replacing it with nothing**.
+
+Every fixture hydrated an already-empty store, where "reset to empty" and "leave it alone" agree, so
+both mutants crossing them survived. `CvStyleStore.hydrate` already documented the right contract -
+"throws on malformed JSON; the caller's load already reports a document it cannot read" - and the cover
+letter now matches it.
+
+That is the third pull request in this campaign where an empty-fixture symmetry hid a real change:
+`TrackerColumnsStore` clearing custom columns on a failed reload, `TrackerRowsStore`'s `null` answering
+two questions, and now this. **Worth naming as a rule: whenever a store has a reset path, the fixture
+must arrive non-empty.**
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -660,7 +713,8 @@ that would recur on every over-budget template; it recurred in the next pull req
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
         1019 -> 517), `tracker` **done** (four PRs, 667 -> 304, the first page to finish **under**
-        budget), `cover-letter-detail` next, `jobs` deferred
+        budget), `cover-letter-detail` **in progress** (four PRs: content done, 644 -> 592; then
+        style, document, AI), `jobs` deferred
   - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**23** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines

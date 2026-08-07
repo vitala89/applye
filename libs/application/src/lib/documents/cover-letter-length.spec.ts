@@ -1,5 +1,5 @@
 import { COVER_LETTER_LENGTH_TARGET } from '@applye/core';
-import { bodyLengthStatus, countBodyWords } from './cover-letter-length.util';
+import { bodyLengthStatus, countBodyWords } from './cover-letter-length';
 
 describe('countBodyWords', () => {
   it('counts across paragraphs, not within one', () => {

@@ -297,6 +297,53 @@ module in `libs/core` as a new `cv/` directory**, beside `jobs/` and `profile/`.
 of a `libs/core` model rather than formatting for one widget, which is the "domain or format" test from
 amendment two; this paragraph is the `libs/core` public-API gate that amendment one requires.
 
+## Amendment, 2026-08-07 (fifth): the `CvStyle` cascade is not domain, and a store need not own its own edits
+
+Amendment four ended by sending the `CvStyle` cascade rules to `libs/core` as a new `cv/` directory,
+and called that paragraph the public-API gate. **Reading the code before writing it reversed the
+decision**, through the grilling gate that same paragraph required. Two facts settled it, and neither
+was visible from the line count:
+
+**The cascade's only input is a widget's wire format.** `applyTitleScopeChange`, `applyToAllTitles`,
+`applyToAllEntries` and `applyBodyScopeChange` take `CvStylePanelChange` - the object
+`CvLiveStylePanelComponent` emits - and nothing else. Amendment two's "domain or format" test puts
+that on the format side: promoting it would have exported one panel's emission shape as `libs/core`
+vocabulary, and dragged `CvPreviewSelection` and nine `apps/desktop` import sites with it.
+
+**The eight helpers it delegates to were already a pure module, in the app.**
+`cv-style.util.ts` (355 lines) imports only `@applye/core`, is re-exported through `cv-content.util.ts`,
+and also serves the cover-letter editor. Moving the cascade to `libs/core` meant moving that file
+wholesale - cover-letter helpers included - or splitting a module whose own header states why its
+functions belong together.
+
+**Decision: the cascade is `apps/desktop/src/app/pages/documents/cv-style-scope.util.ts`**, one pure
+`routeCvStyleChange(style, selection, change) => CvStyle`, beside `cv-style.util.ts`. No `libs/core`
+change. The page shrinks by the same amount either way - the routing leaves the class regardless; only
+its library changes.
+
+### What that implies for a store, generally
+
+`type:application` may depend on `type:data`, `type:domain` and `type:util` - never on the app. So a
+store **cannot call an app-local pure helper**, and this one does not: `CvStyleStore` holds `style`,
+`themeId`, `styleNotes`, the theme baseline and the debounced `checkStyleSafety`, while every immutable
+`CvStyle` transform stays in `apps/desktop`. The page composes a next style with those helpers and
+commits it through `applyStyle`.
+
+**A store owns state, not necessarily the code that edits it.** That is a weaker claim than this ADR
+started with, and it is the honest one whenever the edit helpers are shared with a component or another
+page. It also caught page geometry: `currentMargin`/`setMarginSide`/`setPageSize` clamp through the
+app-local `resolvePageSettings`, so they stay on the page too.
+
+Two further corrections to amendment four's decomposition:
+
+- **The save-template trio is not style.** `openSaveTemplate`/`cancelSaveTemplate`/`confirmSaveTemplate`
+  never read `style`; they write `cvTemplateUpsert` from sections, region tag and the photo store's
+  flags. They belong to `CvDocumentStore`, PR 3.
+- **`CvRegenerationStore` is confirmed as a fourth PR**, since the document cluster measures ~310 lines
+  before `regenerateSection` and `pullFromProfile` are counted.
+
+`cv-detail.component.ts` is **709/400** after this PR, from 962.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

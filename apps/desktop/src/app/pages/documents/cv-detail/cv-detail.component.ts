@@ -37,9 +37,7 @@ import type {
   CvContent,
   CvSection,
   CvSectionKey,
-  CvElementStyle,
   CvSectionStyle,
-  CvStyle,
   CvTemplate,
   CvTextStyle,
   DocumentLibraryItem,
@@ -49,15 +47,8 @@ import type {
   PhotoPlacement,
   StyleNote,
 } from '@applye/core';
-import {
-  CV_STYLE_DEFAULT,
-  PAGE_SETTINGS_DEFAULT,
-  getBuiltinTheme,
-  themeEntryRule,
-  themeStyleSeed,
-  themeTitleRule,
-} from '@applye/core';
-import { CvPhotoStore } from '@applye/application';
+import { PAGE_SETTINGS_DEFAULT } from '@applye/core';
+import { CvPhotoStore, CvStyleStore } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -78,18 +69,13 @@ import {
   mergeRegeneratedSection,
   normalizeCvContent,
   parseCvSkillResponse,
-  patchCvDocumentBody,
-  patchCvElementStyle,
-  clearSectionElementOverrides,
-  clearSectionEntryRuleOverrides,
-  clearSectionTitleOverrides,
   patchCvSectionStyle,
   REGENERATABLE_SECTION_KEYS,
-  resetCvElementStyle,
   resetCvSectionStyle,
   resolvePageSettings,
   sectionLabelKey,
 } from '../cv-content.util';
+import { routeCvStyleChange } from '../cv-style-scope.util';
 
 /** Merges an incoming profile field into the current personal-details value,
  * ignoring empty/whitespace-only incoming values so a blank field from the
@@ -123,7 +109,7 @@ export function mergePersonalField<T extends string | undefined>(
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
-  providers: [CvPhotoStore],
+  providers: [CvPhotoStore, CvStyleStore],
 })
 export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -194,26 +180,20 @@ export class CvDetailComponent {
   readonly saveTemplateName = signal('');
   readonly savingTemplate = signal(false);
 
-  readonly style = signal<CvStyle>(CV_STYLE_DEFAULT);
-  readonly themeId = signal<number>(1);
-  readonly activeTheme = computed(() => getBuiltinTheme(this.themeId()));
-  /** The active theme's own section-title rule - fed to the live-style panel so
-   * its line size/colour controls can show the value the title renders at. */
-  readonly activeThemeTitleRule = computed(() => themeTitleRule(this.activeTheme()));
-  /** The theme's own rule under an experience entry head - fed to the panel for
-   * the same reason as `activeThemeTitleRule`. */
-  readonly activeThemeEntryRule = computed(() => themeEntryRule(this.activeTheme()));
-  /** The clean baseline for the active theme: document defaults with the
-   * theme's four base tokens (font/size/weight/accent) applied. "Custom" and
-   * "Reset styles" are measured against THIS, not the hard-coded Classic
-   * default - so a pristine Aurora doc reads as "Aurora", not "Custom", and
-   * Reset returns to the selected theme. */
-  readonly themeBaseStyle = computed<CvStyle>(() => ({
-    ...CV_STYLE_DEFAULT,
-    ...themeStyleSeed(this.activeTheme()),
-  }));
-  readonly styleNotes = signal<StyleNote[]>([]);
-  private styleCheckTimer?: ReturnType<typeof setTimeout>;
+  /** The document's visual style, the theme it sits on, and the ATS safety
+   * notes it produces. Component-scoped; the store owns the signal and the
+   * debounced safety check, and this page composes the next style with the pure
+   * helpers in `cv-style.util.ts` / `cv-style-scope.util.ts`, which the
+   * application layer may not import. Aliased for the template. */
+  private readonly styleStore = inject(CvStyleStore);
+  readonly style = this.styleStore.style;
+  readonly themeId = this.styleStore.themeId;
+  readonly styleNotes = this.styleStore.styleNotes;
+  readonly activeTheme = this.styleStore.activeTheme;
+  readonly activeThemeTitleRule = this.styleStore.activeThemeTitleRule;
+  readonly activeThemeEntryRule = this.styleStore.activeThemeEntryRule;
+  readonly themeBaseStyle = this.styleStore.themeBaseStyle;
+  readonly hasAnyCustomStyle = this.styleStore.hasAnyCustomStyle;
 
   private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
     font_ats_risk: 'documents.cv_style_note_font',
@@ -226,11 +206,10 @@ export class CvDetailComponent {
     return this.t()(CvDetailComponent.STYLE_NOTE_KEYS[note.kind]).replace('{value}', note.detail);
   }
 
-  updateStyle(patch: Partial<CvStyle>): void {
-    this.style.set({ ...this.style(), ...patch });
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
-  }
+  readonly updateStyle = this.styleStore.updateStyle.bind(this.styleStore);
+  readonly updateTitleStyle = this.styleStore.updateTitleStyle.bind(this.styleStore);
+  readonly selectTheme = this.styleStore.selectTheme.bind(this.styleStore);
+  readonly resetAllStyles = this.styleStore.resetAllStyles.bind(this.styleStore);
 
   readonly marginSides: { key: keyof PageMargins; label: string }[] = [
     { key: 'top', label: 'documents.cv_style_margin_top' },
@@ -257,22 +236,6 @@ export class CvDetailComponent {
 
   setPageSize(size: PageSize): void {
     this.updatePage({ size, margin: this.currentMargin() });
-  }
-
-  private async refreshStyleNotes(): Promise<void> {
-    const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
-    // Global + per-section safety checks can surface the same (kind, detail)
-    // more than once (e.g. a Light global weight plus overridden sections);
-    // collapse duplicates so each distinct warning shows once.
-    const seen = new Set<string>();
-    this.styleNotes.set(
-      notes.filter((n) => {
-        const key = `${n.kind}|${n.detail}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }),
-    );
   }
 
   /** The section/part the user has clicked in the live preview, driving the
@@ -339,9 +302,7 @@ export class CvDetailComponent {
   }
 
   setSectionStyle(key: CvSectionKey, patch: Partial<CvSectionStyle>): void {
-    this.style.set(patchCvSectionStyle(this.style(), key, patch));
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+    this.styleStore.applyStyle(patchCvSectionStyle(this.style(), key, patch));
   }
 
   /** Deep-merge a patch into a section's title override (a nested object that
@@ -350,236 +311,19 @@ export class CvDetailComponent {
     this.setSectionStyle(key, { title: patch });
   }
 
-  /** Deep-merge a patch into the document-wide title style (template
-   * expressions can't spread, so the merge happens here). */
-  updateTitleStyle(patch: Partial<CvTextStyle>): void {
-    this.updateStyle({ titleStyle: { ...(this.style().titleStyle ?? {}), ...patch } });
-  }
-
   resetSectionStyle(key: CvSectionKey): void {
-    this.style.set(resetCvSectionStyle(this.style(), key));
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
-  }
-
-  /** Immutably commits a fully-built next style and debounces the ATS safety
-   * re-check - shared by the element/document-scope panel paths that don't go
-   * through an existing single-target setter. */
-  private applyStyle(next: CvStyle): void {
-    this.style.set(next);
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+    this.styleStore.applyStyle(resetCvSectionStyle(this.style(), key));
   }
 
   /** Routes a scope-tagged panel change to the correct write target for the
-   * current live selection (see the Phase D.2 mapping table): body →
-   * element/section/document; title → this-title (section) / all-titles
-   * (document). No-ops when there is no active selection. */
+   * current live selection. The mapping itself is `routeCvStyleChange`, a pure
+   * transform beside the other `CvStyle` helpers; this only supplies the
+   * selection and commits the result. No-ops when there is no active
+   * selection. */
   onStylePanelChange(change: CvStylePanelChange): void {
     const sel = this.liveSelection();
     if (!sel) return;
-    if (sel.part === 'title') this.applyTitleScopeChange(sel.sectionKey, change);
-    else this.applyBodyScopeChange(sel, change);
-  }
-
-  private applyTitleScopeChange(key: CvSectionKey, change: CvStylePanelChange): void {
-    const allTitles = change.scope === 'document';
-    if (change.reset) {
-      // Clear only the title override for this scope; body/border untouched.
-      if (allTitles) this.updateStyle({ titleStyle: undefined });
-      else
-        this.setSectionTitleStyle(key, {
-          fontFamily: undefined,
-          fontSizePt: undefined,
-          fontWeight: undefined,
-          colorHex: undefined,
-        });
-      return;
-    }
-    if (change.titleBorder !== undefined) {
-      const border = change.titleBorder ?? undefined;
-      if (allTitles) this.applyToAllTitles({ titleBorder: undefined }, { titleBorder: border });
-      else this.setSectionStyle(key, { titleBorder: border });
-      return;
-    }
-    if (change.titleRuleWidth !== undefined) {
-      const w = change.titleRuleWidth ?? undefined;
-      if (allTitles)
-        this.applyToAllTitles({ titleRuleWidthPt: undefined }, { titleRuleWidthPt: w });
-      else this.setSectionStyle(key, { titleRuleWidthPt: w });
-      return;
-    }
-    if (change.titleRuleColor !== undefined) {
-      const c = change.titleRuleColor ?? undefined;
-      if (allTitles)
-        this.applyToAllTitles({ titleRuleColorHex: undefined }, { titleRuleColorHex: c });
-      else this.setSectionStyle(key, { titleRuleColorHex: c });
-      return;
-    }
-    if (change.patch) {
-      if (allTitles) {
-        // Clear the SAME text properties this patch writes (font, size, weight,
-        // or colour) from every section's title override, then write the new
-        // document-wide value.
-        const inherit = Object.fromEntries(
-          Object.keys(change.patch).map((k) => [k, undefined]),
-        ) as CvTextStyle;
-        this.style.set(clearSectionTitleOverrides(this.style(), { title: inherit }));
-        this.updateTitleStyle(change.patch);
-      } else this.setSectionTitleStyle(key, change.patch);
-    }
-  }
-
-  /** Writes an "all titles" (document-scope) title property. The per-section
-   * overrides of that SAME property are cleared first, so a title the user
-   * styled on its own adopts the new value instead of silently keeping its old
-   * one - the title-layer counterpart of the `clearSectionElementOverrides`
-   * step in `applyBodyScopeChange`. Sibling properties survive: only what this
-   * control writes is made uniform. */
-  private applyToAllTitles(inherit: Partial<CvSectionStyle>, patch: Partial<CvStyle>): void {
-    this.style.set(clearSectionTitleOverrides(this.style(), inherit));
-    this.updateStyle(patch);
-  }
-
-  /** Clears one rule property from every entry in a section before its
-   * section-wide ("All experiences") value is written, so an entry the user
-   * styled on its own adopts the new line instead of silently keeping the old.
-   * The title layer's `applyToAllTitles` does the same one level up. */
-  private applyToAllEntries(key: CvSectionKey, inherit: Partial<CvElementStyle>): void {
-    this.style.set(clearSectionEntryRuleOverrides(this.style(), key, inherit));
-  }
-
-  private applyBodyScopeChange(sel: CvPreviewSelection, change: CvStylePanelChange): void {
-    const key = sel.sectionKey;
-    // Section body-rule (divider) is a section-level property - written at
-    // section scope regardless of the font scope selector.
-    if (change.bodyBorder !== undefined) {
-      this.applyToAllEntries(key, { borderStyle: undefined });
-      this.setSectionStyle(key, { bodyBorder: change.bodyBorder ?? undefined });
-      return;
-    }
-    if (change.bodyRuleWidth !== undefined) {
-      this.applyToAllEntries(key, { ruleWidthPt: undefined });
-      this.setSectionStyle(key, { bodyRuleWidthPt: change.bodyRuleWidth ?? undefined });
-      return;
-    }
-    if (change.bodyRuleColor !== undefined) {
-      this.applyToAllEntries(key, { ruleColorHex: undefined });
-      this.setSectionStyle(key, { bodyRuleColorHex: change.bodyRuleColor ?? undefined });
-      return;
-    }
-    if (change.separatorColor !== undefined) {
-      this.setSectionStyle(key, { separatorColorHex: change.separatorColor ?? undefined });
-      return;
-    }
-    if (change.separatorSize !== undefined) {
-      this.setSectionStyle(key, { separatorSizePt: change.separatorSize ?? undefined });
-      return;
-    }
-    if (change.scope === 'bullets') {
-      // "All achievements": the section-shared bullet style. Reset clears it by
-      // merging an all-undefined patch (which `patchCvSectionStyle` drops).
-      const patch: Partial<CvElementStyle> = change.reset
-        ? {
-            fontFamily: undefined,
-            fontSizePt: undefined,
-            fontWeight: undefined,
-            colorHex: undefined,
-            lineHeight: undefined,
-          }
-        : (change.patch ?? {});
-      // Applying to all achievements wipes the per-bullet overrides so every
-      // bullet adopts the shared value uniformly.
-      if (!change.reset) this.style.set(clearSectionElementOverrides(this.style(), key, true));
-      this.setSectionStyle(key, { bulletStyle: patch });
-      return;
-    }
-    if (change.scope === 'section') {
-      if (change.reset) {
-        this.resetSectionStyle(key);
-        return;
-      }
-      // Applying to the whole section (e.g. "All experiences") first wipes the
-      // per-entry/field overrides in it (bullets excepted - their own scope),
-      // so EVERY entry adopts the section value uniformly instead of the
-      // individually-styled ones silently keeping their old colour.
-      this.style.set(clearSectionElementOverrides(this.style(), key));
-      this.setSectionStyle(key, change.patch ?? {});
-      return;
-    }
-    if (change.scope === 'element') {
-      const path = sel.elementPath;
-      if (!path) return;
-      this.applyStyle(
-        change.reset
-          ? resetCvElementStyle(this.style(), path)
-          : patchCvElementStyle(this.style(), path, change.patch ?? {}),
-      );
-      return;
-    }
-    // document scope: reset is deferred to Task 5's global "reset all styling".
-    if (change.reset) return;
-    this.applyStyle(patchCvDocumentBody(this.style(), change.patch ?? {}));
-  }
-
-  /** True when the style differs from the active theme's baseline in any way -
-   * a document-wide field (body font/size/weight/colour, title style, title
-   * line), a per-section override, or a per-element override. Page geometry
-   * is deliberately NOT part of this comparison: `resetAllStyles` preserves
-   * the current `page` rather than reseeding it, so page geometry never makes
-   * a document read as "custom" here. Drives the live-style panel's "reset
-   * all styling" enabled state (Task 5 - the Edit-mode "Custom" badge that
-   * used to read this was removed along with the document-wide style
-   * groups), so it reacts to global, per-section, AND per-element changes
-   * alike. A pristine doc on a theme is NOT custom (a fresh Aurora doc
-   * doesn't count as "customized"). */
-  readonly hasAnyCustomStyle = computed(() => {
-    const s = this.style();
-    const d = this.themeBaseStyle();
-    const nonEmpty = (o: Record<string, unknown> | undefined): boolean =>
-      !!o && Object.values(o).some((v) => v != null);
-    const sectionCustom = Object.values(s.sectionStyles ?? {}).some(
-      (o) =>
-        o &&
-        Object.values(o).some((v) =>
-          v && typeof v === 'object' ? nonEmpty(v as Record<string, unknown>) : v != null,
-        ),
-    );
-    const elementCustom = Object.values(s.elementStyles ?? {}).some((o) =>
-      nonEmpty(o as Record<string, unknown> | undefined),
-    );
-    return (
-      s.fontFamily !== d.fontFamily ||
-      s.fontSizePt !== d.fontSizePt ||
-      s.fontWeight !== d.fontWeight ||
-      s.accentColorHex !== d.accentColorHex ||
-      s.bodyColorHex !== d.bodyColorHex ||
-      !!s.titleBorder ||
-      s.titleRuleWidthPt != null ||
-      !!s.titleRuleColorHex ||
-      nonEmpty(s.titleStyle as Record<string, unknown> | undefined) ||
-      sectionCustom ||
-      elementCustom
-    );
-  });
-
-  /** Reset every section and the document-wide style back to the active
-   * theme's baseline (not the hard-coded Classic default). */
-  resetAllStyles(): void {
-    this.style.set({ ...this.themeBaseStyle(), page: this.style().page });
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    void this.refreshStyleNotes();
-  }
-
-  /** Switch theme: reseed the four base tokens to the theme's defaults but keep
-   * the user's explicit per-section overrides, title style, title border, and
-   * page geometry. */
-  selectTheme(id: number): void {
-    this.themeId.set(id);
-    const seed = themeStyleSeed(getBuiltinTheme(id));
-    this.style.set({ ...this.style(), ...seed });
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    void this.refreshStyleNotes();
+    this.styleStore.applyStyle(routeCvStyleChange(this.style(), sel, change));
   }
 
   readonly previewMode = signal(false);
@@ -723,14 +467,7 @@ export class CvDetailComponent {
 
       this.photo.hydrate(ordered);
 
-      const themeId = item.themeId ?? 1;
-      this.themeId.set(themeId);
-      const seed = themeStyleSeed(getBuiltinTheme(themeId));
-      const style: CvStyle = item.styleJson
-        ? { ...CV_STYLE_DEFAULT, ...seed, ...JSON.parse(item.styleJson) }
-        : { ...CV_STYLE_DEFAULT, ...seed };
-      this.style.set(style);
-      await this.refreshStyleNotes();
+      await this.styleStore.hydrate(item.themeId, item.styleJson);
     } catch {
       this.loadError.set(true);
     } finally {

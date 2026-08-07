@@ -470,6 +470,80 @@ labelled twice, by two callers, in two languages. `colLabel` and `reportColLabel
 unchanged at 25: the page still injects `DbService` for rows, settings, the row editor and the two
 exports. It loses its entry at PR 4, and `tracker-report-print.component.ts` loses its own at PR 2.
 
+## Amendment, 2026-08-07 (ninth): a second window is a second caller, and a surviving mutant sometimes means the code is redundant
+
+PR 2 moved the tracker's rows, its toolbar filters and the archive and delete writes into
+`TrackerRowsStore`, and took `tracker-report-print.component.ts` off the gateway in the same pull
+request. `tracker.component.ts` is **487/400**, from 536.
+
+### Why the print route shipped with the rows store rather than on its own
+
+The hidden Tauri window that renders the PDF **loads its own rows**: it is a separate window with only
+query parameters to go on, so it cannot be handed the page's list. That is why it carried a verbatim
+copy of `rangeStart`, `daysBetween`, the report-row filter and sort, and the summary arithmetic - four
+rules, duplicated, with **no test on either copy**. Two definitions of "the last three months" are how
+the sheet and the screen come to disagree about what was exported.
+
+`tracker-rows.ts` is now the single definition and has two real callers the day it lands, which is the
+argument for extracting it. Shipping the two stores apart would have created a module with one caller
+and left the duplication claim asserted rather than demonstrated.
+
+**`TrackerPrintStore` is deliberately thin.** Reading query parameters, waiting on `document.fonts`
+and tagging `<body>` for the print stylesheet are browser work and stay on the component; only the two
+gateway calls moved. A store is not the place a component's DOM timing goes just because it is nearby.
+
+### `loadError` exists because `null` was answering two questions
+
+`TrackerRowsStore.load` first returned `Settings | null`, and the page defaulted the report market from
+it. That conflated **a database with no settings row** - where the market should default to
+international - with **a read that failed**, where the page had always left the market alone. One
+`null` cannot answer both, so the store raises `loadError` alongside `settings()`. Worth recording
+because it is the second time in two pull requests that a store's return shape quietly lost a
+distinction the page depended on; the first was amendment eight's failed-reload case.
+
+The same care caught a smaller one on the way: `confirmRemove`'s "this row has no job" guard sits
+**before** its `try`, so `finally` never runs and the delete confirmation stays open. Moving the check
+into the store alone would have started closing it. The page keeps its own guard, and a comment says
+which question each one answers.
+
+### The ratchet caught the migration growing a template it never edited
+
+Prefixing fifteen bindings with `rows.` pushed four of them past the print width, prettier re-wrapped
+them, and `tracker.component.html` went **557 -> 569** without a single element changing. The template
+is 557/300, so the ratchet refused the commit - correctly: an over-budget file may not grow, and
+"it was only formatting" is exactly the argument that would let one grow forever.
+
+**The fix is four read-only aliases on the page** - `summary`, `segment`, `range`, `statusFilter` -
+following the `t = this.i18n.t` device the same class already used. They alias and hold nothing;
+`segment.set(...)` writes straight through. The template is byte-neutral at 557 and the page absorbs
+the 15 lines (472 -> 487, still far under the 536 it started at).
+
+Recorded because it will recur on every page whose template is over budget: **a store field name
+becomes part of every binding's width**, and a phase that has scoped template work out has to stay
+byte-neutral rather than borrow against the phase that will do it.
+
+### Two mutants survive by design, and that is a third outcome
+
+Amendment eight recorded that a surviving mutant is a claim about the fixtures. PR 2 found the other
+case: **a mutant can survive because the code it removes genuinely cannot change the result.**
+
+- **`Number.isFinite(days)` in `daysBetweenDates`.** The only non-finite value reachable is `NaN` -
+  date arithmetic is bounded, so `Infinity` never arises - and `NaN >= 0` is already false. It is kept
+  because "reject a non-number" is the intent, and `>= 0` only implements that through a property of
+  `NaN` the reader has to know.
+- **`.slice()` in `reportTrackerRows`.** `.filter()` already returned a fresh array. It is kept because
+  it becomes load-bearing the moment the filter is made conditional, which is a one-line edit away, and
+  `.sort()` mutates in place.
+
+Both now say so in their own doc comments, so the next reader does not repeat the investigation. The
+other 22 mutants die. **The distinction that matters: investigate first, then decide - the same
+evidence supported deleting `essentialKeys` in PR 1 and keeping both of these.**
+
+The two mutants that were real gaps are worth naming, because both fixtures looked asymmetric and were
+not. `remove` filters the list by `id` while deleting by `jobId`, and a **one-row** fixture cannot tell
+those apart - it took two rows against one job. And the print store's period test asserted the narrowed
+rows but not the narrowed summary, so summarizing before narrowing passed.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -483,9 +557,9 @@ exports. It loses its entry at PR 4, and `tracker-report-print.component.ts` los
   - [x] Enforce "a component does not reach the gateway" by lint - `no-restricted-syntax` on
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
-        1019 -> 517), `tracker` **in progress** (four PRs: columns done, then rows + print, row editor,
-        report), `cover-letter-detail` next, `jobs` deferred
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**25** entries, first one deleted 2026-08-07),
+        1019 -> 517), `tracker` **in progress** (four PRs: columns and rows + print done, 667 -> 487;
+        then the row editor, then the report), `cover-letter-detail` next, `jobs` deferred
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**24** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too

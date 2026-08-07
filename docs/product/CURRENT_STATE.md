@@ -92,16 +92,15 @@
   beside them (ADR-0005, amendment five). **Nothing in `libs/core` changed in this whole campaign.**
   Amendments six and seven record the three shapes a store has for code it may not import, in the order
   to prefer them, and that a store raises typed errors rather than phrasing them.
-- **`tracker` is in progress, four pull requests, one done.** Measured rather than remembered - the
+- **`tracker` is in progress, four pull requests, two done.** Measured rather than remembered - the
   handoff into this phase said 667 and the file was **708 raw / 667 non-empty**, which is the same
-  number counted two ways, so re-measure before planning. **PR 1, `TrackerColumnsStore`, is merged into
-  the branch: 667 -> 536.** The remaining three are the rows store together with
-  `tracker-report-print.component.ts` (which duplicates `rangeStart`, `daysBetween` and the summary
-  arithmetic verbatim, and whose allowlist entry goes at that PR: **25 -> 24**), then the inline row
-  editor, then the report and export cluster, which deletes `tracker.component.ts`'s own entry
-  (**24 -> 23**). The template (557/300) and stylesheet (907) are **untouched and out of scope** for
-  this phase by decision - ADR-0005 reaches neither, and moving 557 lines of markup is where Discover
-  silently lost a `routerLink` for a whole extraction.
+  number counted two ways, so re-measure before planning. **PR 1 `TrackerColumnsStore` (667 -> 536) and
+  PR 2 `TrackerRowsStore` + `TrackerPrintStore` (536 -> 487)** are on the branch, PR 2 stacked on PR 1.
+  `tracker-report-print.component.ts` came off the allowlist in PR 2 - **25 -> 24**, verified from the
+  other side. Remaining: the inline row editor, then the report and export cluster, which deletes
+  `tracker.component.ts`'s own entry (**24 -> 23**). The template (557/300) and stylesheet (907) are
+  **untouched and out of scope** for this phase by decision - ADR-0005 reaches neither, and moving 557
+  lines of markup is where Discover silently lost a `routerLink` for a whole extraction.
 - **Amendment eight corrected two of the campaign's own rules**, both found by reading `tracker` rather
   than by reasoning. **A store may inject `TranslateService`** - `libs/i18n` is `type:util` and the
   boundary always allowed it; what the layer may not do is _notify_ or _phrase an error_, and a document
@@ -110,6 +109,12 @@
   ending in the CSV and PDF exports. Also recorded there: a mutation surviving a green suite caught the
   store silently clearing the user's custom columns on a failed reload, which every fixture agreed with
   because every fixture started empty.
+- **Amendment nine records PR 2's two lessons.** A second Tauri window is a second caller, so the PDF
+  route shipped with the rows store rather than after it: the print window loads its own rows and
+  therefore carried a verbatim copy of four period and summary rules, untested on both sides. And a
+  **surviving mutant has a third outcome** beyond "the fixtures are wrong" and "the code is dead": the
+  code can be genuinely unable to change the result and still worth keeping. Two are, both now
+  documented in their own doc comments so the investigation is not repeated.
 - Next after `tracker`: `cover-letter-detail` (**714/400**, 8 gateway calls), whose method list is
   nearly `cv-detail`'s, so the four-store decomposition should transfer - but the types do not rhyme
   with the CV ones and both should be read before anything is copied.

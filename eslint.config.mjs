@@ -48,7 +48,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/pages/profile/profile-photo/profile-photo.component.ts',
   '**/pages/profile/profile.component.ts',
   '**/pages/settings/settings.component.ts',
-  '**/pages/tracker/tracker-report-print.component.ts',
   '**/pages/tracker/tracker.component.ts',
   '**/shared/paste-job-modal/paste-job-modal.component.ts',
 ];

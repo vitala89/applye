@@ -11,5 +11,7 @@ export * from './lib/documents/cv-photo-sections';
 export * from './lib/documents/cv-document-record';
 export * from './lib/documents/cv-document.store';
 export * from './lib/documents/cv-photo.store';
+export * from './lib/documents/cv-regeneration';
+export * from './lib/documents/cv-regeneration.store';
 export * from './lib/documents/cv-section-order';
 export * from './lib/documents/cv-style.store';

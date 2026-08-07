@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `cv-detail` finishes, and the gateway allowlist loses its first entry
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 1. Radius 2 because it edits `eslint.config.mjs`.)
+- **Branch:** `feat/cv-regeneration-store`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `CvRegenerationStore`, fourth and last on `cv-detail` (589/400), and the deletion of the page's `COMPONENTS_STILL_USING_THE_GATEWAY` entry.
+- **Completed:**
+  - **`cv-regeneration.store.ts`, 166/250.** `regenerateSection` and `pullFromProfile`, injecting `DbService`, `AiService` and `CvDocumentStore` (it writes through the document rather than holding its own section list).
+  - **`cv-regeneration.ts`** - `mergePersonalField` (moved off the component, where it was an exported function on a page class's module), `mergePersonalDetails`, `regenerationHashInput`, `resolveDocLanguage`, `CvNoProfileError`.
+  - **`cv-detail.component.ts`: 589 -> 517**, and it no longer injects `DbService` or `AiService` at all. **`COMPONENTS_STILL_USING_THE_GATEWAY`: 26 -> 25.**
+  - **`cv-detail` is finished: 1019 -> 517** across four pull requests (#365, #368, #369, this one).
+  - **ADR-0005 amendment seven**, plus two follow-up items updated.
+- **Not completed:** the page is 517/400 and stays there. What remains is preview mode, live selection, the print/export path and the wizard routing - all view concerns this ADR deliberately does not reach, and the live-selection protocol is what `cv-preview`'s blocked redesign has to settle first.
+- **Files or packages changed:** `apps/desktop/.../cv-detail.component.ts` and its spec (one import line), `libs/application/src/lib/documents/{cv-regeneration,cv-regeneration.store}.ts` (+ two specs, all new), `libs/application/src/index.ts`, `eslint.config.mjs`, `docs/product/decisions/ADR-0005-...md`, `docs/product/CURRENT_STATE.md`, `CHANGELOG.md`, this log.
+- **Validation:** `nx run desktop:type-check`; `lint` on desktop + application (0 errors, 8 pre-existing warnings); `nx run-many --target=test --skip-nx-cache` (7 projects; desktop 1421, application **213**, up from 190); `nx build desktop`; `npm run quality:file-size` (passed; 517/400, base 589); `npm run quality:attribution`; `npx nx format:check`; `git diff --check`. **Mutation testing:** eight mutations, all killed, each matched exactly once and each file restored byte-exact. **The allowlist deletion was verified in both directions**: re-adding `inject(DbService)` to the page fails `nx lint` with the rule's own message, and the file was restored byte-exact.
+- **Privacy/security impact:** none. The profile read, the settings read and the AI calls moved unchanged; no new data leaves the machine.
+- **Decisions and assumptions:**
+  - **A store raises typed errors, it does not phrase them.** `CvNoProfileError` carries no user-facing text. The alternative - `throw new Error(this.t()('...'))` - would put a localized string in the layer that has no `TranslateService`, which is the failure-path half of amendment three.
+  - **Two app-local functions are grouped into a named `CvRegenerationCodec`** rather than passed individually. Amendment six's parameter shape, generalized once there is more than one.
+  - **`pullFromProfile` now replaces the section instead of mutating it** - a deliberate behaviour change inside a refactor, called out in the changelog on its own line. The old code relied on the sections **array** reference changing, so an `OnPush` child holding the section itself could not see the edit.
+  - **`settings` is threaded into the shared `generate` helper** rather than re-read there, which would have turned one `getSettings` call into two. A test asserts it is called exactly once.
+- **Risks or compatibility impact:** the identity change in `pullFromProfile` is the one behavioural difference; it can only make a stale render less likely, never more. Both AI paths keep their guards, their in-flight flags and the source-hash skip, each covered.
+- **Open issues or blockers:** none.
+- **Lessons:**
+  - **Deleting an allowlist entry is a claim that has to be tested from the other side.** Lint passing after the deletion only proves the rule found nothing; it does not prove the rule would have. Re-adding the injection and watching it fail costs one minute and is the only thing that distinguishes "migrated" from "silently unmatched" - which is exactly how the first version of this allowlist failed, with repo-relative paths that matched nothing.
+  - **An extraction is the moment a latent identity bug becomes visible.** `pullFromProfile`'s in-place assignment had been there all along and worked by accident of which reference the template compared. Writing it as a pure function forced the question that reading it never had.
+  - **A private helper shared by two callers can quietly add a round trip.** Factoring the render-and-run out of both AI paths, the first version read `getSettings` inside the helper while both callers had already read it. Cheap to miss, and only a call-count assertion catches it.
+- **Next first action:** `tracker` (667/400, 11 gateway calls, one app service) - Discover's shape, so the method applies unchanged. `cover-letter-detail` (644/400, 10 gateway calls) is the one after. Both shrink `COMPONENTS_STILL_USING_THE_GATEWAY` further; `jobs` stays deferred until its `shared/*` services move.
+
 ### 2026-08-07, the CV document store, and two guards the fixtures were hiding
 
 - **Status:** complete

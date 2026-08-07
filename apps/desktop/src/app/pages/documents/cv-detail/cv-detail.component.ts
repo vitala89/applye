@@ -41,11 +41,14 @@ import type {
 import { PAGE_SETTINGS_DEFAULT } from '@applye/core';
 import {
   CvDocumentStore,
+  CvNoProfileError,
   CvPhotoStore,
+  type CvRegenerationCodec,
+  CvRegenerationStore,
   CvStyleStore,
   isCvSectionLocked,
 } from '@applye/application';
-import { AiService, DbService } from '@applye/data';
+
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -73,16 +76,6 @@ import {
 } from '../cv-content.util';
 import { routeCvStyleChange } from '../cv-style-scope.util';
 
-/** Merges an incoming profile field into the current personal-details value,
- * ignoring empty/whitespace-only incoming values so a blank field from the
- * model never overwrites an existing value. */
-export function mergePersonalField<T extends string | undefined>(
-  incoming: string | null | undefined,
-  current: T,
-): string | T {
-  return incoming && incoming.trim() ? incoming : current;
-}
-
 @Component({
   selector: 'app-cv-detail',
   standalone: true,
@@ -105,13 +98,11 @@ export function mergePersonalField<T extends string | undefined>(
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
-  providers: [CvPhotoStore, CvStyleStore, CvDocumentStore],
+  providers: [CvPhotoStore, CvStyleStore, CvDocumentStore, CvRegenerationStore],
 })
 export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly db = inject(DbService);
-  private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   private readonly appRef = inject(ApplicationRef);
@@ -177,8 +168,18 @@ export class CvDetailComponent {
   readonly includeMaritalStatus = this.photo.includeMaritalStatus;
 
   readonly justSaved = signal(false);
-  readonly regeneratingKey = signal<CvSectionKey | null>(null);
-  readonly pullingProfile = signal(false);
+
+  /** Regenerating a section from the profile, and pulling fresh personal
+   * details. Component-scoped; it writes through `CvDocumentStore`, and it
+   * takes the two app-local functions it needs mid-call from this page
+   * (ADR-0005, amendment six). */
+  private readonly regeneration = inject(CvRegenerationStore);
+  private readonly codec: CvRegenerationCodec = {
+    parse: parseCvSkillResponse,
+    mergeSection: mergeRegeneratedSection,
+  };
+  readonly regeneratingKey = this.regeneration.regeneratingKey;
+  readonly pullingProfile = this.regeneration.pullingProfile;
 
   readonly atsNoteKeys = computed(() => cvFieldAtsNoteKeys(this.photo.flags(), this.regionTag()));
 
@@ -429,12 +430,6 @@ export class CvDetailComponent {
     void this.load();
   }
 
-  private personalDetailsSection(): Extract<CvSection, { key: 'personal_details' }> | undefined {
-    return this.sections().find(
-      (s): s is Extract<CvSection, { key: 'personal_details' }> => s.key === 'personal_details',
-    );
-  }
-
   async load(): Promise<void> {
     // Opened from the apply wizard's "Review CV": show the rendered result
     // first, not the raw section editor. The user can toggle to Edit.
@@ -507,99 +502,28 @@ export class CvDetailComponent {
     this.document.moveSection(key, 1);
   }
 
+  /** Regenerates one section. The store performs the call and never notifies,
+   * so the wording of a missing-profile failure is chosen here. */
   async regenerateSection(key: CvSectionKey): Promise<void> {
-    if (this.regeneratingKey()) return;
-    const doc = this.doc();
-    if (!doc) return;
-    this.regeneratingKey.set(key);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
-
-      const language = doc.language ?? settings.defaultDocLanguage ?? 'en';
-      const regionTag = this.regionTag();
-      const archetypeTag = doc.archetypeTag ?? 'generalist';
-
-      const hashInput = [profile.fullMd, regionTag, archetypeTag, language, key].join('|');
-      const sourceHash = await this.db.hashText(hashInput);
-      const current = this.sections().find((s) => s.key === key);
-      if (current?.sourceHash === sourceHash) {
-        return;
-      }
-
-      const rendered = await this.ai.renderSkill('cv-generate-baseline', {
-        profile_md: profile.fullMd,
-        scoring_json: profile.scoringJson ?? '{}',
-        region_tag: regionTag,
-        archetype_tag: archetypeTag,
-        language,
-        section: key,
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-        maxTokens: 8192,
-      });
-      const parsed = parseCvSkillResponse(res.text);
-      const updated = mergeRegeneratedSection(
-        { sections: this.sections() },
-        key,
-        parsed,
-        sourceHash,
-      );
-      this.sections.set(updated.sections);
+      await this.regeneration.regenerateSection(key, this.codec);
     } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.regeneratingKey.set(null);
+      this.toast.error(this.regenerationMessage(e));
     }
   }
 
   async pullFromProfile(): Promise<void> {
-    if (this.pullingProfile()) return;
-    const personal = this.personalDetailsSection();
-    if (!personal) return;
-    this.pullingProfile.set(true);
     try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      if (!profile?.fullMd) throw new Error(this.t()('documents.cv_generate_no_profile'));
-      const language = this.doc()?.language ?? settings.defaultDocLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('cv-generate-baseline', {
-        profile_md: profile.fullMd,
-        scoring_json: profile.scoringJson ?? '{}',
-        region_tag: this.regionTag(),
-        archetype_tag: this.doc()?.archetypeTag ?? 'generalist',
-        language,
-        section: 'personalDetails',
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-        maxTokens: 8192,
-      });
-      const parsed = parseCvSkillResponse(res.text);
-      const p = parsed.personalDetails;
-      personal.fullName = mergePersonalField(p.fullName, personal.fullName);
-      personal.title = mergePersonalField(p.title, personal.title);
-      personal.email = mergePersonalField(p.email, personal.email);
-      personal.phone = mergePersonalField(p.phone, personal.phone);
-      personal.address = mergePersonalField(p.address, personal.address);
-      personal.website = mergePersonalField(p.website, personal.website);
-      personal.linkedin = mergePersonalField(p.linkedin, personal.linkedin);
-      this.sections.set([...this.sections()]);
+      await this.regeneration.pullFromProfile(this.codec);
     } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.pullingProfile.set(false);
+      this.toast.error(this.regenerationMessage(e));
     }
+  }
+
+  /** `CvNoProfileError` is the one failure with a wording of its own; anything
+   * else is reported as it arrived. */
+  private regenerationMessage(e: unknown): string {
+    return e instanceof CvNoProfileError ? this.t()('documents.cv_generate_no_profile') : String(e);
   }
 
   /** Opens the profile, where the one reusable photo is uploaded and cropped. */

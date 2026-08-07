@@ -378,6 +378,38 @@ call `getProfile`, `getSettings` and `hashText` directly, so the page keeps `inj
 
 `cv-detail.component.ts` is **589/400** after this PR, from 709.
 
+## Amendment, 2026-08-07 (seventh): `cv-detail` is done, and the first allowlist line comes out
+
+Four pull requests, **1019 -> 517** against a 400 budget, and
+`cv-detail.component.ts` is the first entry ever deleted from
+`COMPONENTS_STILL_USING_THE_GATEWAY`: **26 -> 25**. Verified in both directions rather than assumed -
+re-adding an `inject(DbService)` to the page now fails `nx lint` with the rule's own message, and the
+file was restored byte-exact afterwards.
+
+`CvRegenerationStore` reuses amendment six's parameter shape, and generalizes it: the two app-local
+functions it needs mid-call are grouped into a named `CvRegenerationCodec` rather than passed
+individually. When a store needs more than one, the interface is the readable form - it gives the
+dependency a name the store's own documentation can refer to.
+
+**A store raises typed errors, it does not phrase them.** `CvNoProfileError` carries no user-facing
+text; the page catches it and picks the wording. This is the missing half of amendment three: "the
+layer never notifies" was easy to honour for a success path and needed saying for a failure one, since
+the obvious alternative - throwing `new Error(t('...'))` - puts the localized string in the layer that
+has no `TranslateService`.
+
+**One behaviour deliberately changed, rather than moved.** `pullFromProfile` used to assign the seven
+contact fields **onto** the existing personal-details section and then re-set the sections array to
+force a re-render. That works only because the array reference changed: the section object itself
+stayed identical, so anything comparing sections by identity - an `OnPush` child taking one as an
+input, a `track` expression - could not see the edit. `mergePersonalDetails` returns a new section, as
+the rest of the section handling already does. Called out here because it is a change in behaviour
+inside a refactor, which is exactly the kind of thing that should not pass silently.
+
+### What remains
+
+The next pages are `tracker` (667/400) and `cover-letter-detail` (644/400), which share Discover's
+shape. `jobs` stays deferred until its `shared/*` services move.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -390,8 +422,10 @@ call `getProfile`, `getSettings` and `hashText` directly, so the page keeps `inj
   - [x] Create `libs/application` together with its first real store, not empty - `DiscoverDetailStore`
   - [x] Enforce "a component does not reach the gateway" by lint - `no-restricted-syntax` on
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
-  - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` next, `jobs` deferred
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (26 entries), then delete the rule with it
+  - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
+        1019 -> 517), `tracker` and `cover-letter-detail` next, `jobs` deferred
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**25** entries, first one deleted 2026-08-07),
+        then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

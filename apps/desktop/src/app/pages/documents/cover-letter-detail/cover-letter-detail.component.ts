@@ -22,7 +22,6 @@ import type {
   CoverLetterStyle,
   CoverLetterTone,
   CvSectionStyle,
-  DocumentLibraryItem,
   PageMargins,
   PageSettings,
   PageSize,
@@ -38,6 +37,7 @@ import {
 } from '@applye/core';
 import {
   CoverLetterContentStore,
+  CoverLetterDocumentStore,
   CoverLetterStyleStore,
   CoverLetterTextField,
   paragraphStyleKey,
@@ -64,7 +64,7 @@ import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-blo
   ],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
-  providers: [CoverLetterContentStore, CoverLetterStyleStore],
+  providers: [CoverLetterContentStore, CoverLetterStyleStore, CoverLetterDocumentStore],
 })
 export class CoverLetterDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -97,14 +97,24 @@ export class CoverLetterDetailComponent {
    * time. A `CoverLetterBlockKey` for a block, or `body_<i>` for a paragraph. */
   readonly openStyleKey = signal<string | null>(null);
 
-  readonly loading = signal(true);
-  readonly loadError = signal(false);
-  readonly doc = signal<DocumentLibraryItem | null>(null);
-
-  readonly label = signal('');
-  readonly regionTag = signal('generic');
-  readonly isDefault = signal(false);
   readonly previewMode = signal(false);
+
+  /** The row itself - what was loaded, the row-level fields the editor changes,
+   * and the one write that persists all three stores' state. It owns the
+   * gateway calls; this page owns the toast and the navigation that follow
+   * them (ADR-0005, amendment three). */
+  protected readonly docs = inject(CoverLetterDocumentStore);
+
+  /** Read-only aliases onto the document store, for the same reason as the
+   * content aliases below: the template is over budget and prefixing its
+   * bindings would grow a file the ratchet will not let grow. */
+  readonly loading = this.docs.loading;
+  readonly loadError = this.docs.loadError;
+  readonly doc = this.docs.doc;
+  readonly label = this.docs.label;
+  readonly regionTag = this.docs.regionTag;
+  readonly isDefault = this.docs.isDefault;
+  readonly saving = this.docs.saving;
 
   /** The letter itself - its blocks, its paragraphs and the application
    * answers. Touches no gateway: the row it belongs to is loaded and saved
@@ -140,7 +150,6 @@ export class CoverLetterDetailComponent {
   protected readonly styleNotes = this.styles.styleNotes;
   protected readonly hasAnyCustomStyle = this.styles.hasAnyCustomStyle;
 
-  readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingBlock = signal<string | null>(null);
   readonly drafting = signal(false);
@@ -168,32 +177,13 @@ export class CoverLetterDetailComponent {
   }
 
   async load(): Promise<void> {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.loading.set(true);
-    this.loadError.set(false);
-    try {
-      const item = await this.db.documentLibraryGet(id);
-      if (!item) {
-        this.loadError.set(true);
-        return;
-      }
-      this.doc.set(item);
-      this.label.set(item.label ?? '');
-      this.regionTag.set(item.regionTag ?? 'generic');
-      this.isDefault.set(item.isDefault);
-      // Opened from the apply wizard's "Review letter": show the rendered
-      // result first, not the raw editor. The user can toggle to Edit.
-      if (this.route.snapshot.queryParamMap.get('preview') === '1') {
-        this.previewMode.set(true);
-      }
-
-      this.letter.hydrate(item.contentJson);
-
-      this.styles.hydrate(item.styleJson);
-    } catch {
-      this.loadError.set(true);
-    } finally {
-      this.loading.set(false);
+    await this.docs.load(Number(this.route.snapshot.paramMap.get('id')));
+    if (this.loadError()) return;
+    // Opened from the apply wizard's "Review letter": show the rendered result
+    // first, not the raw editor. The user can toggle to Edit. Route state, so
+    // it stays on the page rather than in the store.
+    if (this.route.snapshot.queryParamMap.get('preview') === '1') {
+      this.previewMode.set(true);
     }
   }
 
@@ -572,40 +562,10 @@ export class CoverLetterDetailComponent {
   }
 
   async save(): Promise<void> {
-    const doc = this.doc();
-    if (!doc || this.saving()) return;
-    this.saving.set(true);
     try {
-      if (this.isDefault()) {
-        const siblings = await this.db.documentLibraryList('cover_letter');
-        for (const sibling of siblings) {
-          if (
-            sibling.id !== doc.id &&
-            sibling.isDefault &&
-            sibling.regionTag === this.regionTag()
-          ) {
-            await this.db.documentLibraryUpsert({ ...sibling, id: sibling.id, isDefault: false });
-          }
-        }
-      }
-
-      const saved = await this.db.documentLibraryUpsert({
-        id: doc.id,
-        docType: 'cover_letter',
-        source: doc.source,
-        label: this.label(),
-        contentJson: JSON.stringify(this.content()),
-        styleJson: JSON.stringify(this.style()),
-        regionTag: this.regionTag(),
-        language: doc.language,
-        archetypeTag: doc.archetypeTag,
-        isDefault: this.isDefault(),
-        inputHash: doc.inputHash,
-        modelUsed: doc.modelUsed,
-        tokensInput: doc.tokensInput,
-        tokensOutput: doc.tokensOutput,
-      });
-      this.doc.set(saved);
+      // `null` means no write happened - no document, or a save already in
+      // flight - so there is nothing to confirm to the user either.
+      if (!(await this.docs.save())) return;
       this.justSaved.set(true);
       this.toast.success(this.t()('documents.cover_letter_saved'));
       if (this.shouldReturnToApplyWizard()) {
@@ -615,8 +575,6 @@ export class CoverLetterDetailComponent {
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
       this.toast.error(String(e));
-    } finally {
-      this.saving.set(false);
     }
   }
 }

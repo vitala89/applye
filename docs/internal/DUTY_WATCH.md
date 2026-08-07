@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, the CV style store, and the `libs/core` move that reading the code cancelled
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 1 - which matched the session model)
+- **Branch:** `feat/cv-style-store`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `CvStyleStore`, second of four pull requests on `cv-detail` (962/400), plus the `CvStyle` cascade rules as a pure module. The handover said that module belongs in a new `libs/core/src/lib/cv/`.
+- **Completed:**
+  - **`libs/application/src/lib/documents/cv-style.store.ts`, 182 lines/250.** Owns `style`, `themeId`, `styleNotes`, `activeTheme` and its two rule computeds, `themeBaseStyle`, `hasAnyCustomStyle`, `hydrate`, `applyStyle`, `updateStyle`, `updateTitleStyle`, `selectTheme`, `resetAllStyles`. One gateway call, `checkStyleSafety`. 18 tests.
+  - **`apps/desktop/src/app/pages/documents/cv-style-scope.util.ts`, 230 lines.** One pure `routeCvStyleChange(style, selection, change) => CvStyle`, replacing the four router methods. 29 tests.
+  - **`cv-detail.component.ts`: 962 -> 709** non-empty lines. The template did not change: every removed member is a one-line alias or a thin wrapper, so `cv-detail.style.spec.ts` and `cv-detail.component.spec.ts` pass unmodified.
+  - **ADR-0005 amendment five** records the reversal and the general rule it produced.
+- **Not completed:** nothing in scope. `COMPONENTS_STILL_USING_THE_GATEWAY` still holds 26 entries by design - the page keeps `inject(DbService)` for the document cluster until PR 3.
+- **Files or packages changed:** `apps/desktop/.../cv-detail.component.ts`, `apps/desktop/.../cv-style-scope.util.ts` (+ spec, new), `libs/application/src/lib/documents/cv-style.store.ts` (+ spec, new), `libs/application/src/index.ts`, `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`, `CHANGELOG.md`, this log.
+- **Validation:** `nx run desktop:type-check`; `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` (0 errors, 8 warnings - all pre-existing `no-non-null-assertion`); `nx run-many --target=test --skip-nx-cache` (7 projects, desktop 118 suites/1421 tests, application 10/140); `nx build desktop`; `npm run quality:file-size` (passed; `cv-detail.component.ts` 709/400, base 962); `npm run quality:attribution`; `npx nx format:check`; `git diff --check`. **Mutation testing:** four mutations per new module, each asserted to match exactly once before applying and each file diffed back byte-exact afterwards - all eight killed.
+- **Privacy/security impact:** none. No new I/O; the one gateway call moved unchanged.
+- **Decisions and assumptions:**
+  - **The cascade does not go to `libs/core`, reversing amendment four.** Its only input is `CvStylePanelChange`, one widget's wire format, which amendment two's "domain or format" test puts on the format side. The move would have exported that type plus `CvPreviewSelection` as core public API and churned nine `apps/desktop` import sites.
+  - **`cv-style.util.ts` does not move.** It is already pure, imports only `@applye/core`, and also serves the cover-letter editor. The alternative was moving cover-letter helpers into a CV directory, or splitting a module whose own header states why its functions belong together.
+  - **A store owns state, not necessarily the code that edits it.** `type:application` may not import from the app, so `CvStyleStore` cannot call the app-local helpers; the page composes the next style and commits it through `applyStyle`. Page geometry stayed on the page for the same reason - `resolvePageSettings` is app-local.
+  - **The save-template trio moves to `CvDocumentStore`, not here.** It never reads `style`; it writes `cvTemplateUpsert` from sections, region tag and the photo flags.
+  - **`styleOpen` and `styleNoteMessage` stay page state** - a collapse toggle and a translation lookup, the same shape as `livePanelOpen` and `collapsedSections`.
+- **Risks or compatibility impact:** none observed. Every write path funnels through `applyStyle`, preserving the previous debounce timing exactly; `selectTheme` and `resetAllStyles` still check immediately and still cancel a pending debounced check, which is one of the mutations tested.
+- **Open issues or blockers:** none.
+- **Lessons:**
+  - **A decision recorded in an ADR can still be wrong, and the gate that catches it is reading the code before writing it.** Amendment four named the file to create and the test that justified it. The test was right; its application was not, and only the actual signatures showed that.
+  - **Check the dependency direction before assigning code to a layer.** The `libs/core` question looked settled until `type:application`'s allowlist made the follow-on obvious: a store in `libs/application` cannot reach a helper in `apps/desktop`. That constraint - not the domain/format test - is what forced the final shape, and it was invisible from the line count the plan was built on.
+  - **The page shrinks by the same amount wherever the pure module lives.** Worth saying out loud during a size-driven migration, because it removes the pressure to promote code to a library just to make a number move.
+- **Next first action:** `CvDocumentStore`, third of four PRs on `cv-detail` (709/400): load, save, sections, reorder, lock, and the save-template trio. It injects `CvStyleStore` and `CvPhotoStore` to assemble the single `documentLibraryUpsert` write, and its landing is what deletes `cv-detail.component.ts` from `COMPONENTS_STILL_USING_THE_GATEWAY`.
+
 ### 2026-08-07, the triage canon stops being Claude-shaped
 
 - **Status:** complete

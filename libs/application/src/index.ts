@@ -9,3 +9,4 @@ export * from './lib/discover/discover-sources.util';
 export * from './lib/discover/scan-console';
 export * from './lib/documents/cv-photo-sections';
 export * from './lib/documents/cv-photo.store';
+export * from './lib/documents/cv-style.store';

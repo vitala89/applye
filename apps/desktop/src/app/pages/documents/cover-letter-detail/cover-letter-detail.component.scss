@@ -55,9 +55,6 @@
   font-weight: var(--weight-medium);
   padding: var(--space-2) var(--space-3);
 }
-.coverdetail__spacer {
-  flex: 1;
-}
 
 .icon-btn {
   display: inline-flex;
@@ -173,66 +170,6 @@
   border-color: var(--accent);
 }
 
-/* "Custom" badge + per-button dot */
-.coverdetail__custom-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--accent-tint, var(--surface-hover));
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* ---- Per-block style-popover fields (unchanged, popover-only now) ---- */
-.coverdetail__style-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.coverdetail__style-field label {
-  margin: 0;
-}
-.coverdetail__style-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.coverdetail__style-field select {
-  width: auto;
-  min-width: 150px;
-}
-.coverdetail__style-field input[type='number'] {
-  width: 80px;
-}
-.coverdetail__style-pop select,
-.coverdetail__style-pop input {
-  height: 36px;
-  padding: 0 11px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-input);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  outline: none;
-}
-.coverdetail__style-pop select {
-  appearance: auto;
-  -webkit-appearance: auto;
-}
-.coverdetail__style-pop select:focus,
-.coverdetail__style-pop input:focus {
-  border-color: var(--border-accent);
-  box-shadow: var(--shadow-ring);
-}
-
 /* ---- Blocks ---- */
 .coverdetail__blocks {
   display: flex;
@@ -252,36 +189,6 @@
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-tertiary);
-}
-
-.coverdetail__style-pop {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-  margin: 0 0 4px;
-  padding: 12px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-input);
-}
-.coverdetail__style-pop .coverdetail__style-field select {
-  min-width: 130px;
-}
-.coverdetail__style-pop .coverdetail__style-field input[type='color'] {
-  width: 44px;
-  padding: 2px;
-  cursor: pointer;
-}
-.coverdetail__style-reset {
-  height: 36px;
-  padding: 0 12px;
-  background: none;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-input);
-  color: var(--text-secondary);
-  cursor: pointer;
-  width: auto;
 }
 
 /* ---- Fields inside blocks ---- */

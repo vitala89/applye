@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -19,21 +19,9 @@ import type {
   CoverLetterAddress,
   CoverLetterContent,
   CoverLetterLength,
-  CoverLetterStyle,
   CoverLetterTone,
-  CvSectionStyle,
-  PageMargins,
-  PageSettings,
-  PageSize,
-  StyleNote,
 } from '@applye/core';
-import {
-  COVER_LETTER_BLOCK_KEYS,
-  COVER_LETTER_LENGTHS,
-  COVER_LETTER_TONES,
-  CV_ATS_SAFE_FONTS,
-  PAGE_SETTINGS_DEFAULT,
-} from '@applye/core';
+import { COVER_LETTER_BLOCK_KEYS, COVER_LETTER_LENGTHS, COVER_LETTER_TONES } from '@applye/core';
 import {
   CoverLetterAiStore,
   CoverLetterContentStore,
@@ -49,6 +37,8 @@ import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
+import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
+import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/cover-letter-style-popover.component';
 
 @Component({
   selector: 'app-cover-letter-detail',
@@ -61,6 +51,8 @@ import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-blo
     NgTemplateOutlet,
     CoverLetterPreviewComponent,
     CoverLetterBlockComponent,
+    CoverLetterStyleCardComponent,
+    CoverLetterStylePopoverComponent,
   ],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
@@ -93,7 +85,6 @@ export class CoverLetterDetailComponent {
   protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
   protected readonly toneOptions = COVER_LETTER_TONES;
   protected readonly lengthOptions = COVER_LETTER_LENGTHS;
-  protected readonly fontOptions = CV_ATS_SAFE_FONTS;
   protected readonly blockKeys = COVER_LETTER_BLOCK_KEYS;
 
   /** Which block/paragraph Style popover is open, if any - only one at a
@@ -150,8 +141,6 @@ export class CoverLetterDetailComponent {
    * app-local `resolvePageSettings`. */
   protected readonly styles = inject(CoverLetterStyleStore);
   protected readonly style = this.styles.style;
-  protected readonly styleNotes = this.styles.styleNotes;
-  protected readonly hasAnyCustomStyle = this.styles.hasAnyCustomStyle;
 
   readonly justSaved = signal(false);
 
@@ -184,20 +173,6 @@ export class CoverLetterDetailComponent {
           : String(e),
       );
     }
-  }
-
-  private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
-    font_ats_risk: 'documents.cv_style_note_font',
-    size_out_of_range: 'documents.cv_style_note_size',
-    color_readability_risk: 'documents.cv_style_note_color',
-    weight_unavailable_risk: 'documents.cv_style_note_weight',
-  };
-
-  styleNoteMessage(note: StyleNote): string {
-    return this.t()(CoverLetterDetailComponent.STYLE_NOTE_KEYS[note.kind]).replace(
-      '{value}',
-      note.detail,
-    );
   }
 
   constructor() {
@@ -272,37 +247,6 @@ export class CoverLetterDetailComponent {
     this.letter.setLength(length);
   }
 
-  updateStyle(patch: Partial<CoverLetterStyle>): void {
-    this.styles.updateStyle(patch);
-  }
-
-  readonly marginSides: { key: keyof PageMargins; label: string }[] = [
-    { key: 'top', label: 'documents.cv_style_margin_top' },
-    { key: 'right', label: 'documents.cv_style_margin_right' },
-    { key: 'bottom', label: 'documents.cv_style_margin_bottom' },
-    { key: 'left', label: 'documents.cv_style_margin_left' },
-  ];
-
-  /** Current 4-side margins in mm, already clamped by the resolver. */
-  readonly currentMargin = computed<PageMargins>(
-    () => resolvePageSettings(this.style().page).margin,
-  );
-
-  private updatePage(page: PageSettings): void {
-    this.updateStyle({ page });
-  }
-
-  setMarginSide(side: keyof PageMargins, value: number): void {
-    const clamped = Math.min(50, Math.max(0, Math.round(Number(value) || 0)));
-    const cur = this.currentMargin();
-    const size = this.style().page?.size ?? PAGE_SETTINGS_DEFAULT.size;
-    this.updatePage({ size, margin: { ...cur, [side]: clamped } });
-  }
-
-  setPageSize(size: PageSize): void {
-    this.updatePage({ size, margin: this.currentMargin() });
-  }
-
   /** Style-override key for a body paragraph. */
   paragraphStyleKey(index: number): string {
     return paragraphStyleKey(index);
@@ -329,34 +273,8 @@ export class CoverLetterDetailComponent {
     this.collapsedBlocks.set(next);
   }
 
-  /** Collapse state for the "Style" card - open by default. */
-  readonly styleOpen = signal(true);
-
-  toggleStyleOpen(): void {
-    this.styleOpen.set(!this.styleOpen());
-  }
-
-  sectionOverride(key: string): CvSectionStyle | undefined {
-    return this.styles.sectionOverride(key);
-  }
-
-  setSectionStyle(key: string, patch: Partial<CvSectionStyle>): void {
-    this.styles.setSectionStyle(key, patch);
-  }
-
-  resetSectionStyle(key: string): void {
-    this.styles.resetSectionStyle(key);
-  }
-
   hasCustomStyle(key: string): boolean {
     return this.styles.hasCustomStyle(key);
-  }
-
-  /** Reset every block/paragraph and the document-wide style to the default.
-   * The open popover is page view state, so it closes here. */
-  resetAllStyles(): void {
-    this.styles.resetAllStyles();
-    this.openStyleKey.set(null);
   }
 
   updateAddress(field: keyof CoverLetterAddress, value: string): void {

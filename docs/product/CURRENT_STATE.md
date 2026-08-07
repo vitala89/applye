@@ -92,12 +92,12 @@
   beside them (ADR-0005, amendment five). **Nothing in `libs/core` changed in this whole campaign.**
   Amendments six and seven record the three shapes a store has for code it may not import, in the order
   to prefer them, and that a store raises typed errors rather than phrasing them.
-- **`tracker` is in progress, four pull requests, two done.** Measured rather than remembered - the
+- **`tracker` is in progress, four pull requests, three done.** Measured rather than remembered - the
   handoff into this phase said 667 and the file was **708 raw / 667 non-empty**, which is the same
   number counted two ways, so re-measure before planning. **PR 1 `TrackerColumnsStore` (667 -> 536) and
-  PR 2 `TrackerRowsStore` + `TrackerPrintStore` (536 -> 487)** are on the branch, PR 2 stacked on PR 1.
+  PR 2 `TrackerRowsStore` + `TrackerPrintStore` (536 -> 487) and PR 3 `TrackerRowEditorStore` (487 -> 444)** are done.
   `tracker-report-print.component.ts` came off the allowlist in PR 2 - **25 -> 24**, verified from the
-  other side. Remaining: the inline row editor, then the report and export cluster, which deletes
+  other side. Remaining: the report and export cluster, which deletes
   `tracker.component.ts`'s own entry (**24 -> 23**). The template (557/300) and stylesheet (907) are
   **untouched and out of scope** for this phase by decision - ADR-0005 reaches neither, and moving 557
   lines of markup is where Discover silently lost a `routerLink` for a whole extraction.

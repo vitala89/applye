@@ -127,7 +127,7 @@
                 <tr
                   class="jt-row"
                   [class.is-archived]="r.archived"
-                  [class.is-editing]="isEditing(r)"
+                  [class.is-editing]="editor.isEditing(r)"
                 >
                   <td class="jt-td jt-td--idx">{{ (i + 1).toString().padStart(2, '0') }}</td>
                   @for (col of columns.visibleColumns(); track col.key) {
@@ -141,11 +141,11 @@
                       "
                     >
                       <!-- edit mode -->
-                      @if (isEditing(r) && col.editable) {
+                      @if (editor.isEditing(r) && col.editable) {
                         @if (col.type === 'status') {
                           <select
                             class="jt-input"
-                            [value]="draftValue(col)"
+                            [value]="editor.value(col)"
                             (change)="setDraft(col, $event)"
                           >
                             @for (s of statuses; track s) {
@@ -155,7 +155,7 @@
                         } @else if (col.type === 'yesno') {
                           <select
                             class="jt-input"
-                            [value]="draftValue(col)"
+                            [value]="editor.value(col)"
                             (change)="setDraft(col, $event)"
                           >
                             <option value="yes">{{ t()('common.yes') }}</option>
@@ -171,7 +171,7 @@
                                   ? 'number'
                                   : 'text'
                             "
-                            [value]="draftValue(col)"
+                            [value]="editor.value(col)"
                             (change)="setDraft(col, $event)"
                           />
                         }
@@ -236,13 +236,13 @@
                   }
                   <!-- actions -->
                   <td class="jt-td jt-td--act">
-                    @if (isEditing(r)) {
+                    @if (editor.isEditing(r)) {
                       <div class="jt-actbtns">
                         <button
                           type="button"
                           class="jt-icon jt-icon--primary"
                           [title]="t()('actions.save')"
-                          [disabled]="saving()"
+                          [disabled]="editor.saving()"
                           (click)="saveEdit()"
                         >
                           <lucide-icon [img]="icons.check" [size]="15" />
@@ -251,7 +251,7 @@
                           type="button"
                           class="jt-icon"
                           [title]="t()('actions.cancel')"
-                          (click)="cancelEdit()"
+                          (click)="editor.cancel()"
                         >
                           <lucide-icon [img]="icons.close" [size]="15" />
                         </button>

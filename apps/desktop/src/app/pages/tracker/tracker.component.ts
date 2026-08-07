@@ -24,21 +24,16 @@ import {
   Trash2,
   X,
 } from 'lucide-angular';
-import type {
-  ApplicationStatus,
-  ApplicationTrackerFieldsInput,
-  SupportedLanguage,
-  TrackerRow,
-} from '@applye/core';
+import type { ApplicationStatus, SupportedLanguage, TrackerRow } from '@applye/core';
 import {
   TrackerColumnDef,
   TrackerColumnsStore,
+  TrackerRowEditorStore,
   TrackerRowsStore,
   formatTrackerDate,
   trackerCellValue,
   trackerColumnWidth,
   trackerCustomValues,
-  trackerFieldText,
 } from '@applye/application';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -61,7 +56,7 @@ import {
   imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
-  providers: [TrackerColumnsStore, TrackerRowsStore],
+  providers: [TrackerColumnsStore, TrackerRowsStore, TrackerRowEditorStore],
 })
 export class TrackerComponent {
   private readonly db = inject(DbService);
@@ -95,6 +90,10 @@ export class TrackerComponent {
   protected readonly range = this.rows.range;
   protected readonly statusFilter = this.rows.statusFilter;
 
+  /** One row's draft and the two writes that persist it. The row menu closes
+   * from here; the store only knows which row is open. */
+  protected readonly editor = inject(TrackerRowEditorStore);
+
   readonly icons = {
     fileDown: FileDown,
     columns: Columns3,
@@ -121,14 +120,10 @@ export class TrackerComponent {
   // ---- panels / row state ----
   readonly showCols = signal(false);
   readonly showExport = signal(false);
-  readonly editId = signal<number | null>(null);
-  readonly draft = signal<TrackerRow | null>(null);
-  readonly draftCustom = signal<Record<string, string>>({});
   readonly menuId = signal<number | null>(null);
   readonly menuRow = signal<TrackerRow | null>(null);
   readonly menuPos = signal<{ top: number; left: number } | null>(null);
   readonly confirmId = signal<number | null>(null);
-  readonly saving = signal(false);
   readonly exporting = signal(false);
 
   // ---- export options ----
@@ -216,64 +211,28 @@ export class TrackerComponent {
   }
 
   // ---------- editing ----------
-  isEditing(row: TrackerRow): boolean {
-    return this.editId() === row.id;
-  }
+  // Opening a row also closes the row menu, which is page state; the store only
+  // knows which row is open.
   startEdit(row: TrackerRow): void {
-    this.draft.set({ ...row });
-    this.draftCustom.set({ ...trackerCustomValues(row) });
-    this.editId.set(row.id);
+    this.editor.start(row);
     this.closeMenus();
   }
-  cancelEdit(): void {
-    this.editId.set(null);
-    this.draft.set(null);
-  }
-  draftValue(col: TrackerColumnDef): string {
-    const d = this.draft();
-    if (!d) return '';
-    if (col.custom) return this.draftCustom()[col.key] ?? '';
-    return trackerFieldText(d as unknown as Record<string, unknown>, col);
-  }
+
+  /** Reads the DOM event the store must not see, then delegates. */
   setDraft(col: TrackerColumnDef, e: Event): void {
-    const value = (e.target as HTMLInputElement | HTMLSelectElement).value;
-    if (col.custom) {
-      this.draftCustom.update((m) => ({ ...m, [col.key]: value }));
-      return;
-    }
-    this.draft.update((d) => (d ? { ...d, [col.key]: value } : d));
+    this.editor.setValue(col, (e.target as HTMLInputElement | HTMLSelectElement).value);
   }
 
+  // The store writes and reports; the page decides what to say about it, and
+  // supplies the reload, which refreshes the columns and the report market
+  // alongside the rows (ADR-0005, amendments three and six).
   async saveEdit(): Promise<void> {
-    const d = this.draft();
-    if (!d || this.saving()) return;
-    this.saving.set(true);
-    const custom = this.draftCustom();
-    const input: ApplicationTrackerFieldsInput = {
-      id: d.id,
-      contactName: d.contactName || undefined,
-      contactRole: d.contactRole || undefined,
-      contactChannel: d.contactChannel || undefined,
-      nextAction: d.nextAction || undefined,
-      nextActionAt: d.nextActionAt || undefined,
-      salaryRange: d.salaryRange || undefined,
-      notes: d.notes || undefined,
-      customFields: JSON.stringify(custom),
-    };
     try {
-      await this.db.updateApplicationTrackerFields(input);
-      const original = this.rows.all().find((r) => r.id === d.id);
-      if (d.status && d.status !== original?.status) {
-        await this.db.setApplicationStatus(d.id, d.status as ApplicationStatus);
+      if (await this.editor.save(() => this.load())) {
+        this.toast.success(this.t()('tracker.saved'));
       }
-      this.editId.set(null);
-      this.draft.set(null);
-      await this.load();
-      this.toast.success(this.t()('tracker.saved'));
     } catch (e) {
       this.toast.error(String(e));
-    } finally {
-      this.saving.set(false);
     }
   }
 

@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `tracker` PR 3 of 4: the inline row editor moves, and two rules get names
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 5/10 - radius 2, ambiguity 0, risk 1, verify 2, unknowns 0. Lowest of the phase: the editor cluster is self-contained and its boundary was fixed in the opening grilling.)
+- **Branch:** `feat/tracker-row-editor-store`, off `main` at `f0d74ff` (PR 2 merged first, so no stacking this time)
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `TrackerRowEditorStore`, third of four on `tracker`.
+- **Completed:**
+  - **`tracker-row-edit.ts`, 59/250** - `buildTrackerFieldsInput`, `trackerStatusChanged`, `trackerDraftValue`.
+  - **`tracker-row-editor.store.ts`, 109/250** - `editId`, `draft`, `draftCustom`, `saving`, `isEditing`, `start`, `cancel`, `value`, `setValue`, `save`, over `updateApplicationTrackerFields` and `setApplicationStatus`.
+  - **`tracker.component.ts`: 487 -> 444 non-empty.** The page keeps the row menu, the toast, and `setDraft`, which reads the DOM event and delegates.
+  - **36 more tests** (150 across the tracker suites) and **18 of 20 mutants dead**.
+  - **ADR-0005 amendment ten**, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** PR 4, the report and export cluster, which deletes `tracker.component.ts`'s allowlist entry (**24 -> 23**). Template 557/300 and stylesheet 907 untouched, by decision.
+- **Files or packages changed:** `libs/application` (4 new files + barrel), `apps/desktop/src/app/pages/tracker/tracker.component.{ts,html}`, ADR-0005, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects. `nx build desktop` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`; the tracker suite was re-run after formatting. `git diff --check` **clean**. Mutation harness re-run after formatting, files restored byte-exact.
+  - **No allowlist probe this PR** - `COMPONENTS_STILL_USING_THE_GATEWAY` is unchanged at 24, because the page still injects `DbService` for the two exports. The probe belongs to PR 4.
+  - **Not run:** any UI walkthrough. Tauri IPC is required; the tests are the whole of the evidence.
+- **Privacy/security impact:** none. The same two gateway methods, called from a different file.
+- **Decisions and assumptions:**
+  - **`save` takes the reload as a parameter** - amendment six's third and least-preferred shape. Justified because `saving` must stay true for the whole operation, reload included, which is what keeps the save button disabled while the grid repopulates; returning to the page and letting it reload would clear `saving` first. One function, so a plain parameter with a named type (`TrackerEditReload`), not amendment seven's interface.
+  - **The reload passed in is the page's own `load`**, which refreshes the columns and the report market alongside the rows. That is what `saveEdit` did before, and it is preserved rather than narrowed to a rows-only reload - narrowing would be a behaviour change inside a refactor.
+  - **Two rules were extracted rather than moved**, because both were invisible inside a 30-line method: `|| undefined` on the seven editable fields is what makes clearing a cell clear the stored value, and the status write's `!!draft.status &&` is what stops a blank status overwriting a real one.
+- **Risks or compatibility impact:** the template's 13 editor bindings were rewired by scripted substitution with an asserted match count per pattern, then verified by `ngc`. **The template stayed at exactly 557/300** - no aliases were needed this time, unlike PR 2. No markup moved between components.
+- **Open issues or blockers:** none.
+- **Next first action:** PR 4, the last on `tracker` - `TrackerReportStore` over `exportReport` and `trackerReportExportPdfWysiwyg`, plus moving `ReportColumn`/`ReportMarket`/`ReportMode`/`reportFit` out of `tracker-report.component.ts` into `libs/application/tracker/` (settled in the opening grilling). This is the PR that uses amendment eight's `TranslateService` decision - `reportT`, `periodLabel`, `buildCsv`, `buildReportText` and `csvCell` all move. It deletes `tracker.component.ts` from the allowlist (**24 -> 23**), so the probe-and-restore check applies.
+- **Evidence:**
+  - **A defensive copy and a redundant one, one line apart.** Both survive mutation testing and they are not the same finding. `this.draft.set({ ...row })` spreads a row that belongs to `TrackerRowsStore`'s list: nothing edits the draft in place today, because `setValue` spreads on every write, but that is one careless line from being load-bearing and what it would corrupt is the grid's own list. `this.draftCustom.set({ ...trackerCustomValues(row) })` copies a value the function beside it just allocated, and no plausible edit changes that. Both kept - the second only so the pair reads as one rule - and the source says which is which. **That is a fourth outcome for a surviving mutant: unobservable, not worth keeping on its own merits, kept for the readability of the code around it.** It is the weakest of the four reasons and should be spent rarely.
+  - Sizes: `tracker-row-edit.ts` 59/250, `tracker-row-editor.store.ts` 109/250, `tracker.component.ts` **444/400** from 487, template unchanged at 557.
+
 ### 2026-08-07, `tracker` PR 2 of 4: the rows move, and the PDF route stops carrying its own copy
 
 - **Status:** complete

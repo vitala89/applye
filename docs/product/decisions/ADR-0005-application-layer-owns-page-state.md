@@ -544,6 +544,47 @@ not. `remove` filters the list by `id` while deleting by `jobId`, and a **one-ro
 those apart - it took two rows against one job. And the print store's period test asserted the narrowed
 rows but not the narrowed summary, so summarizing before narrowing passed.
 
+## Amendment, 2026-08-07 (tenth): the reload is passed in, and a defensive copy is not the same as a redundant one
+
+PR 3 moved the inline row editor into `TrackerRowEditorStore`. `tracker.component.ts` is **444/400**,
+from 487.
+
+### Why `save` takes the reload as a parameter
+
+`saveEdit` ended with `await this.load()` - **the page's** load, which refreshes the columns and the
+report market alongside the rows, and which this library cannot see. Three shapes were available
+(amendment six); the parameter is the third and least preferred, and it is right here for a reason the
+first two do not reach:
+
+`saving` has to stay true for the **whole** operation, reload included, which is what keeps the save
+button disabled while the grid repopulates. Returning to the page and letting it reload would clear
+`saving` first. The reload therefore has to happen inside the operation the store owns, which is
+exactly amendment six's stated criterion for the parameter shape.
+
+One function, so it is a plain parameter with a named type - `TrackerEditReload` - rather than
+amendment seven's interface, which is for two or more.
+
+### A defensive copy and a redundant one, one line apart
+
+Two mutants survive, both in `start`, and they are **not the same finding**:
+
+- **`this.draft.set({ ...row })`.** `row` belongs to `TrackerRowsStore`'s list. Nothing edits the draft
+  in place today - `setValue` spreads on every write - so removing the copy changes nothing now. It is
+  one careless line from being load-bearing, and the thing it would corrupt is the list the grid
+  renders. **Defensive; kept.**
+- **`this.draftCustom.set({ ...trackerCustomValues(row) })`.** `trackerCustomValues` allocates a fresh
+  object on every call, so this copies a value nobody else holds, and no plausible edit changes that.
+  **Redundant; kept only so the pair reads as one rule rather than as an oversight.**
+
+Recorded because "a surviving mutant means the fixtures are wrong, the code is dead, or the code is
+unobservable-but-worth-keeping" now has a fourth case: **unobservable, not worth keeping on its own
+merits, and kept for the readability of the code around it.** That is a weaker reason than the others
+and should be spent rarely; it is written in the source so the next reader does not re-derive it.
+
+The other 18 mutants die, including the four that matter most: sending an emptied field as `''` rather
+than clearing it, writing a blank status over a real one, comparing the status against the draft
+instead of the stored row, and dropping the re-entry guard.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -557,8 +598,8 @@ rows but not the narrowed summary, so summarizing before narrowing passed.
   - [x] Enforce "a component does not reach the gateway" by lint - `no-restricted-syntax` on
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
-        1019 -> 517), `tracker` **in progress** (four PRs: columns and rows + print done, 667 -> 487;
-        then the row editor, then the report), `cover-letter-detail` next, `jobs` deferred
+        1019 -> 517), `tracker` **in progress** (four PRs: columns, rows + print and the row editor done, 667 -> 444;
+        then the report), `cover-letter-detail` next, `jobs` deferred
   - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**24** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines

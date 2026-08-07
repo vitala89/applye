@@ -44,6 +44,38 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `cover-letter-detail` PR 2 of 4: the style moves, and the one shared duplicate is extracted
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 5/10 - radius 2, ambiguity 0, risk 1, verify 2, unknowns 0. Ambiguity 0 because amendment twelve had already settled what is shared.)
+- **Branch:** `feat/cover-letter-style-store`, **stacked on `feat/cover-letter-content-store`** (PR 1 open at the time)
+- **Commits:** one
+- **Pull request:** opened against `feat/cover-letter-content-store`
+- **Objective:** `CoverLetterStyleStore`, and `document-style-safety.ts` - the ~15 lines amendment twelve found genuinely shared with the CV editor.
+- **Completed:**
+  - **`document-style-safety.ts`, 24/250** - `STYLE_CHECK_DEBOUNCE_MS` and a pure `dedupeStyleNotes`. **`CvStyleStore` now uses it too**, dropping from 166 to 155 lines.
+  - **`cover-letter-style.store.ts`, 118/250** - the style, the notes, the debounced check, the per-block and per-paragraph overrides, and `reindexAfterParagraphRemoved`, which absorbs the caller PR 1 had left on the page.
+  - **`cover-letter-detail.component.ts`: 592 -> 557 non-empty.** Still injects `DbService` and `AiService`; the allowlist stays at 23 until PR 4.
+  - **43 tests** across the two new suites and `CvStyleStore`'s existing one, and **14 of 14 mutants dead**.
+- **Not completed:** PRs 3 and 4 (document row + save; AI draft and regenerate). Template 669/300 and stylesheet untouched, by decision.
+- **Files or packages changed:** `libs/application` (4 files + barrel + `cv-style.store.ts`), `apps/desktop/src/app/pages/documents/cover-letter-detail/cover-letter-detail.component.ts`, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects - **including `CvStyleStore`'s own suite**, which is the gate that matters for a PR that edits the CV editor. `nx build desktop` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**. Mutation harness re-run after formatting, files restored byte-exact.
+  - **No allowlist probe** - unchanged at 23, because the page still reaches the gateway for the document row and the AI calls.
+  - **Not run:** any UI walkthrough. Tauri IPC is required.
+- **Privacy/security impact:** none. `checkStyleSafety` is the same pure Rust check, called from a different file.
+- **Decisions and assumptions:**
+  - **The debounce itself was NOT extracted, only the constant and the dedupe.** Scheduling depends on a private timer field per store, so sharing it would need a class with a lifecycle - more machinery than six duplicated lines earns. Stated in the module's own header so the next reader does not "finish the job".
+  - **Page geometry stays on the page**, as amendment five settled for `cv-detail`: `currentMargin`, `setMarginSide` and `setPageSize` clamp through the app-local `resolvePageSettings`, so the page computes the next `page` and commits it through `updateStyle`.
+  - **`resetAllStyles` checks immediately rather than debouncing**, and drops any pending check - a full reset rewrites the whole style at once, and a pending check would re-check a style that no longer exists. Same reasoning as `CvStyleStore.selectTheme`, and preserved from the page.
+  - **`reindexAfterParagraphRemoved` deliberately does not re-run the check.** The overrides move, but no style value changes, so the same warnings still apply. There is a test asserting the round trip does not happen.
+  - **The open-popover key closes on the page**, not in the store: it is view state, and the store only owns the style.
+- **Risks or compatibility impact:** this PR **edits `CvStyleStore`**, so the CV editor shares its blast radius. Its suite is green and the extracted helper is byte-identical to what it replaced.
+- **Open issues or blockers:** none. Stacked on PR 1, so it merges after it.
+- **Next first action:** PR 3 - `CoverLetterDocumentStore` over `documentLibraryGet`, `documentLibraryList` and `documentLibraryUpsert`. It injects the content and style stores to assemble the save, exactly as `CvDocumentStore` injects its two siblings. The apply-wizard hand-back and the `justSaved` tick stay on the page (amendment three).
+- **Evidence:**
+  - **All fourteen mutants died on the first pass** - the first PR in this campaign where none survived. The two that would have mattered most: keying the dedupe on `kind` alone, which silences a genuinely different warning, and letting a full reset debounce, which leaves the pending check to re-check a style that no longer exists.
+  - Sizes: `document-style-safety.ts` 24/250, `cover-letter-style.store.ts` 118/250, `cv-style.store.ts` **155/250** from 166, `cover-letter-detail.component.ts` **557/400** from 592, template unchanged at 669/300.
+
 ### 2026-08-07, `cover-letter-detail` PR 1 of 4: the letter's content moves, and the two editors prove they are not siblings
 
 - **Status:** complete

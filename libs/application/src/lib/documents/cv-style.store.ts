@@ -8,10 +8,10 @@ import {
   themeTitleRule,
 } from '@applye/core';
 import { DbService } from '@applye/data';
+import { STYLE_CHECK_DEBOUNCE_MS, dedupeStyleNotes } from './document-style-safety';
 
 /** How long a burst of style edits settles before the ATS safety re-check runs.
  * Dragging a size slider emits on every step; the check is a round trip. */
-const STYLE_CHECK_DEBOUNCE_MS = 400;
 
 /**
  * A CV's visual style: the document-wide `CvStyle`, the theme it sits on, and
@@ -166,17 +166,6 @@ export class CvStyleStore {
 
   private async refreshStyleNotes(): Promise<void> {
     const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
-    // Global + per-section safety checks can surface the same (kind, detail)
-    // more than once (e.g. a Light global weight plus overridden sections);
-    // collapse duplicates so each distinct warning shows once.
-    const seen = new Set<string>();
-    this.styleNotes.set(
-      notes.filter((n) => {
-        const key = `${n.kind}|${n.detail}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }),
-    );
+    this.styleNotes.set(dedupeStyleNotes(notes));
   }
 }

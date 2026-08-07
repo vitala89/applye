@@ -31,7 +31,6 @@ import type {
 import {
   COVER_LETTER_BLOCK_KEYS,
   COVER_LETTER_LENGTHS,
-  COVER_LETTER_STYLE_DEFAULT,
   COVER_LETTER_TONES,
   CV_ATS_SAFE_FONTS,
   PAGE_SETTINGS_DEFAULT,
@@ -39,9 +38,9 @@ import {
 } from '@applye/core';
 import {
   CoverLetterContentStore,
+  CoverLetterStyleStore,
   CoverLetterTextField,
   paragraphStyleKey,
-  reindexParagraphStyleKeys,
 } from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
@@ -65,7 +64,7 @@ import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-blo
   ],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
-  providers: [CoverLetterContentStore],
+  providers: [CoverLetterContentStore, CoverLetterStyleStore],
 })
 export class CoverLetterDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -132,9 +131,14 @@ export class CoverLetterDetailComponent {
   protected readonly wordCount = this.letter.wordCount;
   protected readonly wordStatus = this.letter.wordStatus;
 
-  readonly style = signal<CoverLetterStyle>({ ...COVER_LETTER_STYLE_DEFAULT });
-  readonly styleNotes = signal<StyleNote[]>([]);
-  private styleCheckTimer?: ReturnType<typeof setTimeout>;
+  /** The letter's visual style and its debounced ATS safety check. Not a
+   * variant of `CvStyleStore`: a cover letter has no themes (ADR-0005,
+   * amendment twelve). Page geometry stays here, because it clamps through the
+   * app-local `resolvePageSettings`. */
+  protected readonly styles = inject(CoverLetterStyleStore);
+  protected readonly style = this.styles.style;
+  protected readonly styleNotes = this.styles.styleNotes;
+  protected readonly hasAnyCustomStyle = this.styles.hasAnyCustomStyle;
 
   readonly saving = signal(false);
   readonly justSaved = signal(false);
@@ -185,11 +189,7 @@ export class CoverLetterDetailComponent {
 
       this.letter.hydrate(item.contentJson);
 
-      const style: CoverLetterStyle = item.styleJson
-        ? { ...COVER_LETTER_STYLE_DEFAULT, ...JSON.parse(item.styleJson) }
-        : { ...COVER_LETTER_STYLE_DEFAULT };
-      this.style.set(style);
-      void this.refreshStyleNotes();
+      this.styles.hydrate(item.styleJson);
     } catch {
       this.loadError.set(true);
     } finally {
@@ -255,9 +255,7 @@ export class CoverLetterDetailComponent {
   }
 
   updateStyle(patch: Partial<CoverLetterStyle>): void {
-    this.style.set({ ...this.style(), ...patch });
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+    this.styles.updateStyle(patch);
   }
 
   readonly marginSides: { key: keyof PageMargins; label: string }[] = [
@@ -285,19 +283,6 @@ export class CoverLetterDetailComponent {
 
   setPageSize(size: PageSize): void {
     this.updatePage({ size, margin: this.currentMargin() });
-  }
-
-  private async refreshStyleNotes(): Promise<void> {
-    const notes = await this.db.checkStyleSafety(JSON.stringify(this.style()));
-    const seen = new Set<string>();
-    this.styleNotes.set(
-      notes.filter((n) => {
-        const key = `${n.kind}|${n.detail}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }),
-    );
   }
 
   /** Style-override key for a body paragraph. */
@@ -334,46 +319,26 @@ export class CoverLetterDetailComponent {
   }
 
   sectionOverride(key: string): CvSectionStyle | undefined {
-    return this.style().sectionStyles?.[key];
+    return this.styles.sectionOverride(key);
   }
 
   setSectionStyle(key: string, patch: Partial<CvSectionStyle>): void {
-    const current = this.style();
-    const sectionStyles = { ...(current.sectionStyles ?? {}) };
-    sectionStyles[key] = { ...(sectionStyles[key] ?? {}), ...patch };
-    this.style.set({ ...current, sectionStyles });
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+    this.styles.setSectionStyle(key, patch);
   }
 
   resetSectionStyle(key: string): void {
-    const current = this.style();
-    const sectionStyles = { ...(current.sectionStyles ?? {}) };
-    delete sectionStyles[key];
-    this.style.set({ ...current, sectionStyles });
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    this.styleCheckTimer = setTimeout(() => void this.refreshStyleNotes(), 400);
+    this.styles.resetSectionStyle(key);
   }
 
-  /** True when a block/paragraph carries any style override - drives the
-   * "Custom" badge so the user can see which parts differ from the default. */
   hasCustomStyle(key: string): boolean {
-    const o = this.style().sectionStyles?.[key];
-    return !!o && Object.values(o).some((v) => v !== undefined && v !== null);
+    return this.styles.hasCustomStyle(key);
   }
 
-  /** Any block/paragraph carries an override. */
-  readonly hasAnyCustomStyle = computed(() => {
-    const s = this.style().sectionStyles ?? {};
-    return Object.values(s).some((o) => o && Object.values(o).some((v) => v != null));
-  });
-
-  /** Reset every block/paragraph and the document-wide style to the default. */
+  /** Reset every block/paragraph and the document-wide style to the default.
+   * The open popover is page view state, so it closes here. */
   resetAllStyles(): void {
-    this.style.set({ ...COVER_LETTER_STYLE_DEFAULT });
+    this.styles.resetAllStyles();
     this.openStyleKey.set(null);
-    if (this.styleCheckTimer) clearTimeout(this.styleCheckTimer);
-    void this.refreshStyleNotes();
   }
 
   updateAddress(field: keyof CoverLetterAddress, value: string): void {
@@ -402,9 +367,7 @@ export class CoverLetterDetailComponent {
   removeParagraph(index: number): void {
     const remaining = this.letter.removeParagraph(index);
     if (this.openStyleKey() === this.paragraphStyleKey(index)) this.openStyleKey.set(null);
-    const current = this.style();
-    const sectionStyles = reindexParagraphStyleKeys(current.sectionStyles, index, remaining);
-    if (sectionStyles) this.style.set({ ...current, sectionStyles });
+    this.styles.reindexAfterParagraphRemoved(index, remaining);
   }
 
   /** Full-letter AI draft - fills every block in one pass honoring the current

@@ -44,6 +44,42 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `tracker` PR 2 of 4: the rows move, and the PDF route stops carrying its own copy
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 6/10 - radius 2, ambiguity 0, risk 1, verify 2, unknowns 1. Ambiguity 0 because PR 2's boundaries were settled in the grilling round that opened this phase; radius 2 because it edits `eslint.config.mjs`.)
+- **Branch:** `feat/tracker-rows-store`, **stacked on `feat/tracker-columns-store`** (PR 1 was open, not merged; branching off `main` would have conflicted on `tracker.component.ts`).
+- **Commits:** one
+- **Pull request:** opened against `feat/tracker-columns-store`
+- **Objective:** `TrackerRowsStore` and `TrackerPrintStore`, plus the pure module they share, and the first deletion from the gateway allowlist this phase.
+- **Completed:**
+  - **`tracker-rows.ts`, 122 lines** - `trackerRangeStart`, `daysBetweenDates`, `filterTrackerRows`, `reportTrackerRows`, `summarizeTrackerRows`, `TrackerRange`, `TrackerSegment`, `RESPONDED_STATUSES`.
+  - **`tracker-rows.store.ts`, 104/250** - rows, settings, the three filters, `view`, `reportRows`, the two segment counts, `summary`, `load`, `setArchived`, `remove`.
+  - **`tracker-print.store.ts`, 57/250** - the hidden print window's rows and summary, and `markPrintWindowReady`.
+  - **`tracker.component.ts`: 536 -> 487 non-empty.** **`tracker-report-print.component.ts`: 136 -> 103 non-empty**, and it no longer injects `DbService`, so **`COMPONENTS_STILL_USING_THE_GATEWAY`: 25 -> 24**.
+  - **66 more tests** (114 across the tracker suites) and **22 of 24 mutants dead**, the other two by design.
+  - **ADR-0005 amendment nine**, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** PRs 3 and 4 (row editor; report and export). `tracker.component.html` 557/300 and `.scss` 907 untouched, by decision.
+- **Files or packages changed:** `libs/application` (6 new files + barrel), `apps/desktop/src/app/pages/tracker/{tracker.component.ts,tracker.component.html,tracker-report-print.component.ts}`, `eslint.config.mjs`, ADR-0005, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects. `nx build desktop` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`; the whole suite was re-run after formatting. `git diff --check` **clean**.
+  - **The allowlist deletion was verified from the other side**, not assumed: re-adding `inject(DbService)` to `tracker-report-print.component.ts` fails `nx lint` with `A component may not inject DbService (ADR-0005)...`, and the file was restored byte-exact.
+  - **Not run:** any UI walkthrough. Tauri IPC is required; the tests are the whole of the evidence. The PDF export path in particular has never had automated coverage of its own and still does not - what is covered now is the row selection and summary it prints.
+- **Privacy/security impact:** none. The same gateway methods, called from different files.
+- **Decisions and assumptions:**
+  - **The print route shipped in this PR rather than its own**, so the extracted module has two real callers the day it lands. That is the argument for extracting it; shipping them apart would have left the duplication claim asserted rather than demonstrated.
+  - **`TrackerPrintStore` is deliberately thin.** Query-parameter reading, `document.fonts`, and the `printing-report` body class are browser work and stayed on the component. Only the two gateway calls moved.
+  - **`loadError` was added because `null` was answering two questions.** `load` first returned `Settings | null`, conflating a database with no settings row - where the report market defaults to international - with a failed read, where the page had always left it alone.
+  - **`confirmRemove` keeps its own `jobId` guard, before the `try`.** The store's guard decides whether to write; the page's decides whether the confirmation closes, and the page has always left it open for a row with no job. Moving the check into the store alone would have started closing it - a behaviour change inside a refactor.
+- **Risks or compatibility impact:** the template was rewired by scripted substitution with an asserted match count per pattern, then verified by `ngc`. Two counts were wrong on the first run (`view()` appears twice not three times; `summary()` six times not nine) and the script refused to write rather than partially applying - worth keeping that shape.
+  - **The pre-commit ratchet rejected the first attempt, correctly.** Prefixing fifteen bindings with `rows.` pushed four past the print width, prettier re-wrapped them, and `tracker.component.html` grew **557 -> 569** without a single element changing. It is 557/300, and an over-budget file may not grow - "it was only formatting" is the argument that would let one grow forever. Fixed with four read-only aliases on the page (`summary`, `segment`, `range`, `statusFilter`), the same `t = this.i18n.t` device the class already used; the template is byte-neutral at 557 and the page absorbs the 15 lines. **A store field name becomes part of every binding's width**, which will recur on every page whose template is over budget.
+  - No markup moved between components, so the directive-left-behind trap does not apply.
+- **Open issues or blockers:** none. PR 2 cannot merge before PR 1.
+- **Next first action:** PR 3 - `TrackerRowEditorStore`: `editId`, `draft`, `draftCustom`, `saving`, `startEdit`, `cancelEdit`, `draftValue`, `setDraft`, `saveEdit`, over `updateApplicationTrackerFields` and `setApplicationStatus`. It injects `TrackerRowsStore` (it re-reads the list after a save) and `TrackerColumnsStore` is untouched by it. The allowlist stays at 24 until PR 4.
+- **Evidence:**
+  - **A surviving mutant has a third outcome.** Amendment eight recorded "the fixtures are wrong"; PR 1 recorded "the code is dead". Two here are neither: `Number.isFinite(days)` cannot change the result, because the only non-finite value reachable is `NaN` and `NaN >= 0` is already false; and `.slice()` before the report's sort is redundant because `.filter()` already copied. **Both kept, both documented in their own doc comments** - the first states an intent that `>= 0` only implements by accident, the second becomes load-bearing if the filter is ever made conditional. The same investigation supported _deleting_ `essentialKeys` in PR 1, which is why the rule is "investigate, then decide" rather than a default either way.
+  - **Two fixtures looked asymmetric and were not.** `remove` filters the list by `id` and deletes by `jobId`; a one-row fixture cannot distinguish them, and it took two rows against one job. And the print store's period test asserted the narrowed rows but never the narrowed summary, so summarizing before narrowing passed.
+  - Sizes: `tracker-rows.ts` 122/250, `tracker-rows.store.ts` 104/250, `tracker-print.store.ts` 57/250, `tracker.component.ts` **487/400** from 536, `tracker-report-print.component.ts` 103/400 from 136.
+
 ### 2026-08-07, `tracker` PR 1 of 4: the columns move, and two of the campaign's rules are corrected
 
 - **Status:** complete

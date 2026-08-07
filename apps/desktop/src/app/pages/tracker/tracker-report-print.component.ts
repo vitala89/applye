@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import type { TrackerRow } from '@applye/core';
-import { DbService } from '@applye/data';
+import { TrackerPrintStore } from '@applye/application';
 import {
   ReportColumn,
   ReportMarket,
@@ -15,16 +14,22 @@ import {
  * Renders the SAME `<app-tracker-report>` as the export preview, so the saved
  * PDF IS the preview's render - then signals readiness to Rust once fonts and
  * layout have settled. Params (applicant, period, market) arrive as query args.
+ *
+ * The rows and their summary come from `TrackerPrintStore`, which shares its
+ * period and summary rules with the tracker page's own store. They used to be a
+ * second copy here, and two copies of "what the last three months means" with
+ * no test on either is how the sheet and the screen come to disagree.
  */
 @Component({
   selector: 'app-tracker-report-print',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TrackerReportComponent],
+  providers: [TrackerPrintStore],
   template: `
     @if (loaded()) {
       <app-tracker-report
-        [rows]="rows()"
+        [rows]="print.rows()"
         [columns]="columns()"
         [applicant]="applicant()"
         [periodLabel]="periodLabel()"
@@ -32,9 +37,9 @@ import {
         [mode]="mode()"
         [landscape]="landscape()"
         [generatedOn]="generatedOn()"
-        [total]="total()"
-        [rate]="rate()"
-        [avg]="avg()"
+        [total]="print.summary().total"
+        [rate]="print.summary().rate"
+        [avg]="print.summary().avg"
         [print]="true"
       />
     }
@@ -49,11 +54,10 @@ import {
   ],
 })
 export class TrackerReportPrintComponent {
-  private readonly db = inject(DbService);
   private readonly route = inject(ActivatedRoute);
+  protected readonly print = inject(TrackerPrintStore);
 
   readonly loaded = signal(false);
-  readonly rows = signal<TrackerRow[]>([]);
   readonly columns = signal<ReportColumn[]>([]);
   readonly applicant = signal('');
   readonly periodLabel = signal('');
@@ -61,21 +65,9 @@ export class TrackerReportPrintComponent {
   readonly mode = signal<ReportMode>('fit');
   readonly landscape = signal(false);
   readonly generatedOn = signal('');
-  readonly total = signal(0);
-  readonly rate = signal(0);
-  readonly avg = signal(0);
 
   constructor() {
     void this.load();
-  }
-
-  private rangeStart(period: string): string | null {
-    if (period === 'all') return null;
-    const now = new Date();
-    if (period === 'month') {
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    }
-    return new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
   }
 
   private async load(): Promise<void> {
@@ -91,39 +83,11 @@ export class TrackerReportPrintComponent {
     } catch {
       this.columns.set([]);
     }
-    const period = q.get('period') ?? 'all';
 
-    let all: TrackerRow[];
-    try {
-      all = await this.db.trackerRows();
-    } catch {
-      all = [];
-    }
-    const min = this.rangeStart(period);
-    const rows = all
-      .filter((r) => !min || (r.appliedAt ?? '') >= min)
-      .slice()
-      .sort((a, b) => ((a.appliedAt ?? '') < (b.appliedAt ?? '') ? -1 : 1));
-    this.rows.set(rows);
-
-    const responded = rows.filter((r) =>
-      ['interview', 'offer', 'rejected'].includes(r.status ?? ''),
-    );
-    const days = responded
-      .map((r) => this.daysBetween(r.appliedAt, r.lastUpdate))
-      .filter((d): d is number => d != null);
-    this.total.set(rows.length);
-    this.rate.set(rows.length ? Math.round((responded.length / rows.length) * 100) : 0);
-    this.avg.set(days.length ? Math.round(days.reduce((a, b) => a + b, 0) / days.length) : 0);
+    await this.print.load(q.get('period') ?? 'all');
 
     this.loaded.set(true);
     await this.signalReady();
-  }
-
-  private daysBetween(a?: string, b?: string): number | null {
-    if (!a || !b) return null;
-    const d = (new Date(b).getTime() - new Date(a).getTime()) / 86_400_000;
-    return Number.isFinite(d) && d >= 0 ? Math.round(d) : null;
   }
 
   /** Wait for fonts + a settle tick, then tell Rust the DOM is safe to print.
@@ -141,6 +105,6 @@ export class TrackerReportPrintComponent {
     // the report sheet prints - same mechanism as the CV export.
     document.body.classList.add('printing-report');
     await new Promise((r) => setTimeout(r, 50));
-    await this.db.printWindowReady();
+    await this.print.markPrintWindowReady();
   }
 }

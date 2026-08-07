@@ -27,13 +27,13 @@ import {
 import type {
   ApplicationStatus,
   ApplicationTrackerFieldsInput,
-  Settings,
   SupportedLanguage,
   TrackerRow,
 } from '@applye/core';
 import {
   TrackerColumnDef,
   TrackerColumnsStore,
+  TrackerRowsStore,
   formatTrackerDate,
   trackerCellValue,
   trackerColumnWidth,
@@ -51,10 +51,6 @@ import {
   TrackerReportComponent,
 } from './tracker-report.component';
 
-type Range = 'month' | '3months' | 'all';
-type Segment = 'active' | 'archived';
-const RESPONDED = ['interview', 'offer', 'rejected'];
-
 // Job Tracker: 1:1 with the user's real xlsx tracker. Export IS the Agentur
 // fuer Arbeit "Eigenbemuehungen" report (ROADMAP §9). 0 tokens. This screen is
 // the design in docs/design/job-tracker-screen-brief.md → Job Tracker.dc.html.
@@ -65,7 +61,7 @@ const RESPONDED = ['interview', 'offer', 'rejected'];
   imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
-  providers: [TrackerColumnsStore],
+  providers: [TrackerColumnsStore, TrackerRowsStore],
 })
 export class TrackerComponent {
   private readonly db = inject(DbService);
@@ -78,6 +74,26 @@ export class TrackerComponent {
    * store holds no `TranslateService`, because the same column list is rendered
    * in the UI language here and in the report's own language on the sheet. */
   protected readonly columns = inject(TrackerColumnsStore);
+
+  /** The rows, the toolbar that narrows them, and the archive and delete
+   * writes. The row menu, the delete confirmation and every toast stay here. */
+  protected readonly rows = inject(TrackerRowsStore);
+
+  /**
+   * Read-only aliases onto the store, for the toolbar signals and the summary
+   * the template binds most. Same device as `t` above. **They alias; they hold
+   * nothing** - `segment.set(...)` writes straight through to the store.
+   *
+   * They exist because the template is already 557/300 and the ratchet refuses
+   * to let an over-budget file grow: prefixing these fifteen bindings with
+   * `rows.` pushed four of them past the print width, and prettier re-wrapped
+   * them into twelve extra lines. Cutting the template is a separate phase, so
+   * this keeps it byte-neutral rather than borrowing against that.
+   */
+  protected readonly summary = this.rows.summary;
+  protected readonly segment = this.rows.segment;
+  protected readonly range = this.rows.range;
+  protected readonly statusFilter = this.rows.statusFilter;
 
   readonly icons = {
     fileDown: FileDown,
@@ -102,17 +118,6 @@ export class TrackerComponent {
     plus: Plus,
   };
 
-  // ---- data ----
-  readonly rows = signal<TrackerRow[]>([]);
-  readonly settings = signal<Settings | null>(null);
-  readonly loading = signal(true);
-
-  // ---- toolbar / filters ----
-  readonly segment = signal<Segment>('active');
-  readonly range = signal<Range>('3months');
-  readonly statusFilter = signal<string>('');
-  readonly applicantName = signal('');
-
   // ---- panels / row state ----
   readonly showCols = signal(false);
   readonly showExport = signal(false);
@@ -127,6 +132,7 @@ export class TrackerComponent {
   readonly exporting = signal(false);
 
   // ---- export options ----
+  readonly applicantName = signal('');
   readonly reportMarket = signal<ReportMarket>('de');
   readonly landscape = signal(false);
   readonly reportMode = signal<ReportMode>('fit');
@@ -162,67 +168,19 @@ export class TrackerComponent {
     'rejected',
     'cancelled',
   ];
-  readonly isGerman = computed(() => this.settings()?.uiLanguage === 'de');
-
-  readonly activeCount = computed(() => this.rows().filter((r) => !r.archived).length);
-  readonly archivedCount = computed(() => this.rows().filter((r) => r.archived).length);
-
-  /** Grid rows: current segment + status filter + period. */
-  readonly view = computed(() => {
-    const seg = this.segment();
-    const sf = this.statusFilter();
-    const min = this.rangeStart(this.range());
-    return this.rows().filter((r) => {
-      if (seg === 'archived' ? !r.archived : r.archived) return false;
-      if (sf && (r.status ?? '') !== sf) return false;
-      if (min && (r.appliedAt ?? '') < min) return false;
-      return true;
-    });
-  });
-
-  /** Report rows: period-filtered, archived included, oldest first. */
-  readonly reportRows = computed(() => {
-    const min = this.rangeStart(this.range());
-    return this.rows()
-      .filter((r) => !min || (r.appliedAt ?? '') >= min)
-      .slice()
-      .sort((a, b) => ((a.appliedAt ?? '') < (b.appliedAt ?? '') ? -1 : 1));
-  });
-
-  readonly summary = computed(() => {
-    const rows = this.reportRows();
-    const total = rows.length;
-    const responded = rows.filter((r) => RESPONDED.includes(r.status ?? ''));
-    const rate = total ? Math.round((responded.length / total) * 100) : 0;
-    const days = responded
-      .map((r) => this.daysBetween(r.appliedAt, r.lastUpdate))
-      .filter((d): d is number => d != null);
-    const avg = days.length ? Math.round(days.reduce((a, b) => a + b, 0) / days.length) : 0;
-    return { total, rate, avg };
-  });
 
   constructor() {
     void this.load();
   }
 
   async load(): Promise<void> {
-    this.loading.set(true);
-    try {
-      const [rows, , settings] = await Promise.all([
-        this.db.trackerRows(),
-        this.columns.load(),
-        this.db.getSettings(),
-      ]);
-      this.rows.set(rows);
-      this.settings.set(settings);
-      // Default the report market to Germany when the app language is German
-      // (the Eigenbemuehungen document is a German-office artefact).
-      this.reportMarket.set(settings?.uiLanguage === 'de' ? 'de' : 'intl');
-    } catch {
-      this.rows.set([]);
-    } finally {
-      this.loading.set(false);
-    }
+    await Promise.all([this.rows.load(), this.columns.load()]);
+    // Default the report market to Germany when the app language is German
+    // (the Eigenbemuehungen document is a German-office artefact). A failed
+    // read leaves the market alone rather than defaulting it from nothing,
+    // which is why the store separates that from a database with no settings.
+    if (this.rows.loadError()) return;
+    this.reportMarket.set(this.rows.settings()?.uiLanguage === 'de' ? 'de' : 'intl');
   }
 
   /** Column labels stay on the page: the grid names a column in the UI language
@@ -304,7 +262,7 @@ export class TrackerComponent {
     };
     try {
       await this.db.updateApplicationTrackerFields(input);
-      const original = this.rows().find((r) => r.id === d.id);
+      const original = this.rows.all().find((r) => r.id === d.id);
       if (d.status && d.status !== original?.status) {
         await this.db.setApplicationStatus(d.id, d.status as ApplicationStatus);
       }
@@ -345,8 +303,7 @@ export class TrackerComponent {
   async setArchived(row: TrackerRow, archived: boolean): Promise<void> {
     this.closeMenus();
     try {
-      await this.db.setApplicationArchived(row.id, archived);
-      this.rows.update((rs) => rs.map((r) => (r.id === row.id ? { ...r, archived } : r)));
+      await this.rows.setArchived(row, archived);
       this.toast.success(this.t()(archived ? 'tracker.archived_ok' : 'tracker.restored_ok'));
     } catch (e) {
       this.toast.error(String(e));
@@ -357,11 +314,13 @@ export class TrackerComponent {
     this.confirmId.set(row.id);
   }
   async confirmRemove(row: TrackerRow): Promise<void> {
+    // Guarded here as well as in the store, and deliberately before the `try`:
+    // the store's check decides whether to write, this one decides whether the
+    // confirmation closes, and the page has always left it open for a row with
+    // no job behind it.
     if (row.jobId == null) return;
     try {
-      await this.db.deleteJob(row.jobId);
-      this.rows.update((rs) => rs.filter((r) => r.id !== row.id));
-      this.toast.success(this.t()('tracker.removed'));
+      if (await this.rows.remove(row)) this.toast.success(this.t()('tracker.removed'));
     } catch (e) {
       this.toast.error(String(e));
     } finally {
@@ -388,19 +347,6 @@ export class TrackerComponent {
   }
 
   // ---------- export ----------
-  private rangeStart(r: Range): string | null {
-    if (r === 'all') return null;
-    const now = new Date();
-    if (r === 'month') {
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    }
-    return new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
-  }
-  private daysBetween(a?: string, b?: string): number | null {
-    if (!a || !b) return null;
-    const d = (new Date(b).getTime() - new Date(a).getTime()) / 86_400_000;
-    return Number.isFinite(d) && d >= 0 ? Math.round(d) : null;
-  }
   today(): string {
     return new Date().toISOString().slice(0, 10);
   }
@@ -427,9 +373,9 @@ export class TrackerComponent {
   /** Printed ON the sheet, so it follows the report language, not the UI. */
   private periodLabel(): string {
     const rt = this.reportT();
-    return this.range() === 'all'
+    return this.rows.range() === 'all'
       ? rt('tracker.range_all')
-      : this.range() === 'month'
+      : this.rows.range() === 'month'
         ? rt('tracker.range_month')
         : rt('tracker.range_3months');
   }
@@ -471,7 +417,7 @@ export class TrackerComponent {
       await this.db.trackerReportExportPdfWysiwyg({
         savePath: path,
         applicant: this.applicantName(),
-        period: this.range(),
+        period: this.rows.range(),
         periodLabel: this.periodLabel(),
         market: this.reportMarket(),
         landscape: this.landscape(),
@@ -526,14 +472,14 @@ export class TrackerComponent {
       [rt('tracker.report_generated'), new Date().toISOString().slice(0, 10)],
     ].map((row) => row.map((c) => esc(String(c))).join(','));
     const head = ['#', ...cols.map((c) => c.label)];
-    const lines = this.reportRows().map((r, i) =>
-      [String(i + 1), ...cols.map((c) => this.csvCell(r, c))].map(esc).join(','),
-    );
+    const lines = this.rows
+      .reportRows()
+      .map((r, i) => [String(i + 1), ...cols.map((c) => this.csvCell(r, c))].map(esc).join(','));
     return [...meta, '', head.map(esc).join(','), ...lines].join('\n');
   }
   private buildReportText(): string {
-    const rows = this.reportRows();
-    const s = this.summary();
+    const rows = this.rows.reportRows();
+    const s = this.rows.summary();
     const col = (v: string, w: number) => (v.length > w ? v.slice(0, w - 1) + '…' : v).padEnd(w);
     const rt = this.reportT();
     const header =

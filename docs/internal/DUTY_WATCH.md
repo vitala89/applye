@@ -44,6 +44,36 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, `cover-letter-detail` template cut 2: the recipient block leaves, and a CSS trap the check cannot see
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 1.)
+- **Branch:** `feat/cover-letter-recipient-block`, off `main` at `f9775c2`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** continue the template cut; the blocks region was the largest remaining candidate.
+- **Completed:**
+  - **`cover-letter-recipient-block/`** - the six DIN 5008 address fields, its collapse head and its style button. Collapse and popover state stay on the page as inputs/outputs, the same contract `CoverLetterBlockComponent` uses; the address itself is written straight into `CoverLetterContentStore`.
+  - **`cover-letter-detail.component.html`: 491 -> 406** against 300.
+  - **7 tests**, including one that fails if the inputs stop matching the class their stylesheet targets.
+- **Not completed - and this is a deliberate scope cut.** The **body-paragraphs block (~112 lines) was planned for this PR and dropped.** It uses `.icon-btn`/`.icon-btn--danger`, generic vocabulary already duplicated across four component stylesheets, and the page still needs its own copy for the header. Making it global from a cover-letter partial would change CSS vocabulary app-wide; copying it makes a fifth copy. That is a cross-cutting decision, not a side effect of a template cut, and it belongs in its own pull request with the grilling gate.
+- **Files or packages changed:** 4 new files under `cover-letter-detail/`, the page's `.ts`/`.html`/`.scss`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. Full `jest` run **passed - 191 suites / 2459 tests**. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**.
+  - **`quality:style-move` reports 0 lost, 2 gained** - `.coverdetail__field input` and its `:focus`, both deliberate and explained below. The tool's own closing line asks for exactly that to be named in the PR, and it is.
+  - **A type-check failure was nearly missed, and the near-miss is worth recording.** An earlier gate run was grepped with a pattern that matched neither the error nor the success line, so it printed nothing and read as clean. It was not: `$event` had been eaten by shell escaping in the script that rewrote the template, leaving `toggleStylePopover()`. Re-running the gate and reading its actual verdict caught it. **Grep a gate for its verdict, never for the absence of a word.**
+  - **Not run:** any UI walkthrough. Tauri IPC is required.
+- **Privacy/security impact:** none. Markup and CSS moved.
+- **Decisions and assumptions:**
+  - **The input rule is copied, not moved.** The page styles its controls with `.coverdetail input:not(...)`, rooted at the page element, which Angular's encapsulation stops at a child boundary. The page still needs it; the child gets an equivalent keyed on `.coverdetail__field input`.
+  - **`.coverdetail__grid` and the `.coverdetail__field` family moved** into the child's own stylesheet - nothing else used them, so no global change and no cross-page risk.
+- **Risks or compatibility impact:** the six address inputs are the only thing that could regress visually, and the rule that styles them is now the child's own. **A visual check is owed** and cannot be run here.
+- **Open issues or blockers:** none.
+- **Next first action:** the **body-paragraphs block**, and it starts with the `.icon-btn` decision above, not with the markup. After that the header bar (~85 lines) and the metadata/availability cards (~100). The template needs roughly another 106 non-empty lines to reach 300.
+- **Evidence:**
+  - **A fourth distinct CSS trap, and `quality:style-move` passes on it by construction** (ADR-0005 amendment sixteen). It compares the declarations a selector carries; `.coverdetail input` still exists and still carries all nine. What changed is what the rule can _reach_. The checklist gains a line: the classes the moved markup names are only half the audit - also list every descendant or element selector rooted at the page that matched inside the moved region.
+  - **The three components merged a day earlier were audited against this and are clean.** The Style card's controls sit inside `.docedit-style-grid`, which `_editor-shell.scss` styles globally with a complete control rule (background, border, radius, colour, font, padding, width, outline, focus); the popover's rules had already moved into the global partial in that same PR.
+  - Sizes: `cover-letter-recipient-block.component.ts` 49/400, its template 90/300, its stylesheet 50, `cover-letter-detail.component.html` **406/300** from 491, `.ts` 339/400, `.scss` 223 from 256.
+
 ### 2026-08-08, `cover-letter-detail` template cut 1: the Style card leaves the page, and the class lands under budget
 
 - **Status:** complete

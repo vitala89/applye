@@ -135,11 +135,21 @@
   hiding in plain sight because it was markup rather than state. The four store extractions asked what
   state the page owned; nobody asked what _panels_ it owned. **The rule: when a migrated page is still
   over budget, look for a responsibility before blaming the template.**
-- **Moved markup takes its stylesheet rules with it, and there is a check that proves it.** Angular
-  scopes a component's CSS, so the six classes the moved markup uses went into
-  `_cover-letter-controls.scss`, which `styles.scss` already emits globally;
-  `npm run quality:style-move -- --base main` reports **lossless**. This is the failure shape that has
-  bitten three times, and a visual check is still owed - it cannot be run without Tauri IPC.
+- **The template is now 406/300**, after the recipient block became `cover-letter-recipient-block/`.
+  Roughly another 106 non-empty lines to go.
+- **Moved markup takes its stylesheet rules with it, and the check only proves half of that.** For
+  named classes it works: the six the style panels use went into `_cover-letter-controls.scss`, which
+  `styles.scss` emits globally, and `quality:style-move` reported lossless. **The recipient block found
+  the half it cannot prove** (ADR-0005 amendment sixteen): the page styles its controls with
+  `.coverdetail input:not(...)`, a descendant selector rooted at the page element, which Angular's
+  encapsulation stops at a child boundary. The six address inputs would have rendered as browser
+  defaults with every gate green - `quality:style-move` passes because `.coverdetail input` still
+  exists and still carries all nine declarations. What changed is what the rule can _reach_.
+  **The checklist gains a line: also list every descendant or element selector rooted at the page that
+  matched inside the moved region.** The three components merged a day earlier were audited against
+  this and are clean.
+- **A visual check is owed on the whole cover-letter editor** and cannot be run without Tauri IPC.
+  This is the largest open risk in the documents area.
 - **The two document editors share almost nothing, settled by reading both.** `CoverLetterStyle` and
   `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Their
   `sectionStyles` differ structurally - a closed `CvSectionKey` union against an open

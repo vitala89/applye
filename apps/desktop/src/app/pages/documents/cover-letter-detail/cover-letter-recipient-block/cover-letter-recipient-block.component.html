@@ -1,0 +1,90 @@
+<section class="docedit-section">
+  <div class="docedit-section__head">
+    <button
+      type="button"
+      class="docedit-section__toggle"
+      [attr.aria-expanded]="open()"
+      (click)="toggled.emit()"
+    >
+      <lucide-icon
+        [img]="icons.chevron"
+        [size]="15"
+        aria-hidden="true"
+        class="docedit-chevron"
+        [class.docedit-chevron--closed]="!open()"
+      />
+      <span class="docedit-section__title">{{
+        t()('documents.cover_letter_field_recipient_address')
+      }}</span>
+    </button>
+    <div class="docedit-section__actions">
+      <button
+        type="button"
+        class="coverdetail__style-btn"
+        [class.coverdetail__style-btn--active]="styleOpen()"
+        [class.coverdetail__style-btn--custom]="customStyle()"
+        (click)="styleToggled.emit(styleKey)"
+      >
+        {{ t()('documents.cv_section_style') }}
+      </button>
+    </div>
+  </div>
+  @if (styleOpen()) {
+    <ng-container
+      [ngTemplateOutlet]="stylePopover()"
+      [ngTemplateOutletContext]="{ $implicit: styleKey }"
+    ></ng-container>
+  }
+  <div class="docedit-collapse" [class.docedit-collapse--closed]="!open()">
+    <div class="coverdetail__grid">
+      <label class="coverdetail__field">
+        <span>{{ t()('documents.cover_letter_field_recipient') }}</span>
+        <input
+          type="text"
+          [ngModel]="content().address.recipientName"
+          (ngModelChange)="updateAddress('recipientName', $event)"
+        />
+      </label>
+      <label class="coverdetail__field">
+        <span>{{ t()('documents.cover_letter_field_company') }}</span>
+        <input
+          type="text"
+          [ngModel]="content().address.company"
+          (ngModelChange)="updateAddress('company', $event)"
+        />
+      </label>
+      <label class="coverdetail__field coverdetail__field--wide">
+        <span>{{ t()('documents.cover_letter_field_street') }}</span>
+        <input
+          type="text"
+          [ngModel]="content().address.street"
+          (ngModelChange)="updateAddress('street', $event)"
+        />
+      </label>
+      <label class="coverdetail__field">
+        <span>{{ t()('documents.cover_letter_field_postal_code') }}</span>
+        <input
+          type="text"
+          [ngModel]="content().address.postalCode"
+          (ngModelChange)="updateAddress('postalCode', $event)"
+        />
+      </label>
+      <label class="coverdetail__field">
+        <span>{{ t()('documents.cover_letter_field_city') }}</span>
+        <input
+          type="text"
+          [ngModel]="content().address.city"
+          (ngModelChange)="updateAddress('city', $event)"
+        />
+      </label>
+      <label class="coverdetail__field coverdetail__field--wide">
+        <span>{{ t()('documents.cover_letter_field_country') }}</span>
+        <input
+          type="text"
+          [ngModel]="content().address.country"
+          (ngModelChange)="updateAddress('country', $event)"
+        />
+      </label>
+    </div>
+  </div>
+</section>

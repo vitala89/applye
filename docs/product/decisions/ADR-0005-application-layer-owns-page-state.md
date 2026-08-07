@@ -814,6 +814,52 @@ exactly this reason, and `npm run quality:style-move --base main` reports **loss
 carries the declarations it carried before. `.coverdetail__spacer` moved even though the page still
 uses it, because it is now read from two components and a duplicated copy is a rule that can drift.
 
+## Amendment, 2026-08-08 (sixteenth): the fourth CSS trap, and the one the check cannot see
+
+Extracting the recipient address block turned up a failure mode the previous three did not, and
+`quality:style-move` **passes on it**.
+
+The page styles its form controls with
+
+```scss
+.coverdetail input:not([type='checkbox']):not([type='color']),
+.coverdetail select,
+.coverdetail textarea { ... }
+```
+
+a descendant selector rooted at the page's own element. Angular's emulated encapsulation stamps that
+with the page's content attribute, so it matches nothing inside a child component. Moving the six
+address inputs out would have rendered them as **browser defaults** - no background, no border, no
+padding - while every gate stayed green.
+
+**`quality:style-move` cannot catch this by construction.** It compares the declarations each
+selector carries before and after. `.coverdetail input` still exists and still carries all nine
+declarations, so the check reports lossless. What changed is not the rule but _what the rule can
+reach_, and a declaration-level diff has no way to see that.
+
+**The rule this adds to "Splitting a page: where its shared styles go":** the classes the moved markup
+names are only half the audit. Also list every **descendant or element selector rooted at the page**
+that matched something inside the moved region - `.page input`, `.page select`, bare `textarea` - and
+carry an equivalent into the child. Those are invisible in the markup, which is exactly why they get
+missed.
+
+Here the rule is **copied rather than moved**, because the page still needs it for the controls it
+kept, and the copy is keyed on `.coverdetail__field input` so it stays inside the child's own scope.
+`quality:style-move` reports the two gained selectors, and the tool's own closing line asks for
+exactly that to be named in the pull request.
+
+### And a check on the three extractions already merged
+
+`cover-letter-style-card/` and `cover-letter-style-popover/` (amendment fifteen) were audited against
+this and are **clean**, which is luck as much as judgement: the card's controls sit inside
+`.docedit-style-grid`, and `_editor-shell.scss` styles them globally with a complete control rule -
+background, border, radius, colour, font, padding, width, outline and focus - so losing the
+`.coverdetail` layer cost them nothing. The popover's controls are styled by
+`.coverdetail__style-pop select, .coverdetail__style-pop input`, which that pull request had already
+moved into the global partial.
+
+**A visual check is still owed on all of it**, and cannot be run without Tauri IPC.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

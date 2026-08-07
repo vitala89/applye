@@ -10,14 +10,14 @@ Use before non-trivial feature, architecture, debug, test, security, privacy, do
 
 1. Classify the task using `AGENTS.md`. Route non-trivial feature, product, or architecture tasks through the `aif-project-state-sync` skill first to align on state.
    1a. Before planning further, check the grilling trigger: does a decision here change a public API, a database schema, the privacy or security posture, or does the task have two readings that lead to materially different work? If yes, run `aif-grilling` and do not choose for the maintainer.
-2. Select model tier from `docs/ai/model-policy.md`.
+2. Take the score, model, effort and budget from the `task-triage` skill, which reads `docs/ai/model-policy.md`. Do not re-derive them here.
 3. If the user says "classify only", "without reading files", "do not read files", or "do not modify files", classify from the current task text only.
 4. For text-only classification, do not read files, do not call context scouts, do not recommend Graphify, CodeGraph, or graph/context tools, and do not reference previous observations, memory IDs, prior smoke tests, or internal state.
 5. Exception: architecture, security, migration, or broad-impact tasks may recommend more context, but still must not read files when the user explicitly requested classification only.
 6. Run `aif-context-gate` for context selection only when implementation is actually starting or broad context is explicitly needed.
 7. Do not recommend subagents for simple or bounded feature tasks by default.
 8. For bounded feature tasks with clear scope, local mock data only, and no storage, sync, privacy, security, architecture, plugin, notification, Tauri/Angular boundary, large-refactor, or 8+ file signal, set `Subagents needed: no` and `Graph/context tool needed: no`.
-9. For bounded feature tasks, use this baseline skill list: `aif-model-router`, `aif-token-guard`, `aif-feature-builder`, and `aif-testing-strategy`.
+9. For bounded feature tasks, use this baseline skill list: `task-triage`, `aif-token-guard`, `aif-feature-builder`, and `aif-testing-strategy`.
 10. Add other specialist skills or subagents only when triggered by risk, unknown ownership, architecture, security, privacy, storage, sync, plugins, notifications, the Tauri/Angular boundary, or review needs.
     10a. If the task touches UI (components, styles, screens, or a provided design reference), require the Design Consistency gate from `AGENTS.md`: read `design-system/MASTER.md` before building and run `npx impeccable detect` after. Record this in the specialist plan.
 11. Use subagents for focused scouting or review, not implementation.

@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, tasks get scored before they get a model
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `feat/task-triage-skill`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** stop paying frontier-model prices for small tasks. Score every task first, then route model, effort, subagents and budget from the score.
+- **Completed:**
+  - **`task-triage` skill, global** (`~/.claude/skills/task-triage/`, outside this repository so it works in every project): harness detection, five 0-2 axes, a routing table, an opt-in delegation rule, and an explicit "skip the ceremony" list so it does not fire on confirmations.
+  - **`docs/ai/model-policy.md` rewritten** as the Applye table: named models (`haiku`/`sonnet`/`opus`/`fable`), effort levels (`low`..`max`), per-tier output budgets, and five Applye-specific adjustments tied to `ADR-0005`, the grilling gate and the validation matrix.
+  - **`aif-model-router` deleted.** Nineteen lines, three unnamed tiers, no models, no effort, no score, no way to tell whether it had run. References updated in `aif-orchestrator` and `AGENT_SKILL_MAP.md`.
+  - **`UserPromptSubmit` hook** (`~/.claude/hooks/task-triage-reminder.sh`) merged into `~/.claude/settings.json` - 9 hook events now, up from 8, nothing replaced.
+  - Triage instruction added to all three entry points: `CLAUDE.md`, `AGENTS.md` (its own "Triage gate" section), `AGENT_START_HERE.md`.
+- **Not completed:** Codex, Cursor and Antigravity get the method and role-based tiers but **no model names**, by decision - a name written from memory is how the wrong model gets picked. They are filled in the first time we actually work there and can read that tool's own list.
+- **Files or packages changed:** `docs/ai/model-policy.md`, `.claude/skills/aif-model-router/` (deleted), `.claude/skills/aif-orchestrator/SKILL.md`, `docs/internal/AGENT_SKILL_MAP.md`, `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `CHANGELOG.md`, this log. Outside the repository: the global skill and hook.
+- **Validation:** hook pipe-tested on all five branches - a real task emits valid JSON (`jq -e` on `hookSpecificOutput.hookEventName`), a short prompt, an English continuation, a Russian continuation and malformed stdin all exit 0 silently. `jq -e` confirms the settings schema path and that the other 8 hook events survived. The skill was invoked live and produced a verdict (7/10) on the next real task. `npx nx format:check`, `git diff --check`, `npm run quality:attribution`. **Not run:** `quality:file-size` has no source files to check, and no test, lint or build target covers `.claude/` or `~/.claude/`.
+- **Privacy/security impact:** none. The hook reads the prompt already being sent, emits a fixed string, and reaches no network. It runs on **every project on this machine**, which is the point and worth knowing.
+- **Decisions and assumptions, through the grilling gate:**
+  - **Global skill, canon in the repository.** The skill works everywhere; the thresholds stay versioned and reviewable here.
+  - **The new skill supersedes `aif-model-router`** rather than sitting beside it. Three documents about choosing a model would drift, which is how the unnamed-tier version happened.
+  - **Hook plus instruction, not instruction alone.** An instruction is exactly the mechanism that lost 46 to 1 in this repository.
+  - **Verdict always printed, delegation only on a keyword.** Matches the standing session rule that subagents are not spawned unasked, and keeps spend visible.
+- **Risks or compatibility impact:** the hook adds ~35 tokens per qualifying prompt. The skill can only set a **subagent's** model and effort - the main session's model is the maintainer's to change, so a mismatch is reported in one line and not re-raised.
+- **Open issues or blockers:** **the hook is written but unproven in a live turn.** `UserPromptSubmit` fires outside the turn that writes it, and the settings watcher only watches directories that had a settings file when the session started. Open `/hooks` once, or restart, and the next prompt will carry the reminder.
+- **Lessons:**
+  - **A zsh `case` pattern containing a space is a parse error, and quoting the pattern makes `*` literal** - so the "fix" silently matches nothing. Two failures in a row on the same three lines; `grep -qiE` is what actually works.
+  - **A hook script must be pipe-tested on every branch, including malformed stdin.** The first version failed on the two branches that mattered and passed on the one that did nothing.
+  - **`**/` inside a `/** */` block comment ends the comment** - hit yesterday in `eslint.config.mjs`, avoided today by writing "double-star glob" in prose.
+- **Next first action:** `CvStyleStore` plus the `CvStyle` cascade rules as a new `libs/core/src/lib/cv/` module - triaged at 7/10, so `opus` at high effort, no delegation unless asked.
+
 ### 2026-08-06, cv-detail begins with its photo toggles, and load/save reshape the remaining three stores
 
 - **Status:** complete - first of four pull requests on `cv-detail`

@@ -11,28 +11,28 @@ This file is that division. It is a routing document, not a tutorial.
 `.claude/skills/` holds the AIF set. They are the authority on everything Applye-specific: this
 repository's gates, its size budgets, its privacy posture, its Duty Watch handoff, its stacks.
 
-| Skill                      | Owns                                                                   |
-| -------------------------- | ---------------------------------------------------------------------- |
-| `aif-orchestrator`         | Routing: workflow, model tier, context path, which specialists to call |
-| `aif-grilling`             | Turning an underspecified task into settled decisions before any edit  |
-| `aif-planning-review`      | Prioritising, estimating, splitting, deciding what to do next          |
-| `aif-architecture-planner` | Boundaries, data flow, migration steps                                 |
-| `aif-feature-builder`      | Building a feature through scoped context, tests, docs                 |
-| `aif-testing-strategy`     | Which tests a change actually needs                                    |
-| `aif-debugger`             | Applye-specific debugging: Tauri IPC, SQLite, AI providers             |
-| `aif-code-review`          | Reviewing a diff on both axes, standards and design                    |
-| `aif-security-review`      | Secrets, shell, dependencies, MCP, browser automation                  |
-| `aif-privacy-review`       | User data, storage, sync, external job sources                         |
-| `aif-docs-sync`            | Which documents a change obliges                                       |
-| `aif-project-state-sync`   | `CURRENT_STATE.md`, feature state, ADRs                                |
-| `aif-commit-writer`        | Conventional Commit messages under this repo's attribution rules       |
-| `aif-branch-finisher`      | Diff review, gates, docs, PR summary                                   |
-| `aif-context-gate`         | Whether to read files, scout, or use a graph tool                      |
-| `aif-model-router`         | Model tier per task                                                    |
-| `aif-token-guard`          | Keeping context spend honest                                           |
-| `applye-angular`           | Angular, signals, templates, styles                                    |
-| `applye-rust`              | Rust, Tauri commands, sqlx                                             |
-| `applye-code-quality`      | The mandatory quality gate before writing or reviewing code            |
+| Skill                      | Owns                                                                       |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `aif-orchestrator`         | Routing: workflow, model tier, context path, which specialists to call     |
+| `aif-grilling`             | Turning an underspecified task into settled decisions before any edit      |
+| `aif-planning-review`      | Prioritising, estimating, splitting, deciding what to do next              |
+| `aif-architecture-planner` | Boundaries, data flow, migration steps                                     |
+| `aif-feature-builder`      | Building a feature through scoped context, tests, docs                     |
+| `aif-testing-strategy`     | Which tests a change actually needs                                        |
+| `aif-debugger`             | Applye-specific debugging: Tauri IPC, SQLite, AI providers                 |
+| `aif-code-review`          | Reviewing a diff on both axes, standards and design                        |
+| `aif-security-review`      | Secrets, shell, dependencies, MCP, browser automation                      |
+| `aif-privacy-review`       | User data, storage, sync, external job sources                             |
+| `aif-docs-sync`            | Which documents a change obliges                                           |
+| `aif-project-state-sync`   | `CURRENT_STATE.md`, feature state, ADRs                                    |
+| `aif-commit-writer`        | Conventional Commit messages under this repo's attribution rules           |
+| `aif-branch-finisher`      | Diff review, gates, docs, PR summary                                       |
+| `aif-context-gate`         | Whether to read files, scout, or use a graph tool                          |
+| `task-triage` (global)     | **First on every task**: score 0-10, then model, effort, subagents, budget |
+| `aif-token-guard`          | Keeping context spend honest                                               |
+| `applye-angular`           | Angular, signals, templates, styles                                        |
+| `applye-rust`              | Rust, Tauri commands, sqlx                                                 |
+| `applye-code-quality`      | The mandatory quality gate before writing or reviewing code                |
 
 ## superpowers, and it is already load-bearing
 

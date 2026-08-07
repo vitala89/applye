@@ -29,6 +29,11 @@ Applye deliberately does not add a second `PROJECT_STATE.md`. The existing `docs
 
 ## Accepting the watch
 
+**Before all of this, run the `task-triage` skill and print its verdict** - score 0-10 across blast
+radius, ambiguity, risk, verification and unknowns, then the model, effort, subagents and token budget
+from `docs/ai/model-policy.md`. Ambiguity scored 2 goes to `aif-grilling` before any edit. Subagents
+are never spawned unless the maintainer asked.
+
 Before editing, state briefly:
 
 - where the task belongs in the plan;

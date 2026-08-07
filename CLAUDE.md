@@ -1,5 +1,11 @@
 # Claude Code Applye Notes
 
+**Triage first, on every task.** Invoke the `task-triage` skill before any other skill, tool call, or
+answer, and print its verdict: a 0-10 score with its five axes, the model, the reasoning effort, the
+subagents, the context plan and the token budget. `docs/ai/model-policy.md` is the local table it
+reads - it wins on thresholds, named specialists and gates. Triage from the request text alone; do not
+read files to produce an estimate. Never spawn a subagent unless the maintainer asked for it.
+
 Start every non-trivial task at `docs/internal/AGENT_START_HERE.md`.
 
 Read, in order:

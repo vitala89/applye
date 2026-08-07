@@ -118,6 +118,20 @@
 - Next after `tracker`: `cover-letter-detail` (**714/400**, 8 gateway calls), whose method list is
   nearly `cv-detail`'s, so the four-store decomposition should transfer - but the types do not rhyme
   with the CV ones and both should be read before anything is copied.
+- **`cover-letter-detail` is in progress: 644 -> 592, one of four pull requests done.** Measured, not
+  remembered - the handover said 714/400 and 8 gateway calls; the file is **644 non-empty / 714 raw**
+  and makes **7 distinct gateway calls over 10 call sites**. `CoverLetterContentStore` (the letter,
+  its paragraphs, tone and length, the availability answers, the word budget) is done; style, the
+  document row and the AI cluster remain, and the allowlist entry goes at the last of them
+  (**23 -> 22**).
+- **The two document editors share almost nothing, settled by reading both.** `CoverLetterStyle` and
+  `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Their
+  `sectionStyles` differ structurally - a closed `CvSectionKey` union against an open
+  `Record<string, …>` keyed `body_<i>`. **Only the ~15-line style-safety check and dedupe is extracted**
+  (ADR-0005 amendment twelve). The four cover-letter stores are built fresh.
+- **The empty-fixture trap has now hidden a real change three times**, so it has a name: whenever a
+  store has a reset path, the fixture must arrive non-empty. Here it was `hydrate` swallowing a
+  malformed-JSON failure and opening an empty editor over a letter still on disk.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

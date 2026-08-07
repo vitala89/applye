@@ -44,6 +44,40 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `cover-letter-detail` PR 1 of 4: the letter's content moves, and the two editors prove they are not siblings
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 9/10 - radius 2, **ambiguity 2**, risk 1, verify 2, unknowns 2. Ambiguity 2 sent it to `aif-grilling` before any edit: "share the CV stores or build parallel ones" is two readings leading to different work for the whole phase.)
+- **Branch:** `feat/cover-letter-content-store`, off `main` at `ac205d3`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `CoverLetterContentStore`, first of four, and the grilling that settles what the phase shares with `cv-detail`.
+- **Completed:**
+  - **`cover-letter-content.ts`, 103/250** - `paragraphStyleKey`, the four content transforms, and `reindexParagraphStyleKeys`.
+  - **`cover-letter-content.store.ts`, 134/250** - the letter, tone and length, the three application answers, the live word budget, and every editing method.
+  - **`cover-letter-length.util.ts` moved** into `libs/application` as `cover-letter-length.ts`, with its existing spec, via `git mv`.
+  - **`cover-letter-detail.component.ts`: 644 -> 592 non-empty.** Still injects `DbService` and `AiService`; the allowlist stays at 23 until PR 4.
+  - **42 tests** in the new suites, and **26 of 26 mutants dead** across two harness runs.
+  - **ADR-0005 amendment twelve**, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** PRs 2-4 (style, document row + save, AI draft/regenerate). `cover-letter-detail.component.html` 669/300 and the stylesheet are **untouched by decision**.
+- **Files or packages changed:** `libs/application` (5 files + barrel), `apps/desktop/src/app/pages/documents/cover-letter-detail/cover-letter-detail.component.ts`, ADR-0005, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects - including the page's existing 125-line spec, which is untouched and still green. `nx build desktop` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`; the suite was re-run after formatting. `git diff --check` **clean**. Mutation harness re-run after formatting, files restored byte-exact.
+  - **No allowlist probe this PR** - the entry is unchanged at 23, because the page still reaches the gateway for the document row, the style check and the AI calls.
+  - **Not run:** any UI walkthrough. Tauri IPC is required; the tests are the whole of the evidence.
+- **Privacy/security impact:** none. No gateway call moved in this pull request at all - the content store touches no I/O.
+- **Decisions and assumptions:**
+  - **Almost nothing is shared with the CV stores**, settled by reading both rather than by the handover's warning. `CoverLetterStyle` and `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Only the ~15-line style-safety check and dedupe will be extracted, in PR 2.
+  - **The template was left byte-identical.** At 669/300 it is the largest template this campaign has touched, so the store is reached through read-only aliases on the page rather than by prefixing forty-odd bindings. The template diff for this PR is **empty**.
+  - **`removeParagraph` is orchestrated by the page**, not by a store injecting a sibling: it touches three owners - the content store drops the paragraph and reports the new count, `openStyleKey` is page view state, and the `body_<i>` overrides belong to the style. The page was already involved through `openStyleKey`, so orchestration there is honest rather than a compromise.
+  - **ADR numbering:** this is amendment **twelve** because amendment eleven is on the still-open tracker PR. Date order is right either way; only the numbering reads oddly if that one lands second.
+- **Risks or compatibility impact:** `hydrate` now throws on malformed JSON, matching `CvStyleStore.hydrate` and the page's previous behaviour. That is a restoration, not a change - see the evidence below.
+- **Open issues or blockers:** none. This PR does not depend on the open tracker PR beyond the ADR's numbering.
+- **Next first action:** PR 2 - `CoverLetterStyleStore` over `checkStyleSafety`, plus `document-style-safety.ts` holding `STYLE_CHECK_DEBOUNCE_MS` and a pure `dedupeStyleNotes`. **That PR edits `CvStyleStore`**, so the CV editor's tests are part of its gate. Page geometry (`currentMargin`, `setMarginSide`, `setPageSize`) **stays on the page**: it clamps through the app-local `resolvePageSettings`, which is amendment five's precedent from `cv-detail`.
+- **Evidence:**
+  - **A behaviour change caught by the empty-fixture trap, for the third time in this campaign.** `hydrate` was first written to swallow a `JSON.parse` failure and open an empty letter; the page had thrown, and its `load` caught that into `loadError`. An empty editor over a letter that is still on disk is **one Save away from replacing it with nothing**. Every fixture hydrated an already-empty store, where "reset to empty" and "leave it alone" agree, so both mutants crossing them survived. `CvStyleStore.hydrate` already documented the correct contract. **The rule now has a name: whenever a store has a reset path, the fixture must arrive non-empty.** The first two were `TrackerColumnsStore` clearing custom columns on a failed reload and `TrackerRowsStore`'s `null` answering two questions.
+  - **Removing a dead branch retired a mutant.** `reindexParagraphStyleKeys` carried an `else { delete next[to] }` that mutation testing showed could never fire: the destination is vacant by construction, because `body_<removedAt>` is deleted before the loop and every iteration leaves `body_<i>` absent. The branch went and the invariant went into the doc comment. **A previously-lethal mutant then survived** - starting the loop at `removedAt` used to destroy the override below the removal through that very `else`, and without it the extra iteration is a no-op. That is a fifth reading of a surviving mutant and the only cheerful one: the code lost a way to be wrong.
+  - Sizes: `cover-letter-content.ts` 103/250, `cover-letter-content.store.ts` 134/250, `cover-letter-length.ts` 20/250, `cover-letter-detail.component.ts` **592/400** from 644, template unchanged at 669/300.
+
 ### 2026-08-07, `tracker` PR 4 of 4: the export moves, and the page finishes under budget
 
 - **Status:** complete

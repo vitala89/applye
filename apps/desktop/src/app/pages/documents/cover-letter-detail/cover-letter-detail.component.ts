@@ -30,15 +30,19 @@ import type {
 } from '@applye/core';
 import {
   COVER_LETTER_BLOCK_KEYS,
-  COVER_LETTER_LENGTH_DEFAULT,
   COVER_LETTER_LENGTHS,
   COVER_LETTER_STYLE_DEFAULT,
-  COVER_LETTER_TONE_DEFAULT,
   COVER_LETTER_TONES,
   CV_ATS_SAFE_FONTS,
   PAGE_SETTINGS_DEFAULT,
   sanitizeSignature,
 } from '@applye/core';
+import {
+  CoverLetterContentStore,
+  CoverLetterTextField,
+  paragraphStyleKey,
+  reindexParagraphStyleKeys,
+} from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -46,7 +50,6 @@ import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
-import { bodyLengthStatus, countBodyWords } from './cover-letter-length.util';
 
 @Component({
   selector: 'app-cover-letter-detail',
@@ -62,6 +65,7 @@ import { bodyLengthStatus, countBodyWords } from './cover-letter-length.util';
   ],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
+  providers: [CoverLetterContentStore],
 })
 export class CoverLetterDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -103,17 +107,30 @@ export class CoverLetterDetailComponent {
   readonly isDefault = signal(false);
   readonly previewMode = signal(false);
 
-  readonly content = signal<CoverLetterContent>({
-    address: {},
-    date: '',
-    subject: '',
-    greeting: '',
-    bodyParagraphs: [],
-    closing: '',
-    signature: '',
-    tone: COVER_LETTER_TONE_DEFAULT,
-    length: COVER_LETTER_LENGTH_DEFAULT,
-  });
+  /** The letter itself - its blocks, its paragraphs and the application
+   * answers. Touches no gateway: the row it belongs to is loaded and saved
+   * elsewhere. */
+  protected readonly letter = inject(CoverLetterContentStore);
+
+  /**
+   * Read-only aliases onto the content store, for the bindings the template
+   * repeats most. Same device as `t` above, and they alias rather than hold:
+   * every write still goes through the store's own methods.
+   *
+   * They exist because this template is **669/300** and the ratchet refuses to
+   * let an over-budget file grow - prefixing forty-odd bindings with `letter.`
+   * re-wraps them and adds lines to a file that may not gain any. Cutting the
+   * template is a named next phase; this keeps it byte-identical meanwhile.
+   */
+  protected readonly content = this.letter.content;
+  protected readonly tone = this.letter.tone;
+  protected readonly length = this.letter.length;
+  protected readonly earliestStart = this.letter.earliestStart;
+  protected readonly salaryExpectation = this.letter.salaryExpectation;
+  protected readonly noticePeriod = this.letter.noticePeriod;
+  protected readonly attachments = this.letter.attachments;
+  protected readonly wordCount = this.letter.wordCount;
+  protected readonly wordStatus = this.letter.wordStatus;
 
   readonly style = signal<CoverLetterStyle>({ ...COVER_LETTER_STYLE_DEFAULT });
   readonly styleNotes = signal<StyleNote[]>([]);
@@ -124,38 +141,9 @@ export class CoverLetterDetailComponent {
   readonly regeneratingBlock = signal<string | null>(null);
   readonly drafting = signal(false);
 
-  /** AI voice / length, read straight off the persisted content. */
-  readonly tone = computed<CoverLetterTone>(() => this.content().tone ?? COVER_LETTER_TONE_DEFAULT);
-  readonly length = computed<CoverLetterLength>(
-    () => this.content().length ?? COVER_LETTER_LENGTH_DEFAULT,
-  );
-
-  /** Availability and salary, read straight off the persisted content. German
-   * postings routinely require the first two; all three are free text, because
-   * "ab sofort" and "01.10.2026" are equally valid answers. */
-  readonly earliestStart = computed(() => this.content().earliestStart ?? '');
-  readonly salaryExpectation = computed(() => this.content().salaryExpectation ?? '');
-  readonly noticePeriod = computed(() => this.content().noticePeriod ?? '');
-  /** DIN 5008 enclosure line ("Anlagen"), listing what travels with the letter. */
-  readonly attachments = computed(() => this.content().attachments ?? '');
-
-  /** The three values as the skill takes them - one place, so the draft call,
-   * the per-block call and the cache hash cannot drift apart. */
-  private applicationDetails(): {
-    earliest_start: string;
-    salary_expectation: string;
-    notice_period: string;
-  } {
-    return {
-      earliest_start: this.earliestStart(),
-      salary_expectation: this.salaryExpectation(),
-      notice_period: this.noticePeriod(),
-    };
+  private applicationDetails() {
+    return this.letter.applicationDetails();
   }
-
-  /** Live body word count (paragraphs only - the target is a body budget). */
-  readonly wordCount = computed(() => countBodyWords(this.content().bodyParagraphs));
-  readonly wordStatus = computed(() => bodyLengthStatus(this.wordCount(), this.length()));
 
   private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
     font_ats_risk: 'documents.cv_style_note_font',
@@ -195,20 +183,7 @@ export class CoverLetterDetailComponent {
         this.previewMode.set(true);
       }
 
-      const parsed: CoverLetterContent = item.contentJson
-        ? JSON.parse(item.contentJson)
-        : {
-            address: {},
-            date: '',
-            subject: '',
-            greeting: '',
-            bodyParagraphs: [],
-            closing: '',
-            signature: '',
-          };
-      parsed.tone ??= COVER_LETTER_TONE_DEFAULT;
-      parsed.length ??= COVER_LETTER_LENGTH_DEFAULT;
-      this.content.set(parsed);
+      this.letter.hydrate(item.contentJson);
 
       const style: CoverLetterStyle = item.styleJson
         ? { ...COVER_LETTER_STYLE_DEFAULT, ...JSON.parse(item.styleJson) }
@@ -272,11 +247,11 @@ export class CoverLetterDetailComponent {
   }
 
   setTone(tone: CoverLetterTone): void {
-    this.content.set({ ...this.content(), tone });
+    this.letter.setTone(tone);
   }
 
   setLength(length: CoverLetterLength): void {
-    this.content.set({ ...this.content(), length });
+    this.letter.setLength(length);
   }
 
   updateStyle(patch: Partial<CoverLetterStyle>): void {
@@ -327,7 +302,7 @@ export class CoverLetterDetailComponent {
 
   /** Style-override key for a body paragraph. */
   paragraphStyleKey(index: number): string {
-    return `body_${index}`;
+    return paragraphStyleKey(index);
   }
 
   toggleStylePopover(key: string): void {
@@ -402,64 +377,34 @@ export class CoverLetterDetailComponent {
   }
 
   updateAddress(field: keyof CoverLetterAddress, value: string): void {
-    const fresh = { ...this.content() };
-    fresh.address = { ...fresh.address, [field]: value };
-    this.content.set(fresh);
+    this.letter.updateAddress(field, value);
   }
 
-  updateField(
-    field: keyof Omit<
-      CoverLetterContent,
-      'address' | 'bodyParagraphs' | 'hashes' | 'tone' | 'length'
-    >,
-    value: string,
-  ): void {
-    const fresh = { ...this.content(), [field]: value };
-    this.content.set(fresh);
+  updateField(field: CoverLetterTextField, value: string): void {
+    this.letter.updateField(field, value);
   }
 
   updateParagraph(index: number, value: string): void {
-    const fresh = { ...this.content() };
-    const paragraphs = [...(fresh.bodyParagraphs || [])];
-    paragraphs[index] = value;
-    fresh.bodyParagraphs = paragraphs;
-    this.content.set(fresh);
+    this.letter.updateParagraph(index, value);
   }
 
   addParagraph(): void {
-    const fresh = { ...this.content() };
-    fresh.bodyParagraphs = [...(fresh.bodyParagraphs || []), ''];
-    this.content.set(fresh);
+    this.letter.addParagraph();
   }
 
+  /**
+   * Removing a paragraph touches three owners, which is why it is orchestrated
+   * here: the content store drops the paragraph and reports how many are left,
+   * the open-popover key is page view state, and the `body_<i>` style overrides
+   * above the removal have to shift down so they keep pointing at the paragraph
+   * the user set them on.
+   */
   removeParagraph(index: number): void {
-    const fresh = { ...this.content() };
-    const paragraphs = [...(fresh.bodyParagraphs || [])];
-    paragraphs.splice(index, 1);
-    fresh.bodyParagraphs = paragraphs;
-    this.content.set(fresh);
+    const remaining = this.letter.removeParagraph(index);
     if (this.openStyleKey() === this.paragraphStyleKey(index)) this.openStyleKey.set(null);
-    this.reindexParagraphStyles(index, paragraphs.length);
-  }
-
-  /** After removing paragraph `removedAt`, shift every `body_<i>` style
-   * override down one so overrides keep pointing at the right paragraph. */
-  private reindexParagraphStyles(removedAt: number, newLength: number): void {
     const current = this.style();
-    if (!current.sectionStyles) return;
-    const next = { ...current.sectionStyles };
-    delete next[this.paragraphStyleKey(removedAt)];
-    for (let i = removedAt + 1; i <= newLength; i++) {
-      const from = this.paragraphStyleKey(i);
-      const to = this.paragraphStyleKey(i - 1);
-      if (next[from]) {
-        next[to] = next[from];
-        delete next[from];
-      } else {
-        delete next[to];
-      }
-    }
-    this.style.set({ ...current, sectionStyles: next });
+    const sectionStyles = reindexParagraphStyleKeys(current.sectionStyles, index, remaining);
+    if (sectionStyles) this.style.set({ ...current, sectionStyles });
   }
 
   /** Full-letter AI draft - fills every block in one pass honoring the current

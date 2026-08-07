@@ -780,6 +780,40 @@ fields come from unrelated sources, so the collision is theoretical. It is recor
 asserts the collision rather than in a comment that could go stale, and `regenerationHashInput` for
 CVs has the same shape and the same reasoning.
 
+## Amendment, 2026-08-08 (fifteenth): amendment fourteen misread its own residue
+
+Amendment fourteen, written a day earlier, said `cover-letter-detail`'s five lines over budget were
+the 21 read-only aliases, and that only cutting the template would remove them. **The arithmetic was
+right and the conclusion was wrong.**
+
+Extracting the Style card and the per-block style popover into `cover-letter-style-card/` and
+`cover-letter-style-popover/` took the class to **337/400 - under budget - with all 21 aliases still
+in place.** What was actually left in the page was not a template workaround; it was a second
+responsibility that had never been named, hiding in plain sight because it was markup rather than
+state. The layer migration moved everything that talked to the gateway and stopped there, and
+"everything else is the template's problem" was the wrong inference from that.
+
+**The correction worth carrying forward:** when a migrated page is still over budget, look for a
+responsibility before blaming the template. The four store extractions asked "what state does this
+own?"; this one asked "what _panels_ does this own?", and the second question had an answer the first
+could not reach.
+
+The template is still 669 -> **491/300**, so the original point stands in weaker form: the template
+is the remaining problem, and it is a bigger one than the class ever was.
+
+### Where the styles went, and why the check matters
+
+The moved markup carried `.coverdetail__style-pop`, `.coverdetail__style-field`,
+`.coverdetail__style-label`, `.coverdetail__style-reset`, `.coverdetail__custom-badge` and
+`.coverdetail__spacer` with it. Angular scopes a component's compiled CSS, so rules left on the page
+would simply not reach a child extracted out of it - the failure that rendered this editor unstyled
+once before.
+
+All six moved into `_cover-letter-controls.scss`, which `styles.scss` already emits globally for
+exactly this reason, and `npm run quality:style-move --base main` reports **lossless**: every selector
+carries the declarations it carried before. `.coverdetail__spacer` moved even though the page still
+uses it, because it is now read from two components and a duplicated copy is a rule that can drift.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

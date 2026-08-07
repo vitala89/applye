@@ -125,12 +125,21 @@
   (517 -> 405) both AI paths. The page injects neither `DbService` nor `AiService`, so its allowlist
   line is deleted: **COMPONENTS_STILL_USING_THE_GATEWAY is 22**, from 26 at the start of the campaign.
   The rule was probed both ways - it errors on the injection, it is silent without it.
-- **The 5 lines over budget are the template, not the class** (ADR-0005 amendment fourteen). 21 of the
-  405 are read-only aliases that exist only because the template is **669/300** and the ratchet will
-  not let an over-budget file grow; delete them and the class is **384/400**. That is the pattern the
-  four-page campaign produced: a page class converges once its state moves, and the residue is the
-  template's problem. `tracker` hit 304 because its template was already in budget. **Cutting
-  `cover-letter-detail.component.html` is the next first action**, and it closes the class too.
+- **`cover-letter-detail.component.ts` is now 337/400 - under budget**, and the template is
+  **669 -> 491/300**. The Style card and the per-block style popover became
+  `cover-letter-style-card/` and `cover-letter-style-popover/`.
+- **This corrected a claim made a day earlier** (ADR-0005 amendment fifteen). Amendment fourteen said
+  the five lines over budget were the 21 read-only aliases and that only cutting the template could
+  remove them. The arithmetic was right and the conclusion was wrong: the aliases are all still there
+  and the class is 337. What was left in the page was **a second responsibility nobody had named**,
+  hiding in plain sight because it was markup rather than state. The four store extractions asked what
+  state the page owned; nobody asked what _panels_ it owned. **The rule: when a migrated page is still
+  over budget, look for a responsibility before blaming the template.**
+- **Moved markup takes its stylesheet rules with it, and there is a check that proves it.** Angular
+  scopes a component's CSS, so the six classes the moved markup uses went into
+  `_cover-letter-controls.scss`, which `styles.scss` already emits globally;
+  `npm run quality:style-move -- --base main` reports **lossless**. This is the failure shape that has
+  bitten three times, and a visual check is still owed - it cannot be run without Tauri IPC.
 - **The two document editors share almost nothing, settled by reading both.** `CoverLetterStyle` and
   `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Their
   `sectionStyles` differ structurally - a closed `CvSectionKey` union against an open

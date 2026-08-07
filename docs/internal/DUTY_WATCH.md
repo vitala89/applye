@@ -44,6 +44,38 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, `cover-letter-detail` template cut 1: the Style card leaves the page, and the class lands under budget
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 8/10 - radius 2, ambiguity 1, risk 1, verify 2, **unknowns 2**. Unknowns 2 because the split points needed the 669-line template and the 349-line stylesheet read before anything could be planned; the first step was discovery, not edits.)
+- **Branch:** `feat/cover-letter-style-panels`, off `main` at `0bf6cc0`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** cut `cover-letter-detail.component.html` (669/300), starting with the largest coherent block.
+- **Completed:**
+  - **`cover-letter-style-card/`** - the document-wide Style card: font, size, weight, colour, page size, margins, ATS warnings, reset-all. Owns page geometry, because it clamps through the app-local `resolvePageSettings` (amendment five).
+  - **`cover-letter-style-popover/`** - the per-block override fields and their reset.
+  - **`cover-letter-detail.component.html`: 669 -> 491** non-empty against 300.
+  - **`cover-letter-detail.component.ts`: 405 -> 337** against 400 - **under budget, and the first time this file has been.**
+  - **Six style rules moved into `_cover-letter-controls.scss`**, already emitted globally from `styles.scss`. `quality:style-move` reports **lossless**.
+  - **35 tests** across the two new specs, including the margin clamp - which had never had one, because it lived in a page class.
+- **Not completed:** the template is still **491/300** and the stylesheet 256. Both are the next phase.
+- **Files or packages changed:** 4 new files under `cover-letter-detail/`, the page's `.ts`/`.html`/`.scss`/`.spec.ts`, `_cover-letter-controls.scss`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test` and a full `jest` run **passed - 190 suites / 2452 tests**. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:style-move -- --base main <both stylesheets>` **passed, lossless**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**.
+  - **Not run:** any UI walkthrough. Tauri IPC is required. This is the weakest point of the change and the reason `quality:style-move` and the two rendering specs exist here rather than a visual check.
+- **Privacy/security impact:** none. Markup and CSS moved; no data path changed.
+- **Decisions and assumptions:**
+  - **Both components inject `CoverLetterStyleStore` rather than taking inputs.** It is provided on the page, so every child resolves the same instance through the element injector, and a panel that only reads and writes style has nothing else to say to its parent.
+  - **The reset-all is the exception and travels as an output.** The open-popover key is one-at-a-time across the whole editor, so the page owns it; a reset-all makes whatever is open stale.
+  - **The popover keeps the page's `#stylePopover` `ng-template` as a three-line wrapper.** `CoverLetterBlockComponent` takes a `TemplateRef`, and changing that to a component input would rewrite its API for no gain.
+  - **`.coverdetail__spacer` moved even though the page still uses it.** Two copies of a rule are two rules that can drift; the global partial is the documented home.
+- **Risks or compatibility impact:** this is the change shape that has bitten this repository three times - moved markup losing its rules, a host element breaking a flex parent, a directive left behind. `quality:style-move` covers the first, the two new specs assert the class hooks, and the third does not apply: no `RouterLink` or other directive is involved. **A visual check is still owed** and cannot be done here.
+- **Open issues or blockers:** none.
+- **Next first action:** continue the template cut. The three remaining candidates, largest first: the **blocks region** (~290 lines, the recipient and body blocks the page still renders itself, next to five `app-cover-letter-block` instances that prove the shape works), the **header bar** (~85), and the **metadata/availability cards** (~100). The blocks region is the only one that gets 491 under 300 on its own.
+- **Evidence:**
+  - **Amendment fourteen was wrong and the ADR now says so.** It claimed the five lines over budget were the 21 read-only aliases and that only cutting the template could remove them. The aliases are all still in place and the class is 337. What was left was a second responsibility nobody had named, because the four store extractions asked what state the page owned and not what panels it owned.
+  - Sizes: `cover-letter-style-card.component.ts` 109/400 + template 120/300, `cover-letter-style-popover.component.ts` 40/400 + template 58/300, `cover-letter-detail.component.ts` **337/400** from 405, `.html` **491/300** from 669, `.scss` **256** from 349, `_cover-letter-controls.scss` 197 from 92.
+
 ### 2026-08-07, `cover-letter-detail` PR 4 of 4: the page comes off the gateway, and the allowlist reaches 22
 
 - **Status:** complete

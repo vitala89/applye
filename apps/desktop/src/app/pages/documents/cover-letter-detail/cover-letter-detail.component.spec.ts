@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterDetailComponent } from './cover-letter-detail.component';
+import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
 
 describe('CoverLetterDetailComponent preview atoms', () => {
   let component: CoverLetterDetailComponent;
@@ -64,12 +66,24 @@ describe('CoverLetterDetailComponent preview atoms', () => {
     expect(component.isBlockOpen('recipient')).toBe(true);
   });
 
-  it('toggleStyleOpen flips the Style card open state, default open', () => {
-    expect(component.styleOpen()).toBe(true);
-    component.toggleStyleOpen();
-    expect(component.styleOpen()).toBe(false);
-    component.toggleStyleOpen();
-    expect(component.styleOpen()).toBe(true);
+  // The Style card's own collapse moved into `cover-letter-style-card/` with the
+  // markup that reads it, and its spec covers it there. What stays here is the
+  // *popover* key: it is one-at-a-time across the whole editor, so the page owns
+  // it, and the card has to tell the page when a reset-all makes it stale. This
+  // asserts that wiring rather than the signal.
+  it('closes an open style popover when the card reports a reset-all', () => {
+    component.doc.set({ id: 1, docType: 'cover_letter', source: 'manual', isDefault: false });
+    component.loadError.set(false);
+    component.previewMode.set(false);
+    fixture.detectChanges();
+
+    const card = fixture.debugElement.query(By.directive(CoverLetterStyleCardComponent));
+    expect(card).toBeTruthy();
+    component.openStyleKey.set('greeting');
+
+    card.componentInstance.resetAllStyles();
+
+    expect(component.openStyleKey()).toBeNull();
   });
 
   it('exportPdfWysiwyg keeps printing-cv until afterprint (native print is async)', () => {

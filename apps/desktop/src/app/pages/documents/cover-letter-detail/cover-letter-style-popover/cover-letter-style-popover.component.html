@@ -1,0 +1,58 @@
+<div class="coverdetail__style-pop">
+  <label class="coverdetail__style-field">
+    <span class="coverdetail__style-label">{{ t()('documents.cv_style_font') }}</span>
+    <select
+      [ngModel]="styles.sectionOverride(styleKey())?.fontFamily ?? ''"
+      (ngModelChange)="styles.setSectionStyle(styleKey(), { fontFamily: $event || undefined })"
+    >
+      <option value="">{{ t()('documents.cv_section_style_inherit') }}</option>
+      @for (f of fontOptions; track f) {
+        <option [value]="f">{{ f }}</option>
+      }
+    </select>
+  </label>
+  <label class="coverdetail__style-field">
+    <span class="coverdetail__style-label">{{ t()('documents.cv_style_size') }}</span>
+    <input
+      type="number"
+      min="8"
+      max="14"
+      step="0.5"
+      [ngModel]="styles.sectionOverride(styleKey())?.fontSizePt ?? null"
+      [placeholder]="style().fontSizePt"
+      (ngModelChange)="
+        styles.setSectionStyle(styleKey(), { fontSizePt: $event ? +$event : undefined })
+      "
+    />
+  </label>
+  <label class="coverdetail__style-field">
+    <span class="coverdetail__style-label">{{ t()('documents.cv_style_color') }}</span>
+    <input
+      type="color"
+      [ngModel]="styles.sectionOverride(styleKey())?.colorHex ?? style().accentColorHex"
+      (ngModelChange)="styles.setSectionStyle(styleKey(), { colorHex: $event })"
+    />
+  </label>
+  <label class="coverdetail__style-field">
+    <span class="coverdetail__style-label">{{ t()('documents.cv_style_weight') }}</span>
+    <select
+      [ngModel]="styles.sectionOverride(styleKey())?.fontWeight ?? null"
+      (ngModelChange)="
+        styles.setSectionStyle(styleKey(), { fontWeight: $event ? $any(+$event) : undefined })
+      "
+    >
+      <option [ngValue]="null">{{ t()('documents.cv_section_style_inherit') }}</option>
+      <option [ngValue]="300">{{ t()('documents.cv_style_weight_300') }}</option>
+      <option [ngValue]="400">{{ t()('documents.cv_style_weight_400') }}</option>
+      <option [ngValue]="600">{{ t()('documents.cv_style_weight_600') }}</option>
+      <option [ngValue]="700">{{ t()('documents.cv_style_weight_700') }}</option>
+    </select>
+  </label>
+  <button
+    type="button"
+    class="coverdetail__style-reset"
+    (click)="styles.resetSectionStyle(styleKey())"
+  >
+    {{ t()('documents.cv_section_style_reset') }}
+  </button>
+</div>

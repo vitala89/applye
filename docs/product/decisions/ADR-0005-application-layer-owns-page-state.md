@@ -410,6 +410,66 @@ inside a refactor, which is exactly the kind of thing that should not pass silen
 The next pages are `tracker` (667/400) and `cover-letter-detail` (644/400), which share Discover's
 shape. `jobs` stays deferred until its `shared/*` services move.
 
+## Amendment, 2026-08-07 (eighth): the layer may translate a document, and derived view state is not view state
+
+`tracker` was measured before it was planned, and two of the positions this ADR had settled turned out
+to be answers to a question the page does not ask. Both went through the grilling gate.
+
+### `TranslateService` is not `ToastService`
+
+Amendment three said "nothing in `libs/application` notifies", and amendment seven added "a store raises
+typed errors, it does not phrase them" - the second one supported by the observation that the layer "has
+no `TranslateService`". That observation was true and is not a rule. **`libs/i18n` is tagged
+`type:util`**, so `type:application → data, domain, util` already permits it; the reason amendment three
+gave applies to `ToastService` alone, which is app-local by construction.
+
+The distinction the two rules were reaching for is **who the text is for**. A toast and an error message
+are the layer speaking to the user, and the app owns that. The tracker's Eigenbemuehungen report is a
+**document the layer renders**, and its language is deliberately not the UI language:
+`reportT = tFor(reportMarket() === 'de' ? 'de' : 'en')` prints a German sheet out of an English app.
+
+**Decision: a store may inject `TranslateService` for text that goes into a document it produces. It
+still may not notify, and still may not phrase an error.** Without this, `buildCsv`, `buildReportText`,
+`csvCell` and `periodLabel` - about 150 lines with no tests - either stay on a 708-line page or reach
+the layer through a codec for a dependency lint already allows.
+
+Rejected: a `TrackerReportCodec` carrying `{ t, tFor }`, which is amendment seven's shape applied where
+the constraint it exists for is absent; and leaving the report on the page, which is the Profile outcome.
+
+Consequence, stated plainly: "the layer never speaks to the user" now carries the qualifier "except in a
+document it renders", and the qualifier has to be checked per store rather than assumed.
+
+### Column visibility is not view state
+
+The handoff into this phase recorded `colState` as view state that stays on the page, by analogy with
+`livePanelOpen` and `collapsedSections` on `cv-detail`. The analogy does not hold. `colState` merges
+with the **gateway-loaded** `customCols()` into `visibleColumns()`, and five derived values hang off
+that: the grid header, the grid cells, the column panel, `reportColumns()` and `reportFitInfo()`, ending
+in the CSV and the PDF. `livePanelOpen` derives nothing and loads nothing.
+
+**Decision: state that is half-loaded from the gateway and feeds a derived chain belongs to a store,
+whatever it looks like from the outside.** `TrackerColumnsStore` owns `columnState`, the custom columns
+and `visibleColumns`; the page keeps `showCols`, the panel's open flag, which really is view state.
+
+**The store holds no `TranslateService` even so**, which is the first rule above declining to apply: a
+column's _label_ is UI text in the grid and report text on the sheet, so the same column list is
+labelled twice, by two callers, in two languages. `colLabel` and `reportColLabel` stay on the page.
+
+### Two things found by mutation testing, both worth recording
+
+- **A migration silently changed behaviour, and a symmetric fixture hid it.** The page's `load()` catch
+  only ever emptied `rows`; the first draft of `TrackerColumnsStore.load()` emptied the custom columns
+  too. Every fixture loaded into an already-empty store, where "keep what you have" and "reset to `[]`"
+  agree, so the mutant crossing them survived. The page reloads its columns after **every row save**, so
+  the difference is a failed reload deleting columns the user still has. Fixed, and the regression test
+  loads a non-empty list before the failing reload.
+- **`essentialKeys` was dead**, referenced only by its own declaration, and `reportColumns` contained
+  `c.custom ? (c.type ?? 'text') : (c.type ?? 'text')` - a ternary with identical branches. Both went.
+
+`tracker.component.ts` is **536/400** after PR 1, from 667. `COMPONENTS_STILL_USING_THE_GATEWAY` is
+unchanged at 25: the page still injects `DbService` for rows, settings, the row editor and the two
+exports. It loses its entry at PR 4, and `tracker-report-print.component.ts` loses its own at PR 2.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -423,7 +483,8 @@ shape. `jobs` stays deferred until its `shared/*` services move.
   - [x] Enforce "a component does not reach the gateway" by lint - `no-restricted-syntax` on
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
-        1019 -> 517), `tracker` and `cover-letter-detail` next, `jobs` deferred
+        1019 -> 517), `tracker` **in progress** (four PRs: columns done, then rows + print, row editor,
+        report), `cover-letter-detail` next, `jobs` deferred
   - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**25** entries, first one deleted 2026-08-07),
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines

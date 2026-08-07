@@ -29,9 +29,17 @@ import type {
   ApplicationTrackerFieldsInput,
   Settings,
   SupportedLanguage,
-  TrackerCustomColumn,
   TrackerRow,
 } from '@applye/core';
+import {
+  TrackerColumnDef,
+  TrackerColumnsStore,
+  formatTrackerDate,
+  trackerCellValue,
+  trackerColumnWidth,
+  trackerCustomValues,
+  trackerFieldText,
+} from '@applye/application';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
@@ -45,21 +53,7 @@ import {
 
 type Range = 'month' | '3months' | 'all';
 type Segment = 'active' | 'archived';
-type ColType = 'text' | 'date' | 'number' | 'yesno' | 'select' | 'status' | 'link' | 'stage';
 const RESPONDED = ['interview', 'offer', 'rejected'];
-
-/** A rendered column - a built-in field or a user-defined custom column. */
-interface ColumnDef {
-  key: string;
-  labelKey?: string;
-  label?: string; // custom columns carry a literal label
-  src: 'job' | 'app';
-  editable?: boolean;
-  type?: ColType;
-  essential?: boolean;
-  pin?: boolean;
-  custom?: boolean;
-}
 
 // Job Tracker: 1:1 with the user's real xlsx tracker. Export IS the Agentur
 // fuer Arbeit "Eigenbemuehungen" report (ROADMAP §9). 0 tokens. This screen is
@@ -71,6 +65,7 @@ interface ColumnDef {
   imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
+  providers: [TrackerColumnsStore],
 })
 export class TrackerComponent {
   private readonly db = inject(DbService);
@@ -78,6 +73,11 @@ export class TrackerComponent {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   protected readonly t = this.i18n.t;
+
+  /** Which columns exist and which are showing. The page labels them - the
+   * store holds no `TranslateService`, because the same column list is rendered
+   * in the UI language here and in the report's own language on the sheet. */
+  protected readonly columns = inject(TrackerColumnsStore);
 
   readonly icons = {
     fileDown: FileDown,
@@ -104,7 +104,6 @@ export class TrackerComponent {
 
   // ---- data ----
   readonly rows = signal<TrackerRow[]>([]);
-  readonly customCols = signal<TrackerCustomColumn[]>([]);
   readonly settings = signal<Settings | null>(null);
   readonly loading = signal(true);
 
@@ -145,19 +144,15 @@ export class TrackerComponent {
   /** The report mirrors the user's visible tracker columns (built-in + custom
    * + Next Interview), each with an estimated print width for A4 fit. */
   readonly reportColumns = computed<ReportColumn[]>(() =>
-    this.visibleColumns().map((c) => ({
+    this.columns.visibleColumns().map((c) => ({
       id: c.key,
       label: this.reportColLabel(c),
-      type: c.custom ? (c.type ?? 'text') : (c.type ?? 'text'),
-      width: this.colWidth(c),
+      type: c.type ?? 'text',
+      width: trackerColumnWidth(c),
       custom: !!c.custom,
     })),
   );
   readonly reportFitInfo = computed(() => reportFit(this.reportColumns(), this.landscape()));
-
-  // ---- add-custom-column form ----
-  readonly newColName = signal('');
-  readonly newColType = signal<TrackerCustomColumn['type']>('text');
 
   readonly statuses: ApplicationStatus[] = [
     'saved',
@@ -168,81 +163,6 @@ export class TrackerComponent {
     'cancelled',
   ];
   readonly isGerman = computed(() => this.settings()?.uiLanguage === 'de');
-
-  readonly baseColumns: ColumnDef[] = [
-    { key: 'company', labelKey: 'tracker.col_company', src: 'job', essential: true, pin: true },
-    { key: 'title', labelKey: 'tracker.col_role', src: 'job', essential: true },
-    {
-      key: 'status',
-      labelKey: 'tracker.col_status',
-      src: 'app',
-      editable: true,
-      type: 'status',
-      essential: true,
-    },
-    { key: 'appliedAt', labelKey: 'tracker.col_date', src: 'app', type: 'date', essential: true },
-    {
-      key: 'nextAction',
-      labelKey: 'tracker.col_next_action',
-      src: 'app',
-      editable: true,
-      type: 'text',
-      essential: true,
-    },
-    {
-      key: 'nextActionAt',
-      labelKey: 'tracker.col_next_action_at',
-      src: 'app',
-      editable: true,
-      type: 'date',
-      essential: true,
-    },
-    {
-      key: 'nextStage',
-      labelKey: 'tracker.col_next_stage',
-      src: 'app',
-      type: 'stage',
-      essential: true,
-    },
-    { key: 'techStack', labelKey: 'tracker.col_tech_stack', src: 'job' },
-    { key: 'location', labelKey: 'tracker.col_location', src: 'job' },
-    { key: 'sourceUrl', labelKey: 'tracker.col_source_url', src: 'job', type: 'link' },
-    { key: 'contactName', labelKey: 'tracker.col_contact_name', src: 'app', editable: true },
-    { key: 'contactRole', labelKey: 'tracker.col_contact_role', src: 'app', editable: true },
-    { key: 'contactChannel', labelKey: 'tracker.col_contact_channel', src: 'app', editable: true },
-    { key: 'method', labelKey: 'tracker.col_method', src: 'app' },
-    { key: 'interview1At', labelKey: 'tracker.col_interview1', src: 'app', type: 'date' },
-    { key: 'followUp2At', labelKey: 'tracker.col_followup2', src: 'app', type: 'date' },
-    { key: 'salaryRange', labelKey: 'tracker.col_salary_range', src: 'app', editable: true },
-    { key: 'contractType', labelKey: 'tracker.col_contract_type', src: 'app' },
-    { key: 'blueCardEligible', labelKey: 'tracker.col_blue_card', src: 'job', type: 'yesno' },
-    { key: 'eorProvider', labelKey: 'tracker.col_eor_provider', src: 'app' },
-    { key: 'notes', labelKey: 'tracker.col_notes', src: 'app', editable: true },
-  ];
-
-  readonly essentialKeys = new Set(this.baseColumns.filter((c) => c.essential).map((c) => c.key));
-
-  readonly colState = signal<Record<string, boolean>>(
-    Object.fromEntries(this.baseColumns.map((c) => [c.key, !!c.essential])),
-  );
-
-  /** Built-in visible columns, then every custom column (custom cols always show). */
-  readonly visibleColumns = computed<ColumnDef[]>(() => {
-    const state = this.colState();
-    const base = this.baseColumns.filter((c) => state[c.key]);
-    const custom: ColumnDef[] = this.customCols().map((c) => ({
-      key: c.id,
-      label: c.label,
-      src: 'app',
-      editable: true,
-      type: c.type,
-      custom: true,
-    }));
-    return [...base, ...custom];
-  });
-
-  readonly optionalColumns = computed(() => this.baseColumns.filter((c) => !c.essential));
-  readonly essentialColumns = computed(() => this.baseColumns.filter((c) => c.essential));
 
   readonly activeCount = computed(() => this.rows().filter((r) => !r.archived).length);
   readonly archivedCount = computed(() => this.rows().filter((r) => r.archived).length);
@@ -288,13 +208,12 @@ export class TrackerComponent {
   async load(): Promise<void> {
     this.loading.set(true);
     try {
-      const [rows, cols, settings] = await Promise.all([
+      const [rows, , settings] = await Promise.all([
         this.db.trackerRows(),
-        this.db.trackerCustomColumns(),
+        this.columns.load(),
         this.db.getSettings(),
       ]);
       this.rows.set(rows);
-      this.customCols.set(cols);
       this.settings.set(settings);
       // Default the report market to Germany when the app language is German
       // (the Eigenbemuehungen document is a German-office artefact).
@@ -306,74 +225,28 @@ export class TrackerComponent {
     }
   }
 
-  colLabel(col: ColumnDef): string {
+  /** Column labels stay on the page: the grid names a column in the UI language
+   * and the report names the same column in its own, so the store holds the
+   * column and the caller supplies the words (ADR-0005, amendment eight). */
+  colLabel(col: TrackerColumnDef): string {
     return col.custom ? (col.label ?? '') : this.t()(col.labelKey ?? '');
   }
 
   /** Same column, labelled in the REPORT's language. Custom columns keep the
    * user's own wording - we have no translation for those. */
-  private reportColLabel(col: ColumnDef): string {
+  private reportColLabel(col: TrackerColumnDef): string {
     return col.custom ? (col.label ?? '') : this.reportT()(col.labelKey ?? '');
   }
 
-  /** Rough print width (mm) per column, for the A4 fit calculation. */
-  private colWidth(col: ColumnDef): number {
-    if (col.custom) return 30;
-    const byKey: Record<string, number> = {
-      company: 34,
-      title: 40,
-      status: 22,
-      appliedAt: 22,
-      nextAction: 36,
-      nextActionAt: 26,
-      nextStage: 34,
-      techStack: 38,
-      location: 28,
-      sourceUrl: 22,
-      contactName: 34,
-      contactRole: 26,
-      contactChannel: 34,
-      method: 18,
-      interview1At: 22,
-      followUp2At: 24,
-      salaryRange: 26,
-      contractType: 22,
-      blueCardEligible: 22,
-      eorProvider: 22,
-      notes: 44,
-    };
-    return byKey[col.key] ?? 28;
+  // Template-side delegates to the pure column module, which a template cannot
+  // import directly.
+  cellValue(row: TrackerRow, col: TrackerColumnDef): string {
+    return trackerCellValue(row, col);
   }
-  isColumnVisible(key: string): boolean {
-    return this.colState()[key] ?? false;
-  }
-  toggleColumn(key: string): void {
-    this.colState.update((c) => ({ ...c, [key]: !c[key] }));
-  }
-
-  private customValues(row: TrackerRow): Record<string, string> {
-    if (!row.customFields) return {};
-    try {
-      return JSON.parse(row.customFields) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  }
-  cellValue(row: TrackerRow, col: ColumnDef): string {
-    if (col.custom) return this.customValues(row)[col.key] ?? '';
-    const v = (row as unknown as Record<string, unknown>)[col.key];
-    if (v == null) return '';
-    if (col.type === 'yesno') return v ? 'yes' : 'no';
-    if (col.key.endsWith('At')) return String(v).slice(0, 10);
-    return String(v);
-  }
-
   fmtDate(v: string): string {
-    if (!v) return '';
-    const [y, m, d] = v.slice(0, 10).split('-');
-    const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return m ? `${d} ${mo[+m - 1]} ${y.slice(2)}` : v;
+    return formatTrackerDate(v);
   }
+
   statusLabel(v?: string): string {
     return v ? this.t()('status.' + v) : '·';
   }
@@ -390,7 +263,7 @@ export class TrackerComponent {
   }
   startEdit(row: TrackerRow): void {
     this.draft.set({ ...row });
-    this.draftCustom.set({ ...this.customValues(row) });
+    this.draftCustom.set({ ...trackerCustomValues(row) });
     this.editId.set(row.id);
     this.closeMenus();
   }
@@ -398,17 +271,13 @@ export class TrackerComponent {
     this.editId.set(null);
     this.draft.set(null);
   }
-  draftValue(col: ColumnDef): string {
+  draftValue(col: TrackerColumnDef): string {
     const d = this.draft();
     if (!d) return '';
     if (col.custom) return this.draftCustom()[col.key] ?? '';
-    const v = (d as unknown as Record<string, unknown>)[col.key];
-    if (v == null) return '';
-    if (col.type === 'yesno') return v ? 'yes' : 'no';
-    if (col.key.endsWith('At')) return String(v).slice(0, 10);
-    return String(v);
+    return trackerFieldText(d as unknown as Record<string, unknown>, col);
   }
-  setDraft(col: ColumnDef, e: Event): void {
+  setDraft(col: TrackerColumnDef, e: Event): void {
     const value = (e.target as HTMLInputElement | HTMLSelectElement).value;
     if (col.custom) {
       this.draftCustom.update((m) => ({ ...m, [col.key]: value }));
@@ -501,25 +370,18 @@ export class TrackerComponent {
   }
 
   // ---------- custom columns ----------
+  // The store writes and reports; the page decides what to say about it
+  // (ADR-0005, amendment three).
   async addCustomColumn(): Promise<void> {
-    const label = this.newColName().trim();
-    if (!label) return;
-    const id = 'cf_' + Date.now();
-    const type = this.newColType();
     try {
-      const col = await this.db.addTrackerCustomColumn(id, label, type);
-      this.customCols.update((cs) => [...cs, col]);
-      this.newColName.set('');
-      this.newColType.set('text');
-      this.toast.success(this.t()('tracker.custom_added'));
+      if (await this.columns.addColumn()) this.toast.success(this.t()('tracker.custom_added'));
     } catch (e) {
       this.toast.error(String(e));
     }
   }
   async removeCustomColumn(id: string): Promise<void> {
     try {
-      await this.db.removeTrackerCustomColumn(id);
-      this.customCols.update((cs) => cs.filter((c) => c.id !== id));
+      await this.columns.removeColumn(id);
     } catch (e) {
       this.toast.error(String(e));
     }
@@ -550,7 +412,7 @@ export class TrackerComponent {
     if (!overflow.length) return '';
     // The note is dialog chrome, not part of the sheet, so it names the columns
     // in the UI language even when the sheet itself is German.
-    const uiLabels = new Map(this.visibleColumns().map((c) => [c.key, this.colLabel(c)]));
+    const uiLabels = new Map(this.columns.visibleColumns().map((c) => [c.key, this.colLabel(c)]));
     const cols = overflow.map((c) => uiLabels.get(c.id) ?? c.label).join(', ');
     const orient = this.t()(this.landscape() ? 'tracker.landscape' : 'tracker.portrait');
     const key = this.reportMode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';
@@ -634,7 +496,7 @@ export class TrackerComponent {
   private csvCell(r: TrackerRow, col: ReportColumn): string {
     const rec = r as unknown as Record<string, unknown>;
     if (col.custom) {
-      const v = this.customValues(r)[col.id] ?? '';
+      const v = trackerCustomValues(r)[col.id] ?? '';
       return col.type === 'date' && v ? v.slice(0, 10) : v;
     }
     switch (col.type) {

@@ -15,13 +15,8 @@ import {
   Sparkles,
 } from 'lucide-angular';
 import { NgTemplateOutlet } from '@angular/common';
-import type {
-  CoverLetterAddress,
-  CoverLetterContent,
-  CoverLetterLength,
-  CoverLetterTone,
-} from '@applye/core';
-import { COVER_LETTER_BLOCK_KEYS, COVER_LETTER_LENGTHS, COVER_LETTER_TONES } from '@applye/core';
+import type { CoverLetterContent } from '@applye/core';
+import { COVER_LETTER_BLOCK_KEYS } from '@applye/core';
 import {
   CoverLetterAiStore,
   CoverLetterContentStore,
@@ -37,7 +32,9 @@ import { ToastService } from '../../../core/toast/toast.service';
 import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-letter-preview.component';
 import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
+import { CoverLetterAvailabilityCardComponent } from './cover-letter-availability-card/cover-letter-availability-card.component';
 import { CoverLetterRecipientBlockComponent } from './cover-letter-recipient-block/cover-letter-recipient-block.component';
+import { CoverLetterSettingsCardComponent } from './cover-letter-settings-card/cover-letter-settings-card.component';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
 import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/cover-letter-style-popover.component';
 
@@ -52,7 +49,9 @@ import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/c
     NgTemplateOutlet,
     CoverLetterPreviewComponent,
     CoverLetterBlockComponent,
+    CoverLetterAvailabilityCardComponent,
     CoverLetterRecipientBlockComponent,
+    CoverLetterSettingsCardComponent,
     CoverLetterStyleCardComponent,
     CoverLetterStylePopoverComponent,
   ],
@@ -84,9 +83,6 @@ export class CoverLetterDetailComponent {
     draft: Sparkles,
     chevron: ChevronDown,
   };
-  protected readonly regionTags = ['de', 'us', 'uk', 'generic'];
-  protected readonly toneOptions = COVER_LETTER_TONES;
-  protected readonly lengthOptions = COVER_LETTER_LENGTHS;
   protected readonly blockKeys = COVER_LETTER_BLOCK_KEYS;
 
   /** Which block/paragraph Style popover is open, if any - only one at a
@@ -108,8 +104,6 @@ export class CoverLetterDetailComponent {
   readonly loadError = this.docs.loadError;
   readonly doc = this.docs.doc;
   readonly label = this.docs.label;
-  readonly regionTag = this.docs.regionTag;
-  readonly isDefault = this.docs.isDefault;
   readonly saving = this.docs.saving;
 
   /** The letter itself - its blocks, its paragraphs and the application
@@ -128,12 +122,6 @@ export class CoverLetterDetailComponent {
    * template is a named next phase; this keeps it byte-identical meanwhile.
    */
   protected readonly content = this.letter.content;
-  protected readonly tone = this.letter.tone;
-  protected readonly length = this.letter.length;
-  protected readonly earliestStart = this.letter.earliestStart;
-  protected readonly salaryExpectation = this.letter.salaryExpectation;
-  protected readonly noticePeriod = this.letter.noticePeriod;
-  protected readonly attachments = this.letter.attachments;
   protected readonly wordCount = this.letter.wordCount;
   protected readonly wordStatus = this.letter.wordStatus;
 
@@ -241,14 +229,6 @@ export class CoverLetterDetailComponent {
     });
   }
 
-  setTone(tone: CoverLetterTone): void {
-    this.letter.setTone(tone);
-  }
-
-  setLength(length: CoverLetterLength): void {
-    this.letter.setLength(length);
-  }
-
   /** Style-override key for a body paragraph. */
   paragraphStyleKey(index: number): string {
     return paragraphStyleKey(index);
@@ -277,10 +257,6 @@ export class CoverLetterDetailComponent {
 
   hasCustomStyle(key: string): boolean {
     return this.styles.hasCustomStyle(key);
-  }
-
-  updateAddress(field: keyof CoverLetterAddress, value: string): void {
-    this.letter.updateAddress(field, value);
   }
 
   updateField(field: CoverLetterTextField, value: string): void {

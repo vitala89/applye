@@ -44,6 +44,39 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, `cover-letter-detail` template cut 3: both cards leave, and the checklist earns its place
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 1.)
+- **Branch:** `feat/cover-letter-cards`, off `main` at `8457f7f`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** continue the template cut. **Deliberately not the body-paragraphs block**, which is the larger piece but is gated on the `.icon-btn` decision recorded in the previous entry - these two cards need no decision from the maintainer.
+- **Completed:**
+  - **`cover-letter-settings-card/`** - region, default flag, tone, length. Four controls with **two different owners**: region and the flag are row fields on `CoverLetterDocumentStore`, tone and length are part of the letter on `CoverLetterContentStore`.
+  - **`cover-letter-availability-card/`** - earliest start, salary expectation, notice period and the `Anlagen` line.
+  - **`cover-letter-detail.component.html`: 406 -> 308** against 300. **Eight lines over.**
+  - **`cover-letter-detail.component.ts`: 339 -> 318**, and it has now dropped off the over-budget report entirely.
+  - **10 tests** across the two cards.
+- **Not completed:** the template is **308/300**. The last eight lines come out with the body-paragraphs block, which is still gated on `.icon-btn`. The header bar (~85 lines) also uses `.icon-btn`.
+- **Files or packages changed:** 6 new files under `cover-letter-detail/`, the page's `.ts`/`.html`/`.scss`, `CHANGELOG.md`, `CURRENT_STATE.md`, this file. **No ADR change** - amendment sixteen already covers the reasoning, and this entry is its first application rather than a new decision.
+- **Validation:** `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. Full `jest` run **passed - 193 suites / 2469 tests**. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**.
+  - **`quality:style-move` reports 0 lost, 2 gained** - `.docedit-field input` and its `:focus`, the deliberate copy explained below.
+  - **Every gate was read for its verdict line**, after the previous session's near-miss where a grep matched neither the error nor the success line and printed nothing.
+  - **Not run:** any UI walkthrough. Tauri IPC is required.
+- **Privacy/security impact:** none. Markup and CSS moved.
+- **Decisions and assumptions:**
+  - **The two cards needed opposite treatment, and they look identical from the markup.** The settings card needed **nothing copied**: `.docedit-meta-row select` and `.docedit-style-grid select` are complete control rules emitted globally by `_editor-shell.scss`, so losing the page's `.coverdetail select` layer cost it nothing. The availability card needed **the copy**: `_editor-shell.scss` styles `.docedit-style-grid input` but **not** `.docedit-field input`, and its four fields sit in a plain `.docedit-field`.
+  - **`.coverdetail__checkbox` and its two companions moved outright** into the settings card - nothing else used them.
+  - **The availability fields stay available outside DE.** The region only decides whether the German hint shows; a posting anywhere may ask for a start date. Preserved from the page and now asserted.
+- **Risks or compatibility impact:** the four availability inputs are the only plausible visual regression, and the rule that styles them is now the card's own. **A visual check is owed** across the whole editor - five extractions have now landed on `quality:style-move`, jsdom shape tests and a hand audit, with nothing rendered.
+- **Open issues or blockers:** **the `.icon-btn` decision blocks the last two cuts.** It is generic vocabulary duplicated across four component stylesheets and still needed by the page's own header, so it cannot simply move; making it global from a cover-letter partial changes CSS vocabulary app-wide, and copying it makes a fifth copy. Maintainer call.
+- **Next first action:** put the `.icon-btn` question to the maintainer through the grilling gate. Only after it is answered: the body-paragraphs block (~112 lines, takes the template under 300), then the header bar (~85).
+- **Evidence:**
+  - **The checklist from amendment sixteen was run rather than remembered, and it discriminated.** Two cards, visually the same shape, one needing a carried rule and one not. Had it been skipped, the availability card's four inputs would have rendered as browser defaults and every gate - `quality:style-move` included - would still have been green.
+  - Sizes: `cover-letter-settings-card.component.ts` 45/400 + template 48/300 + stylesheet 38, `cover-letter-availability-card.component.ts` 40/400 + template 50/300 + stylesheet 32, `cover-letter-detail.component.html` **308/300** from 406, `.ts` **318/400** from 339, `.scss` 194 from 223.
+  - Campaign arc for this page: markup **669 -> 308**, code **644 -> 318**, gateway allowlist 26 -> 22.
+
 ### 2026-08-08, `cover-letter-detail` template cut 2: the recipient block leaves, and a CSS trap the check cannot see
 
 - **Status:** complete

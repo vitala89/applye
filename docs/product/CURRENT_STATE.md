@@ -135,8 +135,15 @@
   hiding in plain sight because it was markup rather than state. The four store extractions asked what
   state the page owned; nobody asked what _panels_ it owned. **The rule: when a migrated page is still
   over budget, look for a responsibility before blaming the template.**
-- **The template is now 406/300**, after the recipient block became `cover-letter-recipient-block/`.
-  Roughly another 106 non-empty lines to go.
+- **The template is 308/300 - eight lines over**, after five extractions: the style card, the style
+  popover, the recipient block, and now the settings and availability cards. The page class is
+  **318/400** and has dropped off the over-budget report entirely. Arc for this page: markup
+  **669 -> 308**, code **644 -> 318**.
+- **The last two cuts are blocked on one maintainer decision.** Both the body-paragraphs block (which
+  takes the template under 300 on its own) and the header bar use `.icon-btn`, generic vocabulary
+  already duplicated across four component stylesheets and still needed by the page's own header.
+  Making it global from a cover-letter partial changes CSS vocabulary app-wide; copying it makes a
+  fifth copy. That is a cross-cutting call, not a side effect of a template cut.
 - **Moved markup takes its stylesheet rules with it, and the check only proves half of that.** For
   named classes it works: the six the style panels use went into `_cover-letter-controls.scss`, which
   `styles.scss` emits globally, and `quality:style-move` reported lossless. **The recipient block found

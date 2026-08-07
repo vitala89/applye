@@ -118,13 +118,19 @@
 - Next after `tracker`: `cover-letter-detail` (**714/400**, 8 gateway calls), whose method list is
   nearly `cv-detail`'s, so the four-store decomposition should transfer - but the types do not rhyme
   with the CV ones and both should be read before anything is copied.
-- **`cover-letter-detail` is in progress: 644 -> 517, three of four pull requests done.** Measured, not
-  remembered - the handover said 714/400 and 8 gateway calls; the file is **644 non-empty / 714 raw**
-  and makes **7 distinct gateway calls over 10 call sites**. Done: `CoverLetterContentStore`
-  (644 -> 592) holding the letter, its paragraphs, tone and length, the availability answers and the
-  word budget; `CoverLetterStyleStore` (592 -> 557) holding the style and the debounced ATS check;
-  `CoverLetterDocumentStore` (557 -> 517) holding the row and the save. **Only the AI cluster remains**
-  - `draftWithAI` and `regenerateBlock` - and the allowlist entry goes with it (**23 -> 22**).
+- **`cover-letter-detail` is done as a class: 644 -> 405 across four pull requests, and off the gateway.**
+  `CoverLetterContentStore` (644 -> 592) holds the letter, its paragraphs, tone and length, the
+  availability answers and the word budget; `CoverLetterStyleStore` (592 -> 557) the style and the
+  debounced ATS check; `CoverLetterDocumentStore` (557 -> 517) the row and the save; `CoverLetterAiStore`
+  (517 -> 405) both AI paths. The page injects neither `DbService` nor `AiService`, so its allowlist
+  line is deleted: **COMPONENTS_STILL_USING_THE_GATEWAY is 22**, from 26 at the start of the campaign.
+  The rule was probed both ways - it errors on the injection, it is silent without it.
+- **The 5 lines over budget are the template, not the class** (ADR-0005 amendment fourteen). 21 of the
+  405 are read-only aliases that exist only because the template is **669/300** and the ratchet will
+  not let an over-budget file grow; delete them and the class is **384/400**. That is the pattern the
+  four-page campaign produced: a page class converges once its state moves, and the residue is the
+  template's problem. `tracker` hit 304 because its template was already in budget. **Cutting
+  `cover-letter-detail.component.html` is the next first action**, and it closes the class too.
 - **The two document editors share almost nothing, settled by reading both.** `CoverLetterStyle` and
   `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Their
   `sectionStyles` differ structurally - a closed `CvSectionKey` union against an open
@@ -135,13 +141,16 @@
   itself" - moves into `document-record.ts` because it fails **silently**, leaving two defaults for one
   region. The two upsert builders stay apart, because a CV row carries `templateId` and `themeId` and a
   letter carries neither.
-- **The empty-fixture trap has now hidden a real change four times**, and the fourth was a new shape of
-  it. Three times it was a store with a reset path and an already-empty fixture, so "reset" and "leave
-  alone" agreed - most recently `hydrate` swallowing a malformed-JSON failure and opening an empty
-  editor over a letter still on disk. The fourth was a **single-call** fixture: `load`'s
-  missing-document guard protects the row already on screen, and every test called `load` once, where
-  there was nothing to protect. Two rules now: **a store with a reset path needs a non-empty fixture,
-  and a method that guards state it did not just set needs to be called twice.**
+- **The empty-fixture trap has now hidden a real change six times, in three distinct shapes**, and one
+  rule covers all of them: **the fixture must be able to tell the two branches apart.** Shape one, a
+  store with a reset path and an already-empty fixture, so "reset" and "leave alone" agreed - most
+  recently `hydrate` swallowing a malformed-JSON failure and opening an empty editor over a letter
+  still on disk. Shape two, a **single-call** fixture: `load`'s missing-document guard protects the row
+  already on screen, and every test called `load` once, where there was nothing to protect. Shape
+  three, a **partial input to a merge**: the AI draft carries the user's tone, length and availability
+  answers over rather than taking them from the model, and one paragraph's regeneration keeps the
+  other paragraphs' cache hashes - neither was observable while the fixture omitted those fields.
+  Concretely: non-empty for a reset, called twice for a guard, populated on both sides for a merge.
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

@@ -736,6 +736,50 @@ This is the empty-fixture trap in a new coat - a _single-call_ fixture, where a 
 prior state has no prior state to protect. **The rule generalizes: whenever a method guards state it
 did not just set, the fixture must call it twice.**
 
+## Amendment, 2026-08-07 (fourteenth): the residue of a migrated page is its template
+
+`cover-letter-detail` finishes at **405/400**, and unlike Profile's 445 this number has a named
+cause rather than a decision behind it.
+
+**21 of those lines are read-only aliases** - `content`, `tone`, `loading`, `doc`, `drafting` and the
+rest - each one a single assignment forwarding to the store that now owns it. They exist because the
+template is **669/300**, the ratchet refuses to let an over-budget file grow, and prefixing forty-odd
+bindings with `letter.` re-wraps lines and adds more than it removes. Delete them and the class is
+**384/400**.
+
+So the rule the four-page campaign has actually produced: **a page class converges once its state
+moves, and what is left over is the template's problem, not the class's.** `tracker` reached 304
+because its template was already inside budget; `cv-detail` stopped at 517 for the same reason this
+one stops at 405, one size larger. Cutting the templates is the next phase, and it is what closes
+both.
+
+### Two mutants, one fixture blind spot
+
+`applyCoverLetterDraft` carries the user's tone, length and three availability answers over a fresh
+draft rather than taking them from the model. `applyCoverLetterBlock` keeps the other paragraphs'
+cache hashes when one paragraph is regenerated. Both had mutants that survived the first pass, and
+both for the same reason: **the fixture did not carry the field**, so "keep what was there" and "take
+what arrived" produced identical output.
+
+This is the empty-fixture trap in its third distinct shape. The first was a store with a reset path
+and an already-empty fixture; the second, in the document pull request, a guard protecting prior state
+with a fixture that called `load` once. This one is narrower and more common than either: **a merge
+function tested with a partial input.** The rule that covers all three: _the fixture must be able to
+tell the two branches apart_ - non-empty for a reset, called twice for a guard, fully populated on
+both sides for a merge.
+
+### A limit documented rather than fixed
+
+The per-block cache hash is `[profile, jd, language, section, tone, length, ...answers].join('|')`, so
+two different tuples collide if a field contains a `|` - a profile with a markdown table, for
+instance. A collision skips a regeneration the user asked for.
+
+**Left as-is deliberately.** Changing the separator changes every hash, which invalidates every one
+already stored in every user's database and forces a full regeneration of every letter and CV. The
+fields come from unrelated sources, so the collision is theoretical. It is recorded in a test that
+asserts the collision rather than in a comment that could go stale, and `regenerationHashInput` for
+CVs has the same shape and the same reasoning.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -750,9 +794,9 @@ did not just set, the fixture must call it twice.**
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
         1019 -> 517), `tracker` **done** (four PRs, 667 -> 304, the first page to finish **under**
-        budget), `cover-letter-detail` **in progress** (four PRs: content, style and document done,
-        644 -> 517; AI left), `jobs` deferred
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**23** entries; first deleted 2026-08-07,
+        budget), `cover-letter-detail` **done** (four PRs, 644 -> 405; the residue is 21 template
+        aliases, amendment fourteen), `jobs` deferred
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**22** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too

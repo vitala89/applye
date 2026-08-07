@@ -33,16 +33,16 @@ import {
   COVER_LETTER_TONES,
   CV_ATS_SAFE_FONTS,
   PAGE_SETTINGS_DEFAULT,
-  sanitizeSignature,
 } from '@applye/core';
 import {
+  CoverLetterAiStore,
   CoverLetterContentStore,
   CoverLetterDocumentStore,
+  CoverLetterNoProfileError,
   CoverLetterStyleStore,
   CoverLetterTextField,
   paragraphStyleKey,
 } from '@applye/application';
-import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -64,13 +64,16 @@ import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-blo
   ],
   templateUrl: './cover-letter-detail.component.html',
   styleUrl: './cover-letter-detail.component.scss',
-  providers: [CoverLetterContentStore, CoverLetterStyleStore, CoverLetterDocumentStore],
+  providers: [
+    CoverLetterContentStore,
+    CoverLetterStyleStore,
+    CoverLetterDocumentStore,
+    CoverLetterAiStore,
+  ],
 })
 export class CoverLetterDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly db = inject(DbService);
-  private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
@@ -151,11 +154,36 @@ export class CoverLetterDetailComponent {
   protected readonly hasAnyCustomStyle = this.styles.hasAnyCustomStyle;
 
   readonly justSaved = signal(false);
-  readonly regeneratingBlock = signal<string | null>(null);
-  readonly drafting = signal(false);
 
-  private applicationDetails() {
-    return this.letter.applicationDetails();
+  /** Drafting the whole letter and regenerating one block. Owns both in-flight
+   * flags and both writes into the content store; this page owns only the toast
+   * that reports a failure (ADR-0005, amendment three). */
+  protected readonly ai = inject(CoverLetterAiStore);
+  readonly drafting = this.ai.drafting;
+  readonly regeneratingBlock = this.ai.regeneratingBlock;
+
+  /**
+   * How the model's answer is read. `cleanJsonText` lives in this app and
+   * `libs/application` may not import it, so the store takes it as a parameter
+   * (ADR-0005, amendment six) - the same device `CvRegenerationCodec` uses.
+   */
+  private readonly codec = {
+    parse: (text: string) => JSON.parse(cleanJsonText(text)) as Partial<CoverLetterContent>,
+  };
+
+  /** Runs one AI path and reports its failure. The store raises a typed error
+   * rather than a sentence (ADR-0005, amendment three), so the wording the user
+   * reads is chosen here, where the translations are - once, for both paths. */
+  private async runAi(op: () => Promise<unknown>): Promise<void> {
+    try {
+      await op();
+    } catch (e) {
+      this.toast.error(
+        e instanceof CoverLetterNoProfileError
+          ? this.t()('documents.cv_generate_no_profile')
+          : String(e),
+      );
+    }
   }
 
   private static readonly STYLE_NOTE_KEYS: Record<StyleNote['kind'], string> = {
@@ -364,163 +392,11 @@ export class CoverLetterDetailComponent {
    * tone + length. Populates the editor only; the user still reviews and Saves
    * (AI assists, the user decides - never auto-applied). */
   async draftWithAI(): Promise<void> {
-    if (this.drafting() || this.regeneratingBlock()) return;
-    const doc = this.doc();
-    if (!doc) return;
-    this.drafting.set(true);
-    try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      if (!profile?.fullMd) {
-        throw new Error(this.t()('documents.cv_generate_no_profile'));
-      }
-      const language = doc.language ?? settings.defaultDocLanguage ?? 'en';
-      const jd = this.content().jobDescription || 'General job application';
-
-      const rendered = await this.ai.renderSkill('cover-letter-generate', {
-        profile_md: profile.fullMd,
-        job_description: jd,
-        language,
-        section: 'all',
-        tone: this.tone(),
-        length: this.length(),
-        ...this.applicationDetails(),
-      });
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-      });
-      const parsed = JSON.parse(cleanJsonText(res.text)) as CoverLetterContent;
-
-      const prev = this.content();
-      this.content.set({
-        ...prev,
-        address: parsed.address ?? {},
-        date: parsed.date || prev.date,
-        subject: parsed.subject ?? '',
-        greeting: parsed.greeting ?? '',
-        bodyParagraphs: parsed.bodyParagraphs ?? [],
-        closing: parsed.closing ?? '',
-        signature: parsed.signature ?? '',
-        // Preserve user choices; fresh draft invalidates per-block caches.
-        tone: prev.tone,
-        length: prev.length,
-        earliestStart: prev.earliestStart,
-        salaryExpectation: prev.salaryExpectation,
-        noticePeriod: prev.noticePeriod,
-        jobDescription: prev.jobDescription,
-        hashes: {},
-      });
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.drafting.set(false);
-    }
+    await this.runAi(() => this.ai.draftWithAI(this.codec));
   }
 
   async regenerateBlock(blockKey: string, index?: number): Promise<void> {
-    if (this.regeneratingBlock() || this.drafting()) return;
-    const doc = this.doc();
-    if (!doc) return;
-
-    const sectionName = index !== undefined ? `body_${index}` : blockKey;
-    this.regeneratingBlock.set(sectionName);
-
-    try {
-      const [profile, settings] = await Promise.all([this.db.getProfile(), this.db.getSettings()]);
-      if (!profile?.fullMd) {
-        throw new Error(this.t()('documents.cv_generate_no_profile'));
-      }
-
-      const language = doc.language ?? settings.defaultDocLanguage ?? 'en';
-      const jd = this.content().jobDescription || 'General job application';
-      const tone = this.tone();
-      const length = this.length();
-
-      // Tone, length and the availability/salary answers are all part of the
-      // input identity - changing any of them must bust the per-block cache,
-      // so they're folded into the hash.
-      const details = this.applicationDetails();
-      const hashInput = [
-        profile.fullMd,
-        jd,
-        language,
-        sectionName,
-        tone,
-        length,
-        details.earliest_start,
-        details.salary_expectation,
-        details.notice_period,
-      ].join('|');
-      const sourceHash = await this.db.hashText(hashInput);
-
-      const currentHashes = this.content().hashes || {};
-      const currentBlockHash =
-        index !== undefined
-          ? (currentHashes.bodyParagraphs || [])[index]
-          : (currentHashes as Record<string, string>)[blockKey];
-
-      if (currentBlockHash === sourceHash) {
-        this.regeneratingBlock.set(null);
-        return;
-      }
-
-      const rendered = await this.ai.renderSkill('cover-letter-generate', {
-        profile_md: profile.fullMd,
-        job_description: jd,
-        language,
-        section: sectionName,
-        tone,
-        length,
-        ...details,
-      });
-
-      const res = await this.ai.run({
-        mode: settings.aiMode,
-        provider: settings.provider,
-        model: settings.defaultModel,
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-      });
-
-      const rawText = cleanJsonText(res.text);
-      const parsed = JSON.parse(rawText);
-
-      const freshContent = { ...this.content() };
-      if (!freshContent.hashes) freshContent.hashes = {};
-
-      if (blockKey === 'subject') {
-        freshContent.subject = parsed.subject || '';
-        freshContent.hashes.subject = sourceHash;
-      } else if (blockKey === 'greeting') {
-        freshContent.greeting = parsed.greeting || '';
-        freshContent.hashes.greeting = sourceHash;
-      } else if (blockKey === 'closing') {
-        freshContent.closing = parsed.closing || '';
-        freshContent.hashes.closing = sourceHash;
-      } else if (blockKey === 'signature') {
-        freshContent.signature = sanitizeSignature(parsed.signature);
-        freshContent.hashes.signature = sourceHash;
-      } else if (blockKey === 'body' && index !== undefined) {
-        const freshParagraphs = [...(freshContent.bodyParagraphs || [])];
-        if (parsed.bodyParagraphs && parsed.bodyParagraphs[index]) {
-          freshParagraphs[index] = parsed.bodyParagraphs[index];
-        }
-        freshContent.bodyParagraphs = freshParagraphs;
-        if (!freshContent.hashes.bodyParagraphs) freshContent.hashes.bodyParagraphs = [];
-        freshContent.hashes.bodyParagraphs[index] = sourceHash;
-      }
-
-      this.content.set(freshContent);
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.regeneratingBlock.set(null);
-    }
+    await this.runAi(() => this.ai.regenerateBlock(blockKey, index, this.codec));
   }
 
   /**

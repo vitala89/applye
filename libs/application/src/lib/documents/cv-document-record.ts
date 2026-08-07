@@ -11,6 +11,7 @@ import type {
   DocumentLibraryItem,
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
+import { siblingsToUndefault } from './document-record';
 
 /** The parts of a save that the editor owns. Everything else on the row is
  * carried over from the document as loaded. */
@@ -60,18 +61,15 @@ export function buildCvUpsert(
 }
 
 /**
- * The sibling rows that must stop being the default, because this document is
- * claiming that flag.
- *
- * "Default" is per region, not per library: a default DE CV and a default US CV
- * coexist, so only siblings sharing this document's region are displaced. The
- * document itself is excluded by id - re-saving an already-default CV must not
- * clear its own flag on the way to setting it.
+ * The sibling CV rows that must stop being the default, because this document
+ * is claiming that flag. The rule is not CV-specific and now lives in
+ * `document-record.ts`, shared with the cover-letter editor; this stays as the
+ * name the CV page already imports.
  */
 export function cvSiblingsToUndefault(
   siblings: readonly DocumentLibraryItem[],
   currentId: number,
   regionTag: string,
 ): DocumentLibraryItem[] {
-  return siblings.filter((s) => s.id !== currentId && s.isDefault && s.regionTag === regionTag);
+  return siblingsToUndefault(siblings, currentId, regionTag);
 }

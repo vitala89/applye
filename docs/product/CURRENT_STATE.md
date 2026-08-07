@@ -118,20 +118,30 @@
 - Next after `tracker`: `cover-letter-detail` (**714/400**, 8 gateway calls), whose method list is
   nearly `cv-detail`'s, so the four-store decomposition should transfer - but the types do not rhyme
   with the CV ones and both should be read before anything is copied.
-- **`cover-letter-detail` is in progress: 644 -> 592, two of four pull requests done.** Measured, not
+- **`cover-letter-detail` is in progress: 644 -> 517, three of four pull requests done.** Measured, not
   remembered - the handover said 714/400 and 8 gateway calls; the file is **644 non-empty / 714 raw**
-  and makes **7 distinct gateway calls over 10 call sites**. `CoverLetterContentStore` (644 -> 592) and `CoverLetterStyleStore` (592 -> 557) are done; the first holds the letter,
-  its paragraphs, tone and length, the availability answers, the word budget) is done; style, the
-  document row and the AI cluster remain, and the allowlist entry goes at the last of them
-  (**23 -> 22**).
+  and makes **7 distinct gateway calls over 10 call sites**. Done: `CoverLetterContentStore`
+  (644 -> 592) holding the letter, its paragraphs, tone and length, the availability answers and the
+  word budget; `CoverLetterStyleStore` (592 -> 557) holding the style and the debounced ATS check;
+  `CoverLetterDocumentStore` (557 -> 517) holding the row and the save. **Only the AI cluster remains**
+  - `draftWithAI` and `regenerateBlock` - and the allowlist entry goes with it (**23 -> 22**).
 - **The two document editors share almost nothing, settled by reading both.** `CoverLetterStyle` and
   `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Their
   `sectionStyles` differ structurally - a closed `CvSectionKey` union against an open
   `Record<string, …>` keyed `body_<i>`. **Only the ~15-line style-safety check and dedupe is extracted**
   (ADR-0005 amendment twelve). The four cover-letter stores are built fresh.
-- **The empty-fixture trap has now hidden a real change three times**, so it has a name: whenever a
-  store has a reset path, the fixture must arrive non-empty. Here it was `hydrate` swallowing a
-  malformed-JSON failure and opening an empty editor over a letter still on disk.
+- **The rows are a different story: the invariant is shared, the record shape is not** (ADR-0005
+  amendment thirteen). `siblingsToUndefault` - "default is per region, and a row never displaces
+  itself" - moves into `document-record.ts` because it fails **silently**, leaving two defaults for one
+  region. The two upsert builders stay apart, because a CV row carries `templateId` and `themeId` and a
+  letter carries neither.
+- **The empty-fixture trap has now hidden a real change four times**, and the fourth was a new shape of
+  it. Three times it was a store with a reset path and an already-empty fixture, so "reset" and "leave
+  alone" agreed - most recently `hydrate` swallowing a malformed-JSON failure and opening an empty
+  editor over a letter still on disk. The fourth was a **single-call** fixture: `load`'s
+  missing-document guard protects the row already on screen, and every test called `load` once, where
+  there was nothing to protect. Two rules now: **a store with a reset path needs a non-empty fixture,
+  and a method that guards state it did not just set needs to be called twice.**
 - **Rust is done. Angular is now the whole remaining problem.** Measure the
   repository with `npm run quality:file-size:all` - the plain gate is diff-scoped and a clean report
   from it means only "nothing I touched is near budget". A file **missing** from the diff-scoped

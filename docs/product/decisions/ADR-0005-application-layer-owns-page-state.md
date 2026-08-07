@@ -699,6 +699,43 @@ That is the third pull request in this campaign where an empty-fixture symmetry 
 two questions, and now this. **Worth naming as a rule: whenever a store has a reset path, the fixture
 must arrive non-empty.**
 
+## Amendment, 2026-08-07 (thirteenth): share the invariant, not the record shape
+
+The document pull request had one open question the twelfth amendment did not answer: the CV and the
+cover letter both write through `documentLibraryUpsert`, so is the _row_ the thing the two editors
+share, even though their styles are not?
+
+**Partly, and the split is worth stating because it is not where it looks.**
+
+- **The default-flag rule is shared**, and moves into `document-record.ts` as `siblingsToUndefault`;
+  `cvSiblingsToUndefault` delegates to it and keeps its name, because deleting a `libs/` export is a
+  public-API change and this one buys nothing. The rule is worth sharing precisely because it is an
+  invariant rather than a shape: "default is per region, and a row never displaces itself" fails
+  silently, leaving the library with two defaults for one region until a later save picks the wrong
+  one.
+- **The upsert builders stay apart.** A CV row carries `templateId` and `themeId`; a letter carries
+  neither. A merged builder would take both as optional and stop telling the reader which fields a
+  given document type actually writes - which is the one thing a record builder exists to say.
+  `buildCoverLetterUpsert` omits `templateId`, `themeId` and `isApplicationDraft`, and each omission
+  has a test that fails if it reappears.
+
+The rule this gives the remaining migrations: **extract the invariant, duplicate the shape.** An
+invariant that is wrong in one copy is invisible; a shape that differs in one copy is read.
+
+### A guard whose mutant only shows on the second call
+
+`load`'s missing-document guard survived mutation on the first pass, and the reason is worth keeping.
+Removing it does not change the first load at all: the null row throws one line later and lands in the
+same `catch`, so `loadError` is `true` and `doc` is `null` either way.
+
+**The difference only exists on a second load.** With the guard, a load that finds nothing leaves the
+document already on screen in place; without it, `doc` is cleared to null before the throw. Every
+fixture called `load` exactly once, where the two agree.
+
+This is the empty-fixture trap in a new coat - a _single-call_ fixture, where a guard that protects
+prior state has no prior state to protect. **The rule generalizes: whenever a method guards state it
+did not just set, the fixture must call it twice.**
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -713,8 +750,8 @@ must arrive non-empty.**
         `*.component.ts` with the shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` allowlist (amendment four)
   - [ ] Migrate pages as they are touched, one page per pull request; `cv-detail` **done** (four PRs,
         1019 -> 517), `tracker` **done** (four PRs, 667 -> 304, the first page to finish **under**
-        budget), `cover-letter-detail` **in progress** (four PRs: content done, 644 -> 592; then
-        style, document, AI), `jobs` deferred
+        budget), `cover-letter-detail` **in progress** (four PRs: content, style and document done,
+        644 -> 517; AI left), `jobs` deferred
   - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**23** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines

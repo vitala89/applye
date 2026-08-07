@@ -44,6 +44,38 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `tracker` PR 1 of 4: the columns move, and two of the campaign's rules are corrected
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 8/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 2. Radius 2 because `libs/application`'s public surface grows, which the canon makes an architecture decision rather than a refactor.)
+- **Branch:** `feat/tracker-columns-store`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `TrackerColumnsStore`, first of four on `tracker` (667/400), and the first tests the page has ever had.
+- **Completed:**
+  - **`tracker-columns.ts`, 179/250** - the column set, `visibleTrackerColumns`, `trackerColumnWidth`, `trackerCustomValues`, `trackerFieldText`, `trackerCellValue`, `formatTrackerDate`. Pure; no signal, no gateway, no `TranslateService`.
+  - **`tracker-columns.store.ts`, 88/250** - `columnState`, `customColumns`, `visibleColumns`, the add/remove form and the two gateway writes. Notifies nothing; the page toasts.
+  - **`tracker.component.ts`: 667 -> 536 non-empty** (708 -> 570 raw). Still injects `DbService` for rows, settings, the row editor and the exports, so **`COMPONENTS_STILL_USING_THE_GATEWAY` is unchanged at 25** - it loses its entry at PR 4.
+  - **48 tests where the page had none**, in two suites, and **14 of 14 mutants die**.
+  - **ADR-0005 amendment eight**, `CHANGELOG.md`, `CURRENT_STATE.md`.
+- **Not completed:** PRs 2-4 (rows + print route, row editor, report/export). `tracker.component.html` 557/300 and `tracker.component.scss` 907 are **untouched, by decision** - out of this phase's scope.
+- **Files or packages changed:** `libs/application` (4 new files + barrel), `apps/desktop/src/app/pages/tracker/tracker.component.{ts,html}`, ADR-0005, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed** (ngc compiles the template, which is what checks the rewired bindings). `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors and 8 warnings, all pre-existing non-null assertions in three spec files this change does not touch. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects. `nx build desktop` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` failed on three new files, `format:write` fixed them and the suite was re-run after formatting (48 green) before committing. `git diff --check` **clean**. The mutation harness was re-run after formatting too, since its patterns match source text.
+  - **Not run, and not runnable here:** any UI walkthrough. The app needs Tauri IPC, so the browser preview cannot exercise this screen; the tests are the whole of the evidence.
+- **Privacy/security impact:** none. No storage, network or IPC behaviour changes; the same three gateway methods are called from a different file.
+- **Decisions and assumptions:**
+  - **A store may inject `TranslateService` for text inside a document it renders.** `libs/i18n` is `type:util`, so `type:application` always permitted it; amendment three's reasoning was specific to `ToastService`, which is app-local. The layer still may not notify or phrase an error. This unblocks the report cluster in PR 4 without a codec for a dependency lint allows. **`TrackerColumnsStore` does not use it** - a column is labelled twice, in the UI language and the sheet's, so both labels stay with their callers.
+  - **Column visibility moved into the store, against the plan this phase inherited.** The handoff called it view state by analogy with `livePanelOpen`. It is not: it merges with gateway-loaded custom columns and feeds five derived values ending in the CSV and PDF.
+  - Four stores over four PRs rather than three: rows-plus-editor was estimated at ~210/250 before boilerplate, and the ratchet refuses a new file born near budget.
+  - The `pin` guard was **left in the template**, where it already was. Moving it into the store would be a behaviour change inside a refactor; there is a test recording that the store itself does not refuse a pinned column.
+- **Risks or compatibility impact:** the template's column bindings were rewired by scripted substitution with an asserted match count per pattern, then verified by `ngc`. No markup moved between components, so the directive-left-behind trap does not apply.
+- **Open issues or blockers:** none.
+- **Next first action:** PR 2 - `TrackerRowsStore` plus `TrackerPrintStore` and the pure module they share (`rangeStart`, `daysBetween`, the report-row filter/sort, the summary arithmetic), which `tracker-report-print.component.ts` currently duplicates verbatim. That PR deletes `tracker-report-print.component.ts` from the allowlist (**25 -> 24**), and the deletion must be verified from the other side: re-add an `inject(DbService)`, watch `nx lint` fail with the rule's own message, restore byte-exact.
+- **Evidence:**
+  - **A green suite agreed with a behaviour change nobody intended.** The page's `load()` catch only ever emptied `rows`; the store's first draft also emptied the custom columns. Every fixture loaded into an already-empty store, where "keep what you have" and "reset to `[]`" produce the same result, so the mutant crossing them survived while all other 13 died. The page reloads its columns after **every row save**, so the real effect is a failed reload deleting columns the user still has. The fix keeps the list; the regression test loads two columns before the failing reload. **This is the amendment-eight lesson restated: a surviving mutant is a claim about the fixtures.**
+  - Dead code found on the way out: `essentialKeys` was referenced only by its own declaration, and `reportColumns` held `c.custom ? (c.type ?? 'text') : (c.type ?? 'text')`.
+  - Sizes: `tracker-columns.ts` 179/250, `tracker-columns.store.ts` 88/250, `tracker.component.ts` **536/400** from 667.
+
 ### 2026-08-07, `cv-detail` finishes, and the gateway allowlist loses its first entry
 
 - **Status:** complete

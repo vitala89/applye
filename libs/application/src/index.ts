@@ -15,3 +15,5 @@ export * from './lib/documents/cv-regeneration';
 export * from './lib/documents/cv-regeneration.store';
 export * from './lib/documents/cv-section-order';
 export * from './lib/documents/cv-style.store';
+export * from './lib/tracker/tracker-columns';
+export * from './lib/tracker/tracker-columns.store';

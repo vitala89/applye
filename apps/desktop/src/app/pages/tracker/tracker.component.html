@@ -106,7 +106,7 @@
             <thead>
               <tr>
                 <th class="jt-th jt-th--idx">{{ t()('tracker.col_n') }}</th>
-                @for (col of visibleColumns(); track col.key) {
+                @for (col of columns.visibleColumns(); track col.key) {
                   <th class="jt-th" [class.jt-th--pin]="col.pin">
                     <span class="jt-th__inner">
                       @if (col.custom) {
@@ -130,7 +130,7 @@
                   [class.is-editing]="isEditing(r)"
                 >
                   <td class="jt-td jt-td--idx">{{ (i + 1).toString().padStart(2, '0') }}</td>
-                  @for (col of visibleColumns(); track col.key) {
+                  @for (col of columns.visibleColumns(); track col.key) {
                     <td
                       class="jt-td"
                       [class.jt-td--pin]="col.pin"
@@ -322,41 +322,41 @@
       </div>
       <div class="jt-drawer__body">
         <p class="jt-drawer__heading">{{ t()('tracker.cols_essential') }}</p>
-        @for (col of essentialColumns(); track col.key) {
+        @for (col of columns.essentialColumns; track col.key) {
           <div class="jt-colrow" [class.is-forced]="col.pin">
             <button
               type="button"
               role="switch"
               class="jt-switch"
-              [class.is-on]="isColumnVisible(col.key)"
-              [attr.aria-checked]="isColumnVisible(col.key)"
+              [class.is-on]="columns.isVisible(col.key)"
+              [attr.aria-checked]="columns.isVisible(col.key)"
               [attr.aria-label]="colLabel(col)"
               [disabled]="col.pin"
-              (click)="!col.pin && toggleColumn(col.key)"
+              (click)="!col.pin && columns.toggle(col.key)"
             ></button>
             <span class="jt-colrow__label">{{ colLabel(col) }}</span>
           </div>
         }
 
         <p class="jt-drawer__heading">{{ t()('tracker.cols_optional') }}</p>
-        @for (col of optionalColumns(); track col.key) {
+        @for (col of columns.optionalColumns; track col.key) {
           <div class="jt-colrow">
             <button
               type="button"
               role="switch"
               class="jt-switch"
-              [class.is-on]="isColumnVisible(col.key)"
-              [attr.aria-checked]="isColumnVisible(col.key)"
+              [class.is-on]="columns.isVisible(col.key)"
+              [attr.aria-checked]="columns.isVisible(col.key)"
               [attr.aria-label]="colLabel(col)"
-              (click)="toggleColumn(col.key)"
+              (click)="columns.toggle(col.key)"
             ></button>
             <span class="jt-colrow__label">{{ colLabel(col) }}</span>
           </div>
         }
 
-        @if (customCols().length) {
+        @if (columns.customColumns().length) {
           <p class="jt-drawer__heading">{{ t()('tracker.cols_custom') }}</p>
-          @for (col of customCols(); track col.id) {
+          @for (col of columns.customColumns(); track col.id) {
             <div class="jt-colrow jt-colrow--custom">
               <lucide-icon [img]="icons.sparkles" [size]="14" />
               <span class="jt-colrow__label">{{ col.label }}</span>
@@ -376,15 +376,15 @@
         <div class="jt-addcol">
           <input
             class="jt-drawer__input"
-            [ngModel]="newColName()"
-            (ngModelChange)="newColName.set($event)"
+            [ngModel]="columns.newColumnName()"
+            (ngModelChange)="columns.newColumnName.set($event)"
             [placeholder]="t()('tracker.custom_name_ph')"
             (keydown.enter)="addCustomColumn()"
           />
           <select
             class="jt-drawer__input"
-            [ngModel]="newColType()"
-            (ngModelChange)="newColType.set($event)"
+            [ngModel]="columns.newColumnType()"
+            (ngModelChange)="columns.newColumnType.set($event)"
           >
             <option value="text">{{ t()('tracker.ctype_text') }}</option>
             <option value="date">{{ t()('tracker.ctype_date') }}</option>

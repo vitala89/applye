@@ -44,6 +44,39 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `cover-letter-detail` PR 4 of 4: the page comes off the gateway, and the allowlist reaches 22
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 1. Ambiguity 1 for `cleanJsonText`, which lives in `apps/desktop`; the `CvRegenerationCodec` precedent settled it without a gate.)
+- **Branch:** `feat/cover-letter-ai-store`, off `main` at `74c16b1` (PRs 1-3 all merged first)
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `CoverLetterAiStore` over `draftWithAI` and `regenerateBlock`, and the allowlist entry.
+- **Completed:**
+  - **`cover-letter-generation.ts`, 181/250** - the pure decisions: the section name, the job-description fallback, the cache-hash input, the language resolution, the block-hash read, and the two merge functions.
+  - **`cover-letter-ai.store.ts`, 174/250** - both AI paths, both in-flight flags, and the `CoverLetterCodec` seam for the app-local `cleanJsonText`.
+  - **`cover-letter-detail.component.ts`: 517 -> 405 non-empty**, and it **no longer injects `DbService` or `AiService`**. Its line is deleted from `COMPONENTS_STILL_USING_THE_GATEWAY`: **23 -> 22**.
+  - **63 new tests** across the two suites, and **40 of 40 mutants dead** after two fixes.
+- **Not completed:** the template (669/300) and the stylesheet (907), by decision - they are the next phase, and amendment fourteen explains why they are now the whole remaining problem for this page.
+- **Files or packages changed:** `libs/application` (4 files + barrel), `apps/desktop/.../cover-letter-detail.component.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects; full `jest` run **188 suites / 2435 tests passed**. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**. Mutation harness re-run after formatting, files restored byte-exact.
+  - **Allowlist probed in both directions**, which is the check this PR exists for: re-adding `inject(DbService)` to the component errors with the ADR-0005 message at the injection site; removing it again is silent. A rule that cannot fail is worse than no rule.
+  - **Not run:** any UI walkthrough. Tauri IPC is required, and both AI paths need a configured provider.
+- **Privacy/security impact:** none. The same profile read, the same two AI calls, the same arguments, from a different file. No new data leaves the machine, and nothing is logged that was not logged before.
+- **Decisions and assumptions:**
+  - **`cleanJsonText` is passed in, not moved** (amendment six, and the `CvRegenerationCodec` precedent). Moving it to `libs/core` would be a public-API change to two libraries for one call site.
+  - **A typed `CoverLetterNoProfileError` replaces a translated `Error`** (amendment three). The store must not build user-facing strings, so the page maps the one case the user actually sees back to `documents.cv_generate_no_profile` - the message is byte-identical to before.
+  - **Both wrappers collapsed into one `runAi`.** How an AI failure reaches the user is one decision, not two. It grew the file by three lines and is still the right shape.
+  - **The `|`-joined hash is left alone.** Changing the separator invalidates every stored hash for every user and forces a full regeneration of every letter and CV; the collision needs a `|` inside a field and the fields come from unrelated sources. Recorded in a test that asserts the collision, so it cannot go stale.
+  - **The block merge is now immutable**, where the page assigned into `freshContent.hashes` in place. Same reasoning as `mergePersonalDetails` on the CV side.
+- **Risks or compatibility impact:** the two AI paths are the least test-covered part of the app in production terms - they cannot be exercised without a provider - so the risk here is the one the unit tests and the mutation pass are standing in for. No stored data shape changed, so a rollback is a code revert with no migration.
+- **Open issues or blockers:** none. `cover-letter-detail` is done as a class; its template and stylesheet are not.
+- **Next first action:** cut `cover-letter-detail.component.html` (**669/300**). It is now the whole remaining problem for this page: 21 of the class's 405 lines are read-only aliases that exist only to keep the template byte-identical, so cutting the template deletes them too and takes the class to **384/400** without touching its logic. `npm run quality:style-move -- --base main <files>` is the check to run if the stylesheet is split at the same time.
+- **Evidence:**
+  - **38 of 40 mutants died on the first pass; both survivors were real, and both had the same cause.** Taking the user's tone, length and availability answers from the model instead of carrying them over, and dropping the other paragraphs' cache hashes when one paragraph is regenerated. In each case the fixture did not carry the field, so "keep what was there" and "take what arrived" produced identical output. **Third distinct shape of the empty-fixture trap**, and the general rule now covering all three: the fixture must be able to tell the two branches apart - non-empty for a reset, called twice for a guard, fully populated on both sides for a merge.
+  - Sizes: `cover-letter-generation.ts` 181/250, `cover-letter-ai.store.ts` 174/250, `cover-letter-detail.component.ts` **405/400** from 517, template unchanged at 669/300, stylesheet unchanged at 907.
+  - Campaign arc for this page: **644 -> 592 -> 557 -> 517 -> 405**, four pull requests, allowlist 25 -> 22.
+
 ### 2026-08-07, `cover-letter-detail` PR 3 of 4: the row moves, and the two upsert builders stay apart
 
 - **Status:** complete

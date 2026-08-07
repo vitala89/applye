@@ -11,6 +11,8 @@ export * from './lib/documents/cv-photo-sections';
 export * from './lib/documents/cover-letter-content';
 export * from './lib/documents/cover-letter-content.store';
 export * from './lib/documents/cover-letter-length';
+export * from './lib/documents/cover-letter-style.store';
+export * from './lib/documents/document-style-safety';
 export * from './lib/documents/cv-document-record';
 export * from './lib/documents/cv-document.store';
 export * from './lib/documents/cv-photo.store';

@@ -118,9 +118,9 @@
 - Next after `tracker`: `cover-letter-detail` (**714/400**, 8 gateway calls), whose method list is
   nearly `cv-detail`'s, so the four-store decomposition should transfer - but the types do not rhyme
   with the CV ones and both should be read before anything is copied.
-- **`cover-letter-detail` is in progress: 644 -> 592, one of four pull requests done.** Measured, not
+- **`cover-letter-detail` is in progress: 644 -> 592, two of four pull requests done.** Measured, not
   remembered - the handover said 714/400 and 8 gateway calls; the file is **644 non-empty / 714 raw**
-  and makes **7 distinct gateway calls over 10 call sites**. `CoverLetterContentStore` (the letter,
+  and makes **7 distinct gateway calls over 10 call sites**. `CoverLetterContentStore` (644 -> 592) and `CoverLetterStyleStore` (592 -> 557) are done; the first holds the letter,
   its paragraphs, tone and length, the availability answers, the word budget) is done; style, the
   document row and the AI cluster remain, and the allowlist entry goes at the last of them
   (**23 -> 22**).

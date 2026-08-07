@@ -1,0 +1,37 @@
+---
+description: Score every Applye task before choosing a model, effort, delegation, or budget.
+alwaysApply: true
+---
+
+# Task Triage
+
+**First on every task**, before any other rule, tool call, or answer: score the work and print the
+verdict. `docs/ai/model-policy.md` is the canon - the rubric, the thresholds, the adjustments and the
+gate commands live there and nowhere else. This rule is only the pointer.
+
+Five axes, 0-2 each, summed to 0-10: **blast radius, ambiguity, risk, verification, unknowns**. Report
+the digits, not just the total.
+
+```
+Triage 6/10 (radius 2 · ambiguity 1 · risk 1 · verify 2 · unknowns 0)
+Harness: Cursor · Model: <role, or the name you can verify> · Effort: high
+Delegation: none · Gate: no · Context: 3 named files
+Budget: ~120k output · Stop when: tests green and the gate set passes
+```
+
+Then one sentence on the cheapest thing the maintainer could say that would lower the score.
+
+Three rules that matter more than the table:
+
+- **Escalate context before escalating the model.** A cheap model with the right three files beats a
+  frontier model with none.
+- **Repeated failure is not a reason to escalate.** Two failed attempts mean the diagnosis is wrong.
+- **Ambiguity scored 2 goes to the grilling gate before any edit**, whatever the total.
+
+**Model names are not written here.** Cursor's picker belongs to the maintainer, and this repository has
+not verified Cursor's model list - so report the role (cheapest / mid / frontier) and let the maintainer
+map it. A model name written from memory is how the wrong model gets picked, and nothing fails when it
+happens. Fill the row in `docs/ai/model-policy.md` once the list has actually been read.
+
+Skip the verdict block for questions about the conversation, one-word confirmations, and
+unchanged-scope continuations. Say "re-triage" and print a fresh block when the scope changes.

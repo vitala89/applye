@@ -44,6 +44,39 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, `cover-letter-detail` PR 3 of 4: the row moves, and the two upsert builders stay apart
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 6/10 - radius 2, ambiguity 0, risk 1, verify 2, unknowns 1. Ambiguity 0 because amendments three and twelve had already settled who owns the save and what is shared; unknowns 1 for the document-library methods still on the page.)
+- **Branch:** `feat/cover-letter-document-store`, **stacked on `feat/cover-letter-style-store`** (PRs 1 and 2 open at the time)
+- **Commits:** one
+- **Pull request:** opened against `feat/cover-letter-style-store`
+- **Objective:** `CoverLetterDocumentStore` over `documentLibraryGet`, `documentLibraryList` and `documentLibraryUpsert`, and a decision on how much of the _row_ the two document editors share.
+- **Completed:**
+  - **`cover-letter-document.store.ts`, 96/250** - the load, the row-level fields (`label`, `regionTag`, `isDefault`), and the save that persists all three stores at once. Injects the content and style stores for the same reason `CvDocumentStore` injects its two.
+  - **`cover-letter-record.ts`, 58/250** - `buildCoverLetterUpsert`, pure. Omits `templateId`, `themeId` and `isApplicationDraft`, each with a test that fails if it reappears.
+  - **`document-record.ts`, 28/250** - `siblingsToUndefault`, the per-region default-flag rule. **`cvSiblingsToUndefault` now delegates to it** and keeps its name, so no `libs/` export is removed.
+  - **`cover-letter-detail.component.ts`: 557 -> 517 non-empty.** Still injects `DbService` and `AiService` for the AI paths; the allowlist stays at 23 until PR 4.
+  - **34 new tests** across the three new suites, and **24 of 24 mutants dead** after one fix.
+- **Not completed:** PR 4 (AI draft and per-block regeneration; the allowlist entry goes with it). Template 669/300 and stylesheet untouched, by decision.
+- **Files or packages changed:** `libs/application` (6 files + barrel + `cv-document-record.ts`), `apps/desktop/src/app/pages/documents/cover-letter-detail/cover-letter-detail.component.ts`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
+- **Validation:** `nx run desktop:type-check` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. `nx run-many --target=test --skip-nx-cache` **passed**, 7 projects; full `jest` run **186 suites / 2372 tests passed**. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**. Mutation harness re-run after formatting, files restored byte-exact.
+  - **No allowlist probe** - unchanged at 23, because the page still reaches the gateway for `getProfile`, `getSettings` and `hashText`.
+  - **Not run:** any UI walkthrough. Tauri IPC is required.
+- **Privacy/security impact:** none. The same three gateway calls, from a different file, with the same arguments.
+- **Decisions and assumptions:**
+  - **The invariant is shared; the record shape is not** (ADR-0005, amendment thirteen). `siblingsToUndefault` moves because "default is per region, and a row never displaces itself" fails **silently** - two defaults for one region, discovered when a later save picks the wrong one. The builders stay apart because a CV row carries `templateId` and `themeId` and a letter carries neither, and a merged builder taking both as optional would stop saying which fields a document type actually writes.
+  - **`cvSiblingsToUndefault` delegates rather than being deleted.** Removing a `libs/application` export is a public-API change and would need the grilling gate for no gain.
+  - **The store never toasts and never navigates** (amendment three). `save` returns the saved row or `null` for "no write happened"; the page owns the toast, the `justSaved` tick and the apply-wizard hand-back.
+  - **`previewMode` stays on the page.** It is read from a route query parameter, which is page state, not row state.
+  - **`hydrate` calls sit inside `load`'s `try`** on purpose: malformed stored JSON throws out of them, and the page's error state is the right place for it to land.
+- **Risks or compatibility impact:** this PR **edits `cv-document-record.ts`**, so the CV editor shares its blast radius. Its suite is green and the delegating function is behaviourally identical to the body it replaced.
+- **Open issues or blockers:** none. Stacked on PRs 1 and 2, so it merges after them.
+- **Next first action:** PR 4 - `CoverLetterAiStore` over `draftWithAI` and `regenerateBlock`, injecting `AiService` and the three remaining `DbService` calls (`getProfile`, `getSettings`, `hashText`). When it lands, **delete the `cover-letter-detail.component.ts` line from `COMPONENTS_STILL_USING_THE_GATEWAY`** (23 -> 22) and probe the rule in both directions. `cleanJsonText` lives in `apps/desktop/src/app/pages/documents/cv-content.util.ts`, so it has to be injected or moved, exactly as `CvContentNormalizer` was for `CvDocumentStore`.
+- **Evidence:**
+  - **23 of 24 mutants died on the first pass. The survivor was a real gap, and a new shape of one.** Inverting `load`'s missing-document guard changed nothing observable: the null row threw one line later into the same `catch`, so `loadError` was `true` and `doc` was `null` either way. **The difference only exists on a second load** - with the guard, a load that finds nothing leaves the document already on screen in place. Every fixture called `load` once, where the two agree. The empty-fixture trap in a new coat: **when a method guards state it did not just set, the fixture must call it twice.** Asserted now, and the mutant dies.
+  - Sizes: `document-record.ts` 28/250, `cover-letter-record.ts` 58/250, `cover-letter-document.store.ts` 96/250, `cv-document-record.ts` **71/250** from 73, `cover-letter-detail.component.ts` **517/400** from 557, template unchanged at 669/300.
+
 ### 2026-08-07, `cover-letter-detail` PR 2 of 4: the style moves, and the one shared duplicate is extracted
 
 - **Status:** complete

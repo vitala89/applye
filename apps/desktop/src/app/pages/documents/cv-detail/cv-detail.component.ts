@@ -11,13 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  CdkDrag,
-  CdkDragDrop,
-  CdkDragHandle,
-  CdkDropList,
-  moveItemInArray,
-} from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
 import {
   ArrowLeft,
   ChevronDown,
@@ -34,13 +28,10 @@ import {
   PanelRightOpen,
 } from 'lucide-angular';
 import type {
-  CvContent,
   CvSection,
   CvSectionKey,
   CvSectionStyle,
-  CvTemplate,
   CvTextStyle,
-  DocumentLibraryItem,
   PageMargins,
   PageSettings,
   PageSize,
@@ -48,7 +39,12 @@ import type {
   StyleNote,
 } from '@applye/core';
 import { PAGE_SETTINGS_DEFAULT } from '@applye/core';
-import { CvPhotoStore, CvStyleStore } from '@applye/application';
+import {
+  CvDocumentStore,
+  CvPhotoStore,
+  CvStyleStore,
+  isCvSectionLocked,
+} from '@applye/application';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
@@ -109,7 +105,7 @@ export function mergePersonalField<T extends string | undefined>(
   ],
   templateUrl: './cv-detail.component.html',
   styleUrl: './cv-detail.component.scss',
-  providers: [CvPhotoStore, CvStyleStore],
+  providers: [CvPhotoStore, CvStyleStore, CvDocumentStore],
 })
 export class CvDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -148,15 +144,26 @@ export class CvDetailComponent {
     })),
   );
 
-  readonly loading = signal(true);
-  readonly loadError = signal(false);
-  readonly doc = signal<DocumentLibraryItem | null>(null);
-  readonly sections = signal<CvSection[]>([]);
-  readonly templates = signal<CvTemplate[]>([]);
-
-  readonly label = signal('');
-  readonly regionTag = signal('generic');
-  readonly isDefault = signal(false);
+  /** The CV row: what was loaded, what the editor changed, and the one write
+   * that persists it. Component-scoped; it injects the photo and style stores
+   * because `documentLibraryUpsert` takes a whole record and the three of them
+   * cannot each save their own slice. Aliased for the template. */
+  private readonly document = inject(CvDocumentStore);
+  readonly loading = this.document.loading;
+  readonly loadError = this.document.loadError;
+  readonly doc = this.document.doc;
+  readonly sections = this.document.sections;
+  readonly templates = this.document.templates;
+  readonly label = this.document.label;
+  readonly regionTag = this.document.regionTag;
+  readonly isDefault = this.document.isDefault;
+  readonly saving = this.document.saving;
+  readonly saveTemplateOpen = this.document.saveTemplateOpen;
+  readonly saveTemplateName = this.document.saveTemplateName;
+  readonly savingTemplate = this.document.savingTemplate;
+  readonly openSaveTemplate = this.document.openSaveTemplate.bind(this.document);
+  readonly cancelSaveTemplate = this.document.cancelSaveTemplate.bind(this.document);
+  readonly replaceSection = this.document.replaceSection.bind(this.document);
   /** Whether this CV shows a photo, where, and the two personal-detail fields
    * that are excluded by default. Component-scoped; the image itself is the
    * profile's. Aliased for the template, which names each of these once. */
@@ -169,16 +176,11 @@ export class CvDetailComponent {
   readonly includeBirthdate = this.photo.includeBirthdate;
   readonly includeMaritalStatus = this.photo.includeMaritalStatus;
 
-  readonly saving = signal(false);
   readonly justSaved = signal(false);
   readonly regeneratingKey = signal<CvSectionKey | null>(null);
   readonly pullingProfile = signal(false);
 
   readonly atsNoteKeys = computed(() => cvFieldAtsNoteKeys(this.photo.flags(), this.regionTag()));
-
-  readonly saveTemplateOpen = signal(false);
-  readonly saveTemplateName = signal('');
-  readonly savingTemplate = signal(false);
 
   /** The document's visual style, the theme it sits on, and the ATS safety
    * notes it produces. Component-scoped; the store owns the signal and the
@@ -434,45 +436,14 @@ export class CvDetailComponent {
   }
 
   async load(): Promise<void> {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.loading.set(true);
-    this.loadError.set(false);
-    try {
-      // The photo itself lives on the profile now, and its store reads it: this
-      // document only decides whether to show it and where.
-      const [item, templates] = await Promise.all([
-        this.db.documentLibraryGet(id),
-        this.db.cvTemplatesList(),
-        this.photo.loadProfilePhoto(),
-      ]);
-      if (!item) {
-        this.loadError.set(true);
-        return;
-      }
-      this.doc.set(item);
-      this.templates.set(templates);
-      this.label.set(item.label ?? '');
-      this.regionTag.set(item.regionTag ?? 'generic');
-      this.isDefault.set(item.isDefault);
-      // Opened from the apply wizard's "Review CV": show the rendered result
-      // first, not the raw section editor. The user can toggle to Edit.
-      if (this.route.snapshot.queryParamMap.get('preview') === '1') {
-        this.previewMode.set(true);
-      }
-
-      const raw: CvContent = item.contentJson ? JSON.parse(item.contentJson) : { sections: [] };
-      const content = normalizeCvContent(raw);
-      const ordered = [...content.sections].sort((a, b) => a.order - b.order);
-      this.sections.set(ordered);
-
-      this.photo.hydrate(ordered);
-
-      await this.styleStore.hydrate(item.themeId, item.styleJson);
-    } catch {
-      this.loadError.set(true);
-    } finally {
-      this.loading.set(false);
+    // Opened from the apply wizard's "Review CV": show the rendered result
+    // first, not the raw section editor. The user can toggle to Edit.
+    if (this.route.snapshot.queryParamMap.get('preview') === '1') {
+      this.previewMode.set(true);
     }
+    // `normalizeCvContent` is app-local, so the store takes it as an argument
+    // rather than importing it.
+    await this.document.load(Number(this.route.snapshot.paramMap.get('id')), normalizeCvContent);
   }
 
   back(): void {
@@ -522,61 +493,18 @@ export class CvDetailComponent {
     });
   }
 
-  /** Header sections whose position is fixed - they carry the document's
-   *  identity (photo + personal details) and must stay pinned to the top,
-   *  so reordering (drag or move buttons) is disabled for them. */
-  private static readonly LOCKED_SECTION_KEYS: readonly CvSectionKey[] = [
-    'photo',
-    'personal_details',
-  ];
-
-  isSectionLocked(key: CvSectionKey): boolean {
-    return CvDetailComponent.LOCKED_SECTION_KEYS.includes(key);
-  }
-
-  /** Pins the locked header sections to the top in their canonical order
-   *  (photo, then personal_details), leaving the rest in their given order,
-   *  then reassigns the `order` index. Guarantees a reorder can never move a
-   *  locked section or push another section above it. */
-  private pinLockedSections(list: CvSection[]): CvSection[] {
-    const locked = CvDetailComponent.LOCKED_SECTION_KEYS.map((k) =>
-      list.find((s) => s.key === k),
-    ).filter((s): s is CvSection => !!s);
-    const rest = list.filter((s) => !this.isSectionLocked(s.key));
-    return [...locked, ...rest].map((s, index) => ({ ...s, order: index }));
-  }
+  readonly isSectionLocked = isCvSectionLocked;
 
   drop(event: CdkDragDrop<CvSection[]>): void {
-    const list = this.sections().slice();
-    moveItemInArray(list, event.previousIndex, event.currentIndex);
-    this.sections.set(this.pinLockedSections(list));
-  }
-
-  private moveSection(key: CvSectionKey, offset: -1 | 1): void {
-    if (this.isSectionLocked(key)) return;
-    const list = this.sections().slice();
-    const index = list.findIndex((s) => s.key === key);
-    const target = index + offset;
-    if (index < 0 || target < 0 || target >= list.length) return;
-    // Never swap a movable section past a locked header section.
-    if (this.isSectionLocked(list[target].key)) return;
-    moveItemInArray(list, index, target);
-    this.sections.set(this.pinLockedSections(list));
+    this.document.reorder(event.previousIndex, event.currentIndex);
   }
 
   moveSectionUp(key: CvSectionKey): void {
-    this.moveSection(key, -1);
+    this.document.moveSection(key, -1);
   }
 
   moveSectionDown(key: CvSectionKey): void {
-    this.moveSection(key, 1);
-  }
-
-  /** Swaps a single section by key with a new immutable value - the sink for
-   * extracted section-editor children's `(sectionChange)` output (e.g.
-   * `CvSummaryEditorComponent`, `CvLanguagesEditorComponent`). */
-  replaceSection(updated: CvSection): void {
-    this.sections.update((list) => list.map((s) => (s.key === updated.key ? updated : s)));
+    this.document.moveSection(key, 1);
   }
 
   async regenerateSection(key: CvSectionKey): Promise<void> {
@@ -686,49 +614,15 @@ export class CvDetailComponent {
   /** Toggles the "Include photo" chip. The store decides what the section list
    * must become, because switching the photo on has to create one. */
   toggleIncludePhoto(): void {
-    this.sections.set(this.photo.toggleIncludePhoto(this.sections()));
+    this.document.setSections(this.photo.toggleIncludePhoto(this.sections()));
   }
 
+  /** Saves, then tells the user and decides where to go. The store performs the
+   * write and never notifies (ADR-0005, amendment three), so the toast, the
+   * transient "Saved" tick and the wizard hand-back all live here. */
   async save(): Promise<void> {
-    const doc = this.doc();
-    if (!doc || this.saving()) return;
-    this.saving.set(true);
     try {
-      const sections = this.photo.sectionsForSave(this.sections());
-      this.sections.set(sections);
-
-      if (this.isDefault()) {
-        const siblings = await this.db.documentLibraryList('cv');
-        for (const sibling of siblings) {
-          if (
-            sibling.id !== doc.id &&
-            sibling.isDefault &&
-            sibling.regionTag === this.regionTag()
-          ) {
-            await this.db.documentLibraryUpsert({ ...sibling, id: sibling.id, isDefault: false });
-          }
-        }
-      }
-
-      const saved = await this.db.documentLibraryUpsert({
-        id: doc.id,
-        docType: 'cv',
-        source: doc.source,
-        label: this.label(),
-        contentJson: JSON.stringify({ sections }),
-        templateId: doc.templateId,
-        styleJson: JSON.stringify(this.style()),
-        themeId: this.themeId(),
-        regionTag: this.regionTag(),
-        language: doc.language,
-        archetypeTag: doc.archetypeTag,
-        isDefault: this.isDefault(),
-        inputHash: doc.inputHash,
-        modelUsed: doc.modelUsed,
-        tokensInput: doc.tokensInput,
-        tokensOutput: doc.tokensOutput,
-      });
-      this.doc.set(saved);
+      if (!(await this.document.save())) return;
       this.justSaved.set(true);
       this.toast.success(this.t()('documents.cv_saved'));
       if (this.shouldReturnToApplyWizard()) {
@@ -738,43 +632,16 @@ export class CvDetailComponent {
       setTimeout(() => this.justSaved.set(false), 2500);
     } catch (e) {
       this.toast.error(String(e));
-    } finally {
-      this.saving.set(false);
     }
   }
 
-  openSaveTemplate(): void {
-    this.saveTemplateName.set('');
-    this.saveTemplateOpen.set(true);
-  }
-
-  cancelSaveTemplate(): void {
-    this.saveTemplateOpen.set(false);
-  }
-
   async confirmSaveTemplate(): Promise<void> {
-    if (!this.saveTemplateName().trim() || this.savingTemplate()) return;
-    this.savingTemplate.set(true);
     try {
-      const orderedKeys = this.sections()
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map((s) => s.key);
-      await this.db.cvTemplateUpsert({
-        name: this.saveTemplateName().trim(),
-        regionTag: this.regionTag(),
-        sectionsJson: JSON.stringify(orderedKeys),
-        includePhoto: this.photo.includePhoto(),
-        includeBirthdate: this.photo.includeBirthdate(),
-        includeMaritalStatus: this.photo.includeMaritalStatus(),
-      });
-      this.templates.set(await this.db.cvTemplatesList());
-      this.saveTemplateOpen.set(false);
-      this.toast.success(this.t()('documents.cv_template_saved'));
+      if (await this.document.confirmSaveTemplate()) {
+        this.toast.success(this.t()('documents.cv_template_saved'));
+      }
     } catch (e) {
       this.toast.error(String(e));
-    } finally {
-      this.savingTemplate.set(false);
     }
   }
 }

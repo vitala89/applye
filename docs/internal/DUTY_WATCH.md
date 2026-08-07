@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-07, the CV document store, and two guards the fixtures were hiding
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; re-triaged 8/10 - radius 2, ambiguity 1, **risk 2**, verify 2, unknowns 1. Risk 2 because this store owns `documentLibraryUpsert`, the write that persists a user's CV.)
+- **Branch:** `feat/cv-document-store`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** `CvDocumentStore`, third of four pull requests on `cv-detail` (709/400).
+- **Completed:**
+  - **`cv-document.store.ts`, 185/250.** Owns `doc`, `sections`, `templates`, `label`, `regionTag`, `isDefault`, the loading and saving flags, the save-template dialog state, `load`, `save`, the section operations and the template trio. Injects `CvPhotoStore` and `CvStyleStore` to assemble the single write.
+  - **Two pure modules:** `cv-section-order.ts` (locked header sections, pinning, reorder, move, replace) and `cv-document-record.ts` (`buildCvUpsert`, `cvSiblingsToUndefault`).
+  - **`cv-detail.component.ts`: 709 -> 589.** Template unchanged again; the existing specs pass unmodified.
+  - **ADR-0005 amendment six** records the parameter-injection shape and restates amendment three for a write path.
+- **Not completed:** the page keeps `inject(DbService)` and its allowlist entry - see the correction below. `CvRegenerationStore` is PR 4.
+- **Files or packages changed:** `apps/desktop/.../cv-detail.component.ts`, `libs/application/src/lib/documents/{cv-document.store,cv-document-record,cv-section-order}.ts` (+ three specs, all new), `libs/application/src/index.ts`, `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`, `docs/product/CURRENT_STATE.md`, `CHANGELOG.md`, this log.
+- **Validation:** `nx run desktop:type-check`; `lint` on desktop + application (0 errors, 8 pre-existing `no-non-null-assertion` warnings); `nx run-many --target=test --skip-nx-cache` (7 projects; desktop 1421, application **190**, up from 140); `nx build desktop`; `npm run quality:file-size` (passed; 589/400, base 709); `npm run quality:attribution`; `npx nx format:check`; `git diff --check`. **Mutation testing:** ten mutations, each asserted to match exactly once and each file restored byte-exact. Eight died immediately; two survived and are the lesson below.
+- **Privacy/security impact:** none. No new I/O; the five gateway calls moved unchanged.
+- **Decisions and assumptions:**
+  - **`load` takes `normalizeCvContent` as a parameter**, because the store needs app-local code _during_ an operation it owns - the third shape for that constraint, recorded in amendment six with the order to prefer them in.
+  - **The store never notifies.** `save` returns the saved row or `null` ("no write happened", not failure) and lets a gateway error throw; the page owns the toast, the `justSaved` tick and the wizard hand-back.
+  - **`isApplicationDraft` stays absent from the upsert input**, not copied from the loaded row. Omitting it is what keeps an apply-wizard draft a draft; a test asserts the key is absent rather than `undefined`.
+  - **The default flag is displaced per region**, so a default DE CV and a default US CV coexist. Pinned by a fixture where each sibling differs from "must be displaced" by exactly one of the three conditions.
+- **Risks or compatibility impact:** the save path was rewritten, which is the highest-risk change in this campaign so far. It is covered by nine store tests plus the record module's own, including the sibling-displacement ordering (siblings first, then this row) and the failure path leaving `saving` clear.
+- **Open issues or blockers:** none.
+- **Corrections to the previous entry:** that entry's next-first-action said `CvDocumentStore` would delete `cv-detail.component.ts` from `COMPONENTS_STILL_USING_THE_GATEWAY`. **Wrong** - `regenerateSection` and `pullFromProfile` still call `getProfile`, `getSettings` and `hashText`. The allowlist shrinks at PR 4. The claim was made from the ADR's decomposition rather than from the file's actual `db.` calls, which took one `grep` to check.
+- **Lessons:**
+  - **A mutation test is only as good as the asymmetry in its fixtures.** Two live guards in `moveCvSection` survived deletion with all 46 tests green, because every fixture was already pinned and reindexed - the normal form the function itself produces - so refusing and falling through agreed on all of them. On a drifted list they differ: refusing returns it verbatim, falling through reindexes it. Nearly deleted both as dead code on the strength of the green run.
+  - **A surviving mutant is a claim about the tests, not yet a verdict on the code.** The first reading here - "the guard is unreachable, `reorderCvSections` re-pins anyway" - was coherent, specific, and wrong. Worth asking what input would make the branch observable before concluding it cannot be.
+  - **One guard can mask another.** After adding drifted-list cases, the locked-key check still survived: the case moved `photo`, whose neighbour is also locked, so the neighbour check refused first. It took moving `personal_details` down onto `summary` to isolate it. When two checks can refuse the same call, at least one case has to reach each of them alone.
+- **Next first action:** `CvRegenerationStore`, fourth and last on `cv-detail` (589/400): `regenerateSection` and `pullFromProfile`, roughly 90 lines of prompt assembly and AI calls, injecting `DbService` and `AiService`. Its landing is what removes the page's last direct gateway injection and deletes its `COMPONENTS_STILL_USING_THE_GATEWAY` entry, taking the list from 26 to 25.
+
 ### 2026-08-07, the CV style store, and the `libs/core` move that reading the code cancelled
 
 - **Status:** complete

@@ -1154,6 +1154,8 @@ export const uk: TranslationMap = stub(en, {
     cover_letter_availability: 'Доступність і зарплата',
     cover_letter_availability_de:
       'У німецьких вакансіях зазвичай запитують найближчу дату виходу та зарплатні очікування. Листи без них часто відсіюються.',
+    cover_letter_availability_applies:
+      'Ці відповіді потраплять до останнього абзацу під час наступної генерації листа. Окремо в попередньому перегляді вони не показуються.',
     cover_letter_earliest_start: 'Найближча дата виходу',
     cover_letter_earliest_start_ph: 'наприклад, негайно або 1 жовтня 2026',
     cover_letter_salary_expectation: 'Зарплатні очікування',

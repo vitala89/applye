@@ -1161,6 +1161,8 @@ export const es: TranslationMap = stub(en, {
     cover_letter_availability: 'Disponibilidad y salario',
     cover_letter_availability_de:
       'Las ofertas alemanas suelen pedir tu fecha de incorporación más próxima y tu expectativa salarial. Las cartas que las omiten se descartan a menudo.',
+    cover_letter_availability_applies:
+      'Estas respuestas se integran en el último párrafo la próxima vez que generes o regeneres la carta. Nunca aparecen por separado en la vista previa.',
     cover_letter_earliest_start: 'Fecha de incorporación más próxima',
     cover_letter_earliest_start_ph: 'p. ej. de inmediato, o 1 de octubre de 2026',
     cover_letter_salary_expectation: 'Expectativa salarial',

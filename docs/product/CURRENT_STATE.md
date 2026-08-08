@@ -167,6 +167,10 @@
   trap in the one component amendment sixteen's own retrospective audit forgot to list. Fixed, with a
   test on the class the stylesheet targets. **No further extraction in this area merges without a
   rendered check** - it is the only instrument that detects this defect class.
+- **The Availability card explains itself now.** Its three answers reach the letter only through the
+  AI prompt, on the next generate or regenerate, and never appear in the preview as lines of their
+  own - which made a filled-in card look broken. A region-independent hint says so in all six
+  locales, separate from the German-market explainer above it, which answers a different question.
 - **A shorthand salary reached the letter with its magnitude gone.** `85k - 110k` produced "My salary
   expectation is 85 - 110 EUR per year", which reads as 85 euros. The model was obeying the skill's
   "use the values exactly as given"; `cover-letter-generate.md` now carries a narrow exception for

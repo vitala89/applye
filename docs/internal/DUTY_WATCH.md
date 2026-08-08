@@ -44,6 +44,32 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, the card that looked broken because it was silent
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; re-triaged 6/10 - radius 1, ambiguity 1, risk 1, verify 2, unknowns 1. Model above the verdict and said so once; the shape had already been agreed in the previous round, so no gate.)
+- **Branch:** `feat/cover-letter-body-paragraphs`, continuing on PR #383
+- **Commits:** one
+- **Objective:** close the one item the previous entry recorded as not done - the Availability card gives the user no way to know that its answers reach the letter only through the AI, on the next generation.
+- **Completed:**
+  - **`cover_letter_availability_applies` in all six locales** - `en`, `de`, `es`, `fr`, `ru`, `uk`. The repository has six, not the five the previous entry guessed; the key-parity spec is what would have caught a miss.
+  - **A region-independent hint** under the card, deliberately separate from the German-market explainer above it. The two answer different questions: the existing one says _why a market expects these answers_, the new one says _what the card does with them_.
+  - **Three tests**, replacing two that would have passed on the broken shape. The old assertions were `querySelector('.docedit-card__hint')` against `null`, so a second hint with the same class made them fail - correctly. They now count hints rather than test existence, and one asserts the new line survives across three regions.
+- **Not completed:** nothing in scope. The `.icon-btn` consolidation onto `appButton size="icon"` stays queued behind a rendered check, by decision.
+- **Files or packages changed:** six locale files, the availability card's template and spec, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** full `jest` **passed - 194 suites / 2485 tests**, including the i18n key-parity spec. `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application,i18n --skip-nx-cache` **passed**, 0 errors, the same 8 warnings - `i18n` added to the projects list because this change is mostly in that library. `nx build desktop --skip-nx-cache` **passed**. `quality:file-size` **passed**. `quality:attribution` **passed**. `nx format:check` clean after `format:write`. `git diff --check` clean.
+  - **`quality:style-move` not run, and that is a verdict rather than an omission:** `git status` reports **0 changed stylesheets**, so the check has no subject.
+- **Privacy/security impact:** none. Six strings and a paragraph element.
+- **Decisions and assumptions:**
+  - **The hint is not regional.** The German explainer is conditional because the market expectation is; the behaviour of the card is the same everywhere, and hiding the explanation outside DE would reproduce the original confusion for every other user.
+  - **Both hints keep one class.** They are the same visual element and giving one a modifier would be styling to express test convenience. The tests count and read them instead.
+- **Risks or compatibility impact:** none beyond a slightly taller card. The five other locales were written directly rather than machine-translated, and each states the same two facts: the answers go into the last paragraph on the next generation, and they never appear in the preview alone.
+- **Open issues or blockers:** the rendered check on PR #383 is still owed by the maintainer, and it now covers this hint as well.
+- **Next first action:** the maintainer confirms PR #383 on screen. Then the `.icon-btn` consolidation, which does not merge without one.
+- **Evidence:**
+  - **The previous entry said "five locales"; there are six.** Writing the key into five would have shipped a broken `ru` and been caught by the parity spec rather than by the estimate - a small instance of the same rule this campaign keeps relearning: count the thing, do not recall it.
+  - **The two existing tests failed on the change, which is the outcome worth having.** They asserted a hint's _existence_ rather than _which_ hint, so they were load-bearing in the wrong direction; a second element with the same class broke them immediately instead of silently passing.
+
 ### 2026-08-08, the first rendered check finds what six pull requests of gates did not
 
 - **Status:** complete
@@ -56,7 +82,7 @@ Before a watch can be marked complete:
   - **The regenerate spinner wobbled.** `<lucide-icon>` is a custom element and `display: inline` by default, so its transform box comes from the surrounding line box and `transform-origin: 50% 50%` lands off the icon's centre. `inline-flex` plus an explicit origin, and it now also honours `prefers-reduced-motion`, which `settings.component.scss` already did for its own spinner.
   - **A shorthand salary lost its magnitude.** An input of `85k - 110k` produced "My salary expectation is 85 - 110 EUR per year". The model was obeying "use the values exactly as given"; the skill now carries a narrow exception for `salary_expectation` **only**, with the boundary stated in the same sentence so it cannot generalise to a date. Pinned by a Rust render test asserting the rule, the example, and the scope.
   - **The availability question, answered rather than actioned:** the three fields are AI prompt inputs, not preview content, and must not be deleted.
-- **Not completed:** no UI hint telling the user the three fields only take effect on regeneration. That is the gap that produced the maintainer's confusion, and it is a new i18n string in five locales - recorded, not done.
+- **Not completed at the time of this entry, done immediately after** - see the follow-up entry above: the UI hint telling the user the three fields only take effect on regeneration.
 - **Files or packages changed:** `cover-letter-block/`'s stylesheet and spec, `_cover-letter-controls.scss`, `cover-letter-generate.md`, `skills.rs`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
 - **Validation:** `cargo test --lib ai::skills` **passed - 10 tests**, including the new one. `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 warnings. Full `jest` **passed - 194 suites / 2484 tests**. `nx build desktop --skip-nx-cache` **passed**. `quality:file-size` **passed**. `quality:attribution` **passed**. `quality:style-move` reports **0 lost, 4 gained**, all four being the fixes themselves. `nx format:check` clean after `format:write`. `git diff --check` clean.
   - **A test count was nearly accepted at the wrong value.** `npx jest` reported 123 suites / 1464 tests instead of 194 / 2484, because a `cd` into `src-tauri` for the cargo run had persisted in the shell. The discrepancy was visible only because the previous run's numbers were known. **A gate's verdict includes its scope, not just its pass line.**

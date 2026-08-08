@@ -47,40 +47,12 @@
               }
             </div>
           </div>
-          <div class="cvlist__row-actions">
-            <button
-              class="icon-btn"
-              type="button"
-              [attr.aria-label]="t()('documents.cv_duplicate_action')"
-              (click)="duplicate(item, $event)"
-            >
-              <lucide-icon [img]="icons.duplicate" [size]="14" aria-hidden="true" />
-            </button>
-            <label class="cvlist__export">
-              <lucide-icon [img]="icons.export" [size]="14" aria-hidden="true" />
-              <select
-                [disabled]="exportBusyId() === item.id"
-                [attr.aria-label]="t()('documents.cv_export_action')"
-                (click)="$event.stopPropagation()"
-                (change)="
-                  exportDoc(item, $any($event.target).value, $event); $any($event.target).value = ''
-                "
-              >
-                <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
-                <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
-                <!-- DOCX removed: the single-engine WYSIWYG PDF is the supported
-                     export; the Rust DOCX renderer stays dormant behind it. -->
-              </select>
-            </label>
-            <button
-              class="icon-btn icon-btn--danger"
-              type="button"
-              [attr.aria-label]="t()('documents.cv_delete_action')"
-              (click)="requestDelete(item, $event)"
-            >
-              <lucide-icon [img]="icons.trash" [size]="14" aria-hidden="true" />
-            </button>
-          </div>
+          <app-document-row-actions
+            [exportBusy]="exportBusyId() === item.id"
+            (duplicated)="duplicate(item, $event)"
+            (deleted)="requestDelete(item, $event)"
+            (exported)="exportDoc(item, $event.format, $event.event)"
+          />
         </li>
       }
     </ul>

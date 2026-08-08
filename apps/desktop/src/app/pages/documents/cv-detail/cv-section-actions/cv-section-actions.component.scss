@@ -1,0 +1,26 @@
+/* CARRIED, not moved (ADR-0005, amendment sixteen). `.spinning` is declared in
+   `cv-detail.component.scss` and this markup was its only user, but the page
+   keeps the declaration: it is page vocabulary, and a page-scoped class does
+   not reach a child extracted out of it. Copied here with its keyframes under
+   a component-local name so the two cannot drift into each other.
+
+   The wrapper `.docedit-section__actions` needs nothing - `_editor-shell.scss`
+   emits it globally - and the buttons are `appButton`, whose classes are also
+   global. */
+.spinning {
+  animation: cv-section-actions-spin 0.8s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes cv-section-actions-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The same guard the cover-letter spinner carries: a continuous rotation is
+   what this setting exists to stop. */
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation: none;
+  }
+}

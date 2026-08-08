@@ -599,32 +599,11 @@
   font-size: var(--text-sm);
 }
 
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: none;
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-input);
-  color: var(--text-tertiary);
-  cursor: pointer;
-}
-.icon-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-secondary);
-}
-.icon-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-.icon-btn--active {
-  background: var(--accent-tint);
-  color: var(--accent);
-}
+/* `.icon-btn` and its three modifiers are gone: this page's buttons use
+   `appButton size="icon"`, which `libs/ui` has shipped all along (ADR-0005,
+   amendment eighteen). `:disabled` came free - `.btn` already carries it - and
+   `--active` became a `variant` switch, which is the vocabulary the directive
+   actually renders. */
 
 // The `.cvpreview__*` rules (page-card content, header/photo layout, section
 // title/body typography hooks) moved to `cv-preview/cv-preview.component.scss`
@@ -633,14 +612,10 @@
 // `lib-paginated-sheet`/`.page-card*` by plain class name and lives in the
 // global stylesheet regardless of which component declares `.cvpreview__*`.
 
-.spinning {
-  animation: cv-spin 0.8s linear infinite;
-}
-@keyframes cv-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* `.spinning` moved into `cv-section-actions/` with the only markup that used
+   it - the section Regenerate icon (ADR-0005, amendment eighteen). A
+   page-scoped class does not reach a child extracted out of the page, and this
+   one had exactly one user, so it moved rather than being copied. */
 
 .modal-backdrop {
   position: fixed;

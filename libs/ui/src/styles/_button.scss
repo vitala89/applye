@@ -1,0 +1,103 @@
+/* ============================================================
+   BUTTON - shared control used via the [appButton] directive.
+   Variants: primary (indigo fill), secondary (neutral outline),
+   ghost (borderless), danger (ghost-style, destructive actions).
+   Sizes: sm, md, lg, icon. Token-driven, no hardcoded colors.
+
+   Split out of `global.scss` when the four page-local `.icon-btn`
+   copies folded onto `.btn--icon` (ADR-0005, amendment eighteen):
+   that push took `global.scss` past its 400-line budget, and the
+   button vocabulary is the largest self-contained block in it.
+   Loaded from `global.scss` rather than from each app's
+   `styles.scss`, because both `apps/desktop` and `apps/web`
+   consume `global.scss` and neither should have to know this
+   file exists.
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-card);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn--sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+}
+.btn--md {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-body);
+}
+.btn--lg {
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-body);
+}
+/* The square icon button. Pinned to the shape four page stylesheets had each
+   reimplemented as `.icon-btn` - 28px, `--radius-input`, centred - rather than
+   the other way round, so that folding them onto this rule is a deletion and
+   not a restyle (ADR-0005, amendment eighteen).
+
+   `min-width`/`min-height` rather than a fixed `width`/`height`: every call
+   site in the app uses a 13-16px icon, which lands inside 28px either way, but
+   a larger icon grows the box instead of overflowing it. */
+.btn--icon {
+  padding: var(--space-2);
+  min-width: 28px;
+  min-height: 28px;
+  justify-content: center;
+  border-radius: var(--radius-input);
+  line-height: 1;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+}
+
+.btn--secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: var(--border-width) solid var(--border-default);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+}
+
+.btn--ghost {
+  background: none;
+  color: var(--text-secondary);
+  border: none;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+}
+
+.btn--danger {
+  background: none;
+  color: var(--danger);
+  border: var(--border-width) solid transparent;
+
+  &:hover:not(:disabled) {
+    background: var(--danger-tint);
+    border-color: var(--danger);
+  }
+}

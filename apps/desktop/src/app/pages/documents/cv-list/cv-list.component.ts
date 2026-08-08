@@ -15,6 +15,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
+import { DocumentRowActionsComponent } from '../document-row-actions/document-row-actions.component';
 import {
   buildCvContent,
   parseCvSkillResponse,
@@ -32,7 +33,7 @@ const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
   selector: 'app-cv-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, ButtonDirective],
+  imports: [FormsModule, LucideAngularModule, ButtonDirective, DocumentRowActionsComponent],
   templateUrl: './cv-list.component.html',
   styleUrl: './cv-list.component.scss',
 })

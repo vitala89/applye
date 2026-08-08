@@ -1,3 +1,5 @@
+@use './button';
+
 /* ============================================================
    APPLYE - base resets & primitives
    Mirrors the design system's base layer. Tokens come from
@@ -316,88 +318,6 @@ a:hover {
 
 .ai-thinking .ai-thinking__dots span {
   background: var(--indigo-400, #818cf8);
-}
-
-/* ============================================================
-   BUTTON - shared control used via the [appButton] directive.
-   Variants: primary (indigo fill), secondary (neutral outline),
-   ghost (borderless), danger (ghost-style, destructive actions).
-   Sizes: sm, md. Token-driven, no hardcoded colors/sizes.
-   ============================================================ */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  border-radius: var(--radius-card);
-  font-family: var(--font-sans);
-  font-weight: var(--weight-semibold);
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-standard);
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btn--sm {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
-}
-.btn--md {
-  padding: var(--space-3) var(--space-5);
-  font-size: var(--text-body);
-}
-.btn--lg {
-  padding: var(--space-4) var(--space-6);
-  font-size: var(--text-body);
-}
-.btn--icon {
-  padding: var(--space-3);
-  line-height: 1;
-}
-
-.btn--primary {
-  background: var(--accent);
-  color: var(--accent-fg);
-  border: none;
-
-  &:hover:not(:disabled) {
-    background: var(--accent-hover);
-  }
-}
-
-.btn--secondary {
-  background: transparent;
-  color: var(--text-secondary);
-  border: var(--border-width) solid var(--border-default);
-
-  &:hover:not(:disabled) {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-}
-
-.btn--ghost {
-  background: none;
-  color: var(--text-secondary);
-  border: none;
-
-  &:hover:not(:disabled) {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-}
-
-.btn--danger {
-  background: none;
-  color: var(--danger);
-  border: var(--border-width) solid transparent;
-
-  &:hover:not(:disabled) {
-    background: var(--danger-tint);
-    border-color: var(--danger);
-  }
 }
 
 @keyframes applye-bounce {

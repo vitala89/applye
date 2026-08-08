@@ -13,6 +13,7 @@ import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
+import { DocumentRowActionsComponent } from '../document-row-actions/document-row-actions.component';
 import { cleanJsonText } from '../cv-content.util';
 
 const REGION_TAGS = ['de', 'us', 'uk', 'generic'];
@@ -22,7 +23,7 @@ const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
   selector: 'app-cover-letter-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, ButtonDirective],
+  imports: [FormsModule, LucideAngularModule, ButtonDirective, DocumentRowActionsComponent],
   templateUrl: './cover-letter-list.component.html',
   styleUrl: './cover-letter-list.component.scss',
 })

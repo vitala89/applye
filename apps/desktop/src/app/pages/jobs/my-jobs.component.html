@@ -120,7 +120,9 @@
             <td class="muted">{{ r.source || '·' }}</td>
             <td class="myjobs__row-actions">
               <button
-                class="icon-btn icon-btn--danger"
+                appButton
+                variant="danger"
+                size="icon"
                 type="button"
                 [attr.aria-label]="t()('jobs.delete_action')"
                 (click)="requestDelete(r, $event)"

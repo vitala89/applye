@@ -15,12 +15,10 @@ import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/d
 import {
   ArrowLeft,
   ChevronDown,
-  ChevronUp,
   Eye,
   GripVertical,
   LucideAngularModule,
   Pencil,
-  RefreshCw,
   Save,
   Check,
   Info,
@@ -51,6 +49,7 @@ import {
 
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
+import { CvSectionActionsComponent } from './cv-section-actions/cv-section-actions.component';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPreviewComponent } from './cv-preview/cv-preview.component';
 import { CvLiveStylePanelComponent } from './cv-live-style-panel/cv-live-style-panel.component';
@@ -84,6 +83,7 @@ import { routeCvStyleChange } from '../cv-style-scope.util';
     FormsModule,
     LucideAngularModule,
     ButtonDirective,
+    CvSectionActionsComponent,
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
@@ -112,7 +112,6 @@ export class CvDetailComponent {
   protected readonly icons = {
     back: ArrowLeft,
     save: Save,
-    regenerate: RefreshCw,
     preview: Eye,
     edit: Pencil,
     check: Check,
@@ -120,8 +119,6 @@ export class CvDetailComponent {
     panelClose: PanelRightClose,
     panelOpen: PanelRightOpen,
     dragHandle: GripVertical,
-    moveUp: ChevronUp,
-    moveDown: ChevronDown,
     chevron: ChevronDown,
   };
   protected readonly regeneratableKeys = REGENERATABLE_SECTION_KEYS;

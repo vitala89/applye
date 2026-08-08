@@ -69,37 +69,14 @@
   display: flex;
   gap: var(--space-2);
 }
-.cvlist__row-actions {
-  display: flex;
-  gap: var(--space-2);
-  flex: 0 0 auto;
-}
+/* `.cvlist__row-actions` and the `.cvlist__export` family moved into
+   `document-row-actions/` with the markup that names them. `cover-letter-list`
+   was reaching them from here through its Sass `@import` of this file; it now
+   renders the same component instead (ADR-0005, amendment eighteen). */
 
 .cell-strong {
   color: var(--text-primary);
   font-weight: var(--weight-medium);
-}
-
-.cvlist__export {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-input);
-  color: var(--text-tertiary);
-  cursor: pointer;
-}
-.cvlist__export:hover {
-  background: var(--surface-hover);
-  color: var(--text-secondary);
-}
-.cvlist__export select {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
 }
 
 .cvlist__note {
@@ -118,27 +95,11 @@
   margin: 0;
 }
 
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: none;
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-input);
-  color: var(--text-tertiary);
-  cursor: pointer;
-}
-.icon-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-secondary);
-}
-.icon-btn--danger:hover {
-  color: var(--danger);
-  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
-}
+/* `.icon-btn` and `--danger` are gone: these buttons use `appButton
+   size="icon"` with `variant="ghost"` and `variant="danger"` (ADR-0005,
+   amendment eighteen). `cover-letter-list` inherits this stylesheet through a
+   Sass `@import` and was therefore relying on this rule too - both templates
+   were updated together. */
 
 .badge {
   display: inline-block;

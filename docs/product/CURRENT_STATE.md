@@ -156,8 +156,32 @@
   document lists (`cv-list.component.html` **311 -> 283**, under budget), and `cv-section-actions/`
   out of the CV editor (`cv-detail.component.html` **492 -> 466**). Every one was a seam that already
   existed; the gate is what located them. **Two deliberate visual deltas**: the topbar theme toggle
-  34px -> 28px, and ghost icons one contrast step higher. `interview-prep-detail`'s `.ipd__icon-btn`
-  is the last page-local icon button left.
+  34px -> 28px, and ghost icons one contrast step higher. ~~`interview-prep-detail`'s
+  `.ipd__icon-btn` is the last page-local icon button left.~~ **Both halves of that sentence were
+  wrong**, and the rendered check is what showed it - see the next entry.
+- **The rendered check that fold was owed has been run, and it failed twice** (ADR-0005 amendment
+  nineteen, PR #385). The icon button was **28 x 29.84** rather than square: `<lucide-icon>` wraps an
+  inline `<svg>`, so it is a line box and reserves 1.84px of descender space whatever the icon
+  measures. Eight of the nine call sites were saved by the 28px minimum; the ninth is the topbar
+  toggle at 18px - the one button the fold was written around - and a 16px icon cleared 28 by
+  **0.16px**. And `variant="danger"` colours **at rest**, where all four page rules it replaced were
+  `:hover`-only, so a document row went from one tone to three. That delta was never declared. The
+  tie-break is the fold's own: it bent the design system to the pages because `size="icon"` had one
+  consumer; `variant="danger"` had **zero**. Both fixed, plus `.cvlist__export`, a `<label>` the
+  directive cannot reach, which had been left a shade darker than its neighbours.
+- **The count of remaining icon-button copies was wrong: four, not one** - the audit grepped for the
+  name `icon-btn` and every copy carrying a different name was invisible to it. `.ipd__icon-btn` (4
+  sites), `.ip__icon` in `_ip-shared.scss` (2 sites, **both** interview-prep pages), `.clb__icon-btn`
+  (1), and `.cvlist__export` (1, deliberately kept). This is amendment seventeen's lesson from a
+  fourth direction: that search was not truncated, it searched for a **name** when the thing being
+  counted is a **shape**.
+- **`.ipd__icon-btn` is folded** (PR #386, stacked on #385 because it needs the danger fix to be a
+  deletion). Its base was an exact `variant="secondary"`; only `:disabled` differs, 0.35 against 0.5.
+  The ratchet refused the +8 lines at 311/300 and located `interview-stage-actions/`: template
+  **311 -> 274**, stylesheet 363 -> 346. The narrow cut of four buttons rather than the whole
+  `.ipd__actions` cluster, because that cluster holds `.ip__pop` from `_ip-shared.scss` - amendment
+  sixteen's trap, avoided **before** the merge for the first time. `.ip__icon` is the next fold and
+  is a second visible delta on a second page.
 - **One dead class found by the same audit**, and a second claim that was **wrong and is corrected**.
   `.icon-btn--active` was bound on the Edit/Preview button, which is an `appButton`, and resolved to
   nothing - so the toggle never showed it was on; fixed by switching the button's own `variant`. The

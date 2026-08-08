@@ -18,7 +18,14 @@
    icon, so the native menu opens in the right place while the row shows a
    button. It keeps `.icon-btn`'s original 28px box rather than becoming an
    `appButton`, because it is a `<label>` - the directive's selector is
-   `button[appButton]`. */
+   `button[appButton]`.
+
+   Because the directive cannot reach it, it also did not follow its two
+   neighbours when they moved from `--text-tertiary` to `--text-secondary`,
+   and it sat a shade darker than the icons either side of it. These three
+   colours are hand-matched to `.btn--ghost` rather than inherited from it,
+   which is the cost of the control being a label (ADR-0005, amendment
+   nineteen). */
 .cvlist__export {
   position: relative;
   display: inline-flex;
@@ -27,12 +34,12 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-input);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 .cvlist__export:hover {
   background: var(--surface-hover);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 .cvlist__export select {
   position: absolute;

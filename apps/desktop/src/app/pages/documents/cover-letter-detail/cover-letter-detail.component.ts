@@ -1,20 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  ArrowLeft,
-  ChevronDown,
-  LucideAngularModule,
-  RefreshCw,
-  Save,
-  Plus,
-  Trash2,
-  Check,
-  Eye,
-  Pencil,
-  Sparkles,
-} from 'lucide-angular';
-import { NgTemplateOutlet } from '@angular/common';
+import { ArrowLeft, LucideAngularModule, Save, Check, Eye, Pencil, Sparkles } from 'lucide-angular';
 import type { CoverLetterContent } from '@applye/core';
 import { COVER_LETTER_BLOCK_KEYS } from '@applye/core';
 import {
@@ -33,6 +20,7 @@ import { CoverLetterPreviewComponent } from '../cover-letter-preview/cover-lette
 import { cleanJsonText, resolvePageSettings } from '../cv-content.util';
 import { CoverLetterBlockComponent } from './cover-letter-block/cover-letter-block.component';
 import { CoverLetterAvailabilityCardComponent } from './cover-letter-availability-card/cover-letter-availability-card.component';
+import { CoverLetterBodyParagraphsComponent } from './cover-letter-body-paragraphs/cover-letter-body-paragraphs.component';
 import { CoverLetterRecipientBlockComponent } from './cover-letter-recipient-block/cover-letter-recipient-block.component';
 import { CoverLetterSettingsCardComponent } from './cover-letter-settings-card/cover-letter-settings-card.component';
 import { CoverLetterStyleCardComponent } from './cover-letter-style-card/cover-letter-style-card.component';
@@ -46,10 +34,10 @@ import { CoverLetterStylePopoverComponent } from './cover-letter-style-popover/c
     FormsModule,
     LucideAngularModule,
     ButtonDirective,
-    NgTemplateOutlet,
     CoverLetterPreviewComponent,
     CoverLetterBlockComponent,
     CoverLetterAvailabilityCardComponent,
+    CoverLetterBodyParagraphsComponent,
     CoverLetterRecipientBlockComponent,
     CoverLetterSettingsCardComponent,
     CoverLetterStyleCardComponent,
@@ -74,14 +62,10 @@ export class CoverLetterDetailComponent {
   protected readonly icons = {
     back: ArrowLeft,
     save: Save,
-    regenerate: RefreshCw,
-    plus: Plus,
-    trash: Trash2,
     check: Check,
     preview: Eye,
     edit: Pencil,
     draft: Sparkles,
-    chevron: ChevronDown,
   };
   protected readonly blockKeys = COVER_LETTER_BLOCK_KEYS;
 
@@ -229,11 +213,6 @@ export class CoverLetterDetailComponent {
     });
   }
 
-  /** Style-override key for a body paragraph. */
-  paragraphStyleKey(index: number): string {
-    return paragraphStyleKey(index);
-  }
-
   toggleStylePopover(key: string): void {
     this.openStyleKey.set(this.openStyleKey() === key ? null : key);
   }
@@ -263,24 +242,16 @@ export class CoverLetterDetailComponent {
     this.letter.updateField(field, value);
   }
 
-  updateParagraph(index: number, value: string): void {
-    this.letter.updateParagraph(index, value);
-  }
-
-  addParagraph(): void {
-    this.letter.addParagraph();
-  }
-
   /**
-   * Removing a paragraph touches three owners, which is why it is orchestrated
-   * here: the content store drops the paragraph and reports how many are left,
-   * the open-popover key is page view state, and the `body_<i>` style overrides
-   * above the removal have to shift down so they keep pointing at the paragraph
-   * the user set them on.
+   * Removing a paragraph touches three owners, which is why it stays here while
+   * the block itself owns its text: the content store drops the paragraph and
+   * reports how many are left, the open-popover key is page view state, and the
+   * `body_<i>` style overrides above the removal have to shift down so they keep
+   * pointing at the paragraph the user set them on.
    */
   removeParagraph(index: number): void {
     const remaining = this.letter.removeParagraph(index);
-    if (this.openStyleKey() === this.paragraphStyleKey(index)) this.openStyleKey.set(null);
+    if (this.openStyleKey() === paragraphStyleKey(index)) this.openStyleKey.set(null);
     this.styles.reindexAfterParagraphRemoved(index, remaining);
   }
 

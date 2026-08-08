@@ -1151,6 +1151,8 @@ export const de: TranslationMap = {
     cover_letter_availability: 'Verfügbarkeit und Gehalt',
     cover_letter_availability_de:
       'Deutsche Stellenanzeigen fragen in der Regel nach dem frühestmöglichen Eintrittstermin und der Gehaltsvorstellung. Anschreiben ohne diese Angaben werden oft aussortiert.',
+    cover_letter_availability_applies:
+      'Diese Angaben werden beim nächsten Erstellen oder Neu-Generieren in den letzten Absatz eingearbeitet. In der Vorschau erscheinen sie nie separat.',
     cover_letter_earliest_start: 'Frühestmöglicher Eintrittstermin',
     cover_letter_earliest_start_ph: 'z. B. ab sofort oder 01.10.2026',
     cover_letter_salary_expectation: 'Gehaltsvorstellung',

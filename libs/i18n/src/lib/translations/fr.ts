@@ -1165,6 +1165,8 @@ export const fr: TranslationMap = stub(en, {
     cover_letter_availability: 'Disponibilité et salaire',
     cover_letter_availability_de:
       'Les annonces allemandes demandent en général votre date de disponibilité et vos prétentions salariales. Les lettres qui les omettent sont souvent écartées.',
+    cover_letter_availability_applies:
+      "Ces réponses sont intégrées au dernier paragraphe lors de la prochaine génération de la lettre. Elles n'apparaissent jamais séparément dans l'aperçu.",
     cover_letter_earliest_start: 'Date de disponibilité au plus tôt',
     cover_letter_earliest_start_ph: 'ex. immédiatement, ou 1er octobre 2026',
     cover_letter_salary_expectation: 'Prétentions salariales',

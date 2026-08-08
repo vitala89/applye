@@ -73,9 +73,9 @@
   background: var(--surface-hover);
   color: var(--text-primary);
 }
-.icon-btn--danger:hover {
-  color: var(--danger, #d64545);
-}
+/* `.icon-btn--danger` left with the body-paragraphs block - its delete button
+   was the page's only use - and lives there as `.clb__icon-btn--danger`. The
+   base `.icon-btn` above stays: the header's back button still uses it. */
 
 /* Draft-with-AI: appButton dimensions, accent outline */
 .draft-accent {
@@ -146,57 +146,12 @@
   flex-direction: column;
   gap: var(--space-4);
 }
-.coverdetail__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-default);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-/* ---- Fields inside blocks ---- */
-
-.coverdetail__paragraphs {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.coverdetail__paragraph {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: var(--surface-sunken);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-input);
-}
-.coverdetail__paragraph-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.coverdetail__paragraph-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.coverdetail__textarea {
-  min-height: 96px;
-  line-height: 1.5;
-  background: var(--surface-1) !important;
-}
+/* `.coverdetail__count`, the `.coverdetail__paragraph*` family and
+   `.coverdetail__textarea` moved into `cover-letter-body-paragraphs/` with the
+   markup that named them - nothing else used them, so they stay component-
+   scoped rather than going global. The textarea also needed the page's
+   `.coverdetail textarea` rule carried across; see that stylesheet and
+   ADR-0005, amendment sixteen. */
 
 /* The preview sheet's own styles live with the render itself, in
    `cover-letter-preview.component.scss`. */

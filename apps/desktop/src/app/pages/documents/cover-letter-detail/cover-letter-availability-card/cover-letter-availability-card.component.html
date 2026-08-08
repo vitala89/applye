@@ -3,6 +3,11 @@
   @if (regionTag() === 'de') {
     <p class="docedit-card__hint">{{ t()('documents.cover_letter_availability_de') }}</p>
   }
+  <!-- Unlike the German-market explainer above, this one is region-independent:
+       it describes how the card behaves, not why a market expects it. Without
+       it the card reads as if it should change the preview, and filling it in
+       looks like it did nothing. -->
+  <p class="docedit-card__hint">{{ t()('documents.cover_letter_availability_applies') }}</p>
   <div class="docedit-field">
     <span class="docedit-field__label">
       {{ t()('documents.cover_letter_earliest_start') }}

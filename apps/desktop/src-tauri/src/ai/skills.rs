@@ -233,6 +233,54 @@ mod tests {
         );
     }
 
+    /// A shorthand salary reached the letter with its magnitude gone: an input
+    /// of "85k - 110k" produced "My salary expectation is 85 - 110 EUR per
+    /// year", which reads to an employer as 85 euros. The model was following
+    /// the rule it had - "use the values exactly as given" - so the fix is a
+    /// narrow, explicitly-scoped exception for salary alone.
+    ///
+    /// The output itself needs a live model, so what is pinned here is the
+    /// instruction that produces it: the shorthand reaches the prompt, and the
+    /// prompt carries both the expansion rule and its boundary. Without the
+    /// boundary in the text, nothing stops the model "helpfully" rewriting a
+    /// date the same way.
+    #[test]
+    fn cover_letter_expands_an_abbreviated_salary_but_nothing_else() {
+        let r = render(
+            "cover-letter-generate",
+            &ctx(&[
+                ("profile_md", "Jane Doe"),
+                ("job_description", "Frontend"),
+                ("language", "en"),
+                ("section", "all"),
+                ("tone", "Formal"),
+                ("length", "Standard"),
+                ("earliest_start", "01.10.2026"),
+                ("salary_expectation", "85k - 110k"),
+                ("notice_period", ""),
+            ]),
+        )
+        .unwrap();
+        let prompt = format!("{}{}", r.system_prompt, r.user_prompt);
+
+        // The value reaches the model unaltered - the app does not pre-format it.
+        assert!(prompt.contains("85k - 110k"), "salary missing: {prompt}");
+        // The expansion rule, and the example that names the actual failure.
+        assert!(
+            prompt.contains("85.000") && prompt.contains("NEVER drop the magnitude"),
+            "salary expansion rule missing: {prompt}"
+        );
+        // Its boundary: the exception must not generalise to dates.
+        assert!(
+            prompt.contains("salary_expectation ONLY"),
+            "salary exception is not scoped, so it can eat the date rule: {prompt}"
+        );
+        assert!(
+            !prompt.contains("{{"),
+            "unreplaced placeholder left in the prompt: {prompt}"
+        );
+    }
+
     /// The posting that defines the problem: the employer is "a partner
     /// company", unnamed, while `Jobgether` - the matching platform - appears
     /// throughout. A model that names it produces a cover letter opening "I am

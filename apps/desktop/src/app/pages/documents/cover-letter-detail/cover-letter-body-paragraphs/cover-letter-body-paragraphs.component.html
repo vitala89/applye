@@ -1,0 +1,104 @@
+<section class="docedit-section">
+  <div class="docedit-section__head">
+    <button
+      type="button"
+      class="docedit-section__toggle"
+      [attr.aria-expanded]="open()"
+      (click)="toggled.emit()"
+    >
+      <lucide-icon
+        [img]="icons.chevron"
+        [size]="15"
+        aria-hidden="true"
+        class="docedit-chevron"
+        [class.docedit-chevron--closed]="!open()"
+      />
+      <span class="docedit-section__title">{{
+        t()('documents.cover_letter_body_paragraphs')
+      }}</span>
+    </button>
+    <div class="docedit-section__actions">
+      <span class="coverdetail__count">{{ (content().bodyParagraphs || []).length }}</span>
+      <button
+        type="button"
+        class="coverdetail__style-btn"
+        [class.coverdetail__style-btn--active]="openStyleKey() === styleKey"
+        [class.coverdetail__style-btn--custom]="hasCustomStyle(styleKey)"
+        (click)="styleToggled.emit(styleKey)"
+      >
+        {{ t()('documents.cv_section_style') }}
+      </button>
+    </div>
+  </div>
+  @if (openStyleKey() === styleKey) {
+    <ng-container
+      [ngTemplateOutlet]="stylePopover()"
+      [ngTemplateOutletContext]="{ $implicit: styleKey }"
+    ></ng-container>
+  }
+  <div class="docedit-collapse" [class.docedit-collapse--closed]="!open()">
+    <div>
+      <div class="coverdetail__paragraphs">
+        @for (para of content().bodyParagraphs || []; track $index) {
+          <div class="coverdetail__paragraph">
+            <div class="coverdetail__paragraph-head">
+              <span>{{
+                t()('documents.cover_letter_field_paragraph').replace('{index}', '' + ($index + 1))
+              }}</span>
+              <div class="coverdetail__paragraph-actions">
+                <button
+                  type="button"
+                  class="coverdetail__style-btn"
+                  [class.coverdetail__style-btn--active]="
+                    openStyleKey() === paragraphStyleKey($index)
+                  "
+                  [class.coverdetail__style-btn--custom]="hasCustomStyle(paragraphStyleKey($index))"
+                  (click)="styleToggled.emit(paragraphStyleKey($index))"
+                >
+                  {{ t()('documents.cv_section_style') }}
+                </button>
+                <button
+                  class="coverdetail__regen"
+                  type="button"
+                  [disabled]="isRegenerating($index)"
+                  (click)="regenerated.emit($index)"
+                >
+                  <lucide-icon
+                    [img]="icons.regenerate"
+                    [size]="13"
+                    [class.spin]="isRegenerating($index)"
+                    aria-hidden="true"
+                  />
+                  {{ t()('documents.cover_letter_regen') }}
+                </button>
+                <button
+                  class="clb__icon-btn clb__icon-btn--danger"
+                  type="button"
+                  (click)="paragraphRemoved.emit($index)"
+                  [attr.aria-label]="t()('actions.delete')"
+                >
+                  <lucide-icon [img]="icons.trash" [size]="13" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            @if (openStyleKey() === paragraphStyleKey($index)) {
+              <ng-container
+                [ngTemplateOutlet]="stylePopover()"
+                [ngTemplateOutletContext]="{ $implicit: paragraphStyleKey($index) }"
+              ></ng-container>
+            }
+            <textarea
+              class="coverdetail__textarea"
+              [ngModel]="para"
+              (ngModelChange)="updateParagraph($index, $event)"
+            ></textarea>
+          </div>
+        }
+      </div>
+      <button class="coverdetail__add" type="button" (click)="addParagraph()">
+        <lucide-icon [img]="icons.plus" [size]="13" aria-hidden="true" />
+        {{ t()('documents.cover_letter_add_paragraph') }}
+      </button>
+    </div>
+  </div>
+</section>

@@ -1129,6 +1129,8 @@ export const en: TranslationMap = {
     cover_letter_availability: 'Availability and salary',
     cover_letter_availability_de:
       'German postings usually ask for your earliest start date and your salary expectation. Letters that leave them out are often filtered out.',
+    cover_letter_availability_applies:
+      'These answers are written into the last paragraph the next time you generate or regenerate the letter. They never appear in the preview on their own.',
     cover_letter_earliest_start: 'Earliest start date',
     cover_letter_earliest_start_ph: 'e.g. immediately, or 1 October 2026',
     cover_letter_salary_expectation: 'Salary expectation',

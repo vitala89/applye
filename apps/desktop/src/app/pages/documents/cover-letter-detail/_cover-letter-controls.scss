@@ -82,12 +82,27 @@
   margin-top: var(--space-3);
   color: var(--text-primary);
 }
+/* `<lucide-icon>` is a custom element and therefore `display: inline` by
+   default. An inline box has no reliable transform box of its own - it is sized
+   from the line box around it - so `transform-origin: 50% 50%` resolves off the
+   glyph's centre and the icon wobbles in an ellipse instead of spinning in
+   place. `inline-flex` gives it a box that matches the SVG, and the origin is
+   then genuinely its centre. */
 .spin {
+  display: inline-flex;
+  transform-origin: 50% 50%;
   animation: cl-spin 0.9s linear infinite;
 }
 @keyframes cl-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+/* Matches the same guard `settings.component.scss` already applies to its own
+   spinner: a continuous rotation is exactly what this setting exists to stop. */
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
   }
 }
 

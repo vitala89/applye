@@ -44,6 +44,95 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, the card that looked broken because it was silent
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; re-triaged 6/10 - radius 1, ambiguity 1, risk 1, verify 2, unknowns 1. Model above the verdict and said so once; the shape had already been agreed in the previous round, so no gate.)
+- **Branch:** `feat/cover-letter-body-paragraphs`, continuing on PR #383
+- **Commits:** one
+- **Objective:** close the one item the previous entry recorded as not done - the Availability card gives the user no way to know that its answers reach the letter only through the AI, on the next generation.
+- **Completed:**
+  - **`cover_letter_availability_applies` in all six locales** - `en`, `de`, `es`, `fr`, `ru`, `uk`. The repository has six, not the five the previous entry guessed; the key-parity spec is what would have caught a miss.
+  - **A region-independent hint** under the card, deliberately separate from the German-market explainer above it. The two answer different questions: the existing one says _why a market expects these answers_, the new one says _what the card does with them_.
+  - **Three tests**, replacing two that would have passed on the broken shape. The old assertions were `querySelector('.docedit-card__hint')` against `null`, so a second hint with the same class made them fail - correctly. They now count hints rather than test existence, and one asserts the new line survives across three regions.
+- **Not completed:** nothing in scope. The `.icon-btn` consolidation onto `appButton size="icon"` stays queued behind a rendered check, by decision.
+- **Files or packages changed:** six locale files, the availability card's template and spec, `CHANGELOG.md`, `CURRENT_STATE.md`, this file.
+- **Validation:** full `jest` **passed - 194 suites / 2485 tests**, including the i18n key-parity spec. `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application,i18n --skip-nx-cache` **passed**, 0 errors, the same 8 warnings - `i18n` added to the projects list because this change is mostly in that library. `nx build desktop --skip-nx-cache` **passed**. `quality:file-size` **passed**. `quality:attribution` **passed**. `nx format:check` clean after `format:write`. `git diff --check` clean.
+  - **`quality:style-move` not run, and that is a verdict rather than an omission:** `git status` reports **0 changed stylesheets**, so the check has no subject.
+- **Privacy/security impact:** none. Six strings and a paragraph element.
+- **Decisions and assumptions:**
+  - **The hint is not regional.** The German explainer is conditional because the market expectation is; the behaviour of the card is the same everywhere, and hiding the explanation outside DE would reproduce the original confusion for every other user.
+  - **Both hints keep one class.** They are the same visual element and giving one a modifier would be styling to express test convenience. The tests count and read them instead.
+- **Risks or compatibility impact:** none beyond a slightly taller card. The five other locales were written directly rather than machine-translated, and each states the same two facts: the answers go into the last paragraph on the next generation, and they never appear in the preview alone.
+- **Open issues or blockers:** the rendered check on PR #383 is still owed by the maintainer, and it now covers this hint as well.
+- **Next first action:** the maintainer confirms PR #383 on screen. Then the `.icon-btn` consolidation, which does not merge without one.
+- **Evidence:**
+  - **The previous entry said "five locales"; there are six.** Writing the key into five would have shipped a broken `ru` and been caught by the parity spec rather than by the estimate - a small instance of the same rule this campaign keeps relearning: count the thing, do not recall it.
+  - **The two existing tests failed on the change, which is the outcome worth having.** They asserted a hint's _existence_ rather than _which_ hint, so they were load-bearing in the wrong direction; a second element with the same class broke them immediately instead of silently passing.
+
+### 2026-08-08, the first rendered check finds what six pull requests of gates did not
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; re-triaged 9/10 - radius 2, **ambiguity 2**, risk 1, verify 2, **unknowns 2**. Ambiguity 2 for the availability-fields question and the salary policy; unknowns 2 because the preview renderer, the AI skill and the spinner all had to be read before anything could be answered.)
+- **Branch:** `feat/cover-letter-body-paragraphs`, continuing on PR #383
+- **Commits:** one, on top of the extraction
+- **Objective:** the maintainer ran the editor for the first time in this campaign and reported four things. Answer the one that was a question, fix the three that were defects.
+- **Completed:**
+  - **`cover-letter-block/` had been rendering five fields as native browser inputs since PR #380** - date, subject, greeting, closing, signature. It carried `.coverdetail__full { width: 100% }` out of the page and left the nine declarations `.coverdetail input:not(...)` was supplying. The block now carries its own copy plus `:focus`, and a test fails if the markup stops matching the class.
+  - **The regenerate spinner wobbled.** `<lucide-icon>` is a custom element and `display: inline` by default, so its transform box comes from the surrounding line box and `transform-origin: 50% 50%` lands off the icon's centre. `inline-flex` plus an explicit origin, and it now also honours `prefers-reduced-motion`, which `settings.component.scss` already did for its own spinner.
+  - **A shorthand salary lost its magnitude.** An input of `85k - 110k` produced "My salary expectation is 85 - 110 EUR per year". The model was obeying "use the values exactly as given"; the skill now carries a narrow exception for `salary_expectation` **only**, with the boundary stated in the same sentence so it cannot generalise to a date. Pinned by a Rust render test asserting the rule, the example, and the scope.
+  - **The availability question, answered rather than actioned:** the three fields are AI prompt inputs, not preview content, and must not be deleted.
+- **Not completed at the time of this entry, done immediately after** - see the follow-up entry above: the UI hint telling the user the three fields only take effect on regeneration.
+- **Files or packages changed:** `cover-letter-block/`'s stylesheet and spec, `_cover-letter-controls.scss`, `cover-letter-generate.md`, `skills.rs`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
+- **Validation:** `cargo test --lib ai::skills` **passed - 10 tests**, including the new one. `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 warnings. Full `jest` **passed - 194 suites / 2484 tests**. `nx build desktop --skip-nx-cache` **passed**. `quality:file-size` **passed**. `quality:attribution` **passed**. `quality:style-move` reports **0 lost, 4 gained**, all four being the fixes themselves. `nx format:check` clean after `format:write`. `git diff --check` clean.
+  - **A test count was nearly accepted at the wrong value.** `npx jest` reported 123 suites / 1464 tests instead of 194 / 2484, because a `cd` into `src-tauri` for the cargo run had persisted in the shell. The discrepancy was visible only because the previous run's numbers were known. **A gate's verdict includes its scope, not just its pass line.**
+- **Privacy/security impact:** none. CSS, one prompt rule, one test.
+- **Decisions and assumptions:**
+  - **The availability fields stay.** `cover-letter-tailor.service.ts` sends `earliest_start`, `salary_expectation` and `notice_period` into `cover-letter-generate`, which states them in the final body paragraph. German postings routinely ask for an Eintrittstermin and a Gehaltsvorstellung and filter letters that omit them. They are invisible in the preview **by design** - they are woven into the generated prose - and they only take effect on a regenerate or a draft. The fourth field in that card, `attachments`, is different and _is_ rendered directly.
+  - **Salary magnitude is normalised by the model, not the UI** (maintainer's call). The alternative was formatting on blur in the app; the prompt was chosen because it also repairs values already saved, and because the app pre-formatting a value would break the "the model receives what the user typed" property the other two fields rely on.
+- **Risks or compatibility impact:** the salary exception is a deliberate hole in an otherwise absolute rule, and the risk is the model generalising it to dates. That is why the scope is in the same sentence and asserted by the test rather than left to wording.
+- **Open issues or blockers:** **a correction to the previous entry, and it is the important part of this one.** That entry reported a bare `.spin` as "defined nowhere in the app". It is defined, in `_cover-letter-controls.scss` - the global partial this campaign created. The claim came from a `grep` piped through `head`: the match existed and was truncated away, and **absence was read from a cut-off output.** Corrected in `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md` and the PR body.
+- **Next first action:** the maintainer re-runs the editor and confirms the five block fields and the spinner. Then the `.icon-btn` consolidation onto `appButton size="icon"` - and it does not merge without a rendered check.
+- **Evidence:**
+  - **Six pull requests of green gates did not find a two-day-old visual regression; one minute of a running app did.** Every gate passes on it by construction: `quality:style-move` compares declarations per selector and `.coverdetail input` never changed, so the tool reports lossless while the rule reaches nothing.
+  - **Amendment sixteen's own retrospective audit is where it slipped.** It checked `cover-letter-style-card/` and `cover-letter-style-popover/` and declared the merged work clean. `cover-letter-block/` was extracted in the _same_ pull request and was never listed. The lesson is mechanical: enumerate the components from the diff, not from the pull-request description.
+  - **Three of the four items the maintainer reported were defects invisible to CI**, and the fourth was a design decision nobody had written down. That ratio is the argument for the rendered check, not the six passing gates.
+
+### 2026-08-08, `cover-letter-detail` template cut 4: the block that was blocked, and a shared class that was never one rule
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 8/10 - radius 2, **ambiguity 2**, risk 1, verify 2, unknowns 1. Ambiguity 2 because the `.icon-btn` question had three readings leading to different work, which sends it to `aif-grilling` before any edit whatever the total.)
+- **Branch:** `feat/cover-letter-body-paragraphs`, off `main` at `1c375b9`
+- **Commits:** one
+- **Pull request:** opened against `main`
+- **Objective:** answer the `.icon-btn` question the last two entries left to the maintainer, then - only if it unblocked - cut the body-paragraphs block. **The decision came first and the code waited for it.**
+- **Completed:**
+  - **The grilling gate ran and the maintainer chose**, three questions in one round, all three answers as recommended: a locally-named class, body-paragraphs only, and fix the dead binding rather than merely delete it.
+  - **`cover-letter-body-paragraphs/`** - the collapsible section, the paragraph count, the per-paragraph Style/Regenerate/Delete row and the Add button. Paragraph text writes straight into `CoverLetterContentStore`; **removal and regeneration stay outputs**, because removal touches three owners and regeneration runs through the page's AI error handling.
+  - **`cover-letter-detail.component.html`: 324 -> 222** against 300. **The campaign's goal is met** - it started at 669.
+  - `.ts` 352 -> **333/400**, `.scss` 207 -> **162**.
+  - **14 tests** across the new block.
+- **Not completed:** the header bar (~85 lines) stays, by decision - the template is under budget without it. The four-copy `.icon-btn` duplication is **recorded, not fixed**; so is the dead `.spin` class.
+- **Files or packages changed:** 4 new files under `cover-letter-detail/`, the page's `.ts`/`.html`/`.scss`, `CHANGELOG.md`, `ADR-0005` (amendment seventeen), this file.
+- **Validation:** `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. Full `jest` **passed - 194 suites / 2483 tests**, up from 193/2469. `nx build desktop --skip-nx-cache` **passed**. `npm run quality:file-size` **passed**. `npm run quality:attribution` **passed**. `npx nx format:check` passed after `format:write`. `git diff --check` **clean**.
+  - **`quality:style-move` reports 2 lost and 5 gained**, and all seven are deliberate: `.icon-btn--danger:hover` left with the only markup that used it and lives in the child as `.clb__icon-btn--danger:hover`; `.coverdetail__textarea` lost its `!important` because inside the child nothing competes with it; it gained the nine declarations carried from `.coverdetail textarea` plus `resize`; and `.coverdetail__textarea:focus` and the three `.clb__icon-btn` rules are new by decision.
+  - **A warning that no gate reported.** The dev server printed `NG8113: NgTemplateOutlet is not used within the template of CoverLetterDetailComponent` - the page defines the popover template but no longer stamps it, so the import was dead. Lint reported 0 errors and the production build's own verdict line said success. **It surfaced only because the app was run.** Fixed, and the rebuild is clean.
+  - **Not run: any UI walkthrough.** `tauri dev` was started twice; `target/debug/applye-desktop` ran and stayed alive both times, but no window could be captured, so **nothing was seen**. The maintainer asked for a written checklist instead and it is in the pull request.
+- **Privacy/security impact:** none. Markup and CSS moved; one binding corrected.
+- **Decisions and assumptions:**
+  - **`.icon-btn` is four names and three rules, not one duplicated rule.** `cv-list` and `my-jobs` are an identical 28px pair; `cv-detail` is that box with `:disabled` and `--active`; the cover letter's is 32px with a transition and different colour tokens. A global partial was therefore a **three-way reconciliation that visibly changes two other pages**, not an extraction - and `quality:style-move` would have called it lossless. The block carries `.clb__icon-btn`, following `interview-prep-detail`'s `.ipd__icon-btn`.
+  - **`libs/ui` already ships this primitive.** `appButton` has `size="icon"` and `variant="danger"`; `.btn--ghost` is near-identical to every `.icon-btn`. Four stylesheets reimplemented a design-system component. Folding them onto it is the real fix, is its own change, and needs a rendered check - which is why it was not smuggled in here.
+  - **The dead binding was fixed rather than deleted.** `[class.icon-btn--active]` sat on an `appButton` and resolved to nothing; the button now switches its own `variant`.
+- **Risks or compatibility impact:** the paragraph textareas are the plausible regression - `.coverdetail textarea` reached them and **nothing global styles a bare `textarea`**, so the child carries its own copy. The Edit/Preview button now visibly changes appearance when active, which it never did before; that is the intended fix, not a regression, and it is the one user-visible difference in this PR.
+- **Open issues or blockers:** **the visual debt is six extractions deep and unpaid.** It is now a numbered walkthrough in the PR body for the maintainer to run.
+- **Next first action:** the maintainer runs the eight-step walkthrough. If it is clean, the next code change is folding the four `.icon-btn` copies onto `appButton size="icon"` - and that one must be checked on screen before it merges, because it is deliberately a visible change.
+- **Evidence:**
+  - **The checklist discriminated for the third consecutive cut**, and this time the carry was unavoidable: unlike the settings card, which needed nothing because `_editor-shell.scss` already styled its controls, `grep` found **no rule for a bare `textarea` anywhere** in `apps/desktop` or `libs/ui`.
+  - **First compiled-CSS proof in this campaign.** `dist/apps/desktop/browser/chunk-4BU62BOE.js` carries `.coverdetail__textarea[_ngcontent-%COMP%]` with all nine declarations and `.clb__icon-btn[_ngcontent-%COMP%]` in the **child's** chunk - so the carried rules do reach the elements they were carried for. Still not a rendered check, but it is the first evidence below the level `quality:style-move` operates at.
+  - **The gate-verdict rule paid again, from the opposite direction.** The previous near-miss was a grep that matched neither error nor success. This one was a real warning that every gate's verdict line was silent about, and only running the app exposed it.
+  - Sizes: `cover-letter-body-paragraphs.component.ts` 89/400 + template 106/300 + stylesheet 109 + spec 195, `cover-letter-detail.component.html` **222/300** from 324, `.ts` **333/400** from 352, `.scss` **162** from 207.
+  - Campaign arc for this page, eight pull requests: markup **669 -> 222**, code **644 -> 333**, both under budget; gateway allowlist 26 -> 22.
+
 ### 2026-08-08, `cover-letter-detail` template cut 3: both cards leave, and the checklist earns its place
 
 - **Status:** complete

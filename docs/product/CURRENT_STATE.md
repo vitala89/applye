@@ -135,15 +135,51 @@
   hiding in plain sight because it was markup rather than state. The four store extractions asked what
   state the page owned; nobody asked what _panels_ it owned. **The rule: when a migrated page is still
   over budget, look for a responsibility before blaming the template.**
-- **The template is 308/300 - eight lines over**, after five extractions: the style card, the style
-  popover, the recipient block, and now the settings and availability cards. The page class is
-  **318/400** and has dropped off the over-budget report entirely. Arc for this page: markup
-  **669 -> 308**, code **644 -> 318**.
-- **The last two cuts are blocked on one maintainer decision.** Both the body-paragraphs block (which
-  takes the template under 300 on its own) and the header bar use `.icon-btn`, generic vocabulary
-  already duplicated across four component stylesheets and still needed by the page's own header.
-  Making it global from a cover-letter partial changes CSS vocabulary app-wide; copying it makes a
-  fifth copy. That is a cross-cutting call, not a side effect of a template cut.
+- **The campaign is finished: the template is 222/300 and the class 333/400, both under budget**,
+  after six extractions - the style card, the style popover, the recipient block, the settings and
+  availability cards, and now the body-paragraphs block. Arc for this page across eight pull requests:
+  markup **669 -> 222**, code **644 -> 333**. The header bar (~85 lines) stays, by decision: the
+  template is under budget without it.
+- **The `.icon-btn` blocker is resolved, and the question had a false premise** (ADR-0005 amendment
+  seventeen). It was recorded twice as one class duplicated across four stylesheets. Four files define
+  the **name**; three define different **rules** - `cv-list` and `my-jobs` are an identical 28px pair,
+  `cv-detail` adds `:disabled` and `--active`, and the cover letter's is 32px with a transition and
+  different colour tokens. A global partial was therefore a three-way reconciliation that visibly
+  changes two other pages, not an extraction. The block carries a locally-named `.clb__icon-btn`,
+  following `interview-prep-detail`'s `.ipd__icon-btn`.
+- **`libs/ui` already ships the primitive all four copies reimplement.** `appButton` has
+  `size="icon"` and `variant="danger"`, and `.btn--ghost` is near-identical to every `.icon-btn`.
+  Folding them onto it is the real fix and is **the next code change in this area** - deliberately its
+  own pull request, because it is a visible change and needs a rendered check.
+- **One dead class found by the same audit**, and a second claim that was **wrong and is corrected**.
+  `.icon-btn--active` was bound on the Edit/Preview button, which is an `appButton`, and resolved to
+  nothing - so the toggle never showed it was on; fixed by switching the button's own `variant`. The
+  same entry reported a bare `.spin` as "defined nowhere": **it is defined**, in
+  `_cover-letter-controls.scss`. The error came from a `grep` piped through `head` - the match was
+  truncated away and absence was read from a cut-off output. `.spin` did have a real defect, but a
+  different one: it wobbled, because `<lucide-icon>` is `display: inline` and its transform box comes
+  from the surrounding line box. Fixed with `inline-flex`, an explicit origin and a
+  `prefers-reduced-motion` guard.
+- **The first rendered check found a two-day-old regression that six pull requests of green gates had
+  not.** `cover-letter-block/` - date, subject, greeting, closing, signature - has rendered as native
+  browser inputs since PR #380: it carried `.coverdetail__full { width: 100% }` out of the page and
+  left behind the nine declarations `.coverdetail input:not(...)` supplied. It is amendment sixteen's
+  trap in the one component amendment sixteen's own retrospective audit forgot to list. Fixed, with a
+  test on the class the stylesheet targets. **No further extraction in this area merges without a
+  rendered check** - it is the only instrument that detects this defect class.
+- **The Availability card explains itself now.** Its three answers reach the letter only through the
+  AI prompt, on the next generate or regenerate, and never appear in the preview as lines of their
+  own - which made a filled-in card look broken. A region-independent hint says so in all six
+  locales, separate from the German-market explainer above it, which answers a different question.
+- **A shorthand salary reached the letter with its magnitude gone.** `85k - 110k` produced "My salary
+  expectation is 85 - 110 EUR per year", which reads as 85 euros. The model was obeying the skill's
+  "use the values exactly as given"; `cover-letter-generate.md` now carries a narrow exception for
+  `salary_expectation` **only**, with its boundary in the same sentence so it cannot generalise to a
+  date, pinned by a Rust render test asserting the rule, the example and the scope.
+- **One warning no gate reported.** After the extraction the page's `NgTemplateOutlet` import went
+  dead, and `NG8113` appeared only in the dev server's output - lint read 0 errors and the build's own
+  verdict line said success. It surfaced because the app was run, and it is the argument for running
+  it that does not depend on seeing anything.
 - **Moved markup takes its stylesheet rules with it, and the check only proves half of that.** For
   named classes it works: the six the style panels use went into `_cover-letter-controls.scss`, which
   `styles.scss` emits globally, and `quality:style-move` reported lossless. **The recipient block found
@@ -155,8 +191,12 @@
   **The checklist gains a line: also list every descendant or element selector rooted at the page that
   matched inside the moved region.** The three components merged a day earlier were audited against
   this and are clean.
-- **A visual check is owed on the whole cover-letter editor** and cannot be run without Tauri IPC.
-  This is the largest open risk in the documents area.
+- **A visual check is owed on the whole cover-letter editor, now six extractions deep, and it is the
+  largest open risk in the documents area.** A `tauri dev` build was started twice on 2026-08-08; the
+  binary ran and stayed alive, but no window could be captured, so nothing was rendered. The check is
+  now a written walkthrough for the maintainer rather than an agent task. The compiled bundle does at
+  least confirm that the carried rules land in the child components' own encapsulated scopes -
+  evidence one level below `quality:style-move`, but still not a rendered check.
 - **The two document editors share almost nothing, settled by reading both.** `CoverLetterStyle` and
   `CvStyle` are different types; cover letters have no themes, which is most of `CvStyleStore`. Their
   `sectionStyles` differ structurally - a closed `CvSectionKey` union against an open
@@ -1441,7 +1481,12 @@ technology / seniority` as `jd_text`, which starved everything downstream that r
   `updateField`, so no new setters. `cover-letter-generate` takes the three as inputs and is
   told to state them in the final body paragraph in the user's exact words - never a bullet
   list, never the subject, no currency conversion - and to stay entirely silent on an empty
-  one rather than inventing "salary negotiable". Because a changed answer changes the output,
+  one rather than inventing "salary negotiable". **Amended 2026-08-08:** "exact words" has one
+  scoped exception, for `salary_expectation` alone. An input of `85k - 110k` came back as
+  "85 - 110 EUR per year", which reads as 85 euros; the skill now expands an abbreviated
+  magnitude to the full figure while leaving the currency, the range and the gross/net
+  qualifier untouched. The boundary is stated in the same sentence and asserted by a Rust
+  render test, because the risk of the exception is the model extending it to the date. Because a changed answer changes the output,
   the three are folded into the per-block regeneration cache hash next to tone and length, and
   they carry from a base letter into every tailored copy. Both wizard call sites in
   `jobs.component.ts` pass them explicitly: the template engine leaves unknown placeholders

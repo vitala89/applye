@@ -67,17 +67,45 @@ describe('CoverLetterAvailabilityCardComponent', () => {
     expect(letter.content().attachments).toBe('Lebenslauf, Zeugnisse');
   });
 
-  it('shows the German hint only for a DE letter', () => {
-    expect(fixture.nativeElement.querySelector('.docedit-card__hint')).toBeNull();
+  function hints(): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('.docedit-card__hint') as NodeListOf<HTMLElement>,
+    ).map((el) => el.textContent?.trim() ?? '');
+  }
+
+  /**
+   * Two hints with one class, and they answer different questions: the German
+   * one says why a market expects these answers and is regional, the other says
+   * what the card does with them and is not. Counting them is what keeps the
+   * regional one regional - asserting "a hint exists" would pass either way.
+   */
+  it('shows the German market hint only for a DE letter', () => {
+    expect(hints()).toHaveLength(1);
     docs.regionTag.set('de');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.docedit-card__hint')).not.toBeNull();
+    expect(hints()).toHaveLength(2);
+    expect(hints()[0]).toContain('German postings');
+  });
+
+  /**
+   * The card is invisible in the preview by design - these answers reach the
+   * letter through the AI prompt and land in the final body paragraph. Filling
+   * them in and seeing nothing change is the confusion this line exists to
+   * prevent, so it is not allowed to be regional and it is not allowed to
+   * vanish.
+   */
+  it('always explains that the answers apply on the next generation', () => {
+    for (const region of ['us', 'de', 'fr']) {
+      docs.regionTag.set(region);
+      fixture.detectChanges();
+      expect(hints().at(-1)).toContain('regenerate');
+    }
   });
 
   it('still offers the fields outside DE - a posting anywhere may ask for them', () => {
     docs.regionTag.set('us');
     fixture.detectChanges();
     expect(inputs()).toHaveLength(4);
-    expect(fixture.nativeElement.querySelector('.docedit-card__hint')).toBeNull();
+    expect(hints()).toHaveLength(1);
   });
 });

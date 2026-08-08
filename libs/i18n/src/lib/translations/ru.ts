@@ -1157,6 +1157,8 @@ export const ru: TranslationMap = stub(en, {
     cover_letter_availability: 'Доступность и зарплата',
     cover_letter_availability_de:
       'В немецких вакансиях обычно спрашивают ближайшую дату выхода и зарплатные ожидания. Письма без них часто отсеиваются.',
+    cover_letter_availability_applies:
+      'Эти ответы попадут в последний абзац при следующей генерации письма. Отдельно в предпросмотре они не показываются.',
     cover_letter_earliest_start: 'Ближайшая дата выхода',
     cover_letter_earliest_start_ph: 'например, немедленно или 1 октября 2026',
     cover_letter_salary_expectation: 'Зарплатные ожидания',

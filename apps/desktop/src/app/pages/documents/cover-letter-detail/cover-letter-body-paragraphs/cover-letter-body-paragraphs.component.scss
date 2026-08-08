@@ -1,0 +1,109 @@
+// The body-paragraphs block's own vocabulary. Everything here was on the page
+// and is used by nothing else, so it moves outright rather than going global -
+// the `docedit-*` shell, `.coverdetail__style-btn`, `.coverdetail__regen` and
+// `.coverdetail__add` this block also uses are already emitted globally from
+// `styles.scss` and are deliberately not repeated here.
+
+.coverdetail__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.coverdetail__paragraphs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.coverdetail__paragraph {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-input);
+}
+.coverdetail__paragraph-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.coverdetail__paragraph-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// CARRIED, not moved (ADR-0005, amendment sixteen). The page styles its
+// controls with `.coverdetail input:not(...), .coverdetail select, .coverdetail
+// textarea` - a descendant selector rooted at the page element, which Angular's
+// emulated encapsulation stops at this component's boundary. Nothing global
+// styles a bare `textarea`, so without these nine declarations every paragraph
+// would render as a browser-default box. The page still needs its own copy for
+// the controls it kept, so this is a copy rather than a move, keyed on the
+// block's own class to stay inside its scope.
+//
+// `.coverdetail__textarea` carried a `background: ... !important` on the page,
+// where it had to beat `.coverdetail textarea`. Inside this component nothing
+// competes with it, so the two rules are merged and the `!important` is gone.
+.coverdetail__textarea {
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  outline: none;
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.5;
+}
+.coverdetail__textarea:focus {
+  border-color: var(--accent);
+}
+
+// A local copy of the page's `.icon-btn`, deliberately renamed rather than
+// shared. `.icon-btn` is generic vocabulary defined by four page stylesheets
+// with three different bodies - 32px here, 28px in `cv-list` and `my-jobs`,
+// and a fourth set of modifiers in `cv-detail` - so promoting it to a global
+// partial would be a three-way reconciliation that visibly changes two other
+// pages, not an extraction. `interview-prep-detail` already made the same call
+// with `.ipd__icon-btn`. Folding all of them onto `libs/ui`'s `appButton
+// size="icon"`, which already exists, is its own change and needs a visual
+// check; see the Duty Watch entry for this cut.
+.clb__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-input);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.clb__icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.clb__icon-btn--danger:hover {
+  color: var(--danger, #d64545);
+}

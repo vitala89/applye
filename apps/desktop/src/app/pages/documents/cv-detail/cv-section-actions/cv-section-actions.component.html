@@ -1,0 +1,44 @@
+<div class="docedit-section__actions">
+  @if (regeneratable()) {
+    <button
+      appButton
+      variant="ghost"
+      size="icon"
+      type="button"
+      [disabled]="regenerateDisabled()"
+      [attr.aria-label]="t()('documents.cv_regenerate_action')"
+      (click)="regenerated.emit()"
+    >
+      <lucide-icon
+        [img]="icons.regenerate"
+        [size]="14"
+        aria-hidden="true"
+        [class.spinning]="regenerating()"
+      />
+    </button>
+  }
+  @if (movable()) {
+    <button
+      appButton
+      variant="ghost"
+      size="icon"
+      type="button"
+      [disabled]="moveUpDisabled()"
+      [attr.aria-label]="t()('documents.cv_section_move_up')"
+      (click)="movedUp.emit()"
+    >
+      <lucide-icon [img]="icons.moveUp" [size]="15" aria-hidden="true" />
+    </button>
+    <button
+      appButton
+      variant="ghost"
+      size="icon"
+      type="button"
+      [disabled]="moveDownDisabled()"
+      [attr.aria-label]="t()('documents.cv_section_move_down')"
+      (click)="movedDown.emit()"
+    >
+      <lucide-icon [img]="icons.moveDown" [size]="15" aria-hidden="true" />
+    </button>
+  }
+</div>

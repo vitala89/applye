@@ -44,6 +44,37 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, the icon-button fold, and the gate that turned a sweep into three extractions
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 8/10 then re-triaged 7/10 - radius 2, ambiguity 1 after the gate, risk 1, verify 2, unknowns 1)
+- **Branch:** `feat/cover-letter-body-paragraphs`, continuing on PR #383
+- **Commits:** one
+- **Objective:** fold the four `.icon-btn` copies onto `appButton size="icon"`, the follow-up amendment seventeen recorded.
+- **Completed:**
+  - **The grilling gate ran first**, because the visual outcome was undecided even though the direction was not. Three questions, all answered as recommended: pin the design system to today's look, sweep the four `.icon-btn` stylesheets only, and give `cv-detail`'s preview toggle the same `variant` treatment the cover letter got.
+  - **`.btn--icon` repinned** to a 28px-minimum square at `--radius-input`, so the fold deletes rather than restyles.
+  - **`.icon-btn` is gone from all five pages** - four declared it, and `cover-letter-list` was consuming it through a Sass `@import` of `cv-list.component.scss`.
+  - **Three extractions the ratchet forced**, all of them real seams: `libs/ui/src/styles/_button.scss` (`global.scss` **415 -> 345**), `document-row-actions/` (`cv-list.component.html` **311 -> 283**, under budget), `cv-section-actions/` (`cv-detail.component.html` **492 -> 466**, `.scss` 665 -> 640, `.ts` 515 -> 512).
+  - **17 tests** across three new specs, including the first ever for `ButtonDirective`.
+- **Not completed:** `interview-prep-detail`'s `.ipd__icon-btn` is now the last page-local icon button; left out by the scope decision, recorded as a follow-up.
+- **Files or packages changed:** 2 new components, 1 new style partial, 3 new specs, 5 templates, 5 stylesheets, 4 component classes, `CHANGELOG.md`, `ADR-0005` (amendment eighteen), this file.
+- **Validation:** `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application,ui,i18n --skip-nx-cache` **passed**, 0 errors, the same 8 pre-existing warnings. Full `jest` **passed - 197 suites / 2502 tests**. `nx build desktop` **passed**; **`nx build web` also run and passed**, because `_button.scss` is loaded from `global.scss` and `apps/web` consumes it too. `quality:file-size` **passed**. `quality:attribution` **passed**. `nx format:check` clean. `git diff --check` clean.
+  - **`quality:style-move` reports 14 lost, 4 gained**, all named in the pull request: the `.btn--icon` repin, the four deleted `.icon-btn` blocks, `.spinning` moving into `cv-section-actions/`, and the six `.coverdetail__*` rules from this branch's earlier commits.
+- **Privacy/security impact:** none. Markup, CSS and one type guard.
+- **Decisions and assumptions:**
+  - **The design system bent to the pages, once.** Only defensible because `size="icon"` had exactly one consumer; with twenty the answer would have been the reverse. Recorded that way in the amendment so the precedent does not travel.
+  - **28px, not 32.** Three of the four copies were 28. The cover-letter header and its block delete button move 32 -> 28; everything else is pixel-identical.
+  - **Two visual deltas accepted rather than hidden**: the topbar theme toggle 34 -> 28px, and ghost's `--text-secondary` where `.icon-btn` was `--text-tertiary`.
+- **Risks or compatibility impact:** this is the most visually broad change of the campaign - ~14 buttons on 5 pages plus the topbar. The two named deltas are the only intended differences.
+- **Open issues or blockers:** **the rendered check on PR #383 now covers this too, and it matters more here than anywhere else in the campaign.**
+- **Next first action:** the maintainer runs the walkthrough in the PR. Nothing else in this area should be authored before that.
+- **Evidence:**
+  - **The ratchet was the most useful reviewer in this session.** It blocked a mechanical sweep and the fix for it produced three extractions that were genuine duplication or genuine seams - the `document-row-actions` one removing markup that two pages had byte for byte. None of that was in the plan; the gate located all of it.
+  - **A Sass `@import` hid a cross-page dependency** that no template showed, and it failed the moment the imported file lost a rule.
+  - **`$any(...)` was hiding a real type hole**, exposed only because extracting markup forces an output to declare its type. Two `TS2345` errors, now a type guard.
+  - **A third grep near-miss, in a third shape.** `Successfully|error TS` matched neither line, printed nothing, and read as clean while type-check was failing. The previous two were a truncated `head` and a stale `cd`. The rule stands: read the verdict line, never the absence of a word.
+
 ### 2026-08-08, the card that looked broken because it was silent
 
 - **Status:** complete

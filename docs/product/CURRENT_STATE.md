@@ -147,10 +147,17 @@
   different colour tokens. A global partial was therefore a three-way reconciliation that visibly
   changes two other pages, not an extraction. The block carries a locally-named `.clb__icon-btn`,
   following `interview-prep-detail`'s `.ipd__icon-btn`.
-- **`libs/ui` already ships the primitive all four copies reimplement.** `appButton` has
-  `size="icon"` and `variant="danger"`, and `.btn--ghost` is near-identical to every `.icon-btn`.
-  Folding them onto it is the real fix and is **the next code change in this area** - deliberately its
-  own pull request, because it is a visible change and needs a rendered check.
+- **The fold is done, and the file-size ratchet turned it into three extractions** (ADR-0005,
+  amendment eighteen). All five pages now use `appButton size="icon"`; `.btn--icon` was pinned to the
+  pages' existing 28px square so the change deletes rather than restyles, which is defensible only
+  because that size had exactly one consumer beforehand. Converting a class to three attributes costs
+  +2 lines per button, which the ratchet refused on three already-over-budget files - so
+  `_button.scss` came out of `global.scss` (**415 -> 345**), `document-row-actions/` out of both
+  document lists (`cv-list.component.html` **311 -> 283**, under budget), and `cv-section-actions/`
+  out of the CV editor (`cv-detail.component.html` **492 -> 466**). Every one was a seam that already
+  existed; the gate is what located them. **Two deliberate visual deltas**: the topbar theme toggle
+  34px -> 28px, and ghost icons one contrast step higher. `interview-prep-detail`'s `.ipd__icon-btn`
+  is the last page-local icon button left.
 - **One dead class found by the same audit**, and a second claim that was **wrong and is corrected**.
   `.icon-btn--active` was bound on the Edit/Preview button, which is an `appButton`, and resolved to
   nothing - so the toggle never showed it was on; fixed by switching the button's own `variant`. The

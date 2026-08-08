@@ -78,21 +78,21 @@
   border-color: var(--accent);
 }
 
-// A local copy of the page's `.icon-btn`, deliberately renamed rather than
-// shared. `.icon-btn` is generic vocabulary defined by four page stylesheets
-// with three different bodies - 32px here, 28px in `cv-list` and `my-jobs`,
-// and a fourth set of modifiers in `cv-detail` - so promoting it to a global
-// partial would be a three-way reconciliation that visibly changes two other
-// pages, not an extraction. `interview-prep-detail` already made the same call
-// with `.ipd__icon-btn`. Folding all of them onto `libs/ui`'s `appButton
-// size="icon"`, which already exists, is its own change and needs a visual
-// check; see the Duty Watch entry for this cut.
+// A local rule rather than a shared class, decided when `.icon-btn` was still
+// four page stylesheets with three different bodies. Those four are now gone -
+// they fold onto `libs/ui`'s `appButton size="icon"` (ADR-0005, amendment
+// eighteen) - and this one stayed local by the same decision that created it,
+// because a delete button inside a paragraph row is the block's own affair.
+//
+// Its 32px was matched to the page header's, which the fold moved to 28, so
+// this moved with it. If it ever needs a third state or a second modifier,
+// that is the signal to fold it too.
 .clb__icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-input);
   border: 1px solid transparent;
   background: transparent;

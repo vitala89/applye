@@ -6,7 +6,9 @@
   <div class="cvdetail">
     <header class="cvdetail__bar">
       <button
-        class="icon-btn"
+        appButton
+        variant="ghost"
+        size="icon"
         type="button"
         [title]="backLabel()"
         [attr.aria-label]="backLabel()"
@@ -24,9 +26,8 @@
       <div class="cvdetail__spacer"></div>
       <button
         appButton
-        variant="secondary"
+        [variant]="previewMode() ? 'primary' : 'secondary'"
         size="sm"
-        [class.icon-btn--active]="previewMode()"
         (click)="togglePreview()"
       >
         <lucide-icon
@@ -250,44 +251,17 @@
                       }}</span>
                     </button>
                   </div>
-                  <div class="docedit-section__actions">
-                    @if (regeneratableKeys.includes(section.key)) {
-                      <button
-                        class="icon-btn"
-                        type="button"
-                        [disabled]="!!regeneratingKey()"
-                        [attr.aria-label]="t()('documents.cv_regenerate_action')"
-                        (click)="regenerateSection(section.key)"
-                      >
-                        <lucide-icon
-                          [img]="icons.regenerate"
-                          [size]="14"
-                          aria-hidden="true"
-                          [class.spinning]="regeneratingKey() === section.key"
-                        />
-                      </button>
-                    }
-                    @if (!isSectionLocked(section.key)) {
-                      <button
-                        class="icon-btn"
-                        type="button"
-                        [disabled]="i === 0 || isSectionLocked(sections()[i - 1].key)"
-                        [attr.aria-label]="t()('documents.cv_section_move_up')"
-                        (click)="moveSectionUp(section.key)"
-                      >
-                        <lucide-icon [img]="icons.moveUp" [size]="15" aria-hidden="true" />
-                      </button>
-                      <button
-                        class="icon-btn"
-                        type="button"
-                        [disabled]="i === count - 1"
-                        [attr.aria-label]="t()('documents.cv_section_move_down')"
-                        (click)="moveSectionDown(section.key)"
-                      >
-                        <lucide-icon [img]="icons.moveDown" [size]="15" aria-hidden="true" />
-                      </button>
-                    }
-                  </div>
+                  <app-cv-section-actions
+                    [regeneratable]="regeneratableKeys.includes(section.key)"
+                    [regenerateDisabled]="!!regeneratingKey()"
+                    [regenerating]="regeneratingKey() === section.key"
+                    [movable]="!isSectionLocked(section.key)"
+                    [moveUpDisabled]="i === 0 || isSectionLocked(sections()[i - 1].key)"
+                    [moveDownDisabled]="i === count - 1"
+                    (regenerated)="regenerateSection(section.key)"
+                    (movedUp)="moveSectionUp(section.key)"
+                    (movedDown)="moveSectionDown(section.key)"
+                  />
                 </div>
                 <div
                   class="docedit-collapse"

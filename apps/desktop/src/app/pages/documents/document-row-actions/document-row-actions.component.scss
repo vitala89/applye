@@ -1,0 +1,42 @@
+/* Moved verbatim from `cv-list.component.scss` with the markup that names
+   them - `cover-letter-list` was reaching the same rules through a Sass
+   `@import` of that file, so both lists now get them from this component
+   instead (ADR-0005, amendment eighteen).
+
+   The amendment-sixteen audit on this region found nothing to carry: the
+   stylesheet has no descendant or element selector rooted at `.cvlist`, so
+   these four rules are the whole of what reached inside it. The buttons
+   themselves are `appButton`, whose classes are emitted globally. */
+
+.cvlist__row-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+/* The export control is a `<select>` made invisible and stretched over an
+   icon, so the native menu opens in the right place while the row shows a
+   button. It keeps `.icon-btn`'s original 28px box rather than becoming an
+   `appButton`, because it is a `<label>` - the directive's selector is
+   `button[appButton]`. */
+.cvlist__export {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-input);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.cvlist__export:hover {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+.cvlist__export select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}

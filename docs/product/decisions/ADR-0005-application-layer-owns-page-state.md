@@ -945,6 +945,70 @@ rule actually reaches the element it was carried for. It is still not a rendered
 twice this session; the binary ran and stayed alive, but no window could be captured, so nothing was
 seen. The check is owed to the maintainer as a written walkthrough rather than claimed.
 
+## Amendment, 2026-08-08 (eighteenth): the design system bends to the pages, once
+
+Amendment seventeen recorded that four page stylesheets had reimplemented `libs/ui`'s
+`appButton size="icon"`. Folding them onto it raised the question seventeen deferred: **whose look
+wins?** `.btn--icon` was padding-driven with `--radius-card`; the four copies were fixed squares with
+`--radius-input`.
+
+**The design system was pinned to the pages, not the other way round.** `.btn--icon` becomes a
+28px-minimum square at `--radius-input`, so the fold is a deletion rather than a restyle. That is
+defensible precisely because it is cheap to check: `size="icon"` had **exactly one consumer** in the
+whole app before this. Had it been used in twenty places, the answer would have gone the other way.
+
+Two visual deltas were accepted rather than hidden, and both are named in the pull request: the
+topbar theme toggle (that single consumer, an 18px icon) goes 34px to 28px, and `.btn--ghost` is
+`--text-secondary` where `.icon-btn` was `--text-tertiary`. The cover-letter back button goes 32 to
+28 to join the other three, and `.clb__icon-btn` moved with it so that editor stays internally
+consistent.
+
+`min-width`/`min-height` rather than `width`/`height`, so a larger icon grows the box instead of
+overflowing it. Every call site in the app uses 13-16px, which lands inside 28 either way.
+
+### The ratchet refused the sweep, and it was right
+
+Converting `class="icon-btn"` to `appButton` + `variant` + `size` costs **+2 lines per button**, and
+three already-over-budget files grew: `cv-detail.component.html` 492 to 499,
+`cv-list.component.html` 311 to 315, `global.scss` 415 to 426. The file-size gate blocked the commit.
+
+**This is the ratchet working as designed**, and the response was extraction rather than an
+exception. What it produced is better than the sweep alone:
+
+- **`libs/ui/src/styles/_button.scss`** - the button vocabulary out of `global.scss`, which drops
+  **415 to 345**. Loaded from `global.scss` rather than each app's `styles.scss`, because both
+  `apps/desktop` and `apps/web` consume it and neither should have to know the file exists.
+- **`document-row-actions/`** - the duplicate/export/delete controls, rendered **byte for byte
+  identically** by `cv-list` and `cover-letter-list`. `cv-list.component.html` drops **311 to 283**,
+  under budget for the first time.
+- **`cv-section-actions/`** - the Regenerate and reorder controls in a CV section head.
+  `cv-detail.component.html` drops **492 to 466**, its `.scss` 665 to 640, its `.ts` 515 to 512.
+
+Every one of those was a real seam that existed before the sweep and would have been found later, or
+not at all. **The gate that blocked the change is what located them.**
+
+### Three things the sweep exposed that no gate had
+
+- **A Sass `@import` hid a cross-page dependency.** `cover-letter-list.component.scss` imports
+  `cv-list.component.scss` wholesale, so `cover-letter-list` was styled by rules named in neither of
+  its own files - and broke the instant `cv-list`'s `.icon-btn` was deleted. The shared component
+  removes the need for that import to carry row styling at all.
+- **`$any(...)` was hiding a type hole.** Both lists read the export format as
+  `$any($event.target).value` and passed it to a handler typed `'docx' | 'pdf'`. Extracting the
+  markup made the compiler object, because an output has to declare what it emits. There is a type
+  guard now, and an unrecognised value is dropped rather than forwarded.
+- **`.spinning` was page-scoped with exactly one user**, which moved into the child - amendment
+  sixteen's audit catching its fourth instance, this time as a move rather than a copy.
+
+### And a near-miss worth recording, again
+
+The first type-check run after the extraction was grepped with `Successfully|error TS`. It matched
+**neither**, printed nothing, and read as clean. It was not: two `TS2345` errors from the `$any`
+hole above. This is the third time in this campaign that a grep has failed to distinguish success
+from failure, in three different shapes - a truncated `head`, a pattern matching neither line, and a
+stale `cd` changing a test run's scope. **Read the gate's own verdict line. A filter that can miss
+both outcomes is not a check.**
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -961,8 +1025,10 @@ seen. The check is owed to the maintainer as a written walkthrough rather than c
         1019 -> 517), `tracker` **done** (four PRs, 667 -> 304, the first page to finish **under**
         budget), `cover-letter-detail` **done** (eight PRs, class 644 -> 333 and template 669 -> 222,
         both under budget; six components out, amendments fourteen to seventeen), `jobs` deferred
-  - [ ] Fold the four `.icon-btn` copies onto `libs/ui`'s `appButton size="icon"`, which already
-        exists - a visible change, so it needs a rendered check (amendment seventeen)
+  - [x] Fold the four `.icon-btn` copies onto `libs/ui`'s `appButton size="icon"` (amendment
+        eighteen). **Still owed a rendered check** - two deltas are deliberate and visible.
+  - [ ] `interview-prep-detail`'s `.ipd__icon-btn` is now the last page-local icon button and can
+        fold too; left out of the sweep by scope decision
   - [x] ~~Remove or define the bare `.spin` class; it resolves to nothing~~ - **the claim was wrong**,
         it is defined in `_cover-letter-controls.scss` (amendment seventeen). It did have a real bug:
         it wobbled, because `<lucide-icon>` is `display: inline`. Fixed.

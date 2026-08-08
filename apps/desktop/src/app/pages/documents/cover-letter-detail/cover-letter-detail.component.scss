@@ -56,26 +56,12 @@
   padding: var(--space-2) var(--space-3);
 }
 
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-input);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-standard);
-}
-.icon-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-/* `.icon-btn--danger` left with the body-paragraphs block - its delete button
-   was the page's only use - and lives there as `.clb__icon-btn--danger`. The
-   base `.icon-btn` above stays: the header's back button still uses it. */
+/* `.icon-btn` is gone: the header's back button uses `appButton size="icon"`
+   (ADR-0005, amendment eighteen). This copy was the odd one of the four - 32px
+   where the other three were 28 - so the back button is the one place in this
+   sweep that changes size, by 4px. `.clb__icon-btn` in the body-paragraphs
+   block was moved to 28px in the same change so the editor stays internally
+   consistent; it keeps its local name, which was decided separately. */
 
 /* Draft-with-AI: appButton dimensions, accent outline */
 .draft-accent {

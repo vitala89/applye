@@ -1,0 +1,36 @@
+<div class="cvlist__row-actions">
+  <button
+    appButton
+    variant="ghost"
+    size="icon"
+    type="button"
+    [attr.aria-label]="t()('documents.cv_duplicate_action')"
+    (click)="duplicated.emit($event)"
+  >
+    <lucide-icon [img]="icons.duplicate" [size]="14" aria-hidden="true" />
+  </button>
+  <label class="cvlist__export">
+    <lucide-icon [img]="icons.export" [size]="14" aria-hidden="true" />
+    <select
+      [disabled]="exportBusy()"
+      [attr.aria-label]="t()('documents.cv_export_action')"
+      (click)="$event.stopPropagation()"
+      (change)="onExport($event)"
+    >
+      <option value="" disabled selected>{{ t()('documents.cv_export_action') }}</option>
+      <option value="pdf">{{ t()('documents.cv_export_pdf_action') }}</option>
+      <!-- DOCX removed: the single-engine WYSIWYG PDF is the supported
+           export; the Rust DOCX renderer stays dormant behind it. -->
+    </select>
+  </label>
+  <button
+    appButton
+    variant="danger"
+    size="icon"
+    type="button"
+    [attr.aria-label]="t()('documents.cv_delete_action')"
+    (click)="deleted.emit($event)"
+  >
+    <lucide-icon [img]="icons.trash" [size]="14" aria-hidden="true" />
+  </button>
+</div>

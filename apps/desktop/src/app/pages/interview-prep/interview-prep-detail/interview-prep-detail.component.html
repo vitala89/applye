@@ -97,40 +97,14 @@
                     </div>
                   }
                 </div>
-                <button
-                  type="button"
-                  class="ipd__icon-btn"
-                  [disabled]="i === 0"
-                  [attr.aria-label]="t()('interview.move_up')"
-                  (click)="moveUp(i)"
-                >
-                  <lucide-icon [img]="icons.up" [size]="14" />
-                </button>
-                <button
-                  type="button"
-                  class="ipd__icon-btn"
-                  [disabled]="i === stages().length - 1"
-                  [attr.aria-label]="t()('interview.move_down')"
-                  (click)="moveDown(i)"
-                >
-                  <lucide-icon [img]="icons.down" [size]="14" />
-                </button>
-                <button
-                  type="button"
-                  class="ipd__icon-btn"
-                  [attr.aria-label]="t()('interview.edit')"
-                  (click)="openEdit(stage)"
-                >
-                  <lucide-icon [img]="icons.edit" [size]="14" />
-                </button>
-                <button
-                  type="button"
-                  class="ipd__icon-btn ipd__icon-btn--danger"
-                  [attr.aria-label]="t()('interview.delete')"
-                  (click)="askDelete(stage)"
-                >
-                  <lucide-icon [img]="icons.delete" [size]="14" />
-                </button>
+                <app-interview-stage-actions
+                  [moveUpDisabled]="i === 0"
+                  [moveDownDisabled]="i === stages().length - 1"
+                  (movedUp)="moveUp(i)"
+                  (movedDown)="moveDown(i)"
+                  (edited)="openEdit(stage)"
+                  (deleted)="askDelete(stage)"
+                />
               </div>
             </div>
 

@@ -9,13 +9,10 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  ArrowDown,
   ArrowLeft,
-  ArrowUp,
   Check,
   ChevronDown,
   LucideAngularModule,
-  Pencil,
   Plus,
   Trash2,
   User,
@@ -31,6 +28,7 @@ import {
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
+import { InterviewStageActionsComponent } from './interview-stage-actions/interview-stage-actions.component';
 
 const STAGE_TYPES: StageType[] = [
   'hr_screen',
@@ -83,7 +81,7 @@ function emptyForm(): StageFormValue {
   selector: 'app-interview-prep-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, InterviewStageActionsComponent],
   templateUrl: './interview-prep-detail.component.html',
   styleUrl: './interview-prep-detail.component.scss',
 })
@@ -100,9 +98,6 @@ export class InterviewPrepDetailComponent implements OnInit {
     add: Plus,
     chevron: ChevronDown,
     check: Check,
-    up: ArrowUp,
-    down: ArrowDown,
-    edit: Pencil,
     delete: Trash2,
     user: User,
     close: X,

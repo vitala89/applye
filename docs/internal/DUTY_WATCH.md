@@ -44,6 +44,34 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-08, the first rendered check finds what six pull requests of gates did not
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; re-triaged 9/10 - radius 2, **ambiguity 2**, risk 1, verify 2, **unknowns 2**. Ambiguity 2 for the availability-fields question and the salary policy; unknowns 2 because the preview renderer, the AI skill and the spinner all had to be read before anything could be answered.)
+- **Branch:** `feat/cover-letter-body-paragraphs`, continuing on PR #383
+- **Commits:** one, on top of the extraction
+- **Objective:** the maintainer ran the editor for the first time in this campaign and reported four things. Answer the one that was a question, fix the three that were defects.
+- **Completed:**
+  - **`cover-letter-block/` had been rendering five fields as native browser inputs since PR #380** - date, subject, greeting, closing, signature. It carried `.coverdetail__full { width: 100% }` out of the page and left the nine declarations `.coverdetail input:not(...)` was supplying. The block now carries its own copy plus `:focus`, and a test fails if the markup stops matching the class.
+  - **The regenerate spinner wobbled.** `<lucide-icon>` is a custom element and `display: inline` by default, so its transform box comes from the surrounding line box and `transform-origin: 50% 50%` lands off the icon's centre. `inline-flex` plus an explicit origin, and it now also honours `prefers-reduced-motion`, which `settings.component.scss` already did for its own spinner.
+  - **A shorthand salary lost its magnitude.** An input of `85k - 110k` produced "My salary expectation is 85 - 110 EUR per year". The model was obeying "use the values exactly as given"; the skill now carries a narrow exception for `salary_expectation` **only**, with the boundary stated in the same sentence so it cannot generalise to a date. Pinned by a Rust render test asserting the rule, the example, and the scope.
+  - **The availability question, answered rather than actioned:** the three fields are AI prompt inputs, not preview content, and must not be deleted.
+- **Not completed:** no UI hint telling the user the three fields only take effect on regeneration. That is the gap that produced the maintainer's confusion, and it is a new i18n string in five locales - recorded, not done.
+- **Files or packages changed:** `cover-letter-block/`'s stylesheet and spec, `_cover-letter-controls.scss`, `cover-letter-generate.md`, `skills.rs`, `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md`, this file.
+- **Validation:** `cargo test --lib ai::skills` **passed - 10 tests**, including the new one. `nx run desktop:type-check --skip-nx-cache` **passed**. `nx run-many --target=lint --projects=desktop,application --skip-nx-cache` **passed**, 0 errors, the same 8 warnings. Full `jest` **passed - 194 suites / 2484 tests**. `nx build desktop --skip-nx-cache` **passed**. `quality:file-size` **passed**. `quality:attribution` **passed**. `quality:style-move` reports **0 lost, 4 gained**, all four being the fixes themselves. `nx format:check` clean after `format:write`. `git diff --check` clean.
+  - **A test count was nearly accepted at the wrong value.** `npx jest` reported 123 suites / 1464 tests instead of 194 / 2484, because a `cd` into `src-tauri` for the cargo run had persisted in the shell. The discrepancy was visible only because the previous run's numbers were known. **A gate's verdict includes its scope, not just its pass line.**
+- **Privacy/security impact:** none. CSS, one prompt rule, one test.
+- **Decisions and assumptions:**
+  - **The availability fields stay.** `cover-letter-tailor.service.ts` sends `earliest_start`, `salary_expectation` and `notice_period` into `cover-letter-generate`, which states them in the final body paragraph. German postings routinely ask for an Eintrittstermin and a Gehaltsvorstellung and filter letters that omit them. They are invisible in the preview **by design** - they are woven into the generated prose - and they only take effect on a regenerate or a draft. The fourth field in that card, `attachments`, is different and _is_ rendered directly.
+  - **Salary magnitude is normalised by the model, not the UI** (maintainer's call). The alternative was formatting on blur in the app; the prompt was chosen because it also repairs values already saved, and because the app pre-formatting a value would break the "the model receives what the user typed" property the other two fields rely on.
+- **Risks or compatibility impact:** the salary exception is a deliberate hole in an otherwise absolute rule, and the risk is the model generalising it to dates. That is why the scope is in the same sentence and asserted by the test rather than left to wording.
+- **Open issues or blockers:** **a correction to the previous entry, and it is the important part of this one.** That entry reported a bare `.spin` as "defined nowhere in the app". It is defined, in `_cover-letter-controls.scss` - the global partial this campaign created. The claim came from a `grep` piped through `head`: the match existed and was truncated away, and **absence was read from a cut-off output.** Corrected in `CHANGELOG.md`, `ADR-0005`, `CURRENT_STATE.md` and the PR body.
+- **Next first action:** the maintainer re-runs the editor and confirms the five block fields and the spinner. Then the `.icon-btn` consolidation onto `appButton size="icon"` - and it does not merge without a rendered check.
+- **Evidence:**
+  - **Six pull requests of green gates did not find a two-day-old visual regression; one minute of a running app did.** Every gate passes on it by construction: `quality:style-move` compares declarations per selector and `.coverdetail input` never changed, so the tool reports lossless while the rule reaches nothing.
+  - **Amendment sixteen's own retrospective audit is where it slipped.** It checked `cover-letter-style-card/` and `cover-letter-style-popover/` and declared the merged work clean. `cover-letter-block/` was extracted in the _same_ pull request and was never listed. The lesson is mechanical: enumerate the components from the diff, not from the pull-request description.
+  - **Three of the four items the maintainer reported were defects invisible to CI**, and the fourth was a design decision nobody had written down. That ratio is the argument for the rendered check, not the six passing gates.
+
 ### 2026-08-08, `cover-letter-detail` template cut 4: the block that was blocked, and a shared class that was never one rule
 
 - **Status:** complete

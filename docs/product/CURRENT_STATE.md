@@ -151,10 +151,27 @@
   `size="icon"` and `variant="danger"`, and `.btn--ghost` is near-identical to every `.icon-btn`.
   Folding them onto it is the real fix and is **the next code change in this area** - deliberately its
   own pull request, because it is a visible change and needs a rendered check.
-- **Two dead classes found by the same audit.** `.icon-btn--active` was bound on the Edit/Preview
-  button, which is an `appButton`, and resolved to nothing - so the toggle never showed it was on;
-  fixed by switching the button's own `variant`. A bare `.spin` on the regenerate icons is defined
-  nowhere in the app and is **still open**, because `cover-letter-block/` uses it too.
+- **One dead class found by the same audit**, and a second claim that was **wrong and is corrected**.
+  `.icon-btn--active` was bound on the Edit/Preview button, which is an `appButton`, and resolved to
+  nothing - so the toggle never showed it was on; fixed by switching the button's own `variant`. The
+  same entry reported a bare `.spin` as "defined nowhere": **it is defined**, in
+  `_cover-letter-controls.scss`. The error came from a `grep` piped through `head` - the match was
+  truncated away and absence was read from a cut-off output. `.spin` did have a real defect, but a
+  different one: it wobbled, because `<lucide-icon>` is `display: inline` and its transform box comes
+  from the surrounding line box. Fixed with `inline-flex`, an explicit origin and a
+  `prefers-reduced-motion` guard.
+- **The first rendered check found a two-day-old regression that six pull requests of green gates had
+  not.** `cover-letter-block/` - date, subject, greeting, closing, signature - has rendered as native
+  browser inputs since PR #380: it carried `.coverdetail__full { width: 100% }` out of the page and
+  left behind the nine declarations `.coverdetail input:not(...)` supplied. It is amendment sixteen's
+  trap in the one component amendment sixteen's own retrospective audit forgot to list. Fixed, with a
+  test on the class the stylesheet targets. **No further extraction in this area merges without a
+  rendered check** - it is the only instrument that detects this defect class.
+- **A shorthand salary reached the letter with its magnitude gone.** `85k - 110k` produced "My salary
+  expectation is 85 - 110 EUR per year", which reads as 85 euros. The model was obeying the skill's
+  "use the values exactly as given"; `cover-letter-generate.md` now carries a narrow exception for
+  `salary_expectation` **only**, with its boundary in the same sentence so it cannot generalise to a
+  date, pinned by a Rust render test asserting the rule, the example and the scope.
 - **One warning no gate reported.** After the extraction the page's `NgTemplateOutlet` import went
   dead, and `NG8113` appeared only in the dev server's output - lint read 0 errors and the build's own
   verdict line said success. It surfaced because the app was run, and it is the argument for running
@@ -1460,7 +1477,12 @@ technology / seniority` as `jd_text`, which starved everything downstream that r
   `updateField`, so no new setters. `cover-letter-generate` takes the three as inputs and is
   told to state them in the final body paragraph in the user's exact words - never a bullet
   list, never the subject, no currency conversion - and to stay entirely silent on an empty
-  one rather than inventing "salary negotiable". Because a changed answer changes the output,
+  one rather than inventing "salary negotiable". **Amended 2026-08-08:** "exact words" has one
+  scoped exception, for `salary_expectation` alone. An input of `85k - 110k` came back as
+  "85 - 110 EUR per year", which reads as 85 euros; the skill now expands an abbreviated
+  magnitude to the full figure while leaving the currency, the range and the gross/net
+  qualifier untouched. The boundary is stated in the same sentence and asserted by a Rust
+  render test, because the risk of the exception is the model extending it to the date. Because a changed answer changes the output,
   the three are folded into the per-block regeneration cache hash next to tone and length, and
   they carry from a base letter into every tailored copy. Both wizard call sites in
   `jobs.component.ts` pass them explicitly: the template engine leaves unknown placeholders

@@ -102,6 +102,25 @@ describe('CoverLetterBlockComponent', () => {
     expect(fixture.nativeElement.querySelector('.docedit-collapse--closed')).toBeNull();
   });
 
+  /**
+   * This block shipped without the rule that styles its field, and the field
+   * rendered as a browser-default input for two days: on the page it was
+   * styled by `.coverdetail input:not(...)`, a descendant selector rooted at
+   * the page element, which Angular's encapsulation stops at this component's
+   * boundary (ADR-0005, amendment sixteen). The component carries its own copy
+   * keyed on `.coverdetail__full`, and this test fails if the markup stops
+   * matching the class its stylesheet targets.
+   *
+   * jsdom performs no layout and does not resolve custom properties, so the
+   * *rendering* cannot be asserted here - only that the input is inside the
+   * class the rule names. The rendered check is a maintainer walkthrough.
+   */
+  it('keeps its field inside the class its stylesheet targets', () => {
+    const inputs = fixture.nativeElement.querySelectorAll('input');
+    expect(inputs).toHaveLength(1);
+    expect(inputs[0].classList).toContain('coverdetail__full');
+  });
+
   it('emits the edited text rather than writing it back itself', () => {
     const input = fixture.nativeElement.querySelector('input');
     input.value = 'Kind regards,';

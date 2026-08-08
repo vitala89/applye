@@ -890,17 +890,42 @@ page stylesheets reimplemented a design-system component, and nobody noticed whi
 fourth. Folding them onto `appButton size="icon"` is the real fix, is **its own change**, and needs a
 rendered check - which is exactly why it was not smuggled into a template cut.
 
-### Two dead classes, found by the same audit
+### A dead class, found by the same audit - and a claim that was wrong
 
 `.icon-btn--active` was bound on the page's Edit/Preview button, which is an `appButton`; no rule of
 that name is reachable there, so the toggle never showed an active state. Fixed here, by switching
-the button's own `variant`. A bare `.spin` on the regenerate icons is defined **nowhere** in the app -
-every other spinner is namespaced (`resume-tailor__spin`, `ob__spinner`, `identity-badge__spin`) -
-and it is left recorded rather than fixed, because `cover-letter-block/` uses it too.
+the button's own `variant`.
 
-Both were found by running amendment sixteen's checklist rather than reading the markup. **A class
-audit finds classes that are missing a rule as readily as rules that are missing a class**, and that
-second direction is worth keeping: nothing in the build reports a class that resolves to nothing.
+**This amendment originally reported a second one, and it was false.** It said the bare `.spin` on
+the regenerate icons was "defined nowhere in the app". It is defined in
+`_cover-letter-controls.scss`, which is the global partial this very campaign created. The error came
+from a `grep` piped through `head`: the match existed and was cut off, and **absence was read from a
+truncated output**. This is the same failure the campaign already recorded once - a gate grepped for
+the wrong thing and its silence taken as a pass - arriving from the third direction now. The rule
+generalises past gates: _a search that can be truncated cannot prove a negative._ Count the matches
+or read them all, or do not claim "nowhere".
+
+What the audit direction is still worth keeping: **it finds classes that are missing a rule as
+readily as rules that are missing a class**, and nothing in the build reports a class that resolves
+to nothing. `.icon-btn--active` was real.
+
+### The amendment's own retrospective audit missed a component
+
+Amendment sixteen closed by checking the components already merged and calling them clean. It named
+`cover-letter-style-card/` and `cover-letter-style-popover/`. **`cover-letter-block/` was extracted in
+the same pull request and was not checked**, and it is the one that was broken: it carried
+`.coverdetail__full { width: 100% }` and left behind the nine declarations `.coverdetail input:not(...)`
+supplied. Its five fields - date, subject, greeting, closing, signature - rendered as browser-default
+inputs for two days, through four subsequent pull requests, every gate green.
+
+It was found by **the maintainer opening the app**, which is the check this campaign has been
+deferring since the first extraction. Two lessons, and the second is the expensive one:
+
+1. A retrospective audit has to enumerate the components from the diff, not from memory of the
+   pull-request description. Two of three were listed; the third was simply forgotten.
+2. **`quality:style-move` cannot fail on this and neither can any other gate here.** The only
+   instrument that detects it is a rendered screen. Six extractions shipped without one; the first
+   time one was run, it found a two-day-old visual regression in the first minute.
 
 ### The carry, for the third time - and the first hard evidence it works
 
@@ -938,10 +963,13 @@ seen. The check is owed to the maintainer as a written walkthrough rather than c
         both under budget; six components out, amendments fourteen to seventeen), `jobs` deferred
   - [ ] Fold the four `.icon-btn` copies onto `libs/ui`'s `appButton size="icon"`, which already
         exists - a visible change, so it needs a rendered check (amendment seventeen)
-  - [ ] Remove or define the bare `.spin` class used by `cover-letter-block/` and the body-paragraphs
-        block; it resolves to nothing (amendment seventeen)
-  - [ ] **Pay the visual debt**: six `cover-letter-detail` extractions have shipped on
-        `quality:style-move`, jsdom shape tests and hand audits, with nothing ever rendered
+  - [x] ~~Remove or define the bare `.spin` class; it resolves to nothing~~ - **the claim was wrong**,
+        it is defined in `_cover-letter-controls.scss` (amendment seventeen). It did have a real bug:
+        it wobbled, because `<lucide-icon>` is `display: inline`. Fixed.
+  - [x] **Pay the visual debt** - the maintainer ran the editor and it found a two-day-old regression
+        in `cover-letter-block/` on the first pass (amendment seventeen)
+  - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
+        the only defect class that matters here is invisible to every gate
   - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**22** entries; first deleted 2026-08-07,
         then delete the rule with it
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines

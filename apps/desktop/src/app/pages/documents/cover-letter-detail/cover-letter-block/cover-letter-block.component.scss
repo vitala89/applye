@@ -3,6 +3,33 @@
    `coverdetail__*` action controls - is shared with the blocks the page still
    renders itself and is emitted globally. */
 
+/* CARRIED, not moved (ADR-0005, amendment sixteen), and carried late: this
+   block shipped without it and its five fields - date, subject, greeting,
+   closing, signature - rendered as browser-default inputs from the moment they
+   were extracted.
+
+   The page styles its controls with `.coverdetail input:not([type='checkbox'])
+   :not([type='color'])`, a descendant selector rooted at the page element,
+   which Angular's emulated encapsulation stops at this component's boundary.
+   The sibling blocks each carry their own equivalent - the recipient block on
+   `.coverdetail__field input`, the availability card on `.docedit-field input`,
+   the body paragraphs on `.coverdetail__textarea`. This one sits in a bare
+   `.docedit-collapse` with no such wrapper, so it is keyed on its own class.
+
+   Nothing global styles a bare `input` in this shell either: `_editor-shell.scss`
+   covers `.docedit-style-grid input` and `.docedit-meta-row select`, neither of
+   which this markup uses. */
 .coverdetail__full {
   width: 100%;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+}
+.coverdetail__full:focus {
+  border-color: var(--accent);
 }

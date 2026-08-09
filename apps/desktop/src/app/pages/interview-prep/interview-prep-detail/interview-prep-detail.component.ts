@@ -27,6 +27,7 @@ import {
 } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { InterviewStageActionsComponent } from './interview-stage-actions/interview-stage-actions.component';
 
@@ -81,7 +82,7 @@ function emptyForm(): StageFormValue {
   selector: 'app-interview-prep-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, InterviewStageActionsComponent],
+  imports: [ButtonDirective, FormsModule, LucideAngularModule, InterviewStageActionsComponent],
   templateUrl: './interview-prep-detail.component.html',
   styleUrl: './interview-prep-detail.component.scss',
 })

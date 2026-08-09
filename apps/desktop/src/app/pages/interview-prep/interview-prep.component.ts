@@ -11,6 +11,7 @@ import { ListOrdered, MoreHorizontal, LucideAngularModule, Target, Trash2 } from
 import { PipelineCard } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../core/toast/toast.service';
 
 // Interview Prep list: every application that has at least one stage,
@@ -20,7 +21,7 @@ import { ToastService } from '../../core/toast/toast.service';
   selector: 'app-interview-prep',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule],
+  imports: [ButtonDirective, LucideAngularModule],
   templateUrl: './interview-prep.component.html',
   styleUrl: './interview-prep.component.scss',
 })

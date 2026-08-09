@@ -55,7 +55,7 @@ describe('InterviewPrepComponent row actions', () => {
 
   it('does not navigate when the row menu button is clicked', async () => {
     const fixture = await createFixture();
-    (fixture.nativeElement.querySelector('.ip__icon') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[aria-haspopup="menu"]') as HTMLElement).click();
     fixture.detectChanges();
     expect(navigate).not.toHaveBeenCalled();
     expect(fixture.componentInstance.menuId()).toBe(7);
@@ -63,7 +63,7 @@ describe('InterviewPrepComponent row actions', () => {
 
   it('offers a non-destructive action in the row menu, not only removal', async () => {
     const fixture = await createFixture();
-    (fixture.nativeElement.querySelector('.ip__icon') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[aria-haspopup="menu"]') as HTMLElement).click();
     fixture.detectChanges();
     const items = Array.from(
       fixture.nativeElement.querySelectorAll('.ip__pop-item') as NodeListOf<HTMLElement>,
@@ -74,7 +74,7 @@ describe('InterviewPrepComponent row actions', () => {
 
   it('navigates and closes the menu from the menu entry', async () => {
     const fixture = await createFixture();
-    (fixture.nativeElement.querySelector('.ip__icon') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[aria-haspopup="menu"]') as HTMLElement).click();
     fixture.detectChanges();
     const open = fixture.nativeElement.querySelector(
       '.ip__pop-item:not(.ip__pop-item--danger)',
@@ -82,5 +82,20 @@ describe('InterviewPrepComponent row actions', () => {
     open.click();
     expect(navigate).toHaveBeenCalledWith(['/interview-prep', 7]);
     expect(fixture.componentInstance.menuId()).toBeNull();
+  });
+
+  // The lit look of an open trigger hangs entirely off this attribute now:
+  // `.btn--ghost[aria-expanded='true']` in `libs/ui` is the rule, and the
+  // `.is-open` class it replaced is gone (ADR-0005, amendment twenty). If the
+  // binding is ever dropped the button still works and still opens the menu,
+  // so nothing fails - it just stops looking open. That is invisible to
+  // type-check, lint and every other test here, which is why it has one.
+  it('reports the open menu through aria-expanded, which is what styles it', async () => {
+    const fixture = await createFixture();
+    const trigger = fixture.nativeElement.querySelector('[aria-haspopup="menu"]') as HTMLElement;
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    trigger.click();
+    fixture.detectChanges();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 });

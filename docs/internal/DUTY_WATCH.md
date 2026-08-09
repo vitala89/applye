@@ -44,6 +44,81 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the open state was already in the markup, and the class was the half nobody could read
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/ip-icon-ghost-fold`, from `main` at `55296fc`
+- **Commits:** see the branch; one commit
+- **Pull request:** opened from this branch
+- **Objective:** fold `.ip__icon` (2 sites, both `interview-prep` pages) onto the design-system
+  button, per the ADR-0005 follow-up checklist. Also: resolve the merge conflict on PR #386, which
+  was the session's first task.
+- **Completed:**
+  - PR #386 rebased onto `main` and merged by the maintainer. The conflict was not a content
+    conflict: PR #385 had landed as squash commit `18507d7` while the branch still carried its
+    unsquashed copy `0cacdf7`, so `git rebase` dropped the duplicate as already-applied and resolved
+    it with zero manual edits. CI went green on the rebased head before merge.
+  - `.ip__icon` deleted from `_ip-shared.scss`; both call sites are `appButton size="icon"
+variant="ghost"`.
+  - `.btn--ghost[aria-expanded='true']` added to `libs/ui/src/styles/_button.scss`, replacing the
+    `.is-open` class on both pages.
+  - Rendered check run on both pages, in both themes, with numbers recorded in ADR amendment twenty.
+  - One test added pinning the `aria-expanded` binding; three spec selectors moved off `.ip__icon`
+    onto `[aria-haspopup="menu"]`.
+- **Not completed:** `tracker`'s `.jt-icon` was scoped out **by decision**, not left undone - see
+  Decisions. It is now its own checklist entry.
+- **Files or packages changed:** `libs/ui/src/styles/_button.scss`;
+  `apps/desktop/src/app/pages/interview-prep/` - `_ip-shared.scss`, `interview-prep.component.{ts,html,spec.ts}`,
+  `interview-prep-detail/interview-prep-detail.component.{ts,html}`; `CHANGELOG.md`;
+  `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`; this file.
+- **Validation:**
+  - `nx test desktop` - **1486 passed, 126 suites**, including the new one.
+  - `nx run-many -t lint -p desktop ui` - passed.
+  - `npm run quality:file-size` - passed. `interview-prep-detail.component.html` 280/300, base 274.
+    No other touched file is near budget; `_ip-shared.scss` only shrank.
+  - `npm run quality:attribution` - passed. `npm run format:check` - passed after `nx format:write`
+    reflowed the detail template. `git diff --check` - clean.
+  - `node tools/check-style-move.mjs --base origin/main` on both stylesheets - 4 selectors lost, 1
+    gained, **all of them declared**: the box, background and hover pair moved to `.btn`/`.btn--icon`/
+    `.btn--ghost`; `border-radius: 6px` matched `--radius-input` exactly; the three deliberate
+    differences are the ring, `--text-tertiary` and `opacity: 0.4`.
+  - **Rendered check** at `localhost:4200`: 28.00 x 28.00 at rest and open on both pages and both
+    themes, radius 6px, the open trigger lit while its neighbour stays quiet, no `.is-open` in the
+    DOM, and the modal close button square at an 18px icon.
+  - **Recorded honestly:** `:hover` itself could not be produced through the browser panel's
+    synthetic pointer. Its two declarations are the same two the open state renders, and those were
+    measured. Nothing in this change touches how `:hover` fires.
+  - The data-driven screens need Tauri, so the list rows came from a `__TAURI_INTERNALS__` stub
+    injected into the browser session for the duration of the check. **No stub was added to the
+    repository**, and it was removed before the tab was released.
+- **Privacy/security impact:** none. No data, storage, network or permission surface is touched; the
+  change is CSS, markup and one attribute selector.
+- **Decisions and assumptions:** taken through the `aif-grilling` gate over three rounds, because
+  one of the four readings was a new variant in `libs/ui`.
+  1. Fold onto ghost and move the open state to `.btn--ghost[aria-expanded='true']`, rather than
+     adding a fifth button variant. The trigger already bound `aria-expanded` to the same signal as
+     `.is-open`, so the class duplicated state the DOM had to carry anyway.
+  2. Scope the rule to `.btn--ghost`, not `.btn` - amendment nineteen's lesson about generalising
+     past the evidence. Verified first that no `appButton` in the app carries `aria-expanded`.
+  3. The hover ring is drift and was dropped: it entered with the file in #116, was never revisited,
+     and `.jt-icon` - the same control in every other respect - never had one.
+  4. `--text-tertiary` -> `--text-secondary` and `opacity: 0.4` -> `0.5` accepted as visible deltas,
+     the second on PR B's precedent.
+  5. `tracker` excluded. The maintainer first chose to include it; investigating it then showed six
+     sites in **four** shapes (28px, 24px, 30x30 with radius 7 through a descendant selector, and an
+     accent fill on a different indigo) on a template at **573/300**. That was re-put to the
+     maintainer as new facts rather than acted on, and the scope was narrowed.
+- **Risks or compatibility impact:** two intended visible changes on `interview-prep`, both listed in
+  the changelog. `.btn--ghost[aria-expanded='true']` will style any future ghost button that gains
+  the attribute - that is the point of it, but it is a behaviour a later author could meet by
+  surprise, which is why the rule carries its reasoning in the stylesheet.
+- **Open issues or blockers:** until `tracker` folds, the new rule has one consumer - the exact
+  configuration amendment nineteen warned about, accepted knowingly and written into the checklist.
+- **Next first action:** branch from `main` and open the `tracker` `.jt-icon` work with a grilling
+  round on its four shapes; the extraction that brings `tracker.component.html` under 300 comes
+  before any fold, since the gate refuses growth on a file already over budget.
+
 ### 2026-08-09, GA4 had never received a hit, and every visible sign said it had
 
 - **Status:** complete

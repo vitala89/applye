@@ -102,6 +102,26 @@
   }
 }
 
+/* A ghost button that opens something stays lit while the thing is open.
+   Keyed on `aria-expanded` rather than on a class, because a menu trigger
+   already has to carry the attribute to be usable at all - `.ip__icon` bound
+   `[class.is-open]` and `[attr.aria-expanded]` to the same signal, one line
+   apart, and the class was the half a screen reader could not see. Taking the
+   state from the markup that must exist deletes the class from the page and
+   adds no name to this file's public vocabulary.
+
+   Scoped to ghost rather than to `.btn`: two page copies is the whole of the
+   evidence, and amendment nineteen was written because a variant generalised
+   past its evidence behaved wrongly at every site that later adopted it. A
+   secondary or primary trigger that wants this can have it when one exists.
+
+   Deliberately the same look as `:hover` and not a third state: pointing at
+   an open menu should not change it (ADR-0005, amendment twenty). */
+.btn--ghost[aria-expanded='true'] {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
 /* Destructive, and quiet until pointed at. This variant had zero consumers
    before the icon-button fold gave it two, while the four page rules it
    replaced were all `:hover`-only reds; so the pages' behaviour is the one

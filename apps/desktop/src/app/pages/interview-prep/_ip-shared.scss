@@ -45,30 +45,15 @@
   background: var(--warning);
 }
 
-/* ---------- icon button ---------- */
-.ip__icon {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: var(--border-width) solid transparent;
-  border-radius: 6px;
-  color: var(--text-tertiary);
-  cursor: pointer;
-
-  &:hover,
-  &.is-open {
-    background: var(--surface-hover);
-    border-color: var(--border-default);
-    color: var(--text-primary);
-  }
-  &:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-}
+/* The icon button that lived here is gone: both call sites are
+   `appButton size="icon" variant="ghost"` now (ADR-0005, amendment twenty).
+   Its open state went with it - `.is-open` duplicated the `aria-expanded`
+   the trigger already bound, and `.btn--ghost[aria-expanded='true']` in
+   `libs/ui` reads the attribute instead. Two rest-state differences were
+   accepted rather than reproduced: `--text-tertiary` became the design
+   system's `--text-secondary`, and the hover border was dropped as drift -
+   `.jt-icon` in `tracker`, the same control in every other respect, never
+   had one. */
 
 /* ---------- popover menu ---------- */
 .ip__pop {

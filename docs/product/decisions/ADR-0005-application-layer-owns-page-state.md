@@ -1133,6 +1133,53 @@ from serves at `localhost:4200`, renders every shell, style and geometry, and on
 `tauriInvoke`, which costs the data-driven screens and nothing else. Every measurement above came
 from it.
 
+## Amendment twenty: the state was already in the markup
+
+`.ip__icon` was the sixth page-local icon button and the first whose fold was not obvious. Its box
+was the design system's to the pixel - 28px, `--radius-input`, centred - but three things were not:
+`--text-tertiary` at rest where ghost is `--text-secondary`, a `border-color` ring on hover that
+ghost has no border to show, and an `.is-open` class the design system has no concept of. The
+checklist entry written for it named only the third. Four readings were on the table, one of which
+was a new variant in `libs/ui`, so the decision went through the grilling gate rather than being
+chosen at the keyboard.
+
+**What settled it was reading the markup.** The trigger bound `[class.is-open]` and
+`[attr.aria-expanded]` to the same signal, one line apart - and so did `tracker`'s. The class was
+a duplicate of state the element already had to carry to be usable at all, and the duplicate was the
+half doing the styling while the half a screen reader reads did nothing. `.btn--ghost[aria-expanded='true']`
+takes the state from the attribute, which deletes the class from two pages and adds no name to the
+button's public vocabulary - a smaller change than the variant, and one with a reason that is not
+aesthetic.
+
+Two guards, both checked rather than assumed. **No `appButton` in the app carries `aria-expanded`
+today** - all 27 occurrences are page-local classes or `role="button"` elements - so the rule cannot
+reach a button that does not want it. And it is scoped to `.btn--ghost` rather than to `.btn`,
+because two page copies is the whole of the evidence: amendment nineteen was written precisely
+because `.btn--danger` generalised past its evidence and was wrong at both sites that later adopted
+it.
+
+The hover ring was ruled drift and dropped. It entered with the file in #116 and was never revisited,
+and `.jt-icon` in `tracker` - identical in box, radius, rest colour, hover pair, open state and
+disabled treatment - never had one. Removing it makes the two pages agree rather than making one of
+them odd.
+
+**The rendered check, in both themes:** 28.00 x 28.00 at rest and open, radius 6px unchanged, the
+open trigger at `--surface-hover`/`--text-primary` while its neighbour stays `--text-secondary`, no
+`.is-open` in the DOM, and the modal's close button - an **18px** icon, the exact size that measured
+28 x 29.84 before amendment nineteen - square. What the instrument could not produce is `:hover`
+itself; its two declarations are the same two the open state renders, and they were measured there.
+A test pins the `aria-expanded` binding, because dropping it breaks nothing that fails - the menu
+still opens, it just stops looking open.
+
+**`tracker` was deliberately left out**, and the reason is worth recording because it looked like the
+same fold from a distance. `.jt-icon`'s six sites are four shapes: three plain 28px, one at 24px via
+`--sm`, one at **30x30 with radius 7** reached through a `.jt-menu .jt-icon` descendant selector -
+amendment sixteen's trap - and one accent fill on `--text-accent` (indigo-400) with a hardcoded
+`#fff`, where the design system's primary is `--accent` (indigo-600) with `--accent-fg`. Its template
+is **573 against a budget of 300**, so the fold cannot add a line to it without an extraction first.
+That is a separate decision and a separate cut, and folding it blind would have been four undeclared
+visual changes.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1162,9 +1209,19 @@ from it.
         from `_ip-shared.scss` and would have tripped amendment sixteen. `:disabled` moves 0.35 to
         the design system's 0.5, and is the only visual difference; **checked on a rendered screen**
         before merge, including the danger hover.
-  - [ ] Fold `.ip__icon` in `_ip-shared.scss` (2 sites, both `interview-prep` pages). It is
-        `--text-tertiary` with an `.is-open` state, so it needs ghost plus a local rule for
-        `.is-open`, and it is a second visible delta on a second page.
+  - [x] Fold `.ip__icon` in `_ip-shared.scss` (2 sites, both `interview-prep` pages) - **done, and
+        the local rule this entry predicted was not needed**. The `.is-open` state went to
+        `.btn--ghost[aria-expanded='true']` in `libs/ui`, because the trigger already bound the
+        attribute to the same signal; the rule is scoped to ghost on amendment nineteen's reasoning,
+        and no `appButton` in the app carries `aria-expanded`, so it reaches nothing else. Two
+        accepted visible deltas: `--text-tertiary` -> `--text-secondary`, and the hover ring dropped
+        as drift. **Checked on a rendered screen** in both themes (amendment twenty).
+  - [ ] Fold `tracker`'s `.jt-icon` (6 sites) - **its own PR and its own grilling**, because it is
+        four shapes rather than one: 28px, 24px via `--sm`, 30x30/radius 7 through a `.jt-menu
+.jt-icon` descendant selector, and an accent fill on `--text-accent` (indigo-400) + `#fff`
+        against the system's `--accent` (indigo-600) + `--accent-fg`. Its template is **573/300**, so
+        an extraction comes first. Until it lands, `.btn--ghost[aria-expanded='true']` has one
+        consumer.
   - [ ] Decide what `.clb__icon-btn` in `cover-letter-body-paragraphs/` is for now that
         `.btn--danger` is quiet at rest again - the local name was chosen (amendment seventeen)
         precisely because folding it then meant a visible change, and that reason may have expired.

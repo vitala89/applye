@@ -86,9 +86,10 @@
           <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <div class="ip__rowact" (click)="$event.stopPropagation()">
             <button
+              appButton
+              variant="ghost"
+              size="icon"
               type="button"
-              class="ip__icon"
-              [class.is-open]="menuId() === r.id"
               [attr.aria-label]="t()('interview.row_actions')"
               aria-haspopup="menu"
               [attr.aria-expanded]="menuId() === r.id"

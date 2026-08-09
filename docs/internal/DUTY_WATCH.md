@@ -44,6 +44,65 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, back to the allowlist, and one of the 22 was never work
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/onboarding-banner-store`
+- **Commits:** two, deliberately separate
+- **Pull request:** not yet opened
+- **Objective:** with the icon-button campaign merged (#391, `main` at `3db5c6d`), resume the ADR's
+  main line - shrink `COMPONENTS_STILL_USING_THE_GATEWAY` by migrating a page off `DbService`.
+- **Completed:**
+  - Ranked all 22 entries by **actual gateway call sites** rather than by the injection. That found
+    `paste-job-modal.component.ts` injecting `DbService` with zero uses - the field was the only
+    occurrence of `db` in the file. Deleted with its import and its allowlist line. First commit.
+  - Migrated `onboarding-banner.component.ts`, the cheapest honest first cut: 69 lines, one read
+    pair, one boolean. `OnboardingBannerStore` in a new `libs/application/onboarding/` area owns
+    `visible`, `load()` and `dismiss()`. Second commit.
+  - `onboarding-gate.util.ts` and its spec moved down as a unit - **forced, not chosen**: a store in
+    `libs/application` cannot import from the app. `app.ts` takes `shouldAutoOpenOnboarding` from
+    `@applye/application` now.
+  - Five tests on the store, including the swallow-and-hide path that nothing pinned before.
+  - `ADR-0005` amendment twenty-five, `CHANGELOG.md`, `CURRENT_STATE.md` updated.
+  - **Corrected a stale count in four documents.** `CLAUDE.md`, `AGENTS.md` and
+    `AGENT_START_HERE.md` all said the allowlist was **26**; it had been 22 since 2026-08-08. All
+    four now say 20.
+- **Not completed:** nothing in scope. PR not opened.
+- **Files or packages changed:** `paste-job-modal.component.ts`, `onboarding-banner.component.ts`,
+  `app.ts`, `eslint.config.mjs`, `libs/application/src/index.ts`, new
+  `libs/application/src/lib/onboarding/{onboarding-banner.store.ts,onboarding-banner.store.spec.ts}`,
+  moved `onboarding-gate.util.{ts,spec.ts}`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1507 passed / 130 suites** - five tests and one suite lower than before
+    because the gate spec moved out, not because anything was dropped.
+  - `nx test application` **581 passed / 37 suites**, up from 576/36: the five moved tests plus the
+    five new store tests. The two numbers reconcile.
+  - `nx lint desktop` **0 errors**, `nx lint application` clean, `nx build desktop` succeeds. The
+    build's sass-deprecation and 1.38MB bundle-budget warnings are pre-existing and untouched by
+    ~40 lines of new source.
+  - `quality:file-size`, `quality:attribution`, `format:check`, `git diff --check`: pass.
+  - **Rendered check run.** Banner 976 x 48 at radius 8 on `--surface-2`, `role="status"`, controls
+    at `btn--primary btn--sm` and `btn--ghost btn--sm`. Dismiss clears the signal and removes the
+    element; **Finish setup opened the wizard end to end**, which is the half that stayed on the
+    component working across the new boundary. The component instance carries `banner` and no longer
+    carries `db` or a local `visible`.
+- **Privacy/security impact:** none. The same two reads, from one layer down.
+- **Decisions and assumptions:** three, all taken at the grilling gate:
+  1. A dedicated `OnboardingBannerStore` over a broader area store - designing for the 785-line
+     overlay migration before starting it is how a store generalises past its evidence.
+  2. Both predicates move down together with their spec intact, over splitting the file.
+  3. The dead injection ships in the same PR as its own commit, so the diff reads as two things.
+- **Risks or compatibility impact:** low. One nudge component, checked rendered.
+- **Open issues or blockers:** `tracker.component.scss` still **455/400** - the gate's non-blank
+  count, which is why `wc -l` reads 469. Untouched here; the next change to it cuts.
+- **Next first action:** open the PR from `refactor/onboarding-banner-store`. After it lands, the
+  next-cheapest allowlist entries by call site are `stage-quick-add` (83 lines, 1 call) and
+  `health-check-panel` (156 lines, 1 call).
+- **Evidence:** the two-project test reconciliation above; the rendered-check measurements; the new
+  spec `OnboardingBannerStore`; `ADR-0005` amendment twenty-five.
+
 ### 2026-08-09, the campaign's last question, answered by `git show` rather than by argument
 
 - **Status:** complete

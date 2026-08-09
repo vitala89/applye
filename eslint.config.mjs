@@ -28,7 +28,6 @@ import tseslint from 'typescript-eslint';
 const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/core/first-launch.component.ts',
   '**/core/health-check-panel.component.ts',
-  '**/core/onboarding/onboarding-banner.component.ts',
   '**/core/onboarding/onboarding.component.ts',
   '**/layout/shell-layout.component.ts',
   '**/pages/analytics/analytics.component.ts',

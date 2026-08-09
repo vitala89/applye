@@ -12,7 +12,7 @@ import { UpdaterService } from './core/updater.service';
 import { FirstLaunchComponent, FirstLaunchDismiss } from './core/first-launch.component';
 import { OnboardingComponent } from './core/onboarding/onboarding.component';
 import { OnboardingService } from './core/onboarding/onboarding.service';
-import { shouldAutoOpenOnboarding } from './core/onboarding/onboarding-gate.util';
+import { shouldAutoOpenOnboarding } from '@applye/application';
 import { DbService } from '@applye/data';
 import { ToastContainerComponent } from './core/toast/toast-container.component';
 

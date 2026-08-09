@@ -1345,6 +1345,49 @@ ring changes colour into space the layout had already reserved. A test pins `btn
 `btn--icon` on the delete button, on amendment twenty's reasoning: dropping either attribute breaks
 nothing that fails, since the button still deletes and only stops looking like the thing it is.
 
+## Amendment twenty-five: the smallest state this layer has owned, and a free entry
+
+With the icon-button campaign closed, the allowlist is the work again. Ranking the 22 remaining
+entries by **how much gateway each actually uses** - rather than by whether it injects one - turned up
+something the count had been hiding: `paste-job-modal.component.ts` injects `DbService` and never
+calls it. The field was the only occurrence of `db` in the file. So one of the 22 was not a migration
+at all, and the allowlist had been overstating the remaining work since the entry was written. Three
+lines deleted, 22 -> 21, no behaviour touched.
+
+The first real migration is deliberately the smallest: `onboarding-banner.component.ts`, 69 lines,
+one gateway read pair, deciding one boolean. `OnboardingBannerStore` owns `visible`, `load()` and
+`dismiss()`. **One boolean is the smallest state this layer has owned, and the size is not the point
+
+- the read is.** The banner had to call `getSettings` and `getProfile` to decide whether to show, so
+  the component held the gateway; moving the boolean is what removes the reason it did.
+
+**One consequence was forced rather than chosen, and it is worth naming because the next migration
+will meet it too.** `shouldShowOnboardingBanner` lived in the app's `onboarding-gate.util.ts`, and a
+store in `libs/application` **cannot import from the app** - the dependency arrow forbids it. So the
+predicate either came down with the store or got reimplemented beside it. It came down, together with
+`shouldAutoOpenOnboarding` and their shared spec, as one unit: splitting the file would have left one
+gate concept with two homes and a spec cut in half. `app.ts` imports `shouldAutoOpenOnboarding` from
+`@applye/application` now, which the layering allows.
+
+`OnboardingService` deliberately stayed in the app, and so did the half of `finishSetup` that uses it.
+The store hides the nudge; the component asks the shell to reopen the wizard. That is amendment
+three's boundary applied to a new case - a store does not navigate, does not toast, and does not know
+about the app's shared signals.
+
+Five tests cover the store, including the one behaviour that had no test anywhere before: a failed
+read **hides** the banner rather than rejecting. The component swallowed the error already; nothing
+pinned it, and it is the kind of decision that gets re-litigated as a bug later. A banner is not worth
+an error state, and nagging a user whose profile may well be complete is the worse of the two
+failures.
+
+**Rendered check**, because green gates missed a two-day regression in this campaign once. The banner
+renders 976 x 48 at radius 8 on `--surface-2`, `role="status"`, its two `appButton` controls at
+`btn--primary btn--sm` and `btn--ghost btn--sm`. Dismiss clears the signal and removes the element;
+**Finish setup opened the wizard end to end** - the overlay replaced the dashboard, which is the half
+that stayed on the component working across the new boundary.
+
+Allowlist **22 -> 20** in one pull request.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1415,8 +1458,10 @@ nothing that fails, since the button still deletes and only stops looking like t
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**22** entries; first deleted 2026-08-07,
-        then delete the rule with it
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**20** entries; first deleted 2026-08-07,
+        then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
+        to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
+        without ever calling it - so the count had been overstating the work by one)
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

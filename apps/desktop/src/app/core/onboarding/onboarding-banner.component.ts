@@ -1,9 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { DbService } from '@applye/data';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { OnboardingBannerStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { OnboardingService } from './onboarding.service';
-import { shouldShowOnboardingBanner } from './onboarding-gate.util';
 
 /** Dashboard nudge shown after the user skipped onboarding while their
  * profile is still empty. "Finish setup" reopens the overlay via the shared
@@ -12,15 +11,16 @@ import { shouldShowOnboardingBanner } from './onboarding-gate.util';
   selector: 'app-onboarding-banner',
   standalone: true,
   imports: [ButtonDirective],
+  providers: [OnboardingBannerStore],
   template: `
-    @if (visible()) {
+    @if (banner.visible()) {
       <div class="ob-banner" role="status">
         <span>{{ t()('onboarding.banner.text') }}</span>
         <span class="ob-banner__actions">
           <button appButton variant="primary" size="sm" (click)="finishSetup()">
             {{ t()('onboarding.banner.cta') }}
           </button>
-          <button appButton variant="ghost" size="sm" (click)="visible.set(false)">
+          <button appButton variant="ghost" size="sm" (click)="banner.dismiss()">
             {{ t()('onboarding.banner.dismiss') }}
           </button>
         </span>
@@ -47,23 +47,19 @@ import { shouldShowOnboardingBanner } from './onboarding-gate.util';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OnboardingBannerComponent implements OnInit {
-  private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
   private readonly onboarding = inject(OnboardingService);
   protected readonly t = this.i18n.t;
-  readonly visible = signal(false);
+  protected readonly banner = inject(OnboardingBannerStore);
 
-  async ngOnInit(): Promise<void> {
-    try {
-      const [settings, profile] = await Promise.all([this.db.getSettings(), this.db.getProfile()]);
-      this.visible.set(shouldShowOnboardingBanner(settings, profile));
-    } catch {
-      this.visible.set(false);
-    }
+  ngOnInit(): void {
+    void this.banner.load();
   }
 
+  /** Hides the nudge and asks the shell to reopen the wizard - the second half
+   * stays here, because `OnboardingService` is the app's and not the store's. */
   finishSetup(): void {
-    this.visible.set(false);
+    this.banner.dismiss();
     this.onboarding.requestOpen();
   }
 }

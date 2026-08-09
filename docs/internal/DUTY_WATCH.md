@@ -44,6 +44,67 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the modal, and an untested claim about SQL
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/quick-view-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** finish the pipeline pair after #397 (`main` at `b4b218b`) with
+  `quick-view-modal`: five gateway calls, four outputs, comments and a stage stepper.
+- **Completed:**
+  - `QuickViewStore` owning comments, stage lists, busy flags and all five calls.
+  - `interview-stage-view.ts` beside it: `pickCurrentStage`, `sortStages` and the three stepper
+    predicates, with seven tests on a claim that previously had none.
+  - **Folded two duplicates** onto the functions extracted for the board in the previous PR - the
+    modal's `initials()` and `scoreClass()`, whose comment claimed they matched the board card.
+  - Twenty-four tests across the store and the stage module.
+  - `ADR-0005` amendment thirty-one; `CHANGELOG.md`, `CURRENT_STATE.md` and the count in four
+    documents, all to 12.
+- **Not completed:** nothing in scope. PR not opened.
+- **Files or packages changed:** `quick-view-modal.component.{ts,html}`,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, new
+  `libs/application/src/lib/pipeline/quick-view.store{,.spec}.ts` and
+  `interview-stage-view{,.spec}.ts`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1509 passed / 131 suites**, unchanged - the modal had no spec.
+  - `nx test application` **677 passed / 47 suites**, up from 653/45.
+  - `nx lint desktop` **0 errors** after fixing one the gate caught: the `Comment` type import went
+    unused once the comment list moved. Fourth migration running where the gate catches exactly
+    this class of leftover.
+  - `nx lint application` clean, `nx build desktop` succeeds, `quality:file-size`,
+    `quality:attribution`, `format:check`, `git diff --check` all pass.
+  - **A budget number moved and is worth recording**: the modal's template went **256 -> 258** of
+    its 300, because prefixing bindings with `quick.` made prettier rewrap a few lines. Still under,
+    but this is the first migration in the campaign to make a file grow rather than shrink.
+  - **Rendered check run.** `AC` and `score--high` rendered through the **shared** functions, which
+    is the deduplication visible on screen rather than only in the diff. The stepper drew
+    `HR screen` reached and done, `Technical` reached and current, `Final` neither, counter `2/3`,
+    date chip `01 Sept`. All three write paths exercised: a **failed** comment kept `Worth keeping`
+    in the box and rendered the error; a **successful** one cleared the box and appended; and the
+    status write emitted the **whole row** - `appliedAt` and `followUpAt` included - which is the
+    contract `PipelineStore.applyModalStatus` depends on. The stub was console-only and removed.
+- **Privacy/security impact:** none. Same five calls, one layer down.
+- **Decisions and assumptions:** three, taken at the grilling gate: the store takes ids and the
+  component keeps the input and its effect; the stage logic goes to a pure module beside the store;
+  the two duplicated helpers fold onto the shared ones.
+- **Risks or compatibility impact:** moderate. This modal writes status, priority and comments, and
+  the board depends on the exact shape it emits - which is why the emitted row was verified live and
+  not only in a unit test.
+- **Open issues or blockers:**
+  - Two filed, unfixed defects: the health-icon colours, and `en-GB` at five sites - two of which,
+    `formatStageDate` and `formatTimestamp`, are in this very file and were deliberately left.
+  - `tracker.component.scss` still **455/400**, untouched.
+  - `PipelineStore.cards` is still deliberately not a signal.
+- **Next first action:** open the PR from `refactor/quick-view-store`. The remaining 12 no longer
+  have a cheap entry: the next by call site are `dashboard` (449 lines, 5 calls) and `my-jobs`
+  (334, 5), then the tail `cv-list` (426, 16), `onboarding` (785, 12) and `jobs` (1164, 8). Each
+  wants its own grilling round, and `jobs` was deferred once by this ADR already.
+- **Evidence:** the rendered write-path traces above; the two-project test counts; `ADR-0005`
+  amendment thirty-one.
+
 ### 2026-08-09, the board, and the first store whose data is not a signal
 
 - **Status:** complete

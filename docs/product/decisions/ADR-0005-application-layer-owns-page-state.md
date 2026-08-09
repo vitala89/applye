@@ -1595,6 +1595,44 @@ stubbed IPC, moved a card to `interview`, mirrored `followUpAt` from the written
 `overdue` **true** from it, recounted the total, and opened the quick-view with that card selected -
 the one write path outside Interview Prep, intact across the new boundary.
 
+## Amendment thirty-one: a second reason not to hold the card
+
+`quick-view-modal` finishes the pipeline pair: five gateway calls, four outputs, comments, a stage
+stepper and three writes. Allowlist **13 -> 12**.
+
+**The card stayed on the component for two reasons, and the second is new.** The first is amendment
+twenty-eight's: it is a required input, and an input belongs to the component that declares it. The
+second is specific to this pair - **the board mutates those card objects by reference** when a status
+or priority changes, so a copy held in the store would be one the store could not keep in sync, and
+the two would disagree silently. Every method takes the id it needs. `showQuickAdd` and
+`promptDismissed` stayed with it, because the gate reads `card().status`.
+
+**`pickCurrentStage` was the most valuable thing here, and it had no test.** Its comment says it
+mirrors the SQL in `db_pipeline_cards` exactly, which is a real claim with a real failure mode: if
+the two drift, the modal's headline and the board's card footer disagree about the same application,
+and that reads as data corruption rather than as a bug in a predicate. It is in
+`interview-stage-view.ts` beside the store now, with `sortStages` and the three stepper predicates,
+and seven tests - including the case the SQL exists for: rejected and cancelled stages are ignored
+while anything is still open, but a fully closed funnel still shows the furthest it got.
+
+**Two duplicates were folded rather than moved.** The modal's own `initials()` and `scoreClass()`
+were second copies of the functions extracted for the board one amendment ago, and the comment on the
+first said "matching the board card" - a claim kept true by hand. They call the shared functions now,
+so the claim is structural rather than aspirational. This is the payoff of the previous amendment's
+placement decision arriving one pull request later than the decision itself.
+
+Twenty-four tests across the store and the stage module. Three pin decisions: a failed comment write
+**keeps what the user typed**, because retyping a comment because the database blinked is the worst
+outcome available; a space-only comment never reaches the gateway; and an unset priority compares
+equal to `null`, so clicking "none" on a card that never had one is not a write.
+
+**Rendered check.** `AC` and `score--high` rendered through the _shared_ functions, which is the
+dedup visible on screen. The stepper drew `HR screen` reached and done, `Technical` reached and
+current, `Final` neither, with the counter at `2/3`. Then the three write paths: a failed comment kept
+`Worth keeping` in the box and showed the error; a successful one cleared the box and appended; and
+the status write emitted the **whole row** to the board - `appliedAt` and `followUpAt` included - which
+is the contract the board's `applyModalStatus` depends on.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1665,7 +1703,7 @@ the one write path outside Interview Prep, intact across the new boundary.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**13** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**12** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

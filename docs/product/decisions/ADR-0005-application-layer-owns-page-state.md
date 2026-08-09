@@ -1503,6 +1503,52 @@ and the read caught the transition. The computed style is authoritative and says
 closing off the **store's** `cropSourceUri`. `getBoundingClientRect` is no more free of animation
 than `getComputedStyle` is.
 
+## Amendment twenty-nine: the first whole page since the campaign resumed
+
+`interview-prep` is a list page rather than a single flow: cards, three computeds over them, a row
+menu, a delete confirmation, three gateway calls. Allowlist **15 -> 14**.
+
+**The menu and the confirmation moved with the data, and that is not a reversal of amendment
+twenty-two.** That amendment kept `tracker`'s delete confirmation on the page for a specific
+mechanical reason: its row component is reused rather than recreated as the selection changes, so a
+child owning the flag would carry one row's half-confirmed delete to the next row. This is a page.
+There is one of it, it is destroyed on navigation, and the reason does not reach here. A rule and its
+reason are different things, and it is the reason that travels.
+
+**`stats` returns `nextAt` as the stored ISO string, and `formatDate` stayed on the component.**
+Formatting is presentation and locale-dependent, and this layer refuses translations for the same
+reason it refuses toasts. Moving the formatter down would also have carried a hardcoded `en-GB` into
+`libs/application` - which brings up the finding below.
+
+**A defect found while reading, filed rather than fixed:** `en-GB` is hardcoded at **five** call
+sites - `pipeline`, `quick-view-modal` twice, `interview-prep` and its detail page - while the app
+ships six locales. Five of them render dates in a format their user did not ask for. Fixing it means
+touching four files this migration otherwise does not, and it needs a rendered check per locale, so it
+is its own pull request.
+
+**One regression was caught in the draft rather than in review**, and it is the kind worth recording
+because the gates would not have seen it. The first version of the store swallowed both failures with
+a bare `catch { return false }`. That compiles, passes lint, and would have downgraded the page's
+toast from the actual error text to whatever generic wording the component invented. The store keeps
+an `error` signal, like `StageQuickAddStore` and `ProfilePhotoStore` before it, and refusing stays
+distinguishable from failing by whether it is set. Three stores now share that contract; it is the
+campaign's settled shape for "the store knows what went wrong, the app decides what is said".
+
+Twelve tests, including three that pin decisions rather than mechanics: unscheduled rows sink below
+scheduled ones, because a date the user has not set should not outrank one they have; a removed row is
+cleared in place rather than by reloading, because a reload would re-sort every other row under the
+user while they are looking at it; and a **failed** delete leaves the row in the list, because the
+list must not lie about what was removed.
+
+**Rendered check.** Four cards in, three rows out - the stageless one is Pipeline's, not this page's -
+sorted 01 Sept before 10 Sept with the unscheduled row last showing `·`. Stats read 3 and 3, and the
+next date rendered `01 Sept 2026` from the store's raw `nextAt`, which is the split working in the
+one place it is visible. The row menu opened with `aria-expanded="true"` and its trigger at
+`rgb(42,41,39)`, so amendment twenty's `.btn--ghost[aria-expanded='true']` rule still holds after the
+state moved. The danger entry closed the menu and opened the confirmation in one step; cancel closed
+it; and a live delete against no Tauri left all three rows in place, cleared `removing`, and toasted
+the real error - the path the swallowed-catch draft would have broken.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1573,7 +1619,7 @@ than `getComputedStyle` is.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**15** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**14** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

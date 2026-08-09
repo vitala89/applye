@@ -1096,6 +1096,31 @@ can be truncated cannot prove a negative. Eighteen's search was not truncated - 
 for a name when the thing being counted is a shape**, and three of the four survivors carry different
 names on purpose.
 
+### The fifth copy folded, and the host element behaved this time
+
+`.ipd__icon-btn` is gone. Its base was an **exact** `variant="secondary"` - same 28px box, same
+`--border-default` border, same `--text-secondary`, same hover pair - which is why the fold is a
+deletion and not a reconciliation; only `:disabled` differed, 0.35 against the design system's 0.5,
+and that is the single accepted delta. The danger modifier maps onto `variant="danger"` **because of
+the change above**: had `.btn--danger` still coloured at rest, this fold would have been a second
+visible regression rather than a deletion.
+
+The ratchet refused it, as it refused the last one, and located the seam again: the template was
+311/300, the fold costs +2 lines per button, so `interview-stage-actions/` came out of it -
+**311 -> 274**, stylesheet 363 -> 346. The narrow cut of the four buttons rather than the whole
+`.ipd__actions` cluster, and deliberately: the cluster contains `.ip__pop`, which lives in
+`_ip-shared.scss` and reaches the page through a `@use` that a child component would not inherit.
+That is amendment sixteen's trap, seen in advance for once instead of after merge.
+
+**One thing this repository has now been bitten by twice was checked first**: the four buttons are
+direct children of a flex row, so a host element between them would have collapsed them into a block
+stack - the shape that cost Profile its paired-field row. `:host { display: contents }` keeps them
+flex items. Measured on the rendered page: host `display: contents`, twelve buttons all 28.00x28.00,
+all `--text-secondary` on `--border-default`, first row's up and last row's down disabled at 0.5, and
+delete red with a `--danger-tint` fill only under the pointer. The spec asserts the half jsdom can
+see - that this component adds no wrapper of its own - and says in a comment that the other half is
+not assertable there.
+
 ### What this costs, and what it buys
 
 Six extractions shipped without a rendered check, and the first one run found a two-day-old
@@ -1131,12 +1156,12 @@ from it.
   - [ ] ~~`.ipd__icon-btn` is the last page-local icon button~~ - **wrong, there are four**;
         amendment eighteen's audit grepped for the name `icon-btn` and missed every copy carrying a
         different one. See the table in amendment nineteen.
-  - [ ] Fold `interview-prep-detail`'s `.ipd__icon-btn` (4 sites). Its base is an exact
-        `variant="secondary"`, border and all; only `:disabled` differs, 0.35 against the design
-        system's 0.5. The template is 311/300, so the ratchet will refuse the +8 lines and the answer
-        is `interview-stage-actions/` out of html lines 100-133 - the narrow cut, because the wider
-        `.ipd__actions` cluster contains `.ip__pop` from `_ip-shared.scss` and would trip amendment
-        sixteen.
+  - [x] Fold `interview-prep-detail`'s `.ipd__icon-btn` (4 sites) - **done**, and the ratchet forced
+        `interview-stage-actions/` out of it, taking the template **311 -> 274** and the stylesheet
+        363 -> 346. The narrow cut, because the wider `.ipd__actions` cluster contains `.ip__pop`
+        from `_ip-shared.scss` and would have tripped amendment sixteen. `:disabled` moves 0.35 to
+        the design system's 0.5, and is the only visual difference; **checked on a rendered screen**
+        before merge, including the danger hover.
   - [ ] Fold `.ip__icon` in `_ip-shared.scss` (2 sites, both `interview-prep` pages). It is
         `--text-tertiary` with an `.is-open` state, so it needs ghost plus a local rule for
         `.is-open`, and it is a second visible delta on a second page.

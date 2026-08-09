@@ -275,32 +275,14 @@
 .ipd__status-opt-label {
   flex: 1;
 }
-.ipd__icon-btn {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: var(--border-width) solid var(--border-default);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  cursor: pointer;
-
-  &:hover {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  &:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-}
-.ipd__icon-btn--danger:hover {
-  background: var(--danger-tint);
-  border-color: var(--danger);
-  color: var(--danger);
-}
+/* `.ipd__icon-btn` and its danger modifier are gone: the four stage controls
+   are `appButton size="icon"` inside `interview-stage-actions/`. The base rule
+   was an exact `variant="secondary"` - same 28px box, same `--border-default`
+   border, same `--text-secondary`, same hover - and the danger modifier is
+   `variant="danger"`, which since ADR-0005 amendment nineteen is also quiet at
+   rest and red on hover. The one difference the fold accepts is `:disabled`,
+   0.35 here against the design system's 0.5; the border the variant does not
+   carry is restored in the child's own stylesheet. */
 
 /* ---------- modal form ---------- */
 .ipd-field {

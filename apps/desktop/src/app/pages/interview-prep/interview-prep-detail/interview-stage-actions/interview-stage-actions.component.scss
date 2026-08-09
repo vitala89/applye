@@ -1,0 +1,24 @@
+/* The four buttons are direct children of the page's `.ipd__actions`, which is
+   a flex row with `gap: 6px` and lays out the status pill and these four in one
+   line. A host element between them would become the flex item and collapse
+   the four into a block stack inside it - the same trap that cost Profile its
+   paired-field row (ADR-0005, amendment nineteen). `display: contents` removes
+   the host from the box tree, so the buttons stay the flex items they were and
+   the page's rule is untouched. */
+:host {
+  display: contents;
+}
+
+/* `.ipd__icon-btn` carried a visible `--border-default`, which is what set
+   interview-prep's icon buttons apart from the document pages' borderless
+   ones, and the fold keeps that: three buttons are `variant="secondary"`,
+   which has the border already.
+
+   The fourth cannot be. `variant="danger"` is borderless at rest by design -
+   it is built for a row of borderless ghosts - so without this the delete
+   button would be the only one of the four with no outline. One declaration
+   rather than a local button rule, and it disappears if interview-prep is ever
+   moved to borderless icons like the rest of the app. */
+.btn--danger {
+  border-color: var(--border-default);
+}

@@ -44,6 +44,69 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the rendered check ran and the fold was wrong in two places
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 7/10 - radius 2, ambiguity 1, risk 1, verify 2, unknowns 1. Model matched the verdict. `aif-grilling` ran because the fix direction had two readings; three rounds, seven decisions, all confirmed.)
+- **Branches:** `fix/icon-button-rendered-check`, then `refactor/interview-stage-actions` stacked on it
+- **Commits:** two, one per branch
+- **Pull requests:** #385 (`fix(ui)`), #386 (`refactor(interview-prep)`, based on #385)
+- **Objective:** run the rendered check PR #384 was owed, then fold `.ipd__icon-btn`.
+
+- **The state had already moved:** #384 was **merged** before the session started, so the check was owed by `main` rather than by a branch. `gh pr list` returned `[]`; `gh pr view 384` returned `MERGED`.
+
+- **Completed:**
+  - **The check does not need Tauri, which is why it had gone unpaid.** A `tauri dev` was already running and its Angular dev server was listening on `[::1]:4200`. That server renders every shell, style and geometry; only `tauriInvoke` fails. Every measurement below came from it, and the one page that needed records was reached with a console-only stub for two commands - nothing of which is in either diff.
+  - **Defect one, geometry.** The icon button measured **28.00 x 29.84**. `<lucide-icon>` is a flex item and therefore a block box; the `<svg>` inside it is `display: inline` with `vertical-align: baseline`, so the wrapper is a line box and reserves descender space - **1.84px**, independent of the icon. Swept the sizes on the live page: 13-16 give 28x28, 17 gives 28.84, 18 gives 29.84. Counted the call sites - `14 x4, 15 x2, 16 x2, 18 x1` - so eight were saved by the minimum and the ninth is the topbar toggle, the single consumer `size="icon"` had before the fold. `.btn--icon svg { display: block }` fixes every size, and a 24px icon now gives a 34x34 square instead of a rectangle.
+  - **Defect two, the destructive variant.** `variant="danger"` colours at rest; all four `.icon-btn--danger` rules it replaced were `:hover`-only. A document row went from one tone to three - `--text-secondary`, `--text-tertiary`, `--danger`. Not among the two deltas #384 declared. **Settled by the fold's own tie-break**: it bent the design system to the pages because `size="icon"` had exactly one consumer, and `variant="danger"` had **zero**, so the pages were the shape with evidence. Quiet at rest, red on hover, with the boundary written into the rule - a standalone destructive **text** button will need its own filled variant rather than a revert.
+  - **Third, smaller:** `.cvlist__export` is a `<label>` over an invisible `<select>`, and `[appButton]`'s selector is `button[appButton]`, so it never followed its neighbours and sat a shade darker between them. Hand-matched.
+  - **The count was wrong, and this is the fourth shape of the same failure.** #384's audit grepped the string `icon-btn`. Four 28px square icon rules remain, not one: `.ipd__icon-btn` (4 sites), **`.ip__icon` in `_ip-shared.scss` (2 sites, both interview-prep pages)**, `.clb__icon-btn` (1), `.cvlist__export` (1, kept). Amendment seventeen said a truncatable search cannot prove a negative; this search was not truncated - it looked for a **name** when the thing counted is a **shape**.
+  - **`.ipd__icon-btn` folded.** Its base was an **exact** `variant="secondary"` - box, border, colour, hover - so a deletion rather than a reconciliation; `:disabled` 0.35 -> 0.5 is the only visual difference, and it was chosen at the gate. The variant's own borderless rest state is overridden by one declaration in the child, because interview-prep's icon buttons carry a visible border and the document pages' do not.
+  - **The ratchet located the seam for the second time running.** Template 311/300, fold costs +2 lines per button, gate refused. `interview-stage-actions/` came out: template **311 -> 274**, stylesheet **363 -> 346**. The **narrow** cut deliberately - the wider `.ipd__actions` cluster holds `.ip__pop` from `_ip-shared.scss`, which a child does not inherit through the page's `@use`. That is amendment sixteen's trap seen **before** a merge for the first time in this campaign.
+  - **The host-element trap was handled up front**, not after. Four buttons in a flex row: `:host { display: contents }`, verified on the rendered page as `contents` with all five boxes on one line.
+  - **Rendered evidence, both changes.** Twelve buttons at **28.00 x 28.00**, all `--text-secondary` on `--border-default`; first stage's up and last stage's down disabled at 0.5; delete under the pointer `rgb(240,122,122)` on `rgba(224,86,86,0.14)` with a `--danger` border, the other two rows untouched. Light theme checked as well as dark.
+
+- **Not completed:**
+  - **`.ip__icon` is not folded** - scope decision at the gate, to keep the diff to one page and one rendered check. It is `--text-tertiary` with an `.is-open` state, so it needs ghost plus a local rule, and it is a second visible delta on a second page.
+  - **`.clb__icon-btn`** was given a local name (amendment seventeen) precisely because folding it then was a visible change. `.btn--danger` being quiet at rest may have expired that reason; recorded as a question, not answered.
+
+- **Files or packages changed:** `libs/ui/src/styles/_button.scss`; `document-row-actions.component.scss`; `interview-prep-detail`'s template, class and stylesheet; a new `interview-stage-actions/` (4 files); `CHANGELOG.md`; `ADR-0005` (amendment nineteen); `CURRENT_STATE.md`; this file.
+
+- **Validation:** per branch, each gate read from **its own verdict line or its own exit code**.
+  - `nx run desktop:type-check --skip-nx-cache` **passed** both times - `Successfully ran target type-check for project desktop`.
+  - `nx run-many --target=lint --projects=desktop,application,ui,i18n --skip-nx-cache` **passed** both times - `Successfully ran target lint for 4 projects`, 0 errors, the same 8 pre-existing warnings.
+  - `npx jest` from the repository root: **197 suites / 2502 tests** on #385, **198 / 2509** on #386.
+  - `nx build desktop --skip-nx-cache` and `nx build web --skip-nx-cache` both **exit 0** on both branches. `web` is not optional here: `global.scss` loads `_button.scss` and `apps/web` consumes it.
+  - `quality:file-size` **passed**; it reports the two ratcheted files, template `274/300` (base 300) and stylesheet `346/400` (base 363). `quality:attribution` **passed**. `nx format:check` **exit 0, zero lines**. `git diff --check` **clean**.
+  - `quality:style-move --base main` run on all four stylesheets; 7 lost / 6 gained, every one named in the pull requests.
+  - **No Rust touched, so `cargo` was not run** - a verdict, not an omission.
+
+- **A failed run that is being reported rather than buried:** the **first** full `jest` on `refactor/interview-stage-actions` reported **2 failed tests in 1 suite**, with an async stack ending in `tslib.js:167 at fulfilled`. Four subsequent full runs were clean, and the failing names were not captured before the output was lost. It is not the new spec, which passes alone and in every run. **This branch is therefore "green in 4 of 5 runs", not "green".**
+
+- **Privacy/security impact:** none. CSS, markup, one component, and documentation.
+
+- **Decisions and assumptions** (all through `aif-grilling`, all as recommended):
+  1. `.btn--danger` returns to `:hover`-only red, with the text-button boundary written into the rule.
+  2. `.cvlist__export` is hand-matched to `--text-secondary` / `--text-primary`.
+  3. `.btn--icon svg { display: block }` - not a decision, a defect against the ADR's own stated intent.
+  4. `.ipd__icon-btn` -> `variant="secondary"`, visible border kept, `:disabled` 0.35 -> 0.5 accepted.
+  5. `.ip__icon` deliberately out of scope.
+  6. The narrow extraction, lines 100-133, because of `.ip__pop`.
+  7. Two pull requests, stacked, because a regression fix should not wait on a refactor.
+
+- **Risks or compatibility impact:** #385 changes how deletion reads on four screens and how every icon button measures; #386 is pixel-identical apart from a disabled state. Both were checked on a rendered screen before the pull request was opened, which is the first time in this campaign that has been true.
+
+- **Open issues or blockers:** the jest flake above. `.ip__icon` and the `.clb__icon-btn` question. Neither #385 nor #386 is merged.
+
+- **Next first action:** the maintainer reviews **#385 first** - #386 is based on it and its diff only reads correctly once #385 is in. Then either fold `.ip__icon` or answer the `.clb__icon-btn` question.
+
+- **Evidence:**
+  - **Seven extractions have now shipped without a rendered check, and both times one was finally run it found something.** The first found a two-day-old regression; this one found two defects and a miscount. The instrument is a screen and nothing else comes close - `quality:style-move` passes on all three by construction.
+  - **The check was cheap the whole time.** It needed no Tauri window, no packaged build and no maintainer: the dev server the app is already built from serves the whole UI at `localhost:4200`. The campaign deferred it for seven pull requests on the belief that it required Tauri.
+  - **A comment can be a false gate.** `_button.scss` asserted that every call site used a 13-16px icon. It was written from the four pages being folded and never checked against the consumer that already existed - which is the one it was wrong about.
+  - **`exit=$?` after a pipeline reads the exit code of `tail`.** `nx format:check` prints nothing when clean, so its "exit=0" came from the wrong command and proved nothing. Re-run without the pipe. This is the fourth shape of the same failure this campaign has recorded, and the first that was caught in the same turn it was made.
+  - **A stale `cd` broke a `grep` again**, exactly as recorded on 2026-08-08 - a relative path resolved against a directory left over from an earlier command. Absolute paths, or `cd` to the root in the same command.
+
 ### 2026-08-08, the icon-button fold, and the gate that turned a sweep into three extractions
 
 - **Status:** complete

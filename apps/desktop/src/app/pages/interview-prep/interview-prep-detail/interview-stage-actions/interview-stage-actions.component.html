@@ -1,0 +1,42 @@
+<button
+  appButton
+  variant="secondary"
+  size="icon"
+  type="button"
+  [disabled]="moveUpDisabled()"
+  [attr.aria-label]="t()('interview.move_up')"
+  (click)="movedUp.emit()"
+>
+  <lucide-icon [img]="icons.up" [size]="14" aria-hidden="true" />
+</button>
+<button
+  appButton
+  variant="secondary"
+  size="icon"
+  type="button"
+  [disabled]="moveDownDisabled()"
+  [attr.aria-label]="t()('interview.move_down')"
+  (click)="movedDown.emit()"
+>
+  <lucide-icon [img]="icons.down" [size]="14" aria-hidden="true" />
+</button>
+<button
+  appButton
+  variant="secondary"
+  size="icon"
+  type="button"
+  [attr.aria-label]="t()('interview.edit')"
+  (click)="edited.emit()"
+>
+  <lucide-icon [img]="icons.edit" [size]="14" aria-hidden="true" />
+</button>
+<button
+  appButton
+  variant="danger"
+  size="icon"
+  type="button"
+  [attr.aria-label]="t()('interview.delete')"
+  (click)="deleted.emit()"
+>
+  <lucide-icon [img]="icons.delete" [size]="14" aria-hidden="true" />
+</button>

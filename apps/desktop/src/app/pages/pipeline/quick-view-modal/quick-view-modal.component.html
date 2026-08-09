@@ -20,7 +20,7 @@
             id="qv-status"
             class="qv__select"
             [ngModel]="card().status"
-            [disabled]="statusBusy()"
+            [disabled]="quick.statusBusy()"
             (ngModelChange)="onStatusSelect($event)"
           >
             @for (s of STATUSES; track s) {
@@ -49,7 +49,7 @@
               class="qv__priority-btn"
               [class.is-active]="card().priority === p"
               [attr.data-priority]="p"
-              [disabled]="priorityBusy()"
+              [disabled]="quick.priorityBusy()"
               (click)="onPrioritySelect(p)"
             >
               <lucide-icon [img]="icons.flag" [size]="13" />
@@ -60,7 +60,7 @@
             type="button"
             class="qv__priority-btn qv__priority-btn--none"
             [class.is-active]="!card().priority"
-            [disabled]="priorityBusy()"
+            [disabled]="quick.priorityBusy()"
             (click)="onPrioritySelect(null)"
           >
             {{ t()('pipeline.priority_none') }}
@@ -73,8 +73,10 @@
         <section class="qv__section qv__section--divided">
           <div class="qv__section-head">
             <span class="qv__label">{{ t()('interview.quickview_stage_label') }}</span>
-            @if (!showQuickAdd() && stageSummary(); as cur) {
-              <span class="qv__stage-counter">{{ cur.stageOrder }}/{{ stages().length }}</span>
+            @if (!showQuickAdd() && quick.stageSummary(); as cur) {
+              <span class="qv__stage-counter"
+                >{{ cur.stageOrder }}/{{ quick.stages().length }}</span
+              >
             }
           </div>
           @if (showQuickAdd()) {
@@ -83,12 +85,12 @@
               (added)="onStageAdded($event)"
               (skipped)="skipStagePrompt()"
             />
-          } @else if (stagesLoading()) {
+          } @else if (quick.stagesLoading()) {
             <p class="qv__hint">{{ t()('common.loading') }}</p>
-          } @else if (stages().length > 0) {
+          } @else if (quick.stages().length > 0) {
             <div class="qv__stepper-box">
               <div class="qv__stepper">
-                @for (st of stages(); track st.id) {
+                @for (st of quick.stages(); track st.id) {
                   <div class="qv__step" [class.is-reached]="stageReached(st)">
                     <span
                       class="qv__step-dot"
@@ -108,7 +110,7 @@
                 }
               </div>
               <div class="qv__stepper-foot">
-                @if (stageSummary(); as cur) {
+                @if (quick.stageSummary(); as cur) {
                   <div class="qv__stage-meta">
                     @if (cur.scheduledAt) {
                       <span class="qv__stage-chip">
@@ -219,14 +221,14 @@
       <section class="qv__section qv__section--divided">
         <span class="qv__label">{{ t()('pipeline.quickview_comments') }}</span>
         <div class="qv__comments">
-          @if (commentsLoading()) {
+          @if (quick.commentsLoading()) {
             <p class="qv__hint">{{ t()('common.loading') }}</p>
-          } @else if (commentsError()) {
-            <p class="qv__error">{{ commentsError() }}</p>
-          } @else if (comments().length === 0) {
+          } @else if (quick.commentsError()) {
+            <p class="qv__error">{{ quick.commentsError() }}</p>
+          } @else if (quick.comments().length === 0) {
             <p class="qv__hint">{{ t()('pipeline.quickview_comments_empty') }}</p>
           } @else {
-            @for (c of comments(); track c.id) {
+            @for (c of quick.comments(); track c.id) {
               <div class="qv__comment">
                 <p class="qv__comment-text">{{ c.commentText }}</p>
                 <span class="qv__comment-time">{{ formatTimestamp(c.createdAt) }}</span>
@@ -237,10 +239,10 @@
         <textarea
           class="qv__comment-input"
           rows="2"
-          [ngModel]="commentText()"
-          (ngModelChange)="commentText.set($event)"
+          [ngModel]="quick.commentText()"
+          (ngModelChange)="quick.commentText.set($event)"
           [placeholder]="t()('pipeline.quickview_comment_placeholder')"
-          [disabled]="commentBusy()"
+          [disabled]="quick.commentBusy()"
         ></textarea>
       </section>
     </div>
@@ -253,7 +255,7 @@
       <button
         type="button"
         class="btn-primary"
-        [disabled]="commentBusy() || !commentText().trim()"
+        [disabled]="quick.commentBusy() || !quick.commentText().trim()"
         (click)="addComment()"
       >
         {{ t()('pipeline.quickview_add_comment') }}

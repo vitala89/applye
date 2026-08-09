@@ -4,7 +4,7 @@
       <button appButton variant="primary" size="sm" (click)="pasteJobModal.open()">
         {{ t()('actions.paste_job') }}
       </button>
-      <button appButton variant="secondary" size="sm" (click)="openImport()">
+      <button appButton variant="secondary" size="sm" (click)="importer.start()">
         <lucide-icon [img]="icons.upload" [size]="14" aria-hidden="true" />
         {{ t()('myjobs.import') }}
       </button>
@@ -16,12 +16,12 @@
       <lucide-icon [img]="icons.search" [size]="16" aria-hidden="true" />
       <input
         type="search"
-        [ngModel]="search()"
-        (ngModelChange)="search.set($event)"
+        [ngModel]="table.search()"
+        (ngModelChange)="table.search.set($event)"
         [placeholder]="t()('myjobs.search')"
       />
     </label>
-    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+    <select [ngModel]="table.statusFilter()" (ngModelChange)="table.statusFilter.set($event)">
       <option value="">{{ t()('myjobs.filter_status') }}</option>
       @for (s of statuses; track s) {
         <option [value]="s">{{ t()('status.' + s) }}</option>
@@ -30,12 +30,12 @@
     <label class="chip">
       <input
         type="checkbox"
-        [ngModel]="showAnalysed()"
-        (ngModelChange)="showAnalysed.set($event)"
+        [ngModel]="table.showAnalysed()"
+        (ngModelChange)="table.showAnalysed.set($event)"
       />
       {{ t()('myjobs.show_analysed') }}
     </label>
-    <select [ngModel]="legitFilter()" (ngModelChange)="legitFilter.set($event)">
+    <select [ngModel]="table.legitFilter()" (ngModelChange)="table.legitFilter.set($event)">
       <option value="">{{ t()('myjobs.filter_legit') }}</option>
       @for (l of legitimacies; track l) {
         <option [value]="l">{{ l }}</option>
@@ -46,17 +46,17 @@
       type="number"
       min="0"
       max="100"
-      [ngModel]="minScore()"
-      (ngModelChange)="minScore.set($event === '' || $event === null ? null : +$event)"
+      [ngModel]="table.minScore()"
+      (ngModelChange)="table.minScore.set($event === '' || $event === null ? null : +$event)"
       [placeholder]="t()('myjobs.col_score') + ' ≥'"
     />
   </div>
 
-  @if (loading()) {
+  @if (table.loading()) {
     <p class="myjobs__state">{{ t()('common.loading') }}</p>
-  } @else if (loadError()) {
+  } @else if (table.loadError()) {
     <p class="myjobs__state">{{ t()('common.error') }}</p>
-  } @else if (!jobsStore.overview().length) {
+  } @else if (table.isEmpty()) {
     <p class="myjobs__state">{{ t()('myjobs.empty') }}</p>
   } @else {
     <table class="myjobs__table">
@@ -74,11 +74,11 @@
             ];
             track c.k
           ) {
-            <th (click)="setSort($any(c.k))" [class.is-sorted]="sortKey() === c.k">
+            <th (click)="table.setSort($any(c.k))" [class.is-sorted]="table.sortKey() === c.k">
               <span>{{ t()(c.label) }}</span>
-              @if (sortKey() === c.k) {
+              @if (table.sortKey() === c.k) {
                 <lucide-icon
-                  [img]="sortDir() === 'asc' ? icons.up : icons.down"
+                  [img]="table.sortDir() === 'asc' ? icons.up : icons.down"
                   [size]="13"
                   aria-hidden="true"
                 />
@@ -89,7 +89,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (r of view(); track r.id) {
+        @for (r of table.view(); track r.id) {
           <tr (click)="open(r.id)" class="myjobs__row">
             <td class="cell-strong" [class.identity-unknown]="!r.company">
               {{ r.company || t()('jobs.company_unknown') }}
@@ -137,11 +137,11 @@
   }
 </div>
 
-@if (deleteTarget(); as target) {
+@if (table.deleteTarget(); as target) {
   <div
     class="modal-backdrop"
     (click)="onDeleteBackdropClick($event)"
-    (keydown.escape)="cancelDelete()"
+    (keydown.escape)="table.cancelDelete()"
     tabindex="-1"
     role="presentation"
   >
@@ -168,49 +168,57 @@
         </div>
       </div>
       <div class="modal__actions">
-        <button class="btn btn--secondary btn--md" [disabled]="deleting()" (click)="cancelDelete()">
+        <button
+          class="btn btn--secondary btn--md"
+          [disabled]="table.deleting()"
+          (click)="table.cancelDelete()"
+        >
           {{ t()('actions.cancel') }}
         </button>
-        <button class="btn btn--danger btn--md" [disabled]="deleting()" (click)="confirmDelete()">
-          {{ deleting() ? t()('common.loading') : t()('jobs.delete_confirm_btn') }}
+        <button
+          class="btn btn--danger btn--md"
+          [disabled]="table.deleting()"
+          (click)="confirmDelete()"
+        >
+          {{ table.deleting() ? t()('common.loading') : t()('jobs.delete_confirm_btn') }}
         </button>
       </div>
     </div>
   </div>
 }
 
-@if (importOpen()) {
+@if (importer.open()) {
   <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
        is the keyboard path, so the backdrop stays unfocusable. -->
   <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-  <div class="modal-backdrop" (click)="cancelImport()">
+  <div class="modal-backdrop" (click)="importer.cancel()">
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="modal modal--wide" (click)="$event.stopPropagation()">
       <h3>{{ t()('myjobs.import_title') }}</h3>
 
-      @if (importStep() === 'pick') {
+      @if (importer.step() === 'pick') {
         <p class="modal__hint">{{ t()('myjobs.import_hint') }}</p>
-        @if (importError()) {
-          <p class="modal__error">{{ importError() }}</p>
+        @if (importer.error()) {
+          <p class="modal__error">{{ importer.error() }}</p>
         }
         <div class="modal__actions">
-          <button class="btn-ghost" (click)="cancelImport()">{{ t()('actions.cancel') }}</button>
-          <button class="btn-primary" [disabled]="importBusy()" (click)="pickAndDetect()">
-            {{ importBusy() ? t()('myjobs.import_detecting') : t()('myjobs.import_pick_file') }}
+          <button class="btn-ghost" (click)="importer.cancel()">{{ t()('actions.cancel') }}</button>
+          <button class="btn-primary" [disabled]="importer.busy()" (click)="pickAndDetect()">
+            {{ importer.busy() ? t()('myjobs.import_detecting') : t()('myjobs.import_pick_file') }}
           </button>
         </div>
       }
 
-      @if (importStep() === 'preview') {
+      @if (importer.step() === 'preview') {
         <p class="modal__hint">{{ importSummary() }}</p>
 
-        @if (importSkipped().length) {
+        @if (importer.skipped().length) {
           <details class="import-skipped">
             <summary>
-              {{ t()('myjobs.import_skipped_summary') }} ({{ importSkipped().length }})
+              {{ t()('myjobs.import_skipped_summary') }} ({{ importer.skipped().length }})
             </summary>
             <ul>
-              @for (s of importSkipped(); track s.row) {
+              @for (s of importer.skipped(); track s.row) {
                 <li>Row {{ s.row }}: {{ s.reason }}</li>
               }
             </ul>
@@ -230,13 +238,13 @@
               </tr>
             </thead>
             <tbody>
-              @for (row of importRows(); track $index) {
+              @for (row of importer.rows(); track $index) {
                 <tr [class.import-row--dup]="row.isDuplicate">
                   <td>
                     <input
                       type="checkbox"
                       [ngModel]="row.selected"
-                      (ngModelChange)="setRowSelected($index, $event)"
+                      (ngModelChange)="importer.setRowSelected($index, $event)"
                     />
                   </td>
                   <td class="cell-strong">{{ row.company }}</td>
@@ -255,29 +263,31 @@
           </table>
         </div>
 
-        @if (importError()) {
-          <p class="modal__error">{{ importError() }}</p>
+        @if (importer.error()) {
+          <p class="modal__error">{{ importer.error() }}</p>
         }
         <div class="modal__actions">
-          <button class="btn-ghost" (click)="cancelImport()">{{ t()('actions.cancel') }}</button>
+          <button class="btn-ghost" (click)="importer.cancel()">{{ t()('actions.cancel') }}</button>
           <button
             class="btn-primary"
-            [disabled]="importBusy() || importSelectedCount() === 0"
+            [disabled]="importer.busy() || importer.selectedCount() === 0"
             (click)="confirmImport()"
           >
-            @if (importBusy()) {
+            @if (importer.busy()) {
               {{ t()('common.loading') }}
             } @else {
-              {{ t()('myjobs.import_confirm_btn') }} ({{ importSelectedCount() }})
+              {{ t()('myjobs.import_confirm_btn') }} ({{ importer.selectedCount() }})
             }
           </button>
         </div>
       }
 
-      @if (importStep() === 'done') {
+      @if (importer.step() === 'done') {
         <p class="modal__hint">{{ importDoneMsg() }}</p>
         <div class="modal__actions">
-          <button class="btn-primary" (click)="cancelImport()">{{ t()('actions.close') }}</button>
+          <button class="btn-primary" (click)="importer.cancel()">
+            {{ t()('actions.close') }}
+          </button>
         </div>
       }
     </div>

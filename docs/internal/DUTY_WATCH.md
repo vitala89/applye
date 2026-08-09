@@ -44,6 +44,77 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, My Jobs, two features in one class, and a count I reported wrong before checking it
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/my-jobs-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** fourth migration of this watch, after #402 merged as `ff546bb`. `my-jobs`, the first
+  multi-call entry.
+- **Completed:**
+  - `MyJobsStore` (127) and `TracklistImportStore` (167) in a new `libs/application/jobs/` area, two
+    stores rather than one because the page was two features.
+  - `tracklist-import.ts` beside them for the pure parsing and mapping.
+  - `job-overview-rows.{ts,spec.ts}` moved whole with `git mv`.
+  - `isEmpty` added deliberately: the empty state was asking "no jobs at all" where an empty `view`
+    means "the filters hid them", and those are different screens.
+  - The file dialog and the two English sentences deliberately left on the page.
+  - 29 new tests across three specs; `ADR-0005` amendment thirty-six; `CHANGELOG.md`,
+    `CURRENT_STATE.md`, count in four documents to 7.
+- **Not completed:** nothing in scope. PR not opened. The two hardcoded English strings remain a
+  filed defect.
+- **Files or packages changed:** `my-jobs.component.{ts,html}`, moved
+  `job-overview-rows.{ts,spec.ts}` into `libs/application/src/lib/jobs/`, new `my-jobs.store{,.spec}.ts`,
+  `tracklist-import{,.spec}.ts` and `tracklist-import.store{,.spec}.ts` there,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1487 / 129**, down six tests and one suite - the moved util spec.
+    `nx test application` **768 / 57**, up 35 from 733/53: the same six plus 29 new. **The two
+    numbers reconcile exactly**, which is the check that the move dropped nothing.
+  - `nx lint` caught two unused imports left by the move (`signal`, `SortKey`); cleared. Both
+    projects then 0 errors, 8 pre-existing warnings. `nx build desktop` succeeds.
+  - `quality:file-size`, `quality:attribution`, `format:check` (exit 0) and `git diff --check` pass.
+  - **Rendered check driven through the real controls** wherever one existed, not through the
+    signals: default view `[2, 1, 4]` with the unclaimed row hidden; the checkbox restoring it with
+    its dashed `ANALYSED` chip; the status filter selecting that pseudo-status; a padded wrong-case
+    search matching; a minimum score of 0 excluding the **unscored** row rather than treating null
+    as zero; the Score header sorting 44/82/91 both ways. Then both write paths failing for real
+    without Tauri: a failed delete **kept the confirmation open** and the page raised the real
+    message while the store stayed silent; a failed detect stayed on the pick step; `confirm()` with
+    nothing ticked returned `null` and said nothing.
+- **Privacy/security impact:** none. Same gateway calls, same AI call with the same settings-derived
+  language, nothing new stored or sent.
+- **Decisions and assumptions:** three at the grilling gate - two stores rather than one; the util
+  moves beside the store rather than into `libs/core`; the i18n defect is filed, not fixed. Two more
+  settled by looking: the file dialog stays on the page (no `libs/` file imports a Tauri plugin, and
+  `ProfilePhotoStore` set the shape), and the pure parsing goes beside the store.
+- **Risks or compatibility impact:** low. No behaviour change except `isEmpty`, which corrects a
+  message rather than altering a flow.
+- **Corrections:** I reported mid-session that the template shrank 285 -> 275. **That was wrong** - I
+  compared `wc -l` against the gate's non-empty count. It **grew 275 -> 285** non-empty lines,
+  because the `table.` and `importer.` prefixes make expressions long enough for prettier to wrap
+  them. Still under the 300 budget. Every remaining migration will pay the same few lines, which
+  matters for any template already at its budget.
+- **Open issues or blockers:**
+  - **New:** `importSummary` and `importDoneMsg` are hardcoded English beside a translated toast.
+  - `app.ts` injects the gateway outside the lint rule's `*.component.ts` glob (amendment
+    thirty-five).
+  - Health-icon colours; `en-GB` at five sites.
+  - Over budget: `tracker.component.scss` 455/400, `analytics.component.html` 426/300,
+    `first-launch.component.ts` 419/400.
+  - `PipelineStore.cards` deliberately not a signal.
+- **Next first action:** open the PR from `refactor/my-jobs-store`. Remaining 7: `profile` (483, 4),
+  `interview-prep-detail` (332, 8), `settings` (630, 6), `jobs` (1164, 8), `cover-letter-list`
+  (283, 10), `onboarding` (785, 12), `cv-list` (426, 16). **This session has now done four
+  migrations and its context is very long** - the next watch should start fresh, and `profile` is
+  the natural next entry.
+- **Evidence:** the reconciled counts (1487/129 against 768/57); the failed-delete confirmation
+  still open with the row still present; the default view `[2, 1, 4]`; `ADR-0005` amendment
+  thirty-six.
+
 ### 2026-08-10, the welcome screen, a store with no state, and a blank screenshot that was not a bug
 
 - **Status:** complete

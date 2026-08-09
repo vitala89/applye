@@ -31,7 +31,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/pages/documents/cv-list/cv-list.component.ts',
   '**/pages/interview-prep/interview-prep-detail/interview-prep-detail.component.ts',
   '**/pages/jobs/jobs.component.ts',
-  '**/pages/jobs/my-jobs.component.ts',
   '**/pages/profile/profile.component.ts',
   '**/pages/settings/settings.component.ts',
 ];

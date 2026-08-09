@@ -1,13 +1,13 @@
 <div class="pipeline">
-  @if (loading()) {
+  @if (board.loading()) {
     <div class="state-loading" aria-label="Loading pipeline">
       <div class="state-loading__bar state-loading__bar--wide"></div>
       <div class="state-loading__bar state-loading__bar--mid"></div>
       <div class="state-loading__bar state-loading__bar--short"></div>
     </div>
-  } @else if (error()) {
+  } @else if (board.error()) {
     <div class="state-error" role="alert">
-      <p class="state-error__msg">{{ t()('pipeline.loading') }} - {{ error() }}</p>
+      <p class="state-error__msg">{{ t()('pipeline.loading') }} - {{ board.error() }}</p>
       <button class="state-error__retry" (click)="reload()">{{ t()('common.retry') }}</button>
     </div>
   } @else {
@@ -17,15 +17,15 @@
         <lucide-icon [img]="icons.search" [size]="14" class="strip__search-icon" />
         <input
           type="text"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
+          [ngModel]="board.search()"
+          (ngModelChange)="board.search.set($event)"
           [placeholder]="t()('pipeline.search_placeholder')"
         />
-        @if (search()) {
+        @if (board.search()) {
           <button
             class="strip__search-clear"
             [attr.aria-label]="t()('actions.close')"
-            (click)="search.set('')"
+            (click)="board.search.set('')"
           >
             <lucide-icon [img]="icons.close" [size]="13" />
           </button>
@@ -33,18 +33,18 @@
       </div>
       <span class="strip__div"></span>
       <span class="strip__stat">
-        <b>{{ activeCount() }}</b> {{ t()('pipeline.active') }}
+        <b>{{ board.activeCount() }}</b> {{ t()('pipeline.active') }}
       </span>
-      @if (overdueCount() > 0) {
+      @if (board.overdueCount() > 0) {
         <span class="strip__div"></span>
         <span class="strip__overdue">
           <lucide-icon [img]="icons.alert" [size]="13" />
-          {{ overdueCount() }} {{ t()('pipeline.overdue') }}
+          {{ board.overdueCount() }} {{ t()('pipeline.overdue') }}
         </span>
       }
-      @if (search().trim()) {
+      @if (board.search().trim()) {
         <span class="strip__div"></span>
-        <span class="strip__match">{{ matchCount() }} {{ t()('pipeline.match') }}</span>
+        <span class="strip__match">{{ board.matchCount() }} {{ t()('pipeline.match') }}</span>
       }
       <span class="strip__spacer"></span>
     </div>
@@ -52,7 +52,7 @@
     <!-- board -->
     <div class="board" cdkDropListGroup>
       @for (col of COLS; track col.status) {
-        @if (col.terminal && isCollapsed(col.status)) {
+        @if (col.terminal && board.isCollapsed(col.status)) {
           <!-- collapsed archival rail -->
           <section
             class="rail"
@@ -60,25 +60,25 @@
             role="button"
             tabindex="0"
             [attr.title]="t()(col.labelKey)"
-            (click)="toggleCollapsed(col.status)"
-            (keydown.enter)="toggleCollapsed(col.status)"
+            (click)="board.toggleCollapsed(col.status)"
+            (keydown.enter)="board.toggleCollapsed(col.status)"
           >
             <span class="rail__dot"></span>
             <span class="rail__label">{{ t()(col.labelKey) }}</span>
-            <span class="rail__badge">{{ cards[col.status].length }}</span>
+            <span class="rail__badge">{{ board.cards[col.status].length }}</span>
           </section>
         } @else {
           <section class="col" [style.--col-accent]="col.accent">
             <header class="col__head">
               <span class="col__dot"></span>
               <span class="col__label">{{ t()(col.labelKey) }}</span>
-              <span class="col__badge">{{ visibleCards(col.status).length }}</span>
+              <span class="col__badge">{{ board.visibleCards(col.status).length }}</span>
               <span class="strip__spacer"></span>
               @if (col.terminal) {
                 <button
                   class="col__collapse"
                   [attr.aria-label]="t()(col.labelKey)"
-                  (click)="toggleCollapsed(col.status)"
+                  (click)="board.toggleCollapsed(col.status)"
                 >
                   <lucide-icon [img]="icons.chevron" [size]="15" />
                 </button>
@@ -87,18 +87,18 @@
             <div
               class="col__list"
               cdkDropList
-              [cdkDropListData]="cards[col.status]"
+              [cdkDropListData]="board.cards[col.status]"
               (cdkDropListDropped)="onDrop($event, col.status)"
             >
-              @for (card of visibleCards(col.status); track card.id) {
+              @for (card of board.visibleCards(col.status); track card.id) {
                 <article
                   class="card"
                   cdkDrag
                   role="button"
                   tabindex="0"
-                  (click)="openQuickView(card)"
-                  (keydown.enter)="openQuickView(card)"
-                  (keydown.space)="openQuickView(card)"
+                  (click)="board.openQuickView(card)"
+                  (keydown.enter)="board.openQuickView(card)"
+                  (keydown.space)="board.openQuickView(card)"
                 >
                   <div class="card__top">
                     <span class="card__mono">{{ initials(card.company) }}</span>
@@ -169,9 +169,9 @@
                   <div class="card__placeholder" *cdkDragPlaceholder></div>
                 </article>
               }
-              @if (visibleCards(col.status).length === 0) {
+              @if (board.visibleCards(col.status).length === 0) {
                 <div class="col__empty">
-                  {{ search().trim() ? t()('pipeline.no_match') : t()('common.drop_here') }}
+                  {{ board.search().trim() ? t()('pipeline.no_match') : t()('common.drop_here') }}
                 </div>
               }
             </div>
@@ -180,7 +180,7 @@
       }
     </div>
 
-    @if (totalCards() === 0) {
+    @if (board.totalCards() === 0) {
       <div class="state-empty pipeline__board-empty">
         <lucide-icon [img]="icons.empty" [size]="40" class="state-empty__icon" aria-hidden="true" />
         <p class="state-empty__msg">{{ t()('pipeline.empty') }}</p>
@@ -188,10 +188,10 @@
     }
   }
 </div>
-@if (selectedCard(); as card) {
+@if (board.selectedCard(); as card) {
   <app-quick-view-modal
     [card]="card"
-    (closed)="closeQuickView()"
+    (closed)="board.closeQuickView()"
     (statusChanged)="onModalStatusChanged($event)"
     (priorityChanged)="onModalPriorityChanged($event)"
     (stageAdded)="onModalStageAdded($event)"

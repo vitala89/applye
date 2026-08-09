@@ -50,7 +50,7 @@ Before a watch can be marked complete:
 - **Agent/tool:** Claude Code (Opus 5; triaged 4/10 for the investigation, re-triaged 5/10 for fix + test + deploy - radius 1, ambiguity 0, risk 2, verify 2, unknowns 0. Risk 2 because deployment is outward-facing. No subagents, no gate; the cause was measured rather than argued.)
 - **Branch:** `fix/ga4-datalayer-arguments`
 - **Commits:** `50ef823` (the fix and its tests), `b0e6cb1` (sitemap `lastmod` refreshed by the production build)
-- **Pull request:** none yet - see next first action
+- **Pull request:** [#387](https://github.com/vitala89/applye/pull/387), MERGEABLE. Its checks were queued at the time of writing; GitHub Actions on this repository fails within seconds on billing, which is why the deployment was manual.
 - **Objective:** answer whether applye.dev's empty GA4 property was a deliberate configuration or a fault, then fix it if it was a fault.
 
 - **The answer was a fault, in the code, and it had cost every hit since launch.** `AnalyticsService.load()` installed its shim as `(...args) => win.dataLayer?.push(args)`, pushing a plain array per command. gtag.js reads a queued command **only** as an `arguments` object and ignores anything else without a warning, so `js` and `config` never executed, no destination was configured, and no `/g/collect` request ever left the page.
@@ -66,7 +66,7 @@ Before a watch can be marked complete:
   - `prefer-rest-params` is disabled on exactly that line, with the reason above it, because obeying the rule is the bug. The redundant second disable that ESLint flagged was removed.
   - Docs: `CHANGELOG.md` under Unreleased/Fixed; `docs/internal/ANALYTICS_SETUP.md` gains a "When the tag is present and the property is still empty" section with the thirty-second `performance` check and the canonical probe, and its status block and stale "nothing is deployed" item are corrected.
 
-- **Not completed:** the branch is unpushed and no PR is open.
+- **Not completed:** nothing. The branch is pushed and #387 is open; only the merge itself is outstanding.
 
 - **Files changed:** `apps/web/src/app/analytics/analytics.service.ts`, `apps/web/src/app/analytics/analytics.spec.ts`, `apps/web/public/sitemap.xml`, `CHANGELOG.md`, `docs/internal/ANALYTICS_SETUP.md`.
 
@@ -84,7 +84,7 @@ Before a watch can be marked complete:
 
 - **Open issues:** three diagnostic events were sent to the production property while proving the cause - `claude_probe_cfg` landed, and `claude_probe_array` / `claude_probe_args` did not because they hit the broken path. They will appear in reports for that day and are not real traffic.
 
-- **Next first action:** push `fix/ga4-datalayer-arguments` and open the PR, so `main` carries what is already live. Then, once hits accumulate for a day: mark `download_click` as a key event, and define internal traffic plus switch that filter from Testing to **Active** - both were blocked on traffic that until now did not exist.
+- **Next first action:** merge #387, so `main` carries what is already live. Then, once hits accumulate for a day: mark `download_click` as a key event, and define internal traffic plus switch that filter from Testing to **Active** - both were blocked on traffic that until now did not exist.
 
 - **Evidence:** `50ef823`, `b0e6cb1`; deployment `e29e87e0.applye.pages.dev`; the live `/g/collect` hit quoted above.
 

@@ -1841,6 +1841,63 @@ preference cannot be saved** - which is the whole point of the silence.
 The component fell **426 -> 419** non-empty lines, still over its 400 budget and still allowed
 because it shrank. The store is 43.
 
+## Amendment thirty-six: one page, two features, two stores
+
+`my-jobs` is the first multi-call entry, and the first page that was plainly **two features in one
+class**: a sortable table over the local job overview, and the tracklist import wizard - eight
+signals, an AI call, JSON parsing and a three-step flow. Allowlist **8 -> 7**.
+
+**Two stores, not one.** A single store would have opened at roughly the 250 budget, and the table -
+which is read-only and costs nothing - would have carried a dependency on `AiService` it never uses.
+`MyJobsStore` is 127 lines, `TracklistImportStore` 167. The split is by feature, not by size: they
+share no state, and neither reads the other.
+
+**The rows stayed in `libs/data`.** `JobsStore` is the shared cache two screens read, and a copy in
+`libs/application` would be a second copy that could disagree with the first. The new store injects
+it and holds only what is true of _this_ screen. This is the first store here that depends on another
+store rather than on `DbService` directly, and it is the right direction: `application -> data`.
+
+**`isEmpty` is new, and it is a real distinction rather than a convenience.** The empty state asked
+`!jobsStore.overview().length`, which is "no jobs at all". Filtering to nothing is a different screen,
+and a user with 200 jobs and a typo in the search box must not be told they have none. Moving the
+state forced the question to be named; a passthrough would have hidden it.
+
+**Two things deliberately did not move, and both are precedents being applied rather than set.** The
+file dialog stays on the page: no file under `libs/` imports a Tauri plugin, and `ProfilePhotoStore`
+settled the shape already - the page picks a path, the store takes it from there, so `detect(path)`
+is the whole seam. And the two English sentences stay on the page, because they are text: the stores
+publish `total`, `willAdd`, `duplicates`, `skipped` and the result, and the page writes the words.
+They are **still hardcoded English next to a correctly translated toast**, unchanged by this
+migration and now filed as a defect. Moving them was not an option - a store that writes user-facing
+sentences is the thing this layer has refused since amendment one.
+
+`tracklist-import.ts` takes the pure parts: the code-fence strip, the parse that throws with a
+**truncated** excerpt of what came back, and the snake_case mapping. All three were previously
+unreachable without instantiating the component. The truncation is worth keeping deliberately - a
+parse failure with no sample is unactionable, and the whole response can be thousands of tokens.
+
+`job-overview-rows.{ts,spec.ts}` moved whole, `git mv`, the same way `dashboard.util.ts` did.
+
+**The test counts reconcile exactly, which is the check that the move lost nothing**: `desktop`
+1493 -> **1487**, six tests and one suite out; `application` 733 -> **768**, the same six back plus 29
+new.
+
+**Rendered check, driven through the real controls rather than the signals wherever one existed.**
+The default view drew `[2, 1, 4]` - newest first, with the unclaimed row hidden per ADR-0004. The
+"Show analysed" checkbox brought it back as a fourth row with its dashed `ANALYSED` chip; the status
+filter selected that pseudo-status like any other; a padded, wrong-case search matched; a minimum
+score of 0 excluded the **unscored** row rather than treating null as zero; and clicking the Score
+header twice sorted 44/82/91 up and down. Then the two write paths, both failing for real without
+Tauri: a failed delete **kept the confirmation open** - closing it would claim the row was gone while
+it is still there - and the page raised the real message while the store stayed silent; a failed
+detect stayed on the pick step with the error recorded; and `confirm()` with nothing ticked returned
+`null`, which is a refusal and says nothing.
+
+The component fell **334 -> 140** lines. The template **grew 275 -> 285** non-empty lines, still under
+its 300 budget: the `table.` and `importer.` prefixes make expressions long enough that prettier wraps
+them. Worth naming, because every remaining migration will pay the same few lines, and a template
+already at its budget will need a cut to absorb them.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1911,7 +1968,7 @@ because it shrank. The store is 43.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**8** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**7** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

@@ -170,7 +170,12 @@
   and the lint rule is about the gateway rather than about signals. Reading it found that **`app.ts`
   injects the gateway outside the rule's reach**, because the rule matches `*.component.ts`; the
   allowlist has been undercounting by one all along, and it is filed on the ADR checklist rather
-  than fixed inside a migration (amendment thirty-five).
+  than fixed inside a migration (amendment thirty-five). It is **7** now: My Jobs moved as **two**
+  stores, because it was two features - a table and a tracklist import wizard - and one store would
+  have opened at the 250 budget with the read-only table depending on `AiService`. The rows stayed in
+  `libs/data`, so this is the first store here that depends on another store rather than on the
+  gateway. Moving the state also forced a real distinction into the open: "no jobs at all" is a
+  different screen from "the filters hid them" (amendment thirty-six).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

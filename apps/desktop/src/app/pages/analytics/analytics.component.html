@@ -1,5 +1,5 @@
 <div class="analytics">
-  @if (loading()) {
+  @if (stats.loading()) {
     <!-- ============ SKELETON ============ -->
     <div class="ana-head">
       <div class="ana-skel ana-skel--caption"></div>
@@ -30,7 +30,7 @@
       <div class="ana-skel ana-skel--title"></div>
       <div class="ana-skel ana-skel--plot"></div>
     </section>
-  } @else if (state() === 'empty') {
+  } @else if (stats.state() === 'empty') {
     <!-- ============ EMPTY ============ -->
     <div class="ana-empty">
       <span class="ana-empty__icon"

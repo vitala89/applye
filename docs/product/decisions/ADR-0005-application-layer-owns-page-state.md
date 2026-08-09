@@ -1734,6 +1734,56 @@ numbers. A reload with the preference set drew the rail at first paint.
 
 The component fell **232 -> 203** lines; the store is 67.
 
+## Amendment thirty-four: the page where almost nothing was allowed to move
+
+`analytics` is the first entry whose domain math was **already** in `libs/core`. `computeAnalytics`
+has lived there with its own spec since the feature shipped, so the store's whole job is to own its
+two inputs - the facts and the period - and hand back the `AnalyticsView`. Allowlist **10 -> 9**.
+
+**Ten computeds stayed on the page, and that is the correct outcome, not a shortfall.** `tiles`,
+`stages`, `leakage`, `scoreDist`, `scoreOutcome`, `timeToResponse`, `aging`, `locations`, `caption`
+and `segments` all turn view data into words: KPI labels, stage names, bucket captions, the leakage
+sentence, outcome group names. A migration is not measured by how much moves. Here the honest split
+puts about 200 lines of translation on the page and 80 in the store, and a bigger store would only
+have been a store that translates.
+
+**`now` is stamped at load instead of read inside the view.** The page called
+`computeAnalytics(f, period, new Date())` **inside a computed**, so the window boundary was re-read
+on every recompute - including every period switch. Nothing visible fails from that, which is why it
+survived: a 30d window measured a few seconds later than the 90d one it is compared against is not
+something a gate, a test or a screenshot can catch. `DashboardStore` had already answered this
+question the other way, and two stores disagreeing about what "now" means is worse than either
+answer. A store test asserts `now` is unchanged across two period switches, which is the assertion
+that fails if it ever goes back.
+
+**`analytics-view.ts` takes the sparkline geometry.** The `pts()` closure inside `trend` was the only
+arithmetic on the page that is neither domain math nor translation, and it was untestable without
+instantiating the component. It is now `polylinePoints(values, yMax)` and `areaPoints(line)`, seven
+tests, including that two series scale against a **shared** `yMax` so the followups line stays
+comparable with the applications line. The Intl date formatting stays on the page - it depends on the
+active locale, and locale is the page's.
+
+One deliberate difference from the code it replaces: `polylinePoints` guards `yMax === 0`, which the
+original did not. It is unreachable, because `computeAnalytics` floors `yMax` at 1 - but the function
+is now callable without that guarantee, and the failure mode without the guard is `NaN` inside a
+`points` attribute, which renders as nothing rather than as an error. The guard is documented as a
+guard, not as a fix.
+
+**Rendered check, in three parts, because the missing Tauri context only covers one of them.** The
+failure path came free: `error` held the real message, empty facts were installed, the empty state
+rendered rather than a blank page, and the page's own toast read `Could not load analytics` - the
+store silent, the page speaking, which is the split the contract asks for. The toast was **absent
+from the first DOM read**, the one-cycle lag this campaign has now hit twice. Then facts were pushed
+straight into the store's signal to check the geometry with data: 13 points spanning x=0 to x=100,
+monotonic, y between the 3 top inset and the 39 baseline, five peaks at the inset, the area closing
+on the baseline, and the DOM `polyline` carrying exactly the computed string. Last, the decision
+itself: `now` read identical across `90d -> 30d -> all`, while the buckets changed from 13 weekly to
+30 daily and the KPI moved 5 -> 3 -> 5.
+
+The component fell **297 -> 268** lines; the store is 80 and the geometry module 49. The template is
+**426/300** and untouched - pre-existing debt the ratchet allows because it did not grow, and the
+next change that touches it must cut.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1804,7 +1854,7 @@ The component fell **232 -> 203** lines; the store is 67.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**10** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**9** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

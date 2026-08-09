@@ -160,7 +160,12 @@
   the sidebar indicator it fed left the template, so it was deleted rather than migrated. The store
   reads the stored UI language and the shell applies it, because `setLocale` is an i18n side effect
   this layer does not perform; the sidebar rail preference moved with its `localStorage`
-  persistence, the first browser storage in `libs/application` (amendment thirty-three).
+  persistence, the first browser storage in `libs/application` (amendment thirty-three). It is **9**
+  now: analytics moved, and it is the first page whose domain math was already down in `libs/core`,
+  so the store owns only the facts and the period while ten translated computeds stayed put. The
+  migration fixed a real defect on the way: `computeAnalytics` was called with `new Date()` **inside**
+  a computed, so the window boundary was re-read on every period switch - `now` is stamped at load
+  now, as `DashboardStore` already did (amendment thirty-four).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

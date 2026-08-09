@@ -1,15 +1,7 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ListOrdered, MoreHorizontal, LucideAngularModule, Target, Trash2 } from 'lucide-angular';
-import { PipelineCard } from '@applye/core';
-import { DbService } from '@applye/data';
+import { InterviewPrepStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../core/toast/toast.service';
@@ -17,20 +9,25 @@ import { ToastService } from '../../core/toast/toast.service';
 // Interview Prep list: every application that has at least one stage,
 // sorted soonest-upcoming first. CRUD home for stages - the Pipeline board
 // and its quick-view only show a read-only summary and link here.
+//
+// The list, the row menu and the delete confirmation are `InterviewPrepStore`'s
+// (ADR-0005, amendment twenty-nine). What stays here is what the store is not
+// allowed to do: navigate, translate, and toast.
 @Component({
   selector: 'app-interview-prep',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonDirective, LucideAngularModule],
+  providers: [InterviewPrepStore],
   templateUrl: './interview-prep.component.html',
   styleUrl: './interview-prep.component.scss',
 })
 export class InterviewPrepComponent implements OnInit {
-  private readonly db = inject(DbService);
   private readonly router = inject(Router);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
+  protected readonly prep = inject(InterviewPrepStore);
 
   protected readonly icons = {
     menu: MoreHorizontal,
@@ -39,52 +36,8 @@ export class InterviewPrepComponent implements OnInit {
     empty: Target,
   };
 
-  private readonly cards = signal<PipelineCard[]>([]);
-  readonly loading = signal(true);
-  readonly menuId = signal<number | null>(null);
-  readonly confirmId = signal<number | null>(null);
-  readonly removing = signal(false);
-
-  readonly rows = computed(() =>
-    this.cards()
-      .filter((c) => c.currentStageOrder != null)
-      .sort((a, b) => {
-        const aAt = a.currentStageScheduledAt;
-        const bAt = b.currentStageScheduledAt;
-        if (!aAt && !bAt) return 0;
-        if (!aAt) return 1;
-        if (!bAt) return -1;
-        return aAt.localeCompare(bAt);
-      }),
-  );
-
-  readonly stats = computed(() => {
-    const rows = this.rows();
-    const upcoming = rows.filter((r) => r.currentStageStatus === 'scheduled');
-    const next = upcoming.find((r) => r.currentStageScheduledAt);
-    return {
-      tracking: rows.length,
-      upcoming: upcoming.length,
-      nextDate: next ? this.formatDate(next.currentStageScheduledAt) : '·',
-      nextCompany: next?.company ?? '',
-    };
-  });
-
-  readonly confirmRow = computed(() => this.rows().find((r) => r.id === this.confirmId()) ?? null);
-
   async ngOnInit(): Promise<void> {
-    await this.load();
-  }
-
-  private async load(): Promise<void> {
-    this.loading.set(true);
-    try {
-      this.cards.set(await this.db.listPipelineCards());
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.loading.set(false);
-    }
+    if (!(await this.prep.load())) this.toast.error(this.prep.error());
   }
 
   open(applicationId: number): void {
@@ -94,59 +47,36 @@ export class InterviewPrepComponent implements OnInit {
   /** Same destination as clicking the row, reached from inside the row menu. */
   openFromMenu(applicationId: number, event: Event): void {
     event.stopPropagation();
-    this.menuId.set(null);
+    this.prep.closeMenus();
     this.open(applicationId);
   }
 
   toggleMenu(id: number, event: Event): void {
     event.stopPropagation();
-    this.menuId.update((m) => (m === id ? null : id));
-  }
-  closeMenus(): void {
-    this.menuId.set(null);
+    this.prep.toggleMenu(id);
   }
 
   askRemove(id: number, event: Event): void {
     event.stopPropagation();
-    this.menuId.set(null);
-    this.confirmId.set(id);
-  }
-  cancelRemove(): void {
-    this.confirmId.set(null);
+    this.prep.askRemove(id);
   }
 
   /** Remove an application from Interview Prep = delete every stage it has.
    * The application/job itself stays in My Jobs and Pipeline. */
   async confirmRemove(): Promise<void> {
-    const id = this.confirmId();
-    if (id == null || this.removing()) return;
-    this.removing.set(true);
-    try {
-      const stages = await this.db.listInterviewStages(id);
-      await Promise.all(stages.map((s) => this.db.deleteInterviewStage(s.id)));
-      this.cards.update((cs) =>
-        cs.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                currentStageOrder: undefined,
-                currentStageLabel: undefined,
-                currentStageStatus: undefined,
-                currentStageScheduledAt: undefined,
-              }
-            : c,
-        ),
-      );
+    if (await this.prep.confirmRemove()) {
       this.toast.success(this.t()('interview.removed'));
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.removing.set(false);
-      this.confirmId.set(null);
+      return;
     }
+    // Empty when the store refused rather than failed - nothing confirmed, or a
+    // removal already running. Nothing to tell the user in that case.
+    const message = this.prep.error();
+    if (message) this.toast.error(message);
   }
 
-  formatDate(iso?: string): string {
+  /** Presentation, and therefore the page's: the store keeps `nextAt` as the
+   * stored ISO string and this turns it into something readable. */
+  formatDate(iso?: string | null): string {
     if (!iso) return '·';
     return new Date(iso).toLocaleDateString('en-GB', {
       day: '2-digit',

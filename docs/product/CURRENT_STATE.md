@@ -144,7 +144,10 @@
   value it renders (amendment twenty-eight). It is **14** now: `interview-prep`'s list page moved
   whole - cards, computeds, row menu and delete confirmation - and its store keeps an `error` signal
   because the first draft's bare `catch` would have silently downgraded the page's toast from the
-  real failure to a generic one (amendment twenty-nine).
+  real failure to a generic one (amendment twenty-nine). It is **13** now: the Kanban board moved,
+  and it is the first store here whose principal data is **not** a signal - `cards` stays a mutable
+  record because CDK's drag-drop mutates the arrays it is handed, and converting that is its own
+  decision with its own risk rather than a side effect of a migration (amendment thirty).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

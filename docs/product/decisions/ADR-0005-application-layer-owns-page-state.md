@@ -1677,6 +1677,63 @@ copy and working actions while reading store data, and the greeting still transl
 
 The component fell **449 -> 314** lines as a side effect.
 
+## Amendment thirty-three: one call, and the dead state behind it
+
+`shell-layout` had a single gateway call, which made it look like the cheapest entry left. The call
+itself was small. What it was carrying was not. Allowlist **11 -> 10**.
+
+**Half the call was feeding state nothing read.** `ngOnInit` read the settings row and did two things
+with it: applied `uiLanguage`, and set an `aiMode` signal. `aiMode` was written and never read - not
+in the template, not in any other file, only in the spec's `getSettings` mock. `git log -S` named the
+commit that introduced it, `af4a90a fix(sidebar): de-animate AI status indicator, show real mode`, and
+the indicator it fed left the template afterwards. It is **deleted, not moved**. A migration that
+moves dead state publishes it in the layer's public API and then owes it a test; the grep that finds
+it costs one command, and it is worth running on every remaining entry.
+
+**The store does not apply the locale, and that is the whole shape of the decision.** With `aiMode`
+gone, the only value the database supplies is `uiLanguage`, and its only use is `i18n.setLocale` - a
+side effect this layer has refused since the first migration. Three shapes were on the table: the
+store exposes the preference and the shell applies it; the shell stops owning locale bootstrap at all,
+since `settings.component.ts` already calls `setLocale` itself; or the store takes the setter as an
+argument, the way `CvPrintStore` takes its normalizer. The third is the disguise amendment
+thirty-two named, offered again in a smaller package, and it was refused again for the same reason:
+passing a side effect in as a parameter does not make it state. The first was taken.
+
+**`sidebarCollapsed` moved, and it is the first `localStorage` access in `libs/application`.** The
+alternative reading was that browser storage belongs with the DOM exclusions - `document.fonts`,
+`document.body` - that this layer has kept out. It does not: a rail preference is screen state that
+happens to outlive the session, and the store reads it at construction, which is what makes it correct
+at first paint rather than a frame later. A storage token was considered and rejected: a new symbol in
+the layer's public API to abstract one boolean is not a trade worth making. `globalThis.localStorage?`
+stays optional-chained, so a non-browser environment falls through to the default rather than throwing.
+
+**`load()` returns a boolean and keeps an `error` signal that nothing reads.** The shell says nothing
+on a failed settings read - it keeps `en` and dark, and always has. Recording the failure anyway costs
+one signal and keeps the refusal-versus-failure distinction testable, which is rule three of the
+contract; the alternative, a `void` load, would have made a failed read indistinguishable from a
+successful one inside the layer.
+
+Nothing else moved, and the list is longer than what did: the resume affordance is computed from three
+of the app's own services, the page title and active route come from the router, the two activity-key
+maps are translations, the traffic-light inset is a platform probe, and the theme is the app's
+`ThemeService`.
+
+**The component spec needed no change at all** - the first time in this campaign. It stubs `DbService`
+at the `TestBed` level, and the component-scoped store resolves it through the same injector chain, so
+the badge spec kept its stub and its assertions untouched. Eight store tests are the only addition;
+`application` goes 706/49 to **714/50** while `desktop` stays at **1493/130**.
+
+**Rendered check, and the absence of Tauri did the work.** In the browser the settings read fails,
+which is the failure path for free: `error` carried the real message, `uiLanguage` stayed null, the
+shell kept English, and the console stayed empty - the silence is deliberate, not a swallowed bug. The
+rail then measured **240 -> 64** with labels hidden and icons kept, and back; `localStorage` read `1`
+then `0`. **The first width reading was wrong and looked right**: 240 in all three states, taken
+mid-transition, exactly the trap amendments twenty-three and twenty-eight describe, and the sidebar's
+own `width 0.14s` is what caused it. Setting `transition: none` before measuring produced the real
+numbers. A reload with the preference set drew the rail at first paint.
+
+The component fell **232 -> 203** lines; the store is 67.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1747,7 +1804,7 @@ The component fell **449 -> 314** lines as a side effect.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**11** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**10** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

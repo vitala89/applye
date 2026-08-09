@@ -26,8 +26,14 @@ events carry parameters we never declared. Everything is explicit instead.
 ## Current status
 
 As of 2026-07-26 the property and the `applye.dev` web stream exist. Measurement
-ID `G-ZY158GV42C`, stream ID `15328752672`. Nothing is being collected yet: the
-ID is not set on any deployment, and no deployment exists.
+ID `G-ZY158GV42C`, stream ID `15328752672`.
+
+**2026-08-09: the property was still receiving nothing, and the cause was in the
+code, not in the configuration.** The site was deployed with the real ID and the
+tag loaded correctly, so Google's own settings page reported the tag as present -
+while the stream reported "data collection isn't active on your website". See
+"When the tag is present and the property is still empty" below. Fixed; the first
+hits are expected from the deployment that carries that fix.
 
 **The GA4 property is fully configured.** Stream created, Enhanced measurement
 off, Google signals off, all four account data-sharing options unticked, data
@@ -37,11 +43,11 @@ which that can be done correctly.
 
 Outstanding:
 
-1. The Cloudflare and GitHub setup under "Cloudflare Pages" below. Nothing is
-   deployed, so the property is still receiving nothing.
-2. `download_click` as a key event, and the internal-traffic filter. Both are
-   impossible until events start arriving, so they come after the first deploy.
-3. Optionally, the DPA contact and legal-entity fields ("Изменить сведения DPA"),
+1. `download_click` as a key event, and the internal-traffic filter. Both are
+   impossible until events start arriving, so they wait on the first hits landing
+   from the 2026-08-09 fix rather than on a deployment - the site has been live
+   since 2026-07-29.
+2. Optionally, the DPA contact and legal-entity fields ("Изменить сведения DPA"),
    which are blank by default. The agreement is in force either way.
 
 ## Creating the property
@@ -223,6 +229,61 @@ move together, exactly as they do for the GA4 event list.
 Consequence for Phase 4: a Content-Security-Policy, when one is finally
 measured rather than guessed, has to allow `static.cloudflareinsights.com`
 alongside the googletagmanager origin.
+
+## When the tag is present and the property is still empty
+
+This happened on 2026-08-09 and cost every hit between launch and that date. It
+is worth reading before touching `analytics.service.ts`, because the failure is
+invisible from every instrument this repository has.
+
+**The rule:** gtag.js reads a queued command only when the pushed value is an
+`arguments` object. `dataLayer.push(['config', id])` - a plain array - is not a
+command, and is ignored without a warning. That is why Google's snippet uses
+`function gtag(){dataLayer.push(arguments)}` rather than a modern rest-parameter
+arrow function, and why `installGtag()` in `analytics.service.ts` disables
+`prefer-rest-params` on that line instead of obeying it.
+
+**What the broken state looks like**, all of it reassuring and all of it wrong:
+
+- the `googletagmanager.com/gtag/js?id=G-...` script is in the DOM and returns 200;
+- `window.gtag` is a function and `window.dataLayer` grows with every event;
+- `window.google_tag_manager['G-...']` exists - it is created from the script's
+  own URL, not from a `config` command, so its presence proves nothing;
+- no console error, no CSP violation, no failed request;
+- GA4 says "data collection isn't active on your website", which reads like a
+  missing tag rather than a present and mute one.
+
+**How to check in thirty seconds**, from the site with analytics consent granted:
+
+```js
+performance
+  .getEntriesByType('resource')
+  .map((e) => e.name)
+  .filter((n) => /collect/.test(n));
+```
+
+An empty array means nothing is being sent, whatever else the page shows. A
+working page lists a `region1.google-analytics.com/g/collect?...` entry within a
+second or two of any event. To prove the property itself is fine, push one
+command the canonical way and watch the same list:
+
+```js
+function g() {
+  dataLayer.push(arguments);
+}
+g('js', new Date());
+g('config', 'G-ZY158GV42C', { send_page_view: false });
+g('event', 'debug_probe');
+```
+
+A hit appearing there while the site's own events produce none puts the fault in
+the shim, not in GA4, the network, consent, or an ad blocker.
+
+**Note the blast radius before assuming a filter.** Two configuration causes
+produce a similar "no data" reading and are worth ruling out second: an internal
+traffic filter switched to Active while your own IP is defined as internal, and
+the consent gate itself, which makes every visitor who declines or ignores the
+banner invisible by design.
 
 ## Campaign tagging
 

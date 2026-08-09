@@ -14,9 +14,9 @@ import {
 } from './events';
 import { GA_MEASUREMENT_ID } from './measurement-id';
 
-type Gtag = (...args: unknown[]) => void;
+export type Gtag = (...args: unknown[]) => void;
 
-interface GtagWindow extends Window {
+export interface GtagWindow extends Window {
   dataLayer?: unknown[];
   gtag?: Gtag;
 }
@@ -135,11 +135,7 @@ export class AnalyticsService {
     const win = this.doc.defaultView as GtagWindow | null;
     if (!win) return;
 
-    win.dataLayer = win.dataLayer ?? [];
-    const gtag: Gtag = (...args: unknown[]) => {
-      win.dataLayer?.push(args);
-    };
-    win.gtag = gtag;
+    const gtag = installGtag(win);
 
     const script = this.doc.createElement('script');
     script.async = true;
@@ -162,6 +158,31 @@ export class AnalyticsService {
     if (!this.isBrowser || !this.consent.granted()) return undefined;
     return (this.doc.defaultView as GtagWindow | null)?.gtag;
   }
+}
+
+/**
+ * Installs the `gtag` shim and returns it.
+ *
+ * `dataLayer.push(arguments)` is load-bearing, not a stylistic copy of Google's
+ * snippet. gtag.js reads a queued command only when the pushed value is an
+ * `arguments` object; a plain array is not recognised as a command and is
+ * silently ignored. Shipping the array form cost the property every hit between
+ * launch and 2026-08-09: the script loaded, `window.gtag` existed, the container
+ * registered under the measurement ID, `dataLayer` filled up - and `js` and
+ * `config` never ran, so no destination was ever configured and not one
+ * `/g/collect` request left the page. The failure is invisible from the console:
+ * nothing throws, nothing warns, and GA4 simply reports "data collection isn't
+ * active". Hence the rest-parameter lint rule is disabled here rather than
+ * obeyed, and a test pins the pushed value's type.
+ */
+export function installGtag(win: GtagWindow): Gtag {
+  win.dataLayer = win.dataLayer ?? [];
+  function gtag(): void {
+    // eslint-disable-next-line prefer-rest-params
+    win.dataLayer?.push(arguments);
+  }
+  win.gtag = gtag as Gtag;
+  return gtag as Gtag;
 }
 
 /** Bare host of a URL, so reports group by destination rather than by query string. */

@@ -124,7 +124,11 @@
   debounced ATS check; `CoverLetterDocumentStore` (557 -> 517) the row and the save; `CoverLetterAiStore`
   (517 -> 405) both AI paths. The page injects neither `DbService` nor `AiService`, so its allowlist
   line is deleted: **COMPONENTS_STILL_USING_THE_GATEWAY is 22**, from 26 at the start of the campaign.
-  The rule was probed both ways - it errors on the injection, it is silent without it.
+  The rule was probed both ways - it errors on the injection, it is silent without it. It is **20**
+  now: `onboarding-banner` migrated to `OnboardingBannerStore`, the first store in a new
+  `libs/application/onboarding/` area, and `paste-job-modal` turned out to inject the gateway without
+  ever calling it - so one of the 22 was never a migration (ADR-0005, amendment twenty-five). Three
+  other documents recorded the list as 26 long after it was 22; all four now say 20.
 - **`cover-letter-detail.component.ts` is now 337/400 - under budget**, and the template is
   **669 -> 491/300**. The Style card and the per-block style popover became
   `cover-letter-style-card/` and `cover-letter-style-popover/`.

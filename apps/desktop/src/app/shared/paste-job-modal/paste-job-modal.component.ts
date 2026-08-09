@@ -10,7 +10,7 @@ import {
   LucideAngularModule,
   X,
 } from 'lucide-angular';
-import { DbService, JobSourceService } from '@applye/data';
+import { JobSourceService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
@@ -66,7 +66,6 @@ function looksLikeJobDescription(text: string): boolean {
   styleUrl: './paste-job-modal.component.scss',
 })
 export class PasteJobModalComponent {
-  private readonly db = inject(DbService);
   private readonly source = inject(JobSourceService);
   private readonly router = inject(Router);
   private readonly identity = inject(JobIdentityResolverService);

@@ -68,7 +68,7 @@ describe('TrackerExportModalComponent', () => {
     fixture.componentInstance.closed.subscribe(closed);
 
     (fixture.nativeElement.querySelector('.jt-modal') as HTMLElement).click();
-    (fixture.nativeElement.querySelector('.jt-icon') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('.jt-modal__head button') as HTMLElement).click();
 
     expect(closed).toHaveBeenCalledTimes(2);
   });

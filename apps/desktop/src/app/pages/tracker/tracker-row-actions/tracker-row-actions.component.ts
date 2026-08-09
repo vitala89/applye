@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { Check, LucideAngularModule, MoreHorizontal, X } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 
 /**
  * The last cell of a tracker row: save/cancel while the row is being edited,
@@ -18,7 +19,7 @@ import { TranslateService } from '@applye/i18n';
   selector: 'app-tracker-row-actions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule],
+  imports: [ButtonDirective, LucideAngularModule],
   templateUrl: './tracker-row-actions.component.html',
   styleUrl: './tracker-row-actions.component.scss',
 })

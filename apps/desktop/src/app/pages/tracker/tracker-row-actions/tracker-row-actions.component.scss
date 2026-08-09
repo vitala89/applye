@@ -1,53 +1,9 @@
-/* Moved verbatim from `tracker.component.scss` with the row's action cell
-   (ADR-0005, amendment twenty-two). `.jt-actbtns`, `.jt-menu` and the 30x30
-   kebab override travel together with the markup they style, so the descendant
-   selector `.jt-menu .jt-icon` keeps working here - unlike the `.ip__pop` case
-   in amendment sixteen, its ancestor came along.
+/* What is left after the fold: two layout wrappers and nothing else.
+   `.jt-icon` and its three variants are gone - the buttons are
+   `appButton size="icon"` now, and the shapes that made them local went with
+   them: the kebab's 30x30/radius-7 override, the 24px `--sm`, and the
+   indigo-400 fill (ADR-0005, amendment twenty-three). */
 
-   `.jt-icon` and its two modifiers are still the page's shape, copied into
-   three components now; the fold onto `appButton size="icon"` deletes all of
-   them at once, which is the pull request this cut exists to unblock. `--sm` is
-   carried here as dead weight on purpose: the column drawer is its only user,
-   and keeping the three copies identical is what makes that fold a deletion. */
-
-/* ---------------- icons / row menu ---------------- */
-.jt-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-input);
-  border: var(--border-width) solid transparent;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  &:hover {
-    color: var(--text-primary);
-    background: var(--surface-hover);
-  }
-  &.is-open {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-}
-.jt-icon--primary {
-  background: var(--text-accent);
-  color: #fff;
-  border-color: var(--text-accent);
-  &:hover {
-    color: #fff;
-    background: var(--text-accent);
-    filter: brightness(1.08);
-  }
-}
-.jt-icon--sm {
-  width: 24px;
-  height: 24px;
-}
 .jt-actbtns {
   display: flex;
   gap: var(--space-1);
@@ -56,13 +12,11 @@
   position: relative;
   display: inline-block;
 }
-/* kebab trigger, per the row-actions spec: 30x30, radius 7 */
-.jt-menu .jt-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-}
 
+/* Kept for the reason amendment twenty-one names: the page writes this rule
+   with a bare `*`, which encapsulation scopes to the page's own elements. The
+   design-system button carries a background transition, so without a copy here
+   these controls would animate for a user who asked them not to. */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { FileCheck2, FileDown, Info, LucideAngularModule, Table, X } from 'lucide-angular';
 import { TrackerColumnsStore, TrackerReportStore, TrackerRowsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { trackerColumnLabel } from '../tracker-column-label';
 import { TrackerReportComponent } from '../tracker-report.component';
@@ -31,7 +32,7 @@ import { TrackerReportComponent } from '../tracker-report.component';
   selector: 'app-tracker-export-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
+  imports: [ButtonDirective, FormsModule, LucideAngularModule, TrackerReportComponent],
   templateUrl: './tracker-export-modal.component.html',
   styleUrl: './tracker-export-modal.component.scss',
 })

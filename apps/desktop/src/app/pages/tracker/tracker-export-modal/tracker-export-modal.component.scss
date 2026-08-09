@@ -149,35 +149,9 @@
   }
 }
 
-/* COPIED, and deliberately temporary: `.jt-icon` still has five other call
-   sites in the page and in the drawer, and component styles are encapsulated,
-   so this dialog cannot inherit the page's copy. The very next pull request
-   folds every `.jt-icon` onto `appButton size="icon"`, which deletes this block
-   and its siblings together (ADR-0005, amendment twenty). Copied verbatim so
-   that fold stays a deletion rather than a reconciliation. */
-.jt-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-input);
-  border: var(--border-width) solid transparent;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  &:hover {
-    color: var(--text-primary);
-    background: var(--surface-hover);
-  }
-  &.is-open {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-}
+/* The `.jt-icon` copy that stood here is gone: the close button is
+   `appButton size="icon" variant="ghost"` now (ADR-0005, amendment
+   twenty-three). */
 
 @keyframes jtIn {
   from {

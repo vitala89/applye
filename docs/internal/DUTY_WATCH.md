@@ -44,6 +44,70 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the print windows, and the duplicate that only showed once the state left
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/print-window-stores`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** continue the allowlist after #393 landed (`main` at `2ef76c0`), taking the two
+  print-window components. `profile-photo` was deliberately left for its own pull request: it
+  carries a `linkedSignal` constraint the print pair does not.
+- **Completed:**
+  - `CvPrintStore` and `CoverLetterPrintStore` in `libs/application/documents/`, owning the render
+    signals, the load and `notifyReady()`. Both return `false` on a missing row rather than
+    throwing, preserving the blank-window-and-timeout behaviour.
+  - **Deduplicated `signalReady()`**, which was byte-identical in both components including its
+    comment. Now `awaitPrintSettle()` in the app, **not** beside the stores: every line of it
+    touches `document.fonts` or `document.body`, and that would have been the first DOM access in
+    the application layer.
+  - `normalizeCvContent` passed into `CvPrintStore.load`, following `CvDocumentStore`'s existing
+    `CvContentNormalizer` precedent rather than moving a 652-line util 25 files import.
+  - Sixteen store tests plus two on the settle.
+  - `ADR-0005` amendment twenty-seven; `CHANGELOG.md`, `CURRENT_STATE.md`, and the count in
+    `CLAUDE.md`, `AGENTS.md`, `AGENT_START_HERE.md` all to 16.
+- **Not completed:** `profile-photo` - deliberately deferred to its own PR, as decided at the gate.
+- **Files or packages changed:** `cv-print.component.ts`, `cover-letter-print.component.ts` and its
+  spec, new `print-settle.util.{ts,spec.ts}`, new
+  `libs/application/src/lib/documents/{cv-print,cover-letter-print}.store{,.spec}.ts`,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1509 passed / 131 suites**, up 2 from 1507 - the settle spec.
+  - `nx test application` **608 passed / 41 suites**, up from 592/39.
+  - **A real failure was hit and fixed rather than worked around.** The existing
+    `cover-letter-print.component.spec.ts` asserted `componentInstance.loaded()` and
+    `.content()`, which had moved to the store: 2 tests failed with
+    `fixture.componentInstance.loaded is not a function`. The spec now reads the store through
+    `fixture.debugElement.injector.get(...)`, because these stores are component-scoped. The
+    assertions were kept, not weakened.
+  - `nx lint desktop` **0 errors** (8 pre-existing warnings), `nx lint application` clean,
+    `nx build desktop` succeeds, `quality:file-size`, `quality:attribution`, `format:check`,
+    `git diff --check` all pass.
+  - **Rendered check run, and honestly measurable this time**: both print routes render at
+    **793.7 x 1143.9** - A4 at 96dpi, 210mm exactly - fed from their stores, with each component
+    down to `route` plus a store and no `db`. The cover letter rendered **`09.08.2026`** from
+    `language: 'de'`, which is the drift its own comment warns about. `document.body` measures 0
+    because a print route has no shell layout; that is what a print window is, not a defect.
+- **Privacy/security impact:** none. Same two calls per window, one layer down.
+- **Decisions and assumptions:** three, taken at the grilling gate:
+  1. Store owns the load; a shared **app** helper owns the settle, because the settle is DOM.
+  2. `profile-photo` ships separately - its `uri` is a `linkedSignal` on a required input, which a
+     store cannot derive, and that decision deserves its own review.
+  3. The normalizer is passed in, not moved.
+- **Risks or compatibility impact:** the PDF export is the one path here that cannot be exercised
+  outside a real Tauri window. What was verified instead: both previews render A4 from their stores,
+  the settle marks the body printable, and `notifyReady` is called only after a successful load.
+- **Open issues or blockers:**
+  - The health-icon colour defect from the previous watch is still filed and unfixed.
+  - `tracker.component.scss` still **455/400**, untouched.
+- **Next first action:** open the PR from `refactor/print-window-stores`. Then `profile-photo`
+  (106 lines, 2 calls) as its own PR, with the `linkedSignal` decision already taken: the store owns
+  `saving`, `cropSourceUri` and both calls, while `uri` stays on the component.
+- **Evidence:** the A4 measurements and the German date above; the two-project test counts;
+  `ADR-0005` amendment twenty-seven.
+
 ### 2026-08-09, two more off the allowlist, and a defect that was not mine
 
 - **Status:** complete

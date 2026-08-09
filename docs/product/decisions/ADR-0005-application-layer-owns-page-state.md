@@ -1425,6 +1425,46 @@ a card forced into the pipeline's `selectedCard`, and the synthetic card collaps
   write sets `error` in the store and is toasted by the component, and the numbers are not reported
   because they would be measuring the harness.
 
+## Amendment twenty-seven: moving the state is what exposed the duplicate
+
+`cv-print` and `cover-letter-print` are the hidden windows the WYSIWYG PDF export loads. Two gateway
+calls each: read the document, then tell Rust the snapshot may be taken. Allowlist **18 -> 16**.
+
+**The interesting part was not the migration.** Both components carried a `signalReady()` that was
+**byte-identical** - the same fonts wait, the same two settle ticks, the same
+`document.body.classList.add('printing-cv')`, down to the same comment. Nothing made that visible
+while each file was 100 lines of load-and-render; moving the load out left the duplicate as the only
+thing remaining in each, which is a general property worth naming: **extracting state exposes
+duplication that size was hiding.**
+
+It became `awaitPrintSettle()`, one function, and it deliberately **did not** go into
+`libs/application` beside the stores. Every line of it touches the DOM - `document.fonts`,
+`document.body` - and this layer owns state, not view timing. Putting it there would have been the
+first DOM access in the application layer, and a precedent much easier to set than to withdraw. The
+gateway call stayed in the stores as `notifyReady()`, so the component's whole job is now: read the
+id, load, settle, notify.
+
+`normalizeCvContent` is **passed to** `CvPrintStore.load` rather than imported by it, following the
+precedent `CvDocumentStore` documents at its own `CvContentNormalizer` type. Moving it down instead
+would mean moving a 652-line util that 25 files import - a separate job with its own decision, and
+not one to make in passing.
+
+Both stores return `false` for a missing row rather than throwing, which keeps the behaviour the
+components had: the window stays blank and the Rust side times out. Printing a default letter would
+hand the user a PDF they did not ask for.
+
+Sixteen tests across the two stores and two on the settle - that the body is marked printable, and
+that a `document.fonts.ready` which never resolves is given up on rather than hanging the export.
+The existing print-component spec asserted signals that had moved; it reads them through the
+component's own injector now, because these stores are component-scoped.
+
+**Rendered check**, and this route can be checked more honestly than the last one: both print routes
+render at **793.7 x 1143.9** - A4 at 96dpi, 210mm exactly - fed from their stores, with the
+components down to `route` plus a store and no `db`. The cover letter rendered `09.08.2026` from
+`language: 'de'`, which is the specific drift its comment warns about: the export must be fed the
+language the editor showed. `document.body` measures 0 because a print route has no shell layout,
+which is what a print window is.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1495,7 +1535,7 @@ a card forced into the pipeline's `selectedCard`, and the synthetic card collaps
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**18** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**16** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

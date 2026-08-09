@@ -27,7 +27,6 @@ import tseslint from 'typescript-eslint';
  */
 const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/core/first-launch.component.ts',
-  '**/core/health-check-panel.component.ts',
   '**/core/onboarding/onboarding.component.ts',
   '**/layout/shell-layout.component.ts',
   '**/pages/analytics/analytics.component.ts',
@@ -42,7 +41,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/pages/jobs/my-jobs.component.ts',
   '**/pages/pipeline/pipeline.component.ts',
   '**/pages/pipeline/quick-view-modal/quick-view-modal.component.ts',
-  '**/pages/pipeline/stage-quick-add/stage-quick-add.component.ts',
   '**/pages/profile/profile-photo/profile-photo.component.ts',
   '**/pages/profile/profile.component.ts',
   '**/pages/settings/settings.component.ts',

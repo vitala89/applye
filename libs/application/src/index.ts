@@ -39,6 +39,7 @@ export * from './lib/pipeline/pipeline.store';
 export * from './lib/pipeline/quick-view.store';
 export * from './lib/pipeline/stage-quick-add.store';
 export * from './lib/profile/profile-photo.store';
+export * from './lib/shell/shell.store';
 export * from './lib/tracker/tracker-columns';
 export * from './lib/tracker/tracker-columns.store';
 export * from './lib/tracker/tracker-print.store';

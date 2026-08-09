@@ -155,7 +155,12 @@
   icons, translations and navigation closures, so the store supplies the facts and the page builds the
   cards. `monogram` was deliberately **not** folded onto `companyInitials`: they differ on the empty
   company, `?` against `-`, and a comment now says they are two rules that look alike rather than one
-  rule written twice (amendment thirty-two).
+  rule written twice (amendment thirty-two). It is **10** now: the shell moved, and half of what its
+  single gateway call loaded was dead - `aiMode` was written on every launch and read nowhere since
+  the sidebar indicator it fed left the template, so it was deleted rather than migrated. The store
+  reads the stored UI language and the shell applies it, because `setLocale` is an i18n side effect
+  this layer does not perform; the sidebar rail preference moved with its `localStorage`
+  persistence, the first browser storage in `libs/application` (amendment thirty-three).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

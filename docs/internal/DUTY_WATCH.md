@@ -44,6 +44,71 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, the shell, and the dead half of its only gateway call
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/shell-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** migrate `shell-layout` after #399 (`main` at `a007c42`): one gateway call, chosen by
+  the maintainer over `analytics`, `first-launch` and `my-jobs`.
+- **Completed:**
+  - `ShellStore` in a new `libs/application/shell/` area: the settings read, `uiLanguage`, `error`,
+    and the sidebar rail preference with its `localStorage` persistence.
+  - `aiMode` **deleted, not moved** - written on every launch, read nowhere. `git log -S` named
+    `af4a90a` as its origin and the indicator it fed is gone from the template.
+  - `setLocale` deliberately left on the component; the callback-argument shape was offered by the
+    problem and refused as the disguise amendment thirty-two named.
+  - Eight store tests. The component spec needed **no change** - it stubs `DbService` at the
+    `TestBed` level and the component-scoped store resolves it through the same injector.
+  - `ADR-0005` amendment thirty-three; `CHANGELOG.md`, `CURRENT_STATE.md`, and the count in four
+    documents, all to 10.
+- **Not completed:** nothing in scope. PR not opened.
+- **Files or packages changed:** `shell-layout.component.{ts,html}`, new
+  `libs/application/src/lib/shell/shell.store{,.spec}.ts`, `libs/application/src/index.ts`,
+  `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test application` **714 passed / 50 suites**, up from 706/49 - the eight new tests, one new
+    suite. `nx test desktop` **1493 passed / 130 suites**, unchanged: nothing moved out this time,
+    and the badge spec still passes untouched.
+  - `nx lint desktop` and `nx lint application` **0 errors** (8 pre-existing warnings, all
+    `no-non-null-assertion` in specs this change did not touch). `nx build desktop` succeeds.
+  - `quality:file-size`, `quality:attribution`, `format:check` (exit 0) and `git diff --check` all
+    pass.
+  - **Rendered check run, and the missing Tauri context supplied the failure path for free.**
+    `error` carried `tauriInvoke called outside Tauri context (command: db_get_settings)`,
+    `uiLanguage` stayed null, the shell kept English, and the console was empty - the silence is the
+    designed behaviour, not a swallowed bug. The component no longer has `db` or `aiMode`. The rail
+    measured **240 -> 64** with labels hidden and icons kept, `localStorage` `1` then `0`, and a
+    reload with the preference set drew the rail at first paint.
+  - **One measurement was wrong before it was right.** The first width reading was 240 in all three
+    states, taken mid-transition against the sidebar's own `width 0.14s` - the trap from amendments
+    twenty-three and twenty-eight, hit a third time. `transition: none` before measuring fixed it.
+- **Privacy/security impact:** none. The same settings row is read, by the same gateway; the sidebar
+  preference stays in `localStorage` and out of the settings table, which is what keeps it out of
+  sync and export.
+- **Decisions and assumptions:** four, taken at the grilling gate: delete `aiMode` in this PR; store
+  exposes `uiLanguage` while the component calls `setLocale`; the sidebar preference moves, using
+  `globalThis.localStorage` directly rather than an injected token; `load()` returns boolean and
+  keeps an `error` signal nothing reads today.
+- **Risks or compatibility impact:** low. The one behaviour delta is the removal of dead state.
+  `localStorage` in `libs/application` is new precedent and is called out in the amendment.
+- **Open issues or blockers:**
+  - Two filed, unfixed defects: the health-icon colours, and `en-GB` at five sites.
+  - `tracker.component.scss` still **455/400**, untouched.
+  - `PipelineStore.cards` is still deliberately not a signal.
+- **Next first action:** open the PR from `refactor/shell-store`. Remaining 10, by call site:
+  `analytics` (297, 1) and `first-launch` (439, 1) close out the one-call tier, then `my-jobs`
+  (334, 5), `profile` (483, 4), `settings` (630, 6), `interview-prep-detail` (332, 8), `jobs`
+  (1164, 8), `cover-letter-list` (283, 10), `onboarding` (785, 12), `cv-list` (426, 16). **Run the
+  dead-state grep on each**: `aiMode` cost nothing to find and would have been published had it been
+  moved. The larger entries each want their own grilling round.
+- **Evidence:** the reconciled test counts (714/50 against 1493/130); the store `error` string read
+  in the running app; the 240 -> 64 rail measured with the transition suppressed; `ADR-0005`
+  amendment thirty-three.
+
 ### 2026-08-09, the dashboard, and a duplicate deliberately left standing
 
 - **Status:** complete

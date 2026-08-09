@@ -44,6 +44,66 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the tracker's export dialog cuts free, and a reduced-motion rule nearly stayed behind
+
+- **Status:** partial - one of four planned cuts landed; the other three are scoped and costed
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/tracker-template-extraction`, from `main` at `0ca9194`
+- **Pull request:** opened from this branch
+- **Objective:** bring `tracker.component.html` under its 300-line budget, which the file-size gate
+  requires before the `.jt-icon` fold can add a line to it.
+- **Completed:**
+  - `tracker-export-modal/` extracted: component, template, stylesheet, six tests.
+  - Template **557 -> 463**, stylesheet **893 -> 792**. Both still over budget; the gate passes
+    because they shrank.
+  - Five page aliases and four page methods deleted, having moved with the dialog.
+  - Rendered check run and passed.
+- **Not completed:** the column drawer, the row-actions popup and the row's actions cell. They are
+  measured, their class families are confirmed non-overlapping, and they are written into the
+  ADR-0005 checklist with line counts. The template does **not** yet meet its budget, so the
+  `.jt-icon` fold is still blocked - which is the state this branch set out to end and did not.
+- **Files or packages changed:** `apps/desktop/src/app/pages/tracker/` - new `tracker-export-modal/`
+  (4 files), `tracker.component.{html,scss,ts}`; `CHANGELOG.md`; ADR-0005; this file.
+- **Validation:**
+  - `nx test desktop` - **1491 passed, 127 suites**, six of them new.
+  - `nx lint desktop` - passed. `nx build desktop` - passed.
+  - `quality:file-size` - passed, with both tracker files reported as shrinking.
+  - `check-style-move --base origin/main` - **"Every selector carries the same declarations it did
+    before. Lossless."**
+  - `format:check`, `quality:attribution`, `git diff --check` - passed.
+  - **Rendered check** at `localhost:4200`: panel 1000px at radius 12, config row on
+    `--surface-sunken`, fields 220px at radius 6, the copied `.jt-icon` at **28.00 x 28.00**, the
+    report sheet rendered, and the A4 fit note showing real column names - the moved `fitNoteText()`
+    working against live data. The child's rules resolve under a **different** encapsulation id from
+    the page's, which is the direct evidence the styles actually moved.
+- **Privacy/security impact:** none. No data, storage, network or permission surface is touched.
+- **Decisions and assumptions:**
+  1. Four cuts in one pull request, extraction only, fold in a later one - taken through the grilling
+     gate. The maintainer first chose to include `tracker` in the previous fold PR; investigating it
+     produced facts that changed the picture, those went back rather than being acted on, and the
+     scope narrowed twice.
+  2. Folder per component, following every recent extraction in the campaign rather than the flat
+     files that predate it in this directory.
+  3. The dialog injects its stores rather than taking inputs. They are provided on `TrackerComponent`,
+     so a child in its template resolves the same instances.
+  4. `today()`, `fitNoteText()` and the two export writes moved with the dialog, because each is
+     dialog chrome and ADR-0005 asks a page to render and delegate.
+- **Risks or compatibility impact:** `.jt-icon` now exists in two copies until the fold lands. That is
+  deliberate, stated in the stylesheet, and the fold deletes both.
+- **Open issues or blockers:**
+  - ~~This branch's ADR amendment is numbered twenty-one and assumes PR #388 (amendment twenty)
+    merges first.~~ **Settled**: #388 merged as `59ac22a` while this branch was open, so the branch
+    was rebased onto it and the numbering stands. The rebase conflicted only in the three documents
+    both changes append to; the code did not overlap. The stale copy of the `.ip__icon` checklist
+    line this branch carried from before that merge was dropped in favour of #388's completed one.
+  - The browser panel's synthetic clicks do not reach the tracker toolbar's Angular listeners - the
+    untouched Columns drawer behaves identically, so it is the instrument and not the change. The
+    dialog was opened by setting the page signal directly and then measured.
+- **Next first action:** extract the column drawer (`tracker.component.html` 313-401; `.jt-drawer`,
+  `.jt-colrow` and `.jt-addcol` confirmed to have no caller outside it) into
+  `tracker-column-drawer/`, copying `.jt-icon` and the reduced-motion rule for the same reasons as
+  this one.
+
 ### 2026-08-09, the open state was already in the markup, and the class was the half nobody could read
 
 - **Status:** complete

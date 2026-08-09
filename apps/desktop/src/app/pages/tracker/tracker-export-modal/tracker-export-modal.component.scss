@@ -1,0 +1,204 @@
+/* Moved verbatim from `tracker.component.scss` with the export dialog's markup
+   (ADR-0005, amendment twenty-one). `.jt-modal*` and `.jt-field*` had no other
+   caller in the page, so they moved rather than being copied. Three things did
+   have to be copied, and each has its reason below. */
+
+.jt-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 7, 6, 0.72);
+  backdrop-filter: blur(3px);
+  z-index: 80;
+  display: flex;
+  padding: var(--space-5);
+}
+.jt-modal__panel {
+  margin: auto;
+  width: min(1000px, 94vw);
+  max-height: 92vh;
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-modal, 12px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: jtIn 0.2s ease-out;
+}
+.jt-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+.jt-modal__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-md, 14px);
+  font-weight: var(--weight-semibold, 600);
+  lucide-icon {
+    color: var(--text-accent);
+  }
+}
+.jt-modal__hint {
+  font-family: var(--font-sans, inherit);
+  font-size: var(--text-xs, 12px);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+.jt-modal__config {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: var(--border-width) solid var(--border-default);
+  background: var(--surface-sunken);
+}
+.jt-modal__spacer {
+  flex: 1;
+}
+.jt-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.jt-field__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.jt-field__input {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: var(--space-2) var(--space-3);
+  width: 220px;
+  outline: none;
+}
+.jt-field__input--sm {
+  width: auto;
+  min-width: 150px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 12px);
+  cursor: pointer;
+}
+.jt-modal__note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-secondary);
+  padding: var(--space-2) var(--space-5);
+  border-bottom: var(--border-width) solid var(--border-default);
+  background: var(--accent-tint);
+  lucide-icon {
+    color: var(--text-accent);
+  }
+}
+.jt-modal__scroll {
+  overflow-y: auto;
+  padding: var(--space-6);
+  background: var(--bg, #0d0c0b);
+}
+
+/* COPIED, not moved: the page declares these as `.jt__tbtn, .jt-tbtn { }` and
+   the toolbar still uses the `.jt__tbtn` half. Only the `.jt-tbtn` half came
+   here, so the page's rule keeps both selectors and loses nothing. */
+.jt-tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 12px);
+  color: var(--text-tertiary);
+  background: var(--surface-1);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+  &.is-active {
+    background: var(--accent-tint);
+    border-color: var(--text-accent);
+    color: var(--text-primary);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+.jt-tbtn--primary {
+  background: var(--text-accent);
+  border-color: var(--text-accent);
+  color: #fff;
+
+  &:hover {
+    color: #fff;
+    filter: brightness(1.08);
+  }
+}
+
+/* COPIED, and deliberately temporary: `.jt-icon` still has five other call
+   sites in the page and in the drawer, and component styles are encapsulated,
+   so this dialog cannot inherit the page's copy. The very next pull request
+   folds every `.jt-icon` onto `appButton size="icon"`, which deletes this block
+   and its siblings together (ADR-0005, amendment twenty). Copied verbatim so
+   that fold stays a deletion rather than a reconciliation. */
+.jt-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid transparent;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  &:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+  }
+  &.is-open {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+@keyframes jtIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* COPIED, and the reason is a trap worth naming: the page writes this rule
+   with a bare `*`, and emulated encapsulation rewrites that to
+   `*[_ngcontent-page]`. It therefore stops at the page's own elements and
+   would never have reached this dialog's animation. Without this copy the
+   panel would keep animating for a user who asked it not to, and no gate in
+   this repository can see that. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

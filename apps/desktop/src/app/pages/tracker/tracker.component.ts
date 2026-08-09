@@ -36,7 +36,7 @@ import {
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
-import { TrackerReportComponent } from './tracker-report.component';
+import { TrackerExportModalComponent } from './tracker-export-modal/tracker-export-modal.component';
 
 // Job Tracker: 1:1 with the user's real xlsx tracker. Export IS the Agentur
 // fuer Arbeit "Eigenbemuehungen" report (ROADMAP §9). 0 tokens. This screen is
@@ -45,7 +45,7 @@ import { TrackerReportComponent } from './tracker-report.component';
   selector: 'app-tracker',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
+  imports: [FormsModule, LucideAngularModule, TrackerExportModalComponent],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
   providers: [TrackerColumnsStore, TrackerRowsStore, TrackerRowEditorStore, TrackerReportStore],
@@ -90,14 +90,11 @@ export class TrackerComponent {
    * chosen market, not the UI (ADR-0005, amendment eight). */
   protected readonly report = inject(TrackerReportStore);
 
-  // Export-dialog aliases, for the same reason as the toolbar ones above: the
-  // template is at its budget and `report.` in front of eleven bindings
-  // re-wraps four of them.
-  protected readonly applicantName = this.report.applicant;
-  protected readonly reportMarket = this.report.market;
-  protected readonly landscape = this.report.landscape;
-  protected readonly reportMode = this.report.mode;
-  protected readonly exporting = this.report.exporting;
+  // The five export-dialog aliases that stood here are gone with the dialog
+  // (ADR-0005, amendment twenty-one). They existed only because this template
+  // was at its budget and `report.` in front of eleven bindings re-wrapped four
+  // of them - inside `tracker-export-modal/` there is no such pressure, so it
+  // binds the store directly and the page holds nothing on the dialog's behalf.
 
   readonly icons = {
     fileDown: FileDown,
@@ -275,56 +272,9 @@ export class TrackerComponent {
   }
 
   // ---------- export ----------
-  today(): string {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  /** Human note about A4 fit: which columns are hidden (fit mode) or wrap to a
-   * second line (all mode), for the current orientation. Stays on the page
-   * because it is dialog chrome rather than part of the sheet, so it names the
-   * columns in the **UI** language even when the sheet itself is German. */
-  fitNoteText(): string {
-    const overflow = this.report.fitInfo().overflow;
-    if (!overflow.length) return '';
-    const uiLabels = new Map(this.columns.visibleColumns().map((c) => [c.key, this.colLabel(c)]));
-    const cols = overflow.map((c) => uiLabels.get(c.id) ?? c.label).join(', ');
-    const orient = this.t()(this.report.landscape() ? 'tracker.landscape' : 'tracker.portrait');
-    const key = this.report.mode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';
-    return this.t()(key)
-      .replace('{n}', String(overflow.length))
-      .replace('{orient}', orient)
-      .replace('{cols}', cols);
-  }
-
-  // The store writes and reports; the page closes the dialog and picks the
-  // wording (ADR-0005, amendment three).
-  async exportCsv(): Promise<void> {
-    try {
-      const path = await this.report.exportCsv();
-      this.showExport.set(false);
-      if (path) this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
-
-  /**
-   * PDF renders the preview's own DOM (hidden print window) so the file matches
-   * the preview exactly. The native Save dialog is a Tauri shell action and so
-   * belongs to the app; it is handed to the store rather than called after it,
-   * which is what keeps `exporting` true while the dialog is open.
-   */
-  async exportPdf(): Promise<void> {
-    try {
-      const path = await this.report.exportPdf(async (defaultPath) => {
-        const { save } = await import('@tauri-apps/plugin-dialog');
-        return save({ defaultPath, filters: [{ name: 'PDF', extensions: ['pdf'] }] });
-      });
-      if (!path) return; // cancelled
-      this.showExport.set(false);
-      this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
+  // `today()`, `fitNoteText()` and the two export writes moved into
+  // `tracker-export-modal/` with the dialog they belong to. Their comments here
+  // had said they lived on the page because "the page closes the dialog and
+  // picks the wording"; the dialog now does both for itself, which is what
+  // ADR-0005 asks of a page in the first place (amendment twenty-one).
 }

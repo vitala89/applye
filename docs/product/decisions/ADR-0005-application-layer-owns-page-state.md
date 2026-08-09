@@ -1180,6 +1180,44 @@ is **573 against a budget of 300**, so the fold cannot add a line to it without 
 That is a separate decision and a separate cut, and folding it blind would have been four undeclared
 visual changes.
 
+## Amendment twenty-one: the stores made the cut free
+
+`tracker` is the page this ADR migrated first and finished under budget - 667 to 304 in the class.
+Its **template** was never touched, and it stood at **557 against 300** with a stylesheet at 893
+against 400. That is what blocks the `.jt-icon` fold: the gate refuses to let an over-budget file
+grow, and the fold costs two lines per button.
+
+The extraction turned out cheap for a reason worth recording, because it is this ADR's own machinery
+paying back. `TrackerColumnsStore`, `TrackerRowsStore`, `TrackerRowEditorStore` and
+`TrackerReportStore` are declared in `TrackerComponent`'s `providers`, so **a child rendered inside
+its template resolves the same instances through the injector**. The export dialog therefore takes
+no data inputs at all - it injects the three stores it needs and emits `closed`. A page whose state
+lives in stores can be cut anywhere; a page holding its own state cannot, and that difference is the
+whole argument of this ADR restated as arithmetic.
+
+Four things moved out with the markup - `today()`, `fitNoteText()` and the two export writes -
+because each is dialog chrome. Their comments had said they lived on the page because "the page
+closes the dialog and picks the wording"; the dialog does both now. Five aliases went with them:
+`applicantName`, `reportMarket`, `landscape`, `reportMode` and `exporting` existed **only** because
+the template was at budget and `report.` in front of eleven bindings re-wrapped four of them. The
+extraction removed the pressure that created them, which is the tidier half of the same trade.
+
+**Three rules were copied rather than moved, and the third is a trap this campaign had not met yet.**
+`.jt-tbtn` is copied because the page declares `.jt__tbtn, .jt-tbtn` together and the toolbar still
+uses the other half. `.jt-icon` is copied and deliberately temporary - five call sites remain, and
+the fold deletes every copy at once. The third is `@media (prefers-reduced-motion: reduce) { * }`:
+the page writes it with a bare `*`, and emulated encapsulation rewrites that to
+`*[_ngcontent-page]`, so it stops at the page's own elements. **A dialog extracted without a copy
+keeps animating for a user who asked it not to**, and no gate in this repository can see that - not
+lint, not the suite, not `quality:style-move`, which compares declarations per selector and would
+have read this move as lossless either way. It reads lossless here too, and that is now known to be
+a weaker statement than it looks: the audit proves nothing was dropped, not that everything still
+reaches what it styled.
+
+Result: template **557 -> 463**, stylesheet **893 -> 792**. Both still over budget, and three cuts
+remain before the fold - the column drawer, the row-actions popup, and the row's actions cell, which
+together carry the other five `.jt-icon` sites.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1216,12 +1254,18 @@ visual changes.
         and no `appButton` in the app carries `aria-expanded`, so it reaches nothing else. Two
         accepted visible deltas: `--text-tertiary` -> `--text-secondary`, and the hover ring dropped
         as drift. **Checked on a rendered screen** in both themes (amendment twenty).
-  - [ ] Fold `tracker`'s `.jt-icon` (6 sites) - **its own PR and its own grilling**, because it is
-        four shapes rather than one: 28px, 24px via `--sm`, 30x30/radius 7 through a `.jt-menu
-.jt-icon` descendant selector, and an accent fill on `--text-accent` (indigo-400) + `#fff`
-        against the system's `--accent` (indigo-600) + `--accent-fg`. Its template is **573/300**, so
-        an extraction comes first. Until it lands, `.btn--ghost[aria-expanded='true']` has one
-        consumer.
+  - [ ] Cut `tracker.component.html` under its 300-line budget before folding `.jt-icon`, because the
+        gate refuses growth on an over-budget file. `tracker-export-modal/` is **out** (template
+        **557 -> 463**, stylesheet 893 -> 792, amendment twenty-one). Three cuts remain, and they
+        carry the other five icon sites: the column drawer (~87 lines, two sites), the row-actions
+        popup (~68), and the row's actions cell (~38, three sites, and its `.jt-menu` travels with
+        it rather than being reached from a shared partial). Every one of them can inject the four
+        stores directly, so none needs data inputs.
+  - [ ] Fold `tracker`'s `.jt-icon` once the template is under budget - **six sites in four shapes**:
+        28px, 24px via `--sm`, 30x30 with radius 7 through a `.jt-menu .jt-icon` descendant
+        selector, and an accent fill on `--text-accent` (indigo-400) with a hardcoded `#fff` against
+        the system's `--accent` (indigo-600) and `--accent-fg`. Needs its own grilling round. The
+        `.jt-icon` copies the extractions leave behind all die in that one pull request.
   - [ ] Decide what `.clb__icon-btn` in `cover-letter-body-paragraphs/` is for now that
         `.btn--danger` is quiet at rest again - the local name was chosen (amendment seventeen)
         precisely because folding it then meant a visible change, and that reason may have expired.

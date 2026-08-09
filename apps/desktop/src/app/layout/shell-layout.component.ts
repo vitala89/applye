@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -28,8 +21,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-angular';
-import { AiMode } from '@applye/core';
-import { DbService } from '@applye/data';
+import { ShellStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { UnsavedJobPromptComponent } from '../shared/unsaved-job-prompt/unsaved-job-prompt.component';
@@ -43,9 +35,6 @@ import { WizardProgressService } from '../shared/wizard-progress.service';
 import { WizardActivity, WizardActivityService } from '../shared/wizard-activity.service';
 import { DocumentGenService } from '../shared/document-gen.service';
 import { ThemeService } from '../core/theme.service';
-
-/** localStorage key for the sidebar rail preference. */
-const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
 
 @Component({
   selector: 'app-shell-layout',
@@ -61,10 +50,11 @@ const SIDEBAR_COLLAPSED_KEY = 'applye.sidebar.collapsed';
   ],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.scss',
+  providers: [ShellStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellLayoutComponent implements OnInit {
-  protected readonly db = inject(DbService);
+  protected readonly shell = inject(ShellStore);
   protected readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
   protected readonly pasteJobModal = inject(PasteJobModalService);
@@ -185,24 +175,8 @@ export class ShellLayoutComponent implements OnInit {
     panelExpand: PanelLeftOpen,
   };
 
-  /**
-   * Rail mode: labels hidden, icons kept. Remembered across sessions in
-   * localStorage rather than the settings table - it is a per-machine viewing
-   * preference, not user data worth syncing or exporting.
-   */
-  readonly sidebarCollapsed = signal(
-    globalThis.localStorage?.getItem(SIDEBAR_COLLAPSED_KEY) === '1',
-  );
-
-  toggleSidebar(): void {
-    const next = !this.sidebarCollapsed();
-    this.sidebarCollapsed.set(next);
-    globalThis.localStorage?.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
-  }
-
   private readonly themeService = inject(ThemeService);
   readonly theme = this.themeService.theme;
-  readonly aiMode = signal<AiMode>('api');
 
   // macOS runs with titleBarStyle: "Overlay" (tauri.conf.json) - the native
   // traffic lights float over our own header, so reserve space for them.
@@ -212,18 +186,15 @@ export class ShellLayoutComponent implements OnInit {
     !!(window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ &&
     navigator.platform.toLowerCase().includes('mac');
 
+  /**
+   * Applying the stored locale is the shell's job, not the store's: the store
+   * reads the preference, and a failed read simply leaves it null, which keeps
+   * the defaults (en / dark) exactly as before.
+   */
   async ngOnInit(): Promise<void> {
-    try {
-      const settings = await this.db.getSettings();
-      if (settings?.uiLanguage) {
-        this.i18n.setLocale(settings.uiLanguage);
-      }
-      if (settings?.aiMode) {
-        this.aiMode.set(settings.aiMode);
-      }
-    } catch {
-      // Keep defaults (en / dark) on DB error
-    }
+    await this.shell.load();
+    const locale = this.shell.uiLanguage();
+    if (locale) this.i18n.setLocale(locale);
   }
 
   toggleTheme(): void {

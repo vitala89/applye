@@ -28,15 +28,25 @@
           @if (uri(); as current) {
             <img class="photo-editor__thumb" [src]="current" alt="" />
             <div class="photo-editor__actions">
-              <button class="btn-dashed" type="button" [disabled]="saving()" (click)="pick()">
+              <button
+                class="btn-dashed"
+                type="button"
+                [disabled]="photos.saving()"
+                (click)="pick()"
+              >
                 {{ t()('documents.cv_photo_replace') }}
               </button>
-              <button class="btn-dashed" type="button" [disabled]="saving()" (click)="remove()">
+              <button
+                class="btn-dashed"
+                type="button"
+                [disabled]="photos.saving()"
+                (click)="remove()"
+              >
                 {{ t()('documents.cv_photo_remove') }}
               </button>
             </div>
           } @else {
-            <button class="btn-dashed" type="button" [disabled]="saving()" (click)="pick()">
+            <button class="btn-dashed" type="button" [disabled]="photos.saving()" (click)="pick()">
               <lucide-icon [img]="icons.plus" [size]="14" aria-hidden="true" />
               {{ t()('documents.cv_photo_upload') }}
             </button>
@@ -49,7 +59,7 @@
 
 <!-- Same crop modal the CV editor uses, so a profile photo lands in the
      exact frame a CV expects and never needs re-cropping per document. -->
-@if (cropSourceUri(); as src) {
+@if (photos.cropSourceUri(); as src) {
   <app-cv-photo-crop
     [sourceDataUri]="src"
     (confirmed)="onCropConfirmed($event)"

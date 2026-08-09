@@ -39,7 +39,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/pages/jobs/my-jobs.component.ts',
   '**/pages/pipeline/pipeline.component.ts',
   '**/pages/pipeline/quick-view-modal/quick-view-modal.component.ts',
-  '**/pages/profile/profile-photo/profile-photo.component.ts',
   '**/pages/profile/profile.component.ts',
   '**/pages/settings/settings.component.ts',
 ];

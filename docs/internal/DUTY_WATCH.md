@@ -44,6 +44,75 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, analytics, and a window boundary that moved when nobody was looking
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/analytics-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** second migration of this watch, after #400 merged as `e87fc41`. `analytics`, one
+  gateway call, chosen by the maintainer.
+- **Completed:**
+  - `AnalyticsStore` in a new `libs/application/analytics/` area: facts, period, `now`, `error`,
+    `loading`, and the `computeAnalytics` view. The derivation itself was **already** in `libs/core`.
+  - **Ten translated computeds deliberately stayed on the page** - tiles, stages, leakage, score
+    distribution, score outcome, time to response, aging, locations, caption, period labels.
+  - **A real defect fixed on the way:** `computeAnalytics(f, period, new Date())` ran inside a
+    computed, so the 30d/90d window boundary was re-read on every period switch. `now` is stamped at
+    load, matching `DashboardStore`, and a test asserts it does not move across two switches.
+  - `analytics-view.ts` beside the store takes the sparkline geometry, with seven tests.
+  - `ADR-0005` amendment thirty-four; `CHANGELOG.md`, `CURRENT_STATE.md`, and the count in four
+    documents, all to 9.
+- **Not completed:** nothing in scope. PR not opened. The page's 426/300 template was left untouched
+  deliberately - cutting it is not this migration's job, and the ratchet allows it because it did
+  not grow.
+- **Files or packages changed:** `analytics.component.{ts,html}`, new
+  `libs/application/src/lib/analytics/{analytics.store.ts,analytics.store.spec.ts,analytics-view.ts,analytics-view.spec.ts}`,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test application` **729 passed / 52 suites**, up from 714/50 - eight store tests and seven
+    geometry tests. `nx test desktop` **1493 / 130**, unchanged: nothing moved out, and the page has
+    no spec of its own (it had none before either).
+  - `nx lint` caught one error, an unused `signal` import left by the move; cleared. Both projects
+    then 0 errors, 8 pre-existing warnings. `nx build desktop` succeeds.
+  - `quality:file-size` passes and reports `analytics.component.html` at **426/300, base 426** -
+    over budget, unchanged, allowed. `quality:attribution`, `format:check` (exit 0) and
+    `git diff --check` pass.
+  - **Rendered check in three parts.** Failure path, free from the missing Tauri context: `error`
+    held the real message, empty facts installed, empty state rendered rather than blank, and the
+    page's toast read `Could not load analytics` - store silent, page speaking. The toast was
+    **absent from the first DOM read**, the one-cycle lag again. Geometry with facts pushed into the
+    store: 13 points spanning x=0 to 100, monotonic, y within the 3 inset and the 39 baseline, five
+    peaks at the inset, area closing on the baseline, and the DOM `polyline` carrying exactly the
+    computed string. The decision itself: `now` identical across `90d -> 30d -> all` while buckets
+    went 13 weekly to 30 daily and the applications KPI moved 5 -> 3 -> 5.
+- **Privacy/security impact:** none. Same gateway call, same data, nothing new stored or sent.
+- **Decisions and assumptions:** three at the grilling gate - stamp `now` at load; extract the
+  geometry beside the store; store spec only, no new component spec. A fourth was settled by
+  looking rather than asking: the store owns the `computeAnalytics` result, since it owns both
+  inputs.
+- **Risks or compatibility impact:** low, with one deliberate behaviour change - the window is now
+  measured once per load rather than per recompute. `polylinePoints` adds a `yMax === 0` guard the
+  original lacked; it is unreachable today and documented as a guard, not a fix.
+- **Open issues or blockers:**
+  - Two filed, unfixed defects: the health-icon colours, and `en-GB` at five sites. Analytics is
+    **not** one of the five - it already formats with `i18n.locale()`.
+  - `tracker.component.scss` 455/400 and `analytics.component.html` 426/300, both untouched.
+  - `PipelineStore.cards` is still deliberately not a signal.
+  - The **previous entry in this file is stale**: it says PR "not yet opened" and gives "open the
+    PR" as the next action, both written before #400 merged as `e87fc41`.
+- **Next first action:** open the PR from `refactor/analytics-store`. Remaining 9: `first-launch`
+  (439, 1 call) closes the one-call tier, then `my-jobs` (334, 5), `profile` (483, 4),
+  `interview-prep-detail` (332, 8), `settings` (630, 6), `jobs` (1164, 8), `cover-letter-list`
+  (283, 10), `onboarding` (785, 12), `cv-list` (426, 16). **Two habits earned this watch:** grep for
+  state that is written and never read before migrating, and check whether the page reads `Date` or
+  `new Date()` inside a computed - both defects were found by reading, not by a gate.
+- **Evidence:** 729/52 against 1493/130; the toast string read from the running app; the DOM
+  `polyline` matching the computed points; `now` unchanged across three period switches;
+  `ADR-0005` amendment thirty-four.
+
 ### 2026-08-10, the shell, and the dead half of its only gateway call
 
 - **Status:** complete

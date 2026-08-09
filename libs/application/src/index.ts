@@ -1,5 +1,7 @@
 // The application layer's public surface: page state and orchestration. See
 // `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`.
+export * from './lib/analytics/analytics-view';
+export * from './lib/analytics/analytics.store';
 export * from './lib/discover/discover-detail.store';
 export * from './lib/discover/discover-feed.store';
 export * from './lib/discover/discover-profile-context.store';

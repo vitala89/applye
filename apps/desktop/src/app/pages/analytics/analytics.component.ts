@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -19,8 +12,8 @@ import {
 } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
 import { TranslateService } from '@applye/i18n';
-import { DbService } from '@applye/data';
-import { AnalyticsFacts, AnalyticsKpi, AnalyticsPeriod, computeAnalytics } from '@applye/core';
+import { AnalyticsStore, areaPoints, polylinePoints } from '@applye/application';
+import { AnalyticsKpi, AnalyticsPeriod } from '@applye/core';
 import { ToastService } from '../../core/toast/toast.service';
 
 const PERIODS: AnalyticsPeriod[] = ['30d', '90d', 'all'];
@@ -32,9 +25,10 @@ const PERIODS: AnalyticsPeriod[] = ['30d', '90d', 'all'];
   imports: [LucideAngularModule, RouterLink],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss',
+  providers: [AnalyticsStore],
 })
 export class AnalyticsComponent implements OnInit {
-  private readonly db = inject(DbService);
+  protected readonly stats = inject(AnalyticsStore);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
@@ -49,30 +43,23 @@ export class AnalyticsComponent implements OnInit {
     empty: BarChart3,
   };
 
-  private readonly facts = signal<AnalyticsFacts | null>(null);
-  protected readonly loading = signal(true);
-  protected readonly period = signal<AnalyticsPeriod>('90d');
+  /** The store's view, read once per computed below - all of which translate. */
+  private readonly view = this.stats.view;
 
-  private readonly view = computed(() => {
-    const f = this.facts();
-    return f ? computeAnalytics(f, this.period(), new Date()) : null;
-  });
-
-  protected readonly state = computed(() => this.view()?.state ?? 'empty');
-  protected readonly isLowData = computed(() => this.state() === 'low-data');
+  protected readonly isLowData = computed(() => this.stats.state() === 'low-data');
 
   protected readonly segments = computed(() =>
     PERIODS.map((value) => ({
       value,
       label: this.t()(`analytics.period_${value}`),
-      selected: this.period() === value,
+      selected: this.stats.period() === value,
     })),
   );
 
   protected readonly caption = computed(() => {
     const v = this.view();
     if (!v) return '';
-    const period = this.t()(`analytics.period_${this.period()}`);
+    const period = this.t()(`analytics.period_${this.stats.period()}`);
     return `${period} · ${v.appliedTotal} ${this.t()('analytics.applications_caption')}`;
   });
 
@@ -135,17 +122,7 @@ export class AnalyticsComponent implements OnInit {
     const v = this.view();
     if (!v) return null;
     const b = v.trend;
-    const n = b.apps.length;
-    const yMax = b.yMax;
-    const pts = (arr: number[]): string =>
-      arr
-        .map((val, i) => {
-          const x = n > 1 ? (i / (n - 1)) * 100 : 0;
-          const y = 3 + (1 - val / yMax) * 36;
-          return `${x.toFixed(2)},${y.toFixed(2)}`;
-        })
-        .join(' ');
-    const lineApps = pts(b.apps);
+    const lineApps = polylinePoints(b.apps, b.yMax);
     const opts: Intl.DateTimeFormatOptions =
       b.bucketKind === 'month'
         ? { month: 'short', timeZone: 'UTC' }
@@ -153,11 +130,11 @@ export class AnalyticsComponent implements OnInit {
     const fmt = new Intl.DateTimeFormat(this.i18n.locale(), opts);
     return {
       lineApps,
-      lineFollow: pts(b.followups),
-      area: `${lineApps} 100.00,39.00 0.00,39.00`,
+      lineFollow: polylinePoints(b.followups, b.yMax),
+      area: areaPoints(lineApps),
       ticks: b.tickDates.map((d) => fmt.format(new Date(`${d}T00:00:00Z`)).toUpperCase()),
       unit: this.t()(`analytics.unit_${b.bucketKind}`),
-      yMax: String(yMax),
+      yMax: String(b.yMax),
       hasFollowups: b.hasFollowups,
     };
   });
@@ -254,24 +231,18 @@ export class AnalyticsComponent implements OnInit {
     };
   });
 
+  /**
+   * The store records the failure and installs empty facts; saying so is the
+   * page's job, because the store does not translate.
+   */
   async ngOnInit(): Promise<void> {
-    await this.load();
+    if (!(await this.stats.load())) {
+      this.toast.error(this.t()('analytics.load_error'));
+    }
   }
 
   protected setPeriod(p: AnalyticsPeriod): void {
-    this.period.set(p);
-  }
-
-  private async load(): Promise<void> {
-    this.loading.set(true);
-    try {
-      this.facts.set(await this.db.getAnalyticsFacts());
-    } catch {
-      this.toast.error(this.t()('analytics.load_error'));
-      this.facts.set({ applications: [], followups: [] });
-    } finally {
-      this.loading.set(false);
-    }
+    this.stats.setPeriod(p);
   }
 
   private tile(key: string, icon: LucideIconData, label: string, k: AnalyticsKpi, accent: boolean) {

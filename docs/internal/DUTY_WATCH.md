@@ -44,6 +44,67 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the board, and the first store whose data is not a signal
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/pipeline-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** migrate `pipeline` after #396 (`main` at `a8e1dfb`). The riskiest remaining
+  middle-of-the-list entry: drag-and-drop, a status write, a child modal mutating the same cards.
+- **Completed:**
+  - `PipelineStore` owning the board, search, collapsed columns, selected card and three calls.
+  - `pipeline-card-view.ts` beside it: `companyInitials`, `stageTotal`, `stageSegments`,
+    `scoreClass` as plain functions.
+  - The CDK revert deliberately left on the component.
+  - Twenty-eight tests across the two new files; `pipeline` had **no spec at all** before.
+  - Corrected a comment that was wrong about its own mechanism - see below.
+  - `ADR-0005` amendment thirty; `CHANGELOG.md`, `CURRENT_STATE.md` and the count in four
+    documents, all to 13.
+- **Not completed:** `quick-view-modal` stays for its own PR, as decided at the gate.
+- **Files or packages changed:** `pipeline.component.{ts,html}`, `libs/application/src/index.ts`,
+  `eslint.config.mjs`, new `libs/application/src/lib/pipeline/pipeline.store{,.spec}.ts` and
+  `pipeline-card-view{,.spec}.ts`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1509 passed / 131 suites** - unchanged, and notable: `pipeline` had no spec,
+    so nothing existed to break. That is also why 28 new tests went in.
+  - `nx test application` **653 passed / 45 suites**, up from 627/43.
+  - `nx lint desktop` **0 errors** after fixing two the gate caught: `signal` and `ACTIVE_STATUSES`
+    left unused once the state moved. Third migration in a row where the gate caught exactly this.
+  - `nx lint application` clean, `nx build desktop` succeeds, `quality:file-size`,
+    `quality:attribution`, `format:check`, `git diff --check` all pass.
+  - **Rendered check, the most thorough this campaign has run**, because this was the most to get
+    wrong. Three active columns, two collapsed rails, archive revealing on toggle; `AC`/`GL`/`IS`/
+    `UM` from the extracted initials; all three score bands; search narrowing to one card with the
+    strip reading `1 match`. Then **both** drop paths:
+    - **failed write** - card moved to `offer`, came back to `applied` at index 0, order `[1,2]`
+      preserved, `status` untouched, error captured;
+    - **successful write** against a stubbed IPC - card moved to `interview`, `followUpAt` mirrored
+      from the written row, `overdue` derived **true** from it, total recounted to 4, and the
+      quick-view opened with that card selected, which is the one write path allowed outside
+      Interview Prep still intact across the new boundary.
+      The stub was console-only and removed; nothing committed.
+- **Privacy/security impact:** none. Same three calls, one layer down.
+- **Decisions and assumptions:** three, taken at the grilling gate: the mutable record moves as-is
+  rather than being converted to signals; `quick-view-modal` ships separately; the pure helpers move
+  beside the store while `formatDate` stays on the page.
+- **Risks or compatibility impact:** the highest of the campaign so far - this is the board's core
+  interaction. Mitigated by 28 new tests where there were none, and by exercising both drop paths on
+  a rendered screen rather than only the happy one.
+- **Open issues or blockers:**
+  - Two filed, unfixed defects: the health-icon colours, and the `en-GB` date locale (five sites,
+    one of them this page's `formatDate`).
+  - `tracker.component.scss` still **455/400**, untouched.
+  - **Named for a future decision, not a defect**: `PipelineStore.cards` is deliberately not a
+    signal. Converting it is now testable and is its own piece of work.
+- **Next first action:** open the PR from `refactor/pipeline-store`. Then `quick-view-modal`
+  (340 lines, 5 calls), which shares card objects with this board by reference. After that the tail
+  is `cv-list` (426, 16), `onboarding` (785, 12) and `jobs` (1164, 8), each wanting its own round.
+- **Evidence:** the two drop-path traces above; the two-project test counts; `ADR-0005`
+  amendment thirty.
+
 ### 2026-08-09, a whole page, and a bare catch caught before it shipped
 
 - **Status:** complete

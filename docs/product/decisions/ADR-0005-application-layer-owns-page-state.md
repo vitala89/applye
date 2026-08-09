@@ -1549,6 +1549,52 @@ state moved. The danger entry closed the menu and opened the confirmation in one
 it; and a live delete against no Tauri left all three rows in place, cleared `removing`, and toasted
 the real error - the path the swallowed-catch draft would have broken.
 
+## Amendment thirty: the first store whose data is not a signal
+
+`pipeline` is the riskiest thing this campaign has moved: a Kanban board with drag-and-drop, a status
+write, a modal that mutates the same cards, and an archive. Allowlist **14 -> 13**.
+
+**Its `cards` is a mutable `Record<status, PipelineCard[]>`, not a signal, and it moved in that shape
+on purpose.** CDK's `transferArrayItem` and `moveItemInArray` mutate the arrays they are handed; the
+drop handler undoes a failed move by calling `transferArrayItem` back the other way. Rebuilding that
+around immutable updates is a change to the board's core interaction, with its own risk and its own
+verification - and bundling it into a migration is exactly how a refactor turns into an outage. So
+this is the first store here whose principal data is not a signal, which is worth stating plainly
+rather than leaving for a reader to discover. The signal conversion remains available as its own
+decision, with a real test suite now standing behind it.
+
+**The revert stayed on the component.** It is CDK's operation on CDK's event, and the store has no
+business knowing what a `CdkDragDrop` is: the store reports whether the write succeeded, the page puts
+the card back. That is the same division the photo flow drew - the layer that owns the optimistic
+value owns undoing it.
+
+Four pure functions moved beside the store rather than onto it - `companyInitials`, `stageTotal`,
+`stageSegments`, `scoreClass` - the way `tracker-columns` already sits beside its store. Two of them
+encode rules rather than formatting: a progress track must never be shorter than the stage the card
+has already reached, and an unscored card must not read as a low-scoring one. As plain functions they
+are testable without constructing a component, which is the whole argument for the placement.
+`formatDate` stayed on the page, locale-dependent, defect already filed.
+
+**A comment was corrected in passing, because it was wrong about its own mechanism.** It said the
+mutable model works "under default change detection". The component has been `OnPush` since it was
+written. The model renders because `OnPush` marks a component dirty on its own event handlers - which
+is a different fact with a different failure mode: state mutated outside an event handler would not
+render, and the comment as written would have told the next reader it was safe.
+
+Twenty-eight tests across the store and the pure module. Two pin the decisions that matter most: a
+failed status write leaves the card untouched, so the board cannot show a move the database refused;
+and a failed stage check returns `false`, because that check gates a prompt that **writes**, and
+re-prompting an application that already has stages is worse than not prompting.
+
+**Rendered check, the most thorough this campaign has run, because this was the most to get wrong.**
+Three active columns, two collapsed rails, the archive revealing on toggle. `AC`/`GL`/`IS`/`UM` from
+the extracted initials, the three score bands, search narrowing to one card and the strip reading
+`1 match`. Then both drop paths: a **failed** write moved the card to `offer`, put it back in
+`applied` at index 0 with the order intact and `status` untouched; and a **successful** one, against a
+stubbed IPC, moved a card to `interview`, mirrored `followUpAt` from the written row, derived
+`overdue` **true** from it, recounted the total, and opened the quick-view with that card selected -
+the one write path outside Interview Prep, intact across the new boundary.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1619,7 +1665,7 @@ the real error - the path the swallowed-catch draft would have broken.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**14** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**13** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

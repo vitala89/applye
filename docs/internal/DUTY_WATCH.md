@@ -44,6 +44,75 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the campaign's last question, answered by `git show` rather than by argument
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/cover-letter-icon-fold`
+- **Commits:** one, on this branch
+- **Pull request:** not yet opened
+- **Objective:** close the last open checklist item in `ADR-0005` - decide what `.clb__icon-btn` in
+  `cover-letter-body-paragraphs/` is for, now that the reason it was kept local (amendment
+  seventeen: folding it then meant a visible change, because `.btn--danger` coloured at rest) was
+  removed by amendment nineteen.
+- **Completed:**
+  - The delta was measured before any opinion was formed. Rest state and geometry are the design
+    system's on every property; `--space-2` is 4px around a 13px icon, so `min-width: 28px` decides
+    the box and the fold cannot move it. **The only delta is hover**: local `--surface-hover` plate
+    with a red icon against the system's `--danger-tint` plate and `--danger` ring.
+  - `git show` on the pre-fold `.ipd__icon-btn--danger:hover` returned tint, ring and colour
+    verbatim - so the design system's danger hover is the shape the folded pages had, and this
+    button was the only destructive icon in the app that disagreed with the rest.
+  - Three readings went to `aif-grilling` regardless, because an expired reason justifies re-opening
+    a question and not any particular answer. The maintainer chose the fold.
+  - Folded onto `appButton variant="danger" size="icon"`; 20 SCSS lines deleted, no residue rule.
+  - Stale comment in `cover-letter-detail.component.scss` corrected - it still claimed the block
+    kept its local name.
+  - One test added pinning `btn`, `btn--danger`, `btn--icon` on the delete button. Nothing pinned it
+    before: dropping either attribute breaks nothing that fails.
+  - `ADR-0005` amendment twenty-four written, checklist item closed, `CHANGELOG.md` updated.
+- **Not completed:** nothing in scope. PR not opened, awaiting the maintainer.
+- **Files or packages changed:** `cover-letter-body-paragraphs.component.{html,scss,ts,spec.ts}`,
+  `cover-letter-detail.component.scss`, `CHANGELOG.md`,
+  `docs/product/decisions/ADR-0005-application-layer-owns-page-state.md`, this file.
+- **Validation:**
+  - `nx test desktop` **1512 passed / 131 suites**. Recorded honestly: the **first** run failed and
+    Nx itself flagged the task flaky; two subsequent runs, one cached and one with
+    `--skip-nx-cache`, both pass. No failure detail was ever produced by the failing run.
+  - `nx lint desktop` **0 errors**. The 8 warnings are pre-existing `no-non-null-assertion` in
+    `cv-parse.util.spec.ts`, `cv-style.util.spec.ts` and `cv-gap-dialog.component.spec.ts`, none of
+    which this change touches.
+  - `npm run quality:file-size` passed, `npm run quality:attribution` passed,
+    `npm run format:check` passed, `git diff --check` clean.
+  - `node tools/check-style-move.mjs --base origin/main` over both stylesheets: **3 lost, 0 gained**
+    - the three `.clb__icon-btn` rules, which is the intended deletion.
+  - **Rendered check run, both themes, transitions frozen.** Dark: 28.00 x 28.00 r6 transparent
+    `rgb(154,150,140)` at rest, `rgba(224,86,86,0.14)` with a `rgb(240,122,122)` ring on hover.
+    Light: same box, `rgb(90,90,99)` at rest, `rgba(224,86,86,0.1)` with `rgb(224,86,86)` on hover.
+    Box unchanged on hover in both, because the rest border was already `1px solid transparent`.
+  - **Method, new to this campaign:** hover was measured by rewriting the design system's own
+    `.btn--danger:hover:not(:disabled)` `selectorText` to a probe class in the CSSOM, measuring, and
+    restoring it. Amendment twenty could not produce `:hover` at all; a cloned element with copied
+    declarations would only have proved the copy works. This runs the real declarations through the
+    real cascade. `transition: none` inline, per amendment twenty-three.
+  - The Tauri stub and the theme override were console-only and were removed; nothing was committed.
+- **Privacy/security impact:** none. Presentation only, no data, no IPC, no dependency change.
+- **Decisions and assumptions:**
+  1. **Fold**, not keep and not fold-behind-an-override - maintainer's answer at the grilling gate.
+  2. The hover change is **accepted and declared**, not a regression: it makes this button agree
+     with every other destructive icon in the app.
+  3. `variant="danger"` over `ghost` plus a local red - a residue rule is exactly what amendment
+     twenty-three called the thing a later reader has to explain.
+- **Risks or compatibility impact:** one visible change, on hover only, on one button. Measured in
+  both themes before merge.
+- **Open issues or blockers:** `tracker.component.scss` remains **455/400**. Untouched here and
+  still owed: the next change to that file cuts rather than adds.
+- **Next first action:** open the PR from `refactor/cover-letter-icon-fold` against `main`, naming
+  the single accepted visual delta and the `3 lost, 0 gained` style-move reading.
+- **Evidence:** `quality:style-move` output; the two-theme computed-style table above; the new
+  spec case `deletes through the design-system danger icon button`; `ADR-0005` amendment
+  twenty-four.
+
 ### 2026-08-09, the last icon-button copy folds, and a transition impersonated a bug
 
 - **Status:** complete

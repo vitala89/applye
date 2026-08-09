@@ -8,6 +8,7 @@ import {
   paragraphStyleKey,
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import type { TemplateRef } from '@angular/core';
 
 /** The body is one block among seven, and this is the key the editor's
@@ -35,7 +36,7 @@ const STYLE_KEY = 'body';
   selector: 'app-cover-letter-body-paragraphs',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, NgTemplateOutlet],
+  imports: [ButtonDirective, FormsModule, LucideAngularModule, NgTemplateOutlet],
   templateUrl: './cover-letter-body-paragraphs.component.html',
   styleUrl: './cover-letter-body-paragraphs.component.scss',
 })

@@ -1009,6 +1009,105 @@ from failure, in three different shapes - a truncated `head`, a pattern matching
 stale `cd` changing a test run's scope. **Read the gate's own verdict line. A filter that can miss
 both outcomes is not a check.**
 
+## Amendment, 2026-08-09 (nineteenth): the rendered check ran, and the fold was wrong in two places
+
+Amendment eighteen closed by saying the fold needed a rendered check before anything else in the area
+was authored. It was merged before one happened. The check has now been run, against the Angular dev
+server the running `tauri dev` already serves on `localhost:4200`, and it found **two defects and a
+miscount**. None of the three is reachable from type-check, lint, the suite, either build, or
+`quality:style-move`; all five were green on all of it.
+
+### The square was not square
+
+The topbar toggle measured **28.00 x 29.84**.
+
+`<lucide-icon>` is a flex item, so it is a block box, and the `<svg>` inside it is `display: inline`
+with `vertical-align: baseline`. That makes the wrapper a **line box**, which reserves descender
+space below the baseline - **1.84px** at this font size, independent of what the icon measures. So
+the wrapper is `icon + 1.84`, and the button is `icon + 1.84 + 8 padding + 2 border`.
+
+Measured on the live page, before the fix:
+
+| icon | box           |
+| ---- | ------------- |
+| 13   | 28.00 x 28.00 |
+| 16   | 28.00 x 28.00 |
+| 17   | 28.00 x 28.84 |
+| 18   | 28.00 x 29.84 |
+
+**Eight of the nine call sites were saved by the 28px minimum, and the ninth is the topbar toggle**,
+the single pre-existing consumer this whole amendment was written around. A 16px icon clears 28 by
+**0.16px**, so two more sites are one font-size change away from the same defect.
+
+And the stylesheet said so itself. The comment amendment eighteen shipped reads "every call site in
+the app uses a 13-16px icon". Counted rather than recalled: `14 x4, 15 x2, 16 x2, 18 x1`. **The
+sentence was written from the four pages being folded and never checked against the consumer that
+already existed.**
+
+`.btn--icon svg { display: block }` takes the icon out of the line box. Every size is square again,
+and `min-width`/`min-height` now genuinely do what the amendment claimed - a 24px icon gives a 34x34
+square rather than a 34x35.84 rectangle.
+
+### `variant="danger"` coloured at rest, and nothing said so
+
+All four `.icon-btn--danger` rules were `:hover`-only reds. `.btn--danger` colours at rest. The fold
+swapped one for the other on three pages, and the pull request declared two visual deltas, neither of
+which was this one.
+
+The effect is bigger than the button: a document row's three controls went from **one tone to
+three** - `--text-secondary` for duplicate, `--text-tertiary` for export, `--danger` for delete.
+
+**The tie-break is the one amendment eighteen already used, and it points the other way here.** That
+amendment bent the design system to the pages because `size="icon"` had exactly one consumer. Counted
+here: `variant="danger"` had **zero** before the fold created two. The four page rules are the shape
+with evidence behind them; the variant was an untested claim that had never been rendered. So
+`.btn--danger` is quiet at rest and red on hover.
+
+**The boundary is written into the rule**, because it will not hold forever: this is right for an
+icon in a row of icons and wrong for a standalone destructive text button, which should read as
+destructive before it is pointed at. That case needs its own filled variant, not a change back.
+
+### The control the directive could not reach
+
+`.cvlist__export` is a `<label>` wrapping an invisible `<select>`, and `[appButton]`'s selector is
+`button[appButton]`. So it did not follow its neighbours to `--text-secondary` and sat a shade
+darker between them. It is hand-matched now, and that hand-matching is the standing cost of the
+control not being a button - a third rule that has to be kept in step by hand.
+
+### And the count was wrong again, in the same shape as amendment seventeen
+
+Amendment eighteen's audit grepped for the string `icon-btn`. **The copies that do not carry that
+string were invisible to it.** `_ip-shared.scss:49` defines `.ip__icon` - 28px, transparent border,
+`--text-tertiary`, plus an `.is-open` state - which is byte-for-byte the `cv-list`/`cv-detail` shape,
+and it is used by **both** interview-prep pages.
+
+Counted, not recalled: after the fold the desktop app still holds **four** 28px square icon rules,
+not the one the handoff recorded.
+
+| rule              | where                                          | sites |
+| ----------------- | ---------------------------------------------- | ----- |
+| `.ipd__icon-btn`  | `interview-prep-detail`                        | 4     |
+| `.ip__icon`       | `_ip-shared.scss`, both `interview-prep` pages | 2     |
+| `.clb__icon-btn`  | `cover-letter-body-paragraphs`                 | 1     |
+| `.cvlist__export` | `document-row-actions` - a `<label>`           | 1     |
+
+This is amendment seventeen's lesson arriving from a fourth direction. Seventeen said a search that
+can be truncated cannot prove a negative. Eighteen's search was not truncated - it was **searching
+for a name when the thing being counted is a shape**, and three of the four survivors carry different
+names on purpose.
+
+### What this costs, and what it buys
+
+Six extractions shipped without a rendered check, and the first one run found a two-day-old
+regression. A seventh shipped without one, and the first one run found two more. **Both times the
+instrument was a screen and nothing else came close.** The rule stated in the previous handoff stands
+and is now paid for twice: nothing in this area merges without a rendered check.
+
+The cheap part is that the check does not need Tauri. The Angular dev server the desktop app is built
+from serves at `localhost:4200`, renders every shell, style and geometry, and only fails on
+`tauriInvoke`, which costs the data-driven screens and nothing else. Every measurement above came
+from it.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1026,9 +1125,24 @@ both outcomes is not a check.**
         budget), `cover-letter-detail` **done** (eight PRs, class 644 -> 333 and template 669 -> 222,
         both under budget; six components out, amendments fourteen to seventeen), `jobs` deferred
   - [x] Fold the four `.icon-btn` copies onto `libs/ui`'s `appButton size="icon"` (amendment
-        eighteen). **Still owed a rendered check** - two deltas are deliberate and visible.
-  - [ ] `interview-prep-detail`'s `.ipd__icon-btn` is now the last page-local icon button and can
-        fold too; left out of the sweep by scope decision
+        eighteen). **The rendered check has now been run and it failed**: the box was 28 x 29.84
+        rather than square, and `variant="danger"` coloured at rest where all four rules it replaced
+        were `:hover`-only. Both fixed in amendment nineteen.
+  - [ ] ~~`.ipd__icon-btn` is the last page-local icon button~~ - **wrong, there are four**;
+        amendment eighteen's audit grepped for the name `icon-btn` and missed every copy carrying a
+        different one. See the table in amendment nineteen.
+  - [ ] Fold `interview-prep-detail`'s `.ipd__icon-btn` (4 sites). Its base is an exact
+        `variant="secondary"`, border and all; only `:disabled` differs, 0.35 against the design
+        system's 0.5. The template is 311/300, so the ratchet will refuse the +8 lines and the answer
+        is `interview-stage-actions/` out of html lines 100-133 - the narrow cut, because the wider
+        `.ipd__actions` cluster contains `.ip__pop` from `_ip-shared.scss` and would trip amendment
+        sixteen.
+  - [ ] Fold `.ip__icon` in `_ip-shared.scss` (2 sites, both `interview-prep` pages). It is
+        `--text-tertiary` with an `.is-open` state, so it needs ghost plus a local rule for
+        `.is-open`, and it is a second visible delta on a second page.
+  - [ ] Decide what `.clb__icon-btn` in `cover-letter-body-paragraphs/` is for now that
+        `.btn--danger` is quiet at rest again - the local name was chosen (amendment seventeen)
+        precisely because folding it then meant a visible change, and that reason may have expired.
   - [x] ~~Remove or define the bare `.spin` class; it resolves to nothing~~ - **the claim was wrong**,
         it is defined in `_cover-letter-controls.scss` (amendment seventeen). It did have a real bug:
         it wobbled, because `<lucide-icon>` is `display: inline`. Fixed.

@@ -47,9 +47,9 @@
    the other way round, so that folding them onto this rule is a deletion and
    not a restyle (ADR-0005, amendment eighteen).
 
-   `min-width`/`min-height` rather than a fixed `width`/`height`: every call
-   site in the app uses a 13-16px icon, which lands inside 28px either way, but
-   a larger icon grows the box instead of overflowing it. */
+   `min-width`/`min-height` rather than a fixed `width`/`height`: a larger icon
+   grows the box instead of overflowing it. Eight of the nine call sites use a
+   13-16px icon; the ninth is the topbar theme toggle at 18px. */
 .btn--icon {
   padding: var(--space-2);
   min-width: 28px;
@@ -57,6 +57,17 @@
   justify-content: center;
   border-radius: var(--radius-input);
   line-height: 1;
+
+  /* Without this the box is taller than it is wide. The icon sits in an
+     inline `<svg>` inside a `<lucide-icon>` wrapper, so the wrapper is a line
+     box and reserves descender space below the baseline: 1.84px at this font
+     size, whatever the icon measures. An 18px icon therefore rendered
+     28 x 29.84, and a 16px one cleared 28 by 0.16px. `display: block` takes
+     the icon out of the line box, so the box is square at every icon size
+     and `min-*` grows it squarely past 28 (ADR-0005, amendment nineteen). */
+  svg {
+    display: block;
+  }
 }
 
 .btn--primary {
@@ -91,13 +102,25 @@
   }
 }
 
+/* Destructive, and quiet until pointed at. This variant had zero consumers
+   before the icon-button fold gave it two, while the four page rules it
+   replaced were all `:hover`-only reds; so the pages' behaviour is the one
+   with evidence behind it and the variant is the untested claim. Colouring at
+   rest turned a one-tone row of icons into a three-tone one and was not among
+   the deltas that pull request declared (ADR-0005, amendment nineteen).
+
+   The boundary: this is right for an icon in a row of icons, and wrong for a
+   standalone destructive text button, which should read as destructive before
+   it is pointed at. The first of those needs its own filled variant rather
+   than a change here. */
 .btn--danger {
   background: none;
-  color: var(--danger);
+  color: var(--text-secondary);
   border: var(--border-width) solid transparent;
 
   &:hover:not(:disabled) {
     background: var(--danger-tint);
     border-color: var(--danger);
+    color: var(--danger);
   }
 }

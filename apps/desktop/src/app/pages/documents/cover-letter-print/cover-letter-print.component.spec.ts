@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { CoverLetterPrintStore } from '@applye/application';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { CoverLetterPrintComponent } from './cover-letter-print.component';
@@ -21,10 +23,17 @@ const ITEM = {
   styleJson: JSON.stringify({ fontSizePt: 13 }),
 };
 
-/** Drives the component's async `load()` + `signalReady()` chain to completion.
- * `signalReady` uses real `setTimeout`s (never rAF - an off-screen window
- * throttles it), so the test waits them out rather than faking the clock. */
+/** Drives the component's async load + `awaitPrintSettle()` chain to
+ * completion. The settle uses real `setTimeout`s (never rAF - an off-screen
+ * window throttles it), so the test waits them out rather than faking the
+ * clock. */
 const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 700));
+
+/** The document's state is `CoverLetterPrintStore`'s since ADR-0005 amendment
+ * twenty-seven, and the store is component-scoped - so it comes from the
+ * component's own injector rather than the root one. */
+const storeOf = (fixture: ComponentFixture<CoverLetterPrintComponent>): CoverLetterPrintStore =>
+  fixture.debugElement.injector.get(CoverLetterPrintStore);
 
 describe('CoverLetterPrintComponent', () => {
   let printWindowReady: jest.Mock;
@@ -60,10 +69,11 @@ describe('CoverLetterPrintComponent', () => {
     await settle();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.loaded()).toBe(true);
-    expect(fixture.componentInstance.content().signature).toBe('Vitalii Kasap');
+    const letter = storeOf(fixture);
+    expect(letter.loaded()).toBe(true);
+    expect(letter.content().signature).toBe('Vitalii Kasap');
     // Stored overrides merge over the defaults, exactly as the editor loads them.
-    expect(fixture.componentInstance.style().fontSizePt).toBe(13);
+    expect(letter.style().fontSizePt).toBe(13);
     expect(fixture.nativeElement.querySelector('app-cover-letter-preview')).toBeTruthy();
   });
 
@@ -87,7 +97,7 @@ describe('CoverLetterPrintComponent', () => {
     await settle();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.loaded()).toBe(false);
+    expect(storeOf(fixture).loaded()).toBe(false);
     expect(printWindowReady).not.toHaveBeenCalled();
   });
 });

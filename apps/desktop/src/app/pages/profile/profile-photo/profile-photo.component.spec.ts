@@ -1,10 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ProfilePhotoStore } from '@applye/application';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
 import { ProfilePhotoComponent } from './profile-photo.component';
 
 const DATA_URI = 'data:image/png;base64,AAA';
+
+/** `cropSourceUri` and `saving` are `ProfilePhotoStore`'s since ADR-0005
+ * amendment twenty-eight, and the store is component-scoped - so it comes from
+ * the component's own injector. `uri` stayed on the component, because it is a
+ * `linkedSignal` on a required input. */
+const storeOf = (fixture: ComponentFixture<ProfilePhotoComponent>): ProfilePhotoStore =>
+  fixture.debugElement.injector.get(ProfilePhotoStore);
 
 interface Db {
   setProfilePhoto: jest.Mock;
@@ -79,7 +87,7 @@ describe('ProfilePhotoComponent', () => {
   it('persists a confirmed crop and closes the modal', async () => {
     const fixture = createFixture(null);
     // The modal has to be open first, or "it closed" is true before the call.
-    fixture.componentInstance['cropSourceUri'].set('data:image/png;base64,SRC');
+    storeOf(fixture).cropSourceUri.set('data:image/png;base64,SRC');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-cv-photo-crop')).not.toBeNull();
 
@@ -87,7 +95,7 @@ describe('ProfilePhotoComponent', () => {
     fixture.detectChanges();
 
     expect(db.setProfilePhoto).toHaveBeenCalledWith(DATA_URI);
-    expect(fixture.componentInstance['cropSourceUri']()).toBeNull();
+    expect(storeOf(fixture).cropSourceUri()).toBeNull();
     expect(thumb(fixture)?.getAttribute('src')).toBe(DATA_URI);
     expect(toast.success).toHaveBeenCalledWith(translate(fixture, 'profile.photo_saved'));
   });
@@ -140,10 +148,10 @@ describe('ProfilePhotoComponent', () => {
 
   it('cancelling the crop writes nothing', () => {
     const fixture = createFixture(null);
-    fixture.componentInstance['cropSourceUri'].set(DATA_URI);
+    storeOf(fixture).cropSourceUri.set(DATA_URI);
     fixture.componentInstance['onCropCancelled']();
 
-    expect(fixture.componentInstance['cropSourceUri']()).toBeNull();
+    expect(storeOf(fixture).cropSourceUri()).toBeNull();
     expect(db.setProfilePhoto).not.toHaveBeenCalled();
   });
 

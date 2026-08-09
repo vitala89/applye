@@ -1465,6 +1465,44 @@ components down to `route` plus a store and no `db`. The cover letter rendered `
 language the editor showed. `document.body` measures 0 because a print route has no shell layout,
 which is what a print window is.
 
+## Amendment twenty-eight: the first state this layer could not take
+
+`profile-photo` was the first migration where the answer to "how much moves" was decided by a
+constraint rather than by preference. Allowlist **16 -> 15**.
+
+`uri` is a `linkedSignal` seeded from a **required input**. An input belongs to the component that
+declares it, so a store cannot derive one - and this ADR has no interest in pretending otherwise. The
+alternatives were both worse than the constraint: reproducing the link with a `seed()` method and an
+effect is more machinery than the thing it replaces, and it introduces a re-seed ordering question
+that does not exist today. So `ProfilePhotoStore` owns `saving`, `cropSourceUri`, `error` and the two
+gateway calls, and the component keeps the value it renders together with the optimistic
+set-and-revert around it.
+
+**The `saving` guard is deliberately in both**, which reads like duplication and is not. The store's
+copy protects the gateway from any caller. The component's copy protects the optimistic write: without
+it a second click would show the new photo _before_ the store refused to write it, and the revert
+would then put back a value the first save is still in the middle of replacing. The two guards defend
+different things, and the comment says so at the site.
+
+The store also does not choose between the "saved" and "removed" wordings. Those are translations,
+translations are the app's, and the same boundary has now been drawn three times - against
+`OnboardingService`, against the quick-add toast, and here.
+
+Nine tests, including that a refused second write never reaches the gateway, and that a file the
+backend cannot read leaves the crop modal closed rather than opening a crop over nothing. The
+component spec reached into `cropSourceUri`; it reads the store through the component's own injector
+now, assertions unchanged - the second time this campaign has had to do that, and the pattern is
+settled: **a component-scoped store is reached through `fixture.debugElement.injector`.**
+
+**Rendered check**, and it repeated amendment twenty-three's lesson from a new direction. The thumb
+measured **2px wide** on the first read, which looked like a broken frame; the card was mid-collapse
+and the read caught the transition. The computed style is authoritative and says **90 x 120,
+`object-fit: cover`, radius 8** with the image loaded at its natural 80 x 80. Everything else held:
+"Upload photo" in the empty state, "Replace photo"/"Remove photo" with one set, the summary reading
+"Photo added", both actions disabled from the **store's** `saving`, and the crop modal opening and
+closing off the **store's** `cropSourceUri`. `getBoundingClientRect` is no more free of animation
+than `getComputedStyle` is.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1535,7 +1573,7 @@ which is what a print window is.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**16** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**15** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

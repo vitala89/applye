@@ -44,6 +44,64 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the first state this layer could not take
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-photo-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** migrate `profile-photo`, deferred from the previous watch because its `uri` is a
+  `linkedSignal` on a required input. `main` at `e76bc47` after #394.
+- **Completed:**
+  - `ProfilePhotoStore` in a new `libs/application/profile/` area, owning `saving`,
+    `cropSourceUri`, `error` and both gateway calls.
+  - `uri` stayed on the component, together with the optimistic set-and-revert, because a store
+    cannot derive a `linkedSignal` from an input it does not own.
+  - Nine store tests. The component spec's four reads of `cropSourceUri` now go through
+    `fixture.debugElement.injector`, assertions unchanged.
+  - `ADR-0005` amendment twenty-eight; `CHANGELOG.md`, `CURRENT_STATE.md` and the count in the
+    three instruction documents, all to 15.
+- **Not completed:** nothing in scope. PR not opened.
+- **Files or packages changed:** `profile-photo.component.{ts,html}` and its spec,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, new
+  `libs/application/src/lib/profile/profile-photo.store{,.spec}.ts`, `CHANGELOG.md`, `CLAUDE.md`,
+  `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`,
+  this file.
+- **Validation:**
+  - `nx test desktop` **1509 passed / 131 suites**; `nx test application` **616 passed / 42 suites**,
+    up from 608/41.
+  - Two component-spec tests failed first, the same shape as the previous watch: they reached into
+    `cropSourceUri`, which had moved. Fixed by reading the store from the component's injector, not
+    by weakening the assertions. **That pattern is now settled and written into the ADR.**
+  - `nx lint desktop` **0 errors** after fixing one the gate caught - removing the component's own
+    signals left `signal` imported and unused, exactly as in the health-panel migration.
+  - `nx lint application` clean, `nx build desktop` succeeds, `quality:file-size`,
+    `quality:attribution`, `format:check`, `git diff --check` all pass.
+  - **Rendered check run**, and it repeated a known trap from a new direction. The thumb measured
+    **2px wide** on the first read and looked like a broken frame; the card was mid-collapse and the
+    read caught the transition. Computed style is authoritative: **90 x 120, `object-fit: cover`,
+    radius 8**, image loaded at natural 80 x 80. `getBoundingClientRect` is no freer of animation
+    than `getComputedStyle` - amendment twenty-three generalised.
+  - Everything else verified live: "Upload photo" empty state, "Replace photo"/"Remove photo" with a
+    photo set, summary reading "Photo added", both actions disabled from the **store's** `saving`,
+    and the crop modal opening and closing off the **store's** `cropSourceUri`.
+- **Privacy/security impact:** none in mechanism, but this is the first migrated flow that touches
+  **personal data** - a headshot. The photo stays local, the same two commands are called, and no
+  new surface was added; the store holds the data URI in memory exactly as the component did.
+- **Decisions and assumptions:** the split was decided by the `linkedSignal` constraint at the
+  previous watch's gate, not re-opened here. The double `saving` guard is deliberate and commented.
+- **Risks or compatibility impact:** low. One collapsible section, verified in both states.
+- **Open issues or blockers:**
+  - The health-icon colour defect from two watches ago is still filed and unfixed.
+  - `tracker.component.scss` still **455/400**, untouched.
+- **Next first action:** open the PR from `refactor/profile-photo-store`. After it lands, the
+  remaining 15 entries by call site start at `interview-prep` (157 lines, 3 calls) and `pipeline`
+  (344, 3); the tail is `cv-list` (426, 16), `onboarding` (785, 12) and `jobs` (1164, 8), which are
+  page migrations rather than single-flow ones.
+- **Evidence:** the computed-style reading above; the two-project test counts; `ADR-0005`
+  amendment twenty-eight.
+
 ### 2026-08-09, the print windows, and the duplicate that only showed once the state left
 
 - **Status:** complete

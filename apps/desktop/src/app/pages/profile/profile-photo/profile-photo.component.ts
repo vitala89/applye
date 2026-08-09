@@ -5,10 +5,9 @@ import {
   input,
   linkedSignal,
   output,
-  signal,
 } from '@angular/core';
 import { ChevronDown, LucideAngularModule, Plus } from 'lucide-angular';
-import { DbService } from '@applye/data';
+import { ProfilePhotoStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
 import { CvPhotoCropComponent } from '../../documents/cv-detail/cv-photo-crop/cv-photo-crop.component';
@@ -27,19 +26,26 @@ import { CvPhotoCropComponent } from '../../documents/cv-detail/cv-photo-crop/cv
  * re-seeds it, which is correct - `db_upsert_profile` leaves `photo_data_uri`
  * alone and returns the row, so the reloaded value is whatever this component
  * last wrote.
+ *
+ * **That is also why `uri` did not move to `ProfilePhotoStore`**: it is a
+ * `linkedSignal` on a required input, and an input belongs to the component
+ * that declares it (ADR-0005, amendment twenty-eight). The store owns what is
+ * in flight and the two gateway calls; the value being rendered, and the
+ * optimistic set-and-revert around it, stay here.
  */
 @Component({
   selector: 'app-profile-photo',
   standalone: true,
   imports: [LucideAngularModule, CvPhotoCropComponent],
+  providers: [ProfilePhotoStore],
   templateUrl: './profile-photo.component.html',
   styleUrl: './profile-photo.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfilePhotoComponent {
-  private readonly db = inject(DbService);
   private readonly toast = inject(ToastService);
   protected readonly t = inject(TranslateService).t;
+  protected readonly photos = inject(ProfilePhotoStore);
 
   readonly photo = input.required<string | null>();
   readonly open = input.required<boolean>();
@@ -47,9 +53,6 @@ export class ProfilePhotoComponent {
   readonly toggled = output<void>();
 
   protected readonly uri = linkedSignal<string | null>(() => this.photo());
-  protected readonly saving = signal(false);
-  /** Source image awaiting a crop; non-null opens the crop modal. */
-  protected readonly cropSourceUri = signal<string | null>(null);
 
   protected readonly icons = {
     chevron: ChevronDown,
@@ -65,42 +68,43 @@ export class ProfilePhotoComponent {
       filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
     });
     if (typeof selected !== 'string') return;
-    try {
-      this.cropSourceUri.set(await this.db.cvPhotoReadFile(selected));
-    } catch (e) {
-      this.toast.error(String(e));
-    }
+    if (!(await this.photos.readForCrop(selected))) this.toast.error(this.photos.error());
   }
 
   protected async onCropConfirmed(uri: string): Promise<void> {
-    this.cropSourceUri.set(null);
+    this.photos.cancelCrop();
     await this.save(uri);
   }
 
   protected onCropCancelled(): void {
-    this.cropSourceUri.set(null);
+    this.photos.cancelCrop();
   }
 
   protected async remove(): Promise<void> {
     await this.save(null);
   }
 
-  /** Persists immediately rather than waiting for the page's Save button: the
-   * photo is not part of the profile form, and a cropped photo left unsaved
-   * would be silently lost on navigation. */
+  /**
+   * The optimistic half of the save. The store performs the write and owns
+   * `saving`; what stays here is the value being rendered - `uri` is a
+   * `linkedSignal` on an input, so the store cannot hold it - and therefore the
+   * revert too.
+   *
+   * The `saving` guard is checked here as well as in the store, and that is not
+   * redundant: without it a second click would show the new photo before the
+   * store refused to write it, and the revert would put back a value the first
+   * save is still in the middle of replacing.
+   */
   private async save(uri: string | null): Promise<void> {
-    if (this.saving()) return;
-    this.saving.set(true);
+    if (this.photos.saving()) return;
     const previous = this.uri();
     this.uri.set(uri);
-    try {
-      await this.db.setProfilePhoto(uri);
+
+    if (await this.photos.save(uri)) {
       this.toast.success(this.t()(uri ? 'profile.photo_saved' : 'profile.photo_removed'));
-    } catch (e) {
-      this.uri.set(previous);
-      this.toast.error(String(e));
-    } finally {
-      this.saving.set(false);
+      return;
     }
+    this.uri.set(previous);
+    this.toast.error(this.photos.error());
   }
 }

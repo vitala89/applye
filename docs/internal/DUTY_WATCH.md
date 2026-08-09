@@ -44,6 +44,50 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, GA4 had never received a hit, and every visible sign said it had
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5; triaged 4/10 for the investigation, re-triaged 5/10 for fix + test + deploy - radius 1, ambiguity 0, risk 2, verify 2, unknowns 0. Risk 2 because deployment is outward-facing. No subagents, no gate; the cause was measured rather than argued.)
+- **Branch:** `fix/ga4-datalayer-arguments`
+- **Commits:** `50ef823` (the fix and its tests), `b0e6cb1` (sitemap `lastmod` refreshed by the production build)
+- **Pull request:** [#387](https://github.com/vitala89/applye/pull/387), MERGEABLE. Its checks were queued at the time of writing; GitHub Actions on this repository fails within seconds on billing, which is why the deployment was manual.
+- **Objective:** answer whether applye.dev's empty GA4 property was a deliberate configuration or a fault, then fix it if it was a fault.
+
+- **The answer was a fault, in the code, and it had cost every hit since launch.** `AnalyticsService.load()` installed its shim as `(...args) => win.dataLayer?.push(args)`, pushing a plain array per command. gtag.js reads a queued command **only** as an `arguments` object and ignores anything else without a warning, so `js` and `config` never executed, no destination was configured, and no `/g/collect` request ever left the page.
+
+- **Why no instrument in this repository could have caught it.** The bundle was correct, the ID was correct, consent worked, and the script loaded: `window.gtag` was a function, `window.google_tag_manager['G-ZY158GV42C']` existed (it is created from the script's own URL, not from `config`, so it proves nothing), and `dataLayer` grew to five entries. Nothing threw, no CSP existed to violate, and GA4's only report was "data collection isn't active on your website" - which reads as a missing tag rather than a present and mute one.
+
+- **Measured, not reasoned.** On the live site with consent granted: zero requests matching `/collect/` in `performance.getEntriesByType('resource')`. Then, on the same page, a canonical `function g(){dataLayer.push(arguments)}` plus `js`, `config` and one event produced a `region1.google-analytics.com/g/collect?...&tid=G-ZY158GV42C` hit within two seconds. That isolated the fault to the shim and cleared GA4, the network, consent and the property configuration in one step. Connectivity to `google-analytics.com` was confirmed separately with a `no-cors` fetch, so a blocked host was ruled out before the probe.
+
+- **Completed:**
+  - The shim is an exported `installGtag(win)` that pushes `arguments`. Exporting it is what makes it testable: the service's own `load()` is unreachable from unit tests because the committed measurement ID is the placeholder that keeps checkouts out of the real property.
+  - Four tests: the queued value is `[object Arguments]` and not an array, its contents survive intact, an existing `dataLayer` is reused rather than replaced, and the shim is published on the window.
+  - **The first test was proved to fail against the old shape** - `push(Array.from(arguments))` was substituted deliberately, the suite went to 1 failed / 79 passed, and the file was restored.
+  - `prefer-rest-params` is disabled on exactly that line, with the reason above it, because obeying the rule is the bug. The redundant second disable that ESLint flagged was removed.
+  - Docs: `CHANGELOG.md` under Unreleased/Fixed; `docs/internal/ANALYTICS_SETUP.md` gains a "When the tag is present and the property is still empty" section with the thirty-second `performance` check and the canonical probe, and its status block and stale "nothing is deployed" item are corrected.
+
+- **Not completed:** nothing. The branch is pushed and #387 is open; only the merge itself is outstanding.
+
+- **Files changed:** `apps/web/src/app/analytics/analytics.service.ts`, `apps/web/src/app/analytics/analytics.spec.ts`, `apps/web/public/sitemap.xml`, `CHANGELOG.md`, `docs/internal/ANALYTICS_SETUP.md`.
+
+- **Validation:** `nx run web:test` 80/80 passing across 6 suites; `nx run web:lint` clean, 0 errors and 0 warnings after the redundant disable came out; `npm run format:check` passed; `git diff --check` clean; `npm run quality:file-size` and `npm run quality:attribution` both passed. The desktop suites were not run - nothing outside `apps/web` was touched.
+
+- **Deployed and verified on the live site.** `GA_MEASUREMENT_ID=G-ZY158GV42C npm run web:build`, then `wrangler pages deploy dist/apps/web/browser --project-name=applye --branch=main`, 105 files, deployment `e29e87e0`. `deploy.sh` was bypassed because it requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the environment while wrangler here is authenticated by OAuth; every gate the script runs had already been run by hand. The placeholder was restored with `GA_MEASUREMENT_ID= npm run web:analytics-config` immediately afterwards, and the working tree confirms `G-PLACEHOLDER`. On the deployed bundle, after accepting consent: `dataLayer` holds `[object Arguments]` entries, and a `region1.google-analytics.com/g/collect?v=2&tid=G-ZY158GV42C` hit is present.
+
+- **One transient 404 during the rollout, not a defect.** `chunk-2XV5VSJU.js` returned 404 to the browser in the seconds after upload while `main-SQRE4SI3.js` already served, so that one page load could not bootstrap. Both the apex and the `*.pages.dev` deployment URL returned 200 immediately afterwards and the next load was clean. Worth knowing before diagnosing it as a broken build: a direct-upload Pages deploy is briefly inconsistent across edge nodes.
+
+- **Privacy/security impact:** none by design, and worth stating precisely - the consent gate, the `sanitiseParams` allow list, IP anonymisation and both ad-signal switches are untouched. The change makes the already-declared collection actually happen; it widens nothing. What visitors were told the site collects is now what it collects.
+
+- **Decisions and assumptions:** the shim was exported rather than tested through the service, because reaching `load()` would mean shipping a real measurement ID into the test environment - the exact thing the placeholder arrangement exists to prevent. Deployment went ahead on the maintainer's explicit instruction.
+
+- **Risks:** GA4 needs up to 48 hours to stop reporting "data collection isn't active", so the property will look unchanged for a while after a correct fix. Absolute numbers will stay below real traffic because the consent gate makes decliners invisible - by design, recorded in `ANALYTICS_SETUP.md`.
+
+- **Open issues:** three diagnostic events were sent to the production property while proving the cause - `claude_probe_cfg` landed, and `claude_probe_array` / `claude_probe_args` did not because they hit the broken path. They will appear in reports for that day and are not real traffic.
+
+- **Next first action:** merge #387, so `main` carries what is already live. Then, once hits accumulate for a day: mark `download_click` as a key event, and define internal traffic plus switch that filter from Testing to **Active** - both were blocked on traffic that until now did not exist.
+
+- **Evidence:** `50ef823`, `b0e6cb1`; deployment `e29e87e0.applye.pages.dev`; the live `/g/collect` hit quoted above.
+
 ### 2026-08-09, the rendered check ran and the fold was wrong in two places
 
 - **Status:** complete

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { AnalyticsService } from './analytics.service';
+import { AnalyticsService, GtagWindow, installGtag } from './analytics.service';
 import { ConsentService } from './consent.service';
 import { detectOs, sanitiseParams } from './events';
 import { GA_MEASUREMENT_ID } from './measurement-id';
@@ -59,6 +59,51 @@ describe('analytics consent gating', () => {
 
     expect(calls).toEqual([]);
     delete win.gtag;
+  });
+});
+
+describe('the gtag shim', () => {
+  const fakeWindow = (): GtagWindow => ({}) as unknown as GtagWindow;
+
+  it('queues each command as an arguments object, which is the only form gtag.js reads', () => {
+    const win = fakeWindow();
+    const gtag = installGtag(win);
+
+    gtag('js', new Date());
+    gtag('config', 'G-TESTID123', { send_page_view: false });
+
+    // A plain array here is the shape that shipped between launch and
+    // 2026-08-09: gtag.js ignores it, so `config` never runs, no destination is
+    // configured, and the property receives nothing while every visible sign -
+    // the injected script, window.gtag, a growing dataLayer - says it works.
+    expect(win.dataLayer).toHaveLength(2);
+    for (const queued of win.dataLayer ?? []) {
+      expect(Object.prototype.toString.call(queued)).toBe('[object Arguments]');
+      expect(Array.isArray(queued)).toBe(false);
+    }
+  });
+
+  it('keeps the command and its parameters intact in the queue', () => {
+    const win = fakeWindow();
+    installGtag(win)('event', 'download_click', { os: 'macos' });
+
+    const queued = Array.from((win.dataLayer ?? [])[0] as ArrayLike<unknown>);
+    expect(queued).toEqual(['event', 'download_click', { os: 'macos' }]);
+  });
+
+  it('reuses a dataLayer the page already has rather than dropping queued commands', () => {
+    const win = fakeWindow();
+    win.dataLayer = ['pre-existing'];
+    installGtag(win)('event', 'page_view');
+
+    expect(win.dataLayer).toHaveLength(2);
+    expect(win.dataLayer?.[0]).toBe('pre-existing');
+  });
+
+  it('publishes the shim on the window, so call sites reach the same queue', () => {
+    const win = fakeWindow();
+    const gtag = installGtag(win);
+    expect(win.gtag).toBe(gtag);
   });
 });
 

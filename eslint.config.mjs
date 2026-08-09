@@ -30,7 +30,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/core/onboarding/onboarding.component.ts',
   '**/layout/shell-layout.component.ts',
   '**/pages/analytics/analytics.component.ts',
-  '**/pages/dashboard/dashboard.component.ts',
   '**/pages/documents/cover-letter-list/cover-letter-list.component.ts',
   '**/pages/documents/cv-list/cv-list.component.ts',
   '**/pages/interview-prep/interview-prep-detail/interview-prep-detail.component.ts',

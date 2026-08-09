@@ -47,7 +47,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/pages/profile/profile-photo/profile-photo.component.ts',
   '**/pages/profile/profile.component.ts',
   '**/pages/settings/settings.component.ts',
-  '**/shared/paste-job-modal/paste-job-modal.component.ts',
 ];
 
 /** Matches `inject(DbService)` however it is written, including a type argument. */

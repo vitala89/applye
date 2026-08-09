@@ -1296,6 +1296,55 @@ a transitioning property**, which is a real limit on the rendered check this cam
 reads geometry and colour honestly only for properties that are not mid-animation. Nothing was wrong
 with the styling, and the hour spent proving that was the price of not shipping on an assumption.
 
+## Amendment twenty-four: the expired reason, and the one that had not replaced it
+
+`.clb__icon-btn` in `cover-letter-body-paragraphs/` was the last page-local icon button, and the only
+one whose checklist entry framed itself as a question rather than a task: the local name was chosen in
+amendment seventeen **because** folding it then meant a visible change - `.btn--danger` coloured at
+rest - and amendment nineteen took that away. So the reason had expired. What the entry could not say
+is whether a different reason had taken its place, and that is not answerable from the history.
+
+**The measurement answered it, and it disagreed with the comment sitting above the rule.** That
+comment said the button "keeps its local name, which was decided separately", and named its 28px box
+as the thing that had been reconciled. Every property in the rest state was already the design
+system's to the pixel: 28px box, `--radius-input`, a 1px transparent border, `--text-secondary`,
+the same 140ms `background` transition. `--space-2` is 4px, the icon is 13px, so `4 + 13 + 4 = 21`
+and `min-width: 28px` decides the box - the fold cannot move it. The only property that differed was
+**hover**: local paints `--surface-hover` with a red icon, the design system paints `--danger-tint`
+with a `--danger` ring.
+
+**What settled the decision was `git show` rather than the argument.** `.ipd__icon-btn--danger:hover`,
+one of the four rules amendment eighteen folded, read `background: var(--danger-tint); border-color:
+var(--danger); color: var(--danger)` - the design system's danger hover verbatim. The variant was
+pinned to those pages, which means this button was not holding a considered local look; it was the
+**one destructive icon in the application that disagreed with every other one**. Three readings went
+to the gate anyway - fold, keep, or fold behind a local override - because "the recorded reason
+expired" justifies re-opening the question and not any particular answer to it. The maintainer chose
+the fold and the hover change with it.
+
+Result: `appButton variant="danger" size="icon"`, twenty lines of SCSS deleted, `quality:style-move`
+**3 lost, 0 gained**. Two pure deletions in a row, and the campaign's last one - no page-local icon
+button remains anywhere in the application.
+
+**A method note on the rendered check, because this is the first time hover itself was measured.**
+Amendment twenty could not produce `:hover` and settled for measuring the same two declarations in the
+open state; amendment twenty-three proved a computed read is dishonest on a transitioning property.
+Neither problem is solved by cloning the element and copying declarations onto it - that proves the
+copy works. What does work: find the design system's own `.btn--danger:hover:not(:disabled)` rule in
+the CSSOM, rewrite its `selectorText` to a probe class, add the class, measure, then put the selector
+back. The real declarations run through the real cascade with real token resolution, and with
+`transition: none` set inline the values resolve immediately. Both themes:
+
+|       | rest                                                                  | hover                                                                   |
+| ----- | --------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| dark  | 28.00 x 28.00, r6, transparent, `rgb(154,150,140)`, svg `block` 13x13 | `rgba(224,86,86,0.14)`, ring and icon `rgb(240,122,122)`, box unchanged |
+| light | 28.00 x 28.00, r6, transparent, `rgb(90,90,99)`                       | `rgba(224,86,86,0.1)`, ring and icon `rgb(224,86,86)`, box unchanged    |
+
+The box does not reflow on hover because the rest border was already `1px solid transparent` - the
+ring changes colour into space the layout had already reserved. A test pins `btn`, `btn--danger` and
+`btn--icon` on the delete button, on amendment twenty's reasoning: dropping either attribute breaks
+nothing that fails, since the button still deletes and only stops looking like the thing it is.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1349,9 +1398,16 @@ with the styling, and the hour spent proving that was the price of not shipping 
         selector, and an accent fill on `--text-accent` (indigo-400) with a hardcoded `#fff` against
         the system's `--accent` (indigo-600) and `--accent-fg`. Needs its own grilling round. The
         `.jt-icon` copies the extractions leave behind all die in that one pull request.
-  - [ ] Decide what `.clb__icon-btn` in `cover-letter-body-paragraphs/` is for now that
+  - [x] Decide what `.clb__icon-btn` in `cover-letter-body-paragraphs/` is for now that
         `.btn--danger` is quiet at rest again - the local name was chosen (amendment seventeen)
         precisely because folding it then meant a visible change, and that reason may have expired.
+        **It had, and nothing had replaced it: folded** onto `appButton variant="danger" size="icon"`
+        (amendment twenty-four). Rest state and geometry were already identical on every property;
+        the one accepted visible change is hover, from a neutral `--surface-hover` plate to the
+        system's `--danger-tint` plate and `--danger` ring - which is what the four rules amendment
+        eighteen folded had rendered all along, so this was the last destructive icon in the app that
+        disagreed with the others. `quality:style-move` reads 3 lost, 0 gained. **No page-local icon
+        button remains anywhere in the application; the campaign is closed.**
   - [x] ~~Remove or define the bare `.spin` class; it resolves to nothing~~ - **the claim was wrong**,
         it is defined in `_cover-letter-controls.scss` (amendment seventeen). It did have a real bug:
         it wobbled, because `<lucide-icon>` is `display: inline`. Fixed.

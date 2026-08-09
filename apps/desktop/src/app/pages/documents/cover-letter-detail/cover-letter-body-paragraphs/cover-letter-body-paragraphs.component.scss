@@ -78,32 +78,10 @@
   border-color: var(--accent);
 }
 
-// A local rule rather than a shared class, decided when `.icon-btn` was still
-// four page stylesheets with three different bodies. Those four are now gone -
-// they fold onto `libs/ui`'s `appButton size="icon"` (ADR-0005, amendment
-// eighteen) - and this one stayed local by the same decision that created it,
-// because a delete button inside a paragraph row is the block's own affair.
-//
-// Its 32px was matched to the page header's, which the fold moved to 28, so
-// this moved with it. If it ever needs a third state or a second modifier,
-// that is the signal to fold it too.
-.clb__icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-input);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-standard);
-}
-.clb__icon-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-.clb__icon-btn--danger:hover {
-  color: var(--danger, #d64545);
-}
+// `.clb__icon-btn` is gone: the paragraph delete button is
+// `appButton variant="danger" size="icon"` (ADR-0005, amendment twenty-four).
+// The rest state and the 28px box were already the design system's to the
+// pixel; what changed is the hover, from a neutral plate with a red icon to
+// the system's `--danger-tint` plate and `--danger` ring. That is the hover
+// every other destructive icon in the app already renders - this was the last
+// one that did not.

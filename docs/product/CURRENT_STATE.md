@@ -182,6 +182,19 @@
   `.ipd__actions` cluster, because that cluster holds `.ip__pop` from `_ip-shared.scss` - amendment
   sixteen's trap, avoided **before** the merge for the first time. `.ip__icon` is the next fold and
   is a second visible delta on a second page.
+- **The icon-button campaign is closed: all six copies are folded and no page-local icon button
+  remains anywhere in the application.** After `.ipd__icon-btn` came `.ip__icon` (PR #388, whose
+  `.is-open` class went to `.btn--ghost[aria-expanded='true']` because the trigger already bound the
+  attribute), then `tracker`'s `.jt-icon` (PR #390) - six sites in four shapes, which first needed
+  `tracker.component.html` cut **557 -> 278** in five component extractions (PR #389). The last item
+  was `.clb__icon-btn`, and it was a decision rather than a mechanical fold: its local name was
+  chosen precisely **because** folding it once meant a visible change, and amendment nineteen had
+  removed that reason. Measurement settled it - rest state and geometry were already identical on
+  every property, and the one delta was hover, where `git show` on the already-folded
+  `.ipd__icon-btn--danger:hover` returned the design system's tint-and-ring verbatim. This was the
+  only destructive icon in the app that disagreed with the others; it is folded, with that single
+  hover change declared and checked on a rendered screen in both themes (ADR-0005, amendments twenty
+  to twenty-four). Two of the folds leave **zero** local rules behind.
 - **One dead class found by the same audit**, and a second claim that was **wrong and is corrected**.
   `.icon-btn--active` was bound on the Edit/Preview button, which is an `appButton`, and resolved to
   nothing - so the toggle never showed it was on; fixed by switching the button's own `variant`. The

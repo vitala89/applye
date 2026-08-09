@@ -72,7 +72,9 @@
                   {{ t()('documents.cover_letter_regen') }}
                 </button>
                 <button
-                  class="clb__icon-btn clb__icon-btn--danger"
+                  appButton
+                  variant="danger"
+                  size="icon"
                   type="button"
                   (click)="paragraphRemoved.emit($index)"
                   [attr.aria-label]="t()('actions.delete')"

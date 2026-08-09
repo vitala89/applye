@@ -112,6 +112,24 @@ describe('CoverLetterBodyParagraphsComponent', () => {
     expect(letter.content().bodyParagraphs).toHaveLength(2);
   });
 
+  /**
+   * The delete button was `.clb__icon-btn.clb__icon-btn--danger`, the last
+   * page-local icon button in the app, and it is `appButton variant="danger"
+   * size="icon"` now (ADR-0005, amendment twenty-four). Dropping either
+   * attribute breaks nothing that fails: the button still deletes, it just
+   * stops looking like a destructive control and loses its 28px box. This
+   * pins the three classes the design system styles it through.
+   *
+   * jsdom resolves no custom properties and performs no layout, so this
+   * asserts reach and not appearance - the rendered check is still owed.
+   */
+  it('deletes through the design-system danger icon button', () => {
+    const [, , remove] = paragraphActions(0);
+    expect(remove.classList).toContain('btn');
+    expect(remove.classList).toContain('btn--danger');
+    expect(remove.classList).toContain('btn--icon');
+  });
+
   it('reports a regeneration by paragraph index', () => {
     const [, regenerate] = paragraphActions(0);
     regenerate.click();

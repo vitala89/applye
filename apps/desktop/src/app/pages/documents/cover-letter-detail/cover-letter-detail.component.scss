@@ -61,7 +61,9 @@
    where the other three were 28 - so the back button is the one place in this
    sweep that changes size, by 4px. `.clb__icon-btn` in the body-paragraphs
    block was moved to 28px in the same change so the editor stays internally
-   consistent; it keeps its local name, which was decided separately. */
+   consistent, and kept its local name then; it folded onto
+   `appButton variant="danger" size="icon"` in amendment twenty-four, so no
+   page-local icon button remains in this editor. */
 
 /* Draft-with-AI: appButton dimensions, accent outline */
 .draft-accent {

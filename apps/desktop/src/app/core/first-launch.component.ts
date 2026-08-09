@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
-import { DbService } from '@applye/data';
+import { FirstLaunchStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
 import { HealthCheckPanelComponent } from './health-check-panel.component';
@@ -412,28 +412,21 @@ export interface FirstLaunchDismiss {
       }
     `,
   ],
+  providers: [FirstLaunchStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FirstLaunchComponent {
-  private readonly db = inject(DbService);
+  private readonly store = inject(FirstLaunchStore);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
 
   readonly dismissed = output<FirstLaunchDismiss>();
 
   /** Persist that the welcome was seen, then hand back the user's intent.
-   *  Skipping the tour also marks onboarding seen so it never auto-opens; the
-   *  empty-profile banner still nudges from inside the app. */
+   *  The store's return value is deliberately ignored: even if persisting the
+   *  flags fails, never trap the user on this screen. */
   async finish(startOnboarding: boolean): Promise<void> {
-    try {
-      await this.db.updateSettings(
-        startOnboarding
-          ? { healthCheckSeen: true }
-          : { healthCheckSeen: true, onboardingSeen: true },
-      );
-    } catch {
-      // Even if persisting the flags fails, never trap the user on this screen.
-    }
+    await this.store.dismiss(startOnboarding);
     this.dismissed.emit({ startOnboarding });
   }
 }

@@ -31,6 +31,7 @@ export * from './lib/documents/cv-regeneration';
 export * from './lib/documents/cv-regeneration.store';
 export * from './lib/documents/cv-section-order';
 export * from './lib/documents/cv-style.store';
+export * from './lib/onboarding/first-launch.store';
 export * from './lib/onboarding/onboarding-banner.store';
 export * from './lib/onboarding/onboarding-gate.util';
 export * from './lib/health/health-check.store';

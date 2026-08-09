@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, two more off the allowlist, and a defect that was not mine
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/pipeline-health-stores`
+- **Commits:** three - one per migration, one for docs
+- **Pull request:** not yet opened
+- **Objective:** continue shrinking `COMPONENTS_STILL_USING_THE_GATEWAY` after #392 landed
+  (`main` at `a77cbe0`), taking the next-cheapest entries by call site.
+- **Completed:**
+  - `HealthCheckStore` in a new `libs/application/health/` area - its own area rather than
+    `onboarding/`, because the panel is rendered by both first-launch and Settings.
+  - `StageQuickAddStore` in a new `libs/application/pipeline/` area, taking the **whole** form
+    rather than only the write, with `STAGE_TYPES` moving with it.
+  - Twelve tests across the two stores. Neither component had a spec before.
+  - `ADR-0005` amendment twenty-six; `CHANGELOG.md`, `CURRENT_STATE.md`, and the allowlist count in
+    `CLAUDE.md`, `AGENTS.md` and `AGENT_START_HERE.md` all moved to 18.
+  - **Filed a pre-existing defect** the rendered check turned up, rather than fixing it here.
+- **Not completed:** the health-icon colour defect is filed, not fixed. PR not opened.
+- **Files or packages changed:** `health-check-panel.component.ts`,
+  `stage-quick-add.component.{ts,html}`, `eslint.config.mjs`, `libs/application/src/index.ts`,
+  new `libs/application/src/lib/health/health-check.store{,.spec}.ts`, new
+  `libs/application/src/lib/pipeline/stage-quick-add.store{,.spec}.ts`, `CHANGELOG.md`,
+  `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`,
+  `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1507 passed / 130 suites**, unchanged - nothing moved out of it this time.
+  - `nx test application` **592 passed / 39 suites**, up from 581/37: the twelve new tests.
+  - `nx lint desktop` **0 errors**. One error was introduced and fixed during the work: removing the
+    component's own signals left `signal` imported and unused, which the gate caught.
+  - `nx lint application` clean, `nx build desktop` succeeds, `quality:file-size`,
+    `quality:attribution`, `format:check`, `git diff --check` all pass.
+  - **Rendered check run**, and it is the reason this entry exists in the shape it does:
+    - Health panel: skeleton renders three bars with its `aria-label`; three result rows render with
+      16px icons; **Rerun clicked live** drove the whole new path - store -> gateway failure -> a
+      single `fail` row carrying the component's translated label, `loading` cleared.
+    - Stage quick-add: the component instance carries only `form`, with no `db` and no local field
+      signals. Typing into the label reached the store, enabled submit, and a live submit failed
+      into `error`, which rendered inline **and** was toasted - the store/component split working.
+    - **What could not be measured honestly**: the quick-add form's geometry. Reaching it needs a
+      synthetic card in the pipeline's `selectedCard`, and that collapses the modal above it
+      (`.modal` measured 2px wide). Numbers withheld rather than reported, because they would be
+      measuring the harness.
+- **Privacy/security impact:** none. Same calls, one layer down.
+- **Decisions and assumptions:** three, taken at the grilling gate: the whole quick-add form moves
+  rather than only its write; health gets its own area rather than joining onboarding; both ship in
+  one PR with a commit each.
+- **Risks or compatibility impact:** low, but wider than the last one - the health panel is shared
+  by two hosts, and both were considered when choosing the area name.
+- **Open issues or blockers:**
+  - **Pre-existing, filed, not fixed:** the health check's `ok`/`warn`/`fail` icons all render
+    `rgb(244,242,237)`. `[class]` on `<lucide-icon>` lands nothing - empty `classList` on the
+    rendered element - so three colour rules have never applied. `git diff main` on that file touches
+    no line of the binding. Likely `lucide-angular`'s own host `class` binding winning, which would
+    make the pattern inert at every other call site using it; that sweep is part of the fix.
+  - `tracker.component.scss` still **455/400**, untouched.
+- **Next first action:** open the PR from `refactor/pipeline-health-stores`. After it lands, the
+  next entries by call site are `cover-letter-print` (99 lines, 2 calls), `profile-photo` (106, 2)
+  and `cv-print` (112, 2).
+- **Evidence:** the live Rerun and submit traces above; the empty `classList` reading;
+  `ADR-0005` amendment twenty-six.
+
 ### 2026-08-09, back to the allowlist, and one of the 22 was never work
 
 - **Status:** complete

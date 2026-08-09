@@ -1388,6 +1388,43 @@ that stayed on the component working across the new boundary.
 
 Allowlist **22 -> 20** in one pull request.
 
+## Amendment twenty-six: two more, and the rendered check earned its keep again
+
+`health-check-panel` and `stage-quick-add` were the next two cheapest entries by call site - one
+gateway call each, 156 and 83 lines. Both migrated in one pull request, allowlist **20 -> 18**.
+
+**`HealthCheckStore` got its own `health/` area rather than joining `onboarding/`.** The panel has
+two homes, the first-launch screen and Settings, and naming the area for either one is wrong at the
+other. `run` takes the label for its failure row as an argument, because this layer holds no
+translations - and the failure stays a `fail` row rather than an error state, which is the behaviour
+the component already had. A check that cannot answer has told the user something true.
+
+**`StageQuickAddStore` took the whole form, not only the write.** The alternative was a thin store
+exposing `create()` with the three draft fields left on the component, and it was rejected at the
+gate for a reason this ADR has already written down once: `busy` and `error` are "what is in flight",
+so that split would leave one screen's state with two owners. What did **not** move is the toast.
+`submit` returns the stage or `null` and leaves `error` set; the component decides what the user is
+told. Refusing and failing stay distinguishable - a refusal, meaning an empty label or a save already
+running, leaves `error` empty and says nothing, which is why the component checks it before toasting.
+
+Twelve tests across the two stores, on behaviour that had none: neither component had a spec.
+
+**The rendered check found a defect again, and this time not in the migration.** Driving the panel
+through its states showed all three status icons computing the same colour, `rgb(244,242,237)`. The
+`[class]="'health-item__icon health-item__icon--' + i.status"` binding lands nothing: the rendered
+`<lucide-icon>` has an **empty `classList`**, so `--ok` green, `--warn` amber and `--fail` red have
+never applied. `git diff main` on that file touches no line of the binding, so it is pre-existing and
+was filed separately rather than fixed here - the likely cause is `lucide-angular`'s own host `class`
+binding winning, which would make the same pattern inert at every other call site too. Three
+consecutive rendered checks have now each found something no gate reports.
+
+What the check could **not** honestly measure: `stage-quick-add`'s geometry. Reaching its form needs
+a card forced into the pipeline's `selectedCard`, and the synthetic card collapses the modal above it
+
+- `.modal` measured 2px wide. Its behaviour was verified end to end instead, including that a failed
+  write sets `error` in the store and is toasted by the component, and the numbers are not reported
+  because they would be measuring the harness.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1458,7 +1495,7 @@ Allowlist **22 -> 20** in one pull request.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**20** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**18** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

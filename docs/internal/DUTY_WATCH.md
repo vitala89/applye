@@ -44,6 +44,65 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the dashboard, and a duplicate deliberately left standing
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/dashboard-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** migrate `dashboard` after #398 (`main` at `9ba71e0`): five gateway calls and a
+  dozen derivations, several of which must **not** move.
+- **Completed:**
+  - `DashboardStore` in a new `libs/application/dashboard/` area: data, the four KPIs, the new-user
+    test, the upcoming-interview rows, and the five calls.
+  - `dashboard.util.ts` moved down whole with its spec.
+  - The action queue, the greeting and the recent-jobs rows deliberately left on the component -
+    icons, translations and navigation closures.
+  - `monogram` deliberately **not** folded onto `companyInitials`, with a comment saying why.
+  - Thirteen store tests; the component spec's `isNewUser` read converted the settled way.
+  - `ADR-0005` amendment thirty-two; `CHANGELOG.md`, `CURRENT_STATE.md` and the count in four
+    documents, all to 11.
+- **Not completed:** nothing in scope. PR not opened.
+- **Files or packages changed:** `dashboard.component.{ts,html}` and its spec, moved
+  `dashboard.util.{ts,spec.ts}` into `libs/application/src/lib/dashboard/`, new
+  `dashboard.store{,.spec}.ts` there, `libs/application/src/index.ts`, `eslint.config.mjs`,
+  `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`,
+  `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1493 passed / 130 suites**, down 16 and one suite - the util spec moved out.
+  - `nx test application` **706 passed / 49 suites**, up from 677/47: the 16 moved plus 13 new.
+    The two numbers reconcile exactly, which is the check that nothing was dropped in the move.
+  - One component-spec test failed first, reading `componentInstance['isNewUser']()`. Fourth time
+    this campaign; converted through `fixture.debugElement.injector`, assertion unchanged.
+  - `nx lint desktop` **0 errors** after clearing five the gate caught - `signal`, three type
+    imports and the now-unused `InterviewRow` interface, all left behind by the move.
+  - `nx lint application` clean, `nx build desktop` succeeds, `quality:file-size`,
+    `quality:attribution`, `format:check`, `git diff --check` all pass.
+  - **Rendered check run, and it proved the decision rather than only the migration.** KPIs read
+    4 active, 2 interviews, 1 overdue, 1 offer. The upcoming list drew `GL` at `5h` marked soon, and
+    the empty-company row drew **`?`** - the exact difference that not folding `monogram` preserved,
+    visible on screen rather than asserted in a comment. The queue still built its three items with
+    icons, translated copy and working actions while reading store data, and the greeting still
+    translated.
+- **Privacy/security impact:** none in mechanism. Worth noting the store now holds the profile and
+  a hash of its text in memory, exactly as the component did; nothing new is read or written.
+- **Decisions and assumptions:** three, taken at the grilling gate: data, KPIs and interview rows
+  move while the queue stays; the util moves whole; `monogram` stays separate from
+  `companyInitials`.
+- **Risks or compatibility impact:** low. The riskiest part - the queue - was not touched.
+- **Open issues or blockers:**
+  - Two filed, unfixed defects: the health-icon colours, and `en-GB` at five sites.
+  - `tracker.component.scss` still **455/400**, untouched.
+  - `PipelineStore.cards` is still deliberately not a signal.
+- **Next first action:** open the PR from `refactor/dashboard-store`. Remaining 11, by call site:
+  `my-jobs` (334 lines, 5 calls), then the tail - `cv-list` (426, 16), `onboarding` (785, 12),
+  `jobs` (1164, 8), `settings` (630, 6), `first-launch` (439, 1), `shell-layout` (232, 1),
+  `analytics` (297, 1). **The context in this session is very long**: the next watch should start
+  fresh, and the tail entries each want their own grilling round.
+- **Evidence:** the `?` monogram reading above; the reconciled two-project test counts;
+  `ADR-0005` amendment thirty-two.
+
 ### 2026-08-09, the modal, and an untested claim about SQL
 
 - **Status:** complete

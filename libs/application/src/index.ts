@@ -22,6 +22,8 @@ export * from './lib/documents/document-style-safety';
 export * from './lib/documents/cv-document-record';
 export * from './lib/documents/cv-document.store';
 export * from './lib/documents/cv-print.store';
+export * from './lib/dashboard/dashboard.store';
+export * from './lib/dashboard/dashboard.util';
 export * from './lib/documents/cv-photo.store';
 export * from './lib/documents/cv-regeneration';
 export * from './lib/documents/cv-regeneration.store';

@@ -15,7 +15,16 @@ const MS_DAY = 86_400_000;
 export const SOON_HOURS = 48;
 export { MS_HOUR };
 
-/** Two-letter uppercase monogram from a company name; "?" when unknown. */
+/**
+ * Two-letter uppercase monogram from a company name; `?` when unknown.
+ *
+ * **Deliberately not `companyInitials` from `pipeline-card-view`**, and not
+ * folded onto it (ADR-0005, amendment thirty-two). The two agree on every real
+ * company name and differ only on the empty one: the board draws `-`, the
+ * dashboard draws `?`. Folding them would change what the dashboard renders for
+ * a card with no company, with nothing behind the change but tidiness. They are
+ * two rules that look alike, not one rule written twice.
+ */
 export function monogram(name?: string): string {
   const s = (name ?? '').trim();
   if (!s) return '?';

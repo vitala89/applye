@@ -8,7 +8,7 @@
   </div>
 
   <!-- KPI row -->
-  @if (loading()) {
+  @if (board.loading()) {
     <div class="kpis">
       @for (i of [0, 1, 2, 3]; track i) {
         <div class="sk-tile">
@@ -27,33 +27,33 @@
         <span class="tile__icon"
           ><lucide-icon [img]="icons.active" [size]="16" aria-hidden="true"
         /></span>
-        <span class="tile__num">{{ kActive() }}</span>
+        <span class="tile__num">{{ board.kActive() }}</span>
         <span class="tile__label">{{ t()('dashboard.kpi_active') }}</span>
       </button>
       <button type="button" class="tile" (click)="go('/interview-prep')">
         <span class="tile__icon"
           ><lucide-icon [img]="icons.interviews" [size]="16" aria-hidden="true"
         /></span>
-        <span class="tile__num">{{ kInterviews() }}</span>
+        <span class="tile__num">{{ board.kInterviews() }}</span>
         <span class="tile__label">{{ t()('dashboard.kpi_interviews') }}</span>
       </button>
       <button
         type="button"
         class="tile"
-        [class.tile--warn]="kOverdue() > 0"
+        [class.tile--warn]="board.kOverdue() > 0"
         (click)="go('/pipeline')"
       >
         <span class="tile__icon"
           ><lucide-icon [img]="icons.overdue" [size]="16" aria-hidden="true"
         /></span>
-        <span class="tile__num">{{ kOverdue() }}</span>
+        <span class="tile__num">{{ board.kOverdue() }}</span>
         <span class="tile__label">{{ t()('dashboard.kpi_overdue') }}</span>
       </button>
       <button type="button" class="tile" (click)="go('/tracker')">
         <span class="tile__icon"
           ><lucide-icon [img]="icons.offers" [size]="16" aria-hidden="true"
         /></span>
-        <span class="tile__num">{{ kOffers() }}</span>
+        <span class="tile__num">{{ board.kOffers() }}</span>
         <span class="tile__label">{{ t()('dashboard.kpi_offers') }}</span>
       </button>
     </div>
@@ -63,12 +63,12 @@
   <div class="queue">
     <div class="queue__head">
       <span class="eyebrow">{{ t()('dashboard.needs_attention') }}</span>
-      @if (!loading() && queue().length) {
+      @if (!board.loading() && queue().length) {
         <span class="queue__count">{{ queue().length }} {{ t()('dashboard.items') }}</span>
       }
     </div>
 
-    @if (loading()) {
+    @if (board.loading()) {
       <div class="queue__list">
         @for (i of [0, 1, 2]; track i) {
           <div class="sk-card">
@@ -153,7 +153,7 @@
           {{ t()('dashboard.view_all') }}
         </button>
       </div>
-      @if (loading()) {
+      @if (board.loading()) {
         <div class="panel__body">
           @for (i of [0, 1]; track i) {
             <div class="prow">
@@ -166,9 +166,9 @@
             </div>
           }
         </div>
-      } @else if (upcomingTop().length) {
+      } @else if (board.upcomingTop().length) {
         <div class="panel__body">
-          @for (iv of upcomingTop(); track iv.applicationId) {
+          @for (iv of board.upcomingTop(); track iv.applicationId) {
             <button type="button" class="prow" (click)="go('/interview-prep/' + iv.applicationId)">
               <span class="prow__mono">{{ iv.monogram }}</span>
               <div class="prow__meta">
@@ -201,7 +201,7 @@
           {{ t()('dashboard.open_pipeline') }}
         </button>
       </div>
-      @if (loading()) {
+      @if (board.loading()) {
         <div class="panel__body">
           @for (i of [0, 1]; track i) {
             <div class="prow">

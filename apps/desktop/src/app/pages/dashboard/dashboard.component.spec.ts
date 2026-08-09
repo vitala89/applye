@@ -2,7 +2,17 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
+import { DashboardStore } from '@applye/application';
 import { DashboardComponent } from './dashboard.component';
+
+/** The dashboard's data and its translation-free derivations are
+ * `DashboardStore`'s since ADR-0005 amendment thirty-two, and the store is
+ * component-scoped - so it comes from the component's own injector. The queue,
+ * the greeting and the recent rows stay on the component, because they carry
+ * icons, translations and navigation. */
+const storeOf = (fixture: {
+  debugElement: { injector: { get: (t: unknown) => DashboardStore } };
+}): DashboardStore => fixture.debugElement.injector.get(DashboardStore);
 import { PasteJobModalService } from '../../shared/paste-job-modal/paste-job-modal.service';
 import { WizardProgressService } from '../../shared/wizard-progress.service';
 
@@ -122,7 +132,7 @@ describe('DashboardComponent resume card', () => {
     (TestBed.inject(DbService).getProfile as jest.Mock).mockResolvedValue({ id: 1, fullMd: '' });
     await build();
 
-    expect(fixture.componentInstance['isNewUser']()).toBe(true);
+    expect(storeOf(fixture).isNewUser()).toBe(true);
   });
 
   it('shows no resume card when no tailoring session is in flight', async () => {

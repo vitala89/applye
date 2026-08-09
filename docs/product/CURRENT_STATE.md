@@ -165,7 +165,12 @@
   so the store owns only the facts and the period while ten translated computeds stayed put. The
   migration fixed a real defect on the way: `computeAnalytics` was called with `new Date()` **inside**
   a computed, so the window boundary was re-read on every period switch - `now` is stamped at load
-  now, as `DashboardStore` already did (amendment thirty-four).
+  now, as `DashboardStore` already did (amendment thirty-four). It is **8** now: the first-launch
+  welcome moved, and its store holds no state at all - the screen has none, only a settings write,
+  and the lint rule is about the gateway rather than about signals. Reading it found that **`app.ts`
+  injects the gateway outside the rule's reach**, because the rule matches `*.component.ts`; the
+  allowlist has been undercounting by one all along, and it is filed on the ADR checklist rather
+  than fixed inside a migration (amendment thirty-five).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

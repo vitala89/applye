@@ -44,6 +44,75 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, the welcome screen, a store with no state, and a blank screenshot that was not a bug
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/first-launch-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** third migration of this watch, after #401 merged as `6b22e67`. `first-launch`,
+  closing the one-call tier.
+- **Completed:**
+  - `FirstLaunchStore` in `libs/application/onboarding/`, 43 lines, holding **no state** - the
+    screen has none. Four tests, including that starting the tour writes only `healthCheckSeen`
+    while skipping writes `onboardingSeen` as well.
+  - The deliberate silence preserved: `dismiss()` records a failed write and returns false, and the
+    page ignores the result, with the original comment moved onto the ignoring.
+  - The inline template and keyframes left alone by decision; the file shrank 426 -> 419 non-empty
+    against a 400 budget.
+  - `ADR-0005` amendment thirty-five; `CHANGELOG.md`, `CURRENT_STATE.md`, count in four documents
+    to 8, and a new ADR checklist item for the `app.ts` gap.
+- **Not completed:** nothing in scope. PR not opened. The file remains over budget, deliberately.
+- **Files or packages changed:** `first-launch.component.ts`, new
+  `libs/application/src/lib/onboarding/first-launch.store{,.spec}.ts`,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test application` **733 passed / 53 suites**, up from 729/52. `nx test desktop`
+    **1493 / 130**, unchanged.
+  - `nx lint` both projects 0 errors, 8 pre-existing warnings. `nx build desktop` succeeds.
+  - `quality:file-size` passes, reporting `first-launch.component.ts` at **419/400, base 426** -
+    over budget, shrinking, allowed. `quality:attribution`, `format:check` (exit 0) and
+    `git diff --check` pass.
+  - **Rendered check, and a new instrument trap.** The first screenshot came back **entirely blank**
+    while the DOM held the right text. Cause: `document.hidden` is **true** in the preview tab, so
+    the compositor never advances CSS animations - `currentTime` stayed at 0 across a 4.8-second
+    wait, and every element on this screen starts at `opacity: 0` under `fill-mode: both`.
+    `document.getAnimations().forEach(a => { a.currentTime = 6000; a.pause() })` produced the true
+    end state. Same family as amendments twenty-three and twenty-eight, but those produced a
+    plausible wrong number and this produces a blank frame that reads as a broken screen.
+  - With the animations pinned: lockup, title with caret, tagline, both CTAs, hint, divider and the
+    health panel all render, and the failing check draws as one `fail` row with "Re-run check" -
+    `HealthCheckStore`'s documented behaviour, visible.
+  - The behaviour that matters was driven deliberately with the write failing for real: `dismiss`
+    returned false, `error` held the message, `dismissed` still emitted `{ startOnboarding: false }`,
+    and the component unmounted. The user leaves the screen even when the preference cannot be saved.
+  - **One thing I could not attribute**: between two reads the app moved from the welcome screen to
+    the onboarding overlay without a click from me. `showOnboarding` is a computed off the
+    onboarding service, so it was the service opening rather than anything this change touched, but
+    the trigger was not identified. Recorded rather than explained away.
+- **Privacy/security impact:** none. Same write, same flags, same gateway.
+- **Decisions and assumptions:** two at the grilling gate - a dedicated store rather than folding
+  into `HealthCheckStore` or inventing a shared flags store; migration only, no style extraction.
+- **Risks or compatibility impact:** very low. No behaviour change at all.
+- **Open issues or blockers:**
+  - **New, filed not fixed:** `app.ts` injects the gateway and the lint rule cannot see it, because
+    the rule matches `*.component.ts`. The allowlist has been undercounting by one.
+  - Two older filed defects: health-icon colours, `en-GB` at five sites.
+  - Over budget and untouched: `tracker.component.scss` 455/400,
+    `analytics.component.html` 426/300, `first-launch.component.ts` 419/400.
+  - `PipelineStore.cards` is still deliberately not a signal.
+- **Next first action:** open the PR from `refactor/first-launch-store`. **The one-call tier is now
+  empty.** Remaining 8, all multi-call: `my-jobs` (334, 5), `profile` (483, 4),
+  `interview-prep-detail` (332, 8), `settings` (630, 6), `jobs` (1164, 8), `cover-letter-list`
+  (283, 10), `onboarding` (785, 12), `cv-list` (426, 16). `my-jobs` is the natural next. Each wants
+  its own grilling round, and **the context in this session is now very long** - three migrations
+  deep. The next watch should start fresh.
+- **Evidence:** 733/53 against 1493/130; the store error string and the still-emitted `dismissed`
+  intent read from the running app; `document.hidden === true` with animation `currentTime` at 0;
+  `ADR-0005` amendment thirty-five.
+
 ### 2026-08-10, analytics, and a window boundary that moved when nobody was looking
 
 - **Status:** complete

@@ -44,24 +44,25 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
-### 2026-08-09, the tracker's export dialog cuts free, and a reduced-motion rule nearly stayed behind
+### 2026-08-09, the tracker template comes under budget in five cuts
 
-- **Status:** partial - one of four planned cuts landed; the other three are scoped and costed
+- **Status:** complete
 - **Agent/tool:** Claude Code (Opus 5)
 - **Branch:** `refactor/tracker-template-extraction`, from `main` at `0ca9194`
 - **Pull request:** opened from this branch
 - **Objective:** bring `tracker.component.html` under its 300-line budget, which the file-size gate
   requires before the `.jt-icon` fold can add a line to it.
 - **Completed:**
-  - `tracker-export-modal/` extracted: component, template, stylesheet, six tests.
-  - Template **557 -> 463**, stylesheet **893 -> 792**. Both still over budget; the gate passes
-    because they shrank.
-  - Five page aliases and four page methods deleted, having moved with the dialog.
-  - Rendered check run and passed.
-- **Not completed:** the column drawer, the row-actions popup and the row's actions cell. They are
-  measured, their class families are confirmed non-overlapping, and they are written into the
-  ADR-0005 checklist with line counts. The template does **not** yet meet its budget, so the
-  `.jt-icon` fold is still blocked - which is the state this branch set out to end and did not.
+  - Five components extracted: `tracker-export-modal/`, `tracker-column-drawer/`,
+    `tracker-row-menu/`, `tracker-row-actions/`, `tracker-summary-strip/`.
+  - Template **557 -> 278** against a budget of 300 - **under budget**, which unblocks the
+    `.jt-icon` fold. Stylesheet **893 -> 455**.
+  - Nine dead icons, two dead aliases and four page methods removed with the markup that used them.
+  - `trackerColumnLabel` pulled into its own module once three components needed it, kept local to
+    `pages/tracker/` rather than widened into `libs/application`'s public surface.
+  - Rendered check run and passed with all five on screen at once.
+- **Not completed:** `tracker.component.scss` is **455/400**. It no longer blocks anything - the fold
+  now touches the five children rather than the page - but it is over budget and recorded as such.
 - **Files or packages changed:** `apps/desktop/src/app/pages/tracker/` - new `tracker-export-modal/`
   (4 files), `tracker.component.{html,scss,ts}`; `CHANGELOG.md`; ADR-0005; this file.
 - **Validation:**
@@ -98,11 +99,13 @@ Before a watch can be marked complete:
     line this branch carried from before that merge was dropped in favour of #388's completed one.
   - The browser panel's synthetic clicks do not reach the tracker toolbar's Angular listeners - the
     untouched Columns drawer behaves identically, so it is the instrument and not the change. The
-    dialog was opened by setting the page signal directly and then measured.
-- **Next first action:** extract the column drawer (`tracker.component.html` 313-401; `.jt-drawer`,
-  `.jt-colrow` and `.jt-addcol` confirmed to have no caller outside it) into
-  `tracker-column-drawer/`, copying `.jt-icon` and the reduced-motion rule for the same reasons as
-  this one.
+    panels were opened by setting the page signals directly and then measured.
+  - `tracker.component.scss` at 455/400, above.
+- **Next first action:** fold `.jt-icon` onto `appButton size="icon"`. It no longer touches the page:
+  all six sites are inside `tracker-row-actions/` (three), `tracker-column-drawer/` (two) and
+  `tracker-export-modal/` (one), each carrying an identical copy of the rule so the fold is a
+  deletion. It needs its own grilling round first - four shapes, including the 30x30/radius-7 kebab
+  and an accent fill on a different indigo than the design system's primary.
 
 ### 2026-08-09, the open state was already in the markup, and the class was the half nobody could read
 

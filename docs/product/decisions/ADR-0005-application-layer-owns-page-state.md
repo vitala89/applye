@@ -1218,6 +1218,49 @@ Result: template **557 -> 463**, stylesheet **893 -> 792**. Both still over budg
 remain before the fold - the column drawer, the row-actions popup, and the row's actions cell, which
 together carry the other five `.jt-icon` sites.
 
+## Amendment twenty-two: four more cuts, and the descendant selector that behaved
+
+Amendment twenty-one took the export dialog out and left the template at 463/300. Four more cuts
+finish the job: the column drawer, the row menu, the row's action cell and the summary strip.
+**Template 557 -> 278, stylesheet 893 -> 455.**
+
+**Three of the five needed no inputs.** The drawer, the dialog and the summary strip each inject the
+stores they read, because those are declared in `TrackerComponent`'s `providers` and resolve through
+the injector. The row's action cell takes three and emits three, and the row menu takes four and
+emits six - those two render page state rather than store state, and that is exactly the difference
+this ADR predicts.
+
+**The row menu's delete confirmation deliberately stayed on the page.** It looked like the obvious
+thing to move: nothing else reads it. But the page resets it when a _different_ row's menu opens, and
+the component is reused rather than recreated across that change, so a child owning the flag would
+carry one row's half-confirmed delete to the next row. The extraction keeps a destructive action
+provably identical instead of saving two bindings.
+
+**`.jt-menu .jt-icon` is the first descendant selector in this campaign to survive a move**, and it is
+worth understanding why, because four components have now been shaped by the version that does not.
+The kebab is 30x30 at radius 7 only because of that rule. It travelled because `.jt-menu` is _inside_
+the extracted markup - the ancestor came along. Amendment sixteen's `.ip__pop` case failed because
+the ancestor lived in a shared partial the child reached through a `@use` it would not inherit. The
+rule is therefore not "descendant selectors break on extraction"; it is **"a descendant selector
+survives exactly when its ancestor is inside the cut"**, which is checkable in advance.
+
+Two other traps were paid. The `prefers-reduced-motion` rule is written with a bare `*`, which
+encapsulation rewrites to `*[_ngcontent-page]`; every animating child needed its own copy or it would
+have kept animating for a user who asked it not to. And `toggleMenu` anchored the popup by reading
+`event.currentTarget`, which is only set while an event is dispatching - emitting it across a
+component boundary would have kept working by accident, because outputs fire synchronously inside the
+handler, and broken the day anything deferred it. The cell emits the trigger **element**, which is
+what the caller actually wanted.
+
+`quality:style-move` reads lossless across all six stylesheets. Nine icons and two aliases died with
+the markup that used them; one of them, `ok: CircleCheck`, had already been dead on `main` and was
+found only because the extraction made the list short enough to read.
+
+What is still owed: `tracker.component.scss` is 455 against 400. It is no longer what blocks anything
+
+- the fold now touches the five children, not the page - but it is over, and the next thing to touch
+  it must cut rather than add.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1254,14 +1297,16 @@ together carry the other five `.jt-icon` sites.
         and no `appButton` in the app carries `aria-expanded`, so it reaches nothing else. Two
         accepted visible deltas: `--text-tertiary` -> `--text-secondary`, and the hover ring dropped
         as drift. **Checked on a rendered screen** in both themes (amendment twenty).
-  - [ ] Cut `tracker.component.html` under its 300-line budget before folding `.jt-icon`, because the
-        gate refuses growth on an over-budget file. `tracker-export-modal/` is **out** (template
-        **557 -> 463**, stylesheet 893 -> 792, amendment twenty-one). Three cuts remain, and they
-        carry the other five icon sites: the column drawer (~87 lines, two sites), the row-actions
-        popup (~68), and the row's actions cell (~38, three sites, and its `.jt-menu` travels with
-        it rather than being reached from a shared partial). Every one of them can inject the four
-        stores directly, so none needs data inputs.
-  - [ ] Fold `tracker`'s `.jt-icon` once the template is under budget - **six sites in four shapes**:
+  - [x] Cut `tracker.component.html` under its 300-line budget before folding `.jt-icon` - **done in
+        five cuts**: `tracker-export-modal/`, `tracker-column-drawer/`, `tracker-row-menu/`,
+        `tracker-row-actions/` and `tracker-summary-strip/`. Template **557 -> 278**, stylesheet
+        **893 -> 455** (amendments twenty-one and twenty-two).
+  - [ ] `tracker.component.scss` is **455/400** and no longer blocks anything, but it is over: the
+        next change to touch it cuts rather than adds.
+  - [ ] Fold `tracker`'s `.jt-icon` - **now unblocked**, and it no longer touches the page at all:
+        all six sites live in `tracker-row-actions/` (three) and `tracker-column-drawer/` (two) and
+        `tracker-export-modal/` (one), each of which carries its own copy of the rule. **Six sites in
+        four shapes**:
         28px, 24px via `--sm`, 30x30 with radius 7 through a `.jt-menu .jt-icon` descendant
         selector, and an accent fill on `--text-accent` (indigo-400) with a hardcoded `#fff` against
         the system's `--accent` (indigo-600) and `--accent-fg`. Needs its own grilling round. The

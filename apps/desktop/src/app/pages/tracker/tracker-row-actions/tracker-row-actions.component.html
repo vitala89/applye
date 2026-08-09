@@ -1,0 +1,37 @@
+@if (editing()) {
+  <div class="jt-actbtns">
+    <button
+      type="button"
+      class="jt-icon jt-icon--primary"
+      [title]="t()('actions.save')"
+      [disabled]="saving()"
+      (click)="saved.emit()"
+    >
+      <lucide-icon [img]="icons.check" [size]="15" />
+    </button>
+    <button
+      type="button"
+      class="jt-icon"
+      [title]="t()('actions.cancel')"
+      (click)="cancelled.emit()"
+    >
+      <lucide-icon [img]="icons.close" [size]="15" />
+    </button>
+  </div>
+} @else {
+  <!-- Wrapper only stops the shell's click-away handler; not a control. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+  <div class="jt-menu" (click)="$event.stopPropagation()">
+    <button
+      type="button"
+      class="jt-icon"
+      [class.is-open]="menuOpen()"
+      [title]="t()('tracker.row_actions')"
+      aria-haspopup="menu"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="onMenu($event)"
+    >
+      <lucide-icon [img]="icons.menu" [size]="16" />
+    </button>
+  </div>
+}

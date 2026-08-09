@@ -1,14 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FileCheck2, FileDown, Info, LucideAngularModule, Table, X } from 'lucide-angular';
-import {
-  TrackerColumnDef,
-  TrackerColumnsStore,
-  TrackerReportStore,
-  TrackerRowsStore,
-} from '@applye/application';
+import { TrackerColumnsStore, TrackerReportStore, TrackerRowsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
+import { trackerColumnLabel } from '../tracker-column-label';
 import { TrackerReportComponent } from '../tracker-report.component';
 
 /**
@@ -64,18 +60,6 @@ export class TrackerExportModalComponent {
   }
 
   /**
-   * Column labels cannot come from the store: it deliberately holds no
-   * `TranslateService`, because the same column is named in the UI language
-   * here and in the report's own language on the sheet (ADR-0005, amendment
-   * eight). The page keeps its own copy for the table and the drawer; when the
-   * drawer extracts too, the three callers are what will justify a shared
-   * helper rather than a third copy.
-   */
-  private label(col: TrackerColumnDef): string {
-    return col.custom ? (col.label ?? '') : this.t()(col.labelKey ?? '');
-  }
-
-  /**
    * Human note about A4 fit: which columns are hidden (fit mode) or wrap to a
    * second line (all mode), for the current orientation. It names the columns
    * in the **UI** language even when the sheet itself is German, because it is
@@ -84,7 +68,9 @@ export class TrackerExportModalComponent {
   protected fitNoteText(): string {
     const overflow = this.report.fitInfo().overflow;
     if (!overflow.length) return '';
-    const uiLabels = new Map(this.columns.visibleColumns().map((c) => [c.key, this.label(c)]));
+    const uiLabels = new Map(
+      this.columns.visibleColumns().map((c) => [c.key, trackerColumnLabel(c, this.t())]),
+    );
     const cols = overflow.map((c) => uiLabels.get(c.id) ?? c.label).join(', ');
     const orient = this.t()(this.report.landscape() ? 'tracker.landscape' : 'tracker.portrait');
     const key = this.report.mode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';

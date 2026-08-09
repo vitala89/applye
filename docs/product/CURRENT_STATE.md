@@ -137,7 +137,11 @@
   It is **16** now: both print windows moved to `CvPrintStore` and `CoverLetterPrintStore`, and
   moving their state exposed a `signalReady()` that was byte-identical in the two components -
   extracting state exposes duplication that size was hiding. It is one `awaitPrintSettle()`, kept in
-  the app because every line of it touches the DOM (amendment twenty-seven).
+  the app because every line of it touches the DOM (amendment twenty-seven). It is **15** now:
+  `profile-photo` moved, and it is the first migration where a constraint rather than a preference
+  decided how much moves - `uri` is a `linkedSignal` on a required input, which a store cannot
+  derive, so the store took `saving`, `cropSourceUri` and the two calls and the component kept the
+  value it renders (amendment twenty-eight).
 - **`cover-letter-detail.component.ts` is now 337/400 - under budget**, and the template is
   **669 -> 491/300**. The Style card and the per-block style popover became
   `cover-letter-style-card/` and `cover-letter-style-popover/`.

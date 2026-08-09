@@ -1,0 +1,22 @@
+<div class="jt__summary">
+  <div class="jt__stat">
+    <span class="jt__stat-label"
+      ><lucide-icon [img]="icons.layers" [size]="13" />{{ t()('tracker.total') }}</span
+    >
+    <span class="jt__stat-val">{{ summary().total }}</span>
+  </div>
+  <div class="jt__stat">
+    <span class="jt__stat-label"
+      ><lucide-icon [img]="icons.activity" [size]="13" />{{ t()('tracker.response_rate') }}</span
+    >
+    <span class="jt__stat-val">{{ summary().rate }}<span class="jt__stat-unit">%</span></span>
+  </div>
+  <div class="jt__stat">
+    <span class="jt__stat-label"
+      ><lucide-icon [img]="icons.clock" [size]="13" />{{ t()('tracker.avg_days') }}</span
+    >
+    <span class="jt__stat-val"
+      >{{ summary().avg }}<span class="jt__stat-unit">{{ t()('tracker.days') }}</span></span
+    >
+  </div>
+</div>

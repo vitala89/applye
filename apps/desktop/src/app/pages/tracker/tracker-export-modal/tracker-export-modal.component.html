@@ -1,0 +1,98 @@
+<!-- Backdrop click-to-dismiss is a mouse shortcut; the panel's Close button
+     is the keyboard path, so the backdrop stays unfocusable. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<div class="jt-modal" (click)="closed.emit()">
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+  <div class="jt-modal__panel" (click)="$event.stopPropagation()">
+    <div class="jt-modal__head">
+      <span class="jt-modal__title">
+        <lucide-icon [img]="icons.reportOk" [size]="18" />
+        {{ t()('tracker.preview_title') }}
+        <span class="jt-modal__hint">{{ t()('tracker.preview_hint') }}</span>
+      </span>
+      <button type="button" class="jt-icon" (click)="closed.emit()">
+        <lucide-icon [img]="icons.close" [size]="18" />
+      </button>
+    </div>
+
+    <div class="jt-modal__config">
+      <label class="jt-field">
+        <span class="jt-field__label">{{ t()('tracker.applicant_label') }}</span>
+        <input
+          class="jt-field__input"
+          [ngModel]="report.applicant()"
+          (ngModelChange)="report.applicant.set($event)"
+          [placeholder]="t()('tracker.applicant_placeholder')"
+        />
+      </label>
+      <label class="jt-field">
+        <span class="jt-field__label">{{ t()('tracker.report_market') }}</span>
+        <select
+          class="jt-field__input jt-field__input--sm"
+          [ngModel]="report.market()"
+          (ngModelChange)="report.market.set($event)"
+        >
+          <option value="de">{{ t()('tracker.market_de') }}</option>
+          <option value="intl">{{ t()('tracker.market_intl') }}</option>
+        </select>
+      </label>
+      <label class="jt-field">
+        <span class="jt-field__label">{{ t()('tracker.orientation') }}</span>
+        <select
+          class="jt-field__input jt-field__input--sm"
+          [ngModel]="report.landscape()"
+          (ngModelChange)="report.landscape.set($event)"
+        >
+          <option [ngValue]="false">{{ t()('tracker.portrait') }}</option>
+          <option [ngValue]="true">{{ t()('tracker.landscape') }}</option>
+        </select>
+      </label>
+      <label class="jt-field">
+        <span class="jt-field__label">{{ t()('tracker.columns_toggle') }}</span>
+        <select
+          class="jt-field__input jt-field__input--sm"
+          [ngModel]="report.mode()"
+          (ngModelChange)="report.mode.set($event)"
+        >
+          <option value="fit">{{ t()('tracker.mode_fit') }}</option>
+          <option value="all">{{ t()('tracker.mode_all') }}</option>
+        </select>
+      </label>
+      <span class="jt-modal__spacer"></span>
+      <button
+        type="button"
+        class="jt-tbtn jt-tbtn--primary"
+        [disabled]="report.exporting()"
+        (click)="exportPdf()"
+      >
+        <lucide-icon [img]="icons.fileDown" [size]="15" />{{ t()('tracker.save_pdf') }}
+      </button>
+      <button type="button" class="jt-tbtn" [disabled]="report.exporting()" (click)="exportCsv()">
+        <lucide-icon [img]="icons.table" [size]="15" />{{ t()('tracker.save_csv') }}
+      </button>
+    </div>
+
+    @if (report.fitInfo().overflow.length) {
+      <div class="jt-modal__note">
+        <lucide-icon [img]="icons.info" [size]="13" />
+        {{ fitNoteText() }}
+      </div>
+    }
+
+    <div class="jt-modal__scroll" [class.is-landscape]="report.landscape()">
+      <app-tracker-report
+        [rows]="rows.reportRows()"
+        [columns]="report.columns()"
+        [applicant]="report.applicant()"
+        [periodLabel]="report.periodLabel()"
+        [market]="report.market()"
+        [mode]="report.mode()"
+        [landscape]="report.landscape()"
+        [generatedOn]="today()"
+        [total]="rows.summary().total"
+        [rate]="rows.summary().rate"
+        [avg]="rows.summary().avg"
+      />
+    </div>
+  </div>
+</div>

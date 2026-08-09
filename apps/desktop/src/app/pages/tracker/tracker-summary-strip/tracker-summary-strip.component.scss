@@ -1,0 +1,44 @@
+/* Moved verbatim with the summary strip's markup (ADR-0005, amendment
+   twenty-two). No copies needed: it has no icon button and no animation. */
+
+.jt__summary {
+  display: flex;
+  flex-wrap: wrap;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  margin-top: var(--space-4);
+  overflow: hidden;
+}
+.jt__stat {
+  flex: 1;
+  min-width: 150px;
+  padding: var(--space-4) var(--space-5);
+  border-right: var(--border-width) solid var(--border-default);
+  &:last-child {
+    border-right: none;
+  }
+}
+.jt__stat-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-2);
+}
+.jt__stat-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl, 26px);
+  font-weight: var(--weight-semibold, 600);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.jt__stat-unit {
+  font-size: var(--text-xs, 12px);
+  color: var(--text-secondary);
+  margin-left: var(--space-1);
+}

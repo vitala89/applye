@@ -2,27 +2,15 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  Activity,
   Archive,
-  ArchiveRestore,
   ArrowUpRight,
-  Check,
-  CircleCheck,
-  Clock,
   Columns3,
-  FileCheck2,
   FileDown,
   Info,
-  Layers,
   LucideAngularModule,
-  MoreHorizontal,
   Pencil,
-  Plus,
   Sparkles,
-  Table,
   Table2,
-  Trash2,
-  X,
 } from 'lucide-angular';
 import type { ApplicationStatus, TrackerRow } from '@applye/core';
 import {
@@ -36,7 +24,12 @@ import {
 } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
-import { TrackerReportComponent } from './tracker-report.component';
+import { trackerColumnLabel } from './tracker-column-label';
+import { TrackerColumnDrawerComponent } from './tracker-column-drawer/tracker-column-drawer.component';
+import { TrackerRowActionsComponent } from './tracker-row-actions/tracker-row-actions.component';
+import { TrackerRowMenuComponent } from './tracker-row-menu/tracker-row-menu.component';
+import { TrackerSummaryStripComponent } from './tracker-summary-strip/tracker-summary-strip.component';
+import { TrackerExportModalComponent } from './tracker-export-modal/tracker-export-modal.component';
 
 // Job Tracker: 1:1 with the user's real xlsx tracker. Export IS the Agentur
 // fuer Arbeit "Eigenbemuehungen" report (ROADMAP §9). 0 tokens. This screen is
@@ -45,7 +38,15 @@ import { TrackerReportComponent } from './tracker-report.component';
   selector: 'app-tracker',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule, TrackerReportComponent],
+  imports: [
+    FormsModule,
+    LucideAngularModule,
+    TrackerColumnDrawerComponent,
+    TrackerExportModalComponent,
+    TrackerRowActionsComponent,
+    TrackerRowMenuComponent,
+    TrackerSummaryStripComponent,
+  ],
   templateUrl: './tracker.component.html',
   styleUrl: './tracker.component.scss',
   providers: [TrackerColumnsStore, TrackerRowsStore, TrackerRowEditorStore, TrackerReportStore],
@@ -70,13 +71,14 @@ export class TrackerComponent {
    * the template binds most. Same device as `t` above. **They alias; they hold
    * nothing** - `segment.set(...)` writes straight through to the store.
    *
-   * They exist because the template is already 557/300 and the ratchet refuses
-   * to let an over-budget file grow: prefixing these fifteen bindings with
-   * `rows.` pushed four of them past the print width, and prettier re-wrapped
-   * them into twelve extra lines. Cutting the template is a separate phase, so
-   * this keeps it byte-neutral rather than borrowing against that.
+   * They existed because the template was 557/300 and the ratchet refuses to
+   * let an over-budget file grow: prefixing these bindings with `rows.` pushed
+   * four of them past the print width, and prettier re-wrapped them into twelve
+   * extra lines. The template is 278 now, so the reason has weakened rather
+   * than vanished - three of the four are still bound six, one and one times by
+   * the toolbar, and `summary` left with the strip that used it (ADR-0005,
+   * amendment twenty-two).
    */
-  protected readonly summary = this.rows.summary;
   protected readonly segment = this.rows.segment;
   protected readonly range = this.rows.range;
   protected readonly statusFilter = this.rows.statusFilter;
@@ -90,37 +92,26 @@ export class TrackerComponent {
    * chosen market, not the UI (ADR-0005, amendment eight). */
   protected readonly report = inject(TrackerReportStore);
 
-  // Export-dialog aliases, for the same reason as the toolbar ones above: the
-  // template is at its budget and `report.` in front of eleven bindings
-  // re-wraps four of them.
-  protected readonly applicantName = this.report.applicant;
-  protected readonly reportMarket = this.report.market;
-  protected readonly landscape = this.report.landscape;
-  protected readonly reportMode = this.report.mode;
-  protected readonly exporting = this.report.exporting;
+  // The five export-dialog aliases that stood here are gone with the dialog
+  // (ADR-0005, amendment twenty-one). They existed only because this template
+  // was at its budget and `report.` in front of eleven bindings re-wrapped four
+  // of them - inside `tracker-export-modal/` there is no such pressure, so it
+  // binds the store directly and the page holds nothing on the dialog's behalf.
 
   readonly icons = {
     fileDown: FileDown,
     columns: Columns3,
     pencil: Pencil,
     sparkles: Sparkles,
-    menu: MoreHorizontal,
-    check: Check,
-    close: X,
-    trash: Trash2,
     archive: Archive,
-    restore: ArchiveRestore,
     link: ArrowUpRight,
     info: Info,
     empty: Table2,
-    layers: Layers,
-    activity: Activity,
-    clock: Clock,
-    reportOk: FileCheck2,
-    table: Table,
-    ok: CircleCheck,
-    plus: Plus,
   };
+  // `reportOk`, `table` and `plus` left with the dialog and the drawer that
+  // used them. `ok: CircleCheck` went too, and that one was already dead before
+  // this branch - nothing referenced it on `main` either (ADR-0005, amendment
+  // twenty-two).
 
   // ---- panels / row state ----
   readonly showCols = signal(false);
@@ -153,11 +144,11 @@ export class TrackerComponent {
     this.report.market.set(this.rows.settings()?.uiLanguage === 'de' ? 'de' : 'intl');
   }
 
-  /** Column labels stay on the page: the grid names a column in the UI language
-   * and the report names the same column in its own, so the store holds the
-   * column and the caller supplies the words (ADR-0005, amendment eight). */
+  /** The table's column headings. Three components under `pages/tracker/` name
+   * columns now, so the rule itself lives in `tracker-column-label.ts` rather
+   * than in a third copy of these two lines (ADR-0005, amendment twenty-two). */
   colLabel(col: TrackerColumnDef): string {
-    return col.custom ? (col.label ?? '') : this.t()(col.labelKey ?? '');
+    return trackerColumnLabel(col, this.t());
   }
 
   // Template-side delegates to the pure column module, which a template cannot
@@ -209,13 +200,12 @@ export class TrackerComponent {
   /** Opens the row menu as a FIXED-position popup anchored to the trigger, so
    * it escapes the table's overflow/sticky clipping (a positioned popup inside
    * an overflow-scroll ancestor gets cut off). */
-  toggleMenu(row: TrackerRow, event: Event): void {
+  toggleMenu(row: TrackerRow, trigger: HTMLElement): void {
     if (this.menuId() === row.id) {
       this.closeMenus();
       return;
     }
-    const el = event.currentTarget as HTMLElement;
-    const r = el.getBoundingClientRect();
+    const r = trigger.getBoundingClientRect();
     this.menuPos.set({ top: r.bottom + 4, left: Math.max(8, r.right - 200) });
     this.menuRow.set(row);
     this.menuId.set(row.id);
@@ -257,74 +247,13 @@ export class TrackerComponent {
   }
 
   // ---------- custom columns ----------
-  // The store writes and reports; the page decides what to say about it
-  // (ADR-0005, amendment three).
-  async addCustomColumn(): Promise<void> {
-    try {
-      if (await this.columns.addColumn()) this.toast.success(this.t()('tracker.custom_added'));
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
-  async removeCustomColumn(id: string): Promise<void> {
-    try {
-      await this.columns.removeColumn(id);
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
+  // Both writes moved into `tracker-column-drawer/` with the markup that calls
+  // them (ADR-0005, amendment twenty-two).
 
   // ---------- export ----------
-  today(): string {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  /** Human note about A4 fit: which columns are hidden (fit mode) or wrap to a
-   * second line (all mode), for the current orientation. Stays on the page
-   * because it is dialog chrome rather than part of the sheet, so it names the
-   * columns in the **UI** language even when the sheet itself is German. */
-  fitNoteText(): string {
-    const overflow = this.report.fitInfo().overflow;
-    if (!overflow.length) return '';
-    const uiLabels = new Map(this.columns.visibleColumns().map((c) => [c.key, this.colLabel(c)]));
-    const cols = overflow.map((c) => uiLabels.get(c.id) ?? c.label).join(', ');
-    const orient = this.t()(this.report.landscape() ? 'tracker.landscape' : 'tracker.portrait');
-    const key = this.report.mode() === 'fit' ? 'tracker.fit_note_hidden' : 'tracker.fit_note_wrap';
-    return this.t()(key)
-      .replace('{n}', String(overflow.length))
-      .replace('{orient}', orient)
-      .replace('{cols}', cols);
-  }
-
-  // The store writes and reports; the page closes the dialog and picks the
-  // wording (ADR-0005, amendment three).
-  async exportCsv(): Promise<void> {
-    try {
-      const path = await this.report.exportCsv();
-      this.showExport.set(false);
-      if (path) this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
-
-  /**
-   * PDF renders the preview's own DOM (hidden print window) so the file matches
-   * the preview exactly. The native Save dialog is a Tauri shell action and so
-   * belongs to the app; it is handed to the store rather than called after it,
-   * which is what keeps `exporting` true while the dialog is open.
-   */
-  async exportPdf(): Promise<void> {
-    try {
-      const path = await this.report.exportPdf(async (defaultPath) => {
-        const { save } = await import('@tauri-apps/plugin-dialog');
-        return save({ defaultPath, filters: [{ name: 'PDF', extensions: ['pdf'] }] });
-      });
-      if (!path) return; // cancelled
-      this.showExport.set(false);
-      this.toast.success(`${this.t()('tracker.saved_to')} ${path}`);
-    } catch (e) {
-      this.toast.error(String(e));
-    }
-  }
+  // `today()`, `fitNoteText()` and the two export writes moved into
+  // `tracker-export-modal/` with the dialog they belong to. Their comments here
+  // had said they lived on the page because "the page closes the dialog and
+  // picks the wording"; the dialog now does both for itself, which is what
+  // ADR-0005 asks of a page in the first place (amendment twenty-one).
 }

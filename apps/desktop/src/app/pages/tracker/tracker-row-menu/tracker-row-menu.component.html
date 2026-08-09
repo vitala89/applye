@@ -1,0 +1,62 @@
+<!-- Backdrop click-to-dismiss is a mouse shortcut; the menu below is the
+     keyboard path, so the backdrop stays unfocusable. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<div class="jt-pop-backdrop" (click)="closed.emit()"></div>
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<div
+  class="jt-pop"
+  role="menu"
+  [style.top.px]="top()"
+  [style.left.px]="left()"
+  (click)="$event.stopPropagation()"
+>
+  @if (confirming()) {
+    <div class="jt-pop__confirm">
+      <div class="jt-pop__confirm-head">
+        <lucide-icon [img]="icons.trash" [size]="15" />
+        {{ t()('tracker.confirm_remove_title') }}
+      </div>
+      <p class="jt-pop__confirm-body">{{ t()('tracker.confirm_remove_body') }}</p>
+      <div class="jt-pop__confirm-row">
+        <button type="button" class="jt-mini" (click)="removeCancelled.emit()">
+          {{ t()('actions.cancel') }}
+        </button>
+        <button type="button" class="jt-mini jt-mini--danger" (click)="removeConfirmed.emit()">
+          {{ t()('tracker.remove') }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <button type="button" role="menuitem" class="jt-pop__item" (click)="editRequested.emit()">
+      <lucide-icon [img]="icons.pencil" [size]="16" />{{ t()('tracker.edit') }}
+    </button>
+    @if (row().archived) {
+      <button
+        type="button"
+        role="menuitem"
+        class="jt-pop__item"
+        (click)="archiveToggled.emit(false)"
+      >
+        <lucide-icon [img]="icons.restore" [size]="16" />{{ t()('tracker.restore') }}
+      </button>
+    } @else {
+      <button
+        type="button"
+        role="menuitem"
+        class="jt-pop__item"
+        (click)="archiveToggled.emit(true)"
+      >
+        <lucide-icon [img]="icons.archive" [size]="16" />{{ t()('tracker.archive') }}
+      </button>
+    }
+    <span class="jt-pop__sep"></span>
+    <button
+      type="button"
+      role="menuitem"
+      class="jt-pop__item jt-pop__item--danger"
+      (click)="removeRequested.emit()"
+    >
+      <lucide-icon [img]="icons.trash" [size]="16" />{{ t()('tracker.remove') }}
+    </button>
+  }
+</div>

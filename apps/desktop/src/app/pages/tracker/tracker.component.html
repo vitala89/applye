@@ -236,43 +236,14 @@
                   }
                   <!-- actions -->
                   <td class="jt-td jt-td--act">
-                    @if (editor.isEditing(r)) {
-                      <div class="jt-actbtns">
-                        <button
-                          type="button"
-                          class="jt-icon jt-icon--primary"
-                          [title]="t()('actions.save')"
-                          [disabled]="editor.saving()"
-                          (click)="saveEdit()"
-                        >
-                          <lucide-icon [img]="icons.check" [size]="15" />
-                        </button>
-                        <button
-                          type="button"
-                          class="jt-icon"
-                          [title]="t()('actions.cancel')"
-                          (click)="editor.cancel()"
-                        >
-                          <lucide-icon [img]="icons.close" [size]="15" />
-                        </button>
-                      </div>
-                    } @else {
-                      <!-- Wrapper only stops the shell's click-away handler; not a control. -->
-                      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-                      <div class="jt-menu" (click)="$event.stopPropagation()">
-                        <button
-                          type="button"
-                          class="jt-icon"
-                          [class.is-open]="menuId() === r.id"
-                          [title]="t()('tracker.row_actions')"
-                          aria-haspopup="menu"
-                          [attr.aria-expanded]="menuId() === r.id"
-                          (click)="toggleMenu(r, $event)"
-                        >
-                          <lucide-icon [img]="icons.menu" [size]="16" />
-                        </button>
-                      </div>
-                    }
+                    <app-tracker-row-actions
+                      [editing]="editor.isEditing(r)"
+                      [saving]="editor.saving()"
+                      [menuOpen]="menuId() === r.id"
+                      (saved)="saveEdit()"
+                      (cancelled)="editor.cancel()"
+                      (menuToggled)="toggleMenu(r, $event)"
+                    />
                   </td>
                 </tr>
               }
@@ -282,292 +253,36 @@
       </div>
 
       <!-- summary strip -->
-      <div class="jt__summary">
-        <div class="jt__stat">
-          <span class="jt__stat-label"
-            ><lucide-icon [img]="icons.layers" [size]="13" />{{ t()('tracker.total') }}</span
-          >
-          <span class="jt__stat-val">{{ summary().total }}</span>
-        </div>
-        <div class="jt__stat">
-          <span class="jt__stat-label"
-            ><lucide-icon [img]="icons.activity" [size]="13" />{{
-              t()('tracker.response_rate')
-            }}</span
-          >
-          <span class="jt__stat-val">{{ summary().rate }}<span class="jt__stat-unit">%</span></span>
-        </div>
-        <div class="jt__stat">
-          <span class="jt__stat-label"
-            ><lucide-icon [img]="icons.clock" [size]="13" />{{ t()('tracker.avg_days') }}</span
-          >
-          <span class="jt__stat-val"
-            >{{ summary().avg }}<span class="jt__stat-unit">{{ t()('tracker.days') }}</span></span
-          >
-        </div>
-      </div>
+      <app-tracker-summary-strip />
     }
   </div>
 
   <!-- ===================== column manager drawer ===================== -->
   @if (showCols()) {
-    <!-- Wrapper only stops the shell's click-away handler; not a control. -->
-    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-    <div class="jt-drawer" (click)="$event.stopPropagation()">
-      <div class="jt-drawer__head">
-        <span class="jt-drawer__title">{{ t()('tracker.columns_toggle') }}</span>
-        <button type="button" class="jt-icon" (click)="showCols.set(false)">
-          <lucide-icon [img]="icons.close" [size]="18" />
-        </button>
-      </div>
-      <div class="jt-drawer__body">
-        <p class="jt-drawer__heading">{{ t()('tracker.cols_essential') }}</p>
-        @for (col of columns.essentialColumns; track col.key) {
-          <div class="jt-colrow" [class.is-forced]="col.pin">
-            <button
-              type="button"
-              role="switch"
-              class="jt-switch"
-              [class.is-on]="columns.isVisible(col.key)"
-              [attr.aria-checked]="columns.isVisible(col.key)"
-              [attr.aria-label]="colLabel(col)"
-              [disabled]="col.pin"
-              (click)="!col.pin && columns.toggle(col.key)"
-            ></button>
-            <span class="jt-colrow__label">{{ colLabel(col) }}</span>
-          </div>
-        }
-
-        <p class="jt-drawer__heading">{{ t()('tracker.cols_optional') }}</p>
-        @for (col of columns.optionalColumns; track col.key) {
-          <div class="jt-colrow">
-            <button
-              type="button"
-              role="switch"
-              class="jt-switch"
-              [class.is-on]="columns.isVisible(col.key)"
-              [attr.aria-checked]="columns.isVisible(col.key)"
-              [attr.aria-label]="colLabel(col)"
-              (click)="columns.toggle(col.key)"
-            ></button>
-            <span class="jt-colrow__label">{{ colLabel(col) }}</span>
-          </div>
-        }
-
-        @if (columns.customColumns().length) {
-          <p class="jt-drawer__heading">{{ t()('tracker.cols_custom') }}</p>
-          @for (col of columns.customColumns(); track col.id) {
-            <div class="jt-colrow jt-colrow--custom">
-              <lucide-icon [img]="icons.sparkles" [size]="14" />
-              <span class="jt-colrow__label">{{ col.label }}</span>
-              <span class="jt-tag">{{ col.type }}</span>
-              <button
-                type="button"
-                class="jt-icon jt-icon--sm"
-                (click)="removeCustomColumn(col.id)"
-              >
-                <lucide-icon [img]="icons.trash" [size]="14" />
-              </button>
-            </div>
-          }
-        }
-
-        <p class="jt-drawer__heading">{{ t()('tracker.add_custom') }}</p>
-        <div class="jt-addcol">
-          <input
-            class="jt-drawer__input"
-            [ngModel]="columns.newColumnName()"
-            (ngModelChange)="columns.newColumnName.set($event)"
-            [placeholder]="t()('tracker.custom_name_ph')"
-            (keydown.enter)="addCustomColumn()"
-          />
-          <select
-            class="jt-drawer__input"
-            [ngModel]="columns.newColumnType()"
-            (ngModelChange)="columns.newColumnType.set($event)"
-          >
-            <option value="text">{{ t()('tracker.ctype_text') }}</option>
-            <option value="date">{{ t()('tracker.ctype_date') }}</option>
-            <option value="number">{{ t()('tracker.ctype_number') }}</option>
-            <option value="yesno">{{ t()('tracker.ctype_yesno') }}</option>
-            <option value="select">{{ t()('tracker.ctype_select') }}</option>
-          </select>
-          <button type="button" class="jt-addcol__btn" (click)="addCustomColumn()">
-            <lucide-icon [img]="icons.plus" [size]="15" />{{ t()('tracker.add_column') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-tracker-column-drawer (closed)="showCols.set(false)" />
   }
 
   <!-- ===================== export preview modal ===================== -->
   @if (showExport()) {
-    <!-- Backdrop click-to-dismiss is a mouse shortcut; the panel's Close button
-         is the keyboard path, so the backdrop stays unfocusable. -->
-    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-    <div class="jt-modal" (click)="showExport.set(false)">
-      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-      <div class="jt-modal__panel" (click)="$event.stopPropagation()">
-        <div class="jt-modal__head">
-          <span class="jt-modal__title">
-            <lucide-icon [img]="icons.reportOk" [size]="18" />
-            {{ t()('tracker.preview_title') }}
-            <span class="jt-modal__hint">{{ t()('tracker.preview_hint') }}</span>
-          </span>
-          <button type="button" class="jt-icon" (click)="showExport.set(false)">
-            <lucide-icon [img]="icons.close" [size]="18" />
-          </button>
-        </div>
-
-        <div class="jt-modal__config">
-          <label class="jt-field">
-            <span class="jt-field__label">{{ t()('tracker.applicant_label') }}</span>
-            <input
-              class="jt-field__input"
-              [ngModel]="applicantName()"
-              (ngModelChange)="applicantName.set($event)"
-              [placeholder]="t()('tracker.applicant_placeholder')"
-            />
-          </label>
-          <label class="jt-field">
-            <span class="jt-field__label">{{ t()('tracker.report_market') }}</span>
-            <select
-              class="jt-field__input jt-field__input--sm"
-              [ngModel]="reportMarket()"
-              (ngModelChange)="reportMarket.set($event)"
-            >
-              <option value="de">{{ t()('tracker.market_de') }}</option>
-              <option value="intl">{{ t()('tracker.market_intl') }}</option>
-            </select>
-          </label>
-          <label class="jt-field">
-            <span class="jt-field__label">{{ t()('tracker.orientation') }}</span>
-            <select
-              class="jt-field__input jt-field__input--sm"
-              [ngModel]="landscape()"
-              (ngModelChange)="landscape.set($event)"
-            >
-              <option [ngValue]="false">{{ t()('tracker.portrait') }}</option>
-              <option [ngValue]="true">{{ t()('tracker.landscape') }}</option>
-            </select>
-          </label>
-          <label class="jt-field">
-            <span class="jt-field__label">{{ t()('tracker.columns_toggle') }}</span>
-            <select
-              class="jt-field__input jt-field__input--sm"
-              [ngModel]="reportMode()"
-              (ngModelChange)="reportMode.set($event)"
-            >
-              <option value="fit">{{ t()('tracker.mode_fit') }}</option>
-              <option value="all">{{ t()('tracker.mode_all') }}</option>
-            </select>
-          </label>
-          <span class="jt-modal__spacer"></span>
-          <button
-            type="button"
-            class="jt-tbtn jt-tbtn--primary"
-            [disabled]="exporting()"
-            (click)="exportPdf()"
-          >
-            <lucide-icon [img]="icons.fileDown" [size]="15" />{{ t()('tracker.save_pdf') }}
-          </button>
-          <button type="button" class="jt-tbtn" [disabled]="exporting()" (click)="exportCsv()">
-            <lucide-icon [img]="icons.table" [size]="15" />{{ t()('tracker.save_csv') }}
-          </button>
-        </div>
-
-        @if (report.fitInfo().overflow.length) {
-          <div class="jt-modal__note">
-            <lucide-icon [img]="icons.info" [size]="13" />
-            {{ fitNoteText() }}
-          </div>
-        }
-
-        <div class="jt-modal__scroll" [class.is-landscape]="landscape()">
-          <app-tracker-report
-            [rows]="rows.reportRows()"
-            [columns]="report.columns()"
-            [applicant]="applicantName()"
-            [periodLabel]="report.periodLabel()"
-            [market]="reportMarket()"
-            [mode]="reportMode()"
-            [landscape]="landscape()"
-            [generatedOn]="today()"
-            [total]="summary().total"
-            [rate]="summary().rate"
-            [avg]="summary().avg"
-          />
-        </div>
-      </div>
-    </div>
+    <app-tracker-export-modal (closed)="showExport.set(false)" />
   }
 
   <!-- ===== row-actions popup: rendered at ROOT so no sticky cell's stacking
        context can clip or paint over it ===== -->
   @if (menuRow(); as mr) {
     @if (menuPos(); as pos) {
-      <!-- Backdrop click-to-dismiss is a mouse shortcut; the menu below is the
-           keyboard path, so the backdrop stays unfocusable. -->
-      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-      <div class="jt-pop-backdrop" (click)="closeMenus()"></div>
-      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-      <div
-        class="jt-pop"
-        role="menu"
-        [style.top.px]="pos.top"
-        [style.left.px]="pos.left"
-        (click)="$event.stopPropagation()"
-      >
-        @if (confirmId() === mr.id) {
-          <div class="jt-pop__confirm">
-            <div class="jt-pop__confirm-head">
-              <lucide-icon [img]="icons.trash" [size]="15" />
-              {{ t()('tracker.confirm_remove_title') }}
-            </div>
-            <p class="jt-pop__confirm-body">{{ t()('tracker.confirm_remove_body') }}</p>
-            <div class="jt-pop__confirm-row">
-              <button type="button" class="jt-mini" (click)="confirmId.set(null)">
-                {{ t()('actions.cancel') }}
-              </button>
-              <button type="button" class="jt-mini jt-mini--danger" (click)="confirmRemove(mr)">
-                {{ t()('tracker.remove') }}
-              </button>
-            </div>
-          </div>
-        } @else {
-          <button type="button" role="menuitem" class="jt-pop__item" (click)="startEdit(mr)">
-            <lucide-icon [img]="icons.pencil" [size]="16" />{{ t()('tracker.edit') }}
-          </button>
-          @if (mr.archived) {
-            <button
-              type="button"
-              role="menuitem"
-              class="jt-pop__item"
-              (click)="setArchived(mr, false)"
-            >
-              <lucide-icon [img]="icons.restore" [size]="16" />{{ t()('tracker.restore') }}
-            </button>
-          } @else {
-            <button
-              type="button"
-              role="menuitem"
-              class="jt-pop__item"
-              (click)="setArchived(mr, true)"
-            >
-              <lucide-icon [img]="icons.archive" [size]="16" />{{ t()('tracker.archive') }}
-            </button>
-          }
-          <span class="jt-pop__sep"></span>
-          <button
-            type="button"
-            role="menuitem"
-            class="jt-pop__item jt-pop__item--danger"
-            (click)="askRemove(mr)"
-          >
-            <lucide-icon [img]="icons.trash" [size]="16" />{{ t()('tracker.remove') }}
-          </button>
-        }
-      </div>
+      <app-tracker-row-menu
+        [row]="mr"
+        [top]="pos.top"
+        [left]="pos.left"
+        [confirming]="confirmId() === mr.id"
+        (closed)="closeMenus()"
+        (editRequested)="startEdit(mr)"
+        (archiveToggled)="setArchived(mr, $event)"
+        (removeRequested)="askRemove(mr)"
+        (removeCancelled)="confirmId.set(null)"
+        (removeConfirmed)="confirmRemove(mr)"
+      />
     }
   }
 </div>

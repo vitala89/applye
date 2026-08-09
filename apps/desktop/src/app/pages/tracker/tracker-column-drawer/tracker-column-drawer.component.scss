@@ -1,0 +1,203 @@
+/* Moved verbatim from `tracker.component.scss` with the column manager's
+   markup (ADR-0005, amendment twenty-two). Every `.jt-drawer*`, `.jt-colrow*`,
+   `.jt-switch`, `.jt-tag` and `.jt-addcol*` rule had this drawer as its only
+   caller, so they moved rather than being copied. The three blocks after them
+   are copies, each for the reason stated on it. */
+.jt-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  background: var(--surface-1);
+  border-left: var(--border-width) solid var(--border-strong);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.4);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  animation: jtIn 0.18s ease-out;
+}
+.jt-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+.jt-drawer__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-md, 14px);
+  font-weight: var(--weight-semibold, 600);
+}
+.jt-drawer__body {
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-3);
+  flex: 1;
+}
+.jt-drawer__heading {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: var(--space-4) var(--space-1) var(--space-1);
+}
+.jt-colrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-1);
+  border-radius: var(--radius-input);
+  // The row itself is not clickable; only the switch button inside it is.
+  cursor: default;
+  &:hover {
+    background: var(--surface-hover);
+  }
+  &.is-forced {
+    opacity: 0.7;
+    cursor: default;
+  }
+}
+.jt-colrow--custom {
+  cursor: default;
+  &:hover {
+    background: transparent;
+  }
+  lucide-icon {
+    color: var(--text-accent);
+  }
+}
+.jt-colrow__label {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  flex: 1;
+}
+.jt-switch {
+  appearance: none;
+  padding: 0;
+  cursor: pointer;
+  width: 34px;
+  height: 19px;
+  border-radius: 20px;
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  position: relative;
+  flex-shrink: 0;
+  transition: all var(--motion-fast, 0.14s);
+  &:disabled {
+    cursor: default;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left var(--motion-fast, 0.14s);
+  }
+  &.is-on {
+    background: var(--text-accent);
+    border-color: var(--text-accent);
+    &::after {
+      left: 16px;
+    }
+  }
+}
+.jt-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border: var(--border-width) solid var(--border-default);
+  padding: 2px 5px;
+  border-radius: var(--radius-badge);
+}
+.jt-addcol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1);
+}
+.jt-drawer__input {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+}
+.jt-addcol__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs, 12px);
+  padding: var(--space-2);
+  border-radius: var(--radius-input);
+  border: var(--border-width) dashed var(--text-accent);
+  background: var(--accent-tint);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* COPIED, and deliberately temporary, exactly as in `tracker-export-modal/`:
+   `.jt-icon` still has three call sites left in the page and component styles
+   are encapsulated, so this drawer cannot inherit the page's copy. The fold
+   deletes every copy at once (ADR-0005, amendment twenty). `--sm` comes too,
+   because the custom-column delete button is the only 24px icon in the app and
+   it lives here. */
+.jt-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid transparent;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  &:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+  }
+  &.is-open {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+.jt-icon--sm {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes jtIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* COPIED for the reason amendment twenty-one names: the page writes this with
+   a bare `*`, which encapsulation rewrites to `*[_ngcontent-page]`, so it never
+   reaches this drawer. Without it the panel would keep sliding in for a user
+   who asked it not to, and no gate here can see that. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -150,7 +150,12 @@
   decision with its own risk rather than a side effect of a migration (amendment thirty). It is
   **12** now: the quick-view modal followed its board, and the card stayed on the component for a
   second reason worth knowing - the board mutates those card objects **by reference**, so a copy in
-  a store would be one the store could not keep in sync (amendment thirty-one).
+  a store would be one the store could not keep in sync (amendment thirty-one). It is **11** now: the
+  dashboard moved, and what stayed behind states the boundary most clearly - its action queue carries
+  icons, translations and navigation closures, so the store supplies the facts and the page builds the
+  cards. `monogram` was deliberately **not** folded onto `companyInitials`: they differ on the empty
+  company, `?` against `-`, and a comment now says they are two rules that look alike rather than one
+  rule written twice (amendment thirty-two).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

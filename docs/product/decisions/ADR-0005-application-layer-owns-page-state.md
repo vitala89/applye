@@ -1633,6 +1633,50 @@ current, `Final` neither, with the counter at `2/3`. Then the three write paths:
 the status write emitted the **whole row** to the board - `appliedAt` and `followUpAt` included - which
 is the contract the board's `applyModalStatus` depends on.
 
+## Amendment thirty-two: the clearest case yet for where the boundary runs
+
+`dashboard` has five gateway calls and a dozen derivations, and the interesting question was not what
+moves but **what must not**. Allowlist **12 -> 11**.
+
+**The action queue stayed on the component.** Each of its items carries a lucide icon, translated
+strings, and a `run` closure that navigates or opens a modal - view, i18n and routing, which is three
+of the things this layer has refused every time it was asked. It would have been easy to move behind
+a disguise: take a label function and an icon map as arguments, the way `recentClaimedJobs` already
+takes its label. That disguise is the thing to name, because it will be offered again: passing view
+concerns in as parameters does not make them stop being view concerns. The store supplies the facts,
+the page builds the cards. `greetingTitle` and the recent-jobs rows stayed for the same reason.
+
+What did move is everything translation-free: the cards, the overview, the profile, the two values
+resolved at load because they reach the database, the four KPIs, the new-user test and the
+upcoming-interview rows.
+
+`dashboard.util.ts` moved down **whole**, spec included. It was already pure, and `recentClaimedJobs`
+already took its label function as a parameter - the same shape `CvPrintStore` takes its normalizer.
+Splitting a 104-line file and its spec to hand three helpers to the store is exactly what was rejected
+for the onboarding gate util in amendment twenty-five.
+
+**`monogram` is deliberately not folded onto `companyInitials`, and the code now says so.** It is the
+third copy of the same idea, and the campaign has folded two duplicates already - but these two differ:
+they agree on every real company name and disagree only on the empty one, where the board draws `-`
+and the dashboard draws `?`. Folding would change what the dashboard renders, with nothing behind the
+change but tidiness. **They are two rules that look alike, not one rule written twice**, and the
+comment exists so the next reader does not fold them blind. That is the counterweight to amendment
+thirty-one, which folded two copies that really were one rule.
+
+Thirteen store tests. Three pin decisions: a failed load leaves the page empty rather than
+half-populated, because a half-populated dashboard under-reports how much needs attention; unclaimed
+jobs do not count towards new-user detection, since `listJobsOverview` returns them and the dashboard
+is not the filter that shows them; and an unfinished session on an analysed-but-unsaved job still
+names the job it reopens rather than rendering an empty tail.
+
+**Rendered check, and the deliberate non-fold is the thing it proved.** KPIs read 4 active, 2
+interviews, 1 overdue, 1 offer. The upcoming list drew `GL` at `5h` marked soon, and the
+empty-company row drew **`?`** - which is the difference the decision preserved, visible on screen
+rather than only asserted in a comment. The queue still built its three items with icons, translated
+copy and working actions while reading store data, and the greeting still translated.
+
+The component fell **449 -> 314** lines as a side effect.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1703,7 +1747,7 @@ is the contract the board's `applyModalStatus` depends on.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**12** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**11** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

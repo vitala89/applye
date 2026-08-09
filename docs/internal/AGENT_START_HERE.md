@@ -46,7 +46,7 @@ Before editing, state briefly:
   does not inject `DbService` (`ADR-0005`). The rule binds new code now; an existing page migrates
   when it is touched for another reason. Lint enforces it for components: injecting `DbService` in a
   `*.component.ts` is an error unless the file is in `COMPONENTS_STILL_USING_THE_GATEWAY` in
-  `eslint.config.mjs`, a 12-entry list that only shrinks - never add to it;
+  `eslint.config.mjs`, an 11-entry list that only shrinks - never add to it;
 - which touched files are near or above their code-size budgets, what responsibility each file owns, and where the new behavior will be tested.
 
 Before adding framework or library code, use the configured read-only documentation MCP tools or current official docs for the installed version. Do not send source code, secrets, personal data, or private prompts to a documentation MCP.

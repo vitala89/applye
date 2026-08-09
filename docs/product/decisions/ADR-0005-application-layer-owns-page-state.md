@@ -1784,6 +1784,63 @@ The component fell **297 -> 268** lines; the store is 80 and the geometry module
 **426/300** and untouched - pre-existing debt the ratchet allows because it did not grow, and the
 next change that touches it must cut.
 
+## Amendment thirty-five: a store with no state, which is the honest answer
+
+`first-launch` is 439 lines and looked like the hardest of the one-call tier. It is not: **417 of
+those lines are the inline template and its keyframes**, and the class is 22 - one `updateSettings`
+write and an `output`. There is no screen state to move, because the screen has none. Allowlist
+**9 -> 8**.
+
+**So the store holds nothing, and the amendment says so rather than dressing it up.** The lint rule
+is about the gateway, not about signals: a component may not reach the database, and this one did.
+`FirstLaunchStore` takes the call, and inventing state for it to hold would have been worse than
+leaving it small. Two alternatives were weighed and refused. Folding the write into
+`HealthCheckStore` conflates the check with the flags, and that store's own doc records why it sits
+in its own area - its panel has two homes, and Settings would inherit a method that means nothing
+there. A shared flags store that `onboarding` could reuse when it migrates is designed for a caller
+that does not exist yet; this campaign rejected that shape twice already, for the onboarding gate
+util and for the dashboard helpers.
+
+**The deliberate silence is the interesting part.** The original swallowed a failed write with a
+comment - never trap the user on this screen - and that is still exactly right. The store records
+the failure in `error` and returns `false`; the page ignores the return value, with the comment moved
+to the ignoring rather than deleted. Refusal-versus-failure stays testable inside the layer while
+the screen's behaviour is unchanged.
+
+Two facts found by reading, worth carrying:
+
+- **`app.ts` injects the gateway and the lint rule does not see it**, because the rule matches
+  `*.component.ts` and that file is `app.ts`. The allowlist has been undercounting the work by one
+  the whole campaign. Not fixed here - it is not this migration's job - but the checklist below now
+  names it.
+- `onboarding.component.ts` writes `onboardingSeen` too, and is still on the allowlist. If its
+  migration wants to share this write, that is the moment to decide it, with the second caller in
+  hand rather than imagined.
+
+**Rendered check, and a fourth animation trap - a new one.** The first screenshot came back
+**entirely blank** while the DOM held the right text. The cause is not the app: `document.hidden` is
+**true** in the preview tab, so the compositor never advances CSS animations - `currentTime` stayed
+at 0 through a 4.8-second wait. Every element on this screen starts at `opacity: 0` under
+`animation-fill-mode: both`, so a screen that renders perfectly well photographs as nothing.
+`document.getAnimations().forEach(a => { a.currentTime = 6000; a.pause() })` produces the true end
+state, and it is better than faking `prefers-reduced-motion` because it exercises the real keyframes.
+This is the same family as amendments twenty-three and twenty-eight - a value read while an animation
+is mid-flight - but the previous two produced a _plausible wrong number_, and this one produces a
+blank frame that reads as a broken screen. Both failure modes are worth knowing.
+
+With the animations pinned, everything renders: lockup, title with the caret, tagline, both CTAs,
+hint, divider, and the health panel. The failed check draws as **one `fail` row with a "Re-run check"
+control**, which is `HealthCheckStore`'s documented "a failed check is a result, not an error state"
+(amendment twenty-six) visible on screen.
+
+The behaviour that matters was driven deliberately, not observed in passing: with the write failing
+for real, `dismiss` returned false, `error` held the message, `dismissed` still emitted
+`{ startOnboarding: false }`, and the component unmounted. **The user leaves the screen even when the
+preference cannot be saved** - which is the whole point of the silence.
+
+The component fell **426 -> 419** non-empty lines, still over its 400 budget and still allowed
+because it shrank. The store is 43.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1854,10 +1911,14 @@ next change that touches it must cut.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**9** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**8** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)
+  - [ ] **`app.ts` injects the gateway and the lint rule cannot see it**, because the rule matches
+        `*.component.ts` and that file is not one. Found while migrating `first-launch` (amendment
+        thirty-five); the allowlist has been undercounting by one throughout. Decide whether the
+        rule's glob widens or `app.ts` is migrated on its own
   - [ ] Move the app's `shared/*` services into `libs/application`, decomposing the five over 250 lines
   - [ ] Remove `type:data` from `type:app`'s allowlist once those services have moved too
   - [ ] Cut `db.service.ts` into per-domain gateways when the ratchet refuses the next method

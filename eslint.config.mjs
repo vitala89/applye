@@ -36,7 +36,6 @@ const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/pages/interview-prep/interview-prep-detail/interview-prep-detail.component.ts',
   '**/pages/jobs/jobs.component.ts',
   '**/pages/jobs/my-jobs.component.ts',
-  '**/pages/pipeline/quick-view-modal/quick-view-modal.component.ts',
   '**/pages/profile/profile.component.ts',
   '**/pages/settings/settings.component.ts',
 ];

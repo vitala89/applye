@@ -22,12 +22,18 @@ import {
   Mail,
   X,
 } from 'lucide-angular';
-import { DbService } from '@applye/data';
+import {
+  QuickViewStore,
+  companyInitials,
+  scoreClass,
+  stageDone,
+  stageIsCurrent,
+  stageReached,
+} from '@applye/application';
 import { ToastService } from '../../../core/toast/toast.service';
 import {
   Application,
   ApplicationStatus,
-  Comment,
   InterviewStage,
   PipelineCard,
   Priority,
@@ -39,16 +45,6 @@ import { FOLLOWUP_LANGUAGES, FollowupDraftService } from './followup-draft.servi
 
 const STATUSES: ApplicationStatus[] = ['applied', 'interview', 'offer', 'rejected', 'cancelled'];
 const PRIORITIES: Exclude<Priority, null>[] = ['low', 'medium', 'high'];
-
-/** Highest stage_order that isn't rejected/cancelled, or the most recent one
- * if all are closed - mirrors the SQL in db_pipeline_cards exactly, so the
- * modal's summary always matches the card footer. */
-function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
-  if (!stages.length) return null;
-  const open = stages.filter((s) => s.status !== 'rejected' && s.status !== 'cancelled');
-  const pool = open.length ? open : stages;
-  return pool.reduce((max, s) => (s.stageOrder > max.stageOrder ? s : max), pool[0]);
-}
 
 // Fast triage surface for a Pipeline card - status, priority, comments, and a
 // link out. Deliberately shallow: no score/JD/tailoring/portal-answers here,
@@ -65,15 +61,15 @@ function pickCurrentStage(stages: InterviewStage[]): InterviewStage | null {
   host: { '(document:keydown.escape)': 'close()' },
   // Component-scoped: a follow-up draft belongs to the card this modal shows
   // and must not outlive it, which is the lifetime it had as component fields.
-  providers: [FollowupDraftService],
+  providers: [FollowupDraftService, QuickViewStore],
 })
 export class QuickViewModalComponent {
-  private readonly db = inject(DbService);
   private readonly router = inject(Router);
   private readonly followup = inject(FollowupDraftService);
   private readonly i18n = inject(TranslateService);
   private readonly toast = inject(ToastService);
   protected readonly t = this.i18n.t;
+  protected readonly quick = inject(QuickViewStore);
 
   readonly card = input.required<PipelineCard>();
 
@@ -95,29 +91,17 @@ export class QuickViewModalComponent {
   protected readonly PRIORITIES = PRIORITIES;
   protected readonly FOLLOWUP_LANGUAGES = FOLLOWUP_LANGUAGES;
 
-  protected readonly statusBusy = signal(false);
-  protected readonly priorityBusy = signal(false);
-
-  protected readonly comments = signal<Comment[]>([]);
-  protected readonly commentsLoading = signal(true);
-  protected readonly commentsError = signal('');
-  protected readonly commentText = signal('');
-  protected readonly commentBusy = signal(false);
-
-  // Stage summary / quick-add - see the "one write path outside Interview
-  // Prep" exception: the mini form only ever shows right after a
-  // transition INTO interview when the application has 0 stages yet.
-  protected readonly stageSummary = signal<InterviewStage | null>(null);
-  // Full ordered stage list powers the modal's segmented stepper; the summary
-  // above is the single "current" stage for the headline + card footer.
-  protected readonly stages = signal<InterviewStage[]>([]);
-  protected readonly stagesLoading = signal(true);
+  // `promptDismissed` and `showQuickAdd` stay here: the gate reads `card()`,
+  // which is this component's input (ADR-0005, amendment thirty-one). See the
+  // "one write path outside Interview Prep" exception - the mini form only
+  // ever shows right after a transition INTO interview when the application
+  // has 0 stages yet.
   protected readonly promptDismissed = signal(false);
   protected readonly showQuickAdd = computed(
     () =>
       this.card().status === 'interview' &&
-      !this.stagesLoading() &&
-      this.stageSummary() === null &&
+      !this.quick.stagesLoading() &&
+      this.quick.stageSummary() === null &&
       !this.promptDismissed(),
   );
 
@@ -140,7 +124,7 @@ export class QuickViewModalComponent {
       const card = this.card();
       this.promptDismissed.set(false);
       void this.loadComments(card.id);
-      void this.refreshStageState(card.id, card.status);
+      void this.quick.refreshStages(card.id, card.status);
       this.followup.resetFor(card);
     });
   }
@@ -170,67 +154,32 @@ export class QuickViewModalComponent {
   }
 
   private async loadComments(applicationId: number): Promise<void> {
-    this.commentsLoading.set(true);
-    this.commentsError.set('');
-    try {
-      this.comments.set(await this.db.listApplicationComments(applicationId));
-    } catch (e) {
-      this.commentsError.set(String(e));
-      this.toast.error(String(e));
-    } finally {
-      this.commentsLoading.set(false);
+    if (!(await this.quick.loadComments(applicationId))) {
+      this.toast.error(this.quick.commentsError());
     }
   }
 
-  private async refreshStageState(applicationId: number, status: ApplicationStatus): Promise<void> {
-    if (status !== 'interview') {
-      this.stageSummary.set(null);
-      this.stages.set([]);
-      this.stagesLoading.set(false);
-      return;
-    }
-    this.stagesLoading.set(true);
-    try {
-      const stages = await this.db.listInterviewStages(applicationId);
-      this.stages.set([...stages].sort((a, b) => a.stageOrder - b.stageOrder));
-      this.stageSummary.set(pickCurrentStage(stages));
-    } finally {
-      this.stagesLoading.set(false);
-    }
-  }
-
-  /** 1-2 letter monogram from the company name, matching the board card. */
+  /** The same monogram and score band the board card draws - literally the
+   * same functions now, rather than a second copy whose comment claimed they
+   * matched (ADR-0005, amendment thirty-one). */
   protected initials(): string {
-    const company = this.card().company?.trim();
-    if (!company) return '-';
-    const words = company.split(/\s+/).filter(Boolean);
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
+    return companyInitials(this.card().company);
   }
 
   protected scoreClass(): string {
-    const score = this.card().score;
-    if (score == null) return '';
-    if (score >= 75) return 'score--high';
-    if (score >= 50) return 'score--mid';
-    return 'score--low';
+    return scoreClass(this.card().score);
   }
 
-  /** A stage counts as done once it has passed; the current (summary) stage is
-   * highlighted as active in the stepper. */
   protected stageDone(stage: InterviewStage): boolean {
-    return stage.status === 'passed';
+    return stageDone(stage);
   }
 
   protected stageCurrent(stage: InterviewStage): boolean {
-    return this.stageSummary()?.id === stage.id;
+    return stageIsCurrent(stage, this.quick.stageSummary());
   }
 
-  /** A step (and the connector into it) is "reached" once the funnel has
-   * advanced to at least its position - fills the progress track up to the
-   * current stage. */
   protected stageReached(stage: InterviewStage): boolean {
-    return stage.stageOrder <= (this.stageSummary()?.stageOrder ?? 0);
+    return stageReached(stage, this.quick.stageSummary());
   }
 
   protected formatStageDate(iso: string): string {
@@ -238,7 +187,7 @@ export class QuickViewModalComponent {
   }
 
   protected onStageAdded(stage: InterviewStage): void {
-    this.stageSummary.set(stage);
+    this.quick.noteStageAdded(stage);
     this.stageAdded.emit({ id: this.card().id, stage });
   }
 
@@ -258,53 +207,39 @@ export class QuickViewModalComponent {
 
   protected async onStatusSelect(status: ApplicationStatus): Promise<void> {
     const card = this.card();
-    if (status === card.status || this.statusBusy()) return;
-    this.statusBusy.set(true);
-    try {
-      const updated = await this.db.setApplicationStatus(card.id, status);
-      // Emit the whole row so the board can refresh applied_at / follow_up_at
-      // / overdue too - not just the status literal (those are recomputed in
-      // SQL on the applied/interview transitions).
-      this.statusChanged.emit(updated);
-      this.promptDismissed.set(false);
-      await this.refreshStageState(card.id, updated.status);
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.statusBusy.set(false);
+    const updated = await this.quick.setStatus(card.id, card.status, status);
+    if (!updated) {
+      // Empty when the store refused rather than failed - same status, or a
+      // write already running. Nothing to tell the user in that case.
+      const message = this.quick.error();
+      if (message) this.toast.error(message);
+      return;
     }
+    // Emit the whole row so the board can refresh applied_at / follow_up_at /
+    // overdue too - not just the status literal (those are recomputed in SQL
+    // on the applied/interview transitions).
+    this.statusChanged.emit(updated);
+    this.promptDismissed.set(false);
+    await this.quick.refreshStages(card.id, updated.status);
   }
 
   protected async onPrioritySelect(priority: Priority): Promise<void> {
     const card = this.card();
-    if (priority === (card.priority ?? null) || this.priorityBusy()) return;
-    this.priorityBusy.set(true);
-    try {
-      await this.db.setApplicationPriority(card.id, priority);
+    if (await this.quick.setPriority(card.id, card.priority ?? null, priority)) {
       this.priorityChanged.emit({ id: card.id, priority });
-    } catch (e) {
-      this.toast.error(String(e));
-    } finally {
-      this.priorityBusy.set(false);
+      return;
     }
+    const message = this.quick.error();
+    if (message) this.toast.error(message);
   }
 
   protected async addComment(): Promise<void> {
-    const text = this.commentText().trim();
-    if (!text || this.commentBusy()) return;
-    this.commentBusy.set(true);
-    this.commentsError.set('');
-    try {
-      const comment = await this.db.addApplicationComment(this.card().id, text);
-      this.comments.set([...this.comments(), comment]);
-      this.commentText.set('');
+    if (await this.quick.addComment(this.card().id)) {
       this.toast.success(this.t()('pipeline.comment_added'));
-    } catch (e) {
-      this.commentsError.set(String(e));
-      this.toast.error(String(e));
-    } finally {
-      this.commentBusy.set(false);
+      return;
     }
+    const message = this.quick.commentsError();
+    if (message) this.toast.error(message);
   }
 
   /**

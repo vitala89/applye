@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-  OnInit,
-  output,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, output } from '@angular/core';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -14,7 +6,7 @@ import {
   RefreshCw,
   XCircle,
 } from 'lucide-angular';
-import { DbService } from '@applye/data';
+import { HealthCheckStore } from '@applye/application';
 import { HealthCheckItem } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 
@@ -24,9 +16,10 @@ import { TranslateService } from '@applye/i18n';
   selector: 'app-health-check-panel',
   standalone: true,
   imports: [LucideAngularModule],
+  providers: [HealthCheckStore],
   template: `
     <div class="health-panel">
-      @if (loading()) {
+      @if (health.loading()) {
         <div class="state-loading" [attr.aria-label]="t()('health.checking')">
           <div class="state-loading__bar state-loading__bar--wide"></div>
           <div class="state-loading__bar state-loading__bar--mid"></div>
@@ -34,7 +27,7 @@ import { TranslateService } from '@applye/i18n';
         </div>
       } @else {
         <ul class="health-list">
-          @for (i of items(); track i.key) {
+          @for (i of health.items(); track i.key) {
             <li class="health-item">
               <lucide-icon
                 [img]="statusIcon(i.status)"
@@ -53,7 +46,7 @@ import { TranslateService } from '@applye/i18n';
           <button
             class="btn btn--ghost btn--sm"
             type="button"
-            [disabled]="loading()"
+            [disabled]="health.loading()"
             (click)="run()"
           >
             <lucide-icon [img]="icons.rerun" [size]="14" aria-hidden="true" />
@@ -115,15 +108,12 @@ import { TranslateService } from '@applye/i18n';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HealthCheckPanelComponent implements OnInit {
-  private readonly db = inject(DbService);
   private readonly i18n = inject(TranslateService);
   protected readonly t = this.i18n.t;
+  protected readonly health = inject(HealthCheckStore);
 
   readonly showContinue = input(false);
   readonly continueClicked = output<void>();
-
-  readonly loading = signal(true);
-  readonly items = signal<HealthCheckItem[]>([]);
 
   protected readonly icons = {
     ok: CheckCircle2,
@@ -136,18 +126,10 @@ export class HealthCheckPanelComponent implements OnInit {
     await this.run();
   }
 
+  /** The label goes in because the store holds no translations - a failed check
+   * is reported as a `fail` row and the row needs a name the user can read. */
   async run(): Promise<void> {
-    this.loading.set(true);
-    try {
-      const report = await this.db.healthCheck();
-      this.items.set(report.items);
-    } catch (e) {
-      this.items.set([
-        { key: 'error', label: this.t()('health.section'), status: 'fail', detail: String(e) },
-      ]);
-    } finally {
-      this.loading.set(false);
-    }
+    await this.health.run(this.t()('health.section'));
   }
 
   statusIcon(status: HealthCheckItem['status']) {

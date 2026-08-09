@@ -128,7 +128,12 @@
   now: `onboarding-banner` migrated to `OnboardingBannerStore`, the first store in a new
   `libs/application/onboarding/` area, and `paste-job-modal` turned out to inject the gateway without
   ever calling it - so one of the 22 was never a migration (ADR-0005, amendment twenty-five). Three
-  other documents recorded the list as 26 long after it was 22; all four now say 20.
+  other documents recorded the list as 26 long after it was 22; all four were corrected. It is
+  **18** now: `health-check-panel` and `stage-quick-add` moved to `HealthCheckStore` and
+  `StageQuickAddStore`, opening `health/` and `pipeline/` areas (amendment twenty-six). The rendered
+  check that migration ran found a **pre-existing** defect it did not cause: the health check's
+  `ok`/`warn`/`fail` icons all render the same colour, because the `[class]` binding on
+  `<lucide-icon>` lands nothing. Filed separately; the same pattern may be inert at other call sites.
 - **`cover-letter-detail.component.ts` is now 337/400 - under budget**, and the template is
   **669 -> 491/300**. The Style card and the per-block style popover became
   `cover-letter-style-card/` and `cover-letter-style-popover/`.

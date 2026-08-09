@@ -44,6 +44,52 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, the last icon-button copy folds, and a transition impersonated a bug
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/tracker-icon-fold`, stacked on `refactor/tracker-template-extraction` (#389)
+- **Pull request:** opened from this branch
+- **Objective:** fold `tracker`'s `.jt-icon` - the last page-local icon button - onto
+  `appButton size="icon"`, which the template extraction in #389 unblocked.
+- **Completed:**
+  - All six sites folded: five ghost, one primary. `.jt-icon`, `--primary`, `--sm` and the
+    `.jt-menu .jt-icon` override deleted from all three component stylesheets.
+  - `.is-open` deleted from the kebab; `.btn--ghost[aria-expanded='true']` carries the state, as on
+    `interview-prep`. That rule shipped with one consumer in #388 and has three now.
+  - Spec selectors moved off the deleted class onto structural ones.
+- **Not completed:** nothing in scope. `tracker.component.scss` remains 455/400 from #389, unchanged
+  by this branch and still recorded.
+- **Files or packages changed:** `apps/desktop/src/app/pages/tracker/` - `tracker-row-actions/`,
+  `tracker-column-drawer/`, `tracker-export-modal/` (template, stylesheet, component, spec each);
+  `CHANGELOG.md`; ADR-0005; this file.
+- **Validation:**
+  - `nx test desktop` - **1511 passed, 131 suites**. `nx build desktop`, `nx lint desktop` (0 errors).
+  - `check-style-move` - **8 selectors lost, 0 gained**. Every loss is one of the four declared
+    changes; nothing local was added, which is what makes this fold a pure deletion.
+  - `quality:file-size`, `format:check`, `quality:attribution`, `git diff --check` - passed.
+  - **Rendered check**: save 28.00 x 28.00 filled indigo-600, cancel/drawer-close/modal-close/
+    delete-custom all 28.00 x 28.00 ghost, kebab 28.00 x 28.00 at radius 6 and `aria-expanded`
+    flipping to `true` with `--text-primary`. `svg { display: block }` holding at every size.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** taken through the grilling gate in one round, three questions, all
+  answered "normalise to the design system": the kebab to 28x28/radius 6, `--sm` to 28, and the save
+  fill to the system's primary. That is what made the fold a pure deletion - each "keep it local"
+  answer would have left a rule behind.
+- **Risks or compatibility impact:** four declared visual changes on `tracker`, all in the changelog.
+- **Open issues or blockers:**
+  - **A correction to my own alarm, recorded because it cost real time.** The open kebab measured a
+    transparent background on every read while an identical clone on `document.body` measured
+    `--surface-hover`. Cascade, token and every matching rule checked out. The cause was the
+    instrument: `.btn` carries a 140ms `background` transition and each read caught it at t=0. With
+    `transition: none` inline the value resolves as the rule says. **`getComputedStyle` is not a free
+    instrument on a transitioning property** - a real limit on the rendered check this campaign leans
+    on, now written into amendment twenty-three.
+- **Next first action:** decide `.clb__icon-btn` in `cover-letter-body-paragraphs/`, the last open
+  item on the icon-button checklist. Its local name was chosen in amendment seventeen precisely
+  because folding it then meant a visible change, and `.btn--danger` has been quiet at rest since
+  amendment nineteen - so the reason may have expired and the check is cheap.
+
 ### 2026-08-09, the tracker template comes under budget in five cuts
 
 - **Status:** complete

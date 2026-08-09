@@ -26,7 +26,7 @@ describe('TrackerRowActionsComponent', () => {
     fixture.componentRef.setInput('editing', true);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('.jt-actbtns .jt-icon')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('.jt-actbtns button')).toHaveLength(2);
     expect(fixture.nativeElement.querySelector('.jt-menu')).toBeNull();
   });
 
@@ -36,7 +36,7 @@ describe('TrackerRowActionsComponent', () => {
     fixture.detectChanges();
 
     const [save, cancel] = fixture.nativeElement.querySelectorAll(
-      '.jt-actbtns .jt-icon',
+      '.jt-actbtns button',
     ) as NodeListOf<HTMLButtonElement>;
     expect(save.disabled).toBe(true);
     expect(cancel.disabled).toBe(false);
@@ -53,20 +53,27 @@ describe('TrackerRowActionsComponent', () => {
     let emitted: HTMLElement | undefined;
     fixture.componentInstance.menuToggled.subscribe((el) => (emitted = el));
 
-    const kebab = fixture.nativeElement.querySelector('.jt-menu .jt-icon') as HTMLElement;
+    const kebab = fixture.nativeElement.querySelector('.jt-menu button') as HTMLElement;
     kebab.click();
 
     expect(emitted).toBe(kebab);
     expect(emitted).toBeInstanceOf(HTMLElement);
   });
 
-  it('reports the open menu through aria-expanded', () => {
+  // The lit look of an open kebab hangs entirely off this attribute:
+  // `.btn--ghost[aria-expanded='true']` in `libs/ui` is the rule, and the
+  // `.is-open` class that used to carry it is gone (ADR-0005, amendments twenty
+  // and twenty-three). Dropping the binding breaks nothing that fails - the
+  // menu still opens, it just stops looking open.
+  it('reports the open menu through aria-expanded, which is what styles it', () => {
     fixture.componentRef.setInput('editing', false);
+    fixture.detectChanges();
+    const kebab = fixture.nativeElement.querySelector('.jt-menu button') as HTMLElement;
+    expect(kebab.getAttribute('aria-expanded')).toBe('false');
+
     fixture.componentRef.setInput('menuOpen', true);
     fixture.detectChanges();
-
-    const kebab = fixture.nativeElement.querySelector('.jt-menu .jt-icon') as HTMLElement;
     expect(kebab.getAttribute('aria-expanded')).toBe('true');
-    expect(kebab.classList.contains('is-open')).toBe(true);
+    expect(kebab.classList.contains('is-open')).toBe(false);
   });
 });

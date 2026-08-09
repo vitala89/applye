@@ -146,39 +146,10 @@
   cursor: pointer;
 }
 
-/* COPIED, and deliberately temporary, exactly as in `tracker-export-modal/`:
-   `.jt-icon` still has three call sites left in the page and component styles
-   are encapsulated, so this drawer cannot inherit the page's copy. The fold
-   deletes every copy at once (ADR-0005, amendment twenty). `--sm` comes too,
-   because the custom-column delete button is the only 24px icon in the app and
-   it lives here. */
-.jt-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-input);
-  border: var(--border-width) solid transparent;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  &:hover {
-    color: var(--text-primary);
-    background: var(--surface-hover);
-  }
-  &.is-open {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-}
-.jt-icon--sm {
-  width: 24px;
-  height: 24px;
-}
+/* The `.jt-icon` copy that stood here is gone: both buttons are
+   `appButton size="icon" variant="ghost"` now, and `--sm` went with them -
+   the 24px delete control is 28px like every other icon button in the app
+   (ADR-0005, amendment twenty-three). */
 
 @keyframes jtIn {
   from {

@@ -1261,6 +1261,41 @@ What is still owed: `tracker.component.scss` is 455 against 400. It is no longer
 - the fold now touches the five children, not the page - but it is over, and the next thing to touch
   it must cut rather than add.
 
+## Amendment twenty-three: the first fold that leaves nothing behind
+
+`.jt-icon` was the last page-local icon button, and the most divergent: six sites in four shapes.
+All six are `appButton size="icon"` now, and **no local rule survives** - the first fold in this
+campaign whose result is a pure deletion rather than a deletion plus a residue.
+
+Four visual changes, each decided at the gate rather than discovered afterwards:
+
+| Shape                           | Was                                                      | Now                                                      |
+| ------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| kebab, via `.jt-menu .jt-icon`  | 30x30, radius 7                                          | 28x28, radius 6                                          |
+| `--sm`, drawer's delete-custom  | 24x24                                                    | 28x28                                                    |
+| `--primary`, save-while-editing | `--text-accent` (indigo-400), `#fff`, `brightness(1.08)` | `--accent` (indigo-600), `--accent-fg`, `--accent-hover` |
+| any disabled control            | `cursor: default`                                        | the system's `not-allowed`                               |
+
+The kebab's `.is-open` class went the way `interview-prep`'s did in amendment twenty:
+`.btn--ghost[aria-expanded='true']` reads the attribute the trigger already had to carry to be usable.
+That rule shipped with one consumer and the risk was written down at the time; it has three now, and
+the shape of the risk - a rule generalised past its evidence - never materialised, because the
+evidence was the markup rather than a guess about future callers.
+
+`quality:style-move` reads **8 lost, 0 gained**. The 0 is the interesting half: every previous fold
+in this campaign left a local rule behind to reconcile something, and each of those became a thing a
+later reader had to explain. This one leaves nothing to explain.
+
+**And a correction worth keeping, because it cost a real investigation.** The open kebab measured a
+transparent background on every read, while an identical clone appended to `document.body` measured
+`--surface-hover`. The cascade was checked, the token was checked on the element itself, every
+matching rule was enumerated - all correct. The cause was the instrument: `.btn` carries a 140ms
+`background` transition, and each measurement was catching it at t=0. With `transition: none` set
+inline the value resolves exactly as the rule says. **`getComputedStyle` is not a free instrument on
+a transitioning property**, which is a real limit on the rendered check this campaign relies on: it
+reads geometry and colour honestly only for properties that are not mid-animation. Nothing was wrong
+with the styling, and the hour spent proving that was the price of not shipping on an assumption.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1303,7 +1338,10 @@ What is still owed: `tracker.component.scss` is 455 against 400. It is no longer
         **893 -> 455** (amendments twenty-one and twenty-two).
   - [ ] `tracker.component.scss` is **455/400** and no longer blocks anything, but it is over: the
         next change to touch it cuts rather than adds.
-  - [ ] Fold `tracker`'s `.jt-icon` - **now unblocked**, and it no longer touches the page at all:
+  - [x] Fold `tracker`'s `.jt-icon` - **done**, and it left nothing local behind (amendment
+        twenty-three). Four declared visual changes: kebab 30x30/r7 -> 28x28/r6, `--sm` 24 -> 28,
+        the save fill indigo-400 -> indigo-600, and disabled controls to the system's `not-allowed`.
+        `quality:style-move` reads 8 lost, 0 gained. Superseded detail, kept for the record:
         all six sites live in `tracker-row-actions/` (three) and `tracker-column-drawer/` (two) and
         `tracker-export-modal/` (one), each of which carries its own copy of the rule. **Six sites in
         four shapes**:

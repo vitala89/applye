@@ -10,7 +10,7 @@
         {{ t()('tracker.preview_title') }}
         <span class="jt-modal__hint">{{ t()('tracker.preview_hint') }}</span>
       </span>
-      <button type="button" class="jt-icon" (click)="closed.emit()">
+      <button appButton variant="ghost" size="icon" type="button" (click)="closed.emit()">
         <lucide-icon [img]="icons.close" [size]="18" />
       </button>
     </div>

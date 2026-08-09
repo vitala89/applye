@@ -54,7 +54,7 @@ describe('TrackerColumnDrawerComponent', () => {
     const closed = jest.fn();
     fixture.componentInstance.closed.subscribe(closed);
 
-    (fixture.nativeElement.querySelector('.jt-icon') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('.jt-drawer__head button') as HTMLElement).click();
 
     expect(closed).toHaveBeenCalled();
   });
@@ -113,7 +113,7 @@ describe('TrackerColumnDrawerComponent', () => {
     columns.customColumns.set([{ id: 'c1', label: 'Referral', type: 'text' }]);
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('.jt-icon--sm') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('.jt-colrow--custom button') as HTMLElement).click();
     await fixture.whenStable();
 
     expect(columns.removeColumn).toHaveBeenCalledWith('c1');

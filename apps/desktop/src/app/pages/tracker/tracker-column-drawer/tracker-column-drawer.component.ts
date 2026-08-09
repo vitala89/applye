@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Sparkles, Trash2, X } from 'lucide-angular';
 import { TrackerColumnDef, TrackerColumnsStore } from '@applye/application';
 import { TranslateService } from '@applye/i18n';
+import { ButtonDirective } from '@applye/ui';
 import { ToastService } from '../../../core/toast/toast.service';
 import { trackerColumnLabel } from '../tracker-column-label';
 
@@ -24,7 +25,7 @@ import { trackerColumnLabel } from '../tracker-column-label';
   selector: 'app-tracker-column-drawer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [ButtonDirective, FormsModule, LucideAngularModule],
   templateUrl: './tracker-column-drawer.component.html',
   styleUrl: './tracker-column-drawer.component.scss',
 })

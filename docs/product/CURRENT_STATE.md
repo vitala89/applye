@@ -141,7 +141,14 @@
   `profile-photo` moved, and it is the first migration where a constraint rather than a preference
   decided how much moves - `uri` is a `linkedSignal` on a required input, which a store cannot
   derive, so the store took `saving`, `cropSourceUri` and the two calls and the component kept the
-  value it renders (amendment twenty-eight).
+  value it renders (amendment twenty-eight). It is **14** now: `interview-prep`'s list page moved
+  whole - cards, computeds, row menu and delete confirmation - and its store keeps an `error` signal
+  because the first draft's bare `catch` would have silently downgraded the page's toast from the
+  real failure to a generic one (amendment twenty-nine).
+- **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
+  a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
+  `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting
+  call sites while the app ships six locales.
 - **`cover-letter-detail.component.ts` is now 337/400 - under budget**, and the template is
   **669 -> 491/300**. The Style card and the per-block style popover became
   `cover-letter-style-card/` and `cover-letter-style-popover/`.

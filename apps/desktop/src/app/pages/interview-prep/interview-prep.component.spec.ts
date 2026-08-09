@@ -4,7 +4,15 @@ import { PipelineCard } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../core/toast/toast.service';
+import { InterviewPrepStore } from '@applye/application';
 import { InterviewPrepComponent } from './interview-prep.component';
+
+/** The list, the row menu and the delete confirmation are `InterviewPrepStore`'s
+ * since ADR-0005 amendment twenty-nine, and the store is component-scoped - so
+ * it comes from the component's own injector. */
+const storeOf = (fixture: {
+  debugElement: { injector: { get: (t: unknown) => InterviewPrepStore } };
+}): InterviewPrepStore => fixture.debugElement.injector.get(InterviewPrepStore);
 
 const CARD: PipelineCard = {
   id: 7,
@@ -58,7 +66,7 @@ describe('InterviewPrepComponent row actions', () => {
     (fixture.nativeElement.querySelector('[aria-haspopup="menu"]') as HTMLElement).click();
     fixture.detectChanges();
     expect(navigate).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.menuId()).toBe(7);
+    expect(storeOf(fixture).menuId()).toBe(7);
   });
 
   it('offers a non-destructive action in the row menu, not only removal', async () => {
@@ -81,7 +89,7 @@ describe('InterviewPrepComponent row actions', () => {
     ) as HTMLElement;
     open.click();
     expect(navigate).toHaveBeenCalledWith(['/interview-prep', 7]);
-    expect(fixture.componentInstance.menuId()).toBeNull();
+    expect(storeOf(fixture).menuId()).toBeNull();
   });
 
   // The lit look of an open trigger hangs entirely off this attribute now:

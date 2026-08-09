@@ -44,6 +44,74 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-09, a whole page, and a bare catch caught before it shipped
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/interview-prep-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** continue the allowlist after #395 (`main` at `4b713f6`) with `interview-prep`, the
+  first whole **page** since the campaign resumed rather than a single flow.
+- **Completed:**
+  - `InterviewPrepStore` in a new `libs/application/interview-prep/` area: cards, `rows`, `stats`,
+    `confirmRow`, `menuId`, `confirmId`, `removing`, `error`, and the three gateway calls.
+  - The menu and the confirmation moved with the data. Amendment twenty-two's reason for keeping
+    `tracker`'s on the page is mechanical - a reused row component - and does not reach a page.
+  - `stats` returns `nextAt` as raw ISO; `formatDate` stayed on the component, which also kept a
+    hardcoded `en-GB` out of `libs/application`.
+  - Twelve store tests. The component spec's two `menuId` reads go through the component's injector.
+  - **Filed a second defect** rather than fixing it here: `en-GB` hardcoded at five sites.
+  - `ADR-0005` amendment twenty-nine, `CHANGELOG.md`, `CURRENT_STATE.md`, and the count in the four
+    documents, all to 14.
+- **Not completed:** nothing in scope. PR not opened.
+- **Files or packages changed:** `interview-prep.component.{ts,html}` and its spec,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, new
+  `libs/application/src/lib/interview-prep/interview-prep.store{,.spec}.ts`, `CHANGELOG.md`,
+  `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`,
+  `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1509 passed / 131 suites**; `nx test application` **627 passed / 43 suites**,
+    up from 616/42.
+  - Two component-spec tests failed first - they read `componentInstance.menuId()`, which had moved.
+    Third time this campaign; fixed the settled way, through
+    `fixture.debugElement.injector`, assertions unchanged.
+  - `nx lint desktop` **0 errors** on the first run this time, `nx lint application` clean,
+    `nx build desktop` succeeds, `quality:file-size`, `quality:attribution`, `format:check`,
+    `git diff --check` all pass.
+  - **A regression was caught in my own draft, not by a gate.** The first version of the store
+    swallowed both failure paths with a bare `catch { return false }`. It compiles and lints, and it
+    would have downgraded the page's toast from the real error text to a generic message. Corrected
+    before wiring: the store keeps an `error` signal, the third to do so, and refusing stays
+    distinguishable from failing by whether it is set. **No gate in this repository would have
+    reported that** - it is a behaviour downgrade, not a break.
+  - **Rendered check run.** Four cards in, three rows out - the stageless one belongs to Pipeline.
+    Sorted 01 Sept before 10 Sept, unscheduled last showing `·`. Stats 3 and 3, next date rendered
+    **`01 Sept 2026`** by the component from the store's raw `nextAt`, which is the split visible in
+    the one place it shows. Row menu opened with `aria-expanded="true"` and its trigger at
+    `rgb(42,41,39)`, so amendment twenty's design-system rule survives the state move. The danger
+    entry closed the menu and opened the confirmation in one step, cancel closed it, and a live
+    delete against no Tauri left all three rows in place, cleared `removing`, and toasted the real
+    error - the exact path the swallowed-catch draft would have broken. The toast read empty on the
+    first check and was there one change-detection cycle later; the first reading was the
+    instrument, again.
+- **Privacy/security impact:** none. Same three calls, one layer down.
+- **Decisions and assumptions:** three, taken at the grilling gate: everything moves including the
+  menu and confirmation; `stats` returns raw ISO and the component formats; the `en-GB` defect is
+  filed rather than fixed here.
+- **Risks or compatibility impact:** low, but wider than the recent single-flow migrations - this is
+  a whole page including its destructive action, which is why the failed-delete path was verified
+  live as well as in tests.
+- **Open issues or blockers:**
+  - Two filed, unfixed defects: the health-icon colours, and the `en-GB` date locale.
+  - `tracker.component.scss` still **455/400**, untouched.
+- **Next first action:** open the PR from `refactor/interview-prep-store`. The remaining 14 by call
+  site continue with `pipeline` (344 lines, 3 calls) and `quick-view-modal` (340, 5); the tail -
+  `cv-list` (426, 16), `onboarding` (785, 12), `jobs` (1164, 8) - are large enough that each will
+  want its own grilling round, and `jobs` was already deferred once by this ADR.
+- **Evidence:** the rendered-check readings above; the two-project test counts; `ADR-0005`
+  amendment twenty-nine.
+
 ### 2026-08-09, the first state this layer could not take
 
 - **Status:** complete

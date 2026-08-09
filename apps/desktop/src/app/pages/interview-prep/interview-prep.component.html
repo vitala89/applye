@@ -1,8 +1,8 @@
 <!-- Page shell: the click handler only dismisses open menus when the user clicks
      away. It is not a control, so it stays unfocusable and keyboard-inert. -->
 <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-<div class="ip" (click)="closeMenus()">
-  @if (loading()) {
+<div class="ip" (click)="prep.closeMenus()">
+  @if (prep.loading()) {
     <div class="ip__skeleton">
       <div class="ip__sk-strip">
         <span class="ip__sk-tile"></span><span class="ip__sk-tile"></span
@@ -20,7 +20,7 @@
         }
       </div>
     </div>
-  } @else if (!rows().length) {
+  } @else if (!prep.rows().length) {
     <div class="ip__empty">
       <div class="ip__empty-icon"><lucide-icon [img]="icons.empty" [size]="26" /></div>
       <p class="ip__empty-title">{{ t()('interview.list_empty') }}</p>
@@ -31,18 +31,18 @@
     <div class="ip__summary">
       <div class="ip__stat">
         <span class="ip__stat-label">{{ t()('interview.stat_tracking') }}</span>
-        <span class="ip__stat-val">{{ stats().tracking }}</span>
+        <span class="ip__stat-val">{{ prep.stats().tracking }}</span>
       </div>
       <div class="ip__stat">
         <span class="ip__stat-label">{{ t()('interview.stat_upcoming') }}</span>
-        <span class="ip__stat-val">{{ stats().upcoming }}</span>
+        <span class="ip__stat-val">{{ prep.stats().upcoming }}</span>
       </div>
       <div class="ip__stat ip__stat--wide">
         <span class="ip__stat-label">{{ t()('interview.stat_next') }}</span>
         <span class="ip__stat-next">
-          <span class="ip__stat-next-date">{{ stats().nextDate }}</span>
-          @if (stats().nextCompany) {
-            <span class="ip__stat-next-co">{{ stats().nextCompany }}</span>
+          <span class="ip__stat-next-date">{{ formatDate(prep.stats().nextAt) }}</span>
+          @if (prep.stats().nextCompany) {
+            <span class="ip__stat-next-co">{{ prep.stats().nextCompany }}</span>
           }
         </span>
       </div>
@@ -58,7 +58,7 @@
         <div>{{ t()('interview.col_next') }}</div>
         <div></div>
       </div>
-      @for (r of rows(); track r.id) {
+      @for (r of prep.rows(); track r.id) {
         <div
           class="ip__row"
           role="button"
@@ -92,12 +92,12 @@
               type="button"
               [attr.aria-label]="t()('interview.row_actions')"
               aria-haspopup="menu"
-              [attr.aria-expanded]="menuId() === r.id"
+              [attr.aria-expanded]="prep.menuId() === r.id"
               (click)="toggleMenu(r.id, $event)"
             >
               <lucide-icon [img]="icons.menu" [size]="16" />
             </button>
-            @if (menuId() === r.id) {
+            @if (prep.menuId() === r.id) {
               <div class="ip__pop" role="menu">
                 <!-- The row itself already opens the timeline; this repeats it in
                      the menu so removal is not the only thing offered here. -->
@@ -122,11 +122,11 @@
   }
 
   <!-- delete-confirm modal -->
-  @if (confirmRow(); as row) {
+  @if (prep.confirmRow(); as row) {
     <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
          is the keyboard path, so the backdrop stays unfocusable. -->
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-    <div class="ip-modal" (click)="cancelRemove()">
+    <div class="ip-modal" (click)="prep.cancelRemove()">
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="ip-modal__confirm" (click)="$event.stopPropagation()">
         <div class="ip-modal__confirm-row">
@@ -137,13 +137,13 @@
           </div>
         </div>
         <div class="ip-modal__confirm-actions">
-          <button type="button" class="ip-btn" (click)="cancelRemove()">
+          <button type="button" class="ip-btn" (click)="prep.cancelRemove()">
             {{ t()('actions.cancel') }}
           </button>
           <button
             type="button"
             class="ip-btn ip-btn--danger"
-            [disabled]="removing()"
+            [disabled]="prep.removing()"
             (click)="confirmRemove()"
           >
             {{ t()('interview.remove') }}

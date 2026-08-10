@@ -1,0 +1,27 @@
+@if (jobActions.deleteConfirmOpen()) {
+  <div class="alert alert--danger" role="alert">
+    <lucide-icon [img]="icons.dangerGlyph" [size]="16" class="alert__icon" aria-hidden="true" />
+    <div class="alert__body">
+      <p class="alert__title">{{ t()('jobs.delete_confirm_title') }}</p>
+      <p class="alert__text">{{ t()('jobs.delete_confirm_msg') }}</p>
+      <div class="alert__actions">
+        <button
+          class="btn btn--danger btn--md"
+          type="button"
+          [disabled]="jobActions.deleting()"
+          (click)="confirmed.emit()"
+        >
+          {{ jobActions.deleting() ? t()('common.loading') : t()('jobs.delete_confirm_btn') }}
+        </button>
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          [disabled]="jobActions.deleting()"
+          (click)="jobActions.cancelDeleteConfirm()"
+        >
+          {{ t()('actions.cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,38 @@
+@if (wizardNav.crossJobConfirmOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="wizardNav.cancelCrossJob()"
+    (keydown.escape)="wizardNav.cancelCrossJob()"
+    tabindex="-1"
+    role="presentation"
+  >
+    <div
+      class="modal modal--sm"
+      role="alertdialog"
+      aria-modal="true"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <h3>{{ t()('jobs.cross_job_confirm_title') }}</h3>
+      <p class="modal__hint">
+        {{ t()('jobs.cross_job_confirm_msg') }}
+        @if (wizardNav.crossJobLabel()) {
+          <strong>{{ wizardNav.crossJobLabel() }}</strong>
+        }
+      </p>
+      <div class="modal__actions">
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          (click)="wizardNav.cancelCrossJob()"
+        >
+          {{ t()('actions.cancel') }}
+        </button>
+        <button class="btn btn--primary btn--md" type="button" (click)="confirm()">
+          {{ t()('jobs.cross_job_confirm_btn') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

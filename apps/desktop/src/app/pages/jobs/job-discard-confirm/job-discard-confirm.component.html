@@ -1,0 +1,26 @@
+@if (discard.confirmOpen()) {
+  <div class="discard-confirm" role="dialog" aria-modal="true">
+    <div class="discard-confirm__panel">
+      <h4 class="discard-confirm__title">{{ t()('jobs.wizard.discard_title') }}</h4>
+      <p class="discard-confirm__text">{{ t()('jobs.wizard.discard_body') }}</p>
+      <div class="discard-confirm__actions">
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          [disabled]="discard.discarding()"
+          (click)="discard.cancel()"
+        >
+          {{ t()('jobs.wizard.discard_keep') }}
+        </button>
+        <button
+          class="btn btn--danger btn--md"
+          type="button"
+          [disabled]="discard.discarding()"
+          (click)="confirmed.emit()"
+        >
+          {{ discard.discarding() ? t()('common.loading') : t()('jobs.wizard.discard_confirm') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

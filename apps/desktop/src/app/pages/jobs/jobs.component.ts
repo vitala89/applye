@@ -35,12 +35,17 @@ import {
 } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
 import { SkeletonCard } from '@applye/ui';
-import { applicationStatusBadgeClass } from './scoring.utils';
 import { ScoringView } from './scoring-view.component';
 import { ApplyWizard } from './apply-wizard.component';
 import { UpdatedScoreView } from './updated-score-view.component';
 import { type CvGapAnswer } from '../documents/cv-content.util';
 import { CvGapDialog } from './cv-gap-dialog.component';
+import { JobCrossJobConfirmComponent } from './job-cross-job-confirm/job-cross-job-confirm.component';
+import { JobDeleteConfirmComponent } from './job-delete-confirm/job-delete-confirm.component';
+import { JobDetailActionsComponent } from './job-detail-actions/job-detail-actions.component';
+import { JobDiscardConfirmComponent } from './job-discard-confirm/job-discard-confirm.component';
+import { JobPhotoPromptComponent } from './job-photo-prompt/job-photo-prompt.component';
+import { JobTailorCoverLetterModalComponent } from './job-tailor-cover-letter-modal/job-tailor-cover-letter-modal.component';
 import { CvPhotoPromptService } from './cv-photo-prompt.service';
 import { ToastService } from '../../core/toast/toast.service';
 import { PortalAnswersService } from '../../shared/portal-answers.service';
@@ -93,6 +98,12 @@ import { baseCvChoices, documentReviewLanguageFor } from './job-document-default
     JobDocumentCardsComponent,
     JobTailorStepComponent,
     JobExportApplyStepComponent,
+    JobCrossJobConfirmComponent,
+    JobDeleteConfirmComponent,
+    JobDetailActionsComponent,
+    JobDiscardConfirmComponent,
+    JobPhotoPromptComponent,
+    JobTailorCoverLetterModalComponent,
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.scss',
@@ -215,13 +226,7 @@ export class JobsComponent implements OnInit, OnDestroy {
   // Job Detail: the application row (if this job is on the board) + action state.
   readonly application = signal<Application | null>(null);
   readonly actionBusy = this.jobActions.busy;
-  /** Aliases onto `JobActionsService`'s writable signals. */
-  readonly actionMsg = this.jobActions.message;
   readonly deleteConfirmOpen = this.jobActions.deleteConfirmOpen;
-  /** Confirm gate for abandoning this job's tailoring, and its in-flight flag. */
-  readonly discardConfirmOpen = this.discardSvc.confirmOpen;
-  readonly discarding = this.discardSvc.discarding;
-  readonly deleting = this.jobActions.deleting;
 
   /** Editing override for the scoring view only. The job-detail UI no longer
    * exposes a re-edit affordance once a job leaves Saved (the application is
@@ -244,8 +249,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   /** Locked exactly when Mark-as-Applied isn't available. */
   readonly jobLocked = computed(() => !this.canMarkApplied());
-
-  protected readonly statusBadgeClass = applicationStatusBadgeClass;
 
   // Tailoring wizard. Aliases onto `TailoringService`; the template binds these
   // names and several component methods reset them directly, so they stay the
@@ -284,11 +287,6 @@ export class JobsComponent implements OnInit, OnDestroy {
   readonly coverLetters = signal<DocumentLibraryItem[]>([]);
   readonly matchingCvs = signal<DocumentLibraryItem[]>([]);
   readonly selectedBaseCvId = signal<number | null>(null);
-  readonly selectedCoverLetterId = this.coverLetterTailor.selectedId;
-  readonly tailorCoverLetterLanguage = this.coverLetterTailor.language;
-  readonly tailorCoverLetterOpen = this.coverLetterTailor.modalOpen;
-  readonly tailoringCoverLetter = this.coverLetterTailor.running;
-  readonly tailorCoverLetterError = this.coverLetterTailor.error;
 
   readonly documentRegionTags: DocumentRegionTag[] = ['de', 'us', 'uk', 'generic'];
   readonly documentReviewRegion = signal<DocumentRegionTag>('generic');
@@ -917,23 +915,9 @@ export class JobsComponent implements OnInit, OnDestroy {
     this.wizardNav.requestOpen(this.job()?.id);
   }
 
-  readonly crossJobLabel = this.wizardNav.crossJobLabel;
-
-  confirmCrossJob(): void {
-    this.wizardNav.confirmCrossJob(this.job()?.id);
-  }
-
-  cancelCrossJob(): void {
-    this.wizardNav.cancelCrossJob();
-  }
-
   /** Opens the confirm for abandoning this job's tailoring. */
   askDiscardTailoring(): void {
     this.discardSvc.ask();
-  }
-
-  cancelDiscardTailoring(): void {
-    this.discardSvc.cancel();
   }
 
   /**
@@ -965,10 +949,6 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   openDeleteConfirm(): void {
     this.jobActions.openDeleteConfirm();
-  }
-
-  cancelDeleteConfirm(): void {
-    this.jobActions.cancelDeleteConfirm();
   }
 
   async confirmDeleteJob(): Promise<void> {

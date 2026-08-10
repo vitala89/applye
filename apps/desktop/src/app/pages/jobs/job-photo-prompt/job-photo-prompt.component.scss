@@ -1,0 +1,53 @@
+/* The host must not add a box to the page's flow: the markup below is
+   position:fixed or block-level in its own right, and an extra element in
+   between is the trap amendment sixteen was written for. */
+:host {
+  display: contents;
+}
+
+.photo-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg-app) 70%, transparent);
+}
+.photo-prompt__panel {
+  width: min(520px, 92vw);
+  padding: var(--space-6);
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-lg);
+}
+.photo-prompt__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+.photo-prompt__text {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.photo-prompt__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* `.muted` is page-local, not global, and the "no photo yet" line carries it
+   alongside `.photo-prompt__text`. Left here in the same source order the page
+   had it - both are single-class selectors, so the later one wins, and that is
+   what zeroes the bottom margin on that one line. Move it above and the line
+   gains a margin it has never had. */
+.muted {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}

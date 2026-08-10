@@ -1997,6 +1997,49 @@ error and toasted it; a failed reorder left the order `[1, 2]` untouched. Consol
 The component fell **332 -> 132** lines; the store is 218 and the form module 45. Counts: `desktop`
 unchanged at **1451 / 126**, `application` 823 -> **844 / 63**.
 
+## Amendment thirty-nine: two stores in one folder that answer differently, on purpose
+
+`cover-letter-list` is a document library plus a generate-from-AI modal - the same two-feature shape
+as My Jobs, and it split the same way. Allowlist **5 -> 4**.
+
+**The interesting decision is a deliberate inconsistency.** `CoverLetterAiStore` already lives in this
+folder and **throws** `CoverLetterNoProfileError`; the new `CoverLetterGenerateStore` returns
+`'busy' | 'no-profile' | 'bad-json' | 'generated' | 'failed'` and never rejects. Two stores in one
+directory now answer differently, which a reader will notice, and it was chosen rather than drifted
+into: a missing profile is a **refusal**, not a failure - the user has not done something yet - and
+raising an exception for it is what amendment three argued against. Converting the neighbour was
+offered and refused as a second migration riding inside this one; it moves when it is touched.
+
+Three things the layer already had, reused rather than re-decided: the codec is **passed in** because
+`cleanJsonText` lives in `apps/desktop` (amendment six), the skill name and the generic job-description
+placeholder come from `cover-letter-generation.ts` rather than being retyped, and the save dialog stays
+on the page because no file under `libs/` imports a Tauri plugin.
+
+**Every label stayed with the page**, and there are three: the copy's name (two translation keys), the
+generated document's name (a company plus a key, or a key plus a region tag), and the linked-job line.
+The stores publish `linkedJobFacts` and `selectedCompany`; the page composes all three. This is the
+fourth migration where the honest split leaves more lines on the page than in the store, and that
+continues to be the right answer rather than a shortfall.
+
+**One deliberate behaviour change**, small and named: `suggestCoverLetterFilename` used to collapse a
+label of pure punctuation to an empty stem and suggest a file called `.pdf` - hidden and nameless on
+most systems. It falls back to `cover-letter` now, with a test. Hyphens still survive, because they are
+already safe, and a test pins that too so the next reader does not "fix" it.
+
+**Rendered check, including the AI path under a temporary `__TAURI_INTERNALS__` stub** - installed in
+the console, used, and deleted in the same call, never committed. All four outcomes were exercised
+against the real code path: `no-profile` refused with `error` clear, `bad-json` recorded a 100-character
+excerpt and left the modal open, `generated` returned id 77 with the modal closed and the label written
+exactly as the page composed it, and `failed` had already been seen when the profile read itself threw.
+Without the stub the store correctly reports a failed **read** as `failed` rather than as `no-profile`,
+which is the distinction the outcome type exists for.
+
+The list itself drew both documents, the linked `Acme · Backend Engineer` line on the attached one and
+the untitled fallback on the other. The only console error was from a route I mistyped while driving
+the check - `/documents/cover-letters` does not exist - not from the page.
+
+The component fell **283 -> 127** lines; the stores are 140 and 156, the filename module 19.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2067,7 +2110,7 @@ unchanged at **1451 / 126**, `application` 823 -> **844 / 63**.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**5** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**4** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

@@ -27,7 +27,6 @@ import tseslint from 'typescript-eslint';
  */
 const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/core/onboarding/onboarding.component.ts',
-  '**/pages/documents/cover-letter-list/cover-letter-list.component.ts',
   '**/pages/documents/cv-list/cv-list.component.ts',
   '**/pages/jobs/jobs.component.ts',
   '**/pages/settings/settings.component.ts',

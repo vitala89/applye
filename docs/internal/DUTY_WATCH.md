@@ -44,6 +44,72 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, the cover-letter library, and two neighbours that answer differently on purpose
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/cover-letter-list-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** seventh migration of this watch, after #405 merged as `f34e564`.
+  `cover-letter-list`, chosen as the smallest remaining entry.
+- **Completed:**
+  - `CoverLetterListStore` (140) and `CoverLetterGenerateStore` (156) in the layer's existing
+    `documents/` area, plus `cover-letter-filename.ts` (19). Component **283 -> 127**.
+  - The generate store answers with outcomes and never throws, deliberately unlike its neighbour.
+  - Codec passed in, skill constants reused, save dialog left on the page - all three settled by
+    existing precedent rather than re-decided.
+  - 30 new tests across three specs.
+  - `ADR-0005` amendment thirty-nine; `CHANGELOG.md`, `CURRENT_STATE.md`, count in four documents
+    to 4.
+- **Not completed:** nothing in scope. PR not opened. `CoverLetterAiStore` still throws; converting
+  it was refused as a second migration inside this one, and it moves when it is touched.
+- **Files or packages changed:** `cover-letter-list.component.{ts,html}`, new
+  `libs/application/src/lib/documents/cover-letter-list.store{,.spec}.ts`,
+  `cover-letter-generate.store{,.spec}.ts` and `cover-letter-filename{,.spec}.ts`,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test application` **874 / 66**, up 30 from 844/63. `nx test desktop` **1451 / 126**,
+    unchanged - the page had no spec before and still has none of its own.
+  - Two spec failures on the first run were **my expectations, not the code**: hyphens survive the
+    filename sanitiser (they are already safe), and I asserted the modal was open in a test that
+    never opened it. Both corrected, and the hyphen behaviour is now pinned so it is not "fixed"
+    later.
+  - `nx lint` caught two unused imports; cleared. Both projects 0 errors, 8 pre-existing warnings.
+    `nx build desktop` succeeds. `quality:file-size`, `quality:attribution`, `format:check`
+    (exit 0), `git diff --check` pass.
+  - **Rendered check, including the AI path under a temporary `__TAURI_INTERNALS__` stub** installed
+    in the console and deleted in the same call - never committed. All four outcomes exercised
+    against the real path: `no-profile` refused with `error` clear; `bad-json` recorded a
+    100-character excerpt and left the modal open; `generated` returned id 77, closed the modal and
+    wrote the label exactly as the page composed it; `failed` had been seen already when the profile
+    read itself threw. That last one is the distinction the outcome type exists for - a failed
+    **read** is not a missing profile.
+  - The list drew both documents with the linked `Acme · Backend Engineer` line on the attached one
+    and the untitled fallback on the other. **The only console error was mine**: I navigated to
+    `/documents/cover-letters`, which is not a route - the list lives under `/documents`.
+- **Privacy/security impact:** none. The stub was console-only and removed in the same call.
+- **Decisions and assumptions:** two at the gate - two stores rather than one, and outcomes rather
+  than throwing. Four more settled by existing precedent without asking.
+- **Risks or compatibility impact:** low. One named behaviour change: a punctuation-only label used
+  to suggest a file called `.pdf` and now falls back to `cover-letter`.
+- **Open issues or blockers:**
+  - `CoverLetterAiStore` still throws where its new neighbour answers - a documented inconsistency,
+    not an accident.
+  - Filed and open: two hardcoded English strings in My Jobs; `app.ts` outside the lint glob;
+    health-icon colours; `en-GB` at five sites.
+  - Over budget: `tracker.component.scss` 455/400, `analytics.component.html` 426/300,
+    `first-launch.component.ts` 419/400, and 33 files repo-wide by the `--all` audit.
+- **Next first action:** open the PR from `refactor/cover-letter-list-store`. Remaining 4:
+  `cv-list` (426, 16), `settings` (630, 6), `onboarding` (785, 12), `jobs` (1164, 8). `cv-list` is
+  the natural next - it is the same document-library shape as this one and will reuse the codec and
+  filename devices. **`jobs` should be last and should have its own session**: 1164 lines, and it is
+  also 1050/400 with a 686/300 template, so migration alone will not bring it under budget.
+- **Evidence:** 874/66 against an unchanged 1451/126; the four generate outcomes read from the
+  running app; the label written through the stub matching what the page composed; `ADR-0005`
+  amendment thirty-nine.
+
 ### 2026-08-10, the stage timeline, and a refusal that kept the previous failure's message
 
 - **Status:** complete

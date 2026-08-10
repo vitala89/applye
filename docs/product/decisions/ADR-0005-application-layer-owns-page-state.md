@@ -1898,6 +1898,62 @@ its 300 budget: the `table.` and `importer.` prefixes make expressions long enou
 them. Worth naming, because every remaining migration will pay the same few lines, and a template
 already at its budget will need a cut to absorb them.
 
+## Amendment thirty-seven: the page this ADR stopped once, and a split decided by measurement
+
+`profile` is the page this ADR stopped at 445/400 by decision, with the note that extracting pure
+helpers had not brought it back. It now has three stores. Allowlist **7 -> 6**.
+
+**The split was decided twice, and the second time by a number.** The grilling gate chose two stores -
+`ProfileStore` and `ProfileArtifactStore` - partly on an estimate of mine that `ProfileStore` would
+land at 200-220 lines. It landed at **324 against a 250 budget**, and the file-size gate refused it.
+The estimate was wrong by about a hundred lines, so the decision had been made on bad information and
+was put back to the maintainer with the real number. The third store, `ProfileFormStore`, is that
+correction. The seam it exposed is a good one and was not visible from the outside: **what is saved**
+and **what is being typed** are different things, and the dependency runs one way - `ProfileStore`
+reads the editor to decide whether the page is dirty; the editor knows nothing about the row.
+
+Sizes after: editor 140, `ProfileStore` **218/250**, artefacts 127, and the page **483 -> 171**.
+
+**One writer survived the split, deliberately.** `persist` maintains `savedMdHash` alongside the row,
+and the comment on it records that every writer which maintained the hash by hand eventually forgot
+to. Splitting artefact generation into its own store is exactly the situation where a second writer
+appears, so `ProfileArtifactStore` computes its patch and hands it to `ProfileStore.persist`. A store
+test asserts the hash advances with the row, and the pre-existing wiring spec - eighteen tests on this
+invariant - still passes unchanged apart from where it reads state.
+
+**No status sentence moved, and that reshaped the code rather than just relocating it.** `saveStatus`,
+`scoreStatus` and `pitchStatus` are translated text assembled from a date, token counts or an error.
+The stores publish outcomes instead: `lastSavedAt`, `error`, `tokens`, and a four-value artefact
+result - `empty`, `cached`, `generated`, `failed` - of which two are refusals that say their piece in
+the status line and never toast. The page turns each into its sentence. The old `artifactUi` record,
+which addressed three signals by artefact kind, is gone; what replaced it is a `switch` on the
+outcome.
+
+**A translation-key map now sits in the layer**, `ARTIFACT_CACHED_KEY`, because it is part of
+`profile-artifact.util.ts` which had to move whole. The layer never resolves it - the page does. It is
+named here rather than quietly accepted: splitting a file to keep two constants out would be the
+churn amendment twenty-five rejected, but a key map is text, and if more of them accumulate the rule
+needs restating rather than eroding.
+
+**A real defect, found on the rendered screen and fixed here.** `generate` documents that it never
+rejects, but `hashText` was called **outside** the guard - preserved faithfully from the original. In
+the browser, where hashing genuinely fails, it rejected out of the page's click handler and nothing
+appeared at all. It now records the failure and returns `failed` like any other, with a test. This is
+the fourth defect this campaign found by exercising a page rather than by any gate, and the first
+found because a doc comment I had just written turned out not to describe the code under it.
+
+**Rendered check.** Load failure first, free from the missing Tauri context: the store held the raw
+message and the page composed the translated `Failed to load: …`. Then with a row pushed in: hero
+`Senior · Fintech` joined by the page from the store's facts, completeness 33%, one experience row and
+the skills parsed, both artefacts `fresh`. Editing a field made the page dirty and moved scoring to
+`unsaved`; editing **only** an archetype made it dirty while `mdDirty` stayed false and scoring stayed
+`fresh` - the distinction the whole freshness rule rests on, visible rather than asserted. A failed
+generation wrote to the **scoring** line and left the pitch line empty, which is the crossing
+regression the wiring spec exists to catch, and a failed save wrote its own sentence.
+
+Test counts: `desktop` 1487 -> **1451** (three util specs out), `application` 768 -> **823** (those
+36 back, plus 19 new).
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -1968,7 +2024,7 @@ already at its budget will need a cut to absorb them.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**7** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**6** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

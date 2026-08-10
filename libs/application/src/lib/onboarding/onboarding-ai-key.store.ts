@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiProvider, apiModelsFor, resolveApiModels } from '@applye/core';
 import { KeysService } from '@applye/data';
-import { TranslateService } from '@applye/i18n';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { guideForProvider } from './provider-guides';
 
 /** Feedback for the key INPUT only - never a claim about the keyring. Whether a
@@ -20,13 +18,16 @@ export type KeyStatus = 'idle' | 'checking' | 'valid' | 'invalid';
  * `keyPresent` gates the Continue button and the Ready step's summary, and
  * `apiModelPatch()` writes the model ids into settings. Passing the state down
  * and eventing every change back up would have split the save flow across the
- * boundary; the card mutates through this service instead, and the wizard reads
+ * boundary; the card mutates through this store instead, and the wizard reads
  * the same signals.
+ *
+ * It publishes i18n **keys** and URLs, never translated text and never an open
+ * dialog: this layer has no `TranslateService` and no Tauri plugin. The card
+ * translates `stepKeys` and opens `guide().consoleUrl` itself.
  */
 @Injectable()
-export class OnboardingAiKeyService {
+export class OnboardingAiKeyStore {
   private readonly keys = inject(KeysService);
-  private readonly t = inject(TranslateService).t;
 
   readonly provider = signal<AiProvider>('claude');
   readonly guide = computed(() => guideForProvider(this.provider()));
@@ -64,8 +65,12 @@ export class OnboardingAiKeyService {
    * model string is free text the CLI interprets. */
   readonly providerModels = computed(() => apiModelsFor(this.provider()));
 
+  /** The numbered setup steps for the selected provider, as translation keys.
+   * The card renders the sentence; a store that returned finished text would be
+   * holding view state and would need `TranslateService`, which this layer
+   * cannot inject. */
   readonly providerSteps = computed(() =>
-    this.guide().stepKeys.map((key, i) => ({ n: i + 1, text: this.t()(key) })),
+    this.guide().stepKeys.map((key, i) => ({ n: i + 1, textKey: key })),
   );
 
   /** Selecting a provider clears the previous one's key state: a status or an
@@ -116,15 +121,6 @@ export class OnboardingAiKeyService {
     } catch {
       // Keyring unreadable - leave it as "no key" and let the user paste one.
     }
-  }
-
-  async openConsole(): Promise<void> {
-    await openUrl(this.guide().consoleUrl);
-  }
-
-  async openVideo(): Promise<void> {
-    const url = this.guide().helpVideoUrl;
-    if (url) await openUrl(url);
   }
 
   /** Lightweight format sanity-check (length + provider prefix hint) before

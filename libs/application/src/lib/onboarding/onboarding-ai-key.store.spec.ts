@@ -1,12 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { KeysService } from '@applye/data';
-import { TranslateService } from '@applye/i18n';
-import { OnboardingAiKeyService } from './onboarding-ai-key.service';
+import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 
-describe('OnboardingAiKeyService', () => {
+describe('OnboardingAiKeyStore', () => {
   let hasProviderKey: jest.Mock;
   let setProviderKey: jest.Mock;
-  let service: OnboardingAiKeyService;
+  let service: OnboardingAiKeyStore;
 
   beforeEach(() => {
     hasProviderKey = jest.fn().mockResolvedValue(false);
@@ -14,12 +13,11 @@ describe('OnboardingAiKeyService', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        OnboardingAiKeyService,
+        OnboardingAiKeyStore,
         { provide: KeysService, useValue: { hasProviderKey, setProviderKey } },
-        TranslateService,
       ],
     });
-    service = TestBed.inject(OnboardingAiKeyService);
+    service = TestBed.inject(OnboardingAiKeyStore);
   });
 
   /// The keyring lookup is async and the user can switch provider while it is

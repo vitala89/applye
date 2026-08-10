@@ -1,21 +1,25 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
-import { OnboardingAiKeyService } from './onboarding-ai-key.service';
-import { OnboardingResumeService } from './onboarding-resume.service';
-import { OnboardingTargetingService } from './onboarding-targeting.service';
+import {
+  OnboardingAiKeyStore,
+  OnboardingFinishStore,
+  OnboardingResumeStore,
+  OnboardingTargetingStore,
+} from '@applye/application';
 import { createOnboarding, parsedCv } from './onboarding.harness';
 
 describe('OnboardingComponent flow', () => {
   let component: OnboardingComponent;
-  let aiKey: OnboardingAiKeyService;
+  let aiKey: OnboardingAiKeyStore;
   let fixture: ComponentFixture<OnboardingComponent>;
   let hasProviderKey: jest.Mock;
   let setProviderKey: jest.Mock;
   let getProfile: jest.Mock;
   let upsertProfile: jest.Mock;
   let run: jest.Mock;
-  let resume: OnboardingResumeService;
-  let targeting: OnboardingTargetingService;
+  let resume: OnboardingResumeStore;
+  let targeting: OnboardingTargetingStore;
+  let finish: OnboardingFinishStore;
   let recreate: () => void;
 
   beforeEach(async () => {
@@ -26,6 +30,7 @@ describe('OnboardingComponent flow', () => {
       aiKey,
       resume,
       targeting,
+      finish,
       hasProviderKey,
       setProviderKey,
       getProfile,
@@ -33,7 +38,7 @@ describe('OnboardingComponent flow', () => {
       run,
     } = h);
     recreate = () => {
-      ({ component, fixture, aiKey, resume, targeting } = h.create());
+      ({ component, fixture, aiKey, resume, targeting, finish } = h.create());
     };
   });
 
@@ -320,7 +325,7 @@ describe('OnboardingComponent flow', () => {
     it('keeps the scoring and pitch the user already paid for', async () => {
       component.review.parsedCv.set(parsedCv());
 
-      await component.saveProfile();
+      await finish.saveProfile();
 
       expect(upsertProfile).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -337,7 +342,7 @@ describe('OnboardingComponent flow', () => {
       component.review.reviewFirstName.set('Vitalii');
       component.review.reviewLastName.set('Kasap');
 
-      await component.saveProfile();
+      await finish.saveProfile();
 
       const written = upsertProfile.mock.calls[0][0].fullMd as string;
       expect(written).toContain('Vitalii Kasap');
@@ -370,7 +375,7 @@ describe('OnboardingComponent flow', () => {
       resume.path.set('skip');
       targeting.addArchetype('Engineering Manager');
 
-      await component.saveProfile();
+      await finish.saveProfile();
 
       expect(upsertProfile).toHaveBeenCalledWith(
         expect.objectContaining({ fullMd: '# Old profile' }),
@@ -383,7 +388,7 @@ describe('OnboardingComponent flow', () => {
       targeting.toggleRole('Staff FE');
       targeting.addArchetype('Principal FE');
 
-      await component.saveProfile();
+      await finish.saveProfile();
 
       const roles = upsertProfile.mock.calls[0][0].targetArchetypes as string;
       expect(roles).toContain('Principal FE');

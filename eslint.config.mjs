@@ -25,10 +25,7 @@ import tseslint from 'typescript-eslint';
  * rule errors on a component not listed here, and stays quiet on every one that
  * is.
  */
-const COMPONENTS_STILL_USING_THE_GATEWAY = [
-  '**/core/onboarding/onboarding.component.ts',
-  '**/pages/jobs/jobs.component.ts',
-];
+const COMPONENTS_STILL_USING_THE_GATEWAY = ['**/pages/jobs/jobs.component.ts'];
 
 /** Matches `inject(DbService)` however it is written, including a type argument. */
 const GATEWAY_INJECTION =

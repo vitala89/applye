@@ -1,4 +1,5 @@
 import type {
+  CvContent,
   CvParsedContent,
   CvParsedEducationEntry,
   CvParsedLanguageEntry,
@@ -7,7 +8,6 @@ import type {
   UpsertDocumentLibraryItemInput,
 } from '@applye/core';
 import { serializeEducationEntries, serializeLanguageEntries } from '@applye/core';
-import { buildCvContent } from '../../pages/documents/cv-content.util';
 
 // structurally compatible subset of CvParsedContent
 export interface ParsedCv {
@@ -190,6 +190,12 @@ export interface OnboardingCvInputArgs {
   /** Present only for the upload path; the paste path has no source file to
    * hash. Drives the Documents import's duplicate guard. */
   inputHash?: string;
+  /** `buildCvContent` - lays the parsed fields out in the template's section
+   * order. It lives in `apps/desktop` (`cv-content.util.ts`, 630 lines against
+   * a 400 budget, 40 files touching it), which this layer may not import, so
+   * the caller passes it in - the same seam `CvCodec` already defines for the
+   * Documents stores (ADR-0005, amendment six). */
+  buildContent(parsed: CvParsedContent, template: CvTemplate | null): CvContent;
 }
 
 /** Turns the resume the wizard already parsed into a real CV document, so the
@@ -199,6 +205,7 @@ export function buildOnboardingCvInput(
   args: OnboardingCvInputArgs,
 ): UpsertDocumentLibraryItemInput {
   const { parsed, overrides, templates, regionTag, language, fallbackLabel, inputHash } = args;
+  const { buildContent } = args;
   const template = pickCvTemplate(templates, regionTag);
   const merged: CvParsedContent = {
     ...parsed,
@@ -208,7 +215,7 @@ export function buildOnboardingCvInput(
     docType: 'cv',
     source: 'uploaded',
     label: merged.personalDetails.fullName?.trim() || fallbackLabel,
-    contentJson: JSON.stringify(buildCvContent(merged, template)),
+    contentJson: JSON.stringify(buildContent(merged, template)),
     templateId: template?.id,
     // Follow the template actually chosen, not the one requested: when the
     // exact-region lookup misses, the row must not claim a region its template
@@ -230,70 +237,4 @@ export function hasCvForInputHash(
 ): boolean {
   if (!inputHash) return false;
   return existing.some((item) => item.source === 'uploaded' && item.inputHash === inputHash);
-}
-
-export function parseArchetypesSkillResponse(text: string): {
-  archetypes: string[];
-  compRange: string | null;
-} {
-  const empty = { archetypes: [] as string[], compRange: null as string | null };
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) return empty;
-  try {
-    const obj = JSON.parse(match[0]) as { archetypes?: unknown; compRange?: unknown };
-    const archetypes = Array.isArray(obj.archetypes)
-      ? obj.archetypes.filter((x): x is string => typeof x === 'string')
-      : [];
-    const compRange = typeof obj.compRange === 'string' ? obj.compRange : null;
-    return { archetypes, compRange };
-  } catch {
-    return empty;
-  }
-}
-
-export interface CompRange {
-  currency: string;
-  min: number;
-  max: number;
-}
-
-const DEFAULT_COMP_RANGE: CompRange = { currency: 'USD', min: 80, max: 120 };
-
-/** Best-effort extraction of a currency + two numbers from a free-text AI
- * suggestion (e.g. "EUR 90-120K", or "$140k" and "$190k" separated by any dash
- * character the model chose) so the two numeric
- * min/max inputs can be pre-filled. Never throws; falls back to a sane
- * default range when nothing parseable is found. */
-export function parseCompRange(text: string | null | undefined): CompRange {
-  if (!text) return { ...DEFAULT_COMP_RANGE };
-  const numbers = text.match(/\d+/g);
-  if (!numbers || numbers.length < 1) return { ...DEFAULT_COMP_RANGE };
-  const min = parseInt(numbers[0], 10);
-  const max = numbers.length > 1 ? parseInt(numbers[1], 10) : min;
-  const currencyMatch = text.match(/[A-Z]{3}|\$|€|£/);
-  const currency = currencyMatch ? currencyMatch[0] : DEFAULT_COMP_RANGE.currency;
-  return { currency, min, max: max >= min ? max : min };
-}
-
-/** Renders a min/max compensation range back into the free-text format
- * `appendCompensation` expects. Pure inverse of `parseCompRange` for the
- * common case (does not need to round-trip exactly). */
-export function formatCompRange(range: CompRange): string {
-  const symbol = range.currency.length === 1 ? range.currency : `${range.currency} `;
-  return `${symbol}${range.min}K - ${symbol}${range.max}K`;
-}
-
-export const CURRENCY_OPTIONS = ['USD', 'EUR'] as const;
-export type CurrencyOption = (typeof CURRENCY_OPTIONS)[number];
-
-/** Maps a free-text/symbol currency (from an AI suggestion or a stray
- * parse) onto one of the app's selectable currency codes, so the currency
- * dropdown always has a matching option selected. Defaults to USD for
- * anything not yet supported (e.g. GBP) rather than leaving the select
- * with no match. */
-export function normalizeCurrency(raw: string): CurrencyOption {
-  const upper = raw.trim().toUpperCase();
-  if (upper === '€' || upper === 'EUR') return 'EUR';
-  if (upper === '$' || upper === 'USD') return 'USD';
-  return 'USD';
 }

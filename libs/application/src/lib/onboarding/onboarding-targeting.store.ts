@@ -5,8 +5,8 @@ import {
   normalizeCurrency,
   parseArchetypesSkillResponse,
   parseCompRange,
-} from './onboarding-content.util';
-import type { OnboardingAiDispatch } from './onboarding-resume.service';
+} from './onboarding-targeting.util';
+import type { OnboardingAiDispatch } from './onboarding-resume.store';
 
 /** The band the compensation slider draws against, in thousands. */
 const COMP_BAND = { lo: 50, hi: 300 };
@@ -25,7 +25,7 @@ const COMP_BAND = { lo: 50, hi: 300 };
  * "Suggest again" quietly reverted the user's work.
  */
 @Injectable()
-export class OnboardingTargetingService {
+export class OnboardingTargetingStore {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
 

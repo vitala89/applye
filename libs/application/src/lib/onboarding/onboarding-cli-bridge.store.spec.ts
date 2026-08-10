@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { AiService, KeysService } from '@applye/data';
-import { TranslateService } from '@applye/i18n';
-import { OnboardingAiKeyService } from './onboarding-ai-key.service';
-import { OnboardingCliBridgeService } from './onboarding-cli-bridge.service';
+import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
+import { OnboardingCliBridgeStore } from './onboarding-cli-bridge.store';
 
-describe('OnboardingCliBridgeService', () => {
+describe('OnboardingCliBridgeStore', () => {
   let probeClis: jest.Mock;
   let installCli: jest.Mock;
-  let service: OnboardingCliBridgeService;
+  let service: OnboardingCliBridgeStore;
 
   beforeEach(() => {
     probeClis = jest.fn().mockResolvedValue([]);
@@ -15,14 +14,13 @@ describe('OnboardingCliBridgeService', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        OnboardingAiKeyService,
-        OnboardingCliBridgeService,
+        OnboardingAiKeyStore,
+        OnboardingCliBridgeStore,
         { provide: AiService, useValue: { probeClis, installCli } },
         { provide: KeysService, useValue: { hasProviderKey: jest.fn().mockResolvedValue(false) } },
-        TranslateService,
       ],
     });
-    service = TestBed.inject(OnboardingCliBridgeService);
+    service = TestBed.inject(OnboardingCliBridgeStore);
   });
 
   /// The probe is a Tauri command. In a browser - the dev server, the web
@@ -105,13 +103,14 @@ describe('OnboardingCliBridgeService', () => {
       const setup = service.selectedSetup();
 
       expect(setup?.working).toBe(false);
-      // The repair copy, not the first-install copy.
-      expect(setup?.steps[0].text).toContain('Reinstall');
+      // The repair key, not the first-install key. The store publishes keys
+      // now; the card is what turns one into a sentence.
+      expect(setup?.steps[0].textKey).toBe('onboarding.ai.cli.step_repair');
       expect(setup?.steps[0].command).toBe('npm install -g @anthropic-ai/claude-code');
     });
 
     it('has nothing to say about a provider with no CLI at all', () => {
-      TestBed.inject(OnboardingAiKeyService).provider.set('deepseek');
+      TestBed.inject(OnboardingAiKeyStore).provider.set('deepseek');
 
       expect(service.selectedSetup()).toBeNull();
     });
@@ -123,7 +122,7 @@ describe('OnboardingCliBridgeService', () => {
     // The selected provider is still `claude`, which has no row.
     expect(service.selectedWorks()).toBe(false);
 
-    TestBed.inject(OnboardingAiKeyService).provider.set('openai');
+    TestBed.inject(OnboardingAiKeyStore).provider.set('openai');
     expect(service.selectedWorks()).toBe(true);
   });
 });

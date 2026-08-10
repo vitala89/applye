@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { OnboardingResumeService } from '../onboarding-resume.service';
-import { OnboardingReviewService } from '../onboarding-review.service';
+import { OnboardingResumeStore } from '@applye/application';
+import { OnboardingReviewStore } from '@applye/application';
 import { OnboardingResumeStepComponent } from './onboarding-resume-step.component';
 
 describe('OnboardingResumeStepComponent', () => {
   let fixture: ComponentFixture<OnboardingResumeStepComponent>;
-  let resume: OnboardingResumeService;
+  let resume: OnboardingResumeStore;
 
   function tiles(): HTMLButtonElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.ob__resume-tile'));
@@ -17,15 +17,15 @@ describe('OnboardingResumeStepComponent', () => {
     TestBed.configureTestingModule({
       imports: [OnboardingResumeStepComponent],
       providers: [
-        OnboardingResumeService,
-        OnboardingReviewService,
+        OnboardingResumeStore,
+        OnboardingReviewStore,
         TranslateService,
         { provide: DbService, useValue: { cvImportReadFile: jest.fn() } },
         { provide: AiService, useValue: {} },
       ],
     });
     fixture = TestBed.createComponent(OnboardingResumeStepComponent);
-    resume = TestBed.inject(OnboardingResumeService);
+    resume = TestBed.inject(OnboardingResumeStore);
     fixture.detectChanges();
   });
 

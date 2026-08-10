@@ -1,8 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
-import type { AiMode, AiProvider } from '@applye/core';
+import type { AiMode, AiProvider, CvParsedContent } from '@applye/core';
 import { AiService, DbService } from '@applye/data';
-import { parseCvSkillResponse } from '../../pages/documents/cv-parse.util';
-import { OnboardingReviewService } from './onboarding-review.service';
+import { OnboardingReviewStore } from './onboarding-review.store';
 
 /** How the user is giving the wizard their history, if at all. */
 export type ResumePath = 'upload' | 'paste' | 'skip';
@@ -35,10 +34,10 @@ export interface OnboardingAiDispatch {
  * it over, the same shape every other store in this campaign settled on.
  */
 @Injectable()
-export class OnboardingResumeService {
+export class OnboardingResumeStore {
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
-  private readonly review = inject(OnboardingReviewService);
+  private readonly review = inject(OnboardingReviewStore);
 
   readonly path = signal<ResumePath>('upload');
   readonly fileName = signal<string | null>(null);
@@ -105,8 +104,17 @@ export class OnboardingResumeService {
    * Runs the `cv-import` skill over whatever text there is and seeds the Review
    * step from it. `null` when there was nothing to parse - a refusal, not a
    * failure.
+   *
+   * `parseAnswer` is `parseCvSkillResponse`, which lives in `apps/desktop` and
+   * has six importers there, so it is passed in rather than moved - the seam
+   * `CvCodec` already defines for the Documents stores (ADR-0005, amendment
+   * six). It throws on an answer that is not the shape asked for, which is
+   * caught below like any other failure.
    */
-  async parse(dispatch: OnboardingAiDispatch): Promise<boolean | null> {
+  async parse(
+    dispatch: OnboardingAiDispatch,
+    parseAnswer: (text: string) => CvParsedContent,
+  ): Promise<boolean | null> {
     const text = this.text().trim();
     if (!text || this.parsing()) return null;
     this.parsing.set(true);
@@ -127,7 +135,7 @@ export class OnboardingResumeService {
         // the answer comes back as unparseable JSON, which reads as a parse bug.
         maxTokens: 8192,
       });
-      this.review.parsedCv.set(parseCvSkillResponse(res.text));
+      this.review.parsedCv.set(parseAnswer(res.text));
       this.review.seedReviewFields();
       return true;
     } catch (e) {

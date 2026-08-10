@@ -4,7 +4,7 @@
     <p class="ob__panel-intro-text">{{ t()('onboarding.ai.panel_intro') }}</p>
   </div>
   <div class="ob__panel-body">
-    <button appButton variant="secondary" size="md" type="button" (click)="aiKey.openConsole()">
+    <button appButton variant="secondary" size="md" type="button" (click)="openConsole()">
       <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
       {{ t()('onboarding.ai.open_console') }} · {{ t()(aiKey.guide().consoleLabelKey) }}
     </button>
@@ -12,7 +12,7 @@
       @for (st of aiKey.providerSteps(); track st.n) {
         <li class="ob__stepitem">
           <span class="ob__stepitem-num">{{ st.n }}</span>
-          <span class="ob__stepitem-text">{{ st.text }}</span>
+          <span class="ob__stepitem-text">{{ t()(st.textKey) }}</span>
         </li>
       }
     </ol>
@@ -122,7 +122,7 @@
       </div>
     }
     @if (aiKey.guide().helpVideoUrl) {
-      <button type="button" class="ob__link-btn" (click)="aiKey.openVideo()">
+      <button type="button" class="ob__link-btn" (click)="openVideo()">
         <lucide-icon [img]="icons.playCircle" [size]="15" aria-hidden="true" />
         {{ t()('onboarding.ai.watch_video') }}
       </button>

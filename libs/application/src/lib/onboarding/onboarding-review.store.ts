@@ -11,7 +11,7 @@ import type { OnboardingCvOverrides } from './onboarding-content.util';
  * signals shared through this service, not two copies kept in sync.
  */
 @Injectable()
-export class OnboardingReviewService {
+export class OnboardingReviewStore {
   readonly parsedCv = signal<CvParsedContent | null>(null);
 
   readonly experience = computed(() => this.parsedCv()?.experience ?? []);

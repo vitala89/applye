@@ -28,7 +28,6 @@ import tseslint from 'typescript-eslint';
 const COMPONENTS_STILL_USING_THE_GATEWAY = [
   '**/core/onboarding/onboarding.component.ts',
   '**/pages/jobs/jobs.component.ts',
-  '**/pages/settings/settings.component.ts',
 ];
 
 /** Matches `inject(DbService)` however it is written, including a type argument. */

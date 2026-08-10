@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import { FormsModule } from '@angular/forms';
 import type { AiProvider, Settings } from '@applye/core';
 import { TranslateService } from '@applye/i18n';
-import { CLI_MODEL_CUSTOM } from '../cli-models.util';
+import { CLI_MODEL_CUSTOM } from '@applye/application';
 
 /** Which model field a picker is driving. Both behave identically; naming them
  * is what lets one set of handlers serve both rows. */

@@ -1,0 +1,79 @@
+<div class="detail-actions">
+  <div class="detail-actions__row">
+    <!-- Left: primary action + status/tailored badges -->
+    @if (!application()) {
+      <button
+        class="btn btn--secondary btn--md"
+        [disabled]="jobActions.busy()"
+        (click)="saveRequested.emit()"
+      >
+        {{ t()('jobs.save_job') }}
+      </button>
+    }
+    @if (canMarkApplied()) {
+      <button
+        class="btn btn--primary btn--md"
+        [disabled]="jobActions.busy()"
+        (click)="markAppliedRequested.emit()"
+      >
+        {{ t()(jobActions.applying() ? 'jobs.applying' : 'jobs.mark_applied') }}
+      </button>
+    } @else if (application(); as app) {
+      <!-- Status is read-only here; it is set on the Pipeline board
+           and only reflected on the job detail. -->
+      <span class="badge" [class]="statusBadgeClass(app.status)">{{
+        t()('status.' + app.status)
+      }}</span>
+    }
+    @if (isTailored()) {
+      <span class="badge badge--accent">
+        <lucide-icon [img]="icons.wand" [size]="11" aria-hidden="true" />
+        {{ t()('jobs.wizard.tailored_badge') }}
+      </span>
+    }
+    @if (application()?.cvDocumentId; as cvId) {
+      <button
+        class="detail-actions__doc"
+        type="button"
+        [title]="t()('jobs.open_cv_document')"
+        [attr.aria-label]="t()('jobs.open_cv_document')"
+        (click)="cvRequested.emit(cvId)"
+      >
+        <lucide-icon [img]="icons.fileText" [size]="14" aria-hidden="true" />
+        <span>CV</span>
+      </button>
+    }
+    @if (application()?.coverLetterDocumentId; as clId) {
+      <button
+        class="detail-actions__doc"
+        type="button"
+        [title]="t()('jobs.open_cover_letter_document')"
+        [attr.aria-label]="t()('jobs.open_cover_letter_document')"
+        (click)="coverLetterRequested.emit(clId)"
+      >
+        <lucide-icon [img]="icons.pencilLine" [size]="14" aria-hidden="true" />
+        <span>{{ t()('documents.tab_cover_letter') }}</span>
+      </button>
+    }
+
+    <span class="detail-actions__spacer"></span>
+
+    <!-- Right: delete only. Once a job leaves Saved the pasted
+         description is frozen: the application is already out the
+         door, so there is no re-edit affordance, only Delete. A
+         Saved job needs no Edit either - its textarea is editable
+         inline. -->
+    <button
+      class="btn btn--secondary btn--sm"
+      type="button"
+      [disabled]="jobActions.busy() || jobActions.deleting()"
+      (click)="deleteRequested.emit()"
+    >
+      <lucide-icon [img]="icons.trash" [size]="14" aria-hidden="true" />
+      {{ t()('jobs.delete_action') }}
+    </button>
+  </div>
+  @if (jobActions.message()) {
+    <p class="detail-actions__msg">{{ jobActions.message() }}</p>
+  }
+</div>

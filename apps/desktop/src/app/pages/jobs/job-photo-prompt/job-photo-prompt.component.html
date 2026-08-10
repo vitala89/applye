@@ -1,0 +1,33 @@
+@if (photoPrompt.open()) {
+  <div class="photo-prompt" role="dialog" aria-modal="true">
+    <div class="photo-prompt__panel">
+      <h4 class="photo-prompt__title">{{ t()('jobs.wizard.photo_prompt_title') }}</h4>
+      <p class="photo-prompt__text">{{ t()('jobs.wizard.photo_prompt_body') }}</p>
+      @if (!profilePhoto()) {
+        <p class="photo-prompt__text muted">{{ t()('jobs.wizard.photo_prompt_none') }}</p>
+      }
+      <div class="photo-prompt__actions">
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          [disabled]="photoPrompt.busy()"
+          (click)="photoPrompt.dismiss()"
+        >
+          {{ t()('jobs.wizard.photo_prompt_no') }}
+        </button>
+        <button
+          class="btn btn--primary btn--md"
+          type="button"
+          [disabled]="photoPrompt.busy()"
+          (click)="accepted.emit()"
+        >
+          {{
+            profilePhoto()
+              ? t()('jobs.wizard.photo_prompt_yes')
+              : t()('jobs.wizard.photo_prompt_add_first')
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

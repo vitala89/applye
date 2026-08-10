@@ -1,0 +1,51 @@
+/* The host must not add a box to the page's flow: the markup below is
+   position:fixed or block-level in its own right, and an extra element in
+   between is the trap amendment sixteen was written for. */
+:host {
+  display: contents;
+}
+
+/* The modal shell, carried with its markup. Angular scopes a stylesheet to its
+   own template, so the page's copy would not reach this one. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 55%, transparent);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: var(--space-6);
+}
+.modal {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 2 * var(--space-6));
+  overflow-y: auto;
+  background: var(--surface-1, var(--graphite-900));
+  border: var(--border-width, 1px) solid var(--border-default);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.modal h3 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-title, 16px);
+  color: var(--text-primary);
+}
+.modal__hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm, 13px);
+}
+.modal__error {
+  margin: 0;
+  color: var(--red-500);
+  font-size: var(--text-sm, 13px);
+}
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

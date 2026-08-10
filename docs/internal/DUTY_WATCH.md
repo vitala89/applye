@@ -44,6 +44,75 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-11, Jobs, part one: the dialogs, and a feature nothing can open
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/jobs-dialogs`
+- **Commits:** two - the extraction (`4da0630`), then docs
+- **Pull request:** opened after the docs commit
+- **Objective:** first of two extractions on `jobs`, so the state migration has room later. **No
+  allowlist movement here**, by decision.
+- **Triage:** 9/10 initially (radius 2 · ambiguity 2 · risk 2 · verify 2 · unknowns 1), re-triaged to
+  7/10 once the maintainer scoped the session to extraction part one. One grilling round, three
+  decisions; the second round's questions were both answered by evidence instead, and recorded as
+  such rather than asked.
+- **Completed:**
+  - Six components, one folder each: `job-cross-job-confirm/`, `job-delete-confirm/`,
+    `job-detail-actions/`, `job-discard-confirm/`, `job-photo-prompt/`,
+    `job-tailor-cover-letter-modal/`.
+  - Template **686 -> 387**, stylesheet **493 -> 289** (under budget), class **1050 -> 1036**.
+  - All **1417** existing tests pass **unchanged**; 15 new ones over the six components. 1417 -> 1432.
+- **The gate caught me mid-session, and the fix was the right one.** Six imports plus six `imports:`
+  entries took the class from 1050 to **1062**, and an already-over-budget file may not grow by a
+  line. The offset was not cosmetic: eleven aliases and four handlers were genuinely orphaned by the
+  extraction. An extraction from an over-budget class has to shrink it, so its orphans are part of the
+  work, not a later tidy-up.
+- **Two rules would have been stranded; both were caught before the screen, for once.**
+  `.muted` is page-local and the photo prompt's "no photo yet" line carries it - moved into the child
+  **in its original source order**, because both selectors are single-class and the later one wins,
+  which is what zeroes that line's bottom margin. And the `.modal` shell is now duplicated in the two
+  modals that use it, which is what all eight other modals in this app already do. Every host is
+  `display: contents`.
+- **A feature was found with no way into it.** `CoverLetterTailorService.prepare()` is the only thing
+  that sets `modalOpen`, and it is called only from `openTailorCoverLetterModal()`, which **nothing
+  calls** anywhere. 200 lines of tested service, a working modal, no control. Separately its two
+  fields use `.cvform`, declared only in `cv-list.component.scss` and therefore never reaching them -
+  the twenty lines of inline `style=` are what actually dresses them. **Both moved verbatim.** Removing
+  a feature is a product decision, not an extraction's.
+- **`quality:style-move` produced a false LOST.** It reported `.locked-hint` losing all four
+  declarations; the rule is byte-identical to base, still in the page's stylesheet, and still bound at
+  `jobs.component.html:16`. Removing the neighbouring `.alert` block confused it - the same
+  comment-attachment fragility that made the scripted CSS splitter unsafe in amendment forty-three.
+  **Do not read that tool's output as authoritative in either direction.**
+- **Validation:** all run and observed. `desktop:type-check` passed; `nx test desktop` **1432/1432**;
+  `nx lint desktop` 0 errors (8 pre-existing warnings); `nx build desktop` succeeded;
+  `quality:file-size` passed; `quality:attribution` passed; `format:check` passed; `git diff --check`
+  clean; reachability scan over the page and all six children reported nothing stranded.
+- **Suite flakiness, recorded rather than explained away.** Two full runs failed with _different_
+  timing-sensitive tests each time - `CoverLetterPrintComponent`, `cv-detail` export, Profile's
+  `field-row`, the shell update badge - none of them related to `jobs`, none reproducible in
+  isolation, and three consecutive later runs were clean at 1432/1432. A clean-tree run was 1417/1417
+  in one attempt, which is **not** enough to call the flakiness pre-existing. The shell-badge test
+  also flaked in the previous session. Worth its own investigation.
+- **Rendered check: run, all five dialogs opened.** Toolbar is one row with the spacer expanding
+  550 -> 1060 and Delete pushed right; cross-job modal 420px on a fixed z-50 backdrop; delete alert
+  880px with its danger tint; tailor modal 640px, listing the page-loaded letter, with the inline
+  field styles intact; photo prompt 520px, z-60, muted line at `margin-bottom: 0px`; discard confirm
+  480px, z-60. Console clean.
+- **Privacy/security impact:** none. No data access changed.
+- **Decisions and assumptions:** extraction part one only; five dialogs plus the action row; one
+  folder per dialog; children inject their own service; outputs for what only the page can do;
+  stylesheet cut by hand and verified per class. First three confirmed by the maintainer; the last
+  three were settled by evidence in the repository and recorded rather than asked.
+- **Open issues or blockers:** none from this session. New debt: **#10, the tailor-cover-letter feature
+  is unreachable**; **#11, `.cvform` never reaches the jobs modal** (and `cover-letter-list` uses the
+  same class from another component's stylesheet - worth checking); **#12, the desktop suite is
+  intermittently flaky in timing-sensitive specs.**
+- **Next first action:** jobs extraction part two - the scoring and wizard region, template lines
+  189-527, which is what takes the template from 387 under 300. Then, and only then, the state
+  migration and the empty allowlist.
+
 ### 2026-08-10, Correction to the onboarding part-two entry: a gate I reported without re-running
 
 - **Status:** complete

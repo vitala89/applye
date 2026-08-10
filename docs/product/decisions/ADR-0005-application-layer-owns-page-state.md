@@ -2361,6 +2361,65 @@ broken branch, the three resume tiles measure as one row by rectangle rather tha
 Ready summaries read correctly, and the console is clean. The reachability scan over all four
 onboarding stylesheets reports nothing stranded - no `.scss` was touched this time.
 
+## Amendment forty-five: the jobs page, part one, and a feature with no way in
+
+`jobs` is the last entry in `COMPONENTS_STILL_USING_THE_GATEWAY` and the one this ADR deferred three
+times. All three of its files were over budget - class **1050/400**, template **686/300**, stylesheet
+**493/400** - so the sequencing was forced before anything was decided: the template comes down first,
+because the size gate refuses to let an over-budget file grow at all. **This amendment covers the
+first extraction only. The allowlist does not move in it.**
+
+Six components come out, one folder each, following `paste-job-modal/` and `quick-view-modal/`: the
+cross-job confirm, the delete confirm, the tailor cover-letter modal, the photo prompt, the discard
+confirm, and the detail action row. Each injects the service that already owns its state - the page
+provides seventeen component-scoped, so a child rendered inside its template inherits the same
+instance, which is what `job-document-cards` established here. **What a child cannot do, it asks for
+with an output**: all five outputs either navigate, write page state, or run the document commit, and
+the split is the same one `onboarding-resume-step`'s single `fileRequested` makes.
+
+**Two rules would have been stranded, and both were caught before merge rather than on screen.**
+
+1. **`.muted` is page-local, not global**, and the photo prompt's "no photo yet" line carries it
+   alongside `.photo-prompt__text`. It travelled into the child - and **in its original source
+   order**, because both are single-class selectors and the later one wins: that is what zeroes that
+   line's bottom margin. Moving it above would have given the line a margin it has never had. The
+   rendered check confirms `margin-bottom: 0px` and `rgb(154, 150, 140)`.
+2. **The `.modal` shell** is now duplicated in the two modals that use it. That is not a new
+   compromise: `.modal-backdrop` is already declared in **eight** component stylesheets across this
+   app, because Angular scopes a stylesheet to its own template and every modal folder has always
+   carried its own.
+
+Every host is `display: contents`, so no new box enters the page's flow - the trap amendment sixteen
+was written for, applied pre-emptively this time rather than after a rendered screen found it.
+
+**The gate caught me, and the fix was the right one.** Six imports plus six `imports:` entries pushed
+the class from 1050 to **1062**, and an already-over-budget file may not grow by a single line. The
+offset was not cosmetic: eleven aliases and four handlers were genuinely orphaned by the extraction,
+and deleting them took the class to **1036**. The rule this reinforces is that an extraction from an
+over-budget class has to _shrink_ it, so the aliases it orphans are part of the work rather than a
+tidy-up for later.
+
+**A feature was found with no way into it.** `CoverLetterTailorService.prepare()` is the only thing
+that sets `modalOpen`, and it is called only from `openTailorCoverLetterModal()` - which **nothing
+calls**, in any template or class, anywhere in the app. The service is 200 lines and fully tested, the
+modal exists and renders correctly when opened by hand, and no control opens it. It was extracted
+as-is rather than deleted: removing a feature is a product decision, not an extraction's. Separately,
+the modal's `.cvform` class is declared only in `cv-list.component.scss` and so has **never** reached
+this markup, which is why those two fields carry twenty lines of inline `style=` instead. Both moved
+verbatim, for the same reason.
+
+**`quality:style-move` produced a false LOST.** It reported `.locked-hint` as having lost all four of
+its declarations; the rule is byte-identical to base, still in the page's stylesheet, and still bound
+at `jobs.component.html:16`. Removing the neighbouring `.alert` block is what confused it - the same
+comment-attachment fragility that made the scripted CSS splitter unsafe in amendment forty-three. The
+reachability scan and the rendered screen both read clean, and they are what the claim rests on.
+
+Template **686 -> 387**, stylesheet **493 -> 289** (under budget), class **1050 -> 1036**. All 1417
+existing tests pass **unchanged**, and 15 new ones cover the six components.
+
+**Still to do before the migration:** the template is 387 against 300. Part two takes the scoring and
+wizard region.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

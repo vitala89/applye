@@ -1,0 +1,55 @@
+/* The host must not add a box to the page's flow: the markup below is
+   position:fixed or block-level in its own right, and an extra element in
+   between is the trap amendment sixteen was written for. */
+:host {
+  display: contents;
+}
+
+/* The `.alert` block, moved whole from the page: its only markup in this
+   folder is the delete confirm, and a stylesheet does not reach a template
+   it no longer owns. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-5);
+}
+.alert--danger {
+  background: var(--danger-tint);
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
+}
+.alert--danger .alert__icon {
+  color: var(--danger);
+}
+.alert__icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.alert__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alert__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin: 0;
+}
+.alert__text {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+.alert__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

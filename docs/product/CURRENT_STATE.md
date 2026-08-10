@@ -42,6 +42,16 @@
   CI never reached a build step: `frontendDist` resolved one level short, the packaged app rendered
   unstyled because Angular's `inlineCritical` hides the stylesheet behind an inline handler the CSP
   forbids, and `beforeBuildCommand` called `nx` without `npx`.
+- **Jobs, part one of its decomposition, is done: five dialogs and the action row are their own
+  components.** `jobs.component.ts` is **1036/400**, the template **387/300** and the stylesheet
+  **289/400** - the stylesheet is under budget, the other two are not, and the template is what part
+  two has to finish before any state can move. Each new component injects the service that already
+  owned its state and asks the page, with an output, for what only the page can do. The lint allowlist
+  is untouched at **1**. **Two finds, both pre-existing:** "tailor an existing cover letter to this
+  job" is unreachable - the only method that opens its modal is called from nowhere - and that modal's
+  two fields are styled with a class declared in another component's stylesheet, which has never
+  reached them; the inline `style=` attributes on those fields are what actually dresses them. Both
+  were moved verbatim rather than fixed (ADR-0005, amendment forty-five).
 - **Jobs is moving again by extracting child components, and that is what works on the aliases.**
   `jobs.component.ts` is **1080** non-empty lines against a budget of 400, down from 1467 where the
   work started, with the template at **941/300** and the stylesheet at **860/400**. The earlier stop

@@ -29,7 +29,6 @@
   align-items: center;
   animation: ob-in var(--dur-fast) var(--ease-standard);
 }
-
 .ob__frame {
   width: 100%;
   max-width: 860px;
@@ -38,7 +37,6 @@
   flex-direction: column;
   min-height: 0;
 }
-
 // ---- Top bar: brand + horizontal step stepper ----
 .ob__panehead {
   display: flex;
@@ -47,7 +45,6 @@
   padding: var(--space-7) var(--space-6) var(--space-5);
   flex: 0 0 auto;
 }
-
 .ob__brand {
   display: flex;
   align-items: center;
@@ -65,7 +62,6 @@
   justify-content: space-between;
   gap: var(--space-2);
 }
-
 .ob__chip {
   display: inline-flex;
   align-items: center;
@@ -82,7 +78,6 @@
 .ob__chip--upcoming {
   opacity: 0.75;
 }
-
 .ob__step-num {
   width: 24px;
   height: 24px;
@@ -103,7 +98,6 @@
   color: var(--accent-fg);
   border-color: var(--accent);
 }
-
 .ob__step-label {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -117,7 +111,6 @@
 .ob__step-label--done {
   color: var(--text-secondary);
 }
-
 // ---- Content pane ----
 .ob__pane {
   display: flex;
@@ -127,7 +120,6 @@
   min-height: 0;
   background: var(--bg-app);
 }
-
 .ob__body {
   flex: 1;
   overflow-y: auto;
@@ -142,7 +134,6 @@
   gap: var(--space-6);
   animation: ob-in var(--dur-base) var(--ease-standard);
 }
-
 // ---- Step 0: welcome ----
 .ob__privacy-card {
   padding: var(--space-6);
@@ -192,14 +183,12 @@
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
 }
-
 // ---- Step 1: AI setup ----
 .ob__provider-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
 }
-
 // Mode chooser: API key vs an existing CLI subscription.
 .ob__mode-grid {
   display: grid;
@@ -246,15 +235,6 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
-
-// One detected CLI: name, state, and a repair/install action when needed.
-.ob__cli-icon--ok {
-  color: var(--success);
-}
-.ob__cli-icon--warn {
-  color: var(--warning);
-}
-
 // Teaching state for the CLI the user picked: what to run, in order. Sits on
 // the sunken surface so it reads as a nested aside inside the panel rather
 // than a second card (nested cards are always wrong).
@@ -318,34 +298,13 @@
   color: var(--text-accent);
   margin-left: auto;
 }
-
 // ---- Step 1: API model pickers ----
 
-.ob__note {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  background: var(--surface-2);
-}
-.ob__note lucide-icon {
-  color: var(--text-tertiary);
-  margin-top: 1px;
-  flex: 0 0 auto;
-}
-.ob__note-text {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  line-height: var(--leading-relaxed);
-  color: var(--text-tertiary);
-}
-.ob__note-text b {
-  color: var(--text-secondary);
-  font-weight: var(--weight-semibold);
-}
-
+// `.ob__note`, `.ob__note lucide-icon` and `.ob__note-text b` were deleted here:
+// no template in this folder carries any of those classes, so all three had
+// reached nothing. Found by listing every class this stylesheet declares and
+// checking it against the markup, which is also how the `.ob__cli-icon`
+// modifiers below turned out to have been dead since #327.
 .ob__warning-row {
   display: flex;
   align-items: center;
@@ -357,245 +316,12 @@
 .ob__warning-row lucide-icon {
   flex: 0 0 auto;
 }
-
-// ---- Step 2: resume ----
-.ob__resume-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
-}
-.ob__resume-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-6) var(--space-4);
-  border-radius: var(--radius-lg);
-  border: var(--border-width) solid var(--border-subtle);
-  background: var(--surface-1);
-  cursor: pointer;
-}
-.ob__resume-tile--selected {
-  border-color: var(--border-accent);
-  box-shadow: var(--glow-accent);
-}
-.ob__resume-tile-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-lg);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface-sunken);
-  color: var(--text-secondary);
-}
-.ob__resume-tile-icon--selected {
-  background: var(--accent-tint);
-  color: var(--text-accent);
-}
-.ob__resume-tile-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--text-primary);
-}
-.ob__resume-tile-sub {
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  line-height: var(--leading-relaxed);
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
-.ob__attached-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
-  border: var(--border-width) solid var(--border-accent);
-  border-radius: var(--radius-lg);
-  background: var(--accent-tint);
-}
-.ob__attached-icon {
-  width: 40px;
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-input);
-  background: var(--surface-1);
-  border: var(--border-width) solid var(--border-default);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-accent);
-}
-.ob__attached-body {
-  flex: 1;
-  min-width: 0;
-}
-.ob__attached-name {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ob__attached-meta {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
-}
-.ob__attached-status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--success);
-  flex: 0 0 auto;
-}
-
-.ob__textarea {
-  width: 100%;
-  min-height: 150px;
-  resize: vertical;
-  padding: var(--space-4);
-  border: var(--border-width) solid var(--border-default);
-  border-radius: var(--radius-card);
-  background: var(--surface-sunken);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  outline: none;
-}
-
-.ob__info-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  color: var(--text-tertiary);
-}
-
-// ---- Step 4: targeting ----
-.ob__label-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.ob__role-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-.ob__role-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 34px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-card);
-  cursor: pointer;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  background: var(--surface-sunken);
-  border: var(--border-width) solid var(--border-default);
-  color: var(--text-secondary);
-}
-.ob__role-chip--on {
-  background: var(--accent-tint);
-  border-color: var(--border-accent);
-  color: var(--text-accent);
-}
-.ob__role-add {
-  height: 34px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-card);
-  background: transparent;
-  border: 1px dashed var(--border-strong);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-
-.ob__comp-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--surface-1);
-  padding: var(--space-6);
-}
-.ob__comp-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-.ob__comp-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-4);
-  height: 40px;
-  border: var(--border-width) solid var(--border-default);
-  border-radius: var(--radius-input);
-  background: var(--surface-sunken);
-}
-.ob__comp-currency-select {
-  height: 40px;
-  padding: 0 var(--space-3);
-  border: var(--border-width) solid var(--border-default);
-  border-radius: var(--radius-input);
-  background: var(--surface-sunken);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  outline: none;
-}
-.ob__comp-number {
-  width: 56px;
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-  outline: none;
-}
-.ob__comp-suffix {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
-}
-.ob__comp-dash {
-  color: var(--text-tertiary);
-}
-.ob__comp-hint {
-  margin-left: auto;
-  font-family: var(--font-sans);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-.ob__comp-track {
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--surface-sunken);
-  position: relative;
-  overflow: hidden;
-}
-.ob__comp-track-fill {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: var(--accent);
-  border-radius: var(--radius-full);
-}
-
+// Steps 2 and 4 own their rules now; `.ob__resume-grid` and `.ob__label-row`
+// moved with their markup. Both were still declared here after the extraction
+// and reached nothing, because Angular scopes a stylesheet to its own template.
+// `quality:style-move` read clean throughout - it proves a declaration was not
+// lost, never that it still reaches (ADR-0005, amendments twenty-one and
+// twenty-two). A rendered screen is what found them.
 // ---- Step 5: ready ----
 .ob__ready-icon {
   width: 52px;
@@ -650,7 +376,6 @@
 .ob__summary-value--muted {
   color: var(--text-tertiary);
 }
-
 // ---- Footer ----
 .ob__foot {
   display: flex;

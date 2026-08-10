@@ -1,6 +1,8 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
 import { OnboardingAiKeyService } from './onboarding-ai-key.service';
+import { OnboardingResumeService } from './onboarding-resume.service';
+import { OnboardingTargetingService } from './onboarding-targeting.service';
 import { createOnboarding, parsedCv } from './onboarding.harness';
 
 describe('OnboardingComponent flow', () => {
@@ -12,14 +14,26 @@ describe('OnboardingComponent flow', () => {
   let getProfile: jest.Mock;
   let upsertProfile: jest.Mock;
   let run: jest.Mock;
+  let resume: OnboardingResumeService;
+  let targeting: OnboardingTargetingService;
   let recreate: () => void;
 
   beforeEach(async () => {
     const h = await createOnboarding();
-    ({ component, fixture, aiKey, hasProviderKey, setProviderKey, getProfile, upsertProfile, run } =
-      h);
+    ({
+      component,
+      fixture,
+      aiKey,
+      resume,
+      targeting,
+      hasProviderKey,
+      setProviderKey,
+      getProfile,
+      upsertProfile,
+      run,
+    } = h);
     recreate = () => {
-      ({ component, fixture, aiKey } = h.create());
+      ({ component, fixture, aiKey, resume, targeting } = h.create());
     };
   });
 
@@ -32,7 +46,7 @@ describe('OnboardingComponent flow', () => {
   describe('review step is skipped when there is no resume', () => {
     it('jumps from resume straight to targeting', async () => {
       component.step.set(2);
-      component.resumePath.set('skip');
+      resume.path.set('skip');
 
       await component.goNext();
 
@@ -41,8 +55,8 @@ describe('OnboardingComponent flow', () => {
 
     it('jumps forward when a path is chosen but no text was entered', async () => {
       component.step.set(2);
-      component.resumePath.set('paste');
-      component.resumeText.set('   ');
+      resume.path.set('paste');
+      resume.text.set('   ');
 
       await component.goNext();
 
@@ -79,7 +93,7 @@ describe('OnboardingComponent flow', () => {
 
   describe('suggestArchetypes', () => {
     beforeEach(() => {
-      component.resumeText.set('a resume');
+      resume.text.set('a resume');
     });
 
     it('does not advance the wizard - the Targeting step calls it in place', async () => {
@@ -93,36 +107,36 @@ describe('OnboardingComponent flow', () => {
     it('seeds the selection on the first suggestion', async () => {
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual(['Staff FE']);
+      expect(targeting.archetypes()).toEqual(['Staff FE']);
     });
 
     it('keeps roles the user typed in', async () => {
       await component.suggestArchetypes();
-      component.addArchetype('Manual Role');
+      targeting.addArchetype('Manual Role');
 
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual(['Staff FE', 'Manual Role']);
+      expect(targeting.archetypes()).toEqual(['Staff FE', 'Manual Role']);
     });
 
     it('does not re-check a role the user unchecked', async () => {
       await component.suggestArchetypes();
-      component.toggleRole('Staff FE');
-      expect(component.archetypes()).toEqual([]);
+      targeting.toggleRole('Staff FE');
+      expect(targeting.archetypes()).toEqual([]);
 
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual([]);
+      expect(targeting.archetypes()).toEqual([]);
     });
 
     it('re-offers a role the user unchecked and then chose again', async () => {
       await component.suggestArchetypes();
-      component.toggleRole('Staff FE');
-      component.toggleRole('Staff FE');
+      targeting.toggleRole('Staff FE');
+      targeting.toggleRole('Staff FE');
 
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual(['Staff FE']);
+      expect(targeting.archetypes()).toEqual(['Staff FE']);
     });
 
     it('adds a newly suggested role without disturbing the selection', async () => {
@@ -133,25 +147,25 @@ describe('OnboardingComponent flow', () => {
 
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual(['Staff FE', 'Principal FE']);
+      expect(targeting.archetypes()).toEqual(['Staff FE', 'Principal FE']);
     });
 
     it('seeds the comp range while untouched', async () => {
       await component.suggestArchetypes();
 
-      expect(component.compCurrency()).toBe('EUR');
-      expect(component.compMin()).toBe(90);
-      expect(component.compMax()).toBe(120);
+      expect(targeting.compCurrency()).toBe('EUR');
+      expect(targeting.compMin()).toBe(90);
+      expect(targeting.compMax()).toBe(120);
     });
 
     it('leaves a hand-edited comp range alone', async () => {
-      component.setCompMin('200');
-      component.setCompMax('250');
+      targeting.setCompMin('200');
+      targeting.setCompMax('250');
 
       await component.suggestArchetypes();
 
-      expect(component.compMin()).toBe(200);
-      expect(component.compMax()).toBe(250);
+      expect(targeting.compMin()).toBe(200);
+      expect(targeting.compMax()).toBe(250);
     });
 
     it('advances once when driven by the footer from the Review step', async () => {
@@ -270,7 +284,7 @@ describe('OnboardingComponent flow', () => {
     it('is not written to the profile when the skip tile is chosen after a parse', () => {
       component.review.parsedCv.set(parsedCv());
 
-      component.chooseResume('skip');
+      resume.choose('skip');
 
       expect(component.review.parsedCv()).toBeNull();
       expect(component.review.hasReview()).toBe(false);
@@ -279,7 +293,7 @@ describe('OnboardingComponent flow', () => {
     it('is dropped when the pasted text changes', () => {
       component.review.parsedCv.set(parsedCv());
 
-      component.setPastedResume('a different resume');
+      resume.setPasted('a different resume');
 
       expect(component.review.parsedCv()).toBeNull();
     });
@@ -331,30 +345,30 @@ describe('OnboardingComponent flow', () => {
     });
 
     it('seeds the target roles so finishing does not silently drop them', () => {
-      expect(component.archetypes()).toEqual(['Staff FE']);
+      expect(targeting.archetypes()).toEqual(['Staff FE']);
     });
 
     it('does not let the resume suggestion replace the seeded roles', async () => {
-      component.resumeText.set('a resume');
+      resume.text.set('a resume');
       run.mockResolvedValueOnce({ text: '{"archetypes":["Principal FE"]}' });
 
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual(['Staff FE', 'Principal FE']);
+      expect(targeting.archetypes()).toEqual(['Staff FE', 'Principal FE']);
     });
 
     it('still honours a seeded role the user unchecks', async () => {
-      component.resumeText.set('a resume');
-      component.toggleRole('Staff FE');
+      resume.text.set('a resume');
+      targeting.toggleRole('Staff FE');
 
       await component.suggestArchetypes();
 
-      expect(component.archetypes()).toEqual([]);
+      expect(targeting.archetypes()).toEqual([]);
     });
 
     it('keeps the existing markdown when the resume step is skipped', async () => {
-      component.resumePath.set('skip');
-      component.addArchetype('Engineering Manager');
+      resume.path.set('skip');
+      targeting.addArchetype('Engineering Manager');
 
       await component.saveProfile();
 
@@ -365,9 +379,9 @@ describe('OnboardingComponent flow', () => {
     });
 
     it('persists a targeting-only re-run instead of returning early', async () => {
-      component.resumePath.set('skip');
-      component.toggleRole('Staff FE');
-      component.addArchetype('Principal FE');
+      resume.path.set('skip');
+      targeting.toggleRole('Staff FE');
+      targeting.addArchetype('Principal FE');
 
       await component.saveProfile();
 

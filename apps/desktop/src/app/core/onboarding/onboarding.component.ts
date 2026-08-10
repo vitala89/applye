@@ -38,18 +38,13 @@ import {
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { parseCvSkillResponse } from '../../pages/documents/cv-content.util';
 import {
   appendCompensation,
   applyContactOverrides,
   buildOnboardingCvInput,
-  CURRENCY_OPTIONS,
   cvToProfileMarkdown,
   formatCompRange,
   hasCvForInputHash,
-  normalizeCurrency,
-  parseArchetypesSkillResponse,
-  parseCompRange,
   regionTagForUiLanguage,
   type ParsedCv,
 } from './onboarding-content.util';
@@ -61,10 +56,13 @@ import { OnboardingApiKeyCardComponent } from './onboarding-api-key-card/onboard
 import { OnboardingCliCardComponent } from './onboarding-cli-card/onboarding-cli-card.component';
 import { OnboardingReviewService } from './onboarding-review.service';
 import { OnboardingReviewStepComponent } from './onboarding-review-step/onboarding-review-step.component';
+import { OnboardingResumeService } from './onboarding-resume.service';
+import { OnboardingResumeStepComponent } from './onboarding-resume-step/onboarding-resume-step.component';
+import { OnboardingTargetingService } from './onboarding-targeting.service';
+import { OnboardingTargetingStepComponent } from './onboarding-targeting-step/onboarding-targeting-step.component';
 import { ThemeService } from '../theme.service';
 import { ToastService } from '../toast/toast.service';
 
-type ResumePath = 'upload' | 'paste' | 'skip';
 /** Full-screen onboarding wizard overlay. Auto-opened once after the
  * health-check (see app.ts + onboarding-gate.util.ts). Focused-shell layout:
  * a single centered column with a horizontal step stepper up top, the
@@ -78,13 +76,23 @@ type ResumePath = 'upload' | 'paste' | 'skip';
     LucideAngularModule,
     OnboardingApiKeyCardComponent,
     OnboardingCliCardComponent,
+    OnboardingResumeStepComponent,
     OnboardingReviewStepComponent,
+    OnboardingTargetingStepComponent,
   ],
   templateUrl: './onboarding.component.html',
   styleUrl: './onboarding.component.scss',
-  providers: [OnboardingAiKeyService, OnboardingCliBridgeService, OnboardingReviewService],
+  providers: [
+    OnboardingAiKeyService,
+    OnboardingCliBridgeService,
+    OnboardingResumeService,
+    OnboardingReviewService,
+    OnboardingTargetingService,
+  ],
 })
 export class OnboardingComponent {
+  protected readonly resume = inject(OnboardingResumeService);
+  protected readonly targeting = inject(OnboardingTargetingService);
   private readonly db = inject(DbService);
   private readonly ai = inject(AiService);
   private readonly i18n = inject(TranslateService);
@@ -280,48 +288,14 @@ export class OnboardingComponent {
     // The profile stores full `Archetype` objects; this wizard only ever deals
     // in names and re-wraps them on save, so seed the names.
     const roles = archetypeNames(parseArchetypes(existing?.targetArchetypes));
-    if (!roles.length || this.archetypes().length) return;
-    this.archetypes.set(roles);
-    this.suggestedRoles.set(roles);
-    // Marks the selection as authored, so the resume-driven suggestion that
-    // follows adds to these roles rather than replacing them.
-    this.selectionSeeded.set(true);
+    if (!roles.length || this.targeting.archetypes().length) return;
+    this.targeting.seedRoles(roles);
   }
 
   // ---- Resume ----
-  readonly resumePath = signal<ResumePath>('upload');
-  readonly resumeFileName = signal<string | null>(null);
-  readonly resumeText = signal('');
-  /** Set only by the upload path - the paste path has no file to hash. Carried
-   * so the CV document written on finish can reuse the Documents import's
-   * duplicate guard. */
-  readonly resumeInputHash = signal<string | undefined>(undefined);
-  readonly parsing = signal(false);
-  readonly resumeError = signal(false);
-  /** The raw failure behind `resumeError`, shown under the friendly line. */
-  readonly resumeErrorDetail = signal<string | null>(null);
-
-  chooseResume(path: ResumePath): void {
-    this.resumePath.set(path);
-    this.resumeError.set(false);
-    // Choosing "skip" after a parse must actually drop the parse. Otherwise the
-    // profile still gets written from the resume the user just walked away from
-    // while the Ready step tells them it was skipped.
-    if (path === 'skip') this.review.discardParse();
-    if (path === 'upload' && !this.resumeFileName()) {
-      void this.pickResumeFile();
-    }
-  }
-
-  /** Pasted text has no source file, so it drops any hash a previous upload
-   * left behind rather than tagging the CV document with a hash of content
-   * that is no longer there. */
-  setPastedResume(text: string): void {
-    this.resumeText.set(text);
-    this.resumeInputHash.set(undefined);
-    this.review.discardParse();
-  }
-
+  /** Picking the file is the wizard's: no store imports a Tauri plugin, and the
+   * resume step is on its way to becoming one. It asks; this opens the dialog
+   * and hands over a path. */
   async pickResumeFile(): Promise<void> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({
@@ -329,11 +303,7 @@ export class OnboardingComponent {
       filters: [{ name: 'Resume', extensions: ['pdf', 'docx'] }],
     });
     if (typeof path !== 'string') return;
-    const file = await this.db.cvImportReadFile(path);
-    this.resumeText.set(file.text);
-    this.resumeInputHash.set(file.inputHash);
-    this.resumeFileName.set(path.split(/[/\\]/).pop() ?? path);
-    this.review.discardParse();
+    await this.resume.loadFile(path);
   }
 
   /**
@@ -368,123 +338,16 @@ export class OnboardingComponent {
     };
   }
 
+  /** The parse itself belongs to the resume store; only advancing on success is
+   * the wizard's, because only the wizard knows where it is. */
   async parseResume(): Promise<void> {
-    const text = this.resumeText().trim();
-    if (!text) return;
-    this.parsing.set(true);
-    this.resumeError.set(false);
-    this.resumeErrorDetail.set(null);
-    try {
-      const settings = await this.db.getSettings();
-      // Match the Documents cv-import pipeline: the skill's `language` drives
-      // label text and follows the UI language, not the document output language.
-      const language = settings.uiLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('cv-import', { cv_text: text, language });
-      const res = await this.ai.run({
-        ...this.aiDispatch(),
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-        // Same ceiling as the Documents import: a resume long enough to truncate
-        // the answer comes back as unparseable JSON, which reads as a parse bug.
-        maxTokens: 8192,
-      });
-      const cv = parseCvSkillResponse(res.text);
-      this.review.parsedCv.set(cv);
-      this.review.seedReviewFields();
-      this.next();
-    } catch (e) {
-      this.resumeError.set(true);
-      // The friendly line stays, but the real reason has to be visible: an
-      // auth failure, a missing key and a genuinely malformed answer all landed
-      // on the same sentence, and none of them was ever a parsing problem.
-      this.resumeErrorDetail.set(String(e));
-    } finally {
-      this.parsing.set(false);
-    }
-  }
-
-  // ---- Targeting (archetypes + compensation) ----
-  readonly suggestedRoles = signal<string[]>([]);
-  readonly archetypes = signal<string[]>([]);
-  readonly suggesting = signal(false);
-  /** True once the selection has a deliberate author - the first AI suggestion,
-   * or the roles seeded from an existing profile on a re-run. Distinguishes an
-   * unauthored blank from "the user unchecked everything", and stops a
-   * suggestion from replacing roles the user already had. */
-  readonly selectionSeeded = signal(false);
-  /** Roles the user unchecked by hand - a re-suggest must not bring them back. */
-  readonly rejectedRoles = signal<ReadonlySet<string>>(new Set());
-  readonly currencyOptions = CURRENCY_OPTIONS;
-  readonly compCurrency = signal<string>('USD');
-  readonly compMin = signal(80);
-  readonly compMax = signal(120);
-  /** Set once the user edits the range by hand, so a re-suggest leaves it alone. */
-  readonly compTouched = signal(false);
-
-  readonly displayRoles = computed(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const r of [...this.suggestedRoles(), ...this.archetypes()]) {
-      if (!seen.has(r)) {
-        seen.add(r);
-        out.push(r);
-      }
-    }
-    return out;
-  });
-
-  private readonly compBand = { lo: 50, hi: 300 };
-  readonly compLeft = computed(() => {
-    const pct = ((this.compMin() - this.compBand.lo) / (this.compBand.hi - this.compBand.lo)) * 100;
-    return `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`;
-  });
-  readonly compRight = computed(() => {
-    const pct = ((this.compBand.hi - this.compMax()) / (this.compBand.hi - this.compBand.lo)) * 100;
-    return `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`;
-  });
-
-  isRoleOn(role: string): boolean {
-    return this.archetypes().includes(role);
-  }
-
-  toggleRole(role: string): void {
-    const removing = this.archetypes().includes(role);
-    this.archetypes.update((a) => (removing ? a.filter((r) => r !== role) : [...a, role]));
-    this.rejectedRoles.update((rejected) => {
-      const next = new Set(rejected);
-      if (removing) next.add(role);
-      else next.delete(role);
-      return next;
-    });
-  }
-
-  addArchetype(v: string): void {
-    const t = v.trim();
-    if (t) this.toggleRole(t);
-  }
-
-  setCompMin(v: string): void {
-    const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
-    this.compMin.set(isNaN(n) ? 0 : n);
-    this.compTouched.set(true);
-  }
-
-  setCompMax(v: string): void {
-    const n = parseInt(v.replace(/[^0-9]/g, ''), 10);
-    this.compMax.set(isNaN(n) ? 0 : n);
-    this.compTouched.set(true);
-  }
-
-  setCompCurrency(v: string): void {
-    this.compCurrency.set(v);
-    this.compTouched.set(true);
+    if ((await this.resume.parse(this.aiDispatch())) === true) this.next();
   }
 
   /** True while a footer-driven AI call is in flight. The Continue button binds
    * to it: without the guard a second click starts a second (paid) call and
    * advances twice, skipping a step entirely. */
-  readonly busy = computed(() => this.parsing() || this.suggesting());
+  readonly busy = computed(() => this.resume.parsing() || this.targeting.suggesting());
 
   /** Footer "Continue" handler: branches per step so parsing/suggestion runs
    * before advancing, and a skipped/empty resume never blocks progress. */
@@ -503,7 +366,7 @@ export class OnboardingComponent {
       // With no resume there is nothing to review, so Review would be a dead
       // screen of empty fields - jump straight to Targeting, which the user can
       // still fill in by hand.
-      if (this.resumePath() === 'skip' || !this.resumeText().trim()) {
+      if (this.resume.hasNothingToParse()) {
         this.step.set(4);
         return;
       }
@@ -518,57 +381,10 @@ export class OnboardingComponent {
     this.next();
   }
 
-  /** Suggestion only - it never advances the wizard, because the Targeting step
-   * offers this same action as a "Suggest again" button and advancing there
-   * would throw the user off the step they are working on. */
+  /** The suggestion belongs to the targeting store; the resume text and the
+   * wizard's own AI dispatch are the wizard's, so they are handed over. */
   async suggestArchetypes(): Promise<void> {
-    const text = this.resumeText().trim();
-    if (!text) return;
-    this.suggesting.set(true);
-    try {
-      const settings = await this.db.getSettings();
-      const language = settings.uiLanguage ?? 'en';
-      const rendered = await this.ai.renderSkill('onboarding-archetypes', {
-        cv_text: text,
-        language,
-      });
-      const res = await this.ai.run({
-        ...this.aiDispatch(),
-        systemPrompt: rendered.systemPrompt,
-        userPrompt: rendered.userPrompt,
-        language,
-      });
-      const parsed = parseArchetypesSkillResponse(res.text);
-      this.suggestedRoles.set(parsed.archetypes);
-      // The first suggestion seeds the selection; every later one only offers
-      // its roles as chips. Union-ing on a re-suggest would re-check roles the
-      // user had just unchecked, and an empty selection is a real choice - not
-      // the same state as "never suggested", which is why this needs its own
-      // flag rather than an `archetypes().length` test.
-      if (this.selectionSeeded()) {
-        this.archetypes.update((current) => [
-          ...current,
-          ...parsed.archetypes.filter((r) => !current.includes(r) && !this.rejectedRoles().has(r)),
-        ]);
-      } else {
-        this.archetypes.set(parsed.archetypes);
-      }
-      this.selectionSeeded.set(true);
-      // Comp is a single range with no user-authored parts to preserve, and it
-      // is only ever seeded before the user reaches the step - but once they
-      // have edited it, a re-suggest must not overwrite their number.
-      if (!this.compTouched()) {
-        const range = parseCompRange(parsed.compRange);
-        this.compCurrency.set(normalizeCurrency(range.currency));
-        this.compMin.set(range.min);
-        this.compMax.set(range.max);
-      }
-    } catch {
-      // Suggestion is an enhancement, not a requirement - fail soft and let
-      // the user confirm/add roles manually on the targeting step.
-    } finally {
-      this.suggesting.set(false);
-    }
+    await this.targeting.suggest(this.resume.text(), this.aiDispatch());
   }
 
   // ---- Ready summary ----
@@ -583,7 +399,7 @@ export class OnboardingComponent {
     return `${this.t()(this.guide().nameKey)} · ${this.t()('onboarding.done.connected_suffix')}`;
   });
   readonly resumeSummary = computed(() => {
-    if (this.resumePath() === 'skip') return this.t()('onboarding.done.skipped');
+    if (this.resume.path() === 'skip') return this.t()('onboarding.done.skipped');
     // Resolve the name through the same rule the artifacts are written with, so
     // the recap cannot claim a different name from the one on the profile and
     // the CV - notably for a family-name-first name the user did not reorder.
@@ -591,10 +407,15 @@ export class OnboardingComponent {
     return `${this.t()('onboarding.done.imported_prefix')}${name ? ' · ' + name : ''}`;
   });
   readonly rolesSummary = computed(
-    () => `${this.archetypes().length} ${this.t()('onboarding.done.roles_selected_suffix')}`,
+    () =>
+      `${this.targeting.archetypes().length} ${this.t()('onboarding.done.roles_selected_suffix')}`,
   );
   readonly compSummary = computed(() =>
-    formatCompRange({ currency: this.compCurrency(), min: this.compMin(), max: this.compMax() }),
+    formatCompRange({
+      currency: this.targeting.compCurrency(),
+      min: this.targeting.compMin(),
+      max: this.targeting.compMax(),
+    }),
   );
 
   // ---- Navigation / persistence ----
@@ -648,9 +469,9 @@ export class OnboardingComponent {
           // is written under a body `parseProfileMd` reads back. Period is the
           // targeting step's implicit unit (annual).
           serializeCompensation({
-            min: String(this.compMin()),
-            max: String(this.compMax()),
-            currency: this.compCurrency(),
+            min: String(this.targeting.compMin()),
+            max: String(this.targeting.compMax()),
+            currency: this.targeting.compCurrency(),
             period: 'year',
           }),
         )
@@ -658,14 +479,16 @@ export class OnboardingComponent {
     // Nothing parsed, nothing saved before, no roles picked: a first run the
     // user skipped through. Writing an empty row would only make the dashboard
     // banner disagree with itself.
-    if (!fullMd.trim() && !this.archetypes().length) return;
+    if (!fullMd.trim() && !this.targeting.archetypes().length) return;
     await this.db.upsertProfile({
       fullMd,
       scoringJson: existing?.scoringJson,
       scoringHash: existing?.scoringHash,
       pitchMd: existing?.pitchMd,
       pitchHash: existing?.pitchHash,
-      targetArchetypes: serializeArchetypes(parseArchetypes(JSON.stringify(this.archetypes()))),
+      targetArchetypes: serializeArchetypes(
+        parseArchetypes(JSON.stringify(this.targeting.archetypes())),
+      ),
     });
   }
 
@@ -685,10 +508,10 @@ export class OnboardingComponent {
    * import stays available either way. */
   async saveCvDocument(): Promise<void> {
     const parsed = this.review.parsedCv();
-    if (!parsed || this.resumePath() === 'skip') return;
+    if (!parsed || this.resume.path() === 'skip') return;
     try {
       const settings = await this.db.getSettings();
-      const inputHash = this.resumeInputHash();
+      const inputHash = this.resume.inputHash();
       // Re-running the wizard on the same file must not stack up copies. The
       // existing document wins: it may already carry edits made in Documents,
       // and silently overwriting those would cost more than a skipped rewrite.

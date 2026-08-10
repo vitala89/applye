@@ -1,11 +1,13 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
 import { OnboardingAiKeyService } from './onboarding-ai-key.service';
+import { OnboardingResumeService } from './onboarding-resume.service';
 import { createOnboarding, parsedCv } from './onboarding.harness';
 
 describe('OnboardingComponent keys, profile and AI wiring', () => {
   let component: OnboardingComponent;
   let aiKey: OnboardingAiKeyService;
+  let resume: OnboardingResumeService;
   let fixture: ComponentFixture<OnboardingComponent>;
   let upsertProfile: jest.Mock;
   let documentLibraryUpsert: jest.Mock;
@@ -19,6 +21,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
       component,
       fixture,
       aiKey,
+      resume,
       upsertProfile,
       documentLibraryUpsert,
       updateSettings,
@@ -29,7 +32,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
   describe('a first run with nothing to save', () => {
     it('writes no profile at all', async () => {
-      component.resumePath.set('skip');
+      resume.path.set('skip');
 
       await component.saveProfile();
 
@@ -45,7 +48,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
   describe('in-wizard AI calls follow the mode and provider just picked', () => {
     beforeEach(() => {
-      component.resumeText.set('a resume');
+      resume.text.set('a resume');
       run.mockResolvedValue({ text: '{"personalDetails":{"fullName":"Mira Halvorsen"}}' });
     });
 
@@ -57,7 +60,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
       expect(run).toHaveBeenCalledWith(
         expect.objectContaining({ provider: 'deepseek', mode: 'api' }),
       );
-      expect(component.resumeError()).toBe(false);
+      expect(resume.failed()).toBe(false);
     });
 
     it('sends no model in CLI mode, where the stored API ids are unusable', async () => {
@@ -97,8 +100,8 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
       await component.parseResume();
 
-      expect(component.resumeError()).toBe(true);
-      expect(component.resumeErrorDetail()).toContain('no API key for deepseek');
+      expect(resume.failed()).toBe(true);
+      expect(resume.failureDetail()).toContain('no API key for deepseek');
     });
   });
 
@@ -112,7 +115,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
 
   describe('the model ids follow the provider', () => {
     beforeEach(() => {
-      component.resumeText.set('a resume');
+      resume.text.set('a resume');
       run.mockResolvedValue({ text: '{"personalDetails":{"fullName":"Mira Halvorsen"}}' });
     });
 
@@ -269,7 +272,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
   describe('an AI call already in flight', () => {
     it('blocks a second Continue, so no step is skipped and no call is paid for twice', async () => {
       component.step.set(3);
-      component.resumeText.set('a resume');
+      resume.text.set('a resume');
       let release!: (v: unknown) => void;
       run.mockReturnValueOnce(new Promise((r) => (release = r)));
 

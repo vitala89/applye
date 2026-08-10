@@ -188,7 +188,12 @@
   after a failed load kept the earlier message (amendment thirty-eight). It is **4** now: the
   cover-letter library moved as two stores, and the newer of them deliberately answers with outcomes
   where its older neighbour in the same folder throws - a missing profile is a refusal, not a
-  failure (amendment thirty-nine).
+  failure (amendment thirty-nine). It is **3** now: the CV library moved as **three** stores, the
+  split chosen on a line estimate rather than on taste, and the generate store owns the job link
+  because a forgotten second step produces an unlinked CV that looks identical to a linked one
+  (amendment forty). What is left is `onboarding` (738 lines), `settings` (575) and `jobs` (1050),
+  and `jobs` is deferred to a session of its own: state migration alone will not bring it under its
+  400-line budget.
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

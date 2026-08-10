@@ -191,9 +191,11 @@
   failure (amendment thirty-nine). It is **3** now: the CV library moved as **three** stores, the
   split chosen on a line estimate rather than on taste, and the generate store owns the job link
   because a forgotten second step produces an unlinked CV that looks identical to a linked one
-  (amendment forty). What is left is `onboarding` (738 lines), `settings` (575) and `jobs` (1050),
-  and `jobs` is deferred to a session of its own: state migration alone will not bring it under its
-  400-line budget.
+  (amendment forty). It is **2** now: Settings went in two pull requests - five section
+  components first, because its 580-line template would have failed the size gate the moment the
+  migration touched it, then five stores (amendments forty-one and forty-two). What is left is
+  `onboarding` (738 lines) and `jobs` (1050), and `jobs` is deferred to a session of its own: state
+  migration alone will not bring it under its 400-line budget.
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

@@ -1,4 +1,4 @@
-import { GeoTarget, toggleMarket, toggleRegion, worldwide } from './geo-target.util';
+import { GeoTarget, toggleMarket, toggleRegion, worldwide } from './geo-target';
 
 /** The one rule the whole feature rests on. */
 function expectAtMostOneSideSet(target: GeoTarget): void {

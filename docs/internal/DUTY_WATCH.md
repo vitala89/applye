@@ -44,6 +44,68 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, Settings, part two: five stores, and the screen leaves the allowlist
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/settings-stores`
+- **Commits:** two - the migration (`521017a`), then docs
+- **Pull request:** opened after the docs commit
+- **Objective:** the migration part one existed to make possible. **Allowlist 3 -> 2.**
+- **Triage:** 7/10 (radius 2 · ambiguity 2 · risk 2 · verify 2 · unknowns 0). Unknowns fell to 0
+  because part one cut the seams. One grilling round, one question - whether the children should
+  inject the stores. They do not.
+- **Completed:**
+  - Five stores in `libs/application/src/lib/settings/`: `SettingsStore` (128), `GeoTargetStore`
+    (128), `CliBridgeStore` (114), `ProviderKeyStore` (76), `ConnectionTestStore` (57). All inside
+    the 250 budget with no pure module needing to come out.
+  - `settings.component.ts` **564 -> 277**, under its 400 budget, injecting none of `DbService`,
+    `KeysService` or `AiService`. Its allowlist entry is gone.
+  - `geo-target.util.ts` and `cli-models.util.ts` moved down whole with their specs.
+  - **The five section components and their 30 tests are untouched**, which was the point of the
+    grilling round: children stay pure view.
+- **Not completed:** nothing in scope. `onboarding` and `jobs` remain.
+- **Validation:** all run and observed. `nx test application` 993/993 (921 before),
+  `nx test desktop` 1462/1462 (1481 before). **The counters reconcile**: -19 from desktop is exactly
+  the two utils' specs moving down, so +72 in application is 53 genuinely new tests.
+  `nx lint desktop,application` 0 errors (8 pre-existing warnings) - and lint now _proves_ the page
+  is clean, since its allowlist entry no longer exists. `nx build desktop` succeeded,
+  `quality:file-size` passed, `quality:attribution` passed, `format:check` passed after prettier,
+  `git diff --check` clean. No `.scss` touched, so `check-style-move.mjs` did not apply.
+- **Rendered check, including three failure paths**, under a temporary console-only Tauri stub
+  deleted in the same call. Happy paths: a market pick persists and offers its source plan; a region
+  pick clears the market and drops the pending offer; a second Worldwide is refused with `error`
+  empty; the key save trims and clears the draft with the field reading empty; remove flips the
+  button count and `canTest`; CLI mode probes and draws both status rows; the custom model choice
+  opens the free-text field **without** writing `__custom__` into the row. Then with the stub made to
+  throw: a failed reset **closed the confirmation** instead of leaving an armed dialog, a failed save
+  released `saving`, and a failed geo toggle rolled the record back to exactly its previous value.
+  All three toasted. Part one's `<ng-content>` order and 16px `:host` gaps still measure right.
+- **Privacy/security impact:** the credential path moved into `ProviderKeyStore`, which has
+  `refresh`, `save`, `remove` and **no read path** - `stored` is a yes/no answer, never the key. The
+  draft clears on success and is kept on failure, deliberately. A failed `hasProviderKey` answers
+  "no" rather than leaving the previous provider's answer standing, which would unlock a Test button
+  that can only fail. Six tests pin this, one of which asserts the public surface has no getter. No
+  new IPC command, no new storage, no new external call.
+- **Decisions and assumptions:**
+  1. Children stay pure view; only the page's state moved. Rewiring them would have meant rewriting
+     assertions written the day before and coupling five presentational components to one screen.
+  2. `GeoTargetStore` injects `SettingsStore` - the first store-to-store dependency in this campaign -
+     so the settings row has one copy rather than two that can disagree.
+  3. `refused` kept apart from `failed` for CLI installs; the model picker answers `null` for the
+     custom choice rather than returning the sentinel.
+- **A test fixture was wrong and the code was right:** four `GeoTargetStore` tests failed on the
+  first run asserting `geoScope: 'europe'` where the encoder produces `'["europe"]'`. Fixed by
+  asserting against `encodeGeoScopes` rather than writing the literal - a hardcoded encoding is a
+  second implementation of it, and it would have passed while disagreeing with the real one.
+- **Risks or compatibility impact:** none intended. Every behaviour is the same screen; the reset,
+  save and geo rollback paths were each exercised in the browser.
+- **Open issues or blockers:** none new.
+- **Next first action:** `onboarding.component.ts` - 738 lines, 738/400, 16 gateway calls. It is the
+  last entry before `jobs`, and worth checking early whether its template is over budget too, since
+  that is what forced Settings into two pull requests. `jobs` (1050/400 with a 686/300 template)
+  still needs its own session and its own grilling round.
+
 ### 2026-08-10, Settings, part one: the extraction the size gate demanded first
 
 - **Status:** complete

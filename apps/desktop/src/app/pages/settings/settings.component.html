@@ -1,11 +1,11 @@
-@if (loading()) {
+@if (store.loading()) {
   <div class="state-loading-text">{{ t()('common.loading') }}</div>
-} @else if (settings(); as s) {
+} @else if (store.record(); as s) {
   <div class="settings">
     <header class="head">
-      <button class="btn btn--primary btn--md" [disabled]="saving()" (click)="save()">
+      <button class="btn btn--primary btn--md" [disabled]="store.saving()" (click)="save()">
         <lucide-icon [img]="icons.save" [size]="16" aria-hidden="true" />
-        {{ saving() ? t()('settings.saving') : t()('settings.save_btn') }}
+        {{ store.saving() ? t()('settings.saving') : t()('settings.save_btn') }}
       </button>
     </header>
 
@@ -18,22 +18,22 @@
         [cliProviders]="cliProviders"
         [apiModels]="models"
         [cliModels]="cliModels()"
-        [customModel]="customModel()"
+        [customModel]="cli.customModel()"
         [defaultModelSelectValue]="modelSelectValue(s.defaultModel)"
         [economyModelSelectValue]="modelSelectValue(s.economyModel)"
         [vendorName]="vendorName()"
-        [tier]="tier()"
+        [tier]="test.tier()"
         (modeChanged)="onModeChange($event)"
         (providerChanged)="onProviderChange($event)"
         (cliModelSelected)="onCliModelSelect($event.field, $event.choice)"
         (fieldChanged)="patch($event.key, $event.value)"
-        (tierChanged)="tier.set($event)"
+        (tierChanged)="test.tier.set($event)"
       >
         @if (isCliMode()) {
           <app-settings-cli-status
-            [statuses]="cliStatuses()"
-            [probing]="cliProbing()"
-            [installing]="installingCli()"
+            [statuses]="cli.statuses()"
+            [probing]="cli.probing()"
+            [installing]="cli.installing()"
             (installRequested)="installCli($event)"
             (recheckRequested)="refreshCliProbe()"
           />
@@ -47,10 +47,10 @@
         <h3 class="eyebrow">{{ t()('settings.section_key') }}</h3>
         <app-settings-api-key
           [provider]="s.provider"
-          [stored]="keyStored()"
-          [busy]="keyBusy()"
-          [draft]="apiKeyInput()"
-          (draftChanged)="apiKeyInput.set($event)"
+          [stored]="key.stored()"
+          [busy]="key.busy()"
+          [draft]="key.draft()"
+          (draftChanged)="key.draft.set($event)"
           (saveRequested)="saveKey()"
           (removeRequested)="removeKey()"
         />
@@ -122,8 +122,8 @@
       <h3 class="eyebrow">{{ t()('settings.jobsearch_section') }}</h3>
       <app-settings-geo-target
         [settings]="s"
-        [plan]="marketPlan()"
-        [applyingPlan]="applyingPlan()"
+        [plan]="geo.plan()"
+        [applyingPlan]="geo.applyingPlan()"
         (scopeToggled)="toggleGeoScope($event)"
         (worldwideSelected)="setGeoWorldwide()"
         (marketToggled)="toggleMarket($event)"
@@ -180,11 +180,11 @@
       <h3 class="eyebrow">{{ t()('settings.test_section') }}</h3>
       <button
         class="btn btn--primary btn--md"
-        [disabled]="testing() || !canTest()"
+        [disabled]="test.testing() || !canTest()"
         (click)="testConnection()"
       >
         <lucide-icon [img]="icons.send" [size]="16" aria-hidden="true" />
-        {{ testing() ? t()('settings.testing') : t()('settings.test_prompt_btn') }}
+        {{ test.testing() ? t()('settings.testing') : t()('settings.test_prompt_btn') }}
       </button>
       @if (!canTest()) {
         @if (isCliMode()) {
@@ -193,10 +193,10 @@
           <p class="muted">{{ t()('settings.store_key_first') }}</p>
         }
       }
-      @if (testReply(); as reply) {
+      @if (test.reply(); as reply) {
         <div class="reply">
           <p class="reply__text">{{ reply }}</p>
-          @if (testTokens(); as tok) {
+          @if (test.tokens(); as tok) {
             <p class="reply__tokens">
               in {{ tok.in }} · out {{ tok.out }} · cached {{ tok.cached }} tokens
             </p>
@@ -209,9 +209,9 @@
     <section class="section section--danger">
       <h3 class="eyebrow eyebrow--danger">Data</h3>
       <app-settings-danger-zone
-        [confirming]="confirmingReset()"
-        [resetting]="resetting()"
-        (confirmingChanged)="confirmingReset.set($event)"
+        [confirming]="store.confirmingReset()"
+        [resetting]="store.resetting()"
+        (confirmingChanged)="store.requestReset($event)"
         (resetConfirmed)="resetAllData()"
       />
     </section>

@@ -1,4 +1,4 @@
-import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models.util';
+import { CLI_MODEL_CUSTOM, apiModelsToRestore, cliModelSelectValue } from './cli-models';
 
 const CLAUDE_CLI = ['sonnet', 'opus', 'haiku'];
 const CLAUDE_API = ['claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'];

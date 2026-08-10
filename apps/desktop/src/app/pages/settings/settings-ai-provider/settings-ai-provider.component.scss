@@ -1,0 +1,11 @@
+@use '../settings-form';
+
+/* This component holds what used to be five of `.section`'s own children - the
+   mode picker, the provider picker, the privacy note, the model row and the
+   tier toggle - all separated by its `gap`. The host reproduces that column;
+   without it the five blocks sit flush. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}

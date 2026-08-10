@@ -2106,6 +2106,74 @@ The gate passed and the touched set is strongly negative overall (component -206
 the delete modal's buttons now that their bindings carry a `list.` prefix. The next change to this
 template cuts.
 
+## Amendment forty-one: the extraction the gate demanded before the migration
+
+Settings is the next entry on the allowlist, and its template stopped the migration before it
+started. `settings.component.html` was **580 against a 300 budget**, and
+`check-file-size-budgets.mjs` fails an already-over-budget file that grows **at all**. Rebinding a
+page to stores grows its template - `cv-list`'s went 283 to 285 for exactly that reason one
+migration earlier, and passed only because it was under budget. This one is not. So the extraction
+is its own pull request, and **the allowlist does not move in it**.
+
+That sequencing was not a preference discovered while writing; it was read out of the gate before
+any file was touched. The alternative offered - migrate first and accept the growth - fails the
+build, which is the gate doing its job.
+
+**Five components, each on a boundary the migration already needs**: `settings-ai-provider`,
+`settings-cli-status`, `settings-api-key`, `settings-geo-target`, `settings-danger-zone`. Cutting on
+the future store boundaries means the next pull request is state movement with no second reshaping;
+cutting to the minimum that fits the budget would have left the reshaping for the harder change.
+
+**The section wrapper stays on the page.** `<section class="section"><h3 class="eyebrow">` was not
+moved into the children, which keeps two rules out of the shared partial and - the reason that
+matters - keeps every child host inside a `.section` where nothing lays it out. A host that becomes
+the flex item is what cost Profile its paired-field row.
+
+**One shared partial, `_settings-form.scss`, and its header names its six consumers.** Angular scopes
+a component's styles to its own template, so `.field`, `.cap`, `.hint`, the `input`/`select` block,
+the toggle and the confirm block all stop reaching the moment their markup moves. This is the same
+construct amendments sixteen, twenty-one and twenty-two each hit from a different direction, and the
+mitigation is the only one available: write the consumer list down, because no template shows it.
+
+**Two things the move had to reproduce rather than inherit.**
+
+1. `.section` is a flex column with `gap: var(--space-5)`, and that gap separated blocks that are now
+   one child's content. Collapsing them into a single host would have removed every gap inside it.
+   Each host declares the column itself, and it was **measured on screen**: the section reports 16px,
+   the host reports 16px, and the four blocks inside the provider component sit 16px apart.
+2. The CLI status list belongs **between** the provider picker and the model row, and a sibling
+   component cannot sit there. The picker takes it through `<ng-content>` instead of forwarding four
+   inputs it does not otherwise care about; the rendered order is
+   `label.field, label.field, app-settings-cli-status, div.row, p.hint, div.field`, which is the
+   order it had.
+
+**One thing that nearly became a silent behaviour change.** The danger zone's confirmation flag
+looked like child-local state, and it is not: a _failed_ reset closes the confirmation as well as
+clearing the running flag, and a child-local boolean cannot be closed from the page. It stays an
+input, with a test.
+
+**A function was refused as an input.** `modelSelectValue(stored)` would have been the smallest
+change; it is two resolved strings instead. Handing a component a function to call is how view logic
+crosses a boundary while looking like data - amendments thirty-two and thirty-seven, in the other
+direction.
+
+**Dead CSS deleted:** `.about`, `.about__name`, `.about__version`. `about-update` carries its own
+copies in its own scoped stylesheet, so the page's had reached nothing since that component existed.
+They are the 3 selectors `quality:style-move` reports lost; the 1 gained is the host column above.
+The rendered check confirms the About block still draws.
+
+**A measurement of mine was wrong before it was right, and the tool was the reason.** The first
+light-theme reading said `select` kept its dark background while `.cap` changed - which would have
+been a real regression in the shared partial. It was the amendment twenty-three trap: `select`
+carries `transition: background`, and a property mid-transition reports the interpolated value.
+Re-measured with `transition: none` set inline, it reads `rgb(244, 244, 242)` with a
+`rgb(214, 214, 218)` border - correct. `--text-tertiary` resolves to `#726e64` in both themes, so the
+hint was never wrong either. Nothing was broken; the instrument was.
+
+Template **580 -> 214**, stylesheet **362 -> 71** plus the 164-line partial. The screen had **no spec
+at all**; it has 30 tests. The class is 575 -> 564 and stays over budget, which the migration is what
+fixes.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);

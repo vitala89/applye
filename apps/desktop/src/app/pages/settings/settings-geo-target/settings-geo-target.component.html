@@ -1,0 +1,82 @@
+<div class="field grow">
+  <span class="cap">{{ t()('settings.geo_scope_label') }}</span>
+  <div class="geo-chips" [class.geo-chips--muted]="marketModeActive()">
+    <label class="geo-chip" [class.geo-chip--on]="worldwideChecked()">
+      <input type="checkbox" [checked]="worldwideChecked()" (change)="worldwideSelected.emit()" />
+      {{ t()('settings.geo_worldwide') }}
+    </label>
+    @for (key of geoScopeKeys; track key) {
+      <label class="geo-chip" [class.geo-chip--on]="scopeChecked(key)">
+        <input type="checkbox" [checked]="scopeChecked(key)" (change)="scopeToggled.emit(key)" />
+        {{ t()('discover.region_' + key) }}
+      </label>
+    }
+  </div>
+  <p class="hint">
+    {{ marketModeActive() ? t()('settings.geo_scope_hint_muted') : t()('settings.geo_scope_hint') }}
+  </p>
+</div>
+<div class="field grow">
+  <span class="cap">{{ t()('settings.local_market_label') }}</span>
+  <div class="geo-chips">
+    @for (market of localMarkets; track market) {
+      <label class="geo-chip" [class.geo-chip--on]="marketChecked(market)">
+        <input
+          type="checkbox"
+          [checked]="marketChecked(market)"
+          (change)="marketToggled.emit(market)"
+        />
+        {{ t()('settings.local_market_' + market) }}
+      </label>
+    }
+  </div>
+  <p class="hint">{{ t()('settings.local_market_hint') }}</p>
+  @if (plan(); as p) {
+    <div
+      class="confirm"
+      role="alertdialog"
+      [attr.aria-label]="t()('settings.market_sources_title')"
+    >
+      <p class="confirm__q">{{ t()('settings.market_sources_title') }}</p>
+      @if (p.toEnable.length) {
+        <p class="market-plan__label">{{ t()('settings.market_sources_enable') }}</p>
+        <ul class="market-plan__list">
+          @for (s of p.toEnable; track s.id) {
+            <li>
+              {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
+            </li>
+          }
+        </ul>
+      }
+      @if (p.toDisable.length) {
+        <p class="market-plan__label">{{ t()('settings.market_sources_disable') }}</p>
+        <ul class="market-plan__list">
+          @for (s of p.toDisable; track s.id) {
+            <li>
+              {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
+            </li>
+          }
+        </ul>
+      }
+      <p class="hint">{{ t()('settings.market_sources_note') }}</p>
+      <div class="confirm__actions">
+        <button
+          class="btn btn--primary btn--md"
+          type="button"
+          [disabled]="applyingPlan()"
+          (click)="planApplied.emit()"
+        >
+          {{ t()('settings.market_sources_apply') }}
+        </button>
+        <button
+          class="btn btn--secondary btn--md"
+          type="button"
+          [disabled]="applyingPlan()"
+          (click)="planDismissed.emit()"
+        >
+          {{ t()('actions.cancel') }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

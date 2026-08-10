@@ -1,0 +1,82 @@
+@use '../settings-form';
+
+/* The page's `.section` is a flex column whose `gap` separated these two
+   `.field` blocks while they were its own children. They are one child's
+   content now, so the host reproduces that column and its gap - without this
+   the two rows sit flush and the screen reads as one undivided block. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.geo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.geo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-badge);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.geo-chip:hover {
+  border-color: var(--border-strong);
+}
+/* The checkbox inside is what actually takes focus, so the ring has to
+   be drawn by the label around it. */
+.geo-chip:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.geo-chip input {
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+.geo-chip--on {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--text-accent);
+}
+/* The row that is not the active geo mode. Muted rather than disabled:
+   clicking a chip here is how the user switches back, so it must stay
+   reachable by mouse and keyboard. The hint below it says as much. */
+.geo-chips--muted .geo-chip {
+  opacity: 0.45;
+}
+.geo-chips--muted .geo-chip:hover,
+.geo-chips--muted .geo-chip:has(:focus-visible) {
+  opacity: 1;
+}
+.market-plan__label {
+  margin: var(--space-4) 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.market-plan__list {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.market-plan__host {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}

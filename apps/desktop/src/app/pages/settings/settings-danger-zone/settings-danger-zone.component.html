@@ -1,0 +1,43 @@
+<p class="muted">
+  Everything Applye stores lives on this device. Deleting your data removes every job, application,
+  document, note and cache, clears your saved API keys, and starts you over at onboarding. This
+  cannot be undone.
+</p>
+@if (!confirming()) {
+  <button
+    class="btn btn--danger btn--md danger-btn"
+    type="button"
+    (click)="confirmingChanged.emit(true)"
+  >
+    <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+    Delete all data
+  </button>
+} @else {
+  <div class="confirm" role="alertdialog" aria-label="Confirm delete all data">
+    <p class="confirm__q">Delete everything and start over? This cannot be undone.</p>
+    <div class="confirm__actions">
+      <button
+        class="btn btn--danger-solid btn--md"
+        type="button"
+        [disabled]="resetting()"
+        (click)="resetConfirmed.emit()"
+      >
+        @if (resetting()) {
+          <lucide-icon [img]="icons.loader" [size]="16" class="spin" aria-hidden="true" />
+          Deleting…
+        } @else {
+          <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+          Yes, delete everything
+        }
+      </button>
+      <button
+        class="btn btn--secondary btn--md"
+        type="button"
+        [disabled]="resetting()"
+        (click)="confirmingChanged.emit(false)"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+}

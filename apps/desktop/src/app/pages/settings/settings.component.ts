@@ -7,27 +7,14 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  Check,
-  KeyRound,
-  LoaderCircle,
-  Moon,
-  RefreshCw,
-  Send,
-  Sun,
-  Trash2,
-  TriangleAlert,
-  LucideAngularModule,
-} from 'lucide-angular';
+import { Check, Moon, Send, Sun, LucideAngularModule } from 'lucide-angular';
 import { AiService, CliStatus, DbService, KeysService } from '@applye/data';
 import {
   AiProvider,
   encodeGeoScopes,
-  GEO_SCOPE_KEYS,
   GeoScopeKey,
   encodeLocalMarkets,
   LANGUAGE_NATIVE_NAMES,
-  LOCAL_MARKETS,
   LocalMarket,
   MarketSourcePlan,
   parseGeoScopes,
@@ -51,6 +38,11 @@ import {
   toggleRegion,
   worldwide,
 } from './geo-target.util';
+import { SettingsAiProviderComponent } from './settings-ai-provider/settings-ai-provider.component';
+import { SettingsApiKeyComponent } from './settings-api-key/settings-api-key.component';
+import { SettingsCliStatusComponent } from './settings-cli-status/settings-cli-status.component';
+import { SettingsDangerZoneComponent } from './settings-danger-zone/settings-danger-zone.component';
+import { SettingsGeoTargetComponent } from './settings-geo-target/settings-geo-target.component';
 
 const LANGUAGES: SupportedLanguage[] = ['en', 'de', 'ru', 'es', 'fr', 'uk'];
 
@@ -117,7 +109,17 @@ const CLI_MODELS: Record<string, string[]> = {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, HealthCheckPanelComponent, AboutUpdateComponent],
+  imports: [
+    FormsModule,
+    LucideAngularModule,
+    HealthCheckPanelComponent,
+    AboutUpdateComponent,
+    SettingsAiProviderComponent,
+    SettingsApiKeyComponent,
+    SettingsCliStatusComponent,
+    SettingsDangerZoneComponent,
+    SettingsGeoTargetComponent,
+  ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -133,16 +135,10 @@ export class SettingsComponent implements OnInit {
   protected readonly t = this.i18n.t;
 
   protected readonly icons = {
-    stored: Check,
     save: Check,
-    saveKey: KeyRound,
-    replace: RefreshCw,
-    remove: Trash2,
     send: Send,
-    missing: TriangleAlert,
     sun: Sun,
     moon: Moon,
-    loader: LoaderCircle,
   };
 
   readonly languages = LANGUAGES;
@@ -221,8 +217,6 @@ export class SettingsComponent implements OnInit {
   }
 
   // --- CLI model pickers ---
-  protected readonly CLI_MODEL_CUSTOM = CLI_MODEL_CUSTOM;
-
   /** Known model names for the selected CLI. Empty for a CLI that publishes no
    * readable list - the dropdown then offers the default and a custom field. */
   cliModels(): string[] {
@@ -378,30 +372,20 @@ export class SettingsComponent implements OnInit {
   // toggles) instead of waiting for the page's explicit Save button - this
   // setting drives live Discover scan behavior, so a choice here must take
   // effect right away even if the user never touches Save.
-  readonly geoScopeKeys = GEO_SCOPE_KEYS;
-  readonly localMarkets = LOCAL_MARKETS;
-
-  readonly geoScopeSelected = computed<ReadonlySet<GeoScopeKey>>(
+  /** Which chip is lit, and which row is muted, is derived from the same
+   * settings row inside `SettingsGeoTargetComponent`. Only what the page acts
+   * on stays here: the two selections a toggle is computed from, and the one
+   * check `setGeoWorldwide` needs to refuse a no-op. */
+  private readonly geoScopeSelected = computed<ReadonlySet<GeoScopeKey>>(
     () => new Set(parseGeoScopes(this.settings()?.geoScope)),
   );
 
-  readonly marketsSelected = computed<ReadonlySet<LocalMarket>>(
+  private readonly marketsSelected = computed<ReadonlySet<LocalMarket>>(
     () => new Set(parseLocalMarkets(this.settings()?.market)),
   );
 
-  /** True while local markets own the search, so the region row is inert. */
-  readonly marketModeActive = computed(() => this.marketsSelected().size > 0);
-
-  geoScopeChecked(key: GeoScopeKey): boolean {
-    return !this.marketModeActive() && this.geoScopeSelected().has(key);
-  }
-
-  geoWorldwideChecked(): boolean {
-    return !this.marketModeActive() && this.geoScopeSelected().size === 0;
-  }
-
-  marketChecked(market: LocalMarket): boolean {
-    return this.marketsSelected().has(market);
+  private geoWorldwideChecked(): boolean {
+    return this.marketsSelected().size === 0 && this.geoScopeSelected().size === 0;
   }
 
   /** Pending source changes for the market just picked, awaiting confirmation. */

@@ -1,0 +1,168 @@
+/**
+ * The Settings screen's form primitives.
+ *
+ * Angular scopes a component's styles to its own template, so a rule stops
+ * reaching the moment its markup moves into a child. These are the rules the
+ * page and its section components both need, and they live here instead of
+ * being copied five times.
+ *
+ * **This file is a dependency no template shows.** That is the trap ADR-0005
+ * amendments sixteen, twenty-one and twenty-two each hit from a different
+ * direction, so the consumers are listed here rather than left to be grepped:
+ *
+ *   settings.component.scss
+ *   settings-ai-provider/settings-ai-provider.component.scss
+ *   settings-cli-status/settings-cli-status.component.scss
+ *   settings-api-key/settings-api-key.component.scss
+ *   settings-geo-target/settings-geo-target.component.scss
+ *   settings-danger-zone/settings-danger-zone.component.scss
+ *
+ * Add a consumer to that list when you add a `@use`. Anything that is only
+ * ever used by one of them belongs in that component's own stylesheet, not
+ * here - this file grows only when a second consumer appears.
+ *
+ * `.section`, `.eyebrow` and `.settings` are deliberately absent: the section
+ * wrapper stays on the page, so a child never renders one.
+ */
+
+.row {
+  display: flex;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 220px;
+}
+.field.grow {
+  flex: 1;
+}
+.field.actions {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.cap {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+.muted {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: 0;
+  line-height: var(--leading-relaxed);
+  max-width: 64ch;
+}
+.disclosure {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  background: var(--warning-tint);
+  border: var(--border-width) solid color-mix(in srgb, var(--warning) 30%, transparent);
+  border-radius: var(--radius-input);
+  padding: var(--space-4) var(--space-5);
+  margin: 0;
+}
+.disclosure strong {
+  color: var(--text-primary);
+}
+
+input,
+select {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: var(--space-3) var(--space-4);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+input::placeholder {
+  color: var(--text-tertiary);
+}
+select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: var(--space-8);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - var(--space-4) - 5px) center,
+    calc(100% - var(--space-4)) center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+select:disabled {
+  background-image: none;
+}
+input:hover:not(:disabled),
+select:hover:not(:disabled) {
+  border-color: var(--border-strong, var(--text-tertiary));
+}
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-1);
+}
+
+.toggle {
+  display: inline-flex;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  width: fit-content;
+}
+.seg {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+}
+.seg--on {
+  background: var(--accent-tint);
+  color: var(--text-accent);
+}
+.seg lucide-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: var(--space-1);
+}
+
+/* The confirmation block: the geo target's "change your sources?" step and the
+   danger zone's "delete everything?" step render the same shape. */
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--danger-tint);
+  border: var(--border-width) solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: var(--radius-input);
+}
+.confirm__q {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+.confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

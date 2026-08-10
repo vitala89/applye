@@ -1,0 +1,45 @@
+<p class="muted">
+  @if (stored()) {
+    <strong
+      ><lucide-icon [img]="icons.stored" [size]="14" aria-hidden="true" /> Stored in your OS
+      keychain.</strong
+    >
+    You don't need to re-enter it - the field stays empty because the key is never read back to the
+    app. Type a new one only to replace it.
+  } @else {
+    Saved to your OS keychain, never written to disk or logs, and sent only to the chosen provider.
+  }
+</p>
+<div class="row">
+  <label class="field grow">
+    <span class="cap">{{ provider() }} {{ t()('settings.api_key_label') }}</span>
+    <input
+      type="password"
+      [ngModel]="draft()"
+      (ngModelChange)="draftChanged.emit($event)"
+      [ngModelOptions]="{ standalone: true }"
+      [placeholder]="stored() ? '•••••••••• (stored - type to replace)' : 'sk-ant-…'"
+      autocomplete="off"
+    />
+  </label>
+  <div class="field actions">
+    <button
+      class="btn btn--secondary btn--md"
+      [disabled]="busy() || !draft().trim()"
+      (click)="saveRequested.emit()"
+    >
+      <lucide-icon
+        [img]="stored() ? icons.replace : icons.saveKey"
+        [size]="16"
+        aria-hidden="true"
+      />
+      {{ stored() ? t()('settings.replace_key_btn') : t()('settings.save_key_btn') }}
+    </button>
+    @if (stored()) {
+      <button class="btn btn--danger btn--md" [disabled]="busy()" (click)="removeRequested.emit()">
+        <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
+        {{ t()('settings.remove_key_btn') }}
+      </button>
+    }
+  </div>
+</div>

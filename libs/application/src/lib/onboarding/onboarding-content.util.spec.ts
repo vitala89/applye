@@ -5,13 +5,15 @@ import {
   applyContactOverrides,
   hasCvForInputHash,
   cvToProfileMarkdown,
+  pickCvTemplate,
+  regionTagForUiLanguage,
+} from './onboarding-content.util';
+import {
   formatCompRange,
   normalizeCurrency,
   parseArchetypesSkillResponse,
   parseCompRange,
-  pickCvTemplate,
-  regionTagForUiLanguage,
-} from './onboarding-content.util';
+} from './onboarding-targeting.util';
 
 function template(id: number, regionTag: string): CvTemplate {
   return {

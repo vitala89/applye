@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AiService, DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
-import { OnboardingTargetingService } from '../onboarding-targeting.service';
+import { OnboardingTargetingStore } from '@applye/application';
 import { OnboardingTargetingStepComponent } from './onboarding-targeting-step.component';
 
 describe('OnboardingTargetingStepComponent', () => {
   let fixture: ComponentFixture<OnboardingTargetingStepComponent>;
-  let targeting: OnboardingTargetingService;
+  let targeting: OnboardingTargetingStore;
 
   function chips(): HTMLButtonElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.ob__role-chip'));
@@ -16,14 +16,14 @@ describe('OnboardingTargetingStepComponent', () => {
     TestBed.configureTestingModule({
       imports: [OnboardingTargetingStepComponent],
       providers: [
-        OnboardingTargetingService,
+        OnboardingTargetingStore,
         TranslateService,
         { provide: DbService, useValue: {} },
         { provide: AiService, useValue: {} },
       ],
     });
     fixture = TestBed.createComponent(OnboardingTargetingStepComponent);
-    targeting = TestBed.inject(OnboardingTargetingService);
+    targeting = TestBed.inject(OnboardingTargetingStore);
     fixture.detectChanges();
   });
 

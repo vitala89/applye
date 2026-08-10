@@ -1,9 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AiProvider } from '@applye/core';
 import { AiService, CliStatus } from '@applye/data';
-import { TranslateService } from '@applye/i18n';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { OnboardingAiKeyService } from './onboarding-ai-key.service';
+import { OnboardingAiKeyStore } from './onboarding-ai-key.store';
 import { CLI_SETUP_INFO, cardNameKey } from './onboarding-cli.util';
 
 /**
@@ -16,14 +14,16 @@ import { CLI_SETUP_INFO, cardNameKey } from './onboarding-cli.util';
  * wizard reads the result - `selectedCliWorks` feeds the Continue gate and the
  * Ready step's summary, and switching mode has to re-probe.
  *
- * The selected provider lives on `OnboardingAiKeyService`, because the provider
+ * The selected provider lives on `OnboardingAiKeyStore`, because the provider
  * grid above both panels sets it and both panels read it.
+ *
+ * Like its sibling it publishes i18n **keys**, not sentences, and it does not
+ * open URLs - the card does both.
  */
 @Injectable()
-export class OnboardingCliBridgeService {
+export class OnboardingCliBridgeStore {
   private readonly ai = inject(AiService);
-  private readonly t = inject(TranslateService).t;
-  private readonly aiKey = inject(OnboardingAiKeyService);
+  private readonly aiKey = inject(OnboardingAiKeyStore);
 
   readonly statuses = signal<CliStatus[]>([]);
   readonly probing = signal(false);
@@ -57,25 +57,25 @@ export class OnboardingCliBridgeService {
     const info = CLI_SETUP_INFO[provider];
     if (!info) return null;
     const status = this.statusFor(provider);
-    const name = this.t()(cardNameKey(provider, true));
+    const nameKey = cardNameKey(provider, true);
     if (status?.working) {
-      return { name, working: true, signInCommand: info.cmd, steps: [] };
+      return { nameKey, working: true, signInCommand: info.cmd, steps: [] };
     }
     return {
-      name,
+      nameKey,
       working: false,
       signInCommand: info.cmd,
       steps: [
         {
           n: 1,
-          text: this.t()(
-            status?.installed ? 'onboarding.ai.cli.step_repair' : 'onboarding.ai.cli.step_install',
-          ),
+          textKey: status?.installed
+            ? 'onboarding.ai.cli.step_repair'
+            : 'onboarding.ai.cli.step_install',
           command: `npm install -g ${info.pkg}`,
         },
         {
           n: 2,
-          text: this.t()('onboarding.ai.cli.step_signin'),
+          textKey: 'onboarding.ai.cli.step_signin',
           command: info.cmd,
         },
       ],
@@ -123,7 +123,8 @@ export class OnboardingCliBridgeService {
     }
   }
 
-  async openNodeSite(): Promise<void> {
-    await openUrl('https://nodejs.org');
-  }
+  /** Where a user without Node has to go before any of this can install. The
+   * store publishes the address; the card opens it, because opening a URL is a
+   * Tauri plugin call and no store makes one. */
+  readonly nodeDownloadUrl = 'https://nodejs.org';
 }

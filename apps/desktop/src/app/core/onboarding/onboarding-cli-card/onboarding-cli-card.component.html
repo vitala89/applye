@@ -60,7 +60,7 @@
           <span>{{ err.message }}</span>
         </div>
         @if (err.needsNode) {
-          <button type="button" class="ob__link-btn" (click)="cli.openNodeSite()">
+          <button type="button" class="ob__link-btn" (click)="openNodeSite()">
             <lucide-icon [img]="icons.externalLink" [size]="15" aria-hidden="true" />
             {{ t()('onboarding.ai.cli.get_node') }}
           </button>
@@ -80,20 +80,20 @@
         <div class="ob__cli-setup">
           @if (setup.working) {
             <p class="ob__cli-setup-text">
-              {{ t()('onboarding.ai.cli.ready_prefix') }} {{ setup.name }}.
+              {{ t()('onboarding.ai.cli.ready_prefix') }} {{ t()(setup.nameKey) }}.
               {{ t()('onboarding.ai.cli.ready_auth_hint') }}
               <code class="ob__cmd">{{ setup.signInCommand }}</code>
             </p>
           } @else {
             <p class="ob__cli-setup-title">
-              {{ t()('onboarding.ai.cli.setup_prefix') }} {{ setup.name }}
+              {{ t()('onboarding.ai.cli.setup_prefix') }} {{ t()(setup.nameKey) }}
             </p>
             <ol class="ob__steplist">
               @for (st of setup.steps; track st.n) {
                 <li class="ob__stepitem">
                   <span class="ob__stepitem-num">{{ st.n }}</span>
                   <span class="ob__stepitem-text">
-                    {{ st.text }}
+                    {{ t()(st.textKey) }}
                     <code class="ob__cmd">{{ st.command }}</code>
                   </span>
                 </li>

@@ -2292,6 +2292,75 @@ over until the migration. **The screen's 1210 lines of existing tests all still 
 1476 after, the 14 new ones covering the two step components. That the old tests pass unchanged
 against the new structure is the strongest evidence here that behaviour was preserved.
 
+## Amendment forty-four: the wizard's state, and the two things a layer boundary decided
+
+`onboarding` was the second-to-last entry in `COMPONENTS_STILL_USING_THE_GATEWAY`, and part one
+(amendment forty-three) had already taken the template and the stylesheet under budget so the
+migration would have room. This is that migration. **The allowlist is 2 -> 1; only `jobs` remains.**
+
+Seven stores now sit in `libs/application/src/lib/onboarding/`: the five that part one had already
+split out of the page, plus two the page had nowhere else to put.
+
+**`OnboardingAiSetupStore`** owns the mode, the settings the AI step writes, and the dispatch every
+other wizard store calls through. That dispatch carries the campaign's most expensive comment with
+it: the step's choices only reach the settings row on `finish()`, so reading `aiMode`/`provider` back
+from settings sent every in-wizard call to the pre-onboarding defaults, and a user who picked DeepSeek
+or CLI mode got "Couldn't parse that resume" from a provider that had no key. It injects
+`OnboardingAiKeyStore` and `OnboardingCliBridgeStore` rather than copying their signals
+(amendment fourteen), and it must **never** inject `SettingsStore` - which would reintroduce exactly
+that bug, and would no-op anyway, because `persist()` answers `false` until something calls `load()`
+and the wizard is an overlay that never does.
+
+**`OnboardingFinishStore`** owns the profile the wizard reads, must not destroy on a re-run, and
+writes back, plus the CV document it hands to Documents. `saveCvDocument` answers
+`saved | skipped | failed` instead of raising a toast: only `failed` is worth telling the user about,
+and only the page has anything to say it with (amendment fifteen).
+
+**Two decisions were made by the layer boundary, not by preference.** Neither was in the plan the
+maintainer confirmed; both were forced by what `libs/application` may import, and both were absorbed
+rather than escalated because the repository already had the seam for them.
+
+1. **`libs/application` has zero `@tauri-apps` imports.** `openConsole`, `openVideo` and
+   `openNodeSite` could not travel with the stores. The stores publish the address - `guide()
+.consoleUrl`, `nodeDownloadUrl` - and the cards open it. This is the same shape as the stores
+   publishing i18n keys rather than sentences: `providerSteps` became `{n, textKey}` and
+   `selectedSetup` gained `nameKey` in place of `name`, because neither store may inject
+   `TranslateService` either.
+2. **`onboarding-content.util.ts` imported `buildCvContent` from `apps/desktop`.** Moving it whole was
+   already confirmed; the import was not visible when it was. `buildOnboardingCvInput` now takes
+   `buildContent` as an argument, which is `CvCodec` (amendment six) applied a second time in the same
+   PR - `parseCvSkillResponse` was already going to be passed into `OnboardingResumeStore.parse` for
+   the same reason.
+
+**Two more things the gate decided.** The size gate caps **every** file under `libs/application` at
+250, not only `*.store.ts` - so `onboarding-content.util.ts` arrived at 289 and had to split. The seam
+is real rather than arithmetic: `onboarding-targeting.util.ts` holds the archetype and compensation
+helpers that serve step 4, and the rest serves the resume, the profile and the CV document. And
+`CLI_PROVIDERS` collided in the barrel with the one `settings/cli-bridge.ts` exports, so onboarding's
+is now `ONBOARDING_CLI_PROVIDERS`. **The duplication itself was deliberately left alone**: the two
+lists hold the same providers in different shapes, and reconciling them changes what the provider grid
+renders, which is a behaviour change and not a rider on a migration.
+
+**The template did not grow.** Rebinding it was a rename of identifiers, never of structure, so it
+stayed at 291/300 - nine lines from failing the gate, which is why the rule was checked before
+planning rather than after. `onboarding.component.ts` is **573 -> 312**.
+
+**The counters reconcile exactly.** desktop 1476 -> 1417, application 993 -> 1068: the 59 that left
+desktop arrived in application, and 16 of the new ones are genuinely new coverage for the two new
+stores. Two groups of tests deliberately did **not** move down. The `buildOnboardingCvInput` block
+asserts on `contentJson`, which only means anything against the real `buildCvContent` - passing a stub
+from a library spec would have left every one of those assertions proving nothing, so they live in
+`onboarding-cv-input.spec.ts` in `apps/desktop` instead, unchanged. And the five tests that call
+`saveProfile()` assert through the wizard's harness on a `DbService` mock; they reach the store through
+`fixture.debugElement.injector.get` like everything else the harness exposes, so their assertions moved
+zero characters.
+
+**The rendered check found nothing, and was still worth running.** Both AI cards translate their keys
+(no raw `onboarding.ai.*` reaches the DOM), the CLI setup card renders in both its working and its
+broken branch, the three resume tiles measure as one row by rectangle rather than by `top`, all four
+Ready summaries read correctly, and the console is clean. The reachability scan over all four
+onboarding stylesheets reports nothing stranded - no `.scss` was touched this time.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2362,7 +2431,8 @@ against the new structure is the strongest evidence here that behaviour was pres
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**2** entries - `onboarding` and `jobs`;
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**1** entry - `jobs`; `onboarding` came off in
+        amendment forty-four;
         first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway

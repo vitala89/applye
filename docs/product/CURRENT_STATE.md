@@ -59,9 +59,19 @@
   binds new code now; existing pages migrate **when touched for another reason**, which is the same
   trigger the budgets already use, so the two are **one stream of work**. **The boundary is enforced by
   lint as of ADR-0005 amendment four**: a `*.component.ts` injecting `DbService` is an error unless it
-  is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs`, a list of **26** that only
-  ever shrinks. The `type:data` allowlist flip is a separate, later goal - it keys on the project tag,
+  is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs`, a list of **1** that only
+  ever shrinks - `jobs.component.ts`, and nothing else. It started at 26. The `type:data` allowlist flip is a separate, later goal - it keys on the project tag,
   so it also bans the gateway from the app's 18 `shared/*` services.
+- **Onboarding is out of the gateway, and `jobs` is the only component left in the allowlist.** Seven
+  stores in `libs/application/src/lib/onboarding/` hold what the wizard's page class used to: the five
+  its steps already had, plus `OnboardingAiSetupStore` (the mode, the settings the AI step writes, and
+  the dispatch every other store calls through) and `OnboardingFinishStore` (the profile and the CV
+  document). `onboarding.component.ts` is **312/400**, down from 573; the template is unchanged at
+  291/300, because the rebind renamed identifiers and never structure. Two shapes were forced by the
+  layer boundary rather than chosen: `libs/application` has no `TranslateService` and no Tauri plugin,
+  so the stores publish i18n keys and URLs and the cards render and open them; and the parse and layout
+  helpers that stay in `apps/desktop` are passed in, the `CvCodec` seam. desktop 1476 -> 1417 tests,
+  application 993 -> 1068 - the 59 that left arrived, 16 are new (ADR-0005, amendment forty-four).
 - **All of Discover's state is in the application layer: four stores, and the page class no longer
   injects `DbService`.** `DiscoverDetailStore`, `DiscoverScanStore`, `DiscoverFeedStore` and
   `DiscoverProfileContextStore`, all component-scoped, all under the 250 budget, 78 tests between

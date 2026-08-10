@@ -12,13 +12,13 @@ import {
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
 import { ButtonDirective } from '@applye/ui';
-import { OnboardingResumeService, type ResumePath } from '../onboarding-resume.service';
+import { OnboardingResumeStore, type ResumePath } from '@applye/application';
 
 /**
  * Step 2 of the wizard: upload a resume, paste one, or skip.
  *
  * Built like `OnboardingCliCardComponent` and its siblings - it reads and
- * mutates `OnboardingResumeService` directly rather than taking inputs, because
+ * mutates `OnboardingResumeStore` directly rather than taking inputs, because
  * the wizard provides that service and reads the same signals back for its
  * Continue gate.
  *
@@ -35,7 +35,7 @@ import { OnboardingResumeService, type ResumePath } from '../onboarding-resume.s
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OnboardingResumeStepComponent {
-  protected readonly resume = inject(OnboardingResumeService);
+  protected readonly resume = inject(OnboardingResumeStore);
   protected readonly t = inject(TranslateService).t;
 
   /** Asks the wizard to open a file dialog and hand back a path. */

@@ -44,6 +44,81 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, Onboarding, part two: the migration, and two shapes the layer boundary chose
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/onboarding-stores`
+- **Commits:** two - the migration (`13bb56a`), then docs
+- **Pull request:** opened after the docs commit
+- **Objective:** move the onboarding wizard's state into `libs/application` and take
+  `COMPONENTS_STILL_USING_THE_GATEWAY` from **2 to 1**. Second of two; part one merged as `#410`.
+- **Triage:** 8/10 (radius 2 · ambiguity 2 · risk 1 · verify 2 · unknowns 1). Two grilling rounds,
+  six decisions. No subagents.
+- **Completed:**
+  - Seven stores in `libs/application/src/lib/onboarding/`: the five moved down and renamed, plus
+    `OnboardingAiSetupStore` (187) and `OnboardingFinishStore` (170), both new. Largest is 187/250.
+  - `onboarding.component.ts` **573 -> 312/400**. Template **unchanged at 291/300** - the rebind was a
+    rename of identifiers, never of structure, which was the plan precisely because there were nine
+    lines of headroom.
+  - Allowlist **2 -> 1**, counter updated in all four places.
+- **Two things the layer boundary decided, not me.** Neither was in the confirmed plan; both were
+  forced by what `libs/application` may import, and both were absorbed rather than re-escalated
+  because the repository already had the seam.
+  1. **`libs/application` has zero `@tauri-apps` imports.** `openConsole`, `openVideo` and
+     `openNodeSite` could not travel with the stores; the stores publish the address and the cards
+     open it. Same shape as the i18n strip: `providerSteps` is `{n, textKey}` and `selectedSetup`
+     carries `nameKey` instead of `name`.
+  2. **`onboarding-content.util.ts` imported `buildCvContent` from `apps/desktop`** - invisible when
+     moving it whole was confirmed. It takes `buildContent` as an argument now, which is `CvCodec`
+     applied a second time in the same PR.
+- **Two more the gates decided.** The size gate caps **every** file under `libs/application` at 250,
+  not only `*.store.ts`, so the util arrived at 289 and split at the targeting seam
+  (`onboarding-targeting.util.ts`, 68; the rest 230). And `CLI_PROVIDERS` collided in the barrel with
+  the one `settings/cli-bridge.ts` exports, so onboarding's is `ONBOARDING_CLI_PROVIDERS` - a rename,
+  with the duplication itself deliberately untouched.
+- **Two groups of tests deliberately did not move down**, and saying so is the point:
+  - The `buildOnboardingCvInput` block asserts on `contentJson`, which only means anything against the
+    real `buildCvContent`. Handing a stub to a library spec would have left every one of those
+    assertions proving nothing, so they are in `onboarding-cv-input.spec.ts` in `apps/desktop`,
+    unchanged.
+  - The five tests calling `saveProfile()` assert through the wizard's harness on a `DbService` mock.
+    They reach the store through `fixture.debugElement.injector.get`, so **their assertions moved zero
+    characters** - which is the evidence that behaviour was preserved.
+- **Counters reconcile exactly:** desktop **1476 -> 1417** (-59), application **993 -> 1068** (+75).
+  59 moved, 16 are new coverage for the two new stores.
+- **Files or packages changed:** `apps/desktop/src/app/core/onboarding/*` (page, harness, three specs,
+  two cards and their templates, four step components), `libs/application/src/lib/onboarding/*`
+  (12 files), `libs/application/src/index.ts`, `eslint.config.mjs`.
+- **Validation:** all run and observed. `nx run desktop:type-check` passed; `nx test desktop`
+  1417/1417; `nx test application` 1068/1068; `nx run-many --target=lint --projects=desktop,application
+--skip-nx-cache` 0 errors (8 pre-existing warnings); `nx build desktop` succeeded;
+  `quality:file-size` passed; `quality:attribution` passed; `format:check` passed; `git diff --check`
+  clean. **No `.scss` was touched**, so `check-style-move.mjs` had nothing to compare; the reachability
+  scan was run anyway over all four onboarding stylesheets and reported nothing stranded.
+- **Rendered check: run, and it found nothing.** Dev server on 4201, Tauri stubbed in the console and
+  removed in the same call. Verified: both AI cards translate their keys and no raw `onboarding.ai.*`
+  reaches the DOM; the CLI setup card renders in both its working and its broken branch; the three
+  resume tiles measure as one row **by rectangle, not by `top`**; the seed from settings picks up a
+  stored DeepSeek; switching to CLI mode correctly moves off a provider that mode cannot serve; all
+  four Ready summaries read correctly; console clean.
+- **Privacy/security impact:** none. No new data is read, written or sent; the same three settings
+  writes happen at the same three moments.
+- **Decisions and assumptions:** codec passed as a method argument, not moved and not a DI token; two
+  new stores rather than one or none; the content util moved whole; the CLI-constant duplication left
+  alone; the template rebind rename-only; tests split by what they drive; settings written through
+  `DbService` rather than `SettingsStore`, whose `persist()` answers `false` until `load()` has run and
+  the wizard never calls it. All six confirmed by the maintainer before any edit.
+- **Risks or compatibility impact:** the two AI cards' public shape changed (`text` -> `textKey`,
+  `name` -> `nameKey`). Both consumers are in this folder and both were updated and rendered.
+- **Open issues or blockers:** none from this session. New debt: **#9, `CLI_PROVIDERS` exists twice**
+  in `libs/application` in two shapes (`onboarding-cli.util.ts` and `settings/cli-bridge.ts`), as does
+  the API-provider list (`v1Providers` against `hasApi`). Reconciling them changes what the provider
+  grid renders, so it needs its own PR and its own rendered check.
+- **Next first action:** `jobs`, the last allowlist entry, and it wants its own grilling round.
+  1050/400 with a 686/300 template; migration alone will not bring it under budget, so the first part
+  is a template cut, as it was for Settings and for onboarding.
+
 ### 2026-08-10, Onboarding, part one: the extraction, and a regression only the screen showed
 
 - **Status:** complete

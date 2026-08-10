@@ -4,8 +4,14 @@ import { guideForProvider } from './provider-guides';
 /** Provider ids that have a usable CLI. `openai` is Codex - the app's provider
  * ids predate the CLI bridge. DeepSeek has no CLI and is API-only. Gemini is
  * absent on purpose: Google stopped Gemini CLI serving personal accounts on
- * 2026-06-18, so it cannot serve this mode (see ai/cli.rs). */
-export const CLI_PROVIDERS: readonly AiProvider[] = ['claude', 'openai'];
+ * 2026-06-18, so it cannot serve this mode (see ai/cli.rs).
+ *
+ * Prefixed because `settings/cli-bridge.ts` exports a `CLI_PROVIDERS` of its
+ * own - a list of `{id, label, command}` objects - and this layer's barrel
+ * re-exports both. The two lists hold the same providers by different shapes
+ * and should be reconciled, but that is a behaviour change, not a rider on a
+ * migration (see the debt list in `DUTY_WATCH.md`). */
+export const ONBOARDING_CLI_PROVIDERS: readonly AiProvider[] = ['claude', 'openai'];
 
 /** npm package and terminal command per CLI, for the setup instructions. */
 export const CLI_SETUP_INFO: Record<string, { pkg: string; cmd: string }> = {

@@ -1,13 +1,17 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
-import { OnboardingAiKeyService } from './onboarding-ai-key.service';
-import { OnboardingResumeService } from './onboarding-resume.service';
+import {
+  OnboardingAiKeyStore,
+  OnboardingFinishStore,
+  OnboardingResumeStore,
+} from '@applye/application';
 import { createOnboarding, parsedCv } from './onboarding.harness';
 
 describe('OnboardingComponent keys, profile and AI wiring', () => {
   let component: OnboardingComponent;
-  let aiKey: OnboardingAiKeyService;
-  let resume: OnboardingResumeService;
+  let aiKey: OnboardingAiKeyStore;
+  let resume: OnboardingResumeStore;
+  let finish: OnboardingFinishStore;
   let fixture: ComponentFixture<OnboardingComponent>;
   let upsertProfile: jest.Mock;
   let documentLibraryUpsert: jest.Mock;
@@ -22,6 +26,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
       fixture,
       aiKey,
       resume,
+      finish,
       upsertProfile,
       documentLibraryUpsert,
       updateSettings,
@@ -34,7 +39,7 @@ describe('OnboardingComponent keys, profile and AI wiring', () => {
     it('writes no profile at all', async () => {
       resume.path.set('skip');
 
-      await component.saveProfile();
+      await finish.saveProfile();
 
       expect(upsertProfile).not.toHaveBeenCalled();
     });

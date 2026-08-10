@@ -12,14 +12,15 @@ import {
   TriangleAlert,
 } from 'lucide-angular';
 import { TranslateService } from '@applye/i18n';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { ButtonDirective } from '@applye/ui';
-import { OnboardingAiKeyService } from '../onboarding-ai-key.service';
+import { OnboardingAiKeyStore } from '@applye/application';
 
 /**
  * The API-key panel of the onboarding AI step: where to get a key, the key
  * input and its save status, and the quality/economy model pickers.
  *
- * It reads and mutates `OnboardingAiKeyService` directly rather than taking
+ * It reads and mutates `OnboardingAiKeyStore` directly rather than taking
  * inputs and emitting outputs. The wizard provides that service and reads the
  * same signals back for its Continue gate and the settings it persists, so
  * routing every change through the parent would only split one flow in two.
@@ -32,8 +33,19 @@ import { OnboardingAiKeyService } from '../onboarding-ai-key.service';
   styleUrl: './onboarding-api-key-card.component.scss',
 })
 export class OnboardingApiKeyCardComponent {
-  protected readonly aiKey = inject(OnboardingAiKeyService);
+  protected readonly aiKey = inject(OnboardingAiKeyStore);
   protected readonly t = inject(TranslateService).t;
+
+  /** The store publishes the addresses; opening one is a Tauri plugin call, and
+   * `libs/application` makes none. */
+  protected async openConsole(): Promise<void> {
+    await openUrl(this.aiKey.guide().consoleUrl);
+  }
+
+  protected async openVideo(): Promise<void> {
+    const url = this.aiKey.guide().helpVideoUrl;
+    if (url) await openUrl(url);
+  }
 
   protected readonly icons = {
     badgeCheck: BadgeCheck,

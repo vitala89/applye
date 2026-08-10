@@ -1,0 +1,73 @@
+<div class="cli-status">
+  @if (probing()) {
+    <p class="muted">Looking for installed CLIs…</p>
+  } @else {
+    @for (c of statuses(); track c.provider) {
+      <p
+        class="cli-status__row"
+        [class.cli-status__row--missing]="!c.installed"
+        [class.cli-status__row--broken]="c.installed && !c.working"
+      >
+        <lucide-icon
+          [img]="c.working ? icons.stored : icons.missing"
+          [size]="14"
+          aria-hidden="true"
+        />
+        <strong>{{ c.label }}</strong>
+        @if (c.working) {
+          <span class="cli-status__version">{{ c.version }}</span>
+          <span class="cli-status__path">{{ c.path }}</span>
+        } @else if (c.installed) {
+          <!-- Found on the path but it will not run. The npm wrappers spawn a
+               platform binary that a partial install can leave missing, so this
+               state looks healthy to a file check and fails on first use. -->
+          <span class="cli-status__broken">{{ t()('settings.cli_found_but_broken') }}</span>
+          <button
+            class="btn btn--secondary btn--sm"
+            type="button"
+            [disabled]="installing() !== null"
+            (click)="installRequested.emit(c.provider)"
+          >
+            {{
+              installing() === c.provider
+                ? t()('settings.cli_installing')
+                : t()('settings.cli_repair_btn')
+            }}
+          </button>
+          @if (c.error) {
+            <span class="cli-status__error">{{ c.error }}</span>
+          }
+        } @else {
+          <span
+            >{{ t()('settings.cli_not_found') }} <code>{{ c.command }}</code></span
+          >
+          <button
+            class="btn btn--secondary btn--sm"
+            type="button"
+            [disabled]="installing() !== null"
+            (click)="installRequested.emit(c.provider)"
+          >
+            {{
+              installing() === c.provider
+                ? t()('settings.cli_installing')
+                : t()('settings.cli_install_btn')
+            }}
+          </button>
+        }
+      </p>
+    }
+  }
+  <button class="btn btn--ghost btn--sm" type="button" (click)="recheckRequested.emit()">
+    <lucide-icon [img]="icons.replace" [size]="14" aria-hidden="true" />
+    Re-check
+  </button>
+</div>
+
+<p class="disclosure" role="note">
+  <strong>Privacy note:</strong>
+  In CLI bridge mode Applye stores no API key. It runs the CLI you already installed and signed in
+  to yourself, as a one-shot process with a fixed argument list (never a shell), in a scratch folder
+  rather than your own files. The prompt still reaches that vendor's servers through their CLI - the
+  difference is that the account, the billing and the sign-in stay entirely yours. AI is always
+  opt-in: nothing runs until you trigger an action.
+</p>

@@ -9,303 +9,51 @@
       </button>
     </header>
 
-    <!-- AI provider + models -->
+    <!-- AI provider + models. The CLI status list is projected into the picker
+         because it belongs between the provider and the model row. -->
     <section class="section">
       <h3 class="eyebrow">{{ t()('settings.section_ai') }}</h3>
-
-      <label class="field">
-        <span class="cap">Mode</span>
-        <select
-          [ngModel]="s.aiMode"
-          (ngModelChange)="onModeChange($event)"
-          [ngModelOptions]="{ standalone: true }"
-        >
-          <option value="api">API (direct)</option>
-          <option value="cli">CLI bridge (use a CLI you already pay for)</option>
-        </select>
-      </label>
-
-      @if (isCliMode()) {
-        <label class="field">
-          <span class="cap">Provider</span>
-          <select
-            [ngModel]="s.provider"
-            (ngModelChange)="onProviderChange($event)"
-            [ngModelOptions]="{ standalone: true }"
-          >
-            @for (c of cliProviders; track c.id) {
-              <option [value]="c.id">{{ c.label }} ({{ c.command }})</option>
-            }
-          </select>
-        </label>
-      } @else {
-        <label class="field">
-          <span class="cap">Provider</span>
-          <select
-            [ngModel]="s.provider"
-            (ngModelChange)="onProviderChange($event)"
-            [ngModelOptions]="{ standalone: true }"
-          >
-            <!-- The two arms ai/api.rs has, and no more. OpenAI and
-                 Gemini sat here as disabled "(coming soon)" rows, which
-                 promised work that is not planned: OpenAI is reached
-                 through Codex in CLI mode, and Gemini has no path at all
-                 since Google withdrew its CLI for personal accounts. -->
-            <option value="claude">Claude (Anthropic)</option>
-            <option value="deepseek">DeepSeek</option>
-          </select>
-        </label>
-      }
-
-      @if (isCliMode()) {
-        <div class="cli-status">
-          @if (cliProbing()) {
-            <p class="muted">Looking for installed CLIs…</p>
-          } @else {
-            @for (c of cliStatuses(); track c.provider) {
-              <p
-                class="cli-status__row"
-                [class.cli-status__row--missing]="!c.installed"
-                [class.cli-status__row--broken]="c.installed && !c.working"
-              >
-                <lucide-icon
-                  [img]="c.working ? icons.stored : icons.missing"
-                  [size]="14"
-                  aria-hidden="true"
-                />
-                <strong>{{ c.label }}</strong>
-                @if (c.working) {
-                  <span class="cli-status__version">{{ c.version }}</span>
-                  <span class="cli-status__path">{{ c.path }}</span>
-                } @else if (c.installed) {
-                  <!-- Found on the path but it will not run. The npm
-                       wrappers spawn a platform binary that a partial
-                       install can leave missing, so this state looks
-                       healthy to a file check and fails on first use. -->
-                  <span class="cli-status__broken">
-                    {{ t()('settings.cli_found_but_broken') }}
-                  </span>
-                  <button
-                    class="btn btn--secondary btn--sm"
-                    type="button"
-                    [disabled]="installingCli() !== null"
-                    (click)="installCli(c.provider)"
-                  >
-                    {{
-                      installingCli() === c.provider
-                        ? t()('settings.cli_installing')
-                        : t()('settings.cli_repair_btn')
-                    }}
-                  </button>
-                  @if (c.error) {
-                    <span class="cli-status__error">{{ c.error }}</span>
-                  }
-                } @else {
-                  <span
-                    >{{ t()('settings.cli_not_found') }} <code>{{ c.command }}</code></span
-                  >
-                  <button
-                    class="btn btn--secondary btn--sm"
-                    type="button"
-                    [disabled]="installingCli() !== null"
-                    (click)="installCli(c.provider)"
-                  >
-                    {{
-                      installingCli() === c.provider
-                        ? t()('settings.cli_installing')
-                        : t()('settings.cli_install_btn')
-                    }}
-                  </button>
-                }
-              </p>
-            }
-          }
-          <button class="btn btn--ghost btn--sm" type="button" (click)="refreshCliProbe()">
-            <lucide-icon [img]="icons.replace" [size]="14" aria-hidden="true" />
-            Re-check
-          </button>
-        </div>
-
-        <p class="disclosure" role="note">
-          <strong>Privacy note:</strong>
-          In CLI bridge mode Applye stores no API key. It runs the CLI you already installed and
-          signed in to yourself, as a one-shot process with a fixed argument list (never a shell),
-          in a scratch folder rather than your own files. The prompt still reaches that vendor's
-          servers through their CLI - the difference is that the account, the billing and the
-          sign-in stay entirely yours. AI is always opt-in: nothing runs until you trigger an
-          action.
-        </p>
-      } @else if (s.provider) {
-        <p class="disclosure" role="note">
-          <strong>Privacy note:</strong>
-          @if (s.provider === 'deepseek') {
-            DeepSeek is a China-based cloud provider, so your data is processed under Chinese
-            jurisdiction; if you would rather avoid that, choose a different provider.
-          }
-          In API mode the job description and your profile text are sent to {{ vendorName() }}'s
-          servers to be processed, the same as any cloud API. Your API key is stored in the OS
-          keychain and never written to the local database or logs. AI is always opt-in: nothing is
-          sent until you trigger an action.
-        </p>
-      }
-
-      <div class="row">
+      <app-settings-ai-provider
+        [settings]="s"
+        [cliProviders]="cliProviders"
+        [apiModels]="models"
+        [cliModels]="cliModels()"
+        [customModel]="customModel()"
+        [defaultModelSelectValue]="modelSelectValue(s.defaultModel)"
+        [economyModelSelectValue]="modelSelectValue(s.economyModel)"
+        [vendorName]="vendorName()"
+        [tier]="tier()"
+        (modeChanged)="onModeChange($event)"
+        (providerChanged)="onProviderChange($event)"
+        (cliModelSelected)="onCliModelSelect($event.field, $event.choice)"
+        (fieldChanged)="patch($event.key, $event.value)"
+        (tierChanged)="tier.set($event)"
+      >
         @if (isCliMode()) {
-          <label class="field">
-            <span class="cap">{{ t()('settings.quality_model_label') }}</span>
-            <select
-              [ngModel]="modelSelectValue(s.defaultModel)"
-              (ngModelChange)="onCliModelSelect('defaultModel', $event)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              <option value="">{{ t()('settings.cli_model_default') }}</option>
-              @for (m of cliModels(); track m) {
-                <option [value]="m">{{ m }}</option>
-              }
-              <option [value]="CLI_MODEL_CUSTOM">
-                {{ t()('settings.cli_model_custom') }}
-              </option>
-            </select>
-            @if (customModel().defaultModel) {
-              <input
-                type="text"
-                [ngModel]="s.defaultModel"
-                (ngModelChange)="patch('defaultModel', $event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="t()('settings.cli_model_custom_placeholder')"
-              />
-            }
-          </label>
-          <label class="field">
-            <span class="cap">{{ t()('settings.economy_model_label') }}</span>
-            <select
-              [ngModel]="modelSelectValue(s.economyModel)"
-              (ngModelChange)="onCliModelSelect('economyModel', $event)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              <option value="">{{ t()('settings.cli_model_default') }}</option>
-              @for (m of cliModels(); track m) {
-                <option [value]="m">{{ m }}</option>
-              }
-              <option [value]="CLI_MODEL_CUSTOM">
-                {{ t()('settings.cli_model_custom') }}
-              </option>
-            </select>
-            @if (customModel().economyModel) {
-              <input
-                type="text"
-                [ngModel]="s.economyModel"
-                (ngModelChange)="patch('economyModel', $event)"
-                [ngModelOptions]="{ standalone: true }"
-                [placeholder]="t()('settings.cli_model_custom_placeholder')"
-              />
-            }
-          </label>
-        } @else {
-          <label class="field">
-            <span class="cap">{{ t()('settings.quality_model_label') }}</span>
-            <select
-              [ngModel]="s.defaultModel"
-              (ngModelChange)="patch('defaultModel', $event)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              @for (m of models; track m) {
-                <option [value]="m">{{ m }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
-            <span class="cap">{{ t()('settings.economy_model_label') }}</span>
-            <select
-              [ngModel]="s.economyModel"
-              (ngModelChange)="patch('economyModel', $event)"
-              [ngModelOptions]="{ standalone: true }"
-            >
-              @for (m of models; track m) {
-                <option [value]="m">{{ m }}</option>
-              }
-            </select>
-          </label>
+          <app-settings-cli-status
+            [statuses]="cliStatuses()"
+            [probing]="cliProbing()"
+            [installing]="installingCli()"
+            (installRequested)="installCli($event)"
+            (recheckRequested)="refreshCliProbe()"
+          />
         }
-      </div>
-      @if (isCliMode()) {
-        <p class="hint">{{ t()('settings.cli_model_hint') }}</p>
-      }
-
-      <div class="field">
-        <span class="cap">{{ t()('settings.test_tier_label') }}</span>
-        <div class="toggle" role="group">
-          <button
-            type="button"
-            class="seg"
-            [class.seg--on]="tier() === 'economy'"
-            (click)="tier.set('economy')"
-          >
-            {{ t()('settings.tier_economy') }}
-          </button>
-          <button
-            type="button"
-            class="seg"
-            [class.seg--on]="tier() === 'quality'"
-            (click)="tier.set('quality')"
-          >
-            {{ t()('settings.tier_quality') }}
-          </button>
-        </div>
-        <p class="hint">{{ t()('settings.test_tier_hint') }}</p>
-      </div>
+      </app-settings-ai-provider>
     </section>
 
     <!-- API key (keychain). CLI bridge mode never stores one. -->
     @if (!isCliMode()) {
       <section class="section">
         <h3 class="eyebrow">{{ t()('settings.section_key') }}</h3>
-        <p class="muted">
-          @if (keyStored()) {
-            <strong
-              ><lucide-icon [img]="icons.stored" [size]="14" aria-hidden="true" /> Stored in your OS
-              keychain.</strong
-            >
-            You don't need to re-enter it - the field stays empty because the key is never read back
-            to the app. Type a new one only to replace it.
-          } @else {
-            Saved to your OS keychain, never written to disk or logs, and sent only to the chosen
-            provider.
-          }
-        </p>
-        <div class="row">
-          <label class="field grow">
-            <span class="cap">{{ s.provider }} {{ t()('settings.api_key_label') }}</span>
-            <input
-              type="password"
-              [ngModel]="apiKeyInput()"
-              (ngModelChange)="apiKeyInput.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              [placeholder]="keyStored() ? '•••••••••• (stored - type to replace)' : 'sk-ant-…'"
-              autocomplete="off"
-            />
-          </label>
-          <div class="field actions">
-            <button
-              class="btn btn--secondary btn--md"
-              [disabled]="keyBusy() || !apiKeyInput().trim()"
-              (click)="saveKey()"
-            >
-              <lucide-icon
-                [img]="keyStored() ? icons.replace : icons.saveKey"
-                [size]="16"
-                aria-hidden="true"
-              />
-              {{ keyStored() ? t()('settings.replace_key_btn') : t()('settings.save_key_btn') }}
-            </button>
-            @if (keyStored()) {
-              <button class="btn btn--danger btn--md" [disabled]="keyBusy()" (click)="removeKey()">
-                <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
-                {{ t()('settings.remove_key_btn') }}
-              </button>
-            }
-          </div>
-        </div>
+        <app-settings-api-key
+          [provider]="s.provider"
+          [stored]="keyStored()"
+          [busy]="keyBusy()"
+          [draft]="apiKeyInput()"
+          (draftChanged)="apiKeyInput.set($event)"
+          (saveRequested)="saveKey()"
+          (removeRequested)="removeKey()"
+        />
       </section>
     }
 
@@ -369,102 +117,19 @@
       </div>
     </section>
 
-    <!-- Job search geo target: regions OR local markets, never both.
-         Whichever row the user touches becomes the active mode and clears
-         the other; the inactive row stays clickable so switching back is
-         one click, but is muted and says so. -->
+    <!-- Job search geo target: regions OR local markets, never both. -->
     <section class="section">
       <h3 class="eyebrow">{{ t()('settings.jobsearch_section') }}</h3>
-      <div class="field grow">
-        <span class="cap">{{ t()('settings.geo_scope_label') }}</span>
-        <div class="geo-chips" [class.geo-chips--muted]="marketModeActive()">
-          <label class="geo-chip" [class.geo-chip--on]="geoWorldwideChecked()">
-            <input type="checkbox" [checked]="geoWorldwideChecked()" (change)="setGeoWorldwide()" />
-            {{ t()('settings.geo_worldwide') }}
-          </label>
-          @for (key of geoScopeKeys; track key) {
-            <label class="geo-chip" [class.geo-chip--on]="geoScopeChecked(key)">
-              <input
-                type="checkbox"
-                [checked]="geoScopeChecked(key)"
-                (change)="toggleGeoScope(key)"
-              />
-              {{ t()('discover.region_' + key) }}
-            </label>
-          }
-        </div>
-        <p class="hint">
-          {{
-            marketModeActive()
-              ? t()('settings.geo_scope_hint_muted')
-              : t()('settings.geo_scope_hint')
-          }}
-        </p>
-      </div>
-      <div class="field grow">
-        <span class="cap">{{ t()('settings.local_market_label') }}</span>
-        <div class="geo-chips">
-          @for (market of localMarkets; track market) {
-            <label class="geo-chip" [class.geo-chip--on]="marketChecked(market)">
-              <input
-                type="checkbox"
-                [checked]="marketChecked(market)"
-                (change)="toggleMarket(market)"
-              />
-              {{ t()('settings.local_market_' + market) }}
-            </label>
-          }
-        </div>
-        <p class="hint">{{ t()('settings.local_market_hint') }}</p>
-        @if (marketPlan(); as plan) {
-          <div
-            class="confirm"
-            role="alertdialog"
-            [attr.aria-label]="t()('settings.market_sources_title')"
-          >
-            <p class="confirm__q">{{ t()('settings.market_sources_title') }}</p>
-            @if (plan.toEnable.length) {
-              <p class="market-plan__label">{{ t()('settings.market_sources_enable') }}</p>
-              <ul class="market-plan__list">
-                @for (s of plan.toEnable; track s.id) {
-                  <li>
-                    {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
-                  </li>
-                }
-              </ul>
-            }
-            @if (plan.toDisable.length) {
-              <p class="market-plan__label">{{ t()('settings.market_sources_disable') }}</p>
-              <ul class="market-plan__list">
-                @for (s of plan.toDisable; track s.id) {
-                  <li>
-                    {{ s.name }} <span class="market-plan__host">{{ s.host }}</span>
-                  </li>
-                }
-              </ul>
-            }
-            <p class="hint">{{ t()('settings.market_sources_note') }}</p>
-            <div class="confirm__actions">
-              <button
-                class="btn btn--primary btn--md"
-                type="button"
-                [disabled]="applyingPlan()"
-                (click)="applyMarketPlan()"
-              >
-                {{ t()('settings.market_sources_apply') }}
-              </button>
-              <button
-                class="btn btn--secondary btn--md"
-                type="button"
-                [disabled]="applyingPlan()"
-                (click)="dismissMarketPlan()"
-              >
-                {{ t()('actions.cancel') }}
-              </button>
-            </div>
-          </div>
-        }
-      </div>
+      <app-settings-geo-target
+        [settings]="s"
+        [plan]="marketPlan()"
+        [applyingPlan]="applyingPlan()"
+        (scopeToggled)="toggleGeoScope($event)"
+        (worldwideSelected)="setGeoWorldwide()"
+        (marketToggled)="toggleMarket($event)"
+        (planApplied)="applyMarketPlan()"
+        (planDismissed)="dismissMarketPlan()"
+      />
     </section>
 
     <!-- Follow-up reminders -->
@@ -531,9 +196,9 @@
       @if (testReply(); as reply) {
         <div class="reply">
           <p class="reply__text">{{ reply }}</p>
-          @if (testTokens(); as t) {
+          @if (testTokens(); as tok) {
             <p class="reply__tokens">
-              in {{ t.in }} · out {{ t.out }} · cached {{ t.cached }} tokens
+              in {{ tok.in }} · out {{ tok.out }} · cached {{ tok.cached }} tokens
             </p>
           }
         </div>
@@ -543,49 +208,12 @@
     <!-- Danger zone: delete all data -->
     <section class="section section--danger">
       <h3 class="eyebrow eyebrow--danger">Data</h3>
-      <p class="muted">
-        Everything Applye stores lives on this device. Deleting your data removes every job,
-        application, document, note and cache, clears your saved API keys, and starts you over at
-        onboarding. This cannot be undone.
-      </p>
-      @if (!confirmingReset()) {
-        <button
-          class="btn btn--danger btn--md danger-btn"
-          type="button"
-          (click)="confirmingReset.set(true)"
-        >
-          <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
-          Delete all data
-        </button>
-      } @else {
-        <div class="confirm" role="alertdialog" aria-label="Confirm delete all data">
-          <p class="confirm__q">Delete everything and start over? This cannot be undone.</p>
-          <div class="confirm__actions">
-            <button
-              class="btn btn--danger-solid btn--md"
-              type="button"
-              [disabled]="resetting()"
-              (click)="resetAllData()"
-            >
-              @if (resetting()) {
-                <lucide-icon [img]="icons.loader" [size]="16" class="spin" aria-hidden="true" />
-                Deleting…
-              } @else {
-                <lucide-icon [img]="icons.remove" [size]="16" aria-hidden="true" />
-                Yes, delete everything
-              }
-            </button>
-            <button
-              class="btn btn--secondary btn--md"
-              type="button"
-              [disabled]="resetting()"
-              (click)="confirmingReset.set(false)"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      }
+      <app-settings-danger-zone
+        [confirming]="confirmingReset()"
+        [resetting]="resetting()"
+        (confirmingChanged)="confirmingReset.set($event)"
+        (resetConfirmed)="resetAllData()"
+      />
     </section>
 
     <!-- About -->

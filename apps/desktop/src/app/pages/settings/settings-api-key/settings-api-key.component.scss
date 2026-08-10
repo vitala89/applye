@@ -1,0 +1,9 @@
+@use '../settings-form';
+
+/* The explanatory paragraph and the field row were two of `.section`'s own
+   children, separated by its `gap`. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}

@@ -1,0 +1,36 @@
+@use '../settings-form';
+
+/* The paragraph and the trigger were two of `.section`'s own children,
+   separated by its `gap`. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.danger-btn {
+  align-self: flex-start;
+}
+/* Solid, high-commitment destructive button - the confirm step earns the
+   weight the resting "Delete all data" trigger deliberately withholds. */
+.btn--danger-solid {
+  background: var(--danger);
+  color: var(--white, #fff);
+  border: none;
+}
+.btn--danger-solid:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 84%, black);
+}
+.spin {
+  animation: settings-spin 0.7s linear infinite;
+}
+@keyframes settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

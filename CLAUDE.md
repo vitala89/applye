@@ -55,7 +55,7 @@ Three things a new session must know before writing code:
    the same trigger as the file-size budgets, and one stream of work with them.
 2. **Lint enforces it now, for components.** A `*.component.ts` file that injects `DbService` fails the
    build unless it is named in `COMPONENTS_STILL_USING_THE_GATEWAY` in `eslint.config.mjs` - a list of
-   5 that only ever shrinks. Never add an entry; delete yours when you migrate a page. `type:data`
+   4 that only ever shrinks. Never add an entry; delete yours when you migrate a page. `type:data`
    stays in `type:app`'s allowlist and leaves only when the app's `shared/*` services have moved too,
    which is a separate and larger job (ADR-0005, amendment four).
 3. **Changing the shape of the layer goes through the `aif-grilling` skill**, like any other `libs/`

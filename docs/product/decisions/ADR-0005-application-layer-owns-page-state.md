@@ -2040,6 +2040,72 @@ the check - `/documents/cover-letters` does not exist - not from the page.
 
 The component fell **283 -> 127** lines; the stores are 140 and 156, the filename module 19.
 
+## Amendment forty: three stores, and a refusal that pays for itself
+
+`cv-list` is the same document-library shape as `cover-letter-list`, with a third feature bolted on -
+importing a CV the user already has. Allowlist **4 -> 3**. The component fell **386 -> 180**; the
+stores are 150, 152 and 189, all inside the 250 budget without a pure module being needed.
+
+**Three stores rather than two, decided before writing any of them.** The library, the import flow and
+the baseline generator are three concerns, and the two-store reading - import and generate share a
+modal-config shape, so fold them - was rejected on the estimate: it lands at 230 to 260 lines, at or
+over budget, and this campaign has already been wrong about a store's size twice in the optimistic
+direction. The split cost three files and three specs and bought three stores nobody has to argue
+about later.
+
+**The screen loads once.** `CvListStore` holds the templates and both job lists, and the other two
+stores take them as method arguments. The alternative - each store fetching what it needs - was
+refused for a reason that is not performance: two stores holding independently-fetched template lists
+can disagree after a change, and nothing on screen would say which one is stale.
+
+**`CvGenerateStore` owns the job link.** Generating a CV against a tracked job writes
+`upsertApplication` in the same call rather than leaving the page to do it afterwards. This is the
+first store in the campaign to own a write that is not "its own" data, and the reason is the failure
+mode: a forgotten second step produces an unlinked CV that looks exactly like a linked one, so the
+mistake is invisible until someone goes looking for it. Three tests pin it, including the case where
+the job has no application row yet and there is deliberately nothing to attach to.
+
+**`CvImportStore` answers `'existing'` from the hash, before the model is called.** Re-picking a file
+already in the library costs one file read rather than a second paid parse. The store needs the
+document list to decide, which is one more argument, and that was the cheaper of the two readings:
+the alternative splits the flow into read-file, decide, then parse, turning one store call into two
+for no gain.
+
+**The codec is passed in, and `cv-parse.util.ts` was left where it is.** It qualifies for the
+"move down whole with its spec" branch - it is pure and imports only `@applye/core` - and it was still
+refused, because rewiring its six importers pulls `onboarding.component.ts` and `cv-draft.service.ts`
+into a page migration, and both are themselves pending. `cv-content.util.ts` never had the option:
+596 lines against a 400 budget, 40 files touching it, and already split once because the size gate
+refused the merged version.
+
+**`suggestCvFilename` moved** to `cv-filename.ts` beside its cover-letter twin, with the six tests it
+never had. `cv-content.util.ts` fell 621 -> 596 as a side effect, which is what the ratchet wants from
+a file that was touched.
+
+**One dead signal deleted.** `generateStep` was written twice and read in no file, including the
+template - the same shape as the dead `aiMode` in amendment thirty-five, found by the same grep, which
+has now paid for itself twice.
+
+**One outcome that maps to the same sentence, kept anyway.** `bad-json` and `failed` both toast the
+store's `error` on this page, because `parseCvSkillResponse` already produces a specific message and
+inventing a second English string would have added to a debt this campaign is already carrying. The
+outcomes stay apart because "the model lied" and "the database refused" are different problems for the
+next caller, even where this page has nothing different to say about them.
+
+**Rendered check, list and both modals.** Without Tauri the load fails correctly: `loadError` set, the
+error text carried, and the page toasting it - and `openGenerate` still opens its modal on unreadable
+defaults while reporting, which is the behaviour the store's `start` was written for. Under a
+temporary `__TAURI_INTERNALS__` stub, installed in the console and deleted in the same call, the list
+drew both documents with `Acme · Engineer` on the linked one; generate returned id 42, closed the
+modal and wrote `db_upsert_application`; import answered `existing` with id 9 and no `ai_run` call on
+a known hash, then `parsed` -> preview -> `saved` -> the done panel on a fresh one.
+
+**One thing to be honest about:** the template went 283 -> **285** after prettier, on a 300 budget.
+The gate passed and the touched set is strongly negative overall (component -206, `cv-content.util.ts`
+-25), but the ratchet's own words are that a touched file shrinks. The two lines are prettier wrapping
+the delete modal's buttons now that their bindings carry a `list.` prefix. The next change to this
+template cuts.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2110,7 +2176,8 @@ The component fell **283 -> 127** lines; the stores are 140 and 156, the filenam
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**4** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**3** entries - `onboarding`, `jobs`, `settings`;
+        first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

@@ -44,6 +44,73 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, the CV library, and the first store that owns someone else's write
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/cv-list-store`
+- **Commits:** two - the migration (`782a58c`), then docs
+- **Pull request:** opened after the docs commit
+- **Objective:** eighth migration of this campaign, after #406 merged as `54a978e`. `cv-list`,
+  chosen because it is the cover-letter library's shape with a third feature attached and the
+  densest remaining entry at 20 gateway calls.
+- **Triage:** 8/10 (radius 2 · ambiguity 2 · risk 1 · verify 2 · unknowns 1). Ambiguity 2 and
+  radius 2 on `libs/application` both required the grilling gate; it ran two rounds, seven
+  decisions, and no file was edited before they were confirmed.
+- **Completed:**
+  - `CvListStore` (150), `CvImportStore` (152) and `CvGenerateStore` (189) in `documents/`, plus
+    `cv-codec.ts` (25) and `cv-filename.ts` (38). Component **386 -> 180**.
+  - `suggestCvFilename` moved out of `cv-content.util.ts`, which fell **621 -> 596** against 400.
+  - `generateStep` and its type deleted - written twice, read in no file including the template.
+  - `cv-list.component.ts` removed from `COMPONENTS_STILL_USING_THE_GATEWAY`, **4 -> 3**.
+  - 46 tests added in `application`; **0 removed from `desktop`**, because `cv-list` never had a
+    spec. `application` 875 -> 921, `desktop` 1451 unchanged.
+- **Not completed:** nothing in scope. `onboarding`, `settings` and `jobs` remain.
+- **Files or packages changed:** `libs/application` (5 new modules, 4 new specs, `index.ts`),
+  `apps/desktop` (`cv-list.component.ts`/`.html`, `cv-content.util.ts`), `eslint.config.mjs`,
+  `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `ADR-0005`, `CHANGELOG.md`,
+  `docs/product/CURRENT_STATE.md`, this file.
+- **Validation:** all run and observed. `nx test application` 921/921, `nx test desktop` 1451/1451,
+  `nx lint desktop,application` 0 errors (8 pre-existing warnings), `nx build desktop` succeeded,
+  `npm run quality:file-size` passed, `npm run quality:attribution` passed, `npm run format:check`
+  passed after prettier rewrote two files, `git diff --check` clean. No `.scss` was touched, so
+  `check-style-move.mjs` did not apply.
+- **Rendered check:** run, list and both modals. Without Tauri the load fails correctly - `loadError`
+  set, the message carried, the page toasting it - and `openGenerate` still opens its modal on
+  unreadable defaults, which is what `start` returning `false` rather than refusing was written for.
+  Under a temporary console-only `__TAURI_INTERNALS__` stub, deleted in the same call and never
+  committed: the list drew both rows with `Acme · Engineer` on the linked one, generate returned id
+  42 and wrote `db_upsert_application`, import answered `existing` with id 9 and **no `ai_run` call**
+  on a known hash, then `parsed` -> preview (4 fields) -> `saved` -> the done panel on a fresh one.
+  The only console error came from `cv-detail`, the route generate navigates to.
+- **Privacy/security impact:** none. No new storage, no new IPC command, no new external call; the
+  same four reads and three writes, moved.
+- **Decisions and assumptions:** seven, all confirmed by the maintainer before any edit.
+  1. Three stores, not one or two - the two-store fold estimates at 230-260 against a 250 budget.
+  2. Codec argument for `parseCvSkillResponse`, `buildCvContent` and `cleanJsonText`.
+     `cv-parse.util.ts` qualifies to move down whole and was still left in place, because rewiring
+     its six importers pulls `onboarding` and `cv-draft.service.ts` into a page migration.
+  3. Dead `generateStep` deleted here rather than filed.
+  4. `suggestCvFilename` moved beside its cover-letter twin.
+  5. `CvListStore` owns the shared templates and job lists; the other two take them as arguments.
+  6. `CvGenerateStore` owns the job-linking write.
+  7. `CvImportStore` owns the dedupe decision and answers `'existing'`.
+- **Risks or compatibility impact:** one behaviour change, named: the missing-profile case used to
+  be a `throw new Error(translatedString)` from inside the page and is an outcome now. The sentence
+  the user sees is the same key. Nothing else on this screen changed shape.
+- **Open issues or blockers:**
+  - **The template went 283 -> 285** on a 300 budget - prettier wrapping the delete modal's buttons
+    now that their bindings carry a `list.` prefix. The gate passed and the touched set is strongly
+    negative overall, but the ratchet's rule is that a touched file shrinks. The next change here cuts.
+  - **Two hardcoded English strings** in this screen, both pre-existing and deliberately not fixed
+    inside a migration PR: the job select's `-- General Application / None --` option, and the
+    `'Job'` company fallback in the generated document's label. Same shape as the My Jobs import
+    strings already on the debt list.
+- **Next first action:** migrate `settings.component.ts` (575 lines, 10 gateway calls) - the next
+  entry by size, and the last one before the two that need decomposition rather than migration.
+  `onboarding` (738) after it; `jobs` (1050/400 with a 686/300 template) needs its own session and
+  its own grilling round, as this ADR has already recorded twice.
+
 ### 2026-08-10, the cover-letter library, and two neighbours that answer differently on purpose
 
 - **Status:** complete

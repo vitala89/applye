@@ -370,34 +370,9 @@ export function mergeRegeneratedSection(
   return { sections };
 }
 
-/** Filename convention (ROADMAP §16.6) - DE follows the market convention
- * `Lastname_Vorname_Lebenslauf.ext` when a full name is available; every
- * other region/fallback case is a plain slug of the label. Not a full
- * `market-conventions/{region}.json` config yet - that's future growth
- * once a third consumer needs it (§16.2), 0 tokens either way. */
-export function suggestCvFilename(
-  item: { label?: string; regionTag?: string; contentJson?: string },
-  format: string,
-): string {
-  if ((item.regionTag ?? '').toLowerCase() === 'de' && item.contentJson) {
-    try {
-      const content = JSON.parse(item.contentJson) as CvContent;
-      const personal = content.sections.find(
-        (s): s is Extract<CvSection, { key: 'personal_details' }> => s.key === 'personal_details',
-      );
-      const parts = (personal?.fullName ?? '').trim().split(/\s+/).filter(Boolean);
-      if (parts.length >= 2) {
-        const nachname = parts[parts.length - 1];
-        const vorname = parts.slice(0, -1).join('_');
-        return `${nachname}_${vorname}_Lebenslauf.${format}`;
-      }
-    } catch {
-      // fall through to the generic slug below
-    }
-  }
-  const slug = (item.label ?? 'cv').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-  return `${slug}.${format}`;
-}
+// `suggestCvFilename` moved to `@applye/application` (`cv-filename.ts`), next to
+// its cover-letter twin: the save dialog belongs to the page, but the name it
+// proposes is a document fact, and this file was 652 lines against a 400 budget.
 
 /** Converts a structured CV back into markdown so it can be passed to
  * the AI tailoring skill as a baseline profile. */

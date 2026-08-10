@@ -1,7 +1,7 @@
 <div class="cvlist">
   <header class="cvlist__bar">
     <div class="cvlist__actions">
-      <button appButton variant="secondary" size="sm" (click)="openImport()">
+      <button appButton variant="secondary" size="sm" (click)="imp.start()">
         <lucide-icon [img]="icons.upload" [size]="14" aria-hidden="true" />
         {{ t()('documents.cv_import_action') }}
       </button>
@@ -12,15 +12,15 @@
     </div>
   </header>
 
-  @if (loading()) {
+  @if (list.loading()) {
     <p class="cvlist__state">{{ t()('common.loading') }}</p>
-  } @else if (loadError()) {
+  } @else if (list.loadError()) {
     <p class="cvlist__state">{{ t()('common.error') }}</p>
-  } @else if (!hasCvs()) {
+  } @else if (!list.hasCvs()) {
     <p class="cvlist__state">{{ t()('documents.cv_empty') }}</p>
   } @else {
     <ul class="cvlist__rows">
-      @for (item of cvs(); track item.id) {
+      @for (item of list.cvs(); track item.id) {
         <li
           class="cvlist__row"
           role="button"
@@ -50,7 +50,7 @@
             </div>
           </div>
           <app-document-row-actions
-            [exportBusy]="exportBusyId() === item.id"
+            [exportBusy]="list.exportBusyId() === item.id"
             (duplicated)="duplicate(item, $event)"
             (deleted)="requestDelete(item, $event)"
             (exported)="exportDoc(item, $event.format, $event.event)"
@@ -61,11 +61,11 @@
   }
 </div>
 
-@if (deleteTarget(); as target) {
+@if (list.deleteTarget(); as target) {
   <div
     class="modal-backdrop"
     (click)="onDeleteBackdropClick($event)"
-    (keydown.escape)="cancelDelete()"
+    (keydown.escape)="list.cancelDelete()"
     tabindex="-1"
     role="presentation"
   >
@@ -79,22 +79,30 @@
       <p class="modal__hint">{{ t()('documents.cv_delete_confirm_msg') }}</p>
       <p class="cell-strong">{{ target.label || t()('documents.cv_untitled') }}</p>
       <div class="modal__actions">
-        <button class="btn btn--secondary btn--md" [disabled]="deleting()" (click)="cancelDelete()">
+        <button
+          class="btn btn--secondary btn--md"
+          [disabled]="list.deleting()"
+          (click)="list.cancelDelete()"
+        >
           {{ t()('actions.cancel') }}
         </button>
-        <button class="btn btn--danger btn--md" [disabled]="deleting()" (click)="confirmDelete()">
-          {{ deleting() ? t()('common.loading') : t()('documents.cv_delete_confirm_btn') }}
+        <button
+          class="btn btn--danger btn--md"
+          [disabled]="list.deleting()"
+          (click)="confirmDelete()"
+        >
+          {{ list.deleting() ? t()('common.loading') : t()('documents.cv_delete_confirm_btn') }}
         </button>
       </div>
     </div>
   </div>
 }
 
-@if (importOpen()) {
+@if (imp.open()) {
   <div
     class="modal-backdrop"
-    (click)="cancelImport()"
-    (keydown.escape)="cancelImport()"
+    (click)="imp.cancel()"
+    (keydown.escape)="imp.cancel()"
     tabindex="-1"
     role="presentation"
   >
@@ -107,36 +115,30 @@
     >
       <h3>{{ t()('documents.cv_import_title') }}</h3>
 
-      @if (importStep() === 'pick') {
+      @if (imp.step() === 'pick') {
         <p class="modal__hint">{{ t()('documents.cv_import_hint') }}</p>
-        @if (importError()) {
-          <p class="modal__error">{{ importError() }}</p>
+        @if (imp.error()) {
+          <p class="modal__error">{{ imp.error() }}</p>
         }
         <div class="modal__actions">
-          <button class="btn-ghost" (click)="cancelImport()">{{ t()('actions.cancel') }}</button>
-          <button class="btn-primary" [disabled]="importBusy()" (click)="pickAndParse()">
+          <button class="btn-ghost" (click)="imp.cancel()">{{ t()('actions.cancel') }}</button>
+          <button class="btn-primary" [disabled]="imp.busy()" (click)="pickAndParse()">
             {{
-              importBusy()
-                ? t()('documents.cv_import_parsing')
-                : t()('documents.cv_import_pick_file')
+              imp.busy() ? t()('documents.cv_import_parsing') : t()('documents.cv_import_pick_file')
             }}
           </button>
         </div>
       }
 
-      @if (importStep() === 'preview' && importParsed(); as parsed) {
+      @if (imp.step() === 'preview' && imp.parsed(); as parsed) {
         <div class="cvform">
           <label>
             {{ t()('documents.cv_field_label') }}
-            <input
-              type="text"
-              [ngModel]="importLabel()"
-              (ngModelChange)="importLabel.set($event)"
-            />
+            <input type="text" [ngModel]="imp.label()" (ngModelChange)="imp.label.set($event)" />
           </label>
           <label>
             {{ t()('documents.cv_field_region') }}
-            <select [ngModel]="importRegionTag()" (ngModelChange)="importRegionTag.set($event)">
+            <select [ngModel]="imp.regionTag()" (ngModelChange)="imp.regionTag.set($event)">
               @for (r of regionTags; track r) {
                 <option [value]="r">{{ r.toUpperCase() }}</option>
               }
@@ -144,7 +146,7 @@
           </label>
           <label>
             {{ t()('documents.cv_field_language') }}
-            <select [ngModel]="importLanguage()" (ngModelChange)="importLanguage.set($event)">
+            <select [ngModel]="imp.language()" (ngModelChange)="imp.language.set($event)">
               @for (l of languages; track l) {
                 <option [value]="l">{{ l.toUpperCase() }}</option>
               }
@@ -153,10 +155,10 @@
           <label>
             {{ t()('documents.cv_field_template') }}
             <select
-              [ngModel]="importTemplateId()"
-              (ngModelChange)="importTemplateId.set($event === '' ? null : +$event)"
+              [ngModel]="imp.templateId()"
+              (ngModelChange)="imp.templateId.set($event === '' ? null : +$event)"
             >
-              @for (tpl of templates(); track tpl.id) {
+              @for (tpl of list.templates(); track tpl.id) {
                 <option [value]="tpl.id">{{ tpl.name }}</option>
               }
             </select>
@@ -179,32 +181,32 @@
           }
         </div>
 
-        @if (importError()) {
-          <p class="modal__error">{{ importError() }}</p>
+        @if (imp.error()) {
+          <p class="modal__error">{{ imp.error() }}</p>
         }
         <div class="modal__actions">
-          <button class="btn-ghost" (click)="cancelImport()">{{ t()('actions.cancel') }}</button>
-          <button class="btn-primary" [disabled]="importBusy()" (click)="confirmImport()">
-            {{ importBusy() ? t()('common.loading') : t()('documents.cv_import_confirm_btn') }}
+          <button class="btn-ghost" (click)="imp.cancel()">{{ t()('actions.cancel') }}</button>
+          <button class="btn-primary" [disabled]="imp.busy()" (click)="confirmImport()">
+            {{ imp.busy() ? t()('common.loading') : t()('documents.cv_import_confirm_btn') }}
           </button>
         </div>
       }
 
-      @if (importStep() === 'done') {
+      @if (imp.step() === 'done') {
         <p class="modal__hint">{{ t()('documents.cv_import_done') }}</p>
         <div class="modal__actions">
-          <button class="btn-primary" (click)="cancelImport()">{{ t()('actions.close') }}</button>
+          <button class="btn-primary" (click)="imp.cancel()">{{ t()('actions.close') }}</button>
         </div>
       }
     </div>
   </div>
 }
 
-@if (generateOpen()) {
+@if (gen.open()) {
   <div
     class="modal-backdrop"
-    (click)="cancelGenerate()"
-    (keydown.escape)="cancelGenerate()"
+    (click)="gen.cancel()"
+    (keydown.escape)="gen.cancel()"
     tabindex="-1"
     role="presentation"
   >
@@ -221,7 +223,7 @@
       <div class="cvform">
         <label>
           {{ t()('documents.cv_field_region') }}
-          <select [ngModel]="generateRegionTag()" (ngModelChange)="generateRegionTag.set($event)">
+          <select [ngModel]="gen.regionTag()" (ngModelChange)="gen.regionTag.set($event)">
             @for (r of regionTags; track r) {
               <option [value]="r">{{ r.toUpperCase() }}</option>
             }
@@ -231,14 +233,14 @@
           {{ t()('documents.cv_field_archetype') }}
           <input
             type="text"
-            [ngModel]="generateArchetypeTag()"
-            (ngModelChange)="generateArchetypeTag.set($event)"
+            [ngModel]="gen.archetypeTag()"
+            (ngModelChange)="gen.archetypeTag.set($event)"
             [placeholder]="t()('documents.cv_field_archetype_placeholder')"
           />
         </label>
         <label>
           {{ t()('documents.cv_field_language') }}
-          <select [ngModel]="generateLanguage()" (ngModelChange)="generateLanguage.set($event)">
+          <select [ngModel]="gen.language()" (ngModelChange)="gen.language.set($event)">
             @for (l of languages; track l) {
               <option [value]="l">{{ l.toUpperCase() }}</option>
             }
@@ -247,10 +249,10 @@
         <label>
           {{ t()('documents.cv_field_template') }}
           <select
-            [ngModel]="generateTemplateId()"
-            (ngModelChange)="generateTemplateId.set($event === '' ? null : +$event)"
+            [ngModel]="gen.templateId()"
+            (ngModelChange)="gen.templateId.set($event === '' ? null : +$event)"
           >
-            @for (tpl of templates(); track tpl.id) {
+            @for (tpl of list.templates(); track tpl.id) {
               <option [value]="tpl.id">{{ tpl.name }}</option>
             }
           </select>
@@ -258,11 +260,11 @@
         <label class="cvform__full-width">
           {{ t()('documents.cv_field_job') }}
           <select
-            [ngModel]="selectedJobId()"
-            (ngModelChange)="selectedJobId.set($event === '' ? null : +$event)"
+            [ngModel]="gen.selectedJobId()"
+            (ngModelChange)="gen.selectedJobId.set($event === '' ? null : +$event)"
           >
             <option value="">-- General Application / None --</option>
-            @for (job of trackedJobs(); track job.id) {
+            @for (job of list.trackedJobs(); track job.id) {
               <option [value]="job.id">
                 {{ job.title }}
                 @if (job.company) {
@@ -274,16 +276,16 @@
         </label>
       </div>
 
-      @if (generateError()) {
-        <p class="modal__error">{{ generateError() }}</p>
+      @if (gen.error()) {
+        <p class="modal__error">{{ gen.error() }}</p>
       }
       <div class="modal__actions">
-        <button class="btn-ghost" [disabled]="generateBusy()" (click)="cancelGenerate()">
+        <button class="btn-ghost" [disabled]="gen.busy()" (click)="gen.cancel()">
           {{ t()('actions.cancel') }}
         </button>
-        <button class="btn-primary" [disabled]="generateBusy()" (click)="confirmGenerate()">
+        <button class="btn-primary" [disabled]="gen.busy()" (click)="confirmGenerate()">
           {{
-            generateBusy()
+            gen.busy()
               ? t()('documents.cv_generate_busy')
               : t()('documents.cv_generate_confirm_btn')
           }}

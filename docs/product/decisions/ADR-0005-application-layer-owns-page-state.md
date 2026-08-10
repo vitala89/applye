@@ -2174,6 +2174,70 @@ Template **580 -> 214**, stylesheet **362 -> 71** plus the 164-line partial. The
 at all**; it has 30 tests. The class is 575 -> 564 and stays over budget, which the migration is what
 fixes.
 
+## Amendment forty-two: the screen the extraction had already made easy
+
+Settings is out. Allowlist **3 -> 2**, and the class fell **564 -> 277**, under its 400 budget for
+the first time. That number is the point of amendment forty-one: the seams were already cut, so this
+change is state movement and nothing else. The five section components and their 30 tests were not
+touched at all.
+
+**Five stores**, each on a seam the extraction had drawn: `SettingsStore` (128), `GeoTargetStore`
+(128), `CliBridgeStore` (114), `ProviderKeyStore` (76), `ConnectionTestStore` (57). No pure module
+had to come out to fit any of them.
+
+**The children stayed pure view, and that was a decision rather than an omission.** A store provided
+by a page is injectable by its children, so all five could have taken their own and shed their input
+surface. They did not, for two reasons: it would have meant rewriting assertions written the day
+before, and five presentational components would have become DI-coupled to one screen. The page
+stays a wiring hub, which is most of why 277 rather than 180.
+
+**One copy of the settings row.** `GeoTargetStore` injects `SettingsStore` and reads the record from
+it - the first store in this campaign to depend on another. The alternative, its own copy of the two
+encoded fields, is how two halves of a screen come to disagree about what the next save will write.
+
+**Three things stayed on the page**, all for the same reason: `i18n.setLocale` after patching
+`uiLanguage`, every toast, and `window.location.reload()` after a reset. The store wipes the database
+and the keychain; dropping every component's in-memory state is a DOM action, and no file under
+`libs/` touches the window.
+
+**The credential path moved, and the shape it moved into is the point.** `ProviderKeyStore` has
+`refresh`, `save` and `remove` and **no read path at all** - `stored` is a yes/no answer, never the
+key. The draft is cleared the instant a save succeeds and deliberately _kept_ when one fails, because
+making the user retype a long key over a transient keychain error would be its own bug. A failed
+`hasProviderKey` answers "no" rather than leaving the previous provider's answer standing, which
+would unlock a Test button that can only fail. Five tests pin those, plus one that asserts the
+public surface has no getter.
+
+**Two distinctions kept rather than collapsed.** npm refusing an install is a message worth showing
+verbatim, so `refused` is a separate outcome from `failed` - collapsing them would hide whichever one
+the page chose not to print. And the CLI model picker answers `null` for the custom choice instead of
+returning the sentinel, because writing `__custom__` into the settings row would send that string to
+the CLI verbatim.
+
+**Both utils moved down whole with their specs.** `geo-target.util.ts` and `cli-models.util.ts` are
+pure and import only `@applye/core`, which is the branch of the contract they qualify for - unlike
+`cv-parse.util.ts` one migration earlier, whose six importers included two pages that are themselves
+pending. Their **19 tests moved with them**, which is why `desktop` falls 1481 -> 1462 while
+`application` rises 921 -> 993: 53 genuinely new tests, and the counters reconcile.
+
+**A test fixture was wrong, and the code was right.** Four `GeoTargetStore` tests failed on the first
+run asserting `geoScope: 'europe'` where the encoder produces `'["europe"]'`. The fix was to assert
+against `encodeGeoScopes` rather than to write the literal out - a test that hardcodes an encoding is
+a second implementation of it, and it would have passed while disagreeing with the real one.
+
+**Rendered check, including the three failure paths**, under a temporary console-only Tauri stub
+removed in the same call. A market pick persists and offers its source plan; a region pick clears the
+market and drops the pending offer; a second Worldwide is refused in silence with `error` empty. The
+key save trims and clears the draft and the field reads empty; remove flips the button count and
+`canTest`. CLI mode probes, draws both status rows, and the custom model choice opens the free-text
+field **without** writing the sentinel. Then, with the stub made to throw: a failed reset **closes the
+confirmation** rather than leaving an armed "delete everything" dialog standing, a failed save
+releases `saving`, and a failed geo toggle rolls the record back to exactly what it was. All three
+toasted.
+
+The `<ng-content>` projection and the `:host` gaps from amendment forty-one still measure right after
+the rewiring - order `label, label, app-settings-cli-status, div, p, div`, gaps 16px throughout.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2244,7 +2308,7 @@ fixes.
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**3** entries - `onboarding`, `jobs`, `settings`;
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**2** entries - `onboarding` and `jobs`;
         first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway

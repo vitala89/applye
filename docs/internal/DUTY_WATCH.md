@@ -44,6 +44,64 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, the stage timeline, and a refusal that kept the previous failure's message
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/interview-stages-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** sixth migration of this watch, after #404 merged as `8a6f8ce`.
+  `interview-prep-detail`, the densest entry left by call site.
+- **Completed:**
+  - `InterviewStagesStore` (218/250) and `interview-stage-form.ts` (45) in the existing
+    `libs/application/interview-prep/` area. Component **332 -> 132**.
+  - Five refusals separated from failures; only a gateway failure returns `false` and toasts.
+  - **Defect fixed:** refusal paths returned before clearing `error`, so a refusal after a failed
+    load left the earlier message standing. Cleared first now, with a test.
+  - `ADR-0005` amendment thirty-eight; `CHANGELOG.md`, `CURRENT_STATE.md`, count in four documents
+    to 5.
+- **Not completed:** nothing in scope. PR not opened. `fmtDate`'s `en-GB` deliberately untouched.
+- **Files or packages changed:** `interview-prep-detail.component.{ts,html}` and its spec, new
+  `libs/application/src/lib/interview-prep/interview-stages.store{,.spec}.ts` and
+  `interview-stage-form.ts`, `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`,
+  `CLAUDE.md`, `AGENTS.md`, `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`,
+  `ADR-0005`, this file.
+- **Validation:**
+  - `nx test application` **844 / 63**, up 21 from 823/62. `nx test desktop` **1451 / 126**,
+    unchanged - nothing moved out, and the existing component spec was converted rather than added
+    to.
+  - The store measured **256/250** on first write. Rather than take an exception, the pure form
+    module came out - which rule five wanted anyway - and it landed at 217, 218 after the error fix.
+  - `nx lint` caught four unused imports left by the move; cleared. Both projects 0 errors,
+    8 pre-existing warnings. `nx build desktop` succeeds.
+  - `quality:file-size`, `quality:attribution`, `format:check` (exit 0), `git diff --check` pass.
+  - **Rendered check.** Timeline drew both stages with numbers, status chips, interviewer lines and
+    `2 stages · 1 upcoming`. All five refusals returned `null`. A failed save kept the modal open,
+    recorded the error and toasted it. A failed reorder left the order `[1, 2]`. Console clean.
+  - **The defect was found here and verified here**: the blank-label refusal, run right after a
+    failed load, showed `error` still holding the load's message. After the fix the same sequence
+    leaves it empty.
+- **Privacy/security impact:** none.
+- **Decisions and assumptions:** two at the gate - one store rather than two, and the store keeping
+  `applicationId` after `load(id)` so `create` need not thread it. Routing stays on the page.
+- **Risks or compatibility impact:** low. The reorder's pessimism and the modal's behaviour are
+  unchanged; the only behaviour delta is that `error` is now cleared earlier.
+- **Open issues or blockers:**
+  - Filed and open: the two hardcoded English strings in My Jobs; `app.ts` outside the lint glob;
+    health-icon colours; `en-GB` at five sites, one of which is this page's `fmtDate`.
+  - Over budget: `tracker.component.scss` 455/400, `analytics.component.html` 426/300,
+    `first-launch.component.ts` 419/400.
+  - `ARTIFACT_CACHED_KEY`, a translation-key map, sits in `libs/application` (amendment
+    thirty-seven).
+- **Next first action:** open the PR from `refactor/interview-stages-store`. Remaining 5:
+  `settings` (630, 6), `jobs` (1164, 8), `cover-letter-list` (283, 10), `onboarding` (785, 12),
+  `cv-list` (426, 16). **Six migrations deep, this session's context is enormous** - the next watch
+  should start fresh. `cover-letter-list` is the smallest remaining; `jobs` at 1164 lines is the one
+  this ADR deferred once already and wants a session of its own.
+- **Evidence:** 844/63 against an unchanged 1451/126; the 256 -> 217 measurement; the stale `error`
+  observed in the browser and empty after the fix; `ADR-0005` amendment thirty-eight.
+
 ### 2026-08-10, profile, a split the gate decided, and a doc comment that did not describe its code
 
 - **Status:** complete

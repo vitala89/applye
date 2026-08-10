@@ -44,6 +44,69 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, Settings, part one: the extraction the size gate demanded first
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/settings-sections`
+- **Commits:** two - the extraction (`fa90e7d`), then docs
+- **Pull request:** opened after the docs commit
+- **Objective:** first of two pull requests for `settings`. **No allowlist movement in this one** -
+  it exists so the state migration can land without failing the build.
+- **Triage:** 9/10 (radius 2 · ambiguity 2 · risk 2 · verify 2 · unknowns 1). Risk 2 because the
+  screen injects `KeysService` and holds a plaintext key in a signal. Three grilling rounds, ten
+  decisions; the maintainer declined the security-reviewer subagent, so none was spawned.
+- **The finding that set the plan:** `check-file-size-budgets.mjs:411` fails an already-over-budget
+  file that grows **at all**. `settings.component.html` was 580/300, so any line the migration added
+  would have failed the build. `cv-list`'s template grew 2 lines under the same rebinding one
+  migration earlier and passed only because it was under budget. Extraction first is forced.
+- **Completed:**
+  - Five components: `settings-ai-provider`, `settings-cli-status`, `settings-api-key`,
+    `settings-geo-target`, `settings-danger-zone` - each cut on a boundary part two needs.
+  - `_settings-form.scss`, the shared primitives, with its six consumers named in the header.
+  - Template **580 -> 214** (under budget for the first time), stylesheet **362 -> 71**.
+  - **30 tests on a screen that had none.** Real specs for the CLI status list and the geo target;
+    render assertions for the other three.
+  - Dead `.about*` rules deleted - `about-update` has carried its own copies since it was extracted.
+- **Not completed:** the state migration itself, which is part two. `settings.component.ts` is
+  564/400 and stays there until then.
+- **Validation:** all run and observed. `nx test desktop` 1481/1481 (1451 before, +30),
+  `nx lint desktop` 0 errors (8 pre-existing warnings), `nx build desktop` succeeded,
+  `quality:file-size` passed, `format:check` passed after prettier, `git diff --check` clean.
+  `check-style-move.mjs --base origin/main` over all seven stylesheets reports **3 lost, 1 gained**,
+  both accounted for: the three dead `.about` rules, and the `:host` column.
+- **Rendered check:** run in **both themes**, which this change owed. All 11 sections draw; the
+  correct children mount and `settings-cli-status` is absent in API mode. The host gap **measures
+  16px against the 16px `.section` supplied**, and the four blocks inside the provider component sit
+  16px apart. Projected order is exact: mode, provider, cli-status, models, hint, tier. All three CLI
+  states render (working with version and path, broken in amber with its error and a Repair button,
+  missing with the command). All three geo modes: Worldwide lit, region lit, market winning and
+  muting the region row at 0.45 opacity. The reset confirmation draws tinted with a solid button, and
+  its `@keyframes` resolves scoped inside the child.
+- **A wrong measurement, corrected:** the first light-theme reading said `select` kept its dark
+  background. That was the amendment twenty-three trap - the property carries a transition, and a
+  property mid-transition reports the interpolated value. With `transition: none` set inline it reads
+  `rgb(244, 244, 242)`, which is correct. No regression; the instrument was wrong, and the ADR records
+  it that way rather than quietly.
+- **Privacy/security impact:** the key field moved into its own component. It still never receives a
+  stored key - the keychain is write-only from the app's side - the input stays `type="password"` with
+  `autocomplete="off"`, the typed value is held by the page and cleared on success, and nothing new
+  logs or persists it. Tests pin the empty field and the disabled Save on a whitespace-only key. The
+  keyring calls themselves do not move until part two.
+- **Decisions and assumptions:** the ten from the three grilling rounds, recorded in ADR-0005
+  amendment forty-one. The three worth repeating: the section wrapper stays on the page; the danger
+  zone's confirmation flag stays an input because a _failed_ reset has to close it; and
+  `modelSelectValue` is two resolved strings rather than a function input.
+- **Risks or compatibility impact:** none intended. Every behaviour is the same screen; the only
+  deletions are three rules proven dead by a rendered check.
+- **Open issues or blockers:** none new. `settings.component.ts` remains 564/400 by design until
+  part two.
+- **Next first action:** part two - five stores in `libs/application` (`SettingsStore`,
+  `ProviderKeyStore`, `CliBridgeStore`, `GeoTargetStore`, `ConnectionTestStore`), the key path into
+  `ProviderKeyStore` with tests that the draft clears on success and a failure does not set
+  `keyStored`, `patch` on the store with the page re-applying `i18n.setLocale` for `uiLanguage`,
+  `window.location.reload()` staying on the page. That is when the allowlist goes **3 -> 2**.
+
 ### 2026-08-10, the CV library, and the first store that owns someone else's write
 
 - **Status:** complete

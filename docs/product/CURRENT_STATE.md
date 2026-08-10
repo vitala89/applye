@@ -175,7 +175,13 @@
   have opened at the 250 budget with the read-only table depending on `AiService`. The rows stayed in
   `libs/data`, so this is the first store here that depends on another store rather than on the
   gateway. Moving the state also forced a real distinction into the open: "no jobs at all" is a
-  different screen from "the filters hid them" (amendment thirty-six).
+  different screen from "the filters hid them" (amendment thirty-six). It is **6** now: profile - the
+  page this ADR stopped once at 445/400 - moved as **three** stores. Two were chosen at the grilling
+  gate on an estimate that proved a hundred lines wrong; the file-size gate refused the result at
+  324/250, and the decision went back to the maintainer with the real number. The extra store split
+  "what is saved" from "what is being typed", and `persist` remains the single writer of the row so
+  the scoring hash cannot lag it. A defect was fixed on the way: a failed `hashText` used to reject
+  out of the page's click handler with nothing shown (amendment thirty-seven).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

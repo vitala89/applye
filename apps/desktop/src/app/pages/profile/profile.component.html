@@ -1,4 +1,4 @@
-@if (loading()) {
+@if (store.loading()) {
   <div class="state-loading-text" [attr.aria-label]="t()('common.loading')">
     {{ t()('common.loading') }}
   </div>
@@ -16,7 +16,7 @@
       <div class="profile__head-actions">
         @if (saveError() && saveStatus()) {
           <span class="head-status status--error">{{ saveStatus() }}</span>
-        } @else if (dirty()) {
+        } @else if (store.dirty()) {
           <span class="head-status head-status--warn">
             <lucide-icon [img]="unsavedIcon" [size]="13" aria-hidden="true" />
             {{ t()('profile.unsaved') }}
@@ -35,14 +35,20 @@
           appButton
           variant="primary"
           size="md"
-          [disabled]="saving() || !dirty() || scoring() || pitching()"
+          [disabled]="
+            store.saving() || !store.dirty() || artifacts.busy('scoring') || artifacts.busy('pitch')
+          "
           (click)="save()"
         >
-          <lucide-icon [img]="dirty() ? saveIcon : checkIcon" [size]="15" aria-hidden="true" />
+          <lucide-icon
+            [img]="store.dirty() ? saveIcon : checkIcon"
+            [size]="15"
+            aria-hidden="true"
+          />
           {{
-            saving()
+            store.saving()
               ? t()('profile.saving')
-              : dirty()
+              : store.dirty()
                 ? t()('profile.save_btn')
                 : t()('profile.saved_status')
           }}
@@ -51,26 +57,26 @@
     </header>
 
     <app-completeness-hero
-      [completeness]="completeness()"
-      [gaps]="gaps()"
-      [name]="form().name"
+      [completeness]="store.completeness()"
+      [gaps]="store.gaps()"
+      [name]="store.editor.form().name"
       [subtitle]="heroSubtitle()"
       (addField)="focusField($event)"
     />
 
     <!-- Target roles (archetypes) -->
     <app-profile-archetypes
-      [archetypes]="archetypes()"
-      [open]="sectionOpen().archetypes"
-      (toggled)="toggleSection('archetypes')"
-      (changed)="archetypes.set($event)"
+      [archetypes]="store.archetypes()"
+      [open]="store.sectionOpen().archetypes"
+      (toggled)="store.toggleSection('archetypes')"
+      (changed)="store.archetypes.set($event)"
     />
 
     <!-- Photo: one cropped headshot, reused by any CV that wants one. -->
     <app-profile-photo
-      [photo]="profile()?.photoDataUri ?? null"
-      [open]="sectionOpen().photo"
-      (toggled)="toggleSection('photo')"
+      [photo]="store.profile()?.photoDataUri ?? null"
+      [open]="store.sectionOpen().photo"
+      (toggled)="store.toggleSection('photo')"
     />
 
     <!-- Editor -->
@@ -81,51 +87,51 @@
           <button
             type="button"
             class="mode-btn"
-            [class.mode-btn--on]="!rawMode()"
-            (click)="rawMode() && toggleRawMode()"
+            [class.mode-btn--on]="!store.editor.rawMode()"
+            (click)="store.editor.rawMode() && store.toggleRawMode()"
           >
             {{ t()('profile.mode_form') }}
           </button>
           <button
             type="button"
             class="mode-btn"
-            [class.mode-btn--on]="rawMode()"
-            (click)="!rawMode() && toggleRawMode()"
+            [class.mode-btn--on]="store.editor.rawMode()"
+            (click)="!store.editor.rawMode() && store.toggleRawMode()"
           >
             {{ t()('profile.mode_raw') }}
           </button>
         </div>
       </div>
 
-      @if (!rawMode()) {
+      @if (!store.editor.rawMode()) {
         <div class="form-cards">
           <app-profile-text-field
             key="document-name"
-            [value]="form().name"
-            (changed)="updateField('name', $event)"
+            [value]="store.editor.form().name"
+            (changed)="store.editor.updateField('name', $event)"
           />
           <div class="field-row">
             <app-profile-text-field
               key="first-name"
-              [value]="form().firstName"
-              (changed)="updateField('firstName', $event)"
+              [value]="store.editor.form().firstName"
+              (changed)="store.editor.updateField('firstName', $event)"
             />
             <app-profile-text-field
               key="last-name"
-              [value]="form().lastName"
-              (changed)="updateField('lastName', $event)"
+              [value]="store.editor.form().lastName"
+              (changed)="store.editor.updateField('lastName', $event)"
             />
           </div>
           <div class="field-row">
             <app-profile-text-field
               key="title"
-              [value]="form().title"
-              (changed)="updateField('title', $event)"
+              [value]="store.editor.form().title"
+              (changed)="store.editor.updateField('title', $event)"
             />
             <app-profile-text-field
               key="location"
-              [value]="form().location"
-              (changed)="updateField('location', $event)"
+              [value]="store.editor.form().location"
+              (changed)="store.editor.updateField('location', $event)"
             />
           </div>
 
@@ -133,56 +139,56 @@
             <app-profile-text-field
               key="email"
               type="email"
-              [value]="form().email"
-              (changed)="updateField('email', $event)"
+              [value]="store.editor.form().email"
+              (changed)="store.editor.updateField('email', $event)"
             />
             <app-profile-text-field
               key="phone"
               type="tel"
-              [value]="form().phone"
-              (changed)="updateField('phone', $event)"
+              [value]="store.editor.form().phone"
+              (changed)="store.editor.updateField('phone', $event)"
             />
           </div>
 
           <div class="field-row">
             <app-profile-text-field
               key="website"
-              [value]="form().website"
+              [value]="store.editor.form().website"
               placeholderKey="profile.website_hint"
-              (changed)="updateField('website', $event)"
+              (changed)="store.editor.updateField('website', $event)"
             />
             <app-profile-text-field
               key="linkedin"
-              [value]="form().linkedin"
+              [value]="store.editor.form().linkedin"
               placeholderKey="profile.linkedin_hint"
-              (changed)="updateField('linkedin', $event)"
+              (changed)="store.editor.updateField('linkedin', $event)"
             />
           </div>
 
           <div class="field field--full" id="field-experience">
             <app-profile-experience
-              [entries]="experienceEntries()"
-              [open]="sectionOpen().experience"
-              (toggled)="toggleSection('experience')"
-              (changed)="onExperienceChanged($event)"
+              [entries]="store.editor.experienceEntries()"
+              [open]="store.sectionOpen().experience"
+              (toggled)="store.toggleSection('experience')"
+              (changed)="store.editor.onExperienceChanged($event)"
             />
           </div>
 
           <div class="field-row">
             <div class="field">
               <app-profile-skills
-                [skills]="form().skills"
-                [open]="sectionOpen().skills"
-                (toggled)="toggleSection('skills')"
-                (changed)="updateField('skills', $event)"
+                [skills]="store.editor.form().skills"
+                [open]="store.sectionOpen().skills"
+                (toggled)="store.toggleSection('skills')"
+                (changed)="store.editor.updateField('skills', $event)"
               />
             </div>
             <div class="field" id="field-languages">
               <app-profile-languages
-                [entries]="languageEntries()"
-                [open]="sectionOpen().languages"
-                (toggled)="toggleSection('languages')"
-                (changed)="onLanguagesChanged($event)"
+                [entries]="store.editor.languageEntries()"
+                [open]="store.sectionOpen().languages"
+                (toggled)="store.toggleSection('languages')"
+                (changed)="store.editor.onLanguagesChanged($event)"
               />
             </div>
           </div>
@@ -197,8 +203,8 @@
                 class="field__input"
                 type="number"
                 inputmode="numeric"
-                [ngModel]="form().compMin"
-                (ngModelChange)="updateField('compMin', $event)"
+                [ngModel]="store.editor.form().compMin"
+                (ngModelChange)="store.editor.updateField('compMin', $event)"
                 [placeholder]="t()('profile.comp_min')"
                 [attr.aria-label]="t()('profile.comp_min')"
               />
@@ -207,15 +213,15 @@
                 class="field__input"
                 type="number"
                 inputmode="numeric"
-                [ngModel]="form().compMax"
-                (ngModelChange)="updateField('compMax', $event)"
+                [ngModel]="store.editor.form().compMax"
+                (ngModelChange)="store.editor.updateField('compMax', $event)"
                 [placeholder]="t()('profile.comp_max')"
                 [attr.aria-label]="t()('profile.comp_max')"
               />
               <select
                 class="field__input comp-select"
-                [ngModel]="form().compCurrency"
-                (ngModelChange)="updateField('compCurrency', $event)"
+                [ngModel]="store.editor.form().compCurrency"
+                (ngModelChange)="store.editor.updateField('compCurrency', $event)"
                 [attr.aria-label]="t()('profile.comp_currency')"
               >
                 <option value="">-</option>
@@ -224,8 +230,8 @@
               </select>
               <select
                 class="field__input comp-select"
-                [ngModel]="form().compPeriod"
-                (ngModelChange)="updateField('compPeriod', $event)"
+                [ngModel]="store.editor.form().compPeriod"
+                (ngModelChange)="store.editor.updateField('compPeriod', $event)"
                 [attr.aria-label]="t()('profile.comp_period')"
               >
                 <option value="">-</option>
@@ -237,22 +243,22 @@
 
           <div class="field field--full" id="field-education">
             <app-profile-education
-              [entries]="educationEntries()"
-              [open]="sectionOpen().education"
-              (toggled)="toggleSection('education')"
-              (changed)="onEducationChanged($event)"
+              [entries]="store.editor.educationEntries()"
+              [open]="store.sectionOpen().education"
+              (toggled)="store.toggleSection('education')"
+              (changed)="store.editor.onEducationChanged($event)"
             />
           </div>
         </div>
       } @else {
         <app-profile-raw-editor
-          [markdown]="fullMd()"
-          [settings]="settings()"
-          (markdownChanged)="fullMd.set($event)"
-          (applied)="applyParsedProfile($event)"
+          [markdown]="store.editor.fullMd()"
+          [settings]="store.settings()"
+          (markdownChanged)="store.editor.fullMd.set($event)"
+          (applied)="store.applyParsedProfile($event)"
         />
       }
-      @if (dirty()) {
+      @if (store.dirty()) {
         <p class="unsaved-hint">
           <lucide-icon [img]="unsavedIcon" [size]="13" aria-hidden="true" />
           {{ t()('profile.unsaved') }}
@@ -262,19 +268,24 @@
 
     <!-- AI Tools -->
     <app-profile-ai-tools
-      [canGenerate]="!scoring() && !pitching() && !saving() && !!fullMd().trim()"
-      [scoringOpen]="scoringOpen()"
-      [scoringState]="scoringState()"
-      [scoring]="scoring()"
-      [scoringJson]="profile()?.scoringJson ?? null"
+      [canGenerate]="
+        !artifacts.busy('scoring') &&
+        !artifacts.busy('pitch') &&
+        !store.saving() &&
+        !!store.editor.fullMd().trim()
+      "
+      [scoringOpen]="store.scoringOpen()"
+      [scoringState]="store.scoringState()"
+      [scoring]="artifacts.busy('scoring')"
+      [scoringJson]="store.profile()?.scoringJson ?? null"
       [scoreStatus]="scoreStatus()"
       [scoreError]="scoreError()"
-      [pitchState]="pitchState()"
-      [pitching]="pitching()"
-      [pitchMd]="profile()?.pitchMd ?? null"
+      [pitchState]="store.pitchState()"
+      [pitching]="artifacts.busy('pitch')"
+      [pitchMd]="store.profile()?.pitchMd ?? null"
       [pitchStatus]="pitchStatus()"
       [pitchError]="pitchError()"
-      (scoringToggled)="toggleScoring()"
+      (scoringToggled)="store.toggleScoring()"
       (scoringRequested)="generateScoringProfile()"
       (pitchRequested)="generatePitch()"
     />

@@ -44,6 +44,79 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, profile, a split the gate decided, and a doc comment that did not describe its code
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `refactor/profile-store`
+- **Commits:** two - the migration, then docs
+- **Pull request:** not yet opened
+- **Objective:** fifth migration of this watch, after #403 merged as `32a56da`. `profile`, the page
+  this ADR stopped once at 445/400.
+- **Completed:**
+  - Three component-scoped stores: `ProfileFormStore` (140), `ProfileStore` (218/250),
+    `ProfileArtifactStore` (127). Page **483 -> 171**.
+  - `persist` kept as the single writer of the profile row; the artefact store writes through it.
+  - All three page-local utils moved whole with their specs; `profile-raw-editor` re-pointed at
+    `@applye/application`.
+  - Status sentences left on the page; stores publish outcomes instead.
+  - **Defect fixed:** `hashText` was called outside the guard in `generate`, so a failed hash
+    rejected out of the page's click handler with nothing shown. Now reported as `failed`, with a
+    test.
+  - `ADR-0005` amendment thirty-seven; `CHANGELOG.md`, `CURRENT_STATE.md`, count in four documents
+    to 6.
+- **Not completed:** nothing in scope. PR not opened. `ProfileFormStore` has no dedicated spec - its
+  behaviour is covered through `ProfileStore`'s "the form" block and the component's name-backfill
+  tests, which is honest coverage but not where a reader would look for it.
+- **Files or packages changed:** `profile.component.{ts,html}` and its two specs,
+  `profile-raw-editor.component.{ts,spec.ts}`, moved
+  `profile-{artifact,name,parse}.util.{ts,spec.ts}` into `libs/application/src/lib/profile/`, new
+  `profile.store{,.spec}.ts`, `profile-form.store.ts` and `profile-artifact.store{,.spec}.ts` there,
+  `libs/application/src/index.ts`, `eslint.config.mjs`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`,
+  `docs/internal/AGENT_START_HERE.md`, `docs/product/CURRENT_STATE.md`, `ADR-0005`, this file.
+- **Validation:**
+  - `nx test desktop` **1451 / 126**, down 36 tests and three suites - the moved util specs.
+    `nx test application` **823 / 62**, up 55 from 768/57: those 36 plus 19 new. Reconciles.
+  - Two spec files needed the settled `debugElement.injector` treatment - fifth occurrence. One
+    archetype test additionally needed to arrange **after** the load settled, because
+    `ProfileStore.load` sets `loading` at its start where the old `ngOnInit` never did; the
+    assertions are unchanged.
+  - `nx lint` both projects 0 errors, 8 pre-existing warnings. `nx build desktop` succeeds.
+  - `quality:file-size` **failed once** at `profile.store.ts` 324/250 and passes now at 218/250.
+    `quality:attribution`, `format:check` (exit 0), `git diff --check` pass.
+  - **Rendered check.** Load failure free from the missing Tauri context: raw error in the store,
+    translated sentence on the page. With a row pushed in: hero `Senior · Fintech` joined by the
+    page, completeness 33%, one experience row, skills parsed, both artefacts `fresh`. Editing a
+    field moved scoring to `unsaved`; editing **only** an archetype left the page dirty with
+    `mdDirty` false and scoring `fresh` - the distinction the freshness rule rests on. A failed
+    generation wrote to the scoring line and left the pitch line empty; a failed save wrote its own
+    sentence. Console clean.
+- **Privacy/security impact:** none. Same reads and writes, same AI call.
+- **Decisions and assumptions:** three at the first gate - two stores, structured outcomes rather
+  than status strings, and the artefact store writing through `persist`. A fourth after the size
+  gate refused the result: split the form out as a third store.
+- **Corrections:** my estimate that `ProfileStore` would land at 200-220 lines was wrong by about a
+  hundred. The maintainer chose "two stores" partly on that number, so the choice was re-put with
+  the real one rather than worked around.
+- **Risks or compatibility impact:** moderate by surface, low by behaviour. The freshness invariant
+  is the risk, and it is covered by eighteen pre-existing wiring tests that still pass plus a new
+  store test asserting the hash advances with the row.
+- **Open issues or blockers:**
+  - `ARTIFACT_CACHED_KEY`, a translation-key map, now sits in `libs/application` as part of a util
+    that had to move whole. The layer never resolves it, but it is worth watching.
+  - Filed earlier and still open: the two hardcoded English strings in My Jobs; `app.ts` outside the
+    lint rule's glob; health-icon colours; `en-GB` at five sites.
+  - Over budget: `tracker.component.scss` 455/400, `analytics.component.html` 426/300,
+    `first-launch.component.ts` 419/400.
+- **Next first action:** open the PR from `refactor/profile-store`. Remaining 6:
+  `interview-prep-detail` (332, 8), `settings` (630, 6), `jobs` (1164, 8), `cover-letter-list`
+  (283, 10), `onboarding` (785, 12), `cv-list` (426, 16). **This session has now run five
+  migrations and its context is extremely long.** The next watch should start fresh;
+  `interview-prep-detail` is the natural next entry.
+- **Evidence:** the reconciled counts (1451/126 against 823/62); the size gate's 324/250 refusal and
+  the 218/250 pass after the split; the archetype-only edit reading dirty-but-fresh in the running
+  app; `ADR-0005` amendment thirty-seven.
+
 ### 2026-08-10, My Jobs, two features in one class, and a count I reported wrong before checking it
 
 - **Status:** complete

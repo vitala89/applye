@@ -181,7 +181,11 @@
   324/250, and the decision went back to the maintainer with the real number. The extra store split
   "what is saved" from "what is being typed", and `persist` remains the single writer of the row so
   the scoring hash cannot lag it. A defect was fixed on the way: a failed `hashText` used to reject
-  out of the page's click handler with nothing shown (amendment thirty-seven).
+  out of the page's click handler with nothing shown (amendment thirty-seven). It is **5** now: the
+  interview stage detail screen moved - eight gateway calls, the densest entry left - and its store
+  landed at 217/250 only because the pure form module belonged beside it anyway. A second
+  contract gap was fixed on the way: refusal paths returned before clearing `error`, so a refusal
+  after a failed load kept the earlier message (amendment thirty-eight).
 - **Two defects are filed and unfixed**, both found by reading or by a rendered check rather than by
   a gate: the health check's `ok`/`warn`/`fail` icons all render the same colour, because the
   `[class]` binding on `<lucide-icon>` lands nothing; and `en-GB` is hardcoded at five date-formatting

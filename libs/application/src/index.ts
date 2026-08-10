@@ -40,6 +40,8 @@ export * from './lib/onboarding/onboarding-banner.store';
 export * from './lib/onboarding/onboarding-gate.util';
 export * from './lib/health/health-check.store';
 export * from './lib/interview-prep/interview-prep.store';
+export * from './lib/interview-prep/interview-stage-form';
+export * from './lib/interview-prep/interview-stages.store';
 export * from './lib/pipeline/pipeline-card-view';
 export * from './lib/pipeline/interview-stage-view';
 export * from './lib/pipeline/pipeline.store';

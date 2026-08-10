@@ -1954,6 +1954,49 @@ regression the wiring spec exists to catch, and a failed save wrote its own sent
 Test counts: `desktop` 1487 -> **1451** (three util specs out), `application` 768 -> **823** (those
 36 back, plus 19 new).
 
+## Amendment thirty-eight: the densest entry, and a refusal that kept someone else's error
+
+`interview-prep-detail` had the highest call density left - eight gateway calls in 332 lines, across
+load, create, update, delete and a reorder that writes twice. Allowlist **6 -> 5**.
+
+**The store came to 256 against a 250 budget, and the fix was canon rather than an exception.**
+`StageFormValue`, its empty value, and the mapping that turns blank strings into **absent** fields
+belong beside the store as pure functions (rule five), not on it. Extracting `interview-stage-form.ts`
+took the store to **217** and made the one genuinely testable transformation testable without a
+component. That the extraction also solved the budget is a coincidence worth naming: the same move
+was correct on its own terms, which is the only reason it was not a dodge.
+
+**Refusal and failure are separated all the way through**, and this page has five refusals: a blank
+label, a status equal to the one already set, a reorder past either end, a save already running, and
+a delete with nothing targeted. All return `null` and say nothing; a blank label lights its own field
+instead, which needs no toast. Only a gateway failure returns `false` with `error` filled.
+
+**A contract gap, found on the rendered screen.** The refusal paths returned **before** clearing
+`error`, so a refusal following a failed load left the load's message standing. Nothing displayed it -
+the page reads `error` only when it gets `false` - so no gate, test or screenshot would have caught
+it, and it was visible only because the browser had just failed a load for real and the next thing
+tried was a refusal. `error` is cleared before the refusal checks now, with a test that fails on the
+old order. This is the second time in two migrations that a store's documented contract turned out to
+be true only in the common ordering; the lesson is that "refusal leaves `error` empty" has to mean
+_clears it_, not _does not set it_.
+
+**The reorder keeps its pessimism.** Nothing moves on screen until both writes return, so a failed
+swap leaves the timeline exactly as it was rather than showing an order the database does not have -
+the opposite choice from the Kanban board, which moves first and rolls back (amendment thirty). Both
+are right for their surface: a board drag is direct manipulation the user is already watching, an
+arrow click is not.
+
+`fmtDate` stayed on the page with its hardcoded `en-GB`. It is one of the five filed sites, and a
+migration is not where that gets fixed.
+
+**Rendered check.** The timeline drew two stages with their numbers, status chips, interviewer lines
+and `2 stages · 1 upcoming`. All five refusals returned `null`; the blank label lit the field and left
+`error` clear - the fix verified where it was found. A failed save kept the modal open, recorded the
+error and toasted it; a failed reorder left the order `[1, 2]` untouched. Console clean.
+
+The component fell **332 -> 132** lines; the store is 218 and the form module 45. Counts: `desktop`
+unchanged at **1451 / 126**, `application` 823 -> **844 / 63**.
+
 ## References
 
 - **Links**: `jobs.store.ts` (the precedent, including the recorded refusal of NgRx);
@@ -2024,7 +2067,7 @@ Test counts: `desktop` 1487 -> **1451** (three util specs out), `application` 76
         in `cover-letter-block/` on the first pass (amendment seventeen)
   - [ ] Keep paying it: **no further extraction in this area merges without a rendered check**, since
         the only defect class that matters here is invisible to every gate
-  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**6** entries; first deleted 2026-08-07,
+  - [ ] Empty `COMPONENTS_STILL_USING_THE_GATEWAY` (**5** entries; first deleted 2026-08-07,
         then delete the rule with it. Two went in amendment twenty-five: `onboarding-banner` migrated
         to `OnboardingBannerStore`, and `paste-job-modal` turned out to be injecting the gateway
         without ever calling it - so the count had been overstating the work by one)

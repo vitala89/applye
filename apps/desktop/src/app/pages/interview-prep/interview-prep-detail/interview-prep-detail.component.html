@@ -1,21 +1,21 @@
 <!-- Page shell: the click handler only dismisses open menus when the user clicks
      away. It is not a control, so it stays unfocusable and keyboard-inert. -->
 <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-<div class="ipd" (click)="closeMenus()">
+<div class="ipd" (click)="store.closeMenus()">
   <button type="button" class="ipd__back" (click)="back()">
     <lucide-icon [img]="icons.back" [size]="15" />
     {{ t()('interview.back_to_list') }}
   </button>
 
-  @if (loading()) {
+  @if (store.loading()) {
     <p class="ipd__state">{{ t()('common.loading') }}</p>
   } @else {
     <header class="ipd__header">
       <div class="ipd__head-text">
-        <div class="ipd__company">{{ application()?.company || '·' }}</div>
-        <div class="ipd__title">{{ application()?.title || '·' }}</div>
+        <div class="ipd__company">{{ store.application()?.company || '·' }}</div>
+        <div class="ipd__title">{{ store.application()?.title || '·' }}</div>
       </div>
-      <button type="button" class="ip-btn ip-btn--primary ipd__add-btn" (click)="openAdd()">
+      <button type="button" class="ip-btn ip-btn--primary ipd__add-btn" (click)="store.openAdd()">
         <lucide-icon [img]="icons.add" [size]="16" />
         {{ t()('interview.add_stage') }}
       </button>
@@ -23,20 +23,20 @@
 
     <div class="ipd__summary">{{ detailSummary() }}</div>
 
-    @if (!stages().length) {
+    @if (!store.stages().length) {
       <div class="ipd__empty">{{ t()('interview.detail_empty') }}</div>
     }
 
     <!-- timeline -->
     <div class="ipd__timeline">
-      @for (stage of stages(); track stage.id; let i = $index) {
+      @for (stage of store.stages(); track stage.id; let i = $index) {
         <div class="ipd__row">
           <!-- rail -->
           <div class="ipd__rail">
             @if (i > 0) {
               <span class="ipd__rail-line ipd__rail-line--top"></span>
             }
-            @if (i < stages().length - 1) {
+            @if (i < store.stages().length - 1) {
               <span class="ipd__rail-line ipd__rail-line--bottom"></span>
             }
             <span class="ipd__node" [attr.data-status]="stage.status">{{ stage.stageOrder }}</span>
@@ -76,7 +76,7 @@
                     {{ t()('interview.status_' + stage.status) }}
                     <lucide-icon class="ipd__status-chev" [img]="icons.chevron" [size]="13" />
                   </button>
-                  @if (statusMenuId() === stage.id) {
+                  @if (store.statusMenuId() === stage.id) {
                     <div class="ip__pop ipd__status-menu" role="menu">
                       @for (s of STAGE_STATUSES; track s) {
                         <button
@@ -99,11 +99,11 @@
                 </div>
                 <app-interview-stage-actions
                   [moveUpDisabled]="i === 0"
-                  [moveDownDisabled]="i === stages().length - 1"
+                  [moveDownDisabled]="i === store.stages().length - 1"
                   (movedUp)="moveUp(i)"
                   (movedDown)="moveDown(i)"
-                  (edited)="openEdit(stage)"
-                  (deleted)="askDelete(stage)"
+                  (edited)="store.openEdit(stage)"
+                  (deleted)="store.askDelete(stage)"
                 />
               </div>
             </div>
@@ -118,18 +118,22 @@
   }
 
   <!-- add / edit modal -->
-  @if (modalOpen()) {
+  @if (store.modalOpen()) {
     <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
          is the keyboard path, so the backdrop stays unfocusable. -->
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-    <div class="ip-modal" (click)="closeModal()">
+    <div class="ip-modal" (click)="store.closeModal()">
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="ip-modal__panel" (click)="$event.stopPropagation()">
         <header class="ip-modal__head">
           <span class="ip-modal__title">{{
-            t()(modalMode() === 'add' ? 'interview.modal_add_title' : 'interview.modal_edit_title')
+            t()(
+              store.modalMode() === 'add'
+                ? 'interview.modal_add_title'
+                : 'interview.modal_edit_title'
+            )
           }}</span>
-          <button appButton variant="ghost" size="icon" type="button" (click)="closeModal()">
+          <button appButton variant="ghost" size="icon" type="button" (click)="store.closeModal()">
             <lucide-icon [img]="icons.close" [size]="18" />
           </button>
         </header>
@@ -142,12 +146,12 @@
               id="stage-label"
               type="text"
               class="ipd-input"
-              [class.is-error]="labelError()"
-              [ngModel]="form().stageLabel"
-              (ngModelChange)="updateForm('stageLabel', $event)"
+              [class.is-error]="store.labelError()"
+              [ngModel]="store.form().stageLabel"
+              (ngModelChange)="store.updateForm('stageLabel', $event)"
               [placeholder]="t()('interview.stage_label_placeholder')"
             />
-            @if (labelError()) {
+            @if (store.labelError()) {
               <span class="ipd-error">{{ t()('interview.label_required') }}</span>
             }
           </div>
@@ -159,8 +163,8 @@
               <select
                 id="stage-type"
                 class="ipd-input"
-                [ngModel]="form().stageType"
-                (ngModelChange)="updateForm('stageType', $event)"
+                [ngModel]="store.form().stageType"
+                (ngModelChange)="store.updateForm('stageType', $event)"
               >
                 @for (type of STAGE_TYPES; track type) {
                   <option [value]="type">{{ t()('interview.type_' + type) }}</option>
@@ -175,8 +179,8 @@
                 id="stage-date"
                 type="date"
                 class="ipd-input"
-                [ngModel]="form().scheduledAt"
-                (ngModelChange)="updateForm('scheduledAt', $event)"
+                [ngModel]="store.form().scheduledAt"
+                (ngModelChange)="store.updateForm('scheduledAt', $event)"
               />
             </div>
           </div>
@@ -188,8 +192,8 @@
               <select
                 id="stage-language"
                 class="ipd-input"
-                [ngModel]="form().stageLanguage"
-                (ngModelChange)="updateForm('stageLanguage', $event)"
+                [ngModel]="store.form().stageLanguage"
+                (ngModelChange)="store.updateForm('stageLanguage', $event)"
               >
                 <option value="">·</option>
                 @for (lang of LANGUAGES; track lang) {
@@ -206,23 +210,23 @@
               <input
                 type="text"
                 class="ipd-input"
-                [ngModel]="form().interviewerName"
-                (ngModelChange)="updateForm('interviewerName', $event)"
+                [ngModel]="store.form().interviewerName"
+                (ngModelChange)="store.updateForm('interviewerName', $event)"
                 [placeholder]="t()('interview.stage_interviewer_name')"
               />
               <input
                 type="text"
                 class="ipd-input"
-                [ngModel]="form().interviewerRole"
-                (ngModelChange)="updateForm('interviewerRole', $event)"
+                [ngModel]="store.form().interviewerRole"
+                (ngModelChange)="store.updateForm('interviewerRole', $event)"
                 [placeholder]="t()('interview.stage_interviewer_role')"
               />
             </div>
             <input
               type="email"
               class="ipd-input"
-              [ngModel]="form().interviewerEmail"
-              (ngModelChange)="updateForm('interviewerEmail', $event)"
+              [ngModel]="store.form().interviewerEmail"
+              (ngModelChange)="store.updateForm('interviewerEmail', $event)"
               [placeholder]="t()('interview.stage_interviewer_email')"
             />
           </div>
@@ -233,23 +237,23 @@
               id="stage-notes"
               rows="3"
               class="ipd-input"
-              [ngModel]="form().notes"
-              (ngModelChange)="updateForm('notes', $event)"
+              [ngModel]="store.form().notes"
+              (ngModelChange)="store.updateForm('notes', $event)"
               [placeholder]="t()('interview.notes_placeholder')"
             ></textarea>
           </div>
         </div>
         <footer class="ip-modal__foot">
-          <button type="button" class="ip-btn" (click)="closeModal()">
+          <button type="button" class="ip-btn" (click)="store.closeModal()">
             {{ t()('actions.cancel') }}
           </button>
           <button
             type="button"
             class="ip-btn ip-btn--primary"
-            [disabled]="saving()"
+            [disabled]="store.saving()"
             (click)="saveModal()"
           >
-            {{ t()(modalMode() === 'add' ? 'interview.add_stage' : 'interview.save') }}
+            {{ t()(store.modalMode() === 'add' ? 'interview.add_stage' : 'interview.save') }}
           </button>
         </footer>
       </div>
@@ -257,11 +261,11 @@
   }
 
   <!-- delete confirm -->
-  @if (confirmStage(); as stage) {
+  @if (store.confirmStage(); as stage) {
     <!-- Backdrop click-to-dismiss is a mouse shortcut; the dialog's Cancel button
          is the keyboard path, so the backdrop stays unfocusable. -->
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-    <div class="ip-modal ip-modal--center" (click)="cancelDelete()">
+    <div class="ip-modal ip-modal--center" (click)="store.cancelDelete()">
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <div class="ip-modal__confirm" (click)="$event.stopPropagation()">
         <div class="ip-modal__confirm-row">
@@ -272,7 +276,7 @@
           </div>
         </div>
         <div class="ip-modal__confirm-actions">
-          <button type="button" class="ip-btn" (click)="cancelDelete()">
+          <button type="button" class="ip-btn" (click)="store.cancelDelete()">
             {{ t()('actions.cancel') }}
           </button>
           <button type="button" class="ip-btn ip-btn--danger" (click)="confirmDelete()">

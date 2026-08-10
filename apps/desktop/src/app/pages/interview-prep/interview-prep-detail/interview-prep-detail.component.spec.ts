@@ -4,6 +4,7 @@ import { InterviewStage } from '@applye/core';
 import { DbService } from '@applye/data';
 import { TranslateService } from '@applye/i18n';
 import { ToastService } from '../../../core/toast/toast.service';
+import { InterviewStagesStore } from '@applye/application';
 import { InterviewPrepDetailComponent } from './interview-prep-detail.component';
 
 const STAGE: InterviewStage = {
@@ -49,16 +50,22 @@ function buildComponent(overrides: { db?: Partial<DbService> } = {}): {
   }).compileComponents();
 
   const fixture = TestBed.createComponent(InterviewPrepDetailComponent);
-  return { component: fixture.componentInstance, fixture };
+  // The page's state is a component-scoped store now (ADR-0005, amendment
+  // thirty-eight); the assertions below are unchanged.
+  return {
+    component: fixture.componentInstance,
+    store: fixture.debugElement.injector.get(InterviewStagesStore),
+    fixture,
+  };
 }
 
 describe('InterviewPrepDetailComponent', () => {
   it('loads the application and its stages', async () => {
-    const { component, fixture } = buildComponent();
+    const { component, store, fixture } = buildComponent();
     await component.ngOnInit();
     fixture.detectChanges();
 
-    expect(component['application']()?.company).toBe('Acme');
-    expect(component['stages']()).toEqual([STAGE]);
+    expect(store.application()?.company).toBe('Acme');
+    expect(store.stages()).toEqual([STAGE]);
   });
 });

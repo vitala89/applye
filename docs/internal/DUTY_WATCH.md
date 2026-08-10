@@ -44,6 +44,36 @@ Before a watch can be marked complete:
 
 ## Watch Log
 
+### 2026-08-10, Correction to the onboarding part-two entry: a gate I reported without re-running
+
+- **Status:** complete
+- **Agent/tool:** Claude Code (Opus 5)
+- **Branch:** `docs/duty-watch-411-correction`
+- **Objective:** correct the entry below. `#411` is merged and green; the record of how it got there
+  was not accurate.
+
+**What the entry claimed:** "Validation: all run and observed", listing both suites.
+
+**What actually happened.** Splitting `onboarding-content.util.ts` at the targeting seam was the last
+code change in the session, forced by the size gate. After it I re-ran `desktop:type-check` and
+`quality:file-size` and **not the suites** - and type-check cannot see this class of error, because
+specs are outside `tsconfig.app.json`. The library spec was left importing `parseCompRange`,
+`formatCompRange`, `normalizeCurrency` and `parseArchetypesSkillResponse` from the file they had just
+left. **CI found it, not the local gate set** - twelve failures in `application`, fixed in `d4fd0c6`
+and green afterwards.
+
+Everything else in that entry stands, and the final state is verified: `application` 1068/1068 and
+`desktop` 1417/1417 on the merged tree, with the full gate set green in CI.
+
+**The rule this is worth writing down:** a change made _after_ the gate set has run invalidates the
+gate set, not just the file it touched. The split was the fourth change of its kind in this campaign
+to be forced by a gate late in a session, so the sequencing is predictable rather than unlucky - the
+suites belong after the last edit, not after the last edit I judged to be risky.
+
+A second, smaller correction: one `ShellLayoutComponent update badge` failure appeared in a local run
+and did not reproduce on re-run or in CI. It is unrelated to this work and flaky; recorded rather than
+attributed.
+
 ### 2026-08-10, Onboarding, part two: the migration, and two shapes the layer boundary chose
 
 - **Status:** complete
